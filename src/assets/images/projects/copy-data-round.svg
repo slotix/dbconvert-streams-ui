@@ -1,0 +1,19 @@
+<svg width="150" height="150" viewBox="0 0 150 150" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="copy-data-small">
+<g id="Group 5" filter="url(#filter0_d)">
+<circle id="Ellipse 2" cx="75" cy="75" r="62.5" fill="#1B7ABC" stroke="#1B7ABC" stroke-width="5"/>
+</g>
+<path id="Shape Copy 3" d="M38 81.9783V82.9783H39H83.2761V96V98.0771L84.8998 96.7817L110.624 76.259L111.56 75.5122L110.658 74.7242L84.9341 52.247L83.2761 50.7982V53V66.4891H39H38V67.4891V81.9783Z" fill="white" stroke="white" stroke-width="2"/>
+</g>
+<defs>
+<filter id="filter0_d" x="6" y="10" width="138" height="138" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"/>
+<feOffset dy="4"/>
+<feGaussianBlur stdDeviation="2"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+<feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow"/>
+<feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow" result="shape"/>
+</filter>
+</defs>
+</svg>
