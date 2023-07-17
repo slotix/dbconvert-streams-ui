@@ -9,6 +9,7 @@
     </div>
   </header>
   <main>
+    <!-- Main area -->
     <Connections />
   </main>
 </template>

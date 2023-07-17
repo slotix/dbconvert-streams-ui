@@ -5,10 +5,15 @@ export default {
     "./src/**/*.{vue,js,ts,jsx,tsx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      padding: {
+        '0.2': '0.2rem',
+        '0.3': '0.3rem',
+      },
+    },
   },
   plugins: [
-      require('@tailwindcss/forms'),
+    require('@tailwindcss/forms'),
   ],
 }
 
