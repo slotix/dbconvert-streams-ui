@@ -27,7 +27,7 @@
 </template>
 
 <script setup>
-import { computed, ref, getCurrentInstance, watch } from 'vue'
+import { computed, ref,  watch } from 'vue'
 import { CheckIcon, FunnelIcon } from '@heroicons/vue/24/outline'
 import {
   Combobox,
@@ -111,10 +111,10 @@ const filteredDbTypes = computed(() =>
 )
 
 // Emitting the selectedDBType value to the parent component
-const emit = getCurrentInstance()?.emit; // Retrieve the emit function
+const emit = defineEmits(['update:selected-db-type'])
 // Watch for changes in selectedDBType
 watch(selectedDBType, (newVal) => {
-  console.log(newVal)
+  // console.log(newVal)
   emit('update:selected-db-type', newVal.type);
 });
 </script>

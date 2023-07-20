@@ -29,6 +29,11 @@ export default {
       return date.toLocaleDateString() + " - " + date.toLocaleTimeString();
       //return date.toUTCString();
     },
+
+    concatenateValues() {
+      if (this.connection.host === undefined && this.connection.port === undefined) return ''
+      return (this.connection.host || '') + (this.connection.port !== undefined ? `:${this.connection.port}` : '')
+    },
     selected() {
       if (!this.currentConnection) return false;
       if (this.connection.id === this.currentConnection.id) {

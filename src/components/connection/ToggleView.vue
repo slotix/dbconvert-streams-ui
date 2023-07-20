@@ -59,15 +59,14 @@
 </template>
 
 <script setup>
-import { ref, getCurrentInstance } from 'vue'
+import { ref } from 'vue'
 import { TableCellsIcon, Squares2X2Icon } from '@heroicons/vue/24/outline'
 const tabs = ref([
-  { name: 'Cards', icon: Squares2X2Icon, current: true },
-  { name: 'Table', icon: TableCellsIcon, current: false }
+  { name: 'Cards', icon: Squares2X2Icon, current: false },
+  { name: 'Table', icon: TableCellsIcon, current: true }
 ])
 
-const emit = getCurrentInstance()?.emit; // Retrieve the emit function
-defineEmits(['currentTab']);
+const emit = defineEmits(['toggleView']);
 const emitCurrentTab = (tabName) => {
   // Emit the current tab name to the parent component
   if (tabName) {
@@ -76,7 +75,6 @@ const emitCurrentTab = (tabName) => {
 };
 const toggleView = (tabName) => {
   tabs.value.forEach((tab) => {
-    console.log(tab)
     tab.current = tab.name === tabName // Set the `current` value based on the selected tab
     // tab.current = !tab.current // Toggle the `current` value
   })
