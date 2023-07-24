@@ -17,7 +17,10 @@ export default {
     delete: null
   },
   computed: {
-    ...mapGetters(["dbTypes", "currentConnection", "currentStep"]),
+    ...mapGetters(['connectionsByType','dbTypes', 'currentConnection', 'currentStep']),
+    connectionsCount() {
+      return connectionsByType.length
+    },
     logoSrc() {
       let dbType = this.dbTypes.filter(f => {
         return f.type === this.connection.type;
