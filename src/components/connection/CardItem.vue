@@ -1,7 +1,4 @@
 <template>
-  <!-- :class="{
-        'ring-transparent ring-4 border-transparent': selected
-      }" -->
   <div class="max-w-sm w-full py-6">
     <div
       class="bg-white shadow-md rounded-lg overflow-hidden cursor-pointer transform hover:scale-105 duration-300 ease-in-out"
@@ -25,20 +22,6 @@
           <!-- check mark -->
 
           <CheckCircleIcon class="h-8 w-8" aria-hidden="true" />
-          <!-- <svg -->
-          <!--   xmlns="http://www.w3.org/2000/svg" -->
-          <!--   class="h-8 w-8" -->
-          <!--   fill="none" -->
-          <!--   viewBox="0 0 24 24" -->
-          <!--   stroke="currentColor" -->
-          <!-- > -->
-          <!--   <path -->
-          <!--     stroke-linecap="round" -->
-          <!--     stroke-linejoin="round" -->
-          <!--     stroke-width="2" -->
-          <!--     d="M5 13l4 4L19 7" -->
-          <!--   /> -->
-          <!-- </svg> -->
         </span>
       </div>
 
@@ -109,13 +92,23 @@ import {
   CheckCircleIcon
 } from '@heroicons/vue/24/outline'
 export default Object.assign({}, shared, {
-  // Rest of your component options
   components: {
     PencilIcon,
     Square2StackIcon,
     TrashIcon,
     CalendarIcon,
     CheckCircleIcon
+  },
+  props: {
+    connection: {
+      type: Object,
+      required: true
+    },
+    isSelectable: {
+      type: Boolean,
+      required: true,
+      default: true
+    }
   }
 })
 </script>

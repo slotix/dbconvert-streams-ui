@@ -1,23 +1,17 @@
 import { mapGetters, mapActions } from "vuex";
+import { useDbTypes } from '@/stores/dbTypesStore.js'
+import { useAddConnectionStore } from '@/stores/addConnection.js'
+import { useEditConnectionStore } from '@/stores/editConnection.js'
 export default {
-  props: {
-    connection: {
-      type: Object,
-      required: true
-    },
-    isSelectable: {
-      type: Boolean,
-      required: true,
-      default: true
-    }
-  },
-  emits: {
-    edit: null,
-    clone: null,
-    delete: null
+  setup() {
+    const dbTypesData = useDbTypes();
+    const dbTypes = dbTypesData.dbTypes;
+    return {
+      dbTypes
+    };
   },
   computed: {
-    ...mapGetters(['connectionsByType','dbTypes', 'currentConnection', 'currentStep']),
+    ...mapGetters(['connectionsByType',  'currentConnection', 'currentStep']),
     connectionsCount() {
       return connectionsByType.length
     },
@@ -58,9 +52,17 @@ export default {
       "cloneCurrentConnection",
       "refreshConnections"
     ]),
+    addConnection() {
+      useAddConnectionStore().openModal()
+    },
     editConnection() {
       this.setCurrentConnection(this.connection.id);
-      this.$emit("edit");
+      useEditConnectionStore().openModal()
+    },
+    cloneConnection() {
+      this.setCurrentConnection(this.connection.id);
+      this.cloneCurrentConnection();
+      useEditConnectionStore().openModal()
     },
     async deleteConn(id) {
       try {
@@ -73,10 +75,5 @@ export default {
     selectConnection() {
       this.setCurrentConnection(this.connection.id);
     },
-    cloneConnection() {
-      this.setCurrentConnection(this.connection.id);
-      this.cloneCurrentConnection();
-      this.$emit("edit");
-    }
   }
 };

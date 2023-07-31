@@ -11,12 +11,16 @@
   <main>
     <!-- Main area -->
     <Connections @count-connections="onConnCountChanged" />
+    <Add />
+    <Edit />
   </main>
 </template>
 
 <script setup>
 import { ref } from 'vue'
 import Connections from '@/components/connection/Connections.vue'
+import Add from '@/components/connection/Add.vue'
+import Edit from '@/components/connection/Edit.vue'
 const connectionsCount = ref(null)
 const onConnCountChanged = (value) => {
   connectionsCount.value = value

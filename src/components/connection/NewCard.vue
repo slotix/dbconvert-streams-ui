@@ -23,9 +23,12 @@
     </div>
   </div>
 </template>
-<script setup>
-const emit = defineEmits(['add'])
-const addConnection = () => {
-  emit('add')
-}
+<script>
+import shared from './shared.js'
+export default Object.assign({}, shared )
+// import { useAddConnectionStore } from '@/stores/addConnection.js'
+
+// const addConnection = () => {
+//   useAddConnectionStore().openModal()
+// }
 </script>

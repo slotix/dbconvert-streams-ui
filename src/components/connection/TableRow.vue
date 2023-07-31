@@ -20,7 +20,7 @@
           class="mx-auto object-cover rounded-full h-6 w-6 hidden md:table-cell"
         />
       </div>
-      <span class="ml-3 text-gray-900 whitespace-no-wrap">
+      <span class="ml-3 text-gray-900 font-medium whitespace-no-wrap">
         {{ connection.name }}
       </span>
     </div>
@@ -33,7 +33,7 @@
       'bg-gradient-to-r from-green-200  to-green-300': highlightSelected === 'target'
     }"
   >
-    <span class="text-gray-900 whitespace-no-wrap">
+    <span class="text-gray-600 whitespace-no-wrap">
       {{ concatenateValues }}
     </span>
   </td>
@@ -45,7 +45,7 @@
       'bg-gradient-to-r from-green-200  to-green-300': highlightSelected === 'target'
     }"
   >
-    <span class="text-gray-900 whitespace-no-wrap">
+    <span class="text-gray-600 whitespace-no-wrap">
       {{ connection.database }}
     </span>
   </td>
@@ -57,7 +57,7 @@
       'bg-gradient-to-r from-green-300  to-green-400': highlightSelected === 'target'
     }"
   >
-    <span class="text-gray-900 whitespace-no-wrap">
+    <span class="text-gray-600 whitespace-no-wrap">
       {{ connectionCreated }}
     </span>
   </td>
@@ -100,7 +100,19 @@
 
 <script>
 import shared from './shared.js'
-export default Object.assign({}, shared )
+export default Object.assign({}, shared, {
+  props: {
+    connection: {
+      type: Object,
+      required: true
+    },
+    isSelectable: {
+      type: Boolean,
+      required: true,
+      default: true
+    }
+  }
+})
 </script>
 
 <style></style>

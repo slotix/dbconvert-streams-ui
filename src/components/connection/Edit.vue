@@ -1,9 +1,7 @@
 <template>
-  <connection-popup
-    :is-open="isPopupOpen"
+  <EditModal
     :isShowActionBtns="true"
     @ok="update"
-    @close="close"
   >
     <template #title>
       Edit Database Connection
@@ -17,40 +15,24 @@
     <template #confirmButton>
       Update
     </template>
-  </connection-popup>
+  </EditModal>
 </template>
 
 <script>
-import ConnectionPopup from "./ConnectionPopup.vue";
+import EditModal from './EditModal.vue'
 import ConnectionParams from "./params/ConnectionParams.vue";
 import { mapGetters, mapActions } from "vuex";
 
 export default {
-  name: "ConnectionEdit",
   components: {
-    ConnectionPopup,
+    EditModal,
     ConnectionParams
   },
-  props: {
-    isOpen: {
-      type: Boolean,
-      required: true
-    }
-  },
-  emits: {
-    close: null
-  },
   data: () => ({
-    isPopupOpen: false
   }),
   provide: {
     //Edit or add connection
     isNewConnection: false
-  },
-  watch: {
-    isOpen() {
-      this.isPopupOpen = this.isOpen;
-    }
   },
   computed: {
     ...mapGetters(["currentConnection"])
@@ -65,15 +47,6 @@ export default {
         console.log(e);
       }
     },
-    // edit() {
-    //   this.isPopupOpen = true;
-    // },
-    close() {
-      // this.isPopupOpen = false;
-      this.$emit("close");
-    }
   }
 };
 </script>
-
-<style></style>

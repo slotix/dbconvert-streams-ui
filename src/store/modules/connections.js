@@ -9,57 +9,7 @@ export default {
     currentFilter: "",
     sshConnection: null,
     sslConnection: null,
-    dbTypes: [
-      {
-        type: "All",
-        logo: "src/assets/images/db-logos/all.svg"
-      },
-      {
-        type: "PostgreSQL",
-        logo: "src/assets/images/db-logos/postgresql.svg"
-      },
-      {
-        type: "MySQL",
-        logo: "src/assets/images/db-logos/mysql.svg"
-      },
-      {
-        type: "SQLServer",
-        logo: "src/assets/images/db-logos/sql-server.svg"
-      },
-      {
-        type: "Azure",
-        logo: "src/assets/images/db-logos/azure.svg"
-      },
-      {
-        type: "Oracle",
-        logo: "src/assets/images/db-logos/oracle.svg"
-      },
-      {
-        type: "DB2",
-        logo: "src/assets/images/db-logos/db2.svg"
-      },
-      {
-        type: "Firebird",
-        logo: "src/assets/images/db-logos/firebird.svg"
-      },
-      {
-        type: "Interbase",
-        logo: "src/assets/images/db-logos/interbase.svg"
-      },
-      {
-        type: "Access",
-        logo: "src/assets/images/db-logos/access.svg"
-      },
-      {
-        type: "FoxPro",
-        logo: "src/assets/images/db-logos/foxpro.svg"
-      },
-      {
-        type: "SQLite",
-        logo: "src/assets/images/db-logos/sqlite.svg"
-      }
-    ],
-    viewTypes: ["grid", "list"]
+    // viewTypes: ["grid", "list"]
   },
   mutations: {
     SET_FILTER: (state, filter) => {

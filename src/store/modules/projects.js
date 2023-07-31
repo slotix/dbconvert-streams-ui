@@ -50,7 +50,7 @@ export default {
         img: "@/assets/images/steps/launch-step.svg"
       }
     ],
-    viewTypes: ["grid", "list"]
+    // viewTypes: ["grid", "list"]
   },
   mutations: {
     SET_FILTER: (state, filter) => {
