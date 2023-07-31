@@ -1,52 +1,39 @@
 <template>
-  <EditModal
-    :isShowActionBtns="true"
-    @ok="update"
-  >
-    <template #title>
-      Edit Database Connection
-    </template>
+  <EditModal :isShowActionBtns="true" @ok="ok">
     <template #connection-params>
-      <connection-params
-        v-if="currentConnection"
-        :connectionType="currentConnection.type"
-      />
-    </template>
-    <template #confirmButton>
-      Update
+      <connection-params v-if="currentConnection" :connectionType="currentConnection.type" />
     </template>
   </EditModal>
 </template>
 
 <script>
 import EditModal from './EditModal.vue'
-import ConnectionParams from "./params/ConnectionParams.vue";
-import { mapGetters, mapActions } from "vuex";
+import ConnectionParams from './params/ConnectionParams.vue'
+import { mapGetters, mapActions } from 'vuex'
 
 export default {
   components: {
     EditModal,
     ConnectionParams
   },
-  data: () => ({
-  }),
+  data: () => ({}),
   provide: {
     //Edit or add connection
     isNewConnection: false
   },
   computed: {
-    ...mapGetters(["currentConnection"])
+    ...mapGetters(['currentConnection'])
   },
   methods: {
-    ...mapActions(["saveConnection", "refreshConnections"]),
-    async update() {
+    ...mapActions(['saveConnection', 'refreshConnections']),
+    async ok() {
       try {
-        await this.saveConnection();
-        await this.refreshConnections();
+        await this.saveConnection()
+        await this.refreshConnections()
       } catch (e) {
-        console.log(e);
+        console.log(e)
       }
-    },
+    }
   }
-};
+}
 </script>

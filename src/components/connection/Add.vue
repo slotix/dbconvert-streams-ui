@@ -1,14 +1,11 @@
 <template>
-  <AddModal :isShowActionBtns="showActionBtns" @ok="save">
-    <template #title> Add Database Connection </template>
+  <AddModal :isShowActionBtns="showActionBtns" @ok="ok">
     <template #dbtypes-combo>
-      <!-- dbTypes combo for mobiles  -->
       <DBTypesListBox @update:selected-db-type="selectDB" />
     </template>
     <template #connection-params>
-      <connection-params v-if="selectedDB" :connectionType="selectedDB.type" />
+      <ConnectionParams v-if="selectedDB" :connectionType="selectedDB.type" />
     </template>
-    <template #confirmButton> Save </template>
   </AddModal>
 </template>
 
@@ -46,7 +43,7 @@ export default {
     selectDB(conn) {
       this.selectedDB = conn
     },
-    async save() {
+    async ok() {
       try {
         await this.saveConnection()
         await this.refreshConnections()

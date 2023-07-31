@@ -3,7 +3,7 @@
     @submit.prevent="submit"
     class="flex items-end justify-center pt-4 px-4 pb-20 text-center sm:block sm:p-0"
   >
-    <TransitionRoot as="template" :show="showModal" class="min-h-screen">
+    <TransitionRoot as="template" :show="showModal">
       <Dialog as="div" class="relative z-10" @close="close">
         <TransitionChild
           as="template"
@@ -45,7 +45,7 @@
                 </div>
                 <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left">
                   <DialogTitle as="h3" class="text-base font-semibold leading-6 text-gray-900">
-                    <slot name="title"></slot>
+                    {{ dlgType }} database connection.
                   </DialogTitle>
 
                   <slot name="dbtypes-combo"></slot>
@@ -57,32 +57,7 @@
                   v-if="isShowActionBtns"
                   class="bg-gray-500 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6"
                 >
-                  <button
-                    type="submit"
-                    name="submit"
-                    @click="confirm"
-                    class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gray-600 text-base font-medium text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:ml-3 sm:w-auto sm:text-sm"
-                  >
-                    <slot name="confirmButton"> Ok</slot>
-                  </button>
-                  <button
-                    type="button"
-                    name="test"
-                    class="inline-flex w-full justify-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 sm:ml-3 sm:w-auto"
-                    v-show="showTestConnectionBtn"
-                    @click="open = false"
-                  >
-                    Test Connection
-                  </button>
-                  <button
-                    type="button"
-                    name="cancel"
-                    class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
-                    @click="close"
-                    ref="cancelButtonRef"
-                  >
-                    Cancel
-                  </button>
+                  <ActionBtns :dlgType="dlgType" @confirm="confirm" @test="test" @cancel="close" />
                 </div>
               </DialogPanel>
             </TransitionChild>
@@ -94,12 +69,12 @@
 </template>
 
 <script setup>
-import { ref, watch, computed } from 'vue'
+import { ref, computed } from 'vue'
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue'
 import { XMarkIcon } from '@heroicons/vue/24/outline'
 import { mapGetters } from 'vuex'
 import { useEditConnectionStore } from '@/stores/editConnection.js'
-
+import  ActionBtns  from './ActionBtns.vue'
 const emit = defineEmits(['ok', 'close'])
 const props = defineProps({
   isShowActionBtns: Boolean,
@@ -107,17 +82,16 @@ const props = defineProps({
   default: true
 })
 const currentConnection = ref(mapGetters(['currentConnection']))
+// const okBtnTitle = ref('Update')
+const dlgType = ref('Update')
 
-const showTestConnectionBtn = computed(() => {
-  if (!currentConnection) return false
-  if (['Access', 'FoxPro', 'SQLite'].includes(currentConnection.type)) {
-    return false
-  }
-  return true
-})
 const showModal = computed(() => {
-  return useEditConnectionStore().showEditModal
+  return useEditConnectionStore().showModal
 })
+
+function test() {
+  console.log("test pressed")
+}
 
 function close() {
   useEditConnectionStore().closeModal()
