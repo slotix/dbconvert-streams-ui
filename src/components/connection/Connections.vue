@@ -78,7 +78,7 @@ export default {
   },
   watch: {
     filter() {
-      if (this.filter == null || this.filer.toLowerCase() == 'all') {
+      if (this.filter == null || this.filter.toLowerCase() == 'all') {
         this.SET_FILTER('')
         return
       }
