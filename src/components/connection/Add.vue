@@ -25,13 +25,6 @@ export default {
     connection: null,
     showDBCombo: false
   }),
-  provide: {
-    //Edit or add connection
-    isNewConnection: true
-  },
-  // computed: {
-  //   ...mapGetters(['currentConnection'])
-  // },
   methods: {
     ...mapActions(['saveConnection', 'refreshConnections']),
     selectDB(conn) {

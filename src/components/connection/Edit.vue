@@ -19,10 +19,6 @@ export default {
   data: () => ({
     // dlgType:'Update' 
   }),
-  provide: {
-    //Edit or add connection
-    isNewConnection: false
-  },
   computed: {
     ...mapGetters(['currentConnection']),
   },

@@ -26,6 +26,7 @@
 import UploadBox from "../../UploadBox.vue";
 import ConnectionName from "./ConnectionName.vue";
 import { mapMutations, mapGetters } from "vuex";
+import { useModalStore, DIALOG_TYPES } from '@/stores/modalStore.js'
 export default {
   name: "FoxproParams",
   components: {
@@ -41,15 +42,14 @@ export default {
     accept: ".dbc,.dbf",
     uploadBoxId: "uploadFoxProFile"
   }),
-  inject: ["isNewConnection"],
   mounted() {
-    if (this.isNewConnection) {
+    if (this.dlgTp === DIALOG_TYPES.SAVE) {
       this.connection.name = this.buildConnectionName;
     }
     this.connection.type = this.connectionType;
   },
   activated() {
-    if (this.isNewConnection) {
+    if (this.dlgTp === DIALOG_TYPES.SAVE) {
       this.UPDATE_CURRENT_CONNECTION(this.connection);
     } else {
       this.connection = this.currentConnection;
@@ -66,11 +66,14 @@ export default {
     ...mapGetters(["currentConnection"]),
     buildConnectionName() {
       return this.connectionType + "_" + this.connection.fileName;
+    },
+    dlgTp() {
+      return useModalStore().dlgType
     }
   },
   watch: {
     "connection.fileName": function() {
-      if (this.isNewConnection) {
+    if (this.dlgTp === DIALOG_TYPES.SAVE) {
         this.connection.name = this.buildConnectionName;
       }
     },
