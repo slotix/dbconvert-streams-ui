@@ -11,18 +11,23 @@
   <main>
     <!-- Main area -->
     <Connections @count-connections="onConnCountChanged" />
-    <Add />
-    <Edit />
+    <Add v-if="dlgTp === 'Save'" />
+    <Edit v-if="dlgTp === 'Update'" />
   </main>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import Connections from '@/components/connection/Connections.vue'
 import Add from '@/components/connection/Add.vue'
 import Edit from '@/components/connection/Edit.vue'
+import { useModalStore } from '@/stores/modalStore.js'
 const connectionsCount = ref(null)
 const onConnCountChanged = (value) => {
   connectionsCount.value = value
 }
+
+const dlgTp = computed(() => {
+  return useModalStore().dlgType
+})
 </script>

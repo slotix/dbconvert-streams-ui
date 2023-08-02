@@ -1,47 +1,41 @@
 <template>
-  <AddModal :isShowActionBtns="showActionBtns" @ok="ok">
+  <Modal @ok="ok">
     <template #dbtypes-combo>
       <DBTypesListBox @update:selected-db-type="selectDB" />
     </template>
     <template #connection-params>
-      <ConnectionParams v-if="selectedDB" :connectionType="selectedDB.type" />
+      <ConnectionParams v-if="connection" :connectionType="connection.type" />
     </template>
-  </AddModal>
+  </Modal>
 </template>
 
 <script>
-import AddModal from './AddModal.vue'
+import Modal from './Modal.vue'
 import ConnectionParams from './params/ConnectionParams.vue'
 import DBTypesListBox from './DBTypesListBox.vue'
-import { mapActions } from 'vuex'
-import { useAddConnectionStore } from '@/stores/addConnection.js'
+import {  mapActions } from 'vuex'
 
 export default {
   components: {
-    AddModal,
+    Modal,
     ConnectionParams,
     DBTypesListBox
   },
   data: () => ({
-    selectedDB: null,
+    connection: null,
     showDBCombo: false
   }),
   provide: {
     //Edit or add connection
     isNewConnection: true
   },
-  computed: {
-    showActionBtns() {
-      if (this.selectedDB === null) {
-        return false
-      }
-      return true
-    }
-  },
+  // computed: {
+  //   ...mapGetters(['currentConnection'])
+  // },
   methods: {
     ...mapActions(['saveConnection', 'refreshConnections']),
     selectDB(conn) {
-      this.selectedDB = conn
+      this.connection = conn
     },
     async ok() {
       try {
@@ -50,9 +44,6 @@ export default {
       } catch (e) {
         console.log(e)
       }
-    },
-    closeModal() {
-      useAddConnectionStore().closeModal()
     }
   }
 }

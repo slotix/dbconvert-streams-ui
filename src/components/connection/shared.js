@@ -1,7 +1,6 @@
 import { mapGetters, mapActions } from "vuex";
 import { useDbTypes } from '@/stores/dbTypesStore.js'
-import { useAddConnectionStore } from '@/stores/addConnection.js'
-import { useEditConnectionStore } from '@/stores/editConnection.js'
+import { useModalStore } from '@/stores/modalStore.js'
 export default {
   setup() {
     const dbTypesData = useDbTypes();
@@ -53,16 +52,20 @@ export default {
       "refreshConnections"
     ]),
     addConnection() {
-      useAddConnectionStore().openModal()
+      // console.log("SAVE CONNECTION")
+      useModalStore().openModal('Save')
     },
     editConnection() {
       this.setCurrentConnection(this.connection.id);
-      useEditConnectionStore().openModal()
+      // console.log("UPDATE CONNECTION")
+      // console.log(this.connection.id)
+      useModalStore().openModal('Update')
     },
     cloneConnection() {
       this.setCurrentConnection(this.connection.id);
+      // console.log("CLONE CONNECTION")
       this.cloneCurrentConnection();
-      useEditConnectionStore().openModal()
+      useModalStore().openModal('Update')
     },
     async deleteConn(id) {
       try {

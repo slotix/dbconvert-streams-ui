@@ -45,19 +45,20 @@
                 </div>
                 <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left">
                   <DialogTitle as="h3" class="text-base font-semibold leading-6 text-gray-900">
-                    {{ dlgType }} database connection.
+                    {{ dlgTp }} database connection.
                   </DialogTitle>
-
-                  <slot name="dbtypes-combo"></slot>
+                  <div v-if="isShowDBTypesCombo">
+                    <slot name="dbtypes-combo"></slot>
+                  </div>
                   <div class="ml-auto">
                     <slot name="connection-params"></slot>
                   </div>
                 </div>
                 <div
-                  v-if="isShowActionBtns"
+                  v-if="showActionBtns"
                   class="bg-gray-500 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6"
                 >
-                  <ActionBtns :dlgType="dlgType" @confirm="confirm" @test="test" @cancel="close" />
+                  <ActionBtns :dlgType="dlgTp" @confirm="confirm" @test="test" @cancel="close" />
                 </div>
               </DialogPanel>
             </TransitionChild>
@@ -69,31 +70,46 @@
 </template>
 
 <script setup>
-import { ref,  computed } from 'vue'
+import { ref, computed } from 'vue'
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue'
 import { XMarkIcon } from '@heroicons/vue/24/outline'
 import { mapGetters } from 'vuex'
-import { useAddConnectionStore } from '@/stores/addConnection.js'
-import  ActionBtns  from './ActionBtns.vue'
+import { useModalStore } from '@/stores/modalStore.js'
+import ActionBtns from './ActionBtns.vue'
 const emit = defineEmits(['ok', 'close'])
-const props = defineProps({
-  isShowActionBtns: Boolean,
-  required: true,
-  default: true
-})
+// const props = defineProps({
+//   isShowActionBtns: Boolean,
+// })
 const currentConnection = ref(mapGetters(['currentConnection']))
-const dlgType = ref('Save')
 
 const showModal = computed(() => {
-  return useAddConnectionStore().showModal
+  return useModalStore().showModal
+})
+
+const  dlgTp = computed(() => {
+  return useModalStore().dlgType
+})
+
+const isShowDBTypesCombo = computed(() => {
+  // console.log(dlgTp.value)
+  return dlgTp.value === 'Save'
+})
+
+const showActionBtns = computed(() => {
+  if (dlgTp.value === 'Save') {
+    return true
+  }
+  if (dlgTp.value === 'Update' && currentConnection != null){
+    return true
+  }
 })
 
 function test() {
-  console.log("test pressed")
+  console.log('test pressed')
 }
 
 function close() {
-  useAddConnectionStore().closeModal()
+  useModalStore().closeModal()
 }
 
 function confirm() {

@@ -1,11 +1,13 @@
 import { defineStore } from 'pinia';
 
-export const useAddConnectionStore = defineStore('addModal', {
+export const useModalStore = defineStore('modal', {
   state: () => ({
     showModal: false,
+    dlgType: '',
   }),
   actions: {
-    openModal() {
+    openModal(dlgType) {
+      this.dlgType = dlgType;
       this.showModal = true;
     },
     closeModal() {

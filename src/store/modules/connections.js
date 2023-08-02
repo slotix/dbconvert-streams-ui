@@ -9,7 +9,6 @@ export default {
     currentFilter: "",
     sshConnection: null,
     sslConnection: null,
-    // viewTypes: ["grid", "list"]
   },
   mutations: {
     SET_FILTER: (state, filter) => {
@@ -113,9 +112,6 @@ export default {
     },
     sslConnection(state) {
       return state.sslConnection;
-    },
-    dbTypes(state) {
-      return state.dbTypes;
     }
   }
 };

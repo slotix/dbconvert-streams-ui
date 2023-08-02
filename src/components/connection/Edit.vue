@@ -1,28 +1,30 @@
 <template>
-  <EditModal :isShowActionBtns="true" @ok="ok">
+  <Modal @ok="ok">
     <template #connection-params>
-      <connection-params v-if="currentConnection" :connectionType="currentConnection.type" />
+      <ConnectionParams v-if="currentConnection" :connectionType="currentConnection.type" />
     </template>
-  </EditModal>
+  </Modal>
 </template>
 
 <script>
-import EditModal from './EditModal.vue'
+import Modal from './Modal.vue'
 import ConnectionParams from './params/ConnectionParams.vue'
 import { mapGetters, mapActions } from 'vuex'
 
 export default {
   components: {
-    EditModal,
+    Modal,
     ConnectionParams
   },
-  data: () => ({}),
+  data: () => ({
+    // dlgType:'Update' 
+  }),
   provide: {
     //Edit or add connection
     isNewConnection: false
   },
   computed: {
-    ...mapGetters(['currentConnection'])
+    ...mapGetters(['currentConnection']),
   },
   methods: {
     ...mapActions(['saveConnection', 'refreshConnections']),
