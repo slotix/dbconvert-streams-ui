@@ -1,5 +1,10 @@
 import { defineStore } from 'pinia';
 
+export const DIALOG_TYPES = {
+  SAVE: 'Save',
+  UPDATE: 'Update',
+};
+
 export const useModalStore = defineStore('modal', {
   state: () => ({
     showModal: false,

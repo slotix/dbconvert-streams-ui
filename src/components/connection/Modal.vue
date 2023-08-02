@@ -74,12 +74,9 @@ import { ref, computed } from 'vue'
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue'
 import { XMarkIcon } from '@heroicons/vue/24/outline'
 import { mapGetters } from 'vuex'
-import { useModalStore } from '@/stores/modalStore.js'
+import { useModalStore, DIALOG_TYPES } from '@/stores/modalStore.js'
 import ActionBtns from './ActionBtns.vue'
 const emit = defineEmits(['ok', 'close'])
-// const props = defineProps({
-//   isShowActionBtns: Boolean,
-// })
 const currentConnection = ref(mapGetters(['currentConnection']))
 
 const showModal = computed(() => {
@@ -91,15 +88,14 @@ const  dlgTp = computed(() => {
 })
 
 const isShowDBTypesCombo = computed(() => {
-  // console.log(dlgTp.value)
-  return dlgTp.value === 'Save'
+  return dlgTp.value === DIALOG_TYPES.SAVE
 })
 
 const showActionBtns = computed(() => {
-  if (dlgTp.value === 'Save') {
+  if (dlgTp.value === DIALOG_TYPES.SAVE) {
     return true
   }
-  if (dlgTp.value === 'Update' && currentConnection != null){
+  if (dlgTp.value === DIALOG_TYPES.UPDATE && currentConnection != null){
     return true
   }
 })
