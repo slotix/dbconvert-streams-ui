@@ -13,7 +13,8 @@
 import Modal from './Modal.vue'
 import ConnectionParams from './params/ConnectionParams.vue'
 import DBTypesListBox from './DBTypesListBox.vue'
-import {  mapActions } from 'vuex'
+import { useConnectionsStore } from '@/stores/connections.js'
+import { mapActions } from 'pinia'
 
 export default {
   components: {
@@ -26,14 +27,14 @@ export default {
     showDBCombo: false
   }),
   methods: {
-    ...mapActions(['saveConnection', 'refreshConnections']),
+    ...mapActions(useConnectionsStore, { save: 'saveConnection', refresh: 'refreshConnections' }),
     selectDB(conn) {
       this.connection = conn
     },
     async ok() {
       try {
-        await this.saveConnection()
-        await this.refreshConnections()
+         await this.save()
+         await this.refresh()
       } catch (e) {
         console.log(e)
       }

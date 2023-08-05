@@ -151,13 +151,9 @@
 </template>
 
 <script>
-import { mapMutations, mapGetters } from "vuex";
-import ConnectionName from "./ConnectionName.vue";
-import { useModalStore, DIALOG_TYPES } from '@/stores/modalStore.js'
-
-export default {
+import common from './common.js'
+export default Object.assign({}, common, {
   name: "SQLServerParams",
-  components: { ConnectionName },
   data: () => ({
     connection: {
       name: "",
@@ -173,56 +169,7 @@ export default {
     connectionType: "SQLServer",
     protocols: ["TCP/IP", "PIPE", "IPX/SPX"]
   }),
-  mounted() {
-    if (this.dlgTp === DIALOG_TYPES.SAVE) {
-      this.connection.name = this.buildConnectionName;
-    }
-    this.connection.type = this.connectionType;
-  },
-  activated() {
-    if (this.dlgTp === DIALOG_TYPES.SAVE) {
-      this.UPDATE_CURRENT_CONNECTION(this.connection);
-    } else {
-      this.connection = this.currentConnection;
-    }
-  },
-  methods: {
-    ...mapMutations(["UPDATE_CURRENT_CONNECTION"])
-  },
-  computed: {
-    ...mapGetters(["currentConnection"]),
-    buildConnectionName() {
-      return (
-        this.connectionType +
-        "_" +
-        this.connection.host +
-        "_" +
-        this.connection.userName
-      );
-    },
-    dlgTp() {
-      return useModalStore().dlgType
-    }
-  },
-  watch: {
-    "connection.host": function() {
-    if (this.dlgTp === DIALOG_TYPES.SAVE) {
-        this.connection.name = this.buildConnectionName;
-      }
-    },
-    "connection.userName": function() {
-    if (this.dlgTp === DIALOG_TYPES.SAVE) {
-        this.connection.name = this.buildConnectionName;
-      }
-    },
-    connection: {
-      handler() {
-        this.UPDATE_CURRENT_CONNECTION(this.connection);
-      },
-      deep: true
-    }
-  }
-};
+});
 </script>
 
 <style>

@@ -26,9 +26,4 @@
 <script>
 import shared from './shared.js'
 export default Object.assign({}, shared )
-// import { useAddConnectionStore } from '@/stores/addConnection.js'
-
-// const addConnection = () => {
-//   useAddConnectionStore().openModal()
-// }
 </script>

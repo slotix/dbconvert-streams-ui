@@ -1,6 +1,8 @@
-import { mapGetters, mapActions } from "vuex";
 import { useDbTypes } from '@/stores/dbTypesStore.js'
 import { useModalStore } from '@/stores/modalStore.js'
+import { useConnectionsStore } from "@/stores/connections.js";
+import { mapState, mapActions } from "pinia";
+
 export default {
   setup() {
     const dbTypesData = useDbTypes();
@@ -10,7 +12,7 @@ export default {
     };
   },
   computed: {
-    ...mapGetters(['connectionsByType',  'currentConnection', 'currentStep']),
+    ...mapState(useConnectionsStore, ['connectionsByType', 'currentConnection', 'currentStep']),
     connectionsCount() {
       return connectionsByType.length
     },
@@ -45,25 +47,21 @@ export default {
     }
   },
   methods: {
-    ...mapActions([
+    ...mapActions(useConnectionsStore, [
       "deleteConnection",
       "setCurrentConnection",
       "cloneCurrentConnection",
       "refreshConnections"
     ]),
     addConnection() {
-      // console.log("SAVE CONNECTION")
       useModalStore().openModal('Save')
     },
     editConnection() {
       this.setCurrentConnection(this.connection.id);
-      // console.log("UPDATE CONNECTION")
-      // console.log(this.connection.id)
       useModalStore().openModal('Update')
     },
     cloneConnection() {
       this.setCurrentConnection(this.connection.id);
-      // console.log("CLONE CONNECTION")
       this.cloneCurrentConnection();
       useModalStore().openModal('Update')
     },

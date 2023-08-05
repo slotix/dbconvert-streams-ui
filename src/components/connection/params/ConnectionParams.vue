@@ -17,7 +17,7 @@
   </nav>
   <div class="container max-w-2xl mx-auto  md:w-full">
     <keep-alive>
-      <component :is="paramsComponent" :isNewConnection="true" />
+      <component :is="paramsComponent" />
     </keep-alive>
   </div>
 </template>
@@ -63,7 +63,6 @@ export default {
   data: () => ({
     tabs: ["Direct", "SSH", "SSL"],
     currentTab: "",
-    connectionParams: null
   }),
   watch: {
     connectionType() {

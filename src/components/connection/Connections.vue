@@ -27,13 +27,15 @@
 </template>
 
 <script>
-import { mapGetters, mapActions, mapMutations } from 'vuex'
 
 import Table from './Table.vue'
 import NewCard from './NewCard.vue'
 import DBTypesCombo from './DBTypesCombo.vue'
 import ToggleView from './ToggleView.vue'
 import CardItem from './CardItem.vue'
+
+import { useConnectionsStore } from '@/stores/connections.js'
+import { mapState, mapActions } from 'pinia'
 
 export default {
   name: 'Connections',
@@ -61,8 +63,10 @@ export default {
     isAddOpen: false
   }),
   methods: {
-    ...mapActions(['refreshConnections', 'toggleAddConnectionDialog']),
-    ...mapMutations(['SET_FILTER']),
+    ...mapActions(useConnectionsStore, [
+      'refreshConnections',
+      'setFilter'
+    ]),
     filterDB(dbType) {
       this.filter = dbType.type
     },
@@ -71,7 +75,7 @@ export default {
     }
   },
   computed: {
-    ...mapGetters(['connectionsByType']),
+    ...mapState(useConnectionsStore, ['connectionsByType']),
     connectionsCount() {
       return this.connectionsByType.length
     }
@@ -79,10 +83,10 @@ export default {
   watch: {
     filter() {
       if (this.filter == null || this.filter.toLowerCase() == 'all') {
-        this.SET_FILTER('')
+        this.setFilter('')
         return
       }
-      this.SET_FILTER(this.filter)
+      this.setFilter(this.filter)
     },
     connectionsCount(newValue) {
       this.$emit('count-connections', newValue)

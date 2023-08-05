@@ -9,25 +9,23 @@
 <script>
 import Modal from './Modal.vue'
 import ConnectionParams from './params/ConnectionParams.vue'
-import { mapGetters, mapActions } from 'vuex'
+import { useConnectionsStore } from '@/stores/connections.js'
+import { mapActions, mapState } from 'pinia'
 
 export default {
   components: {
     Modal,
     ConnectionParams
   },
-  data: () => ({
-    // dlgType:'Update' 
-  }),
   computed: {
-    ...mapGetters(['currentConnection']),
+    ...mapState(useConnectionsStore,['currentConnection']),
   },
   methods: {
-    ...mapActions(['saveConnection', 'refreshConnections']),
+    ...mapActions(useConnectionsStore, {save : 'saveConnection', refresh: 'refreshConnections'}),
     async ok() {
       try {
-        await this.saveConnection()
-        await this.refreshConnections()
+        await this.save()
+        await this.refresh()
       } catch (e) {
         console.log(e)
       }

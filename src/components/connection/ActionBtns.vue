@@ -28,8 +28,9 @@
   </button>
 </template>
 <script setup>
-import { ref, watch, computed } from 'vue'
-import { mapGetters } from 'vuex'
+import { ref, computed } from 'vue'
+import { useConnectionsStore } from '@/stores/connections.js'
+import { mapState } from 'pinia'
 const emit = defineEmits(['confirm', 'test', 'cancel'])
 const confirm = () => {
   emit('confirm')
@@ -44,7 +45,7 @@ const close = () => {
 const props = defineProps({
   dlgType: String
 })
-const currentConnection = ref(mapGetters(['currentConnection']))
+const currentConnection = ref(mapState(useConnectionsStore, ['currentConnection']))
 const showTestConnectionBtn = computed(() => {
   if (!currentConnection) return false
   if (['Access', 'FoxPro', 'SQLite'].includes(currentConnection.type)) {

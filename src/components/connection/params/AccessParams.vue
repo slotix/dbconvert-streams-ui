@@ -1,6 +1,6 @@
 <template>
   <div>
-    <connection-name v-model:name="connection.name" />
+    <ConnectionName v-model:name="connection.name" />
     <hr />
     <div class="bg-white bg-opacity-5 text-center md:text-left">
       <div class="items-center w-full p-4 space-y-4 text-gray-500 md:inline-flex md:space-y-0">
@@ -47,9 +47,10 @@
 <script>
 import UploadBox from '../../UploadBox.vue'
 import ConnectionName from './ConnectionName.vue'
-
 import { useModalStore, DIALOG_TYPES } from '@/stores/modalStore.js'
-import { mapMutations, mapGetters } from 'vuex'
+import { useConnectionsStore } from '@/stores/connections.js'
+import { mapWritableState } from 'pinia'
+
 export default {
   name: 'AccessParams',
   components: {
@@ -76,7 +77,7 @@ export default {
   },
   activated() {
   if ( this.dlgTp === DIALOG_TYPES.SAVE ) {
-      this.UPDATE_CURRENT_CONNECTION(this.connection)
+      this.currentConnection = this.connection
     } else {
       this.connection = this.currentConnection
     }
@@ -86,10 +87,9 @@ export default {
       this.connection.fileName = fileName
       this.connection.name = this.buildConnectionName
     },
-    ...mapMutations(['UPDATE_CURRENT_CONNECTION'])
   },
   computed: {
-    ...mapGetters(['currentConnection']),
+    ...mapWritableState(useConnectionsStore,['currentConnection']),
     buildConnectionName() {
       return this.connectionType + '_' + this.connection.fileName
     },
@@ -100,18 +100,15 @@ export default {
   watch: {
     'connection.fileName': function () {
     if ( this.dlgTp === DIALOG_TYPES.SAVE ) {
-        console.log(this.dlgTp)
         this.connection.name = this.buildConnectionName
       }
     },
     connection: {
       handler() {
-        this.UPDATE_CURRENT_CONNECTION(this.connection)
+        this.currentConnection = this.connection
       },
       deep: true
     }
   }
 }
 </script>
-
-<style></style>

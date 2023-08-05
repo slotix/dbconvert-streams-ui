@@ -73,17 +73,18 @@
 import { ref, computed } from 'vue'
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue'
 import { XMarkIcon } from '@heroicons/vue/24/outline'
-import { mapGetters } from 'vuex'
+import { mapState } from 'pinia'
 import { useModalStore, DIALOG_TYPES } from '@/stores/modalStore.js'
+import { useConnectionsStore } from '@/stores/connections.js'
 import ActionBtns from './ActionBtns.vue'
 const emit = defineEmits(['ok', 'close'])
-const currentConnection = ref(mapGetters(['currentConnection']))
+const currentConnection = ref(mapState(useConnectionsStore, ['currentConnection']))
 
 const showModal = computed(() => {
   return useModalStore().showModal
 })
 
-const  dlgTp = computed(() => {
+const dlgTp = computed(() => {
   return useModalStore().dlgType
 })
 
@@ -95,7 +96,7 @@ const showActionBtns = computed(() => {
   if (dlgTp.value === DIALOG_TYPES.SAVE) {
     return true
   }
-  if (dlgTp.value === DIALOG_TYPES.UPDATE && currentConnection != null){
+  if (dlgTp.value === DIALOG_TYPES.UPDATE && currentConnection != null) {
     return true
   }
 })

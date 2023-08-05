@@ -23,9 +23,10 @@
 
 <script>
 import UploadBox from "../../UploadBox.vue";
-import { mapMutations, mapGetters } from "vuex";
 import ConnectionName from "./ConnectionName.vue";
 import { useModalStore, DIALOG_TYPES } from '@/stores/modalStore.js'
+import { useConnectionsStore } from '@/stores/connections.js'
+import { mapWritableState } from 'pinia'
 
 export default {
   name: "SQLiteParams",
@@ -50,7 +51,7 @@ export default {
   },
   activated() {
     if (this.dlgTp === DIALOG_TYPES.SAVE) {
-      this.UPDATE_CURRENT_CONNECTION(this.connection);
+      this.currentConnection = this.connection
     } else {
       this.connection = this.currentConnection;
     }
@@ -60,10 +61,9 @@ export default {
       this.connection.fileName = fileName;
       this.connection.name = this.buildConnectionName;
     },
-    ...mapMutations(["UPDATE_CURRENT_CONNECTION"])
   },
   computed: {
-    ...mapGetters(["currentConnection"]),
+    ...mapWritableState(useConnectionsStore,['currentConnection']),
     buildConnectionName() {
       return this.connectionType + "_" + this.connection.fileName;
     },
@@ -79,12 +79,10 @@ export default {
     },
     connection: {
       handler() {
-        this.UPDATE_CURRENT_CONNECTION(this.connection);
+        this.currentConnection = this.connection
       },
       deep: true
     }
   }
 };
 </script>
-
-<style></style>

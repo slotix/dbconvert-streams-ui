@@ -2,10 +2,8 @@
   <div>
     <connection-name v-model:name="connection.name" />
     <hr />
-    <div class=" bg-white bg-opacity-5 text-center md:text-left ">
-      <div
-        class="items-center  w-full p-4 space-y-4 text-gray-500 md:inline-flex md:space-y-0 "
-      >
+    <div class="bg-white bg-opacity-5 text-center md:text-left">
+      <div class="items-center w-full p-4 space-y-4 text-gray-500 md:inline-flex md:space-y-0">
         <label class="max-w-sm mx-auto md:w-1/3">
           FoxPro Database(.dbc) or FoxPro free tables(.dbf)
         </label>
@@ -23,68 +21,67 @@
 </template>
 
 <script>
-import UploadBox from "../../UploadBox.vue";
-import ConnectionName from "./ConnectionName.vue";
-import { mapMutations, mapGetters } from "vuex";
+import UploadBox from '../../UploadBox.vue'
+import ConnectionName from './ConnectionName.vue'
 import { useModalStore, DIALOG_TYPES } from '@/stores/modalStore.js'
+import { useConnectionsStore } from '@/stores/connections.js'
+import { mapWritableState } from 'pinia'
+
 export default {
-  name: "FoxproParams",
+  name: 'FoxproParams',
   components: {
     UploadBox,
     ConnectionName
   },
   data: () => ({
     connection: {
-      name: "",
-      fileName: ""
+      name: '',
+      fileName: ''
     },
-    connectionType: "FoxPro",
-    accept: ".dbc,.dbf",
-    uploadBoxId: "uploadFoxProFile"
+    connectionType: 'FoxPro',
+    accept: '.dbc,.dbf',
+    uploadBoxId: 'uploadFoxProFile'
   }),
   mounted() {
     if (this.dlgTp === DIALOG_TYPES.SAVE) {
-      this.connection.name = this.buildConnectionName;
+      this.connection.name = this.buildConnectionName
     }
-    this.connection.type = this.connectionType;
+    this.connection.type = this.connectionType
   },
   activated() {
     if (this.dlgTp === DIALOG_TYPES.SAVE) {
-      this.UPDATE_CURRENT_CONNECTION(this.connection);
+      this.currentConnection = this.connection
     } else {
-      this.connection = this.currentConnection;
+      this.connection = this.currentConnection
     }
   },
   methods: {
     changeFileName(fileName) {
-      this.connection.fileName = fileName;
-      this.connection.name = this.buildConnectionName;
-    },
-    ...mapMutations(["UPDATE_CURRENT_CONNECTION"])
+      this.connection.fileName = fileName
+      this.connection.name = this.buildConnectionName
+    }
   },
   computed: {
-    ...mapGetters(["currentConnection"]),
+    ...mapWritableState(useConnectionsStore, ['currentConnection']),
     buildConnectionName() {
-      return this.connectionType + "_" + this.connection.fileName;
+      return this.connectionType + '_' + this.connection.fileName
     },
     dlgTp() {
       return useModalStore().dlgType
     }
   },
   watch: {
-    "connection.fileName": function() {
-    if (this.dlgTp === DIALOG_TYPES.SAVE) {
-        this.connection.name = this.buildConnectionName;
+    'connection.fileName': function () {
+      if (this.dlgTp === DIALOG_TYPES.SAVE) {
+        this.connection.name = this.buildConnectionName
       }
     },
     connection: {
       handler() {
-        this.UPDATE_CURRENT_CONNECTION(this.connection);
+        this.currentConnection = this.connection
       },
       deep: true
     }
   }
-};
+}
 </script>
-
-<style></style>
