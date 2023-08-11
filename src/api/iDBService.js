@@ -8,7 +8,6 @@ function dbPromise() {
   if (!("indexedDB" in window)) {
     throw new Error("Browser does not support IndexedDB");
   }
-
   return openDB("dbconvert", 1, {
     upgrade(db) {
       const connectionStore = db.createObjectStore("connections", {
@@ -126,11 +125,39 @@ const clearConnections = async () => {
 //   }
 // };
 
+const saveStream = async item => {
+  try {
+    (await db).put("streams", item);
+  } catch (error) {
+    return error;
+  }
+};
+
+
+const deleteStream = async index => {
+  try {
+    (await db).delete("streams", index);
+  } catch (error) {
+    return error;
+  }
+};
+
+const clearStreams = async () => {
+  try {
+    (await db).clear("streams");
+  } catch (error) {
+    return error;
+  }
+};
+
 export default {
   deleteConnection,
   clearConnections,
   saveConnection,
   getConnections,
   getConnectionsByType,
-  getConnectionById
+  getConnectionById,
+  saveStream,
+  deleteStream,
+  clearStreams
 };
