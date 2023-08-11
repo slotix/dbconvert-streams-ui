@@ -2,6 +2,8 @@ import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import ConnectionsView from '../views/ConnectionsView.vue'
 import StreamsView from '../views/StreamsView.vue'
+import AddStreamView from '../views/AddStreamView.vue'
+import NotFound from '../views/NotFound.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -13,13 +15,22 @@ const router = createRouter({
     },
     {
       path: '/connections',
-      name: 'connections',
+      name: 'Connections',
       component: ConnectionsView
     },
     {
       path: '/streams',
-      name: 'streams',
+      name: 'Streams',
       component: StreamsView
+    },
+    {
+      path: "/streams/add",
+      name: "AddStream",
+      component: AddStreamView
+    },
+    {
+      path: "/:catchAll(.*)",
+      component: NotFound
     }
     // {
     //   path: '/about',
