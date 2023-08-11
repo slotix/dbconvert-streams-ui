@@ -58,7 +58,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { CheckIcon, ChevronUpDownIcon, FunnelIcon } from '@heroicons/vue/24/outline'
-import { useDbTypes } from '@/stores/dbTypesStore.js'
+import { useConnectionsStore } from '@/stores/connections.js'
 import {
   Combobox,
   ComboboxButton,
@@ -68,7 +68,7 @@ import {
   ComboboxOptions
 } from '@headlessui/vue'
 
-const dbTypes = useDbTypes().dbTypes
+const dbTypes = useConnectionsStore().dbTypes
 const props = defineProps({
   isFilterIcon: Boolean
 })

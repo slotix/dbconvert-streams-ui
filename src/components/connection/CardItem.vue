@@ -113,4 +113,3 @@ export default Object.assign({}, shared, {
 })
 </script>
 
-<style></style>

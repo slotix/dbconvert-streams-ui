@@ -1,11 +1,10 @@
-import { useDbTypes } from '@/stores/dbTypesStore.js'
+import { useConnectionsStore } from '@/stores/connections.js'
 import { useModalStore } from '@/stores/modalStore.js'
-import { useConnectionsStore } from "@/stores/connections.js";
 import { mapState, mapActions } from "pinia";
 
 export default {
   setup() {
-    const dbTypesData = useDbTypes();
+    const dbTypesData = useConnectionsStore();
     const dbTypes = dbTypesData.dbTypes;
     return {
       dbTypes

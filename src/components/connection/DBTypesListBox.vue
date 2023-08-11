@@ -71,9 +71,9 @@ import {
   ListboxOptions
 } from '@headlessui/vue'
 import { CheckIcon, ChevronUpDownIcon } from '@heroicons/vue/24/outline'
-import { useDbTypes } from '@/stores/dbTypesStore.js'
+import { useConnectionsStore } from '@/stores/connections.js'
 
-const fetchedDbTypes = useDbTypes().dbTypes
+const fetchedDbTypes = useConnectionsStore().dbTypes
 const dbTypes = fetchedDbTypes.slice(1)
 const selectedDBType = ref(dbTypes[0])
 

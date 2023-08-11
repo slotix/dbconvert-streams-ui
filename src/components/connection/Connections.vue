@@ -47,10 +47,6 @@ export default {
     NewCard
   },
   props: {
-    isShowHeader: {
-      type: Boolean,
-      default: true
-    },
     isSelectable: {
       type: Boolean,
       default: false
@@ -76,9 +72,6 @@ export default {
   },
   computed: {
     ...mapState(useConnectionsStore, ['connectionsByType']),
-    connectionsCount() {
-      return this.connectionsByType.length
-    }
   },
   watch: {
     filter() {
@@ -87,9 +80,6 @@ export default {
         return
       }
       this.setFilter(this.filter)
-    },
-    connectionsCount(newValue) {
-      this.$emit('count-connections', newValue)
     }
   },
   async mounted() {

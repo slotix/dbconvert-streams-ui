@@ -3,7 +3,7 @@
     <div class="sm:flex sm:items-center px-4">
       <div class="sm:flex-auto">
         <h1 class="text-base font-semibold leading-6 text-gray-900">Connections</h1>
-        <p class="mt-2 text-sm text-gray-700">A list of all the connections.</p>
+        <p class="mt-2 text-sm text-gray-700"> List of connections.</p>
       </div>
       <div class="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
         <button
