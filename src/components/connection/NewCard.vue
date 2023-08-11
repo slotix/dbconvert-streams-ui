@@ -7,7 +7,7 @@
       <div class="flex justify-center">
         <img
           class="mt-8 mb-7 h-20 w-20 rounded-full"
-          :src="'src/assets/images/connections/new-connection.svg'"
+          :src="'/images/connections/new-connection.svg'"
           alt="Create database connection"
         />
       </div>
