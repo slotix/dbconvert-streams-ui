@@ -3,7 +3,7 @@
     <div class="sm:flex sm:items-center px-4">
       <div class="sm:flex-auto">
         <h1 class="text-base font-semibold leading-6 text-gray-900">Connections</h1>
-        <p class="mt-2 text-sm text-gray-700"> List of connections.</p>
+        <p class="mt-2 text-sm text-gray-700">List of connections.</p>
       </div>
       <div class="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
         <button
@@ -60,6 +60,7 @@
                 v-for="connection in connections"
                 :key="connection.id"
                 class="divide-x divide-gray-200"
+                :class="bgRowClass(connection)"
               >
                 <TableRow :connection="connection" :isSelectable="isSelectable" />
               </tr>
@@ -90,12 +91,6 @@ export default Object.assign({}, shared, {
   components: {
     TableRow,
     PlusIcon
-  },
+  }
 })
 </script>
-
-<style>
-table tr:hover td {
-  background-color: #f5f5f5;
-}
-</style>

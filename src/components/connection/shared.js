@@ -1,4 +1,5 @@
 import { useConnectionsStore } from '@/stores/connections.js'
+import { useStreamsStore } from '@/stores/streams.js'
 import { useModalStore } from '@/stores/modalStore.js'
 import { mapState, mapActions } from "pinia";
 
@@ -7,11 +8,12 @@ export default {
     const dbTypesData = useConnectionsStore();
     const dbTypes = dbTypesData.dbTypes;
     return {
-      dbTypes
+      dbTypes,
     };
   },
   computed: {
     ...mapState(useConnectionsStore, ['connectionsByType', 'currentConnection', 'currentStep']),
+    ...mapState(useStreamsStore, ['currentStep']),
     connectionsCount() {
       return connectionsByType.length
     },
@@ -32,18 +34,14 @@ export default {
       return (this.connection.host || '') + (this.connection.port !== undefined ? `:${this.connection.port}` : '')
     },
     selected() {
-      if (!this.currentConnection) return false;
-      if (this.connection.id === this.currentConnection.id) {
-        return true;
-      }
-      return false;
+      return this.currentConnection &&  this.connection.id === this.currentConnection.id;
     },
-    highlightSelected() {
-      //isSelectable && selected && currentStep.name === 'source',
-      if (!this.isSelectable) return "";
-      if (this.selected && this.currentStep) return this.currentStep.name;
-      return "";
-    }
+    bgRowClass() {
+      return connection => ({
+        'bg-yellow-50 hover:bg-yellow-50 focus:bg-yellow-50': this.isSelectable && this.currentStep.name === 'source' && this.currentConnection && this.currentConnection.id === connection.id,
+        'bg-green-50 hover:bg-green-50 focus:bg-green-50': this.isSelectable && this.currentStep.name === 'target' && this.currentConnection && this.currentConnection.id === connection.id
+      });
+    },
   },
   methods: {
     ...mapActions(useConnectionsStore, [
