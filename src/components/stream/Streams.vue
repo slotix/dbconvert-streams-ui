@@ -27,7 +27,6 @@
 
 import Table from './Table.vue'
 import NewCard from './NewCard.vue'
-// import DBTypesCombo from './DBTypesCombo.vue'
 import ToggleView from '../connection/ToggleView.vue'
 import CardItem from './CardItem.vue'
 
@@ -38,7 +37,6 @@ export default {
   name: 'Streams',
   components: {
     Table,
-//     DBTypesCombo,
     ToggleView,
     CardItem,
     NewCard
@@ -55,7 +53,7 @@ export default {
 //   },
   data: () => ({
 //     filter: null,
-    cardsView: false,
+    cardsView: true,
 //     isEditOpen: false,
 //     isAddOpen: false
   }),

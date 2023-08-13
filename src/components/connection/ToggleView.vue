@@ -48,8 +48,8 @@
 import { ref } from 'vue'
 import { TableCellsIcon, Squares2X2Icon } from '@heroicons/vue/24/outline'
 const tabs = ref([
-  { name: 'Cards', icon: Squares2X2Icon, current: false },
-  { name: 'Table', icon: TableCellsIcon, current: true }
+  { name: 'Cards', icon: Squares2X2Icon, current: true },
+  { name: 'Table', icon: TableCellsIcon, current: false }
 ])
 
 const emit = defineEmits(['toggleView']);

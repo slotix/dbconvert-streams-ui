@@ -54,7 +54,7 @@ export default {
   },
   data: () => ({
     filter: null,
-    cardsView: false,
+    cardsView: true,
     isEditOpen: false,
     isAddOpen: false
   }),
