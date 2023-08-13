@@ -59,7 +59,7 @@
               <tr
                 v-for="connection in connections"
                 :key="connection.id"
-                class="divide-x divide-gray-200"
+                class="divide-x divide-gray-200 cursor-pointer border-b border-gray-200 "
                 :class="bgRowClass(connection)"
               >
                 <TableRow :connection="connection" :isSelectable="isSelectable" />

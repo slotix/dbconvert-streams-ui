@@ -94,8 +94,8 @@ export default {
 // })
 </script>
 
-<style>
-table tr:hover td {
-  background-color: #f5f5f5;
-}
-</style>
+<!-- <style> -->
+<!-- table tr:hover td { -->
+<!--   background-color: #000; -->
+<!-- } -->
+<!-- </style> -->

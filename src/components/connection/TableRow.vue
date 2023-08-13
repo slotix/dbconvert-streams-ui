@@ -1,5 +1,5 @@
 <template>
-  <td class="px-5 py-5 border-b border-gray-200 cursor-pointer" @click="selectConnection">
+  <td class="px-5 py-5 " @click="selectConnection">
     <div class="flex items-center">
       <div class="flex-shrink-0">
         <img
@@ -14,7 +14,7 @@
     </div>
   </td>
   <td
-    class="hidden px-5 py-5 border-b border-gray-200 cursor-pointer lg:table-cell"
+    class="hidden px-5 py-5 lg:table-cell"
     @click="selectConnection"
   >
     <span class="text-gray-600 whitespace-no-wrap">
@@ -22,7 +22,7 @@
     </span>
   </td>
   <td
-    class="hidden px-5 py-5 border-b border-gray-200 cursor-pointer lg:table-cell"
+    class="hidden px-5 py-5 lg:table-cell"
     @click="selectConnection"
   >
     <span class="text-gray-600 whitespace-no-wrap">
@@ -30,24 +30,24 @@
     </span>
   </td>
   <td
-    class="hidden px-5 py-5 border-b border-gray-200 cursor-pointer lg:table-cell"
+    class="hidden px-5 py-5 lg:table-cell"
     @click="selectConnection"
   >
     <span class="text-gray-600 whitespace-no-wrap">
       {{ connectionCreated }}
     </span>
   </td>
-  <td class="px-5 py-5 border-b border-gray-200 cursor-pointer">
+  <td class="px-5 py-5 ">
     <button class="text-indigo-600 hover:text-indigo-900" @click="editConnection">
       Edit<span class="sr-only">, {{ connection.name }}</span>
     </button>
   </td>
-  <td class="px-5 py-5 border-b border-gray-200 cursor-pointer">
+  <td class="px-5 py-5 ">
     <button class="text-indigo-600 hover:text-indigo-900" @click="cloneConnection">
       Clone<span class="sr-only">, {{ connection.name }}</span>
     </button>
   </td>
-  <td class="px-5 py-5 border-b border-gray-200 cursor-pointer">
+  <td class="px-5 py-5 ">
     <button class="text-indigo-600 hover:text-indigo-900" @click="deleteConn(connection.id)">
       Delete<span class="sr-only">, {{ connection.name }}</span>
     </button>
@@ -70,3 +70,8 @@ export default Object.assign({}, shared, {
   }
 })
 </script>
+<style>
+/* td: { */
+
+/* } */
+</style>

@@ -7,7 +7,7 @@
       <div class="flex justify-center">
         <img
           class="mt-8 mb-7 h-20 w-20 rounded-full"
-          :src="'/images/streams/copy-data.svg'"
+          :src="'/images/streams/add-stream.svg'"
           alt="Create database connection"
         />
       </div>

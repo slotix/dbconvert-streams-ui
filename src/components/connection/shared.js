@@ -34,12 +34,15 @@ export default {
       return (this.connection.host || '') + (this.connection.port !== undefined ? `:${this.connection.port}` : '')
     },
     selected() {
-      return this.currentConnection &&  this.connection.id === this.currentConnection.id;
+      return this.currentConnection && this.connection.id === this.currentConnection.id;
     },
     bgRowClass() {
       return connection => ({
-        'bg-yellow-50 hover:bg-yellow-50 focus:bg-yellow-50': this.isSelectable && this.currentStep.name === 'source' && this.currentConnection && this.currentConnection.id === connection.id,
-        'bg-green-50 hover:bg-green-50 focus:bg-green-50': this.isSelectable && this.currentStep.name === 'target' && this.currentConnection && this.currentConnection.id === connection.id
+        'bg-yellow-50 ': this.isSelectable && this.currentStep.name === 'source' && this.currentConnection && this.currentConnection.id === connection.id,
+        'bg-green-50 ': this.isSelectable && this.currentStep.name === 'target' && this.currentConnection && this.currentConnection.id === connection.id,
+        'hover:bg-yellow-50 ': this.isSelectable && this.currentStep.name === 'source' ,
+        'hover:bg-green-50 ': this.isSelectable && this.currentStep.name === 'target' ,
+        'hover:bg-gray-50 ': !this.isSelectable 
       });
     },
   },

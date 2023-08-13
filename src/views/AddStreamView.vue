@@ -4,7 +4,7 @@
       class="bg-white flex flex-wrap justify-between space-y-4 sm:space-y-0 max-w-7xl mx-auto py-6 px-8"
     >
       <h1 class="flex-auto text-3xl font-bold text-gray-900 dark:text-white;">Add Stream.</h1>
-    <Steps />
+      <Steps />
     </div>
   </header>
   <main>

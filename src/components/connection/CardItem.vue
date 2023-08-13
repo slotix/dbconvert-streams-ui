@@ -8,9 +8,20 @@
         <div class="item w-1/5 flex">
           <img class="h-10 w-10 rounded-full" :src="logoSrc" :alt="connection.type + ' logo'" />
         </div>
-        <span class="item w-3/5 uppercase truncate tracking-wide text-sm font-medium text-gray-800">
+        <span class="item w-4/5 uppercase truncate tracking-wide text-sm font-medium text-gray-800">
           {{ connection.name }}
         </span>
+        <!-- <span -->
+        <!--   v-show="isSelectable && selected" -->
+        <!--   class="justify-end item w-1/5 flex" -->
+        <!-- > -->
+        <!--   <CheckCircleIcon class="h-8 w-8" aria-hidden="true" -->
+        <!--   :class="{ -->
+        <!--     'text-yellow-600': currentStep.name === 'source', -->
+        <!--     'text-green-600': currentStep.name === 'target' -->
+        <!--   }" -->
+        <!--   /> -->
+        <!-- </span> -->
       </div>
       <div :class="bgRowClass(connection)">
         <div class="px-2 flex items-center justify-between">
@@ -21,7 +32,6 @@
             </span>
           </div>
           <div v-show="isSelectable && selected" class="mt-2 items-center">
-            <!-- check mark -->
             <CheckCircleIcon
               class="h-8 w-8"
               aria-hidden="true"

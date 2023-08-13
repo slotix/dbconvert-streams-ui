@@ -81,14 +81,10 @@ const stepsBarValue = computed(() => {
 function next() {
   currentStepNumber.value++
   store.currentStep = allSteps[currentStepNumber.value - 1]
-  console.log(store.currentStep)
-  console.log(currentStepNumber)
 }
 function prev() {
   currentStepNumber.value--
   store.currentStep = allSteps[currentStepNumber.value - 1]
-  console.log(store.currentStep)
-  console.log(currentStepNumber)
 }
 onMounted(() => {
   store.currentStep = allSteps[0]
