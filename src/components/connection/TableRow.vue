@@ -1,5 +1,5 @@
 <template>
-  <td class="px-5 py-5 " @click="selectConnection">
+  <td class="px-5 py-5" @click="selectConnection">
     <div class="flex items-center">
       <div class="flex-shrink-0">
         <img
@@ -13,42 +13,38 @@
       </span>
     </div>
   </td>
-  <td
-    class="hidden px-5 py-5 lg:table-cell"
-    @click="selectConnection"
-  >
+  <td class="px-5 py-5">
+    <div class="flex items-center justify-center">
+      <ModeCombo />
+    </div>
+  </td>
+  <td class="hidden px-5 py-5 lg:table-cell" @click="selectConnection">
     <span class="text-gray-600 whitespace-no-wrap">
       {{ concatenateValues }}
     </span>
   </td>
-  <td
-    class="hidden px-5 py-5 lg:table-cell"
-    @click="selectConnection"
-  >
+  <td class="hidden px-5 py-5 lg:table-cell" @click="selectConnection">
     <span class="text-gray-600 whitespace-no-wrap">
       {{ connection.database }}
     </span>
   </td>
-  <td
-    class="hidden px-5 py-5 lg:table-cell"
-    @click="selectConnection"
-  >
+  <td class="hidden px-5 py-5 lg:table-cell" @click="selectConnection">
     <span class="text-gray-600 whitespace-no-wrap">
       {{ connectionCreated }}
     </span>
   </td>
-  <td class="px-5 py-5 ">
-    <button class="text-indigo-600 hover:text-indigo-900" @click="editConnection">
+  <td class="px-5 py-5">
+    <button class="text-gray-600 hover:text-gray-900" @click="editConnection">
       Edit<span class="sr-only">, {{ connection.name }}</span>
     </button>
   </td>
-  <td class="px-5 py-5 ">
-    <button class="text-indigo-600 hover:text-indigo-900" @click="cloneConnection">
+  <td class="px-5 py-5">
+    <button class="text-gray-600 hover:text-gray-900" @click="cloneConnection">
       Clone<span class="sr-only">, {{ connection.name }}</span>
     </button>
   </td>
-  <td class="px-5 py-5 ">
-    <button class="text-indigo-600 hover:text-indigo-900" @click="deleteConn(connection.id)">
+  <td class="px-5 py-5">
+    <button class="text-gray-600 hover:text-gray-900" @click="deleteConn(connection.id)">
       Delete<span class="sr-only">, {{ connection.name }}</span>
     </button>
   </td>
@@ -56,6 +52,7 @@
 
 <script>
 import shared from './shared.js'
+import ModeCombo from './ModeCombo.vue'
 export default Object.assign({}, shared, {
   props: {
     connection: {
@@ -67,6 +64,9 @@ export default Object.assign({}, shared, {
       required: true,
       default: true
     }
+  },
+  components: {
+    ModeCombo
   }
 })
 </script>

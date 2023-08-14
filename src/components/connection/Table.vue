@@ -30,6 +30,12 @@
                 </th>
                 <th
                   scope="col"
+                  class="px-5 py-3 border-b border-gray-200 text-gray-800 text-left uppercase font-normal"
+                >
+                  Mode
+                </th>
+                <th
+                  scope="col"
                   class="hidden px-5 py-3 border-b border-gray-200 text-gray-800 text-left uppercase font-normal lg:table-cell"
                 >
                   Host
@@ -59,7 +65,7 @@
               <tr
                 v-for="connection in connections"
                 :key="connection.id"
-                class="divide-x divide-gray-200 cursor-pointer border-b border-gray-200 "
+                class="divide-x divide-gray-200 cursor-pointer border-b border-gray-200"
                 :class="bgRowClass(connection)"
               >
                 <TableRow :connection="connection" :isSelectable="isSelectable" />

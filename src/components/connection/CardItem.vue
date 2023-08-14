@@ -24,6 +24,9 @@
         <!-- </span> -->
       </div>
       <div :class="bgRowClass(connection)">
+        <div v-if="currentStep && currentStep.name === 'source'">
+          <ModeCombo class="px-6 pt-4 pb-4" />
+        </div>
         <div class="px-2 flex items-center justify-between">
           <div class="px-4 pt-4 md:text-left w-full space-y-2 text-gray-500">
             <span class="mx-auto font-semibold text-gray-800">
@@ -91,6 +94,7 @@
 
 <script>
 import shared from './shared.js'
+import ModeCombo from './ModeCombo.vue'
 import {
   PencilIcon,
   Square2StackIcon,
@@ -104,7 +108,8 @@ export default Object.assign({}, shared, {
     Square2StackIcon,
     TrashIcon,
     CalendarIcon,
-    CheckCircleIcon
+    CheckCircleIcon,
+    ModeCombo
   },
   props: {
     connection: {
