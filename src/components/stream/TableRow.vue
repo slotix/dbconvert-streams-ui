@@ -63,7 +63,7 @@
       'bg-gradient-to-r from-green-400  to-green-400': highlightSelected === 'target'
     }"
   >
-    <button class="text-indigo-600 hover:text-indigo-900" @click="editStream">
+    <button class="text-gray-600 hover:text-gray-900" @click="editStream">
       Edit<span class="sr-only">, {{ stream.name }}</span>
     </button>
   </td>
@@ -74,7 +74,7 @@
       'bg-gradient-to-r from-green-400  to-green-400': highlightSelected === 'target'
     }"
   >
-    <button class="text-indigo-600 hover:text-indigo-900" @click="cloneStream">
+    <button class="text-gray-600 hover:text-gray-900" @click="cloneStream">
       Clone<span class="sr-only">, {{ stream.name }}</span>
     </button>
   </td>
@@ -85,7 +85,7 @@
       'bg-gradient-to-r from-green-400  to-green-400': highlightSelected === 'target'
     }"
   >
-    <button class="text-indigo-600 hover:text-indigo-900" @click="deleteConn(stream.id)">
+    <button class="text-gray-600 hover:text-gray-900" @click="deleteConn(stream.id)">
       Delete<span class="sr-only">, {{ stream.name }}</span>
     </button>
   </td>
