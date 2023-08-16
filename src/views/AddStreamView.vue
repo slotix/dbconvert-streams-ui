@@ -12,14 +12,12 @@
       <div class="mb-20" v-if="currentStep !== null">
         <div v-show="currentStep.name === 'source'">
           <Connections :isSelectable="true" />
-          <Add v-if="dlgTp === 'Save'" />
-          <Edit v-if="dlgTp === 'Update'" />
         </div>
         <div v-show="currentStep.name === 'target'">
           <Connections :isSelectable="true" />
-          <Add v-if="dlgTp === 'Save'" />
-          <Edit v-if="dlgTp === 'Update'" />
         </div>
+        <Add v-if="dlgTp === 'Save'" />
+        <Edit v-if="dlgTp === 'Update'" />
         <div v-show="currentStep.name === 'settings'">
           <Settings />
         </div>
