@@ -10,10 +10,6 @@
       <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
         <div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
           <div class="relative">
-            <!-- <div v-if="selectedTables.length > 0" class="absolute left-14 top-0 flex h-12 items-center space-x-3 bg-white sm:left-12"> -->
-            <!--   <button type="button" class="inline-flex items-center rounded bg-white px-2 py-1 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-white">Bulk edit</button> -->
-            <!--   <button type="button" class="inline-flex items-center rounded bg-white px-2 py-1 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-white">Delete all</button> -->
-            <!-- </div> -->
             <table class="min-w-full table-fixed divide-y divide-gray-300">
               <thead>
                 <tr class="bg-gray-100">
@@ -51,8 +47,6 @@
                   >
                     Operations
                   </th>
-                  <!-- <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Email</th> -->
-                  <!-- <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Role</th> -->
                   <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-3">
                     <span class="sr-only">Edit</span>
                   </th>
@@ -60,7 +54,7 @@
               </thead>
               <tbody class="divide-y divide-gray-200 bg-white">
                 <tr
-                  v-for="table in filteredItems"
+                  v-for="table in filteredTables"
                   :key="table.name"
                   :class="[selectedTables.includes(table.name) && 'bg-gray-50']"
                 >
@@ -84,20 +78,71 @@
                   >
                     {{ table.name }}
                   </td>
-                  <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                    {{ table.operations }}
-                  </td>
-                  <!-- <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500"> -->
-                  <!--   {{ person.email }} -->
-                  <!-- </td> -->
-                  <!-- <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500"> -->
-                  <!--   {{ person.role }} -->
-                  <!-- </td> -->
                   <td
                     class="whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-3"
                   >
-                    <a href="#" class="text-indigo-600 hover:text-indigo-900">
-                      Edit<span class="sr-only">, {{ table.name }}</span>
+                    <Listbox as="div" v-model="table.operations" multiple>
+                      <div class="relative mt-2">
+                        <ListboxButton
+                          class="relative w-full cursor-default rounded-md bg-white py-1.5 pl-3 pr-10 text-left text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-600 sm:text-sm sm:leading-6"
+                        >
+                          <span class="">{{ getFormattedOperations(table.operations) }}</span>
+                          <span
+                            class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2"
+                          >
+                            <ChevronUpDownIcon class="h-5 w-5 text-gray-400" aria-hidden="true" />
+                          </span>
+                        </ListboxButton>
+
+                        <transition
+                          leave-active-class="transition ease-in duration-100"
+                          leave-from-class="opacity-100"
+                          leave-to-class="opacity-0"
+                        >
+                          <ListboxOptions
+                            class="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
+                          >
+                            <ListboxOption
+                              as="template"
+                              v-for="operation in operations"
+                              :key="operation"
+                              :value="operation"
+                              v-slot="{ active, selected }"
+                            >
+                              <li
+                                :class="[
+                                  active ? 'bg-gray-600 text-white' : 'text-gray-900',
+                                  'relative cursor-default select-none py-2 pl-3 pr-9'
+                                ]"
+                              >
+                                <span
+                                  :class="[
+                                    selected ? 'font-semibold' : 'font-normal',
+                                    'block truncate'
+                                  ]"
+                                  >{{ operation }}</span
+                                >
+                                <span
+                                  v-if="selected"
+                                  :class="[
+                                    active ? 'text-white' : 'text-gray-600',
+                                    'absolute inset-y-0 right-0 flex items-center pr-4'
+                                  ]"
+                                >
+                                  <CheckIcon class="h-5 w-5" aria-hidden="true" />
+                                </span>
+                              </li>
+                            </ListboxOption>
+                          </ListboxOptions>
+                        </transition>
+                      </div>
+                    </Listbox>
+                  </td>
+                  <td
+                    class="whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-3"
+                  >
+                    <a href="#" class="text-gray-600 hover:text-gray-900">
+                      ... <span class="sr-only">, {{ table.name }}</span>
                     </a>
                   </td>
                 </tr>
@@ -117,21 +162,25 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/vue'
 import { FunnelIcon } from '@heroicons/vue/24/outline'
+import { CheckIcon, ChevronUpDownIcon } from '@heroicons/vue/20/solid'
+
+const operations = ['insert', 'update', 'delete']
 
 const tables = ref([
-  { name: 'product', operations: ['insert'] },
-  { name: 'country', operations: ['insert', 'update'] },
+  { name: 'product', operations: ['insert', 'update', 'delete'] },
+  { name: 'country', operations: ['insert', 'update', 'delete'] },
   { name: 'city', operations: ['insert', 'update', 'delete'] },
-  { name: 'store', operations: ['insert'] },
-  { name: 'users', operations: ['insert'] },
-  { name: 'status_name', operations: ['insert'] },
-  { name: 'sale', operations: ['insert'] },
-  { name: 'order_status', operations: ['insert'] }
+  { name: 'store', operations: ['insert', 'update', 'delete'] },
+  { name: 'users', operations: ['insert', 'update', 'delete'] },
+  { name: 'status_name', operations: ['insert', 'update', 'delete'] },
+  { name: 'sale', operations: ['insert', 'update', 'delete'] },
+  { name: 'order_status', operations: ['insert', 'update', 'delete'] }
 ])
 
 const searchQuery = ref('')
-const filteredItems = computed(() => {
+const filteredTables = computed(() => {
   if (!searchQuery.value) {
     return tables.value
   }
@@ -140,8 +189,18 @@ const filteredItems = computed(() => {
 })
 
 // Initialize selectedTables with an array of all table names
-const selectedTables = ref(tables.value.map((table) => table.name));
+const selectedTables = ref(tables.value.map((table) => table.name))
 const indeterminate = computed(
   () => selectedTables.value.length > 0 && selectedTables.value.length < tables.length
 )
+const getFormattedOperations = (operations) => {
+  return operations
+    .map((operation) => {
+      if (operation === 'insert') return 'Insert'
+      if (operation === 'update') return 'Update'
+      if (operation === 'delete') return 'Delete'
+      return operation
+    })
+    .join(', ')
+}
 </script>
