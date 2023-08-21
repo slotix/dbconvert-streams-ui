@@ -12,7 +12,7 @@
           {{ connection.name }}
         </span>
         <!-- <span -->
-        <!--   v-show="isSelectable && selected" -->
+        <!--   v-show="isStreamsTab && selected" -->
         <!--   class="justify-end item w-1/5 flex" -->
         <!-- > -->
         <!--   <CheckCircleIcon class="h-8 w-8" aria-hidden="true" -->
@@ -24,9 +24,6 @@
         <!-- </span> -->
       </div>
       <div :class="bgRowClass(connection)">
-        <div v-if="currentStep && currentStep.name === 'source'">
-          <ModeCombo class="px-6 pt-4 pb-4" />
-        </div>
         <div class="px-2 flex items-center justify-between">
           <div class="px-4 pt-4 md:text-left w-full space-y-2 text-gray-500">
             <span class="mx-auto font-semibold text-gray-800">
@@ -34,7 +31,7 @@
               <span class="font-normal pl-3">{{ concatenateValues }} </span>
             </span>
           </div>
-          <div v-show="isSelectable && selected" class="mt-2 items-center">
+          <div v-show="isStreamsTab && selected" class="mt-4 mr-4 items-center">
             <CheckCircleIcon
               class="h-8 w-8"
               aria-hidden="true"
@@ -94,7 +91,6 @@
 
 <script>
 import shared from './shared.js'
-import ModeCombo from './ModeCombo.vue'
 import {
   PencilIcon,
   Square2StackIcon,
@@ -109,14 +105,13 @@ export default Object.assign({}, shared, {
     TrashIcon,
     CalendarIcon,
     CheckCircleIcon,
-    ModeCombo
   },
   props: {
     connection: {
       type: Object,
       required: true
     },
-    isSelectable: {
+    isStreamsTab: {
       type: Boolean,
       required: true,
       default: true

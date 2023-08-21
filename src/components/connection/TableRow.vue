@@ -13,11 +13,6 @@
       </span>
     </div>
   </td>
-  <td class="px-5 py-5">
-    <div class="flex items-center justify-center">
-      <ModeCombo />
-    </div>
-  </td>
   <td class="hidden px-5 py-5 lg:table-cell" @click="selectConnection">
     <span class="text-gray-600 whitespace-no-wrap">
       {{ concatenateValues }}
@@ -52,26 +47,19 @@
 
 <script>
 import shared from './shared.js'
-import ModeCombo from './ModeCombo.vue'
 export default Object.assign({}, shared, {
   props: {
     connection: {
       type: Object,
       required: true
     },
-    isSelectable: {
+    isStreamsTab: {
       type: Boolean,
       required: true,
       default: true
     }
   },
   components: {
-    ModeCombo
   }
 })
 </script>
-<style>
-/* td: { */
-
-/* } */
-</style>

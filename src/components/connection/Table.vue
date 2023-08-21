@@ -30,12 +30,6 @@
                 </th>
                 <th
                   scope="col"
-                  class="px-5 py-3 border-b border-gray-200 text-gray-800 text-left uppercase font-normal"
-                >
-                  Mode
-                </th>
-                <th
-                  scope="col"
                   class="hidden px-5 py-3 border-b border-gray-200 text-gray-800 text-left uppercase font-normal lg:table-cell"
                 >
                   Host
@@ -68,7 +62,7 @@
                 class="divide-x divide-gray-200 cursor-pointer border-b border-gray-200"
                 :class="bgRowClass(connection)"
               >
-                <TableRow :connection="connection" :isSelectable="isSelectable" />
+                <TableRow :connection="connection" :isStreamsTab="isStreamsTab" />
               </tr>
             </tbody>
           </table>
@@ -88,7 +82,7 @@ export default Object.assign({}, shared, {
     connections: {
       type: Array
     },
-    isSelectable: {
+    isStreamsTab: {
       type: Boolean,
       required: true,
       default: true

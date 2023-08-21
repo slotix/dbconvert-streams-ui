@@ -17,11 +17,11 @@
         v-for="connection in connectionsByType"
         :key="connection.id"
       >
-        <CardItem :connection="connection" :isSelectable="isSelectable" />
+        <CardItem :connection="connection" :isStreamsTab="isStreamsTab" />
       </div>
     </div>
     <div class="flex flex-wrap mx-6 overflow-hidden" v-show="!cardsView">
-      <Table :connections="connectionsByType" :isSelectable="isSelectable" />
+      <Table :connections="connectionsByType" :isStreamsTab="isStreamsTab" />
     </div>
   </div>
 </template>
@@ -47,7 +47,7 @@ export default {
     NewCard
   },
   props: {
-    isSelectable: {
+    isStreamsTab: {
       type: Boolean,
       default: false
     }
@@ -55,8 +55,6 @@ export default {
   data: () => ({
     filter: null,
     cardsView: true,
-    isEditOpen: false,
-    isAddOpen: false
   }),
   methods: {
     ...mapActions(useConnectionsStore, [
