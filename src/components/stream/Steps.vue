@@ -29,48 +29,53 @@
       </div>
     </div>
     <!-- <div class="" v-show="currentStepNumber != 'complete'"> -->
-      <div class="justify-center px-4 my-6 sm:px-6 sm:flex sm:flex-row">
-        <button
-          type="button"
-          @click="prev"
-          class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gray-600 text-base font-medium text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:ml-3 sm:w-auto"
-          :class="{
-            visible: currentStepNumber > 1,
-            invisible: currentStepNumber == 1
-          }"
-        >
-          <ChevronLeftIcon class="h-6 w-6 text-white" aria-hidden="true" />
-          Back
-        </button>
-        <button
-          type="button"
-          @click="next"
-          class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gray-600 text-base font-medium text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:ml-3 sm:w-auto"
-          :class="{
-            visible: currentStepNumber < stepsCount,
-            invisible: currentStepNumber == stepsCount
-          }"
-        >
-          Next
-          <ChevronRightIcon class="h-6 w-6 text-white" aria-hidden="true" />
-        </button>
-        <button
-          type="button"
-          @click="currentStepNumber = 'complete'"
-          class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:mt-0 sm:ml-3 sm:w-auto"
-        >
-          Finish
-        </button>
-      </div>
+    <div class="justify-center px-4 my-6 sm:px-6 sm:flex sm:flex-row">
+      <button
+        type="button"
+        @click="prev"
+        class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gray-600 text-base font-medium text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:ml-3 sm:w-auto"
+        :class="{
+          visible: currentStepNumber > 1,
+          invisible: currentStepNumber == 1
+        }"
+      >
+        <ChevronLeftIcon class="h-6 w-6 text-white" aria-hidden="true" />
+        Back
+      </button>
+      <button
+        type="button"
+        @click="next"
+        class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gray-600 text-base font-medium text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:ml-3 sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+        :class="{
+          visible: currentStepNumber < stepsCount,
+          invisible: currentStepNumber == stepsCount
+        }"
+        :disabled="
+          (currentStream.source === 0 && currentStepNumber === 1) ||
+          (currentStream.target === 0 && currentStepNumber === 3)
+        "
+      >
+        Next
+        <ChevronRightIcon class="h-6 w-6 text-white" aria-hidden="true" />
+      </button>
+      <button
+        type="button"
+        @click="currentStepNumber = 'complete'"
+        class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:mt-0 sm:ml-3 sm:w-auto"
+      >
+        Finish
+      </button>
     </div>
+  </div>
   <!-- </div> -->
 </template>
 <script setup>
 import { useStreamsStore } from '@/stores/streams.js'
 import { ref, computed, onMounted } from 'vue'
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/vue/24/outline'
-
+const currentStream = useStreamsStore().currentStream
 const store = useStreamsStore()
+
 const allSteps = store.steps
 let currentStepNumber = ref(1)
 const stepsCount = store.steps.length

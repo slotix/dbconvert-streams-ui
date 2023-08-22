@@ -11,10 +11,12 @@ export default {
       dbTypes,
     };
   },
+
   computed: {
     ...mapState(useConnectionsStore, [
       "connectionsByType",
-      "currentConnection",
+      "sourceConnection",
+      "targetConnection",
       "currentStep",
     ]),
     ...mapState(useStreamsStore, ["currentStep", "currentStream"]),
@@ -40,18 +42,21 @@ export default {
       return (this.connection.host || "") +
         (this.connection.port !== undefined ? `:${this.connection.port}` : "");
     },
+
     selected() {
-      return this.currentConnection &&
-        this.connection.id === this.currentConnection.id;
+      let isSource = this.currentStep.name === "source";
+      return (isSource ? this.sourceConnection : this.targetConnection) &&
+        this.connection.id ===
+          (isSource ? this.sourceConnection.id : this.targetConnection.id);
     },
     bgRowClass() {
       return (connection) => ({
         "bg-yellow-50 ": this.isStreamsTab &&
-          this.currentStep.name === "source" && this.currentConnection &&
-          this.currentConnection.id === connection.id,
+          this.currentStep.name === "source" && this.sourceConnection &&
+          this.sourceConnection.id === connection.id,
         "bg-green-50 ": this.isStreamsTab &&
-          this.currentStep.name === "target" && this.currentConnection &&
-          this.currentConnection.id === connection.id,
+          this.currentStep.name === "target" && this.targetConnection &&
+          this.targetConnection.id === connection.id,
         "hover:bg-yellow-50 ": this.isStreamsTab &&
           this.currentStep.name === "source",
         "hover:bg-green-50 ": this.isStreamsTab &&
@@ -61,7 +66,7 @@ export default {
     },
   },
   methods: {
-          ...mapActions(useConnectionsStore, [
+    ...mapActions(useConnectionsStore, [
       "deleteConnection",
       "setCurrentConnection",
       "cloneCurrentConnection",
@@ -94,19 +99,20 @@ export default {
     // console.log(this.currentStream);
     // },
     selectConnection() {
-      this.setCurrentConnection(this.connection.id);
+      this.currentStream.currentConnection = this.connection.id;
+      let step = this.currentStep && this.currentStep.name;
       // Stream
-      if (this.isStreamsTab && this.currentStep.name === "source") {
+      if (this.isStreamsTab && step === "source") {
         if (this.currentStream) {
           this.currentStream.source = this.connection.id;
-          // console.log(this.currentStream);
         }
       }
-      if (this.isStreamsTab && this.currentStep.name === "target") {
+      if (this.isStreamsTab && step === "target") {
         if (this.currentStream) {
           this.currentStream.target = this.connection.id;
         }
       }
+      this.setCurrentConnection(this.connection.id, step);
     },
   },
 };

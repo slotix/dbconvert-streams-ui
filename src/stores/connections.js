@@ -1,72 +1,74 @@
-import { defineStore } from 'pinia';
+import { defineStore } from "pinia";
 import idb from "@/api/iDBService";
 
-export const useConnectionsStore = defineStore('connections', {
+export const useConnectionsStore = defineStore("connections", {
   state: () => ({
     dbTypes: [
       {
         id: 0,
-        type: 'All',
-        logo: '/images/db-logos/all.svg'
+        type: "All",
+        logo: "/images/db-logos/all.svg",
       },
       {
         id: 1,
-        type: 'PostgreSQL',
-        logo: '/images/db-logos/postgresql.svg'
+        type: "PostgreSQL",
+        logo: "/images/db-logos/postgresql.svg",
       },
       {
         id: 2,
-        type: 'MySQL',
-        logo: '/images/db-logos/mysql.svg'
+        type: "MySQL",
+        logo: "/images/db-logos/mysql.svg",
       },
       {
         id: 3,
-        type: 'SQLServer',
-        logo: '/images/db-logos/sql-server.svg'
+        type: "SQLServer",
+        logo: "/images/db-logos/sql-server.svg",
       },
       {
         id: 4,
-        type: 'Azure',
-        logo: '/images/db-logos/azure.svg'
+        type: "Azure",
+        logo: "/images/db-logos/azure.svg",
       },
       {
         id: 5,
-        type: 'Oracle',
-        logo: '/images/db-logos/oracle.svg'
+        type: "Oracle",
+        logo: "/images/db-logos/oracle.svg",
       },
       {
         id: 6,
-        type: 'DB2',
-        logo: '/images/db-logos/db2.svg'
+        type: "DB2",
+        logo: "/images/db-logos/db2.svg",
       },
       {
         id: 7,
-        type: 'Firebird',
-        logo: '/images/db-logos/firebird.svg'
+        type: "Firebird",
+        logo: "/images/db-logos/firebird.svg",
       },
       {
         id: 8,
-        type: 'Interbase',
-        logo: '/images/db-logos/interbase.svg'
+        type: "Interbase",
+        logo: "/images/db-logos/interbase.svg",
       },
       {
         id: 9,
-        type: 'Access',
-        logo: '/images/db-logos/access.svg'
+        type: "Access",
+        logo: "/images/db-logos/access.svg",
       },
       {
         id: 10,
-        type: 'FoxPro',
-        logo: '/images/db-logos/foxpro.svg'
+        type: "FoxPro",
+        logo: "/images/db-logos/foxpro.svg",
       },
       {
         id: 11,
-        type: 'SQLite',
-        logo: '/images/db-logos/sqlite.svg'
-      }
+        type: "SQLite",
+        logo: "/images/db-logos/sqlite.svg",
+      },
     ],
     connections: [],
     currentConnection: null,
+    sourceConnection: null,
+    targetConnection: null,
     currentFilter: "",
     ssh: null,
     ssl: null,
@@ -77,10 +79,11 @@ export const useConnectionsStore = defineStore('connections', {
     },
     countConnections(state) {
       return state.connections
-        .filter(el => {
+        .filter((el) => {
           return (
             el.type &&
-            el.type.toLowerCase().indexOf(state.currentFilter.toLowerCase()) > -1
+            el.type.toLowerCase().indexOf(state.currentFilter.toLowerCase()) >
+              -1
           );
         })
         .length;
@@ -91,21 +94,27 @@ export const useConnectionsStore = defineStore('connections', {
     },
     connectionsByType(state) {
       return state.connections
-        .filter(function(el) {
+        .filter(function (el) {
           return (
             el.type &&
-            el.type.toLowerCase().indexOf(state.currentFilter.toLowerCase()) > -1
+            el.type.toLowerCase().indexOf(state.currentFilter.toLowerCase()) >
+              -1
           );
         })
         .reverse();
     },
   },
   actions: {
-    setCurrentConnection(id) {
-      let curConnection = this.connections.filter(c => {
+    setCurrentConnection(id, step) {
+      let curConnection = this.connections.filter((c) => {
         return c.id === id;
       });
-      this.currentConnection = curConnection[0]
+      this.currentConnection = curConnection[0];
+      if (step === "source") {
+        this.sourceConnection = curConnection[0];
+      } else if (step === "target") {
+        this.targetConnection = curConnection[0];
+      }
     },
     setFilter(filter) {
       this.currentFilter = filter;
@@ -134,12 +143,12 @@ export const useConnectionsStore = defineStore('connections', {
       let clonedConnection = this.currentConnection;
       clonedConnection.id = Date.now();
       this.setCurrentConnection(clonedConnection.id);
-      await this.saveConnection()
+      await this.saveConnection();
     },
 
     async refreshConnections() {
       let connections = await idb.getConnections();
-      this.connections = connections
+      this.connections = connections;
     },
     async deleteConnection(index) {
       this.connections.splice(index, 1);
@@ -157,7 +166,7 @@ export const useConnectionsStore = defineStore('connections', {
       this.ssl = ssl;
     },
   },
-})
+});
 
 function encryptPassword(password) {
   return btoa(password);
