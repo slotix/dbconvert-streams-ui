@@ -11,14 +11,14 @@
     <div class="antialiased bg-gray-200">
       <div class="mb-20" v-if="currentStep !== null">
         <div v-show="currentStep.name === 'source'">
-          <Connections :isSelectable="true" />
+          <Connections :isStreamsTab="true" />
         </div>
         <div v-show="currentStep.name === 'target'">
-          <Connections :isSelectable="true" />
+          <Connections :isStreamsTab="true" />
         </div>
         <Add v-if="dlgTp === 'Save'" />
         <Edit v-if="dlgTp === 'Update'" />
-        <div v-show="currentStep.name === 'settings'">
+        <div v-show="currentStep.name === 'streamSettings'">
           <Settings />
         </div>
         <div v-show="currentStep.name === 'run'">run</div>

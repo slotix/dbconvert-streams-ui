@@ -1,26 +1,45 @@
-import { defineStore } from 'pinia';
+import { defineStore } from "pinia";
 import idb from "@/api/iDBService";
 
-export const useStreamsStore = defineStore('streams', {
+export const useStreamsStore = defineStore("streams", {
   state: () => ({
     streams: [],
-    currentStream: null,
+    currentStream: {
+      id: 0,
+      source: 0,
+      mode: "convert",
+      limits: { "numberOfEvents": 0, "elapsedTime": 0 },
+      target: 0,
+      tables: [],
+    },
     currentStep: null,
     currentFilter: "",
-    streamTypes: [
-      {
-        type: "conversion",
-        description: "Copy Data",
-        img: "/images/projects/copy-data.svg",
-        imgSmall: "/images/projects/copy-data-round.svg"
-      },
-      {
-        type: "sync",
-        description: "Synchronization",
-        img: "/images/projects/synchronization.svg",
-        imgSmall: "/images/projects/synchronization-round.svg"
-      }
+
+    modes: [
+      { id: "convert", title: "Convert" },
+      { id: "cdc", title: "CDC Sync" },
     ],
+    operationMap: {
+      insert: "Insert",
+      update: "Update",
+      delete: "Delete",
+    },
+    // modes: [
+    //   {
+    //     id: "convert",
+    //     title: "Convert",
+    //     description: "Copy Data",
+    //     img: "/images/projects/copy-data.svg",
+    //     imgSmall: "/images/projects/copy-data-round.svg"
+    //   },
+    //   {
+    //     id: "cdc",
+    //     type: "CDC Sync",
+    //     description: "Synchronization",
+    //     img: "/images/projects/synchronization.svg",
+    //     imgSmall: "/images/projects/synchronization-round.svg"
+    //   }
+    // ],
     steps: [
       {
         id: 1,
@@ -28,23 +47,23 @@ export const useStreamsStore = defineStore('streams', {
         title: "Select Source database",
         description:
           "Lorem ipsum dolor sit amet consectetur adipisicing elit. Aperiam facilis, voluptates error alias dolorem praesentium sit soluta iure incidunt labore explicabo eaque, quia architecto veritatis dolores, enim consequatur nihil ipsum.",
-        img: "/images/steps/source-step.svg"
+        img: "/images/steps/source-step.svg",
       },
       {
         id: 2,
+        name: "streamSettings",
+        title: "Customize your stream",
+        description:
+          "We are fetching the schema of your data source. This should take less than a minute, but may take a few minutes on slow internet connections or data sources with a large amount of tables.",
+        img: "/images/steps/settings-step.svg",
+      },
+      {
+        id: 3,
         name: "target",
         title: "Select Target database",
         description:
           "Lorem ipsum dolor sit amet consectetur adipisicing elit. Aperiam facilis, voluptates error alias dolorem praesentium sit soluta iure incidunt labore explicabo eaque, quia architecto veritatis dolores, enim consequatur nihil ipsum.",
-        img: "/images/steps/destination-step.svg"
-      },
-      {
-        id: 3,
-        name: "settings",
-        title: "Customize your Stream",
-        description:
-          "We are fetching the schema of your data source. This should take less than a minute, but may take a few minutes on slow internet connections or data sources with a large amount of tables.",
-        img: "/images/steps/settings-step.svg"
+        img: "/images/steps/destination-step.svg",
       },
       {
         id: 4,
@@ -52,8 +71,8 @@ export const useStreamsStore = defineStore('streams', {
         title: "Run the Stream",
         description:
           "Lorem ipsum dolor sit amet consectetur adipisicing elit. Aperiam facilis, voluptates error alias dolorem praesentium sit soluta iure incidunt labore explicabo eaque, quia architecto veritatis dolores, enim consequatur nihil ipsum.",
-        img: "/images/steps/launch-step.svg"
-      }
+        img: "/images/steps/launch-step.svg",
+      },
     ],
   }),
   getters: {
@@ -62,10 +81,11 @@ export const useStreamsStore = defineStore('streams', {
     },
     countStreams(state) {
       return state.streams
-        .filter(el => {
+        .filter((el) => {
           return (
             el.type &&
-            el.type.toLowerCase().indexOf(state.currentFilter.toLowerCase()) > -1
+            el.type.toLowerCase().indexOf(state.currentFilter.toLowerCase()) >
+              -1
           );
         })
         .length;
@@ -75,10 +95,11 @@ export const useStreamsStore = defineStore('streams', {
     },
     streamsByType(state) {
       return state.streams
-        .filter(function(el) {
+        .filter(function (el) {
           return (
             el.type &&
-            el.type.toLowerCase().indexOf(state.currentFilter.toLowerCase()) > -1
+            el.type.toLowerCase().indexOf(state.currentFilter.toLowerCase()) >
+              -1
           );
         })
         .reverse();
@@ -89,10 +110,10 @@ export const useStreamsStore = defineStore('streams', {
   },
   actions: {
     setCurrentStream(id) {
-      let curStream = this.streams.filter(c => {
+      let curStream = this.streams.filter((c) => {
         return c.id === id;
       });
-      this.currentStream = curStream[0]
+      this.currentStream = curStream[0];
     },
     setFilter(filter) {
       this.currentFilter = filter;
@@ -111,12 +132,12 @@ export const useStreamsStore = defineStore('streams', {
       let clonedStream = this.currentStream;
       clonedStream.id = Date.now();
       this.setCurrentStream(clonedStream.id);
-      await this.saveStream()
+      await this.saveStream();
     },
 
     async refreshStreams() {
       let streams = await idb.getStreams();
-      this.streams = streams
+      this.streams = streams;
     },
     async deleteStream(index) {
       this.streams.splice(index, 1);
@@ -127,4 +148,4 @@ export const useStreamsStore = defineStore('streams', {
       this.streams.length = 0;
     },
   },
-})
+});

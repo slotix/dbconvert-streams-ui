@@ -28,19 +28,19 @@
                   scope="col"
                   class="px-5 py-3 border-b border-gray-200 text-gray-800 text-left uppercase font-normal"
                 >
-                  Connection
+                  Stream
                 </th>
                 <th
                   scope="col"
                   class="hidden px-5 py-3 border-b border-gray-200 text-gray-800 text-left uppercase font-normal lg:table-cell"
                 >
-                  Host
+                  Source
                 </th>
                 <th
                   scope="col"
                   class="hidden px-5 py-3 border-b border-gray-200 text-gray-800 text-left uppercase font-normal lg:table-cell"
                 >
-                  Database
+                  Target
                 </th>
                 <th
                   scope="col"
@@ -59,7 +59,7 @@
             </thead>
             <tbody class="divide-y divide-gray-200 bg-white">
               <tr v-for="stream in streams" :key="stream.id" class="divide-x divide-gray-200">
-                <TableRow :stream="stream" :isSelectable="isSelectable" />
+                <TableRow :stream="stream" />
               </tr>
             </tbody>
           </table>
@@ -77,25 +77,13 @@ import { PlusIcon } from '@heroicons/vue/24/outline'
 // export default Object.assign({}, shared, {
 export default {
   props: {
-    connections: {
+    streams: {
       type: Array
     },
-    isSelectable: {
-      type: Boolean,
-      required: true,
-      default: true
-    }
   },
   components: {
     TableRow,
     PlusIcon
   }
 }
-// })
 </script>
-
-<!-- <style> -->
-<!-- table tr:hover td { -->
-<!--   background-color: #000; -->
-<!-- } -->
-<!-- </style> -->

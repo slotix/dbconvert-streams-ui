@@ -1,4 +1,3 @@
-
 <template>
   <header>
     <div
@@ -19,7 +18,6 @@
 <script setup>
 import { ref, computed } from 'vue'
 import Streams from '@/components/stream/Streams.vue'
-import { useModalStore } from '@/stores/modalStore.js'
 import { useStreamsStore } from '@/stores/streams.js'
 const streamsCount = computed(() => {
   return useStreamsStore().countStreams;
@@ -29,7 +27,4 @@ const streamsCount = computed(() => {
 //   streamsCount.value = value
 // }
 
-const dlgTp = computed(() => {
-  return useModalStore().dlgType
-})
 </script>

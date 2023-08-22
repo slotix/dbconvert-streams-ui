@@ -24,7 +24,6 @@
 </template>
 
 <script>
-
 import Table from './Table.vue'
 import NewCard from './NewCard.vue'
 import ToggleView from '../connection/ToggleView.vue'
@@ -41,51 +40,45 @@ export default {
     CardItem,
     NewCard
   },
-//   props: {
-//     isShowHeader: {
-//       type: Boolean,
-//       default: true
-//     },
-//     isSelectable: {
-//       type: Boolean,
-//       default: false
-//     }
-//   },
+  //   props: {
+  //     isStreamsTab: {
+  //       type: Boolean,
+  //       default: false
+  //     }
+  //   },
   data: () => ({
-//     filter: null,
-    cardsView: true,
-//     isEditOpen: false,
-//     isAddOpen: false
+    //     filter: null,
+    cardsView: true
   }),
   methods: {
-//     ...mapActions(useConnectionsStore, [
-//       'refreshConnections',
-//       'setFilter'
-//     ]),
-//     filterDB(dbType) {
-//       this.filter = dbType.type
-//     },
+    //     ...mapActions(useConnectionsStore, [
+    //       'refreshConnections',
+    //       'setFilter'
+    //     ]),
+    //     filterDB(dbType) {
+    //       this.filter = dbType.type
+    //     },
     toggleView() {
       this.cardsView = !this.cardsView
     }
   },
   computed: {
-    ...mapState(useStreamsStore, ['streamsByType']),
-  },
-//   watch: {
-//     filter() {
-//       if (this.filter == null || this.filter.toLowerCase() == 'all') {
-//         this.setFilter('')
-//         return
-//       }
-//       this.setFilter(this.filter)
-//     },
-//     connectionsCount(newValue) {
-//       this.$emit('count-connections', newValue)
-//     }
-//   },
-//   async mounted() {
-//     await this.refreshConnections()
-//   }
+    ...mapState(useStreamsStore, ['streamsByType'])
+  }
+  //   watch: {
+  //     filter() {
+  //       if (this.filter == null || this.filter.toLowerCase() == 'all') {
+  //         this.setFilter('')
+  //         return
+  //       }
+  //       this.setFilter(this.filter)
+  //     },
+  //     connectionsCount(newValue) {
+  //       this.$emit('count-connections', newValue)
+  //     }
+  //   },
+  //   async mounted() {
+  //     await this.refreshConnections()
+  //   }
 }
 </script>

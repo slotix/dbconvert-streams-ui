@@ -18,7 +18,7 @@
         <span class="item w-3/5 uppercase truncate tracking-wide text-sm font-medium text-gray-800">
           {{ stream.name }}
         </span>
-        <span v-show="isSelectable && selected" class="justify-end item w-1/5 flex text-gray-700">
+        <span v-show="isStreamsTab && selected" class="justify-end item w-1/5 flex text-gray-700">
           <CheckCircleIcon class="h-8 w-8" aria-hidden="true" />
         </span>
       </div>
@@ -96,14 +96,14 @@ export default {
     Square2StackIcon,
     TrashIcon,
     CalendarIcon,
-    CheckCircleIcon
+    CheckCircleIcon,
   },
   props: {
     connection: {
       type: Object,
       required: true
     },
-    isSelectable: {
+    isStreamsTab: {
       type: Boolean,
       required: true,
       default: true
@@ -111,8 +111,8 @@ export default {
   },
   computed: {
     highlightSelected() {
-      //isSelectable && selected && currentStep.name === 'source',
-      if (!this.isSelectable) return ''
+      //isStreamsTab && selected && currentStep.name === 'source',
+      if (!this.isStreamsTab) return ''
       if (this.selected && this.currentStep) return this.currentStep.name
       return ''
     },

@@ -100,7 +100,7 @@ export default {
       type: Object,
       required: true
     },
-    isSelectable: {
+    isStreamsTab: {
       type: Boolean,
       required: true,
       default: true
