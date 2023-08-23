@@ -152,7 +152,19 @@ const getFormattedOperations = (operations) => {
     .map((operation) => operationMap[operation] || operation)
     .join(', ')
 }
-watch(tables, () => {
+
+watch(selectedTables, () => {
+  currentStream.tables = selectedTables.value.map((tableName) => {
+    const table = tables.value.find((t) => t.name === tableName)
+    return {
+      name: table.name,
+      operations: table.operations,
+    }
+  })
+  console.log(currentStream)
+})
+
+watch(() => tables.value.map(table => table.operations), () => {
   selectedTables.value.forEach((tableName) => {
     const table = tables.value.find((t) => t.name === tableName)
     if (table) {
@@ -163,15 +175,5 @@ watch(tables, () => {
     }
   })
   console.log(currentStream)
-})
-watch(selectedTables, () => {
-  currentStream.tables = selectedTables.value.map((tableName) => {
-    const table = tables.value.find((t) => t.name === tableName)
-    return {
-      name: table.name,
-      operations: table.operations,
-    }
-  })
-   console.log(currentStream)
-})
+}, { deep: true })
 </script>
