@@ -36,33 +36,31 @@ export default {
     },
 
     concatenateValues() {
-      if (
-        this.connection.host === undefined && this.connection.port === undefined
-      ) return "";
-      return (this.connection.host || "") +
-        (this.connection.port !== undefined ? `:${this.connection.port}` : "");
+      const { host, port } = this.connection;
+      return (host || "") + (port ? `:${port}` : "");
     },
 
     selected() {
       let isSource = this.currentStep.name === "source";
       return (isSource ? this.sourceConnection : this.targetConnection) &&
         this.connection.id ===
-          (isSource ? this.sourceConnection.id : this.targetConnection.id);
+        (isSource ? this.sourceConnection.id : this.targetConnection.id);
     },
     bgRowClass() {
-      return (connection) => ({
-        "bg-yellow-50 ": this.isStreamsTab &&
-          this.currentStep.name === "source" && this.sourceConnection &&
-          this.sourceConnection.id === connection.id,
-        "bg-green-50 ": this.isStreamsTab &&
-          this.currentStep.name === "target" && this.targetConnection &&
-          this.targetConnection.id === connection.id,
-        "hover:bg-yellow-50 ": this.isStreamsTab &&
-          this.currentStep.name === "source",
-        "hover:bg-green-50 ": this.isStreamsTab &&
-          this.currentStep.name === "target",
-        "hover:bg-gray-50 ": !this.isStreamsTab,
-      });
+      return (connection) => {
+        const isSourceTab = this.isStreamsTab && this.currentStep.name === "source";
+        const isTargetTab = this.isStreamsTab && this.currentStep.name === "target";
+        const isMatchingSourceConnection = isSourceTab && this.sourceConnection && this.sourceConnection.id === connection.id;
+        const isMatchingTargetConnection = isTargetTab && this.targetConnection && this.targetConnection.id === connection.id;
+
+        return {
+          "bg-yellow-50 ": isMatchingSourceConnection,
+          "bg-green-50 ": isMatchingTargetConnection,
+          "hover:bg-yellow-50 ": isSourceTab,
+          "hover:bg-green-50 ": isTargetTab,
+          "hover:bg-gray-50 ": !this.isStreamsTab,
+        };
+      };
     },
   },
   methods: {
@@ -92,27 +90,22 @@ export default {
         console.log(e);
       }
     },
-    // handleSelectedModeUpdate(mode) {
-    // (mode) => console.log(currentConnection)
-    // console.log(this.currentConnection, mode);
-    // this.currentStream.mode = mode
-    // console.log(this.currentStream);
-    // },
     selectConnection() {
-      this.currentStream.currentConnection = this.connection.id;
-      let step = this.currentStep && this.currentStep.name;
-      // Stream
-      if (this.isStreamsTab && step === "source") {
-        if (this.currentStream) {
-          this.currentStream.source = this.connection.id;
+      const { currentStep, currentStream, connection } = this;
+      const { id } = connection;
+      const { name: step } = currentStep || {};
+
+      if (this.isStreamsTab) {
+        if (step === "source") {
+          currentStream.source = id;
+        }
+        if (step === "target") {
+          currentStream.target = id;
         }
       }
-      if (this.isStreamsTab && step === "target") {
-        if (this.currentStream) {
-          this.currentStream.target = this.connection.id;
-        }
-      }
-      this.setCurrentConnection(this.connection.id, step);
-    },
+
+      currentStream.currentConnection = id;
+      this.setCurrentConnection(id, step);
+    }
   },
 };

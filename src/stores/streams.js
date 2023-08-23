@@ -8,7 +8,7 @@ export const useStreamsStore = defineStore("streams", {
       id: 0,
       source: 0,
       mode: "convert",
-      limits: { "numberOfEvents": 0, "elapsedTime": 0 },
+      limits: { numberOfEvents: 0, elapsedTime: 0 },
       target: 0,
       tables: [],
     },
@@ -76,9 +76,9 @@ export const useStreamsStore = defineStore("streams", {
     ],
   }),
   getters: {
-    allStreams(state) {
-      return state.streams;
-    },
+    // allStreams(state) {
+    //   return state.streams;
+    // },
     countStreams(state) {
       return state.streams
         .filter((el) => {
