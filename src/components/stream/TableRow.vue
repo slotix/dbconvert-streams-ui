@@ -1,109 +1,120 @@
 <template class="hover:bg-gray-100">
-  <td
-    class="px-5 py-5 border-b border-gray-200 bg-white cursor-pointer"
-    @click="selectStream"
-    :class="{
-      'bg-gradient-to-r from-white via-yellow-100 to-yellow-200': highlightSelected === 'source',
-      'bg-gradient-to-r from-white via-green-100 to-green-200': highlightSelected === 'target'
-    }"
-  >
+  <td class="px-5 py-5 border-b border-gray-200 bg-white cursor-pointer" @click="selectStream">
     <div class="flex items-center">
-      <div class="flex-shrink-0">
+      <div class="item w-2/5 flex">
         <img
-          :src="logoSrc"
-          :alt="stream.type + ' logo'"
-          class="mx-auto object-cover rounded-full h-6 w-6 hidden md:table-cell"
+          class="h-6 w-6 rounded-full"
+          :src="logoSrc(this.source.type)"
+          :alt="source.type + ' logo'"
+        />
+        <ChevronRightIcon class="h-6 w-6 pt-1 text-gray-500" aria-hidden="true" />
+        <img
+          class="h-6 w-6 rounded-full"
+          :src="logoSrc(this.target.type)"
+          :alt="target.type + ' logo'"
         />
       </div>
       <span class="ml-3 text-gray-900 font-medium whitespace-no-wrap">
-        {{ stream.name }}
+        {{ stream.id }}
       </span>
     </div>
   </td>
   <td
     class="hidden px-5 py-5 border-b border-gray-200 bg-white cursor-pointer lg:table-cell"
     @click="selectStream"
-    :class="{
-      'bg-gradient-to-r from-yellow-200  to-yellow-300': highlightSelected === 'source',
-      'bg-gradient-to-r from-green-200  to-green-300': highlightSelected === 'target'
-    }"
   >
     <span class="text-gray-600 whitespace-no-wrap">
-      {{ concatenateValues }}
+      {{ source.name }}
     </span>
   </td>
   <td
     class="hidden px-5 py-5 border-b border-gray-200 bg-white cursor-pointer lg:table-cell"
     @click="selectStream"
-    :class="{
-      'bg-gradient-to-r from-yellow-200  to-yellow-300': highlightSelected === 'source',
-      'bg-gradient-to-r from-green-200  to-green-300': highlightSelected === 'target'
-    }"
   >
     <span class="text-gray-600 whitespace-no-wrap">
-      {{ stream.database }}
+      {{ target.name }}
     </span>
   </td>
   <td
     class="hidden px-5 py-5 border-b border-gray-200 bg-white cursor-pointer lg:table-cell"
     @click="selectStream"
-    :class="{
-      'bg-gradient-to-r from-yellow-300  to-yellow-400': highlightSelected === 'source',
-      'bg-gradient-to-r from-green-300  to-green-400': highlightSelected === 'target'
-    }"
   >
     <span class="text-gray-600 whitespace-no-wrap">
       {{ streamCreated }}
     </span>
   </td>
-  <td
-    class="px-5 py-5 border-b border-gray-200 bg-white cursor-pointer"
-    :class="{
-      'bg-gradient-to-r from-yellow-400  to-yellow-400': highlightSelected === 'source',
-      'bg-gradient-to-r from-green-400  to-green-400': highlightSelected === 'target'
-    }"
-  >
+  <td class="px-5 py-5 border-b border-gray-200 bg-white cursor-pointer">
     <button class="text-gray-600 hover:text-gray-900" @click="editStream">
-      Edit<span class="sr-only">, {{ stream.name }}</span>
+      Edit<span class="sr-only">, {{ stream.id }}</span>
     </button>
   </td>
-  <td
-    class="px-5 py-5 border-b border-gray-200 bg-white cursor-pointer"
-    :class="{
-      'bg-gradient-to-r from-yellow-400  to-yellow-400': highlightSelected === 'source',
-      'bg-gradient-to-r from-green-400  to-green-400': highlightSelected === 'target'
-    }"
-  >
+  <td class="px-5 py-5 border-b border-gray-200 bg-white cursor-pointer">
     <button class="text-gray-600 hover:text-gray-900" @click="cloneStream">
-      Clone<span class="sr-only">, {{ stream.name }}</span>
+      Clone<span class="sr-only">, {{ stream.id }}</span>
     </button>
   </td>
-  <td
-    class="px-5 py-5 border-b border-gray-200 bg-white cursor-pointer"
-    :class="{
-      'bg-gradient-to-r from-yellow-400  to-yellow-400': highlightSelected === 'source',
-      'bg-gradient-to-r from-green-400  to-green-400': highlightSelected === 'target'
-    }"
-  >
-    <button class="text-gray-600 hover:text-gray-900" @click="deleteConn(stream.id)">
-      Delete<span class="sr-only">, {{ stream.name }}</span>
+  <td class="px-5 py-5 border-b border-gray-200 bg-white cursor-pointer">
+    <button class="text-gray-600 hover:text-gray-900" @click="deleteStream(stream.id)">
+      Delete<span class="sr-only">, {{ stream.id }}</span>
     </button>
   </td>
 </template>
 
 <script>
+
+
+import { ChevronRightIcon } from '@heroicons/vue/24/outline'
+import { useStreamsStore } from '@/stores/streams.js'
+import { useConnectionsStore } from '@/stores/connections.js'
 // import shared from './shared.js'
 // export default Object.assign({}, shared, {
 export default {
+  components: {
+    ChevronRightIcon
+  },
   props: {
-    connection: {
+    stream: {
       type: Object,
       required: true
     },
-    isStreamsTab: {
-      type: Boolean,
-      required: true,
-      default: true
+    source: {
+      type: Object,
+      required: true
+    },
+    target: {
+      type: Object,
+      required: true
+    }
+  },
+  setup() {
+    const dbTypes = useConnectionsStore().dbTypes
+    return {
+      dbTypes
+    }
+  },
+  methods: {
+    async deleteStream(id) {
+      try {
+        await useStreamsStore().deleteStream(id)
+        await useStreamsStore().refreshStreams()
+      } catch (e) {
+        console.log(e)
+      }
+    }
+  },
+  computed: {
+    streamCreated() {
+      let date = new Date(this.stream.id)
+      return date.toLocaleDateString() + ' - ' + date.toLocaleTimeString()
+      //return date.toUTCString();
+    },
+    logoSrc() {
+      return (tp) => {
+        let dbType = this.dbTypes.filter((f) => {
+          return f.type === tp
+        })
+        return dbType[0].logo
+      }
     }
   }
 }

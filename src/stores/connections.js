@@ -150,10 +150,14 @@ export const useConnectionsStore = defineStore("connections", {
       let connections = await idb.getConnections();
       this.connections = connections;
     },
+    connectionByID(id) {
+      return this.connections.filter((c) => {
+        return c.id === id;
+      })[0];
+    },
     async deleteConnection(index) {
       this.connections.splice(index, 1);
       await idb.deleteConnection(index);
-      //  await dispatch("refreshConnections");
     },
     async clearConnections() {
       await idb.clearConnections();

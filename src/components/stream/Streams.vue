@@ -11,14 +11,18 @@
       </div>
       <div
         class="w-full px-4 overflow-hidden md:w-1/2 lg:w-1/3"
-        v-for="stream in streamsByType"
+        v-for="stream in streams"
         :key="stream.id"
       >
-        <CardItem :stream="stream" />
+        <CardItem
+          :stream="stream"
+          :source="connectionByID(stream.source)"
+          :target="connectionByID(stream.target)"
+        />
       </div>
     </div>
     <div class="flex flex-wrap mx-6 overflow-hidden" v-show="!cardsView">
-      <Table :streams="streamsByType" />
+      <Table :strms="streams" />
     </div>
   </div>
 </template>
@@ -30,6 +34,7 @@ import ToggleView from '../connection/ToggleView.vue'
 import CardItem from './CardItem.vue'
 
 import { useStreamsStore } from '@/stores/streams.js'
+import { useConnectionsStore } from '@/stores/connections.js'
 import { mapState, mapActions } from 'pinia'
 
 export default {
@@ -40,45 +45,27 @@ export default {
     CardItem,
     NewCard
   },
-  //   props: {
-  //     isStreamsTab: {
-  //       type: Boolean,
-  //       default: false
-  //     }
-  //   },
   data: () => ({
-    //     filter: null,
     cardsView: true
   }),
   methods: {
-    //     ...mapActions(useConnectionsStore, [
-    //       'refreshConnections',
-    //       'setFilter'
-    //     ]),
-    //     filterDB(dbType) {
-    //       this.filter = dbType.type
-    //     },
+    ...mapActions(useStreamsStore, ['refreshStreams']),
+    ...mapActions(useConnectionsStore, ['refreshConnections']),
     toggleView() {
       this.cardsView = !this.cardsView
     }
   },
   computed: {
-    ...mapState(useStreamsStore, ['streamsByType'])
+    ...mapState(useStreamsStore, ['streams', 'streamsByType']),
+    connectionByID() {
+      return (id) => {
+        return useConnectionsStore().connectionByID(id)
+      }
+    }
+  },
+  mounted() {
+    this.refreshConnections()
+    this.refreshStreams()
   }
-  //   watch: {
-  //     filter() {
-  //       if (this.filter == null || this.filter.toLowerCase() == 'all') {
-  //         this.setFilter('')
-  //         return
-  //       }
-  //       this.setFilter(this.filter)
-  //     },
-  //     connectionsCount(newValue) {
-  //       this.$emit('count-connections', newValue)
-  //     }
-  //   },
-  //   async mounted() {
-  //     await this.refreshConnections()
-  //   }
 }
 </script>

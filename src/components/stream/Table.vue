@@ -2,7 +2,7 @@
   <div class="container mx-auto">
     <div class="sm:flex sm:items-center px-4">
       <div class="sm:flex-auto">
-        <h1 class="text-base font-semibold leading-6 text-gray-900">Connections</h1>
+        <h1 class="text-base font-semibold leading-6 text-gray-900">Streams</h1>
         <p class="mt-2 text-sm text-gray-700">List of streams.</p>
       </div>
       <router-link :to="{ name: 'AddStream' }">
@@ -58,8 +58,12 @@
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200 bg-white">
-              <tr v-for="stream in streams" :key="stream.id" class="divide-x divide-gray-200">
-                <TableRow :stream="stream" />
+              <tr v-for="stream in strms" :key="stream.id" class="divide-x divide-gray-200">
+                <TableRow
+                  :stream="stream"
+                  :source="connectionByID(stream.source)"
+                  :target="connectionByID(stream.target)"
+                />
               </tr>
             </tbody>
           </table>
@@ -73,17 +77,31 @@
 import TableRow from './TableRow.vue'
 // import shared from './shared.js'
 import { PlusIcon } from '@heroicons/vue/24/outline'
+import { mapState, mapActions } from 'pinia'
+import { useConnectionsStore } from '@/stores/connections.js'
+import { useStreamsStore } from '@/stores/streams.js'
 
 // export default Object.assign({}, shared, {
 export default {
   props: {
-    streams: {
+    strms: {
       type: Array
-    },
+    }
+  },
+  methods: {
+    ...mapActions(useConnectionsStore, ['refreshConnections']),
   },
   components: {
     TableRow,
     PlusIcon
-  }
+  },
+  computed: {
+    ...mapState(useStreamsStore, ['streams', 'streamsByType']),
+    connectionByID() {
+      return (id) => {
+        return useConnectionsStore().connectionByID(id)
+      }
+    }
+  },
 }
 </script>

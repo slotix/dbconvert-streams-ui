@@ -65,14 +65,14 @@ export const useStreamsStore = defineStore("streams", {
           "Lorem ipsum dolor sit amet consectetur adipisicing elit. Aperiam facilis, voluptates error alias dolorem praesentium sit soluta iure incidunt labore explicabo eaque, quia architecto veritatis dolores, enim consequatur nihil ipsum.",
         img: "/images/steps/destination-step.svg",
       },
-      {
-        id: 4,
-        name: "run",
-        title: "Run the Stream",
-        description:
-          "Lorem ipsum dolor sit amet consectetur adipisicing elit. Aperiam facilis, voluptates error alias dolorem praesentium sit soluta iure incidunt labore explicabo eaque, quia architecto veritatis dolores, enim consequatur nihil ipsum.",
-        img: "/images/steps/launch-step.svg",
-      },
+      // {
+      //   id: 4,
+      //   name: "run",
+      //   title: "Run the Stream",
+      //   description:
+      //     "Lorem ipsum dolor sit amet consectetur adipisicing elit. Aperiam facilis, voluptates error alias dolorem praesentium sit soluta iure incidunt labore explicabo eaque, quia architecto veritatis dolores, enim consequatur nihil ipsum.",
+      //   img: "/images/steps/launch-step.svg",
+      // },
     ],
   }),
   getters: {
@@ -80,15 +80,15 @@ export const useStreamsStore = defineStore("streams", {
     //   return state.streams;
     // },
     countStreams(state) {
-      return state.streams
-        .filter((el) => {
-          return (
-            el.type &&
-            el.type.toLowerCase().indexOf(state.currentFilter.toLowerCase()) >
-              -1
-          );
-        })
-        .length;
+      return state.streams.length;
+        // .filter((el) => {
+        //   return (
+        //     el.type &&
+        //     el.type.toLowerCase().indexOf(state.currentFilter.toLowerCase()) >
+        //     -1
+        //   );
+        // })
+        // .length;
     },
     streamsNewestFirst(state) {
       return state.streams.slice().reverse();
@@ -99,7 +99,7 @@ export const useStreamsStore = defineStore("streams", {
           return (
             el.type &&
             el.type.toLowerCase().indexOf(state.currentFilter.toLowerCase()) >
-              -1
+            -1
           );
         })
         .reverse();
@@ -123,7 +123,9 @@ export const useStreamsStore = defineStore("streams", {
       if (!stream.id) {
         stream.id = Date.now();
       }
+      console.log('save stream', stream);
       await idb.saveStream(JSON.parse(JSON.stringify(stream)));
+      this.resetCurrentStream();
     },
     async cloneCurrentStream() {
       if (!this.currentStream) {
@@ -142,6 +144,16 @@ export const useStreamsStore = defineStore("streams", {
     async deleteStream(index) {
       this.streams.splice(index, 1);
       await idb.deleteStream(index);
+    },
+    resetCurrentStream() {
+      this.currentStream = {
+        id: 0,
+        source: 0,
+        mode: "convert",
+        limits: { numberOfEvents: 0, elapsedTime: 0 },
+        target: 0,
+        tables: [],
+      };
     },
     async clearStreams() {
       await idb.clearStreams();

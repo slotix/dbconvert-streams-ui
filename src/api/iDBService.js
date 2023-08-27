@@ -125,6 +125,14 @@ const clearConnections = async () => {
 //   }
 // };
 
+const getStreams = async () => {
+  try {
+    return (await db).getAll("streams");
+  } catch (error) {
+    return error;
+  }
+};
+
 const saveStream = async item => {
   try {
     (await db).put("streams", item);
@@ -157,6 +165,7 @@ export default {
   getConnections,
   getConnectionsByType,
   getConnectionById,
+  getStreams,
   saveStream,
   deleteStream,
   clearStreams

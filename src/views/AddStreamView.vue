@@ -21,7 +21,6 @@
         <div v-show="currentStep.name === 'streamSettings'">
           <Settings />
         </div>
-        <div v-show="currentStep.name === 'run'">run</div>
       </div>
     </div>
   </main>

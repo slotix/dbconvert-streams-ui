@@ -4,35 +4,41 @@
       class="bg-white shadow-md rounded-lg overflow-hidden cursor-pointer transform hover:scale-105 duration-300 ease-in-out"
       @click="selectStream"
     >
-      <div
-        class="flex flex-wrap items-center bg-gray-100 p-4"
-        :class="{
-          'bg-gradient-to-r from-white via-yellow-200 to-yellow-500':
-            highlightSelected === 'source',
-          'bg-gradient-to-r from-white via-green-200 to-green-500': highlightSelected === 'target'
-        }"
-      >
-        <div class="item w-1/5 flex">
-          <img class="h-10 w-10 rounded-full" :src="logoSrc" :alt="stream.id + ' logo'" />
+      <div class="flex flex-wrap items-center bg-gray-100 p-4">
+        <div class="item w-2/5 flex">
+          <img
+            class="h-8 w-8 rounded-full"
+            :src="logoSrc(this.source.type)"
+            :alt="source.type + ' logo'"
+          />
+          <ChevronRightIcon class="h-8 w-8 pt-1 text-gray-500" aria-hidden="true" />
+          <img
+            class="h-8 w-8 rounded-full"
+            :src="logoSrc(this.target.type)"
+            :alt="target.type + ' logo'"
+          />
         </div>
         <span class="item w-3/5 uppercase truncate tracking-wide text-sm font-medium text-gray-800">
-          {{ stream.name }}
+          {{ stream.id }}
         </span>
-        <span v-show="isStreamsTab && selected" class="justify-end item w-1/5 flex text-gray-700">
-          <CheckCircleIcon class="h-8 w-8" aria-hidden="true" />
+      </div>
+      <div class="flex-auto px-4 pt-4 md:text-left w-full space-y-2 text-gray-500">
+        <span class="mx-auto font-semibold text-gray-800">
+          Source:
+          <span class="font-normal pl-3">{{ source.name }} </span>
         </span>
       </div>
 
-      <div class="flex-auto px-4 pt-4 md:text-left w-full space-y-2 text-gray-500">
-        <span class="mx-auto font-semibold text-gray-800">
-          Host:
-          <span class="font-normal pl-3">{{ concatenateValues }} </span>
-        </span>
-      </div>
       <div class="flex-auto px-4 pt-2 md:text-left w-full space-y-2 text-gray-500">
         <span class="mx-auto font-semibold text-gray-800">
-          Database:
-          <span class="font-normal pl-3"> {{ connection.database }}</span>
+          Target:
+          <span class="font-normal pl-3">{{ target.name }} </span>
+        </span>
+      </div>
+      <div class="flex-auto px-4 pt-4 md:text-left w-full space-y-2 text-gray-500">
+        <span class="mx-auto font-semibold text-gray-800">
+          Mode:
+          <span class="font-normal pl-3"> {{ stream.mode }}</span>
         </span>
       </div>
       <div class="px-4 pt-4 pb-4">
@@ -69,7 +75,7 @@
           <button
             type="button"
             class="relative inline-flex w-0 flex-1 items-center justify-center gap-x-3 rounded-br-lg border border-transparent py-4 text-sm font-semibold text-red-600 bg-gray-200"
-            @click="deleteConn(stream.id)"
+            @click="deleteStream(stream.id)"
           >
             <TrashIcon class="h-5 w-5 text-red-600" aria-hidden="true" />
             Delete
@@ -87,8 +93,11 @@ import {
   Square2StackIcon,
   TrashIcon,
   CalendarIcon,
-  CheckCircleIcon
+  CheckCircleIcon,
+  ChevronRightIcon
 } from '@heroicons/vue/24/outline'
+import { useStreamsStore } from '@/stores/streams.js'
+import { useConnectionsStore } from '@/stores/connections.js'
 // export default Object.assign({}, shared, {
 export default {
   components: {
@@ -97,27 +106,51 @@ export default {
     TrashIcon,
     CalendarIcon,
     CheckCircleIcon,
+    ChevronRightIcon
   },
   props: {
-    connection: {
+    stream: {
       type: Object,
       required: true
     },
-    isStreamsTab: {
-      type: Boolean,
-      required: true,
-      default: true
+    source: {
+      type: Object,
+      required: true
+    },
+    target: {
+      type: Object,
+      required: true
+    }
+  },
+  setup() {
+    const dbTypes = useConnectionsStore().dbTypes
+    return {
+      dbTypes
+    }
+  },
+  methods: {
+    async deleteStream(id) {
+      try {
+        await useStreamsStore().deleteStream(id)
+        await useStreamsStore().refreshStreams()
+      } catch (e) {
+        console.log(e)
+      }
     }
   },
   computed: {
-    highlightSelected() {
-      //isStreamsTab && selected && currentStep.name === 'source',
-      if (!this.isStreamsTab) return ''
-      if (this.selected && this.currentStep) return this.currentStep.name
-      return ''
+    streamCreated() {
+      let date = new Date(this.stream.id)
+      return date.toLocaleDateString() + ' - ' + date.toLocaleTimeString()
+      //return date.toUTCString();
     },
-    concatenateValues() {
-      return ''
+    logoSrc() {
+      return (tp) => {
+        let dbType = this.dbTypes.filter((f) => {
+          return f.type === tp
+        })
+        return dbType[0].logo
+      }
     }
   }
 }
