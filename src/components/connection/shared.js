@@ -11,12 +11,10 @@ export default {
       dbTypes,
     };
   },
-
   computed: {
     ...mapState(useConnectionsStore, [
       "connectionsByType",
-      "sourceConnection",
-      "targetConnection",
+      "currentConnection",
       "currentStep",
     ]),
     ...mapState(useStreamsStore, ["currentStep", "currentStream"]),
@@ -36,31 +34,30 @@ export default {
     },
 
     concatenateValues() {
-      const { host, port } = this.connection;
-      return (host || "") + (port ? `:${port}` : "");
+      if (
+        this.connection.host === undefined && this.connection.port === undefined
+      ) return "";
+      return (this.connection.host || "") +
+        (this.connection.port !== undefined ? `:${this.connection.port}` : "");
     },
-
     selected() {
-      let isSource = this.currentStep.name === "source";
-      return (isSource ? this.sourceConnection : this.targetConnection) &&
-        this.connection.id ===
-        (isSource ? this.sourceConnection.id : this.targetConnection.id);
+      return this.currentConnection &&
+        this.connection.id === this.currentConnection.id;
     },
     bgRowClass() {
-      return (connection) => {
-        const isSourceTab = this.isStreamsTab && this.currentStep.name === "source";
-        const isTargetTab = this.isStreamsTab && this.currentStep.name === "target";
-        const isMatchingSourceConnection = isSourceTab && this.sourceConnection && this.sourceConnection.id === connection.id;
-        const isMatchingTargetConnection = isTargetTab && this.targetConnection && this.targetConnection.id === connection.id;
-
-        return {
-          "bg-yellow-50 ": isMatchingSourceConnection,
-          "bg-green-50 ": isMatchingTargetConnection,
-          "hover:bg-yellow-50 ": isSourceTab,
-          "hover:bg-green-50 ": isTargetTab,
-          "hover:bg-gray-50 ": !this.isStreamsTab,
-        };
-      };
+      return (connection) => ({
+        "bg-yellow-50 ": this.isStreamsTab &&
+          this.currentStep.name === "source" && this.currentConnection &&
+          this.currentConnection.id === connection.id,
+        "bg-green-50 ": this.isStreamsTab &&
+          this.currentStep.name === "target" && this.currentConnection &&
+          this.currentConnection.id === connection.id,
+        "hover:bg-yellow-50 ": this.isStreamsTab &&
+          this.currentStep.name === "source",
+        "hover:bg-green-50 ": this.isStreamsTab &&
+          this.currentStep.name === "target",
+        "hover:bg-gray-50 ": !this.isStreamsTab,
+      });
     },
   },
   methods: {
@@ -90,22 +87,21 @@ export default {
         console.log(e);
       }
     },
-    selectConnection() {
-      const { currentStep, currentStream, connection } = this;
-      const { id } = connection;
-      const { name: step } = currentStep || {};
 
-      if (this.isStreamsTab) {
-        if (step === "source") {
-          currentStream.source = id;
-        }
-        if (step === "target") {
-          currentStream.target = id;
+    selectConnection() {
+      this.setCurrentConnection(this.connection.id);
+      // Stream
+      if (this.isStreamsTab && this.currentStep.name === "source") {
+        if (this.currentStream) {
+          this.currentStream.source = this.connection.id;
+          // console.log(this.currentStream);
         }
       }
-
-      currentStream.currentConnection = id;
-      this.setCurrentConnection(id, step);
-    }
+      if (this.isStreamsTab && this.currentStep.name === "target") {
+        if (this.currentStream) {
+          this.currentStream.target = this.connection.id;
+        }
+      }
+    },
   },
 };

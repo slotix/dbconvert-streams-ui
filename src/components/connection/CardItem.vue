@@ -6,7 +6,7 @@
     >
       <div class="flex flex-wrap items-center bg-gray-100 p-4">
         <div class="item w-1/5 flex">
-          <img class="h-10 w-10 rounded-full" :src="logoSrc" :alt="connection.type + ' logo'" />
+          <img class="h-8 w-8 rounded-full" :src="logoSrc" :alt="connection.type + ' logo'" />
         </div>
         <span class="item w-4/5 uppercase truncate tracking-wide text-sm font-medium text-gray-800">
           {{ connection.name }}
