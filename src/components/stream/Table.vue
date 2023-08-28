@@ -23,7 +23,7 @@
         <div class="inline-block min-w-full shadow rounded-lg overflow-hidden">
           <table class="min-w-full divide-y divide-gray-300 bg-white">
             <thead class="text-sm md:text-base">
-              <tr class="bg-gray-100 divide-x divide-gray-200">
+              <tr class="bg-gray-100 divide-x divide-gray-200 ">
                 <th
                   scope="col"
                   class="px-5 py-3 border-b border-gray-200 text-gray-800 text-left uppercase font-normal"
@@ -58,7 +58,7 @@
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200 bg-white">
-              <tr v-for="stream in strms" :key="stream.id" class="divide-x divide-gray-200">
+              <tr v-for="stream in strms" :key="stream.id" class="divide-x divide-gray-200 border-b border-gray-200 cursor-pointer">
                 <TableRow
                   :stream="stream"
                   :source="connectionByID(stream.source)"

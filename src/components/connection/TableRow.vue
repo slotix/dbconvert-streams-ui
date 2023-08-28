@@ -1,4 +1,4 @@
-<template>
+<template >
   <td class="px-5 py-5" @click="selectConnection">
     <div class="flex items-center">
       <div class="flex-shrink-0">
