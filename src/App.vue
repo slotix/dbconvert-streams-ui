@@ -58,12 +58,12 @@
                       <RouterLink
                         :to="item.href"
                         :class="[
-                          item.current
+                          item.active
                             ? 'bg-gray-800 text-white'
                             : 'text-gray-400 hover:text-white hover:bg-gray-800',
                           'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold'
                         ]"
-                        @click="setMenuItemAsCurrent(item.name)"
+                        @click="setMenuItemAsActive(item.name)"
                       >
                         <component :is="item.icon" class="h-6 w-6 shrink-0" aria-hidden="true" />
                         {{ item.name }}
@@ -83,11 +83,7 @@
       class="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-50 lg:block lg:w-20 lg:overflow-y-auto lg:bg-gray-900 lg:pb-4"
     >
       <div class="flex h-16 shrink-0 items-center justify-center">
-        <img
-          class="h-8 w-auto"
-          src="/images/dbconvert-streams-logo.svg"
-          alt="DBConvert Streams"
-        />
+        <img class="h-8 w-auto" src="/images/dbconvert-streams-logo.svg" alt="DBConvert Streams" />
       </div>
       <nav class="mt-8">
         <ul role="list" class="flex flex-col items-center space-y-1">
@@ -95,12 +91,12 @@
             <RouterLink
               :to="item.href"
               :class="[
-                item.current
-                  ? 'bg-gray-800 text-white'
+                item.active
+                  ? 'bg-gray-700 text-white'
                   : 'text-gray-400 hover:text-white hover:bg-gray-800',
                 'group flex gap-x-3 rounded-md p-3 text-sm leading-6 font-semibold'
               ]"
-              @click="setMenuItemAsCurrent(item.name)"
+              @click="setMenuItemAsActive(item.name)"
             >
               <component :is="item.icon" class="h-6 w-6 shrink-0" aria-hidden="true" />
               <span class="sr-only">{{ item.name }}</span>
@@ -221,14 +217,14 @@ import {
 } from '@heroicons/vue/24/outline'
 import { ChevronDownIcon, MagnifyingGlassIcon } from '@heroicons/vue/20/solid'
 
-const navigation = [
-  { name: 'Dashboard', href: '/', icon: HomeIcon, current: true },
-  { name: 'Connections', href: '/connections', icon: CircleStackIcon, current: false },
-  { name: 'Streams', href: '/streams', icon: FolderIcon, current: false }
-]
-const setMenuItemAsCurrent = (name) => {
-  navigation.forEach((item) => {
-    item.current = item.name === name
+const navigation = ref([
+  { name: 'Dashboard', href: '/', icon: HomeIcon, active: true },
+  { name: 'Connections', href: '/connections', icon: CircleStackIcon, active: false },
+  { name: 'Streams', href: '/streams', icon: FolderIcon, active: false }
+])
+const setMenuItemAsActive = (name) => {
+  navigation.value.forEach((item) => {
+    item.active = item.name === name
   })
 }
 const userNavigation = [
