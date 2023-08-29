@@ -209,7 +209,7 @@ import {
   CalendarIcon,
   ChartPieIcon,
   DocumentDuplicateIcon,
-  FolderIcon,
+  ArrowPathIcon,
   HomeIcon,
   CircleStackIcon,
   UserIcon,
@@ -218,9 +218,9 @@ import {
 import { ChevronDownIcon, MagnifyingGlassIcon } from '@heroicons/vue/20/solid'
 
 const navigation = ref([
-  { name: 'Dashboard', href: '/', icon: HomeIcon, active: true },
+  { name: 'Home', href: '/', icon: HomeIcon, active: true },
   { name: 'Connections', href: '/connections', icon: CircleStackIcon, active: false },
-  { name: 'Streams', href: '/streams', icon: FolderIcon, active: false }
+  { name: 'Streams', href: '/streams', icon: ArrowPathIcon, active: false }
 ])
 const setMenuItemAsActive = (name) => {
   navigation.value.forEach((item) => {

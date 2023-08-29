@@ -59,7 +59,5 @@ export default Object.assign({}, shared, {
       default: true
     }
   },
-  components: {
-  }
 })
 </script>
