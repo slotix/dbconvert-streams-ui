@@ -90,7 +90,7 @@ export const useStreamsStore = defineStore("streams", {
         // })
         // .length;
     },
-    streamsNewestFirst(state) {
+    newestFirst(state) {
       return state.streams.slice().reverse();
     },
     streamsByType(state) {

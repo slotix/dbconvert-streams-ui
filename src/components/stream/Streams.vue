@@ -11,7 +11,7 @@
       </div>
       <div
         class="w-full px-4 overflow-hidden md:w-1/2 lg:w-1/3"
-        v-for="stream in streams"
+        v-for="stream in newestFirst"
         :key="stream.id"
       >
         <CardItem
@@ -22,7 +22,7 @@
       </div>
     </div>
     <div class="flex flex-wrap mx-6 overflow-hidden" v-show="!cardsView">
-      <Table :strms="streams" />
+      <Table :strms="newestFirst" />
     </div>
   </div>
 </template>
@@ -56,7 +56,7 @@ export default {
     }
   },
   computed: {
-    ...mapState(useStreamsStore, ['streams', 'streamsByType']),
+    ...mapState(useStreamsStore, ['newestFirst']),
     connectionByID() {
       return (id) => {
         return useConnectionsStore().connectionByID(id)
