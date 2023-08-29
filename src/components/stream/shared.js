@@ -15,11 +15,9 @@ export default {
       required: true,
     },
     source: {
-      type: Object,
       required: true,
     },
     target: {
-      type: Object,
       required: true,
     },
   },
@@ -38,14 +36,18 @@ export default {
     };
   },
   methods: {
-    async deleteStream(id) {
+    async deleteStream() {
       try {
-        await useStreamsStore().deleteStream(id);
+        await useStreamsStore().deleteStream(this.stream.id);
         await useStreamsStore().refreshStreams();
       } catch (e) {
         console.log(e);
       }
     },
+    selectStream() {
+      useStreamsStore().setCurrentStream(this.stream.id);
+      console.log(this.stream);
+    }
   },
   computed: {
     streamCreated() {

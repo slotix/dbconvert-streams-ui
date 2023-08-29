@@ -65,9 +65,9 @@ export default {
       this.cloneCurrentConnection();
       useModalStore().openModal('Update')
     },
-    async deleteConn(id) {
+    async deleteConn() {
       try {
-        await this.deleteConnection(id);
+        await this.deleteConnection(this.connection.id);
         await this.refreshConnections();
       } catch (e) {
         console.log(e);
