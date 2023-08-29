@@ -7,16 +7,25 @@
       <div class="flex flex-wrap items-center bg-gray-100 p-4">
         <div class="item w-2/5 flex">
           <img
+            v-if="source && source.type"
             class="h-8 w-8 rounded-full"
             :src="logoSrc(this.source.type)"
             :alt="source.type + ' logo'"
           />
+          <div v-else class="h-8 w-8 rounded-full bg-red-400 flex items-center justify-center">
+            <span class="text-white font-mono">x</span>
+          </div>
           <ChevronRightIcon class="h-8 w-8 pt-1 text-gray-500" aria-hidden="true" />
+
           <img
+            v-if="target && target.type"
             class="h-8 w-8 rounded-full"
             :src="logoSrc(this.target.type)"
             :alt="target.type + ' logo'"
           />
+          <div v-else class="h-8 w-8 rounded-full bg-red-400 flex items-center justify-center">
+            <span class="text-white font-mono">x</span>
+          </div>
         </div>
         <span class="item w-3/5 uppercase truncate tracking-wide text-sm font-medium text-gray-800">
           {{ stream.id }}
@@ -25,14 +34,18 @@
       <div class="flex-auto px-4 pt-4 md:text-left w-full space-y-2 text-gray-500">
         <span class="mx-auto font-semibold text-gray-800">
           Source:
-          <span class="font-normal pl-3">{{ source.name }} </span>
+          <span class="font-normal pl-3" :class="{ 'text-red-500': !source || !source.name }">{{
+            source && source.name ? source.name : 'N/A'
+          }}</span>
         </span>
       </div>
 
       <div class="flex-auto px-4 pt-2 md:text-left w-full space-y-2 text-gray-500">
         <span class="mx-auto font-semibold text-gray-800">
           Target:
-          <span class="font-normal pl-3">{{ target.name }} </span>
+          <span class="font-normal pl-3" :class="{ 'text-red-500': !target || !target.name }">{{
+            target && target.name ? target.name : 'N/A'
+          }}</span>
         </span>
       </div>
       <div class="flex-auto px-4 pt-4 md:text-left w-full space-y-2 text-gray-500">
@@ -49,7 +62,6 @@
           </span>
         </div>
       </div>
-
       <div class="-mt-px flex divide-x divide-gray-200">
         <div class="flex w-0 flex-1">
           <button
@@ -75,7 +87,7 @@
           <button
             type="button"
             class="relative inline-flex w-0 flex-1 items-center justify-center gap-x-3 rounded-br-lg border border-transparent py-4 text-sm font-semibold text-red-600 bg-gray-200"
-            @click="deleteStream(stream.id)"
+            @click="deleteStream"
           >
             <TrashIcon class="h-5 w-5 text-red-600" aria-hidden="true" />
             Delete
@@ -85,7 +97,21 @@
     </div>
   </div>
 </template>
+<!-- <script>
+import shared from './shared.js'
 
+export default {
+  mixins: [shared],
+  computed: {
+    isValidSource() {
+      return this.source && this.source.name;
+    },
+    isValidTarget() {
+      return this.target && this.target.name;
+    },
+  },
+}
+</script> -->
 <script>
 import shared from './shared.js'
 export default Object.assign({}, shared, {})

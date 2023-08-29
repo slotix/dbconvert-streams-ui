@@ -83,7 +83,7 @@ export const useConnectionsStore = defineStore("connections", {
           return (
             el.type &&
             el.type.toLowerCase().indexOf(state.currentFilter.toLowerCase()) >
-              -1
+            -1
           );
         })
         .length;
@@ -98,7 +98,7 @@ export const useConnectionsStore = defineStore("connections", {
           return (
             el.type &&
             el.type.toLowerCase().indexOf(state.currentFilter.toLowerCase()) >
-              -1
+            -1
           );
         })
         .reverse();
@@ -151,9 +151,8 @@ export const useConnectionsStore = defineStore("connections", {
       this.connections = connections;
     },
     connectionByID(id) {
-      return this.connections.filter((c) => {
-        return c.id === id;
-      })[0];
+      const connection = this.connections.find((c) => c.id === id);
+      return connection !== null && connection !== undefined ? connection : null;
     },
     async deleteConnection(index) {
       this.connections.splice(index, 1);
