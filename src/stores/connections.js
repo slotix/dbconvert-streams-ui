@@ -88,10 +88,10 @@ export const useConnectionsStore = defineStore("connections", {
         })
         .length;
     },
-    connectionsNewestFirst(state) {
-      // return state.connections.reverse();
-      return state.connections.slice().reverse();
-    },
+    // connectionsNewestFirst(state) {
+    //   // return state.connections.reverse();
+    //   return state.connections.slice().reverse();
+    // },
     connectionsByType(state) {
       return state.connections
         .filter(function (el) {
@@ -157,6 +157,9 @@ export const useConnectionsStore = defineStore("connections", {
     async deleteConnection(index) {
       this.connections.splice(index, 1);
       await idb.deleteConnection(index);
+    },
+    resetCurrentConnection() {
+      this.currentConnection = null;
     },
     async clearConnections() {
       await idb.clearConnections();

@@ -25,7 +25,18 @@
     </div>
   </div>
 </template>
-<script setup>
+<script >
+import { useStreamsStore } from "@/stores/streams.js";
+import {useConnectionsStore} from "@/stores/connections.js"
+
+export default {
+  methods: {
+    addStream() {
+      useStreamsStore().resetCurrentStream();
+      useConnectionsStore().resetCurrentConnection();
+    }
+  }
+}
 // import shared from './shared.js'
-// export default Object.assign({}, shared )
+// export default Object.assign({}, shared, {})
 </script>

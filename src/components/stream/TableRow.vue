@@ -50,9 +50,11 @@
     </span>
   </td>
   <td class="px-5 py-5">
-    <button class="text-gray-600 hover:text-gray-900" @click="editStream">
-      Edit<span class="sr-only">, {{ stream.id }}</span>
-    </button>
+    <router-link :to="{ name: 'AddStream' }">
+      <button class="text-gray-600 hover:text-gray-900" @click="editStream">
+        Edit<span class="sr-only">, {{ stream.id }}</span>
+      </button>
+    </router-link>
   </td>
   <td class="px-5 py-5">
     <button class="text-gray-600 hover:text-gray-900" @click="cloneStream">

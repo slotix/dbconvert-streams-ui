@@ -34,9 +34,7 @@ import { useModalStore } from '@/stores/modalStore.js'
 import Steps from '@/components/stream/Steps.vue'
 import Settings from '@/components/settings/Settings.vue'
 import { useStreamsStore } from '@/stores/streams.js'
-import { mapState, mapWritableState } from 'pinia'
 const store = useStreamsStore()
-const allSteps = store.steps
 const currentStep = computed(() => {
   return store.currentStep
 })
