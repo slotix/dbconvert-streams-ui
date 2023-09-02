@@ -30,7 +30,7 @@ import { computed } from 'vue'
 import Connections from '@/components/connection/Connections.vue'
 import Add from '@/components/connection/Add.vue'
 import Edit from '@/components/connection/Edit.vue'
-import { useModalStore } from '@/stores/modalStore.js'
+import { useSettingsStore } from '@/stores/settingsStore.js'
 import Steps from '@/components/stream/Steps.vue'
 import Settings from '@/components/settings/Settings.vue'
 import { useStreamsStore } from '@/stores/streams.js'
@@ -39,6 +39,6 @@ const currentStep = computed(() => {
   return store.currentStep
 })
 const dlgTp = computed(() => {
-  return useModalStore().dlgType
+  return useSettingsStore().dlgType
 })
 </script>

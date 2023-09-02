@@ -1,5 +1,5 @@
 import ConnectionName from "./ConnectionName.vue";
-import { useModalStore, DIALOG_TYPES } from '@/stores/modalStore.js'
+import { useSettingsStore, DIALOG_TYPES } from '@/stores/settingsStore.js'
 import { useConnectionsStore } from '@/stores/connections.js'
 import { mapWritableState } from 'pinia'
 
@@ -30,7 +30,7 @@ export default {
       );
     },
     dlgTp() {
-      return useModalStore().dlgType
+      return useSettingsStore().dlgType
     }
   },
   watch: {

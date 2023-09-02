@@ -45,26 +45,23 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { TableCellsIcon, Squares2X2Icon } from '@heroicons/vue/24/outline'
+import { useSettingsStore } from '@/stores/settingsStore.js'
+const store = useSettingsStore()
 const tabs = ref([
   { name: 'Cards', icon: Squares2X2Icon, current: true },
   { name: 'Table', icon: TableCellsIcon, current: false }
 ])
-
-const emit = defineEmits(['toggleView']);
-const emitCurrentTab = (tabName) => {
-  // Emit the current tab name to the parent component
-  if (tabName) {
-    emit('toggleView');
-  }
-};
+onMounted(() => {
+  tabs.value.forEach((tab) => {
+    tab.current = tab.name === store.currentViewType
+  })
+})
 const toggleView = (tabName) => {
   tabs.value.forEach((tab) => {
     tab.current = tab.name === tabName // Set the `current` value based on the selected tab
-    // tab.current = !tab.current // Toggle the `current` value
   })
-  emitCurrentTab(tabName) // Emit the current tab name to the parent component
-  // this.cardsView = !this.cardsView
+  store.currentViewType = tabName
 }
 </script>

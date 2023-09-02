@@ -5,10 +5,10 @@
       <div class="flex flex-start px-8">
         <DBTypesCombo :isFilterIcon="true" @update:selected-db-type="filterDB" />
       </div>
-      <ToggleView class="py-2 px-8" @toggleView="toggleView" />
+      <ToggleView class="py-2 px-8"  />
     </div>
     <!-- End View control buttons   -->
-    <div class="flex flex-wrap max-w-7xl mx-auto px-4 overflow-hidden" v-show="cardsView">
+    <div class="flex flex-wrap max-w-7xl mx-auto px-4 overflow-hidden" v-show="currentViewType==='Cards'">
       <div class="w-full px-4 overflow-hidden md:w-1/2 lg:w-1/3">
         <NewCard />
       </div>
@@ -20,7 +20,7 @@
         <CardItem :connection="connection" :isStreamsTab="isStreamsTab" />
       </div>
     </div>
-    <div class="flex flex-wrap mx-6 overflow-hidden" v-show="!cardsView">
+    <div class="flex flex-wrap mx-6 overflow-hidden" v-show="currentViewType==='Table'">
       <Table :connections="connectionsByType" :isStreamsTab="isStreamsTab" />
     </div>
   </div>
@@ -31,10 +31,11 @@
 import Table from './Table.vue'
 import NewCard from './NewCard.vue'
 import DBTypesCombo from './DBTypesCombo.vue'
-import ToggleView from './ToggleView.vue'
+import ToggleView from '../settings/ToggleView.vue'
 import CardItem from './CardItem.vue'
 
 import { useConnectionsStore } from '@/stores/connections.js'
+import { useSettingsStore } from '@/stores/settingsStore.js'
 import { mapState, mapActions } from 'pinia'
 
 export default {
@@ -54,7 +55,6 @@ export default {
   },
   data: () => ({
     filter: null,
-    cardsView: true,
   }),
   methods: {
     ...mapActions(useConnectionsStore, [
@@ -64,12 +64,10 @@ export default {
     filterDB(dbType) {
       this.filter = dbType.type
     },
-    toggleView() {
-      this.cardsView = !this.cardsView
-    }
   },
   computed: {
     ...mapState(useConnectionsStore, ['connectionsByType']),
+    ...mapState(useSettingsStore, ['currentViewType']),
   },
   watch: {
     filter() {

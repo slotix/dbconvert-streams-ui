@@ -2,10 +2,10 @@
   <div class="antialiased bg-gray-200">
     <!-- View control buttons   -->
     <div class="flex flex-wrap gap-x-3 space-y-0 max-w-7xl mx-auto py-6 px-8;">
-      <ToggleView class="py-2 px-8" @toggleView="toggleView" />
+      <ToggleView class="py-2 px-8"  />
     </div>
     <!-- End View control buttons   -->
-    <div class="flex flex-wrap max-w-7xl mx-auto px-4 overflow-hidden" v-show="cardsView">
+    <div class="flex flex-wrap max-w-7xl mx-auto px-4 overflow-hidden" v-show="currentViewType ==='Cards'">
       <div class="w-full px-4 overflow-hidden md:w-1/2 lg:w-1/3">
         <NewCard />
       </div>
@@ -21,7 +21,7 @@
         />
       </div>
     </div>
-    <div class="flex flex-wrap mx-6 overflow-hidden" v-show="!cardsView">
+    <div class="flex flex-wrap mx-6 overflow-hidden" v-show="currentViewType ==='Table'">
       <Table :strms="newestFirst" />
     </div>
   </div>
@@ -30,12 +30,13 @@
 <script>
 import Table from './Table.vue'
 import NewCard from './NewCard.vue'
-import ToggleView from '../connection/ToggleView.vue'
+import ToggleView from '../settings/ToggleView.vue'
 import CardItem from './CardItem.vue'
 
 import { useStreamsStore } from '@/stores/streams.js'
 import { useConnectionsStore } from '@/stores/connections.js'
 import { mapState, mapActions } from 'pinia'
+import { useSettingsStore } from '@/stores/settingsStore.js'
 
 export default {
   name: 'Streams',
@@ -57,6 +58,7 @@ export default {
   },
   computed: {
     ...mapState(useStreamsStore, ['newestFirst']),
+    ...mapState(useSettingsStore, ['currentViewType']),
     connectionByID() {
       return (id) => {
         return useConnectionsStore().connectionByID(id)

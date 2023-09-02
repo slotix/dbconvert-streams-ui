@@ -24,7 +24,7 @@
 <script>
 import UploadBox from "../../UploadBox.vue";
 import ConnectionName from "./ConnectionName.vue";
-import { useModalStore, DIALOG_TYPES } from '@/stores/modalStore.js'
+import { useSettingsStore, DIALOG_TYPES } from '@/stores/settingsStore.js'
 import { useConnectionsStore } from '@/stores/connections.js'
 import { mapWritableState } from 'pinia'
 
@@ -68,7 +68,7 @@ export default {
       return this.connectionType + "_" + this.connection.fileName;
     },
     dlgTp() {
-      return useModalStore().dlgType
+      return useSettingsStore().dlgType
     }
   },
   watch: {

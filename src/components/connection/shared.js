@@ -1,6 +1,6 @@
 import { useConnectionsStore } from "@/stores/connections.js";
 import { useStreamsStore } from "@/stores/streams.js";
-import { useModalStore } from "@/stores/modalStore.js";
+import { useSettingsStore } from "@/stores/settingsStore.js";
 import { mapActions, mapState } from "pinia";
 
 export default {
@@ -77,16 +77,16 @@ export default {
       "refreshConnections",
     ]),
     addConnection() {
-      useModalStore().openModal("Save");
+      useSettingsStore().openModal("Save");
     },
     editConnection() {
       this.setCurrentConnection(this.connection.id);
-      useModalStore().openModal("Update");
+      useSettingsStore().openModal("Update");
     },
     cloneConnection() {
       this.setCurrentConnection(this.connection.id);
       this.cloneCurrentConnection();
-      useModalStore().openModal("Update");
+      useSettingsStore().openModal("Update");
     },
     async deleteConn() {
       try {

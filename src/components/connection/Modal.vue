@@ -74,18 +74,18 @@ import { ref, computed } from 'vue'
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue'
 import { XMarkIcon } from '@heroicons/vue/24/outline'
 import { mapState } from 'pinia'
-import { useModalStore, DIALOG_TYPES } from '@/stores/modalStore.js'
+import { useSettingsStore, DIALOG_TYPES } from '@/stores/settingsStore.js'
 import { useConnectionsStore } from '@/stores/connections.js'
 import ActionBtns from './ActionBtns.vue'
 const emit = defineEmits(['ok', 'close'])
 const currentConnection = ref(mapState(useConnectionsStore, ['currentConnection']))
 
 const showModal = computed(() => {
-  return useModalStore().showModal
+  return useSettingsStore().showModal
 })
 
 const dlgTp = computed(() => {
-  return useModalStore().dlgType
+  return useSettingsStore().dlgType
 })
 
 const isShowDBTypesCombo = computed(() => {
@@ -106,7 +106,7 @@ function test() {
 }
 
 function close() {
-  useModalStore().closeModal()
+  useSettingsStore().closeModal()
 }
 
 function confirm() {

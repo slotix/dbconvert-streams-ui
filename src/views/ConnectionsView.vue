@@ -21,13 +21,13 @@ import { ref, computed } from 'vue'
 import Connections from '@/components/connection/Connections.vue'
 import Add from '@/components/connection/Add.vue'
 import Edit from '@/components/connection/Edit.vue'
-import { useModalStore } from '@/stores/modalStore.js'
+import { useSettingsStore } from '@/stores/settingsStore.js'
 import { useConnectionsStore } from '@/stores/connections.js'
 
 const connectionsCount = computed(() => {
   return useConnectionsStore().countConnections;
 })
 const dlgTp = computed(() => {
-  return useModalStore().dlgType
+  return useSettingsStore().dlgType
 })
 </script>

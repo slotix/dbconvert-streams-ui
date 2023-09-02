@@ -5,10 +5,16 @@ export const DIALOG_TYPES = {
   UPDATE: 'Update',
 };
 
-export const useModalStore = defineStore('modal', {
+// export const VIEW_TYPES = {
+//   { name: 'Cards', icon: Squares2X2Icon, current: true },
+//   { name: 'Table', icon: TableCellsIcon, current: false }
+// };
+
+export const useSettingsStore = defineStore('modal', {
   state: () => ({
     showModal: false,
     dlgType: '',
+    currentViewType: 'Cards',
   }),
   actions: {
     openModal(dlgType) {
