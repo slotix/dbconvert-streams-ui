@@ -2,10 +2,13 @@
   <div class="antialiased bg-gray-200">
     <!-- View control buttons   -->
     <div class="flex flex-wrap gap-x-3 space-y-0 max-w-7xl mx-auto py-6 px-8;">
-      <ToggleView class="py-2 px-8"  />
+      <ToggleView class="py-2 px-8" />
     </div>
     <!-- End View control buttons   -->
-    <div class="flex flex-wrap max-w-7xl mx-auto px-4 overflow-hidden" v-show="currentViewType ==='Cards'">
+    <div
+      class="flex flex-wrap max-w-7xl mx-auto px-4 overflow-hidden"
+      v-show="currentViewType === 'cards'"
+    >
       <div class="w-full px-4 overflow-hidden md:w-1/2 lg:w-1/3">
         <NewCard />
       </div>
@@ -21,7 +24,7 @@
         />
       </div>
     </div>
-    <div class="flex flex-wrap mx-6 overflow-hidden" v-show="currentViewType ==='Table'">
+    <div class="flex flex-wrap mx-6 overflow-hidden" v-show="currentViewType === 'table'">
       <Table :strms="newestFirst" />
     </div>
   </div>
@@ -52,6 +55,7 @@ export default {
   methods: {
     ...mapActions(useStreamsStore, ['refreshStreams']),
     ...mapActions(useConnectionsStore, ['refreshConnections']),
+    ...mapActions(useSettingsStore, ['getViewType']),
     toggleView() {
       this.cardsView = !this.cardsView
     }
@@ -65,9 +69,10 @@ export default {
       }
     }
   },
-  mounted() {
-    this.refreshConnections()
-    this.refreshStreams()
+  async mounted() {
+    await this.refreshConnections()
+    await this.refreshStreams()
+    await this.getViewType()
   }
 }
 </script>

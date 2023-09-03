@@ -50,8 +50,8 @@ import { TableCellsIcon, Squares2X2Icon } from '@heroicons/vue/24/outline'
 import { useSettingsStore } from '@/stores/settingsStore.js'
 const store = useSettingsStore()
 const tabs = ref([
-  { name: 'Cards', icon: Squares2X2Icon, current: true },
-  { name: 'Table', icon: TableCellsIcon, current: false }
+  { name: 'cards', icon: Squares2X2Icon, current: true },
+  { name: 'table', icon: TableCellsIcon, current: false }
 ])
 onMounted(() => {
   tabs.value.forEach((tab) => {
@@ -62,6 +62,7 @@ const toggleView = (tabName) => {
   tabs.value.forEach((tab) => {
     tab.current = tab.name === tabName // Set the `current` value based on the selected tab
   })
-  store.currentViewType = tabName
+  // store.currentViewType = tabName
+   store.setViewType(tabName)
 }
 </script>

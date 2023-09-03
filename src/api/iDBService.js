@@ -19,6 +19,12 @@ function dbPromise() {
         keyPath: "id",
         autoIncrement: true
       });
+      const settingsStore = db.createObjectStore("settings", {
+      })
+      const viewTypeExists = settingsStore.indexNames.contains("viewType");
+      if (!viewTypeExists) {
+        settingsStore.put("cards", "viewType");
+      }
     }
   });
   //   return openDB("dbconvert", 1, upgrade => {
@@ -31,7 +37,7 @@ function dbPromise() {
   //   });
 }
 
-const saveConnection = async item => {
+const saveConnection = async (item) => {
   try {
     // const tx = db.transaction(storeName, "readwrite");
     // const store = tx.objectStore(storeName);
@@ -82,7 +88,7 @@ const getConnections = async () => {
   }
 };
 
-const getConnectionById = async id => {
+const getConnectionById = async (id) => {
   try {
     return (await db).get("connections", id);
   } catch (error) {
@@ -90,7 +96,7 @@ const getConnectionById = async id => {
   }
 };
 
-const getConnectionsByType = async dbType => {
+const getConnectionsByType = async (dbType) => {
   try {
     return (await db).getAllFromIndex("type_idx", dbType);
   } catch (error) {
@@ -98,7 +104,7 @@ const getConnectionsByType = async dbType => {
   }
 };
 
-const deleteConnection = async index => {
+const deleteConnection = async (index) => {
   try {
     (await db).delete("connections", index);
   } catch (error) {
@@ -124,6 +130,23 @@ const clearConnections = async () => {
 //     return error;
 //   }
 // };
+const setCurrentViewType = async (type) => {
+  try {
+    (await db).put("settings", type, "viewType");
+  } catch (error) {
+    return error;
+  }
+};
+
+const getCurrentViewType = async () => {
+  try {
+    var vType = await (await db).get("settings", "viewType");
+    console.log(vType);
+    return vType;
+  } catch (error) {
+    return error;
+  }
+};
 
 const getStreams = async () => {
   try {
@@ -133,7 +156,7 @@ const getStreams = async () => {
   }
 };
 
-const saveStream = async item => {
+const saveStream = async (item) => {
   try {
     (await db).put("streams", item);
   } catch (error) {
@@ -141,8 +164,7 @@ const saveStream = async item => {
   }
 };
 
-
-const deleteStream = async index => {
+const deleteStream = async (index) => {
   try {
     (await db).delete("streams", index);
   } catch (error) {
@@ -168,5 +190,7 @@ export default {
   getStreams,
   saveStream,
   deleteStream,
-  clearStreams
+  clearStreams,
+  setCurrentViewType,
+  getCurrentViewType,
 };

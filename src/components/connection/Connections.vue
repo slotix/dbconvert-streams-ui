@@ -5,10 +5,13 @@
       <div class="flex flex-start px-8">
         <DBTypesCombo :isFilterIcon="true" @update:selected-db-type="filterDB" />
       </div>
-      <ToggleView class="py-2 px-8"  />
+      <ToggleView class="py-2 px-8" />
     </div>
     <!-- End View control buttons   -->
-    <div class="flex flex-wrap max-w-7xl mx-auto px-4 overflow-hidden" v-show="currentViewType==='Cards'">
+    <div
+      class="flex flex-wrap max-w-7xl mx-auto px-4 overflow-hidden"
+      v-show="currentViewType === 'cards'"
+    >
       <div class="w-full px-4 overflow-hidden md:w-1/2 lg:w-1/3">
         <NewCard />
       </div>
@@ -20,14 +23,13 @@
         <CardItem :connection="connection" :isStreamsTab="isStreamsTab" />
       </div>
     </div>
-    <div class="flex flex-wrap mx-6 overflow-hidden" v-show="currentViewType==='Table'">
+    <div class="flex flex-wrap mx-6 overflow-hidden" v-show="currentViewType === 'table'">
       <Table :connections="connectionsByType" :isStreamsTab="isStreamsTab" />
     </div>
   </div>
 </template>
 
 <script>
-
 import Table from './Table.vue'
 import NewCard from './NewCard.vue'
 import DBTypesCombo from './DBTypesCombo.vue'
@@ -54,20 +56,18 @@ export default {
     }
   },
   data: () => ({
-    filter: null,
+    filter: null
   }),
   methods: {
-    ...mapActions(useConnectionsStore, [
-      'refreshConnections',
-      'setFilter'
-    ]),
+    ...mapActions(useConnectionsStore, ['refreshConnections', 'setFilter']),
+    ...mapActions(useSettingsStore, ['getViewType']),
     filterDB(dbType) {
       this.filter = dbType.type
-    },
+    }
   },
   computed: {
     ...mapState(useConnectionsStore, ['connectionsByType']),
-    ...mapState(useSettingsStore, ['currentViewType']),
+    ...mapState(useSettingsStore, ['currentViewType'])
   },
   watch: {
     filter() {
@@ -80,6 +80,7 @@ export default {
   },
   async mounted() {
     await this.refreshConnections()
+    await this.getViewType()
   }
 }
 </script>
