@@ -61,7 +61,8 @@ import {
 
 const modes = useStreamsStore().modes
 const currentStream = useStreamsStore().currentStream
-const selectedMode = ref(modes[0])
+// const selectedMode = ref(modes[0])
+const selectedMode = ref(currentStream.mode)
 const query = ref('')
 
 // Emitting the selectedMode value to the parent component
