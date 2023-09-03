@@ -83,10 +83,15 @@ export default {
       this.setCurrentConnection(this.connection.id);
       useSettingsStore().openModal("Update");
     },
-    cloneConnection() {
+    async cloneConnection() {
       this.setCurrentConnection(this.connection.id);
-      this.cloneCurrentConnection();
-      useSettingsStore().openModal("Update");
+      try {
+        await this.cloneCurrentConnection();
+        await this.refreshConnections();
+      } catch (e) {
+        console.log(e);
+      }
+      // useSettingsStore().openModal("Update");
     },
     async deleteConn() {
       try {
