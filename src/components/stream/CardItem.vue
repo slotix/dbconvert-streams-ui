@@ -67,7 +67,6 @@
           <button
             type="button"
             class="relative -mr-px inline-flex w-0 flex-1 items-center justify-center gap-x-3 rounded-bl-lg border border-gray-500 py-4 text-sm font-semibold text-gray-200 bg-gray-600"
-            @click="editStream"
           >
             <PencilIcon class="h-5 w-5 text-gray-200" aria-hidden="true" />
             Edit

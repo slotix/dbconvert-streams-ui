@@ -123,11 +123,11 @@ export const useStreamsStore = defineStore("streams", {
       if (!stream.id) {
         stream.id = Date.now();
       }
-      console.log('save stream', stream);
+      // console.log('save stream', stream);
       await idb.saveStream(JSON.parse(JSON.stringify(stream)));
       this.resetCurrentStream();
     },
-    async cloneCurrentStream() {
+    async cloneStream() {
       if (!this.currentStream) {
         throw new Error("can't clone empty stream");
       }

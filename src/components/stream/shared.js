@@ -44,10 +44,19 @@ export default {
         console.log(e);
       }
     },
+    async cloneStream() {
+      try {
+        useStreamsStore().setCurrentStream(this.stream.id);
+        await useStreamsStore().cloneStream(this.stream.id);
+        await useStreamsStore().refreshStreams();
+      } catch (e) {
+        console.log(e);
+      }
+    },
     selectStream() {
       useStreamsStore().setCurrentStream(this.stream.id);
-      console.log(this.stream);
-    }
+      // console.log(this.stream);
+    },
   },
   computed: {
     streamCreated() {
