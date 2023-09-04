@@ -141,7 +141,6 @@ const setCurrentViewType = async (type) => {
 const getCurrentViewType = async () => {
   try {
     var vType = await (await db).get("settings", "viewType");
-    console.log(vType);
     return vType;
   } catch (error) {
     return error;
