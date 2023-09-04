@@ -1,15 +1,13 @@
 <template>
   <div>
     <div class="sm:hidden">
-      <label for="tabs" class="sr-only">Select a tab</label>
-      <!-- Use an "onChange" listener to redirect the user to the selected tab URL. -->
+      <!-- <label for="tabs" class="sr-only">Select a tab</label> -->
       <select
-        id="tabs"
         name="tabs"
         class="block w-full pt-0.2 rounded-md border-gray-300 focus:border-gray-500 focus:ring-gray-500"
         @change="emitCurrentTab($event.target.value)"
       >
-        <option v-for="tab in tabs" :key="tab.name" :selected="tab.current">{{ tab.name }}</option>
+        <option v-for="tab in tabs" :key="tab.name" :selected="tab.current" :id="'tab-' + tab.name">{{ tab.name }}</option>
       </select>
     </div>
     <div class="hidden sm:block">
