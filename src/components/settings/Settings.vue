@@ -5,7 +5,8 @@
       <div class="col-span-1">
         <div class="flex flex-col">
           <!-- ModeCombo component -->
-          <ModeCombo class="pb-8" />
+          <!-- <ModeCombo class="pb-8" /> -->
+          <ModeButtons class="pb-8" />
           <!-- Limits component -->
           <Limits class="pb-8" />
         </div>
@@ -22,13 +23,15 @@
 </template>
 <script>
 import TableList from './TableList.vue'
-import ModeCombo from './ModeCombo.vue'
+// import ModeCombo from './ModeCombo.vue'
+import ModeButtons from './ModeButtons.vue'
 import Limits from './Limits.vue'
 export default {
   name: 'Connections',
   components: {
     TableList,
-    ModeCombo,
+    // ModeCombo,
+    ModeButtons,
     Limits
   },
 }

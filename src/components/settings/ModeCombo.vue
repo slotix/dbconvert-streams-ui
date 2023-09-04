@@ -61,16 +61,11 @@ import {
 
 const modes = useStreamsStore().modes
 const currentStream = useStreamsStore().currentStream
-// const selectedMode = ref(modes[0])
-const selectedMode = ref(currentStream.mode)
+const selectedMode = ref(modes.find(option => option.id === currentStream.mode) || modes[0]);
 const query = ref('')
 
-// Emitting the selectedMode value to the parent component
-// const emit = defineEmits(['update:selected-mode'])
 // Watch for changes in selectedDBType
 watch(selectedMode, (newVal) => {
   currentStream.mode = newVal.id
-  console.log(currentStream)
-  // emit('update:selected-mode', newVal.id)
 })
 </script>
