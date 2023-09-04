@@ -52,7 +52,7 @@
         }"
         :disabled="isNextDisabled"
       >
-        Next {{ currentStepNumber }}
+        Next 
         <ChevronRightIcon class="h-6 w-6" aria-hidden="true" />
       </button>
       <router-link :to="{ name: 'Streams' }">
