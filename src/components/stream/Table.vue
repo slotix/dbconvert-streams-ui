@@ -5,7 +5,7 @@
         <h1 class="text-base font-semibold leading-6 text-gray-900">Streams</h1>
         <p class="mt-2 text-sm text-gray-700">List of streams.</p>
       </div>
-      <router-link :to="{ name: 'AddStream' }">
+      <router-link :to="{ name: 'ManageStream', params: { mode: 'add' }}">
         <div class="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
           <button
             type="button"
@@ -90,6 +90,10 @@ export default {
   },
   methods: {
     ...mapActions(useConnectionsStore, ['refreshConnections']),
+    addStream() {
+      useStreamsStore().resetCurrentStream();
+      useConnectionsStore().resetCurrentConnection();
+    }
   },
   components: {
     TableRow,

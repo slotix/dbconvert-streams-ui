@@ -63,7 +63,10 @@
         </div>
       </div>
       <div class="-mt-px flex">
-        <router-link class="flex w-0 flex-1" :to="{ name: 'AddStream' }">
+        <router-link
+          class="flex w-0 flex-1"
+          :to="{ name: 'ManageStream',  params: { mode: 'edit' } }"
+        >
           <button
             type="button"
             class="relative -mr-px inline-flex w-0 flex-1 items-center justify-center gap-x-3 rounded-bl-lg border border-gray-500 py-4 text-sm font-semibold text-gray-200 bg-gray-600"

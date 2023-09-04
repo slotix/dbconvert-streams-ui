@@ -11,7 +11,7 @@
           alt="Create database connection"
         />
       </div>
-      <router-link :to="{ name: 'AddStream' }">
+      <router-link :to="{ name: 'ManageStream', params: { mode: 'add' }  }">
         <div class="flex flex-wrap text-gray-700 bg-gray-100">
           <button
             type="button"

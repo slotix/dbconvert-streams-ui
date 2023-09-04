@@ -50,8 +50,8 @@
     </span>
   </td>
   <td class="px-5 py-5">
-    <router-link :to="{ name: 'AddStream' }">
-      <button class="text-gray-600 hover:text-gray-900" @click="editStream">
+    <router-link :to="{ name: 'ManageStream', params: { mode: 'edit' } }">
+      <button class="text-gray-600 hover:text-gray-900" @click="selectStream">
         Edit<span class="sr-only">, {{ stream.id }}</span>
       </button>
     </router-link>

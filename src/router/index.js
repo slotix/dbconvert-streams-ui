@@ -1,37 +1,38 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
-import ConnectionsView from '../views/ConnectionsView.vue'
-import StreamsView from '../views/StreamsView.vue'
-import AddStreamView from '../views/AddStreamView.vue'
-import NotFound from '../views/NotFound.vue'
+import { createRouter, createWebHistory } from "vue-router";
+import HomeView from "../views/HomeView.vue";
+import ConnectionsView from "../views/ConnectionsView.vue";
+import StreamsView from "../views/StreamsView.vue";
+import ManageStreamView from "../views/ManageStreamView.vue";
+import NotFound from "../views/NotFound.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
-      path: '/',
-      name: 'home',
-      component: HomeView
+      path: "/",
+      name: "home",
+      component: HomeView,
     },
     {
-      path: '/connections',
-      name: 'Connections',
-      component: ConnectionsView
+      path: "/connections",
+      name: "Connections",
+      component: ConnectionsView,
     },
     {
-      path: '/streams',
-      name: 'Streams',
-      component: StreamsView
+      path: "/streams",
+      name: "Streams",
+      component: StreamsView,
     },
     {
-      path: "/streams/add",
-      name: "AddStream",
-      component: AddStreamView
+      path: "/streams/:mode",
+      name: "ManageStream",
+      component: ManageStreamView,
+      props: true,
     },
     {
       path: "/:catchAll(.*)",
-      component: NotFound
-    }
+      component: NotFound,
+    },
     // {
     //   path: '/about',
     //   name: 'about',
@@ -40,7 +41,7 @@ const router = createRouter({
     //   // which is lazy-loaded when the route is visited.
     //   component: () => import('../views/AboutView.vue')
     // }
-  ]
-})
+  ],
+});
 
-export default router
+export default router;
