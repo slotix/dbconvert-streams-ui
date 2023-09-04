@@ -58,12 +58,11 @@
                       <RouterLink
                         :to="item.href"
                         :class="[
-                          item.active
+                          $route.path === item.href
                             ? 'bg-gray-800 text-white'
                             : 'text-gray-400 hover:text-white hover:bg-gray-800',
                           'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold'
                         ]"
-                        @click="setMenuItemAsActive(item.name)"
                       >
                         <component :is="item.icon" class="h-6 w-6 shrink-0" aria-hidden="true" />
                         {{ item.name }}
@@ -91,12 +90,11 @@
             <RouterLink
               :to="item.href"
               :class="[
-                item.active
-                  ? 'bg-gray-700 text-white'
+                $route.path === item.href
+                  ? 'bg-gray-800 text-white'
                   : 'text-gray-400 hover:text-white hover:bg-gray-800',
-                'group flex gap-x-3 rounded-md p-3 text-sm leading-6 font-semibold'
+                'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold'
               ]"
-              @click="setMenuItemAsActive(item.name)"
             >
               <component :is="item.icon" class="h-6 w-6 shrink-0" aria-hidden="true" />
               <span class="sr-only">{{ item.name }}</span>
@@ -191,7 +189,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import {
   Dialog,
   DialogPanel,
@@ -202,7 +200,7 @@ import {
   TransitionChild,
   TransitionRoot
 } from '@headlessui/vue'
-import { RouterLink, RouterView } from 'vue-router'
+import { RouterLink, RouterView, useRoute } from 'vue-router'
 import {
   Bars3Icon,
   BellIcon,
@@ -218,15 +216,11 @@ import {
 import { ChevronDownIcon, MagnifyingGlassIcon } from '@heroicons/vue/20/solid'
 
 const navigation = ref([
-  { name: 'Home', href: '/', icon: HomeIcon, active: true },
-  { name: 'Connections', href: '/connections', icon: CircleStackIcon, active: false },
-  { name: 'Streams', href: '/streams', icon: ArrowPathIcon, active: false }
+  { name: 'Home', href: '/', icon: HomeIcon},
+  { name: 'Connections', href: '/connections', icon: CircleStackIcon},
+  { name: 'Streams', href: '/streams', icon: ArrowPathIcon}
 ])
-const setMenuItemAsActive = (name) => {
-  navigation.value.forEach((item) => {
-    item.active = item.name === name
-  })
-}
+const route = useRoute()
 const userNavigation = [
   { name: 'Your profile', href: '#' },
   { name: 'Sign out', href: '#' }
