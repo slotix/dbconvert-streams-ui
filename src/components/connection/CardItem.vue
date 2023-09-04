@@ -31,7 +31,7 @@
               <span class="font-normal pl-3">{{ concatenateValues }} </span>
             </span>
           </div>
-          <div v-show="isStreamsTab && selected" class="mt-4 mr-4 items-center">
+          <div v-show="selected" class="mt-4 mr-4 items-center">
             <CheckCircleIcon
               class="h-8 w-8"
               aria-hidden="true"

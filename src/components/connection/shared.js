@@ -55,17 +55,11 @@ export default {
     },
     bgRowClass() {
       return (connection) => ({
-        "hover:bg-gray-50 ": !this.isStreamsTab,
-        "bg-yellow-50 ": this.isStreamsTab &&
-          this.currentStep.name === "source" && this.currentStream.source &&
-          this.currentStream.source === connection.id,
-        "bg-green-50 ": this.isStreamsTab &&
-          this.currentStep.name === "target" && this.currentStream.target &&
-          this.currentStream.target === connection.id,
-        "hover:bg-yellow-50 ": this.isStreamsTab &&
-          this.currentStep.name === "source",
-        "hover:bg-green-50 ": this.isStreamsTab &&
-          this.currentStep.name === "target",
+        "hover:bg-gray-50": !this.isStreamsTab,
+        "bg-yellow-50": this.isStreamsTab && this.currentStep?.name === "source" && this.currentStream?.source === connection.id,
+        "bg-green-50": this.isStreamsTab && this.currentStep?.name === "target" && this.currentStream?.target === connection.id,
+        "hover:bg-yellow-50": this.isStreamsTab && this.currentStep?.name === "source",
+        "hover:bg-green-50": this.isStreamsTab && this.currentStep?.name === "target",
       });
     },
   },
@@ -104,13 +98,13 @@ export default {
     selectConnection() {
       this.setCurrentConnection(this.connection.id);
       // Stream
-      if (this.isStreamsTab && this.currentStep.name === "source") {
+      if (this.currentStep.name === "source") {
         if (this.currentStream) {
           this.currentStream.source = this.connection.id;
           // console.log(this.currentStream);
         }
       }
-      if (this.isStreamsTab && this.currentStep.name === "target") {
+      if (this.currentStep.name === "target") {
         if (this.currentStream) {
           this.currentStream.target = this.connection.id;
         }
