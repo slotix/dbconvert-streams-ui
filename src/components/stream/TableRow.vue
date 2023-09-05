@@ -31,6 +31,13 @@
   <td class="hidden px-5 py-5 lg:table-cell" @click="selectStream">
     <span
       class="text-gray-600 whitespace-no-wrap"
+    >
+      {{stream.mode}}
+    </span>
+  </td>
+<td class="hidden px-5 py-5 lg:table-cell" @click="selectStream">
+    <span
+      class="text-gray-600 whitespace-no-wrap"
       :class="{ 'text-red-500': !source || !source.name }"
     >
       {{ source && source.name ? source.name : 'N/A' }}
@@ -51,18 +58,18 @@
   </td>
   <td class="px-5 py-5">
     <router-link :to="{ name: 'ManageStream', params: { mode: 'edit' } }">
-      <button class="text-gray-600 hover:text-gray-900" @click="selectStream">
+      <button class=" text-blue-500 hover:underline" @click="selectStream">
         Edit<span class="sr-only">, {{ stream.id }}</span>
       </button>
     </router-link>
   </td>
   <td class="px-5 py-5">
-    <button class="text-gray-600 hover:text-gray-900" @click="cloneStream">
+    <button class="text-blue-500 hover:underline" @click="cloneStream">
       Clone<span class="sr-only">, {{ stream.id }}</span>
     </button>
   </td>
   <td class="px-5 py-5">
-    <button class="text-gray-600 hover:text-gray-900" @click="deleteStream(stream.id)">
+    <button class="text-blue-500 hover:underline" @click="deleteStream(stream.id)">
       Delete<span class="sr-only">, {{ stream.id }}</span>
     </button>
   </td>

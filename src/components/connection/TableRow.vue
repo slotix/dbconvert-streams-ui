@@ -29,17 +29,17 @@
     </span>
   </td>
   <td class="px-5 py-5">
-    <button class="text-gray-600 hover:text-gray-900" @click="editConnection">
+    <button class="text-blue-500 hover:underline" @click="editConnection">
       Edit<span class="sr-only">, {{ connection.name }}</span>
     </button>
   </td>
   <td class="px-5 py-5">
-    <button class="text-gray-600 hover:text-gray-900" @click="cloneConnection">
+    <button class="text-blue-500 hover:underline" @click="cloneConnection">
       Clone<span class="sr-only">, {{ connection.name }}</span>
     </button>
   </td>
   <td class="px-5 py-5">
-    <button class="text-gray-600 hover:text-gray-900" @click="deleteConn(connection.id)">
+    <button class="text-blue-500 hover:underline" @click="deleteConn(connection.id)">
       Delete<span class="sr-only">, {{ connection.name }}</span>
     </button>
   </td>
