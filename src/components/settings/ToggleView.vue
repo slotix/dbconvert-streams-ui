@@ -7,10 +7,14 @@
         class="block w-full pt-0.2 rounded-md border-gray-300 focus:border-gray-500 focus:ring-gray-500"
         @change="emitCurrentTab($event.target.value)"
       >
-        <option v-for="tab in tabs" :key="tab.name" :selected="tab.current" :id="'tab-' + tab.name">{{ tab.name }}</option>
+        <option v-for="tab in tabs" :key="tab.name" :selected="tab.current" :id="'tab-' + tab.name">
+          {{ tab.name }}
+        </option>
       </select>
     </div>
     <div class="hidden sm:block">
+      <div class="flex items-center mb-2">
+        <span class="text-gray-500 text-sm font-medium mr-4">View:</span>
       <nav class="isolate flex divide-x divide-gray-200 rounded-md shadow" aria-label="Tabs">
         <button
           type="button"
@@ -38,6 +42,7 @@
           <span>{{ tab.name }}</span>
         </button>
       </nav>
+      </div>
     </div>
   </div>
 </template>
@@ -61,6 +66,6 @@ const toggleView = (tabName) => {
     tab.current = tab.name === tabName // Set the `current` value based on the selected tab
   })
   // store.currentViewType = tabName
-   store.setViewType(tabName)
+  store.setViewType(tabName)
 }
 </script>
