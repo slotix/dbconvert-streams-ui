@@ -29,13 +29,11 @@
     </div>
   </td>
   <td class="hidden px-5 py-5 lg:table-cell" @click="selectStream">
-    <span
-      class="text-gray-600 whitespace-no-wrap"
-    >
-      {{stream.mode}}
+    <span class="text-gray-600 whitespace-no-wrap">
+      {{ stream.mode }}
     </span>
   </td>
-<td class="hidden px-5 py-5 lg:table-cell" @click="selectStream">
+  <td class="hidden px-5 py-5 lg:table-cell" @click="selectStream">
     <span
       class="text-gray-600 whitespace-no-wrap"
       :class="{ 'text-red-500': !source || !source.name }"
@@ -57,21 +55,16 @@
     </span>
   </td>
   <td class="px-5 py-5">
-    <router-link :to="{ name: 'ManageStream', params: { mode: 'edit' } }">
-      <button class=" text-blue-500 hover:underline" @click="selectStream">
-        Edit<span class="sr-only">, {{ stream.id }}</span>
-      </button>
-    </router-link>
+    <ActionsMenu
+      :position="actionsMenuPosition"
+      @selectRow="selectStream"
+      @cloneRow="cloneStream"
+      @deleteRow="deleteStream"
+    />
   </td>
+
   <td class="px-5 py-5">
-    <button class="text-blue-500 hover:underline" @click="cloneStream">
-      Clone<span class="sr-only">, {{ stream.id }}</span>
-    </button>
-  </td>
-  <td class="px-5 py-5">
-    <button class="text-blue-500 hover:underline" @click="deleteStream(stream.id)">
-      Delete<span class="sr-only">, {{ stream.id }}</span>
-    </button>
+    <PlayIcon class="h-6 w-6 text-gray-600" @selectRow="selectStream" />
   </td>
 </template>
 

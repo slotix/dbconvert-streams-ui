@@ -3,11 +3,13 @@ import {
   CheckCircleIcon,
   ChevronRightIcon,
   PencilIcon,
+  PlayIcon,
   Square2StackIcon,
   TrashIcon,
 } from "@heroicons/vue/24/outline";
 import { useStreamsStore } from "@/stores/streams.js";
 import { useConnectionsStore } from "@/stores/connections.js";
+import ActionsMenu from "./ActionsMenu.vue";
 export default {
   props: {
     stream: {
@@ -28,6 +30,8 @@ export default {
     CalendarIcon,
     CheckCircleIcon,
     ChevronRightIcon,
+    PlayIcon,
+    ActionsMenu,
   },
   setup() {
     const dbTypes = useConnectionsStore().dbTypes;
@@ -55,7 +59,6 @@ export default {
     },
     selectStream() {
       useStreamsStore().setCurrentStream(this.stream.id);
-      // console.log(this.stream);
     },
   },
   computed: {
@@ -71,6 +74,18 @@ export default {
         });
         return dbType[0].logo;
       };
+    },
+    index() {
+      return useStreamsStore().currentStreamIndexInArray;
+    },
+    rowCount() {
+      return useStreamsStore().countStreams;
+    },
+    actionsMenuPosition() {
+      const index = this.index;
+      const rowCount = this.rowCount;
+
+      return index > rowCount / 2 ? "top" : "bottom";
     },
   },
 };

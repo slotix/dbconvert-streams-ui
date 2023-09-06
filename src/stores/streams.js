@@ -104,6 +104,9 @@ export const useStreamsStore = defineStore("streams", {
         })
         .reverse();
     },
+    currentStreamIndexInArray(state) {
+      return state.streams.indexOf(state.currentStream); 
+    },
     allSteps(state) {
       return state.steps;
     },

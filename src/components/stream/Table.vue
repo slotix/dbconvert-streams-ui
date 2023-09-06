@@ -5,7 +5,7 @@
         <h1 class="text-base font-semibold leading-6 text-gray-900">Streams</h1>
         <p class="mt-2 text-sm text-gray-700">List of streams.</p>
       </div>
-      <router-link :to="{ name: 'ManageStream', params: { mode: 'add' }}">
+      <router-link :to="{ name: 'ManageStream', params: { mode: 'add' } }">
         <div class="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
           <button
             type="button"
@@ -21,14 +21,21 @@
     <div class="container mx-auto">
       <div class="px-4 py-4 overflow-x-auto">
         <div class="inline-block min-w-full shadow rounded-lg overflow-hidden">
-          <table class="min-w-full divide-y divide-gray-300 bg-white">
+          <!-- <table class="min-w-full divide-y divide-gray-300 bg-white"> -->
+          <table class="min-w-full bg-white">
             <thead class="text-sm md:text-base">
-              <tr class="bg-gray-100 divide-x divide-gray-200 ">
+              <tr class="bg-gray-100 divide-x divide-gray-200">
                 <th
                   scope="col"
                   class="px-5 py-3 border-b border-gray-200 text-gray-800 text-left uppercase font-normal"
                 >
                   Stream
+                </th>
+                <th
+                  scope="col"
+                  class="px-5 py-3 border-b border-gray-200 text-gray-800 text-left uppercase font-normal"
+                >
+                  Mode
                 </th>
                 <th
                   scope="col"
@@ -50,15 +57,24 @@
                 </th>
                 <th
                   scope="col"
-                  colspan="3"
                   class="px-5 py-3 border-b border-gray-200 text-gray-800 text-center uppercase font-normal"
                 >
                   Actions
                 </th>
+                <th
+                  scope="col"
+                  class="px-5 py-3 border-b border-gray-200 text-gray-800 text-left uppercase font-normal hidden lg:table-cell"
+                >
+                  Start 
+                </th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200 bg-white">
-              <tr v-for="stream in strms" :key="stream.id" class="divide-x divide-gray-200 border-b border-gray-200 cursor-pointer">
+              <tr
+                v-for="stream in strms"
+                :key="stream.id"
+                class="divide-x divide-gray-200 border-b border-gray-200 cursor-pointer"
+              >
                 <TableRow
                   :stream="stream"
                   :source="connectionByID(stream.source)"
@@ -91,8 +107,8 @@ export default {
   methods: {
     ...mapActions(useConnectionsStore, ['refreshConnections']),
     addStream() {
-      useStreamsStore().resetCurrentStream();
-      useConnectionsStore().resetCurrentConnection();
+      useStreamsStore().resetCurrentStream()
+      useConnectionsStore().resetCurrentConnection()
     }
   },
   components: {
@@ -106,6 +122,6 @@ export default {
         return useConnectionsStore().connectionByID(id)
       }
     }
-  },
+  }
 }
 </script>
