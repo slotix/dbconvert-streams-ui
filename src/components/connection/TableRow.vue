@@ -58,7 +58,7 @@
 </template>
 
 <script>
-import ActionsMenu from "@/components/stream/ActionsMenu.vue";
+import ActionsMenu from "@/components/common/ActionsMenu.vue";
 import shared from './shared.js'
 export default Object.assign({}, shared, {
   props: {

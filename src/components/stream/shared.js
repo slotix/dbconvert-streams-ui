@@ -11,7 +11,7 @@ import { mapActions } from "pinia";
 import { useStreamsStore } from "@/stores/streams.js";
 import { useConnectionsStore } from "@/stores/connections.js";
 import { useSettingsStore } from "@/stores/settings.js";
-import ActionsMenu from "./ActionsMenu.vue";
+import ActionsMenu from "@/components/common/ActionsMenu.vue";
 export default {
   props: {
     stream: {

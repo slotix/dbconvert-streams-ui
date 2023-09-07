@@ -33,7 +33,7 @@
 import Table from './Table.vue'
 import NewCard from './NewCard.vue'
 import DBTypesCombo from './DBTypesCombo.vue'
-import ToggleView from '../settings/ToggleView.vue'
+import ToggleView from '@/components/common/ToggleView.vue'
 import CardItem from './CardItem.vue'
 
 import { useConnectionsStore } from '@/stores/connections.js'
