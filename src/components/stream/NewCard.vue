@@ -16,7 +16,7 @@
           <button
             type="button"
             @click="addStream"
-            class="relative -mr-px inline-flex w-0 flex-1 items-center justify-center gap-x-3 rounded-bl-lg rounded-br-lg border border-gray-500 py-4 text-sm font-semibold text-gray-200 bg-gray-600"
+            class="relative -mr-px inline-flex w-0 flex-1 items-center justify-center gap-x-3 rounded-bl-lg rounded-br-lg border border-gray-300 py-4 text-sm font-semibold  "
           >
             Add Stream
           </button>
