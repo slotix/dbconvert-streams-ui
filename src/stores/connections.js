@@ -88,6 +88,9 @@ export const useConnectionsStore = defineStore("connections", {
         })
         .length;
     },
+    currentConnectionIndexInArray(state) {
+      return state.connections.indexOf(state.currentConnection); 
+    },
     // connectionsNewestFirst(state) {
     //   // return state.connections.reverse();
     //   return state.connections.slice().reverse();

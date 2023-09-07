@@ -4,8 +4,9 @@
       class="flex items-center rounded-full ring-gray-100 text-gray-600 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-gray-100"
       @click="$emit('selectRow')"
     >
-      <span class="sr-only">Open options</span>
+      <span class="sr-only">Open actions</span>
       <EllipsisHorizontalIcon class="h-6 w-6 mr-5 ml-5" aria-hidden="true" />
+      <span v-show="viewType === 'cards'"> Actions </span>
     </MenuButton>
 
     <transition
@@ -17,14 +18,14 @@
       leave-to-class="transform opacity-0 scale-95"
     >
       <MenuItems
-        class="absolute right-0 z-10 mt-2 w-56 origin-top-right divide-y divide-gray-100 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+        class="absolute right-0 z-10 mt-2 w-56 divide-y divide-gray-100 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
         :class="{
           'bottom-10': position === 'bottom',
           'left-4 bottom-16 ': position === 'card'
         }"
       >
         <div class="py-1">
-          <router-link :to="{ name: 'ManageStream', params: { mode: 'edit' } }">
+          <!-- <router-link :to="{ name: 'ManageStream', params: { mode: 'edit' } }"> -->
             <MenuItem v-slot="{ active }">
               <a
                 href="#"
@@ -32,6 +33,7 @@
                   active ? 'bg-gray-100 text-gray-900' : 'text-gray-700',
                   'group flex items-center px-4 py-2 text-sm'
                 ]"
+              @click="$emit('editRow')"
               >
                 <PencilIcon
                   class="mr-3 h-5 w-5 text-gray-400 group-hover:text-gray-500"
@@ -40,7 +42,7 @@
                 Edit
               </a>
             </MenuItem>
-          </router-link>
+          <!-- </router-link> -->
           <MenuItem v-slot="{ active }">
             <a
               href="#"
@@ -88,6 +90,11 @@ import {
   PencilIcon,
   TrashIcon,
   EllipsisHorizontalIcon
-} from '@heroicons/vue/24/outline'
+} from '@heroicons/vue/24/solid'
+import { useSettingsStore } from '@/stores/settings.js'
+import { computed } from 'vue'
 const props = defineProps(['position'])
+const viewType = computed(() => {
+  return useSettingsStore().currentViewType
+})
 </script>

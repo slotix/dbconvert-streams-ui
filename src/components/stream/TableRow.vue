@@ -58,6 +58,7 @@
     <ActionsMenu
       :position="actionsMenuPosition"
       @selectRow="selectStream"
+      @editRow="editStream"
       @cloneRow="cloneStream"
       @deleteRow="deleteStream"
     />

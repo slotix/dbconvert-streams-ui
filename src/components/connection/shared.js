@@ -62,6 +62,12 @@ export default {
         "hover:bg-green-50": this.isStreamsTab && this.currentStep?.name === "target",
       });
     },
+    actionsMenuPosition() {
+      const index = useConnectionsStore().currentConnectionIndexInArray;
+      const rowCount = useConnectionsStore().countConnections;
+
+      return index > rowCount / 2 ? "top" : "bottom";
+    },
   },
   methods: {
     ...mapActions(useConnectionsStore, [

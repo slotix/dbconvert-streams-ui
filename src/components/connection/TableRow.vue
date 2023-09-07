@@ -28,24 +28,37 @@
       {{ connectionCreated }}
     </span>
   </td>
+  <!-- <td class="px-5 py-5"> -->
+  <!--   <button class="text-blue-500 hover:underline" @click="editConnection"> -->
+  <!--     Edit<span class="sr-only">, {{ connection.name }}</span> -->
+  <!--   </button> -->
+  <!-- </td> -->
+  <!-- <td class="px-5 py-5"> -->
+  <!--   <button class="text-blue-500 hover:underline" @click="cloneConnection"> -->
+  <!--     Clone<span class="sr-only">, {{ connection.name }}</span> -->
+  <!--   </button> -->
+  <!-- </td> -->
+  <!-- <td class="px-5 py-5"> -->
+  <!--   <button class="text-blue-500 hover:underline" @click="deleteConn(connection.id)"> -->
+  <!--     Delete<span class="sr-only">, {{ connection.name }}</span> -->
+  <!--   </button> -->
+  <!-- </td> -->
   <td class="px-5 py-5">
-    <button class="text-blue-500 hover:underline" @click="editConnection">
-      Edit<span class="sr-only">, {{ connection.name }}</span>
-    </button>
-  </td>
-  <td class="px-5 py-5">
-    <button class="text-blue-500 hover:underline" @click="cloneConnection">
-      Clone<span class="sr-only">, {{ connection.name }}</span>
-    </button>
-  </td>
-  <td class="px-5 py-5">
-    <button class="text-blue-500 hover:underline" @click="deleteConn(connection.id)">
-      Delete<span class="sr-only">, {{ connection.name }}</span>
-    </button>
+    <ActionsMenu
+      :position="actionsMenuPosition"
+      @selectRow="selectConnection"
+      @editRow="editConnection"
+      @cloneRow="cloneConnection"
+      @deleteRow="deleteConnection"
+    />
+    <!-- <button class="text-blue-500 hover:underline" @click="cloneConnection"> -->
+    <!--   Clone<span class="sr-only">, {{ connection.name }}</span> -->
+    <!-- </button> -->
   </td>
 </template>
 
 <script>
+import ActionsMenu from "@/components/stream/ActionsMenu.vue";
 import shared from './shared.js'
 export default Object.assign({}, shared, {
   props: {
@@ -59,5 +72,8 @@ export default Object.assign({}, shared, {
       default: true
     }
   },
+  components: {
+    ActionsMenu
+  }
 })
 </script>

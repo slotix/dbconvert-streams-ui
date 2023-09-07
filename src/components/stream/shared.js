@@ -6,7 +6,7 @@ import {
   PlayIcon,
   Square2StackIcon,
   TrashIcon,
-} from "@heroicons/vue/24/outline";
+} from "@heroicons/vue/24/solid";
 import { mapActions } from "pinia";
 import { useStreamsStore } from "@/stores/streams.js";
 import { useConnectionsStore } from "@/stores/connections.js";
@@ -43,6 +43,9 @@ export default {
   },
   methods: {
     ...mapActions(useSettingsStore, ["getViewType"]),
+    editStream() {
+      this.$router.push({ name: "ManageStream", params: { mode: "edit" } });
+    },
     async deleteStream() {
       try {
         await useStreamsStore().deleteStream(this.stream.id);
