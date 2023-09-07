@@ -1,6 +1,6 @@
 import { useConnectionsStore } from "@/stores/connections.js";
 import { useStreamsStore } from "@/stores/streams.js";
-import { useSettingsStore } from "@/stores/settingsStore.js";
+import { useSettingsStore } from "@/stores/settings.js";
 import { mapActions, mapState } from "pinia";
 
 export default {
@@ -98,13 +98,13 @@ export default {
     selectConnection() {
       this.setCurrentConnection(this.connection.id);
       // Stream
-      if (this.currentStep.name === "source") {
+      if (this.currentStep?.name === "source") {
         if (this.currentStream) {
           this.currentStream.source = this.connection.id;
           // console.log(this.currentStream);
         }
       }
-      if (this.currentStep.name === "target") {
+      if (this.currentStep?.name === "target") {
         if (this.currentStream) {
           this.currentStream.target = this.connection.id;
         }
