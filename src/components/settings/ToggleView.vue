@@ -50,7 +50,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { TableCellsIcon, Squares2X2Icon } from '@heroicons/vue/24/outline'
-import { useSettingsStore } from '@/stores/settingsStore.js'
+import { useSettingsStore } from '@/stores/settings.js'
 const store = useSettingsStore()
 const tabs = ref([
   { name: 'cards', icon: Squares2X2Icon, current: true },

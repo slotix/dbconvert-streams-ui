@@ -1,5 +1,5 @@
 import ConnectionName from "./ConnectionName.vue";
-import { useSettingsStore, DIALOG_TYPES } from '@/stores/settingsStore.js'
+import { useSettingsStore, DIALOG_TYPES } from '@/stores/settings.js'
 import { useConnectionsStore } from '@/stores/connections.js'
 import { mapWritableState } from 'pinia'
 

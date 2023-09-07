@@ -37,7 +37,7 @@ import ToggleView from '../settings/ToggleView.vue'
 import CardItem from './CardItem.vue'
 
 import { useConnectionsStore } from '@/stores/connections.js'
-import { useSettingsStore } from '@/stores/settingsStore.js'
+import { useSettingsStore } from '@/stores/settings.js'
 import { mapState, mapActions } from 'pinia'
 
 export default {

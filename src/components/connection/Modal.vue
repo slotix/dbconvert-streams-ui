@@ -74,7 +74,7 @@ import { ref, computed } from 'vue'
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue'
 import { XMarkIcon } from '@heroicons/vue/24/outline'
 import { mapState } from 'pinia'
-import { useSettingsStore, DIALOG_TYPES } from '@/stores/settingsStore.js'
+import { useSettingsStore, DIALOG_TYPES } from '@/stores/settings.js'
 import { useConnectionsStore } from '@/stores/connections.js'
 import ActionBtns from './ActionBtns.vue'
 const emit = defineEmits(['ok', 'close'])

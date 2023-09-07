@@ -21,7 +21,7 @@ import { ref, computed } from 'vue'
 import Connections from '@/components/connection/Connections.vue'
 import Add from '@/components/connection/Add.vue'
 import Edit from '@/components/connection/Edit.vue'
-import { useSettingsStore } from '@/stores/settingsStore.js'
+import { useSettingsStore } from '@/stores/settings.js'
 import { useConnectionsStore } from '@/stores/connections.js'
 
 const connectionsCount = computed(() => {

@@ -39,7 +39,7 @@ import CardItem from './CardItem.vue'
 import { useStreamsStore } from '@/stores/streams.js'
 import { useConnectionsStore } from '@/stores/connections.js'
 import { mapState, mapActions } from 'pinia'
-import { useSettingsStore } from '@/stores/settingsStore.js'
+import { useSettingsStore } from '@/stores/settings.js'
 
 export default {
   name: 'Streams',
