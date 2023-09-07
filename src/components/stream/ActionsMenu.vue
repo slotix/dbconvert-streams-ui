@@ -1,14 +1,12 @@
 <template>
   <Menu as="div" class="relative inline-block text-left">
-    <div>
-      <MenuButton
-        class="flex items-center rounded-full ring-gray-100 text-gray-600 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-gray-100"
-        @click="$emit('selectRow')"
-      >
-        <span class="sr-only">Open options</span>
-        <EllipsisHorizontalIcon class="h-6 w-6" aria-hidden="true" />
-      </MenuButton>
-    </div>
+    <MenuButton
+      class="flex items-center rounded-full ring-gray-100 text-gray-600 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-gray-100"
+      @click="$emit('selectRow')"
+    >
+      <span class="sr-only">Open options</span>
+      <EllipsisHorizontalIcon class="h-6 w-6 mr-5 ml-5" aria-hidden="true" />
+    </MenuButton>
 
     <transition
       enter-active-class="transition ease-out duration-100"
@@ -20,7 +18,10 @@
     >
       <MenuItems
         class="absolute right-0 z-10 mt-2 w-56 origin-top-right divide-y divide-gray-100 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
-        :class="position === 'bottom' ? 'bottom-10' : ''"
+        :class="{
+          'bottom-10': position === 'bottom',
+          'left-4 bottom-16 ': position === 'card'
+        }"
       >
         <div class="py-1">
           <router-link :to="{ name: 'ManageStream', params: { mode: 'edit' } }">

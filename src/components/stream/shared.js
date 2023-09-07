@@ -7,8 +7,10 @@ import {
   Square2StackIcon,
   TrashIcon,
 } from "@heroicons/vue/24/outline";
+import { mapActions } from "pinia";
 import { useStreamsStore } from "@/stores/streams.js";
 import { useConnectionsStore } from "@/stores/connections.js";
+import { useSettingsStore } from "@/stores/settings.js";
 import ActionsMenu from "./ActionsMenu.vue";
 export default {
   props: {
@@ -40,6 +42,7 @@ export default {
     };
   },
   methods: {
+    ...mapActions(useSettingsStore, ["getViewType"]),
     async deleteStream() {
       try {
         await useStreamsStore().deleteStream(this.stream.id);
@@ -82,10 +85,16 @@ export default {
       return useStreamsStore().countStreams;
     },
     actionsMenuPosition() {
+      if (useSettingsStore().currentViewType === "cards") {
+        return "card";
+      }
       const index = this.index;
       const rowCount = this.rowCount;
 
       return index > rowCount / 2 ? "top" : "bottom";
     },
+  },
+  async mounted() {
+    await this.getViewType();
   },
 };
