@@ -10,10 +10,11 @@
 </template>
 
 <script>
+import api from '@/api/connections.js'
 import Modal from './Modal.vue'
 import ConnectionParams from './params/ConnectionParams.vue'
 import DBTypesListBox from './DBTypesListBox.vue'
-import { useConnectionsStore } from '@/stores/connections.js'
+import { useConnectionsStore } from '@/stores/connections'
 import { mapActions } from 'pinia'
 
 export default {
@@ -33,8 +34,9 @@ export default {
     },
     async ok() {
       try {
-         await this.save()
-         await this.refresh()
+        await api.createConnection()
+        await this.save()
+        await this.refresh()
       } catch (e) {
         console.log(e)
       }
