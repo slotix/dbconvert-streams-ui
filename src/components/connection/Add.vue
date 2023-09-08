@@ -34,9 +34,9 @@ export default {
     },
     async ok() {
       try {
-        await api.createConnection()
         await this.save()
         await this.refresh()
+        await api.createConnection()
       } catch (e) {
         console.log(e)
       }
