@@ -66,7 +66,7 @@ export default {
       const index = useConnectionsStore().currentConnectionIndexInArray;
       const rowCount = useConnectionsStore().countConnections;
 
-      return index > rowCount / 2 ? "top" : "bottom";
+      return index >= rowCount / 2 ? "top" : "bottom";
     },
   },
   methods: {
