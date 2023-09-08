@@ -19,8 +19,8 @@
       </router-link>
     </div>
     <div class="container mx-auto">
-      <div class="px-4 py-4 overflow-x-auto">
-        <div class="inline-block min-w-full shadow rounded-lg overflow-hidden">
+      <div class="px-4 py-4 ">
+        <div class="inline-block min-w-full shadow rounded-lg ">
           <!-- <table class="min-w-full divide-y divide-gray-300 bg-white"> -->
           <table class="min-w-full bg-white">
             <thead class="text-sm md:text-base">
