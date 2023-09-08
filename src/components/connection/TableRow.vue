@@ -49,7 +49,7 @@
       @selectRow="selectConnection"
       @editRow="editConnection"
       @cloneRow="cloneConnection"
-      @deleteRow="deleteConnection"
+      @deleteRow="deleteConn"
     />
     <!-- <button class="text-blue-500 hover:underline" @click="cloneConnection"> -->
     <!--   Clone<span class="sr-only">, {{ connection.name }}</span> -->
