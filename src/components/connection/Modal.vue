@@ -70,6 +70,7 @@
 </template>
 
 <script setup>
+import api from '@/api/connections.js'
 import { ref, computed } from 'vue'
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue'
 import { XMarkIcon } from '@heroicons/vue/24/outline'
@@ -101,8 +102,8 @@ const showActionBtns = computed(() => {
   }
 })
 
-function test() {
-  console.log('test pressed')
+async function test() {
+  await api.testConnection()
 }
 
 function close() {
