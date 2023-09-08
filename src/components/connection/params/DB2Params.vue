@@ -119,7 +119,7 @@ export default Object.assign({}, common, {
     connection: {
       name: "",
       host: "localhost",
-      port: "50000",
+      port: 50000,
       userName: "db2admin",
       password: "",
       database: "",

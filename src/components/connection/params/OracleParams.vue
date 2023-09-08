@@ -111,7 +111,7 @@ export default Object.assign({}, common, {
     connection: {
       name: '',
       host: 'localhost',
-      port: '1521',
+      port: 1521,
       userName: 'system',
       password: '',
       connectAs: 'Normal',

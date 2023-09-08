@@ -130,7 +130,7 @@ export default {
   data: () => ({
     ssh: {
       host: '',
-      port: '22',
+      port: 22,
       localPort: '',
       version: 'SSH2',
       login: '',

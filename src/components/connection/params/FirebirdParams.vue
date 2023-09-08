@@ -97,7 +97,7 @@ export default Object.assign({}, common, {
     connection: {
       name: '',
       host: 'localhost',
-      port: '3050',
+      port: 3050,
       userName: 'SYSDBA',
       password: '',
       charset: 'utf8',

@@ -150,7 +150,7 @@ export default Object.assign({}, common, {
     connection: {
       name: "",
       host: "localhost",
-      port: "3306",
+      port: 3306,
       userName: "root",
       password: "",
       charset: "utf8",

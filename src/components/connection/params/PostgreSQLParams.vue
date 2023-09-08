@@ -113,11 +113,11 @@ export default Object.assign({}, common, {
     connection: {
       name: '',
       host: 'localhost',
-      port: '5432',
+      port: 5432,
       userName: 'postgres',
       password: '',
       charset: 'utf8',
-      database: '',
+      database: 'postgres',
       schema: 'public'
     },
     connectionType: 'PostgreSQL',

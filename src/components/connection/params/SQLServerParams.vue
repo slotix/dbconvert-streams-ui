@@ -159,7 +159,7 @@ export default Object.assign({}, common, {
       name: "",
       protocol: "TCP/IP",
       host: "localhost",
-      port: "1435",
+      port: 1435,
       windowsAuthentication: false,
       userName: "sa",
       password: "",
