@@ -2,9 +2,10 @@ import ConnectionName from "./ConnectionName.vue";
 import { useSettingsStore, DIALOG_TYPES } from '@/stores/settings.js'
 import { useConnectionsStore } from '@/stores/connections.js'
 import { mapWritableState } from 'pinia'
+import PasswordBox from '@/components/common/PasswordBox.vue'
 
 export default {
-  components: { ConnectionName },
+  components: { ConnectionName, PasswordBox },
   mounted() {
     if (this.dlgTp === DIALOG_TYPES.SAVE) {
       this.connection.name = this.buildConnectionName;
