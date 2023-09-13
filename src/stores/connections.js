@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import idb from "@/api/iDBService";
+import bcrypt from "bcryptjs";
 
 export const useConnectionsStore = defineStore("connections", {
   state: () => ({
@@ -83,13 +84,13 @@ export const useConnectionsStore = defineStore("connections", {
           return (
             el.type &&
             el.type.toLowerCase().indexOf(state.currentFilter.toLowerCase()) >
-            -1
+              -1
           );
         })
         .length;
     },
     currentConnectionIndexInArray(state) {
-      return state.connections.indexOf(state.currentConnection); 
+      return state.connections.indexOf(state.currentConnection);
     },
     // connectionsNewestFirst(state) {
     //   // return state.connections.reverse();
@@ -101,7 +102,7 @@ export const useConnectionsStore = defineStore("connections", {
           return (
             el.type &&
             el.type.toLowerCase().indexOf(state.currentFilter.toLowerCase()) >
-            -1
+              -1
           );
         })
         .reverse();
@@ -124,9 +125,9 @@ export const useConnectionsStore = defineStore("connections", {
     },
     async saveConnection() {
       let connection = this.currentConnection;
-      if (connection && connection.password) {
-        connection.password = encryptPassword(connection.password);
-      }
+      // if (connection && connection.password) {
+      //   connection.password = await hashPassword(connection.password);
+      // }
       if (this.sshConnection !== null) {
         connection["ssh"] = this.sshConnection;
       }
@@ -155,7 +156,9 @@ export const useConnectionsStore = defineStore("connections", {
     },
     connectionByID(id) {
       const connection = this.connections.find((c) => c.id === id);
-      return connection !== null && connection !== undefined ? connection : null;
+      return connection !== null && connection !== undefined
+        ? connection
+        : null;
     },
     async deleteConnection(index) {
       this.connections.splice(index, 1);
@@ -177,6 +180,16 @@ export const useConnectionsStore = defineStore("connections", {
   },
 });
 
-function encryptPassword(password) {
-  return btoa(password);
+
+async function hashPassword(password) {
+  try {
+    // Generate a salt with a cost factor of 10 (you can adjust this as needed)
+    const salt = await bcrypt.genSalt(10);
+    // Hash the password with the generated salt
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    return hashedPassword;
+  } catch (error) {
+    throw error;
+  }
 }

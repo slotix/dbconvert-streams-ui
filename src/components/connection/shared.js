@@ -2,6 +2,7 @@ import { useConnectionsStore } from "@/stores/connections.js";
 import { useStreamsStore } from "@/stores/streams.js";
 import { useSettingsStore } from "@/stores/settings.js";
 import { mapActions, mapState } from "pinia";
+import api from '@/api/connections.js'
 
 export default {
   setup() {
@@ -56,17 +57,23 @@ export default {
     bgRowClass() {
       return (connection) => ({
         "hover:bg-gray-50": !this.isStreamsTab,
-        "bg-yellow-50": this.isStreamsTab && this.currentStep?.name === "source" && this.currentStream?.source === connection.id,
-        "bg-green-50": this.isStreamsTab && this.currentStep?.name === "target" && this.currentStream?.target === connection.id,
-        "hover:bg-yellow-50": this.isStreamsTab && this.currentStep?.name === "source",
-        "hover:bg-green-50": this.isStreamsTab && this.currentStep?.name === "target",
+        "bg-yellow-50": this.isStreamsTab &&
+          this.currentStep?.name === "source" &&
+          this.currentStream?.source === connection.id,
+        "bg-green-50": this.isStreamsTab &&
+          this.currentStep?.name === "target" &&
+          this.currentStream?.target === connection.id,
+        "hover:bg-yellow-50": this.isStreamsTab &&
+          this.currentStep?.name === "source",
+        "hover:bg-green-50": this.isStreamsTab &&
+          this.currentStep?.name === "target",
       });
     },
     actionsMenuPosition() {
       const index = useConnectionsStore().currentConnectionIndexInArray;
       const rowCount = useConnectionsStore().countConnections;
-
-      return index >= rowCount / 2 ? "top" : "bottom";
+      const position = index > rowCount / 2 ? "top" : "bottom";
+      return position;
     },
   },
   methods: {
@@ -88,6 +95,7 @@ export default {
       try {
         await this.cloneCurrentConnection();
         await this.refreshConnections();
+        await api.createConnection()
       } catch (e) {
         console.log(e);
       }

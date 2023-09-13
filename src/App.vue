@@ -79,7 +79,7 @@
 
     <!-- Static sidebar for desktop -->
     <div
-      class="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-50 lg:block lg:w-20 lg:overflow-y-auto lg:bg-gray-900 lg:pb-4"
+      class="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-50 lg:block lg:w-20 lg:overflow-y-auto lg:bg-gray-900 lg:pb-10"
     >
       <div class="flex h-16 shrink-0 items-center justify-center">
         <img class="h-8 w-auto" src="/images/dbconvert-streams-logo.svg" alt="DBConvert Streams" />
@@ -181,7 +181,6 @@
         <RouterView />
       </div>
     </div>
-
     <!-- <aside class="fixed bottom-0 left-20 top-16 hidden w-96 overflow-y-auto border-r border-gray-200 px-4 py-6 sm:px-6 lg:px-8 xl:block"> -->
     <!-- Secondary column (hidden on smaller screens) -->
     <!-- </aside> -->
@@ -214,17 +213,15 @@ import {
   XMarkIcon
 } from '@heroicons/vue/24/outline'
 import { ChevronDownIcon, MagnifyingGlassIcon } from '@heroicons/vue/20/solid'
-
 const navigation = ref([
-  { name: 'Home', href: '/', icon: HomeIcon},
-  { name: 'Connections', href: '/connections', icon: CircleStackIcon},
-  { name: 'Streams', href: '/streams', icon: ArrowPathIcon}
+  { name: 'Home', href: '/', icon: HomeIcon },
+  { name: 'Connections', href: '/connections', icon: CircleStackIcon },
+  { name: 'Streams', href: '/streams', icon: ArrowPathIcon }
 ])
 const route = useRoute()
 const userNavigation = [
   { name: 'Your profile', href: '#' },
   { name: 'Sign out', href: '#' }
 ]
-
 const sidebarOpen = ref(false)
 </script>

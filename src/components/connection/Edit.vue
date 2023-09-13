@@ -7,6 +7,7 @@
 </template>
 
 <script>
+import api from '@/api/connections.js'
 import Modal from './Modal.vue'
 import ConnectionParams from './params/ConnectionParams.vue'
 import { useConnectionsStore } from '@/stores/connections.js'
@@ -26,6 +27,7 @@ export default {
       try {
         await this.save()
         await this.refresh()
+        await api.updateConnection()
       } catch (e) {
         console.log(e)
       }

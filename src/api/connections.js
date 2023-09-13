@@ -14,21 +14,48 @@ const createConnection = async () => {
       console.log(error);
     });
 };
+
+const updateConnection = async () => {
+  const connection = useConnectionsStore().currentConnection;
+  const json = JSON.stringify(connection);
+  
+  try {
+    const response = await axios.put(
+      `http://0.0.0.0:8020/api/v1/connections/${connection.id}`,
+      json
+    );
+    
+    // Handle the response
+    console.log(response.data);
+    
+    // Optionally, you can update the current connection in the store if needed
+    // useConnectionsStore().updateCurrentConnection(response.data);
+    
+    return response.data; // You can return the updated connection data or any other relevant information.
+  } catch (error) {
+    // Handle the error
+    console.log(error);
+    throw new Error("Failed to update connection");
+  }
+};
+
 const testConnection = async () => {
   const connection = useConnectionsStore().currentConnection;
-  await axios.get(
-    `http://0.0.0.0:8020/api/v1/connections/${connection.id}/ping`,
-  )
-    .then((response) => {
-      // Handle the response
-      console.log(response.data);
-    })
-    .catch((error) => {
-      // Handle the error
-      console.log(error);
-    });
+  try {
+    const response = await axios.get(
+      `http://0.0.0.0:8020/api/v1/connections/${connection.id}/ping`,
+    );
+    if (response.data.ping === "ok") {
+      const status = "Connection Test Passed";
+      return status;
+    }
+  } catch (error) {
+    const status = error.response.data.error;
+    throw new Error(status);
+  }
 };
 export default {
   createConnection,
+  updateConnection,
   testConnection,
 };
