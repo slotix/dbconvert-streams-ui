@@ -54,8 +54,24 @@ const testConnection = async () => {
     throw new Error(status);
   }
 };
+const refreshDatabases = async () => {
+  const connection = useConnectionsStore().currentConnection;
+  try {
+    const response = await axios.get(
+      `http://0.0.0.0:8020/api/v1/connections/${connection.id}/schemas`,
+    );
+    if (response.data) {
+      return response.data;
+    }
+  } catch (error) {
+    const err = error.response.data.error;
+    throw new Error(err);
+  }
+};
+
 export default {
   createConnection,
   updateConnection,
   testConnection,
+  refreshDatabases
 };

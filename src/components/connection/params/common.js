@@ -1,11 +1,12 @@
 import ConnectionName from "./ConnectionName.vue";
-import { useSettingsStore, DIALOG_TYPES } from '@/stores/settings.js'
-import { useConnectionsStore } from '@/stores/connections.js'
-import { mapWritableState } from 'pinia'
-import PasswordBox from '@/components/common/PasswordBox.vue'
+import { DIALOG_TYPES, useSettingsStore } from "@/stores/settings.js";
+import { useConnectionsStore } from "@/stores/connections.js";
+import { mapWritableState } from "pinia";
+import PasswordBox from "@/components/common/PasswordBox.vue";
+import { ArrowPathIcon } from "@heroicons/vue/24/solid";
 
 export default {
-  components: { ConnectionName, PasswordBox },
+  components: { ConnectionName, PasswordBox, ArrowPathIcon },
   mounted() {
     if (this.dlgTp === DIALOG_TYPES.SAVE) {
       this.connection.name = this.buildConnectionName;
@@ -14,13 +15,13 @@ export default {
   },
   activated() {
     if (this.dlgTp === DIALOG_TYPES.SAVE) {
-      this.currentConnection = this.connection
+      this.currentConnection = this.connection;
     } else {
       this.connection = this.currentConnection;
     }
   },
   computed: {
-    ...mapWritableState(useConnectionsStore, ['currentConnection']),
+    ...mapWritableState(useConnectionsStore, ["currentConnection"]),
     buildConnectionName() {
       return (
         this.connectionType +
@@ -31,25 +32,25 @@ export default {
       );
     },
     dlgTp() {
-      return useSettingsStore().dlgType
-    }
+      return useSettingsStore().dlgType;
+    },
   },
   watch: {
-    "connection.host": function() {
-    if (this.dlgTp === DIALOG_TYPES.SAVE) {
+    "connection.host": function () {
+      if (this.dlgTp === DIALOG_TYPES.SAVE) {
         this.connection.name = this.buildConnectionName;
       }
     },
-    "connection.userName": function() {
-    if (this.dlgTp === DIALOG_TYPES.SAVE) {
+    "connection.userName": function () {
+      if (this.dlgTp === DIALOG_TYPES.SAVE) {
         this.connection.name = this.buildConnectionName;
       }
     },
     connection: {
       handler() {
-        this.currentConnection = this.connection
+        this.currentConnection = this.connection;
       },
-      deep: true
+      deep: true,
     }
   }
 }
