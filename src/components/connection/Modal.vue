@@ -54,12 +54,7 @@
                     <slot name="connection-params"></slot>
                   </div>
                 </div>
-                <NotificationBar
-                  :show="isShowNotification"
-                  :type="notificationType"
-                  :msg="notificationMsg"
-                  @close="isShowNotification = false"
-                />
+                <NotificationBar />
                 <div
                   v-if="showActionBtns"
                   class="bg-gray-100 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6"
@@ -73,28 +68,24 @@
       </Dialog>
     </TransitionRoot>
   </form>
-  <!-- <Notification class="z-50" /> -->
 </template>
 
 <script setup>
 import api from '@/api/connections.js'
-import { ref, computed} from 'vue'
+import { ref, computed } from 'vue'
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue'
 import { XMarkIcon } from '@heroicons/vue/24/outline'
 import { mapState } from 'pinia'
 import { useSettingsStore, DIALOG_TYPES } from '@/stores/settings.js'
 import { useConnectionsStore } from '@/stores/connections.js'
 import ActionBtns from './ActionBtns.vue'
-// import Notification from '@/components/common/Notification.vue'
 import NotificationBar from '@/components/common/NotificationBar.vue'
 const emit = defineEmits(['ok', 'close'])
 const currentConnection = ref(mapState(useConnectionsStore, ['currentConnection']))
-const isShowNotification = ref(false)
 const showModal = computed(() => {
   return useSettingsStore().showModal
 })
-const notificationMsg = ref('')
-const notificationType = ref('success')
+
 const dlgTp = computed(() => {
   return useSettingsStore().dlgType
 })
@@ -113,21 +104,24 @@ const showActionBtns = computed(() => {
 })
 
 async function test() {
-  // isShowNotification.value = true
-  isShowNotification.value = false
+  useSettingsStore().showNotificationBar = false
   try {
     const status = await api.testConnection()
-    notificationType.value = 'success'
-    notificationMsg.value = status
+    useSettingsStore().notificationBar = {
+      msg: status,
+      type: 'success'
+    }
   } catch (error) {
-    notificationType.value = 'error'
-    notificationMsg.value = 'Error: ' + error.message
+    useSettingsStore().notificationBar = {
+      msg: 'Error: ' + error.message,
+      type: 'error'
+    }
   }
-  isShowNotification.value = true
+  useSettingsStore().showNotificationBar = true
 }
 
 function close() {
-  isShowNotification.value = false 
+  useSettingsStore().showNotificationBar = false
   useSettingsStore().closeModal()
 }
 

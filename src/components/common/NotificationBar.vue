@@ -1,11 +1,11 @@
 <template>
   <div
     v-if="show"
-    :class="getNotificationClass(type)"
+    :class="getNotificationClass(notification.type)"
     class="flex items-center gap-x-6 bg-gray-900 px-6 py-2.5 sm:px-3.5 sm:before:flex-1"
   >
     <p class="text-sm leading-6 text-white">
-      {{ msg }} 
+      {{ notification.msg }}
     </p>
     <div class="flex flex-1 justify-end">
       <button
@@ -21,24 +21,21 @@
 </template>
 
 <script setup>
-import { ref} from 'vue'
+import { ref, computed } from 'vue'
 import { XMarkIcon } from '@heroicons/vue/20/solid'
-const props = defineProps({
-  msg: {
-    type: String
-  },
-  type: {
-    type: String
-  },
-  show: {
-    type: Boolean
-  }
+import { useSettingsStore } from '@/stores/settings.js'
+const show = computed(() => {
+  return useSettingsStore().showNotificationBar
 })
-const emit = defineEmits(['close'])
+const notification = computed(() => {
+  const notification = useSettingsStore().notificationBar
+  console.log(notification)
+  return useSettingsStore().notificationBar
+})
 const closeNotification = () => {
-  emit('close') 
-  // props.show = false
+  useSettingsStore().showNotificationBar = false
 }
+
 const getNotificationClass = (type) => {
   if (type === 'error') {
     return 'bg-red-500'
@@ -50,5 +47,5 @@ const getNotificationClass = (type) => {
     // Default class if type is not recognized
     return 'bg-gray-900'
   }
-} 
+}
 </script>

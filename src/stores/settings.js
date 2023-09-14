@@ -16,6 +16,11 @@ export const useSettingsStore = defineStore("modal", {
     showModal: false,
     dlgType: "",
     currentViewType: "",
+    showNotificationBar: false,
+    notificationBar:{
+      msg: "",
+      type: "",
+    } ,
   }),
   actions: {
     async getViewType() {
