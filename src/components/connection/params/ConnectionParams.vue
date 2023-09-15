@@ -1,7 +1,7 @@
 <template>
   <nav
     v-show="showTabs"
-    class="flex flex-col sm:flex-row max-w-sm mx-auto mb-4"
+    class="flex flex-col sm:flex-row max-w-sm mx-auto mb-4 mt-8"
   >
     <button
       v-for="tab in tabs"

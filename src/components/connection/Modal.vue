@@ -36,7 +36,7 @@
                 <div class="absolute right-0 top-0 hidden pr-4 pt-4 sm:block">
                   <button
                     type="button"
-                    class="rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                    class="rounded-md bg-gray-100 p-1 text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
                     @click="close"
                   >
                     <span class="sr-only">Close</span>
@@ -48,7 +48,7 @@
                     {{ dlgTp }} database connection.
                   </DialogTitle>
                   <div v-if="isShowDBTypesCombo">
-                    <slot name="dbtypes-combo"></slot>
+                    <slot name="dbtypes-combo" class="mt-12"></slot>
                   </div>
                   <div class="ml-auto">
                     <slot name="connection-params"></slot>

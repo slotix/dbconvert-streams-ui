@@ -3,10 +3,10 @@
     class="items-center text-center md:text-left w-full p-4 space-y-4
     text-gray-500 lg:inline-flex lg:space-y-0"
   >
-    <label class="max-w-sm mx-auto lg:w-1/3 font-semibold">
-      Connection Name
+    <label class="max-w-sm mx-auto lg:w-1/4 font-semibold">
+       Name
     </label>
-    <div class="max-w-sm mx-auto lg:w-2/3">
+    <div class="max-w-sm mx-auto lg:w-3/4">
       <div class=" relative ">
         <input
           type="text"
