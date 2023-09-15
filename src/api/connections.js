@@ -18,19 +18,19 @@ const createConnection = async () => {
 const updateConnection = async () => {
   const connection = useConnectionsStore().currentConnection;
   const json = JSON.stringify(connection);
-  
+
   try {
     const response = await axios.put(
       `http://0.0.0.0:8020/api/v1/connections/${connection.id}`,
-      json
+      json,
     );
-    
+
     // Handle the response
     console.log(response.data);
-    
+
     // Optionally, you can update the current connection in the store if needed
     // useConnectionsStore().updateCurrentConnection(response.data);
-    
+
     return response.data; // You can return the updated connection data or any other relevant information.
   } catch (error) {
     // Handle the error
@@ -54,7 +54,7 @@ const testConnection = async () => {
     throw new Error(status);
   }
 };
-const refreshDatabases = async () => {
+const refreshSchemas = async () => {
   const connection = useConnectionsStore().currentConnection;
   try {
     const response = await axios.get(
@@ -69,9 +69,45 @@ const refreshDatabases = async () => {
   }
 };
 
+const refreshDatabases = async () => {
+  const connection = useConnectionsStore().currentConnection;
+  try {
+    const response = await axios.get(
+      `http://0.0.0.0:8020/api/v1/connections/${connection.id}/databases`,
+    );
+    if (response.data) {
+      return response.data;
+    }
+  } catch (error) {
+    const err = error.response.data.error;
+    throw new Error(err);
+  }
+};
+
+const createDatabase = async () => {
+  const connection = useConnectionsStore().currentConnection;
+  try {
+    await axios.post(
+      `http://0.0.0.0:8020/api/v1/connections/${connection.id}/databases`,
+      // connection.database, // Assuming connection.database is a string
+      "NewDB1",
+      {
+        headers: {
+          "Content-Type": "text/plain", // Set the content type to plain text
+        },
+      },
+    );
+  } catch (error) {
+    const err = error.response.data.error;
+    throw new Error(err);
+  }
+};
+
 export default {
   createConnection,
   updateConnection,
   testConnection,
-  refreshDatabases
+  refreshSchemas,
+  refreshDatabases,
+  createDatabase,
 };
