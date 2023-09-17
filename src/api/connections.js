@@ -84,19 +84,42 @@ const refreshDatabases = async () => {
   }
 };
 
-const createDatabase = async () => {
+const createDatabase = async (newDatabase) => {
   const connection = useConnectionsStore().currentConnection;
   try {
     await axios.post(
       `http://0.0.0.0:8020/api/v1/connections/${connection.id}/databases`,
       // connection.database, // Assuming connection.database is a string
-      "NewDB1",
+      newDatabase,
       {
         headers: {
           "Content-Type": "text/plain", // Set the content type to plain text
         },
       },
     );
+    connection.databases.push(newDatabase);
+    connection.database = newDatabase;
+  } catch (error) {
+    const err = error.response.data.error;
+    throw new Error(err);
+  }
+};
+
+
+const createSchema = async (newSchema) => {
+  const connection = useConnectionsStore().currentConnection;
+  try {
+    await axios.post(
+      `http://0.0.0.0:8020/api/v1/connections/${connection.id}/schemas`,
+      newSchema,
+      {
+        headers: {
+          "Content-Type": "text/plain", // Set the content type to plain text
+        },
+      },
+    );
+    connection.schemas.push(newSchema);
+    connection.schema = newSchema;
   } catch (error) {
     const err = error.response.data.error;
     throw new Error(err);
@@ -110,4 +133,5 @@ export default {
   refreshSchemas,
   refreshDatabases,
   createDatabase,
+  createSchema,
 };

@@ -4,39 +4,39 @@
     <hr />
     <div class="bg-white bg-opacity-5 text-center md:text-left">
       <div class="items-center w-full p-4 space-y-4 text-gray-500 md:inline-flex md:space-y-0">
-        <label class="max-w-sm mx-auto md:w-1/4"> Server </label>
-        <div class="max-w-sm mx-auto md:w-3/4">
+        <label class="max-w-sm mx-auto md:w-1/3"> Server </label>
+        <div class="max-w-sm mx-auto md:w-2/3">
           <div class="relative">
             <input
               v-model="connection.host"
               type="text"
-              class="rounded-lg border-transparent flex-1 appearance-none border border-gray-300 w-full py-2 px-4 bg-white text-gray-700 placeholder-gray-400 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-gray-600 focus:border-transparent"
+              class="rounded-lg flex-1 appearance-none border border-gray-300 w-full py-2 px-4 bg-white text-gray-700 placeholder-gray-400 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-gray-600 focus:border-transparent"
               placeholder=""
             />
           </div>
         </div>
       </div>
       <div class="items-center w-full p-4 space-y-4 text-gray-500 md:inline-flex md:space-y-0">
-        <label class="max-w-sm mx-auto md:w-1/4"> Port </label>
-        <div class="max-w-sm mx-auto md:w-3/4">
+        <label class="max-w-sm mx-auto md:w-1/3"> Port </label>
+        <div class="max-w-sm mx-auto md:w-2/3">
           <div class="relative">
             <input
               v-model.number.lazy="connection.port"
               type="number"
-              class="rounded-lg border-transparent flex-1 appearance-none border border-gray-300 w-full py-2 px-4 bg-white text-gray-700 placeholder-gray-400 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-gray-600 focus:border-transparent"
+              class="rounded-lg flex-1 appearance-none border border-gray-300 w-full py-2 px-4 bg-white text-gray-700 placeholder-gray-400 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-gray-600 focus:border-transparent"
               placeholder=""
             />
           </div>
         </div>
       </div>
       <div class="items-center w-full p-4 space-y-4 text-gray-500 md:inline-flex md:space-y-0">
-        <label class="max-w-sm mx-auto md:w-1/4"> User ID </label>
-        <div class="max-w-sm mx-auto md:w-3/4">
+        <label class="max-w-sm mx-auto md:w-1/3"> User ID </label>
+        <div class="max-w-sm mx-auto md:w-2/3">
           <div class="relative">
             <input
               v-model="connection.userName"
               type="text"
-              class="rounded-lg border-transparent flex-1 appearance-none border border-gray-300 w-full py-2 px-4 bg-white text-gray-700 placeholder-gray-400 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-gray-600 focus:border-transparent"
+              class="rounded-lg flex-1 appearance-none border border-gray-300 w-full py-2 px-4 bg-white text-gray-700 placeholder-gray-400 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-gray-600 focus:border-transparent"
               placeholder=""
             />
           </div>
@@ -45,17 +45,21 @@
 
       <PasswordBox v-model:password="connection.password" />
       <div class="items-center w-full p-4 space-y-4 text-gray-500 md:inline-flex md:space-y-0">
-        <label class="max-w-sm mx-auto md:w-1/4"> Charset </label>
-        <div class="max-w-sm mx-auto md:w-3/4">
-          <ItemsCombo :items="charsets" v-model="connection.charset"/>
+        <label class="max-w-sm mx-auto md:w-1/3"> Charset </label>
+        <div class="max-w-sm mx-auto md:w-2/3">
+          <ItemsCombo :items="charsets" v-model="connection.charset" />
         </div>
       </div>
       <hr />
       <div class="items-center w-full p-4 space-y-4 text-gray-500 md:inline-flex md:space-y-0">
-        <label class="max-w-sm mx-auto md:w-1/4"> Database </label>
-        <div class="md:inline-flex max-w-sm mx-auto md:w-3/4">
-
-          <ItemsCombo :items="databases" v-model="connection.database"/>
+        <label class="max-w-sm mx-auto md:w-1/3">Database </label>
+        <div class="md:inline-flex max-w-sm mx-auto md:w-2/3">
+          <ItemsCombo
+            v-model="connection.database"
+            :items="connection.databases"
+            :isShowAddButton="true"
+            @addItem="createDatabase"
+          />
           <button
             type="button"
             class="w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-gray-100 text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:ml-3 sm:w-auto sm:text-sm"
@@ -64,22 +68,20 @@
             Refresh
             <ArrowPathIcon class="pl-2 h-5 w-5" aria-hidden="true" />
           </button>
-
-          <button
-            type="button"
-            class="w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-gray-100 text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:ml-3 sm:w-auto sm:text-sm"
-            @click="createDatabase"
-          >
-            Create
-            <!-- <ArrowPathIcon class="pl-2 h-5 w-5" aria-hidden="true" /> -->
-          </button>
         </div>
       </div>
 
-      <div class="items-center w-full p-4 space-y-4 text-gray-500 md:inline-flex md:space-y-0">
-        <label class="max-w-sm mx-auto md:w-1/4"> Schema </label>
-        <div class="md:inline-flex max-w-sm mx-auto md:w-3/4">
-          <ItemsCombo :items="schemas" v-model="connection.schema"/>
+      <div
+        class="items-center w-full p-4 mb-12 space-y-4 text-gray-500 md:inline-flex md:space-y-0"
+      >
+        <label class="max-w-sm mx-auto md:w-1/3"> Schema </label>
+        <div class="md:inline-flex max-w-sm mx-auto md:w-2/3">
+          <ItemsCombo
+            :items="connection.schemas"
+            v-model="connection.schema"
+            :isShowAddButton="true"
+            @addItem="createSchema"
+          />
           <button
             type="button"
             class="w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-gray-100 text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:ml-3 sm:w-auto sm:text-sm"
@@ -107,10 +109,10 @@ export default Object.assign({}, common, {
       password: '',
       charset: 'utf8',
       database: 'postgres',
-      schema: 'public'
+      databases: [],
+      schema: 'public',
+      schemas: ['public']
     },
-    databases: ['postgres'],
-    schemas:['public'],
     connectionType: 'PostgreSQL',
     charsets: [
       'utf8',
