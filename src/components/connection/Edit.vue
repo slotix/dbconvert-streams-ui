@@ -19,15 +19,16 @@ export default {
     ConnectionParams
   },
   computed: {
-    ...mapState(useConnectionsStore,['currentConnection']),
+    ...mapState(useConnectionsStore, ['currentConnection'])
   },
   methods: {
-    ...mapActions(useConnectionsStore, {save : 'saveConnection', refresh: 'refreshConnections'}),
+    ...mapActions(useConnectionsStore, { save: 'saveConnection', refresh: 'refreshConnections' }),
     async ok() {
       try {
         await this.save()
         await this.refresh()
-        await api.updateConnection()
+        const json = JSON.stringify(this.currentConnection)
+        await api.updateConnection(this.currentConnection.id, json)
       } catch (e) {
         console.log(e)
       }

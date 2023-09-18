@@ -15,7 +15,7 @@ import Modal from './Modal.vue'
 import ConnectionParams from './params/ConnectionParams.vue'
 import DBTypesListBox from './DBTypesListBox.vue'
 import { useConnectionsStore } from '@/stores/connections'
-import { mapActions } from 'pinia'
+import { mapActions, mapState } from 'pinia'
 
 export default {
   components: {
@@ -27,6 +27,9 @@ export default {
     connection: null,
     showDBCombo: false
   }),
+  computed: {
+    ...mapState(useConnectionsStore, ['currentConnection'])
+  },
   methods: {
     ...mapActions(useConnectionsStore, { save: 'saveConnection', refresh: 'refreshConnections' }),
     selectDB(conn) {
@@ -36,7 +39,8 @@ export default {
       try {
         await this.save()
         await this.refresh()
-        await api.createConnection()
+        const json = JSON.stringify(this.currentConnection)
+        await api.createConnection(json)
       } catch (e) {
         console.log(e)
       }
