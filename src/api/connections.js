@@ -1,9 +1,6 @@
 import axios from "axios";
-import { useConnectionsStore } from "@/stores/connections";
 
-const createConnection = async () => {
-  const connection = useConnectionsStore().currentConnection;
-  const json = JSON.stringify(connection);
+const createConnection = async (json) => {
   await axios.post("http://0.0.0.0:8020/api/v1/connections", json)
     .then((response) => {
       // Handle the response
@@ -15,13 +12,11 @@ const createConnection = async () => {
     });
 };
 
-const updateConnection = async () => {
-  const connection = useConnectionsStore().currentConnection;
-  const json = JSON.stringify(connection);
+const updateConnection = async (id, json) => {
 
   try {
     const response = await axios.put(
-      `http://0.0.0.0:8020/api/v1/connections/${connection.id}`,
+      `http://0.0.0.0:8020/api/v1/connections/${id}`,
       json,
     );
 
@@ -39,11 +34,10 @@ const updateConnection = async () => {
   }
 };
 
-const testConnection = async () => {
-  const connection = useConnectionsStore().currentConnection;
+const testConnection = async (id) => {
   try {
     const response = await axios.get(
-      `http://0.0.0.0:8020/api/v1/connections/${connection.id}/ping`,
+      `http://0.0.0.0:8020/api/v1/connections/${id}/ping`,
     );
     if (response.data.ping === "ok") {
       const status = "Connection Test Passed";
@@ -54,11 +48,10 @@ const testConnection = async () => {
     throw new Error(status);
   }
 };
-const refreshSchemas = async () => {
-  const connection = useConnectionsStore().currentConnection;
+const getSchemas = async (id) => {
   try {
     const response = await axios.get(
-      `http://0.0.0.0:8020/api/v1/connections/${connection.id}/schemas`,
+      `http://0.0.0.0:8020/api/v1/connections/${id}/schemas`,
     );
     if (response.data) {
       return response.data;
@@ -69,11 +62,10 @@ const refreshSchemas = async () => {
   }
 };
 
-const refreshDatabases = async () => {
-  const connection = useConnectionsStore().currentConnection;
+const getDatabases = async (id) => {
   try {
     const response = await axios.get(
-      `http://0.0.0.0:8020/api/v1/connections/${connection.id}/databases`,
+      `http://0.0.0.0:8020/api/v1/connections/${id}/databases`,
     );
     if (response.data) {
       return response.data;
@@ -84,12 +76,10 @@ const refreshDatabases = async () => {
   }
 };
 
-const createDatabase = async (newDatabase) => {
-  const connection = useConnectionsStore().currentConnection;
+const createDatabase = async (newDatabase, id) => {
   try {
     await axios.post(
-      `http://0.0.0.0:8020/api/v1/connections/${connection.id}/databases`,
-      // connection.database, // Assuming connection.database is a string
+      `http://0.0.0.0:8020/api/v1/connections/${id}/databases`,
       newDatabase,
       {
         headers: {
@@ -105,12 +95,10 @@ const createDatabase = async (newDatabase) => {
   }
 };
 
-
-const createSchema = async (newSchema) => {
-  const connection = useConnectionsStore().currentConnection;
+const createSchema = async (newSchema, id) => {
   try {
     await axios.post(
-      `http://0.0.0.0:8020/api/v1/connections/${connection.id}/schemas`,
+      `http://0.0.0.0:8020/api/v1/connections/${id}/schemas`,
       newSchema,
       {
         headers: {
@@ -126,12 +114,27 @@ const createSchema = async (newSchema) => {
   }
 };
 
+const getMeta = async (id) => {
+  try {
+    const response = await axios.get(
+      `http://0.0.0.0:8020/api/v1/connections/${id}/meta`,
+    );
+    if (response.data) {
+      return response.data;
+    }
+  } catch (error) {
+    const err = error.response.data.error;
+    throw new Error(err);
+  }
+};
+
 export default {
   createConnection,
   updateConnection,
   testConnection,
-  refreshSchemas,
-  refreshDatabases,
+  getSchemas,
+  getDatabases,
   createDatabase,
   createSchema,
+  getMeta,
 };

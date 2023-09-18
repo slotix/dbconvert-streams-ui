@@ -59,7 +59,7 @@ export default {
     //for postgres only
     async refreshSchemas() {
       try {
-        const schemas = await api.refreshSchemas();
+        const schemas = await api.getSchemas(this.currentConnection.id);
         this.currentConnection.schemas = schemas;
         // this.connection.schema= schemas[0];
         console.log(this.currentConnection.schemas);
@@ -74,9 +74,8 @@ export default {
     },
     async refreshDatabases() {
       try {
-        const databases = await api.refreshDatabases();
+        const databases = await api.getDatabases(this.currentConnection.id);
         this.currentConnection.databases = databases;
-        // console.log(this.databases);
       } catch (error) {
         useSettingsStore().showNotificationBar = false;
         useSettingsStore().notificationBar = {
@@ -89,14 +88,14 @@ export default {
 
     async createDatabase(newDatabase) {
       try {
-        await api.createDatabase(newDatabase);
+        await api.createDatabase(newDatabase, this.currentConnection.id);
         useSettingsStore().showNotificationBar = false;
         useSettingsStore().notificationBar = {
           msg: "Database created",
           type: "success",
         };
         useSettingsStore().showNotificationBar = true;
-        this.refreshDatabases();
+        this.getDatabases();
       } catch (error) {
         useSettingsStore().showNotificationBar = false;
         useSettingsStore().notificationBar = {
@@ -109,14 +108,14 @@ export default {
 
     async createSchema(newSchema) {
       try {
-        await api.createSchema(newSchema);
+        await api.createSchema(newSchema, this.currentConnection.id);
         useSettingsStore().showNotificationBar = false;
         useSettingsStore().notificationBar = {
           msg: "Schema created",
           type: "success",
         };
         useSettingsStore().showNotificationBar = true;
-        this.refreshSchemas();
+        this.getSchemas();
       } catch (error) {
         useSettingsStore().showNotificationBar = false;
         useSettingsStore().notificationBar = {
