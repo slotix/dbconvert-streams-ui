@@ -1,4 +1,5 @@
 <template>
+  <!-- todo: add multiple select -->
   <Combobox as="div" v-model="selectedItem">
     <div class="relative">
       <ComboboxInput
