@@ -109,16 +109,16 @@ export const useConnectionsStore = defineStore("connections", {
     },
   },
   actions: {
-    setCurrentConnection(id, step) {
+    setCurrentConnection(id) {
       let curConnection = this.connections.filter((c) => {
         return c.id === id;
       });
       this.currentConnection = curConnection[0];
-      if (step === "source") {
-        this.sourceConnection = curConnection[0];
-      } else if (step === "target") {
-        this.targetConnection = curConnection[0];
-      }
+      // if (step === "source") {
+      //   this.sourceConnection = curConnection[0];
+      // } else if (step === "target") {
+      //   this.targetConnection = curConnection[0];
+      // }
     },
     setFilter(filter) {
       this.currentFilter = filter;

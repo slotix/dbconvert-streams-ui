@@ -23,14 +23,12 @@
 </template>
 <script>
 import TableList from './TableList.vue'
-// import ModeCombo from './ModeCombo.vue'
 import ModeButtons from './ModeButtons.vue'
 import Limits from './Limits.vue'
 export default {
   name: 'Connections',
   components: {
     TableList,
-    // ModeCombo,
     ModeButtons,
     Limits
   },
