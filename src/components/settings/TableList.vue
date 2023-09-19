@@ -2,11 +2,23 @@
   <div class="px-4 sm:px-6 lg:px-8">
     <div class="flex items-center">
       <div class="flex-auto border-b border-gray-400 pb-5">
-        <h3 class="text-base font-semibold leading-6 text-gray-900">Source tables</h3>
-        <!-- <p class="mt-2 text-sm text-gray-700">Select tables.</p> -->
+        <h2 class="text-base font-semibold leading-6 text-gray-900">Source tables</h2>
       </div>
     </div>
     <div class="mt-8 flow-root">
+      <div class="flex items-center justify-between">
+        <div class="mb-4 inline-flex font-medium text-gray-900">
+          Selected {{ selectedTables.length }} of {{ tables.length }} tables
+        </div>
+
+        <button
+          type="button"
+          class="mb-4 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:mt-0 sm:ml-3 sm:w-auto"
+          @click="refreshTables"
+        >
+          Refresh tables
+        </button>
+      </div>
       <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
         <div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
           <div class="relative">
@@ -27,6 +39,7 @@
                   </th>
                   <th
                     scope="col"
+                    colspan="2"
                     class="min-w-[12rem] py-3.5 pr-3 text-left uppercase text-sm font-normal text-gray-800"
                   >
                     <div class="relative flex items-center">
@@ -50,20 +63,11 @@
                   >
                     Capture Events
                   </th>
-                  <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-3">
-                    <button
-                      type="button"
-                      class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:mt-0 sm:ml-3 sm:w-auto"
-                      @click="refreshTables"
-                    >
-                      Refresh metadata
-                    </button>
-                  </th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-200 bg-white">
                 <tr
-                  v-for="table in filteredTables"
+                  v-for="table in paginatedTables"
                   :key="table.name"
                   :class="[selectedTables.includes(table.name) && 'bg-gray-50']"
                 >
@@ -87,6 +91,14 @@
                     ]"
                   >
                     {{ table.name }}
+                  </td>
+                  <td
+                    :class="[
+                      'whitespace-nowrap py-4 pr-3 text-sm font-medium',
+                      selectedTables.includes(table.name) ? 'text-gray-600' : 'text-gray-900'
+                    ]"
+                  >
+                    ({{ table.size }})
                   </td>
                   <td
                     class="whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-3"
@@ -150,14 +162,29 @@
                       </div>
                     </Listbox>
                   </td>
-                  <td></td>
                 </tr>
               </tbody>
             </table>
-            <div class="mt-2 pt-4">
-              <p class="text-sm text-gray-600">
-                Selected: {{ selectedTables.length }} of {{ tables.length }} tables
-              </p>
+            <div v-if="isPaginatorVisible" class="mt-4 mt-4 flex items-center">
+              <button
+                type="button"
+                class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:mt-0 sm:ml-3 sm:w-auto"
+                :disabled="previousPageDisabled"
+                @click="previousPage"
+              >
+                <ChevronLeftIcon class="h-6 w-6" aria-hidden="true" />
+                Prev
+              </button>
+              <span class="mx-3">Page {{ currentPage }} of {{ maxPage }} </span>
+              <button
+                type="button"
+                class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:mt-0 sm:ml-3 sm:w-auto"
+                :disabled="nextPageDisabled"
+                @click="nextPage"
+              >
+                Next
+                <ChevronRightIcon class="h-6 w-6" aria-hidden="true" />
+              </button>
             </div>
             <NotificationBar />
           </div>
@@ -171,7 +198,12 @@
 import { ref, computed, watch } from 'vue'
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/vue'
 import { FunnelIcon } from '@heroicons/vue/24/outline'
-import { CheckIcon, ChevronUpDownIcon } from '@heroicons/vue/20/solid'
+import {
+  CheckIcon,
+  ChevronUpDownIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon
+} from '@heroicons/vue/20/solid'
 import { useStreamsStore } from '@/stores/streams.js'
 import { useSettingsStore } from '@/stores/settings.js'
 import NotificationBar from '@/components/common/NotificationBar.vue'
@@ -182,7 +214,13 @@ const currentStream = streamsStore.currentStream
 const operationMap = streamsStore.operationMap
 const operations = Object.keys(operationMap)
 
-const tables = ref(currentStream.tables)
+const tables = ref(
+  currentStream.tables.map((table) => ({
+    name: table.name,
+    operations: table.operations,
+    size: table.size // Initialize size as an empty string
+  }))
+)
 
 const searchQuery = ref('')
 const filteredTables = computed(() => {
@@ -195,7 +233,6 @@ const filteredTables = computed(() => {
 
 // Initialize selectedTables with an array of all table names
 const selectedTables = ref(tables.value.map((table) => table.name))
-console.log(selectedTables.value)
 
 const indeterminate = computed(
   () => selectedTables.value.length > 0 && selectedTables.value.length < tables.length
@@ -204,18 +241,39 @@ const getFormattedOperations = (operations) => {
   return operations.map((operation) => operationMap[operation] || operation).join(', ')
 }
 
+let currentPage = ref(1)
+const itemsPerPage = 20 // Set the number of items to display per page
+const maxPage = computed(() => Math.ceil(filteredTables.value.length / itemsPerPage))
+const isPaginatorVisible = computed(() => maxPage.value > 1)
+
+const previousPageDisabled = computed(() => currentPage.value <= 1)
+const nextPageDisabled = computed(() => currentPage.value >= maxPage.value)
+
+const paginatedTables = computed(() => {
+  const startIndex = (currentPage.value - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  return filteredTables.value.slice(startIndex, endIndex)
+})
+
+const previousPage = () => {
+  if (currentPage.value > 1) {
+    currentPage.value--
+  }
+}
+const nextPage = () => {
+  if (currentPage.value < maxPage.value) {
+    currentPage.value++
+  }
+}
+
 const refreshTables = async () => {
   try {
-    const response = await api.getMeta(currentStream.source)
-    const tableNames = response.map((entry) => entry.name)
-    // Create table objects and add them to the tables array
-    const tablesArray = tableNames.map((name) => ({
-      name,
+    const response = await api.getTables(currentStream.source)
+    tables.value = response.map((entry) => ({
+      name: entry.name,
+      size: entry.size, // Set the size property
       operations: ['insert', 'update', 'delete']
     }))
-    // Assign the tableNames array to the tables ref
-    tables.value = tablesArray
-    // currentStream.tables = tablesArray
   } catch (error) {
     useSettingsStore().showNotificationBar = false
     useSettingsStore().notificationBar = {
@@ -231,6 +289,7 @@ watch(selectedTables, () => {
     const table = tables.value.find((t) => t.name === tableName)
     return {
       name: table.name,
+      size: table.size,
       operations: table.operations
     }
   })
