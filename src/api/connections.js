@@ -7,13 +7,12 @@ const createConnection = async (json) => {
       console.log(response.data);
     })
     .catch((error) => {
-      // Handle the error
-      console.log(error);
+      const err = error.response?.data.error || error.message;
+      throw new Error(err);
     });
 };
 
 const updateConnection = async (id, json) => {
-
   try {
     const response = await axios.put(
       `http://0.0.0.0:8020/api/v1/connections/${id}`,
@@ -29,8 +28,8 @@ const updateConnection = async (id, json) => {
     return response.data; // You can return the updated connection data or any other relevant information.
   } catch (error) {
     // Handle the error
-    console.log(error);
-    throw new Error("Failed to update connection");
+    const err = error.response?.data.error || error.message;
+    throw new Error(err);
   }
 };
 
@@ -44,8 +43,8 @@ const testConnection = async (id) => {
       return status;
     }
   } catch (error) {
-    const status = error.response.data.error;
-    throw new Error(status);
+    const err = error.response?.data.error || error.message;
+    throw new Error(err);
   }
 };
 const getSchemas = async (id) => {
@@ -57,7 +56,7 @@ const getSchemas = async (id) => {
       return response.data;
     }
   } catch (error) {
-    const err = error.response.data.error;
+    const err = error.response?.data.error || error.message;
     throw new Error(err);
   }
 };
@@ -71,7 +70,7 @@ const getDatabases = async (id) => {
       return response.data;
     }
   } catch (error) {
-    const err = error.response.data.error;
+    const err = error.response?.data.error || error.message;
     throw new Error(err);
   }
 };
@@ -90,7 +89,7 @@ const createDatabase = async (newDatabase, id) => {
     connection.databases.push(newDatabase);
     connection.database = newDatabase;
   } catch (error) {
-    const err = error.response.data.error;
+    const err = error.response?.data.error || error.message;
     throw new Error(err);
   }
 };
@@ -109,7 +108,7 @@ const createSchema = async (newSchema, id) => {
     connection.schemas.push(newSchema);
     connection.schema = newSchema;
   } catch (error) {
-    const err = error.response.data.error;
+    const err = error.response?.data.error || error.message;
     throw new Error(err);
   }
 };
@@ -120,14 +119,30 @@ const getMeta = async (id) => {
       `http://0.0.0.0:8020/api/v1/connections/${id}/meta`,
     );
     if (response.data) {
+      console.log(response.data);
       return response.data;
     }
   } catch (error) {
-    const err = error.response.data.error;
+    const err = error.response?.data.error || error.message;
     throw new Error(err);
   }
 };
 
+const getTables = async (id) => {
+  try {
+    const response = await axios.get(
+      `http://0.0.0.0:8020/api/v1/connections/${id}/tables`,
+    );
+
+    if (response.data) {
+      // console.log(response.data);
+      return response.data;
+    }
+  } catch (error) {
+    const err = error.response?.data.error || error.message;
+    throw new Error(err);
+  }
+};
 export default {
   createConnection,
   updateConnection,
@@ -137,4 +152,5 @@ export default {
   createDatabase,
   createSchema,
   getMeta,
+  getTables,
 };
