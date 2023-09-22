@@ -146,6 +146,7 @@ const filteredTables = computed(() => {
     return tables.value
   }
   const query = searchQuery.value.toLowerCase()
+  currentPage.value = 1
   return tables.value.filter((item) => item?.name.toLowerCase().includes(query))
 })
 
