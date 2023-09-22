@@ -104,27 +104,11 @@
                 </tr>
               </tbody>
             </table>
-            <div v-if="isPaginatorVisible" class="mt-4 mt-4 flex items-center">
-              <button
-                type="button"
-                class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:mt-0 sm:ml-3 sm:w-auto"
-                :disabled="previousPageDisabled"
-                @click="previousPage"
-              >
-                <ChevronLeftIcon class="h-6 w-6" aria-hidden="true" />
-                Prev
-              </button>
-              <span class="mx-3">Page {{ currentPage }} of {{ maxPage }} </span>
-              <button
-                type="button"
-                class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:mt-0 sm:ml-3 sm:w-auto"
-                :disabled="nextPageDisabled"
-                @click="nextPage"
-              >
-                Next
-                <ChevronRightIcon class="h-6 w-6" aria-hidden="true" />
-              </button>
-            </div>
+            <Pagination
+              :totalPages="filteredTables.length"
+              :itemsPerPage="itemsPerPage"
+              @update:currentPage="updateCurrentPage"
+            />
             <NotificationBar />
           </div>
         </div>
@@ -136,13 +120,11 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { FunnelIcon } from '@heroicons/vue/24/outline'
-import {
-  ChevronLeftIcon,
-  ChevronRightIcon
-} from '@heroicons/vue/20/solid'
+import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/vue/20/solid'
 import { useStreamsStore } from '@/stores/streams.js'
 import { useSettingsStore } from '@/stores/settings.js'
 import NotificationBar from '@/components/common/NotificationBar.vue'
+import Pagination from '@/components/common/Pagination.vue'
 import OperationsListBox from '@/components/settings/OperationsListBox.vue'
 import api from '@/api/connections.js'
 
@@ -153,7 +135,7 @@ const tables = ref(
   currentStream.tables.map((table) => ({
     name: table.name,
     operations: table.operations,
-    size: table.size, 
+    size: table.size,
     selected: true
   }))
 )
@@ -179,28 +161,16 @@ const changeTableOps = (newValue, table) => {
 
 let currentPage = ref(1)
 const itemsPerPage = 20 // Set the number of items to display per page
-const maxPage = computed(() => Math.ceil(filteredTables.value.length / itemsPerPage))
-const isPaginatorVisible = computed(() => maxPage.value > 1)
 
-const previousPageDisabled = computed(() => currentPage.value <= 1)
-const nextPageDisabled = computed(() => currentPage.value >= maxPage.value)
+const updateCurrentPage = (newPage) => {
+  currentPage.value = newPage
+}
 
 const paginatedTables = computed(() => {
   const startIndex = (currentPage.value - 1) * itemsPerPage
   const endIndex = startIndex + itemsPerPage
   return filteredTables.value.slice(startIndex, endIndex)
 })
-
-const previousPage = () => {
-  if (currentPage.value > 1) {
-    currentPage.value--
-  }
-}
-const nextPage = () => {
-  if (currentPage.value < maxPage.value) {
-    currentPage.value++
-  }
-}
 
 const refreshTables = async () => {
   useSettingsStore().showNotificationBar = false
