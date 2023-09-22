@@ -8,9 +8,8 @@
     <div class="mt-8 flow-root">
       <div class="flex items-center justify-between">
         <div class="mb-4 inline-flex font-medium text-gray-900">
-          Selected {{ selectedTables.length }} of {{ tables.length }} tables
+          Selected {{ selectedTablesCount }} of {{ tables.length }} tables
         </div>
-
         <button
           type="button"
           class="mb-4 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:mt-0 sm:ml-3 sm:w-auto"
@@ -30,11 +29,9 @@
                       type="checkbox"
                       id="table-select-all"
                       class="absolute left-4 top-1/2 -mt-2 h-4 w-4 rounded border-gray-200 text-gray-600 focus:ring-gray-600"
-                      :checked="indeterminate || selectedTables.length === tables.length"
+                      :checked="selectAllCheckboxState"
                       :indeterminate="indeterminate"
-                      @change="
-                        selectedTables = $event.target.checked ? tables.map((t) => t.name) : []
-                      "
+                      @change="toggleSelectAll"
                     />
                   </th>
                   <th
@@ -61,106 +58,48 @@
                     class="px-3 py-3.5 text-left uppercase text-sm font-normal text-gray-800"
                     v-if="currentStream.mode !== 'convert'"
                   >
+                    Name in target
+                  </th>
+                  <th
+                    scope="col"
+                    class="px-3 py-3.5 text-left uppercase text-sm font-normal text-gray-800"
+                    v-if="currentStream.mode !== 'convert'"
+                  >
                     Capture Events
                   </th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-200 bg-white">
-                <tr
-                  v-for="table in paginatedTables"
-                  :key="table.name"
-                  :class="[selectedTables.includes(table.name) && 'bg-gray-50']"
-                >
-                  <td class="relative px-7 sm:w-12 sm:px-6">
-                    <div
-                      v-if="selectedTables.includes(table.name)"
-                      class="absolute inset-y-0 left-0 w-0.5 bg-gray-600"
-                    ></div>
+                <tr v-for="table in paginatedTables" :key="table.name" class="py-4 bg-gray-5">
+                  <td class="relative py-4 px-7 sm:w-12 sm:px-6">
+                    <div class="absolute inset-y-0 left-0 w-0.5 bg-gray-600"></div>
+
                     <input
                       type="checkbox"
                       :id="'checkbox-' + table.name"
                       class="absolute left-4 top-1/2 -mt-2 h-4 w-4 rounded border-gray-300 text-gray-600 focus:ring-gray-600"
                       :value="table.name"
-                      v-model="selectedTables"
+                      v-model="table.selected"
                     />
                   </td>
-                  <td
-                    :class="[
-                      'whitespace-nowrap py-4 pr-3 text-sm font-medium',
-                      selectedTables.includes(table.name) ? 'text-gray-600' : 'text-gray-900'
-                    ]"
-                  >
+                  <td class="py-4 px-3">
                     {{ table.name }}
                   </td>
-                  <td
-                    :class="[
-                      'whitespace-nowrap py-4 pr-3 text-sm font-medium',
-                      selectedTables.includes(table.name) ? 'text-gray-600' : 'text-gray-900'
-                    ]"
-                  >
-                    ({{ table.size }})
+                  <td>
+                    {{ table.name }}
+                  </td>
+                  <td>
+                    {{ table.size }}
                   </td>
                   <td
                     class="whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-3"
                     v-if="currentStream.mode !== 'convert'"
                   >
-                    <Listbox as="div" v-model="table.operations" multiple>
-                      <div class="relative mt-2">
-                        <ListboxButton
-                          class="relative w-full cursor-default rounded-md bg-white py-1.5 pl-3 pr-10 text-left text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-600 sm:text-sm sm:leading-6"
-                        >
-                          <span class="">{{ getFormattedOperations(table.operations) }}</span>
-                          <span
-                            class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2"
-                          >
-                            <ChevronUpDownIcon class="h-5 w-5 text-gray-400" aria-hidden="true" />
-                          </span>
-                        </ListboxButton>
-
-                        <transition
-                          leave-active-class="transition ease-in duration-100"
-                          leave-from-class="opacity-100"
-                          leave-to-class="opacity-0"
-                        >
-                          <ListboxOptions
-                            class="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
-                          >
-                            <ListboxOption
-                              as="template"
-                              v-for="operation in operations"
-                              :key="operation"
-                              :value="operation"
-                              v-slot="{ active, selected }"
-                            >
-                              <li
-                                :class="[
-                                  active ? 'bg-gray-600 text-white' : 'text-gray-900',
-                                  'relative cursor-default select-none py-2 pl-3 pr-9'
-                                ]"
-                              >
-                                <span
-                                  class="pr-8"
-                                  :class="[
-                                    selected ? 'font-semibold' : 'font-normal',
-                                    'block truncate'
-                                  ]"
-                                  >{{ operation }}</span
-                                >
-                                <span
-                                  v-if="selected"
-                                  :class="[
-                                    active ? 'text-white' : 'text-gray-600',
-                                    'absolute inset-y-0 right-0 flex items-center pr-4'
-                                  ]"
-                                >
-                                  <CheckIcon class="h-5 w-5" aria-hidden="true" />
-                                </span>
-                              </li>
-                            </ListboxOption>
-                          </ListboxOptions>
-                        </transition>
-                      </div>
-                    </Listbox>
+                    <OperationsListBox
+                      v-model="table.operations"
+                      :tableOperations="table.operations"
+                      @update:tableOperations="changeTableOps(table.operations, table)"
+                    />
                   </td>
                 </tr>
               </tbody>
@@ -196,29 +135,26 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
-import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/vue'
 import { FunnelIcon } from '@heroicons/vue/24/outline'
 import {
-  CheckIcon,
-  ChevronUpDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon
 } from '@heroicons/vue/20/solid'
 import { useStreamsStore } from '@/stores/streams.js'
 import { useSettingsStore } from '@/stores/settings.js'
 import NotificationBar from '@/components/common/NotificationBar.vue'
+import OperationsListBox from '@/components/settings/OperationsListBox.vue'
 import api from '@/api/connections.js'
 
 const streamsStore = useStreamsStore()
 const currentStream = streamsStore.currentStream
-const operationMap = streamsStore.operationMap
-const operations = Object.keys(operationMap)
 
 const tables = ref(
   currentStream.tables.map((table) => ({
     name: table.name,
     operations: table.operations,
-    size: table.size // Initialize size as an empty string
+    size: table.size, 
+    selected: true
   }))
 )
 
@@ -231,14 +167,14 @@ const filteredTables = computed(() => {
   return tables.value.filter((item) => item?.name.toLowerCase().includes(query))
 })
 
-// Initialize selectedTables with an array of all table names
-const selectedTables = ref(tables.value.map((table) => table.name))
+const indeterminate = computed(() => {
+  const selectedCount = tables.value.filter((table) => table.selected).length
+  return selectedCount > 0 && selectedCount < tables.value.length
+})
 
-const indeterminate = computed(
-  () => selectedTables.value.length > 0 && selectedTables.value.length < tables.length
-)
-const getFormattedOperations = (operations) => {
-  return operations.map((operation) => operationMap[operation] || operation).join(', ')
+const changeTableOps = (newValue, table) => {
+  // Assuming newValue is an array of selected operations
+  table.operations = newValue
 }
 
 let currentPage = ref(1)
@@ -267,15 +203,17 @@ const nextPage = () => {
 }
 
 const refreshTables = async () => {
+  useSettingsStore().showNotificationBar = false
   try {
     const response = await api.getTables(currentStream.source)
     tables.value = response.map((entry) => ({
       name: entry.name,
-      size: entry.size, // Set the size property
-      operations: ['insert', 'update', 'delete']
+      size: entry.size,
+      operations: ['insert', 'update', 'delete'],
+      selected: true // Set the selected property as desired
     }))
   } catch (error) {
-    useSettingsStore().showNotificationBar = false
+    // Handle the error
     useSettingsStore().notificationBar = {
       msg: 'Error: ' + error.message,
       type: 'error'
@@ -284,30 +222,28 @@ const refreshTables = async () => {
   }
 }
 
-watch(selectedTables, () => {
-  currentStream.tables = selectedTables.value.map((tableName) => {
-    const table = tables.value.find((t) => t.name === tableName)
-    return {
-      name: table.name,
-      size: table.size,
-      operations: table.operations
-    }
-  })
+const selectedTablesCount = computed(() => {
+  return tables.value.filter((table) => table.selected).length
 })
 
-watch(
-  () => tables.value.map((table) => table.operations),
-  () => {
-    selectedTables.value.forEach((tableName) => {
-      const table = tables.value.find((t) => t.name === tableName)
-      if (table) {
-        const updatedTable = currentStream.tables.find((t) => t.name === tableName)
-        if (updatedTable) {
-          updatedTable.operations = table.operations
-        }
-      }
-    })
-  },
-  { deep: true }
-)
+// Define selectAllCheckboxState and toggleSelectAll
+let selectAllCheckboxState = computed(() => {
+  const allSelected = tables.value.every((table) => table.selected)
+  const noneSelected = tables.value.every((table) => !table.selected)
+
+  if (allSelected) {
+    return true // If all tables are selected, check the "Select All" checkbox
+  } else if (noneSelected) {
+    return false // If no tables are selected, uncheck the "Select All" checkbox
+  } else {
+    return null // If some tables are selected, set the checkbox to indeterminate
+  }
+})
+const toggleSelectAll = ($event) => {
+  const selectAll = $event.target.checked
+
+  filteredTables.value.forEach((table) => {
+    table.selected = selectAll
+  })
+}
 </script>
