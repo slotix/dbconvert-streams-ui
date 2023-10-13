@@ -16,8 +16,8 @@ export const useStreamsStore = defineStore("streams", {
     currentFilter: "",
 
     modes: [
-      { id: "convert", title: "Convert" },
-      { id: "cdc", title: "CDC Sync" },
+      { id: "convert", title: "Copy Data/ Convert" },
+      { id: "cdc", title: "Change Data Capture Sync" },
     ],
     operationMap: {
       insert: "Insert",
@@ -52,7 +52,7 @@ export const useStreamsStore = defineStore("streams", {
       {
         id: 2,
         name: "streamSettings",
-        title: "Customize your stream",
+        title: "Configure your stream",
         description:
           "We are fetching the schema of your data source. This should take less than a minute, but may take a few minutes on slow internet connections or data sources with a large amount of tables.",
         img: "/images/steps/settings-step.svg",
