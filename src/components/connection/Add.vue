@@ -38,17 +38,19 @@ export default {
     },
     async ok() {
       try {
+        const json = JSON.stringify(this.currentConnection)
+        const connection = await api.createConnection(json)
+        this.currentConnection.id = connection.id
+        this.currentConnection.created = connection.created
         await this.save()
         await this.refresh()
-        const json = JSON.stringify(this.currentConnection)
-        await api.createConnection(json)
       } catch (error) {
-        useSettingsStore().showNotificationBar = false;
+        useSettingsStore().showNotificationBar = false
         useSettingsStore().notificationBar = {
-          msg: "Error: " + error.message,
-          type: "error",
-        };
-        useSettingsStore().showNotificationBar = true;
+          msg: 'Error: ' + error.message,
+          type: 'error'
+        }
+        useSettingsStore().showNotificationBar = true
       }
     }
   }

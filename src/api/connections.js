@@ -1,15 +1,16 @@
 import axios from "axios";
 
 const createConnection = async (json) => {
-  await axios.post("http://0.0.0.0:8020/api/v1/connections", json)
-    .then((response) => {
-      // Handle the response
-      console.log(response.data);
-    })
-    .catch((error) => {
-      const err = error.response?.data.error || error.message;
-      throw new Error(err);
-    });
+  try {
+    const response = await axios.post(
+      "http://0.0.0.0:8020/api/v1/connections",
+      json,
+    );
+    return response.data;
+  } catch (error) {
+    const err = error.response?.data.error || error.message;
+    throw new Error(err);
+  }
 };
 
 const updateConnection = async (id, json) => {
@@ -18,13 +19,10 @@ const updateConnection = async (id, json) => {
       `http://0.0.0.0:8020/api/v1/connections/${id}`,
       json,
     );
-
     // Handle the response
-    console.log(response.data);
-
+    // console.log(response.data);
     // Optionally, you can update the current connection in the store if needed
     // useConnectionsStore().updateCurrentConnection(response.data);
-
     return response.data; // You can return the updated connection data or any other relevant information.
   } catch (error) {
     // Handle the error

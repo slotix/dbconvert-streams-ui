@@ -134,9 +134,6 @@ export const useConnectionsStore = defineStore("connections", {
       if (this.sslConnection !== null) {
         connection["ssl"] = this.sslconnection;
       }
-      if (!connection.id) {
-        connection.id = Date.now();
-      }
       await idb.saveConnection(JSON.parse(JSON.stringify(connection)));
       // connection.password = "";
     },
@@ -179,7 +176,6 @@ export const useConnectionsStore = defineStore("connections", {
     },
   },
 });
-
 
 async function hashPassword(password) {
   try {

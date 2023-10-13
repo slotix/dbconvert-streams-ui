@@ -26,10 +26,10 @@ export default {
     ...mapActions(useConnectionsStore, { save: 'saveConnection', refresh: 'refreshConnections' }),
     async ok() {
       try {
-        await this.save()
-        await this.refresh()
         const json = JSON.stringify(this.currentConnection)
         await api.updateConnection(this.currentConnection.id, json)
+        await this.save()
+        await this.refresh()
       } catch (error) {
         useSettingsStore().showNotificationBar = false
         useSettingsStore().notificationBar = {

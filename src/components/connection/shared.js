@@ -2,7 +2,7 @@ import { useConnectionsStore } from "@/stores/connections.js";
 import { useStreamsStore } from "@/stores/streams.js";
 import { useSettingsStore } from "@/stores/settings.js";
 import { mapActions, mapState } from "pinia";
-import api from '@/api/connections.js'
+import api from "@/api/connections.js";
 
 export default {
   setup() {
@@ -29,11 +29,10 @@ export default {
       return dbType[0].logo;
     },
     connectionCreated() {
-      let date = new Date(this.connection.id);
+      const milliseconds = this.connection.created * 1000;
+      const date = new Date(milliseconds);
       return date.toLocaleDateString() + " - " + date.toLocaleTimeString();
-      //return date.toUTCString();
     },
-
     concatenateValues() {
       if (
         this.connection.host === undefined && this.connection.port === undefined
@@ -95,7 +94,7 @@ export default {
       try {
         await this.cloneCurrentConnection();
         await this.refreshConnections();
-        await api.createConnection()
+        await api.createConnection();
       } catch (e) {
         console.log(e);
       }
