@@ -81,7 +81,7 @@ import { useConnectionsStore } from '@/stores/connections.js'
 import ActionBtns from './ActionBtns.vue'
 import NotificationBar from '@/components/common/NotificationBar.vue'
 const emit = defineEmits(['ok', 'close'])
-const currentConnection = ref(mapState(useConnectionsStore, ['currentConnection']))
+const currentConnection = computed(() => useConnectionsStore().currentConnection)
 const showModal = computed(() => {
   return useSettingsStore().showModal
 })
@@ -105,7 +105,7 @@ const showActionBtns = computed(() => {
 
 async function test() {
   useSettingsStore().showNotificationBar = false
-  const connection = useConnectionsStore().currentConnection 
+  const connection = useConnectionsStore().currentConnection
   try {
     const status = await api.testConnection(connection.id)
     useSettingsStore().notificationBar = {

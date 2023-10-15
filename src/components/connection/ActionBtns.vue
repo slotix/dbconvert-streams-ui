@@ -9,9 +9,10 @@
     <!-- <slot name="confirmButton"> Ok</slot> -->
   </button>
   <button
+    :disabled="!currentConnection?.id"
     type="button"
     name="test"
-    class="inline-flex w-full justify-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 sm:ml-3 sm:w-auto"
+    class="inline-flex w-full justify-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 sm:ml-3 sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
     v-show="showTestConnectionBtn"
     @click="test"
   >
@@ -45,12 +46,13 @@ const close = () => {
 const props = defineProps({
   dlgType: String
 })
-const currentConnection = ref(mapState(useConnectionsStore, ['currentConnection']))
+const currentConnection = computed(() => useConnectionsStore().currentConnection)
 const showTestConnectionBtn = computed(() => {
-  if (!currentConnection) return false
-  if (['Access', 'FoxPro', 'SQLite'].includes(currentConnection.type)) {
-    return false
-  }
   return true
+  // if (!currentConnection) return false
+  // if (['Access', 'FoxPro', 'SQLite'].includes(currentConnection.type)) {
+  //   return false
+  // }
+  // return true
 })
 </script>
