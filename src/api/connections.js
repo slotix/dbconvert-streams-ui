@@ -45,6 +45,7 @@ const testConnection = async (id) => {
     throw new Error(err);
   }
 };
+
 const getSchemas = async (id) => {
   try {
     const response = await axios.get(
@@ -84,8 +85,6 @@ const createDatabase = async (newDatabase, id) => {
         },
       },
     );
-    connection.databases.push(newDatabase);
-    connection.database = newDatabase;
   } catch (error) {
     const err = error.response?.data.error || error.message;
     throw new Error(err);
@@ -103,8 +102,6 @@ const createSchema = async (newSchema, id) => {
         },
       },
     );
-    connection.schemas.push(newSchema);
-    connection.schema = newSchema;
   } catch (error) {
     const err = error.response?.data.error || error.message;
     throw new Error(err);

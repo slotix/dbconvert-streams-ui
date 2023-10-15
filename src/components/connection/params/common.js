@@ -8,7 +8,13 @@ import { ArrowPathIcon, PlusIcon } from "@heroicons/vue/24/solid";
 import api from "@/api/connections.js";
 
 export default {
-  components: { ConnectionName, PasswordBox, ArrowPathIcon, PlusIcon, ItemsCombo },
+  components: {
+    ConnectionName,
+    PasswordBox,
+    ArrowPathIcon,
+    PlusIcon,
+    ItemsCombo,
+  },
   mounted() {
     if (this.dlgTp === DIALOG_TYPES.SAVE) {
       this.connection.name = this.buildConnectionName;
@@ -89,13 +95,15 @@ export default {
     async createDatabase(newDatabase) {
       try {
         await api.createDatabase(newDatabase, this.currentConnection.id);
+        this.currentConnection.databases.push(newDatabase);
+        this.currentConnection.database = newDatabase;
         useSettingsStore().showNotificationBar = false;
         useSettingsStore().notificationBar = {
           msg: "Database created",
           type: "success",
         };
         useSettingsStore().showNotificationBar = true;
-        this.getDatabases();
+        this.refreshDatabases();
       } catch (error) {
         useSettingsStore().showNotificationBar = false;
         useSettingsStore().notificationBar = {
@@ -109,13 +117,15 @@ export default {
     async createSchema(newSchema) {
       try {
         await api.createSchema(newSchema, this.currentConnection.id);
+        this.currentConnection.schemas.push(newSchema);
+        this.currentConnection.schema = newSchema;
         useSettingsStore().showNotificationBar = false;
         useSettingsStore().notificationBar = {
           msg: "Schema created",
           type: "success",
         };
         useSettingsStore().showNotificationBar = true;
-        this.getSchemas();
+        this.refreshSchemas();
       } catch (error) {
         useSettingsStore().showNotificationBar = false;
         useSettingsStore().notificationBar = {
