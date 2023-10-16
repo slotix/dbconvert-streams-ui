@@ -103,6 +103,7 @@ export default {
     },
     async deleteConn() {
       try {
+        await api.deleteConnection(this.connection.id);
         await this.deleteConnection(this.connection.id);
         await this.refreshConnections();
       } catch (e) {

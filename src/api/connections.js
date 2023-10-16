@@ -26,6 +26,17 @@ const updateConnection = async (json) => {
   }
 };
 
+const deleteConnection = async (id) => {
+  try {
+    await axios.delete(
+      `http://0.0.0.0:8020/api/v1/connections/${id}`,
+    );
+  } catch (error) {
+    const err = error.response?.data.error || error.message;
+    throw new Error(err);
+  }
+};
+
 const cloneConnection = async (id) => {
   try {
     const response = await axios.put(
@@ -148,6 +159,7 @@ const getTables = async (id) => {
 export default {
   createConnection,
   updateConnection,
+  deleteConnection,
   cloneConnection,
   testConnection,
   getSchemas,
