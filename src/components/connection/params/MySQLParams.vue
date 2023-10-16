@@ -52,6 +52,7 @@
 
       <hr />
       <div
+        v-show="connection.id"
         class="items-center w-full p-4 mb-12 space-y-4 text-gray-500 md:inline-flex md:space-y-0"
       >
         <label class="max-w-sm mx-auto md:w-1/3">Database </label>

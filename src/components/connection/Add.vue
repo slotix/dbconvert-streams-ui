@@ -36,13 +36,25 @@ export default {
     selectDB(conn) {
       this.connection = conn
     },
+    // create new connection
     async ok() {
       useSettingsStore().showNotificationBar = false
       try {
         const json = JSON.stringify(this.currentConnection)
         const connection = await api.createConnection(json)
+        //test connection is performed on backend
+        // get the list of databases and schemas
+        const databases = await api.getDatabases(connection.id)
+        this.currentConnection.databases = databases
+
+        if (this.currentConnection.type.toLowerCase() === 'postgresql') {
+          const schemas = await api.getSchemas(connection.id)
+          this.currentConnection.schemas = schemas
+        }
+
         this.currentConnection.id = connection.id
         this.currentConnection.created = connection.created
+
         await this.save()
         await this.refresh()
       } catch (error) {

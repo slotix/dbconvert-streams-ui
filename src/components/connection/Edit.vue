@@ -24,11 +24,24 @@ export default {
   },
   methods: {
     ...mapActions(useConnectionsStore, { save: 'saveConnection', refresh: 'refreshConnections' }),
+
+    // update connection
     async ok() {
       useSettingsStore().showNotificationBar = false
       try {
         const json = JSON.stringify(this.currentConnection)
-        const connection = await api.updateConnection(this.currentConnection.id, json)
+        const connection = await api.updateConnection(json)
+
+        //test connection is performed on backend
+        // get the list of databases and schemas
+        const databases = await api.getDatabases(connection.id)
+        this.currentConnection.databases = databases
+
+        if (this.currentConnection.type.toLowerCase() === 'postgresql') {
+          const schemas = await api.getSchemas(connection.id)
+          this.currentConnection.schemas = schemas
+        }
+
         await this.save()
         await this.refresh()
       } catch (error) {
