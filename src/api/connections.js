@@ -19,13 +19,20 @@ const updateConnection = async (id, json) => {
       `http://0.0.0.0:8020/api/v1/connections/${id}`,
       json,
     );
-    // Handle the response
-    // console.log(response.data);
-    // Optionally, you can update the current connection in the store if needed
-    // useConnectionsStore().updateCurrentConnection(response.data);
-    return response.data; // You can return the updated connection data or any other relevant information.
+    return response.data; 
   } catch (error) {
-    // Handle the error
+    const err = error.response?.data.error || error.message;
+    throw new Error(err);
+  }
+};
+
+const cloneConnection = async (id) => {
+  try {
+    const response = await axios.put(
+      `http://0.0.0.0:8020/api/v1/connections/${id}/clone`,
+    );
+    return response.data; 
+  } catch (error) {
     const err = error.response?.data.error || error.message;
     throw new Error(err);
   }
@@ -141,6 +148,7 @@ const getTables = async (id) => {
 export default {
   createConnection,
   updateConnection,
+  cloneConnection,
   testConnection,
   getSchemas,
   getDatabases,

@@ -79,7 +79,7 @@ export default {
     ...mapActions(useConnectionsStore, [
       "deleteConnection",
       "setCurrentConnection",
-      "cloneCurrentConnection",
+      "saveConnection",
       "refreshConnections",
     ]),
     addConnection() {
@@ -92,13 +92,14 @@ export default {
     async cloneConnection() {
       this.setCurrentConnection(this.connection.id);
       try {
-        await this.cloneCurrentConnection();
+        const conn = await api.cloneConnection(this.connection.id);
+        this.currentConnection.id = conn.id;
+        this.currentConnection.created = conn.created;
+        this.saveConnection();
         await this.refreshConnections();
-        await api.createConnection();
       } catch (e) {
         console.log(e);
       }
-      // useSettingsStore().openModal("Update");
     },
     async deleteConn() {
       try {

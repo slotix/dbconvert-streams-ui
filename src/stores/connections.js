@@ -137,16 +137,6 @@ export const useConnectionsStore = defineStore("connections", {
       await idb.saveConnection(JSON.parse(JSON.stringify(connection)));
       // connection.password = "";
     },
-    async cloneCurrentConnection() {
-      if (!this.currentConnection) {
-        throw new Error("can't clone empty connection");
-      }
-      let clonedConnection = this.currentConnection;
-      clonedConnection.id = Date.now();
-      this.setCurrentConnection(clonedConnection.id);
-      await this.saveConnection();
-    },
-
     async refreshConnections() {
       let connections = await idb.getConnections();
       this.connections = connections;
