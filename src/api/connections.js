@@ -13,13 +13,13 @@ const createConnection = async (json) => {
   }
 };
 
-const updateConnection = async (id, json) => {
+const updateConnection = async (json) => {
   try {
     const response = await axios.put(
-      `http://0.0.0.0:8020/api/v1/connections/${id}`,
+      `http://0.0.0.0:8020/api/v1/connections`,
       json,
     );
-    return response.data; 
+    return response.data;
   } catch (error) {
     const err = error.response?.data.error || error.message;
     throw new Error(err);
@@ -31,7 +31,7 @@ const cloneConnection = async (id) => {
     const response = await axios.put(
       `http://0.0.0.0:8020/api/v1/connections/${id}/clone`,
     );
-    return response.data; 
+    return response.data;
   } catch (error) {
     const err = error.response?.data.error || error.message;
     throw new Error(err);
