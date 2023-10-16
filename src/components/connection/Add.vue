@@ -37,6 +37,7 @@ export default {
       this.connection = conn
     },
     async ok() {
+      useSettingsStore().showNotificationBar = false
       try {
         const json = JSON.stringify(this.currentConnection)
         const connection = await api.createConnection(json)
@@ -45,7 +46,6 @@ export default {
         await this.save()
         await this.refresh()
       } catch (error) {
-        useSettingsStore().showNotificationBar = false
         useSettingsStore().notificationBar = {
           msg: 'Error: ' + error.message,
           type: 'error'
