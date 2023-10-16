@@ -53,21 +53,21 @@
   </Listbox>
 </template>
 <script setup>
-import { ref, defineProps, defineEmits, watch } from 'vue'
+import { ref } from 'vue'
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/vue'
 import { CheckIcon, ChevronUpDownIcon } from '@heroicons/vue/20/solid'
 import { useStreamsStore } from '@/stores/streams.js'
 const props = defineProps({
-  tableOperations: Array // Declare the value prop as an array
+  value: Array // Declare the value prop as an array
 })
-const emits = defineEmits(['update:tableOperations'])
-const selectedOperations = ref(props.tableOperations)
+const emits = defineEmits(['update:value'])
+const selectedOperations = ref(props.value)
 
 const operationMap = useStreamsStore().operationMap
 const operations = Object.keys(operationMap)
 // Watch for changes in the selectedOperations and emit 'update:value'
 watch(selectedOperations, (newValue) => {
-  emits('update:tableOperations', newValue)
+  emits('update:value', newValue)
 })
 
 const getFormattedOperations = (operations) => {

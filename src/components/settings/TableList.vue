@@ -53,13 +53,13 @@
                       />
                     </div>
                   </th>
-                  <th
-                    scope="col"
-                    class="px-3 py-3.5 text-left uppercase text-sm font-normal text-gray-800"
-                    v-if="currentStream.mode !== 'convert'"
-                  >
-                    Name in target
-                  </th>
+                  <!-- <th -->
+                  <!--   scope="col" -->
+                  <!--   class="px-3 py-3.5 text-left uppercase text-sm font-normal text-gray-800" -->
+                  <!--   v-if="currentStream.mode !== 'convert'" -->
+                  <!-- > -->
+                  <!--   Name in target -->
+                  <!-- </th> -->
                   <th
                     scope="col"
                     class="px-3 py-3.5 text-left uppercase text-sm font-normal text-gray-800"
@@ -85,9 +85,9 @@
                   <td class="py-4 px-3">
                     {{ table.name }}
                   </td>
-                  <td>
-                    {{ table.name }}
-                  </td>
+                  <!-- <td> -->
+                  <!--   {{ table.name }} -->
+                  <!-- </td> -->
                   <td>
                     {{ table.size }}
                   </td>
@@ -217,4 +217,18 @@ const toggleSelectAll = ($event) => {
     table.selected = selectAll
   })
 }
+watch(
+  tables,
+  (newTables) => {
+    // watch(tables, (newTables, oldTables) => {
+    // Handle changes in table selection here
+    // You can compare newTables and oldTables to detect changes
+    // console.log('Tables changed:', newTables, oldTables)
+
+    // Example: Update currentStream.tables based on selected tables
+    const selectedTables = newTables.filter((table) => table.selected)
+    currentStream.tables = selectedTables
+  },
+  { deep: true }
+)
 </script>
