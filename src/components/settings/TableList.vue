@@ -36,30 +36,35 @@
                   </th>
                   <th
                     scope="col"
-                    colspan="2"
-                    class="min-w-[12rem] py-3.5 pr-3 text-left uppercase text-sm font-normal text-gray-800"
+                    class="min-w-[10rem] py-3.5 pr-3 text-left uppercase text-sm font-normal text-gray-800"
                   >
-                    <div class="relative flex items-center">
+                    <div class="relative rounded-md shadow-sm">
+                      <div
+                        class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3"
+                      >
+                        <FunnelIcon class="h-5 w-5 text-gray-400" aria-hidden="true" />
+                      </div>
                       <input
                         type="text"
                         id="table-search"
                         v-model="searchQuery"
                         placeholder="Filter tables..."
-                        class="rounded-md border-0 py-1.5 pl-10 pr-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-gray-600 sm:text-sm sm:leading-6"
-                      />
-                      <FunnelIcon
-                        class="absolute h-5 w-5 text-gray-400 left-3"
-                        aria-hidden="true"
+                        class="block w-full rounded-md border-0 py-1.5 pl-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-gray-600 sm:text-sm sm:leading-6"
                       />
                     </div>
                   </th>
-                  <!-- <th -->
-                  <!--   scope="col" -->
-                  <!--   class="px-3 py-3.5 text-left uppercase text-sm font-normal text-gray-800" -->
-                  <!--   v-if="currentStream.mode !== 'convert'" -->
-                  <!-- > -->
-                  <!--   Name in target -->
-                  <!-- </th> -->
+                  <th
+                    scope="col"
+                    class="px-3 py-3.5 text-left uppercase text-sm font-normal text-gray-800 text-right"
+                  >
+                    Size
+                  </th>
+                  <th
+                    scope="col"
+                    class="px-3 py-3.5 text-left uppercase text-sm font-normal text-gray-800 text-right"
+                  >
+                    Rows
+                  </th>
                   <th
                     scope="col"
                     class="px-3 py-3.5 text-left uppercase text-sm font-normal text-gray-800"
@@ -88,8 +93,11 @@
                   <!-- <td> -->
                   <!--   {{ table.name }} -->
                   <!-- </td> -->
-                  <td>
+                  <td class="text-right">
                     {{ table.size }}
+                  </td>
+                  <td class="text-right pr-3">
+                    {{ table.rows }}
                   </td>
                   <td
                     class="whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-3"
@@ -136,6 +144,7 @@ const tables = ref(
     name: table.name,
     operations: table.operations,
     size: table.size,
+    rows: table.rows,
     selected: true
   }))
 )
@@ -180,6 +189,7 @@ const refreshTables = async () => {
     tables.value = response.map((entry) => ({
       name: entry.name,
       size: entry.size,
+      rows: entry.rows,
       operations: ['insert', 'update', 'delete'],
       selected: true // Set the selected property as desired
     }))
