@@ -4,7 +4,7 @@
       <ListboxButton
         class="relative w-full cursor-default rounded-md bg-white py-1.5 pl-3 pr-10 text-left text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-600 sm:text-sm sm:leading-6"
       >
-        <span class="">{{ getFormattedOperations(selectedOperations) }}</span>
+        <span class="">{{ formattedOperations(selectedOperations) }}</span>
         <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
           <ChevronUpDownIcon class="h-5 w-5 text-gray-400" aria-hidden="true" />
         </span>
@@ -53,24 +53,24 @@
   </Listbox>
 </template>
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/vue'
 import { CheckIcon, ChevronUpDownIcon } from '@heroicons/vue/20/solid'
 import { useStreamsStore } from '@/stores/streams.js'
 const props = defineProps({
-  value: Array // Declare the value prop as an array
+  tableOperations: Array
 })
-const emits = defineEmits(['update:value'])
-const selectedOperations = ref(props.value)
+const emits = defineEmits(['update:tableOperations'])
+const selectedOperations = ref(props.tableOperations)
 
 const operationMap = useStreamsStore().operationMap
 const operations = Object.keys(operationMap)
-// Watch for changes in the selectedOperations and emit 'update:value'
+// Watch for changes in the selectedOperations and emit 'update:tableOperations'
 watch(selectedOperations, (newValue) => {
-  emits('update:value', newValue)
+  emits('update:tableOperations', newValue)
 })
 
-const getFormattedOperations = (operations) => {
+const formattedOperations = (operations) => {
   return operations.map((operation) => operationMap[operation] || operation).join(', ')
 }
 </script>
