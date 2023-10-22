@@ -37,10 +37,12 @@ import { ref, watch, watchEffect } from 'vue'
 import { useStreamsStore } from '@/stores/streams.js'
 const currentStream = useStreamsStore().currentStream
 
-const limits = ref({
-  numberOfEvents: 0,
-  elapsedTime: 0
-})
+const limits =
+  ref(currentStream.limits) ||
+  ref({
+    numberOfEvents: 0,
+    elapsedTime: 0
+  })
 watch(
   limits,
   (newLimits) => {
