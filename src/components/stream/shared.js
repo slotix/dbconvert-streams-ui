@@ -7,11 +7,13 @@ import {
   Square2StackIcon,
   TrashIcon,
 } from "@heroicons/vue/24/solid";
-import { mapActions } from "pinia";
+import { mapActions, mapState } from "pinia";
 import { useStreamsStore } from "@/stores/streams.js";
 import { useConnectionsStore } from "@/stores/connections.js";
 import { useSettingsStore } from "@/stores/settings.js";
 import ActionsMenu from "@/components/common/ActionsMenu.vue";
+import api from "@/api/streams.js";
+
 export default {
   props: {
     stream: {
@@ -57,7 +59,12 @@ export default {
     async cloneStream() {
       try {
         useStreamsStore().setCurrentStream(this.stream.id);
-        await useStreamsStore().cloneStream(this.stream.id);
+        const resp = await api.cloneStream(this.stream.id);
+        // this.currentStream.id = stream.id;
+        // this.currentStream.created = stream.created;
+        this.stream.id = resp.id;
+        this.stream.created = resp.created;
+        await useStreamsStore().saveStream(this.stream.id);
         await useStreamsStore().refreshStreams();
       } catch (e) {
         console.log(e);
@@ -68,10 +75,11 @@ export default {
     },
   },
   computed: {
+    ...mapState(useStreamsStore, ["currentStream"]),
     streamCreated() {
-      let date = new Date(this.stream.id);
+      let date = new Date(this.stream.created * 1000);
       return date.toLocaleDateString() + " - " + date.toLocaleTimeString();
-      //return date.toUTCString();
+      // return date.toUTCString();
     },
     logoSrc() {
       return (tp) => {

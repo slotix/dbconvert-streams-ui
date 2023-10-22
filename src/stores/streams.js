@@ -5,11 +5,11 @@ export const useStreamsStore = defineStore("streams", {
   state: () => ({
     streams: [],
     currentStream: {
-      id: 0,
-      source: 0,
+      id: "",
+      source: "",
       mode: "convert",
       limits: { numberOfEvents: 0, elapsedTime: 0 },
-      target: 0,
+      target: "",
       tables: [],
     },
     currentStep: null,
@@ -81,14 +81,14 @@ export const useStreamsStore = defineStore("streams", {
     // },
     countStreams(state) {
       return state.streams.length;
-        // .filter((el) => {
-        //   return (
-        //     el.type &&
-        //     el.type.toLowerCase().indexOf(state.currentFilter.toLowerCase()) >
-        //     -1
-        //   );
-        // })
-        // .length;
+      // .filter((el) => {
+      //   return (
+      //     el.type &&
+      //     el.type.toLowerCase().indexOf(state.currentFilter.toLowerCase()) >
+      //     -1
+      //   );
+      // })
+      // .length;
     },
     newestFirst(state) {
       return state.streams.slice().reverse();
@@ -99,13 +99,13 @@ export const useStreamsStore = defineStore("streams", {
           return (
             el.type &&
             el.type.toLowerCase().indexOf(state.currentFilter.toLowerCase()) >
-            -1
+              -1
           );
         })
         .reverse();
     },
     currentStreamIndexInArray(state) {
-      return state.streams.indexOf(state.currentStream); 
+      return state.streams.indexOf(state.currentStream);
     },
     allSteps(state) {
       return state.steps;
@@ -124,21 +124,22 @@ export const useStreamsStore = defineStore("streams", {
     async saveStream() {
       let stream = this.currentStream;
       if (!stream.id) {
-        stream.id = Date.now();
+        stream.id = "";
+        // stream.id = Date.now();
       }
       // console.log('save stream', stream);
       await idb.saveStream(JSON.parse(JSON.stringify(stream)));
       this.resetCurrentStream();
     },
-    async cloneStream() {
-      if (!this.currentStream) {
-        throw new Error("can't clone empty stream");
-      }
-      let clonedStream = this.currentStream;
-      clonedStream.id = Date.now();
-      this.setCurrentStream(clonedStream.id);
-      await this.saveStream();
-    },
+    // async cloneStream() {
+    //   if (!this.currentStream) {
+    //     throw new Error("can't clone empty stream");
+    //   }
+    //   let clonedStream = this.currentStream;
+    //   clonedStream.id = Date.now();
+    //   this.setCurrentStream(clonedStream.id);
+    //   await this.saveStream();
+    // },
 
     async refreshStreams() {
       let streams = await idb.getStreams();
@@ -150,11 +151,11 @@ export const useStreamsStore = defineStore("streams", {
     },
     resetCurrentStream() {
       this.currentStream = {
-        id: 0,
-        source: 0,
+        id: "",
+        source: "",
         mode: "convert",
         limits: { numberOfEvents: 0, elapsedTime: 0 },
-        target: 0,
+        target: "",
         tables: [],
       };
     },

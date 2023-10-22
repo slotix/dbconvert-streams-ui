@@ -33,7 +33,7 @@
       <button
         type="button"
         @click="prev"
-        class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:mt-0 sm:ml-3 sm:w-auto"
+        class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:mt-0 sm:ml-3 sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
         :class="{
           visible: currentStepNumber > 1,
           invisible: currentStepNumber == 1
@@ -45,14 +45,14 @@
       <button
         type="button"
         @click="next"
-        class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:mt-0 sm:ml-3 sm:w-auto"
+        class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:mt-0 sm:ml-3 sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
         :class="{
           visible: currentStepNumber < stepsCount,
           invisible: currentStepNumber == stepsCount
         }"
         :disabled="isNextDisabled"
       >
-        Next 
+        Next
         <ChevronRightIcon class="h-6 w-6" aria-hidden="true" />
       </button>
       <router-link :to="{ name: 'Streams' }">
@@ -70,6 +70,7 @@
   <!-- </div> -->
 </template>
 <script setup>
+import api from '@/api/streams.js'
 import { useStreamsStore } from '@/stores/streams.js'
 import { ref, computed, onMounted } from 'vue'
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/vue/24/outline'
@@ -102,6 +103,9 @@ function prev() {
 }
 async function save() {
   try {
+    const stream = await api.createStream(currentStream)
+    currentStream.id = stream.id
+    currentStream.created = stream.created
     await store.saveStream()
     await store.refreshStreams()
   } catch (e) {
