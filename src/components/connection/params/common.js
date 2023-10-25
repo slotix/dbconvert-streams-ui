@@ -36,7 +36,7 @@ export default {
         "_" +
         this.connection.host +
         "_" +
-        this.connection.userName
+        this.connection.username
       );
     },
     dlgTp() {
@@ -49,7 +49,7 @@ export default {
         this.connection.name = this.buildConnectionName;
       }
     },
-    "connection.userName": function () {
+    "connection.username": function () {
       if (this.dlgTp === DIALOG_TYPES.SAVE) {
         this.connection.name = this.buildConnectionName;
       }

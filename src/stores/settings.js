@@ -17,10 +17,10 @@ export const useSettingsStore = defineStore("modal", {
     dlgType: "",
     currentViewType: "",
     showNotificationBar: false,
-    notificationBar:{
+    notificationBar: {
       msg: "",
       type: "",
-    } ,
+    },
   }),
   actions: {
     async getViewType() {
@@ -29,7 +29,7 @@ export const useSettingsStore = defineStore("modal", {
     },
     async setViewType(vType) {
       await idb.setCurrentViewType(vType);
-      this.currentViewType = vType; 
+      this.currentViewType = vType;
     },
     openModal(dlgType) {
       this.dlgType = dlgType;
