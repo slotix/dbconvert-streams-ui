@@ -1,5 +1,17 @@
 import axios from "axios";
 
+const getConnections = async () => {
+  try {
+    const response = await axios.get(
+      "http://0.0.0.0:8020/api/v1/connections",
+    );
+    return response.data;
+  } catch (error) {
+    const err = error.response?.data.error || error.message;
+    throw new Error(err);
+  }
+};
+
 const createConnection = async (json) => {
   try {
     const response = await axios.post(
@@ -157,6 +169,7 @@ const getTables = async (id) => {
   }
 };
 export default {
+  getConnections,
   createConnection,
   updateConnection,
   deleteConnection,

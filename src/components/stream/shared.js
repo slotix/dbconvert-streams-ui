@@ -50,6 +50,7 @@ export default {
     },
     async deleteStream() {
       try {
+        await api.deleteStream(this.stream.id);
         await useStreamsStore().deleteStream(this.stream.id);
         await useStreamsStore().refreshStreams();
       } catch (e) {

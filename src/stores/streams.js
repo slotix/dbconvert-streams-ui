@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import idb from "@/api/iDBService";
+import api from "@/api/streams.js";
 
 export const useStreamsStore = defineStore("streams", {
   state: () => ({
@@ -127,27 +127,18 @@ export const useStreamsStore = defineStore("streams", {
         stream.id = "";
         // stream.id = Date.now();
       }
-      // console.log('save stream', stream);
-      await idb.saveStream(JSON.parse(JSON.stringify(stream)));
       this.resetCurrentStream();
     },
-    // async cloneStream() {
-    //   if (!this.currentStream) {
-    //     throw new Error("can't clone empty stream");
-    //   }
-    //   let clonedStream = this.currentStream;
-    //   clonedStream.id = Date.now();
-    //   this.setCurrentStream(clonedStream.id);
-    //   await this.saveStream();
-    // },
-
     async refreshStreams() {
-      let streams = await idb.getStreams();
-      this.streams = streams;
+      try {
+        this.streams = await api.getStreams();
+      } catch (error) {
+        throw error;
+      }
     },
     async deleteStream(index) {
       this.streams.splice(index, 1);
-      await idb.deleteStream(index);
+      // await idb.deleteStream(index);
     },
     resetCurrentStream() {
       this.currentStream = {
@@ -160,7 +151,6 @@ export const useStreamsStore = defineStore("streams", {
       };
     },
     async clearStreams() {
-      await idb.clearStreams();
       this.streams.length = 0;
     },
   },

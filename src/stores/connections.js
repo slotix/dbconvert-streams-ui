@@ -1,6 +1,5 @@
 import { defineStore } from "pinia";
-import idb from "@/api/iDBService";
-import bcrypt from "bcryptjs";
+import api from "@/api/connections.js";
 
 export const useConnectionsStore = defineStore("connections", {
   state: () => ({
@@ -134,12 +133,14 @@ export const useConnectionsStore = defineStore("connections", {
       if (this.sslConnection !== null) {
         connection["ssl"] = this.sslconnection;
       }
-      await idb.saveConnection(JSON.parse(JSON.stringify(connection)));
       // connection.password = "";
     },
     async refreshConnections() {
-      let connections = await idb.getConnections();
-      this.connections = connections;
+      try {
+        this.connections = await api.getConnections();
+      } catch (error) {
+        throw error;
+      }
     },
     connectionByID(id) {
       const connection = this.connections.find((c) => c.id === id);
@@ -149,13 +150,11 @@ export const useConnectionsStore = defineStore("connections", {
     },
     async deleteConnection(index) {
       this.connections.splice(index, 1);
-      await idb.deleteConnection(index);
     },
     resetCurrentConnection() {
       this.currentConnection = null;
     },
     async clearConnections() {
-      await idb.clearConnections();
       this.connections.length = 0;
     },
     updateSSHParams(ssh) {
@@ -166,16 +165,3 @@ export const useConnectionsStore = defineStore("connections", {
     },
   },
 });
-
-async function hashPassword(password) {
-  try {
-    // Generate a salt with a cost factor of 10 (you can adjust this as needed)
-    const salt = await bcrypt.genSalt(10);
-    // Hash the password with the generated salt
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    return hashedPassword;
-  } catch (error) {
-    throw error;
-  }
-}
