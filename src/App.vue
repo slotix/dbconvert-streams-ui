@@ -105,8 +105,11 @@
     </div>
 
     <div class="lg:pl-20">
+      <!-- <div -->
+      <!--   class="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8" -->
+      <!-- > -->
       <div
-        class="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8"
+        class="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8"
       >
         <button
           type="button"
@@ -176,6 +179,8 @@
             </Menu>
           </div>
         </div>
+
+        <NotificationBar class="absolute inset-y-0 right-0 h-16 w-auto" />
       </div>
       <div class="py-10 lg:py-6">
         <RouterView />
@@ -189,6 +194,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import NotificationBar from '@/components/common/NotificationBar.vue'
 import {
   Dialog,
   DialogPanel,

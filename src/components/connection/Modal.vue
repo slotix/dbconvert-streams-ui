@@ -54,7 +54,6 @@
                     <slot name="connection-params"></slot>
                   </div>
                 </div>
-                <NotificationBar />
                 <div
                   v-if="showActionBtns"
                   class="bg-gray-100 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6"
@@ -79,7 +78,6 @@ import { mapState } from 'pinia'
 import { useSettingsStore, DIALOG_TYPES } from '@/stores/settings.js'
 import { useConnectionsStore } from '@/stores/connections.js'
 import ActionBtns from './ActionBtns.vue'
-import NotificationBar from '@/components/common/NotificationBar.vue'
 const emit = defineEmits(['ok', 'close'])
 const currentConnection = computed(() => useConnectionsStore().currentConnection)
 const showModal = computed(() => {
