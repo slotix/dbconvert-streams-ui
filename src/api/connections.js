@@ -61,10 +61,11 @@ const cloneConnection = async (id) => {
   }
 };
 
-const testConnection = async (id) => {
+const testConnection = async (json) => {
   try {
-    const response = await axios.get(
-      `http://0.0.0.0:8020/api/v1/connections/${id}/ping`,
+    const response = await axios.post(
+      `http://0.0.0.0:8020/api/v1/connections/ping`,
+      json,
     );
     if (response.data.ping === "ok") {
       const status = "Connection Test Passed";

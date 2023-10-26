@@ -105,7 +105,7 @@ async function test() {
   useSettingsStore().showNotificationBar = false
   const connection = useConnectionsStore().currentConnection
   try {
-    const status = await api.testConnection(connection.id)
+    const status = await api.testConnection(connection)
     useSettingsStore().notificationBar = {
       msg: status,
       type: 'success'
