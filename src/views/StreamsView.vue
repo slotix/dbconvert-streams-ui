@@ -19,12 +19,12 @@
 import { ref, computed } from 'vue'
 import Streams from '@/components/stream/Streams.vue'
 import { useStreamsStore } from '@/stores/streams.js'
+
 const streamsCount = computed(() => {
-  return useStreamsStore().countStreams;
+  return useStreamsStore().countStreams
 })
 // const streamsCount = ref(null)
 // const onStreamCountChanged = (value) => {
 //   streamsCount.value = value
 // }
-
 </script>
