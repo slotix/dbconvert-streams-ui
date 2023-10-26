@@ -70,8 +70,18 @@ export default {
     }
   },
   async mounted() {
-    await this.refreshConnections()
-    await this.refreshStreams()
+    useSettingsStore().showNotificationBar = false
+    try {
+      await this.refreshConnections()
+      await this.refreshStreams()
+    } catch (err) {
+      // console.log(err)
+      useSettingsStore().notificationBar = {
+        msg: 'Error: ' + err,
+        type: 'error'
+      }
+      useSettingsStore().showNotificationBar = true
+    }
     await this.getViewType()
   }
 }

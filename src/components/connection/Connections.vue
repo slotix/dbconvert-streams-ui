@@ -79,7 +79,16 @@ export default {
     }
   },
   async mounted() {
-    await this.refreshConnections()
+    useSettingsStore().showNotificationBar = false
+    try {
+      await this.refreshConnections()
+    } catch (err) {
+      useSettingsStore().notificationBar = {
+        msg: 'Error: ' + err,
+        type: 'error'
+      }
+      useSettingsStore().showNotificationBar = true
+    }
     await this.getViewType()
   }
 }
