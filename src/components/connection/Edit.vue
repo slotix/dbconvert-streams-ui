@@ -30,15 +30,15 @@ export default {
       useSettingsStore().showNotificationBar = false
       try {
         const json = JSON.stringify(this.currentConnection)
-        const connection = await api.updateConnection(json)
+        await api.updateConnection(json)
 
         //test connection is performed on backend
         // get the list of databases and schemas
-        const databases = await api.getDatabases(connection.id)
+        const databases = await api.getDatabases(this.currentConnection.id)
         this.currentConnection.databases = databases
 
         if (this.currentConnection.type.toLowerCase() === 'postgresql') {
-          const schemas = await api.getSchemas(connection.id)
+          const schemas = await api.getSchemas(this.currentConnection.id)
           this.currentConnection.schemas = schemas
         }
 
