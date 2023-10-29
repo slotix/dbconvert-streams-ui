@@ -16,7 +16,7 @@ const createStream = async (json) => {
   try {
     // console.log(json);
     const response = await axios.post(
-      "http://0.0.0.0:8020/api/v1/streams",
+      "http://0.0.0.0:8020/api/v1/streams/config",
       json,
     );
     return response.data;
