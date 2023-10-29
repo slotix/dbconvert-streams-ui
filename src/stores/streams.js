@@ -80,7 +80,7 @@ export const useStreamsStore = defineStore("streams", {
     //   return state.streams;
     // },
     countStreams(state) {
-      return state.streams.length;
+      return state.streams?.length || 0;
       // .filter((el) => {
       //   return (
       //     el.type &&
@@ -91,7 +91,7 @@ export const useStreamsStore = defineStore("streams", {
       // .length;
     },
     newestFirst(state) {
-      return state.streams.slice().reverse();
+      return state.streams?.slice().reverse() || [];
     },
     streamsByType(state) {
       return state.streams

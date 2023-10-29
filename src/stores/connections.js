@@ -79,14 +79,14 @@ export const useConnectionsStore = defineStore("connections", {
     },
     countConnections(state) {
       return state.connections
-        .filter((el) => {
+        ?.filter((el) => {
           return (
             el.type &&
             el.type.toLowerCase().indexOf(state.currentFilter.toLowerCase()) >
               -1
           );
         })
-        .length;
+        .length || 0;
     },
     currentConnectionIndexInArray(state) {
       return state.connections.indexOf(state.currentConnection);
@@ -97,14 +97,14 @@ export const useConnectionsStore = defineStore("connections", {
     // },
     connectionsByType(state) {
       return state.connections
-        .filter(function (el) {
+        ?.filter(function (el) {
           return (
             el.type &&
             el.type.toLowerCase().indexOf(state.currentFilter.toLowerCase()) >
               -1
           );
         })
-        .reverse();
+        .reverse() || [];
     },
   },
   actions: {
@@ -143,7 +143,7 @@ export const useConnectionsStore = defineStore("connections", {
       }
     },
     connectionByID(id) {
-      const connection = this.connections.find((c) => c.id === id);
+      const connection = this.connections?.find((c) => c.id === id);
       return connection !== null && connection !== undefined
         ? connection
         : null;
