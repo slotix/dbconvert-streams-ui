@@ -27,11 +27,11 @@ const createConnection = async (json) => {
 
 const updateConnection = async (json) => {
   try {
-    const response = await axios.put(
+    await axios.put(
       `http://0.0.0.0:8020/api/v1/connections`,
       json,
     );
-    return response.data;
+    // return response.data;
   } catch (error) {
     const err = error.response?.data.error || error.message;
     throw new Error(err);
