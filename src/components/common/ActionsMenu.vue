@@ -1,12 +1,12 @@
 <template>
   <Menu as="div" class="relative inline-block text-left">
     <MenuButton
-      class="flex items-center rounded-full ring-gray-100 text-gray-600 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-gray-100"
+      class="flex items-center rounded-md ring-gray-100 text-gray-600 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-gray-100"
       @click="$emit('selectRow')"
     >
       <span class="sr-only">Open actions</span>
       <EllipsisHorizontalIcon class="h-6 w-6 mr-5 ml-5" aria-hidden="true" />
-      <span v-show="viewType === 'cards'"> Actions </span>
+      <span class="mr-5" v-show="viewType === 'cards'"> Actions </span>
     </MenuButton>
 
     <transition
