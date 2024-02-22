@@ -101,7 +101,7 @@
                     </th>
                   </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-200 bg-white">
+                <tbody v-if="paginatedTables.length > 0" class="divide-y divide-gray-200 bg-white">
                   <tr v-for="table in paginatedTables" :key="table.name" class="py-4 bg-gray-5">
                     <td class="relative py-4 px-7 sm:w-12 sm:px-6">
                       <div class="absolute inset-y-0 left-0 w-0.5 bg-gray-600"></div>
@@ -138,6 +138,11 @@
                     </td>
                   </tr>
                 </tbody>
+                <tbody v-else>
+                  <tr>
+                    <td colspan="5" class="text-gray-600 py-4 text-center">No tables found</td>
+                  </tr>
+                </tbody>
               </table>
               <Pagination
                 :totalPages="filteredTables.length"
@@ -170,7 +175,9 @@ const selectBtns = [
   { id: 'all', title: 'Select All' },
   { id: 'filter', title: 'Filter' }
 ]
-const selectedBtn = ref(currentStream?.tables?.length > 0 ? selectBtns[1] : selectBtns[0] || selectBtns[1])
+const selectedBtn = ref(
+  currentStream?.tables?.length > 0 ? selectBtns[1] : selectBtns[0] || selectBtns[1]
+)
 
 watch(selectedBtn, (newVal) => {
   if (newVal.id === 'all') {
