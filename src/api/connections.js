@@ -7,8 +7,10 @@ const getConnections = async () => {
     );
     return response.data;
   } catch (error) {
-    const err = error.response?.data.error || error.message;
-    throw new Error(err);
+    const errMessage = error.response?.data.error || error.message;
+    const customErrorMessage =
+      `Unable to connect to the API server. ${errMessage}`;
+    throw new Error(customErrorMessage);
   }
 };
 
