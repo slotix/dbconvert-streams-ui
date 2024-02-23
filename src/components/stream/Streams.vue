@@ -77,7 +77,7 @@ export default {
     } catch (err) {
       // console.log(err)
       useSettingsStore().notificationBar = {
-        msg: 'Error: ' + err,
+        msg: err.message,
         type: 'error'
       }
       useSettingsStore().showNotificationBar = true

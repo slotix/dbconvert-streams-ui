@@ -72,7 +72,7 @@ export default {
       } catch (error) {
         useSettingsStore().showNotificationBar = false;
         useSettingsStore().notificationBar = {
-          msg: "Error: " + error.message,
+          msg: error.message,
           type: "error",
         };
         useSettingsStore().showNotificationBar = true;
@@ -85,7 +85,7 @@ export default {
       } catch (error) {
         useSettingsStore().showNotificationBar = false;
         useSettingsStore().notificationBar = {
-          msg: "Error: " + error.message,
+          msg: error.message,
           type: "error",
         };
         useSettingsStore().showNotificationBar = true;
@@ -107,7 +107,7 @@ export default {
       } catch (error) {
         useSettingsStore().showNotificationBar = false;
         useSettingsStore().notificationBar = {
-          msg: "Error: " + error.message,
+          msg: error.message,
           type: "error",
         };
         useSettingsStore().showNotificationBar = true;
@@ -129,7 +129,7 @@ export default {
       } catch (error) {
         useSettingsStore().showNotificationBar = false;
         useSettingsStore().notificationBar = {
-          msg: "Error: " + error.message,
+          msg: error.message,
           type: "error",
         };
         useSettingsStore().showNotificationBar = true;

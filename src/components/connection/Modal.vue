@@ -112,7 +112,7 @@ async function test() {
     }
   } catch (error) {
     useSettingsStore().notificationBar = {
-      msg: 'Error: ' + error.message,
+      msg: error.message,
       type: 'error'
     }
   }

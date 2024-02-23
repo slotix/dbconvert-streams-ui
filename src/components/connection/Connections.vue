@@ -84,7 +84,7 @@ export default {
       await this.refreshConnections()
     } catch (err) {
       useSettingsStore().notificationBar = {
-        msg: err,
+        msg: err.message,
         type: 'error'
       }
       useSettingsStore().showNotificationBar = true

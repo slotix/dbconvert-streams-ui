@@ -59,7 +59,7 @@ export default {
         await this.refresh()
       } catch (error) {
         useSettingsStore().notificationBar = {
-          msg: 'Error: ' + error.message,
+          msg: error.message,
           type: 'error'
         }
         useSettingsStore().showNotificationBar = true

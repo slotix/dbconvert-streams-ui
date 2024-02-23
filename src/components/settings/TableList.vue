@@ -80,18 +80,18 @@
                         />
                       </div>
                     </th>
-                    <th
-                      scope="col"
-                      class="px-3 py-3.5 text-left uppercase text-sm font-normal text-gray-800 text-right"
-                    >
-                      Size
-                    </th>
-                    <th
-                      scope="col"
-                      class="px-3 py-3.5 text-left uppercase text-sm font-normal text-gray-800 text-right"
-                    >
-                      Rows
-                    </th>
+                    <!-- <th -->
+                    <!--   scope="col" -->
+                    <!--   class="px-3 py-3.5 text-left uppercase text-sm font-normal text-gray-800 text-right" -->
+                    <!-- > -->
+                    <!--   Size -->
+                    <!-- </th> -->
+                    <!-- <th -->
+                    <!--   scope="col" -->
+                    <!--   class="px-3 py-3.5 text-left uppercase text-sm font-normal text-gray-800 text-right" -->
+                    <!-- > -->
+                    <!--   Rows -->
+                    <!-- </th> -->
                     <th
                       scope="col"
                       class="px-3 py-3.5 text-left uppercase text-sm font-normal text-gray-800"
@@ -120,12 +120,12 @@
                     <!-- <td> -->
                     <!--   {{ table.name }} -->
                     <!-- </td> -->
-                    <td class="text-right">
-                      {{ table.size }}
-                    </td>
-                    <td class="text-right pr-3">
-                      {{ table.rows }}
-                    </td>
+                    <!-- <td class="text-right"> -->
+                    <!--   {{ table.size }} -->
+                    <!-- </td> -->
+                    <!-- <td class="text-right pr-3"> -->
+                    <!--   {{ table.rows }} -->
+                    <!-- </td> -->
                     <td
                       class="whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-3"
                       v-if="currentStream.mode !== 'convert'"
@@ -238,9 +238,10 @@ const refreshTables = async () => {
       // if (currentStream.mode === 'cdc') {
       // Set operations for CDC mode
       return {
-        name: entry.name,
-        size: entry.size,
-        rows: entry.rows,
+        name: entry,
+        // name: entry.name,
+        // size: entry.size,
+        // rows: entry.rows,
         operations: ['insert', 'update', 'delete'],
         selected: true // Set the selected property as desired
       }
@@ -257,7 +258,7 @@ const refreshTables = async () => {
   } catch (error) {
     // Handle the error
     useSettingsStore().notificationBar = {
-      msg: 'Error: ' + error.message,
+      msg: error.message,
       type: 'error'
     }
     useSettingsStore().showNotificationBar = true
