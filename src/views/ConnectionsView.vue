@@ -4,7 +4,7 @@
       class="bg-white flex flex-wrap justify-between space-y-4 sm:space-y-0 max-w-7xl mx-auto py-6 px-8"
     >
       <h1 class="flex-auto text-3xl font-bold text-gray-900 dark:text-white;">
-        {{ connectionsCount }} Database Connections.
+        {{ connectionsCount() }} Database Connections.
       </h1>
     </div>
   </header>
@@ -24,9 +24,9 @@ import Edit from '@/components/connection/Edit.vue'
 import { useSettingsStore } from '@/stores/settings.js'
 import { useConnectionsStore } from '@/stores/connections.js'
 
-const connectionsCount = computed(() => {
-  return useConnectionsStore().countConnections;
-})
+function connectionsCount () {
+  return useConnectionsStore().countConnections
+}
 const dlgTp = computed(() => {
   return useSettingsStore().dlgType
 })

@@ -38,5 +38,8 @@ export const useSettingsStore = defineStore("modal", {
     closeModal() {
       this.showModal = false;
     },
+    closeNotification() {
+      this.showNotificationBar = false;
+    },
   },
 });
