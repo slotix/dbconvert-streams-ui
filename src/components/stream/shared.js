@@ -74,6 +74,18 @@ export default {
     selectStream() {
       useStreamsStore().setCurrentStream(this.stream.id);
     },
+    async startStream() {
+      
+      try {
+        await api.startStream(this.stream.id);
+      } catch (error) {
+        useSettingsStore().notificationBar = {
+          type: "error",
+          msg: error.message,
+        };
+        useSettingsStore().showNotificationBar = true;
+      }
+    },
   },
   computed: {
     ...mapState(useStreamsStore, ["currentStream"]),

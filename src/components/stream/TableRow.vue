@@ -65,7 +65,7 @@
   </td>
 
   <td class="px-5 py-5">
-    <PlayIcon class="h-6 w-6 text-gray-600" @selectRow="selectStream" />
+    <PlayIcon class="h-6 w-6 text-gray-600" @selectRow="selectStream" @click="startStream" />
   </td>
 </template>
 

@@ -2,27 +2,18 @@
   <div class="max-w-sm w-full py-6">
     <div
       class="bg-white shadow-md rounded-lg overflow-hidden cursor-pointer transform hover:scale-105 duration-300 ease-in-out"
-      @click="selectStream"
-    >
+      @click="selectStream">
       <div class="flex flex-wrap items-center bg-gray-100 p-4">
         <div class="item w-2/5 flex">
-          <img
-            v-if="source && source.type"
-            class="h-8 w-8 rounded-full"
-            :src="logoSrc(this.source.type)"
-            :alt="source.type + ' logo'"
-          />
+          <img v-if="source && source.type" class="h-8 w-8 rounded-full" :src="logoSrc(this.source.type)"
+            :alt="source.type + ' logo'" />
           <div v-else class="h-8 w-8 rounded-full bg-red-400 flex items-center justify-center">
             <span class="text-white font-mono">x</span>
           </div>
           <ChevronRightIcon class="h-8 w-8 pt-1 text-gray-500" aria-hidden="true" />
 
-          <img
-            v-if="target && target.type"
-            class="h-8 w-8 rounded-full"
-            :src="logoSrc(this.target.type)"
-            :alt="target.type + ' logo'"
-          />
+          <img v-if="target && target.type" class="h-8 w-8 rounded-full" :src="logoSrc(this.target.type)"
+            :alt="target.type + ' logo'" />
           <div v-else class="h-8 w-8 rounded-full bg-red-400 flex items-center justify-center">
             <span class="text-white font-mono">x</span>
           </div>
@@ -66,12 +57,8 @@
         <div class="-ml-px flex w-0 flex-1">
           <ActionsMenu
             class="relative inline-flex w-0 flex-1 items-center justify-center gap-x-3 rounded-bl-lg border-gray-300 border-t py-4 text-sm font-semibold bg-gray-100"
-            :position="actionsMenuPosition"
-            @selectRow="selectStream"
-            @editRow="editStream"
-            @cloneRow="cloneStream"
-            @deleteRow="deleteStream"
-          />
+            :position="actionsMenuPosition" @selectRow="selectStream" @editRow="editStream" @cloneRow="cloneStream"
+            @deleteRow="deleteStream" />
         </div>
         <!-- <router-link -->
         <!--   class="flex w-0 flex-1" -->
@@ -106,10 +93,9 @@
         <!--   </button> -->
         <!-- </div> -->
         <div class="-ml-px flex w-0 flex-1">
-          <button
-            type="button"
+          <button type="button"
             class="relative inline-flex w-0 flex-1 items-center justify-center gap-x-0 rounded-br-lg border-l border-t border-gray-300 py-4 text-sm font-semibold text-gray-700 bg-gray-100"
-          >
+            @click="startStream">
             <PlayIcon class="h-6 w-6 text-gray-600 mr-5 ml-5" @selectRow="selectStream" />
             Start
           </button>

@@ -49,9 +49,23 @@ const cloneStream = async (id) => {
   }
 };
 
+const startStream = async (id) => {
+  try {
+    await axios.post(
+      `http://0.0.0.0:8020/api/v1/streams/${id}/start`,
+    );
+  } catch (error) {
+    const errMessage = error.response?.data.error || error.message;
+    const customErrorMessage =
+      `Unable to connect to the API server. ${errMessage}`;
+    throw new Error(customErrorMessage);
+  }
+};
+
 export default {
   getStreams,
   createStream,
   deleteStream,
   cloneStream,
+  startStream,
 };
