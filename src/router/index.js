@@ -3,6 +3,7 @@ import HomeView from "../views/HomeView.vue";
 import ConnectionsView from "../views/ConnectionsView.vue";
 import StreamsView from "../views/StreamsView.vue";
 import ManageStreamView from "../views/ManageStreamView.vue";
+import MonitorStreamView from "../views/MonitorStreamView.vue";
 import NotFound from "../views/NotFound.vue";
 
 const router = createRouter({
@@ -27,6 +28,12 @@ const router = createRouter({
       path: "/streams/:mode",
       name: "ManageStream",
       component: ManageStreamView,
+      props: true,
+    },
+    {
+      path: "/monitor",
+      name: "MonitorStream",
+      component: MonitorStreamView,
       props: true,
     },
     {
