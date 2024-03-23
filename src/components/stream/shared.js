@@ -77,7 +77,9 @@ export default {
     async startStream() {
       
       try {
-        await api.startStream(this.stream.id);
+        console.log(this.stream.id)
+        const resp = await api.startStream(this.stream.id);
+        console.log(resp.data.id)
       } catch (error) {
         useSettingsStore().notificationBar = {
           type: "error",

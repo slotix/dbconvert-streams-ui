@@ -51,9 +51,10 @@ const cloneStream = async (id) => {
 
 const startStream = async (id) => {
   try {
-    await axios.post(
+    const response = await axios.post(
       `http://0.0.0.0:8020/api/v1/streams/${id}/start`,
     );
+    return response.data
   } catch (error) {
     const errMessage = error.response?.data.error || error.message;
     const customErrorMessage =
