@@ -83,8 +83,8 @@ const stepsCount = store.steps.length
 
 const isNextDisabled = computed(() => {
   return (
-    (currentStream.source === 0 && currentStepNumber === 1) ||
-    (currentStream.target === 0 && currentStepNumber === 3)
+    (currentStream.source === 0 && currentStepNumber.value === 1) ||
+    (currentStream.target === 0 && currentStepNumber.value === 3)
   )
 })
 const isSaveDisabled = computed(() => {

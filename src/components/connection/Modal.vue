@@ -96,7 +96,7 @@ const showActionBtns = computed(() => {
   if (dlgTp.value === DIALOG_TYPES.SAVE) {
     return true
   }
-  if (dlgTp.value === DIALOG_TYPES.UPDATE && currentConnection != null) {
+  if (dlgTp.value === DIALOG_TYPES.UPDATE && currentConnection.value != null) {
     return true
   }
 })

@@ -55,13 +55,10 @@
     }"></div>
       </div>
     </div>
-    <LogContainer />
   </section>
 </template>
 
 <script setup>
 import { useStreamsStore } from '@/stores/streams.js'
-import LogContainer from '@/components/common/LogContainer.vue';
-
 const allSteps = useStreamsStore().steps
 </script>

@@ -44,7 +44,7 @@ export const useStreamsStore = defineStore("streams", {
       {
         id: 1,
         name: "source",
-        title: "Select Source database",
+        title: "Select source database",
         description:
           "Lorem ipsum dolor sit amet consectetur adipisicing elit. Aperiam facilis, voluptates error alias dolorem praesentium sit soluta iure incidunt labore explicabo eaque, quia architecto veritatis dolores, enim consequatur nihil ipsum.",
         img: "/images/steps/source-step.svg",
@@ -60,7 +60,7 @@ export const useStreamsStore = defineStore("streams", {
       {
         id: 3,
         name: "target",
-        title: "Select Target database",
+        title: "Select target database",
         description:
           "Lorem ipsum dolor sit amet consectetur adipisicing elit. Aperiam facilis, voluptates error alias dolorem praesentium sit soluta iure incidunt labore explicabo eaque, quia architecto veritatis dolores, enim consequatur nihil ipsum.",
         img: "/images/steps/destination-step.svg",
@@ -68,7 +68,7 @@ export const useStreamsStore = defineStore("streams", {
       // {
       //   id: 4,
       //   name: "run",
-      //   title: "Run the Stream",
+      //   title: "Monitor running stream",
       //   description:
       //     "Lorem ipsum dolor sit amet consectetur adipisicing elit. Aperiam facilis, voluptates error alias dolorem praesentium sit soluta iure incidunt labore explicabo eaque, quia architecto veritatis dolores, enim consequatur nihil ipsum.",
       //   img: "/images/steps/launch-step.svg",
@@ -79,8 +79,8 @@ export const useStreamsStore = defineStore("streams", {
     // allStreams(state) {
     //   return state.streams;
     // },
-    countStreams(state) {
-      return state.streams?.length || 0;
+    countStreams() {
+      return this.streams?.length || 0;
       // .filter((el) => {
       //   return (
       //     el.type &&
@@ -107,9 +107,9 @@ export const useStreamsStore = defineStore("streams", {
     currentStreamIndexInArray(state) {
       return state.streams.indexOf(state.currentStream);
     },
-    allSteps(state) {
-      return state.steps;
-    },
+    // allSteps() {
+    //   return this.steps;
+    // },
   },
   actions: {
     setCurrentStream(id) {
