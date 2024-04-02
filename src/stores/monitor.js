@@ -13,7 +13,41 @@ export const useMonitoringStore = defineStore ('monitoring', {
     },
     logs: [],
   }),
-  getters: {},
+  getters: {
+    stats (state) {
+      const nodes = state.runningStream.nodes.filter (node => {
+        return node.type === 'source' || node.type === 'target';
+      });
+
+      const filteredLogs = nodes.map (node => {
+        // Filter logs for each node
+        const logsForNode = state.logs.filter (
+          log => log.nodeID === node.id && log.msg.startsWith ('[progress]')
+        );
+
+        // Find the last log entry for the current node
+        const lastLogEntry = logsForNode.length > 0
+          ? logsForNode[logsForNode.length - 1]
+          : null;
+        if (lastLogEntry) {
+          // Split the message into parts
+          const parts = lastLogEntry.msg.split ('|').map (part => part.trim ());
+          lastLogEntry['status'] = parts[0].split (' ')[1];
+          // Extract individual parts using key-value pairs
+          parts.forEach (part => {
+            const [key, value] = part.split (':');
+            if (key && value) {
+              lastLogEntry[key.toLowerCase ()] = value.trim ();
+            }
+          });
+        }
+        return lastLogEntry;
+      });
+      // Remove null entries (nodes without any logs)
+      const filtered = filteredLogs.filter (log => log !== null);
+      return filtered;
+    },
+  },
   actions: {
     async consumeLogsFromNATS () {
       try {
