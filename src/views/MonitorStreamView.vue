@@ -7,20 +7,27 @@
     </div>
   </header>
   <main>
-      <LogContainer />
+    <div class="antialiased bg-gray-200">
+      <div class="flex flex-wrap max-w-7xl mx-auto px-4 overflow-hidden">
+        <div class="w-full px-4 overflow-hidden mb-10">
+          <StatContainer />
+          <LogContainer />
+        </div>
+      </div>
+    </div>
   </main>
 </template>
 
 <script setup>
+
+import { ref, onMounted, computed } from 'vue';
 import LogContainer from '@/components/common/LogContainer.vue';
+import StatContainer from '@/components/common/StatContainer.vue';
 
-const source = "source"
-const target = "target"
-// const streamsCount = computed(() => useStreamsStore().countStreams )
+import { useMonitoringStore } from '@/stores/monitor.js'
 
-// const streamsCount = ref(useStreamsStore().countStreams)
-// const streamsCount = ref(null)
-// const onStreamCountChanged = (value) => {
-//   streamsCount.value = value
-// }
+const store = useMonitoringStore()
+onMounted(() => {
+  store.consumeLogsFromNATS();
+});
 </script>
