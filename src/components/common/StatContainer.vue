@@ -1,15 +1,14 @@
 <template>
-
   <div>
     <dl
       class="mt-5 grid grid-cols-2 divide-y divide-gray-200 overflow-hidden rounded-lg bg-white shadow md:grid-cols-4 md:divide-x md:divide-y-0">
       <div v-for="stat in store.stats" :key="stat.id" class="px-4 py-5 sm:p-6 ">
         <img :src="step(stat.type)?.img" :alt="step(stat.type)?.title" class="object-scale-down h-8 mr-2" />
         <dt class="pb-5 text-base font-normal text-gray-900 ">
-          {{ stat.type }}
-          {{ stat.nodeID }}
+          <span class ="capitalize">{{ stat.type }}</span> 
+          <span class ="text-sm font-medium text-gray-500">{{ stat.nodeID }}</span> 
         </dt>
-        <dd class="mt-1 flex items-baseline justify-between md:block lg:flex">
+        <dd class=" mt-1 flex items-baseline justify-between md:block lg:flex">
           <div class="flex items-baseline text-2xl font-semibold text-gray-600" :class="getStatusColor(stat.status)">
             {{ stat.status }}
           </div>
@@ -84,8 +83,6 @@
 
 </template>
 <script setup>
-
-import { computed } from 'vue';
 
 import { useStreamsStore } from '@/stores/streams.js'
 import { useMonitoringStore } from '@/stores/monitor.js'

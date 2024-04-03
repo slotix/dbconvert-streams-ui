@@ -1,7 +1,7 @@
 <template>
   <div class="relative mt-10 mb-10">
     <div class="absolute inset-0 flex items-center" aria-hidden="true">
-      <div class="w-full border-t border-gray-300" />
+      <div class="w-full border-t border-gray-300"></div>
     </div>
     <div class="relative flex justify-center">
       <span class="bg-white px-3 text-xl font-semibold leading-6 text-gray-900">Logs</span>
@@ -11,14 +11,16 @@
     <div class="sm:hidden">
       <label for="tabs" class="sr-only">Select a tab</label>
       <select id="tabs" name="tabs"
-        class="block w-full rounded-md border-gray-300 focus:border-gray-500 focus:ring-gray-500">
-        <option v-for="tab in nodes" :key="tab.id" :selected="tab.current">{{ tab.type }} - {{ tab.id }}</option>
+        class="block w-full rounded-md border-gray-300 focus:border-gray-500 focus:ring-gray-500"
+        @change="changeTab($event.target.selectedIndex)">
+        <option v-for="(node, nodeIdx) in store.nodes" :key="node.id" :value="nodeIdx"
+          :selected="nodeIdx === activeNode">{{ node.type }} - {{ node.id }}</option>
       </select>
     </div>
     <div class="hidden sm:block">
       <nav class="isolate flex divide-x divide-gray-200 rounded-lg shadow" aria-label="Tabs">
-        <a v-for="(node, nodeIdx) in nodes" :key="node.id"
-          :class="[node.current ? 'text-gray-900' : 'text-gray-500 hover:text-gray-700', nodeIdx === 0 ? 'rounded-l-lg' : '', nodeIdx === nodes.length - 1 ? 'rounded-r-lg' : '', 'group relative min-w-0 flex-1 overflow-hidden bg-white py-4 px-4 text-center text-sm font-medium hover:bg-gray-50 focus:z-10']"
+        <a v-for="(node, nodeIdx) in store.nodes" :key="node.id"
+          :class="[node.current ? 'text-gray-900' : 'text-gray-500 hover:text-gray-700', nodeIdx === 0 ? 'rounded-l-lg' : '', nodeIdx === store.nodes.length - 1 ? 'rounded-r-lg' : '', 'group relative min-w-0 flex-1 overflow-hidden bg-white py-4 px-4 text-center text-sm font-medium hover:bg-gray-50 focus:z-10']"
           :aria-current="node.current ? 'page' : undefined" @click="changeTab(nodeIdx)">
           <div class="flex flex-col items-center"> <!-- Wrap tab content in a flex column -->
             <span class="text-lg font-medium">{{ node.type }}</span> <!-- Tab type as title -->
@@ -78,11 +80,10 @@ const logContainer = ref(null);
 
 const store = useMonitoringStore()
 const logs = store.logs;
-const nodes = store.runningStream.nodes;
 
 const activeNode = ref(0); // Default active tab index
 const filteredLogs = computed(() => {
-  const activeNodeID = nodes[activeNode.value]?.id; // Get the ID of the active tab's node
+  const activeNodeID = store.nodes[activeNode.value]?.id; // Get the ID of the active tab's node
   if (!activeNodeID) {
     return []; // If no active node, return an empty array
   }
@@ -100,7 +101,7 @@ const filteredLogs = computed(() => {
 
 
 const changeTab = (index) => {
-  nodes.forEach((tab, idx) => {
+  store.nodes.forEach((tab, idx) => {
     tab.current = idx === index;
   });
   activeNode.value = index;

@@ -3,26 +3,26 @@ import {connect, AckPolicy, StringCodec} from 'nats.ws';
 
 export const useMonitoringStore = defineStore ('monitoring', {
   state: () => ({
-    runningStream: {
-      id: '',
-      nodes: [],
-    },
-    node: {
-      id: '',
-      type: '',
-    },
+    streamID: '',
+    nodes: [],
     logs: [],
   }),
   getters: {
-    stats (state) {
-      const nodes = state.runningStream.nodes.filter (node => {
+    statNodes (state) {
+      return state.nodes.filter (node => {
         return node.type === 'source' || node.type === 'target';
       });
-
-      const filteredLogs = nodes.map (node => {
+    },
+    apiNode (state) {
+      return state.nodes.filter (node => {
+        return node.type === 'api';
+      });
+    },
+    stats (state) {
+      const filteredLogs = this.statNodes.map (node => {
         // Filter logs for each node
         const logsForNode = state.logs.filter (
-          log => log.nodeID === node.id && log.msg.startsWith ('[progress]')
+          log => log.nodeID === node.id && log.msg.startsWith ('[stat]')
         );
 
         // Find the last log entry for the current node
@@ -75,12 +75,20 @@ export const useMonitoringStore = defineStore ('monitoring', {
           const subjectParts = m.subject.split ('.');
           parsed.type = subjectParts[1]; // Assuming the Node type is the second part of the subject
           parsed.nodeID = subjectParts[2]; // Assuming the NodeId is the second part of the subject
-          const nodeExists = this.runningStream.nodes.find (
+
+          if (parsed.msg.startsWith ('[init]') && parsed.type === 'api') {
+            this.nodes = [];
+            const parts = parsed.msg.split ('ID:');
+            const id = parts[1].trim ();
+            this.streamID = id;
+          }
+
+          const nodeExists = this.nodes.find (
             node => node.id === parsed.nodeID
           );
 
           if (!nodeExists) {
-            this.runningStream.nodes.push ({
+            this.nodes.push ({
               id: parsed.nodeID,
               type: parsed.type,
             });
