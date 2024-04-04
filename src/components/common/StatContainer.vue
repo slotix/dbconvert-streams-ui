@@ -1,7 +1,7 @@
 <template>
   <div>
     <dl
-      class="mt-5 grid grid-cols-2 divide-y divide-gray-200 overflow-hidden rounded-lg bg-white shadow md:grid-cols-4 md:divide-x md:divide-y-0">
+      class="mt-5 grid grid-cols-1 divide-y divide-gray-200 overflow-hidden rounded-lg bg-white shadow md:grid-cols-3 md:divide-x md:divide-y-0">
       <div v-for="stat in store.stats" :key="stat.id" class="px-4 py-5 sm:p-6 ">
         <img :src="step(stat.type)?.img" :alt="step(stat.type)?.title" class="object-scale-down h-8 mr-2" />
         <dt class="pb-5 text-base font-normal text-gray-900 ">
