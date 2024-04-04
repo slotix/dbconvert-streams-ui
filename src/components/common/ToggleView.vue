@@ -5,7 +5,7 @@
       <select
         name="tabs"
         class="block w-full pt-0.2 rounded-md border-gray-300 focus:border-gray-500 focus:ring-gray-500"
-        @change="emitCurrentTab($event.target.value)"
+        @change="toggleView($event.target.value)"
       >
         <option v-for="tab in tabs" :key="tab.name" :selected="tab.current" :id="'tab-' + tab.name">
           {{ tab.name }}
