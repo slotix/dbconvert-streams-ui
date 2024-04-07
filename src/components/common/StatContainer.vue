@@ -3,10 +3,12 @@
     <dl
       class="mt-5 grid grid-cols-1 divide-y divide-gray-200 overflow-hidden rounded-lg bg-white shadow md:grid-cols-3 md:divide-x md:divide-y-0">
       <div v-for="stat in store.stats" :key="stat.id" class="px-4 py-5 sm:p-6 ">
-        <img :src="step(stat.type)?.img" :alt="step(stat.type)?.title" class="object-scale-down h-8 mr-2" />
+        <div class="flex items-center">
+          <img :src="step(stat.type)?.img" :alt="step(stat.type)?.title" class="object-scale-down h-8 mr-2" />
+          <span class="capitalize text-lg font-medium">{{ stat.type }}</span>
+        </div>
         <dt class="pb-5 text-base font-normal text-gray-900 ">
-          <span class ="capitalize">{{ stat.type }}</span> 
-          <span class ="text-sm font-medium text-gray-500">{{ stat.nodeID }}</span> 
+          <span class="text-sm font-medium text-gray-600">{{ stat.nodeID }}</span>
         </dt>
         <dd class=" mt-1 flex items-baseline justify-between md:block lg:flex">
           <div class="flex items-baseline text-2xl font-semibold text-gray-600" :class="getStatusColor(stat.status)">
@@ -43,19 +45,28 @@
     </dl>
   </div>
 
-  <!-- <div v-for="stat in stats" :key="stat.id" class="px-4 py-5 sm:p-0">
+  <div v-for="stat in store.stats" :key="stat.id" class="px-4 py-5 sm:p-0">
     <dl
       class="mt-5 grid grid-cols-1 divide-y divide-gray-200 overflow-hidden rounded-lg bg-white shadow md:grid-cols-6 md:divide-x md:divide-y-0">
-      <dt class="pb-5 text-base font-normal text-gray-900 ">{{ stat.type }} {{ stat.nodeID }}</dt>
+      <dt class="pb-5 text-base font-normal text-gray-900 ">
+        <div class="flex items-center">
+          <img :src="step(stat.type)?.img" :alt="step(stat.type)?.title" class="object-scale-down h-8 mr-2" />
+          <span class="capitalize text-lg font-medium">{{ stat.type }}</span>
+        </div>
+
+      </dt>
       <dd class="mt-1 flex items-baseline justify-between md:block lg:flex">
         <div class="flex items-baseline text-2xl font-semibold text-gray-600" :class="getStatusColor(stat.status)">
           {{ stat.status }}
         </div>
       </dd>
-      <dd class="mt-1 flex items-baseline justify-between md:block lg:flex">
-        <div class="flex items-baseline text-2xl font-semibold text-gray-600">
-          {{ stat.events }}
+      <dd class="mt-1 flex flex-col items-baseline justify-between md:block lg:flex">
+        <div >
           <span class="ml-2 text-sm font-medium text-gray-500"> events </span>
+        </div>
+        <div class="flex items-baseline text-2xl font-semibold text-gray-600">
+
+          {{ stat.events }}
         </div>
       </dd>
 
@@ -79,7 +90,7 @@
         </div>
       </dd>
     </dl>
-  </div> -->
+  </div>
 
 </template>
 <script setup>
