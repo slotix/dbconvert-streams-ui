@@ -4,12 +4,12 @@
       <div class="w-full border-t border-gray-300"></div>
     </div>
     <div class="relative flex justify-center">
-      <span class="bg-white px-3 text-xl font-semibold leading-6 text-gray-900">Logs</span>
+      <span class="px-3 text-xl font-semibold leading-6 text-gray-900">Logs</span>
     </div>
   </div>
   <div>
     <div class="sm:hidden">
-      <label for="tabs" class="sr-only">Select a tab</label>
+      <label for="tabs" class="sr-only">Select a node</label>
       <select id="tabs" name="tabs"
         class="block w-full rounded-md border-gray-300 focus:border-gray-500 focus:ring-gray-500"
         @change="changeTab($event.target.selectedIndex)">
@@ -36,6 +36,7 @@
     <div class="max-h-96 overflow-y-auto px-4 py-5 sm:p-6" ref="logContainer">
       <div v-for="log in filteredLogs" :key="log.id" :class="[
           'flex',
+          'flex-row',
           'items-center',
           'p-2',
           'text-gray-800',
@@ -61,10 +62,12 @@
           <ExclamationTriangleIcon class="mr-3 h-5 w-5 text-yellow-400 group-hover:text-yellow-500"
             aria-hidden="true" />
         </div>
-        <span class="text-gray-500 text-sm ml-2 mr-2">
+        <span class="text-gray-500 tabular-nums text-sm ml-0 mr-2">
           [{{ formatTimestamp(log.ts) }}]
         </span>
-        {{ log.msg }}
+        <span class="basis-5/6">
+          {{ log.msg }}
+        </span>
       </div>
     </div>
   </div>
