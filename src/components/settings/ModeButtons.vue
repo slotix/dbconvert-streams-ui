@@ -37,8 +37,9 @@
 <script setup>
 import { ref, watch } from 'vue'
 import { useStreamsStore } from '@/stores/streams.js'
+import { useCommonStore } from '@/stores/common.js'
 import { RadioGroup, RadioGroupLabel, RadioGroupOption } from '@headlessui/vue'
-const modes = useStreamsStore().modes
+const modes = useCommonStore().modes
 const currentStream = useStreamsStore().currentStream
 const mode = ref(modes.find((option) => option.id === currentStream.mode) || modes[-1])
 watch(mode, (newVal) => {

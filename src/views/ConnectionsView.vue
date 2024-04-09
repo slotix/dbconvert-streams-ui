@@ -21,13 +21,13 @@ import { ref, computed } from 'vue'
 import Connections from '@/components/connection/Connections.vue'
 import Add from '@/components/connection/Add.vue'
 import Edit from '@/components/connection/Edit.vue'
-import { useSettingsStore } from '@/stores/settings.js'
+import { useCommonStore } from '@/stores/common.js'
 import { useConnectionsStore } from '@/stores/connections.js'
 
 function connectionsCount () {
   return useConnectionsStore().countConnections
 }
 const dlgTp = computed(() => {
-  return useSettingsStore().dlgType
+  return useCommonStore().dlgType
 })
 </script>

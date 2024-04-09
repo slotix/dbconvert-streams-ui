@@ -75,17 +75,17 @@ import { ref, computed } from 'vue'
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue'
 import { XMarkIcon } from '@heroicons/vue/24/outline'
 import { mapState } from 'pinia'
-import { useSettingsStore, DIALOG_TYPES } from '@/stores/settings.js'
+import { useCommonStore, DIALOG_TYPES } from '@/stores/common.js'
 import { useConnectionsStore } from '@/stores/connections.js'
 import ActionBtns from './ActionBtns.vue'
 const emit = defineEmits(['ok', 'close'])
 const currentConnection = computed(() => useConnectionsStore().currentConnection)
 const showModal = computed(() => {
-  return useSettingsStore().showModal
+  return useCommonStore().showModal
 })
 
 const dlgTp = computed(() => {
-  return useSettingsStore().dlgType
+  return useCommonStore().dlgType
 })
 
 const isShowDBTypesCombo = computed(() => {
@@ -102,26 +102,26 @@ const showActionBtns = computed(() => {
 })
 
 async function test() {
-  useSettingsStore().showNotificationBar = false
+  useCommonStore().showNotificationBar = false
   const connection = useConnectionsStore().currentConnection
   try {
     const status = await api.testConnection(connection)
-    useSettingsStore().notificationBar = {
+    useCommonStore().notificationBar = {
       msg: status,
       type: 'success'
     }
   } catch (error) {
-    useSettingsStore().notificationBar = {
+    useCommonStore().notificationBar = {
       msg: error.message,
       type: 'error'
     }
   }
-  useSettingsStore().showNotificationBar = true
+  useCommonStore().showNotificationBar = true
 }
 
 function close() {
-  useSettingsStore().showNotificationBar = false
-  useSettingsStore().closeModal()
+  useCommonStore().showNotificationBar = false
+  useCommonStore().closeModal()
 }
 
 function confirm() {

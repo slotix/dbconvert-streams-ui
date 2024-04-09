@@ -37,7 +37,7 @@ import ToggleView from '@/components/common/ToggleView.vue'
 import CardItem from './CardItem.vue'
 
 import { useConnectionsStore } from '@/stores/connections.js'
-import { useSettingsStore } from '@/stores/settings.js'
+import { useCommonStore } from '@/stores/common.js'
 import { mapState, mapActions } from 'pinia'
 
 export default {
@@ -60,14 +60,14 @@ export default {
   }),
   methods: {
     ...mapActions(useConnectionsStore, ['refreshConnections', 'setFilter']),
-    ...mapActions(useSettingsStore, ['getViewType']),
+    ...mapActions(useCommonStore, ['getViewType']),
     filterDB(dbType) {
       this.filter = dbType.type
     }
   },
   computed: {
     ...mapState(useConnectionsStore, ['connectionsByType']),
-    ...mapState(useSettingsStore, ['currentViewType'])
+    ...mapState(useCommonStore, ['currentViewType'])
   },
   watch: {
     filter() {
@@ -79,15 +79,15 @@ export default {
     }
   },
   async mounted() {
-    useSettingsStore().showNotificationBar = false
+    useCommonStore().showNotificationBar = false
     try {
       await this.refreshConnections()
     } catch (err) {
-      useSettingsStore().notificationBar = {
+      useCommonStore().notificationBar = {
         msg: err.message,
         type: 'error'
       }
-      useSettingsStore().showNotificationBar = true
+      useCommonStore().showNotificationBar = true
     }
     await this.getViewType()
   }

@@ -1,6 +1,6 @@
 import { useConnectionsStore } from "@/stores/connections.js";
 import { useStreamsStore } from "@/stores/streams.js";
-import { useSettingsStore } from "@/stores/settings.js";
+import { useCommonStore } from "@/stores/common.js";
 import { mapActions, mapState } from "pinia";
 import api from "@/api/connections.js";
 
@@ -83,11 +83,11 @@ export default {
       "refreshConnections",
     ]),
     addConnection() {
-      useSettingsStore().openModal("Save");
+      useCommonStore().openModal("Save");
     },
     editConnection() {
       this.setCurrentConnection(this.connection.id);
-      useSettingsStore().openModal("Update");
+      useCommonStore().openModal("Update");
     },
     async cloneConnection() {
       this.setCurrentConnection(this.connection.id);

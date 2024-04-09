@@ -56,14 +56,14 @@
 import { ref, watch } from 'vue'
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/vue'
 import { CheckIcon, ChevronUpDownIcon } from '@heroicons/vue/20/solid'
-import { useStreamsStore } from '@/stores/streams.js'
+import { useCommonStore } from '@/stores/common.js'
 const props = defineProps({
   tableOperations: Array
 })
 const emits = defineEmits(['update:tableOperations'])
 const selectedOperations = ref(props.tableOperations)
 
-const operationMap = useStreamsStore().operationMap
+const operationMap = useCommonStore().operationMap
 const operations = Object.keys(operationMap)
 // Watch for changes in the selectedOperations and emit 'update:tableOperations'
 watch(selectedOperations, (newValue) => {

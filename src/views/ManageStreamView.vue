@@ -33,7 +33,7 @@ import { computed  } from 'vue'
 import Connections from '@/components/connection/Connections.vue'
 import Add from '@/components/connection/Add.vue'
 import Edit from '@/components/connection/Edit.vue'
-import { useSettingsStore } from '@/stores/settings.js'
+import { useCommonStore } from '@/stores/common.js'
 import Steps from '@/components/stream/Steps.vue'
 import Settings from '@/components/settings/Settings.vue'
 import { useStreamsStore } from '@/stores/streams.js'
@@ -45,6 +45,6 @@ const props = defineProps({
   mode: String,
 })
 const dlgTp = computed(() => {
-  return useSettingsStore().dlgType
+  return useCommonStore().dlgType
 })
 </script>

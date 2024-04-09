@@ -4,7 +4,7 @@
       <div class="w-full border-t border-gray-300"></div>
     </div>
     <div class="relative flex justify-center">
-      <span class="px-3 text-xl font-semibold leading-6 text-gray-900">Logs</span>
+      <span class="px-3 text-xl font-semibold leading-6 text-gray-600">Logs</span>
     </div>
   </div>
   <div>

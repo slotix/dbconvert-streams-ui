@@ -59,6 +59,6 @@
 </template>
 
 <script setup>
-import { useStreamsStore } from '@/stores/streams.js'
-const allSteps = useStreamsStore().steps
+import { useCommonStore } from '@/stores/common.js'
+const allSteps = useCommonStore().steps
 </script>

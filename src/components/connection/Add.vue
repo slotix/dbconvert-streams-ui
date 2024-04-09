@@ -15,7 +15,7 @@ import Modal from './Modal.vue'
 import ConnectionParams from './params/ConnectionParams.vue'
 import DBTypesListBox from './DBTypesListBox.vue'
 import { useConnectionsStore } from '@/stores/connections'
-import { useSettingsStore } from '@/stores/settings'
+import { useCommonStore } from '@/stores/common'
 import { mapActions, mapState } from 'pinia'
 
 export default {
@@ -38,7 +38,7 @@ export default {
     },
     // create new connection
     async ok() {
-      useSettingsStore().showNotificationBar = false
+      useCommonStore().showNotificationBar = false
       try {
         const json = JSON.stringify(this.currentConnection)
         const connection = await api.createConnection(json)
@@ -58,11 +58,11 @@ export default {
         await this.save()
         await this.refresh()
       } catch (error) {
-        useSettingsStore().notificationBar = {
+        useCommonStore().notificationBar = {
           msg: error.message,
           type: 'error'
         }
-        useSettingsStore().showNotificationBar = true
+        useCommonStore().showNotificationBar = true
       }
     }
   }

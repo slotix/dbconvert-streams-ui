@@ -39,7 +39,7 @@ import CardItem from './CardItem.vue'
 import { useStreamsStore } from '@/stores/streams.js'
 import { useConnectionsStore } from '@/stores/connections.js'
 import { mapState, mapActions } from 'pinia'
-import { useSettingsStore } from '@/stores/settings.js'
+import { useCommonStore } from '@/stores/common.js'
 
 export default {
   name: 'Streams',
@@ -55,14 +55,14 @@ export default {
   methods: {
     ...mapActions(useStreamsStore, ['refreshStreams']),
     ...mapActions(useConnectionsStore, ['refreshConnections']),
-    ...mapActions(useSettingsStore, ['getViewType']),
+    ...mapActions(useCommonStore, ['getViewType']),
     toggleView() {
       this.cardsView = !this.cardsView
     }
   },
   computed: {
     ...mapState(useStreamsStore, ['newestFirst']),
-    ...mapState(useSettingsStore, ['currentViewType']),
+    ...mapState(useCommonStore, ['currentViewType']),
     connectionByID() {
       return (id) => {
         return useConnectionsStore().connectionByID(id)
@@ -70,17 +70,17 @@ export default {
     }
   },
   async mounted() {
-    useSettingsStore().showNotificationBar = false
+    useCommonStore().showNotificationBar = false
     try {
       await this.refreshConnections()
       await this.refreshStreams()
     } catch (err) {
       // console.log(err)
-      useSettingsStore().notificationBar = {
+      useCommonStore().notificationBar = {
         msg: err.message,
         type: 'error'
       }
-      useSettingsStore().showNotificationBar = true
+      useCommonStore().showNotificationBar = true
     }
     await this.getViewType()
   }

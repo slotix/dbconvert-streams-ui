@@ -1,5 +1,5 @@
 import ConnectionName from "./ConnectionName.vue";
-import { DIALOG_TYPES, useSettingsStore } from "@/stores/settings.js";
+import { DIALOG_TYPES, useCommonStore } from "@/stores/common.js";
 import { useConnectionsStore } from "@/stores/connections.js";
 import { mapWritableState } from "pinia";
 import PasswordBox from "@/components/common/PasswordBox.vue";
@@ -40,7 +40,7 @@ export default {
       );
     },
     dlgTp() {
-      return useSettingsStore().dlgType;
+      return useCommonStore().dlgType;
     },
   },
   watch: {
@@ -70,12 +70,12 @@ export default {
         // this.connection.schema= schemas[0];
         console.log(this.currentConnection.schemas);
       } catch (error) {
-        useSettingsStore().showNotificationBar = false;
-        useSettingsStore().notificationBar = {
+        useCommonStore().showNotificationBar = false;
+        useCommonStore().notificationBar = {
           msg: error.message,
           type: "error",
         };
-        useSettingsStore().showNotificationBar = true;
+        useCommonStore().showNotificationBar = true;
       }
     },
     async refreshDatabases() {
@@ -83,12 +83,12 @@ export default {
         const databases = await api.getDatabases(this.currentConnection.id);
         this.currentConnection.databases = databases;
       } catch (error) {
-        useSettingsStore().showNotificationBar = false;
-        useSettingsStore().notificationBar = {
+        useCommonStore().showNotificationBar = false;
+        useCommonStore().notificationBar = {
           msg: error.message,
           type: "error",
         };
-        useSettingsStore().showNotificationBar = true;
+        useCommonStore().showNotificationBar = true;
       }
     },
 
@@ -97,20 +97,20 @@ export default {
         await api.createDatabase(newDatabase, this.currentConnection.id);
         this.currentConnection.databases.push(newDatabase);
         this.currentConnection.database = newDatabase;
-        useSettingsStore().showNotificationBar = false;
-        useSettingsStore().notificationBar = {
+        useCommonStore().showNotificationBar = false;
+        useCommonStore().notificationBar = {
           msg: "Database created",
           type: "success",
         };
-        useSettingsStore().showNotificationBar = true;
+        useCommonStore().showNotificationBar = true;
         this.refreshDatabases();
       } catch (error) {
-        useSettingsStore().showNotificationBar = false;
-        useSettingsStore().notificationBar = {
+        useCommonStore().showNotificationBar = false;
+        useCommonStore().notificationBar = {
           msg: error.message,
           type: "error",
         };
-        useSettingsStore().showNotificationBar = true;
+        useCommonStore().showNotificationBar = true;
       }
     },
 
@@ -119,20 +119,20 @@ export default {
         await api.createSchema(newSchema, this.currentConnection.id);
         this.currentConnection.schemas.push(newSchema);
         this.currentConnection.schema = newSchema;
-        useSettingsStore().showNotificationBar = false;
-        useSettingsStore().notificationBar = {
+        useCommonStore().showNotificationBar = false;
+        useCommonStore().notificationBar = {
           msg: "Schema created",
           type: "success",
         };
-        useSettingsStore().showNotificationBar = true;
+        useCommonStore().showNotificationBar = true;
         this.refreshSchemas();
       } catch (error) {
-        useSettingsStore().showNotificationBar = false;
-        useSettingsStore().notificationBar = {
+        useCommonStore().showNotificationBar = false;
+        useCommonStore().notificationBar = {
           msg: error.message,
           type: "error",
         };
-        useSettingsStore().showNotificationBar = true;
+        useCommonStore().showNotificationBar = true;
       }
     },
   },

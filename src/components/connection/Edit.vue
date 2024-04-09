@@ -11,7 +11,7 @@ import api from '@/api/connections.js'
 import Modal from './Modal.vue'
 import ConnectionParams from './params/ConnectionParams.vue'
 import { useConnectionsStore } from '@/stores/connections.js'
-import { useSettingsStore } from '@/stores/settings'
+import { useCommonStore } from '@/stores/common'
 import { mapActions, mapState } from 'pinia'
 
 export default {
@@ -27,7 +27,7 @@ export default {
 
     // update connection
     async ok() {
-      useSettingsStore().showNotificationBar = false
+      useCommonStore().showNotificationBar = false
       try {
         const json = JSON.stringify(this.currentConnection)
         await api.updateConnection(json)
@@ -45,11 +45,11 @@ export default {
         await this.save()
         await this.refresh()
       } catch (error) {
-        useSettingsStore().notificationBar = {
+        useCommonStore().notificationBar = {
           msg: error.message,
           type: 'error'
         }
-        useSettingsStore().showNotificationBar = true
+        useCommonStore().showNotificationBar = true
       }
     }
   }

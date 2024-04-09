@@ -10,7 +10,7 @@ import {
 import { mapActions, mapState } from "pinia";
 import { useStreamsStore } from "@/stores/streams.js";
 import { useConnectionsStore } from "@/stores/connections.js";
-import { useSettingsStore } from "@/stores/settings.js";
+import { useCommonStore } from "@/stores/common.js";
 import ActionsMenu from "@/components/common/ActionsMenu.vue";
 import api from "@/api/streams.js";
 
@@ -44,7 +44,7 @@ export default {
     };
   },
   methods: {
-    ...mapActions(useSettingsStore, ["getViewType"]),
+    ...mapActions(useCommonStore, ["getViewType"]),
     editStream() {
       this.$router.push({ name: "ManageStream", params: { mode: "edit" } });
     },
@@ -81,11 +81,11 @@ export default {
         const resp = await api.startStream(this.stream.id);
         console.log(resp.data.id)
       } catch (error) {
-        useSettingsStore().notificationBar = {
+        useCommonStore().notificationBar = {
           type: "error",
           msg: error.message,
         };
-        useSettingsStore().showNotificationBar = true;
+        useCommonStore().showNotificationBar = true;
       }
     },
   },
@@ -111,7 +111,7 @@ export default {
       return useStreamsStore().countStreams;
     },
     actionsMenuPosition() {
-      if (useSettingsStore().currentViewType === "cards") {
+      if (useCommonStore().currentViewType === "cards") {
         return "card";
       }
       const index = this.index;

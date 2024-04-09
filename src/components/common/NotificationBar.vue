@@ -21,12 +21,12 @@
 <script setup>
 import { computed } from 'vue'
 import { XMarkIcon, ExclamationCircleIcon } from '@heroicons/vue/20/solid'
-import { useSettingsStore } from '@/stores/settings.js'
-const show = computed(() => useSettingsStore().showNotificationBar)
+import { useCommonStore } from '@/stores/common.js'
+const show = computed(() => useCommonStore().showNotificationBar)
 function notification() {
-  return useSettingsStore().notificationBar
+  return useCommonStore().notificationBar
 }
-const closeNotification = () => useSettingsStore().closeNotification()
+const closeNotification = () => useCommonStore().closeNotification()
 
 const getNotificationClass = (type) => {
   const classes = {

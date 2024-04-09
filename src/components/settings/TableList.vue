@@ -163,7 +163,7 @@ import { FunnelIcon } from '@heroicons/vue/24/outline'
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/vue/20/solid'
 import { RadioGroup, RadioGroupLabel, RadioGroupOption } from '@headlessui/vue'
 import { useStreamsStore } from '@/stores/streams.js'
-import { useSettingsStore } from '@/stores/settings.js'
+import { useCommonStore } from '@/stores/common.js'
 import Pagination from '@/components/common/Pagination.vue'
 import OperationsListBox from '@/components/settings/OperationsListBox.vue'
 import api from '@/api/connections.js'
@@ -231,7 +231,7 @@ const paginatedTables = computed(() => {
 })
 
 const refreshTables = async () => {
-  useSettingsStore().showNotificationBar = false
+  useCommonStore().showNotificationBar = false
   try {
     const response = await api.getTables(currentStream.source)
     tables.value = response.map((entry) => {
@@ -257,11 +257,11 @@ const refreshTables = async () => {
     })
   } catch (error) {
     // Handle the error
-    useSettingsStore().notificationBar = {
+    useCommonStore().notificationBar = {
       msg: error.message,
       type: 'error'
     }
-    useSettingsStore().showNotificationBar = true
+    useCommonStore().showNotificationBar = true
   }
 }
 

@@ -91,10 +91,10 @@ import {
   TrashIcon,
   EllipsisHorizontalIcon
 } from '@heroicons/vue/24/solid'
-import { useSettingsStore } from '@/stores/settings.js'
+import { useCommonStore } from '@/stores/common.js'
 import { computed } from 'vue'
 const props = defineProps(['position'])
 const viewType = computed(() => {
-  return useSettingsStore().currentViewType
+  return useCommonStore().currentViewType
 })
 </script>

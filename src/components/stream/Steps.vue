@@ -72,14 +72,15 @@
 <script setup>
 import api from '@/api/streams.js'
 import { useStreamsStore } from '@/stores/streams.js'
+import { useCommonStore } from '@/stores/common.js'
 import { ref, computed, onMounted } from 'vue'
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/vue/24/outline'
 const currentStream = useStreamsStore().currentStream
 const store = useStreamsStore()
-
-const allSteps = store.steps
+const commonStore = useCommonStore()
+const allSteps = commonStore.steps
 let currentStepNumber = ref(1)
-const stepsCount = store.steps.length
+const stepsCount = commonStore.steps.length
 
 const isNextDisabled = computed(() => {
   return (
