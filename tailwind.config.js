@@ -16,7 +16,7 @@ export default {
         current: "currentColor",
         gray: colors.neutral,
         yellow: colors.orange,
-        green: colors.teal
+        green: colors.cyan
       }
     },
   },
