@@ -96,7 +96,7 @@
           <button type="button"
             class="relative inline-flex w-0 flex-1 items-center justify-center gap-x-0 rounded-br-lg border-l border-t border-gray-300 py-4 text-sm font-semibold text-gray-700 bg-gray-100"
             @click="startStream">
-            <PlayIcon class="h-6 w-6 text-gray-600 mr-5 ml-5" @selectRow="selectStream" />
+            <PlayIcon class="h-6 w-6 text-green-700 mr-5 ml-5" @selectRow="selectStream" />
             Start
           </button>
         </div>
