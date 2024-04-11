@@ -6,8 +6,64 @@ export const useMonitoringStore = defineStore ('monitoring', {
     streamID: '',
     nodes: [],
     logs: [],
+    currentStageID: 0,
+    stages: [
+      {
+        id: 1,
+        name: 'init',
+        title: 'Initializing Stream',
+        description: 'Setting up connections and resources for data transfer.',
+      },
+      {
+        id: 2,
+        name: 'createMeta',
+        title: 'Replicating Meta Structures',
+        description: 'Duplicating table and index meta-information onto the target database.',
+      },
+      {
+        id: 3,
+        name: 'dataTransfer',
+        title: 'Transferring Data',
+        description: 'Actual movement of data records from the source to the target database.',
+      },
+      {
+        id: 4,
+        name: 'finished',
+        title: 'Finished',
+        description: 'Completed the data transfer process.',
+      },
+    ],
+    status: {
+      UNDEFINED: 0,
+      READY: 1,
+      RUNNING: 2,
+      FAILED: 3,
+      TIME_LIMIT_REACHED: 4,
+      EVENT_LIMIT_REACHED: 5,
+      STOPPED: 6,
+      FINISHED: 7,
+    },
   }),
   getters: {
+    currentStage (state) {
+      if (this.stats.length > 0) {
+        var runningNodesNumber = this.stats.filter (stat => {
+          const statusID = this.status[stat.status];
+          return statusID < this.status['FAILED'];
+        }).length;
+        if (runningNodesNumber === 0) {
+          state.currentStageID = 4;
+        }
+      }
+      const stage = state.stages.find (
+        stage => stage.id === state.currentStageID
+      );
+      return stage ? stage : null;
+    },
+
+    stagesBarWidth (state) {
+      return parseInt (state.currentStageID / state.stages.length * 100) + '%';
+    },
     statNodes (state) {
       return state.nodes.filter (node => {
         return node.type === 'source' || node.type === 'target';
@@ -82,7 +138,11 @@ export const useMonitoringStore = defineStore ('monitoring', {
             const id = parts[1].trim ();
             this.streamID = id;
           }
-
+          if (parsed.msg.startsWith ('[progress]')) {
+            const parts = parsed.msg.split ('|');
+            const stage = parts[0].split ('STAGE:')[1];
+            this.currentStageID = parseInt (stage);
+          }
           const nodeExists = this.nodes.find (
             node => node.id === parsed.nodeID
           );
