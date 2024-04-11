@@ -20,7 +20,7 @@
     <div class="hidden sm:block">
       <nav class="isolate flex divide-x divide-gray-200 rounded-lg shadow" aria-label="Tabs">
         <a v-for="(node, nodeIdx) in store.nodes" :key="node.id"
-          :class="[node.current ? 'text-gray-900' : 'text-gray-500 hover:text-gray-700', nodeIdx === 0 ? 'rounded-l-lg' : '', nodeIdx === store.nodes.length - 1 ? 'rounded-r-lg' : '', 'group relative min-w-0 flex-1 overflow-hidden bg-white py-4 px-4 text-center text-sm font-medium hover:bg-gray-50 focus:z-10']"
+          :class="[node.current ? 'text-gray-900' : 'text-gray-500 hover:text-gray-700', nodeIdx === 0 ? 'rounded-l-lg' : '', nodeIdx === store.nodes.length - 1 ? 'rounded-r-lg' : '', 'group relative min-w-0 flex-1 overflow-hidden bg-white py-4 px-4 text-center text-sm font-medium hover:bg-gray-100 focus:z-10']"
           :aria-current="node.current ? 'page' : undefined" @click="changeTab(nodeIdx)">
           <div class="flex flex-col items-center"> <!-- Wrap tab content in a flex column -->
             <span class="text-lg font-medium">{{ node.type }}</span> <!-- Tab type as title -->
@@ -35,17 +35,17 @@
   <div class="divide-y divide-gray-200 overflow-hidden rounded-lg bg-white shadow">
     <div class="max-h-96 overflow-y-auto px-4 py-5 sm:p-6" ref="logContainer">
       <div v-for="log in filteredLogs" :key="log.id" :class="[
-          'flex',
-          'flex-row',
-          'items-center',
-          'p-2',
-          'text-gray-800',
-          'font-mono',
-          'border-b border-gray-100',
-          { 'bg-white': log.level !== 'warn' && log.level !== 'error' },
-          { 'bg-yellow-100': log.level === 'warn' },
-          { 'bg-red-100': log.level === 'error' }
-        ]">
+        'flex',
+        'flex-row',
+        'items-center',
+        'p-2',
+        'text-gray-800',
+        'font-mono',
+        'border-b border-gray-100',
+        { 'bg-white': log.level !== 'warn' && log.level !== 'error' },
+        { 'bg-yellow-100': log.level === 'warn' },
+        { 'bg-red-100': log.level === 'error' }
+      ]">
 
         <div v-if="log.level === 'info'">
           <InformationCircleIcon class="mr-3 h-5 w-5 text-blue-400 group-hover:text-blue-500" aria-hidden="true" />
