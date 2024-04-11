@@ -1,11 +1,7 @@
 <template>
-  <div class="relative mt-10 mb-10">
-    <div class="absolute inset-0 flex items-center" aria-hidden="true">
-      <div class="w-full border-t border-gray-300"></div>
-    </div>
-    <div class="relative flex justify-center">
-      <span class="px-3 text-xl font-semibold leading-6 text-gray-600">Stats of Nodes </span>
-    </div>
+
+  <div class="relative mt-10 mb-10 border-b border-gray-300 pb-5">
+    <h3 class="text-xl font-semibold leading-6 text-gray-900">Stats of Nodes</h3>
   </div>
   <div
     class="mt-5 grid grid-cols-1 divide-y divide-gray-200 overflow-hidden rounded-lg bg-white shadow md:grid-cols-3 md:divide-x md:divide-y-0">

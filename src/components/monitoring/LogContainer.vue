@@ -1,11 +1,7 @@
 <template>
-  <div class="relative mt-10 mb-10">
-    <div class="absolute inset-0 flex items-center" aria-hidden="true">
-      <div class="w-full border-t border-gray-300"></div>
-    </div>
-    <div class="relative flex justify-center">
-      <span class="px-3 text-xl font-semibold leading-6 text-gray-600">Logs</span>
-    </div>
+
+  <div class="relative mt-10 mb-10 border-b border-gray-300 pb-5">
+    <h3 class="text-xl font-semibold leading-6 text-gray-900">Logs</h3>
   </div>
   <div>
     <div class="sm:hidden">
