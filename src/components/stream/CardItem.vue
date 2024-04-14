@@ -54,24 +54,25 @@
         </div>
       </div>
       <div class="-mt-px flex">
+        
+        <router-link
+          class="flex w-0 flex-1"
+          :to="{ name: 'ManageStream', params: { mode: 'edit' } }"
+        >
+          <button 
+            type="button"
+            class="relative -mr-px inline-flex w-0 flex-1 items-center justify-center gap-x-3  rounded-bl-lg border border-gray-300 py-4 text-sm  text-gray-700 font-semibold bg-gray-100"
+          >
+            <PencilIcon class="h-5 w-5 text-gray-700" aria-hidden="true" />
+            Edit
+           </button>
+         </router-link>
         <div class="-ml-px flex w-0 flex-1">
           <ActionsMenu
-            class="relative inline-flex w-0 flex-1 items-center justify-center gap-x-3 rounded-bl-lg border-gray-300 border-t py-4 text-sm font-semibold bg-gray-100"
+            class="relative inline-flex w-0 flex-1 items-center justify-center gap-x-3  border-gray-300 border-t border-l py-4 text-sm font-semibold bg-gray-100"
             :position="actionsMenuPosition" @selectRow="selectStream" @editRow="editStream" @cloneRow="cloneStream"
             @deleteRow="deleteStream" />
         </div>
-        <!-- <router-link -->
-        <!--   class="flex w-0 flex-1" -->
-        <!--   :to="{ name: 'ManageStream', params: { mode: 'edit' } }" -->
-        <!-- > -->
-        <!--   <button -->
-        <!--     type="button" -->
-        <!--     class="relative -mr-px inline-flex w-0 flex-1 items-center justify-center gap-x-3 rounded-bl-lg border border-gray-500 py-4 text-sm font-semibold text-gray-200 bg-gray-600" -->
-        <!--   > -->
-        <!--     <PencilIcon class="h-5 w-5 text-gray-200" aria-hidden="true" /> -->
-        <!--     Edit -->
-        <!--   </button> -->
-        <!-- </router-link> -->
         <!-- <div class="-ml-px flex w-0 flex-1"> -->
         <!--   <button -->
         <!--     type="button" -->

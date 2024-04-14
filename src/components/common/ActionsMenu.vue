@@ -5,8 +5,8 @@
       @click="$emit('selectRow')"
     >
       <span class="sr-only">Open actions</span>
-      <EllipsisHorizontalIcon class="h-6 w-6 mr-5 ml-5" aria-hidden="true" />
-      <span class="mr-5" v-show="viewType === 'cards'"> Actions </span>
+      <EllipsisHorizontalIcon class="h-6 w-6 mr-3 ml-3" aria-hidden="true" />
+      <span class="mr-5" v-show="viewType === 'cards'"> More </span>
     </MenuButton>
 
     <transition
@@ -24,42 +24,7 @@
           'left-4 bottom-16 ': position === 'card'
         }"
       >
-        <div class="py-1">
-          <!-- <router-link :to="{ name: 'ManageStream', params: { mode: 'edit' } }"> -->
-          <MenuItem v-slot="{ active }">
-            <a
-              href="#"
-              :class="[
-                active ? 'bg-gray-100 text-gray-900' : 'text-gray-700',
-                'group flex items-center px-4 py-2 text-sm'
-              ]"
-              @click="$emit('editRow')"
-            >
-              <PencilIcon
-                class="mr-3 h-5 w-5 text-gray-400 group-hover:text-gray-500"
-                aria-hidden="true"
-              />
-              Edit
-            </a>
-          </MenuItem>
-          <!-- </router-link> -->
-          <MenuItem v-slot="{ active }">
-            <a
-              href="#"
-              :class="[
-                active ? 'bg-gray-100 text-gray-900' : 'text-gray-700',
-                'group flex items-center px-4 py-2 text-sm'
-              ]"
-              @click="$emit('cloneRow')"
-            >
-              <Square2StackIcon
-                class="mr-3 h-5 w-5 text-gray-400 group-hover:text-gray-500"
-                aria-hidden="true"
-              />
-              Clone
-            </a>
-          </MenuItem>
-        </div>
+
         <div class="py-1">
           <MenuItem v-slot="{ active }">
             <a
@@ -75,6 +40,42 @@
                 aria-hidden="true"
               />
               Delete
+            </a>
+          </MenuItem>
+        </div>
+        <div class="py-1">
+          <!-- <router-link :to="{ name: 'ManageStream', params: { mode: 'edit' } }"> -->
+          <!-- <MenuItem v-slot="{ active }">
+            <a
+              href="#"
+              :class="[
+                active ? 'bg-gray-100 text-gray-900' : 'text-gray-700',
+                'group flex items-center px-4 py-2 text-sm'
+              ]"
+              @click="$emit('editRow')"
+            >
+              <PencilIcon
+                class="mr-3 h-5 w-5 text-gray-400 group-hover:text-gray-500"
+                aria-hidden="true"
+              />
+              Edit
+            </a>
+          </MenuItem> -->
+          <!-- </router-link> -->
+          <MenuItem v-slot="{ active }">
+            <a
+              href="#"
+              :class="[
+                active ? 'bg-gray-100 text-gray-900' : 'text-gray-700',
+                'group flex items-center px-4 py-2 text-sm'
+              ]"
+              @click="$emit('cloneRow')"
+            >
+              <Square2StackIcon
+                class="mr-3 h-5 w-5 text-gray-400 group-hover:text-gray-500"
+                aria-hidden="true"
+              />
+              Clone
             </a>
           </MenuItem>
         </div>
