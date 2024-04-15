@@ -44,8 +44,8 @@
           </MenuItem>
         </div>
         <div class="py-1">
-          <!-- <router-link :to="{ name: 'ManageStream', params: { mode: 'edit' } }"> -->
-          <!-- <MenuItem v-slot="{ active }">
+          <!-- <router-link :to="{ name: 'ManageStream', params: { mode: 'edit' } }"> 
+          <MenuItem v-slot="{ active }">
             <a
               href="#"
               :class="[
@@ -60,8 +60,8 @@
               />
               Edit
             </a>
-          </MenuItem> -->
-          <!-- </router-link> -->
+          </MenuItem>
+           </router-link> -->
           <MenuItem v-slot="{ active }">
             <a
               href="#"

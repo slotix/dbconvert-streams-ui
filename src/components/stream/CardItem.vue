@@ -87,10 +87,11 @@
         </div>
       </div> -->
       <div class="-mt-px flex">
-
         <router-link class="flex w-0 flex-1" :to="{ name: 'ManageStream', params: { mode: 'edit' } }">
           <button type="button"
-            class="relative -mr-px inline-flex w-0 flex-1 items-center justify-center gap-x-3  rounded-bl-lg border border-gray-300 py-4 text-sm  text-gray-700 font-semibold bg-gray-100">
+            class="relative -mr-px inline-flex w-0 flex-1 items-center justify-center gap-x-3  rounded-bl-lg border border-gray-300 py-4 text-sm  text-gray-700 font-semibold bg-gray-100"
+            @click="editStream"
+            >
             <PencilIcon class="h-5 w-5 text-gray-700" aria-hidden="true" />
             Edit
           </button>

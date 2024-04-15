@@ -48,6 +48,7 @@ export default {
   methods: {
     ...mapActions (useCommonStore, ['getViewType']),
     editStream () {
+      this.selectStream();
       this.$router.push ({name: 'ManageStream', params: {mode: 'edit'}});
     },
     async deleteStream () {
