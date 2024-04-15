@@ -1,15 +1,15 @@
 <template>
 
-  <div class="relative mt-10 mb-10 border-b border-gray-300 pb-5">
+  <div class="relative mt-20  pb-5">
     <h3 class="text-xl font-semibold leading-6 text-gray-900">Stats of Nodes</h3>
   </div>
   <div
-    class="mt-5 grid grid-cols-1 divide-y divide-gray-200 overflow-hidden rounded-lg bg-white shadow md:grid-cols-3 md:divide-x md:divide-y-0">
+    class="grid grid-cols-1 divide-y divide-gray-200 overflow-hidden rounded-lg bg-white shadow md:grid-cols-3 md:divide-x md:divide-y-0">
     <div v-for="stat in store.stats" :key="stat.id">
       <div class="px-4 py-5 sm:p-6 bg-gray-100">
         <div class="flex items-center ">
           <img :src="step(stat.type)?.img" :alt="step(stat.type)?.title" class="object-scale-down h-8 mr-2" />
-          <span class="capitalize text-lg font-medium"> {{ outType(stat.type) }} </span>
+          <span class="capitalize text-lg font-medium"> {{ outType(stat.type).title }} </span>
         </div>
       </div>
       <dl class="px-4 py-5 sm:p-6">
@@ -21,7 +21,7 @@
         <div class="flex items-baseline justify-between md:block lg:flex border-b border-gray-100">
           <dd class="mt-1 flex items-baseline text-2xl font-semibold text-gray-600"> {{ stat.events }} </dd>
           <dt class="ml-2 font-medium text-gray-500">
-            events
+            {{ outType(stat.type).ioType }} events
           </dt>
         </div>
 
@@ -35,7 +35,7 @@
         <div class="flex items-baseline justify-between md:block lg:flex border-b border-gray-100">
           <dd class="mt-1 flex items-baseline text-2xl font-semibold text-gray-600"> {{ stat.size }} </dd>
           <dt class="ml-2 font-medium text-gray-500">
-            size
+            data size
           </dt>
         </div>
         <div class="flex items-baseline justify-between md:block lg:flex border-b border-gray-100">
@@ -43,7 +43,7 @@
             }}
           </dd>
           <dt v-if="stat.rate" class="ml-2 font-medium text-gray-500">
-            rate
+            {{ outType(stat.type).ioType }} rate
           </dt>
           <dt v-else class="ml-2 font-medium text-gray-500">
             average rate
@@ -69,16 +69,19 @@ const steps = useCommonStore().steps
 const step = (name) => steps.find(step => step.name === name)
 
 const store = useMonitoringStore()
+
+
 const outType = (type) => {
   switch (type) {
     case 'source':
-      return 'Source Reader';
+      return { title: 'Source Reader', ioType: 'input' };
     case 'target':
-      return 'Target Writer';
+      return { title: 'Target Writer', ioType: 'output' };
     default:
-      return type;
+      return { title: type, ioType: 'Unknown' };
   }
 };
+
 
 const getStatusColor = (status) => {
   // Return a class based on the status value

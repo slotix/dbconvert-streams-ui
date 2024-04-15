@@ -1,6 +1,6 @@
 <template>
 
-  <div class="relative mt-10 mb-10 border-b border-gray-300 pb-5">
+  <div class="relative mt-20  pb-5">
     <h3 class="text-xl font-semibold leading-6 text-gray-900">Logs</h3>
   </div>
   <div>
@@ -44,18 +44,18 @@
       ]">
 
         <div v-if="log.level === 'info'">
-          <InformationCircleIcon class="mr-3 h-5 w-5 text-blue-400 group-hover:text-blue-500" aria-hidden="true" />
+          <InformationCircleIcon class="mr-3 h-5 w-5 text-green-600 group-hover:text-green-700" aria-hidden="true" />
         </div>
         <div v-else-if="log.level === 'debug'">
-          <BugAntIcon class="mr-3 h-5 w-5 text-gray-400 group-hover:text-gray-500" aria-hidden="true" />
+          <BugAntIcon class="mr-3 h-5 w-5 text-gray-600 group-hover:text-gray-700" aria-hidden="true" />
         </div>
 
         <div v-else-if="log.level === 'error'">
-          <ExclamationCircleIcon class="mr-3 h-5 w-5 text-red-400 group-hover:text-red-500" aria-hidden="true" />
+          <ExclamationCircleIcon class="mr-3 h-5 w-5 text-red-600 group-hover:text-red-700" aria-hidden="true" />
         </div>
 
         <div v-else-if="log.level === 'warn'">
-          <ExclamationTriangleIcon class="mr-3 h-5 w-5 text-yellow-400 group-hover:text-yellow-500"
+          <ExclamationTriangleIcon class="mr-3 h-5 w-5 text-yellow-600 group-hover:text-yellow-700"
             aria-hidden="true" />
         </div>
         <span class="text-gray-500 tabular-nums text-sm ml-0 mr-2">
