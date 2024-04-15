@@ -31,20 +31,21 @@
                 'relative cursor-default select-none py-2 pl-3 pr-9'
               ]"
             >
-              <span
-                class="pr-8"
-                :class="[selected ? 'font-semibold' : 'font-normal', 'block truncate']"
-                >{{ operation }}</span
-              >
+
               <span
                 v-if="selected"
                 :class="[
                   active ? 'text-white' : 'text-gray-600',
-                  'absolute inset-y-0 right-0 flex items-center pr-4'
+                  'absolute inset-y-0 left-3 flex items-center pr-4'
                 ]"
               >
-                <CheckIcon class="h-5 w-5" aria-hidden="true" />
+                <CheckCircleIcon class="h-5 w-5" aria-hidden="true" />
               </span>
+              <span
+                class="pl-8"
+                :class="[selected ? 'font-semibold' : 'font-normal', 'block truncate']"
+                >{{ operation }}</span
+              >
             </li>
           </ListboxOption>
         </ListboxOptions>
@@ -55,7 +56,7 @@
 <script setup>
 import { ref, watch } from 'vue'
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/vue'
-import { CheckIcon, ChevronUpDownIcon } from '@heroicons/vue/20/solid'
+import { CheckCircleIcon, ChevronUpDownIcon } from '@heroicons/vue/20/solid'
 import { useCommonStore } from '@/stores/common.js'
 const props = defineProps({
   tableOperations: Array

@@ -33,12 +33,6 @@
                 </th>
                 <th
                   scope="col"
-                  class="px-5 py-3 border-b border-gray-200 text-gray-800 text-left uppercase font-normal"
-                >
-                  Mode
-                </th>
-                <th
-                  scope="col"
                   class="hidden px-5 py-3 border-b border-gray-200 text-gray-800 text-left uppercase font-normal lg:table-cell"
                 >
                   Source
@@ -51,9 +45,9 @@
                 </th>
                 <th
                   scope="col"
-                  class="px-5 py-3 border-b border-gray-200 text-gray-800 text-left uppercase font-normal hidden lg:table-cell"
+                  class="px-5 py-3 border-b border-gray-200 text-gray-800 text-left uppercase font-normal  lg:table-cell"
                 >
-                  Created at
+                 Edit 
                 </th>
                 <th
                   scope="col"
@@ -63,7 +57,7 @@
                 </th>
                 <th
                   scope="col"
-                  class="px-5 py-3 border-b border-gray-200 text-gray-800 text-left uppercase font-normal hidden lg:table-cell"
+                  class="px-5 py-3 border-b border-gray-200 text-gray-800 text-left uppercase font-normal  lg:table-cell"
                 >
                   Start 
                 </th>

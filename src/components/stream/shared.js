@@ -6,13 +6,13 @@ import {
   PlayIcon,
   Square2StackIcon,
   TrashIcon,
-} from "@heroicons/vue/24/solid";
-import { mapActions, mapState } from "pinia";
-import { useStreamsStore } from "@/stores/streams.js";
-import { useConnectionsStore } from "@/stores/connections.js";
-import { useCommonStore } from "@/stores/common.js";
-import ActionsMenu from "@/components/common/ActionsMenu.vue";
-import api from "@/api/streams.js";
+} from '@heroicons/vue/24/solid';
+import {mapActions, mapState} from 'pinia';
+import {useStreamsStore} from '@/stores/streams.js';
+import {useConnectionsStore} from '@/stores/connections.js';
+import {useCommonStore} from '@/stores/common.js';
+import ActionsMenu from '@/components/common/ActionsMenu.vue';
+import api from '@/api/streams.js';
 
 export default {
   props: {
@@ -37,90 +37,99 @@ export default {
     PlayIcon,
     ActionsMenu,
   },
-  setup() {
-    const dbTypes = useConnectionsStore().dbTypes;
+  setup () {
+    const dbTypes = useConnectionsStore ().dbTypes;
+    const steps = useCommonStore ().steps;
     return {
       dbTypes,
+      steps,
     };
   },
   methods: {
-    ...mapActions(useCommonStore, ["getViewType"]),
-    editStream() {
-      this.$router.push({ name: "ManageStream", params: { mode: "edit" } });
+    ...mapActions (useCommonStore, ['getViewType']),
+    editStream () {
+      this.$router.push ({name: 'ManageStream', params: {mode: 'edit'}});
     },
-    async deleteStream() {
+    async deleteStream () {
       try {
-        await api.deleteStream(this.stream.id);
-        await useStreamsStore().deleteStream(this.stream.id);
-        await useStreamsStore().refreshStreams();
+        await api.deleteStream (this.stream.id);
+        await useStreamsStore ().deleteStream (this.stream.id);
+        await useStreamsStore ().refreshStreams ();
       } catch (e) {
-        console.log(e);
+        console.log (e);
       }
     },
-    async cloneStream() {
+    async cloneStream () {
       try {
-        useStreamsStore().setCurrentStream(this.stream.id);
-        const resp = await api.cloneStream(this.stream.id);
+        useStreamsStore ().setCurrentStream (this.stream.id);
+        const resp = await api.cloneStream (this.stream.id);
         // this.currentStream.id = stream.id;
         // this.currentStream.created = stream.created;
         this.stream.id = resp.id;
         this.stream.created = resp.created;
-        await useStreamsStore().saveStream(this.stream.id);
-        await useStreamsStore().refreshStreams();
+        await useStreamsStore ().saveStream (this.stream.id);
+        await useStreamsStore ().refreshStreams ();
       } catch (e) {
-        console.log(e);
+        console.log (e);
       }
     },
-    selectStream() {
-      useStreamsStore().setCurrentStream(this.stream.id);
+    selectStream () {
+      useStreamsStore ().setCurrentStream (this.stream.id);
     },
-    async startStream() {
-      
+    async startStream () {
       try {
-        console.log(this.stream.id)
-        const resp = await api.startStream(this.stream.id);
-        console.log(resp.data.id)
+        console.log (this.stream.id);
+        const resp = await api.startStream (this.stream.id);
+        console.log (resp.data.id);
       } catch (error) {
-        useCommonStore().notificationBar = {
-          type: "error",
+        useCommonStore ().notificationBar = {
+          type: 'error',
           msg: error.message,
         };
-        useCommonStore().showNotificationBar = true;
+        useCommonStore ().showNotificationBar = true;
       }
     },
   },
   computed: {
-    ...mapState(useStreamsStore, ["currentStream"]),
-    streamCreated() {
-      let date = new Date(this.stream.created * 1000);
-      return date.toLocaleDateString() + " - " + date.toLocaleTimeString();
+    ...mapState (useStreamsStore, ['currentStream']),
+    streamCreated () {
+      let date = new Date (this.stream.created * 1000);
+      return date.toLocaleDateString () + ' - ' + date.toLocaleTimeString ();
       // return date.toUTCString();
     },
-    logoSrc() {
-      return (tp) => {
-        let dbType = this.dbTypes.filter((f) => {
+    logoSrc () {
+      return tp => {
+        let dbType = this.dbTypes.filter (f => {
           return f.type === tp;
         });
         return dbType[0].logo;
       };
     },
-    index() {
-      return useStreamsStore().currentStreamIndexInArray;
+    // step () {
+    //   return name => {
+    //     let step = this.steps.filter (step => {
+    //       return step.name === name;
+    //     });
+    //     return step[0];
+    //   };
+    // },
+    index () {
+      return useStreamsStore ().currentStreamIndexInArray;
     },
-    rowCount() {
-      return useStreamsStore().countStreams;
+    rowCount () {
+      return useStreamsStore ().countStreams;
     },
-    actionsMenuPosition() {
-      if (useCommonStore().currentViewType === "cards") {
-        return "card";
+    actionsMenuPosition () {
+      if (useCommonStore ().currentViewType === 'cards') {
+        return 'card';
       }
       const index = this.index;
       const rowCount = this.rowCount;
 
-      return index > rowCount / 2 ? "top" : "bottom";
+      return index > rowCount / 2 ? 'top' : 'bottom';
     },
   },
-  async mounted() {
-    await this.getViewType();
+  async mounted () {
+    await this.getViewType ();
   },
 };
