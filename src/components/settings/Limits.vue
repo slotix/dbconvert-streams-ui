@@ -1,39 +1,21 @@
 <template>
-  <div class="px-4 sm:px-6 lg:px-8">
-    <div class="flex items-center">
-      <div class="flex-auto border-b border-gray-400 pb-5">
-        <h3 class="text-base font-semibold leading-6 text-gray-900">Limits</h3>
-      </div>
+  <h3 class=" text-base mt-6 font-semibold leading-6 text-gray-900">Limits</h3>
+  <div class="mt-2 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-2">
+    <div>
+      <label for="numberOfEvents" class="block text-sm font-medium text-gray-700">Number of Events:</label>
+      <input type="number" id="numberOfEvents" v-model="limits.numberOfEvents"
+        class="mt-1 focus:ring-gray-500 focus:border-gray-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" />
     </div>
-    <div class="mt-6">
-      <div>
-        <label for="numberOfEvents" class="block text-sm font-medium text-gray-700"
-          >Number of Events:</label
-        >
-        <input
-          type="number"
-          id="numberOfEvents"
-          v-model="limits.numberOfEvents"
-          class="mt-1 focus:ring-gray-500 focus:border-gray-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-        />
-      </div>
-      <div class="mt-4">
-        <label for="elapsedTime" class="block text-sm font-medium text-gray-700"
-          >Elapsed Time (seconds):</label
-        >
-        <input
-          type="number"
-          id="elapsedTime"
-          v-model="limits.elapsedTime"
-          class="mt-1 focus:ring-gray-500 focus:border-gray-500 focus:border-gray-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-        />
-      </div>
+    <div>
+      <label for="elapsedTime" class="block text-sm font-medium text-gray-700">Elapsed Time (seconds):</label>
+      <input type="number" id="elapsedTime" v-model="limits.elapsedTime"
+        class="mt-1 focus:ring-gray-500 focus:border-gray-500 focus:border-gray-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" />
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, watch, watchEffect } from 'vue'
+import { ref, watch } from 'vue'
 import { useStreamsStore } from '@/stores/streams.js'
 const currentStream = useStreamsStore().currentStream
 

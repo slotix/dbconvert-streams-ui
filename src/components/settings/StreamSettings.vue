@@ -12,24 +12,29 @@
                 <input type="number" id="dataBundleSize" v-model="dataBundleSize"
                     class="mt-1 focus:ring-gray-500 focus:border-gray-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" />
             </div>
-            <div class="mt-4">
-                <label for="elapsedTime" class="block text-sm font-medium text-gray-700">Source Reader Reporting
-                    Interval (seconds):</label>
-                <input type="number" id="sourceReaderReportingInterval" v-model="reportingIntervals.source"
-                    class="mt-1 focus:ring-gray-500 focus:border-gray-500 focus:border-gray-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" />
+
+            <h3 class="text-base mt-6 font-semibold leading-6 text-gray-900">Reporting Intervals (seconds)</h3>
+            <div class="mt-2 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-2">
+                <div class="">
+                    <label for="elapsedTime" class="block text-sm font-medium text-gray-700">Source Reader</label>
+                    <input type="number" id="sourceReaderReportingInterval" v-model="reportingIntervals.source"
+                        class="mt-1 focus:ring-gray-500 focus:border-gray-500 focus:border-gray-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" />
+                </div>
+                <div class="">
+                    <label for="elapsedTime" class="block text-sm font-medium text-gray-700">Target Writers</label>
+                    <input type="number" id="targetWriterReportingInterval" v-model="reportingIntervals.target"
+                        class="mt-1 focus:ring-gray-500 focus:border-gray-500 focus:border-gray-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" />
+                </div>
             </div>
             <div class="mt-4">
-                <label for="elapsedTime" class="block text-sm font-medium text-gray-700">Target Writer Reporting
-                    Interval (seconds):</label>
-                <input type="number" id="targetWriterReportingInterval" v-model="reportingIntervals.target"
-                    class="mt-1 focus:ring-gray-500 focus:border-gray-500 focus:border-gray-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" />
-            </div>
-            <div class="mt-4">
-                <input id="create-target-structure" name="create-target-structure" type="checkbox" v-model="options.createStructure"
+                <input id="create-target-structure" name="create-target-structure" type="checkbox"
+                    v-model="options.createStructure"
                     class="h-4 w-4 text-sm rounded border-gray-300 text-gray-600 focus:ring-gray-600" />
-                <label for="create-target-structure" class="text-sm font-medium text-gray-700 pl-2">Create Structure on Target</label>
+                <label for="create-target-structure" class="text-sm font-medium text-gray-700 pl-2">Create Structure on
+                    Target</label>
             </div>
         </div>
+        <Limits />
     </div>
 </template>
 
@@ -37,9 +42,11 @@
 import { ref, watch, watchEffect } from 'vue'
 import { useStreamsStore } from '@/stores/streams.js'
 import ModeButtons from './ModeButtons.vue';
+
+import Limits from './Limits.vue'
 const currentStream = useStreamsStore().currentStream
 
-const defaultDataBundleSize = 100 
+const defaultDataBundleSize = 100
 const dataBundleSize = ref(currentStream.dataBundleSize || defaultDataBundleSize)
 const defaultReportingIntervals = {
     source: 3,

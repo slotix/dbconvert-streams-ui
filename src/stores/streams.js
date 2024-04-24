@@ -11,6 +11,7 @@ export const useStreamsStore = defineStore("streams", {
       limits: { numberOfEvents: 0, elapsedTime: 0 },
       target: "",
       tables: [],
+      selectedTableRow: null,
     },
     currentStep: null,
     currentFilter: "",
