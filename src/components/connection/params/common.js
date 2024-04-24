@@ -33,9 +33,9 @@ export default {
     buildConnectionName() {
       return (
         this.connectionType +
-        "_" +
+        "-" +
         this.connection.host +
-        "_" +
+        "-" +
         this.connection.username
       );
     },
