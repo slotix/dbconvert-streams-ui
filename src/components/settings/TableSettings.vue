@@ -1,18 +1,16 @@
 <template>
     <div v-if="currentStream.selectedTableRow">
-        <div class=" py-6 lg:px-10 md:col-span-2">
-            <div class="flex-auto border-b border-gray-400 pb-5">
+        <div class="px-2 py-6 lg:px-10 md:col-span-2">
+            <div class=" flex-auto border-b border-gray-400 pb-4">
                 <h3 class="text-base font-semibold leading-6 text-gray-900">Table <span
                         class="underline underline-offset-4 decoration-dashed decoration-gray-400">"{{
                             currentStream.selectedTableRow.name }}" </span> Options
                 </h3>
             </div>
             <div v-if="currentStream.mode === 'convert'">
-                <label for="about" class="block text-sm font-medium leading-6 text-gray-900 mt-4">Custom
-                    Query. </label>
+                <label for="about" class="block text-sm font-medium leading-6 text-gray-900 mt-4">Custom Query. </label>
                 <div class="mt-2">
-                    <textarea v-model="currentStream.selectedTableRow.customQuery" id="custom-query" name="custom-query"
-                        rows="2"
+                    <textarea v-model="currentStream.selectedTableRow.customQuery" id="custom-query" name="custom-query" rows="2"
                         class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-gray-600 sm:text-sm sm:leading-6"
                         placeholder="Integrate conditions, sorting, and limiting as needed..." />
                 </div>
@@ -44,3 +42,6 @@ const streamsStore = useStreamsStore()
 const currentStream = streamsStore.currentStream
 
 </script>
+
+
+

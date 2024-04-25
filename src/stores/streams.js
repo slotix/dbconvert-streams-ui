@@ -1,28 +1,39 @@
-import { defineStore } from "pinia";
-import api from "@/api/streams.js";
+import {defineStore} from 'pinia';
+import api from '@/api/streams.js';
 
-export const useStreamsStore = defineStore("streams", {
+export const defaultStreamOptions = {
+  dataBundleSize: 100,
+  reportingIntervals: {source: 3, target: 3},
+  cdcOperations: ['insert', 'update', 'delete'],
+  createStructure: true,
+  limits: {numberOfEvents: 0, elapsedTime: 0},
+};
+export const useStreamsStore = defineStore ('streams', {
   state: () => ({
     streams: [],
     currentStream: {
-      id: "",
-      source: "",
-      mode: "convert",
-      limits: { numberOfEvents: 0, elapsedTime: 0 },
-      target: "",
+      id: '',
+      source: '',
+      mode: 'convert',
+      cdcOperations: [],
+      dataBundleSize: 0,
+      reportingIntervals: null,
+      createStructure: true,
+      limits: null,
+      target: '',
       tables: [],
       selectedTableRow: null,
     },
     currentStep: null,
-    currentFilter: "",
-
+    currentFilter: '',
   }),
   getters: {
     // allStreams(state) {
     //   return state.streams;
     // },
-    countStreams() {
-      return this.streams?.length || 0;
+    countStreams () {
+      return this.streams ? this.streams.length : 0;
+      // return this.streams?.length || 0;
       // .filter((el) => {
       //   return (
       //     el.type &&
@@ -32,67 +43,69 @@ export const useStreamsStore = defineStore("streams", {
       // })
       // .length;
     },
-    newestFirst(state) {
-      return state.streams?.slice().reverse() || [];
+    newestFirst (state) {
+      return state.streams ? state.streams.slice ().reverse () : [];
+      // return state.streams?.slice().reverse() || [];
     },
-    streamsByType(state) {
+    streamsByType (state) {
       return state.streams
-        .filter(function (el) {
+        .filter (function (el) {
           return (
             el.type &&
-            el.type.toLowerCase().indexOf(state.currentFilter.toLowerCase()) >
-              -1
+            el.type
+              .toLowerCase ()
+              .indexOf (state.currentFilter.toLowerCase ()) > -1
           );
         })
-        .reverse();
+        .reverse ();
     },
-    currentStreamIndexInArray(state) {
-      return state.streams.indexOf(state.currentStream);
+    currentStreamIndexInArray (state) {
+      return state.streams.indexOf (state.currentStream);
     },
     // allSteps() {
     //   return this.steps;
     // },
   },
   actions: {
-    setCurrentStream(id) {
-      let curStream = this.streams.filter((c) => {
+    setCurrentStream (id) {
+      let curStream = this.streams.filter (c => {
         return c.id === id;
       });
       this.currentStream = curStream[0];
     },
-    setFilter(filter) {
+    setFilter (filter) {
       this.currentFilter = filter;
     },
-    async saveStream() {
+    async saveStream () {
       let stream = this.currentStream;
       if (!stream.id) {
-        stream.id = "";
+        stream.id = '';
         // stream.id = Date.now();
       }
-      this.resetCurrentStream();
+      this.resetCurrentStream ();
     },
-    async refreshStreams() {
+    async refreshStreams () {
       try {
-        this.streams = await api.getStreams();
+        this.streams = await api.getStreams ();
       } catch (error) {
         throw error;
       }
     },
-    async deleteStream(index) {
-      this.streams.splice(index, 1);
+    async deleteStream (index) {
+      this.streams.splice (index, 1);
       // await idb.deleteStream(index);
     },
-    resetCurrentStream() {
+    resetCurrentStream () {
       this.currentStream = {
-        id: "",
-        source: "",
-        mode: "convert",
-        limits: { numberOfEvents: 0, elapsedTime: 0 },
-        target: "",
+        id: '',
+        source: '',
+        mode: 'convert',
+        limits: {numberOfEvents: 0, elapsedTime: 0},
+        target: '',
         tables: [],
       };
     },
-    async clearStreams() {
+    async clearStreams () {
       this.streams.length = 0;
     },
   },

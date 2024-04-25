@@ -6,7 +6,7 @@
           <TableList />
         </div>
         <div class="lg:w-1/2 lg:pl-8">
-          <StreamSettings class="pb-8" />
+          <StreamSettings class="pb-8 pt-8" />
           <TableSettings class="pb-8" />
         </div>
       </div>

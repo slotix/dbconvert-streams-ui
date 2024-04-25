@@ -1,10 +1,11 @@
 <template>
   <header>
-    <div
-      class="bg-white flex flex-wrap justify-between space-y-4 sm:space-y-0 max-w-7xl mx-auto py-6 px-8"
-    >
+    <div class="bg-white flex flex-wrap justify-between space-y-4 sm:space-y-0 max-w-7xl mx-auto py-6 px-8">
       <h1 class="flex-auto text-3xl font-bold text-gray-900 dark:text-white;">
-      {{ mode=== 'edit' ? 'Edit Stream' : 'Add Stream' }} 
+        {{ mode === 'edit' ? 'Edit Stream' : 'Add Stream' }}:
+        <span class="text-gray-500 text-lg underline underline-offset-4 decoration-dashed decoration-gray-400">
+          {{ currentStream.id }}
+        </span>
       </h1>
       <Steps />
     </div>
@@ -13,7 +14,7 @@
     <div class="antialiased bg-gray-200">
       <div class="mb-20" v-if="currentStep !== null">
         <div v-show="currentStep.name === 'source'">
-          <Connections :isStreamsTab="true"  />
+          <Connections :isStreamsTab="true" />
         </div>
         <div v-show="currentStep.name === 'target'">
           <Connections :isStreamsTab="true" />
@@ -29,7 +30,7 @@
   </main>
 </template>
 <script setup>
-import { computed  } from 'vue'
+import { computed } from 'vue'
 import Connections from '@/components/connection/Connections.vue'
 import Add from '@/components/connection/Add.vue'
 import Edit from '@/components/connection/Edit.vue'
@@ -40,6 +41,9 @@ import { useStreamsStore } from '@/stores/streams.js'
 const store = useStreamsStore()
 const currentStep = computed(() => {
   return store.currentStep
+})
+const currentStream = computed(() => {
+  return store.currentStream
 })
 const props = defineProps({
   mode: String,
