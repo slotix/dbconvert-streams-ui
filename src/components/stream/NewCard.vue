@@ -32,7 +32,7 @@ import {useConnectionsStore} from "@/stores/connections.js"
 export default {
   methods: {
     addStream() {
-      useStreamsStore().resetCurrentStream();
+      useStreamsStore().initCurrentStream();
       useConnectionsStore().resetCurrentConnection();
     }
   }

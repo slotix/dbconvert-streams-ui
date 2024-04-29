@@ -2,6 +2,7 @@ import {defineStore} from 'pinia';
 import api from '@/api/streams.js';
 
 export const defaultStreamOptions = {
+  mode: 'convert',
   dataBundleSize: 100,
   reportingIntervals: {source: 3, target: 3},
   cdcOperations: ['insert', 'update', 'delete'],
@@ -14,12 +15,6 @@ export const useStreamsStore = defineStore ('streams', {
     currentStream: {
       id: '',
       source: '',
-      mode: 'convert',
-      cdcOperations: [],
-      dataBundleSize: 0,
-      reportingIntervals: null,
-      createStructure: true,
-      limits: null,
       target: '',
       tables: [],
       selectedTableRow: null,
@@ -28,9 +23,6 @@ export const useStreamsStore = defineStore ('streams', {
     currentFilter: '',
   }),
   getters: {
-    // allStreams(state) {
-    //   return state.streams;
-    // },
     countStreams () {
       return this.streams ? this.streams.length : 0;
       // return this.streams?.length || 0;
@@ -62,17 +54,23 @@ export const useStreamsStore = defineStore ('streams', {
     currentStreamIndexInArray (state) {
       return state.streams.indexOf (state.currentStream);
     },
-    // allSteps() {
-    //   return this.steps;
-    // },
   },
   actions: {
     setCurrentStream (id) {
-      let curStream = this.streams.filter (c => {
-        return c.id === id;
-      });
-      this.currentStream = curStream[0];
+      let curStream = this.streams.find (c => c.id === id);
+      if (!curStream) {
+        // If stream does not exist, set it to default options
+        this.currentStream = {...defaultStreamOptions};
+      } else {
+        this.currentStream = curStream;
+      }
     },
+    // setCurrentStream (id) {
+    //   let curStream = this.streams.filter (c => {
+    //     return c.id === id;
+    //   });
+    //   this.currentStream = curStream[0];
+    // },
     setFilter (filter) {
       this.currentFilter = filter;
     },
@@ -82,7 +80,7 @@ export const useStreamsStore = defineStore ('streams', {
         stream.id = '';
         // stream.id = Date.now();
       }
-      this.resetCurrentStream ();
+      this.initCurrentStream ();
     },
     async refreshStreams () {
       try {
@@ -95,14 +93,13 @@ export const useStreamsStore = defineStore ('streams', {
       this.streams.splice (index, 1);
       // await idb.deleteStream(index);
     },
-    resetCurrentStream () {
+    initCurrentStream () {
       this.currentStream = {
         id: '',
         source: '',
-        mode: 'convert',
-        limits: {numberOfEvents: 0, elapsedTime: 0},
         target: '',
         tables: [],
+        ...defaultStreamOptions
       };
     },
     async clearStreams () {
