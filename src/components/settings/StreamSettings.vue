@@ -9,12 +9,12 @@
             <ModeButtons />
             <div v-if="currentStream.mode === 'cdc'">
                 <div class="mt-2">
-                    <Operations v-model="cdcOperations" />
+                    <Operations v-model="currentStream.cdcOperations" />
                 </div>
             </div>
             <div class="mt-4">
                 <label for="dataBundleSize" class="block text-sm font-medium text-gray-700">Data Bundle Size:</label>
-                <input type="number" id="dataBundleSize" v-model="dataBundleSize"
+                <input type="number" id="dataBundleSize" v-model="currentStream.dataBundleSize"
                     class="mt-1 focus:ring-gray-500 focus:border-gray-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" />
             </div>
 
@@ -22,18 +22,20 @@
             <div class="mt-2 grid grid-cols-1 gap-x-2 gap-y-8 sm:grid-cols-2">
                 <div class="">
                     <label for="elapsedTime" class="block text-sm font-medium text-gray-700">Source Reader</label>
-                    <input type="number" id="sourceReaderReportingInterval" v-model="reportingIntervals.source"
+                    <input type="number" id="sourceReaderReportingInterval"
+                        v-model="currentStream.reportingIntervals.source"
                         class="mt-1 focus:ring-gray-500 focus:border-gray-500 focus:border-gray-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" />
                 </div>
                 <div class="">
                     <label for="elapsedTime" class="block text-sm font-medium text-gray-700">Target Writers</label>
-                    <input type="number" id="targetWriterReportingInterval" v-model="reportingIntervals.target"
+                    <input type="number" id="targetWriterReportingInterval"
+                        v-model="currentStream.reportingIntervals.target"
                         class="mt-1 focus:ring-gray-500 focus:border-gray-500 focus:border-gray-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" />
                 </div>
             </div>
             <div class="mt-4">
                 <input id="create-target-structure" name="create-target-structure" type="checkbox"
-                    v-model="createStructure"
+                    v-model="currentStream.createStructure"
                     class="h-4 w-4 text-sm rounded border-gray-300 text-gray-600 focus:ring-gray-600" />
                 <label for="create-target-structure" class="text-sm font-medium text-gray-700 pl-2">Create Structure on
                     Target</label>
@@ -45,13 +47,13 @@
                 <div>
                     <label for="numberOfEvents" class="block text-sm font-medium text-gray-700">Number of
                         Events:</label>
-                    <input type="number" id="numberOfEvents" v-model="limits.numberOfEvents"
+                    <input type="number" id="numberOfEvents" v-model="currentStream.limits.numberOfEvents"
                         class="mt-1 focus:ring-gray-500 focus:border-gray-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" />
                 </div>
                 <div>
                     <label for="elapsedTime" class="block text-sm font-medium text-gray-700">Elapsed Time
                         (seconds):</label>
-                    <input type="number" id="elapsedTime" v-model="limits.elapsedTime"
+                    <input type="number" id="elapsedTime" v-model="currentStream.limits.elapsedTime"
                         class="mt-1 focus:ring-gray-500 focus:border-gray-500 focus:border-gray-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" />
                 </div>
             </div>
@@ -60,33 +62,37 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
-import { useStreamsStore, defaultStreamOptions } from '@/stores/streams.js'
+// import { ref, watch } from 'vue'
+import { useStreamsStore } from '@/stores/streams.js'
 import ModeButtons from './ModeButtons.vue';
 import Operations from './Operations.vue';
 
-const currentStream = useStreamsStore().currentStream
+const streamsStore = useStreamsStore()
+const currentStream = streamsStore.currentStream
 
-const dataBundleSize = ref(currentStream.dataBundleSize || defaultStreamOptions.dataBundleSize)
-const cdcOperations = ref(currentStream.cdcOperations || defaultStreamOptions.cdcOperations)
-const reportingIntervals = ref(currentStream.reportingIntervals || defaultStreamOptions.reportingIntervals)
-const createStructure = ref(currentStream.createStructure || defaultStreamOptions.createStructure)
-const limits = ref(currentStream.limits || defaultStreamOptions.limits)
 
-watch(dataBundleSize, newValue => {
-    currentStream.dataBundleSize = newValue
-})
+// const dataBundleSize = ref(currentStream.dataBundleSize || defaultStreamOptions.dataBundleSize)
+// const cdcOperations = ref(currentStream.cdcOperations || defaultStreamOptions.cdcOperations)
+// const reportingIntervals = ref(currentStream.reportingIntervals || defaultStreamOptions.reportingIntervals)
+// const createStructure = ref(currentStream.createStructure || defaultStreamOptions.createStructure)
+// const limits = ref(currentStream.limits || defaultStreamOptions.limits)
 
-watch(createStructure, newValue => {
-    currentStream.createStructure = newValue
-})
+// watch(dataBundleSize, newValue => {
+//     currentStream.dataBundleSize = newValue
+// })
 
-watch(reportingIntervals, newValue => {
-    currentStream.reportingIntervals = newValue
-}, { deep: true })
 
-watch(limits, newValue => {
-    currentStream.limits = newValue
-}, { deep: true })
+// watch(createStructure, newValue => {
+//     // console.log(newValue)
+//     currentStream.createStructure = newValue
+// })
+
+// watch(reportingIntervals, newValue => {
+//     currentStream.reportingIntervals = newValue
+// }, { deep: true })
+
+// watch(limits, newValue => {
+//     currentStream.limits = newValue
+// }, { deep: true })
 
 </script>
