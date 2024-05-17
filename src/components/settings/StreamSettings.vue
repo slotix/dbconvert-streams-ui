@@ -22,14 +22,14 @@
             <div class="mt-2 grid grid-cols-1 gap-x-2 gap-y-8 sm:grid-cols-2">
                 <div class="">
                     <label for="elapsedTime" class="block text-sm font-medium text-gray-700">Source Reader</label>
-                    <input type="number" id="sourceReaderReportingInterval"
-                        v-model="currentStream.reportingIntervals.source"
+                    <input type="number" id="sourceReaderReportingInterval" :value="reportingIntervals.source"
+                        @input="updateReportingIntervals('source', $event.target.value)"
                         class="mt-1 focus:ring-gray-500 focus:border-gray-500 focus:border-gray-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" />
                 </div>
                 <div class="">
                     <label for="elapsedTime" class="block text-sm font-medium text-gray-700">Target Writers</label>
-                    <input type="number" id="targetWriterReportingInterval"
-                        v-model="currentStream.reportingIntervals.target"
+                    <input type="number" id="targetReaderReportingInterval" :value="reportingIntervals.target"
+                        @input="updateReportingIntervals('target', $event.target.value)"
                         class="mt-1 focus:ring-gray-500 focus:border-gray-500 focus:border-gray-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" />
                 </div>
             </div>
@@ -62,8 +62,8 @@
 </template>
 
 <script setup>
-// import { ref, watch } from 'vue'
-import { useStreamsStore } from '@/stores/streams.js'
+import { ref, watch } from 'vue'
+import { useStreamsStore, defaultStreamOptions } from '@/stores/streams.js'
 import ModeButtons from './ModeButtons.vue';
 import Operations from './Operations.vue';
 
@@ -73,7 +73,8 @@ const currentStream = streamsStore.currentStream
 
 // const dataBundleSize = ref(currentStream.dataBundleSize || defaultStreamOptions.dataBundleSize)
 // const cdcOperations = ref(currentStream.cdcOperations || defaultStreamOptions.cdcOperations)
-// const reportingIntervals = ref(currentStream.reportingIntervals || defaultStreamOptions.reportingIntervals)
+const reportingIntervals = ref(currentStream.reportingIntervals || defaultStreamOptions.reportingIntervals)
+
 // const createStructure = ref(currentStream.createStructure || defaultStreamOptions.createStructure)
 // const limits = ref(currentStream.limits || defaultStreamOptions.limits)
 
@@ -86,10 +87,18 @@ const currentStream = streamsStore.currentStream
 //     // console.log(newValue)
 //     currentStream.createStructure = newValue
 // })
+const updateReportingIntervals = (key, value) => {
+  // Parse the input value as an integer
+  const intValue = parseInt(value, 10);
+  // Ensure that the parsed value is a number before updating
+  if (!isNaN(intValue)) {
+    reportingIntervals.value = { ...reportingIntervals.value, [key]: intValue };
+  }
+};
 
-// watch(reportingIntervals, newValue => {
-//     currentStream.reportingIntervals = newValue
-// }, { deep: true })
+watch(reportingIntervals, newValue => {
+    currentStream.reportingIntervals = newValue
+}, { deep: true })
 
 // watch(limits, newValue => {
 //     currentStream.limits = newValue
