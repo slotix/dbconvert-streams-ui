@@ -17,6 +17,7 @@ export const useStreamsStore = defineStore ('streams', {
       source: '',
       target: '',
       tables: [],
+      createStructure: true,
       selectedTableRow: null,
     },
     currentStep: null,
@@ -80,7 +81,7 @@ export const useStreamsStore = defineStore ('streams', {
         stream.id = '';
         // stream.id = Date.now();
       }
-      this.initCurrentStream ();
+      this.resetCurrentStream ();
     },
     async refreshStreams () {
       try {
@@ -93,7 +94,7 @@ export const useStreamsStore = defineStore ('streams', {
       this.streams.splice (index, 1);
       // await idb.deleteStream(index);
     },
-    initCurrentStream () {
+    resetCurrentStream () {
       this.currentStream = {
         id: '',
         source: '',

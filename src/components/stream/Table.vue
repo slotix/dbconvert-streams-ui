@@ -101,7 +101,7 @@ export default {
   methods: {
     ...mapActions(useConnectionsStore, ['refreshConnections']),
     addStream() {
-      useStreamsStore().initCurrentStream()
+      useStreamsStore().resetCurrentStream()
       useConnectionsStore().resetCurrentConnection()
     }
   },
