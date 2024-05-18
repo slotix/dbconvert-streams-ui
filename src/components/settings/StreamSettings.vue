@@ -46,13 +46,13 @@
                 <div>
                     <label for="numberOfEvents" class="block text-sm font-medium text-gray-700">Number of
                         Events:</label>
-                    <input type="number" id="numberOfEvents" v-model.number="currentStream.limits.numberOfEvents"
+                    <input type="number" id="numberOfEvents" v-model.number="limits.numberOfEvents"
                         class="mt-1 focus:ring-gray-500 focus:border-gray-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" />
                 </div>
                 <div>
                     <label for="elapsedTime" class="block text-sm font-medium text-gray-700">Elapsed Time
                         (seconds):</label>
-                    <input type="number" id="elapsedTime" v-model.number="currentStream.limits.elapsedTime"
+                    <input type="number" id="elapsedTime" v-model.number="limits.elapsedTime"
                         class="mt-1 focus:ring-gray-500 focus:border-gray-500 focus:border-gray-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" />
                 </div>
             </div>
