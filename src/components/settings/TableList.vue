@@ -8,7 +8,7 @@
     </div>
     <button type="button"
       class="mb-4 w-full inline-flex rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:mt-0 sm:ml-3 sm:w-auto"
-      @click="refreshTables">
+      @click="debouncedRefreshTables">
       Refresh tables
     </button>
   </div>
@@ -32,18 +32,9 @@
       </tr>
     </thead>
     <tbody v-if="paginatedTables.length > 0" class="divide-y divide-gray-200 bg-white">
-      <tr v-for="table in paginatedTables" :key="table.name" class="py-4"
-        :class="{ 'bg-gray-200 ': table === currentStream.selectedTableRow }" @click="selectTable(table)">
-        <td class="relative py-4 px-7 sm:w-12 sm:px-6"
-          :class="{ 'border-l border-white': table === currentStream.selectedTableRow }">
-          <input type="checkbox" :id="'checkbox-' + table.name"
-            class="absolute left-4 top-1/2 -mt-2 h-4 w-4 rounded border-gray-300 text-gray-600 focus:ring-gray-600"
-            :value="table.name" v-model="table.selected" />
-        </td>
-        <td class="py-4 px-3" :class="{ 'border-r border-white': table === currentStream.selectedTableRow }">
-          {{ table.name }}
-        </td>
-      </tr>
+      <TableRow v-for="table in paginatedTables" :key="table.name" :table="table"
+        :isSelected="table === currentStream.selectedTableRow" @selectTable="selectTable"
+        @checkboxChange="(event) => handleCheckboxChange(table, event.checked)" />
     </tbody>
     <tbody v-else>
       <tr>
@@ -56,37 +47,24 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
-import { FunnelIcon } from '@heroicons/vue/24/outline'
+import { ref, computed, watch } from 'vue';
 import { useStreamsStore } from '@/stores/streams.js'
 import { useCommonStore } from '@/stores/common.js'
-import Pagination from '@/components/common/Pagination.vue'
-import api from '@/api/connections.js'
+import Pagination from '@/components/common/Pagination.vue';
+import TableRow from './TableRow.vue';
+import api from '@/api/connections.js';
+import { FunnelIcon } from '@heroicons/vue/24/outline'
+import { debounce } from 'lodash'
 
 const streamsStore = useStreamsStore()
 const currentStream = streamsStore.currentStream
 
-// const selectBtns = [
-//   { id: 'all', title: 'Select All' },
-//   { id: 'filter', title: 'Filter' }
-// ]
-// const selectedBtn = ref(
-//   currentStream?.tables?.length > 0 ? selectBtns[1] : selectBtns[0] || selectBtns[1]
-// )
-
-// watch(selectedBtn, (newVal) => {
-//   if (newVal.id === 'all') {
-//     currentStream.tables = []
-//   }
-// })
 
 const tables = ref(
   currentStream?.tables?.length > 0
     ? currentStream.tables.map((table) => ({
       name: table.name,
       operations: table.operations,
-      // size: table.size,
-      // rows: table.rows,
       selected: true
     }))
     : []
@@ -118,20 +96,21 @@ const checkedTablesCount = computed(() => {
 const searchQuery = ref('')
 const selectTable = (table) => {
   if (table !== null && table !== undefined) {
-    // currentStream.selectedTableRow = table ? table : null;
     currentStream.selectedTableRow = table
   }
 }
+const handleCheckboxChange = (table, checked) => {
+  table.selected = checked;
+  // If additional logic is required when a checkbox changes, add it here.
+  // For example, you may want to emit an event or call an API.
+};
+
 
 const indeterminate = computed(() => {
-  const selectedCount = tables.value.filter((table) => table.selected).length
-  return selectedCount > 0 && selectedCount < tables.value.length
-})
+  const selectedCount = checkedTablesCount.value;
+  return selectedCount > 0 && selectedCount < tables.value.length;
+});
 
-// const changeTableOps = (newValue, table) => {
-//   // Assuming newValue is an array of selected operations
-//   table.operations = newValue
-// }
 
 let currentPage = ref(1)
 const itemsPerPage = 10 // Set the number of items to display per page
@@ -142,42 +121,33 @@ const updateCurrentPage = (newPage) => {
 
 
 const refreshTables = async () => {
-  useCommonStore().showNotificationBar = false
+  const commonStore = useCommonStore();
+  commonStore.showNotificationBar = false; // Hide the notification bar before starting the refresh
+  
   try {
-    const response = await api.getTables(currentStream.source)
-    tables.value = response.map((entry) => {
-      // if (currentStream.mode === 'cdc') {
-      // Set operations for CDC mode
-      return {
-        name: entry,
-        // name: entry.name,
-        // size: entry.size,
-        // rows: entry.rows,
-        operations: ['insert', 'update', 'delete'],
-        selected: true // Set the selected property as desired
-      }
-      // } else {
-      // Exclude operations for other modes, like 'convert'
-      //   return {
-      //     name: entry.name,
-      //     size: entry.size,
-      //     rows: entry.rows,
-      //     selected: true // Set the selected property as desired
-      //   }
-      // }
-    })
+    const response = await api.getTables(currentStream.source);
+    tables.value = response.map(entry => ({
+      name: entry,
+      operations: ['insert', 'update', 'delete'],
+      selected: true
+    }));
+    // Optionally hide the notification bar after successful refresh
   } catch (error) {
-    // Handle the error
-    useCommonStore().notificationBar = {
+    // Display the error message to the user
+    commonStore.notificationBar = {
       msg: error.message,
       type: 'error'
-    }
-    useCommonStore().showNotificationBar = true
+    };
+    commonStore.showNotificationBar = true;
+
+    // Log the error to the console for developers
+    console.error('Error refreshing tables:', error);
   }
-}
-
-
-
+};
+ 
+// Wrap the refreshTables function with lodash's debounce
+const debouncedRefreshTables = debounce(refreshTables, 500); // Debounce for 500 milliseconds
+ 
 // Define selectAllCheckboxState and toggleSelectAll
 let selectAllCheckboxState = computed(() => {
   const allSelected = tables.value.every((table) => table.selected)
@@ -199,17 +169,7 @@ const toggleSelectAll = ($event) => {
   })
 }
 watch(
-  checkedTables,
-  (newTables) => {
-    // watch(tables, (newTables, oldTables) => {
-    // Handle changes in table selection here
-    // You can compare newTables and oldTables to detect changes
-    // console.log('Tables changed:', newTables, oldTables)
-
-    // Example: Update currentStream.tables based on selected tables
-    const selectedTables = newTables.filter((table) => table.selected)
-    currentStream.tables = selectedTables;
-  },
-  { deep: true }
-)
+  checkedTables, (newTables) => {
+    currentStream.tables = newTables.filter(table => table.selected);
+  }, { deep: true });
 </script>
