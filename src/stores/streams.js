@@ -12,14 +12,7 @@ export const defaultStreamOptions = {
 export const useStreamsStore = defineStore ('streams', {
   state: () => ({
     streams: [],
-    currentStream: {
-      id: '',
-      source: '',
-      target: '',
-      tables: [],
-      createStructure: true,
-      selectedTableRow: null,
-    },
+    currentStream: null,
     currentStep: null,
     currentFilter: '',
   }),
@@ -66,12 +59,6 @@ export const useStreamsStore = defineStore ('streams', {
         this.currentStream = curStream;
       }
     },
-    // setCurrentStream (id) {
-    //   let curStream = this.streams.filter (c => {
-    //     return c.id === id;
-    //   });
-    //   this.currentStream = curStream[0];
-    // },
     setFilter (filter) {
       this.currentFilter = filter;
     },
@@ -100,7 +87,7 @@ export const useStreamsStore = defineStore ('streams', {
         source: '',
         target: '',
         tables: [],
-        ...defaultStreamOptions
+        ...defaultStreamOptions,
       };
     },
     async clearStreams () {
