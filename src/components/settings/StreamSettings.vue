@@ -9,12 +9,14 @@
             <ModeButtons />
             <div v-if="currentStream.mode === 'cdc'">
                 <div class="mt-2">
-                    <Operations v-model="currentStream.cdcOperations" />
+                    <Operations v-model="cdcOperations" />
                 </div>
             </div>
             <div class="mt-4">
                 <label for="dataBundleSize" class="block text-sm font-medium text-gray-700">Data Bundle Size:</label>
-                <input type="number" id="dataBundleSize" v-model.number="dataBundleSize"
+                <!-- <input type="number" id="dataBundleSize" v-model.number="dataBundleSize"
+                    class="mt-1 focus:ring-gray-500 focus:border-gray-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" /> -->
+                <input type="number" id="dataBundleSize" v-model="dataBundleSize"
                     class="mt-1 focus:ring-gray-500 focus:border-gray-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" />
             </div>
 
@@ -22,19 +24,20 @@
             <div class="mt-2 grid grid-cols-1 gap-x-2 gap-y-8 sm:grid-cols-2">
                 <div class="">
                     <label for="elapsedTime" class="block text-sm font-medium text-gray-700">Source Reader</label>
-                    <input type="number" id="sourceReaderReportingInterval" v-model.number="reportingIntervals.source"
+                    <!-- <input type="number" id="sourceReaderReportingInterval" v-model.number="reportingIntervals.source" -->
+                    <input type="number" id="sourceReaderReportingInterval" v-model="reportingIntervalsSource"
                         class="mt-1 focus:ring-gray-500 focus:border-gray-500 focus:border-gray-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" />
                 </div>
                 <div>
                     <label for="targetReaderReportingInterval" class="block text-sm font-medium text-gray-700">Target
                         Writers</label>
-                    <input type="number" id="targetReaderReportingInterval" v-model.number="reportingIntervals.target"
+                    <input type="number" id="sourceReaderReportingInterval" v-model="reportingIntervalsTarget"
                         class="mt-1 focus:ring-gray-500 focus:border-gray-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" />
                 </div>
             </div>
             <div class="mt-4">
                 <input id="create-target-structure" name="create-target-structure" type="checkbox"
-                    v-model="createStructure"
+                    v-model="createStructureComputed"
                     class="h-4 w-4 text-sm rounded border-gray-300 text-gray-600 focus:ring-gray-600" />
                 <label for="create-target-structure" class="text-sm font-medium text-gray-700 pl-2">Create Structure on
                     Target</label>
@@ -46,13 +49,13 @@
                 <div>
                     <label for="numberOfEvents" class="block text-sm font-medium text-gray-700">Number of
                         Events:</label>
-                    <input type="number" id="numberOfEvents" v-model.number="limits.numberOfEvents"
+                    <input type="number" id="numberOfEvents" v-model="limitsNumberOfEvents"
                         class="mt-1 focus:ring-gray-500 focus:border-gray-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" />
                 </div>
                 <div>
                     <label for="elapsedTime" class="block text-sm font-medium text-gray-700">Elapsed Time
                         (seconds):</label>
-                    <input type="number" id="elapsedTime" v-model.number="limits.elapsedTime"
+                    <input type="number" id="elapsedTime" v-model="limitsElapsedTime"
                         class="mt-1 focus:ring-gray-500 focus:border-gray-500 focus:border-gray-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" />
                 </div>
             </div>
@@ -61,7 +64,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, computed, onMounted } from 'vue'
 import { useStreamsStore, defaultStreamOptions } from '@/stores/streams.js'
 import ModeButtons from './ModeButtons.vue';
 import Operations from './Operations.vue';
@@ -70,31 +73,65 @@ const streamsStore = useStreamsStore()
 const currentStream = streamsStore.currentStream
 
 
-const dataBundleSize = ref(currentStream.dataBundleSize || defaultStreamOptions.dataBundleSize)
-const cdcOperations = ref(currentStream.cdcOperations || defaultStreamOptions.cdcOperations)
-const reportingIntervals = ref(currentStream.reportingIntervals || defaultStreamOptions.reportingIntervals)
-const createStructure = ref(
-  currentStream === undefined ? defaultStreamOptions.createStructure : currentStream.createStructure
-);
-const limits = ref(currentStream.limits || defaultStreamOptions.limits)
+const dataBundleSize = computed({
+    get: () => currentStream.dataBundleSize || defaultStreamOptions.dataBundleSize,
+    set: (newValue) => { currentStream.dataBundleSize = newValue; }
+});
+const cdcOperations = computed({
+  get: () => currentStream.cdcOperations || defaultStreamOptions.cdcOperations,
+  set: (value) => { currentStream.cdcOperations = value; }
+});
 
-watch(dataBundleSize, newValue => {
-    currentStream.dataBundleSize = newValue
-})
+const reportingIntervalsSource = computed({
+  get: () => currentStream.reportingIntervals?.source || defaultStreamOptions.reportingIntervals.source,
+  set: (value) => { currentStream.reportingIntervals.source = value; }
+});
+
+const reportingIntervalsTarget = computed({
+  get: () => currentStream.reportingIntervals?.target || defaultStreamOptions.reportingIntervals.target,
+  set: (value) => { currentStream.reportingIntervals.target = value; }
+});
+
+const limitsNumberOfEvents = computed({
+  get: () => currentStream.limits?.numberOfEvents || defaultStreamOptions.limits.numberOfEvents,
+  set: (value) => { currentStream.limits.numberOfEvents = value; }
+});
+
+const limitsElapsedTime = computed({
+  get: () => currentStream.limits?.elapsedTime || defaultStreamOptions.limits.elapsedTime,
+  set: (value) => { currentStream.limits.elapsedTime = value; }
+});
+
+const createStructureComputed = computed({
+  get: () => currentStream.createStructure !== undefined ? currentStream.createStructure : defaultStreamOptions.createStructure,
+  set: (value) => { currentStream.createStructure = value; }
+});
+
+// const dataBundleSize = ref(currentStream.dataBundleSize || defaultStreamOptions.dataBundleSize)
+// const cdcOperations = ref(currentStream.cdcOperations || defaultStreamOptions.cdcOperations)
+// const reportingIntervals = ref(currentStream.reportingIntervals || defaultStreamOptions.reportingIntervals)
+// const createStructure = ref(
+//     currentStream === undefined ? defaultStreamOptions.createStructure : currentStream.createStructure
+// );
+// const limits = ref(currentStream.limits || defaultStreamOptions.limits)
+
+// watch(dataBundleSize, newValue => {
+//     currentStream.dataBundleSize = newValue
+// })
 
 
-watch(createStructure, newValue => {
-      createStructure: true,
-    currentStream.createStructure = newValue
-})
+// watch(createStructure, newValue => {
+//     createStructure: true,
+//         currentStream.createStructure = newValue
+// })
 
-watch(reportingIntervals, newValue => {
-    currentStream.reportingIntervals = newValue
-}, { deep: true })
+// watch(reportingIntervals, newValue => {
+//     currentStream.reportingIntervals = newValue
+// }, { deep: true })
 
-watch(limits, newValue => {
-    currentStream.limits = newValue
-}, { deep: true })
+// watch(limits, newValue => {
+//     currentStream.limits = newValue
+// }, { deep: true })
 
 // onMounted(() => {
 // });
