@@ -28,7 +28,7 @@
 </template>
 
 <script setup>
-import { defineProps , watch, onMounted } from 'vue';
+import {  watch, onMounted } from 'vue';
 // import OperationsListBox from '@/components/settings/OperationsListBox.vue';
 import { useStreamsStore, defaultStreamOptions } from '@/stores/streams.js'
 import Operations from './Operations.vue';

@@ -16,7 +16,6 @@
 </template>
 
 <script setup>
-import { defineProps, defineEmits } from 'vue'
 
 import { defaultStreamOptions } from '@/stores/streams.js'
 const operationList = defaultStreamOptions.operations
