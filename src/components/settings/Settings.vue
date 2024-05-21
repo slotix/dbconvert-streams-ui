@@ -7,7 +7,6 @@
         </div>
         <div class="lg:w-1/2 lg:pl-8">
           <StreamSettings class="pb-8" />
-          <TableSettings class="pb-8" />
         </div>
       </div>
     </div>
@@ -17,5 +16,4 @@
 <script setup>
 import TableList from './TableList.vue'
 import StreamSettings from './StreamSettings.vue'
-import TableSettings from './TableSettings.vue'
 </script>

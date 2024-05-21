@@ -81,11 +81,11 @@ watch(currentStepIndex, (newVal) => {
 
 const debouncedSave = debounce(async () => {
   try {
+    await store.saveStream()
+    await store.refreshStreams()
     const stream = await api.createStream(currentStream)
     currentStream.id = stream.id
     currentStream.created = stream.created
-    await store.saveStream()
-    await store.refreshStreams()
     // Navigate to the Streams route
     router.push({ name: 'Streams' })
   } catch (e) {

@@ -20,7 +20,8 @@
             class="absolute left-4 top-1/2 -mt-2 h-4 w-4 rounded border-gray-200 text-gray-600 focus:ring-gray-600"
             :checked="selectAllCheckboxState" :indeterminate="indeterminate" @change="toggleSelectAll" />
         </th>
-        <th scope="col" class="min-w-[10rem] py-3.5 pr-3 text-left uppercase text-sm font-normal text-gray-800">
+        <th scope="col" colspan="2"
+          class="min-w-[10rem] py-3.5 pr-3 text-left uppercase text-sm font-normal text-gray-800">
           <div class="relative rounded-md shadow-sm">
             <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
               <FunnelIcon class="h-5 w-5 text-gray-400" aria-hidden="true" />
@@ -33,8 +34,13 @@
     </thead>
     <tbody v-if="paginatedTables.length > 0" class="divide-y divide-gray-200 bg-white">
       <TableRow v-for="table in paginatedTables" :key="table.name" :table="table"
-        :isSelected="table === currentStream.selectedTableRow" @selectTable="selectTable"
-        @checkboxChange="(event) => handleCheckboxChange(table, event.checked)" />
+        :isSelected="selectedTableNames.includes(table.name)" :colspan="totalColumns" @selectTable="toggleTableSettings"
+        @checkboxChange="handleCheckboxChange" @toggleSettings="toggleTableSettings">
+        <!-- This slot will be used to add a button to toggle the settings panel -->
+        <template #default>
+          <TableSettings v-if="selectedTableNames.includes(table.name)" :table="table" />
+        </template>
+      </TableRow>
     </tbody>
     <tbody v-else>
       <tr>
@@ -48,9 +54,10 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue';
-import { useStreamsStore } from '@/stores/streams.js'
+import { useStreamsStore, defaultStreamOptions } from '@/stores/streams.js'
 import { useCommonStore } from '@/stores/common.js'
 import Pagination from '@/components/common/Pagination.vue';
+import TableSettings from './TableSettings.vue';
 import TableRow from './TableRow.vue';
 import api from '@/api/connections.js';
 import { FunnelIcon } from '@heroicons/vue/24/outline'
@@ -65,6 +72,8 @@ const tables = ref(
     ? currentStream.tables.map((table) => ({
       name: table.name,
       operations: table.operations,
+      createIndexes : table.createIndexes,
+      query : table.query,
       selected: true
     }))
     : []
@@ -99,12 +108,26 @@ const selectTable = (table) => {
     currentStream.selectedTableRow = table
   }
 }
+
+const selectedTableNames = ref([]);
+const toggleTableSettings = (tableName) => {
+  const index = selectedTableNames.value.indexOf(tableName);
+  if (index > -1) {
+    selectedTableNames.value.splice(index, 1); // Remove if open
+  } else {
+    selectedTableNames.value.push(tableName); // Add if not open
+  }
+};
+
 const handleCheckboxChange = (table, checked) => {
   table.selected = checked;
   // If additional logic is required when a checkbox changes, add it here.
   // For example, you may want to emit an event or call an API.
 };
 
+const totalColumns = computed(() => {
+  return 3;
+});
 
 const indeterminate = computed(() => {
   const selectedCount = checkedTablesCount.value;
@@ -119,35 +142,51 @@ const updateCurrentPage = (newPage) => {
   currentPage.value = newPage
 }
 
+// Helper function to create table objects based on the current stream mode
+function createTableObject(entry, mode) {
+  if (mode === 'cdc') {
+    return {
+      name: entry,
+      operations: defaultStreamOptions.operations,
+      selected: true
+    };
+  } else {
+    return {
+      name: entry,
+      query: '',
+      selected: true
+    };
+  }
+}
 
+// Refactored refreshTables function
 const refreshTables = async () => {
   const commonStore = useCommonStore();
   commonStore.showNotificationBar = false; // Hide the notification bar before starting the refresh
-  
+
   try {
     const response = await api.getTables(currentStream.source);
-    tables.value = response.map(entry => ({
-      name: entry,
-      operations: ['insert', 'update', 'delete'],
-      selected: true
-    }));
+    // Use the helper function to map over the response
+    tables.value = response.map(entry => createTableObject(entry, currentStream.mode));
     // Optionally hide the notification bar after successful refresh
   } catch (error) {
-    // Display the error message to the user
-    commonStore.notificationBar = {
-      msg: error.message,
-      type: 'error'
-    };
-    commonStore.showNotificationBar = true;
-
-    // Log the error to the console for developers
-    console.error('Error refreshing tables:', error);
+    handleError(commonStore, error);
   }
 };
- 
+
+// Helper function to handle errors
+function handleError(commonStore, error) {
+  commonStore.notificationBar = {
+    msg: error.message,
+    type: 'error'
+  };
+  commonStore.showNotificationBar = true;
+  console.error('Error refreshing tables:', error);
+}
+
 // Wrap the refreshTables function with lodash's debounce
 const debouncedRefreshTables = debounce(refreshTables, 500); // Debounce for 500 milliseconds
- 
+
 // Define selectAllCheckboxState and toggleSelectAll
 let selectAllCheckboxState = computed(() => {
   const allSelected = tables.value.every((table) => table.selected)

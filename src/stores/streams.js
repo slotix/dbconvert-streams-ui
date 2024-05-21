@@ -5,7 +5,7 @@ export const defaultStreamOptions = {
   mode: 'convert',
   dataBundleSize: 100,
   reportingIntervals: {source: 3, target: 3},
-  cdcOperations: ['insert', 'update', 'delete'],
+  operations: ['insert', 'update', 'delete'],
   createStructure: true,
   limits: {numberOfEvents: 0, elapsedTime: 0},
 };
@@ -64,10 +64,27 @@ export const useStreamsStore = defineStore ('streams', {
     },
     async saveStream () {
       let stream = this.currentStream;
+
+      // Ensure stream has an ID
       if (!stream.id) {
-        stream.id = '';
-        // stream.id = Date.now();
+        stream.id = ''; 
       }
+
+      // Check the mode and reset properties accordingly
+      if (stream.mode === 'cdc') {
+        // If mode is 'cdc', reset query values in each table
+        stream.tables.forEach (table => {
+          table.query = ''; // Reset query to an empty string
+        });
+      } else if (stream.mode === 'convert') {
+        stream.operations = []
+        // If mode is 'convert', reset operations for each table
+        stream.tables.forEach (table => {
+          table.operations = []; // Reset operations to an empty array
+        });
+      }
+
+      // Reset the current stream
       this.resetCurrentStream ();
     },
     async refreshStreams () {

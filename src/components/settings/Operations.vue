@@ -5,8 +5,9 @@
             <div v-for="operation in operationList" :key="operation">
                 <div class="flex items-center">
                     <input :id="operation" :name="operation" type="checkbox"
-                        class="h-4 w-4 rounded border-gray-300 text-gray-600 focus:ring-gray-600" :value="operation"
-                        v-model="operations" />
+                        class="h-4 w-4 rounded border-gray-300 text-gray-600 focus:ring-gray-600"
+                        :checked="modelValue.includes(operation)"
+                        @change="onOperationChange(operation, $event.target.checked)" />
                     <label :for="operation" class="ml-2 font-medium text-gray-900">{{ operation }}</label>
                 </div>
             </div>
@@ -15,14 +16,26 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
-import { useStreamsStore, defaultStreamOptions } from '@/stores/streams.js'
+import { defineProps, defineEmits } from 'vue'
 
-const operationList = ['insert', 'update', 'delete']
-const currentStream = useStreamsStore().currentStream
-const operations = ref(currentStream.cdcOperations || defaultStreamOptions.cdcOperations)
+import { defaultStreamOptions } from '@/stores/streams.js'
+const operationList = defaultStreamOptions.operations
 
-watch(operations, (newValue, oldValue) => {
-    currentStream.cdcOperations = newValue
-})
+const props = defineProps({
+    modelValue: {
+        type: Array,
+        // Use the defaultOperations constant as the default value
+        default: () => [...defaultStreamOptions.operations] // Using spread to ensure a new array is created
+    }
+});
+
+const emit = defineEmits(['update:modelValue']);
+
+// Event handler for checkbox changes
+function onOperationChange(operation, isChecked) {
+    const newValue = isChecked
+        ? [...props.modelValue, operation]
+        : props.modelValue.filter(op => op !== operation);
+    emit('update:modelValue', newValue);
+}
 </script>

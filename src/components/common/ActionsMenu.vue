@@ -88,7 +88,6 @@
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue'
 import {
   Square2StackIcon,
-  PencilIcon,
   TrashIcon,
   EllipsisHorizontalIcon
 } from '@heroicons/vue/24/solid'

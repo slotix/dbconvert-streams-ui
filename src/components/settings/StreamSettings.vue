@@ -9,7 +9,7 @@
             <ModeButtons />
             <div v-if="currentStream.mode === 'cdc'">
                 <div class="mt-2">
-                    <Operations v-model="cdcOperations" />
+                    <Operations v-model="operations" />
                 </div>
             </div>
             <div class="mt-4">
@@ -77,9 +77,9 @@ const dataBundleSize = computed({
     get: () => currentStream.dataBundleSize || defaultStreamOptions.dataBundleSize,
     set: (newValue) => { currentStream.dataBundleSize = newValue; }
 });
-const cdcOperations = computed({
-  get: () => currentStream.cdcOperations || defaultStreamOptions.cdcOperations,
-  set: (value) => { currentStream.cdcOperations = value; }
+const operations = computed({
+  get: () => currentStream.operations || defaultStreamOptions.operations,
+  set: (value) => { currentStream.operations = value; }
 });
 
 const reportingIntervalsSource = computed({
@@ -108,7 +108,7 @@ const createStructureComputed = computed({
 });
 
 // const dataBundleSize = ref(currentStream.dataBundleSize || defaultStreamOptions.dataBundleSize)
-// const cdcOperations = ref(currentStream.cdcOperations || defaultStreamOptions.cdcOperations)
+// const operations = ref(currentStream.operations || defaultStreamOptions.operations)
 // const reportingIntervals = ref(currentStream.reportingIntervals || defaultStreamOptions.reportingIntervals)
 // const createStructure = ref(
 //     currentStream === undefined ? defaultStreamOptions.createStructure : currentStream.createStructure
