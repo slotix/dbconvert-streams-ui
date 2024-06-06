@@ -32,11 +32,11 @@
                   <ul role="list" class="-mx-2 flex-1 space-y-1">
                     <li v-for="item in navigation" :key="item.name">
                       <RouterLink :to="item.href" :class="[
-      $route.path === item.href
-        ? 'bg-gray-800 text-white'
-        : 'text-gray-400 hover:text-white hover:bg-gray-800',
-      'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold'
-    ]">
+                        $route.path === item.href
+                          ? 'bg-gray-800 text-white'
+                          : 'text-gray-400 hover:text-white hover:bg-gray-800',
+                        'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold'
+                      ]">
                         <component :is="item.icon" class="h-6 w-6 shrink-0" aria-hidden="true" />
                         {{ item.name }}
                       </RouterLink>
@@ -60,11 +60,11 @@
         <ul role="list" class="flex flex-col items-center space-y-1">
           <li v-for="item in navigation" :key="item.name">
             <RouterLink :to="item.href" :class="[
-      $route.path === item.href
-        ? 'bg-gray-800 text-white'
-        : 'text-gray-400 hover:text-white hover:bg-gray-800',
-      'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold'
-    ]">
+              $route.path === item.href
+                ? 'bg-gray-800 text-white'
+                : 'text-gray-400 hover:text-white hover:bg-gray-800',
+              'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold'
+            ]">
               <component :is="item.icon" class="h-6 w-6 shrink-0" aria-hidden="true" />
               <span class="sr-only">{{ item.name }}</span>
             </RouterLink>
@@ -74,9 +74,7 @@
     </div>
 
     <div class="lg:pl-20">
-      <!-- <div -->
-      <!--   class="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8" -->
-      <!-- > -->
+      <!-- Top bar with login button -->
       <div
         class="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
         <button type="button" class="-m-2.5 p-2.5 text-gray-700 lg:hidden" @click="sidebarOpen = true">
@@ -88,42 +86,38 @@
         <div class="h-6 w-px bg-gray-900/10 lg:hidden" aria-hidden="true" />
 
         <div class="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <!-- <div class="flex flex-1 gap-x-4 justify-between self-stretch lg:gap-x-6"> -->
-          <!-- <form class="relative flex flex-1" action="#" method="GET"> -->
-          <!--   <label for="search-field" class="sr-only">Search</label> -->
-          <!--   <MagnifyingGlassIcon class="pointer-events-none absolute inset-y-0 left-0 h-full w-5 text-gray-400" aria-hidden="true" /> -->
-          <!--   <input id="search-field" class="block h-full w-full border-0 py-0 pl-8 pr-0 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm" placeholder="Search..." type="search" name="search" /> -->
-          <!-- </form> -->
           <div class="flex items-center gap-x-4 lg:gap-x-6">
-            <button type="button" class="-m-2.5 p-2.5 text-gray-400 hover:text-gray-500">
+            <!-- <button type="button" class="-m-2.5 p-2.5 text-gray-400 hover:text-gray-500">
               <span class="sr-only">View notifications</span>
               <BellIcon class="h-6 w-6" aria-hidden="true" />
-            </button>
+            </button> -->
 
             <!-- Separator -->
-            <div class="hidden lg:block lg:h-6 lg:w-px lg:bg-gray-900/10" aria-hidden="true" />
+            <!-- <div class="hidden lg:block lg:h-6 lg:w-px lg:bg-gray-900/10" aria-hidden="true" /> -->
 
             <!-- Profile dropdown -->
             <Menu as="div" class="relative">
               <MenuButton class="-m-1.5 flex items-center p-1.5">
-                <span class="sr-only">Open user menu</span>
-                <UserIcon class="h-6 w-6" />
-                <span class="hidden lg:flex lg:items-center">
-                  <span class="ml-4 text-sm font-semibold leading-6 text-gray-900" aria-hidden="true">Tom Cook</span>
+                <span v-if="user" class="sr-only">Open user menu</span>
+                <img v-if="user" :src="user.pictureUrl" alt="User picture" class="h-6 w-6 rounded-full" />
+                <span v-if="user" class="hidden lg:flex lg:items-center">
+                  <span class="ml-4 text-sm font-semibold leading-6 text-gray-900" aria-hidden="true">{{ user.name
+                    }}</span>
                   <ChevronDownIcon class="ml-2 h-5 w-5 text-gray-400" aria-hidden="true" />
                 </span>
+                <span v-else @click="login" class="cursor-pointer">Sign In</span>
               </MenuButton>
               <transition enter-active-class="transition ease-out duration-100"
                 enter-from-class="transform opacity-0 scale-95" enter-to-class="transform opacity-100 scale-100"
                 leave-active-class="transition ease-in duration-75" leave-from-class="transform opacity-100 scale-100"
                 leave-to-class="transform opacity-0 scale-95">
-                <MenuItems
+                <MenuItems v-if="user"
                   class="absolute right-0 z-10 mt-2.5 w-32 origin-top-right rounded-md bg-white py-2 shadow-lg ring-1 ring-gray-900/5 focus:outline-none">
                   <MenuItem v-for="item in userNavigation" :key="item.name" v-slot="{ active }">
-                  <a :href="item.href" :class="[
-      active ? 'bg-gray-50' : '',
-      'block px-3 py-1 text-sm leading-6 text-gray-900'
-    ]">{{ item.name }}</a>
+                  <button @click="item.onClick" :class="[
+                    active ? 'bg-gray-50' : '',
+                    'block px-3 py-1 text-sm leading-6 text-gray-900 w-full text-left'
+                  ]">{{ item.name }}</button>
                   </MenuItem>
                 </MenuItems>
               </transition>
@@ -137,15 +131,12 @@
         <RouterView />
       </div>
     </div>
-    <!-- <aside class="fixed bottom-0 left-20 top-16 hidden w-96 overflow-y-auto border-r border-gray-200 px-4 py-6 sm:px-6 lg:px-8 xl:block"> -->
-    <!-- Secondary column (hidden on smaller screens) -->
-    <!-- </aside> -->
   </div>
 </template>
-
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 import NotificationBar from '@/components/common/NotificationBar.vue'
+import { useCommonStore } from '@/stores/common'
 import {
   Dialog,
   DialogPanel,
@@ -156,31 +147,47 @@ import {
   TransitionChild,
   TransitionRoot
 } from '@headlessui/vue'
-import { RouterLink, RouterView, useRoute } from 'vue-router'
+import { RouterLink, RouterView } from 'vue-router'
 import {
   Bars3Icon,
-  BellIcon,
-  CalendarIcon,
-  ChartPieIcon,
-  DocumentDuplicateIcon,
   ArrowPathIcon,
   HomeIcon,
   CircleStackIcon,
-  UserIcon,
   XMarkIcon,
   ChartBarSquareIcon
 } from '@heroicons/vue/24/outline'
-import { ChevronDownIcon, MagnifyingGlassIcon } from '@heroicons/vue/20/solid'
+import { ChevronDownIcon } from '@heroicons/vue/20/solid'
+import { kobbleClient } from '@/kobble/index.ts'
+
+
+const store = useCommonStore()
+const user = ref(store.user)
+
+const login = async () => {
+  await kobbleClient.loginWithRedirect()
+}
+
+const logout = async () => {
+  await kobbleClient.logout()
+  store.clearUser()
+}
+// Update the user ref when the store user changes
+store.$subscribe((mutation, state) => {
+  user.value = state.user
+})
+
 const navigation = ref([
   { name: 'Home', href: '/', icon: HomeIcon },
   { name: 'Connections', href: '/connections', icon: CircleStackIcon },
   { name: 'Streams', href: '/streams', icon: ArrowPathIcon },
   { name: 'Monitor Stream', href: '/monitor', icon: ChartBarSquareIcon }
 ])
-const route = useRoute()
+
 const userNavigation = [
-  { name: 'Your profile', href: '#' },
-  { name: 'Sign out', href: '#' }
+  // { name: 'Login', onClick: login },
+  // { name: 'Your profile', onClick: getUser },
+  { name: 'Sign out', onClick: logout }
 ]
 const sidebarOpen = ref(false)
+
 </script>

@@ -4,6 +4,7 @@ import ConnectionsView from "../views/ConnectionsView.vue";
 import StreamsView from "../views/StreamsView.vue";
 import ManageStreamView from "../views/ManageStreamView.vue";
 import MonitorStreamView from "../views/MonitorStreamView.vue";
+import CallbackView from  "../views/CallbackView.vue" 
 import NotFound from "../views/NotFound.vue";
 
 const router = createRouter({
@@ -34,6 +35,12 @@ const router = createRouter({
       path: "/monitor",
       name: "MonitorStream",
       component: MonitorStreamView,
+      props: true,
+    },
+    {
+      path: "/callback",
+      name: "callback",
+      component: CallbackView,
       props: true,
     },
     {
