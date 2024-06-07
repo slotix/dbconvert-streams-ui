@@ -99,7 +99,7 @@
             <Menu as="div" class="relative">
               <MenuButton class="-m-1.5 flex items-center p-1.5">
                 <span v-if="user" class="sr-only">Open user menu</span>
-                <img v-if="user" :src="user.pictureUrl" alt="User picture" class="h-6 w-6 rounded-full" />
+                <img v-if="user" :src="user.pictureUrl" alt="User picture" class="h-10 w-10 rounded-full" />
                 <span v-if="user" class="hidden lg:flex lg:items-center">
                   <span class="ml-4 text-sm font-semibold leading-6 text-gray-900" aria-hidden="true">{{ user.name
                     }}</span>
@@ -164,6 +164,8 @@ const store = useCommonStore()
 const user = ref(store.user)
 
 const login = async () => {
+  // Save the current route path to session storage
+  sessionStorage.setItem('preAuthPath', window.location.pathname);
   await kobbleClient.loginWithRedirect()
 }
 

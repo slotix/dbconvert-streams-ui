@@ -26,9 +26,17 @@ export default {
       } else {
         console.error('No user information available');
       }
+      // const isAuthenticated = await kobbleClient.isAuthenticated()
+      // if (isAuthenticated) {
+      //   console.log('User is authenticated');
+      // } else {
+      //   console.log('User is not authenticated');
+      // }
+      // Retrieve the pre-authentication path from session storage
+      const preAuthPath = sessionStorage.getItem('preAuthPath') || '/';
 
-    // Redirect the user to the home page
-    this.$router.replace({ name: 'home' });
+      // Redirect to the saved path
+      this.$router.replace(preAuthPath);
     } catch (e) {
       console.error('Error handling redirect callback:', e);
       // Optionally, you can redirect to an error page or show an error message
