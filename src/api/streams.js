@@ -1,67 +1,69 @@
 import axios from "axios";
+import { handleApiError } from '@/utils/errorHandler';
 
-const getStreams = async () => {
+const apiClient = axios.create({
+  baseURL: 'http://0.0.0.0:8020/api/v1',
+  headers: {
+    'Content-Type': 'application/json'
+  }
+});
+
+const getStreams = async (token) => {
   try {
-    const response = await axios.get(
-      "http://0.0.0.0:8020/api/v1/streams",
-    );
+    const response = await apiClient.get('/streams', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
     return response.data;
   } catch (error) {
-    const err = error.response?.data.error || error.message;
-    throw new Error(err);
+    throw handleApiError(error);
   }
 };
-
-const createStream = async (json) => {
+const createStream = async (json, token) => {
   try {
-    // console.log(json);
-    const response = await axios.post(
-      "http://0.0.0.0:8020/api/v1/streams/config",
-      json,
-    );
+    const response = await apiClient.post('/streams/config', json, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
     return response.data;
   } catch (error) {
-    const err = error.response?.data.error || error.message;
-    throw new Error(err);
+    throw handleApiError(error);
   }
 };
 
-const deleteStream = async (id) => {
+const deleteStream = async (id, token) => {
   try {
-    await axios.delete(
-      `http://0.0.0.0:8020/api/v1/streams/${id}`,
-    );
+    const headers = {
+      'Authorization': `Bearer ${token}`
+    };
+    await apiClient.delete(`/streams/${id}`, { headers });
   } catch (error) {
-    const err = error.response?.data.error || error.message;
-    throw new Error(err);
+    throw handleApiError(error);
   }
 };
 
-const cloneStream = async (id) => {
+const cloneStream = async (id, token) => {
   try {
-    const response = await axios.put(
-      `http://0.0.0.0:8020/api/v1/streams/${id}/clone`,
-    );
+    const headers = {
+      'Authorization': `Bearer ${token}`
+    };
+    const response = await apiClient.put(`/streams/${id}/clone`, null, { headers });
     return response.data;
   } catch (error) {
-    const err = error.response?.data.error || error.message;
-    throw new Error(err);
+    throw handleApiError(error);
   }
 };
 
-const startStream = async (id) => {
+const startStream = async (id, token) => {
   try {
-    const response = await axios.post(
-      `http://0.0.0.0:8020/api/v1/streams/${id}/start`,
-    );
-    return response.data
+    const headers = {
+      'Authorization': `Bearer ${token}`
+    };
+    const response = await apiClient.post(`/streams/${id}/start`, null, { headers });
+    return response.data;
   } catch (error) {
-    const errMessage = error.response?.data.error || error.message;
-    const customErrorMessage =
-      `Unable to connect to the API server. ${errMessage}`;
-    throw new Error(customErrorMessage);
+    throw handleApiError(error);
   }
 };
+
 
 export default {
   getStreams,

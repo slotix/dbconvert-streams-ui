@@ -87,40 +87,20 @@
 
         <div class="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <div class="flex items-center gap-x-4 lg:gap-x-6">
-            <!-- <button type="button" class="-m-2.5 p-2.5 text-gray-400 hover:text-gray-500">
+            <button type="button" class="-m-2.5 p-2.5 text-gray-400 hover:text-gray-500">
               <span class="sr-only">View notifications</span>
               <BellIcon class="h-6 w-6" aria-hidden="true" />
-            </button> -->
+            </button>
 
             <!-- Separator -->
-            <!-- <div class="hidden lg:block lg:h-6 lg:w-px lg:bg-gray-900/10" aria-hidden="true" /> -->
+            <div class="hidden lg:block lg:h-6 lg:w-px lg:bg-gray-900/10" aria-hidden="true" />
 
             <!-- Profile dropdown -->
             <Menu as="div" class="relative">
               <MenuButton class="-m-1.5 flex items-center p-1.5">
-                <span v-if="user" class="sr-only">Open user menu</span>
-                <img v-if="user" :src="user.pictureUrl" alt="User picture" class="h-10 w-10 rounded-full" />
-                <span v-if="user" class="hidden lg:flex lg:items-center">
-                  <span class="ml-4 text-sm font-semibold leading-6 text-gray-900" aria-hidden="true">{{ user.name
-                    }}</span>
-                  <ChevronDownIcon class="ml-2 h-5 w-5 text-gray-400" aria-hidden="true" />
-                </span>
-                <span v-else @click="login" class="cursor-pointer">Sign In</span>
+                <UserButton :showName=true v-if="isSignedIn" />
+                <SignInButton v-else />
               </MenuButton>
-              <transition enter-active-class="transition ease-out duration-100"
-                enter-from-class="transform opacity-0 scale-95" enter-to-class="transform opacity-100 scale-100"
-                leave-active-class="transition ease-in duration-75" leave-from-class="transform opacity-100 scale-100"
-                leave-to-class="transform opacity-0 scale-95">
-                <MenuItems v-if="user"
-                  class="absolute right-0 z-10 mt-2.5 w-32 origin-top-right rounded-md bg-white py-2 shadow-lg ring-1 ring-gray-900/5 focus:outline-none">
-                  <MenuItem v-for="item in userNavigation" :key="item.name" v-slot="{ active }">
-                  <button @click="item.onClick" :class="[
-                    active ? 'bg-gray-50' : '',
-                    'block px-3 py-1 text-sm leading-6 text-gray-900 w-full text-left'
-                  ]">{{ item.name }}</button>
-                  </MenuItem>
-                </MenuItems>
-              </transition>
             </Menu>
           </div>
         </div>
@@ -135,20 +115,19 @@
 </template>
 <script setup>
 import { ref } from 'vue'
+import { RouterLink, RouterView } from 'vue-router'
+import { SignInButton, UserButton, useAuth } from 'vue-clerk'
 import NotificationBar from '@/components/common/NotificationBar.vue'
-import { useCommonStore } from '@/stores/common'
 import {
   Dialog,
   DialogPanel,
   Menu,
   MenuButton,
-  MenuItem,
-  MenuItems,
   TransitionChild,
   TransitionRoot
 } from '@headlessui/vue'
-import { RouterLink, RouterView } from 'vue-router'
 import {
+  BellIcon,
   Bars3Icon,
   ArrowPathIcon,
   HomeIcon,
@@ -156,27 +135,8 @@ import {
   XMarkIcon,
   ChartBarSquareIcon
 } from '@heroicons/vue/24/outline'
-import { ChevronDownIcon } from '@heroicons/vue/20/solid'
-import { kobbleClient } from '@/kobble/index.ts'
 
-
-const store = useCommonStore()
-const user = ref(store.user)
-
-const login = async () => {
-  // Save the current route path to session storage
-  sessionStorage.setItem('preAuthPath', window.location.pathname);
-  await kobbleClient.loginWithRedirect()
-}
-
-const logout = async () => {
-  await kobbleClient.logout()
-  store.clearUser()
-}
-// Update the user ref when the store user changes
-store.$subscribe((mutation, state) => {
-  user.value = state.user
-})
+const { isSignedIn } = useAuth()
 
 const navigation = ref([
   { name: 'Home', href: '/', icon: HomeIcon },
@@ -185,11 +145,5 @@ const navigation = ref([
   { name: 'Monitor Stream', href: '/monitor', icon: ChartBarSquareIcon }
 ])
 
-const userNavigation = [
-  // { name: 'Login', onClick: login },
-  // { name: 'Your profile', onClick: getUser },
-  { name: 'Sign out', onClick: logout }
-]
 const sidebarOpen = ref(false)
-
 </script>
