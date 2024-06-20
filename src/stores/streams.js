@@ -60,8 +60,8 @@ export const useStreamsStore = defineStore('streams', {
         await this.refreshStreams(token);
         this.currentStream.id = stream.id;
         this.currentStream.created = stream.created;
-      } catch (e) {
-        console.error(e);
+      } catch (err) {
+        throw err;
       }
     }, 500),
     prepareStreamData() {
@@ -89,11 +89,30 @@ export const useStreamsStore = defineStore('streams', {
     },
     async deleteStream(index, token) {
       try {
-        const stream = this.streams[index];
-        await api.deleteStream(stream.id, token);
         this.streams.splice(index, 1);
+        await api.deleteStream(index, token);
       } catch (error) {
-        console.error(error);
+        throw error;
+      }
+    },
+
+    async cloneStream(index, token) {
+      try {
+        const resp = await api.cloneStream(index, token);
+        this.currentStream.id = resp.id;
+        this.currentStream.created = resp.created;
+        this.saveStream(token);
+      } catch (error) {
+        throw error;
+      }
+    },
+
+    async startStream(index, token) {
+      try {
+        const resp = await api.startStream (index, token);
+        console.log (resp.data.id);
+      } catch (error) {
+        throw error;
       }
     },
     resetCurrentStream() {

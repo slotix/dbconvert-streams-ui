@@ -51,11 +51,12 @@ export default {
     const clerk = useClerk();
 
     const fetchStreams = async () => {
+      commonStore.showNotificationBar = false;
       try {
         const token = await clerk.session.getToken();
         await streamsStore.refreshStreams(token);
-      } catch (error) {
-        console.error(error);
+      } catch (err) {
+        commonStore.showNotification(err.message);
       }
     };
 

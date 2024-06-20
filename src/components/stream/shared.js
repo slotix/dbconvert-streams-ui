@@ -12,7 +12,7 @@ import {useStreamsStore} from '@/stores/streams.js';
 import {useConnectionsStore} from '@/stores/connections.js';
 import {useCommonStore} from '@/stores/common.js';
 import ActionsMenu from '@/components/common/ActionsMenu.vue';
-import api from '@/api/streams.js';
+import {useClerk} from 'vue-clerk';
 
 export default {
   props: {
@@ -40,36 +40,39 @@ export default {
   setup () {
     const dbTypes = useConnectionsStore ().dbTypes;
     const steps = useCommonStore ().steps;
+    const clerk = useClerk ();
     return {
       dbTypes,
       steps,
+      clerk,
     };
   },
   methods: {
     ...mapActions (useCommonStore, ['getViewType']),
+    async getToken () {
+      const token = await this.clerk.session.getToken ();
+      return token;
+    },
     editStream () {
       this.selectStream ();
       this.$router.push ({name: 'ManageStream', params: {mode: 'edit'}});
     },
     async deleteStream () {
       try {
-        await api.deleteStream (this.stream.id);
-        await useStreamsStore ().deleteStream (this.stream.id);
-        await useStreamsStore ().refreshStreams ();
+        const token = await this.getToken ();
+        await useStreamsStore ().deleteStream (this.stream.id, token);
+        await useStreamsStore ().refreshStreams (token);
       } catch (e) {
         console.log (e);
       }
     },
+
     async cloneStream () {
       try {
-        useStreamsStore ().setCurrentStream (this.stream.id);
-        const resp = await api.cloneStream (this.stream.id);
-        // this.currentStream.id = stream.id;
-        // this.currentStream.created = stream.created;
-        this.stream.id = resp.id;
-        this.stream.created = resp.created;
-        await useStreamsStore ().saveStream (this.stream.id);
-        await useStreamsStore ().refreshStreams ();
+        // useStreamsStore ().setCurrentStream (this.stream.id);
+        const token = await this.getToken();
+        await useStreamsStore ().cloneStream (this.stream.id, token);
+        await useStreamsStore ().refreshStreams (token);
       } catch (e) {
         console.log (e);
       }
@@ -79,9 +82,8 @@ export default {
     },
     async startStream () {
       try {
-        console.log (this.stream.id);
-        const resp = await api.startStream (this.stream.id);
-        console.log (resp.data.id);
+        const token = await this.getToken ();
+        await useStreamsStore ().startStream (this.stream.id, token);
       } catch (err) {
         useCommonStore ().showNotification (err.message);
       }

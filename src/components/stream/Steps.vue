@@ -44,8 +44,6 @@
   </div>
 </template>
 <script setup>
-// import { debounce } from 'lodash'
-// import api from '@/api/streams.js'
 import { useStreamsStore } from '@/stores/streams.js'
 import { useCommonStore } from '@/stores/common.js'
 import { ref, computed, onMounted, watch } from 'vue'
@@ -80,14 +78,13 @@ watch(currentStepIndex, (newVal) => {
   store.currentStep = allSteps[newVal - 1]
 })
 async function saveStream() {
-  // store.prepareStreamData();
+  commonStore.showNotificationBar = false;
   try {
     const token = await clerk.session.getToken();
     await store.saveStream(token);
     router.push({ name: 'Streams' });
-  } catch (e) {
-    console.log(e);
-    // Handle error, possibly show user feedback
+  } catch (err) {
+    commonStore.showNotification(err.message);
   }
 }
 onMounted(() => {
