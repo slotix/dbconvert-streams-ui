@@ -57,12 +57,9 @@ export default {
 
         await this.save()
         await this.refresh()
-      } catch (error) {
-        useCommonStore().notificationBar = {
-          msg: error.message,
-          type: 'error'
-        }
-        useCommonStore().showNotificationBar = true
+      } catch (err) {
+
+        useCommonStore().showNotification(err.message);
       }
     }
   }

@@ -8,18 +8,12 @@
       <ToggleView class="py-2 px-8" />
     </div>
     <!-- End View control buttons   -->
-    <div
-      class="flex flex-wrap max-w-7xl mx-auto px-4 overflow-hidden"
-      v-show="currentViewType === 'cards'"
-    >
+    <div class="flex flex-wrap max-w-7xl mx-auto px-4 overflow-hidden" v-show="currentViewType === 'cards'">
       <div class="w-full px-4 overflow-hidden md:w-1/2 lg:w-1/3">
         <NewCard />
       </div>
-      <div
-        class="w-full px-4 overflow-hidden md:w-1/2 lg:w-1/3"
-        v-for="connection in connectionsByType"
-        :key="connection.id"
-      >
+      <div class="w-full px-4 overflow-hidden md:w-1/2 lg:w-1/3" v-for="connection in connectionsByType"
+        :key="connection.id">
         <CardItem :connection="connection" :isStreamsTab="isStreamsTab" />
       </div>
     </div>
@@ -83,11 +77,7 @@ export default {
     try {
       await this.refreshConnections()
     } catch (err) {
-      useCommonStore().notificationBar = {
-        msg: err.message,
-        type: 'error'
-      }
-      useCommonStore().showNotificationBar = true
+      useCommonStore().showNotification(err.message);
     }
     await this.getViewType()
   }

@@ -20,7 +20,6 @@ export const useCommonStore = defineStore ('modal', {
       msg: '',
       type: '',
     },
-    user: null, // Add user state here
     steps: [
       {
         id: 1,
@@ -95,14 +94,12 @@ export const useCommonStore = defineStore ('modal', {
     closeModal () {
       this.showModal = false;
     },
-    closeNotification () {
+    showNotification (msg, type = 'error') {
+      this.notificationBar = {msg, type};
+      this.showNotificationBar = true;
+    },
+    hideNotification () {
       this.showNotificationBar = false;
-    },
-    setUser (user) {
-      this.user = user;
-    },
-    clearUser () {
-      this.user = null;
     },
   },
 });

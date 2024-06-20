@@ -1,6 +1,5 @@
 <template>
     <div v-if="table">
-        {{  table.name }}
         <div v-if="currentStream.mode === 'convert'">
             <label for="about" class="block text-sm font-medium leading-6 text-gray-900 mt-4">Custom Query.</label>
             <div class="">
@@ -24,6 +23,7 @@
             <label for="create-indexes" class="text-sm font-medium text-gray-700 pl-2">Create Indexes on
                 target</label>
         </div>
+    {{ currentStream.tables }}
     </div>
 </template>
 
@@ -53,10 +53,10 @@ onMounted(() => {
   if (props.table) {
     watch(() => props.table, (newTable) => {
       // Ensure currentStream is available and has the tables array
-      if (streamsStore.currentStream && streamsStore.currentStream.tables) {
-        const tableIndex = streamsStore.currentStream.tables.findIndex(t => t.name === newTable.name);
+      if (currentStream && currentStream.tables) {
+        const tableIndex = currentStream.tables.findIndex(t => t.name === newTable.name);
         if (tableIndex !== -1) {
-          streamsStore.currentStream.tables[tableIndex] = {...newTable};
+          currentStream.tables[tableIndex] = {...newTable};
           // Consider using an action to update the table in the store, instead of directly mutating the state
         }
       }

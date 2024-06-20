@@ -1,11 +1,11 @@
-import ConnectionName from "./ConnectionName.vue";
-import { DIALOG_TYPES, useCommonStore } from "@/stores/common.js";
-import { useConnectionsStore } from "@/stores/connections.js";
-import { mapWritableState } from "pinia";
-import PasswordBox from "@/components/common/PasswordBox.vue";
-import ItemsCombo from "@/components/common/ItemsCombo.vue";
-import { ArrowPathIcon, PlusIcon } from "@heroicons/vue/24/solid";
-import api from "@/api/connections.js";
+import ConnectionName from './ConnectionName.vue';
+import {DIALOG_TYPES, useCommonStore} from '@/stores/common.js';
+import {useConnectionsStore} from '@/stores/connections.js';
+import {mapWritableState} from 'pinia';
+import PasswordBox from '@/components/common/PasswordBox.vue';
+import ItemsCombo from '@/components/common/ItemsCombo.vue';
+import {ArrowPathIcon, PlusIcon} from '@heroicons/vue/24/solid';
+import api from '@/api/connections.js';
 
 export default {
   components: {
@@ -15,13 +15,13 @@ export default {
     PlusIcon,
     ItemsCombo,
   },
-  mounted() {
+  mounted () {
     if (this.dlgTp === DIALOG_TYPES.SAVE) {
       this.connection.name = this.buildConnectionName;
     }
     this.connection.type = this.connectionType;
   },
-  activated() {
+  activated () {
     if (this.dlgTp === DIALOG_TYPES.SAVE) {
       this.currentConnection = this.connection;
     } else {
@@ -29,33 +29,33 @@ export default {
     }
   },
   computed: {
-    ...mapWritableState(useConnectionsStore, ["currentConnection"]),
-    buildConnectionName() {
+    ...mapWritableState (useConnectionsStore, ['currentConnection']),
+    buildConnectionName () {
       return (
         this.connectionType +
-        "-" +
+        '-' +
         this.connection.host +
-        "-" +
+        '-' +
         this.connection.username
       );
     },
-    dlgTp() {
-      return useCommonStore().dlgType;
+    dlgTp () {
+      return useCommonStore ().dlgType;
     },
   },
   watch: {
-    "connection.host": function () {
+    'connection.host': function () {
       if (this.dlgTp === DIALOG_TYPES.SAVE) {
         this.connection.name = this.buildConnectionName;
       }
     },
-    "connection.username": function () {
+    'connection.username': function () {
       if (this.dlgTp === DIALOG_TYPES.SAVE) {
         this.connection.name = this.buildConnectionName;
       }
     },
     connection: {
-      handler() {
+      handler () {
         this.currentConnection = this.connection;
       },
       deep: true,
@@ -63,76 +63,57 @@ export default {
   },
   methods: {
     //for postgres only
-    async refreshSchemas() {
+    async refreshSchemas () {
       try {
-        const schemas = await api.getSchemas(this.currentConnection.id);
+        const schemas = await api.getSchemas (this.currentConnection.id);
         this.currentConnection.schemas = schemas;
         // this.connection.schema= schemas[0];
-        console.log(this.currentConnection.schemas);
-      } catch (error) {
-        useCommonStore().showNotificationBar = false;
-        useCommonStore().notificationBar = {
-          msg: error.message,
-          type: "error",
-        };
-        useCommonStore().showNotificationBar = true;
+        console.log (this.currentConnection.schemas);
+      } catch (err) {
+        useCommonStore ().showNotification (err.message);
       }
     },
-    async refreshDatabases() {
+    async refreshDatabases () {
       try {
-        const databases = await api.getDatabases(this.currentConnection.id);
+        const databases = await api.getDatabases (this.currentConnection.id);
         this.currentConnection.databases = databases;
-      } catch (error) {
-        useCommonStore().showNotificationBar = false;
-        useCommonStore().notificationBar = {
-          msg: error.message,
-          type: "error",
-        };
-        useCommonStore().showNotificationBar = true;
+      } catch (err) {
+        useCommonStore ().showNotification (err.message);
       }
     },
 
-    async createDatabase(newDatabase) {
+    async createDatabase (newDatabase) {
       try {
-        await api.createDatabase(newDatabase, this.currentConnection.id);
-        this.currentConnection.databases.push(newDatabase);
+        await api.createDatabase (newDatabase, this.currentConnection.id);
+        this.currentConnection.databases.push (newDatabase);
         this.currentConnection.database = newDatabase;
-        useCommonStore().showNotificationBar = false;
-        useCommonStore().notificationBar = {
-          msg: "Database created",
-          type: "success",
-        };
-        useCommonStore().showNotificationBar = true;
-        this.refreshDatabases();
-      } catch (error) {
-        useCommonStore().showNotificationBar = false;
-        useCommonStore().notificationBar = {
-          msg: error.message,
-          type: "error",
-        };
-        useCommonStore().showNotificationBar = true;
+        useCommonStore ().showNotificationBar = false;
+        useCommonStore ().showNotification (
+          (msg = 'Database created'),
+          (type = 'success')
+        );
+        this.refreshDatabases ();
+      } catch (err) {
+        useCommonStore ().showNotificationBar = false;
+        useCommonStore ().showNotification (err.message);
       }
     },
 
-    async createSchema(newSchema) {
+    async createSchema (newSchema) {
       try {
-        await api.createSchema(newSchema, this.currentConnection.id);
-        this.currentConnection.schemas.push(newSchema);
+        await api.createSchema (newSchema, this.currentConnection.id);
+        this.currentConnection.schemas.push (newSchema);
         this.currentConnection.schema = newSchema;
-        useCommonStore().showNotificationBar = false;
-        useCommonStore().notificationBar = {
-          msg: "Schema created",
-          type: "success",
-        };
-        useCommonStore().showNotificationBar = true;
-        this.refreshSchemas();
-      } catch (error) {
-        useCommonStore().showNotificationBar = false;
-        useCommonStore().notificationBar = {
-          msg: error.message,
-          type: "error",
-        };
-        useCommonStore().showNotificationBar = true;
+        useCommonStore ().showNotificationBar = false;
+
+        useCommonStore ().showNotification (
+          (msg = 'Schema created'),
+          (type = 'success')
+        );
+        this.refreshSchemas ();
+      } catch (err) {
+        useCommonStore ().showNotificationBar = false;
+        useCommonStore ().showNotification (err.message);
       }
     },
   },

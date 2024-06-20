@@ -11,6 +11,7 @@
       @click="debouncedRefreshTables">
       Refresh tables
     </button>
+    {{ currentStream.tables }}
   </div>
   <table class="min-w-full table-fixed divide-y divide-gray-300">
     <thead>
@@ -38,7 +39,7 @@
         @checkboxChange="handleCheckboxChange" @toggleSettings="toggleTableSettings">
         <!-- This slot will be used to add a button to toggle the settings panel -->
         <template #default>
-          <TableSettings v-if="selectedTableNames.includes(table.name)" :table="table" />
+          <TableSettings v-if="selectedTableNames.includes(table.name)" :table="table" class="" />
         </template>
       </TableRow>
     </tbody>
@@ -68,15 +69,23 @@ const currentStream = streamsStore.currentStream
 
 
 const tables = ref(
-  currentStream?.tables?.length > 0
-    ? currentStream.tables.map((table) => ({
-      name: table.name,
-      operations: table.operations,
-      createIndexes : table.createIndexes,
-      query : table.query,
-      selected: true
-    }))
-    : []
+  // currentStream.tables
+  currentStream.tables.map((table) => ({
+    name: table.name,
+    operations: table.operations,
+    createIndexes: table.createIndexes,
+    query: table.query,
+    selected: true
+  }))
+  // currentStream?.tables?.length > 0
+  //   ? currentStream.tables.map((table) => ({
+  //     name: table.name,
+  //     operations: table.operations,
+  //     createIndexes : table.createIndexes,
+  //     query : table.query,
+  //     selected: true
+  //   }))
+  //   : []
 )
 
 const filteredTables = computed(() => {
@@ -166,23 +175,14 @@ const refreshTables = async () => {
 
   try {
     const response = await api.getTables(currentStream.source);
+    // console.log("refreshTables", currentStream.tables)
     // Use the helper function to map over the response
     tables.value = response.map(entry => createTableObject(entry, currentStream.mode));
     // Optionally hide the notification bar after successful refresh
-  } catch (error) {
-    handleError(commonStore, error);
+  } catch (err) {
+        commonStore.showNotification (err.message);
   }
 };
-
-// Helper function to handle errors
-function handleError(commonStore, error) {
-  commonStore.notificationBar = {
-    msg: error.message,
-    type: 'error'
-  };
-  commonStore.showNotificationBar = true;
-  console.error('Error refreshing tables:', error);
-}
 
 // Wrap the refreshTables function with lodash's debounce
 const debouncedRefreshTables = debounce(refreshTables, 500); // Debounce for 500 milliseconds

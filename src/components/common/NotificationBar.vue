@@ -10,7 +10,7 @@
       {{ notification().msg }}
     </p>
     <div class="flex flex-1 justify-end">
-      <button type="button" class="-m-3 p-3 focus-visible:outline-offset-[-4px]" @click="closeNotification">
+      <button type="button" class="-m-3 p-3 focus-visible:outline-offset-[-4px]" @click="hideNotification">
         <span class="sr-only">Dismiss</span>
         <XMarkIcon class="h-5 w-5 text-white" aria-hidden="true" />
       </button>
@@ -26,7 +26,7 @@ const show = computed(() => useCommonStore().showNotificationBar)
 function notification() {
   return useCommonStore().notificationBar
 }
-const closeNotification = () => useCommonStore().closeNotification()
+const hideNotification = () => useCommonStore().hideNotification()
 
 const getNotificationClass = (type) => {
   const classes = {

@@ -48,7 +48,7 @@ export default {
   methods: {
     ...mapActions (useCommonStore, ['getViewType']),
     editStream () {
-      this.selectStream();
+      this.selectStream ();
       this.$router.push ({name: 'ManageStream', params: {mode: 'edit'}});
     },
     async deleteStream () {
@@ -82,12 +82,8 @@ export default {
         console.log (this.stream.id);
         const resp = await api.startStream (this.stream.id);
         console.log (resp.data.id);
-      } catch (error) {
-        useCommonStore ().notificationBar = {
-          type: 'error',
-          msg: error.message,
-        };
-        useCommonStore ().showNotificationBar = true;
+      } catch (err) {
+        useCommonStore ().showNotification (err.message);
       }
     },
   },
