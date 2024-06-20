@@ -7,11 +7,9 @@
       </div>
       <router-link :to="{ name: 'ManageStream', params: { mode: 'add' } }">
         <div class="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
-          <button
-            type="button"
+          <button type="button"
             class="flex items-center justify-center rounded-md bg-gray-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-gray-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-600"
-            @click="addStream"
-          >
+            @click="addStream">
             <PlusIcon class="mr-2 h-5 w-5 text-white" aria-hidden="true" />
             Add stream
           </button>
@@ -25,55 +23,37 @@
           <table class="min-w-full bg-white">
             <thead class="text-sm md:text-base">
               <tr class="bg-gray-100 divide-x divide-gray-200">
-                <th
-                  scope="col"
-                  class="px-5 py-3 border-b border-gray-200 text-gray-800 text-left uppercase font-normal"
-                >
+                <th scope="col"
+                  class="px-5 py-3 border-b border-gray-200 text-gray-800 text-left uppercase font-normal">
                   Stream
                 </th>
-                <th
-                  scope="col"
-                  class="hidden px-5 py-3 border-b border-gray-200 text-gray-800 text-left uppercase font-normal lg:table-cell"
-                >
+                <th scope="col"
+                  class="hidden px-5 py-3 border-b border-gray-200 text-gray-800 text-left uppercase font-normal lg:table-cell">
                   Source
                 </th>
-                <th
-                  scope="col"
-                  class="hidden px-5 py-3 border-b border-gray-200 text-gray-800 text-left uppercase font-normal lg:table-cell"
-                >
+                <th scope="col"
+                  class="hidden px-5 py-3 border-b border-gray-200 text-gray-800 text-left uppercase font-normal lg:table-cell">
                   Target
                 </th>
-                <th
-                  scope="col"
-                  class="px-5 py-3 border-b border-gray-200 text-gray-800 text-left uppercase font-normal  lg:table-cell"
-                >
-                 Edit 
+                <th scope="col"
+                  class="px-5 py-3 border-b border-gray-200 text-gray-800 text-left uppercase font-normal  lg:table-cell">
+                  Edit
                 </th>
-                <th
-                  scope="col"
-                  class="px-5 py-3 border-b border-gray-200 text-gray-800 text-center uppercase font-normal"
-                >
+                <th scope="col"
+                  class="px-5 py-3 border-b border-gray-200 text-gray-800 text-center uppercase font-normal">
                   Actions
                 </th>
-                <th
-                  scope="col"
-                  class="px-5 py-3 border-b border-gray-200 text-gray-800 text-left uppercase font-normal  lg:table-cell"
-                >
-                  Start 
+                <th scope="col"
+                  class="px-5 py-3 border-b border-gray-200 text-gray-800 text-left uppercase font-normal  lg:table-cell">
+                  Start
                 </th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200 bg-white">
-              <tr
-                v-for="stream in strms"
-                :key="stream.id"
-                class="divide-x divide-gray-200 border-b border-gray-200 cursor-pointer"
-              >
-                <TableRow
-                  :stream="stream"
-                  :source="connectionByID(stream.source)"
-                  :target="connectionByID(stream.target)"
-                />
+              <tr v-for="stream in newestFirst" :key="stream.id"
+                class="divide-x divide-gray-200 border-b border-gray-200 cursor-pointer">
+                <TableRow :stream="stream" :source="connectionByID(stream.source)"
+                  :target="connectionByID(stream.target)" />
               </tr>
             </tbody>
           </table>
@@ -85,19 +65,12 @@
 
 <script>
 import TableRow from './TableRow.vue'
-// import shared from './shared.js'
 import { PlusIcon } from '@heroicons/vue/24/outline'
 import { mapState, mapActions } from 'pinia'
 import { useConnectionsStore } from '@/stores/connections.js'
 import { useStreamsStore } from '@/stores/streams.js'
 
-// export default Object.assign({}, shared, {
 export default {
-  props: {
-    strms: {
-      type: Array
-    }
-  },
   methods: {
     ...mapActions(useConnectionsStore, ['refreshConnections']),
     addStream() {
@@ -110,7 +83,7 @@ export default {
     PlusIcon
   },
   computed: {
-    ...mapState(useStreamsStore, ['streams', 'streamsByType']),
+    ...mapState(useStreamsStore, ['streams', 'streamsByType', 'newestFirst']),
     connectionByID() {
       return (id) => {
         return useConnectionsStore().connectionByID(id)
