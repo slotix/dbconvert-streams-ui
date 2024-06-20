@@ -8,7 +8,8 @@
 
         <div class="flex items-center md:w-64">
           <div class="w-full bg-gray-200 rounded-full mr-2">
-            <div class="rounded-full bg-green-500 text-sm leading-none h-3 text-center text-white transition-all duration-300 ease-in-out"
+            <div
+              class="rounded-full bg-green-500 text-sm leading-none h-3 text-center text-white transition-all duration-300 ease-in-out"
               :style="{ width: stepsBarValue }"></div>
           </div>
           <div class="text-sm w-10 text-gray-600">
@@ -34,7 +35,7 @@
         Next
         <ChevronRightIcon class="h-6 w-6" aria-hidden="true" />
       </button>
-      <button type="button" @click="debouncedSave"
+      <button type="button" @click="saveStream"
         class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gray-600 text-base font-medium text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:ml-3 sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
         :disabled="isSaveDisabled">
         Save
@@ -43,11 +44,12 @@
   </div>
 </template>
 <script setup>
-import { debounce } from 'lodash'
-import api from '@/api/streams.js'
+// import { debounce } from 'lodash'
+// import api from '@/api/streams.js'
 import { useStreamsStore } from '@/stores/streams.js'
 import { useCommonStore } from '@/stores/common.js'
 import { ref, computed, onMounted, watch } from 'vue'
+import { useAuth, useClerk } from 'vue-clerk';
 import { useRouter } from 'vue-router'
 const router = useRouter()
 
@@ -58,7 +60,7 @@ const commonStore = useCommonStore()
 const allSteps = commonStore.steps
 let currentStepIndex = ref(1)
 const stepsCount = commonStore.steps.length
-
+const clerk = useClerk();
 
 const isSaveDisabled = computed(() => {
   return currentStream.source === 0 || currentStream.target === 0
@@ -77,23 +79,17 @@ function prev() {
 watch(currentStepIndex, (newVal) => {
   store.currentStep = allSteps[newVal - 1]
 })
-
-
-const debouncedSave = debounce(async () => {
+async function saveStream() {
+  // store.prepareStreamData();
   try {
-    await store.saveStream()
-    await store.refreshStreams()
-    const stream = await api.createStream(currentStream)
-    currentStream.id = stream.id
-    currentStream.created = stream.created
-    // Navigate to the Streams route
-    router.push({ name: 'Streams' })
+    const token = await clerk.session.getToken();
+    await store.saveStream(token);
+    router.push({ name: 'Streams' });
   } catch (e) {
-    console.log(e)
+    console.log(e);
     // Handle error, possibly show user feedback
   }
-}, 500) // The number of milliseconds to delay; adjust as needed.
-
+}
 onMounted(() => {
   store.currentStep = allSteps[0]
 })
