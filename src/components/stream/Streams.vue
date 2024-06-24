@@ -1,4 +1,5 @@
 <template>
+<ClerkLoaded>
   <div class="antialiased bg-gray-200">
     <div class="flex flex-wrap gap-x-3 space-y-0 max-w-7xl mx-auto py-6 px-8;">
       <ToggleView class="py-2 px-8" />
@@ -22,6 +23,7 @@
       <Table />
     </div>
   </div>
+  </ClerkLoaded>
 </template>
 <script>
 import { ref, onMounted, computed } from 'vue';
@@ -32,7 +34,7 @@ import CardItem from './CardItem.vue';
 import { useStreamsStore } from '@/stores/streams.js';
 import { useConnectionsStore } from '@/stores/connections.js';
 import { useCommonStore } from '@/stores/common.js';
-import { useClerk } from 'vue-clerk';
+import { useClerk, ClerkLoaded } from 'vue-clerk';
 import { mapActions } from 'pinia';
 
 export default {
@@ -42,6 +44,7 @@ export default {
     ToggleView,
     CardItem,
     NewCard,
+    ClerkLoaded
   },
 
   setup() {
