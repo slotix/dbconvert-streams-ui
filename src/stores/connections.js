@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import api from "@/api/connections.js";
+import { debounce } from 'lodash';
 
 export const useConnectionsStore = defineStore("connections", {
   state: () => ({
@@ -91,10 +92,6 @@ export const useConnectionsStore = defineStore("connections", {
     currentConnectionIndexInArray(state) {
       return state.connections.indexOf(state.currentConnection);
     },
-    // connectionsNewestFirst(state) {
-    //   // return state.connections.reverse();
-    //   return state.connections.slice().reverse();
-    // },
     connectionsByType(state) {
       return state.connections
         ?.filter(function (el) {
@@ -113,34 +110,6 @@ export const useConnectionsStore = defineStore("connections", {
         return c.id === id;
       });
       this.currentConnection = curConnection[0];
-      // if (step === "source") {
-      //   this.sourceConnection = curConnection[0];
-      // } else if (step === "target") {
-      //   this.targetConnection = curConnection[0];
-      // }
-    },
-    setFilter(filter) {
-      this.currentFilter = filter;
-    },
-    async saveConnection() {
-      let connection = this.currentConnection;
-      // if (connection && connection.password) {
-      //   connection.password = await hashPassword(connection.password);
-      // }
-      if (this.sshConnection !== null) {
-        connection["ssh"] = this.sshConnection;
-      }
-      if (this.sslConnection !== null) {
-        connection["ssl"] = this.sslconnection;
-      }
-      // connection.password = "";
-    },
-    async refreshConnections() {
-      try {
-        this.connections = await api.getConnections();
-      } catch (error) {
-        throw error;
-      }
     },
     connectionByID(id) {
       const connection = this.connections?.find((c) => c.id === id);
@@ -148,8 +117,68 @@ export const useConnectionsStore = defineStore("connections", {
         ? connection
         : null;
     },
-    async deleteConnection(index) {
-      this.connections.splice(index, 1);
+    setFilter(filter) {
+      this.currentFilter = filter;
+    },
+    saveConnection: debounce(async function (token) {
+      try {
+        let connection = this.currentConnection;
+        if (this.ssh !== null) {
+          connection.ssh = this.ssh;
+        }
+        if (this.ssl !== null) {
+          connection.ssl = this.ssl;
+        }
+        if (!connection.id) {
+          await api.createConnection(connection, token);
+        } else {
+          await api.updateConnection(connection, token);
+        }
+        await this.refreshConnections(token);
+      } catch (error) {
+        console.error('Failed to save connection:', error);
+        throw error;
+      }
+    }, 500),
+    async refreshConnections(token) {
+      try {
+        this.connections = await api.getConnections(token);
+      } catch (error) {
+        console.error('Failed to refresh connections:', error);
+        throw error;
+      }
+    },
+    async deleteConnection(index, token) {
+      try {
+        this.connections.splice(index, 1);
+        await api.deleteConnection(index, token);
+      } catch (error) {
+        console.error('Failed to delete connection:', error);
+        throw error;
+      }
+    },
+    async cloneConnection(index, token) {
+      try {
+        const resp = await api.cloneConnection(index, token);
+        this.currentConnection = {
+          ...this.currentConnection,
+          id: resp.id,
+          created: resp.created,
+        };
+        this.saveConnection(token);
+      } catch (error) {
+        console.error('Failed to clone connection:', error);
+        throw error;
+      }
+    },
+    async testConnection(json, token) {
+      try {
+        const status = await api.testConnection(json, token);
+        console.log(status);
+      } catch (error) {
+        console.error('Failed to test connection:', error);
+        throw error;
+      }
     },
     resetCurrentConnection() {
       this.currentConnection = null;

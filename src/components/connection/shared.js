@@ -1,29 +1,55 @@
-import { useConnectionsStore } from "@/stores/connections.js";
-import { useStreamsStore } from "@/stores/streams.js";
-import { useCommonStore } from "@/stores/common.js";
-import { mapActions, mapState } from "pinia";
-import api from "@/api/connections.js";
+import {
+  CalendarIcon,
+  CheckCircleIcon,
+  ChevronRightIcon,
+  PencilIcon,
+  PlayIcon,
+  Square2StackIcon,
+  TrashIcon,
+} from '@heroicons/vue/24/solid';
+import { mapActions, mapState } from 'pinia';
+import { useConnectionsStore } from '@/stores/connections.js';
+import { useStreamsStore } from '@/stores/streams.js';
+import { useCommonStore } from '@/stores/common.js';
+import ActionsMenu from '@/components/common/ActionsMenu.vue';
+import { useAuth } from 'vue-clerk';
 
 export default {
+  components: {
+    PencilIcon,
+    Square2StackIcon,
+    TrashIcon,
+    CalendarIcon,
+    CheckCircleIcon,
+    ChevronRightIcon,
+    PlayIcon,
+    ActionsMenu,
+  },
   setup() {
-    const dbTypesData = useConnectionsStore();
-    const dbTypes = dbTypesData.dbTypes;
+    const connectionsStore = useConnectionsStore();
+    const streamsStore = useStreamsStore();
+    const commonStore = useCommonStore();
+    const { getToken } = useAuth();
+    const dbTypes = connectionsStore.dbTypes;
+    const steps = commonStore.steps;
+
     return {
       dbTypes,
+      steps,
+      getToken,
+      connectionsStore,
+      streamsStore,
+      commonStore,
     };
   },
   computed: {
-    ...mapState(useConnectionsStore, [
-      "connectionsByType",
-      "currentConnection",
-      "currentStep",
-    ]),
-    ...mapState(useStreamsStore, ["currentStep", "currentStream"]),
+    ...mapState(useConnectionsStore, ['connectionsByType', 'currentConnection', 'currentStep']),
+    ...mapState(useStreamsStore, ['currentStep', 'currentStream']),
     connectionsCount() {
-      return connectionsByType.length;
+      return this.connectionsByType.length;
     },
     logoSrc() {
-      let dbType = this.dbTypes.filter((f) => {
+      let dbType = this.dbTypes.filter(f => {
         return f.type === this.connection.type;
       });
       return dbType[0].logo;
@@ -31,95 +57,73 @@ export default {
     connectionCreated() {
       const milliseconds = this.connection.created * 1000;
       const date = new Date(milliseconds);
-      return date.toLocaleDateString() + " - " + date.toLocaleTimeString();
+      return date.toLocaleDateString() + ' - ' + date.toLocaleTimeString();
     },
     concatenateValues() {
-      if (
-        this.connection.host === undefined && this.connection.port === undefined
-      ) return "";
-      return (this.connection.host || "") +
-        (this.connection.port !== undefined ? `:${this.connection.port}` : "");
+      if (this.connection.host === undefined && this.connection.port === undefined) return '';
+      return (this.connection.host || '') + (this.connection.port !== undefined ? `:${this.connection.port}` : '');
     },
     selected() {
       if (!this.isStreamsTab) {
         return false;
       }
 
-      const isSourceStreamSelected = this.currentStep.name === "source" &&
-        this.currentStream.source === this.connection.id;
-
-      const isTargetStreamSelected = this.currentStep.name === "target" &&
-        this.currentStream.target === this.connection.id;
+      const isSourceStreamSelected = this.currentStep.name === 'source' && this.currentStream.source === this.connection.id;
+      const isTargetStreamSelected = this.currentStep.name === 'target' && this.currentStream.target === this.connection.id;
 
       return isSourceStreamSelected || isTargetStreamSelected;
     },
     bgRowClass() {
-      return (connection) => ({
-        "hover:bg-gray-50": !this.isStreamsTab,
-        "bg-yellow-50": this.isStreamsTab &&
-          this.currentStep?.name === "source" &&
-          this.currentStream?.source === connection.id,
-        "bg-green-50": this.isStreamsTab &&
-          this.currentStep?.name === "target" &&
-          this.currentStream?.target === connection.id,
-        "hover:bg-yellow-50": this.isStreamsTab &&
-          this.currentStep?.name === "source",
-        "hover:bg-green-50": this.isStreamsTab &&
-          this.currentStep?.name === "target",
+      return connection => ({
+        'hover:bg-gray-50': !this.isStreamsTab,
+        'bg-yellow-50': this.isStreamsTab && this.currentStep?.name === 'source' && this.currentStream?.source === connection.id,
+        'bg-green-50': this.isStreamsTab && this.currentStep?.name === 'target' && this.currentStream?.target === connection.id,
+        'hover:bg-yellow-50': this.isStreamsTab && this.currentStep?.name === 'source',
+        'hover:bg-green-50': this.isStreamsTab && this.currentStep?.name === 'target',
       });
     },
     actionsMenuPosition() {
-      const index = useConnectionsStore().currentConnectionIndexInArray;
-      const rowCount = useConnectionsStore().countConnections;
-      const position = index > rowCount / 2 ? "top" : "bottom";
-      return position;
+      const index = this.connectionsStore.currentConnectionIndexInArray;
+      const rowCount = this.connectionsStore.countConnections;
+      return index > rowCount / 2 ? 'top' : 'bottom';
     },
   },
   methods: {
-    ...mapActions(useConnectionsStore, [
-      "deleteConnection",
-      "setCurrentConnection",
-      "saveConnection",
-      "refreshConnections",
-    ]),
+    ...mapActions(useConnectionsStore, ['setCurrentConnection', 'saveConnection']),
     addConnection() {
-      useCommonStore().openModal("Save");
+      this.commonStore.openModal('Save');
     },
     editConnection() {
       this.setCurrentConnection(this.connection.id);
-      useCommonStore().openModal("Update");
+      this.commonStore.openModal('Update');
     },
     async cloneConnection() {
       this.setCurrentConnection(this.connection.id);
       try {
-        const conn = await api.cloneConnection(this.connection.id);
-        this.currentConnection.id = conn.id;
-        this.currentConnection.created = conn.created;
-        this.saveConnection();
-        await this.refreshConnections();
+        const token = await this.getToken();
+        await this.connectionsStore.cloneConnection(this.connection.id, token);
+        await this.connectionsStore.refreshConnections(token);
       } catch (e) {
         console.log(e);
       }
     },
     async deleteConn() {
       try {
-        await api.deleteConnection(this.connection.id);
-        await this.deleteConnection(this.connection.id);
-        await this.refreshConnections();
+        const token = await this.getToken();
+        await this.connectionsStore.deleteConnection(this.connection.id, token);
+        await this.connectionsStore.refreshConnections(token);
       } catch (e) {
         console.log(e);
       }
     },
     selectConnection() {
       this.setCurrentConnection(this.connection.id);
-      // Stream
-      if (this.currentStep?.name === "source") {
+      if (this.currentStep?.name === 'source') {
         if (this.currentStream) {
           this.currentStream.source = this.connection.id;
-          // console.log(this.currentStream);
         }
       }
-      if (this.currentStep?.name === "target") {
+      if (this.currentStep?.name === 'target') {
         if (this.currentStream) {
           this.currentStream.target = this.connection.id;
         }

@@ -1,6 +1,5 @@
 <template>
   <Listbox as="div" v-model="selectedDBType">
-    <!-- <ListboxLabel class="block text-sm font-medium leading-6 text-gray-900">Assigned to</ListboxLabel> -->
     <div class="relative mt-8 mr-4">
       <ListboxButton
         class="relative w-full cursor-default rounded-md bg-white py-1.5 pl-3 pr-10 text-left text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 sm:text-sm sm:leading-6"
@@ -62,29 +61,28 @@
 </template>
 
 <script setup>
-import { onMounted, ref, watch } from 'vue'
+import { ref, onMounted, watch } from 'vue';
 import {
   Listbox,
   ListboxButton,
-  ListboxLabel,
   ListboxOption,
   ListboxOptions
-} from '@headlessui/vue'
-import { CheckIcon, ChevronUpDownIcon } from '@heroicons/vue/24/outline'
-import { useConnectionsStore } from '@/stores/connections.js'
+} from '@headlessui/vue';
+import { CheckIcon, ChevronUpDownIcon } from '@heroicons/vue/24/outline';
+import { useConnectionsStore } from '@/stores/connections.js';
 
-const fetchedDbTypes = useConnectionsStore().dbTypes
-const dbTypes = fetchedDbTypes.slice(1)
-const selectedDBType = ref(dbTypes[0])
+const connectionsStore = useConnectionsStore();
+const fetchedDbTypes = connectionsStore.dbTypes;
+const dbTypes = ref(fetchedDbTypes.slice(1));
+const selectedDBType = ref(dbTypes.value[0]);
 
-// Emitting the selectedDBType value to the parent component
-const emit = defineEmits(['update:selected-db-type'])
+const emit = defineEmits(['update:selected-db-type']);
+
 onMounted(() => {
-  emit('update:selected-db-type', selectedDBType)
-})
-// Watch for changes in selectedDBType
-watch(selectedDBType, (newVal) => {
-  emit('update:selected-db-type', newVal)
-})
-</script>
+  emit('update:selected-db-type', selectedDBType.value);
+});
 
+watch(selectedDBType, (newVal) => {
+  emit('update:selected-db-type', newVal);
+});
+</script>

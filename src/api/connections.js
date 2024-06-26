@@ -1,176 +1,149 @@
 import axios from "axios";
+import { handleApiError } from '@/utils/errorHandler';
 
-const getConnections = async () => {
+const apiClient = axios.create({
+  baseURL: 'http://0.0.0.0:8020/api/v1',
+  headers: {
+    'Content-Type': 'application/json'
+  }
+});
+
+const getConnections = async (token) => {
   try {
-    const response = await axios.get(
-      "http://0.0.0.0:8020/api/v1/connections",
-    );
+    const response = await apiClient.get('/connections', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
     return response.data;
   } catch (error) {
-    const errMessage = error.response?.data.error || error.message;
-    const customErrorMessage =
-      `Unable to connect to the API server. ${errMessage}`;
-    throw new Error(customErrorMessage);
+    throw handleApiError(error);
   }
 };
 
-const createConnection = async (json) => {
+const createConnection = async (json, token) => {
   try {
-    const response = await axios.post(
-      "http://0.0.0.0:8020/api/v1/connections",
-      json,
-    );
+    const response = await apiClient.post('/connections', json, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
     return response.data;
   } catch (error) {
-    const err = error.response?.data.error || error.message;
-    throw new Error(err);
+    throw handleApiError(error);
   }
 };
 
-const updateConnection = async (json) => {
+const updateConnection = async (json, token) => {
   try {
-    await axios.put(
-      `http://0.0.0.0:8020/api/v1/connections`,
-      json,
-    );
-    // return response.data;
+    await apiClient.put('/connections', json, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
   } catch (error) {
-    const err = error.response?.data.error || error.message;
-    throw new Error(err);
+    throw handleApiError(error);
   }
 };
 
-const deleteConnection = async (id) => {
+const deleteConnection = async (id, token) => {
   try {
-    await axios.delete(
-      `http://0.0.0.0:8020/api/v1/connections/${id}`,
-    );
+    await apiClient.delete(`/connections/${id}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
   } catch (error) {
-    const err = error.response?.data.error || error.message;
-    throw new Error(err);
+    throw handleApiError(error);
   }
 };
 
-const cloneConnection = async (id) => {
+const cloneConnection = async (id, token) => {
   try {
-    const response = await axios.put(
-      `http://0.0.0.0:8020/api/v1/connections/${id}/clone`,
-    );
+    const response = await apiClient.put(`/connections/${id}/clone`, null, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
     return response.data;
   } catch (error) {
-    const err = error.response?.data.error || error.message;
-    throw new Error(err);
+    throw handleApiError(error);
   }
 };
 
-const testConnection = async (json) => {
+const testConnection = async (json, token) => {
   try {
-    const response = await axios.post(
-      `http://0.0.0.0:8020/api/v1/connections/ping`,
-      json,
-    );
+    const response = await apiClient.post('/connections/ping', json, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
     if (response.data.ping === "ok") {
-      const status = "Connection Test Passed";
-      return status;
+      return "Connection Test Passed";
     }
   } catch (error) {
-    const err = error.response?.data.error || error.message;
-    throw new Error(err);
+    throw handleApiError(error);
   }
 };
 
-const getSchemas = async (id) => {
+const getSchemas = async (id, token) => {
   try {
-    const response = await axios.get(
-      `http://0.0.0.0:8020/api/v1/connections/${id}/schemas`,
-    );
-    if (response.data) {
-      return response.data;
-    }
+    const response = await apiClient.get(`/connections/${id}/schemas`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
   } catch (error) {
-    const err = error.response?.data.error || error.message;
-    throw new Error(err);
+    throw handleApiError(error);
   }
 };
 
-const getDatabases = async (id) => {
+const getDatabases = async (id, token) => {
   try {
-    const response = await axios.get(
-      `http://0.0.0.0:8020/api/v1/connections/${id}/databases`,
-    );
-    if (response.data) {
-      return response.data;
-    }
+    const response = await apiClient.get(`/connections/${id}/databases`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
   } catch (error) {
-    const err = error.response?.data.error || error.message;
-    throw new Error(err);
+    throw handleApiError(error);
   }
 };
 
-const createDatabase = async (newDatabase, id) => {
+const createDatabase = async (newDatabase, id, token) => {
   try {
-    await axios.post(
-      `http://0.0.0.0:8020/api/v1/connections/${id}/databases`,
-      newDatabase,
-      {
-        headers: {
-          "Content-Type": "text/plain", // Set the content type to plain text
-        },
-      },
-    );
+    await apiClient.post(`/connections/${id}/databases`, newDatabase, {
+      headers: {
+        'Content-Type': 'text/plain',
+        Authorization: `Bearer ${token}`
+      }
+    });
   } catch (error) {
-    const err = error.response?.data.error || error.message;
-    throw new Error(err);
+    throw handleApiError(error);
   }
 };
 
-const createSchema = async (newSchema, id) => {
+const createSchema = async (newSchema, id, token) => {
   try {
-    await axios.post(
-      `http://0.0.0.0:8020/api/v1/connections/${id}/schemas`,
-      newSchema,
-      {
-        headers: {
-          "Content-Type": "text/plain", // Set the content type to plain text
-        },
-      },
-    );
+    await apiClient.post(`/connections/${id}/schemas`, newSchema, {
+      headers: {
+        'Content-Type': 'text/plain',
+        Authorization: `Bearer ${token}`
+      }
+    });
   } catch (error) {
-    const err = error.response?.data.error || error.message;
-    throw new Error(err);
+    throw handleApiError(error);
   }
 };
 
-const getMeta = async (id) => {
+const getMeta = async (id, token) => {
   try {
-    const response = await axios.get(
-      `http://0.0.0.0:8020/api/v1/connections/${id}/meta`,
-    );
-    if (response.data) {
-      console.log(response.data);
-      return response.data;
-    }
+    const response = await apiClient.get(`/connections/${id}/meta`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
   } catch (error) {
-    const err = error.response?.data.error || error.message;
-    throw new Error(err);
+    throw handleApiError(error);
   }
 };
 
-const getTables = async (id) => {
+const getTables = async (id, token) => {
   try {
-    const response = await axios.get(
-      `http://0.0.0.0:8020/api/v1/connections/${id}/tables`,
-    );
-
-    if (response.data) {
-      // console.log(response.data);
-      return response.data;
-    }
+    const response = await apiClient.get(`/connections/${id}/tables`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
   } catch (error) {
-    const err = error.response?.data.error || error.message;
-    throw new Error(err);
+    throw handleApiError(error);
   }
 };
+
 export default {
   getConnections,
   createConnection,

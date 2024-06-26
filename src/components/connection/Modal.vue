@@ -49,13 +49,15 @@
 
 <script setup>
 import api from '@/api/connections.js'
-import { ref, computed } from 'vue'
+import {  computed } from 'vue'
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue'
 import { XMarkIcon } from '@heroicons/vue/24/outline'
-import { mapState } from 'pinia'
 import { useCommonStore, DIALOG_TYPES } from '@/stores/common.js'
 import { useConnectionsStore } from '@/stores/connections.js'
 import ActionBtns from './ActionBtns.vue'
+import { useAuth } from 'vue-clerk';
+
+const { getToken } = useAuth()
 const emit = defineEmits(['ok', 'close'])
 const currentConnection = computed(() => useConnectionsStore().currentConnection)
 const showModal = computed(() => {
@@ -83,11 +85,9 @@ async function test() {
   useCommonStore().showNotificationBar = false
   const connection = useConnectionsStore().currentConnection
   try {
-    const status = await api.testConnection(connection)
-    useCommonStore().notificationBar = {
-      msg: status,
-      type: 'success'
-    }
+    const token = await getToken.value()
+    const status = await api.testConnection(connection, token)
+    useCommonStore().showNotification(status, 'success');
   } catch (err) {
     useCommonStore().showNotification(err.message);
   }

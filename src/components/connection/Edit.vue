@@ -7,46 +7,56 @@
 </template>
 
 <script>
+import { ref, computed } from 'vue'
 import api from '@/api/connections.js'
 import Modal from './Modal.vue'
 import ConnectionParams from './params/ConnectionParams.vue'
 import { useConnectionsStore } from '@/stores/connections.js'
 import { useCommonStore } from '@/stores/common'
-import { mapActions, mapState } from 'pinia'
+import { useAuth } from 'vue-clerk'
 
 export default {
   components: {
     Modal,
-    ConnectionParams
+    ConnectionParams,
+    useAuth
   },
-  computed: {
-    ...mapState(useConnectionsStore, ['currentConnection'])
-  },
-  methods: {
-    ...mapActions(useConnectionsStore, { save: 'saveConnection', refresh: 'refreshConnections' }),
+  setup() {
+    const connectionsStore = useConnectionsStore()
+    const commonStore = useCommonStore()
+    const { getToken } = useAuth()
+    const currentConnection = computed(() => connectionsStore.currentConnection)
 
-    // update connection
-    async ok() {
-      useCommonStore().showNotificationBar = false
+    // const save = connectionsStore.saveConnection
+    // const refresh = connectionsStore.refreshConnections
+
+    const ok = async () => {
+      commonStore.showNotificationBar = false
       try {
-        const json = JSON.stringify(this.currentConnection)
-        await api.updateConnection(json)
+        const token = await getToken.value()
+        const json = JSON.stringify(currentConnection.value)
+        await api.updateConnection(json, token)
 
-        //test connection is performed on backend
-        // get the list of databases and schemas
-        const databases = await api.getDatabases(this.currentConnection.id)
-        this.currentConnection.databases = databases
+        const databases = await api.getDatabases(currentConnection.value.id, token)
+        currentConnection.value.databases = databases
 
-        if (this.currentConnection.type.toLowerCase() === 'postgresql') {
-          const schemas = await api.getSchemas(this.currentConnection.id)
-          this.currentConnection.schemas = schemas
+        if (currentConnection.value.type.toLowerCase() === 'postgresql') {
+          const schemas = await api.getSchemas(currentConnection.value.id, token)
+          currentConnection.value.schemas = schemas
         }
 
-        await this.save()
-        await this.refresh()
+        await connectionsStore.saveConnection(token);
+        await connectionsStore.refreshConnections(token);
+        // await save()
+        // await refresh()
       } catch (err) {
-        useCommonStore().showNotification(err.message);
+        commonStore.showNotification(err.message)
       }
+    }
+
+    return {
+      currentConnection,
+      ok
     }
   }
 }

@@ -91,21 +91,7 @@
 
 <script>
 import shared from './shared.js'
-import {
-  PencilIcon,
-  Square2StackIcon,
-  TrashIcon,
-  CalendarIcon,
-  CheckCircleIcon
-} from '@heroicons/vue/24/solid'
 export default Object.assign({}, shared, {
-  components: {
-    PencilIcon,
-    Square2StackIcon,
-    TrashIcon,
-    CalendarIcon,
-    CheckCircleIcon,
-  },
   props: {
     connection: {
       type: Object,
