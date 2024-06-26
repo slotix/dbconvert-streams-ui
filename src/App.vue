@@ -107,16 +107,23 @@
 
         <NotificationBar class="absolute inset-y-0 right-0 h-16 w-auto" />
       </div>
-      <div class="py-10 lg:py-6">
-        <RouterView />
-      </div>
+      <SignedIn>
+        <div class="py-10 lg:py-6">
+          <RouterView />
+        </div>
+      </SignedIn>
+      <SignedOut>
+        <div class="flex items-center justify-center flex-col text-center pb-16">
+          <SignIn />
+        </div>
+      </SignedOut>
     </div>
   </div>
 </template>
 <script setup>
 import { ref } from 'vue'
 import { RouterLink, RouterView } from 'vue-router'
-import { SignInButton, UserButton, useAuth } from 'vue-clerk'
+import { SignInButton, UserButton, useAuth, SignedIn, SignedOut,SignIn } from 'vue-clerk'
 import NotificationBar from '@/components/common/NotificationBar.vue'
 import {
   Dialog,
