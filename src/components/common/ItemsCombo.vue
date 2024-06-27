@@ -69,7 +69,6 @@ import {
   Combobox,
   ComboboxButton,
   ComboboxInput,
-  ComboboxLabel,
   ComboboxOption,
   ComboboxOptions
 } from '@headlessui/vue'

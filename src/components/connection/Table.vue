@@ -50,6 +50,12 @@
                   scope="col"
                   class="px-5 py-3 border-b border-gray-200 text-gray-800 text-center uppercase font-normal"
                 >
+                  Edit
+                </th>
+                <th
+                  scope="col"
+                  class="px-5 py-3 border-b border-gray-200 text-gray-800 text-center uppercase font-normal"
+                >
                   Actions
                 </th>
               </tr>
