@@ -39,7 +39,7 @@
         @checkboxChange="handleCheckboxChange" @toggleSettings="toggleTableSettings">
         <!-- This slot will be used to add a button to toggle the settings panel -->
         <template #default>
-          <TableSettings v-if="selectedTableNames.includes(table.name)" :table="table" class="" />
+          <TableSettings v-if="selectedTableNames.includes(table.name)" :table="table" class="ml-10" />
         </template>
       </TableRow>
     </tbody>
@@ -63,7 +63,9 @@ import TableRow from './TableRow.vue';
 import api from '@/api/connections.js';
 import { FunnelIcon } from '@heroicons/vue/24/outline'
 import { debounce } from 'lodash'
+import { useAuth } from 'vue-clerk';
 
+const { getToken } = useAuth()
 const streamsStore = useStreamsStore()
 const currentStream = streamsStore.currentStream
 
@@ -174,13 +176,14 @@ const refreshTables = async () => {
   commonStore.showNotificationBar = false; // Hide the notification bar before starting the refresh
 
   try {
-    const response = await api.getTables(currentStream.source);
+    const token = await getToken.value()
+    const response = await api.getTables(currentStream.source, token);
     // console.log("refreshTables", currentStream.tables)
     // Use the helper function to map over the response
     tables.value = response.map(entry => createTableObject(entry, currentStream.mode));
     // Optionally hide the notification bar after successful refresh
   } catch (err) {
-        commonStore.showNotification (err.message);
+    commonStore.showNotification(err.message);
   }
 };
 
