@@ -1,5 +1,6 @@
 import {defineStore} from 'pinia';
 import idb from '@/api/iDBService';
+import api from "@/api/api.js";
 
 export const DIALOG_TYPES = {
   SAVE: 'Save',
@@ -20,6 +21,7 @@ export const useCommonStore = defineStore ('modal', {
       msg: '',
       type: '',
     },
+    apiKey: null, // Add state for API key
     steps: [
       {
         id: 1,
@@ -79,6 +81,14 @@ export const useCommonStore = defineStore ('modal', {
     // ],
   }),
   actions: {
+    async fetchApiKey (token) {
+      try {
+        this.apiKey = await api.getApiKey (token);
+      } catch (error) {
+        this.showNotification ('Failed to get API key', 'error');
+        console.error ('Failed to get API key:', error);
+      }
+    },
     async getViewType () {
       let vType = await idb.getCurrentViewType ();
       this.currentViewType = vType;

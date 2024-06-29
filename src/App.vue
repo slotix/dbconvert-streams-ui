@@ -121,10 +121,11 @@
   </div>
 </template>
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { RouterLink, RouterView } from 'vue-router'
-import { SignInButton, UserButton, useAuth, SignedIn, SignedOut,SignIn } from 'vue-clerk'
+import { SignInButton, UserButton, useAuth, SignedIn, SignedOut, SignIn } from 'vue-clerk'
 import NotificationBar from '@/components/common/NotificationBar.vue'
+import { useCommonStore } from '@/stores/common'
 import {
   Dialog,
   DialogPanel,
@@ -143,7 +144,7 @@ import {
   ChartBarSquareIcon
 } from '@heroicons/vue/24/outline'
 
-const { isSignedIn } = useAuth()
+const { isSignedIn, getToken } = useAuth()
 
 const navigation = ref([
   { name: 'Home', href: '/', icon: HomeIcon },
@@ -152,5 +153,19 @@ const navigation = ref([
   { name: 'Monitor Stream', href: '/monitor', icon: ChartBarSquareIcon }
 ])
 
+
+const commonStore = useCommonStore()
 const sidebarOpen = ref(false)
+
+const fetchApiKey = async () => {
+  const token = await getToken.value()
+  await commonStore.fetchApiKey(token)
+  console.log(commonStore.apiKey)
+}
+watch(isSignedIn, async (newValue) => {
+  if (newValue) {
+    await fetchApiKey()
+  }
+})
+
 </script>
