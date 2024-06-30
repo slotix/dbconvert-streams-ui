@@ -1,6 +1,6 @@
 import {defineStore} from 'pinia';
 import idb from '@/api/iDBService';
-import api from "@/api/api.js";
+import api from '@/api/api.js';
 
 export const DIALOG_TYPES = {
   SAVE: 'Save',
@@ -87,6 +87,15 @@ export const useCommonStore = defineStore ('modal', {
       } catch (error) {
         this.showNotification ('Failed to get API key', 'error');
         console.error ('Failed to get API key:', error);
+      }
+    },
+    async checkAPIHealth (token) {
+      try {
+        const status = await api.healthCheck ();
+        healthStatus.value = JSON.stringify (status);
+      } catch (error) {
+        this.showNotification ('API health check failed', 'error');
+        console.error ('Health check failed:', error);
       }
     },
     async getViewType () {

@@ -121,7 +121,7 @@
   </div>
 </template>
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { RouterLink, RouterView } from 'vue-router'
 import { SignInButton, UserButton, useAuth, SignedIn, SignedOut, SignIn } from 'vue-clerk'
 import NotificationBar from '@/components/common/NotificationBar.vue'
@@ -143,7 +143,6 @@ import {
   XMarkIcon,
   ChartBarSquareIcon
 } from '@heroicons/vue/24/outline'
-
 const { isSignedIn, getToken } = useAuth()
 
 const navigation = ref([
@@ -160,10 +159,10 @@ const sidebarOpen = ref(false)
 const fetchApiKey = async () => {
   const token = await getToken.value()
   await commonStore.fetchApiKey(token)
-  console.log(commonStore.apiKey)
 }
 watch(isSignedIn, async (newValue) => {
   if (newValue) {
+    await commonStore.checkAPIHealth()
     await fetchApiKey()
   }
 })
