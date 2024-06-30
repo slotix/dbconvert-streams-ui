@@ -120,8 +120,9 @@
     </div>
   </div>
 </template>
+
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { RouterLink, RouterView } from 'vue-router'
 import { SignInButton, UserButton, useAuth, SignedIn, SignedOut, SignIn } from 'vue-clerk'
 import NotificationBar from '@/components/common/NotificationBar.vue'
@@ -143,6 +144,7 @@ import {
   XMarkIcon,
   ChartBarSquareIcon
 } from '@heroicons/vue/24/outline'
+
 const { isSignedIn, getToken } = useAuth()
 
 const navigation = ref([
@@ -152,7 +154,6 @@ const navigation = ref([
   { name: 'Monitor Stream', href: '/monitor', icon: ChartBarSquareIcon }
 ])
 
-
 const commonStore = useCommonStore()
 const sidebarOpen = ref(false)
 
@@ -160,11 +161,29 @@ const fetchApiKey = async () => {
   const token = await getToken.value()
   await commonStore.fetchApiKey(token)
 }
+
+const checkHealth = async () => {
+  await commonStore.checkAPIHealth()
+}
+const retryFetchApiKeyAndCheckHealth = async () => {
+  const token = await getToken.value()
+  await commonStore.retryFetchApiKeyAndCheckHealth(token)
+}
+
 watch(isSignedIn, async (newValue) => {
   if (newValue) {
-    await commonStore.checkAPIHealth()
-    await fetchApiKey()
+    await checkHealth()
+    if (commonStore.backendHealthy) {
+      await fetchApiKey()
+    }
+    retryFetchApiKeyAndCheckHealth() // Start retry mechanism
   }
 })
 
+// onMounted(async () => {
+//   if (isSignedIn.value) {
+//     await fetchApiKey()
+//     await checkHealth()
+//   }
+// })
 </script>

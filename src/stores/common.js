@@ -15,13 +15,12 @@ export const useCommonStore = defineStore ('modal', {
   state: () => ({
     showModal: false,
     dlgType: '',
-    currentViewType: '',
+    notificationQueue: [],
+    currentNotification: null,
     showNotificationBar: false,
-    notificationBar: {
-      msg: '',
-      type: '',
-    },
+    currentViewType: '',
     apiKey: null, // Add state for API key
+    backendHealthy: false, // New state to track backend health
     steps: [
       {
         id: 1,
@@ -84,18 +83,19 @@ export const useCommonStore = defineStore ('modal', {
     async fetchApiKey (token) {
       try {
         this.apiKey = await api.getApiKey (token);
+        this.backendHealthy = true; // Set backend as healthy if successful
       } catch (error) {
-        this.showNotification ('Failed to get API key', 'error');
-        console.error ('Failed to get API key:', error);
+        this.showNotification ('Failed to fetch API key', 'error');
+        this.backendHealthy = false; // Set backend as unhealthy if failed
       }
     },
-    async checkAPIHealth (token) {
+    async checkAPIHealth () {
       try {
-        const status = await api.healthCheck ();
-        healthStatus.value = JSON.stringify (status);
+        await api.healthCheck ();
+        this.backendHealthy = true; // Set backend as healthy if successful
       } catch (error) {
-        this.showNotification ('API health check failed', 'error');
-        console.error ('Health check failed:', error);
+        this.showNotification ('Health check failed', 'error');
+        this.backendHealthy = false; // Set backend as unhealthy if failed
       }
     },
     async getViewType () {
@@ -114,11 +114,55 @@ export const useCommonStore = defineStore ('modal', {
       this.showModal = false;
     },
     showNotification (msg, type = 'error') {
-      this.notificationBar = {msg, type};
-      this.showNotificationBar = true;
+      const newNotification = {msg, type};
+      // Prevent duplicate messages
+      if (
+        !this.notificationQueue.some (
+          notification => notification.msg === msg && notification.type === type
+        )
+      ) {
+        this.notificationQueue.push (newNotification);
+      }
+      if (!this.currentNotification) {
+        this.displayNextNotification ();
+      }
+    },
+    // showNotification (msg, type = 'error') {
+    //   this.notificationQueue.push ({msg, type});
+    //   if (!this.currentNotification) {
+    //     this.displayNextNotification ();
+    //   }
+    // },
+    displayNextNotification () {
+      if (this.notificationQueue.length > 0) {
+        this.currentNotification = this.notificationQueue.shift ();
+        this.showNotificationBar = true;
+        setTimeout (this.hideNotification, 3000); // Auto-hide notification after 3 seconds
+      } else {
+        this.currentNotification = null;
+        this.showNotificationBar = false;
+      }
     },
     hideNotification () {
       this.showNotificationBar = false;
+      setTimeout (this.displayNextNotification, 500); // Display next notification after a short delay
+    },
+    async retryFetchApiKeyAndCheckHealth (token) {
+      const retryInterval = 5000; // Retry every 5 seconds
+      const retryFunction = async () => {
+        if (!this.backendHealthy) {
+          await this.checkAPIHealth ();
+          if (this.backendHealthy) {
+            await this.fetchApiKey (token);
+          }
+        }
+      };
+      setInterval (retryFunction, retryInterval);
+    },
+  },
+  getters: {
+    notificationBar (state) {
+      return state.currentNotification;
     },
   },
 });
