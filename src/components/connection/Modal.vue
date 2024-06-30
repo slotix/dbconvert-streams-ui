@@ -55,9 +55,7 @@ import { XMarkIcon } from '@heroicons/vue/24/outline'
 import { useCommonStore, DIALOG_TYPES } from '@/stores/common.js'
 import { useConnectionsStore } from '@/stores/connections.js'
 import ActionBtns from './ActionBtns.vue'
-import { useAuth } from 'vue-clerk';
 
-const { getToken } = useAuth()
 const emit = defineEmits(['ok', 'close'])
 const currentConnection = computed(() => useConnectionsStore().currentConnection)
 const showModal = computed(() => {
@@ -85,8 +83,7 @@ async function test() {
   useCommonStore().showNotificationBar = false
   const connection = useConnectionsStore().currentConnection
   try {
-    const token = await getToken.value()
-    const status = await api.testConnection(connection, token)
+    const status = await api.testConnection(connection)
     useCommonStore().showNotification(status, 'success');
   } catch (err) {
     useCommonStore().showNotification(err.message);

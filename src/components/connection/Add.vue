@@ -17,20 +17,18 @@ import ConnectionParams from './params/ConnectionParams.vue';
 import DBTypesListBox from './DBTypesListBox.vue';
 import { useConnectionsStore } from '@/stores/connections';
 import { useCommonStore } from '@/stores/common';
-import { useAuth } from 'vue-clerk';
 
 export default {
     components: {
         Modal,
         ConnectionParams,
         DBTypesListBox,
-        useAuth
+        // useAuth
     },
     setup() {
         const connectionsStore = useConnectionsStore();
         const commonStore = useCommonStore();
 
-        const { getToken } = useAuth()
         const connection = ref(null);
         const showDBCombo = ref(false);
         const currentConnection = computed(() => connectionsStore.currentConnection);
@@ -42,23 +40,21 @@ export default {
         const ok = async () => {
             commonStore.showNotificationBar = false;
             try {
-
-                const token = await getToken.value()
                 const json = JSON.stringify(currentConnection.value);
-                const connectionResponse = await api.createConnection(json, token);
-                const databases = await api.getDatabases(connectionResponse.id, token);
+                const connectionResponse = await api.createConnection(json);
+                const databases = await api.getDatabases(connectionResponse.id);
                 currentConnection.value.databases = databases;
 
                 if (currentConnection.value.type.toLowerCase() === 'postgresql') {
-                    const schemas = await api.getSchemas(connectionResponse.id, token);
+                    const schemas = await api.getSchemas(connectionResponse.id);
                     currentConnection.value.schemas = schemas;
                 }
 
                 currentConnection.value.id = connectionResponse.id;
                 currentConnection.value.created = connectionResponse.created;
                 // test connection is performed on backend before saving
-                await connectionsStore.saveConnection(token);
-                await connectionsStore.refreshConnections(token);
+                await connectionsStore.saveConnection();
+                await connectionsStore.refreshConnections();
             } catch (err) {
                 commonStore.showNotification(err.message);
             }

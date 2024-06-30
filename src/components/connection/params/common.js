@@ -6,7 +6,6 @@ import {DIALOG_TYPES, useCommonStore} from '@/stores/common.js';
 import {useConnectionsStore} from '@/stores/connections.js';
 import {mapWritableState} from 'pinia';
 import api from '@/api/connections.js';
-import {useAuth} from 'vue-clerk';
 
 export default {
   components: {
@@ -15,10 +14,6 @@ export default {
     ArrowPathIcon,
     PlusIcon,
     ItemsCombo,
-  },
-  setup () {
-    const {getToken} = useAuth ();
-    return {getToken};
   },
   data () {
     return {
@@ -67,8 +62,7 @@ export default {
     },
     async fetchData (apiMethod, targetProperty) {
       try {
-        const token = await this.getToken ();
-        const data = await apiMethod (this.currentConnection.id, token);
+        const data = await apiMethod (this.currentConnection.id);
         this.currentConnection[targetProperty] = data;
       } catch (err) {
         useCommonStore ().showNotification (err.message);
@@ -82,8 +76,7 @@ export default {
     },
     async createData (apiMethod, newData, targetArray, targetProperty) {
       try {
-        const token = await this.getToken ();
-        await apiMethod (newData, this.currentConnection.id, token);
+        await apiMethod (newData, this.currentConnection.id);
         this.currentConnection[targetArray].push (newData);
         this.currentConnection[targetProperty] = newData;
         useCommonStore ().showNotificationBar = false;

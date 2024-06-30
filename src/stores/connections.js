@@ -120,7 +120,7 @@ export const useConnectionsStore = defineStore("connections", {
     setFilter(filter) {
       this.currentFilter = filter;
     },
-    saveConnection: debounce(async function (token) {
+    saveConnection: debounce(async function () {
       try {
         let connection = this.currentConnection;
         if (this.ssh !== null) {
@@ -130,50 +130,50 @@ export const useConnectionsStore = defineStore("connections", {
           connection.ssl = this.ssl;
         }
         if (!connection.id) {
-          await api.createConnection(connection, token);
+          await api.createConnection(connection);
         } else {
-          await api.updateConnection(connection, token);
+          await api.updateConnection(connection);
         }
-        await this.refreshConnections(token);
+        await this.refreshConnections();
       } catch (error) {
         console.error('Failed to save connection:', error);
         throw error;
       }
     }, 500),
-    async refreshConnections(token) {
+    async refreshConnections() {
       try {
-        this.connections = await api.getConnections(token);
+        this.connections = await api.getConnections();
       } catch (error) {
         console.error('Failed to refresh connections:', error);
         throw error;
       }
     },
-    async deleteConnection(index, token) {
+    async deleteConnection(index) {
       try {
         this.connections.splice(index, 1);
-        await api.deleteConnection(index, token);
+        await api.deleteConnection(index);
       } catch (error) {
         console.error('Failed to delete connection:', error);
         throw error;
       }
     },
-    async cloneConnection(index, token) {
+    async cloneConnection(index) {
       try {
-        const resp = await api.cloneConnection(index, token);
+        const resp = await api.cloneConnection(index);
         this.currentConnection = {
           ...this.currentConnection,
           id: resp.id,
           created: resp.created,
         };
-        this.saveConnection(token);
+        this.saveConnection();
       } catch (error) {
         console.error('Failed to clone connection:', error);
         throw error;
       }
     },
-    async testConnection(json, token) {
+    async testConnection(json) {
       try {
-        const status = await api.testConnection(json, token);
+        const status = await api.testConnection(json);
         console.log(status);
       } catch (error) {
         console.error('Failed to test connection:', error);

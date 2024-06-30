@@ -39,7 +39,6 @@ import ToggleView from '@/components/common/ToggleView.vue'
 import CardItem from './CardItem.vue'
 import { useConnectionsStore } from '@/stores/connections.js'
 import { useCommonStore } from '@/stores/common.js'
-import { useAuth } from 'vue-clerk';
 
 
 export default {
@@ -49,8 +48,7 @@ export default {
     DBTypesCombo,
     ToggleView,
     CardItem,
-    NewCard,
-    useAuth
+    NewCard
   },
   props: {
     isStreamsTab: {
@@ -62,7 +60,6 @@ export default {
     const connectionsStore = useConnectionsStore()
     const commonStore = useCommonStore()
     const filter = ref(null)
-    const { getToken } = useAuth()
 
     const connectionsByType = computed(() => connectionsStore.connectionsByType)
     const currentViewType = computed(() => commonStore.currentViewType)
@@ -86,8 +83,7 @@ export default {
       commonStore.showNotificationBar = false;
 
       try {
-        const token = await getToken.value()
-        await connectionsStore.refreshConnections(token);
+        await connectionsStore.refreshConnections();
       } catch (err) {
         commonStore.showNotification(err.message);
       }

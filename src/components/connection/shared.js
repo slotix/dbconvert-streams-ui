@@ -12,7 +12,6 @@ import { useConnectionsStore } from '@/stores/connections.js';
 import { useStreamsStore } from '@/stores/streams.js';
 import { useCommonStore } from '@/stores/common.js';
 import ActionsMenu from '@/components/common/ActionsMenu.vue';
-import { useAuth } from 'vue-clerk';
 
 export default {
   components: {
@@ -29,14 +28,12 @@ export default {
     const connectionsStore = useConnectionsStore();
     const streamsStore = useStreamsStore();
     const commonStore = useCommonStore();
-    const { getToken } = useAuth();
     const dbTypes = connectionsStore.dbTypes;
     const steps = commonStore.steps;
 
     return {
       dbTypes,
       steps,
-      getToken,
       connectionsStore,
       streamsStore,
       commonStore,
@@ -100,18 +97,16 @@ export default {
     async cloneConnection() {
       this.setCurrentConnection(this.connection.id);
       try {
-        const token = await this.getToken();
-        await this.connectionsStore.cloneConnection(this.connection.id, token);
-        await this.connectionsStore.refreshConnections(token);
+        await this.connectionsStore.cloneConnection(this.connection.id);
+        await this.connectionsStore.refreshConnections();
       } catch (e) {
         console.log(e);
       }
     },
     async deleteConn() {
       try {
-        const token = await this.getToken();
-        await this.connectionsStore.deleteConnection(this.connection.id, token);
-        await this.connectionsStore.refreshConnections(token);
+        await this.connectionsStore.deleteConnection(this.connection.id);
+        await this.connectionsStore.refreshConnections();
       } catch (e) {
         console.log(e);
       }

@@ -13,18 +13,18 @@ import Modal from './Modal.vue'
 import ConnectionParams from './params/ConnectionParams.vue'
 import { useConnectionsStore } from '@/stores/connections.js'
 import { useCommonStore } from '@/stores/common'
-import { useAuth } from 'vue-clerk'
+// import { useAuth } from 'vue-clerk'
 
 export default {
   components: {
     Modal,
     ConnectionParams,
-    useAuth
+    // useAuth
   },
   setup() {
     const connectionsStore = useConnectionsStore()
     const commonStore = useCommonStore()
-    const { getToken } = useAuth()
+    // const { getToken } = useAuth()
     const currentConnection = computed(() => connectionsStore.currentConnection)
 
     // const save = connectionsStore.saveConnection
@@ -33,22 +33,20 @@ export default {
     const ok = async () => {
       commonStore.showNotificationBar = false
       try {
-        const token = await getToken.value()
+        // const token = await getToken.value()
         const json = JSON.stringify(currentConnection.value)
-        await api.updateConnection(json, token)
+        await api.updateConnection(json)
 
-        const databases = await api.getDatabases(currentConnection.value.id, token)
+        const databases = await api.getDatabases(currentConnection.value.id)
         currentConnection.value.databases = databases
 
         if (currentConnection.value.type.toLowerCase() === 'postgresql') {
-          const schemas = await api.getSchemas(currentConnection.value.id, token)
+          const schemas = await api.getSchemas(currentConnection.value.id)
           currentConnection.value.schemas = schemas
         }
 
-        await connectionsStore.saveConnection(token);
-        await connectionsStore.refreshConnections(token);
-        // await save()
-        // await refresh()
+        await connectionsStore.saveConnection();
+        await connectionsStore.refreshConnections();
       } catch (err) {
         commonStore.showNotification(err.message)
       }
