@@ -12,7 +12,6 @@ import {useStreamsStore} from '@/stores/streams.js';
 import {useConnectionsStore} from '@/stores/connections.js';
 import {useCommonStore} from '@/stores/common.js';
 import ActionsMenu from '@/components/common/ActionsMenu.vue';
-import {useClerk} from 'vue-clerk';
 
 export default {
   props: {
@@ -40,28 +39,21 @@ export default {
   setup () {
     const dbTypes = useConnectionsStore ().dbTypes;
     const steps = useCommonStore ().steps;
-    const clerk = useClerk ();
     return {
       dbTypes,
       steps,
-      clerk,
     };
   },
   methods: {
     ...mapActions (useCommonStore, ['getViewType']),
-    async getToken () {
-      const token = await this.clerk.session.getToken ();
-      return token;
-    },
     editStream () {
       this.selectStream ();
       this.$router.push ({name: 'ManageStream', params: {mode: 'edit'}});
     },
     async deleteStream () {
       try {
-        const token = await this.getToken ();
-        await useStreamsStore ().deleteStream (this.stream.id, token);
-        await useStreamsStore ().refreshStreams (token);
+        await useStreamsStore ().deleteStream (this.stream.id);
+        await useStreamsStore ().refreshStreams ();
       } catch (e) {
         console.log (e);
       }
@@ -70,9 +62,8 @@ export default {
     async cloneStream () {
       try {
         // useStreamsStore ().setCurrentStream (this.stream.id);
-        const token = await this.getToken();
-        await useStreamsStore ().cloneStream (this.stream.id, token);
-        await useStreamsStore ().refreshStreams (token);
+        await useStreamsStore ().cloneStream (this.stream.id);
+        await useStreamsStore ().refreshStreams ();
       } catch (e) {
         console.log (e);
       }
@@ -82,8 +73,7 @@ export default {
     },
     async startStream () {
       try {
-        const token = await this.getToken ();
-        await useStreamsStore ().startStream (this.stream.id, token);
+        await useStreamsStore ().startStream (this.stream.id);
       } catch (err) {
         useCommonStore ().showNotification (err.message);
       }

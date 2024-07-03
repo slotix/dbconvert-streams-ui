@@ -94,7 +94,7 @@ export const useCommonStore = defineStore ('modal', {
         await api.healthCheck ();
         this.backendHealthy = true; // Set backend as healthy if successful
       } catch (error) {
-        this.showNotification ('Health check failed', 'error');
+        this.showNotification ('Connection to Backend API failed', 'error');
         this.backendHealthy = false; // Set backend as unhealthy if failed
       }
     },

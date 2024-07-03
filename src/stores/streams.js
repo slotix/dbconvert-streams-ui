@@ -58,12 +58,12 @@ export const useStreamsStore = defineStore ('streams', {
     setFilter (filter) {
       this.currentFilter = filter;
     },
-    saveStream: debounce (async function (token) {
+    saveStream: debounce (async function () {
       try {
         this.prepareStreamData ();
-        const stream = await api.createStream (this.currentStream, token);
+        const stream = await api.createStream (this.currentStream);
         this.resetCurrentStream ();
-        await this.refreshStreams (token);
+        await this.refreshStreams ();
         this.currentStream.id = stream.id;
         this.currentStream.created = stream.created;
       } catch (err) {
@@ -87,27 +87,27 @@ export const useStreamsStore = defineStore ('streams', {
         });
       }
     },
-    async refreshStreams (token) {
+    async refreshStreams () {
       try {
-        this.streams = await api.getStreams (token);
+        this.streams = await api.getStreams ();
       } catch (error) {
         console.error ('Failed to refresh streams:', error);
         throw error;
       }
     },
-    async deleteStream (index, token) {
+    async deleteStream (index) {
       try {
         this.streams.splice (index, 1);
-        await api.deleteStream (index, token);
+        await api.deleteStream (index);
       } catch (error) {
         console.error ('Failed to delete stream:', error);
         throw error;
       }
     },
 
-    async cloneStream (index, token) {
+    async cloneStream (index) {
       try {
-        const resp = await api.cloneStream (index, token);
+        const resp = await api.cloneStream (index);
         this.currentStream = {
           ...this.currentStream,
           id: resp.id,
@@ -115,16 +115,16 @@ export const useStreamsStore = defineStore ('streams', {
         };
         // this.currentStream.id = resp.id;
         // this.currentStream.created = resp.created;
-        this.saveStream (token);
+        this.saveStream ();
       } catch (error) {
         console.error ('Failed to clone stream:', error);
         throw error;
       }
     },
 
-    async startStream (index, token) {
+    async startStream (index) {
       try {
-        const resp = await api.startStream (index, token);
+        const resp = await api.startStream (index);
         console.log (resp.data.id);
       } catch (error) {
         console.error ('Failed to start stream:', error);

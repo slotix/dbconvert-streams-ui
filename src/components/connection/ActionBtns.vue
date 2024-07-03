@@ -29,9 +29,8 @@
   </button>
 </template>
 <script setup>
-import { ref, computed } from 'vue'
+import {  computed } from 'vue'
 import { useConnectionsStore } from '@/stores/connections.js'
-import { mapState } from 'pinia'
 const emit = defineEmits(['confirm', 'test', 'cancel'])
 const confirm = () => {
   emit('confirm')

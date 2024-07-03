@@ -32,7 +32,6 @@ import CardItem from './CardItem.vue';
 import { useStreamsStore } from '@/stores/streams.js';
 import { useConnectionsStore } from '@/stores/connections.js';
 import { useCommonStore } from '@/stores/common.js';
-import { useAuth } from 'vue-clerk';
 import { mapActions } from 'pinia';
 
 export default {
@@ -42,20 +41,17 @@ export default {
     ToggleView,
     CardItem,
     NewCard,
-    useAuth
   },
 
   setup() {
     const streamsStore = useStreamsStore();
     const connectionsStore = useConnectionsStore();
     const commonStore = useCommonStore();
-    const { getToken } = useAuth()
 
     const fetchStreams = async () => {
       commonStore.showNotificationBar = false;
       try {
-        const token = await getToken.value()
-        await streamsStore.refreshStreams(token);
+        await streamsStore.refreshStreams();
       } catch (err) {
         commonStore.showNotification(err.message);
       }
@@ -66,8 +62,7 @@ export default {
     onMounted(async () => {
       commonStore.showNotificationBar = false;
       try {
-        const token = await getToken.value()
-        await connectionsStore.refreshConnections(token);
+        await connectionsStore.refreshConnections();
         await fetchStreams();
       } catch (err) {
         commonStore.showNotification(err.message);

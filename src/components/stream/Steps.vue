@@ -47,7 +47,6 @@
 import { useStreamsStore } from '@/stores/streams.js'
 import { useCommonStore } from '@/stores/common.js'
 import { ref, computed, onMounted, watch } from 'vue'
-import { useAuth, useClerk } from 'vue-clerk';
 import { useRouter } from 'vue-router'
 const router = useRouter()
 
@@ -58,7 +57,6 @@ const commonStore = useCommonStore()
 const allSteps = commonStore.steps
 let currentStepIndex = ref(1)
 const stepsCount = commonStore.steps.length
-const clerk = useClerk();
 
 const isSaveDisabled = computed(() => {
   return currentStream.source === 0 || currentStream.target === 0
@@ -80,8 +78,7 @@ watch(currentStepIndex, (newVal) => {
 async function saveStream() {
   commonStore.showNotificationBar = false;
   try {
-    const token = await clerk.session.getToken();
-    await store.saveStream(token);
+    await store.saveStream();
     router.push({ name: 'Streams' });
   } catch (err) {
     commonStore.showNotification(err.message);
