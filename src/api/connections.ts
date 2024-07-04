@@ -1,18 +1,21 @@
-import axios from "axios";
+import axios, { AxiosInstance, AxiosResponse } from "axios";
 import { handleApiError } from '@/utils/errorHandler';
-import { useCommonStore } from '@/stores/common';  
+import { useCommonStore } from '@/stores/common';
+import { Connection, Schema, Database } from '@/types/connections';
 
-const apiClient = axios.create({
+
+
+const apiClient: AxiosInstance = axios.create({
   baseURL: 'http://0.0.0.0:8020/api/v1',
   headers: {
     'Content-Type': 'application/json'
   }
 });
 
-const getConnections = async () => {
+const getConnections = async (): Promise<Connection[]> => {
   const commonStore = useCommonStore();
   try {
-    const response = await apiClient.get('/connections', {
+    const response: AxiosResponse<Connection[]> = await apiClient.get('/connections', {
       headers: { 'X-API-Key': commonStore.apiKey }
     });
     return response.data;
@@ -21,10 +24,10 @@ const getConnections = async () => {
   }
 };
 
-const createConnection = async (json) => {
+const createConnection = async (json: Record<string, unknown>): Promise<Connection> => {
   const commonStore = useCommonStore();
   try {
-    const response = await apiClient.post('/connections', json, {
+    const response: AxiosResponse<Connection> = await apiClient.post('/connections', json, {
       headers: { 'X-API-Key': commonStore.apiKey }
     });
     return response.data;
@@ -33,7 +36,7 @@ const createConnection = async (json) => {
   }
 };
 
-const updateConnection = async (json) => {
+const updateConnection = async (json: Record<string, unknown>): Promise<void> => {
   const commonStore = useCommonStore();
   try {
     await apiClient.put('/connections', json, {
@@ -44,7 +47,7 @@ const updateConnection = async (json) => {
   }
 };
 
-const deleteConnection = async (id) => {
+const deleteConnection = async (id: string): Promise<void> => {
   const commonStore = useCommonStore();
   try {
     await apiClient.delete(`/connections/${id}`, {
@@ -55,10 +58,10 @@ const deleteConnection = async (id) => {
   }
 };
 
-const cloneConnection = async (id) => {
+const cloneConnection = async (id: string): Promise<Connection> => {
   const commonStore = useCommonStore();
   try {
-    const response = await apiClient.put(`/connections/${id}/clone`, null, {
+    const response: AxiosResponse<Connection> = await apiClient.put(`/connections/${id}/clone`, null, {
       headers: { 'X-API-Key': commonStore.apiKey }
     });
     return response.data;
@@ -67,24 +70,26 @@ const cloneConnection = async (id) => {
   }
 };
 
-const testConnection = async (json) => {
+const testConnection = async (json: Record<string, unknown>): Promise<string> => {
   const commonStore = useCommonStore();
   try {
-    const response = await apiClient.post('/connections/ping', json, {
+    const response: AxiosResponse<{ ping: string }> = await apiClient.post('/connections/ping', json, {
       headers: { 'X-API-Key': commonStore.apiKey }
     });
     if (response.data.ping === "ok") {
       return "Connection Test Passed";
+    } else {
+      throw new Error("Connection Test Failed");
     }
   } catch (error) {
     throw handleApiError(error);
   }
 };
 
-const getSchemas = async (id) => {
+const getSchemas = async (id: string): Promise<Schema[]> => {
   const commonStore = useCommonStore();
   try {
-    const response = await apiClient.get(`/connections/${id}/schemas`, {
+    const response: AxiosResponse<Schema[]> = await apiClient.get(`/connections/${id}/schemas`, {
       headers: { 'X-API-Key': commonStore.apiKey }
     });
     return response.data;
@@ -93,10 +98,10 @@ const getSchemas = async (id) => {
   }
 };
 
-const getDatabases = async (id) => {
+const getDatabases = async (id: string): Promise<Database[]> => {
   const commonStore = useCommonStore();
   try {
-    const response = await apiClient.get(`/connections/${id}/databases`, {
+    const response: AxiosResponse<Database[]> = await apiClient.get(`/connections/${id}/databases`, {
       headers: { 'X-API-Key': commonStore.apiKey }
     });
     return response.data;
@@ -105,7 +110,7 @@ const getDatabases = async (id) => {
   }
 };
 
-const createDatabase = async (newDatabase, id) => {
+const createDatabase = async (newDatabase: string, id: string): Promise<void> => {
   const commonStore = useCommonStore();
   try {
     await apiClient.post(`/connections/${id}/databases`, newDatabase, {
@@ -119,7 +124,7 @@ const createDatabase = async (newDatabase, id) => {
   }
 };
 
-const createSchema = async (newSchema, id) => {
+const createSchema = async (newSchema: string, id: string): Promise<void> => {
   const commonStore = useCommonStore();
   try {
     await apiClient.post(`/connections/${id}/schemas`, newSchema, {
@@ -133,10 +138,10 @@ const createSchema = async (newSchema, id) => {
   }
 };
 
-const getMeta = async (id) => {
+const getMeta = async (id: string): Promise<Record<string, unknown>> => {
   const commonStore = useCommonStore();
   try {
-    const response = await apiClient.get(`/connections/${id}/meta`, {
+    const response: AxiosResponse<Record<string, unknown>> = await apiClient.get(`/connections/${id}/meta`, {
       headers: { 'X-API-Key': commonStore.apiKey }
     });
     return response.data;
@@ -145,10 +150,10 @@ const getMeta = async (id) => {
   }
 };
 
-const getTables = async (id) => {
+const getTables = async (id: string): Promise<Record<string, unknown>[]> => {
   const commonStore = useCommonStore();
   try {
-    const response = await apiClient.get(`/connections/${id}/tables`, {
+    const response: AxiosResponse<Record<string, unknown>[]> = await apiClient.get(`/connections/${id}/tables`, {
       headers: { 'X-API-Key': commonStore.apiKey }
     });
     return response.data;

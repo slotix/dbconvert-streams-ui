@@ -44,8 +44,8 @@
   </div>
 </template>
 <script setup>
-import { useStreamsStore } from '@/stores/streams.js'
-import { useCommonStore } from '@/stores/common.js'
+import { useStreamsStore } from '@/stores/streams'
+import { useCommonStore } from '@/stores/common'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 const router = useRouter()

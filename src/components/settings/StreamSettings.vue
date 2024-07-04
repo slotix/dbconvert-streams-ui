@@ -65,7 +65,7 @@
 
 <script setup>
 import { ref, watch, computed, onMounted } from 'vue'
-import { useStreamsStore, defaultStreamOptions } from '@/stores/streams.js'
+import { useStreamsStore, defaultStreamOptions } from '@/stores/streams'
 import ModeButtons from './ModeButtons.vue';
 import Operations from './Operations.vue';
 

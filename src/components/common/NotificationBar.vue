@@ -19,7 +19,7 @@
 <script setup>
 import { computed } from 'vue'
 import { XMarkIcon, ExclamationCircleIcon } from '@heroicons/vue/20/solid'
-import { useCommonStore } from '@/stores/common.js'
+import { useCommonStore } from '@/stores/common'
 
 const commonStore = useCommonStore();
 const show = computed(() => commonStore.showNotificationBar)

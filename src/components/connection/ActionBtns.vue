@@ -30,7 +30,7 @@
 </template>
 <script setup>
 import {  computed } from 'vue'
-import { useConnectionsStore } from '@/stores/connections.js'
+import { useConnectionsStore } from '@/stores/connections'
 const emit = defineEmits(['confirm', 'test', 'cancel'])
 const confirm = () => {
   emit('confirm')

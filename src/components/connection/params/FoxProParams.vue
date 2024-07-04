@@ -23,8 +23,8 @@
 <script>
 import UploadBox from '../../UploadBox.vue'
 import ConnectionName from './ConnectionName.vue'
-import { useCommonStore, DIALOG_TYPES } from '@/stores/common.js'
-import { useConnectionsStore } from '@/stores/connections.js'
+import { useCommonStore, DIALOG_TYPES } from '@/stores/common'
+import { useConnectionsStore } from '@/stores/connections'
 import { mapWritableState } from 'pinia'
 
 export default {

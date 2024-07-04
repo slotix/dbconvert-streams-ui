@@ -35,10 +35,10 @@ import { computed } from 'vue'
 import Connections from '@/components/connection/Connections.vue'
 import Add from '@/components/connection/Add.vue'
 import Edit from '@/components/connection/Edit.vue'
-import { useCommonStore } from '@/stores/common.js'
+import { useCommonStore } from '@/stores/common'
 import Steps from '@/components/stream/Steps.vue'
 import Settings from '@/components/settings/Settings.vue'
-import { useStreamsStore } from '@/stores/streams.js'
+import { useStreamsStore } from '@/stores/streams'
 const store = useStreamsStore()
 const currentStep = computed(() => {
   return store.currentStep

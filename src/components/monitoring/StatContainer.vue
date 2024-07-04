@@ -62,7 +62,7 @@
 </template>
 <script setup>
 
-import { useCommonStore } from '@/stores/common.js'
+import { useCommonStore } from '@/stores/common'
 import { useMonitoringStore } from '@/stores/monitor.js'
 
 const steps = useCommonStore().steps

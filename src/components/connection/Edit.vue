@@ -8,10 +8,10 @@
 
 <script>
 import { ref, computed } from 'vue'
-import api from '@/api/connections.js'
+import api from '@/api/connections'
 import Modal from './Modal.vue'
 import ConnectionParams from './params/ConnectionParams.vue'
-import { useConnectionsStore } from '@/stores/connections.js'
+import { useConnectionsStore } from '@/stores/connections'
 import { useCommonStore } from '@/stores/common'
 // import { useAuth } from 'vue-clerk'
 

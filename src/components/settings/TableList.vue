@@ -55,12 +55,12 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue';
-import { useStreamsStore, defaultStreamOptions } from '@/stores/streams.js'
-import { useCommonStore } from '@/stores/common.js'
+import { useStreamsStore, defaultStreamOptions } from '@/stores/streams'
+import { useCommonStore } from '@/stores/common'
 import Pagination from '@/components/common/Pagination.vue';
 import TableSettings from './TableSettings.vue';
 import TableRow from './TableRow.vue';
-import api from '@/api/connections.js';
+import api from '@/api/connections';
 import { FunnelIcon } from '@heroicons/vue/24/outline'
 import { debounce } from 'lodash'
 import { useAuth } from 'vue-clerk';

@@ -37,8 +37,8 @@ import NewCard from './NewCard.vue'
 import DBTypesCombo from './DBTypesCombo.vue'
 import ToggleView from '@/components/common/ToggleView.vue'
 import CardItem from './CardItem.vue'
-import { useConnectionsStore } from '@/stores/connections.js'
-import { useCommonStore } from '@/stores/common.js'
+import { useConnectionsStore } from '@/stores/connections'
+import { useCommonStore } from '@/stores/common'
 
 
 export default {

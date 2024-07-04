@@ -29,9 +29,9 @@ import Table from './Table.vue';
 import NewCard from './NewCard.vue';
 import ToggleView from '@/components/common/ToggleView.vue';
 import CardItem from './CardItem.vue';
-import { useStreamsStore } from '@/stores/streams.js';
-import { useConnectionsStore } from '@/stores/connections.js';
-import { useCommonStore } from '@/stores/common.js';
+import { useStreamsStore } from '@/stores/streams';
+import { useConnectionsStore } from '@/stores/connections';
+import { useCommonStore } from '@/stores/common';
 import { mapActions } from 'pinia';
 
 export default {

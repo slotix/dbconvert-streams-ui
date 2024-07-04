@@ -11,7 +11,7 @@
 
 <script>
 import { ref, computed } from 'vue';
-import api from '@/api/connections.js';
+import api from '@/api/connections';
 import Modal from './Modal.vue';
 import ConnectionParams from './params/ConnectionParams.vue';
 import DBTypesListBox from './DBTypesListBox.vue';

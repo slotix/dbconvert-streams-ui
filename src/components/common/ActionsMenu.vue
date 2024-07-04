@@ -91,7 +91,7 @@ import {
   TrashIcon,
   EllipsisHorizontalIcon
 } from '@heroicons/vue/24/solid'
-import { useCommonStore } from '@/stores/common.js'
+import { useCommonStore } from '@/stores/common'
 import { computed } from 'vue'
 const props = defineProps(['position'])
 const viewType = computed(() => {

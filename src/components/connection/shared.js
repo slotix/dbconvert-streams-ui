@@ -8,9 +8,9 @@ import {
   TrashIcon,
 } from '@heroicons/vue/24/solid';
 import { mapActions, mapState } from 'pinia';
-import { useConnectionsStore } from '@/stores/connections.js';
-import { useStreamsStore } from '@/stores/streams.js';
-import { useCommonStore } from '@/stores/common.js';
+import { useConnectionsStore } from '@/stores/connections';
+import { useStreamsStore } from '@/stores/streams';
+import { useCommonStore } from '@/stores/common';
 import ActionsMenu from '@/components/common/ActionsMenu.vue';
 
 export default {

@@ -21,8 +21,8 @@
 
 <script setup>
 import { ref, watch } from 'vue'
-import { useStreamsStore } from '@/stores/streams.js'
-import { useCommonStore } from '@/stores/common.js'
+import { useStreamsStore } from '@/stores/streams'
+import { useCommonStore } from '@/stores/common'
 import { RadioGroup, RadioGroupLabel, RadioGroupOption } from '@headlessui/vue'
 import { CheckCircleIcon } from '@heroicons/vue/20/solid'
 const modes = useCommonStore().modes

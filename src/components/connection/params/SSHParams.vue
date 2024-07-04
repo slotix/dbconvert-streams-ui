@@ -119,7 +119,7 @@
 </template>
 
 <script>
-import { useConnectionsStore } from '@/stores/connections.js'
+import { useConnectionsStore } from '@/stores/connections'
 import { mapActions } from 'pinia'
 import UploadBox from '../../UploadBox.vue'
 export default {

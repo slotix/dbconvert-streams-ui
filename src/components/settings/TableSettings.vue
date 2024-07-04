@@ -30,7 +30,7 @@
 <script setup>
 import {  watch, onMounted } from 'vue';
 // import OperationsListBox from '@/components/settings/OperationsListBox.vue';
-import { useStreamsStore, defaultStreamOptions } from '@/stores/streams.js'
+import { useStreamsStore, defaultStreamOptions } from '@/stores/streams'
 import Operations from './Operations.vue';
 
 // Accept a prop for the specific table data

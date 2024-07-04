@@ -57,7 +57,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { CheckIcon, ChevronUpDownIcon, FunnelIcon } from '@heroicons/vue/24/outline'
-import { useConnectionsStore } from '@/stores/connections.js'
+import { useConnectionsStore } from '@/stores/connections'
 import {
   Combobox,
   ComboboxButton,

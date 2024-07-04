@@ -2,10 +2,10 @@ import ConnectionName from './ConnectionName.vue';
 import PasswordBox from '@/components/common/PasswordBox.vue';
 import ItemsCombo from '@/components/common/ItemsCombo.vue';
 import {ArrowPathIcon, PlusIcon} from '@heroicons/vue/24/solid';
-import {DIALOG_TYPES, useCommonStore} from '@/stores/common.js';
-import {useConnectionsStore} from '@/stores/connections.js';
+import {DIALOG_TYPES, useCommonStore} from '@/stores/common';
+import {useConnectionsStore} from '@/stores/connections';
 import {mapWritableState} from 'pinia';
-import api from '@/api/connections.js';
+import api from '@/api/connections';
 
 export default {
   components: {

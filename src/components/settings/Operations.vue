@@ -17,7 +17,7 @@
 
 <script setup>
 
-import { defaultStreamOptions } from '@/stores/streams.js'
+import { defaultStreamOptions } from '@/stores/streams'
 const operationList = defaultStreamOptions.operations
 
 const props = defineProps({

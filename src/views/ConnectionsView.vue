@@ -19,8 +19,8 @@ import {  computed } from 'vue'
 import Connections from '@/components/connection/Connections.vue'
 import Add from '@/components/connection/Add.vue'
 import Edit from '@/components/connection/Edit.vue'
-import { useCommonStore } from '@/stores/common.js'
-import { useConnectionsStore } from '@/stores/connections.js'
+import { useCommonStore } from '@/stores/common'
+import { useConnectionsStore } from '@/stores/connections'
 
 function connectionsCount() {
   return useConnectionsStore().countConnections

@@ -48,12 +48,12 @@
 </template>
 
 <script setup>
-import api from '@/api/connections.js'
+import api from '@/api/connections'
 import {  computed } from 'vue'
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue'
 import { XMarkIcon } from '@heroicons/vue/24/outline'
-import { useCommonStore, DIALOG_TYPES } from '@/stores/common.js'
-import { useConnectionsStore } from '@/stores/connections.js'
+import { useCommonStore, DIALOG_TYPES } from '@/stores/common'
+import { useConnectionsStore } from '@/stores/connections'
 import ActionBtns from './ActionBtns.vue'
 
 const emit = defineEmits(['ok', 'close'])

@@ -69,7 +69,7 @@ import {
   ListboxOptions
 } from '@headlessui/vue';
 import { CheckIcon, ChevronUpDownIcon } from '@heroicons/vue/24/outline';
-import { useConnectionsStore } from '@/stores/connections.js';
+import { useConnectionsStore } from '@/stores/connections';
 
 const connectionsStore = useConnectionsStore();
 const fetchedDbTypes = connectionsStore.dbTypes;

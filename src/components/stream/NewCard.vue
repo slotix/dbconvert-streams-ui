@@ -20,8 +20,8 @@
   </div>
 </template>
 <script>
-import { useStreamsStore } from "@/stores/streams.js";
-import { useConnectionsStore } from "@/stores/connections.js"
+import { useStreamsStore } from "@/stores/streams";
+import { useConnectionsStore } from "@/stores/connections"
 
 export default {
   methods: {
