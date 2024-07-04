@@ -63,7 +63,7 @@
 <script setup>
 
 import { useCommonStore } from '@/stores/common'
-import { useMonitoringStore } from '@/stores/monitor.js'
+import { useMonitoringStore } from '@/stores/monitoring'
 
 const steps = useCommonStore().steps
 const step = (name) => steps.find(step => step.name === name)

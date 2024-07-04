@@ -21,7 +21,7 @@
 </template>
 
 <script setup>
-import { useMonitoringStore } from '@/stores/monitor.js'
+import { useMonitoringStore } from '@/stores/monitoring'
 const store = useMonitoringStore()
 const stages = store.stages
 

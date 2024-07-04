@@ -35,7 +35,7 @@ import LogContainer from '@/components/monitoring/LogContainer.vue';
 import StatContainer from '@/components/monitoring/StatContainer.vue';
 import ProgressContainer from '@/components/monitoring/ProgressContainer.vue';
 
-import { useMonitoringStore } from '@/stores/monitor.js'
+import { useMonitoringStore } from '@/stores/monitoring'
 const monitoringStore = useMonitoringStore();
 
 onMounted(() => {

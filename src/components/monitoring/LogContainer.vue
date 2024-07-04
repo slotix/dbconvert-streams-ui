@@ -74,7 +74,7 @@ import { ref, computed } from 'vue';
 
 import { BugAntIcon, InformationCircleIcon, ExclamationCircleIcon, ExclamationTriangleIcon, ArrowUpIcon, ArrowDownIcon } from '@heroicons/vue/20/solid'
 
-import { useMonitoringStore } from '@/stores/monitor.js'
+import { useMonitoringStore } from '@/stores/monitoring'
 const logContainer = ref(null);
 
 const store = useMonitoringStore()
