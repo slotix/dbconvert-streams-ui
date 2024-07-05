@@ -10,8 +10,7 @@
             </div>
         </div>
         <div v-else>
-            <label for="capture-events" class="block text-sm font-medium leading-6 text-gray-900 mt-4">Capture
-                Events.</label>
+            
             <div class="mt-2">
                 <Operations v-model="table.operations" />
             </div>
@@ -23,7 +22,7 @@
             <label for="create-indexes" class="text-sm font-medium text-gray-700 pl-2">Create Indexes on
                 target</label>
         </div>
-    {{ currentStream.tables }}
+    <!-- {{ currentStream.tables }} -->
     </div>
 </template>
 

@@ -14,18 +14,21 @@
     </main>
 </template>
 
-<script setup>
-import {  computed } from 'vue'
-import Connections from '@/components/connection/Connections.vue'
-import Add from '@/components/connection/Add.vue'
-import Edit from '@/components/connection/Edit.vue'
-import { useCommonStore } from '@/stores/common'
-import { useConnectionsStore } from '@/stores/connections'
+<script setup lang="ts">
+import { computed } from 'vue';
+import Connections from '@/components/connection/Connections.vue';
+import Add from '@/components/connection/Add.vue';
+import Edit from '@/components/connection/Edit.vue';
+import { useCommonStore } from '@/stores/common';
+import { useConnectionsStore } from '@/stores/connections';
 
-function connectionsCount() {
-  return useConnectionsStore().countConnections
+// Define the function to count connections
+function connectionsCount(): number {
+  return useConnectionsStore().countConnections;
 }
-const dlgTp = computed(() => {
-  return useCommonStore().dlgType
-})
+
+// Get the dialog type from the common store
+const dlgTp = computed((): string => {
+  return useCommonStore().dlgType;
+});
 </script>

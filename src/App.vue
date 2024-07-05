@@ -51,8 +51,7 @@
     </TransitionRoot>
 
     <!-- Static sidebar for desktop -->
-    <div
-      class="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-50 lg:block lg:w-20 lg:overflow-y-auto lg:bg-gray-900 lg:pb-10">
+    <div class="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-50 lg:block lg:w-20 lg:overflow-y-auto lg:bg-gray-900 lg:pb-10">
       <div class="flex h-16 shrink-0 items-center justify-center">
         <img class="h-8 w-auto" src="/images/dbconvert-streams-logo.svg" alt="DBConvert Streams" />
       </div>
@@ -75,8 +74,7 @@
 
     <div class="lg:pl-20">
       <!-- Top bar with login button -->
-      <div
-        class="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
+      <div class="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
         <button type="button" class="-m-2.5 p-2.5 text-gray-700 lg:hidden" @click="sidebarOpen = true">
           <span class="sr-only">Open sidebar</span>
           <Bars3Icon class="h-6 w-6" aria-hidden="true" />
@@ -98,7 +96,7 @@
             <!-- Profile dropdown -->
             <Menu as="div" class="relative">
               <MenuButton class="-m-1.5 flex items-center p-1.5">
-                <UserButton :showName=true v-if="isSignedIn" />
+                <UserButton :showName="true" v-if="isSignedIn" />
                 <SignInButton v-else />
               </MenuButton>
             </Menu>
@@ -121,12 +119,12 @@
   </div>
 </template>
 
-<script setup>
-import { ref, watch, onMounted } from 'vue'
-import { RouterLink, RouterView } from 'vue-router'
-import { SignInButton, UserButton, useAuth, SignedIn, SignedOut, SignIn } from 'vue-clerk'
-import NotificationBar from '@/components/common/NotificationBar.vue'
-import { useCommonStore } from '@/stores/common'
+<script setup lang="ts">
+import { ref, watch } from 'vue';
+import { RouterLink, RouterView } from 'vue-router';
+import { SignInButton, UserButton, useAuth, SignedIn, SignedOut, SignIn } from 'vue-clerk';
+import NotificationBar from '@/components/common/NotificationBar.vue';
+import { useCommonStore } from '@/stores/common';
 import {
   Dialog,
   DialogPanel,
@@ -134,7 +132,7 @@ import {
   MenuButton,
   TransitionChild,
   TransitionRoot
-} from '@headlessui/vue'
+} from '@headlessui/vue';
 import {
   BellIcon,
   Bars3Icon,
@@ -143,47 +141,55 @@ import {
   CircleStackIcon,
   XMarkIcon,
   ChartBarSquareIcon
-} from '@heroicons/vue/24/outline'
+} from '@heroicons/vue/24/outline';
 
-const { isSignedIn, getToken } = useAuth()
+const { isSignedIn, getToken } = useAuth();
 
-const navigation = ref([
+interface NavigationItem {
+  name: string;
+  href: string;
+  icon: any;
+}
+
+const navigation = ref<NavigationItem[]>([
   { name: 'Home', href: '/', icon: HomeIcon },
   { name: 'Connections', href: '/connections', icon: CircleStackIcon },
   { name: 'Streams', href: '/streams', icon: ArrowPathIcon },
   { name: 'Monitor Stream', href: '/monitor', icon: ChartBarSquareIcon }
-])
+]);
 
-const commonStore = useCommonStore()
-const sidebarOpen = ref(false)
+const commonStore = useCommonStore();
+const sidebarOpen = ref(false);
 
+// Fetch API key
 const fetchApiKey = async () => {
-  const token = await getToken.value()
-  await commonStore.fetchApiKey(token)
-}
+  const token = await getToken.value();
+  if (token) {
+    await commonStore.fetchApiKey(token);
+  }
+};
 
+// Check API health
 const checkHealth = async () => {
-  await commonStore.checkAPIHealth()
-}
-const retryFetchApiKeyAndCheckHealth = async () => {
-  const token = await getToken.value()
-  await commonStore.retryFetchApiKeyAndCheckHealth(token)
-}
+  await commonStore.checkAPIHealth();
+};
 
+// Retry mechanism for fetching API key and checking health
+const retryFetchApiKeyAndCheckHealth = async () => {
+  const token = await getToken.value();
+  if (token) {
+    await commonStore.retryFetchApiKeyAndCheckHealth(token);
+  }
+};
+
+// Watch for changes in isSignedIn and handle accordingly
 watch(isSignedIn, async (newValue) => {
   if (newValue) {
-    await checkHealth()
+    await checkHealth();
     if (commonStore.backendHealthy) {
-      await fetchApiKey()
+      await fetchApiKey();
     }
-    retryFetchApiKeyAndCheckHealth() // Start retry mechanism
+    await retryFetchApiKeyAndCheckHealth(); // Start retry mechanism
   }
-})
-
-// onMounted(async () => {
-//   if (isSignedIn.value) {
-//     await fetchApiKey()
-//     await checkHealth()
-//   }
-// })
+});
 </script>

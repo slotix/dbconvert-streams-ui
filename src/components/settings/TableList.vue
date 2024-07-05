@@ -11,7 +11,6 @@
       @click="debouncedRefreshTables">
       Refresh tables
     </button>
-    {{ currentStream.tables }}
   </div>
   <table class="min-w-full table-fixed divide-y divide-gray-300">
     <thead>

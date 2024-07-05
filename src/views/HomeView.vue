@@ -57,8 +57,10 @@
     </div>
   </section>
 </template>
+<script setup lang="ts">
+import { computed } from 'vue';
+import { useCommonStore, Step } from '@/stores/common';
 
-<script setup>
-import { useCommonStore } from '@/stores/common'
-const allSteps = useCommonStore().steps
+const commonStore = useCommonStore();
+const allSteps = computed<Step[]>(() => commonStore.steps);
 </script>

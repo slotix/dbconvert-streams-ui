@@ -5,14 +5,32 @@ import api from '@/api/api.js';
 export const DIALOG_TYPES = {
   SAVE: 'Save',
   UPDATE: 'Update',
-};
+} as const;
+
+interface Notification {
+  msg: string;
+  type: string;
+}
+
+export interface Step {
+  id: number;
+  name: string;
+  title: string;
+  description: string;
+  img: string;
+}
+
+interface Mode {
+  id: string;
+  title: string;
+}
 
 export const useCommonStore = defineStore('modal', {
   state: () => ({
     showModal: false,
-    dlgType: '',
-    notificationQueue: [] as { msg: string; type: string }[],
-    currentNotification: null as { msg: string; type: string } | null,
+    dlgType: '' as keyof typeof DIALOG_TYPES,
+    notificationQueue: [] as Notification[],
+    currentNotification: null as Notification | null,
     showNotificationBar: false,
     currentViewType: '',
     apiKey: null as string | null,
@@ -39,7 +57,7 @@ export const useCommonStore = defineStore('modal', {
         description: 'Lorem ipsum dolor sit amet consectetur adipisicing elit. Aperiam facilis, voluptates error alias dolorem praesentium sit soluta iure incidunt labore explicabo eaque, quia architecto veritatis dolores, enim consequatur nihil ipsum.',
         img: '/images/steps/destination-step.svg',
       },
-    ],
+    ] as Step[],
     operationMap: {
       insert: 'Insert',
       update: 'Update',
@@ -48,7 +66,7 @@ export const useCommonStore = defineStore('modal', {
     modes: [
       { id: 'convert', title: 'Migrate Data/ Convert' },
       { id: 'cdc', title: 'Change Data Capture/ Sync' },
-    ],
+    ] as Mode[],
   }),
   actions: {
     async fetchApiKey(token: string) {
@@ -70,22 +88,22 @@ export const useCommonStore = defineStore('modal', {
       }
     },
     async getViewType() {
-      let vType = await idb.getCurrentViewType();
+      const vType = await idb.getCurrentViewType();
       this.currentViewType = vType;
     },
     async setViewType(vType: string) {
       await idb.setCurrentViewType(vType);
       this.currentViewType = vType;
     },
-    openModal(dlgType: string) {
+    openModal(dlgType: keyof typeof DIALOG_TYPES) {
       this.dlgType = dlgType;
       this.showModal = true;
     },
     closeModal() {
       this.showModal = false;
     },
-    showNotification(msg: string, type = 'error') {
-      const newNotification = { msg, type };
+    showNotification(msg: string, type: string = 'error') {
+      const newNotification: Notification = { msg, type };
       if (!this.notificationQueue.some(notification => notification.msg === msg && notification.type === type)) {
         this.notificationQueue.push(newNotification);
       }
@@ -121,8 +139,6 @@ export const useCommonStore = defineStore('modal', {
     },
   },
   getters: {
-    notificationBar(state) {
-      return state.currentNotification;
-    },
+    notificationBar: (state) => state.currentNotification,
   },
 });
