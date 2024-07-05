@@ -20,8 +20,8 @@ export interface Step {
   img: string;
 }
 
-interface Mode {
-  id: string;
+export interface ModeOption {
+  id: 'cdc' | 'convert';
   title: string;
 }
 
@@ -66,7 +66,7 @@ export const useCommonStore = defineStore('modal', {
     modes: [
       { id: 'convert', title: 'Migrate Data/ Convert' },
       { id: 'cdc', title: 'Change Data Capture/ Sync' },
-    ] as Mode[],
+    ] as ModeOption[],
   }),
   actions: {
     async fetchApiKey(token: string) {

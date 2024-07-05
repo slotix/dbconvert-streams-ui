@@ -15,10 +15,10 @@
             </div>
         </div>
         <div class="mt-4">
-            <input id="create-indexes" name="create-indexes" type="checkbox" v-model="table.createIndexes"
+            <input id="create-indexes" name="create-indexes" type="checkbox" v-model="table.skipIndexCreation"
                 class="h-4 w-4 text-sm rounded border-gray-300 text-gray-600 focus:ring-gray-600"
                 @change="updateStreamSettings" />
-            <label for="create-indexes" class="text-sm font-medium text-gray-700 pl-2">Create Indexes on target</label>
+            <label for="create-indexes" class="text-sm font-medium text-gray-700 pl-2">Skip Index Creation</label>
         </div>
     </div>
 </template>

@@ -70,7 +70,7 @@ const currentStream = streamsStore.currentStream as Stream;
 const tables = ref<Table[]>(currentStream.tables?.map((table) => ({
   name: table.name,
   operations: table.operations ?? defaultStreamOptions.operations ?? [], // Default to operations if undefined
-  createIndexes: table.createIndexes !== undefined ? table.createIndexes : true, // Default value for createIndexes
+  skipIndexCreation: table.skipIndexCreation !== undefined ? table.skipIndexCreation : false, // Default value for createIndexes
   query: table.query,
   selected: true
 })) || []);
@@ -142,14 +142,14 @@ function createTableObject(entry: any, mode: 'cdc' | 'convert'): Table {
   const name = typeof entry === 'string' ? entry : 'Unknown';
   const operations = entry?.operations ?? defaultStreamOptions.operations ?? [];
   const query = entry?.query ?? '';
-  const createIndexes = entry?.createIndexes !== undefined ? entry.createIndexes : true;
+  const skipIndexCreation = entry?.skipIndexCreation !== undefined ? entry.skipIndexCreation : true;
   const selected = entry?.selected !== undefined ? entry.selected : true;
 
   if (mode === 'cdc') {
     return {
       name,
       operations: defaultStreamOptions.operations ?? [],
-      createIndexes: true,
+      skipIndexCreation: skipIndexCreation,
       query: '',
       selected: true
     };
@@ -158,7 +158,7 @@ function createTableObject(entry: any, mode: 'cdc' | 'convert'): Table {
       name,
       query,
       operations,
-      createIndexes,
+      skipIndexCreation: skipIndexCreation,
       selected
     };
   }

@@ -32,6 +32,7 @@ export const defaultStreamOptions: Stream = {
     createStructure: true,
     limits: { numberOfEvents: 0, elapsedTime: 0 },
     tables: [],
+    skipIndexCreation: false
 };
 
 export const useStreamsStore = defineStore('streams', {
