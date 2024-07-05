@@ -1,14 +1,17 @@
 // src/types/streams.ts
-
 export interface Table {
-    query?: string;
-    operations?: string[];
+    name: string;
+    createIndexes: boolean;
+    query: string;
+    operations: string[];
+    selected: boolean;
 }
+
 export interface Stream {
     id: string;
     name: string;
     created?: string;
-    mode?: string;
+    mode: 'cdc' | 'convert'; 
     dataBundleSize?: number;
     reportingIntervals?: {
         source: number;

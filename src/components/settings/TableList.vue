@@ -52,75 +52,61 @@
     @update:currentPage="updateCurrentPage" />
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, watch } from 'vue';
-import { useStreamsStore, defaultStreamOptions } from '@/stores/streams'
-import { useCommonStore } from '@/stores/common'
+import { useStreamsStore, defaultStreamOptions } from '@/stores/streams';
+import { useCommonStore } from '@/stores/common';
 import Pagination from '@/components/common/Pagination.vue';
 import TableSettings from './TableSettings.vue';
 import TableRow from './TableRow.vue';
 import api from '@/api/connections';
-import { FunnelIcon } from '@heroicons/vue/24/outline'
-import { debounce } from 'lodash'
-import { useAuth } from 'vue-clerk';
+import { FunnelIcon } from '@heroicons/vue/24/outline';
+import { debounce } from 'lodash';
+import { Stream, Table } from '@/types/streams';
 
-const { getToken } = useAuth()
-const streamsStore = useStreamsStore()
-const currentStream = streamsStore.currentStream
+const streamsStore = useStreamsStore();
+const currentStream = streamsStore.currentStream as Stream;
 
-
-const tables = ref(
-  // currentStream.tables
-  currentStream.tables.map((table) => ({
-    name: table.name,
-    operations: table.operations,
-    createIndexes: table.createIndexes,
-    query: table.query,
-    selected: true
-  }))
-  // currentStream?.tables?.length > 0
-  //   ? currentStream.tables.map((table) => ({
-  //     name: table.name,
-  //     operations: table.operations,
-  //     createIndexes : table.createIndexes,
-  //     query : table.query,
-  //     selected: true
-  //   }))
-  //   : []
-)
+const tables = ref<Table[]>(currentStream.tables?.map((table) => ({
+  name: table.name,
+  operations: table.operations ?? defaultStreamOptions.operations ?? [], // Default to operations if undefined
+  createIndexes: table.createIndexes !== undefined ? table.createIndexes : true, // Default value for createIndexes
+  query: table.query,
+  selected: true
+})) || []);
 
 const filteredTables = computed(() => {
   if (!searchQuery.value) {
-    return tables.value
+    return tables.value;
   }
-  const query = searchQuery.value.toLowerCase()
-  currentPage.value = 1
-  return tables.value.filter((item) => item?.name.toLowerCase().includes(query))
-})
+  const query = searchQuery.value.toLowerCase();
+  currentPage.value = 1;
+  return tables.value.filter((item) => item?.name.toLowerCase().includes(query));
+});
 
 const paginatedTables = computed(() => {
-  const startIndex = (currentPage.value - 1) * itemsPerPage
-  const endIndex = startIndex + itemsPerPage
-  return filteredTables.value.slice(startIndex, endIndex)
-})
+  const startIndex = (currentPage.value - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  return filteredTables.value.slice(startIndex, endIndex);
+});
 
 const checkedTables = computed(() => {
-  return filteredTables.value.filter((table) => table.selected)
-})
+  return filteredTables.value.filter((table) => table.selected);
+});
 
 const checkedTablesCount = computed(() => {
-  return checkedTables.value.length
-})
+  return checkedTables.value.length;
+});
 
-const searchQuery = ref('')
-const selectTable = (table) => {
+const searchQuery = ref('');
+const selectTable = (table: Table | null) => {
   if (table !== null && table !== undefined) {
-    currentStream.selectedTableRow = table
+    currentStream.selectedTableRow = table;
   }
-}
+};
 
-const selectedTableNames = ref([]);
-const toggleTableSettings = (tableName) => {
+const selectedTableNames = ref<string[]>([]);
+const toggleTableSettings = (tableName: string) => {
   const index = selectedTableNames.value.indexOf(tableName);
   if (index > -1) {
     selectedTableNames.value.splice(index, 1); // Remove if open
@@ -129,7 +115,7 @@ const toggleTableSettings = (tableName) => {
   }
 };
 
-const handleCheckboxChange = (table, checked) => {
+const handleCheckboxChange = (table: Table, checked: boolean) => {
   table.selected = checked;
   // If additional logic is required when a checkbox changes, add it here.
   // For example, you may want to emit an event or call an API.
@@ -144,27 +130,36 @@ const indeterminate = computed(() => {
   return selectedCount > 0 && selectedCount < tables.value.length;
 });
 
+let currentPage = ref(1);
+const itemsPerPage = 10; // Set the number of items to display per page
 
-let currentPage = ref(1)
-const itemsPerPage = 10 // Set the number of items to display per page
-
-const updateCurrentPage = (newPage) => {
-  currentPage.value = newPage
-}
+const updateCurrentPage = (newPage: number) => {
+  currentPage.value = newPage;
+};
 
 // Helper function to create table objects based on the current stream mode
-function createTableObject(entry, mode) {
+function createTableObject(entry: any, mode: 'cdc' | 'convert'): Table {
+  const name = typeof entry === 'string' ? entry : 'Unknown';
+  const operations = entry?.operations ?? defaultStreamOptions.operations ?? [];
+  const query = entry?.query ?? '';
+  const createIndexes = entry?.createIndexes !== undefined ? entry.createIndexes : true;
+  const selected = entry?.selected !== undefined ? entry.selected : true;
+
   if (mode === 'cdc') {
     return {
-      name: entry,
-      operations: defaultStreamOptions.operations,
+      name,
+      operations: defaultStreamOptions.operations ?? [],
+      createIndexes: true,
+      query: '',
       selected: true
     };
   } else {
     return {
-      name: entry,
-      query: '',
-      selected: true
+      name,
+      query,
+      operations,
+      createIndexes,
+      selected
     };
   }
 }
@@ -175,14 +170,16 @@ const refreshTables = async () => {
   commonStore.showNotificationBar = false; // Hide the notification bar before starting the refresh
 
   try {
-    const token = await getToken.value()
-    const response = await api.getTables(currentStream.source, token);
-    // console.log("refreshTables", currentStream.tables)
+    const response = await api.getTables(currentStream.source);
     // Use the helper function to map over the response
-    tables.value = response.map(entry => createTableObject(entry, currentStream.mode));
+    tables.value = response.map((entry: any) => createTableObject(entry, currentStream.mode));
     // Optionally hide the notification bar after successful refresh
   } catch (err) {
-    commonStore.showNotification(err.message);
+    if (err instanceof Error) {
+      commonStore.showNotification(err.message);
+    } else {
+      commonStore.showNotification("An unknown error occurred.");
+    }
   }
 };
 
@@ -191,24 +188,20 @@ const debouncedRefreshTables = debounce(refreshTables, 500); // Debounce for 500
 
 // Define selectAllCheckboxState and toggleSelectAll
 let selectAllCheckboxState = computed(() => {
-  const allSelected = tables.value.every((table) => table.selected)
-  const noneSelected = tables.value.every((table) => !table.selected)
+  const allSelected = tables.value.every((table) => table.selected);
+  const noneSelected = tables.value.every((table) => !table.selected);
 
-  if (allSelected) {
-    return true // If all tables are selected, check the "Select All" checkbox
-  } else if (noneSelected) {
-    return false // If no tables are selected, uncheck the "Select All" checkbox
-  } else {
-    return null // If some tables are selected, set the checkbox to indeterminate
-  }
-})
-const toggleSelectAll = ($event) => {
-  const selectAll = $event.target.checked
+  return allSelected || noneSelected ? allSelected : false;
+});
+
+const toggleSelectAll = ($event: Event) => {
+  const selectAll = ($event.target as HTMLInputElement).checked;
 
   filteredTables.value.forEach((table) => {
-    table.selected = selectAll
-  })
-}
+    table.selected = selectAll;
+  });
+};
+
 watch(
   checkedTables, (newTables) => {
     currentStream.tables = newTables.filter(table => table.selected);
