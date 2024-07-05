@@ -9,8 +9,10 @@
       {{ table.name }}
     </td>
     <td class="p-4 ">
-      <button @click.stop="toggleSettings" class="text-blue-600 hover:text-blue-800">
+      <button @click.stop="toggleSettings" class="flex items-center text-blue-600 hover:text-blue-800">
         Options
+        <ChevronDownIcon v-if="!showSettings" class="h-5 w-5 ml-1" />
+        <ChevronUpIcon v-if="showSettings" class="h-5 w-5 ml-1" />
       </button>
     </td>
   </tr>
@@ -25,40 +27,40 @@
   </tr>
 </template>
 
-<script>
-export default {
-  name: 'TableRow',
-  props: {
-    table: {
-      type: Object,
-      required: true
-    },
-    isSelected: {
-      type: Boolean,
-      default: false
-    },
-    colspan: {
-      type: Number,
-      required: true
-    }
+<script setup lang="ts">
+import { ref } from 'vue';
+import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/vue/24/outline';
+
+const props = defineProps({
+  table: {
+    type: Object,
+    required: true
   },
-  data() {
-    return {
-      showSettings: false
-    };
+  isSelected: {
+    type: Boolean,
+    default: false
   },
-  emits: ['selectTable', 'checkboxChange', 'toggleSettings'],
-  methods: {
-    handleSelectTable() {
-      this.$emit('selectTable', this.table);
-    },
-    handleCheckboxChange(event) {
-      this.$emit('checkboxChange', { table: this.table, checked: event.target.checked });
-    },
-    toggleSettings() {
-      this.showSettings = !this.showSettings;
-      this.$emit('toggleSettings', this.table.name);
-    }
+  colspan: {
+    type: Number,
+    required: true
   }
+});
+
+const emit = defineEmits(['selectTable', 'checkboxChange', 'toggleSettings']);
+
+const showSettings = ref(false);
+
+const handleSelectTable = () => {
+  emit('selectTable', props.table);
+};
+
+const handleCheckboxChange = (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  emit('checkboxChange', { table: props.table, checked: target.checked });
+};
+
+const toggleSettings = () => {
+  showSettings.value = !showSettings.value;
+  emit('toggleSettings', props.table.name);
 };
 </script>

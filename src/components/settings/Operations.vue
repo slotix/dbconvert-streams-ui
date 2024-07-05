@@ -16,7 +16,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { defaultStreamOptions } from '@/stores/streams';
-
 interface Props {
     modelValue: string[];
     prefix: string; // New prop for unique ID prefix
