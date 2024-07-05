@@ -19,16 +19,24 @@
   </div>
 </template>
 
-<script setup>
-import { ref, watch } from 'vue'
-import { useStreamsStore } from '@/stores/streams'
-import { useCommonStore } from '@/stores/common'
-import { RadioGroup, RadioGroupLabel, RadioGroupOption } from '@headlessui/vue'
-import { CheckCircleIcon } from '@heroicons/vue/20/solid'
-const modes = useCommonStore().modes
-const currentStream = useStreamsStore().currentStream
-const mode = ref(modes.find((option) => option.id === currentStream.mode) || modes[-1])
+<script setup lang="ts">
+import { ref, watch } from 'vue';
+import { useStreamsStore } from '@/stores/streams';
+import { useCommonStore, ModeOption } from '@/stores/common';
+import { RadioGroup, RadioGroupLabel, RadioGroupOption } from '@headlessui/vue';
+import { CheckCircleIcon } from '@heroicons/vue/20/solid';
+
+
+const commonStore = useCommonStore();
+const modes = commonStore.modes as ModeOption[];
+const streamsStore = useStreamsStore();
+const currentStream = streamsStore.currentStream;
+
+const mode = ref < ModeOption > (modes.find((option) => option.id === currentStream?.mode) || modes[0]);
+
 watch(mode, (newVal) => {
-  currentStream.mode = newVal.id
-})
+  if (currentStream) {
+    currentStream.mode = newVal.id;
+  }
+});
 </script>
