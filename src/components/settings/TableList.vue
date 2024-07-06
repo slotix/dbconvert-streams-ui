@@ -142,7 +142,7 @@ function createTableObject(entry: any, mode: 'cdc' | 'convert'): Table {
   const name = typeof entry === 'string' ? entry : 'Unknown';
   const operations = entry?.operations ?? defaultStreamOptions.operations ?? [];
   const query = entry?.query ?? '';
-  const skipIndexCreation = entry?.skipIndexCreation !== undefined ? entry.skipIndexCreation : true;
+  const skipIndexCreation = entry?.skipIndexCreation !== undefined ? entry.skipIndexCreation : false;
   const selected = entry?.selected !== undefined ? entry.selected : true;
 
   if (mode === 'cdc') {
@@ -151,7 +151,7 @@ function createTableObject(entry: any, mode: 'cdc' | 'convert'): Table {
       operations: defaultStreamOptions.operations ?? [],
       skipIndexCreation: skipIndexCreation,
       query: '',
-      selected: true
+      selected: selected
     };
   } else {
     return {
@@ -159,7 +159,7 @@ function createTableObject(entry: any, mode: 'cdc' | 'convert'): Table {
       query,
       operations,
       skipIndexCreation: skipIndexCreation,
-      selected
+      selected: selected
     };
   }
 }

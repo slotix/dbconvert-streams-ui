@@ -33,17 +33,17 @@
             </div>
             <div class="mt-4">
                 <input id="create-target-structure" name="create-target-structure" type="checkbox"
-                    v-model="createStructureComputed"
+                    v-model="createStructure"
                     class="h-4 w-4 text-sm rounded border-gray-300 text-gray-600 focus:ring-gray-600" />
                 <label for="create-target-structure" class="text-sm font-medium text-gray-700 pl-2">Create Structure on
                     Target</label>
             </div>
 
             <div class="mt-4">
-                <input id="create-target-structure" name="create-target-structure" type="checkbox"
+                <input id="skip-index-creation" name="skip-index-creation" type="checkbox"
                     v-model="skipIndexCreation"
                     class="h-4 w-4 text-sm rounded border-gray-300 text-gray-600 focus:ring-gray-600" />
-                <label for="create-target-structure" class="text-sm font-medium text-gray-700 pl-2"> Skip Index Creation
+                <label for="skip-index-creation" class="text-sm font-medium text-gray-700 pl-2"> Skip Index Creation
                     for All Tables
                 </label>
             </div>
@@ -123,7 +123,7 @@ const limitsElapsedTime = computed<number>({
     }
 });
 
-const createStructureComputed = computed<boolean>({
+const createStructure = computed<boolean>({
     get: () => currentStream.createStructure !== undefined ? currentStream.createStructure : defaultStreamOptions.createStructure,
     set: (value) => { currentStream.createStructure = value; }
 });
