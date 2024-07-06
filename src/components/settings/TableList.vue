@@ -99,11 +99,6 @@ const checkedTablesCount = computed(() => {
 });
 
 const searchQuery = ref('');
-const selectTable = (table: Table | null) => {
-  if (table !== null && table !== undefined) {
-    currentStream.selectedTableRow = table;
-  }
-};
 
 const selectedTableNames = ref<string[]>([]);
 const toggleTableSettings = (tableName: string) => {
