@@ -3,22 +3,10 @@ import api from '@/api/streams';
 import { debounce } from 'lodash';
 import { Stream, Table } from '@/types/streams';
 
-interface ReportingIntervals {
-    source: number;
-    target: number;
-}
-
-interface Limits {
-    numberOfEvents: number;
-    elapsedTime: number;
-}
-
-
-
 interface State {
     streams: Stream[];
     currentStream: Stream | null;
-    currentStep: any;
+    currentStep: number;
     currentFilter: string;
 }
 
@@ -35,11 +23,73 @@ export const defaultStreamOptions: Stream = {
     skipIndexCreation: false
 };
 
+const defaultTableOptions: Partial<Table> = {
+    query: '',
+    operations: ['insert', 'update', 'delete'],
+    skipIndexCreation: false,
+    selected: false
+};
+
+const omitDefaults = (stream: Stream): Partial<Stream> => {
+    const filteredStream: Partial<Stream> = {};
+
+    for (const key in stream) {
+        if (Object.prototype.hasOwnProperty.call(stream, key)) {
+            if (Array.isArray(stream[key]) && stream[key].length === 0) {
+                continue;
+            }
+            if (typeof stream[key] === 'object' && stream[key] !== null) {
+                if (JSON.stringify(stream[key]) === JSON.stringify(defaultStreamOptions[key])) {
+                    continue;
+                }
+            }
+            if (stream[key] !== defaultStreamOptions[key]) {
+                filteredStream[key] = stream[key];
+            }
+        }
+    }
+
+    if (stream.mode === 'convert') {
+        delete filteredStream.operations;
+    }
+
+    if (stream.tables) {
+        filteredStream.tables = stream.tables.map(table => {
+            const filteredTable: Partial<Table> = {};
+            for (const key in table) {
+                if (Object.prototype.hasOwnProperty.call(table, key)) {
+                    const tableKey = key as keyof Table;
+                    const defaultValue = defaultTableOptions[tableKey];
+
+                    if (table[tableKey] !== defaultValue) {
+                        filteredTable[tableKey] = table[tableKey] as any;
+                    }
+                }
+            }
+
+            if (stream.mode === 'convert') {
+                delete filteredTable.operations;
+            } else if (stream.mode === 'cdc') {
+                delete filteredTable.query;
+            }
+
+            // Omit default operations if they match the default value
+            if (JSON.stringify(filteredTable.operations) === JSON.stringify(defaultTableOptions.operations)) {
+                delete filteredTable.operations;
+            }
+
+            return filteredTable as Table;
+        });
+    }
+
+    return filteredStream;
+};
+
 export const useStreamsStore = defineStore('streams', {
     state: (): State => ({
         streams: [],
         currentStream: null,
-        currentStep: null,
+        currentStep: 1,
         currentFilter: '',
     }),
     getters: {
@@ -85,21 +135,21 @@ export const useStreamsStore = defineStore('streams', {
             }
         }, 500),
         prepareStreamData(this: State) {
-            const stream = this.currentStream!;
-            if (!stream.id) {
-                stream.id = '';
-            }
-            if (stream.mode === 'cdc' && stream.tables) {
-                stream.tables.forEach((table: Table) => {
-                    table.query = '';
-                });
-            } else if (stream.mode === 'convert') {
-                stream.operations = [];
-                if (stream.tables) {
-                    stream.tables.forEach((table: Table) => {
-                        table.operations = [];
-                    });
+            if (this.currentStream) {
+                const refinedStream = omitDefaults(this.currentStream);
+                // Create a new object excluding default values
+                const newStream: Stream = {
+                    ...this.currentStream,
+                    ...refinedStream,
+                    operations: this.currentStream.mode === 'convert' ? [] : this.currentStream.operations
+                };
+
+                // Exclude default operations if mode is convert
+                if (newStream.mode === 'convert' && (newStream.operations?.length ?? 0) === 0) {
+                    delete newStream.operations;
                 }
+
+                this.currentStream = newStream;
             }
         },
         refreshStreams: debounce(async function (this: State) {
@@ -122,7 +172,7 @@ export const useStreamsStore = defineStore('streams', {
                 throw error;
             }
         }, 500),
-        cloneStream: debounce(async function (this: any, id: string) {
+        async cloneStream(id: string) {
             try {
                 const resp = await api.cloneStream(id) as unknown as Stream;
                 this.currentStream = {
@@ -135,7 +185,7 @@ export const useStreamsStore = defineStore('streams', {
                 console.error('Failed to clone stream:', error);
                 throw error;
             }
-        }, 500),
+        },
         async startStream(this: State, id: string) {
             try {
                 const resp = await api.startStream(id);

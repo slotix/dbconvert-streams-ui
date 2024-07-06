@@ -27,3 +27,12 @@ export interface Stream {
     tables?: Table[];
     [key: string]: any;
 }
+export interface ReportingIntervals {
+    source: number;
+    target: number;
+}
+
+export interface Limits {
+    numberOfEvents: number;
+    elapsedTime: number;
+}
