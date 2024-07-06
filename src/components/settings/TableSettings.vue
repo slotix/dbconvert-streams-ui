@@ -50,10 +50,16 @@ onMounted(() => {
         }, { deep: true });
     }
 });
-
 const updateStreamSettings = () => {
     if (streamsStore.currentStream) {
-        streamsStore.setCurrentStream(streamsStore.currentStream.id);
+        const stream = streamsStore.currentStream;
+        if (stream.tables) {
+            const tableIndex = stream.tables.findIndex(t => t.name === props.table.name);
+            if (tableIndex !== -1) {
+                stream.tables[tableIndex] = { ...props.table };
+                streamsStore.currentStream = { ...stream };
+            }
+        }
     }
 };
 </script>
