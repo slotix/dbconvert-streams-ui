@@ -67,7 +67,7 @@
                 class="divide-x divide-gray-200 cursor-pointer border-b border-gray-200 cursor-pointer"
                 :class="bgRowClass(connection)"
               >
-                <TableRow :connection="connection" :isStreamsTab="isStreamsTab" />
+                <TableRow :connection="connection" />
               </tr>
             </tbody>
           </table>
@@ -76,21 +76,16 @@
     </div>
   </div>
 </template>
-
 <script>
 import TableRow from './TableRow.vue'
-import shared from './shared.js'
+import shared from './shared.ts'
 import { PlusIcon } from '@heroicons/vue/24/outline'
 
 export default Object.assign({}, shared, {
   props: {
     connections: {
-      type: Array
-    },
-    isStreamsTab: {
-      type: Boolean,
-      required: true,
-      default: true
+      type: Array,
+      required: true
     }
   },
   components: {
@@ -98,4 +93,5 @@ export default Object.assign({}, shared, {
     PlusIcon
   }
 })
+
 </script>

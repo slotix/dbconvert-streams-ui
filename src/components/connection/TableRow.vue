@@ -52,7 +52,7 @@
 
 <script>
 import ActionsMenu from "@/components/common/ActionsMenu.vue";
-import shared from './shared.js'
+import shared from './shared'
 import { PencilIcon } from '@heroicons/vue/20/solid'
 export default Object.assign({}, shared, {
   props: {
@@ -60,11 +60,6 @@ export default Object.assign({}, shared, {
       type: Object,
       required: true
     },
-    isStreamsTab: {
-      type: Boolean,
-      required: true,
-      default: true
-    }
   },
   components: {
     ActionsMenu,

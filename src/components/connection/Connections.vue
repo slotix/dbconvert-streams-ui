@@ -1,13 +1,13 @@
 <template>
   <div class="antialiased bg-gray-200">
-    <!-- View control buttons   -->
+    <!-- View control buttons -->
     <div class="flex flex-wrap gap-x-3 space-y-0 max-w-7xl mx-auto py-6 px-8;">
       <div class="flex flex-start px-8">
         <DBTypesCombo :isFilterIcon="true" @update:selected-db-type="filterDB" />
       </div>
       <ToggleView class="py-2 px-8" />
     </div>
-    <!-- End View control buttons   -->
+    <!-- End View control buttons -->
     <div v-if="connectionsByType.length > 0" class="flex flex-wrap max-w-7xl mx-auto px-4 overflow-hidden"
       v-show="currentViewType === 'cards'">
       <div class="w-full px-4 overflow-hidden md:w-1/2 lg:w-1/3">
@@ -15,7 +15,7 @@
       </div>
       <div class="w-full px-4 overflow-hidden md:w-1/2 lg:w-1/3" v-for="connection in connectionsByType"
         :key="connection.id">
-        <CardItem :connection="connection" :isStreamsTab="isStreamsTab" />
+        <CardItem :connection="connection" :isStreamsPage="isStreamsPage" />
       </div>
     </div>
     <div v-else class="flex items-center justify-center flex-col text-center pb-16">
@@ -25,11 +25,10 @@
       <NewCard />
     </div>
     <div class="flex flex-wrap mx-6 overflow-hidden" v-show="currentViewType === 'table'">
-      <Table :connections="connectionsByType" :isStreamsTab="isStreamsTab" />
+      <Table :connections="connectionsByType" :isStreamsPage="isStreamsPage" />
     </div>
   </div>
 </template>
-
 <script>
 import { ref, computed, watch, onMounted } from 'vue'
 import Table from './Table.vue'
@@ -40,7 +39,6 @@ import CardItem from './CardItem.vue'
 import { useConnectionsStore } from '@/stores/connections'
 import { useCommonStore } from '@/stores/common'
 
-
 export default {
   name: 'Connections',
   components: {
@@ -50,12 +48,6 @@ export default {
     CardItem,
     NewCard
   },
-  props: {
-    isStreamsTab: {
-      type: Boolean,
-      default: false
-    }
-  },
   setup(props) {
     const connectionsStore = useConnectionsStore()
     const commonStore = useCommonStore()
@@ -63,6 +55,7 @@ export default {
 
     const connectionsByType = computed(() => connectionsStore.connectionsByType)
     const currentViewType = computed(() => commonStore.currentViewType)
+    const isStreamsPage = computed(() => commonStore.isStreamsPage)
 
     const filterDB = (dbType) => {
       filter.value = dbType.type
@@ -95,8 +88,10 @@ export default {
       filter,
       connectionsByType,
       currentViewType,
-      filterDB
+      filterDB,
+      isStreamsPage
     }
   }
 }
+
 </script>

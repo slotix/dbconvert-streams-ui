@@ -12,7 +12,7 @@
           {{ connection.name }}
         </span>
         <!-- <span -->
-        <!--   v-show="isStreamsTab && selected" -->
+        <!--   v-show="isStreamsPage && selected" -->
         <!--   class="justify-end item w-1/5 flex" -->
         <!-- > -->
         <!--   <CheckCircleIcon class="h-8 w-8" aria-hidden="true" -->
@@ -53,7 +53,7 @@
           <span class="font-normal pl-3">{{ connectionCreated }}</span>
         </span>
       </div>
-      <div v-show="!isStreamsTab" class="-mt-px flex divide-x divide-gray-200">
+      <div v-show="!isStreamsPage" class="-mt-px flex divide-x divide-gray-200">
         <div class="flex w-0 flex-1">
           <button
             type="button"
@@ -90,18 +90,15 @@
 </template>
 
 <script>
-import shared from './shared.js'
-export default Object.assign({}, shared, {
+import shared from './shared.ts';
+
+export default {
+  ...shared,
   props: {
     connection: {
       type: Object,
       required: true
-    },
-    isStreamsTab: {
-      type: Boolean,
-      required: true,
-      default: true
     }
   }
-})
+};
 </script>

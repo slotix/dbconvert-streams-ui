@@ -24,11 +24,11 @@ export interface ModeOption {
   id: 'cdc' | 'convert';
   title: string;
 }
-
+type DialogType = typeof DIALOG_TYPES[keyof typeof DIALOG_TYPES];
 export const useCommonStore = defineStore('modal', {
   state: () => ({
     showModal: false,
-    dlgType: '' as keyof typeof DIALOG_TYPES,
+    dlgType: '' as DialogType | '',
     notificationQueue: [] as Notification[],
     currentNotification: null as Notification | null,
     showNotificationBar: false,
@@ -67,6 +67,7 @@ export const useCommonStore = defineStore('modal', {
       { id: 'convert', title: 'Migrate Data/ Convert' },
       { id: 'cdc', title: 'Change Data Capture/ Sync' },
     ] as ModeOption[],
+    currentPage: '',
   }),
   actions: {
     async fetchApiKey(token: string) {
@@ -95,7 +96,7 @@ export const useCommonStore = defineStore('modal', {
       await idb.setCurrentViewType(vType);
       this.currentViewType = vType;
     },
-    openModal(dlgType: keyof typeof DIALOG_TYPES) {
+    openModal(dlgType: DialogType) {
       this.dlgType = dlgType;
       this.showModal = true;
     },
@@ -137,8 +138,12 @@ export const useCommonStore = defineStore('modal', {
       };
       setInterval(retryFunction, retryInterval);
     },
+    setCurrentPage(page: string) {
+      this.currentPage = page;
+    },
   },
   getters: {
     notificationBar: (state) => state.currentNotification,
+    isStreamsPage: (state) => state.currentPage === 'Streams',
   },
 });

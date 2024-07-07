@@ -122,6 +122,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import { RouterLink, RouterView } from 'vue-router';
+import { useRouter } from 'vue-router';
 import { SignInButton, UserButton, useAuth, SignedIn, SignedOut, SignIn } from 'vue-clerk';
 import NotificationBar from '@/components/common/NotificationBar.vue';
 import { useCommonStore } from '@/stores/common';
@@ -160,6 +161,7 @@ const navigation = ref<NavigationItem[]>([
 
 const commonStore = useCommonStore();
 const sidebarOpen = ref(false);
+const router = useRouter();
 
 // Fetch API key
 const fetchApiKey = async () => {
@@ -191,5 +193,9 @@ watch(isSignedIn, async (newValue) => {
     }
     await retryFetchApiKeyAndCheckHealth(); // Start retry mechanism
   }
+});
+// Watch for changes in route and update the current page in the common store
+watch(router.currentRoute, (to) => {
+  commonStore.setCurrentPage(to.name as string);
 });
 </script>
