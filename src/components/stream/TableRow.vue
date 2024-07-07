@@ -68,6 +68,6 @@
 
 <script>
 import { PencilIcon } from '@heroicons/vue/20/solid';
-import shared from './shared.js'
+import shared from './shared'
 export default Object.assign({}, shared, {})
 </script>

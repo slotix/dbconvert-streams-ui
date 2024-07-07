@@ -135,7 +135,7 @@
   </div>
 </template>
 <script>
-import shared from './shared.js'
+import shared from './shared'
 
 export default Object.assign({}, shared, {})
 </script>

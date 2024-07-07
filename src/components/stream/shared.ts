@@ -12,11 +12,14 @@ import { useStreamsStore } from '@/stores/streams';
 import { useConnectionsStore } from '@/stores/connections';
 import { useCommonStore } from '@/stores/common';
 import ActionsMenu from '@/components/common/ActionsMenu.vue';
+import { defineComponent, PropType } from 'vue';
+import { Stream } from '@/types/streams';
+import { DbType } from '@/types/connections';
 
-export default {
+export default defineComponent({
   props: {
     stream: {
-      type: Object,
+      type: Object as PropType<Stream>,
       required: true,
     },
     source: {
@@ -54,17 +57,28 @@ export default {
       try {
         await useStreamsStore().deleteStream(this.stream.id);
         await useStreamsStore().refreshStreams();
-      } catch (e) {
+        useCommonStore().showNotification('Stream deleted', 'success');
+      } catch (e: unknown) {
+        if (e instanceof Error) {
+          useCommonStore().showNotification(e.message, 'error');
+        } else {
+          useCommonStore().showNotification('An unknown error occurred', 'error');
+        }
         console.log(e);
       }
     },
 
     async cloneStream() {
       try {
-        // useStreamsStore ().setCurrentStream (this.stream.id);
         await useStreamsStore().cloneStream(this.stream.id);
         await useStreamsStore().refreshStreams();
-      } catch (e) {
+        useCommonStore().showNotification('Stream cloned', 'success');
+      } catch (e: unknown) {
+        if (e instanceof Error) {
+          useCommonStore().showNotification(e.message, 'error');
+        } else {
+          useCommonStore().showNotification('An unknown error occurred', 'error');
+        }
         console.log(e);
       }
     },
@@ -75,51 +89,44 @@ export default {
       try {
         await useStreamsStore().startStream(this.stream.id);
         useCommonStore().showNotification('Stream started', 'success');
-      } catch (err) {
-        useCommonStore().showNotification(err.message);
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          useCommonStore().showNotification(err.message, 'error');
+        } else {
+          useCommonStore().showNotification('An unknown error occurred', 'error');
+        }
       }
     },
   },
   computed: {
     ...mapState(useStreamsStore, ['currentStream']),
-    streamCreated() {
-      let date = new Date(this.stream.created * 1000);
+    streamCreated(): string {
+      if (!this.stream || typeof this.stream.created !== 'number') return '';
+      const date = new Date(this.stream.created * 1000);
       return date.toLocaleDateString() + ' - ' + date.toLocaleTimeString();
-      // return date.toUTCString();
     },
-    logoSrc() {
-      return tp => {
-        let dbType = this.dbTypes.filter(f => {
-          return f.type === tp;
-        });
-        return dbType[0].logo;
+    logoSrc(): (tp: string) => string {
+      return (tp: string) => {
+        const dbType = this.dbTypes.find((f: DbType) => f.type === tp);
+        return dbType ? dbType.logo : '';
       };
     },
-    // step () {
-    //   return name => {
-    //     let step = this.steps.filter (step => {
-    //       return step.name === name;
-    //     });
-    //     return step[0];
-    //   };
-    // },
-    index() {
+    index(): number {
       return useStreamsStore().currentStreamIndexInArray;
     },
-    rowCount() {
+    rowCount(): number {
       return useStreamsStore().countStreams;
     },
-    actionsMenuPosition() {
+    actionsMenuPosition(): string {
       if (useCommonStore().currentViewType === 'cards') {
         return 'card';
       }
       const index = this.index;
       const rowCount = this.rowCount;
-
       return index > rowCount / 2 ? 'top' : 'bottom';
     },
   },
   async mounted() {
     await this.getViewType();
   },
-};
+});
