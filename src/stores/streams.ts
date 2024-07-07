@@ -2,11 +2,12 @@ import { defineStore } from 'pinia';
 import api from '@/api/streams';
 import { debounce } from 'lodash';
 import { Stream, Table } from '@/types/streams';
+import {Step} from '@/stores/common'
 
 interface State {
     streams: Stream[];
     currentStream: Stream | null;
-    currentStep: number;
+    currentStep: Step | null;
     currentFilter: string;
 }
 
@@ -89,7 +90,7 @@ export const useStreamsStore = defineStore('streams', {
     state: (): State => ({
         streams: [],
         currentStream: null,
-        currentStep: 1,
+        currentStep: null,
         currentFilter: '',
     }),
     getters: {

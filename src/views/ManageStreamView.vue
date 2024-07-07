@@ -15,10 +15,10 @@
     <div class="antialiased bg-gray-200">
       <div class="mb-20" v-if="currentStep !== null">
         <div v-show="currentStep.name === 'source'">
-          <Connections :isStreamsTab="true" />
+          <Connections />
         </div>
         <div v-show="currentStep.name === 'target'">
-          <Connections :isStreamsTab="true" />
+          <Connections />
         </div>
         <!-- Add/ Edit connection  -->
         <Add v-if="dlgTp === 'Save'" />
@@ -30,6 +30,7 @@
     </div>
   </main>
 </template>
+
 <script setup>
 import { computed } from 'vue'
 import Connections from '@/components/connection/Connections.vue'
@@ -39,17 +40,16 @@ import { useCommonStore } from '@/stores/common'
 import Steps from '@/components/stream/Steps.vue'
 import Settings from '@/components/settings/Settings.vue'
 import { useStreamsStore } from '@/stores/streams'
+
 const store = useStreamsStore()
-const currentStep = computed(() => {
-  return store.currentStep
-})
-const currentStream = computed(() => {
-  return store.currentStream
-})
+const commonStore = useCommonStore()
+
+const currentStep = computed(() => store.currentStep)
+const currentStream = computed(() => store.currentStream)
+
 const props = defineProps({
   mode: String,
 })
-const dlgTp = computed(() => {
-  return useCommonStore().dlgType
-})
+
+const dlgTp = computed(() => commonStore.dlgType)
 </script>
