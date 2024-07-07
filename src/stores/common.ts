@@ -144,6 +144,6 @@ export const useCommonStore = defineStore('modal', {
   },
   getters: {
     notificationBar: (state) => state.currentNotification,
-    isStreamsPage: (state) => state.currentPage === 'Streams',
+    isStreamsPage: (state) => state.currentPage === 'ManageStream',
   },
 });
