@@ -7,10 +7,10 @@ import {
   Square2StackIcon,
   TrashIcon,
 } from '@heroicons/vue/24/solid';
-import {mapActions, mapState} from 'pinia';
-import {useStreamsStore} from '@/stores/streams';
-import {useConnectionsStore} from '@/stores/connections';
-import {useCommonStore} from '@/stores/common';
+import { mapActions, mapState } from 'pinia';
+import { useStreamsStore } from '@/stores/streams';
+import { useConnectionsStore } from '@/stores/connections';
+import { useCommonStore } from '@/stores/common';
 import ActionsMenu from '@/components/common/ActionsMenu.vue';
 
 export default {
@@ -36,59 +36,60 @@ export default {
     PlayIcon,
     ActionsMenu,
   },
-  setup () {
-    const dbTypes = useConnectionsStore ().dbTypes;
-    const steps = useCommonStore ().steps;
+  setup() {
+    const dbTypes = useConnectionsStore().dbTypes;
+    const steps = useCommonStore().steps;
     return {
       dbTypes,
       steps,
     };
   },
   methods: {
-    ...mapActions (useCommonStore, ['getViewType']),
-    editStream () {
-      this.selectStream ();
-      this.$router.push ({name: 'ManageStream', params: {mode: 'edit'}});
+    ...mapActions(useCommonStore, ['getViewType']),
+    editStream() {
+      this.selectStream();
+      this.$router.push({ name: 'ManageStream', params: { mode: 'edit' } });
     },
-    async deleteStream () {
+    async deleteStream() {
       try {
-        await useStreamsStore ().deleteStream (this.stream.id);
-        await useStreamsStore ().refreshStreams ();
+        await useStreamsStore().deleteStream(this.stream.id);
+        await useStreamsStore().refreshStreams();
       } catch (e) {
-        console.log (e);
+        console.log(e);
       }
     },
 
-    async cloneStream () {
+    async cloneStream() {
       try {
         // useStreamsStore ().setCurrentStream (this.stream.id);
-        await useStreamsStore ().cloneStream (this.stream.id);
-        await useStreamsStore ().refreshStreams ();
+        await useStreamsStore().cloneStream(this.stream.id);
+        await useStreamsStore().refreshStreams();
       } catch (e) {
-        console.log (e);
+        console.log(e);
       }
     },
-    selectStream () {
-      useStreamsStore ().setCurrentStream (this.stream.id);
+    selectStream() {
+      useStreamsStore().setCurrentStream(this.stream.id);
     },
-    async startStream () {
+    async startStream() {
       try {
-        await useStreamsStore ().startStream (this.stream.id);
+        await useStreamsStore().startStream(this.stream.id);
+        useCommonStore().showNotification('Stream started', 'success');
       } catch (err) {
-        useCommonStore ().showNotification (err.message);
+        useCommonStore().showNotification(err.message);
       }
     },
   },
   computed: {
-    ...mapState (useStreamsStore, ['currentStream']),
-    streamCreated () {
-      let date = new Date (this.stream.created * 1000);
-      return date.toLocaleDateString () + ' - ' + date.toLocaleTimeString ();
+    ...mapState(useStreamsStore, ['currentStream']),
+    streamCreated() {
+      let date = new Date(this.stream.created * 1000);
+      return date.toLocaleDateString() + ' - ' + date.toLocaleTimeString();
       // return date.toUTCString();
     },
-    logoSrc () {
+    logoSrc() {
       return tp => {
-        let dbType = this.dbTypes.filter (f => {
+        let dbType = this.dbTypes.filter(f => {
           return f.type === tp;
         });
         return dbType[0].logo;
@@ -102,14 +103,14 @@ export default {
     //     return step[0];
     //   };
     // },
-    index () {
-      return useStreamsStore ().currentStreamIndexInArray;
+    index() {
+      return useStreamsStore().currentStreamIndexInArray;
     },
-    rowCount () {
-      return useStreamsStore ().countStreams;
+    rowCount() {
+      return useStreamsStore().countStreams;
     },
-    actionsMenuPosition () {
-      if (useCommonStore ().currentViewType === 'cards') {
+    actionsMenuPosition() {
+      if (useCommonStore().currentViewType === 'cards') {
         return 'card';
       }
       const index = this.index;
@@ -118,7 +119,7 @@ export default {
       return index > rowCount / 2 ? 'top' : 'bottom';
     },
   },
-  async mounted () {
-    await this.getViewType ();
+  async mounted() {
+    await this.getViewType();
   },
 };

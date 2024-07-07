@@ -49,7 +49,6 @@ export default {
     const commonStore = useCommonStore();
 
     const fetchStreams = async () => {
-      commonStore.showNotificationBar = false;
       try {
         await streamsStore.refreshStreams();
       } catch (err) {
@@ -60,7 +59,6 @@ export default {
     const viewType = computed(() => commonStore.currentViewType);
     const streams = computed(() => streamsStore.newestFirst);
     onMounted(async () => {
-      commonStore.showNotificationBar = false;
       try {
         await connectionsStore.refreshConnections();
         await fetchStreams();

@@ -73,8 +73,6 @@ export default {
       setFilter(newFilter)
     })
     onMounted(async () => {
-      commonStore.showNotificationBar = false;
-
       try {
         await connectionsStore.refreshConnections();
       } catch (err) {

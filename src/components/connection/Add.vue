@@ -38,7 +38,6 @@ export default {
         };
 
         const ok = async () => {
-            commonStore.showNotificationBar = false;
             try {
                 const json = JSON.stringify(currentConnection.value);
                 const connectionResponse = await api.createConnection(json);
@@ -55,6 +54,7 @@ export default {
                 // test connection is performed on backend before saving
                 await connectionsStore.saveConnection();
                 await connectionsStore.refreshConnections();
+                commonStore.showNotification('Connection added', 'success');
             } catch (err) {
                 commonStore.showNotification(err.message);
             }

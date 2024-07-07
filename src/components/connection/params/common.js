@@ -79,7 +79,6 @@ export default {
         await apiMethod (newData, this.currentConnection.id);
         this.currentConnection[targetArray].push (newData);
         this.currentConnection[targetProperty] = newData;
-        useCommonStore ().showNotificationBar = false;
         useCommonStore ().showNotification (
           `${targetProperty} created`,
           'success'
@@ -90,7 +89,6 @@ export default {
           this.refreshSchemas ();
         }
       } catch (err) {
-        useCommonStore ().showNotificationBar = false;
         useCommonStore ().showNotification (err.message);
       }
     },

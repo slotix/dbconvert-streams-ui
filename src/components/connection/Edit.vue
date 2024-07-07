@@ -31,9 +31,7 @@ export default {
     // const refresh = connectionsStore.refreshConnections
 
     const ok = async () => {
-      commonStore.showNotificationBar = false
       try {
-        // const token = await getToken.value()
         const json = JSON.stringify(currentConnection.value)
         await api.updateConnection(json)
 
@@ -47,6 +45,7 @@ export default {
 
         await connectionsStore.saveConnection();
         await connectionsStore.refreshConnections();
+        commonStore.showNotification('Connection updated', 'success');
       } catch (err) {
         commonStore.showNotification(err.message)
       }

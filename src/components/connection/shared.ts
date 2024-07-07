@@ -121,7 +121,13 @@ export default defineComponent({
       try {
         await this.connectionsStore.cloneConnection(this.connection.id);
         await this.connectionsStore.refreshConnections();
-      } catch (e) {
+        this.commonStore.showNotification('Connection cloned', 'success');
+      } catch (e: unknown) {
+        if (e instanceof Error) {
+          this.commonStore.showNotification(e.message, 'error');
+        } else {
+          this.commonStore.showNotification('An unknown error occurred', 'error');
+        }
         console.error(e);
       }
     },
@@ -130,10 +136,17 @@ export default defineComponent({
       try {
         await this.connectionsStore.deleteConnection(this.connection.id);
         await this.connectionsStore.refreshConnections();
-      } catch (e) {
+        this.commonStore.showNotification('Connection deleted', 'success');
+      } catch (e: unknown) {
+        if (e instanceof Error) {
+          this.commonStore.showNotification(e.message, 'error');
+        } else {
+          this.commonStore.showNotification('An unknown error occurred', 'error');
+        }
         console.error(e);
       }
     },
+
     selectConnection(): void {
       if (!this.connection) return;
       this.setCurrentConnection(this.connection.id);

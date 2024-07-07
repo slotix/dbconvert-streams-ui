@@ -159,16 +159,11 @@ function createTableObject(entry: any, mode: 'cdc' | 'convert'): Table {
   }
 }
 
-// Refactored refreshTables function
 const refreshTables = async () => {
   const commonStore = useCommonStore();
-  commonStore.showNotificationBar = false; // Hide the notification bar before starting the refresh
-
   try {
     const response = await api.getTables(currentStream.source);
-    // Use the helper function to map over the response
     tables.value = response.map((entry: any) => createTableObject(entry, currentStream.mode));
-    // Optionally hide the notification bar after successful refresh
   } catch (err) {
     if (err instanceof Error) {
       commonStore.showNotification(err.message);

@@ -80,7 +80,6 @@ const showActionBtns = computed(() => {
 })
 
 async function test() {
-  useCommonStore().showNotificationBar = false
   const connection = useConnectionsStore().currentConnection
   try {
     const status = await api.testConnection(connection)
@@ -91,7 +90,6 @@ async function test() {
 }
 
 function close() {
-  useCommonStore().showNotificationBar = false
   useCommonStore().closeModal()
 }
 

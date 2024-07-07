@@ -76,10 +76,10 @@ watch(currentStepIndex, (newVal) => {
   store.currentStep = allSteps[newVal - 1]
 })
 async function saveStream() {
-  commonStore.showNotificationBar = false;
   try {
     await store.saveStream();
     router.push({ name: 'Streams' });
+    commonStore.showNotification('Stream saved', 'success');
   } catch (err) {
     commonStore.showNotification(err.message);
   }
