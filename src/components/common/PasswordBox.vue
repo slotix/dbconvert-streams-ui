@@ -6,7 +6,7 @@
         <input
           :type="passwordFieldType"
           :value="password"
-          @input="$emit('update:password', $event.target.value)" 
+          @input="updatePassword"
           class="rounded-lg flex-1 appearance-none border border-gray-300 w-full py-2 px-4 bg-white text-gray-700 placeholder-gray-400 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-gray-600 focus:border-transparent"
           placeholder=""
         />
@@ -23,28 +23,40 @@
   </div>
 </template>
 
-<script>
-import { EyeIcon, EyeSlashIcon } from '@heroicons/vue/24/solid'
-export default {
-  data() {
-    return {
-      // password: '',
-      passwordFieldType: 'password'
-    }
-  },
-  props: {
-    password: {
-      type: String
-    }
-  },
+<script lang="ts">
+import { defineComponent, ref } from 'vue';
+import { EyeIcon, EyeSlashIcon } from '@heroicons/vue/24/solid';
+
+export default defineComponent({
   components: {
     EyeIcon,
     EyeSlashIcon
   },
-  methods: {
-    switchVisibility() {
-      this.passwordFieldType = this.passwordFieldType === 'password' ? 'text' : 'password'
+  props: {
+    password: {
+      type: String,
+      required: true
     }
+  },
+  setup(props, { emit }) {
+    const passwordFieldType = ref<'password' | 'text'>('password');
+
+    const switchVisibility = () => {
+      passwordFieldType.value = passwordFieldType.value === 'password' ? 'text' : 'password';
+    };
+
+    const updatePassword = (event: Event) => {
+      const target = event.target as HTMLInputElement | null;
+      if (target) {
+        emit('update:password', target.value);
+      }
+    };
+
+    return {
+      passwordFieldType,
+      switchVisibility,
+      updatePassword
+    };
   }
-}
+});
 </script>

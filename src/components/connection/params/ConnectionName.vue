@@ -11,7 +11,7 @@
         <input
           type="text"
           :value="name"
-          @input="$emit('update:name', $event.target.value)"
+          @input="updateName"
           class=" rounded-lg  flex-1 appearance-none border border-gray-300 w-full py-2 px-4 bg-white text-gray-700 placeholder-gray-400 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-gray-600 focus:border-transparent"
           placeholder="Connection Name"
         />
@@ -20,15 +20,27 @@
   </div>
 </template>
 
-<script>
-export default {
+<script lang="ts">
+import { defineComponent } from 'vue';
+
+export default defineComponent({
   props: {
     name: {
       type: String,
       required: true
     }
-  }
-};
-</script>
+  },
+  setup(props, { emit }) {
+    const updateName = (event: Event) => {
+      const target = event.target as HTMLInputElement | null;
+      if (target) {
+        emit('update:name', target.value);
+      }
+    };
 
-<style></style>
+    return {
+      updateName
+    };
+  }
+});
+</script>

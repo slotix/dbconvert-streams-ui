@@ -3,7 +3,8 @@ import idb from '@/api/iDBService';
 import api from '@/api/api.js';
 
 export const DIALOG_TYPES = {
-  SAVE: 'Save',
+  SAVE: 'Add',
+  SAVE_CHANGES: 'Save Changes',
   UPDATE: 'Update',
 } as const;
 

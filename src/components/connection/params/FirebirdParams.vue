@@ -1,6 +1,6 @@
 <template>
   <div>
-    <connection-name v-model:name="connection.name" />
+    <ConnectionName v-model:name="connection.name" />
     <hr />
     <div class="bg-white bg-opacity-5 text-center md:text-left">
       <div class="items-center w-full p-4 space-y-4 text-gray-500 md:inline-flex md:space-y-0">
@@ -34,7 +34,7 @@
         <div class="max-w-sm mx-auto md:w-2/3">
           <div class="relative">
             <input
-              v-model="connection.userName"
+              v-model="connection.username"
               type="text"
               class="rounded-lg border-transparent flex-1 appearance-none border border-gray-300 w-full py-2 px-4 bg-white text-gray-700 placeholder-gray-400 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-gray-600 focus:border-transparent"
               placeholder=""
@@ -78,22 +78,33 @@
   </div>
 </template>
 
-<script>
-import common from './common.js'
-export default Object.assign({}, common, {
+<script lang="ts">
+import { defineComponent, ref } from 'vue';
+import { useCommon, Connection } from './common';
+
+interface FirebirdConnection extends Connection {
+  charset: string;
+}
+
+export default defineComponent({
   name: 'FirebirdParams',
-  data: () => ({
-    connection: {
+  setup() {
+    const defaultConnection: FirebirdConnection = {
+      id: '',
       name: '',
+      type: 'Firebird',
       host: 'localhost',
       port: 3050,
-      userName: 'SYSDBA',
+      username: 'SYSDBA',
       password: '',
+      databases: [],
+      database: '',
+      schema: '',
+      schemas: [''],
       charset: 'utf8',
-      database: ''
-    },
-    connectionType: 'Firebird',
-    charsets: [
+    };
+
+    const charsets = ref([
       'utf8',
       'armscii8',
       'ascii',
@@ -119,8 +130,31 @@ export default Object.assign({}, common, {
       'macce',
       'macroman',
       'swe7',
-      'tis620'
-    ]
-  }),
-})
+      'tis620',
+    ]);
+
+    const {
+      connection,
+      buildConnectionName,
+      dlgTp,
+      updateConnectionName,
+      fetchData,
+      refreshDatabases,
+      createData,
+      createDatabase,
+    } = useCommon<FirebirdConnection>(defaultConnection);
+
+    return {
+      connection,
+      buildConnectionName,
+      dlgTp,
+      updateConnectionName,
+      fetchData,
+      refreshDatabases,
+      createData,
+      createDatabase,
+      charsets,
+    };
+  },
+});
 </script>

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <connection-name v-model:name="connection.name" />
+    <ConnectionName v-model:name="connection.name" />
     <hr />
     <div class="bg-white bg-opacity-5 text-center md:text-left">
       <div class="items-center w-full p-4 space-y-4 text-gray-500 md:inline-flex md:space-y-0">
@@ -91,24 +91,60 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent, ref } from 'vue';
+import { useCommon, Connection } from './common';
 
-import common from './common.js'
-export default Object.assign({}, common, {
+interface OracleConnection extends Connection {
+  connectAs: string;
+  netServiceName: string;
+}
+
+export default defineComponent({
   name: 'OracleParams',
-  data: () => ({
-    connection: {
+  setup() {
+    const defaultConnection: OracleConnection = {
+      id: '',
       name: '',
+      type: 'Oracle',
       host: 'localhost',
       port: 1521,
-      userName: 'system',
+      username: 'system',
       password: '',
+      databases: [],
+      database: '',
+      schemas: [''],
+      schema: '',
       connectAs: 'Normal',
       netServiceName: 'orcl',
-      schema: ''
-    },
-    connectionType: 'Oracle',
-    connectAsVariants: ['Normal', 'SYSDBA', 'SYSOPER']
-  }),
-})
+    };
+
+    const connectAsVariants = ref(['Normal', 'SYSDBA', 'SYSOPER']);
+
+    const {
+      connection,
+      buildConnectionName,
+      dlgTp,
+      updateConnectionName,
+      fetchData,
+      refreshDatabases,
+      createData,
+      createDatabase,
+      createSchema,
+    } = useCommon<OracleConnection>(defaultConnection);
+
+    return {
+      connection,
+      buildConnectionName,
+      dlgTp,
+      updateConnectionName,
+      fetchData,
+      refreshDatabases,
+      createData,
+      createDatabase,
+      createSchema,
+      connectAsVariants,
+    };
+  },
+});
 </script>

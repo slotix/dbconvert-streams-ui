@@ -19,16 +19,12 @@ export default {
   components: {
     Modal,
     ConnectionParams,
-    // useAuth
   },
   setup() {
     const connectionsStore = useConnectionsStore()
     const commonStore = useCommonStore()
-    // const { getToken } = useAuth()
     const currentConnection = computed(() => connectionsStore.currentConnection)
 
-    // const save = connectionsStore.saveConnection
-    // const refresh = connectionsStore.refreshConnections
 
     const ok = async () => {
       try {

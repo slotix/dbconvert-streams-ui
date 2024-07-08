@@ -5,8 +5,8 @@
       <ComboboxInput
         v-model="query"
         class="w-full rounded-md border-0 bg-white py-1.5 pl-3 pr-10 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-gray-600 sm:text-sm sm:leading-6"
-        @change="query = $event.target.value"
-        :display-value="(item) => item"
+        @change="query = ($event.target as HTMLInputElement).value"
+        :display-value="displayValue"
       />
       <ComboboxButton
         class="absolute inset-y-0 flex items-center rounded-r-md px-4 focus:outline-none"
@@ -18,7 +18,7 @@
       <button
         v-if="isShowAddButton"
         :class="[
-          'absolute inset-y-1 right-1 rounded-md bg-gray-100   flex items-center rounded-md   ',
+          'absolute inset-y-1 right-1 rounded-md bg-gray-100 flex items-center rounded-md',
           queryItem === '' ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
         ]"
         @click="addItem"
@@ -27,7 +27,7 @@
         <PlusIcon class="mx-2 h-5 w-5" />
       </button>
       <ComboboxOptions
-        v-if="filteredItems?.length > 0"
+        v-if="filteredItems.length > 0"
         class="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
       >
         <ComboboxOption
@@ -62,48 +62,54 @@
   </Combobox>
 </template>
 
-<script setup>
-import { computed, ref, onMounted } from 'vue'
-import { CheckIcon, ChevronUpDownIcon, PlusIcon } from '@heroicons/vue/20/solid'
+<script setup lang="ts">
+import { computed, ref, onMounted } from 'vue';
+import { CheckIcon, ChevronUpDownIcon, PlusIcon } from '@heroicons/vue/20/solid';
 import {
   Combobox,
   ComboboxButton,
   ComboboxInput,
   ComboboxOption,
-  ComboboxOptions
-} from '@headlessui/vue'
+  ComboboxOptions,
+} from '@headlessui/vue';
 
-const props = defineProps({
-  items: Array,
-  isShowAddButton: Boolean
-})
-
-const emit = defineEmits(['addItem'])
-onMounted(() => {
-  if (props.items.length > 0) {
-    selectedItem.value = props.items[0]
-  }
-})
-const addItem = () => {
-  if (queryItem.value !== null) {
-    // Emit the 'addItem' event with the current query value
-    emit('addItem', queryItem.value)
-    // Clear the query input
-    query.value = ''
-  }
+interface Props {
+  items: string[];
+  isShowAddButton: boolean;
 }
-const query = ref('')
-const selectedItem = ref(null)
+
+const props = defineProps<Props>();
+const emit = defineEmits(['addItem']);
+
+const query = ref('');
+const selectedItem = ref<string | null>(null);
 
 const queryItem = computed(() => {
-  return query.value === '' ? '' : query.value
-})
+  return query.value === '' ? '' : query.value;
+});
 
 const filteredItems = computed(() =>
   query.value === ''
     ? props.items
-    : props.items?.filter((item) => {
-        return item.toLowerCase().includes(query.value.toLowerCase())
+    : props.items.filter((item) => {
+        return item.toLowerCase().includes(query.value.toLowerCase());
       })
-)
+);
+
+const displayValue = (item: unknown): string => {
+  return item as string;
+};
+
+onMounted(() => {
+  if (props.items.length > 0) {
+    selectedItem.value = props.items[0];
+  }
+});
+
+const addItem = () => {
+  if (queryItem.value !== '') {
+    emit('addItem', queryItem.value);
+    query.value = '';
+  }
+};
 </script>

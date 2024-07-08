@@ -23,7 +23,6 @@ export default {
         Modal,
         ConnectionParams,
         DBTypesListBox,
-        // useAuth
     },
     setup() {
         const connectionsStore = useConnectionsStore();
@@ -39,6 +38,7 @@ export default {
 
         const ok = async () => {
             try {
+                currentConnection.value.type = connection.value.type;
                 const json = JSON.stringify(currentConnection.value);
                 const connectionResponse = await api.createConnection(json);
                 const databases = await api.getDatabases(connectionResponse.id);

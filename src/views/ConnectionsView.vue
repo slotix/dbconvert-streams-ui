@@ -1,17 +1,17 @@
 <template>
-    <header>
-      <div class="bg-white flex flex-wrap justify-between space-y-4 sm:space-y-0 max-w-7xl mx-auto py-6 px-8">
-        <h1 class="flex-auto text-3xl font-bold text-gray-900 dark:text-white;">
-          {{ connectionsCount() }} Connections.
-        </h1>
-      </div>
-    </header>
-    <main>
-      <!-- Main area -->
-      <Connections />
-      <Add v-if="dlgTp === 'Save'" />
-      <Edit v-if="dlgTp === 'Update'" />
-    </main>
+  <header>
+    <div class="bg-white flex flex-wrap justify-between space-y-4 sm:space-y-0 max-w-7xl mx-auto py-6 px-8">
+      <h1 class="flex-auto text-3xl font-bold text-gray-900 dark:text-white;">
+        {{ connectionsCount }} Connections.
+      </h1>
+    </div>
+  </header>
+  <main>
+    <!-- Main area -->
+    <Connections />
+ <Add v-if="dlgTp === DIALOG_TYPES.SAVE" />
+    <Edit v-if="dlgTp === DIALOG_TYPES.UPDATE" />
+  </main>
 </template>
 
 <script setup lang="ts">
@@ -21,14 +21,15 @@ import Add from '@/components/connection/Add.vue';
 import Edit from '@/components/connection/Edit.vue';
 import { useCommonStore } from '@/stores/common';
 import { useConnectionsStore } from '@/stores/connections';
+import { DIALOG_TYPES } from '@/stores/common'; // Import the DIALOG_TYPES
+
+// Access the connections store
+const connectionsStore = useConnectionsStore();
+const commonStore = useCommonStore();
 
 // Define the function to count connections
-function connectionsCount(): number {
-  return useConnectionsStore().countConnections;
-}
+const connectionsCount = computed(() => connectionsStore.countConnections);
 
 // Get the dialog type from the common store
-const dlgTp = computed((): string => {
-  return useCommonStore().dlgType;
-});
+const dlgTp = computed(() => commonStore.dlgType);
 </script>
