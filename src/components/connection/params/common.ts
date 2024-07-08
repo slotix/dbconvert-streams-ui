@@ -6,18 +6,8 @@ import { ArrowPathIcon, PlusIcon } from '@heroicons/vue/24/solid';
 import { DIALOG_TYPES, useCommonStore } from '@/stores/common';
 import { useConnectionsStore } from '@/stores/connections';
 import api from '@/api/connections';
+import { Connection } from '@/types/connections';
 
-export interface Connection {
-  id: string | '';
-  name: string;
-  type: string;
-  host: string;
-  port: number;
-  username: string;
-  password: string;
-  databases: string[];
-  database: string;
-}
 
 function isErrorWithMessage(error: unknown): error is { message: string } {
   return (

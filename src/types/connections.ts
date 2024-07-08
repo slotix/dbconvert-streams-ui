@@ -1,11 +1,17 @@
+
 export interface Connection {
-  id: string;
+  id: string | '';
+  name: string;
   type: string;
-  ssh?: any;
-  ssl?: any;
+  host: string;
+  port: number;
+  username: string;
+  password: string;
+  databases: string[];
+  database: string;
   created?: string;
-  [key: string]: any;
 }
+
 export interface Schema {
   // Define the properties of a schema object
 }
