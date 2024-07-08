@@ -7,9 +7,9 @@ export const DIALOG_TYPES = {
   UPDATE: 'Update',
 } as const;
 
-interface Notification {
+export interface Notification {
+  type: 'error' | 'success' | 'warning' | 'info';
   msg: string;
-  type: string;
 }
 
 export interface Step {
@@ -103,7 +103,7 @@ export const useCommonStore = defineStore('modal', {
     closeModal() {
       this.showModal = false;
     },
-    showNotification(msg: string, type: string = 'error') {
+    showNotification(msg: string, type: Notification['type'] = 'error') {
       const newNotification: Notification = { msg, type };
       if (!this.notificationQueue.some(notification => notification.msg === msg && notification.type === type)) {
         this.notificationQueue.push(newNotification);
