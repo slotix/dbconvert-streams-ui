@@ -5,6 +5,7 @@ import ConnectionsView from '../views/ConnectionsView.vue';
 import StreamsView from '../views/StreamsView.vue';
 import ManageStreamView from '../views/ManageStreamView.vue';
 import MonitorStreamView from '../views/MonitorStreamView.vue';
+import ApiKeyView from '../views/ApiKeyView.vue'; // Import the new ApiKeyView component
 import NotFound from '../views/NotFound.vue';
 
 const routes: Array<RouteRecordRaw> = [
@@ -34,6 +35,11 @@ const routes: Array<RouteRecordRaw> = [
     name: 'MonitorStream',
     component: MonitorStreamView,
     props: true,
+  },
+  {
+    path: '/api-key',
+    name: 'ApiKey',
+    component: ApiKeyView, // Define the route for the API Key page
   },
   {
     path: '/:catchAll(.*)',

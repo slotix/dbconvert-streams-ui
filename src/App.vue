@@ -30,7 +30,7 @@
                 </div>
                 <nav class="flex flex-1 flex-col">
                   <ul role="list" class="-mx-2 flex-1 space-y-1">
-                    <li v-for="item in navigation" :key="item.name">
+                    <li v-for="item in navigation" :key="item.name" :class="{ 'mt-4': item.name === 'API Key' }">
                       <RouterLink :to="item.href" :class="[
                         $route.path === item.href
                           ? 'bg-gray-800 text-white'
@@ -57,7 +57,7 @@
       </div>
       <nav class="mt-8">
         <ul role="list" class="flex flex-col items-center space-y-1">
-          <li v-for="item in navigation" :key="item.name">
+          <li v-for="item in navigation" :key="item.name" :class="{ 'mt-4': item.name === 'API Key' }">
             <RouterLink :to="item.href" :class="[
               $route.path === item.href
                 ? 'bg-gray-800 text-white'
@@ -141,7 +141,8 @@ import {
   HomeIcon,
   CircleStackIcon,
   XMarkIcon,
-  ChartBarSquareIcon
+  ChartBarSquareIcon,
+  KeyIcon
 } from '@heroicons/vue/24/outline';
 
 const { isSignedIn, getToken } = useAuth();
@@ -156,7 +157,8 @@ const navigation = ref<NavigationItem[]>([
   { name: 'Home', href: '/', icon: HomeIcon },
   { name: 'Connections', href: '/connections', icon: CircleStackIcon },
   { name: 'Streams', href: '/streams', icon: ArrowPathIcon },
-  { name: 'Monitor Stream', href: '/monitor', icon: ChartBarSquareIcon }
+  { name: 'Monitor Stream', href: '/monitor', icon: ChartBarSquareIcon },
+  { name: 'API Key', href: '/api-key', icon: KeyIcon }
 ]);
 
 const commonStore = useCommonStore();
