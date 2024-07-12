@@ -63,7 +63,8 @@ export const useConnectionsStore = defineStore("connections", {
                         el.type &&
                         el.type.toLowerCase().indexOf(state.currentFilter.toLowerCase()) > -1
                     );
-                }).reverse();
+                })
+                .sort((a, b) => (b.created as number) - (a.created as number));
         },
     },
     actions: {

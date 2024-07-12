@@ -9,7 +9,7 @@ export interface Connection {
   password: string;
   databases: string[];
   database: string;
-  created?: string;
+  created?: number;
 }
 
 export interface Schema {
