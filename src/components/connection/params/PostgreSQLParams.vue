@@ -44,36 +44,57 @@
         </div>
       </div>
     </div>
-
     <PasswordBox v-model:password="connection.password" />
     <hr />
     <div v-show="connection.id">
       <div class="items-center w-full p-4 space-y-4 text-gray-500 md:inline-flex md:space-y-0">
-        <label class="max-w-sm mx-auto md:w-1/3">Database </label>
-        <div class="md:inline-flex max-w-sm mx-auto md:w-2/3">
-          <ItemsCombo v-model="connection.database" :items="connection.databases" :isShowAddButton="true"
-             :openUpwards="true" @addItem="createDatabase" />
+        <label class="max-w-sm mx-auto md:w-1/3">Database</label>
+        <div class="flex items-center max-w-sm mx-auto md:w-2/3 space-x-2">
+          <ItemsCombo v-model="connection.database" :items="connection.databases" :openUpwards="true" />
           <button :disabled="!connection.id" type="button"
-            class="w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-gray-100 text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            class="inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-gray-100 text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             @click="refreshDatabases">
             Refresh
             <ArrowPathIcon class="pl-2 h-5 w-5" aria-hidden="true" />
           </button>
         </div>
       </div>
-
-      <div class="items-center w-full p-4 mb-12 space-y-4 text-gray-500 md:inline-flex md:space-y-0">
-        <label class="max-w-sm mx-auto md:w-1/3"> Schema </label>
-        <div class="md:inline-flex max-w-sm mx-auto md:w-2/3">
-          <ItemsCombo :items="connection.schemas" v-model="connection.schema" :isShowAddButton="true"
-            :openUpwards="true" @addItem="createSchema" />
-          <!-- <ItemsCombo :items="connection.schemas" v-model="connection.schema" :isShowAddButton="true"
-            @addItem="createSchema" /> -->
+      <!-- Separate input box and button for adding a new database -->
+      <div v-show="connection.id" class="items-center w-full p-4 space-y-4 text-gray-500 md:inline-flex md:space-y-0">
+        <label class="max-w-sm mx-auto md:w-1/3"></label>
+        <div class="flex items-center max-w-sm mx-auto md:w-2/3 space-x-2">
+          <input v-model="newDatabase" type="text"
+            class="flex-1 rounded-lg appearance-none border border-gray-300 py-2 px-4 bg-white text-gray-700 placeholder-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-600 sm:text-sm focus:border-transparent"
+            placeholder="Add new database" />
+          <button @click="createDatabase(newDatabase)" :disabled="newDatabase === ''"
+            class="inline-flex items-center rounded-lg border border-gray-300 py-2 px-4 text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-600 sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+            Add
+          </button>
+        </div>
+      </div>
+      <div v-show="connection.id" class="items-center w-full p-4 space-y-4 text-gray-500 md:inline-flex md:space-y-0">
+        <label class="max-w-sm mx-auto md:w-1/3">Schema</label>
+        <div class="flex items-center max-w-sm mx-auto md:w-2/3 space-x-2">
+          <ItemsCombo v-model="connection.schema" :items="connection.schemas" :openUpwards="true" />
           <button :disabled="!connection.id" type="button"
-            class="w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-gray-100 text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            class="inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-gray-100 text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             @click="refreshSchemas">
             Refresh
             <ArrowPathIcon class="pl-2 h-5 w-5" aria-hidden="true" />
+          </button>
+        </div>
+      </div>
+      <!-- Separate input box and button for adding a new schema -->
+      <div v-show="connection.id"
+        class="items-center w-full mb-6 p-4 space-y-4 text-gray-500 md:inline-flex md:space-y-0">
+        <label class="max-w-sm mx-auto md:w-1/3"></label>
+        <div class="flex items-center max-w-sm mx-auto md:w-2/3 space-x-2">
+          <input v-model="newSchema" type="text"
+            class="flex-1 rounded-lg appearance-none border border-gray-300 py-2 px-4 bg-white text-gray-700 placeholder-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-600 sm:text-sm focus:border-transparent"
+            placeholder="Add new schema" />
+          <button @click="createSchema(newSchema)" :disabled="newSchema === ''"
+            class="inline-flex items-center rounded-md border border-gray-300 bg-gray-100 py-2 px-4 text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-600 sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+            Add
           </button>
         </div>
       </div>
@@ -82,7 +103,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import { defineComponent, ref, watch } from 'vue';
 import { useCommon } from './common';
 import { Connection } from '@/types/connections';
 import ConnectionName from './ConnectionName.vue';
@@ -131,6 +152,9 @@ export default defineComponent({
       createSchema,
     } = useCommon<PostgreSQLConnection>(defaultConnection);
 
+    const newDatabase = ref('');
+    const newSchema = ref('');
+
     return {
       connection,
       buildConnectionName,
@@ -142,6 +166,8 @@ export default defineComponent({
       createData,
       createDatabase,
       createSchema,
+      newDatabase,
+      newSchema,
     };
   },
 });

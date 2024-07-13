@@ -8,7 +8,6 @@ import { useConnectionsStore } from '@/stores/connections';
 import api from '@/api/connections';
 import { Connection } from '@/types/connections';
 
-
 function isErrorWithMessage(error: unknown): error is { message: string } {
   return (
     typeof error === 'object' &&
@@ -17,6 +16,7 @@ function isErrorWithMessage(error: unknown): error is { message: string } {
     typeof (error as any).message === 'string'
   );
 }
+
 function getProperty<T, K extends keyof T>(obj: T, key: K): T[K] {
   return obj[key];
 }
@@ -62,17 +62,25 @@ export function useCommon<T extends Connection>(defaultConnection: T) {
       connection.name = connectionsStore.currentConnection?.name || buildConnectionName.value;
     }
   };
-  onMounted(() => {
+
+  onMounted(async () => {
     updateConnectionName();
     if (dlgTp.value === DIALOG_TYPES.UPDATE && connectionsStore.currentConnection) {
+      await refreshDatabases();
+      if (connection.type === 'PostgreSQL') {
+        await refreshSchemas();
+      }
       Object.assign(connection, connectionsStore.currentConnection);
     }
   });
+
   const fetchData = async (apiMethod: (id: string) => Promise<any>, targetProperty: keyof T) => {
     try {
       if (connectionsStore.currentConnection) {
         const data = await apiMethod(connectionsStore.currentConnection.id);
         setProperty(connectionsStore.currentConnection as T, targetProperty, data);
+        // Ensure the connection object is updated with the fetched data
+        Object.assign(connection, connectionsStore.currentConnection);
       }
     } catch (err) {
       if (isErrorWithMessage(err)) {
@@ -85,12 +93,10 @@ export function useCommon<T extends Connection>(defaultConnection: T) {
 
   const refreshSchemas = async () => {
     await fetchData(api.getSchemas, 'schemas' as keyof T);
-    Object.assign(connection, connectionsStore.currentConnection);
   };
 
   const refreshDatabases = async () => {
     await fetchData(api.getDatabases, 'databases' as keyof T);
-    Object.assign(connection, connectionsStore.currentConnection);
   };
 
   const createData = async (
@@ -107,9 +113,9 @@ export function useCommon<T extends Connection>(defaultConnection: T) {
         setProperty(connectionsStore.currentConnection as T, targetProperty, newData);
         commonStore.showNotification(`${String(targetProperty)} created`, 'success');
         if (targetProperty === 'database') {
-          refreshDatabases();
+          await refreshDatabases();
         } else if (targetProperty === 'schema') {
-          refreshSchemas();
+          await refreshSchemas();
         }
       }
     } catch (err) {
