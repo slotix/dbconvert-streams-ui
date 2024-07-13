@@ -1,5 +1,4 @@
 <template>
-  <!-- todo: add multiple select -->
   <Combobox as="div" v-model="selectedItem">
     <div class="relative">
       <ComboboxInput
@@ -28,7 +27,7 @@
       </button>
       <ComboboxOptions
         v-if="filteredItems.length > 0"
-        class="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
+        :class="dropdownClasses"
       >
         <ComboboxOption
           v-for="item in filteredItems"
@@ -76,6 +75,7 @@ import {
 interface Props {
   items: string[];
   isShowAddButton: boolean;
+  openUpwards: boolean; // Add this prop to control the dropdown direction
 }
 
 const props = defineProps<Props>();
@@ -112,4 +112,12 @@ const addItem = () => {
     query.value = '';
   }
 };
+
+// Compute the dropdown classes based on the openUpwards prop
+const dropdownClasses = computed(() => {
+  return [
+    'absolute z-10 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm',
+    props.openUpwards ? 'bottom-full mb-1' : 'mt-1'
+  ];
+});
 </script>
