@@ -128,10 +128,6 @@ export default defineComponent({
 
     const newDatabase = ref('');
 
-    // Refresh databases and schemas when the dialog is opened
-    onMounted(() => {
-      refreshDatabases();
-    });
 
     return {
       connection,
