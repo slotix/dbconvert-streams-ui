@@ -90,16 +90,16 @@ export function useCommon<T extends Connection>(defaultConnection: T) {
       }
     }
   };
-
   const refreshSchemas = async () => {
-    if (connection.id === '') return;
+    if (!connectionsStore.currentConnection || connectionsStore.currentConnection.id === '') return;
     await fetchData(api.getSchemas, 'schemas' as keyof T);
   };
 
   const refreshDatabases = async () => {
-    if (connection.id === '') return;
+    if (!connectionsStore.currentConnection || connectionsStore.currentConnection.id === '') return;
     await fetchData(api.getDatabases, 'databases' as keyof T);
   };
+
 
   const createData = async (
     apiMethod: (data: any, id: string) => Promise<void>,
