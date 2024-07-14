@@ -4,7 +4,7 @@
       <div class="relative">
         <ComboboxInput
           v-model="query"
-          class="w-full rounded-md border-0 bg-white py-1.5 pl-3 pr-10 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-gray-600 sm:text-sm sm:leading-6"
+          class="w-full rounded-lg border  border-gray-300 bg-white py-1.5 pl-3 pr-10 text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-gray-600 sm:text-sm sm:leading-6 focus:border-transparent"
           @change="query = ($event.target as HTMLInputElement).value"
           :display-value="displayValue"
         />
@@ -15,12 +15,12 @@
         </ComboboxButton>
         <button
           :class="[
-            'absolute inset-y-1 right-1 rounded-md bg-gray-100 flex items-center rounded-md',
+            'absolute inset-y-1 right-1 rounded-md bg-gray-100 flex items-center',
             queryItem === '' ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
           ]"
           @click="toggleShowAll"
         >
-          <component :is="filterIcon" class="mx-2 h-5 w-5" />
+          <component :is="filterIcon" class="mx-2 h-5 w-5 text-gray-600" />
         </button>
         <ComboboxOptions v-if="filteredItems.length > 0" :class="dropdownClasses">
           <ComboboxOption
@@ -32,7 +32,7 @@
           >
             <li
               :class="[
-                'relative cursor-default select-none py-2 pl-3 pr-9',
+                'relative cursor-default select-none py-2 pl-3 pr-9 border-b border-gray-300 last:border-0',
                 active ? 'bg-gray-600 text-white' : 'text-gray-900'
               ]"
             >
@@ -53,13 +53,13 @@
         </ComboboxOptions>
       </div>
     </Combobox>
-    <!-- <button @click="toggleShowAll" class="mt-2 p-2 bg-gray-200 rounded">{{ showAll ? 'Show Filtered' : 'Show All' }}</button> -->
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
-import { CheckIcon, ChevronUpDownIcon, FunnelIcon, XMarkIcon } from '@heroicons/vue/24/outline';
+import { CheckIcon, ChevronUpDownIcon, FunnelIcon } from '@heroicons/vue/24/outline';
+import SlashedFunnelIcon from './SlashedFunnelIcon.vue'; // Import the new slashed funnel icon
 import {
   Combobox,
   ComboboxButton,
@@ -119,12 +119,12 @@ const toggleShowAll = () => {
   showAll.value = !showAll.value;
 };
 
-const filterIcon = computed(() => (showAll.value ? XMarkIcon : FunnelIcon));
+const filterIcon = computed(() => (showAll.value ? SlashedFunnelIcon : FunnelIcon));
 
 // Compute the dropdown classes based on the openUpwards prop
 const dropdownClasses = computed(() => {
   return [
-    'absolute z-10 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm',
+    'absolute z-10 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm border border-gray-400',
     props.openUpwards ? 'bottom-full mb-1' : 'mt-1'
   ];
 });
