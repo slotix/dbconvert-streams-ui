@@ -10,7 +10,7 @@ export interface Table {
 export interface Stream {
     id: string;
     name: string;
-    created?: string;
+    created?: number;
     mode: 'cdc' | 'convert';
     dataBundleSize: number;
     reportingIntervals: {

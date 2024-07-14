@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import api from '@/api/streams';
 import { debounce } from 'lodash';
 import { Stream, Table } from '@/types/streams';
-import {Step} from '@/stores/common'
+import { Step } from '@/stores/common'
 
 interface State {
     streams: Stream[];
@@ -97,9 +97,15 @@ export const useStreamsStore = defineStore('streams', {
         countStreams(state: State): number {
             return state.streams ? state.streams.length : 0;
         },
+        // newestFirst(state: State): Stream[] {
+        //     return state.streams ? state.streams.slice().reverse() : [];
+        // },
         newestFirst(state: State): Stream[] {
-            return state.streams ? state.streams.slice().reverse() : [];
+            return state.streams
+                ? state.streams.slice().sort((a, b) => (b.created as number) - (a.created as number))
+                : [];
         },
+
         streamsByType(state: State): Stream[] {
             return state.streams
                 .filter(el => {

@@ -11,17 +11,6 @@
         <span class="item w-4/5 uppercase truncate tracking-wide text-sm font-medium text-gray-800">
           {{ connection.name }}
         </span>
-        <!-- <span -->
-        <!--   v-show="isStreamsPage && selected" -->
-        <!--   class="justify-end item w-1/5 flex" -->
-        <!-- > -->
-        <!--   <CheckCircleIcon class="h-8 w-8" aria-hidden="true" -->
-        <!--   :class="{ -->
-        <!--     'text-yellow-600': currentStep.name === 'source', -->
-        <!--     'text-green-600': currentStep.name === 'target' -->
-        <!--   }" -->
-        <!--   /> -->
-        <!-- </span> -->
       </div>
       <div :class="bgRowClass(connection)">
         <div class="px-2 flex items-center justify-between">
@@ -57,27 +46,27 @@
         <div class="flex w-0 flex-1">
           <button
             type="button"
-            class="relative -mr-px inline-flex w-0 flex-1 items-center justify-center gap-x-3 rounded-bl-lg border border-gray-300 py-4 text-sm text-gray-600 font-semibold  bg-gray-100"
+            class="relative -mr-px inline-flex w-0 flex-1 items-center justify-center gap-x-3 rounded-bl-lg border border-gray-300 py-4 text-sm text-gray-600 font-semibold bg-gray-100 hover:bg-gray-200 hover:text-gray-700"
             @click="editConnection"
           >
-            <PencilIcon class="h-5 w-5 " aria-hidden="true" />
+            <PencilIcon class="h-5 w-5" aria-hidden="true" />
             Edit
           </button>
         </div>
         <div class="-ml-px flex w-0 flex-1">
           <button
             type="button"
-            class="relative inline-flex w-0 flex-1 items-center justify-center gap-x-3 border border-gray-300 py-4 text-gray-600 text-sm font-semibold  bg-gray-100"
+            class="relative inline-flex w-0 flex-1 items-center justify-center gap-x-3 border border-gray-300 py-4 text-gray-600 text-sm font-semibold bg-gray-100 hover:bg-gray-200 hover:text-gray-700"
             @click="cloneConnection"
           >
-            <Square2StackIcon class="h-5 w-5 " aria-hidden="true" />
+            <Square2StackIcon class="h-5 w-5" aria-hidden="true" />
             Clone
           </button>
         </div>
         <div class="-ml-px flex w-0 flex-1">
           <button
             type="button"
-            class="relative inline-flex w-0 flex-1 items-center justify-center gap-x-3 rounded-br-lg border border-gray-300 py-4 text-sm font-semibold text-red-600 bg-gray-100"
+            class="relative inline-flex w-0 flex-1 items-center justify-center gap-x-3 rounded-br-lg border border-gray-300 py-4 text-sm font-semibold text-red-600 bg-gray-100 hover:bg-gray-200 hover:text-red-700"
             @click="deleteConn(connection.id)"
           >
             <TrashIcon class="h-5 w-5 text-red-600" aria-hidden="true" />

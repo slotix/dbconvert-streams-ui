@@ -5,13 +5,11 @@
         Create new stream
       </div>
       <div class="flex justify-center">
-        <img class="mt-8 mb-7 h-20 w-20 rounded-full" :src="'/images/streams/add-stream.svg'"
-          alt="Create database connection" />
+        <img class="mt-8 mb-8 h-24 w-20 rounded-full" :src="'/images/streams/add-stream.svg'" alt="Create database connection" />
       </div>
       <router-link :to="{ name: 'ManageStream', params: { mode: 'add' } }">
         <div class="flex flex-wrap text-gray-700 bg-gray-100">
-          <button type="button" @click="addStream"
-            class="relative -mr-px inline-flex w-0 flex-1 items-center justify-center gap-x-3 rounded-bl-lg rounded-br-lg border border-gray-300 py-4 text-sm font-semibold  ">
+          <button type="button" @click="addStream" class="relative -mr-px inline-flex flex-1 items-center justify-center gap-x-4 rounded-bl-lg rounded-br-lg border border-gray-300 py-4 text-sm font-semibold hover:bg-gray-200 hover:text-gray-900">
             Add Stream
           </button>
         </div>
@@ -19,6 +17,7 @@
     </div>
   </div>
 </template>
+
 <script>
 import { useStreamsStore } from "@/stores/streams";
 import { useConnectionsStore } from "@/stores/connections"
@@ -31,6 +30,4 @@ export default {
     }
   }
 }
-// import shared from './shared.js'
-// export default Object.assign({}, shared, {})
 </script>
