@@ -1,59 +1,62 @@
 <template>
-  <div class="flex-auto border-b border-gray-400 pb-5">
-    <h2 class="text-base font-semibold leading-6 text-gray-900">Source tables.</h2>
-  </div>
-  <div class="flex items-center justify-between mt-4">
-    <div class="mb-4 inline-flex font-medium text-gray-900">
-      Selected {{ checkedTablesCount }} of {{ tables.length }} tables
+  <div>
+    <div class="flex-auto border-b border-gray-400 pb-5">
+      <h2 class="text-base font-semibold leading-6 text-gray-900">Source tables.</h2>
     </div>
-    <button type="button"
-      class="mb-4 w-full inline-flex rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:mt-0 sm:ml-3 sm:w-auto"
-      @click="debouncedRefreshTables">
-      Refresh tables
-    </button>
-  </div>
-  <table class="min-w-full table-fixed divide-y divide-gray-300">
-    <thead>
-      <tr class="bg-gray-100">
-        <th scope="col" class="relative px-7 sm:w-12 sm:px-6">
-          <input type="checkbox" id="table-select-all"
-            class="absolute left-4 top-1/2 -mt-2 h-4 w-4 rounded border-gray-200 text-gray-600 focus:ring-gray-600"
-            :checked="selectAllCheckboxState" :indeterminate="indeterminate" @change="toggleSelectAll" />
-        </th>
-        <th scope="col" colspan="2"
-          class="min-w-[10rem] py-3.5 pr-3 text-left uppercase text-sm font-normal text-gray-800">
-          <div class="relative rounded-md shadow-sm">
-            <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-              <FunnelIcon class="h-5 w-5 text-gray-400" aria-hidden="true" />
+    <div class="flex items-center justify-between mt-4">
+      <div class="mb-4 inline-flex font-medium text-gray-900">
+        Selected {{ checkedTablesCount }} of {{ tables.length }} tables
+      </div>
+      <button type="button"
+        class="mb-4 w-full inline-flex rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:mt-0 sm:ml-3 sm:w-auto"
+        @click="debouncedRefreshTables">
+        Refresh tables
+      </button>
+    </div>
+    <table class="min-w-full table-fixed divide-y divide-gray-300 border border-gray-400 rounded-md">
+      <thead v-if="paginatedTables.length > 0">
+        <tr class="bg-gray-100">
+          <th scope="col" class="relative px-7 sm:w-12 sm:px-6">
+            <input type="checkbox" id="table-select-all"
+              class="absolute left-4 top-1/2 -mt-2 h-4 w-4 rounded border-gray-200 text-gray-600 focus:ring-gray-600"
+              :checked="selectAllCheckboxState" :indeterminate="indeterminate" @change="toggleSelectAll" />
+          </th>
+          <th scope="col" colspan="2"
+            class="min-w-[10rem] py-3.5 pr-3 text-left uppercase text-sm font-normal text-gray-800">
+            <div class="relative rounded-md shadow-sm">
+              <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                <FunnelIcon class="h-5 w-5 text-gray-400" aria-hidden="true" />
+              </div>
+              <input type="text" id="table-search" v-model="searchQuery" placeholder="Filter tables..."
+                class="block w-full rounded-md border border-gray-300 py-1.5 pl-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-gray-600 sm:text-sm sm:leading-6" />
             </div>
-            <input type="text" id="table-search" v-model="searchQuery" placeholder="Filter tables..."
-              class="block w-full rounded-md border-0 py-1.5 pl-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-gray-600 sm:text-sm sm:leading-6" />
-          </div>
-        </th>
-      </tr>
-    </thead>
-    <tbody v-if="paginatedTables.length > 0" class="divide-y divide-gray-200 bg-white">
-      <TableRow v-for="table in paginatedTables" :key="table.name" :table="table"
-        :isSelected="selectedTableNames.includes(table.name)" :colspan="totalColumns" @selectTable="toggleTableSettings"
-        @checkboxChange="handleCheckboxChange" @toggleSettings="toggleTableSettings">
-        <!-- This slot will be used to add a button to toggle the settings panel -->
-        <template #default>
-          <TableSettings v-if="selectedTableNames.includes(table.name)" :table="table" class="ml-10" />
-        </template>
-      </TableRow>
-    </tbody>
-    <tbody v-else>
-      <tr>
-        <td colspan="5" class="text-gray-600 py-4 text-center">No tables found</td>
-      </tr>
-    </tbody>
-  </table>
-  <Pagination :totalPages="filteredTables.length" :itemsPerPage="itemsPerPage"
-    @update:currentPage="updateCurrentPage" />
+          </th>
+        </tr>
+      </thead>
+      <tbody v-if="paginatedTables.length > 0" class="divide-y divide-gray-200 bg-white">
+        <TableRow v-for="table in paginatedTables" :key="table.name" :table="table"
+          :isSelected="selectedTableNames.includes(table.name)" :colspan="totalColumns"
+          @selectTable="toggleTableSettings" @checkboxChange="handleCheckboxChange"
+          @toggleSettings="toggleTableSettings">
+          <!-- This slot will be used to add a button to toggle the settings panel -->
+          <template #default>
+            <TableSettings v-if="selectedTableNames.includes(table.name)" :table="table" class="ml-10" />
+          </template>
+        </TableRow>
+      </tbody>
+      <tbody v-else>
+        <tr>
+          <td colspan="5" class="text-gray-600 py-4 text-center">No tables found</td>
+        </tr>
+      </tbody>
+    </table>
+    <Pagination :totalPages="filteredTables.length" :itemsPerPage="itemsPerPage"
+      @update:currentPage="updateCurrentPage" />
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { useStreamsStore, defaultStreamOptions } from '@/stores/streams';
 import { useCommonStore } from '@/stores/common';
 import Pagination from '@/components/common/Pagination.vue';
@@ -165,6 +168,7 @@ const refreshTables = async () => {
     const response = await api.getTables(currentStream.source);
     tables.value = response.map((entry: any) => createTableObject(entry, currentStream.mode));
   } catch (err) {
+    tables.value = []; // Clear the tables in case of an error
     if (err instanceof Error) {
       commonStore.showNotification(err.message);
     } else {
@@ -172,7 +176,14 @@ const refreshTables = async () => {
     }
   }
 };
-
+watch(
+  () => currentStream.source,
+  async (newSource, oldSource) => {
+    if (newSource !== oldSource) {
+      await refreshTables();
+    }
+  }
+);
 // Wrap the refreshTables function with lodash's debounce
 const debouncedRefreshTables = debounce(refreshTables, 500); // Debounce for 500 milliseconds
 
@@ -196,4 +207,5 @@ watch(
   checkedTables, (newTables) => {
     currentStream.tables = newTables.filter(table => table.selected);
   }, { deep: true });
+
 </script>
