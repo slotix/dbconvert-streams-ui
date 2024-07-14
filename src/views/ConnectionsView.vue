@@ -9,7 +9,7 @@
   <main>
     <!-- Main area -->
     <Connections />
- <Add v-if="dlgTp === DIALOG_TYPES.SAVE" />
+    <Add v-if="dlgTp === DIALOG_TYPES.SAVE" />
     <Edit v-if="dlgTp === DIALOG_TYPES.UPDATE" />
   </main>
 </template>

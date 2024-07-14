@@ -21,8 +21,9 @@
           <Connections />
         </div>
         <!-- Add/ Edit connection  -->
-        <Add v-if="dlgTp === 'Save'" />
-        <Edit v-if="dlgTp === 'Update'" />
+
+        <Add v-if="dlgTp === DIALOG_TYPES.SAVE" />
+        <Edit v-if="dlgTp === DIALOG_TYPES.UPDATE" />
         <div v-show="currentStep.name === 'streamSettings'">
           <Settings />
         </div>
@@ -40,6 +41,7 @@ import { useCommonStore } from '@/stores/common'
 import Steps from '@/components/stream/Steps.vue'
 import Settings from '@/components/settings/Settings.vue'
 import { useStreamsStore } from '@/stores/streams'
+import { DIALOG_TYPES } from '@/stores/common';
 
 const store = useStreamsStore()
 const commonStore = useCommonStore()
