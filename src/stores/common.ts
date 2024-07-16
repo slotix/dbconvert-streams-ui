@@ -65,18 +65,19 @@ export const useCommonStore = defineStore('modal', {
       delete: 'Delete',
     },
     modes: [
-      { id: 'convert', title: 'Migrate Data/ Convert' },
-      { id: 'cdc', title: 'Change Data Capture/ Sync' },
+      { id: 'convert', title: 'Convert / Migrate Data' },
+      { id: 'cdc', title: 'Stream / Change Data Capture' },
     ] as ModeOption[],
     currentPage: '',
   }),
   actions: {
-    async fetchApiKey(token: string) {
+    async fetchApiKeyAndLoadData(token: string) {
       try {
         this.apiKey = await api.getApiKey(token);
+        await api.loadUserData(this.apiKey);
         this.backendHealthy = true;
       } catch (error) {
-        this.showNotification('Failed to fetch API key', 'error');
+        this.showNotification('Failed to fetch API key and load user data', 'error');
         this.backendHealthy = false;
       }
     },
@@ -133,7 +134,7 @@ export const useCommonStore = defineStore('modal', {
         if (!this.backendHealthy) {
           await this.checkAPIHealth();
           if (this.backendHealthy) {
-            await this.fetchApiKey(token);
+            await this.fetchApiKeyAndLoadData(token);
           }
         }
       };

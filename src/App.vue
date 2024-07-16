@@ -169,7 +169,7 @@ const router = useRouter();
 const fetchApiKey = async () => {
   const token = await getToken.value();
   if (token) {
-    await commonStore.fetchApiKey(token);
+    await commonStore.fetchApiKeyAndLoadData(token);
   }
 };
 

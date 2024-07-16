@@ -1,5 +1,6 @@
 import axios, { AxiosInstance } from 'axios';
 import { handleApiError } from '@/utils/errorHandler';
+import { useCommonStore } from '@/stores/common';
 
 // Define the shape of the API responses
 interface ApiResponse<T> {
@@ -12,6 +13,11 @@ interface ApiKeyResponse {
 
 interface HealthCheckResponse {
   status: string;
+}
+
+interface UserDataResponse {
+  status: string;
+  userID: string;
 }
 
 const apiClient: AxiosInstance = axios.create({
@@ -41,4 +47,16 @@ const healthCheck = async (): Promise<HealthCheckResponse> => {
   }
 };
 
-export default { getApiKey, healthCheck };
+const loadUserData = async (apiKey: string): Promise<UserDataResponse> => {
+  const commonStore = useCommonStore();
+  try {
+    const response: ApiResponse<UserDataResponse> = await apiClient.get('/loadUserData', {
+      headers: { 'X-API-Key':  commonStore.apiKey },
+    });
+    return response.data;
+  } catch (error) {
+    throw handleApiError(error);
+  }
+};
+
+export default { getApiKey, healthCheck, loadUserData };
