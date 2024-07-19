@@ -1,7 +1,10 @@
 <!-- src/views/ApiKeyView.vue -->
 <template>
-  <div class="api-key-view p-4">
-    <h1 class="text-xl font-bold mb-4">API Key</h1>
+  <div class="api-key-view ">
+    <div class="border-b border-gray-200 pb-4 mb-4">
+      <h3 class="text-lg leading-6 font-bold text-gray-900">API Key</h3>
+      <!-- <p class="mt-1 text-sm text-gray-600">Manage your API key.</p> -->
+    </div>
     <div v-if="apiKey" class="api-key-display bg-gray-100 p-4 rounded-md shadow-md flex items-center">
       <input
         :type="showApiKey ? 'text' : 'password'"

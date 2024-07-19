@@ -12,7 +12,7 @@ app.use(createPinia());
 app.use(router);
 app.use(clerkPlugin, {
   publishableKey: import.meta.env.VITE_CLERK_PUBLISHABLE_KEY,
-  // clerkJSVariant: 'headless'
+  // frontendApi: import.meta.env.VITE_CLERK_FRONTEND_API,
 });
 
 app.mount('#app');

@@ -28,6 +28,7 @@
                 <div class="flex h-16 shrink-0 items-center">
                   <img class="h-8 w-auto" src="/images/dbconvert-streams-logo.svg" alt="DBConvert Streams" />
                 </div>
+
                 <nav class="flex flex-1 flex-col">
                   <ul role="list" class="-mx-2 flex-1 space-y-1">
                     <li v-for="item in navigation" :key="item.name" :class="{ 'mt-4': item.name === 'API Key' }">
@@ -43,6 +44,7 @@
                     </li>
                   </ul>
                 </nav>
+
               </div>
             </DialogPanel>
           </TransitionChild>
@@ -96,7 +98,7 @@
             <!-- Profile dropdown -->
             <Menu as="div" class="relative">
               <MenuButton class="-m-1.5 flex items-center p-1.5">
-                <UserButton :showName="true" v-if="isSignedIn" />
+                <UserButton :showName="true" v-if="isSignedIn" :userProfileProps="{ customPages }" />
                 <SignInButton v-else />
               </MenuButton>
             </Menu>
@@ -107,6 +109,15 @@
       </div>
       <SignedIn>
         <div class="py-10 lg:py-6">
+          <div class="hidden">
+            <UserProfile :custom-pages="customPages" />
+            <Teleport v-if="customPageIcon" :to="customPageIcon">
+              <KeyIcon />
+            </Teleport>
+            <Teleport v-if="customPageContent" :to="customPageContent">
+              <ApiKeyView />
+            </Teleport>
+          </div>
           <RouterView />
         </div>
       </SignedIn>
@@ -120,12 +131,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch, shallowRef, onMounted } from 'vue';
 import { RouterLink, RouterView } from 'vue-router';
 import { useRouter } from 'vue-router';
-import { SignInButton, UserButton, useAuth, SignedIn, SignedOut, SignIn } from 'vue-clerk';
+import { SignInButton, UserButton, useAuth, SignedIn, SignedOut, SignIn, UserProfile } from 'vue-clerk';
 import NotificationBar from '@/components/common/NotificationBar.vue';
 import { useCommonStore } from '@/stores/common';
+import ApiKeyView from './views/ApiKeyView.vue';
+import type { CustomPage } from '@clerk/types';
+
 import {
   Dialog,
   DialogPanel,
@@ -165,6 +179,9 @@ const commonStore = useCommonStore();
 const sidebarOpen = ref(false);
 const router = useRouter();
 
+const customPageIcon = shallowRef<HTMLDivElement | null>(null);
+const customPageContent = shallowRef<HTMLDivElement | null>(null);
+
 // Fetch API key
 const fetchApiKey = async () => {
   const token = await getToken.value();
@@ -196,8 +213,30 @@ watch(isSignedIn, async (newValue) => {
     await retryFetchApiKeyAndCheckHealth(); // Start retry mechanism
   }
 });
+
 // Watch for changes in route and update the current page in the common store
 watch(router.currentRoute, (to) => {
   commonStore.setCurrentPage(to.name as string);
 });
+
+// Define custom pages
+const customPages: CustomPage[] = [
+  {
+    url: '/api-key',
+    label: 'API Key',
+    mountIcon: (el) => {
+      customPageIcon.value = el;
+    },
+    unmountIcon: () => {
+      // Clean up if needed
+    },
+    mount: (el) => {
+      customPageContent.value = el;
+    },
+    unmount: () => {
+      // Clean up if needed
+    }
+  }
+];
+
 </script>
