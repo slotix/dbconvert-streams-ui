@@ -36,7 +36,8 @@ const props = defineProps<{
 const streamsStore = useStreamsStore();
 const currentStream = streamsStore.currentStream as Stream | null;
 
-const isConvertMode = computed(() => currentStream?.mode === 'convert' ?? false);
+const isConvertMode = computed(() => (currentStream?.mode === 'convert') || false);
+
 
 onMounted(() => {
     if (props.table) {
