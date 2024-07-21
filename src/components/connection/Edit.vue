@@ -13,7 +13,6 @@ import Modal from './Modal.vue'
 import ConnectionParams from './params/ConnectionParams.vue'
 import { useConnectionsStore } from '@/stores/connections'
 import { useCommonStore } from '@/stores/common'
-// import { useAuth } from 'vue-clerk'
 
 export default {
   components: {

@@ -105,20 +105,20 @@ export const useCommonStore = defineStore('modal', {
     closeModal() {
       this.showModal = false;
     },
-    showNotification(msg: string, type: Notification['type'] = 'error') {
+    showNotification(msg: string, type: Notification['type'] = 'error', duration = 3000) {
       const newNotification: Notification = { msg, type };
       if (!this.notificationQueue.some(notification => notification.msg === msg && notification.type === type)) {
         this.notificationQueue.push(newNotification);
       }
       if (!this.currentNotification) {
-        this.displayNextNotification();
+        this.displayNextNotification(duration);
       }
     },
-    displayNextNotification() {
+    displayNextNotification(duration: number) {
       if (this.notificationQueue.length > 0) {
         this.currentNotification = this.notificationQueue.shift() || null;
         this.showNotificationBar = true;
-        setTimeout(this.hideNotification, 3000);
+        setTimeout(this.hideNotification, duration);
       } else {
         this.currentNotification = null;
         this.showNotificationBar = false;

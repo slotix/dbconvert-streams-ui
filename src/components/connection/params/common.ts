@@ -84,7 +84,7 @@ export function useCommon<T extends Connection>(defaultConnection: T) {
       }
     } catch (err) {
       if (isErrorWithMessage(err)) {
-        commonStore.showNotification(err.message);
+        commonStore.showNotification(err.message, 'error' , 5000);
       } else {
         commonStore.showNotification('An unknown error occurred');
       }
