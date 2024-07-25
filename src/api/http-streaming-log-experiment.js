@@ -2,7 +2,7 @@
 
 const message = ref('');
 const setupLogSource = () => {
-  const eventSource = new EventSource('http://0.0.0.0:8020/api/v1/log');
+  const eventSource = new EventSource('http://127.0.0.1:8020/api/v1/log');
 
   eventSource.addEventListener('message', (event) => {
     // Assuming the data is in event.data, modify this line accordingly

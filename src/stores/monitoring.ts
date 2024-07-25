@@ -127,7 +127,7 @@ export const useMonitoringStore = defineStore('monitoring', {
   actions: {
     async consumeLogsFromNATS() {
       try {
-        const nc = await connect({ servers: 'ws://0.0.0.0:8081' });
+        const nc = await connect({ servers: 'ws://127.0.0.1:8081' });
         const js = nc.jetstream();
         const jsm: JetStreamManager = await js.jetstreamManager();
 

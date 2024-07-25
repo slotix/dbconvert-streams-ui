@@ -6,7 +6,7 @@ import { Connection, Schema, Database } from '@/types/connections';
 
 
 const apiClient: AxiosInstance = axios.create({
-  baseURL: 'http://0.0.0.0:8020/api/v1',
+  baseURL: 'http://127.0.0.1:8020/api/v1',
   headers: {
     'Content-Type': 'application/json'
   }
