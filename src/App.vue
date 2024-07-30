@@ -132,8 +132,7 @@
 
 <script setup lang="ts">
 import { ref, watch, shallowRef, onMounted } from 'vue';
-import { RouterLink, RouterView } from 'vue-router';
-import { useRouter } from 'vue-router';
+import { RouterLink, RouterView, useRouter } from 'vue-router';
 import { SignInButton, UserButton, useAuth, SignedIn, SignedOut, SignIn, UserProfile } from 'vue-clerk';
 import NotificationBar from '@/components/common/NotificationBar.vue';
 import { useCommonStore } from '@/stores/common';
@@ -160,6 +159,8 @@ import {
 } from '@heroicons/vue/24/outline';
 
 const { isSignedIn, getToken } = useAuth();
+const commonStore = useCommonStore();
+const router = useRouter();
 
 interface NavigationItem {
   name: string;
@@ -175,42 +176,42 @@ const navigation = ref<NavigationItem[]>([
   { name: 'API Key', href: '/api-key', icon: KeyIcon }
 ]);
 
-const commonStore = useCommonStore();
 const sidebarOpen = ref(false);
-const router = useRouter();
-
 const customPageIcon = shallowRef<HTMLDivElement | null>(null);
 const customPageContent = shallowRef<HTMLDivElement | null>(null);
 
-// Fetch API key
-const fetchApiKey = async () => {
-  const token = await getToken.value();
-  if (token) {
-    await commonStore.fetchApiKeyAndLoadData(token);
-  }
-};
+const initializeApp = async () => {
+  try {
+    await commonStore.checkSentryHealth();
+    await commonStore.checkAPIHealth();
 
-// Check API health
-const checkHealth = async () => {
-  await commonStore.checkAPIHealth();
-};
-
-// Retry mechanism for fetching API key and checking health
-const retryFetchApiKeyAndCheckHealth = async () => {
-  const token = await getToken.value();
-  if (token) {
-    await commonStore.retryFetchApiKeyAndCheckHealth(token);
+    if (commonStore.sentryHealthy && commonStore.apiHealthy) {
+      const token = await getToken.value();
+      if (token) {
+        await commonStore.fetchApiKey(token);
+        await commonStore.storeApiKey(token);
+        if (commonStore.apiKey) {
+          await commonStore.loadUserData();
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Failed to initialize app:', error);
+    commonStore.showNotification('Failed to initialize app. Please try again later.', 'error');
   }
 };
 
 // Watch for changes in isSignedIn and handle accordingly
 watch(isSignedIn, async (newValue) => {
   if (newValue) {
-    await checkHealth();
-    if (commonStore.backendHealthy) {
-      await fetchApiKey();
-    }
-    await retryFetchApiKeyAndCheckHealth(); // Start retry mechanism
+    await initializeApp();
+  }
+});
+
+// Call initializeApp when the component is mounted if the user is already signed in
+onMounted(async () => {
+  if (isSignedIn.value) {
+    await initializeApp();
   }
 });
 
@@ -238,5 +239,4 @@ const customPages: CustomPage[] = [
     }
   }
 ];
-
 </script>

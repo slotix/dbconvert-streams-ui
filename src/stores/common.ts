@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import idb from '@/api/iDBService';
-import api from '@/api/api.js';
+import sentry from '@/api/sentry';
+import userData from '@/api/user-data';
 
 export const DIALOG_TYPES = {
   SAVE: 'Add',
@@ -11,6 +12,11 @@ export const DIALOG_TYPES = {
 export interface Notification {
   type: 'error' | 'success' | 'warning' | 'info';
   msg: string;
+}
+
+interface UserData {
+  userID: string;
+  apiKey: string;
 }
 
 export interface Step {
@@ -34,8 +40,9 @@ export const useCommonStore = defineStore('modal', {
     currentNotification: null as Notification | null,
     showNotificationBar: false,
     currentViewType: '',
-    apiKey: null as string | null,
-    backendHealthy: false,
+    userData: null as UserData | null,
+    sentryHealthy: false,
+    apiHealthy: false,
     steps: [
       {
         id: 1,
@@ -71,25 +78,83 @@ export const useCommonStore = defineStore('modal', {
     currentPage: '',
   }),
   actions: {
-    async fetchApiKeyAndLoadData(token: string) {
-      try {
-        this.apiKey = await api.getApiKey(token);
-        await api.loadUserData(this.apiKey);
-        this.backendHealthy = true;
-      } catch (error) {
-        this.showNotification('Failed to fetch API key and load user data', 'error');
-        this.backendHealthy = false;
+    async retryOperation(operation: () => Promise<void>, maxRetries = 3, delay = 5000): Promise<void> {
+      let retries = 0;
+      while (retries < maxRetries) {
+        try {
+          await operation();
+          return;
+        } catch (error) {
+          retries++;
+          if (retries === maxRetries) {
+            throw error;
+          }
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
       }
     },
+    async checkSentryHealth() {
+      await this.retryOperation(async () => {
+        try {
+          await sentry.healthCheck();
+          this.sentryHealthy = true;
+        } catch (error) {
+          this.showNotification('Connection to Sentry failed', 'error');
+          this.sentryHealthy = false;
+          throw error;  // Rethrow to trigger retry
+        }
+      });
+    },
+
     async checkAPIHealth() {
-      try {
-        await api.healthCheck();
-        this.backendHealthy = true;
-      } catch (error) {
-        this.showNotification('Connection to Backend API failed', 'error');
-        this.backendHealthy = false;
-      }
+      await this.retryOperation(async () => {
+        try {
+          await userData.healthCheck();
+          this.apiHealthy = true;
+        } catch (error) {
+          this.showNotification('Connection to API server failed', 'error');
+          this.apiHealthy = false;
+          throw error;  // Rethrow to trigger retry
+        }
+      });
     },
+    async fetchApiKey(token: string) {
+      await this.retryOperation(async () => {
+        try {
+          const response = await sentry.getUserData(token);
+          this.userData = response;
+        } catch (error) {
+          this.showNotification('Failed to fetch user data', 'error');
+          this.userData = null;
+          throw error;  // Rethrow to trigger retry
+        }
+      });
+    },
+    async storeApiKey(token: string) {
+      await this.retryOperation(async () => {
+        try {
+          await userData.storeAPIKey(token);
+        } catch (error) {
+          this.showNotification('Failed to store API Key in backend', 'error');
+          this.userData = null;
+          throw error;  // Rethrow to trigger retry
+        }
+      });
+    },
+    async loadUserData() {
+      await this.retryOperation(async () => {
+        try {
+          if (!this.userData?.apiKey) {
+            throw new Error('API key is not available');
+          }
+          await userData.load(this.userData.apiKey);
+        } catch (error) {
+          this.showNotification('Failed to load user data', 'error');
+          throw error;  // Rethrow to trigger retry
+        }
+      });
+    },
+
     async getViewType() {
       const vType = await idb.getCurrentViewType();
       this.currentViewType = vType;
@@ -128,18 +193,6 @@ export const useCommonStore = defineStore('modal', {
       this.showNotificationBar = false;
       setTimeout(this.displayNextNotification, 500);
     },
-    async retryFetchApiKeyAndCheckHealth(token: string) {
-      const retryInterval = 5000;
-      const retryFunction = async () => {
-        if (!this.backendHealthy) {
-          await this.checkAPIHealth();
-          if (this.backendHealthy) {
-            await this.fetchApiKeyAndLoadData(token);
-          }
-        }
-      };
-      setInterval(retryFunction, retryInterval);
-    },
     setCurrentPage(page: string) {
       this.currentPage = page;
     },
@@ -147,5 +200,7 @@ export const useCommonStore = defineStore('modal', {
   getters: {
     notificationBar: (state) => state.currentNotification,
     isStreamsPage: (state) => state.currentPage === 'ManageStream',
+    apiKey: (state) => state.userData?.apiKey || null,
+    userID: (state) => state.userData?.userID || null,
   },
 });
