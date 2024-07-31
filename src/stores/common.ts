@@ -129,17 +129,6 @@ export const useCommonStore = defineStore('modal', {
         }
       });
     },
-    async storeApiKey(token: string) {
-      await this.retryOperation(async () => {
-        try {
-          await api.storeAPIKey(token);
-        } catch (error) {
-          this.showNotification('Failed to store API Key in backend', 'error');
-          this.userData = null;
-          throw error;  // Rethrow to trigger retry
-        }
-      });
-    },
     async loadUserConfigs() {
       await this.retryOperation(async () => {
         try {

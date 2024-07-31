@@ -191,7 +191,6 @@ const initializeApp = async () => {
       const token = await getToken.value();
       if (token) {
         await commonStore.fetchApiKey(token);
-        await commonStore.storeApiKey(token);
         if (commonStore.apiKey) {
           await commonStore.loadUserConfigs();
         }

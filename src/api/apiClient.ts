@@ -36,9 +36,10 @@ const sentryClient: AxiosInstance = axios.create({
   withCredentials: true,
 });
 
+
 const getUserDataFromSentry = async (token: string): Promise<UserDataResponse> => {
   try {
-    const response: ApiResponse<UserDataResponse> = await sentryClient.post('/apikey', {}, {
+    const response: ApiResponse<UserDataResponse> = await backendClient.post('/getUserData', {}, {
       headers: { Authorization: `Bearer ${token}` },
     });
     return response.data;
@@ -70,7 +71,7 @@ const storeAPIKey = async (token: string): Promise<StoreAPIKeyResponse> => {
 const loadUserConfigs = async (): Promise<UserDataResponse> => {
   const commonStore = useCommonStore();
   try {
-    const response: ApiResponse<UserDataResponse> = await backendClient.get('/loadUserData', {
+    const response: ApiResponse<UserDataResponse> = await backendClient.get('/loadUserConfigs', {
       headers: { 'X-API-Key': commonStore.apiKey },
     });
     return response.data;
