@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia';
 import idb from '@/api/iDBService';
-import sentry from '@/api/sentry';
-import userData from '@/api/user-data';
+import api from '@/api/apiClient';
 
 export const DIALOG_TYPES = {
   SAVE: 'Add',
@@ -96,7 +95,7 @@ export const useCommonStore = defineStore('modal', {
     async checkSentryHealth() {
       await this.retryOperation(async () => {
         try {
-          await sentry.healthCheck();
+          await api.sentryHealthCheck();
           this.sentryHealthy = true;
         } catch (error) {
           this.showNotification('Connection to Sentry failed', 'error');
@@ -109,7 +108,7 @@ export const useCommonStore = defineStore('modal', {
     async checkAPIHealth() {
       await this.retryOperation(async () => {
         try {
-          await userData.healthCheck();
+          await api.backendHealthCheck();
           this.apiHealthy = true;
         } catch (error) {
           this.showNotification('Connection to API server failed', 'error');
@@ -121,7 +120,7 @@ export const useCommonStore = defineStore('modal', {
     async fetchApiKey(token: string) {
       await this.retryOperation(async () => {
         try {
-          const response = await sentry.getUserData(token);
+          const response = await api.getUserDataFromSentry(token);
           this.userData = response;
         } catch (error) {
           this.showNotification('Failed to fetch user data', 'error');
@@ -133,7 +132,7 @@ export const useCommonStore = defineStore('modal', {
     async storeApiKey(token: string) {
       await this.retryOperation(async () => {
         try {
-          await userData.storeAPIKey(token);
+          await api.storeAPIKey(token);
         } catch (error) {
           this.showNotification('Failed to store API Key in backend', 'error');
           this.userData = null;
@@ -141,13 +140,13 @@ export const useCommonStore = defineStore('modal', {
         }
       });
     },
-    async loadUserData() {
+    async loadUserConfigs() {
       await this.retryOperation(async () => {
         try {
           if (!this.userData?.apiKey) {
             throw new Error('API key is not available');
           }
-          await userData.load(this.userData.apiKey);
+          await api.loadUserConfigs();
         } catch (error) {
           this.showNotification('Failed to load user data', 'error');
           throw error;  // Rethrow to trigger retry

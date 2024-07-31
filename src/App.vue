@@ -53,7 +53,8 @@
     </TransitionRoot>
 
     <!-- Static sidebar for desktop -->
-    <div class="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-100 lg:block lg:w-20 lg:overflow-y-auto lg:bg-gray-900 lg:pb-10">
+    <div
+      class="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-100 lg:block lg:w-20 lg:overflow-y-auto lg:bg-gray-900 lg:pb-10">
       <div class="flex h-16 shrink-0 items-center justify-center">
         <img class="h-8 w-auto" src="/images/dbconvert-streams-logo.svg" alt="DBConvert Streams" />
       </div>
@@ -76,7 +77,8 @@
 
     <div class="lg:pl-20">
       <!-- Top bar with login button -->
-      <div class="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
+      <div
+        class="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
         <button type="button" class="-m-2.5 p-2.5 text-gray-700 lg:hidden" @click="sidebarOpen = true">
           <span class="sr-only">Open sidebar</span>
           <Bars3Icon class="h-6 w-6" aria-hidden="true" />
@@ -191,7 +193,7 @@ const initializeApp = async () => {
         await commonStore.fetchApiKey(token);
         await commonStore.storeApiKey(token);
         if (commonStore.apiKey) {
-          await commonStore.loadUserData();
+          await commonStore.loadUserConfigs();
         }
       }
     }
