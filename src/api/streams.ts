@@ -25,7 +25,7 @@ const getStreams = async (): Promise<Stream[]> => {
 const createStream = async (json: Record<string, unknown>): Promise<Stream> => {
   const commonStore = useCommonStore();
   try {
-    const response: AxiosResponse<Stream> = await apiClient.post('/streams/config', json, {
+    const response: AxiosResponse<Stream> = await apiClient.post('/streams', json, {
       headers: { 'X-API-Key': commonStore.apiKey }
     });
     return response.data;
