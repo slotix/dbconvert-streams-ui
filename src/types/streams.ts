@@ -12,6 +12,7 @@ export interface Stream {
     name: string;
     created?: number;
     mode: 'cdc' | 'convert';
+    status: 'idle' | 'running' | 'paused' | 'stopped' | 'error';
     dataBundleSize: number;
     reportingIntervals: {
         source: number;

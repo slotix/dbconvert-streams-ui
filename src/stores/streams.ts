@@ -15,6 +15,7 @@ export const defaultStreamOptions: Stream = {
     id: '',
     name: '',
     mode: 'convert',
+    status: 'idle',
     dataBundleSize: 100,
     reportingIntervals: { source: 3, target: 3 },
     operations: ['insert', 'update', 'delete'],
@@ -128,6 +129,7 @@ export const useStreamsStore = defineStore('streams', {
         setFilter(filter: string) {
             this.currentFilter = filter;
         },
+
         saveStream: debounce(async function (this: any) {
             try {
                 this.prepareStreamData();
@@ -193,13 +195,48 @@ export const useStreamsStore = defineStore('streams', {
                 throw error;
             }
         },
-        async startStream(this: State, id: string) {
+        async startStream(id: string) {
             try {
                 const resp = await api.startStream(id);
-                // console.log(resp.data.id);
+                this.updateStreamStatus(id, 'running');
             } catch (error) {
                 console.error('Failed to start stream:', error);
                 throw error;
+            }
+        },
+        async pauseStream(id: string) {
+            try {
+                const resp = await api.pauseStream(id);
+                this.updateStreamStatus(id, 'paused');
+            } catch (error) {
+                console.error('Failed to pause stream:', error);
+                throw error;
+            }
+        },
+
+        async resumeStream(id: string) {
+            try {
+                const resp = await api.resumeStream(id);
+                this.updateStreamStatus(id, 'running');
+            } catch (error) {
+                console.error('Failed to resume stream:', error);
+                throw error;
+            }
+        },
+
+        async stopStream(id: string) {
+            try {
+                const resp = await api.stopStream(id);
+                this.updateStreamStatus(id, 'stopped');
+            } catch (error) {
+                console.error('Failed to stop stream:', error);
+                throw error;
+            }
+        },
+        updateStreamStatus(id: string, status: Stream['status']) {
+            const streamIndex = this.streams.findIndex(stream => stream.id === id);
+            if (streamIndex !== -1) {
+                this.streams[streamIndex] = { ...this.streams[streamIndex], status };
             }
         },
         resetCurrentStream(this: State) {

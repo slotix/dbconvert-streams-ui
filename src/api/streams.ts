@@ -69,10 +69,49 @@ const startStream = async (id: string): Promise<Stream> => {
   }
 };
 
+const pauseStream = async (id: string): Promise<Stream> => {
+  const commonStore = useCommonStore();
+  try {
+    const response: AxiosResponse<Stream> = await apiClient.post(`/streams/${id}/pause`, null, {
+      headers: { 'X-API-Key': commonStore.apiKey }
+    });
+    return response.data;
+  } catch (error) {
+    throw handleApiError(error);
+  }
+};
+
+const resumeStream = async (id: string): Promise<Stream> => {
+  const commonStore = useCommonStore();
+  try {
+    const response: AxiosResponse<Stream> = await apiClient.post(`/streams/${id}/resume`, null, {
+      headers: { 'X-API-Key': commonStore.apiKey }
+    });
+    return response.data;
+  } catch (error) {
+    throw handleApiError(error);
+  }
+};
+
+const stopStream = async (id: string): Promise<Stream> => {
+  const commonStore = useCommonStore();
+  try {
+    const response: AxiosResponse<Stream> = await apiClient.post(`/streams/${id}/stop`, null, {
+      headers: { 'X-API-Key': commonStore.apiKey }
+    });
+    return response.data;
+  } catch (error) {
+    throw handleApiError(error);
+  }
+};
+
 export default {
   getStreams,
   createStream,
   deleteStream,
   cloneStream,
   startStream,
+  pauseStream,
+  resumeStream,
+  stopStream,
 };
