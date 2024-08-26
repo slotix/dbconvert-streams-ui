@@ -57,28 +57,46 @@ import LogContainer from '@/components/monitoring/LogContainer.vue';
 import StatContainer from '@/components/monitoring/StatContainer.vue';
 import ProgressContainer from '@/components/monitoring/ProgressContainer.vue';
 import { useMonitoringStore } from '@/stores/monitoring';
+import { useStreamsStore } from '@/stores/streams';
+import { useCommonStore } from '@/stores/common';
 
 const monitoringStore = useMonitoringStore();
+const streamStore = useStreamsStore();
+const commonStore = useCommonStore();
 
 onMounted(() => {
   monitoringStore.consumeLogsFromNATS();
 });
-
-const pauseStream = () => {
-  // Implement pause functionality
-  console.log('Pause stream');
-  // monitoringStore.pauseStream();
+const pauseStream = async () => {
+  try {
+    await streamStore.pauseStream(monitoringStore.streamID);
+    commonStore.showNotification('Stream paused', 'success');
+  } catch (error) {
+    handleStreamError(error, 'Failed to pause stream');
+  }
 };
 
-const resumeStream = () => {
-  // Implement resume functionality
-  console.log('Resume stream');
-  // monitoringStore.resumeStream();
+const resumeStream = async () => {
+  try {
+    await streamStore.resumeStream(monitoringStore.streamID);
+    commonStore.showNotification('Stream resumed', 'success');
+  } catch (error) {
+    handleStreamError(error, 'Failed to resume stream');
+  }
 };
 
-const stopStream = () => {
-  // Implement stop functionality
-  console.log('Stop stream');
-  // monitoringStore.stopStream();
+const stopStream = async () => {
+  try {
+    await streamStore.stopStream(monitoringStore.streamID);
+    commonStore.showNotification('Stream stopped', 'success');
+  } catch (error) {
+    handleStreamError(error, 'Failed to stop stream');
+  }
+};
+
+const handleStreamError = (error, defaultMessage) => {
+  console.error(error);
+  const errorMessage = error instanceof Error ? error.message : defaultMessage;
+  commonStore.showNotification(errorMessage, 'error');
 };
 </script>
