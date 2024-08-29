@@ -181,24 +181,16 @@ const navigation = ref<NavigationItem[]>([
 const sidebarOpen = ref(false);
 const customPageIcon = shallowRef<HTMLDivElement | null>(null);
 const customPageContent = shallowRef<HTMLDivElement | null>(null);
-
-const initializeApp = async () => {
+  const initializeApp = async () => {
   try {
-    await commonStore.checkSentryHealth();
-    await commonStore.checkAPIHealth();
-
-    if (commonStore.sentryHealthy && commonStore.apiHealthy) {
-      const token = await getToken.value();
-      if (token) {
-        await commonStore.fetchApiKey(token);
-        if (commonStore.apiKey) {
-          await commonStore.loadUserConfigs();
-        }
-      }
+    const token = await getToken.value();
+    if (token) {
+      await commonStore.initApp(token);
     }
   } catch (error) {
     console.error('Failed to initialize app:', error);
-    commonStore.showNotification('Failed to initialize app. Please try again later.', 'error');
+    commonStore.showNotification('Failed to initialize app. Retrying...', 'error');
+    setTimeout(initializeApp, 5000); // Retry after 5 seconds
   }
 };
 

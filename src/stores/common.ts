@@ -30,8 +30,9 @@ export interface ModeOption {
   id: 'cdc' | 'convert';
   title: string;
 }
+
 type DialogType = typeof DIALOG_TYPES[keyof typeof DIALOG_TYPES];
-export const useCommonStore = defineStore('modal', {
+export const useCommonStore = defineStore('common', {
   state: () => ({
     showModal: false,
     dlgType: '' as DialogType | '',
@@ -75,6 +76,8 @@ export const useCommonStore = defineStore('modal', {
       { id: 'cdc', title: 'Stream / Change Data Capture' },
     ] as ModeOption[],
     currentPage: '',
+    isInitializing: false,
+    initializationAttempts: 0,
   }),
   actions: {
     async retryOperation(operation: () => Promise<void>, maxRetries = 3, delay = 5000): Promise<void> {
@@ -117,30 +120,27 @@ export const useCommonStore = defineStore('modal', {
         }
       });
     },
+
     async fetchApiKey(token: string) {
-      await this.retryOperation(async () => {
-        try {
-          const response = await api.getUserDataFromSentry(token);
-          this.userData = response;
-        } catch (error) {
-          this.showNotification('Failed to fetch user data', 'error');
-          this.userData = null;
-          throw error;  // Rethrow to trigger retry
-        }
-      });
+      try {
+        const response = await api.getUserDataFromSentry(token);
+        this.userData = response;
+      } catch (error) {
+        this.showNotification('Failed to fetch user data', 'error');
+        this.userData = null;
+        throw error;
+      }
     },
     async loadUserConfigs() {
-      await this.retryOperation(async () => {
-        try {
-          if (!this.userData?.apiKey) {
-            throw new Error('API key is not available');
-          }
-          await api.loadUserConfigs();
-        } catch (error) {
-          this.showNotification('Failed to load user data', 'error');
-          throw error;  // Rethrow to trigger retry
+      try {
+        if (!this.userData?.apiKey) {
+          throw new Error('API key is not available');
         }
-      });
+        await api.loadUserConfigs();
+      } catch (error) {
+        this.showNotification('Failed to load user data', 'error');
+        throw error;
+      }
     },
 
     async getViewType() {
@@ -183,6 +183,38 @@ export const useCommonStore = defineStore('modal', {
     },
     setCurrentPage(page: string) {
       this.currentPage = page;
+    },
+    async initApp(token: string): Promise<void> {
+      this.isInitializing = true;
+      this.initializationAttempts += 1;
+      return new Promise<void>(async (resolve, reject) => {
+        try {
+          await this.checkSentryHealth();
+          await this.checkAPIHealth();
+
+          if (this.sentryHealthy && this.apiHealthy) {
+            await this.fetchApiKey(token);
+            if (this.userData?.apiKey) {
+              await this.loadUserConfigs();
+            }
+          }
+          this.isInitializing = false;
+          this.initializationAttempts = 0;
+          resolve();
+        } catch (error) {
+          console.error('Failed to initialize app:', error);
+          this.showNotification('Failed to initialize app. Retrying...', 'error');
+          this.isInitializing = false;
+          
+          if (this.initializationAttempts < 5) {
+            reject(error);  // Reject to allow retry in App.vue
+          } else {
+            this.showNotification('Failed to initialize app after multiple attempts. Please try again later.', 'error');
+            this.initializationAttempts = 0;
+            resolve();
+          }
+        }
+      });
     },
   },
   getters: {

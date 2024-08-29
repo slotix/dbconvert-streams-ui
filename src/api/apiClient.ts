@@ -36,7 +36,6 @@ const sentryClient: AxiosInstance = axios.create({
   withCredentials: true,
 });
 
-
 const getUserDataFromSentry = async (token: string): Promise<UserDataResponse> => {
   try {
     const response: ApiResponse<UserDataResponse> = await backendClient.post('/getUserData', {}, {
@@ -44,6 +43,10 @@ const getUserDataFromSentry = async (token: string): Promise<UserDataResponse> =
     });
     return response.data;
   } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 401) {
+      // Token is invalid or expired, throw a specific error
+      throw new Error('UNAUTHORIZED');
+    }
     throw handleApiError(error);
   }
 };
