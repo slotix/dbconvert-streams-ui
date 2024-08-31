@@ -160,7 +160,7 @@ import {
   KeyIcon
 } from '@heroicons/vue/24/outline';
 
-const { isSignedIn, getToken } = useAuth();
+const { isSignedIn } = useAuth();
 const commonStore = useCommonStore();
 const router = useRouter();
 
@@ -181,12 +181,9 @@ const navigation = ref<NavigationItem[]>([
 const sidebarOpen = ref(false);
 const customPageIcon = shallowRef<HTMLDivElement | null>(null);
 const customPageContent = shallowRef<HTMLDivElement | null>(null);
-  const initializeApp = async () => {
+const initializeApp = async () => {
   try {
-    const token = await getToken.value();
-    if (token) {
-      await commonStore.initApp(token);
-    }
+    await commonStore.initApp();
   } catch (error) {
     console.error('Failed to initialize app:', error);
     commonStore.showNotification('Failed to initialize app. Retrying...', 'error');

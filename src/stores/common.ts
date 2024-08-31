@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import idb from '@/api/iDBService';
 import api from '@/api/apiClient';
+import { getToken} from '@/utils/auth';
 
 export const DIALOG_TYPES = {
   SAVE: 'Add',
@@ -76,8 +77,6 @@ export const useCommonStore = defineStore('common', {
       { id: 'cdc', title: 'Stream / Change Data Capture' },
     ] as ModeOption[],
     currentPage: '',
-    isInitializing: false,
-    initializationAttempts: 0,
   }),
   actions: {
     async retryOperation(operation: () => Promise<void>, maxRetries = 3, delay = 5000): Promise<void> {
@@ -121,8 +120,13 @@ export const useCommonStore = defineStore('common', {
       });
     },
 
-    async fetchApiKey(token: string) {
+    async fetchApiKey() {
       try {
+      const token = await getToken();
+      if (!token) {
+        this.showNotification('No token provided', 'error');
+        return;
+      }
         const response = await api.getUserDataFromSentry(token);
         this.userData = response;
       } catch (error) {
@@ -136,7 +140,7 @@ export const useCommonStore = defineStore('common', {
         if (!this.userData?.apiKey) {
           throw new Error('API key is not available');
         }
-        await api.loadUserConfigs();
+        await api.loadUserConfigs(this.userData.apiKey);
       } catch (error) {
         this.showNotification('Failed to load user data', 'error');
         throw error;
@@ -184,37 +188,28 @@ export const useCommonStore = defineStore('common', {
     setCurrentPage(page: string) {
       this.currentPage = page;
     },
-    async initApp(token: string): Promise<void> {
-      this.isInitializing = true;
-      this.initializationAttempts += 1;
-      return new Promise<void>(async (resolve, reject) => {
-        try {
-          await this.checkSentryHealth();
-          await this.checkAPIHealth();
+    async initApp(): Promise<void> {
+      const token = await getToken();
+      if (!token) {
+        this.showNotification('No token provided', 'error');
+        return;
+      }
 
-          if (this.sentryHealthy && this.apiHealthy) {
-            await this.fetchApiKey(token);
-            if (this.userData?.apiKey) {
-              await this.loadUserConfigs();
-            }
-          }
-          this.isInitializing = false;
-          this.initializationAttempts = 0;
-          resolve();
-        } catch (error) {
-          console.error('Failed to initialize app:', error);
-          this.showNotification('Failed to initialize app. Retrying...', 'error');
-          this.isInitializing = false;
-          
-          if (this.initializationAttempts < 5) {
-            reject(error);  // Reject to allow retry in App.vue
-          } else {
-            this.showNotification('Failed to initialize app after multiple attempts. Please try again later.', 'error');
-            this.initializationAttempts = 0;
-            resolve();
+      try {
+        await this.checkSentryHealth();
+        await this.checkAPIHealth();
+
+        if (this.sentryHealthy && this.apiHealthy) {
+          await this.fetchApiKey();
+          if (this.userData?.apiKey) {
+            await this.loadUserConfigs();
           }
         }
-      });
+      } catch (error) {
+        console.error('Failed to initialize app:', error);
+        this.showNotification('Failed to initialize app', 'error');
+        throw error;
+      }
     },
   },
   getters: {
