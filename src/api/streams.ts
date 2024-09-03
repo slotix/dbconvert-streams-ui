@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosResponse } from "axios";
+import axios, { AxiosInstance, AxiosResponse, AxiosError } from "axios";
 import { handleApiError } from '@/utils/errorHandler';
 import { useCommonStore } from '@/stores/common';
 import { Stream } from '@/types/streams';  // Import the Stream interface
@@ -10,99 +10,106 @@ const apiClient: AxiosInstance = axios.create({
   }
 });
 
-const getStreams = async (): Promise<Stream[]> => {
+const handleUnauthorizedError = async (error: AxiosError) => {
+  if (error.response?.status === 401) {
+    const commonStore = useCommonStore();
+    await commonStore.initApp();
+    throw new Error('UNAUTHORIZED');
+  }
+  throw error;
+};
+
+const executeWithRetry = async <T>(operation: () => Promise<T>): Promise<T> => {
   const commonStore = useCommonStore();
   try {
+    return await operation();
+  } catch (error) {
+    if (error instanceof AxiosError && error.response?.status === 401) {
+      await handleUnauthorizedError(error);
+      // Retry the operation after reinitialization
+      return await operation();
+    }
+    throw handleApiError(error);
+  }
+};
+
+const getStreams = async (): Promise<Stream[]> => {
+  return executeWithRetry(async () => {
+    const commonStore = useCommonStore();
     const response: AxiosResponse<Stream[]> = await apiClient.get('/streams', {
       headers: { 'X-API-Key': commonStore.apiKey }
     });
     return response.data;
-  } catch (error) {
-    throw handleApiError(error);
-  }
+  });
 };
 
 const createStream = async (json: Record<string, unknown>): Promise<Stream> => {
-  const commonStore = useCommonStore();
-  try {
+  return executeWithRetry(async () => {
+    const commonStore = useCommonStore();
     const response: AxiosResponse<Stream> = await apiClient.post('/streams', json, {
       headers: { 'X-API-Key': commonStore.apiKey }
     });
     return response.data;
-  } catch (error) {
-    throw handleApiError(error);
-  }
+  });
 };
 
 const deleteStream = async (id: string): Promise<void> => {
-  const commonStore = useCommonStore();
-  try {
+  return executeWithRetry(async () => {
+    const commonStore = useCommonStore();
     await apiClient.delete(`/streams/${id}`, {
       headers: { 'X-API-Key': commonStore.apiKey }
     });
-  } catch (error) {
-    throw handleApiError(error);
-  }
+  });
 };
 
 const cloneStream = async (id: string): Promise<Stream> => {
-  const commonStore = useCommonStore();
-  try {
+  return executeWithRetry(async () => {
+    const commonStore = useCommonStore();
     const response: AxiosResponse<Stream> = await apiClient.put(`/streams/${id}/clone`, null, {
       headers: { 'X-API-Key': commonStore.apiKey }
     });
     return response.data;
-  } catch (error) {
-    throw handleApiError(error);
-  }
+  });
 };
 
 const startStream = async (id: string): Promise<Stream> => {
-  const commonStore = useCommonStore();
-  try {
+  return executeWithRetry(async () => {
+    const commonStore = useCommonStore();
     const response: AxiosResponse<Stream> = await apiClient.post(`/streams/${id}/start`, null, {
       headers: { 'X-API-Key': commonStore.apiKey }
     });
     return response.data;
-  } catch (error) {
-    throw handleApiError(error);
-  }
+  });
 };
 
 const pauseStream = async (id: string): Promise<Stream> => {
-  const commonStore = useCommonStore();
-  try {
+  return executeWithRetry(async () => {
+    const commonStore = useCommonStore();
     const response: AxiosResponse<Stream> = await apiClient.post(`/streams/${id}/pause`, null, {
       headers: { 'X-API-Key': commonStore.apiKey }
     });
     return response.data;
-  } catch (error) {
-    throw handleApiError(error);
-  }
+  });
 };
 
 const resumeStream = async (id: string): Promise<Stream> => {
-  const commonStore = useCommonStore();
-  try {
+  return executeWithRetry(async () => {
+    const commonStore = useCommonStore();
     const response: AxiosResponse<Stream> = await apiClient.post(`/streams/${id}/resume`, null, {
       headers: { 'X-API-Key': commonStore.apiKey }
     });
     return response.data;
-  } catch (error) {
-    throw handleApiError(error);
-  }
+  });
 };
 
 const stopStream = async (id: string): Promise<Stream> => {
-  const commonStore = useCommonStore();
-  try {
+  return executeWithRetry(async () => {
+    const commonStore = useCommonStore();
     const response: AxiosResponse<Stream> = await apiClient.post(`/streams/${id}/stop`, null, {
       headers: { 'X-API-Key': commonStore.apiKey }
     });
     return response.data;
-  } catch (error) {
-    throw handleApiError(error);
-  }
+  });
 };
 
 export default {

@@ -1,4 +1,4 @@
-import axios, { AxiosInstance } from 'axios';
+import axios, { AxiosInstance, AxiosError } from 'axios';
 import { handleApiError } from '@/utils/errorHandler';
 import { useCommonStore } from '@/stores/common';
 
@@ -36,6 +36,15 @@ const sentryClient: AxiosInstance = axios.create({
   withCredentials: true,
 });
 
+const handleUnauthorizedError = async (error: AxiosError) => {
+  if (error.response?.status === 401) {
+    const commonStore = useCommonStore();
+    await commonStore.initApp();
+    throw new Error('UNAUTHORIZED');
+  }
+  throw error;
+};
+
 const getUserDataFromSentry = async (token: string): Promise<UserDataResponse> => {
   try {
     const response: ApiResponse<UserDataResponse> = await backendClient.post('/getUserData', {}, {
@@ -43,43 +52,31 @@ const getUserDataFromSentry = async (token: string): Promise<UserDataResponse> =
     });
     return response.data;
   } catch (error) {
-    if (axios.isAxiosError(error) && error.response?.status === 401) {
-      // Token is invalid or expired, throw a specific error
-      throw new Error('UNAUTHORIZED');
-    }
-    throw handleApiError(error);
+    return handleUnauthorizedError(error as AxiosError);
   }
 };
 
-const storeAPIKey = async (token: string): Promise<StoreAPIKeyResponse> => {
-  const commonStore = useCommonStore();
+const storeAPIKey = async (token: string, userID: string, apiKey: string): Promise<StoreAPIKeyResponse> => {
   try {
     const response: ApiResponse<StoreAPIKeyResponse> = await backendClient.post(
       '/storeAPIKey',
-      {
-        user_id: commonStore.userID,
-        api_key: commonStore.apiKey,
-        token: token,
-      },
-      {
-        headers: { 'X-API-Key': commonStore.apiKey },
-      }
+      { user_id: userID, api_key: apiKey, token: token },
+      { headers: { 'X-API-Key': apiKey } }
     );
     return response.data;
   } catch (error) {
-    throw handleApiError(error);
+    return handleUnauthorizedError(error as AxiosError);
   }
 };
 
-const loadUserConfigs = async (): Promise<UserDataResponse> => {
-  const commonStore = useCommonStore();
+const loadUserConfigs = async (apiKey: string): Promise<UserDataResponse> => {
   try {
     const response: ApiResponse<UserDataResponse> = await backendClient.get('/loadUserConfigs', {
-      headers: { 'X-API-Key': commonStore.apiKey },
+      headers: { 'X-API-Key': apiKey },
     });
     return response.data;
   } catch (error) {
-    throw handleApiError(error);
+    return handleUnauthorizedError(error as AxiosError);
   }
 };
 
