@@ -1,6 +1,5 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
-import { handleApiError } from '@/utils/errorHandler';
-import { useCommonStore } from '@/stores/common';
+import { handleApiError, handleUnauthorizedError } from '@/utils/errorHandler';
 
 // Define the shape of the API responses
 interface ApiResponse<T> {
@@ -35,15 +34,6 @@ const sentryClient: AxiosInstance = axios.create({
   },
   withCredentials: true,
 });
-
-const handleUnauthorizedError = async (error: AxiosError) => {
-  if (error.response?.status === 401) {
-    const commonStore = useCommonStore();
-    await commonStore.initApp();
-    throw new Error('UNAUTHORIZED');
-  }
-  throw error;
-};
 
 const getUserDataFromSentry = async (token: string): Promise<UserDataResponse> => {
   try {
