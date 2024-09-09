@@ -183,7 +183,10 @@ const customPageIcon = shallowRef<HTMLDivElement | null>(null);
 const customPageContent = shallowRef<HTMLDivElement | null>(null);
 const initializeApp = async () => {
   try {
-    await commonStore.initApp();
+    const initResult = await commonStore.initApp();
+    if (initResult === 'failed') {
+      throw new Error('Failed to initialize app');
+    }
   } catch (error) {
     console.error('Failed to initialize app:', error);
     commonStore.showNotification('Failed to initialize app. Retrying...', 'error');

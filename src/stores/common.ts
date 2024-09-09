@@ -188,11 +188,12 @@ export const useCommonStore = defineStore('common', {
     setCurrentPage(page: string) {
       this.currentPage = page;
     },
-    async initApp(): Promise<void> {
+    async initApp(): Promise<'success' | 'failed'> {
+      this.showNotification('Initializing App', 'success');
       const token = await getToken();
       if (!token) {
         this.showNotification('No token provided', 'error');
-        return;
+        return 'failed';
       }
 
       try {
@@ -205,10 +206,11 @@ export const useCommonStore = defineStore('common', {
             await this.loadUserConfigs();
           }
         }
+        return 'success';
       } catch (error) {
         console.error('Failed to initialize app:', error);
         this.showNotification('Failed to initialize app', 'error');
-        throw error;
+        return 'failed';
       }
     },
   },

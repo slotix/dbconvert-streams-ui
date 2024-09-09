@@ -1,5 +1,5 @@
 import axios, { AxiosInstance, AxiosResponse, AxiosError } from "axios";
-import { handleApiError } from '@/utils/errorHandler';
+import { handleApiError, handleUnauthorizedError } from '@/utils/errorHandler';
 import { useCommonStore } from '@/stores/common';
 import { Stream } from '@/types/streams';  // Import the Stream interface
 
@@ -10,14 +10,6 @@ const apiClient: AxiosInstance = axios.create({
   }
 });
 
-const handleUnauthorizedError = async (error: AxiosError) => {
-  if (error.response?.status === 401) {
-    const commonStore = useCommonStore();
-    await commonStore.initApp();
-    throw new Error('UNAUTHORIZED');
-  }
-  throw error;
-};
 
 const executeWithRetry = async <T>(operation: () => Promise<T>): Promise<T> => {
   const commonStore = useCommonStore();

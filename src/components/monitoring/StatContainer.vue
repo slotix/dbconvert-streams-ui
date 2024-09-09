@@ -18,7 +18,7 @@
             {{ stat.status }}
           </dd>
         </div>
-        <div class="flex items-baseline justify-between md:block lg:flex border-b border-gray-100">
+        <div v-if="stat.events" class="flex items-baseline justify-between md:block lg:flex border-b border-gray-100">
           <dd class="mt-1 flex items-baseline text-2xl font-semibold text-gray-600"> {{ stat.events }} </dd>
           <dt class="ml-2 font-medium text-gray-500">
             {{ outType(stat.type).ioType }} events
@@ -33,7 +33,8 @@
         </div>
 
         <div class="flex items-baseline justify-between md:block lg:flex border-b border-gray-100">
-          <dd class="mt-1 flex items-baseline text-2xl font-semibold text-gray-600"> {{ stat.size }} </dd>
+          <dd v-if="stat.size" class="mt-1 flex items-baseline text-2xl font-semibold text-gray-600"> {{ stat.size }} </dd>
+          <dd v-else class="mt-1 flex items-baseline text-2xl font-semibold text-gray-600"> -  </dd>
           <dt class="ml-2 font-medium text-gray-500">
             data size
           </dt>
