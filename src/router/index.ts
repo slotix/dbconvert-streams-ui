@@ -7,6 +7,7 @@ import ManageStreamView from '../views/ManageStreamView.vue';
 import MonitorStreamView from '../views/MonitorStreamView.vue';
 import ApiKeyView from '../views/ApiKeyView.vue'; // Import the new ApiKeyView component
 import NotFound from '../views/NotFound.vue';
+import UsageView from '../views/UsageView.vue';
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -40,6 +41,11 @@ const routes: Array<RouteRecordRaw> = [
     path: '/api-key',
     name: 'ApiKey',
     component: ApiKeyView, // Define the route for the API Key page
+  },
+  {
+    path: '/usage',
+    name: 'Usage',
+    component: UsageView, 
   },
   {
     path: '/:catchAll(.*)',
