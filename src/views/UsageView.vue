@@ -36,8 +36,8 @@
   </div>
 </template>
 
-<script lang="ts">
-import { ref, computed, defineComponent } from 'vue'
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
 import { use } from "echarts/core"
 import { CanvasRenderer } from "echarts/renderers"
 import { BarChart } from "echarts/charts"
@@ -48,6 +48,9 @@ import {
   GridComponent,
 } from "echarts/components"
 import VChart, { THEME_KEY } from "vue-echarts"
+import apiClient from '@/api/apiClient'
+import { useCommonStore } from '@/stores/common'
+import { DailyUsage, MonthlyUsage } from '@/types/user'
 
 use([
   CanvasRenderer,
@@ -58,114 +61,59 @@ use([
   GridComponent,
 ])
 
-interface UsageData {
-  usage_date?: string;
-  usage_month?: string;
-  total_data_volume: number;
+const commonStore = useCommonStore()
+const activeTab = ref<'daily' | 'monthly'>('daily')
+
+const dailyUsage = ref<DailyUsage[]>([])
+const monthlyUsage = ref<MonthlyUsage[]>([])
+
+const fetchUsageData = async () => {
+  const apiKey = commonStore.apiKey
+  if (!apiKey) {
+    console.error('API key not found')
+    return
+  }
+  try {
+    dailyUsage.value = await apiClient.getDailyUsage(apiKey)
+    monthlyUsage.value = await apiClient.getMonthlyUsage(apiKey)
+  } catch (error) {
+    console.error('Error fetching usage data:', error)
+  }
 }
 
-export default defineComponent({
-  name: 'UsageView',
-  components: {
-    VChart
+onMounted(fetchUsageData)
+
+const formatBytes = (bytes: number): string => {
+  if (bytes === 0) return '0 Bytes'
+  const k = 1024
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+}
+
+const barChartOption = computed(() => ({
+  xAxis: {
+    type: 'category',
+    data: activeTab.value === 'daily' 
+      ? dailyUsage.value.map(item => item.date)
+      : monthlyUsage.value.map(item => item.month)
   },
-  setup() {
-    const activeTab = ref<'daily' | 'monthly'>('daily')
-
-    const mockDailyData: UsageData[] = [
-      { usage_date: '2024-09-01', total_data_volume: 1500000 },
-      { usage_date: '2024-09-02', total_data_volume: 2000000 },
-      { usage_date: '2024-09-03', total_data_volume: 1800000 },
-      { usage_date: '2024-09-04', total_data_volume: 2200000 },
-      { usage_date: '2024-09-05', total_data_volume: 2500000 },
-    ]
-
-    const mockMonthlyData: UsageData[] = [
-      { usage_month: '2024-05', total_data_volume: 15000000 },
-      { usage_month: '2024-06', total_data_volume: 18000000 },
-      { usage_month: '2024-07', total_data_volume: 22000000 },
-      { usage_month: '2024-08', total_data_volume: 20000000 },
-      { usage_month: '2024-09', total_data_volume: 25000000 },
-    ]
-
-    const formatBytes = (bytes: number): string => {
-      if (bytes === 0) return '0 Bytes'
-      const k = 1024
-      const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB']
-      const i = Math.floor(Math.log(bytes) / Math.log(k))
-      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+  yAxis: {
+    type: 'value',
+    axisLabel: {
+      formatter: (value: number) => formatBytes(value)
     }
-
-    const dailyChartData = computed(() => ({
-      columns: ['Date', 'Usage'],
-      rows: mockDailyData.map(item => ({
-        'Date': item.usage_date,
-        'Usage': item.total_data_volume
-      }))
-    }))
-
-    const monthlyChartData = computed(() => ({
-      columns: ['Month', 'Usage'],
-      rows: mockMonthlyData.map(item => ({
-        'Month': item.usage_month,
-        'Usage': item.total_data_volume
-      }))
-    }))
-
-    const chartSettings = {
-      yAxisType: ['normal'],
-      yAxisName: ['Data Volume']
-    }
-
-    const chartExtend = {
-      tooltip: {
-        formatter: function(params: any) {
-          return `${params[0].name}: ${formatBytes(params[0].value)}`
-        }
-      },
-      yAxis: {
-        axisLabel: {
-          formatter: function(value: number) {
-            return formatBytes(value)
-          }
-        }
-      }
-    }
-
-    const barChartOption = computed(() => ({
-      xAxis: {
-        type: 'category',
-        data: activeTab.value === 'daily' 
-          ? dailyChartData.value.rows.map(row => row.Date)
-          : monthlyChartData.value.rows.map(row => row.Month)
-      },
-      yAxis: {
-        type: 'value',
-        axisLabel: {
-          formatter: (value: number) => formatBytes(value)
-        }
-      },
-      series: [{
-        data: activeTab.value === 'daily'
-          ? dailyChartData.value.rows.map(row => row.Usage)
-          : monthlyChartData.value.rows.map(row => row.Usage),
-        type: 'bar'
-      }],
-      tooltip: {
-        formatter: (params: any) => `${params.name}: ${formatBytes(params.value)}`
-      }
-    }))
-
-    return {
-      activeTab,
-      barChartOption,
-      dailyChartData,
-      monthlyChartData,
-      chartSettings,
-      chartExtend
-    }
+  },
+  series: [{
+    data: activeTab.value === 'daily'
+      ? dailyUsage.value.map(item => item.data_volume)
+      : monthlyUsage.value.map(item => item.data_volume),
+    type: 'bar'
+  }],
+  tooltip: {
+    formatter: (params: any) => `${params.name}: ${formatBytes(params.value)}`
   }
-})
+}))
 </script>
 
 <style scoped>

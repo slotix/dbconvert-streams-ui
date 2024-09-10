@@ -1,5 +1,6 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import { handleApiError, handleUnauthorizedError } from '@/utils/errorHandler';
+import { DailyUsage, MonthlyUsage } from '@/types/user';
 
 // Define the shape of the API responses
 interface ApiResponse<T> {
@@ -19,6 +20,7 @@ interface UserDataResponse {
   userID: string;
   apiKey: string;
 }
+
 
 const backendClient: AxiosInstance = axios.create({
   baseURL: 'http://127.0.0.1:8020/api/v1',
@@ -88,10 +90,34 @@ const sentryHealthCheck = async (): Promise<HealthCheckResponse> => {
   }
 };
 
+const getDailyUsage = async (apiKey: string): Promise<DailyUsage[]> => {
+  try {
+    const response: ApiResponse<DailyUsage[]> = await backendClient.get('/usage/daily', {
+      headers: { 'X-API-Key': apiKey },
+    });
+    return response.data;
+  } catch (error) {
+    return handleUnauthorizedError(error as AxiosError);
+  }
+};
+
+const getMonthlyUsage = async (apiKey: string): Promise<MonthlyUsage[]> => {
+  try {
+    const response: ApiResponse<MonthlyUsage[]> = await backendClient.get('/usage/monthly', {
+      headers: { 'X-API-Key': apiKey },
+    });
+    return response.data;
+  } catch (error) {
+    return handleUnauthorizedError(error as AxiosError);
+  }
+};
+
 export default { 
   getUserDataFromSentry, 
   storeAPIKey, 
   loadUserConfigs, 
   backendHealthCheck, 
-  sentryHealthCheck 
+  sentryHealthCheck,
+  getDailyUsage,
+  getMonthlyUsage 
 };
