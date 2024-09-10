@@ -113,11 +113,17 @@
         <div class="py-10 lg:py-6">
           <div class="hidden">
             <UserProfile :custom-pages="customPages" />
-            <Teleport v-if="customPageIcon" :to="customPageIcon">
+            <Teleport v-if="APIKeyIcon" :to="APIKeyIcon">
               <KeyIcon />
             </Teleport>
-            <Teleport v-if="customPageContent" :to="customPageContent">
+            <Teleport v-if="APIKeyPageContent" :to="APIKeyPageContent">
               <ApiKeyView />
+            </Teleport>
+            <Teleport v-if="UsagePageIcon" :to="UsagePageIcon">
+              <ChartBarSquareIcon />
+            </Teleport>
+            <Teleport v-if="UsagePageContent" :to="UsagePageContent">
+              <UsageView />
             </Teleport>
           </div>
           <RouterView />
@@ -139,6 +145,7 @@ import { SignInButton, UserButton, useAuth, SignedIn, SignedOut, SignIn, UserPro
 import NotificationBar from '@/components/common/NotificationBar.vue';
 import { useCommonStore } from '@/stores/common';
 import ApiKeyView from './views/ApiKeyView.vue';
+import UsageView from './views/UsageView.vue';
 import type { CustomPage } from '@clerk/types';
 
 import {
@@ -179,8 +186,11 @@ const navigation = ref<NavigationItem[]>([
 ]);
 
 const sidebarOpen = ref(false);
-const customPageIcon = shallowRef<HTMLDivElement | null>(null);
-const customPageContent = shallowRef<HTMLDivElement | null>(null);
+const APIKeyIcon = shallowRef<HTMLDivElement | null>(null);
+const APIKeyPageContent = shallowRef<HTMLDivElement | null>(null);
+const UsagePageIcon = shallowRef<HTMLDivElement | null>(null);
+const UsagePageContent = shallowRef<HTMLDivElement | null>(null);
+
 const initializeApp = async () => {
   try {
     const initResult = await commonStore.initApp();
@@ -219,13 +229,29 @@ const customPages: CustomPage[] = [
     url: '/api-key',
     label: 'API Key',
     mountIcon: (el) => {
-      customPageIcon.value = el;
+      APIKeyIcon.value = el;
     },
     unmountIcon: () => {
       // Clean up if needed
     },
     mount: (el) => {
-      customPageContent.value = el;
+      APIKeyPageContent.value = el;
+    },
+    unmount: () => {
+      // Clean up if needed
+    }
+  },
+  {
+    url: '/usage',
+    label: 'Usage',
+    mountIcon: (el) => {
+      UsagePageIcon.value = el;
+    },
+    unmountIcon: () => {
+      // Clean up if needed
+    },
+    mount: (el) => {
+      UsagePageContent.value = el;
     },
     unmount: () => {
       // Clean up if needed
