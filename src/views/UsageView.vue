@@ -26,21 +26,21 @@
     <div v-if="activeTab === 'daily'" class="space-y-6">
       <div :class="['bg-white shadow rounded-lg p-6', { 'dark-theme': isDarkTheme }]">
         <h2 class="text-xl font-semibold mb-4 text-gray-800">Daily Usage</h2>
-        <v-chart class="chart" :option="barChartOption" />
+        <v-chart ref="chartRef" class="chart" :option="barChartOption" />
       </div>
     </div>
 
     <div v-if="activeTab === 'monthly'" class="space-y-6">
       <div :class="['bg-white shadow rounded-lg p-6', { 'dark-theme': isDarkTheme }]">
         <h2 class="text-xl font-semibold mb-4 text-gray-800">Monthly Usage</h2>
-        <v-chart class="chart" :option="barChartOption" />
+        <v-chart ref="chartRef" class="chart" :option="barChartOption" />
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { use } from "echarts/core"
 import { CanvasRenderer } from "echarts/renderers"
 import { BarChart } from "echarts/charts"
@@ -49,6 +49,7 @@ import {
   TooltipComponent,
   LegendComponent,
   GridComponent,
+  MarkLineComponent // Import MarkLineComponent
 } from "echarts/components"
 import VChart, { THEME_KEY } from "vue-echarts"
 import apiClient from '@/api/apiClient'
@@ -62,6 +63,7 @@ use([
   TooltipComponent,
   LegendComponent,
   GridComponent,
+  MarkLineComponent // Use MarkLineComponent
 ])
 
 const commonStore = useCommonStore()
@@ -113,8 +115,8 @@ const formatMonth = (month: string): string => {
 
 const barChartOption = computed(() => ({
   grid: {
-    left: '15%', // Adjust this value to give more space to the y-axis labels
-    right: '15%',
+    left: '20%',
+    right: '20%',
   },
   xAxis: {
     type: 'category',
@@ -144,18 +146,56 @@ const barChartOption = computed(() => ({
   },
   series: [{
     data: activeTab.value === 'daily'
-      ? dailyUsage.value.map(item => item.data_volume)
-      : monthlyUsage.value.map(item => item.data_volume),
-    type: 'bar'
+      ? dailyUsage.value.map(item => item.data_volume ?? 0)
+      : monthlyUsage.value.map(item => item.data_volume ?? 0),
+    type: 'bar',
+    markLine: activeTab.value === 'monthly' ? {
+      data: monthlyUsage.value
+        .filter(item => item.max_limit != null)
+        .map(item => ({
+          yAxis: item.max_limit,
+          label: {
+            formatter: 'Monthly Limit',
+            position: 'end'
+          },
+          lineStyle: {
+            color: 'red',
+            type: 'dashed'
+          }
+        }))
+    } : null
   }],
   tooltip: {
-    formatter: (params: any) => `${params.name}: ${formatBytes(params.value)}`
+    formatter: (params: any) => {
+      const value = `${params.name}: ${formatBytes(params.value)}`;
+      if (activeTab.value === 'monthly') {
+        const monthData = monthlyUsage.value.find(item => formatMonth(item.month) === params.name);
+        if (monthData && monthData.max_limit != null) {
+          const limit = formatBytes(monthData.max_limit);
+          return `${value}<br>Limit: ${limit}`;
+        }
+      }
+      return value;
+    }
   },
   backgroundColor: isDarkTheme.value ? '#1f2937' : '#ffffff',
   textStyle: {
     color: isDarkTheme.value ? '#d1d5db' : '#111827'
   }
 }))
+
+// Add a watch effect to update the chart when data changes
+watch([dailyUsage, monthlyUsage, activeTab], () => {
+  // Force chart update
+  nextTick(() => {
+    const chart = chartRef.value?.chart;
+    if (chart) {
+      chart.setOption(barChartOption.value);
+    }
+  });
+});
+
+const chartRef = ref<any>(null);
 </script>
 
 <style scoped>
