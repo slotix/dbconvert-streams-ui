@@ -183,7 +183,7 @@ export const useStreamsStore = defineStore('streams', {
         }, 500),
         async cloneStream(id: string) {
             try {
-                const resp = await api.cloneStream(id) as unknown as Stream;
+                const resp = await api.cloneStreamConfig(id) as unknown as Stream;
                 this.currentStream = {
                     ...this.currentStream!,
                     id: resp.id,

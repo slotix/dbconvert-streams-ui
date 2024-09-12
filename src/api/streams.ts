@@ -54,7 +54,7 @@ const deleteStream = async (id: string): Promise<void> => {
   });
 };
 
-const cloneStream = async (id: string): Promise<Stream> => {
+const cloneStreamConfig = async (id: string): Promise<Stream> => {
   return executeWithRetry(async () => {
     const commonStore = useCommonStore();
     const response: AxiosResponse<Stream> = await apiClient.put(`/streams/${id}/clone`, null, {
@@ -108,7 +108,7 @@ export default {
   getStreams,
   createStream,
   deleteStream,
-  cloneStream,
+  cloneStreamConfig,
   startStream,
   pauseStream,
   resumeStream,

@@ -1,7 +1,10 @@
 <template>
-  <div class="usage-view">
-    <div class="border-b border-gray-200 pb-4 mb-4">
+  <div class="usage-view max-w-2xl mx-auto transition-colors duration-300">
+    <div class="border-b border-gray-200 pb-4 mb-4 flex justify-between items-center">
       <h3 class="text-lg leading-6 font-bold text-gray-900">Usage Dashboard</h3>
+      <!-- <button @click="toggleTheme" class="px-3 py-1 rounded bg-gray-200 text-gray-800 hover:bg-gray-300">
+        {{ isDarkTheme ? 'Light' : 'Dark' }} Theme
+      </button> -->
     </div>
     <div class="mb-4">
       <div class="border-b border-gray-200">
@@ -21,23 +24,23 @@
     </div>
 
     <div v-if="activeTab === 'daily'" class="space-y-6">
-      <div class="bg-white shadow rounded-lg p-6">
+      <div :class="['bg-white shadow rounded-lg p-6', { 'dark-theme': isDarkTheme }]">
         <h2 class="text-xl font-semibold mb-4 text-gray-800">Daily Usage</h2>
-        <v-chart class="chart" :option="barChartOption" />
+        <v-chart ref="chartRef" class="chart" :option="barChartOption" />
       </div>
     </div>
 
     <div v-if="activeTab === 'monthly'" class="space-y-6">
-      <div class="bg-white shadow rounded-lg p-6">
+      <div :class="['bg-white shadow rounded-lg p-6', { 'dark-theme': isDarkTheme }]">
         <h2 class="text-xl font-semibold mb-4 text-gray-800">Monthly Usage</h2>
-        <v-chart class="chart" :option="barChartOption" />
+        <v-chart ref="chartRef" class="chart" :option="barChartOption" />
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { use } from "echarts/core"
 import { CanvasRenderer } from "echarts/renderers"
 import { BarChart } from "echarts/charts"
@@ -46,6 +49,7 @@ import {
   TooltipComponent,
   LegendComponent,
   GridComponent,
+  MarkLineComponent // Import MarkLineComponent
 } from "echarts/components"
 import VChart, { THEME_KEY } from "vue-echarts"
 import apiClient from '@/api/apiClient'
@@ -59,6 +63,7 @@ use([
   TooltipComponent,
   LegendComponent,
   GridComponent,
+  MarkLineComponent // Use MarkLineComponent
 ])
 
 const commonStore = useCommonStore()
@@ -91,42 +96,117 @@ const formatBytes = (bytes: number): string => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
 
+const isDarkTheme = ref(false)
+const currentTheme = computed(() => isDarkTheme.value ? 'dark' : '')
+
+const toggleTheme = () => {
+  isDarkTheme.value = !isDarkTheme.value
+}
+
+const formatDate = (date: string): string => {
+  const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' }
+  return new Date(date).toLocaleDateString(undefined, options)
+}
+
+const formatMonth = (month: string): string => {
+  const options: Intl.DateTimeFormatOptions = { month: 'short', year: 'numeric' }
+  return new Date(month).toLocaleDateString(undefined, options)
+}
+
 const barChartOption = computed(() => ({
+  grid: {
+    left: '20%',
+    right: '20%',
+  },
   xAxis: {
     type: 'category',
     data: activeTab.value === 'daily' 
-      ? dailyUsage.value.map(item => item.date)
-      : monthlyUsage.value.map(item => item.month)
+      ? dailyUsage.value.map(item => formatDate(item.date))
+      : monthlyUsage.value.map(item => formatMonth(item.month)),
+    axisLine: {
+      lineStyle: {
+        color: isDarkTheme.value ? '#d1d5db' : '#333'
+      }
+    },
+    axisLabel: {
+      color: isDarkTheme.value ? '#d1d5db' : '#333'
+    }
   },
   yAxis: {
     type: 'value',
+    axisLine: {
+      lineStyle: {
+        color: isDarkTheme.value ? '#d1d5db' : '#333'
+      }
+    },
     axisLabel: {
+      color: isDarkTheme.value ? '#d1d5db' : '#333',
       formatter: (value: number) => formatBytes(value)
     }
   },
   series: [{
     data: activeTab.value === 'daily'
-      ? dailyUsage.value.map(item => item.data_volume)
-      : monthlyUsage.value.map(item => item.data_volume),
-    type: 'bar'
+      ? dailyUsage.value.map(item => item.data_volume ?? 0)
+      : monthlyUsage.value.map(item => item.data_volume ?? 0),
+    type: 'bar',
+    markLine: activeTab.value === 'monthly' ? {
+      data: monthlyUsage.value
+        .filter(item => item.max_limit != null)
+        .map(item => ({
+          yAxis: item.max_limit,
+          label: {
+            formatter: 'Monthly Limit',
+            position: 'end'
+          },
+          lineStyle: {
+            color: 'red',
+            type: 'dashed'
+          }
+        }))
+    } : null
   }],
   tooltip: {
-    formatter: (params: any) => `${params.name}: ${formatBytes(params.value)}`
+    formatter: (params: any) => {
+      const value = `${params.name}: ${formatBytes(params.value)}`;
+      if (activeTab.value === 'monthly') {
+        const monthData = monthlyUsage.value.find(item => formatMonth(item.month) === params.name);
+        if (monthData && monthData.max_limit != null) {
+          const limit = formatBytes(monthData.max_limit);
+          return `${value}<br>Limit: ${limit}`;
+        }
+      }
+      return value;
+    }
+  },
+  backgroundColor: isDarkTheme.value ? '#1f2937' : '#ffffff',
+  textStyle: {
+    color: isDarkTheme.value ? '#d1d5db' : '#111827'
   }
 }))
+
+// Add a watch effect to update the chart when data changes
+watch([dailyUsage, monthlyUsage, activeTab], () => {
+  // Force chart update
+  nextTick(() => {
+    const chart = chartRef.value?.chart;
+    if (chart) {
+      chart.setOption(barChartOption.value);
+    }
+  });
+});
+
+const chartRef = ref<any>(null);
 </script>
 
 <style scoped>
-.usage-view {
-  max-width: 600px;
-  margin: 0 auto;
+.dark-theme .chart {
+  background-color: #374151;
 }
 .chart {
   height: 400px;
-  background-color: #f3f4f6;
   padding: 1rem;
   border-radius: 0.375rem;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   margin-bottom: 1rem;
+  transition: background-color 0.3s;
 }
 </style>
