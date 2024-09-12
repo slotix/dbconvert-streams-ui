@@ -33,8 +33,18 @@ interface State {
   logs: Log[];
   currentStageID: number;
   stages: Stage[];
-  status: Status;
+  status: typeof statusEnum;
 }
+const statusEnum = {
+  UNDEFINED: 0,
+  READY: 1,
+  RUNNING: 2,
+  FAILED: 3,
+  TIME_LIMIT_REACHED: 4,
+  EVENT_LIMIT_REACHED: 5,
+  STOPPED: 6,
+  FINISHED: 7,
+} as const;
 
 export const useMonitoringStore = defineStore('monitoring', {
   state: (): State => ({
@@ -68,23 +78,14 @@ export const useMonitoringStore = defineStore('monitoring', {
         description: 'Completed the data transfer process.',
       },
     ],
-    status: {
-      UNDEFINED: 0,
-      READY: 1,
-      RUNNING: 2,
-      FAILED: 3,
-      TIME_LIMIT_REACHED: 4,
-      EVENT_LIMIT_REACHED: 5,
-      STOPPED: 6,
-      FINISHED: 7,
-    },
+    status: statusEnum,
   }),
   getters: {
     currentStage(state: State): Stage | null {
       if (this.stats.length > 0) {
         const runningNodesNumber = this.stats.filter((stat: Log) => {
-          const statusID = state.status[stat.status!];
-          return statusID < state.status['FAILED'];
+          const statusID = statusEnum[stat.status as keyof typeof statusEnum];
+          return statusID < statusEnum.FAILED;
         }).length;
         if (runningNodesNumber === 0) {
           state.currentStageID = 4;
@@ -126,53 +127,57 @@ export const useMonitoringStore = defineStore('monitoring', {
   },
   actions: {
     async consumeLogsFromNATS() {
-      try {
-        const nc = await connect({ servers: 'ws://127.0.0.1:8081' });
-        const js = nc.jetstream();
-        const jsm: JetStreamManager = await js.jetstreamManager();
+      while (true) {
+        try {
+          const nc = await connect({ servers: 'ws://127.0.0.1:8081' });
+          const js = nc.jetstream();
+          const jsm: JetStreamManager = await js.jetstreamManager();
 
-        const sc = StringCodec();
-        await jsm.consumers.add('LOGS', {
-          durable_name: 'logsAll',
-          ack_policy: AckPolicy.Explicit,
-        });
+          const sc = StringCodec();
+          await jsm.consumers.add('LOGS', {
+            durable_name: 'logsAll',
+            ack_policy: AckPolicy.Explicit,
+          });
 
-        const c: Consumer = await js.consumers.get('LOGS', 'logsAll');
+          const c: Consumer = await js.consumers.get('LOGS', 'logsAll');
 
-        let iter = await c.consume();
-        for await (const m of iter) {
-          let data = sc.decode(m.data);
-          let parsed: Log = JSON.parse(data);
-          parsed.id = m.seq;
-          const subjectParts = m.subject.split('.');
-          parsed.type = subjectParts[1];
-          parsed.nodeID = subjectParts[2];
+          let iter = await c.consume();
+          for await (const m of iter) {
+            let data = sc.decode(m.data);
+            let parsed: Log = JSON.parse(data);
+            parsed.id = m.seq;
+            const subjectParts = m.subject.split('.');
+            parsed.type = subjectParts[1];
+            parsed.nodeID = subjectParts[2];
 
-          if (parsed.msg.startsWith('[init]') && parsed.type === 'api') {
-            this.nodes = [];
-            const parts = parsed.msg.split('ID:');
-            const id = parts[1].trim();
-            this.streamID = id;
+            if (parsed.msg.startsWith('[init]') && parsed.type === 'api') {
+              this.nodes = [];
+              const parts = parsed.msg.split('ID:');
+              const id = parts[1].trim();
+              this.streamID = id;
+            }
+            if (parsed.msg.startsWith('[progress]')) {
+              const parts = parsed.msg.split('|');
+              const stage = parts[0].split('STAGE:')[1];
+              this.currentStageID = parseInt(stage);
+            }
+            const nodeExists = this.nodes.find(node => node.id === parsed.nodeID);
+            if (!nodeExists) {
+              this.nodes.push({
+                id: parsed.nodeID,
+                type: parsed.type,
+              });
+            }
+            this.logs.push(parsed);
+            m.ack();
           }
-          if (parsed.msg.startsWith('[progress]')) {
-            const parts = parsed.msg.split('|');
-            const stage = parts[0].split('STAGE:')[1];
-            this.currentStageID = parseInt(stage);
-          }
-          const nodeExists = this.nodes.find(node => node.id === parsed.nodeID);
-          if (!nodeExists) {
-            this.nodes.push({
-              id: parsed.nodeID,
-              type: parsed.type,
-            });
-          }
-          this.logs.push(parsed);
-          m.ack();
+
+          await nc.drain();
+        } catch (error) {
+          console.error('Error in NATS connection:', error);
+          // Wait before attempting to reconnect
+          await new Promise(resolve => setTimeout(resolve, 5000));
         }
-
-        await nc.drain();
-      } catch (error) {
-        console.error(error);
       }
     },
   },
