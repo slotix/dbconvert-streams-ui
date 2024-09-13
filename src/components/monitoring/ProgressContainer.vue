@@ -7,6 +7,13 @@
       <h4 class="sr-only">Status</h4>
       <p class="text-lg font-medium text-gray-900">{{ store.currentStage?.description }}</p>
 
+
+      <div class="mt-3" aria-hidden="true">
+        <div class="overflow-hidden rounded-full bg-gray-200">
+          <div class="rounded-full bg-green-500 h-3" :style="{ width: store.stagesBarWidth }"></div>
+        </div>
+      </div>
+
       <!-- Stage Icons -->
       <div class="flex justify-between mt-4 mb-2">
         <div v-for="(stage, index) in store.stages" :key="stage.id" class="flex flex-col items-center">
@@ -20,12 +27,6 @@
             'text-sm mt-1',
             index === store.currentStageID - 1 ? 'font-bold text-green-600' : 'text-gray-500'
           ]">{{ stage.title }}</span>
-        </div>
-      </div>
-
-      <div class="mt-3" aria-hidden="true">
-        <div class="overflow-hidden rounded-full bg-gray-200">
-          <div class="rounded-full bg-green-500 h-3" :style="{ width: store.stagesBarWidth }"></div>
         </div>
       </div>
     </div>
