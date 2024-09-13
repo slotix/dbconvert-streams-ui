@@ -102,7 +102,9 @@ const barChartOption = computed(() => {
     ? usageDataStore.dailyUsage.map(item => item.data_volume ?? 0)
     : usageDataStore.monthlyUsage.map(item => item.data_volume ?? 0);
 
-  const maxValue = Math.max(...data, usageDataStore.monthlyLimit);
+  const maxValue = activeTab.value === 'monthly'
+    ? Math.max(...data, usageDataStore.monthlyLimit)
+    : Math.max(...data);
 
   return {
     grid: {
@@ -125,7 +127,7 @@ const barChartOption = computed(() => {
     },
     yAxis: {
       type: 'value',
-      max: maxValue * 1.1, // Set max to 110% of the highest value
+      max: activeTab.value === 'monthly' ? maxValue * 1.1 : undefined,
       axisLine: {
         lineStyle: {
           color: isDarkTheme.value ? '#d1d5db' : '#333'
