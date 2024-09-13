@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { connect, AckPolicy, StringCodec, JetStreamManager, Consumer } from 'nats.ws';
+import { useUsageDataStore } from './usageData';
 
 // Define types for the state
 interface Node {
@@ -23,9 +24,6 @@ interface Stage {
   description: string;
 }
 
-interface Status {
-  [key: string]: number;
-}
 
 interface State {
   streamID: string;
@@ -45,6 +43,7 @@ const statusEnum = {
   STOPPED: 6,
   FINISHED: 7,
 } as const;
+
 
 export const useMonitoringStore = defineStore('monitoring', {
   state: (): State => ({
@@ -84,10 +83,13 @@ export const useMonitoringStore = defineStore('monitoring', {
     currentStage(state: State): Stage | null {
       if (this.stats.length > 0) {
         const runningNodesNumber = this.stats.filter((stat: Log) => {
-          const statusID = statusEnum[stat.status as keyof typeof statusEnum];
-          return statusID < statusEnum.FAILED;
+          const statusID = state.status[stat.status as keyof typeof statusEnum];
+          return statusID < state.status.FAILED;
         }).length;
         if (runningNodesNumber === 0) {
+          //that means all nodes are finished
+          const usageDataStore = useUsageDataStore();
+          usageDataStore.fetchUsageData();
           state.currentStageID = 4;
         }
       }

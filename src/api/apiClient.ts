@@ -1,6 +1,6 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import { handleApiError, handleUnauthorizedError } from '@/utils/errorHandler';
-import { DailyUsage, MonthlyUsage } from '@/types/user';
+import { DailyUsage, MonthlyUsage, MonthlyUsageResponse } from '@/types/user';
 
 // Define the shape of the API responses
 interface ApiResponse<T> {
@@ -101,9 +101,9 @@ const getDailyUsage = async (apiKey: string): Promise<DailyUsage[]> => {
   }
 };
 
-const getMonthlyUsage = async (apiKey: string): Promise<MonthlyUsage[]> => {
+const getMonthlyUsage = async (apiKey: string): Promise<MonthlyUsageResponse> => {
   try {
-    const response: ApiResponse<MonthlyUsage[]> = await backendClient.get('/usage/monthly', {
+    const response: ApiResponse<MonthlyUsageResponse> = await backendClient.get('/usage/monthly', {
       headers: { 'X-API-Key': apiKey },
     });
     return response.data;

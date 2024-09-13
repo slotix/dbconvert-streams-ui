@@ -49,12 +49,11 @@ import {
   TooltipComponent,
   LegendComponent,
   GridComponent,
-  MarkLineComponent // Import MarkLineComponent
+  MarkLineComponent
 } from "echarts/components"
 import VChart, { THEME_KEY } from "vue-echarts"
-import apiClient from '@/api/apiClient'
+import { useUsageDataStore } from '@/stores/usageData'
 import { useCommonStore } from '@/stores/common'
-import { DailyUsage, MonthlyUsage } from '@/types/user'
 
 use([
   CanvasRenderer,
@@ -63,30 +62,15 @@ use([
   TooltipComponent,
   LegendComponent,
   GridComponent,
-  MarkLineComponent // Use MarkLineComponent
+  MarkLineComponent
 ])
 
-const commonStore = useCommonStore()
+const usageDataStore = useUsageDataStore()
 const activeTab = ref<'daily' | 'monthly'>('daily')
 
-const dailyUsage = ref<DailyUsage[]>([])
-const monthlyUsage = ref<MonthlyUsage[]>([])
-
-const fetchUsageData = async () => {
-  const apiKey = commonStore.apiKey
-  if (!apiKey) {
-    console.error('API key not found')
-    return
-  }
-  try {
-    dailyUsage.value = await apiClient.getDailyUsage(apiKey)
-    monthlyUsage.value = await apiClient.getMonthlyUsage(apiKey)
-  } catch (error) {
-    console.error('Error fetching usage data:', error)
-  }
-}
-
-onMounted(fetchUsageData)
+onMounted(async () => {
+  await usageDataStore.fetchUsageData()
+})
 
 const formatBytes = (bytes: number): string => {
   if (bytes === 0) return '0 Bytes'
@@ -113,81 +97,83 @@ const formatMonth = (month: string): string => {
   return new Date(month).toLocaleDateString(undefined, options)
 }
 
-const barChartOption = computed(() => ({
-  grid: {
-    left: '20%',
-    right: '20%',
-  },
-  xAxis: {
-    type: 'category',
-    data: activeTab.value === 'daily' 
-      ? dailyUsage.value.map(item => formatDate(item.date))
-      : monthlyUsage.value.map(item => formatMonth(item.month)),
-    axisLine: {
-      lineStyle: {
+const barChartOption = computed(() => {
+  const data = activeTab.value === 'daily'
+    ? usageDataStore.dailyUsage.map(item => item.data_volume ?? 0)
+    : usageDataStore.monthlyUsage.map(item => item.data_volume ?? 0);
+
+  const maxValue = Math.max(...data, usageDataStore.monthlyLimit);
+
+  return {
+    grid: {
+      left: '20%',
+      right: '20%',
+    },
+    xAxis: {
+      type: 'category',
+      data: activeTab.value === 'daily' 
+        ? usageDataStore.dailyUsage.map(item => formatDate(item.date))
+        : usageDataStore.monthlyUsage.map(item => formatMonth(item.month)),
+      axisLine: {
+        lineStyle: {
+          color: isDarkTheme.value ? '#d1d5db' : '#333'
+        }
+      },
+      axisLabel: {
         color: isDarkTheme.value ? '#d1d5db' : '#333'
       }
     },
-    axisLabel: {
-      color: isDarkTheme.value ? '#d1d5db' : '#333'
-    }
-  },
-  yAxis: {
-    type: 'value',
-    axisLine: {
-      lineStyle: {
-        color: isDarkTheme.value ? '#d1d5db' : '#333'
+    yAxis: {
+      type: 'value',
+      max: maxValue * 1.1, // Set max to 110% of the highest value
+      axisLine: {
+        lineStyle: {
+          color: isDarkTheme.value ? '#d1d5db' : '#333'
+        }
+      },
+      axisLabel: {
+        color: isDarkTheme.value ? '#d1d5db' : '#333',
+        formatter: (value: number) => formatBytes(value)
       }
     },
-    axisLabel: {
-      color: isDarkTheme.value ? '#d1d5db' : '#333',
-      formatter: (value: number) => formatBytes(value)
-    }
-  },
-  series: [{
-    data: activeTab.value === 'daily'
-      ? dailyUsage.value.map(item => item.data_volume ?? 0)
-      : monthlyUsage.value.map(item => item.data_volume ?? 0),
-    type: 'bar',
-    markLine: activeTab.value === 'monthly' ? {
-      data: monthlyUsage.value
-        .filter(item => item.max_limit != null)
-        .map(item => ({
-          yAxis: item.max_limit,
+    series: [{
+      data: data,
+      type: 'bar',
+      markLine: activeTab.value === 'monthly' ? {
+        data: [{
+          yAxis: usageDataStore.monthlyLimit,
           label: {
-            formatter: 'Monthly Limit',
-            position: 'end'
+            formatter: `Monthly Limit: ${formatBytes(usageDataStore.monthlyLimit)}`,
+            position: 'insideEndTop'
           },
           lineStyle: {
             color: 'red',
             type: 'dashed'
           }
-        }))
-    } : null
-  }],
-  tooltip: {
-    formatter: (params: any) => {
-      const value = `${params.name}: ${formatBytes(params.value)}`;
-      if (activeTab.value === 'monthly') {
-        const monthData = monthlyUsage.value.find(item => formatMonth(item.month) === params.name);
-        if (monthData && monthData.max_limit != null) {
-          const limit = formatBytes(monthData.max_limit);
+        }]
+      } : null
+    }],
+    tooltip: {
+      formatter: (params: any) => {
+        const value = `${params.name}: ${formatBytes(params.value)}`;
+        if (activeTab.value === 'monthly') {
+          const limit = formatBytes(usageDataStore.monthlyLimit);
           return `${value}<br>Limit: ${limit}`;
         }
+        return value;
       }
-      return value;
+    },
+    backgroundColor: isDarkTheme.value ? '#1f2937' : '#ffffff',
+    textStyle: {
+      color: isDarkTheme.value ? '#d1d5db' : '#111827'
     }
-  },
-  backgroundColor: isDarkTheme.value ? '#1f2937' : '#ffffff',
-  textStyle: {
-    color: isDarkTheme.value ? '#d1d5db' : '#111827'
-  }
-}))
+  };
+})
 
 // Add a watch effect to update the chart when data changes
-watch([dailyUsage, monthlyUsage, activeTab], () => {
-  // Force chart update
+watch([() => usageDataStore.dailyUsage, () => usageDataStore.monthlyUsage, activeTab], () => {
   nextTick(() => {
+    console.log('updating chart');
     const chart = chartRef.value?.chart;
     if (chart) {
       chart.setOption(barChartOption.value);
