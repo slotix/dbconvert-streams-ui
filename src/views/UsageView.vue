@@ -98,12 +98,13 @@ const formatMonth = (month: string): string => {
 }
 
 const barChartOption = computed(() => {
-  const data = activeTab.value === 'daily'
-    ? usageDataStore.dailyUsage.map(item => item.data_volume ?? 0)
-    : usageDataStore.monthlyUsage.map(item => item.data_volume ?? 0);
+  const dailyData = usageDataStore.dailyUsage?.map(item => item.data_volume ?? 0) ?? [];
+  const monthlyData = usageDataStore.monthlyUsage?.map(item => item.data_volume ?? 0) ?? [];
+
+  const data = activeTab.value === 'daily' ? dailyData : monthlyData;
 
   const maxValue = activeTab.value === 'monthly'
-    ? Math.max(...data, usageDataStore.monthlyLimit)
+    ? Math.max(...data, usageDataStore.monthlyLimit || 0)
     : Math.max(...data);
 
   return {
@@ -114,8 +115,8 @@ const barChartOption = computed(() => {
     xAxis: {
       type: 'category',
       data: activeTab.value === 'daily' 
-        ? usageDataStore.dailyUsage.map(item => formatDate(item.date))
-        : usageDataStore.monthlyUsage.map(item => formatMonth(item.month)),
+        ? usageDataStore.dailyUsage?.map(item => formatDate(item.date)) ?? []
+        : usageDataStore.monthlyUsage?.map(item => formatMonth(item.month)) ?? [],
       axisLine: {
         lineStyle: {
           color: isDarkTheme.value ? '#d1d5db' : '#333'
@@ -143,9 +144,9 @@ const barChartOption = computed(() => {
       type: 'bar',
       markLine: activeTab.value === 'monthly' ? {
         data: [{
-          yAxis: usageDataStore.monthlyLimit,
+          yAxis: usageDataStore.monthlyLimit || 0,
           label: {
-            formatter: `Monthly Limit: ${formatBytes(usageDataStore.monthlyLimit)}`,
+            formatter: `Monthly Limit: ${formatBytes(usageDataStore.monthlyLimit || 0)}`,
             position: 'insideEndTop'
           },
           lineStyle: {
