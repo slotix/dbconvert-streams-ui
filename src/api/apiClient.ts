@@ -1,6 +1,6 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import { handleApiError, handleUnauthorizedError } from '@/utils/errorHandler';
-import { DailyUsage, MonthlyUsage, MonthlyUsageResponse } from '@/types/user';
+import { DailyUsage, MonthlyUsage, MonthlyUsageResponse, UserData } from '@/types/user';
 
 // Define the shape of the API responses
 interface ApiResponse<T> {
@@ -14,13 +14,6 @@ interface HealthCheckResponse {
 interface StoreAPIKeyResponse {
   status: string;
 }
-
-interface UserDataResponse {
-  status: string;
-  userID: string;
-  apiKey: string;
-}
-
 
 const backendClient: AxiosInstance = axios.create({
   baseURL: 'http://127.0.0.1:8020/api/v1',
@@ -37,9 +30,9 @@ const sentryClient: AxiosInstance = axios.create({
   withCredentials: true,
 });
 
-const getUserDataFromSentry = async (token: string): Promise<UserDataResponse> => {
+const getUserDataFromSentry = async (token: string): Promise<UserData> => {
   try {
-    const response: ApiResponse<UserDataResponse> = await backendClient.post('/getUserData', {}, {
+    const response: ApiResponse<UserData> = await backendClient.post('/user', {}, {
       headers: { Authorization: `Bearer ${token}` },
     });
     return response.data;
@@ -61,9 +54,9 @@ const storeAPIKey = async (token: string, userID: string, apiKey: string): Promi
   }
 };
 
-const loadUserConfigs = async (apiKey: string): Promise<UserDataResponse> => {
+const loadUserConfigs = async (apiKey: string): Promise<UserData> => {
   try {
-    const response: ApiResponse<UserDataResponse> = await backendClient.get('/loadUserConfigs', {
+    const response: ApiResponse<UserData> = await backendClient.get('/loadUserConfigs', {
       headers: { 'X-API-Key': apiKey },
     });
     return response.data;

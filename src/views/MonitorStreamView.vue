@@ -59,12 +59,10 @@ import ProgressContainer from '@/components/monitoring/ProgressContainer.vue';
 import { useMonitoringStore } from '@/stores/monitoring';
 import { useStreamsStore } from '@/stores/streams';
 import { useCommonStore } from '@/stores/common';
-import { useUsageDataStore } from '@/stores/usageData';
 
 const monitoringStore = useMonitoringStore();
 const streamStore = useStreamsStore();
 const commonStore = useCommonStore();
-const usageDataStore = useUsageDataStore();
 
 onMounted(() => {
   monitoringStore.consumeLogsFromNATS();
@@ -73,7 +71,7 @@ const pauseStream = async () => {
   try {
     await streamStore.pauseStream(monitoringStore.streamID);
     commonStore.showNotification('Stream paused', 'success');
-    usageDataStore.fetchUsageData();
+    commonStore.fetchUsageData();
   } catch (error) {
     handleStreamError(error, 'Failed to pause stream');
   }

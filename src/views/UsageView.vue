@@ -9,13 +9,11 @@
     <div class="mb-4">
       <div class="border-b border-gray-200">
         <nav class="-mb-px flex">
-          <button 
-            @click="activeTab = 'daily'"
+          <button @click="activeTab = 'daily'"
             :class="['py-2 px-4 text-sm font-medium', activeTab === 'daily' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500 hover:text-gray-700']">
             Daily Usage
           </button>
-          <button 
-            @click="activeTab = 'monthly'"
+          <button @click="activeTab = 'monthly'"
             :class="['ml-8 py-2 px-4 text-sm font-medium', activeTab === 'monthly' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500 hover:text-gray-700']">
             Monthly Usage
           </button>
@@ -40,7 +38,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import { use } from "echarts/core"
 import { CanvasRenderer } from "echarts/renderers"
 import { BarChart } from "echarts/charts"
@@ -52,7 +50,6 @@ import {
   MarkLineComponent
 } from "echarts/components"
 import VChart, { THEME_KEY } from "vue-echarts"
-import { useUsageDataStore } from '@/stores/usageData'
 import { useCommonStore } from '@/stores/common'
 
 use([
@@ -65,12 +62,9 @@ use([
   MarkLineComponent
 ])
 
-const usageDataStore = useUsageDataStore()
+const commonStore = useCommonStore()
 const activeTab = ref<'daily' | 'monthly'>('daily')
 
-onMounted(async () => {
-  await usageDataStore.fetchUsageData()
-})
 
 const formatBytes = (bytes: number): string => {
   if (bytes === 0) return '0 Bytes'
@@ -98,13 +92,13 @@ const formatMonth = (month: string): string => {
 }
 
 const barChartOption = computed(() => {
-  const dailyData = usageDataStore.dailyUsage?.map(item => item.data_volume ?? 0) ?? [];
-  const monthlyData = usageDataStore.monthlyUsage?.map(item => item.data_volume ?? 0) ?? [];
+  const dailyData = commonStore.userData?.dailyUsage?.map(item => item.data_volume ?? 0) ?? [];
+  const monthlyData = commonStore.userData?.monthlyUsage?.map(item => item.data_volume ?? 0) ?? [];
 
   const data = activeTab.value === 'daily' ? dailyData : monthlyData;
 
   const maxValue = activeTab.value === 'monthly'
-    ? Math.max(...data, usageDataStore.monthlyLimit || 0)
+    ? Math.max(...data, commonStore.userData?.limit || 0)
     : Math.max(...data);
 
   return {
@@ -114,9 +108,9 @@ const barChartOption = computed(() => {
     },
     xAxis: {
       type: 'category',
-      data: activeTab.value === 'daily' 
-        ? usageDataStore.dailyUsage?.map(item => formatDate(item.date)) ?? []
-        : usageDataStore.monthlyUsage?.map(item => formatMonth(item.month)) ?? [],
+      data: activeTab.value === 'daily'
+        ? commonStore.userData?.dailyUsage?.map(item => formatDate(item.date)) ?? []
+        : commonStore.userData?.monthlyUsage?.map(item => formatMonth(item.month)) ?? [],
       axisLine: {
         lineStyle: {
           color: isDarkTheme.value ? '#d1d5db' : '#333'
@@ -144,9 +138,9 @@ const barChartOption = computed(() => {
       type: 'bar',
       markLine: activeTab.value === 'monthly' ? {
         data: [{
-          yAxis: usageDataStore.monthlyLimit || 0,
+          yAxis: commonStore.monthlyLimit || 0,
           label: {
-            formatter: `Monthly Limit: ${formatBytes(usageDataStore.monthlyLimit || 0)}`,
+            formatter: `Monthly Limit: ${formatBytes(commonStore.monthlyLimit || 0)}`,
             position: 'insideEndTop'
           },
           lineStyle: {
@@ -160,7 +154,7 @@ const barChartOption = computed(() => {
       formatter: (params: any) => {
         const value = `${params.name}: ${formatBytes(params.value)}`;
         if (activeTab.value === 'monthly') {
-          const limit = formatBytes(usageDataStore.monthlyLimit);
+          const limit = formatBytes(commonStore.monthlyLimit || 0);
           return `${value}<br>Limit: ${limit}`;
         }
         return value;
@@ -174,7 +168,7 @@ const barChartOption = computed(() => {
 })
 
 // Add a watch effect to update the chart when data changes
-watch([() => usageDataStore.dailyUsage, () => usageDataStore.monthlyUsage, activeTab], () => {
+watch([() => commonStore.dailyUsage, () => commonStore.monthlyUsage, activeTab], () => {
   nextTick(() => {
     console.log('updating chart');
     const chart = chartRef.value?.chart;
@@ -191,6 +185,7 @@ const chartRef = ref<any>(null);
 .dark-theme .chart {
   background-color: #374151;
 }
+
 .chart {
   height: 400px;
   padding: 1rem;

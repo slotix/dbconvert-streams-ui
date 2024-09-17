@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { connect, AckPolicy, StringCodec, JetStreamManager, Consumer } from 'nats.ws';
-import { useUsageDataStore } from './usageData';
+import { useCommonStore } from './common';
 
 // Define types for the state
 interface Node {
@@ -88,8 +88,8 @@ export const useMonitoringStore = defineStore('monitoring', {
         }).length;
         if (runningNodesNumber === 0) {
           //that means all nodes are finished
-          const usageDataStore = useUsageDataStore();
-          usageDataStore.fetchUsageData();
+          const commonStore = useCommonStore();
+          commonStore.fetchUsageData();
           state.currentStageID = 4;
         }
       }
