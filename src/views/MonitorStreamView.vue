@@ -71,6 +71,7 @@ const pauseStream = async () => {
   try {
     await streamStore.pauseStream(monitoringStore.streamID);
     commonStore.showNotification('Stream paused', 'success');
+    commonStore.fetchUsageData();
   } catch (error) {
     handleStreamError(error, 'Failed to pause stream');
   }
@@ -89,6 +90,7 @@ const stopStream = async () => {
   try {
     await streamStore.stopStream(monitoringStore.streamID);
     commonStore.showNotification('Stream stopped', 'success');
+    usageDataStore.fetchUsageData();
   } catch (error) {
     handleStreamError(error, 'Failed to stop stream');
   }

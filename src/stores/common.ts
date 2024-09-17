@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia';
 import idb from '@/api/iDBService';
 import api from '@/api/apiClient';
-import { getToken} from '@/utils/auth';
+import { getToken } from '@/utils/auth';
+import { UserData } from '@/types/user';
 
 export const DIALOG_TYPES = {
   SAVE: 'Add',
@@ -14,10 +15,6 @@ export interface Notification {
   msg: string;
 }
 
-interface UserData {
-  userID: string;
-  apiKey: string;
-}
 
 export interface Step {
   id: number;
@@ -120,13 +117,13 @@ export const useCommonStore = defineStore('common', {
       });
     },
 
-    async fetchApiKey() {
+    async userDataFromSentry() {
       try {
-      const token = await getToken();
-      if (!token) {
-        this.showNotification('No token provided', 'error');
-        return;
-      }
+        const token = await getToken();
+        if (!token) {
+          this.showNotification('No token provided', 'error');
+          return;
+        }
         const response = await api.getUserDataFromSentry(token);
         this.userData = response;
       } catch (error) {
@@ -146,7 +143,27 @@ export const useCommonStore = defineStore('common', {
         throw error;
       }
     },
-
+    async fetchUsageData() {
+      const apiKey = this.userData?.apiKey;
+      if (!apiKey) {
+        console.error('API key not found');
+        return;
+      }
+      try {
+        const dailyUsage = await api.getDailyUsage(apiKey);
+        const monthlyData = await api.getMonthlyUsage(apiKey);
+        if (this.userData) {
+          this.userData = {
+            ...this.userData,
+            dailyUsage,
+            monthlyUsage: monthlyData.usage,
+            limit: monthlyData.limit,
+          };
+        }
+      } catch (error) {
+        console.error('Error fetching usage data:', error);
+      }
+    },
     async getViewType() {
       const vType = await idb.getCurrentViewType();
       this.currentViewType = vType;
@@ -201,7 +218,7 @@ export const useCommonStore = defineStore('common', {
         await this.checkAPIHealth();
 
         if (this.sentryHealthy && this.apiHealthy) {
-          await this.fetchApiKey();
+          await this.userDataFromSentry();
           if (this.userData?.apiKey) {
             await this.loadUserConfigs();
           }
@@ -219,5 +236,12 @@ export const useCommonStore = defineStore('common', {
     isStreamsPage: (state) => state.currentPage === 'ManageStream',
     apiKey: (state) => state.userData?.apiKey || null,
     userID: (state) => state.userData?.userID || null,
+    monthlyLimit: (state) => state.userData?.limit || null,
+    dailyUsage: (state) => state.userData?.dailyUsage || null,
+    monthlyUsage: (state) => state.userData?.monthlyUsage || null,
+    currentMonthUsage: (state) => {
+      const currentMonth = new Date().getMonth();
+      return state.userData?.monthlyUsage?.find(usage => new Date(usage.month).getMonth() === currentMonth) || null;
+    },
   },
 });
