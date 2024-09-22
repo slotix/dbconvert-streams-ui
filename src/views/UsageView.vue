@@ -170,7 +170,6 @@ const barChartOption = computed(() => {
 // Add a watch effect to update the chart when data changes
 watch([() => commonStore.dailyUsage, () => commonStore.monthlyUsage, activeTab], () => {
   nextTick(() => {
-    console.log('updating chart');
     const chart = chartRef.value?.chart;
     if (chart) {
       chart.setOption(barChartOption.value);

@@ -11,8 +11,9 @@ interface HealthCheckResponse {
   status: string;
 }
 
-interface StoreAPIKeyResponse {
+interface UpdateAPIKeyResponse {
   status: string;
+  apiKey: string;
 }
 
 const backendClient: AxiosInstance = axios.create({
@@ -41,18 +42,18 @@ const getUserDataFromSentry = async (token: string): Promise<UserData> => {
   }
 };
 
-const storeAPIKey = async (token: string, userID: string, apiKey: string): Promise<StoreAPIKeyResponse> => {
+const updateAPIKey = async (token: string): Promise<UpdateAPIKeyResponse> => {
   try {
-    const response: ApiResponse<StoreAPIKeyResponse> = await backendClient.post(
-      '/storeAPIKey',
-      { user_id: userID, api_key: apiKey, token: token },
-      { headers: { 'X-API-Key': apiKey } }
+    const response: ApiResponse<UpdateAPIKeyResponse> = await backendClient.post(
+      '/user/update-api-key', {},
+      { headers: { Authorization: `Bearer ${token}` } }
     );
     return response.data;
   } catch (error) {
     return handleUnauthorizedError(error as AxiosError);
   }
 };
+
 
 const loadUserConfigs = async (apiKey: string): Promise<UserData> => {
   try {
@@ -105,12 +106,12 @@ const getMonthlyUsage = async (apiKey: string): Promise<MonthlyUsageResponse> =>
   }
 };
 
-export default { 
-  getUserDataFromSentry, 
-  storeAPIKey, 
-  loadUserConfigs, 
-  backendHealthCheck, 
+export default {
+  getUserDataFromSentry,
+  updateAPIKey,
+  loadUserConfigs,
+  backendHealthCheck,
   sentryHealthCheck,
   getDailyUsage,
-  getMonthlyUsage 
+  getMonthlyUsage
 };
