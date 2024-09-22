@@ -116,7 +116,24 @@ export const useCommonStore = defineStore('common', {
         }
       });
     },
-
+    async updateAPIKey() {
+      try {
+        const token = await getToken();
+        if (!token) {
+          this.showNotification('No token provided', 'error');
+          return;
+        }
+        const response = await api.updateAPIKey(token);
+        if (this.userData) {
+          this.userData.apiKey = response.apiKey;
+        } else {
+          this.showNotification('User data not available', 'error');
+        }
+      } catch (error) {
+        this.showNotification('Failed to update API key', 'error');
+        throw error;
+      }
+    },
     async userDataFromSentry() {
       try {
         const token = await getToken();
