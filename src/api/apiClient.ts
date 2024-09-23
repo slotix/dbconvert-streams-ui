@@ -33,7 +33,7 @@ const sentryClient: AxiosInstance = axios.create({
 
 const getUserDataFromSentry = async (token: string): Promise<UserData> => {
   try {
-    const response: ApiResponse<UserData> = await backendClient.post('/user', {}, {
+    const response: ApiResponse<UserData> = await backendClient.get('/user', {
       headers: { Authorization: `Bearer ${token}` },
     });
     return response.data;
