@@ -57,7 +57,7 @@ const updateAPIKey = async (token: string): Promise<UpdateAPIKeyResponse> => {
 
 const loadUserConfigs = async (apiKey: string): Promise<UserData> => {
   try {
-    const response: ApiResponse<UserData> = await backendClient.get('/loadUserConfigs', {
+    const response: ApiResponse<UserData> = await backendClient.get('/user/load-configs', {
       headers: { 'X-API-Key': apiKey },
     });
     return response.data;
@@ -86,7 +86,7 @@ const sentryHealthCheck = async (): Promise<HealthCheckResponse> => {
 
 const getDailyUsage = async (apiKey: string): Promise<DailyUsage[]> => {
   try {
-    const response: ApiResponse<DailyUsage[]> = await backendClient.get('/usage/daily', {
+    const response: ApiResponse<DailyUsage[]> = await backendClient.get('/user/daily-usage', {
       headers: { 'X-API-Key': apiKey },
     });
     return response.data;
@@ -97,7 +97,7 @@ const getDailyUsage = async (apiKey: string): Promise<DailyUsage[]> => {
 
 const getMonthlyUsage = async (apiKey: string): Promise<MonthlyUsageResponse> => {
   try {
-    const response: ApiResponse<MonthlyUsageResponse> = await backendClient.get('/usage/monthly', {
+    const response: ApiResponse<MonthlyUsageResponse> = await backendClient.get('/user/monthly-usage', {
       headers: { 'X-API-Key': apiKey },
     });
     return response.data;
