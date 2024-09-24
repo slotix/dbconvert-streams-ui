@@ -67,7 +67,7 @@ const cloneStreamConfig = async (id: string): Promise<Stream> => {
 const startStream = async (id: string): Promise<Stream> => {
   return executeWithRetry(async () => {
     const commonStore = useCommonStore();
-    const response: AxiosResponse<Stream> = await apiClient.post(`/streams/${id}/start`, null, {
+    const response: AxiosResponse<Stream> = await apiClient.post(`/streams/${id}/action`, { action: 'start' }, {
       headers: { 'X-API-Key': commonStore.apiKey }
     });
     return response.data;
@@ -77,7 +77,7 @@ const startStream = async (id: string): Promise<Stream> => {
 const pauseStream = async (id: string): Promise<Stream> => {
   return executeWithRetry(async () => {
     const commonStore = useCommonStore();
-    const response: AxiosResponse<Stream> = await apiClient.post(`/streams/${id}/pause`, null, {
+    const response: AxiosResponse<Stream> = await apiClient.post(`/streams/${id}/action`, { action: 'pause' }, {
       headers: { 'X-API-Key': commonStore.apiKey }
     });
     return response.data;
@@ -87,7 +87,7 @@ const pauseStream = async (id: string): Promise<Stream> => {
 const resumeStream = async (id: string): Promise<Stream> => {
   return executeWithRetry(async () => {
     const commonStore = useCommonStore();
-    const response: AxiosResponse<Stream> = await apiClient.post(`/streams/${id}/resume`, null, {
+    const response: AxiosResponse<Stream> = await apiClient.post(`/streams/${id}/action`, { action: 'resume' }, {
       headers: { 'X-API-Key': commonStore.apiKey }
     });
     return response.data;
@@ -97,7 +97,7 @@ const resumeStream = async (id: string): Promise<Stream> => {
 const stopStream = async (id: string): Promise<Stream> => {
   return executeWithRetry(async () => {
     const commonStore = useCommonStore();
-    const response: AxiosResponse<Stream> = await apiClient.post(`/streams/${id}/stop`, null, {
+    const response: AxiosResponse<Stream> = await apiClient.post(`/streams/${id}/action`, { action: 'stop' }, {
       headers: { 'X-API-Key': commonStore.apiKey }
     });
     return response.data;
