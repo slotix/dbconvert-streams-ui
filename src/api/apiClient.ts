@@ -45,7 +45,7 @@ const getUserDataFromSentry = async (token: string): Promise<UserData> => {
 const updateAPIKey = async (token: string): Promise<UpdateAPIKeyResponse> => {
   try {
     const response: ApiResponse<UpdateAPIKeyResponse> = await backendClient.post(
-      '/user/update-api-key', {},
+      '/user/api-key', {},
       { headers: { Authorization: `Bearer ${token}` } }
     );
     return response.data;
