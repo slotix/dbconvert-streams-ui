@@ -135,15 +135,6 @@ export const useConnectionsStore = defineStore("connections", {
                 throw error;
             }
         }, 500),
-        async testConnection(json: Record<string, unknown>) {
-            try {
-                const status = await api.testConnection(json);
-                console.log(status);
-            } catch (error) {
-                console.error('Failed to test connection:', error);
-                throw error;
-            }
-        },
         resetCurrentConnection() {
             this.currentConnection = null;
         },

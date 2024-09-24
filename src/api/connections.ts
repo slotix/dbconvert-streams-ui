@@ -45,10 +45,21 @@ const createConnection = async (json: Record<string, unknown>): Promise<Connecti
   });
 };
 
-const updateConnection = async (json: Record<string, unknown>): Promise<void> => {
+const updateConnection = async (jsonOrObject: string | Record<string, unknown>): Promise<void> => {
   return executeWithRetry(async () => {
     const commonStore = useCommonStore();
-    await apiClient.put('/connections', json, {
+    
+    // Parse the input if it's a string
+    const json = typeof jsonOrObject === 'string' ? JSON.parse(jsonOrObject) : jsonOrObject;
+    
+    // Now we can safely access the id
+    const id = json.id as string;
+    
+    if (!id) {
+      throw new Error('Connection ID is undefined or empty');
+    }
+    
+    await apiClient.put(`/connections/${id}`, json, {
       headers: { 'X-API-Key': commonStore.apiKey }
     });
   });
@@ -73,10 +84,10 @@ const cloneConnection = async (id: string): Promise<Connection> => {
   });
 };
 
-const testConnection = async (json: Record<string, unknown>): Promise<string> => {
+const testConnection = async (id: string): Promise<string> => {
   return executeWithRetry(async () => {
     const commonStore = useCommonStore();
-    const response: AxiosResponse<{ ping: string }> = await apiClient.post('/connections/ping', json, {
+    const response: AxiosResponse<{ ping: string }> = await apiClient.post(`/connections/${id}/ping`, null, {
       headers: { 'X-API-Key': commonStore.apiKey }
     });
     if (response.data.ping === "ok") {
