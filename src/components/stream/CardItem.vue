@@ -38,7 +38,7 @@
         </div>
         <div>
           <span class="font-semibold text-gray-800">Tables: </span>
-          <span>{{ stream.tables.length }} </span>
+          <span>{{ stream?.tables?.length ?? 0 }} </span>
         </div>
         <div class="text-sm text-gray-600 flex items-center pt-4">
           <CalendarIcon class="h-4 w-4 mr-1" aria-hidden="true" />
