@@ -1,61 +1,67 @@
 // src/router/index.ts
-import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router';
-import HomeView from '../views/HomeView.vue';
-import ConnectionsView from '../views/ConnectionsView.vue';
-import StreamsView from '../views/StreamsView.vue';
-import ManageStreamView from '../views/ManageStreamView.vue';
-import MonitorStreamView from '../views/MonitorStreamView.vue';
-import ApiKeyView from '../views/ApiKeyView.vue'; // Import the new ApiKeyView component
-import NotFound from '../views/NotFound.vue';
-import UsageView from '../views/UsageView.vue';
+import { createRouter, createWebHistory } from 'vue-router'
+import HomeView from '@/views/HomeView.vue'
+import StreamsView from '@/views/StreamsView.vue'
+import PricingView from '@/views/PricingView.vue'
+import ConnectionsView from '@/views/ConnectionsView.vue'
+import ManageStreamView from '@/views/ManageStreamView.vue'
+import MonitorStreamView from '@/views/MonitorStreamView.vue'
+import ApiKeyView from '@/views/ApiKeyView.vue' // Import the new ApiKeyView component
+import NotFound from '@/views/NotFound.vue'
+import UsageView from '@/views/UsageView.vue'
 
-const routes: Array<RouteRecordRaw> = [
+const routes = [
   {
     path: '/',
-    name: 'home',
-    component: HomeView,
+    name: 'Home',
+    component: HomeView
   },
   {
     path: '/connections',
     name: 'Connections',
-    component: ConnectionsView,
+    component: ConnectionsView
   },
   {
     path: '/streams',
     name: 'Streams',
-    component: StreamsView,
+    component: StreamsView
   },
   {
     path: '/streams/:mode',
     name: 'ManageStream',
     component: ManageStreamView,
-    props: true,
+    props: true
   },
   {
     path: '/monitor',
     name: 'MonitorStream',
     component: MonitorStreamView,
-    props: true,
+    props: true
   },
   {
     path: '/api-key',
     name: 'ApiKey',
-    component: ApiKeyView, // Define the route for the API Key page
+    component: ApiKeyView 
   },
   {
     path: '/usage',
     name: 'Usage',
-    component: UsageView, 
+    component: UsageView
+  },
+  {
+    path: '/pricing',
+    name: 'Pricing',
+    component: PricingView
   },
   {
     path: '/:catchAll(.*)',
-    component: NotFound,
-  },
-];
+    component: NotFound
+  }
+]
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.VITE_BASE_URL),
-  routes,
-});
+  routes
+})
 
-export default router;
+export default router

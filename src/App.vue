@@ -165,7 +165,8 @@ import {
   XMarkIcon,
   ChartBarSquareIcon,
   KeyIcon,
-  ComputerDesktopIcon
+  ComputerDesktopIcon,
+  WalletIcon,
 } from '@heroicons/vue/24/outline';
 
 const { isSignedIn } = useAuth();
@@ -184,7 +185,8 @@ const navigation = ref<NavigationItem[]>([
   { name: 'Streams', href: '/streams', icon: ArrowPathIcon },
   { name: 'Monitor Stream', href: '/monitor', icon: ComputerDesktopIcon },
   { name: 'API Key', href: '/api-key', icon: KeyIcon },
-  { name: 'Usage', href: '/usage', icon: ChartBarSquareIcon }
+  { name: 'Usage', href: '/usage', icon: ChartBarSquareIcon },
+  { name: 'Pricing', href: '/pricing', icon: WalletIcon }
 ]);
 
 const sidebarOpen = ref(false);

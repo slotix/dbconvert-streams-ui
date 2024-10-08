@@ -74,6 +74,7 @@ export const useCommonStore = defineStore('common', {
       { id: 'cdc', title: 'Stream / Change Data Capture' },
     ] as ModeOption[],
     currentPage: '',
+    selectedPlan: null as string | null
   }),
   actions: {
     async retryOperation(operation: () => Promise<void>, maxRetries = 3, delay = 5000): Promise<void> {
@@ -246,6 +247,9 @@ export const useCommonStore = defineStore('common', {
         this.showNotification('Failed to initialize app', 'error');
         return 'failed';
       }
+    },
+    setSelectedPlan(planId: string) {
+      this.selectedPlan = planId;
     },
   },
   getters: {
