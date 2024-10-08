@@ -22,6 +22,11 @@
         Update API Key
       </button>
     </div>
+    <!-- <div class="mt-4 flex space-x-4">
+      <div class="text-gray-600 text-sm italic">
+        Country: {{ country || 'Unknown' }}
+      </div>
+    </div> -->
   </div>
 </template>
 
@@ -29,12 +34,13 @@
 import { ref, computed } from 'vue';
 import { useCommonStore } from '@/stores/common';
 import { EyeIcon, EyeSlashIcon, ClipboardIcon, CheckIcon } from '@heroicons/vue/24/outline';
+// import { useUserCountry } from '@/views/useUserCountry';
 
 const commonStore = useCommonStore();
 const apiKey = computed(() => commonStore.userData?.apiKey);
 const showApiKey = ref(false);
 const copied = ref(false);
-
+// const { country } = useUserCountry();
 const toggleApiKeyVisibility = () => {
   showApiKey.value = !showApiKey.value;
 };
