@@ -6,10 +6,8 @@ import PricingView from '@/views/PricingView.vue'
 import ConnectionsView from '@/views/ConnectionsView.vue'
 import ManageStreamView from '@/views/ManageStreamView.vue'
 import MonitorStreamView from '@/views/MonitorStreamView.vue'
-import ApiKeyView from '@/views/ApiKeyView.vue' // Import the new ApiKeyView component
+import UserView from '@/views/UserView.vue'
 import NotFound from '@/views/NotFound.vue'
-import UsageView from '@/views/UsageView.vue'
-
 const routes = [
   {
     path: '/',
@@ -39,14 +37,9 @@ const routes = [
     props: true
   },
   {
-    path: '/api-key',
-    name: 'ApiKey',
-    component: ApiKeyView 
-  },
-  {
-    path: '/usage',
-    name: 'Usage',
-    component: UsageView
+    path: '/user',
+    name: 'User',
+    component: UserView
   },
   {
     path: '/pricing',
@@ -60,7 +53,7 @@ const routes = [
 ]
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.VITE_BASE_URL),
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes
 })
 

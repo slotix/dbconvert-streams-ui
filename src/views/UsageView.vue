@@ -1,36 +1,26 @@
 <template>
-  <div class="usage-view max-w-2xl mx-auto transition-colors duration-300">
-    <div class="border-b border-gray-200 pb-4 mb-4 flex justify-between items-center">
-      <h3 class="text-lg leading-6 font-bold text-gray-900">Usage Dashboard</h3>
-      <!-- <button @click="toggleTheme" class="px-3 py-1 rounded bg-gray-200 text-gray-800 hover:bg-gray-300">
-        {{ isDarkTheme ? 'Light' : 'Dark' }} Theme
-      </button> -->
-    </div>
+  <div class="usage-view">
     <div class="mb-4">
-      <div class="border-b border-gray-200">
-        <nav class="-mb-px flex">
-          <button @click="activeTab = 'daily'"
-            :class="['py-2 px-4 text-sm font-medium', activeTab === 'daily' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500 hover:text-gray-700']">
-            Daily Usage
-          </button>
-          <button @click="activeTab = 'monthly'"
-            :class="['ml-8 py-2 px-4 text-sm font-medium', activeTab === 'monthly' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500 hover:text-gray-700']">
-            Monthly Usage
-          </button>
-        </nav>
-      </div>
+      <nav class="flex">
+        <button @click="activeTab = 'daily'"
+          :class="['py-2 px-4 text-sm font-medium', activeTab === 'daily' ? 'text-blue-600 font-semibold' : 'text-gray-500 hover:text-gray-700']">
+          Daily Usage
+        </button>
+        <button @click="activeTab = 'monthly'"
+          :class="['ml-8 py-2 px-4 text-sm font-medium', activeTab === 'monthly' ? 'text-blue-600 font-semibold' : 'text-gray-500 hover:text-gray-700']">
+          Monthly Usage
+        </button>
+      </nav>
     </div>
 
     <div v-if="activeTab === 'daily'" class="space-y-6">
-      <div :class="['bg-white shadow rounded-lg p-6', { 'dark-theme': isDarkTheme }]">
-        <h2 class="text-xl font-semibold mb-4 text-gray-800">Daily Usage</h2>
+      <div :class="['bg-white rounded-lg', { 'dark-theme': isDarkTheme }]">
         <v-chart ref="chartRef" class="chart" :option="barChartOption" />
       </div>
     </div>
 
     <div v-if="activeTab === 'monthly'" class="space-y-6">
-      <div :class="['bg-white shadow rounded-lg p-6', { 'dark-theme': isDarkTheme }]">
-        <h2 class="text-xl font-semibold mb-4 text-gray-800">Monthly Usage</h2>
+      <div :class="['bg-white rounded-lg', { 'dark-theme': isDarkTheme }]">
         <v-chart ref="chartRef" class="chart" :option="barChartOption" />
       </div>
     </div>

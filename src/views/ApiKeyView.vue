@@ -1,32 +1,28 @@
 <!-- src/views/ApiKeyView.vue -->
 <template>
-  <div class="api-key-view ">
-    <div class="border-b border-gray-200 pb-4 mb-4">
-      <h3 class="text-lg leading-6 font-bold text-gray-900">Manage API Key</h3>
+  <div class="api-key-view">
+    <div v-if="apiKey" class="mb-4">
+      <label for="api-key" class="block text-sm font-medium text-gray-700 mb-1">API Key</label>
+      <div class="mt-1 relative rounded-md shadow-sm">
+        <input :type="showApiKey ? 'text' : 'password'" :value="apiKey" id="api-key"
+          class="block w-full pr-10 focus:outline-none focus:ring-blue-500 focus:border-gray-500 sm:text-sm border-gray-300 rounded-md"
+          readonly />
+        <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
+          <button @click="toggleApiKeyVisibility" class="text-gray-400 hover:text-gray-500">
+            <component :is="showApiKey ? EyeSlashIcon : EyeIcon" class="h-5 w-5" />
+          </button>
+          <button @click="copyApiKey" class="ml-2 text-gray-400 hover:text-gray-500">
+            <component :is="copied ? CheckIcon : ClipboardIcon" class="h-5 w-5" />
+          </button>
+        </div>
+      </div>
     </div>
-    <div v-if="apiKey" class="api-key-display bg-gray-100 p-4 rounded-md shadow-md flex items-center">
-      <input :type="showApiKey ? 'text' : 'password'" :value="apiKey"
-        class="flex-grow bg-gray-100 border-none focus:ring-0 text-gray-800" readonly />
-      <button @click="toggleApiKeyVisibility" class="ml-2">
-        <component :is="showApiKey ? EyeSlashIcon : EyeIcon" class="h-5 w-5 text-gray-500" />
-      </button>
-      <button @click="copyApiKey" class="ml-2">
-        <component :is="copied ? CheckIcon : ClipboardIcon" class="h-5 w-5 text-gray-500" />
-      </button>
-    </div>
-    <div v-else class="text-gray-600 text-sm italic animate-pulse">
+    <div v-else class="text-gray-600 text-sm italic animate-pulse mb-4">
       <p>Loading your API key...</p>
     </div>
-    <div class="mt-4 flex space-x-4">
-      <button @click="updateApiKey" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
-        Update API Key
-      </button>
-    </div>
-    <!-- <div class="mt-4 flex space-x-4">
-      <div class="text-gray-600 text-sm italic">
-        Country: {{ country || 'Unknown' }}
-      </div>
-    </div> -->
+    <button @click="updateApiKey" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded">
+      Update API Key
+    </button>
   </div>
 </template>
 
