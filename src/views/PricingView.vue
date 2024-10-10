@@ -1,15 +1,24 @@
 <template>
-  <div class="flex items-center justify-center min-h-screen bg-gray-100 p-4">
-    <div class="w-full max-w-4xl bg-white rounded-lg shadow-md p-6">
-      <h1 class="text-2xl font-semibold mb-6 text-center">Choose Your Plan</h1>
-      <stripe-pricing-table
-        :pricing-table-id="pricingTableId"
-        :publishable-key="stripePublishableKey"
-        @subscriptionCompleted="handleSubscriptionCompleted"
-        class="mx-auto w-full"
-      >
-      </stripe-pricing-table>
-    </div>
+  <div class="antialiased bg-gray-200 min-h-screen">
+    <header class="bg-white shadow">
+      <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+        <h1 class="text-3xl font-bold text-gray-900">
+          Choose Your Plan
+        </h1>
+      </div>
+    </header>
+    <main class="py-12 sm:py-16">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="bg-white rounded-lg shadow-lg p-8 sm:p-12">
+          <stripe-pricing-table 
+            :pricing-table-id="pricingTableId" 
+            :publishable-key="stripePublishableKey"
+            @subscriptionCompleted="handleSubscriptionCompleted" 
+            class="w-full"
+          />
+        </div>
+      </div>
+    </main>
   </div>
 </template>
 
@@ -20,7 +29,7 @@ const commonStore = useCommonStore()
 const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY
 const pricingTableId = import.meta.env.VITE_STRIPE_PRICING_TABLE_ID
 
-const handleSubscriptionCompleted = (event: any) => {
+function handleSubscriptionCompleted(event: any) {
   console.log('Subscription completed:', event)
   commonStore.setSelectedPlan(event.subscription.id)
 }
