@@ -103,6 +103,10 @@ export default defineComponent({
       const rowCount = this.connectionsStore.countConnections;
       return index > rowCount / 2 ? 'top' : 'bottom';
     },
+    connectionNameWithId(): string {
+      if (!this.connection) return '';
+      return `${this.connection.name} (ID: ${this.connection.id})`;
+    },
   },
   methods: {
     ...mapActions(useConnectionsStore, ['setCurrentConnection', 'saveConnection']),
