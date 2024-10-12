@@ -56,7 +56,8 @@
         <div class="flex w-0 flex-1">
           <button type="button"
             class="relative -mr-px inline-flex w-0 flex-1 items-center justify-center gap-x-3 rounded-bl-lg border border-gray-300 py-4 text-sm text-gray-600 font-semibold bg-gray-100 hover:bg-gray-200 hover:text-gray-700"
-            @click="editConnection">
+            @click="editConnection"
+            v-tooltip="'Edit the connection'">
             <PencilIcon class="h-5 w-5" aria-hidden="true" />
             Edit
           </button>
@@ -64,7 +65,8 @@
         <div class="-ml-px flex w-0 flex-1">
           <button type="button"
             class="relative inline-flex w-0 flex-1 items-center justify-center gap-x-3 border border-gray-300 py-4 text-gray-600 text-sm font-semibold bg-gray-100 hover:bg-gray-200 hover:text-gray-700"
-            @click.stop="cloneConnection">
+            @click.stop="cloneConnection"
+            v-tooltip="'Clone the connection'">
             <Square2StackIcon class="h-5 w-5" aria-hidden="true" />
             Clone
           </button>
@@ -72,7 +74,8 @@
         <div class="-ml-px flex w-0 flex-1">
           <button type="button"
             class="relative inline-flex w-0 flex-1 items-center justify-center gap-x-3 rounded-br-lg border border-gray-300 py-4 text-sm font-semibold text-red-600 bg-gray-100 hover:bg-gray-200 hover:text-red-700"
-            @click.stop="deleteConn(connection.id)">
+            @click.stop="deleteConn(connection.id)"
+            v-tooltip="'Delete the connection'">
             <TrashIcon class="h-5 w-5 text-red-600" aria-hidden="true" />
             Delete
           </button>
@@ -84,9 +87,13 @@
 
 <script>
 import shared from './shared.ts';
+import { vTooltip } from '@/directives/tooltip';
 
 export default {
   ...shared,
+  directives: {
+    tooltip: vTooltip
+  },
   props: {
     connection: {
       type: Object,
