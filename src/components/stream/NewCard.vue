@@ -1,33 +1,47 @@
 <template>
-  <div class="max-w-sm w-full py-6">
-    <div class="bg-white shadow-md rounded-lg overflow-hidden">
-      <div class="bg-gray-100 p-6 tracking-wide uppercase text-sm font-medium text-gray-700">
-        Create new stream
-      </div>
-      <div class="flex justify-center">
-        <img class="mt-8 mb-8 h-24 w-20 rounded-full" :src="'/images/streams/add-stream.svg'" alt="Create database connection" />
-      </div>
-      <router-link :to="{ name: 'ManageStream', params: { mode: 'add' } }">
-        <div class="flex flex-wrap text-gray-700 bg-gray-100">
-          <button type="button" @click="addStream" class="relative -mr-px inline-flex flex-1 items-center justify-center gap-x-4 rounded-bl-lg rounded-br-lg border border-gray-300 py-4 text-sm font-semibold hover:bg-gray-200 hover:text-gray-900">
-            Add Stream
-          </button>
+  <div class="w-full py-6">
+    <div
+      class="bg-white shadow-md rounded-lg overflow-hidden cursor-pointer transform hover:scale-105 duration-300 ease-in-out flex flex-col h-full"
+      @click="addStream">
+      <div class="flex-grow p-10 space-y-2 text-sm flex flex-col items-center justify-center">
+        <img class="w-20 h-20 mb-12" src="/images/streams/add-stream.svg" alt="Create new stream" />
+        <div class="text-lg font-semibold text-gray-800 text-center">
+          Create New Stream
         </div>
-      </router-link>
+        <p class="text-gray-600 text-center">
+          Click here to create a new data stream
+        </p>
+      </div>
     </div>
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
+import { PlusIcon, ChevronRightIcon } from '@heroicons/vue/24/solid';
 import { useStreamsStore } from "@/stores/streams";
-import { useConnectionsStore } from "@/stores/connections"
+import { useConnectionsStore } from "@/stores/connections";
+import { useRouter } from 'vue-router';
 
-export default {
-  methods: {
-    addStream() {
-      useStreamsStore().resetCurrentStream();
-      useConnectionsStore().resetCurrentConnection();
-    }
-  }
-}
+export default defineComponent({
+  components: {
+    PlusIcon,
+    ChevronRightIcon,
+  },
+  setup() {
+    const router = useRouter();
+    const streamsStore = useStreamsStore();
+    const connectionsStore = useConnectionsStore();
+
+    const addStream = () => {
+      streamsStore.resetCurrentStream();
+      connectionsStore.resetCurrentConnection();
+      router.push({ name: 'ManageStream', params: { mode: 'add' } });
+    };
+
+    return {
+      addStream,
+    };
+  },
+});
 </script>
