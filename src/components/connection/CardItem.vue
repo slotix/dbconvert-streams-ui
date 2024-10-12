@@ -56,7 +56,7 @@
         <div class="flex w-0 flex-1">
           <button type="button"
             class="relative -mr-px inline-flex w-0 flex-1 items-center justify-center gap-x-3 rounded-bl-lg border border-gray-300 py-4 text-sm text-gray-600 font-semibold bg-gray-100 hover:bg-gray-200 hover:text-gray-700"
-            @click.stop="editConnection">
+            @click="editConnection">
             <PencilIcon class="h-5 w-5" aria-hidden="true" />
             Edit
           </button>
