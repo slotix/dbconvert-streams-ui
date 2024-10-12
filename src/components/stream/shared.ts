@@ -126,6 +126,10 @@ export default defineComponent({
       const rowCount = this.rowCount;
       return index > rowCount / 2 ? 'top' : 'bottom';
     },
+    streamNameWithId(): string {
+      if (!this.stream) return '';
+      return `ID: ${this.stream.id}`;
+    },
   },
   async mounted() {
     await this.getViewType();

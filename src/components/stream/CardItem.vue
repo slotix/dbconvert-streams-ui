@@ -24,7 +24,7 @@
       </div>
       <div class="px-4 pt-4 space-y-3 text-gray-500">
         <div class="text-lg font-semibold text-gray-800">
-          ID: <span class="font-normal">{{ stream.id }}</span>
+          ID: <span class="text-sm font-normal">{{ stream.id }}</span>
         </div>
         <div>
           <span class="font-semibold text-gray-800">Source: </span>
