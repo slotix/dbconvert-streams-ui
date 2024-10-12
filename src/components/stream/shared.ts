@@ -130,6 +130,21 @@ export default defineComponent({
       if (!this.stream) return '';
       return `ID: ${this.stream.id}`;
     },
+
+    displayedTables(): string[] {
+      const maxDisplayedTables = 5; // Adjust this number as needed
+      if (this.stream && this.stream.tables && this.stream.tables.length) {
+        return this.stream.tables.slice(0, maxDisplayedTables).map(table => table.name);
+      }
+      return [];
+    },
+
+    remainingTablesCount(): number {
+      if (this.stream && this.stream.tables) {
+        return Math.max(0, this.stream.tables.length - this.displayedTables.length);
+      }
+      return 0;
+    },
   },
   async mounted() {
     await this.getViewType();

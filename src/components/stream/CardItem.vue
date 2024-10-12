@@ -36,9 +36,14 @@
           <span :class="{ 'text-red-500': !target || !target.name }">{{ target && target.name ? target.name : 'N/A'
             }}</span>
         </div>
-        <div>
-          <span class="font-semibold text-gray-800">Tables: </span>
-          <span>{{ stream?.tables?.length ?? 0 }} </span>
+        <div class="flex flex-wrap items-start">
+          <span class="font-semibold text-gray-800 mr-1">Tables: </span>
+          <span class="text-sm">
+            [{{ displayedTables.join(', ') }}{{ remainingTablesCount > 0 ? ', ...' : '' }}]
+          </span>
+          <span v-if="remainingTablesCount > 0" class="text-xs italic ml-1">
+            ({{ remainingTablesCount }} more)
+          </span>
         </div>
         <div class="text-sm text-gray-600 flex items-center pt-4">
           <CalendarIcon class="h-4 w-4 mr-1" aria-hidden="true" />
