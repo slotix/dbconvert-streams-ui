@@ -7,6 +7,7 @@
       </div>
       <span class="ml-3 text-gray-900 font-medium whitespace-no-wrap">
         {{ connection.name }}
+        <span class="text-xs text-gray-500 ml-1" v-if="connection.id">{{ connection.id }}</span>
       </span>
     </div>
   </td>
@@ -18,6 +19,7 @@
   <td class="hidden px-5 py-5 lg:table-cell" @click="selectConnection">
     <span class="text-gray-600 whitespace-no-wrap">
       {{ connection.database }}
+      <span class="text-xs text-gray-500 ml-1" v-if="connection.schema">{{ connection.schema }}</span>
     </span>
   </td>
   <td class="hidden px-5 py-5 lg:table-cell" @click="selectConnection">

@@ -44,12 +44,14 @@
   </td>
   <td class="hidden px-5 py-5 lg:table-cell" @click="selectStream">
     <span class="text-gray-600 whitespace-no-wrap" :class="{ 'text-red-500': !source || !source.name }">
-      {{ source && source.name ? source.name : 'N/A' }}
+      {{ source?.name || 'N/A' }}
+      <span class="text-xs text-gray-500 ml-1" v-if="source && source.id">{{ source.id }}</span>
     </span>
   </td>
   <td class="hidden px-5 py-5 lg:table-cell" @click="selectStream">
     <span class="text-gray-600 whitespace-no-wrap" :class="{ 'text-red-500': !target || !target.name }">
-      {{ target && target.name ? target.name : 'N/A' }}
+      {{ target?.name || 'N/A' }}
+      <span class="text-xs text-gray-500 ml-1" v-if="target && target.id">{{ target.id }}</span>
     </span>
   </td>
   <td class="px-5 py-5">
