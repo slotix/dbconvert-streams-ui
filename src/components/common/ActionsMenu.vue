@@ -23,7 +23,7 @@
           <a href="#" :class="[
             active ? 'bg-gray-100 text-red-500' : 'text-red-600',
             'group flex items-center px-4 py-2 text-sm'
-          ]" @click="$emit('deleteRow')" v-tooltip="'Delete the stream'">
+          ]" @click="$emit('deleteRow')" >
             <TrashIcon class="mr-3 h-5 w-5 text-red-600 group-hover:text-red-500" aria-hidden="true" />
             Delete
           </a>
@@ -52,7 +52,7 @@
           <a href="#" :class="[
             active ? 'bg-gray-100 text-gray-900' : 'text-gray-700',
             'group flex items-center px-4 py-2 text-sm'
-          ]" @click="$emit('cloneRow')" v-tooltip="'Clone the stream'">
+          ]" @click="$emit('cloneRow')" >
             <Square2StackIcon class="mr-3 h-5 w-5 text-gray-400 group-hover:text-gray-500" aria-hidden="true" />
             Clone
           </a>
