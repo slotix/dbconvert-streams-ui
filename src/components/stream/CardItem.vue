@@ -23,12 +23,12 @@
         <div>
           <span class="font-semibold text-gray-800">Source: </span>
           <span :class="{ 'text-red-500': !source || !source.name }">{{ source?.name || 'N/A' }}</span>
-          <span class="text-xs text-gray-500 ml-1" v-if="source && source.id">(ID: {{ source.id }})</span>
+          <span class="text-xs text-gray-500 ml-1" v-if="source && source.id">({{ source.id }})</span>
         </div>
         <div>
           <span class="font-semibold text-gray-800">Target: </span>
           <span :class="{ 'text-red-500': !target || !target.name }">{{ target?.name || 'N/A' }}</span>
-          <span class="text-xs text-gray-500 ml-1" v-if="target && target.id">(ID: {{ target.id }})</span>
+          <span class="text-xs text-gray-500 ml-1" v-if="target && target.id">({{ target.id }})</span>
         </div>
         <div class="flex flex-wrap items-start">
           <span class="font-semibold text-gray-800 mr-1">Tables: </span>
@@ -39,8 +39,8 @@
             ({{ remainingTablesCount }} more)
           </span>
         </div>
-        <div class="text-xs text-gray-600 flex items-center font-medium">
-          <CalendarIcon class="h-4 w-4 mr-1" aria-hidden="true" />
+        <div class=" text-gray-600 flex items-center font-medium">
+          <CalendarIcon class="h-6 w-6 mr-1" aria-hidden="true" />
           {{ streamCreated }}
         </div>
       </div>
