@@ -28,7 +28,7 @@ const executeWithRetry = async <T>(operation: () => Promise<T>): Promise<T> => {
 const getStreams = async (): Promise<Stream[]> => {
   return executeWithRetry(async () => {
     const commonStore = useCommonStore();
-    const response: AxiosResponse<Stream[]> = await apiClient.get('/streams', {
+    const response: AxiosResponse<Stream[]> = await apiClient.get('/stream-configs', {
       headers: { 'X-API-Key': commonStore.apiKey }
     });
     return response.data;
@@ -38,7 +38,7 @@ const getStreams = async (): Promise<Stream[]> => {
 const createStream = async (json: Record<string, unknown>): Promise<Stream> => {
   return executeWithRetry(async () => {
     const commonStore = useCommonStore();
-    const response: AxiosResponse<Stream> = await apiClient.post('/streams', json, {
+    const response: AxiosResponse<Stream> = await apiClient.post('/stream-configs', json, {
       headers: { 'X-API-Key': commonStore.apiKey }
     });
     return response.data;
@@ -48,7 +48,7 @@ const createStream = async (json: Record<string, unknown>): Promise<Stream> => {
 const deleteStream = async (id: string): Promise<void> => {
   return executeWithRetry(async () => {
     const commonStore = useCommonStore();
-    await apiClient.delete(`/streams/${id}`, {
+    await apiClient.delete(`/stream-configs/${id}`, {
       headers: { 'X-API-Key': commonStore.apiKey }
     });
   });
@@ -57,7 +57,7 @@ const deleteStream = async (id: string): Promise<void> => {
 const cloneStreamConfig = async (id: string): Promise<Stream> => {
   return executeWithRetry(async () => {
     const commonStore = useCommonStore();
-    const response: AxiosResponse<Stream> = await apiClient.put(`/streams/${id}/clone`, null, {
+    const response: AxiosResponse<Stream> = await apiClient.put(`/stream-configs/${id}/clone`, null, {
       headers: { 'X-API-Key': commonStore.apiKey }
     });
     return response.data;
