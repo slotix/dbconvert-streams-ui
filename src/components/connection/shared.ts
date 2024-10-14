@@ -70,7 +70,14 @@ export default defineComponent({
       if (!this.connection || typeof this.connection.created !== 'number') return '';
       const milliseconds = this.connection.created * 1000;
       const date = new Date(milliseconds);
-      return date.toLocaleDateString() + ' - ' + date.toLocaleTimeString();
+      return date.toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      }).replace(',', ' -');
     },
     concatenateValues(): string {
       if (!this.connection) return '';
