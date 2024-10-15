@@ -71,5 +71,11 @@
 <script>
 import { PencilIcon,  ClipboardIcon, PlayIcon } from '@heroicons/vue/20/solid';
 import shared from './shared'
-export default Object.assign({}, shared, {})
+import { vTooltip } from '@/directives/tooltip';
+
+export default Object.assign({}, shared, {
+  directives: {
+    tooltip: vTooltip
+  }
+})
 </script>
