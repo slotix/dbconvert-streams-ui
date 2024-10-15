@@ -1,26 +1,10 @@
 <template>
   <td class="px-5 py-5" @click="selectStream">
     <div class="flex items-center">
-      <!-- <div class="item w-2/5 flex">
-        <img v-if="source && source.type" class="h-6 w-6 rounded-full" :src="logoSrc(this.source.type)"
-          :alt="source.type + ' logo'" />
-
-        <div v-else class="h-6 w-6 rounded-full bg-red-400 flex items-center justify-center">
-          <span class="text-white font-mono">x</span>
-        </div>
-        <ChevronRightIcon class="h-6 w-6 pt-1 text-gray-500" aria-hidden="true" />
-        <img v-if="target && target.type" class="h-6 w-6 rounded-full" :src="logoSrc(this.target.type)"
-          :alt="target.type + ' logo'" />
-        <div v-else class="h-6 w-6 rounded-full bg-red-400 flex items-center justify-center">
-          <span class="text-white font-mono">x</span>
-        </div>
-      </div> -->
       <div class="flex-auto">
-
         <div class="item flex">
           <img v-if="source && source.type" class="h-6 w-6 rounded-full" :src="logoSrc(this.source.type)"
             :alt="source.type + ' logo'" />
-
           <div v-else class="h-6 w-6 rounded-full bg-red-400 flex items-center justify-center">
             <span class="text-white font-mono">x</span>
           </div>
@@ -36,9 +20,25 @@
           </div>
         </div>
         <div class="flex items-start gap-x-3 mt-3">
-          <div class="text-sm font-medium leading-6 text-gray-900">{{ stream.id }}</div>
+          <div class="text-sm font-medium leading-6 text-gray-900">{{ stream.name || 'Unnamed Stream' }}</div>
         </div>
-        <div class="mt-1 text-xs leading-5 text-gray-500">{{ streamCreated }} </div>
+        <div class="mt-1 text-xs leading-5 text-gray-500 flex items-center">
+          <span 
+            class="cursor-pointer"
+            @click.stop="toggleIdExpansion"
+            v-tooltip="isIdExpanded ? 'Collapse ID' : 'Expand ID'"
+          >
+            ID: {{ displayedId }}
+          </span>
+          <button 
+            @click.stop="copyId" 
+            class="ml-2 text-gray-500 hover:text-gray-700" 
+            v-tooltip="'Copy full ID'"
+          >
+            <ClipboardIcon class="h-4 w-4" />
+          </button>
+        </div>
+        <div class="mt-1 text-xs leading-5 text-gray-500">{{ streamCreated }}</div>
       </div>
     </div>
   </td>
@@ -69,7 +69,7 @@
 </template>
 
 <script>
-import { PencilIcon } from '@heroicons/vue/20/solid';
+import { PencilIcon,  ClipboardIcon, PlayIcon } from '@heroicons/vue/20/solid';
 import shared from './shared'
 export default Object.assign({}, shared, {})
 </script>
