@@ -6,7 +6,12 @@
             </div>
         </div>
         <div class="px-2 overflow-x-auto mt-6">
-            <ModeButtons />
+            <div >
+                <label for="streamName" class="block text-sm font-medium text-gray-700">Stream Name:</label>
+                <input type="text" id="streamName" v-model="streamName"
+                    class="mt-1 focus:ring-gray-500 focus:border-gray-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" />
+            </div>
+            <ModeButtons class="mt-4" />
             <div v-if="currentStream.mode === 'cdc'">
                 <div class="mt-2">
                     <Operations v-model="operations" />
@@ -40,8 +45,7 @@
             </div>
 
             <div class="mt-4">
-                <input id="skip-index-creation" name="skip-index-creation" type="checkbox"
-                    v-model="skipIndexCreation"
+                <input id="skip-index-creation" name="skip-index-creation" type="checkbox" v-model="skipIndexCreation"
                     class="h-4 w-4 text-sm rounded border-gray-300 text-gray-600 focus:ring-gray-600" />
                 <label for="skip-index-creation" class="text-sm font-medium text-gray-700 pl-2"> Skip Index Creation
                     for All Tables
@@ -69,7 +73,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed} from 'vue';
+import { computed } from 'vue';
 import { useStreamsStore, defaultStreamOptions } from '@/stores/streams';
 import ModeButtons from './ModeButtons.vue';
 import Operations from './Operations.vue';
@@ -131,5 +135,10 @@ const createStructure = computed<boolean>({
 const skipIndexCreation = computed<boolean>({
     get: () => currentStream.skipIndexCreation !== undefined ? currentStream.skipIndexCreation : defaultStreamOptions.skipIndexCreation,
     set: (value) => { currentStream.skipIndexCreation = value; }
+});
+
+const streamName = computed({
+    get: () => currentStream.name,
+    set: (value) => { currentStream.name = value; }
 });
 </script>

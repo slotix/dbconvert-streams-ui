@@ -17,8 +17,11 @@
         </span>
       </div>
       <div class="flex-grow p-4 space-y-3 text-sm">
-        <div class="text-gray-800 font-bold text-base">
-          ID: <span class="font-semibold">{{ stream.id }}</span>
+        <div class="text-gray-800 font-bold text-lg mb-2">
+           {{ stream.name }}
+        </div>
+         <div class="text-xs text-gray-500 cursor-pointer hover:text-gray-700" @click.stop="copyId" v-tooltip="'Click to copy ID'">
+          ID: {{ stream.id }}
         </div>
         <div>
           <span class="font-semibold text-gray-800">Source: </span>
@@ -39,17 +42,16 @@
             ({{ remainingTablesCount }} more)
           </span>
         </div>
-        <div class=" text-gray-600 flex items-center font-medium">
-          <CalendarIcon class="h-6 w-6 mr-1" aria-hidden="true" />
-          {{ streamCreated }}
+        <div class=" text-gray-600 flex items-center ">
+          <CalendarIcon class="h-4 w-4 mr-1" aria-hidden="true" />
+          <span class="font-normal pl-3">{{ streamCreated }}</span>
         </div>
       </div>
       <div class="mt-auto flex divide-x divide-gray-200">
         <div class="flex w-0 flex-1">
           <button type="button"
             class="relative -mr-px inline-flex w-0 flex-1 items-center justify-center gap-x-3 rounded-bl-lg border border-gray-300 py-4 text-sm text-gray-700 font-semibold bg-gray-100 hover:bg-gray-200"
-            @click.stop="editStream"
-            v-tooltip="'Edit stream configuration'">
+            @click.stop="editStream" v-tooltip="'Edit stream configuration'">
             <PencilIcon class="h-5 w-5 text-gray-700" aria-hidden="true" />
             Edit
           </button>
@@ -58,14 +60,12 @@
           <ActionsMenu
             class="relative inline-flex w-0 flex-1 items-center justify-center gap-x-3 border-gray-300 border-t border-l py-4 text-sm font-semibold bg-gray-100 hover:bg-gray-200"
             :position="actionsMenuPosition" @selectRow="selectStream" @editRow="editStream" @cloneRow="cloneStream"
-            @deleteRow="deleteStream"
-            v-tooltip="'More stream actions'" />
+            @deleteRow="deleteStream" v-tooltip="'More stream actions'" />
         </div>
         <div class="-ml-px flex w-0 flex-1">
           <button type="button"
             class="relative inline-flex w-0 flex-1 items-center justify-center gap-x-0 rounded-br-lg border-l border-t border-gray-300 py-4 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200"
-            @click.stop="startStream"
-            v-tooltip="'Start the stream'">
+            @click.stop="startStream" v-tooltip="'Start the stream'">
             <PlayIcon class="h-5 w-5 text-green-700 mr-2" aria-hidden="true" />
             Start
           </button>
@@ -84,6 +84,6 @@ export default defineComponent({
   ...shared,
   directives: {
     tooltip: vTooltip
-  }
+  },
 });
 </script>

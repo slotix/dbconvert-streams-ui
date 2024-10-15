@@ -98,13 +98,28 @@ export default defineComponent({
         }
       }
     },
+    copyId() {
+      navigator.clipboard.writeText(this.stream.id).then(() => {
+        const commonStore = useCommonStore();
+        commonStore.showNotification('Stream ID copied to clipboard', 'success');
+      }, (err) => {
+        console.error('Could not copy text: ', err);
+      });
+    }
   },
   computed: {
     ...mapState(useStreamsStore, ['currentStream']),
     streamCreated(): string {
       if (!this.stream || typeof this.stream.created !== 'number') return '';
       const date = new Date(this.stream.created * 1000);
-      return date.toLocaleDateString() + ' - ' + date.toLocaleTimeString();
+      return date.toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      }).replace(',', ' -');
     },
     logoSrc(): (tp: string) => string {
       return (tp: string) => {

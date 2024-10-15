@@ -3,6 +3,7 @@ import api from '@/api/streams';
 import { debounce } from 'lodash';
 import { Stream, Table } from '@/types/streams';
 import { Step } from '@/stores/common'
+import { useConnectionsStore } from '@/stores/connections';
 
 interface State {
     streams: Stream[];
@@ -125,6 +126,14 @@ export const useStreamsStore = defineStore('streams', {
         setCurrentStream(id: string) {
             const curStream = this.streams.find(c => c.id === id);
             this.currentStream = curStream ? curStream : { ...defaultStreamOptions };
+            if (this.currentStream && !this.currentStream.name) {
+                this.currentStream.name = this.generateDefaultStreamName(
+                    this.currentStream.source || '',
+                    this.currentStream.target || '',
+                    this.currentStream.tables || [],
+                    this.currentStream.created || 0
+                );
+            }
         },
         setFilter(filter: string) {
             this.currentFilter = filter;
@@ -133,6 +142,14 @@ export const useStreamsStore = defineStore('streams', {
         saveStream: debounce(async function (this: any) {
             try {
                 this.prepareStreamData();
+                if (!this.currentStream.name) {
+                    this.currentStream.name = this.generateDefaultStreamName(
+                        this.currentStream.source,
+                        this.currentStream.target,
+                        this.currentStream.tables || [],
+                        this.currentStream.created || 0
+                    );
+                }
                 const stream = await api.createStream(this.currentStream!);
                 this.resetCurrentStream();
                 await this.refreshStreams();
@@ -249,6 +266,22 @@ export const useStreamsStore = defineStore('streams', {
         },
         async clearStreams(this: State) {
             this.streams.length = 0;
+        },
+        generateDefaultStreamName(source: string, target: string, tables: Table[], created: number): string {
+            const sourceType = useConnectionsStore().connectionByID(source)?.type || 'Unknown';
+            const targetType = useConnectionsStore().connectionByID(target)?.type || 'Unknown';
+            const tableCount = tables.length;
+            const firstTableName = tables[0]?.name || 'unknown';
+            const milliseconds = created * 1000;
+            const date = new Date(milliseconds).toISOString().split('T')[0];
+
+            let name = `Stream_${sourceType}_to_${targetType}_${firstTableName}`;
+            if (tableCount > 1) {
+                name += `_and_${tableCount - 1}_more`;
+            }
+            name += `_${date}`;
+
+            return name;
         },
     },
 });
