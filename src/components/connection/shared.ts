@@ -9,7 +9,7 @@ import {
 } from '@heroicons/vue/24/solid';
 import { mapActions, mapState } from 'pinia';
 import { useConnectionsStore } from '@/stores/connections';
-import { useStreamsStore } from '@/stores/streams';
+import { useStreamsStore } from '@/stores/streamConfig';
 import { useCommonStore, DIALOG_TYPES } from '@/stores/common';
 import ActionsMenu from '@/components/common/ActionsMenu.vue';
 import { defineComponent, computed, ref, PropType } from 'vue';
@@ -57,7 +57,7 @@ export default defineComponent({
     }),
     ...mapState(useStreamsStore, {
       currentStep: 'currentStep',
-      currentStream: 'currentStream'
+      currentStreamConfig: 'currentStreamConfig'
     }),
     connectionsCount(): number {
       return this.connectionsByType.length;
@@ -90,17 +90,17 @@ export default defineComponent({
         return false;
       }
       const isSourceStreamSelected =
-        this.currentStep?.name === 'source' && this.currentStream?.source === this.connection?.id;
+        this.currentStep?.name === 'source' && this.currentStreamConfig?.source === this.connection?.id;
       const isTargetStreamSelected =
-        this.currentStep?.name === 'target' && this.currentStream?.target === this.connection?.id;
+        this.currentStep?.name === 'target' && this.currentStreamConfig?.target === this.connection?.id;
 
       return isSourceStreamSelected || isTargetStreamSelected;
     },
     bgRowClass(): (connection: Connection) => object {
       return (connection: Connection) => ({
         'hover:bg-gray-50': !this.isStreamsPage,
-        'bg-yellow-50': this.isStreamsPage && this.currentStep?.name === 'source' && this.currentStream?.source === connection.id,
-        'bg-green-50': this.isStreamsPage && this.currentStep?.name === 'target' && this.currentStream?.target === connection.id,
+        'bg-yellow-50': this.isStreamsPage && this.currentStep?.name === 'source' && this.currentStreamConfig?.source === connection.id,
+        'bg-green-50': this.isStreamsPage && this.currentStep?.name === 'target' && this.currentStreamConfig?.target === connection.id,
         'hover:bg-yellow-50': this.isStreamsPage && this.currentStep?.name === 'source',
         'hover:bg-green-50': this.isStreamsPage && this.currentStep?.name === 'target',
       });
@@ -162,13 +162,13 @@ export default defineComponent({
       if (!this.connection) return;
       this.setCurrentConnection(this.connection.id);
       if (this.currentStep?.name === 'source') {
-        if (this.currentStream) {
-          this.currentStream.source = this.connection.id;
+        if (this.currentStreamConfig) {
+          this.currentStreamConfig.source = this.connection.id;
         }
       }
       if (this.currentStep?.name === 'target') {
-        if (this.currentStream) {
-          this.currentStream.target = this.connection.id;
+        if (this.currentStreamConfig) {
+          this.currentStreamConfig.target = this.connection.id;
         }
       }
     },

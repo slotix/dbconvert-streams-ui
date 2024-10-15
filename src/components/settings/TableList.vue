@@ -57,7 +57,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue';
-import { useStreamsStore, defaultStreamOptions } from '@/stores/streams';
+import { useStreamsStore, defaultStreamConfigOptions } from '@/stores/streamConfig';
 import { useCommonStore } from '@/stores/common';
 import Pagination from '@/components/common/Pagination.vue';
 import TableSettings from './TableSettings.vue';
@@ -65,14 +65,14 @@ import TableRow from './TableRow.vue';
 import api from '@/api/connections';
 import { FunnelIcon } from '@heroicons/vue/24/outline';
 import { debounce } from 'lodash';
-import { Stream, Table } from '@/types/streams';
+import { StreamConfig, Table } from '@/types/streamConfig';
 
 const streamsStore = useStreamsStore();
-const currentStream = streamsStore.currentStream as Stream;
+const currentStreamConfig = streamsStore.currentStreamConfig as StreamConfig;
 
-const tables = ref<Table[]>(currentStream.tables?.map((table) => ({
+const tables = ref<Table[]>(currentStreamConfig.tables?.map((table) => ({
   name: table.name,
-  operations: table.operations ?? defaultStreamOptions.operations ?? [], // Default to operations if undefined
+  operations: table.operations ?? defaultStreamConfigOptions.operations ?? [], // Default to operations if undefined
   skipIndexCreation: table.skipIndexCreation !== undefined ? table.skipIndexCreation : false, // Default value for createIndexes
   query: table.query,
   selected: true
@@ -138,7 +138,7 @@ const updateCurrentPage = (newPage: number) => {
 // Helper function to create table objects based on the current stream mode
 function createTableObject(entry: any, mode: 'cdc' | 'convert'): Table {
   const name = typeof entry === 'string' ? entry : 'Unknown';
-  const operations = entry?.operations ?? defaultStreamOptions.operations ?? [];
+  const operations = entry?.operations ?? defaultStreamConfigOptions.operations ?? [];
   const query = entry?.query ?? '';
   const skipIndexCreation = entry?.skipIndexCreation !== undefined ? entry.skipIndexCreation : false;
   const selected = entry?.selected !== undefined ? entry.selected : true;
@@ -146,7 +146,7 @@ function createTableObject(entry: any, mode: 'cdc' | 'convert'): Table {
   if (mode === 'cdc') {
     return {
       name,
-      operations: defaultStreamOptions.operations ?? [],
+      operations: defaultStreamConfigOptions.operations ?? [],
       skipIndexCreation: skipIndexCreation,
       query: '',
       selected: selected
@@ -165,8 +165,8 @@ function createTableObject(entry: any, mode: 'cdc' | 'convert'): Table {
 const refreshTables = async () => {
   const commonStore = useCommonStore();
   try {
-    const response = await api.getTables(currentStream.source);
-    tables.value = response.map((entry: any) => createTableObject(entry, currentStream.mode));
+    const response = await api.getTables(currentStreamConfig.source);
+    tables.value = response.map((entry: any) => createTableObject(entry, currentStreamConfig.mode));
   } catch (err) {
     tables.value = []; // Clear the tables in case of an error
     if (err instanceof Error) {
@@ -177,7 +177,7 @@ const refreshTables = async () => {
   }
 };
 watch(
-  () => currentStream.source,
+  () => currentStreamConfig.source,
   async (newSource, oldSource) => {
     if (newSource !== oldSource) {
       await refreshTables();
@@ -205,7 +205,7 @@ const toggleSelectAll = ($event: Event) => {
 
 watch(
   checkedTables, (newTables) => {
-    currentStream.tables = newTables.filter(table => table.selected);
+    currentStreamConfig.tables = newTables.filter(table => table.selected);
   }, { deep: true });
 
 </script>

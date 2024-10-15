@@ -16,7 +16,7 @@
 
 <script setup>
 import Streams from '@/components/stream/Streams.vue'
-import { useStreamsStore } from '@/stores/streams'
+import { useStreamsStore } from '@/stores/streamConfig'
 
 function streamsCount() {
   return useStreamsStore().countStreams

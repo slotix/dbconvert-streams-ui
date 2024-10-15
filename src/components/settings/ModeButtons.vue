@@ -21,7 +21,7 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue';
-import { useStreamsStore } from '@/stores/streams';
+import { useStreamsStore } from '@/stores/streamConfig';
 import { useCommonStore, ModeOption } from '@/stores/common';
 import { RadioGroup, RadioGroupLabel, RadioGroupOption } from '@headlessui/vue';
 import { CheckCircleIcon } from '@heroicons/vue/20/solid';
@@ -30,13 +30,13 @@ import { CheckCircleIcon } from '@heroicons/vue/20/solid';
 const commonStore = useCommonStore();
 const modes = commonStore.modes as ModeOption[];
 const streamsStore = useStreamsStore();
-const currentStream = streamsStore.currentStream;
+const currentStreamConfig = streamsStore.currentStreamConfig;
 
-const mode = ref < ModeOption > (modes.find((option) => option.id === currentStream?.mode) || modes[0]);
+const mode = ref<ModeOption>(modes.find((option) => option.id === currentStreamConfig?.mode) || modes[0]);
 
 watch(mode, (newVal) => {
-  if (currentStream) {
-    currentStream.mode = newVal.id;
+  if (currentStreamConfig) {
+    currentStreamConfig.mode = newVal.id;
   }
 });
 </script>

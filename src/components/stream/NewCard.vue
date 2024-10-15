@@ -19,7 +19,7 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 import { PlusIcon, ChevronRightIcon } from '@heroicons/vue/24/solid';
-import { useStreamsStore } from "@/stores/streams";
+import { useStreamsStore } from "@/stores/streamConfig";
 import { useConnectionsStore } from "@/stores/connections";
 import { useRouter } from 'vue-router';
 

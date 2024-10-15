@@ -3,9 +3,9 @@
     <div class="bg-white flex flex-wrap justify-between space-y-4 sm:space-y-0 max-w-7xl mx-auto py-6 px-8">
       <h1 class="flex-auto text-3xl font-bold text-gray-900 dark:text-white;">
         {{ mode === 'edit' ? 'Edit Stream' : 'Add Stream' }}:
-        <span v-if="currentStream"
+        <span v-if="currentStreamConfig"
           class="text-gray-500 text-lg underline underline-offset-4 decoration-dashed decoration-gray-400">
-          {{ currentStream.id }}
+          {{ currentStreamConfig.id }}
         </span>
       </h1>
       <Steps />
@@ -40,14 +40,14 @@ import Edit from '@/components/connection/Edit.vue'
 import { useCommonStore } from '@/stores/common'
 import Steps from '@/components/stream/Steps.vue'
 import Settings from '@/components/settings/Settings.vue'
-import { useStreamsStore } from '@/stores/streams'
+import { useStreamsStore } from '@/stores/streamConfig'
 import { DIALOG_TYPES } from '@/stores/common';
 
 const store = useStreamsStore()
 const commonStore = useCommonStore()
 
 const currentStep = computed(() => store.currentStep)
-const currentStream = computed(() => store.currentStream)
+const currentStreamConfig = computed(() => store.currentStreamConfig)
 
 const props = defineProps({
   mode: String,
@@ -55,4 +55,3 @@ const props = defineProps({
 
 const dlgTp = computed(() => commonStore.dlgType)
 </script>
- 

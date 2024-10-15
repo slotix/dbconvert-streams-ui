@@ -15,7 +15,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { defaultStreamOptions } from '@/stores/streams';
+import { defaultStreamConfigOptions } from '@/stores/streamConfig';
 interface Props {
     modelValue: string[];
     prefix?: string; // New prop for unique ID prefix
@@ -26,7 +26,7 @@ const props = defineProps<Props>();
 const emit = defineEmits(['update:modelValue']);
 
 // Computed property to get the list of operations with a fallback to an empty array if undefined
-const operationList = computed<string[]>(() => defaultStreamOptions.operations ?? []);
+const operationList = computed<string[]>(() => defaultStreamConfigOptions.operations ?? []);
 
 // Function to generate unique IDs
 const generateId = (operation: string): string => `${props.prefix}-${operation}`;

@@ -7,7 +7,7 @@ export interface Table {
     skipIndexCreation?: boolean;
 }
 
-export interface Stream {
+export interface StreamConfig {
     id: string;
     name: string;
     created?: number;

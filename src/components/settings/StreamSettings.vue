@@ -6,13 +6,13 @@
             </div>
         </div>
         <div class="px-2 overflow-x-auto mt-6">
-            <div >
+            <div>
                 <label for="streamName" class="block text-sm font-medium text-gray-700">Stream Name:</label>
                 <input type="text" id="streamName" v-model="streamName"
                     class="mt-1 focus:ring-gray-500 focus:border-gray-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" />
             </div>
             <ModeButtons class="mt-4" />
-            <div v-if="currentStream.mode === 'cdc'">
+            <div v-if="currentStreamConfig.mode === 'cdc'">
                 <div class="mt-2">
                     <Operations v-model="operations" />
                 </div>
@@ -74,71 +74,71 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { useStreamsStore, defaultStreamOptions } from '@/stores/streams';
+import { useStreamsStore, defaultStreamConfigOptions } from '@/stores/streamConfig';
 import ModeButtons from './ModeButtons.vue';
 import Operations from './Operations.vue';
-import { Stream } from '@/types/streams';
+import { StreamConfig } from '@/types/streamConfig';
 
 const streamsStore = useStreamsStore();
-const currentStream = streamsStore.currentStream as Stream;
+const currentStreamConfig = streamsStore.currentStreamConfig as StreamConfig;
 
 const dataBundleSize = computed<number>({
-    get: () => currentStream.dataBundleSize ?? defaultStreamOptions.dataBundleSize,
-    set: (newValue) => { currentStream.dataBundleSize = newValue; }
+    get: () => currentStreamConfig.dataBundleSize ?? defaultStreamConfigOptions.dataBundleSize,
+    set: (newValue) => { currentStreamConfig.dataBundleSize = newValue; }
 });
 
 const operations = computed<string[]>({
-    get: () => currentStream.operations ?? defaultStreamOptions.operations ?? [],
-    set: (value) => { currentStream.operations = value; }
+    get: () => currentStreamConfig.operations ?? defaultStreamConfigOptions.operations ?? [],
+    set: (value) => { currentStreamConfig.operations = value; }
 });
 
 const reportingIntervalsSource = computed<number>({
-    get: () => currentStream.reportingIntervals?.source ?? defaultStreamOptions.reportingIntervals.source,
+    get: () => currentStreamConfig.reportingIntervals?.source ?? defaultStreamConfigOptions.reportingIntervals.source,
     set: (value) => {
-        if (currentStream.reportingIntervals) {
-            currentStream.reportingIntervals.source = value;
+        if (currentStreamConfig.reportingIntervals) {
+            currentStreamConfig.reportingIntervals.source = value;
         }
     }
 });
 const reportingIntervalsTarget = computed<number>({
-    get: () => currentStream.reportingIntervals?.target ?? defaultStreamOptions.reportingIntervals.target,
+    get: () => currentStreamConfig.reportingIntervals?.target ?? defaultStreamConfigOptions.reportingIntervals.target,
     set: (value) => {
-        if (currentStream.reportingIntervals) {
-            currentStream.reportingIntervals.target = value;
+        if (currentStreamConfig.reportingIntervals) {
+            currentStreamConfig.reportingIntervals.target = value;
         }
     }
 });
 
 const limitsNumberOfEvents = computed<number>({
-    get: () => currentStream.limits?.numberOfEvents ?? defaultStreamOptions.limits.numberOfEvents,
+    get: () => currentStreamConfig.limits?.numberOfEvents ?? defaultStreamConfigOptions.limits.numberOfEvents,
     set: (value) => {
-        if (currentStream.limits) {
-            currentStream.limits.numberOfEvents = value;
+        if (currentStreamConfig.limits) {
+            currentStreamConfig.limits.numberOfEvents = value;
         }
     }
 });
 
 const limitsElapsedTime = computed<number>({
-    get: () => currentStream.limits?.elapsedTime ?? defaultStreamOptions.limits.elapsedTime,
+    get: () => currentStreamConfig.limits?.elapsedTime ?? defaultStreamConfigOptions.limits.elapsedTime,
     set: (value) => {
-        if (currentStream.limits) {
-            currentStream.limits.elapsedTime = value;
+        if (currentStreamConfig.limits) {
+            currentStreamConfig.limits.elapsedTime = value;
         }
     }
 });
 
 const createStructure = computed<boolean>({
-    get: () => currentStream.createStructure !== undefined ? currentStream.createStructure : defaultStreamOptions.createStructure,
-    set: (value) => { currentStream.createStructure = value; }
+    get: () => currentStreamConfig.createStructure !== undefined ? currentStreamConfig.createStructure : defaultStreamConfigOptions.createStructure,
+    set: (value) => { currentStreamConfig.createStructure = value; }
 });
 
 const skipIndexCreation = computed<boolean>({
-    get: () => currentStream.skipIndexCreation !== undefined ? currentStream.skipIndexCreation : defaultStreamOptions.skipIndexCreation,
-    set: (value) => { currentStream.skipIndexCreation = value; }
+    get: () => currentStreamConfig.skipIndexCreation !== undefined ? currentStreamConfig.skipIndexCreation : defaultStreamConfigOptions.skipIndexCreation,
+    set: (value) => { currentStreamConfig.skipIndexCreation = value; }
 });
 
 const streamName = computed({
-    get: () => currentStream.name,
-    set: (value) => { currentStream.name = value; }
+    get: () => currentStreamConfig.name,
+    set: (value) => { currentStreamConfig.name = value; }
 });
 </script>

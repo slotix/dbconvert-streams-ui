@@ -9,19 +9,19 @@ import {
   ClipboardIcon,
 } from '@heroicons/vue/24/solid';
 import { mapActions, mapState } from 'pinia';
-import { useStreamsStore } from '@/stores/streams';
+import { useStreamsStore } from '@/stores/streamConfig';
 import { useConnectionsStore } from '@/stores/connections';
 import { useCommonStore } from '@/stores/common';
 import { useMonitoringStore } from '@/stores/monitoring';
 import ActionsMenu from '@/components/common/ActionsMenu.vue';
 import { defineComponent, PropType, computed, ref } from 'vue';
-import { Stream } from '@/types/streams';
+import { StreamConfig } from '@/types/streamConfig';
 import { DbType } from '@/types/connections';
 
 export default defineComponent({
   props: {
     stream: {
-      type: Object as PropType<Stream>,
+      type: Object as PropType<StreamConfig>,
       required: true,
     },
     source: {
@@ -130,7 +130,7 @@ export default defineComponent({
     },
   },
   computed: {
-    ...mapState(useStreamsStore, ['currentStream']),
+    ...mapState(useStreamsStore, ['currentStreamConfig']),
     streamCreated(): string {
       if (!this.stream || typeof this.stream.created !== 'number') return '';
       const date = new Date(this.stream.created * 1000);

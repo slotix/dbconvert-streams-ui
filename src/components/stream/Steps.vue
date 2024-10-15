@@ -52,7 +52,7 @@
 </template>
 
 <script setup>
-import { useStreamsStore } from '@/stores/streams'
+import { useStreamsStore } from '@/stores/streamConfig'
 import { useCommonStore } from '@/stores/common'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
@@ -66,10 +66,10 @@ const allSteps = commonStore.steps
 const stepsCount = commonStore.steps.length
 
 const currentStepIndex = ref(1)
-const currentStream = store.currentStream
+const currentStreamConfig = store.currentStreamConfig
 
 const isSaveDisabled = computed(() => {
-  return currentStream.source === 0 || currentStream.target === 0
+  return currentStreamConfig.source === 0 || currentStreamConfig.target === 0
 })
 
 const stepsBarValue = computed(() => {

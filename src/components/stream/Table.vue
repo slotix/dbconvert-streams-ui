@@ -68,7 +68,7 @@ import TableRow from './TableRow.vue'
 import { PlusIcon } from '@heroicons/vue/24/outline'
 import { mapState, mapActions } from 'pinia'
 import { useConnectionsStore } from '@/stores/connections'
-import { useStreamsStore } from '@/stores/streams'
+import { useStreamsStore } from '@/stores/streamConfig'
 
 export default {
   methods: {

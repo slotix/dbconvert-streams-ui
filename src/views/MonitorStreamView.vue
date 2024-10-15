@@ -3,8 +3,9 @@
     <div class="bg-white flex flex-col max-w-7xl mx-auto py-6 px-8">
       <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
         Monitor stream: <span
-          class="text-gray-500 text-lg underline underline-offset-4 decoration-dashed decoration-gray-400">{{ monitoringStore.streamID }}
-          </span>
+          class="text-gray-500 text-lg underline underline-offset-4 decoration-dashed decoration-gray-400">{{
+            monitoringStore.streamID }}
+        </span>
       </h1>
       <p class="text-gray-500 text-sm mb-4">
         Config: <span class="">{{ currentStreamConfig.name }}</span>
@@ -59,7 +60,7 @@ import LogContainer from '@/components/monitoring/LogContainer.vue';
 import StatContainer from '@/components/monitoring/StatContainer.vue';
 import ProgressContainer from '@/components/monitoring/ProgressContainer.vue';
 import { useMonitoringStore } from '@/stores/monitoring';
-import { useStreamsStore } from '@/stores/streams';
+import { useStreamsStore } from '@/stores/streamConfig';
 import { useCommonStore } from '@/stores/common';
 
 const monitoringStore = useMonitoringStore();
