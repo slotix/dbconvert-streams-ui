@@ -6,13 +6,14 @@ import {
   PlayIcon,
   Square2StackIcon,
   TrashIcon,
+  ClipboardIcon,
 } from '@heroicons/vue/24/solid';
 import { mapActions, mapState } from 'pinia';
 import { useStreamsStore } from '@/stores/streams';
 import { useConnectionsStore } from '@/stores/connections';
 import { useCommonStore } from '@/stores/common';
 import ActionsMenu from '@/components/common/ActionsMenu.vue';
-import { defineComponent, PropType } from 'vue';
+import { defineComponent, PropType, computed, ref } from 'vue';
 import { Stream } from '@/types/streams';
 import { DbType } from '@/types/connections';
 
@@ -38,13 +39,32 @@ export default defineComponent({
     ChevronRightIcon,
     PlayIcon,
     ActionsMenu,
+    ClipboardIcon,
   },
-  setup() {
+  setup(props) {
     const dbTypes = useConnectionsStore().dbTypes;
     const steps = useCommonStore().steps;
+
+    const isIdExpanded = ref(false);
+
+    const toggleIdExpansion = () => {
+      isIdExpanded.value = !isIdExpanded.value;
+    };
+
+    const displayedId = computed(() => {
+      if (isIdExpanded.value) {
+        return props.stream.id;
+      }
+      const id = props.stream.id;
+      return id.length > 13 ? `${id.slice(0, 6)}...${id.slice(-4)}` : id;
+    });
+
     return {
       dbTypes,
       steps,
+      isIdExpanded,
+      toggleIdExpansion,
+      displayedId,
     };
   },
   methods: {
@@ -67,7 +87,6 @@ export default defineComponent({
         console.log(e);
       }
     },
-
     async cloneStream() {
       try {
         await useStreamsStore().cloneStream(this.stream.id);
@@ -104,8 +123,9 @@ export default defineComponent({
         commonStore.showNotification('Stream ID copied to clipboard', 'success');
       }, (err) => {
         console.error('Could not copy text: ', err);
+        useCommonStore().showNotification('Failed to copy Stream ID', 'error');
       });
-    }
+    },
   },
   computed: {
     ...mapState(useStreamsStore, ['currentStream']),
@@ -145,7 +165,6 @@ export default defineComponent({
       if (!this.stream) return '';
       return `ID: ${this.stream.id}`;
     },
-
     displayedTables(): string[] {
       const maxDisplayedTables = 5; // Adjust this number as needed
       if (this.stream && this.stream.tables && this.stream.tables.length) {
@@ -153,7 +172,6 @@ export default defineComponent({
       }
       return [];
     },
-
     remainingTablesCount(): number {
       if (this.stream && this.stream.tables) {
         return Math.max(0, this.stream.tables.length - this.displayedTables.length);

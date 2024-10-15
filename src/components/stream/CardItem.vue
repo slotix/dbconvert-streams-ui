@@ -18,10 +18,15 @@
       </div>
       <div class="flex-grow p-4 space-y-3 text-sm">
         <div class="text-gray-800 font-bold text-lg mb-2">
-           {{ stream.name }}
+          {{ stream.name }}
         </div>
-         <div class="text-xs text-gray-500 cursor-pointer hover:text-gray-700" @click.stop="copyId" v-tooltip="'Click to copy ID'">
-          ID: {{ stream.id }}
+        <div class="text-xs text-gray-500 flex items-center">
+          <span class="break-all cursor-pointer" @click.stop="toggleIdExpansion" v-tooltip="isIdExpanded ? 'Collapse ID' : 'Expand ID'">
+            ID: {{ displayedId }}
+          </span>
+          <button @click.stop="copyId" class="ml-1 text-gray-500 hover:text-gray-700" v-tooltip="'Copy full ID'">
+            <ClipboardIcon class="h-4 w-4" />
+          </button>
         </div>
         <div>
           <span class="font-semibold text-gray-800">Source: </span>
@@ -87,3 +92,4 @@ export default defineComponent({
   },
 });
 </script>
+
