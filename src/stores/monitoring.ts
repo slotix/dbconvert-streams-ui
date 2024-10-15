@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { connect, AckPolicy, StringCodec, JetStreamManager, Consumer } from 'nats.ws';
+import { Stream } from '@/types/streams';
 import { useCommonStore } from './common';
 
 // Define types for the state
@@ -32,6 +33,7 @@ interface State {
   currentStageID: number;
   stages: Stage[];
   status: typeof statusEnum;
+  streamConfig: Stream;
 }
 const statusEnum = {
   UNDEFINED: 0,
@@ -78,6 +80,7 @@ export const useMonitoringStore = defineStore('monitoring', {
       },
     ],
     status: statusEnum,
+    streamConfig: {} as Stream,
   }),
   getters: {
     currentStage(state: State): Stage | null {
@@ -128,6 +131,9 @@ export const useMonitoringStore = defineStore('monitoring', {
     },
   },
   actions: {
+    setStream(stream: Stream) {
+      this.streamConfig = stream;
+    },
     async consumeLogsFromNATS() {
       while (true) {
         try {

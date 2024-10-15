@@ -1,13 +1,15 @@
 <template>
   <header>
-    <div
-      class="bg-white flex flex-wrap justify-between items-center space-y-4 sm:space-y-0 max-w-7xl mx-auto py-6 px-8">
-      <h1 class="flex-auto text-3xl font-bold text-gray-900 dark:text-white mb-4 sm:mb-0">
+    <div class="bg-white flex flex-col max-w-7xl mx-auto py-6 px-8">
+      <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
         Monitor stream: <span
-          class="text-gray-500 text-lg underline underline-offset-4 decoration-dashed decoration-gray-400">{{
-            monitoringStore.streamID }}</span>
+          class="text-gray-500 text-lg underline underline-offset-4 decoration-dashed decoration-gray-400">{{ monitoringStore.streamID }}
+          </span>
       </h1>
-      <div v-if="monitoringStore.streamID != ''" class="antialiased ">
+      <p class="text-gray-500 text-sm mb-4">
+        Config: <span class="">{{ currentStreamConfig.name }}</span>
+      </p>
+      <div v-if="monitoringStore.streamID != ''" class="antialiased">
         <div class="flex space-x-1 border border-gray-300 rounded-md overflow-hidden">
           <button @click="pauseStream"
             class="px-4 py-2 bg-white text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-gray-500 flex items-center">
@@ -50,8 +52,8 @@
   </main>
 </template>
 
-<script setup>
-import { onMounted } from 'vue';
+<script setup lang="ts">
+import { onMounted, computed } from 'vue';
 import { ChartBarSquareIcon, PauseIcon, PlayIcon, StopIcon } from '@heroicons/vue/20/solid';
 import LogContainer from '@/components/monitoring/LogContainer.vue';
 import StatContainer from '@/components/monitoring/StatContainer.vue';
@@ -61,15 +63,20 @@ import { useStreamsStore } from '@/stores/streams';
 import { useCommonStore } from '@/stores/common';
 
 const monitoringStore = useMonitoringStore();
-const streamStore = useStreamsStore();
+const streamsStore = useStreamsStore();
 const commonStore = useCommonStore();
+
+const currentStreamConfig = computed(() => {
+  return monitoringStore.streamConfig;
+});
 
 onMounted(() => {
   monitoringStore.consumeLogsFromNATS();
 });
+
 const pauseStream = async () => {
   try {
-    await streamStore.pauseStream(monitoringStore.streamID);
+    await streamsStore.pauseStream(monitoringStore.streamID);
     commonStore.showNotification('Stream paused', 'success');
     commonStore.fetchUsageData();
   } catch (error) {
@@ -79,7 +86,7 @@ const pauseStream = async () => {
 
 const resumeStream = async () => {
   try {
-    await streamStore.resumeStream(monitoringStore.streamID);
+    await streamsStore.resumeStream(monitoringStore.streamID);
     commonStore.showNotification('Stream resumed', 'success');
   } catch (error) {
     handleStreamError(error, 'Failed to resume stream');
@@ -88,15 +95,15 @@ const resumeStream = async () => {
 
 const stopStream = async () => {
   try {
-    await streamStore.stopStream(monitoringStore.streamID);
+    await streamsStore.stopStream(monitoringStore.streamID);
     commonStore.showNotification('Stream stopped', 'success');
-    usageDataStore.fetchUsageData();
+    commonStore.fetchUsageData();
   } catch (error) {
     handleStreamError(error, 'Failed to stop stream');
   }
 };
 
-const handleStreamError = (error, defaultMessage) => {
+const handleStreamError = (error: any, defaultMessage: string) => {
   console.error(error);
   const errorMessage = error instanceof Error ? error.message : defaultMessage;
   commonStore.showNotification(errorMessage, 'error');

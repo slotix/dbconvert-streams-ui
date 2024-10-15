@@ -12,6 +12,7 @@ import { mapActions, mapState } from 'pinia';
 import { useStreamsStore } from '@/stores/streams';
 import { useConnectionsStore } from '@/stores/connections';
 import { useCommonStore } from '@/stores/common';
+import { useMonitoringStore } from '@/stores/monitoring';
 import ActionsMenu from '@/components/common/ActionsMenu.vue';
 import { defineComponent, PropType, computed, ref } from 'vue';
 import { Stream } from '@/types/streams';
@@ -108,6 +109,7 @@ export default defineComponent({
       try {
         await useStreamsStore().startStream(this.stream.id);
         useCommonStore().showNotification('Stream started', 'success');
+        useMonitoringStore().setStream(this.stream);
         this.$router.push({ name: 'MonitorStream' });
       } catch (err: unknown) {
         if (err instanceof Error) {
