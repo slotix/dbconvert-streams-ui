@@ -6,7 +6,7 @@ import { Step } from '@/stores/common'
 import { useConnectionsStore } from '@/stores/connections';
 
 interface State {
-    generateDefaultStreamConfigName(source: string, target: string, arg2: Table[], arg3: number): string;
+    generateDefaultStreamConfigName(source: string, target: string, tables: Table[]): string;
     streamConfigs: StreamConfig[];
     currentStreamConfig: StreamConfig | null;
     currentStep: Step | null;
@@ -95,7 +95,7 @@ export const useStreamsStore = defineStore('streams', {
         currentStreamConfig: null,
         currentStep: null,
         currentFilter: '',
-        generateDefaultStreamConfigName: function (source: string, target: string, arg2: Table[], arg3: number): string {
+        generateDefaultStreamConfigName: function (source: string, target: string, tables: Table[]): string {
             throw new Error('Function not implemented.');
         }
     }),
@@ -134,8 +134,7 @@ export const useStreamsStore = defineStore('streams', {
                 this.currentStreamConfig.name = this.generateDefaultStreamConfigName(
                     this.currentStreamConfig.source || '',
                     this.currentStreamConfig.target || '',
-                    this.currentStreamConfig.tables || [],
-                    this.currentStreamConfig.created || 0
+                    this.currentStreamConfig.tables || []
                 );
             }
         },
@@ -150,15 +149,16 @@ export const useStreamsStore = defineStore('streams', {
                     this.currentStreamConfig.name = this.generateDefaultStreamConfigName(
                         this.currentStreamConfig.source,
                         this.currentStreamConfig.target,
-                        this.currentStreamConfig.tables || [],
-                        this.currentStreamConfig.created || 0
+                        this.currentStreamConfig.tables || []
                     );
                 }
                 const stream = await api.createStream(this.currentStreamConfig as StreamConfig);
+                
                 this.resetCurrentStream();
                 await this.refreshStreams();
                 this.currentStreamConfig!.id = stream.id;
                 this.currentStreamConfig!.created = stream.created;
+                this.currentStreamConfig!.name = stream.name; // The backend will return the updated name with uppended 5 last characters of the id
             } catch (err) {
                 console.error('Failed to save stream:', err);
                 throw err;
@@ -274,19 +274,16 @@ export const useStreamsStore = defineStore('streams', {
         async clearStreams(this: State) {
             this.streamConfigs.length = 0;
         },
-        generateDefaultStreamConfigName(source: string, target: string, tables: Table[], created: number): string {
+        generateDefaultStreamConfigName(source: string, target: string, tables: Table[]): string {
             const sourceType = useConnectionsStore().connectionByID(source)?.type || 'Unknown';
             const targetType = useConnectionsStore().connectionByID(target)?.type || 'Unknown';
             const tableCount = tables.length;
             const firstTableName = tables[0]?.name || 'unknown';
-            const milliseconds = created === 0 ? Date.now() : created * 1000;
-            const date = new Date(milliseconds).toISOString().split('T')[0];
 
             let name = `${sourceType}_to_${targetType}_${firstTableName}`;
             if (tableCount > 1) {
                 name += `_and_${tableCount - 1}_more`;
             }
-            name += `_${date}`;
 
             return name;
         },
