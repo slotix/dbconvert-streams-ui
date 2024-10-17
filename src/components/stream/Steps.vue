@@ -69,7 +69,7 @@ const currentStepIndex = ref(1)
 const currentStreamConfig = store.currentStreamConfig
 
 const isSaveDisabled = computed(() => {
-  return currentStreamConfig.source === 0 || currentStreamConfig.target === 0
+  return currentStreamConfig?.source === '' || currentStreamConfig?.target === ''
 })
 
 const stepsBarValue = computed(() => {
