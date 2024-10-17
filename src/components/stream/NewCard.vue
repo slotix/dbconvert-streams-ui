@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full py-6">
+  <div class="w-full p-10">
     <div
       class="bg-white shadow-md rounded-lg overflow-hidden cursor-pointer transform hover:scale-105 duration-300 ease-in-out flex flex-col h-full"
       @click="addStream">
