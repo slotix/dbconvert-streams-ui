@@ -8,7 +8,7 @@
           class="py-2 px-4 mt-2 flex items-center justify-center rounded-md bg-gray-600 text-center text-sm font-semibold text-white shadow-sm hover:bg-gray-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-600"
           @click="addStream">
           <PlusIcon class="mr-2 h-5 w-5 text-white" aria-hidden="true" />
-          Add stream
+          New stream
         </button>
       </router-link>
     </div>
@@ -75,7 +75,6 @@ export default {
     const addStream = () => {
       streamsStore.resetCurrentStream();
       connectionsStore.resetCurrentConnection();
-      // router.push({ name: 'ManageStream', params: { mode: 'add' } });
     };
 
     onMounted(async () => {

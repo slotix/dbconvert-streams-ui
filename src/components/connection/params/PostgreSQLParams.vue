@@ -68,7 +68,7 @@
             placeholder="Add new database" />
           <button @click="createDatabase(newDatabase)" :disabled="newDatabase === ''"
             class="inline-flex items-center rounded-lg border border-gray-300 py-2 px-4 text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-600 sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed">
-            Add
+            New database
           </button>
         </div>
       </div>
@@ -94,7 +94,7 @@
             placeholder="Add new schema" />
           <button @click="createSchema(newSchema)" :disabled="newSchema === ''"
             class="inline-flex items-center rounded-md border border-gray-300 bg-gray-100 py-2 px-4 text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-600 sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed">
-            Add
+            New schema
           </button>
         </div>
       </div>

@@ -45,7 +45,7 @@ export const useCommonStore = defineStore('common', {
       {
         id: 1,
         name: 'source',
-        title: 'Select source database',
+        title: 'Select source or create new connection',
         description: 'Lorem ipsum dolor sit amet consectetur adipisicing elit. Aperiam facilis, voluptates error alias dolorem praesentium sit soluta iure incidunt labore explicabo eaque, quia architecto veritatis dolores, enim consequatur nihil ipsum.',
         img: '/images/steps/source-step.svg',
       },
@@ -59,7 +59,7 @@ export const useCommonStore = defineStore('common', {
       {
         id: 3,
         name: 'target',
-        title: 'Select target database',
+        title: 'Select target or create new connection',
         description: 'Lorem ipsum dolor sit amet consectetur adipisicing elit. Aperiam facilis, voluptates error alias dolorem praesentium sit soluta iure incidunt labore explicabo eaque, quia architecto veritatis dolores, enim consequatur nihil ipsum.',
         img: '/images/steps/destination-step.svg',
       },
