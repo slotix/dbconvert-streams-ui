@@ -279,10 +279,10 @@ export const useStreamsStore = defineStore('streams', {
             const targetType = useConnectionsStore().connectionByID(target)?.type || 'Unknown';
             const tableCount = tables.length;
             const firstTableName = tables[0]?.name || 'unknown';
-            const milliseconds = created * 1000;
+            const milliseconds = created === 0 ? Date.now() : created * 1000;
             const date = new Date(milliseconds).toISOString().split('T')[0];
 
-            let name = `Stream_${sourceType}_to_${targetType}_${firstTableName}`;
+            let name = `${sourceType}_to_${targetType}_${firstTableName}`;
             if (tableCount > 1) {
                 name += `_and_${tableCount - 1}_more`;
             }
