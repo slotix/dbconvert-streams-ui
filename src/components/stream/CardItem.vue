@@ -17,7 +17,7 @@
         </span>
       </div>
       <div class="flex-grow p-4 space-y-3 text-sm">
-        <div class="text-gray-800 font-bold text-lg mb-2">
+        <div class="text-gray-800 font-bold text-sm mb-2">
           {{ stream.name }}
         </div>
         <div class="text-xs text-gray-500 flex items-center">
