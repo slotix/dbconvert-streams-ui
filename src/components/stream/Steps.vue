@@ -2,28 +2,25 @@
   <div class="relative">
     <div v-for="step in allSteps" :key="step.id">
       <div v-show="currentStepIndex === step.id" class="p-4">
-        <div class="uppercase tracking-wide text-sm font-bold text-gray-500 mb-1 leading-tight">
-          Step: {{ currentStepIndex }} of {{ stepsCount }}
+        <div class="flex items-center space-x-3 mb-4">
+          <img class="h-8 w-8" :src="step.img" :alt="step.title" />
+          <div class="text-sm font-bold text-gray-700 leading-tight">
+            {{ step.title }}
+          </div>
         </div>
-        <div class="flex items-center md:w-64">
+        <div class="flex items-center w-full mb-2">
           <div class="w-full bg-gray-200 rounded-full mr-2 h-4">
             <div
-              class="rounded-full bg-green-500 text-sm leading-none h-full text-center text-white transition-all duration-300 ease-in-out"
+              class="rounded-full bg-green-500 text-xs leading-none h-full text-center text-white transition-all duration-300 ease-in-out"
               :style="{ width: stepsBarValue }"></div>
           </div>
-          <div class="text-sm w-10 text-gray-600">
-            {{ stepsBarValue }}
-          </div>
-        </div>
-        <div class="flex items-center mt-4">
-          <img class="mr-3 h-8 w-8" :src="step.img" :alt="step.title" />
-          <div class="text-xl font-bold text-gray-700 leading-tight">
-            {{ step.title }}
+          <div class="text-xs w-24 text-gray-600 text-right">
+            Step {{ currentStepIndex }} of {{ stepsCount }}
           </div>
         </div>
       </div>
     </div>
-    <div class="mt-4 sm:mt-0 sm:flex-none flex space-x-2 justify-between w-full">
+    <div class="mt-6 flex justify-between w-full">
       <div class="flex space-x-2">
         <button type="button" @click="cancelStream"
           class="inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
