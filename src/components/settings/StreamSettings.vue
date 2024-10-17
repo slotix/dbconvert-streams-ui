@@ -9,7 +9,11 @@
             <div>
                 <label for="streamName" class="block text-sm font-medium text-gray-700">Stream Name:</label>
                 <input type="text" id="streamName" v-model="streamName"
-                    class="mt-1 focus:ring-gray-500 focus:border-gray-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" />
+                    class="mt-1 focus:ring-gray-500 focus:border-gray-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                    placeholder="Enter custom name or leave blank for auto-generation" />
+                <p class="mt-2 text-sm text-gray-500">
+                    You can leave this field blank for an auto-generated name  or enter a custom name.
+                </p>
             </div>
             <ModeButtons class="mt-4" />
             <div v-if="currentStreamConfig.mode === 'cdc'">
