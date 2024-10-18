@@ -3,18 +3,19 @@
     "target": "esnext",
     "module": "esnext",
     "strict": true,
-    "noEmit": true,
     "jsx": "preserve",
     "importHelpers": true,
     "moduleResolution": "node",
-    "allowJs": true,
     "experimentalDecorators": true,
-    "esModuleInterop": true,
     "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
+    "useDefineForClassFields": true,
+    "sourceMap": true,
     "baseUrl": ".",
     "types": [
-      "vite/client",
+      "webpack-env",
       "jest"
     ],
     "paths": {
@@ -24,20 +25,23 @@
     },
     "lib": [
       "esnext",
-      "dom"
+      "dom",
+      "dom.iterable",
+      "scripthost"
     ]
   },
   "include": [
-    "src/**/*",
-    "tests/**/*",
-    "src/shims-vue.d.ts",
-    "src/declarations.d.ts"
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "src/**/*.vue",
+    "tests/**/*.ts",
+    "tests/**/*.tsx"
   ],
   "exclude": [
     "node_modules",
     "dist",
-    "public",
-    "*.html",
-    "index.html"
+    "*.config.js",
+    "vite.config.js",
+    "vitest.config.js"
   ]
 }
