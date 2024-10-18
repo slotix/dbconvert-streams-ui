@@ -4,6 +4,7 @@ import tsPlugin from '@typescript-eslint/eslint-plugin'
 import tsParser from '@typescript-eslint/parser'
 import prettierPlugin from 'eslint-plugin-prettier'
 import globals from 'globals'
+import vueParser from 'vue-eslint-parser'
 
 export default [
   js.configs.recommended,
@@ -13,47 +14,52 @@ export default [
   {
     files: ['**/*.{js,mjs,cjs,jsx,ts,tsx,vue}'],
     plugins: {
-      vue: vuePlugin,
       '@typescript-eslint': tsPlugin,
       prettier: prettierPlugin
     },
     languageOptions: {
-      parser: vuePlugin.parser,
+      parser: tsParser,
       parserOptions: {
         ecmaVersion: 2020,
-        sourceType: 'module',
-        extraFileExtensions: ['.vue']
+        sourceType: 'module'
       },
       globals: {
         ...globals.browser,
-        ...globals.es2020
+        ...globals.es2020,
+        ...globals.node
       }
     },
     rules: {
       'prettier/prettier': 'error',
-      'no-unused-vars': 'warn',
-      'no-undef': 'warn',
-      'vue/multi-word-component-names': 'off'
+      'no-unused-vars': 'off',
+      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+      'no-undef': 'off',
+      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-empty-interface': 'warn',
+      'vue/multi-word-component-names': 'off',
+      'vue/comment-directive': 'off'
     }
   },
   {
-    files: ['**/*.{ts,tsx}'],
+    files: ['**/*.vue'],
+    plugins: {
+      vue: vuePlugin
+    },
     languageOptions: {
-      parser: tsParser,
+      parser: vueParser,
       parserOptions: {
-        project: './tsconfig.json'
+        parser: tsParser,
+        extraFileExtensions: ['.vue'],
+        ecmaVersion: 2020,
+        sourceType: 'module'
       }
     },
     rules: {
-      ...tsPlugin.configs['recommended'].rules
-    }
-  },
-  {
-    files: ['*.config.js', 'vite.config.js', 'vitest.config.js'],
-    languageOptions: {
-      globals: {
-        ...globals.node
-      }
+      ...vuePlugin.configs.base.rules,
+      ...vuePlugin.configs['vue3-recommended'].rules,
+      'vue/multi-word-component-names': 'off',
+      'vue/no-unused-vars': 'warn',
+      'vue/comment-directive': 'off'
     }
   }
 ]
