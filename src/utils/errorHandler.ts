@@ -1,35 +1,36 @@
-import { AxiosError, AxiosResponse } from 'axios';
-import { useCommonStore } from '@/stores/common';
+import { AxiosError, AxiosResponse } from 'axios'
+import { useCommonStore } from '@/stores/common'
 
 // Define an interface for the expected error response data structure
 interface ErrorResponseData {
-  error?: string;
+  error?: string
 }
 
 // Extend AxiosResponse to include ErrorResponseData
 interface CustomAxiosResponse extends AxiosResponse {
-  data: ErrorResponseData;
+  data: ErrorResponseData
 }
 
 // Extend AxiosError to use CustomAxiosResponse
 interface CustomAxiosError extends AxiosError {
-  response?: CustomAxiosResponse;
+  response?: CustomAxiosResponse
 }
 
 export function handleApiError(error: unknown): Error {
-  const axiosError = error as CustomAxiosError;
-  const message = axiosError.response?.data?.error || axiosError.message || 'An unknown error occurred';
-  return new Error(message);
+  const axiosError = error as CustomAxiosError
+  const message =
+    axiosError.response?.data?.error || axiosError.message || 'An unknown error occurred'
+  return new Error(message)
 }
 
 export const handleUnauthorizedError = async (error: AxiosError) => {
   if (error.response?.status === 401) {
-    const commonStore = useCommonStore();
-    const initResult = await commonStore.initApp();
+    const commonStore = useCommonStore()
+    const initResult = await commonStore.initApp()
     if (initResult === 'failed') {
-      throw error;
+      throw error
     }
-    throw new Error('UNAUTHORIZED');
+    throw new Error('UNAUTHORIZED')
   }
-  throw error;
-};
+  throw error
+}

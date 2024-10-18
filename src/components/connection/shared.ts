@@ -5,15 +5,15 @@ import {
   PencilIcon,
   PlayIcon,
   Square2StackIcon,
-  TrashIcon,
-} from '@heroicons/vue/24/solid';
-import { mapActions, mapState } from 'pinia';
-import { useConnectionsStore } from '@/stores/connections';
-import { useStreamsStore } from '@/stores/streamConfig';
-import { useCommonStore, DIALOG_TYPES } from '@/stores/common';
-import ActionsMenu from '@/components/common/ActionsMenu.vue';
-import { defineComponent, computed, ref, PropType } from 'vue';
-import { Connection, DbType } from '@/types/connections';
+  TrashIcon
+} from '@heroicons/vue/24/solid'
+import { mapActions, mapState } from 'pinia'
+import { useConnectionsStore } from '@/stores/connections'
+import { useStreamsStore } from '@/stores/streamConfig'
+import { useCommonStore, DIALOG_TYPES } from '@/stores/common'
+import ActionsMenu from '@/components/common/ActionsMenu.vue'
+import { defineComponent, computed, ref, PropType } from 'vue'
+import { Connection, DbType } from '@/types/connections'
 
 export default defineComponent({
   components: {
@@ -24,21 +24,21 @@ export default defineComponent({
     CheckCircleIcon,
     ChevronRightIcon,
     PlayIcon,
-    ActionsMenu,
+    ActionsMenu
   },
   props: {
     connection: {
-      type: Object as PropType<Connection>,
+      type: Object as PropType<Connection>
     }
   },
   setup(props) {
-    const connectionsStore = useConnectionsStore();
-    const streamsStore = useStreamsStore();
-    const commonStore = useCommonStore();
-    const dbTypes = ref<DbType[]>(connectionsStore.dbTypes);
-    const steps = ref(commonStore.steps);
+    const connectionsStore = useConnectionsStore()
+    const streamsStore = useStreamsStore()
+    const commonStore = useCommonStore()
+    const dbTypes = ref<DbType[]>(connectionsStore.dbTypes)
+    const steps = ref(commonStore.steps)
 
-    const isStreamsPage = computed(() => commonStore.isStreamsPage);
+    const isStreamsPage = computed(() => commonStore.isStreamsPage)
 
     return {
       dbTypes,
@@ -48,129 +48,139 @@ export default defineComponent({
       commonStore,
       isStreamsPage,
       connection: props.connection
-    };
+    }
   },
   computed: {
     ...mapState(useConnectionsStore, {
       connectionsByType: 'connectionsByType',
-      currentConnection: 'currentConnection',
+      currentConnection: 'currentConnection'
     }),
     ...mapState(useStreamsStore, {
       currentStep: 'currentStep',
       currentStreamConfig: 'currentStreamConfig'
     }),
     connectionsCount(): number {
-      return this.connectionsByType.length;
+      return this.connectionsByType.length
     },
     logoSrc(): string {
-      const dbType = this.dbTypes.find((f) => f.type === this.connection?.type);
-      return dbType ? dbType.logo : '';
+      const dbType = this.dbTypes.find((f) => f.type === this.connection?.type)
+      return dbType ? dbType.logo : ''
     },
     connectionCreated(): string {
-      if (!this.connection || typeof this.connection.created !== 'number') return '';
-      const milliseconds = this.connection.created * 1000;
-      const date = new Date(milliseconds);
-      return date.toLocaleString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true
-      }).replace(',', ' -');
+      if (!this.connection || typeof this.connection.created !== 'number') return ''
+      const milliseconds = this.connection.created * 1000
+      const date = new Date(milliseconds)
+      return date
+        .toLocaleString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true
+        })
+        .replace(',', ' -')
     },
     concatenateValues(): string {
-      if (!this.connection) return '';
-      const { host, port } = this.connection;
-      if (host === undefined && port === undefined) return '';
-      return (host || '') + (port !== undefined ? `:${port}` : '');
+      if (!this.connection) return ''
+      const { host, port } = this.connection
+      if (host === undefined && port === undefined) return ''
+      return (host || '') + (port !== undefined ? `:${port}` : '')
     },
     selected(): boolean {
       if (!this.isStreamsPage) {
-        return false;
+        return false
       }
       const isSourceStreamSelected =
-        this.currentStep?.name === 'source' && this.currentStreamConfig?.source === this.connection?.id;
+        this.currentStep?.name === 'source' &&
+        this.currentStreamConfig?.source === this.connection?.id
       const isTargetStreamSelected =
-        this.currentStep?.name === 'target' && this.currentStreamConfig?.target === this.connection?.id;
+        this.currentStep?.name === 'target' &&
+        this.currentStreamConfig?.target === this.connection?.id
 
-      return isSourceStreamSelected || isTargetStreamSelected;
+      return isSourceStreamSelected || isTargetStreamSelected
     },
     bgRowClass(): (connection: Connection) => object {
       return (connection: Connection) => ({
         'hover:bg-gray-50': !this.isStreamsPage,
-        'bg-yellow-50': this.isStreamsPage && this.currentStep?.name === 'source' && this.currentStreamConfig?.source === connection.id,
-        'bg-green-50': this.isStreamsPage && this.currentStep?.name === 'target' && this.currentStreamConfig?.target === connection.id,
+        'bg-yellow-50':
+          this.isStreamsPage &&
+          this.currentStep?.name === 'source' &&
+          this.currentStreamConfig?.source === connection.id,
+        'bg-green-50':
+          this.isStreamsPage &&
+          this.currentStep?.name === 'target' &&
+          this.currentStreamConfig?.target === connection.id,
         'hover:bg-yellow-50': this.isStreamsPage && this.currentStep?.name === 'source',
-        'hover:bg-green-50': this.isStreamsPage && this.currentStep?.name === 'target',
-      });
+        'hover:bg-green-50': this.isStreamsPage && this.currentStep?.name === 'target'
+      })
     },
     actionsMenuPosition(): string {
-      const index = this.connectionsStore.currentConnectionIndexInArray;
-      const rowCount = this.connectionsStore.countConnections;
-      return index > rowCount / 2 ? 'top' : 'bottom';
+      const index = this.connectionsStore.currentConnectionIndexInArray
+      const rowCount = this.connectionsStore.countConnections
+      return index > rowCount / 2 ? 'top' : 'bottom'
     },
     connectionNameWithId(): string {
-      if (!this.connection) return '';
-      return `${this.connection.name} (ID: ${this.connection.id})`;
-    },
+      if (!this.connection) return ''
+      return `${this.connection.name} (ID: ${this.connection.id})`
+    }
   },
   methods: {
     ...mapActions(useConnectionsStore, ['setCurrentConnection', 'saveConnection']),
     addConnection(): void {
-      this.commonStore.openModal(DIALOG_TYPES.SAVE);
+      this.commonStore.openModal(DIALOG_TYPES.SAVE)
     },
     editConnection(): void {
       if (this.connection) {
-        this.setCurrentConnection(this.connection.id);
-        this.commonStore.openModal(DIALOG_TYPES.UPDATE);
+        this.setCurrentConnection(this.connection.id)
+        this.commonStore.openModal(DIALOG_TYPES.UPDATE)
       }
     },
     async cloneConnection(): Promise<void> {
-      if (!this.connection) return;
-      this.setCurrentConnection(this.connection.id);
+      if (!this.connection) return
+      this.setCurrentConnection(this.connection.id)
       try {
-        await this.connectionsStore.cloneConnection(this.connection.id);
-        await this.connectionsStore.refreshConnections();
-        this.commonStore.showNotification('Connection cloned', 'success');
+        await this.connectionsStore.cloneConnection(this.connection.id)
+        await this.connectionsStore.refreshConnections()
+        this.commonStore.showNotification('Connection cloned', 'success')
       } catch (e: unknown) {
         if (e instanceof Error) {
-          this.commonStore.showNotification(e.message, 'error');
+          this.commonStore.showNotification(e.message, 'error')
         } else {
-          this.commonStore.showNotification('An unknown error occurred', 'error');
+          this.commonStore.showNotification('An unknown error occurred', 'error')
         }
-        console.error(e);
+        console.error(e)
       }
     },
     async deleteConn(): Promise<void> {
-      if (!this.connection) return;
+      if (!this.connection) return
       try {
-        await this.connectionsStore.deleteConnection(this.connection.id);
-        await this.connectionsStore.refreshConnections();
-        this.commonStore.showNotification('Connection deleted', 'success');
+        await this.connectionsStore.deleteConnection(this.connection.id)
+        await this.connectionsStore.refreshConnections()
+        this.commonStore.showNotification('Connection deleted', 'success')
       } catch (e: unknown) {
         if (e instanceof Error) {
-          this.commonStore.showNotification(e.message, 'error');
+          this.commonStore.showNotification(e.message, 'error')
         } else {
-          this.commonStore.showNotification('An unknown error occurred', 'error');
+          this.commonStore.showNotification('An unknown error occurred', 'error')
         }
-        console.error(e);
+        console.error(e)
       }
     },
 
     selectConnection(): void {
-      if (!this.connection) return;
-      this.setCurrentConnection(this.connection.id);
+      if (!this.connection) return
+      this.setCurrentConnection(this.connection.id)
       if (this.currentStep?.name === 'source') {
         if (this.currentStreamConfig) {
-          this.currentStreamConfig.source = this.connection.id;
+          this.currentStreamConfig.source = this.connection.id
         }
       }
       if (this.currentStep?.name === 'target') {
         if (this.currentStreamConfig) {
-          this.currentStreamConfig.target = this.connection.id;
+          this.currentStreamConfig.target = this.connection.id
         }
       }
-    },
-  },
-});
+    }
+  }
+})
