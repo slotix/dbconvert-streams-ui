@@ -23,6 +23,7 @@ interface Stage {
   name: string
   title: string
   description: string
+  timestamp: number | null
 }
 
 interface State {
@@ -56,25 +57,29 @@ export const useMonitoringStore = defineStore('monitoring', {
         id: 1,
         name: 'init',
         title: 'Initializing Stream',
-        description: 'Setting up connections and resources for data transfer.'
+        description: 'Setting up connections and resources for data transfer.',
+        timestamp: null
       },
       {
         id: 2,
         name: 'createMeta',
         title: 'Replicating Meta Structures',
-        description: 'Duplicating table and index meta-information onto the target database.'
+        description: 'Duplicating table and index meta-information onto the target database.',
+        timestamp: null
       },
       {
         id: 3,
         name: 'dataTransfer',
         title: 'Transferring Data',
-        description: 'Actual movement of data records from the source to the target database.'
+        description: 'Actual movement of data records from the source to the target database.',
+        timestamp: null
       },
       {
         id: 4,
         name: 'finished',
         title: 'Finished',
-        description: 'Completed the data transfer process.'
+        description: 'Completed the data transfer process.',
+        timestamp: null
       }
     ],
     status: statusEnum,
@@ -184,6 +189,19 @@ export const useMonitoringStore = defineStore('monitoring', {
           // Wait before attempting to reconnect
           await new Promise((resolve) => setTimeout(resolve, 5000))
         }
+      }
+    },
+    setStageTimestamp(stageId: number) {
+      const stage = this.stages.find(s => s.id === stageId)
+      if (stage) {
+        stage.timestamp = Date.now()
+      }
+    },
+    updateCurrentStage(stageId: number) {
+      this.currentStageID = stageId
+      const stage = this.stages.find(s => s.id === stageId)
+      if (stage) {
+        stage.timestamp = Date.now()
       }
     }
   }
