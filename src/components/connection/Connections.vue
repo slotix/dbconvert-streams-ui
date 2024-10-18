@@ -6,10 +6,8 @@
         <DBTypesCombo :isFilterIcon="true" @update:selected-db-type="filterDB" />
         <ToggleView class=" px-8 pt-4" />
       </div>
-      <button
-        @click="addConnection"
-        class="flex items-center justify-center rounded-md bg-gray-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-gray-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-600"
-      >
+      <button @click="addConnection"
+        class="flex items-center justify-center rounded-md bg-gray-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-gray-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-600">
         <PlusIcon class="mr-2 h-5 w-5 text-white" aria-hidden="true" />
         New connection
       </button>
@@ -30,13 +28,15 @@
       <p class="mt-1 text-lg text-gray-700">
         You haven't created any connections yet.<br> Click the button below to create your first connection.
       </p>
-      <button
+      <!-- <button
         @click="addConnection"
         class="mt-4 flex items-center justify-center rounded-md bg-gray-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-gray-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-600"
       >
         <PlusIcon class="mr-2 h-5 w-5 text-white" aria-hidden="true" />
         New connection
-      </button>
+      </button> -->
+
+      <NewCard />
     </div>
   </div>
 </template>
@@ -47,6 +47,7 @@ import Table from './Table.vue'
 import DBTypesCombo from './DBTypesCombo.vue'
 import ToggleView from '@/components/common/ToggleView.vue'
 import CardItem from './CardItem.vue'
+import NewCard from './NewCard.vue'
 import { useConnectionsStore } from '@/stores/connections'
 import { useCommonStore } from '@/stores/common'
 import { PlusIcon } from '@heroicons/vue/24/solid'
@@ -58,6 +59,7 @@ export default defineComponent({
     DBTypesCombo,
     ToggleView,
     CardItem,
+    NewCard,
     PlusIcon
   },
   setup() {

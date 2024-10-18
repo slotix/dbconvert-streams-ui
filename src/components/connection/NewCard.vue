@@ -5,6 +5,9 @@
       @click="addConnection">
       <div class="flex-grow flex flex-col space-y-2 p-10 justify-center items-center">
         <img class="w-20 h-20 mb-12" src="/images/connections/new-connection.svg" alt="Create database connection" />
+        <div class="text-lg font-semibold text-gray-800 text-center">
+          Create New Connection
+        </div>
         <p class="text-gray-600 text-center mb-4">
           Click here to create a new database connection
         </p>
