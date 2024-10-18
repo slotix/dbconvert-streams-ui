@@ -150,7 +150,7 @@
       </div>
       <SignedIn>
         <div class="py-10 lg:py-6">
-          <div class="hidden">
+          <!-- <div class="hidden">
             <UserProfile :custom-pages="customPages" />
             <Teleport v-if="APIKeyIcon" :to="APIKeyIcon">
               <KeyIcon />
@@ -164,7 +164,7 @@
             <Teleport v-if="UsagePageContent" :to="UsagePageContent">
               <UsageView />
             </Teleport>
-          </div>
+          </div> -->
           <RouterView />
         </div>
       </SignedIn>
