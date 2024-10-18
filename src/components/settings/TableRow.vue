@@ -1,15 +1,22 @@
 <template>
   <tr :class="{ 'bg-gray-200': isSelected }" @click="handleSelectTable">
     <td class="relative py-4 px-7 sm:w-12 sm:px-6" :class="{ 'border-l border-white': isSelected }">
-      <input type="checkbox" :id="'checkbox-' + table.name"
+      <input
+        :id="'checkbox-' + table.name"
+        v-model="table.selected"
+        type="checkbox"
         class="absolute left-4 top-1/2 -mt-2 h-4 w-4 rounded border-gray-300 text-gray-600 focus:ring-gray-600"
-        v-model="table.selected" @change.stop="handleCheckboxChange" />
+        @change.stop="handleCheckboxChange"
+      />
     </td>
     <td class="py-4 px-3" :class="{ 'border-r border-white': isSelected }">
       {{ table.name }}
     </td>
-    <td class="p-4 ">
-      <button @click.stop="toggleSettings" class="flex items-center text-blue-600 hover:text-blue-800">
+    <td class="p-4">
+      <button
+        class="flex items-center text-blue-600 hover:text-blue-800"
+        @click.stop="toggleSettings"
+      >
         Options
         <ChevronDownIcon v-if="!showSettings" class="h-5 w-5 ml-1" />
         <ChevronUpIcon v-if="showSettings" class="h-5 w-5 ml-1" />
@@ -19,7 +26,7 @@
   <!-- Additional <tr> for collapsible panel -->
   <tr v-if="showSettings">
     <td :colspan="colspan">
-      <div class="bg-white px-4 pb-4 shadow ">
+      <div class="bg-white px-4 pb-4 shadow">
         <!-- Content for the settings panel -->
         <slot></slot>
       </div>
@@ -28,8 +35,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/vue/24/outline';
+import { ref } from 'vue'
+import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
   table: {
@@ -44,23 +51,23 @@ const props = defineProps({
     type: Number,
     required: true
   }
-});
+})
 
-const emit = defineEmits(['selectTable', 'checkboxChange', 'toggleSettings']);
+const emit = defineEmits(['selectTable', 'checkboxChange', 'toggleSettings'])
 
-const showSettings = ref(false);
+const showSettings = ref(false)
 
 const handleSelectTable = () => {
-  emit('selectTable', props.table);
-};
+  emit('selectTable', props.table)
+}
 
 const handleCheckboxChange = (event: Event) => {
-  const target = event.target as HTMLInputElement;
-  emit('checkboxChange', { table: props.table, checked: target.checked });
-};
+  const target = event.target as HTMLInputElement
+  emit('checkboxChange', { table: props.table, checked: target.checked })
+}
 
 const toggleSettings = () => {
-  showSettings.value = !showSettings.value;
-  emit('toggleSettings', props.table.name);
-};
+  showSettings.value = !showSettings.value
+  emit('toggleSettings', props.table.name)
+}
 </script>

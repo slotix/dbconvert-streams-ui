@@ -76,12 +76,10 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
-import { useCommon, Connection } from './common';
+import { defineComponent } from 'vue'
+import { useCommon, Connection } from './common'
 
-interface DB2Connection extends Connection {
-  // DB2-specific properties can be added here if needed
-}
+type DB2Connection = Connection
 
 export default defineComponent({
   name: 'DB2Params',
@@ -97,8 +95,8 @@ export default defineComponent({
       databases: [],
       database: '',
       schema: '',
-      schemas: [''],
-    };
+      schemas: ['']
+    }
 
     const {
       connection,
@@ -108,8 +106,8 @@ export default defineComponent({
       fetchData,
       refreshDatabases,
       createData,
-      createDatabase,
-    } = useCommon<DB2Connection>(defaultConnection);
+      createDatabase
+    } = useCommon<DB2Connection>(defaultConnection)
 
     return {
       connection,
@@ -119,8 +117,8 @@ export default defineComponent({
       fetchData,
       refreshDatabases,
       createData,
-      createDatabase,
-    };
-  },
-});
+      createDatabase
+    }
+  }
+})
 </script>

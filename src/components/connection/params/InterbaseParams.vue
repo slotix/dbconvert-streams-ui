@@ -79,11 +79,11 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from 'vue';
-import { useCommon, Connection } from './common';
+import { defineComponent, ref } from 'vue'
+import { useCommon, Connection } from './common'
 
 interface InterbaseConnection extends Connection {
-  charset: string;
+  charset: string
 }
 
 export default defineComponent({
@@ -101,8 +101,8 @@ export default defineComponent({
       database: '',
       schema: '',
       schemas: [''],
-      charset: 'utf8',
-    };
+      charset: 'utf8'
+    }
 
     const charsets = ref([
       'utf8',
@@ -130,8 +130,8 @@ export default defineComponent({
       'macce',
       'macroman',
       'swe7',
-      'tis620',
-    ]);
+      'tis620'
+    ])
 
     const {
       connection,
@@ -141,8 +141,8 @@ export default defineComponent({
       fetchData,
       refreshDatabases,
       createData,
-      createDatabase,
-    } = useCommon<InterbaseConnection>(defaultConnection);
+      createDatabase
+    } = useCommon<InterbaseConnection>(defaultConnection)
 
     return {
       connection,
@@ -153,8 +153,8 @@ export default defineComponent({
       refreshDatabases,
       createData,
       createDatabase,
-      charsets,
-    };
-  },
-});
+      charsets
+    }
+  }
+})
 </script>

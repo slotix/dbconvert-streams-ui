@@ -92,12 +92,12 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from 'vue';
-import { useCommon, Connection } from './common';
+import { defineComponent, ref } from 'vue'
+import { useCommon, Connection } from './common'
 
 interface OracleConnection extends Connection {
-  connectAs: string;
-  netServiceName: string;
+  connectAs: string
+  netServiceName: string
 }
 
 export default defineComponent({
@@ -116,10 +116,10 @@ export default defineComponent({
       schemas: [''],
       schema: '',
       connectAs: 'Normal',
-      netServiceName: 'orcl',
-    };
+      netServiceName: 'orcl'
+    }
 
-    const connectAsVariants = ref(['Normal', 'SYSDBA', 'SYSOPER']);
+    const connectAsVariants = ref(['Normal', 'SYSDBA', 'SYSOPER'])
 
     const {
       connection,
@@ -130,8 +130,8 @@ export default defineComponent({
       refreshDatabases,
       createData,
       createDatabase,
-      createSchema,
-    } = useCommon<OracleConnection>(defaultConnection);
+      createSchema
+    } = useCommon<OracleConnection>(defaultConnection)
 
     return {
       connection,
@@ -143,8 +143,8 @@ export default defineComponent({
       createData,
       createDatabase,
       createSchema,
-      connectAsVariants,
-    };
-  },
-});
+      connectAsVariants
+    }
+  }
+})
 </script>

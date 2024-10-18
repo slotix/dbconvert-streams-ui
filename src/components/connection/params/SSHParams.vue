@@ -99,7 +99,7 @@
     <div class="items-center w-full p-4 space-y-4 text-gray-500 md:inline-flex md:space-y-0">
       <label class="max-w-sm mx-auto md:w-1/3"> Private Key </label>
 
-      <upload-box class="w-full overflow-auto md:w-2/3" :id="uploadBoxId" :multiple="false" />
+      <upload-box :id="uploadBoxId" class="w-full overflow-auto md:w-2/3" :multiple="false" />
     </div>
     <div class="items-center w-full p-4 space-y-4 text-gray-500 md:inline-flex md:space-y-0">
       <label class="max-w-sm mx-auto md:w-1/3"> Key Password </label>

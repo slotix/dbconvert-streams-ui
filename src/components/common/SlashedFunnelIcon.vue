@@ -7,5 +7,5 @@
 </template>
 
 <script setup>
-import { FunnelIcon, SlashIcon } from '@heroicons/vue/24/outline';
+import { FunnelIcon, SlashIcon } from '@heroicons/vue/24/outline'
 </script>

@@ -9,8 +9,8 @@
         </label>
 
         <upload-box
-          class="w-full overflow-auto md:w-2/3"
           :id="uploadBoxId"
+          class="w-full overflow-auto md:w-2/3"
           :multiple="true"
           :accept="accept"
           @changeFileName="changeFileName"

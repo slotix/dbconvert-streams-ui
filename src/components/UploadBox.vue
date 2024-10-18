@@ -2,12 +2,12 @@
   <form @submit.prevent="handleUploadFiles">
     <div
       v-cloak
-      @drop.prevent="dropFiles"
-      @dragover.prevent="drag"
-      class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md max-w-sm mx-auto "
+      class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md max-w-sm mx-auto"
       :class="{
         'border-blue-400 border-4': draggingOver
       }"
+      @drop.prevent="dropFiles"
+      @dragover.prevent="drag"
     >
       <div class="flex flex-wrap overflow-hidden">
         <div class="w-full overflow-hidden">
@@ -40,20 +40,18 @@
                 :multiple="multiple"
                 :accept="accept"
                 type="file"
-                @change="addFiles"
                 class="sr-only"
+                @change="addFiles"
               />
             </div>
             <p class="pl-1">or drag and drop</p>
-            <p class="text-xs text-gray-500">
-              files up to 1GB
-            </p>
+            <p class="text-xs text-gray-500">files up to 1GB</p>
           </div>
         </div>
 
-        <div class="w-full overflow-hidden ">
+        <div class="w-full overflow-hidden">
           <template v-if="showFilesTable">
-            <table class="table p-4 bg-white  rounded-lg table-fixed">
+            <table class="table p-4 bg-white rounded-lg table-fixed">
               <thead>
                 <tr>
                   <th
@@ -72,25 +70,19 @@
                 </tr>
               </thead>
               <tbody>
-                <tr
-                  class="text-gray-700 w-full"
-                  v-for="file in files"
-                  :key="file.id"
-                >
+                <tr v-for="file in files" :key="file.id" class="text-gray-700 w-full">
                   <td class="border-b p-1 dark:border-dark-5 text-left space-0">
                     {{ file.name }}
                   </td>
-                  <td
-                    class=" hidden sm:table-cell border-b p-1 dark:border-dark-5 text-right"
-                  >
+                  <td class="hidden sm:table-cell border-b p-1 dark:border-dark-5 text-right">
                     {{ bytesToSize(file.size) }}
                   </td>
                   <td class="border-b p-1 dark:border-dark-5">
                     <button
-                      @click="removeFile(file)"
+                      v-show="!file.uploaded"
                       title="Remove"
                       class="mt-2"
-                      v-show="!file.uploaded"
+                      @click="removeFile(file)"
                     >
                       <svg
                         class="mx-auto h-5 w-5 text-red-400"
@@ -107,7 +99,7 @@
                         />
                       </svg>
                     </button>
-                    <span class="mt-2" v-show="file.uploaded">
+                    <span v-show="file.uploaded" class="mt-2">
                       <svg
                         class="mx-auto h-5 w-5 text-green-400"
                         xmlns="http://www.w3.org/2000/svg"
@@ -128,12 +120,9 @@
               </tbody>
             </table>
             <!-- ProgressBar -->
-            <div
-              v-show="showProgress"
-              class="w-full h-4 bg-gray-400 rounded-full mt-3"
-            >
+            <div v-show="showProgress" class="w-full h-4 bg-gray-400 rounded-full mt-3">
               <div
-                class=" h-full text-center text-xs text-white bg-green-500 rounded-full"
+                class="h-full text-center text-xs text-white bg-green-500 rounded-full"
                 :style="{ width: progressBarValue + '%' }"
               >
                 {{ progressBarValue }}
@@ -142,16 +131,16 @@
 
             <div class="items-center justify-center text-center mt-4">
               <button
-                @click="upload"
+                v-show="!filesDone"
                 :disabled="disabledUploadBtn"
                 class="relative cursor-pointer bg-white rounded-md font-medium text-blue-700 hover:text-blue-500 disabled:opacity-50"
-                v-show="!filesDone"
+                @click="upload"
               >
                 Upload {{ filesDone }} of {{ filesToDo }} file(s)
               </button>
               <span
-                class="relative bg-white rounded-md font-medium text-gray-700 "
                 v-show="filesDone"
+                class="relative bg-white rounded-md font-medium text-gray-700"
               >
                 Uploaded
               </span>
@@ -164,15 +153,15 @@
 </template>
 
 <script>
-import axios from "axios";
+import axios from 'axios'
 export default {
-  name: "UploadBox",
+  name: 'UploadBox',
   props: {
     multiple: Boolean,
     accept: String,
     id: String
   },
-  emits: ["changeFileName"],
+  emits: ['changeFileName'],
   data: () => ({
     files: [],
     draggingOver: false,
@@ -180,25 +169,25 @@ export default {
     filesDone: 0,
     showProgress: false,
     disabledUploadBtn: false,
-    database: "",
-    for: ""
+    database: '',
+    for: ''
   }),
   computed: {
     showFilesTable() {
-      return !(this.files.length === 0);
+      return !(this.files.length === 0)
     },
     filesToDo() {
-      return this.files.length;
+      return this.files.length
     }
   },
   watch: {
     progressBarValue() {
       // if (newVal.length && newVal !== oldVal) {
       if (this.progressBarValue === 100) {
-        this.disabledUploadBtn = true;
-        this.$emit("changeFileName", this.files[0].name);
+        this.disabledUploadBtn = true
+        this.$emit('changeFileName', this.files[0].name)
       } else {
-        this.disabledUploadBtn = false;
+        this.disabledUploadBtn = false
       }
       //  }
     }
@@ -207,45 +196,45 @@ export default {
   methods: {
     addFiles(event) {
       if (!event.target.files.length) {
-        return;
+        return
       }
-      this.files = [];
-      this.initProgress();
-      [...event.target.files].forEach(f => {
-        this.files.push(f);
-        f.uploaded = false;
-      });
+      this.files = []
+      this.initProgress()
+      ;[...event.target.files].forEach((f) => {
+        this.files.push(f)
+        f.uploaded = false
+      })
     },
     dropFiles(e) {
-      this.files = [];
-      this.initProgress();
-      let droppedFiles = e.dataTransfer.files;
-      if (!droppedFiles) return;
-      // this tip, convert FileList to array, credit: https://www.smashingmagazine.com/2018/01/drag-drop-file-uploader-vanilla-js/
-      [...droppedFiles].forEach(f => {
-        this.files.push(f);
-        f.uploaded = false;
-      });
-      this.draggingOver = false;
+      this.files = []
+      this.initProgress()
+      let droppedFiles = e.dataTransfer.files
+      if (!droppedFiles)
+        return // this tip, convert FileList to array, credit: https://www.smashingmagazine.com/2018/01/drag-drop-file-uploader-vanilla-js/
+      ;[...droppedFiles].forEach((f) => {
+        this.files.push(f)
+        f.uploaded = false
+      })
+      this.draggingOver = false
     },
     drag() {
-      this.draggingOver = true;
+      this.draggingOver = true
     },
     removeFile(file) {
-      this.files = this.files.filter(f => {
-        return f != file;
-      });
+      this.files = this.files.filter((f) => {
+        return f != file
+      })
     },
     initProgress() {
-      this.progressBarValue = 0;
-      this.filesDone = 0;
-      this.showProgress = false;
+      this.progressBarValue = 0
+      this.filesDone = 0
+      this.showProgress = false
     },
     handleUploadFiles() {
-      this.initProgress();
+      this.initProgress()
       for (const i of Object.keys(this.files)) {
-        this.showProgress = true;
-        this.uploadFile(this.files[i]);
+        this.showProgress = true
+        this.uploadFile(this.files[i])
 
         //setTimeout(() => this.uploadFile(this.files[i]), 3000);
         // setTimeout(() => this.progressDone(), 3000);
@@ -253,9 +242,9 @@ export default {
     },
     uploadFile(file) {
       //handleUploadFiles() {
-      const url = "http://localhost:8080/upload";
-      const formData = new FormData();
-      formData.append("files", file);
+      const url = 'http://localhost:8080/upload'
+      const formData = new FormData()
+      formData.append('files', file)
       //formData.append("files", this.files);
 
       // fetch(url, {
@@ -271,11 +260,11 @@ export default {
       //     console.error(JSON.stringify(e.message));
       //   });
       const config = {
-        onUploadProgress: event => {
-          console.log("event", event);
+        onUploadProgress: (event) => {
+          console.log('event', event)
           //setTimeout(() => this.progressDone(), 3000);
         }
-      };
+      }
       axios
         .post(
           url,
@@ -286,25 +275,23 @@ export default {
         )
         .then(this.progressDone())
         .then((file.uploaded = true))
-        .catch(error => console.log(error));
+        .catch((error) => console.log(error))
     },
     progressDone() {
-      this.filesDone++;
-      this.progressBarValue = Math.round(
-        (this.filesDone / this.filesToDo) * 100
-      );
+      this.filesDone++
+      this.progressBarValue = Math.round((this.filesDone / this.filesToDo) * 100)
     },
     bytesToSize(x) {
-      const units = ["bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
+      const units = ['bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
       let l = 0,
-        n = parseInt(x, 10) || 0;
+        n = parseInt(x, 10) || 0
       while (n >= 1024 && ++l) {
-        n = n / 1024;
+        n = n / 1024
       }
-      return n.toFixed(n < 10 && l > 0 ? 1 : 0) + units[l];
+      return n.toFixed(n < 10 && l > 0 ? 1 : 0) + units[l]
     }
   }
-};
+}
 </script>
 
 <style>

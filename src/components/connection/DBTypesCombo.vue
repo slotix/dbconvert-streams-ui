@@ -1,10 +1,10 @@
 <template>
-  <Combobox as="div" v-model="selectedDBType">
+  <Combobox v-model="selectedDBType" as="div">
     <div class="relative mt-2">
       <ComboboxInput
         class="w-full rounded-md border-0 bg-white py-1.5 pl-3 pr-12 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-gray-600 sm:text-sm sm:leading-6"
-        @change="query = $event.target.value"
         :display-value="(tp) => tp?.type"
+        @change="query = $event.target.value"
       />
       <ComboboxButton
         class="absolute inset-y-0 right-0 flex items-center rounded-r-md px-2 focus:outline-none"
@@ -21,9 +21,9 @@
         <ComboboxOption
           v-for="tp in filteredDbTypes"
           :key="tp.id"
+          v-slot="{ active, selected }"
           :value="tp"
           as="template"
-          v-slot="{ active, selected }"
         >
           <li
             :class="[

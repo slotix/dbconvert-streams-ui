@@ -105,15 +105,15 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from 'vue';
-import { useCommon, Connection } from './common';
+import { defineComponent, ref } from 'vue'
+import { useCommon, Connection } from './common'
 
 interface SQLServerConnection extends Connection {
-  protocol: string;
-  windowsAuthentication: boolean;
-  userName: string;
-  schemas: string[];
-  schema: string;
+  protocol: string
+  windowsAuthentication: boolean
+  userName: string
+  schemas: string[]
+  schema: string
 }
 
 export default defineComponent({
@@ -133,8 +133,8 @@ export default defineComponent({
       schema: 'dbo',
       protocol: 'TCP/IP',
       windowsAuthentication: false,
-      userName: 'sa',
-    };
+      userName: 'sa'
+    }
 
     const {
       connection,
@@ -146,10 +146,10 @@ export default defineComponent({
       refreshDatabases,
       createData,
       createDatabase,
-      createSchema,
-    } = useCommon<SQLServerConnection>(defaultConnection);
+      createSchema
+    } = useCommon<SQLServerConnection>(defaultConnection)
 
-    const protocols = ref(['TCP/IP', 'PIPE', 'IPX/SPX']);
+    const protocols = ref(['TCP/IP', 'PIPE', 'IPX/SPX'])
 
     return {
       connection,
@@ -162,10 +162,10 @@ export default defineComponent({
       createData,
       createDatabase,
       createSchema,
-      protocols,
-    };
-  },
-});
+      protocols
+    }
+  }
+})
 </script>
 
 <style>

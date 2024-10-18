@@ -1,20 +1,27 @@
 <template>
   <section class="max-w-7xl mx-auto px-4 py-10">
     <div v-for="(step, index) in allSteps" :key="step.id">
-      <div class="flex" :class="{
-      'flex-row': (index + 1) % 2 != 0,
-      'flex-row-reverse': (index + 1) % 2 == 0
-    }">
+      <div
+        class="flex"
+        :class="{
+          'flex-row': (index + 1) % 2 != 0,
+          'flex-row-reverse': (index + 1) % 2 == 0
+        }"
+      >
         <div class="hidden md:flex flex-col items-center">
           <div
-            class="w-32 py-5 border border-gray-300 rounded-lg mr-4 uppercase flex flex-col items-center justify-center">
+            class="w-32 py-5 border border-gray-300 rounded-lg mr-4 uppercase flex flex-col items-center justify-center"
+          >
             <div class="text-3xl font-black text-gray-500">Step {{ index + 1 }}</div>
           </div>
           <div class="h-full border-l-2 border-transparent">
-            <div class="border-l-2 h-full border-gray-300 border-dashed" :class="{
-      'mr-4': (index + 1) % 2 != 0,
-      'ml-2': (index + 1) % 2 == 0
-    }"></div>
+            <div
+              class="border-l-2 h-full border-gray-300 border-dashed"
+              :class="{
+                'mr-4': (index + 1) % 2 != 0,
+                'ml-2': (index + 1) % 2 == 0
+              }"
+            ></div>
           </div>
         </div>
         <div class="flex-auto rounded">
@@ -36,31 +43,41 @@
           </div>
         </div>
       </div>
-      <div class="flex items-start" :class="{
-      'flex-row': (index + 1) % 2 != 0,
-      'flex-row-reverse': (index + 1) % 2 == 0
-    }" v-if="index != Object.keys(allSteps).length - 1">
+      <div
+        v-if="index != Object.keys(allSteps).length - 1"
+        class="flex items-start"
+        :class="{
+          'flex-row': (index + 1) % 2 != 0,
+          'flex-row-reverse': (index + 1) % 2 == 0
+        }"
+      >
         <div class="border-t-2 border-r-2 border-transparent">
-          <div class="w-16 h-16 border-gray-300 border-dashed border-b-2" :class="{
-      'ml-16 border-l-2 rounded-bl-full': (index + 1) % 2 != 0,
-      'mr-16 border-r-2 rounded-br-full': (index + 1) % 2 == 0
-    }"></div>
+          <div
+            class="w-16 h-16 border-gray-300 border-dashed border-b-2"
+            :class="{
+              'ml-16 border-l-2 rounded-bl-full': (index + 1) % 2 != 0,
+              'mr-16 border-r-2 rounded-br-full': (index + 1) % 2 == 0
+            }"
+          ></div>
         </div>
         <div class="border-t-2 border-transparent flex-auto">
           <div class="h-16 border-b-2 border-gray-300 border-dashelogod"></div>
         </div>
-        <div class="w-16 mt-16 h-16 border-gray-300 border-dashed border-t-2" :class="{
-      'ml-16 border-l-2 rounded-tl-full': (index + 1) % 2 == 0,
-      'mr-16 border-r-2 rounded-tr-full': (index + 1) % 2 != 0
-    }"></div>
+        <div
+          class="w-16 mt-16 h-16 border-gray-300 border-dashed border-t-2"
+          :class="{
+            'ml-16 border-l-2 rounded-tl-full': (index + 1) % 2 == 0,
+            'mr-16 border-r-2 rounded-tr-full': (index + 1) % 2 != 0
+          }"
+        ></div>
       </div>
     </div>
   </section>
 </template>
 <script setup lang="ts">
-import { computed } from 'vue';
-import { useCommonStore, Step } from '@/stores/common';
+import { computed } from 'vue'
+import { useCommonStore, Step } from '@/stores/common'
 
-const commonStore = useCommonStore();
-const allSteps = computed<Step[]>(() => commonStore.steps);
+const commonStore = useCommonStore()
+const allSteps = computed<Step[]>(() => commonStore.steps)
 </script>

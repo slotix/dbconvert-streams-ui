@@ -11,7 +11,6 @@ const apiClient: AxiosInstance = axios.create({
 })
 
 const executeWithRetry = async <T>(operation: () => Promise<T>): Promise<T> => {
-  const commonStore = useCommonStore()
   try {
     return await operation()
   } catch (error) {

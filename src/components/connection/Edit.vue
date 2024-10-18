@@ -17,13 +17,12 @@ import { useCommonStore } from '@/stores/common'
 export default {
   components: {
     Modal,
-    ConnectionParams,
+    ConnectionParams
   },
   setup() {
     const connectionsStore = useConnectionsStore()
     const commonStore = useCommonStore()
     const currentConnection = computed(() => connectionsStore.currentConnection)
-
 
     const ok = async () => {
       try {
@@ -38,9 +37,9 @@ export default {
           currentConnection.value.schemas = schemas
         }
 
-        await connectionsStore.saveConnection();
-        await connectionsStore.refreshConnections();
-        commonStore.showNotification('Connection updated', 'success');
+        await connectionsStore.saveConnection()
+        await connectionsStore.refreshConnections()
+        commonStore.showNotification('Connection updated', 'success')
       } catch (err) {
         commonStore.showNotification(err.message)
       }

@@ -1,5 +1,5 @@
 <template>
-  <Listbox as="div" v-model="selectedDBType">
+  <Listbox v-model="selectedDBType" as="div">
     <div class="relative mt-8 mr-4">
       <ListboxButton
         class="relative w-full cursor-default rounded-md bg-white py-1.5 pl-3 pr-10 text-left text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 sm:text-sm sm:leading-6"
@@ -23,11 +23,11 @@
           class="absolute z-10 mt-1 max-h-56 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
         >
           <ListboxOption
-            as="template"
             v-for="dbt in dbTypes"
             :key="dbt.id"
-            :value="dbt"
             v-slot="{ active, selected }"
+            as="template"
+            :value="dbt"
           >
             <li
               :class="[
@@ -38,7 +38,10 @@
               <div class="flex items-center">
                 <img :src="dbt.logo" alt="" class="h-5 w-5 flex-shrink-0 rounded-full" />
                 <span
-                  :class="[selected ? 'font-semibold' : 'font-normal', 'ml-3 mr-6 block truncate min-w-full']"
+                  :class="[
+                    selected ? 'font-semibold' : 'font-normal',
+                    'ml-3 mr-6 block truncate min-w-full'
+                  ]"
                   >{{ dbt.type }}</span
                 >
               </div>
@@ -61,28 +64,23 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue';
-import {
-  Listbox,
-  ListboxButton,
-  ListboxOption,
-  ListboxOptions
-} from '@headlessui/vue';
-import { CheckIcon, ChevronUpDownIcon } from '@heroicons/vue/24/outline';
-import { useConnectionsStore } from '@/stores/connections';
+import { ref, onMounted, watch } from 'vue'
+import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/vue'
+import { CheckIcon, ChevronUpDownIcon } from '@heroicons/vue/24/outline'
+import { useConnectionsStore } from '@/stores/connections'
 
-const connectionsStore = useConnectionsStore();
-const fetchedDbTypes = connectionsStore.dbTypes;
-const dbTypes = ref(fetchedDbTypes.slice(1));
-const selectedDBType = ref(dbTypes.value[0]);
+const connectionsStore = useConnectionsStore()
+const fetchedDbTypes = connectionsStore.dbTypes
+const dbTypes = ref(fetchedDbTypes.slice(1))
+const selectedDBType = ref(dbTypes.value[0])
 
-const emit = defineEmits(['update:selected-db-type']);
+const emit = defineEmits(['update:selected-db-type'])
 
 onMounted(() => {
-  emit('update:selected-db-type', selectedDBType.value);
-});
+  emit('update:selected-db-type', selectedDBType.value)
+})
 
 watch(selectedDBType, (newVal) => {
-  emit('update:selected-db-type', newVal);
-});
+  emit('update:selected-db-type', newVal)
+})
 </script>

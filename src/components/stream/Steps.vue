@@ -12,7 +12,8 @@
           <div class="w-full bg-gray-200 rounded-full mr-2 h-4">
             <div
               class="rounded-full bg-green-500 text-xs leading-none h-full text-center text-white transition-all duration-300 ease-in-out"
-              :style="{ width: stepsBarValue }"></div>
+              :style="{ width: stepsBarValue }"
+            ></div>
           </div>
           <div class="text-xs w-24 text-gray-600 text-right">
             Step {{ currentStepIndex }} of {{ stepsCount }}
@@ -22,25 +23,41 @@
     </div>
     <div class="mt-6 flex justify-between w-full">
       <div class="flex space-x-2">
-        <button type="button" @click="cancelStream"
-          class="inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+        <button
+          type="button"
+          class="inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+          @click="cancelStream"
+        >
           Cancel
         </button>
-        <button type="button" @click="prev" :disabled="currentStepIndex === 1" aria-label="Go to previous step"
-          class="inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed">
+        <button
+          type="button"
+          :disabled="currentStepIndex === 1"
+          aria-label="Go to previous step"
+          class="inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          @click="prev"
+        >
           <ChevronLeftIcon class="h-5 w-5 mr-1" aria-hidden="true" />
           Back
         </button>
       </div>
       <div class="flex space-x-2">
-        <button type="button" @click="next" :disabled="currentStepIndex === stepsCount" aria-label="Go to next step"
-          class="inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-gray-600 text-sm font-medium text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed">
+        <button
+          type="button"
+          :disabled="currentStepIndex === stepsCount"
+          aria-label="Go to next step"
+          class="inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-gray-600 text-sm font-medium text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          @click="next"
+        >
           Next
           <ChevronRightIcon class="h-5 w-5 ml-1" aria-hidden="true" />
         </button>
-        <button type="button" @click="saveStream"
+        <button
+          type="button"
           class="inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-sm font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-          :disabled="isSaveDisabled">
+          :disabled="isSaveDisabled"
+          @click="saveStream"
+        >
           Save
         </button>
       </div>

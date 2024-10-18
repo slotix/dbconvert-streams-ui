@@ -65,12 +65,10 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
-import { useCommon, Connection } from './common';
+import { defineComponent } from 'vue'
+import { useCommon, Connection } from './common'
 
-interface AzureConnection extends Connection {
-  // Azure-specific properties can be added here if needed
-}
+type AzureConnection = Connection
 
 export default defineComponent({
   name: 'AzureParams',
@@ -86,8 +84,8 @@ export default defineComponent({
       databases: [],
       database: '',
       schema: 'dbo',
-      schemas: [''],
-    };
+      schemas: ['']
+    }
 
     const {
       connection,
@@ -97,8 +95,8 @@ export default defineComponent({
       fetchData,
       refreshDatabases,
       createData,
-      createDatabase,
-    } = useCommon<AzureConnection>(defaultConnection);
+      createDatabase
+    } = useCommon<AzureConnection>(defaultConnection)
 
     return {
       connection,
@@ -108,8 +106,8 @@ export default defineComponent({
       fetchData,
       refreshDatabases,
       createData,
-      createDatabase,
-    };
-  },
-});
+      createDatabase
+    }
+  }
+})
 </script>

@@ -4,10 +4,12 @@
     <div class="flex flex-wrap justify-between items-center max-w-7xl mx-auto py-6 px-8">
       <div class="flex items-center space-x-4">
         <DBTypesCombo :isFilterIcon="true" @update:selected-db-type="filterDB" />
-        <ToggleView class=" px-8 pt-4" />
+        <ToggleView class="px-8 pt-4" />
       </div>
-      <button @click="addConnection"
-        class="flex items-center justify-center rounded-md bg-gray-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-gray-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-600">
+      <button
+        class="flex items-center justify-center rounded-md bg-gray-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-gray-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-600"
+        @click="addConnection"
+      >
         <PlusIcon class="mr-2 h-5 w-5 text-white" aria-hidden="true" />
         New connection
       </button>
@@ -16,7 +18,11 @@
 
     <div v-if="connectionsByType.length > 0" class="max-w-7xl mx-auto px-4">
       <div v-show="currentViewType === 'cards'" class="flex flex-wrap -mx-4">
-        <div class="w-full px-4 mb-8 md:w-1/2 lg:w-1/3" v-for="connection in connectionsByType" :key="connection.id">
+        <div
+          v-for="connection in connectionsByType"
+          :key="connection.id"
+          class="w-full px-4 mb-8 md:w-1/2 lg:w-1/3"
+        >
           <CardItem :connection="connection" :isStreamsPage="isStreamsPage" />
         </div>
       </div>
@@ -26,7 +32,8 @@
     </div>
     <div v-else class="flex items-center justify-center flex-col text-center pb-16">
       <p class="mt-1 text-lg text-gray-700">
-        You haven't created any connections yet.<br> Click the button below to create your first connection.
+        You haven't created any connections yet.<br />
+        Click the button below to create your first connection.
       </p>
       <!-- <button
         @click="addConnection"

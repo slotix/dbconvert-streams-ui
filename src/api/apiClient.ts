@@ -1,6 +1,6 @@
 import axios, { AxiosInstance, AxiosError } from 'axios'
 import { handleApiError, handleUnauthorizedError } from '@/utils/errorHandler'
-import { DailyUsage, MonthlyUsage, MonthlyUsageResponse, UserData } from '@/types/user'
+import { DailyUsage, MonthlyUsageResponse, UserData } from '@/types/user'
 
 // Define the shape of the API responses
 interface ApiResponse<T> {

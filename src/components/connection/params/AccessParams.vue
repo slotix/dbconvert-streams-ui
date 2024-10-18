@@ -33,8 +33,8 @@
       <div class="items-center w-full p-4 space-y-4 text-gray-500 md:inline-flex md:space-y-0">
         <label class="max-w-sm mx-auto md:w-1/3"> MS Access Database (.mdb or .accdb) </label>
         <upload-box
-          class="w-full overflow-auto md:w-2/3"
           :id="uploadBoxId"
+          class="w-full overflow-auto md:w-2/3"
           :multiple="false"
           :accept="accept"
           @changeFileName="changeFileName"
@@ -70,13 +70,13 @@ export default {
     uploadBoxId: 'uploadAccessFile'
   }),
   mounted() {
-    if ( this.dlgTp === DIALOG_TYPES.SAVE ) {
+    if (this.dlgTp === DIALOG_TYPES.SAVE) {
       this.connection.name = this.buildConnectionName
     }
     this.connection.type = this.connectionType
   },
   activated() {
-  if ( this.dlgTp === DIALOG_TYPES.SAVE ) {
+    if (this.dlgTp === DIALOG_TYPES.SAVE) {
       this.currentConnection = this.connection
     } else {
       this.connection = this.currentConnection
@@ -86,10 +86,10 @@ export default {
     changeFileName(fileName) {
       this.connection.fileName = fileName
       this.connection.name = this.buildConnectionName
-    },
+    }
   },
   computed: {
-    ...mapWritableState(useConnectionsStore,['currentConnection']),
+    ...mapWritableState(useConnectionsStore, ['currentConnection']),
     buildConnectionName() {
       return this.connectionType + '_' + this.connection.fileName
     },
@@ -99,7 +99,7 @@ export default {
   },
   watch: {
     'connection.fileName': function () {
-    if ( this.dlgTp === DIALOG_TYPES.SAVE ) {
+      if (this.dlgTp === DIALOG_TYPES.SAVE) {
         this.connection.name = this.buildConnectionName
       }
     },

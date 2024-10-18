@@ -17,43 +17,61 @@
       </router-link>
     </div>
     <div class="container mx-auto">
-      <div class="px-4 py-4 ">
-        <div class="inline-block min-w-full shadow rounded-lg ">
+      <div class="px-4 py-4">
+        <div class="inline-block min-w-full shadow rounded-lg">
           <!-- <table class="min-w-full divide-y divide-gray-300 bg-white"> -->
           <table class="min-w-full bg-white">
             <thead class="text-sm md:text-base">
               <tr class="bg-gray-100 divide-x divide-gray-200">
-                <th scope="col"
-                  class="px-5 py-3 border-b border-gray-200 text-gray-800 text-left uppercase font-normal">
+                <th
+                  scope="col"
+                  class="px-5 py-3 border-b border-gray-200 text-gray-800 text-left uppercase font-normal"
+                >
                   Stream
                 </th>
-                <th scope="col"
-                  class="hidden px-5 py-3 border-b border-gray-200 text-gray-800 text-left uppercase font-normal lg:table-cell">
+                <th
+                  scope="col"
+                  class="hidden px-5 py-3 border-b border-gray-200 text-gray-800 text-left uppercase font-normal lg:table-cell"
+                >
                   Source
                 </th>
-                <th scope="col"
-                  class="hidden px-5 py-3 border-b border-gray-200 text-gray-800 text-left uppercase font-normal lg:table-cell">
+                <th
+                  scope="col"
+                  class="hidden px-5 py-3 border-b border-gray-200 text-gray-800 text-left uppercase font-normal lg:table-cell"
+                >
                   Target
                 </th>
-                <th scope="col"
-                  class="px-5 py-3 border-b border-gray-200 text-gray-800 text-left uppercase font-normal  lg:table-cell">
+                <th
+                  scope="col"
+                  class="px-5 py-3 border-b border-gray-200 text-gray-800 text-left uppercase font-normal lg:table-cell"
+                >
                   Edit
                 </th>
-                <th scope="col"
-                  class="px-5 py-3 border-b border-gray-200 text-gray-800 text-center uppercase font-normal">
+                <th
+                  scope="col"
+                  class="px-5 py-3 border-b border-gray-200 text-gray-800 text-center uppercase font-normal"
+                >
                   Actions
                 </th>
-                <th scope="col"
-                  class="px-5 py-3 border-b border-gray-200 text-gray-800 text-left uppercase font-normal  lg:table-cell">
+                <th
+                  scope="col"
+                  class="px-5 py-3 border-b border-gray-200 text-gray-800 text-left uppercase font-normal lg:table-cell"
+                >
                   Start
                 </th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200 bg-white">
-              <tr v-for="stream in newestFirst" :key="stream.id"
-                class="divide-x divide-gray-200 border-b border-gray-200 cursor-pointer">
-                <TableRow :stream="stream" :source="connectionByID(stream.source)"
-                  :target="connectionByID(stream.target)" />
+              <tr
+                v-for="stream in newestFirst"
+                :key="stream.id"
+                class="divide-x divide-gray-200 border-b border-gray-200 cursor-pointer"
+              >
+                <TableRow
+                  :stream="stream"
+                  :source="connectionByID(stream.source)"
+                  :target="connectionByID(stream.target)"
+                />
               </tr>
             </tbody>
           </table>

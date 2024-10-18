@@ -2,19 +2,17 @@
   <div class="antialiased bg-gray-200 min-h-screen">
     <header class="bg-white shadow">
       <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        <h1 class="text-3xl font-bold text-gray-900">
-          Choose Your Plan
-        </h1>
+        <h1 class="text-3xl font-bold text-gray-900">Choose Your Plan</h1>
       </div>
     </header>
     <main class="py-12 sm:py-16">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="bg-white rounded-lg shadow-lg p-8 sm:p-12">
-          <stripe-pricing-table 
-            :pricing-table-id="pricingTableId" 
+          <stripe-pricing-table
+            :pricing-table-id="pricingTableId"
             :publishable-key="stripePublishableKey"
-            @subscriptionCompleted="handleSubscriptionCompleted" 
             class="w-full"
+            @subscriptionCompleted="handleSubscriptionCompleted"
           />
         </div>
       </div>
