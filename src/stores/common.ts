@@ -78,7 +78,8 @@ export const useCommonStore = defineStore('common', {
       { id: 'cdc', title: 'Stream / Change Data Capture' }
     ] as ModeOption[],
     currentPage: '',
-    selectedPlan: null as string | null
+    selectedPlan: null as string | null,
+    isBackendConnected: false
   }),
   actions: {
     async retryOperation(
@@ -251,6 +252,9 @@ export const useCommonStore = defineStore('common', {
     },
     setSelectedPlan(planId: string) {
       this.selectedPlan = planId
+    },
+    setBackendConnected(status: boolean) {
+      this.isBackendConnected = status
     }
   },
   getters: {
