@@ -1,41 +1,67 @@
-# Vue 3 + Vite
+# DBConvert Streams UI
 
-This template should help get you started developing with Vue 3 in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+## Overview
 
-## Recommended IDE Setup
+DBConvert Streams is a powerful application for efficient data migration and real-time Change Data Capture (CDC) replication. For more information, visit [stream.dbconvert.com](https://stream.dbconvert.com). This repository contains the frontend user interface, built with Vue 3, Vite, and TypeScript, designed to simplify managing your data flows between multiple databases.
 
-- [VS Code](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur) + [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin).
+## Key Features
 
-## Customize configuration
+- **Create and Manage Connections**: Set up and handle various database connections easily.
+- **Configure Streams**: Full control over creating and configuring data streams.
+- **Monitor Streams**: Track, manage, and visualize the progress of ongoing data streams in real time.
+- **User Dashboard**: Easily manage API keys, check your usage statistics, and monitor your data transfer consumption.
+- **Responsive Design**: Built with Tailwind CSS to provide an intuitive and accessible experience across devices.
 
-See [Vite Configuration Reference](https://vitejs.dev/config/).
+## Prerequisites
 
-## Project Setup
+- **Node.js**: Version 14 or higher.
+- **npm**: Version 6 or higher.
 
-```sh
-npm install
-```
+## Installation and Setup
 
-### Compile and Hot-Reload for Development
+To get started with DBConvert Streams UI, follow these steps:
 
-```sh
-npm run dev
-```
+1. **Clone the Repository**
 
-### Compile and Minify for Production
+2. **Install Dependencies**
 
-```sh
-npm run build
-```
+3. **Set Up Environment Variables**
+   Create a `.env` file in the root directory and add the following variables. Replace `your_key` with your actual credentials:
 
-### Run Unit Tests with [Vitest](https://vitest.dev/)
+4. **Start the Development Server**
 
-```sh
-npm run test:unit
-```
+5. **View the Application**
+   Open your browser and navigate to `http://localhost:5173` to view and interact with the UI.
 
-### Lint with [ESLint](https://eslint.org/)
+> **Note**: A common script will soon be available to install DBConvert Streams backend services and dependencies automatically, simplifying the setup process.
 
-```sh
-npm run lint
-```
+## Screenshots
+
+Here are some screenshots to help you get familiar with the UI:
+
+- **Dashboard Overview**
+  ![Dashboard Overview](docs/screenshots/home.png)
+
+- **Connection Management**
+  ![Connection Management](docs/screenshots/connection-management.png)
+
+- **Streams Configuration**
+  ![Streams Configuration](docs/screenshots/streams-configuration.png)
+
+- **Stream Settings**
+  ![Stream Configuration](docs/screenshots/streams-configuration.png)
+
+- **Real-Time Monitoring**
+  ![Real-Time Monitoring](docs/screenshots/real-time-monitoring.png)
+
+## Contributing
+
+We welcome contributions! If you would like to contribute, please fork the repository and submit a pull request. Make sure to follow the contribution guidelines and coding standards mentioned in the repository.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
+
+## Need Help?
+
+If you run into issues or have questions, feel free to open an issue in the GitHub repository or contact the support team at [streams@dbconvert.com](mailto:streams@dbconvert.com).
