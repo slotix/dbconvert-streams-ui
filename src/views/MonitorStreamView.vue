@@ -1,42 +1,37 @@
 <template>
   <header>
     <div class="bg-white flex flex-col max-w-7xl mx-auto py-6 px-8">
-      <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-        Monitor stream:
-        <span
-          class="text-gray-500 text-lg underline underline-offset-4 decoration-dashed decoration-gray-400"
-          >{{ monitoringStore.streamID }}
-        </span>
+      <h1 class="text-3xl font-bold text-gray-900 mb-2">
+        Monitor stream: 
+        <span class="text-gray-500 text-lg font-normal">{{ monitoringStore.streamID }}</span>
       </h1>
       <p class="text-gray-500 text-sm mb-4">
-        Config: <span class="">{{ currentStreamConfig.name }}</span>
+        Config: <span>{{ currentStreamConfig.name }}</span>
       </p>
-      <div v-if="monitoringStore.streamID != ''" class="antialiased">
-        <div class="flex space-x-1 border border-gray-300 rounded-md overflow-hidden">
-          <button
-            class="px-4 py-2 bg-white text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-gray-500 flex items-center"
-            @click="pauseStream"
-          >
-            <PauseIcon class="h-5 w-5 mr-2 ml-2 text-yellow-700" />
-            Pause
-          </button>
-          <div class="w-px bg-gray-300"></div>
-          <button
-            class="px-4 py-2 bg-white text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-gray-500 flex items-center"
-            @click="resumeStream"
-          >
-            <PlayIcon class="h-5 w-5 mr-2 ml-2 text-green-700" />
-            Resume
-          </button>
-          <div class="w-px bg-gray-300"></div>
-          <button
-            class="px-4 py-2 bg-white text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-gray-500 flex items-center"
-            @click="stopStream"
-          >
-            <StopIcon class="h-5 w-5 mr-2 ml-2 text-red-700" />
-            Stop
-          </button>
-        </div>
+      <div v-if="monitoringStore.streamID != ''" class="flex space-x-2">
+        <button
+          v-if="!isPaused"
+          class="px-4 py-2 bg-cyan-500 text-white font-semibold rounded-md hover:bg-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 transition-colors duration-200 flex items-center justify-center"
+          @click="pauseStream"
+        >
+          <PauseIcon class="h-5 w-5 mr-2" />
+          Pause
+        </button>
+        <button
+          v-else
+          class="px-4 py-2 bg-cyan-500 text-white font-semibold rounded-md hover:bg-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 transition-colors duration-200 flex items-center justify-center"
+          @click="resumeStream"
+        >
+          <PlayIcon class="h-5 w-5 mr-2" />
+          Resume
+        </button>
+        <button
+          class="px-4 py-2 bg-red-500 text-white font-semibold rounded-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors duration-200 flex items-center justify-center"
+          @click="stopStream"
+        >
+          <StopIcon class="h-5 w-5 mr-2" />
+          Stop
+        </button>
       </div>
     </div>
   </header>
@@ -63,7 +58,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, computed } from 'vue'
+import { onMounted, computed, ref } from 'vue'
 import { ChartBarSquareIcon, PauseIcon, PlayIcon, StopIcon } from '@heroicons/vue/20/solid'
 import LogContainer from '@/components/monitoring/LogContainer.vue'
 import StatContainer from '@/components/monitoring/StatContainer.vue'
@@ -80,6 +75,8 @@ const currentStreamConfig = computed(() => {
   return monitoringStore.streamConfig
 })
 
+const isPaused = ref(false)
+
 onMounted(() => {
   monitoringStore.consumeLogsFromNATS()
 })
@@ -89,6 +86,7 @@ const pauseStream = async () => {
     await streamsStore.pauseStream(monitoringStore.streamID)
     commonStore.showNotification('Stream paused', 'success')
     commonStore.fetchUsageData()
+    isPaused.value = true
   } catch (error) {
     handleStreamError(error, 'Failed to pause stream')
   }
@@ -98,6 +96,7 @@ const resumeStream = async () => {
   try {
     await streamsStore.resumeStream(monitoringStore.streamID)
     commonStore.showNotification('Stream resumed', 'success')
+    isPaused.value = false
   } catch (error) {
     handleStreamError(error, 'Failed to resume stream')
   }
