@@ -251,15 +251,16 @@ const initializeApp = async () => {
   const initWithRetry = useExponentialBackoff(async () => {
     const initResult = await commonStore.initApp()
     if (initResult === 'failed') {
+      commonStore.setBackendConnected(false)
       throw new Error('Failed to initialize app')
     }
+    commonStore.setBackendConnected(true)
   }, maxRetries, initialDelay)
 
   try {
     await initWithRetry()
   } catch (error) {
     console.error('Failed to initialize app after multiple retries:', error)
-    commonStore.showNotification('Failed to initialize app. Please try again later.', 'error')
   }
 }
 
@@ -318,3 +319,4 @@ const customPages: CustomPage[] = [
   }
 ]
 </script>
+
