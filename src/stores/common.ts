@@ -3,6 +3,7 @@ import idb from '@/api/iDBService'
 import api from '@/api/apiClient'
 import { getToken } from '@/utils/auth'
 import { UserData } from '@/types/user'
+import { v4 as uuidv4 } from 'uuid'
 
 export const DIALOG_TYPES = {
   SAVE: 'Add',
@@ -11,6 +12,7 @@ export const DIALOG_TYPES = {
 } as const
 
 export interface Notification {
+  id: string
   type: 'error' | 'success' | 'warning' | 'info'
   msg: string
 }
@@ -203,32 +205,17 @@ export const useCommonStore = defineStore('common', {
     closeModal() {
       this.showModal = false
     },
-    showNotification(msg: string, type: Notification['type'] = 'error', duration = 3000) {
-      const newNotification: Notification = { msg, type }
-      if (
-        !this.notificationQueue.some(
-          (notification) => notification.msg === msg && notification.type === type
-        )
-      ) {
-        this.notificationQueue.push(newNotification)
-      }
-      if (!this.currentNotification) {
-        this.displayNextNotification(duration)
-      }
+    showNotification(msg: string, type: Notification['type'] = 'info') {
+      console.log(`Adding notification: ${msg} with type: ${type}`)
+      const newNotification: Notification = { id: uuidv4(), msg, type }
+      this.notificationQueue.push(newNotification)
+      setTimeout(() => this.dismissNotification(newNotification.id), 5000)
     },
-    displayNextNotification(duration: number) {
-      if (this.notificationQueue.length > 0) {
-        this.currentNotification = this.notificationQueue.shift() || null
-        this.showNotificationBar = true
-        setTimeout(this.hideNotification, duration)
-      } else {
-        this.currentNotification = null
-        this.showNotificationBar = false
+    dismissNotification(id: string) {
+      const index = this.notificationQueue.findIndex(n => n.id === id)
+      if (index !== -1) {
+        this.notificationQueue.splice(index, 1)
       }
-    },
-    hideNotification() {
-      this.showNotificationBar = false
-      setTimeout(this.displayNextNotification, 500)
     },
     setCurrentPage(page: string) {
       this.currentPage = page
