@@ -217,6 +217,8 @@ import {
   UserIcon
 } from '@heroicons/vue/24/outline'
 
+import { useExponentialBackoff } from '@/utils/retryUtils'
+
 const { isSignedIn } = useAuth()
 const commonStore = useCommonStore()
 const router = useRouter()
@@ -243,15 +245,21 @@ const UsagePageIcon = shallowRef<HTMLDivElement | null>(null)
 const UsagePageContent = shallowRef<HTMLDivElement | null>(null)
 
 const initializeApp = async () => {
-  try {
+  const maxRetries = 10
+  const initialDelay = 1000 // 1 second
+
+  const initWithRetry = useExponentialBackoff(async () => {
     const initResult = await commonStore.initApp()
     if (initResult === 'failed') {
       throw new Error('Failed to initialize app')
     }
+  }, maxRetries, initialDelay)
+
+  try {
+    await initWithRetry()
   } catch (error) {
-    console.error('Failed to initialize app:', error)
-    commonStore.showNotification('Failed to initialize app. Retrying...', 'error')
-    setTimeout(initializeApp, 5000) // Retry after 5 seconds
+    console.error('Failed to initialize app after multiple retries:', error)
+    commonStore.showNotification('Failed to initialize app. Please try again later.', 'error')
   }
 }
 

@@ -234,16 +234,18 @@ export const useCommonStore = defineStore('common', {
       this.currentPage = page
     },
     async initApp(): Promise<'success' | 'failed'> {
-      this.showNotification('Initializing App', 'success')
-      const token = await getToken()
-      if (!token) {
-        this.showNotification('No token provided', 'error')
-        return 'failed'
-      }
-
+      this.showNotification('Initializing App', 'info')
+      
       try {
-        await this.checkSentryHealth()
-        await this.checkAPIHealth()
+        const token = await getToken()
+        if (!token) {
+          throw new Error('No token provided')
+        }
+
+        await Promise.all([
+          this.checkSentryHealth(),
+          this.checkAPIHealth()
+        ])
 
         if (this.sentryHealthy && this.apiHealthy) {
           await this.userDataFromSentry()
@@ -251,10 +253,12 @@ export const useCommonStore = defineStore('common', {
             await this.loadUserConfigs()
           }
         }
+
+        this.showNotification('App initialized successfully', 'success')
         return 'success'
-      } catch (error) {
+      } catch (error: any) {
         console.error('Failed to initialize app:', error)
-        this.showNotification('Failed to initialize app', 'error')
+        this.showNotification(`Failed to initialize app: ${error.message}`, 'error')
         return 'failed'
       }
     },
