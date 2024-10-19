@@ -46,7 +46,7 @@ export const useCommonStore = defineStore('common', {
         name: 'source',
         title: 'Select source or create new connection',
         description:
-          'Lorem ipsum dolor sit amet consectetur adipisicing elit. Aperiam facilis, voluptates error alias dolorem praesentium sit soluta iure incidunt labore explicabo eaque, quia architecto veritatis dolores, enim consequatur nihil ipsum.',
+          'Choose an existing data source from your connections or set up a new one to begin the data transfer process.',
         img: '/images/steps/source-step.svg'
       },
       {
@@ -54,7 +54,7 @@ export const useCommonStore = defineStore('common', {
         name: 'streamSettings',
         title: 'Configure your stream',
         description:
-          'We are fetching the schema of your data source. This should take less than a minute, but may take a few minutes on slow internet connections or data sources with a large amount of tables.',
+          'Customize your stream settings, including table selection, data filtering, and transformation rules to ensure optimal data transfer.',
         img: '/images/steps/settings-step.svg'
       },
       {
@@ -62,7 +62,7 @@ export const useCommonStore = defineStore('common', {
         name: 'target',
         title: 'Select target or create new connection',
         description:
-          'Lorem ipsum dolor sit amet consectetur adipisicing elit. Aperiam facilis, voluptates error alias dolorem praesentium sit soluta iure incidunt labore explicabo eaque, quia architecto veritatis dolores, enim consequatur nihil ipsum.',
+          'Choose or create a target connection where your data will be transferred, completing the stream configuration process.',
         img: '/images/steps/destination-step.svg'
       }
     ] as Step[],
