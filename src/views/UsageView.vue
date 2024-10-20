@@ -102,7 +102,7 @@ const barChartOption = computed(() => {
 
   const maxValue =
     activeTab.value === 'monthly'
-      ? Math.max(...data, commonStore.userData?.limit || 0)
+      ? Math.max(...data, commonStore.monthlyLimit || 0)
       : Math.max(...data)
 
   return {
