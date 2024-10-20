@@ -47,8 +47,8 @@ import { useCommonStore } from '@/stores/common'
 import type { Subscription } from '@/types/user'
 
 const commonStore = useCommonStore()
-const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string
-const pricingTableId = import.meta.env.VITE_STRIPE_PRICING_TABLE_ID as string
+const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY
+const pricingTableId = import.meta.env.VITE_STRIPE_PRICING_TABLE_ID
 
 const currentPlan = computed<Subscription | null>(() => commonStore.userData?.subscription || null)
 
