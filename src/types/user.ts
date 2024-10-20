@@ -10,7 +10,6 @@ export interface MonthlyUsage {
 
 export interface MonthlyUsageResponse {
   usage: MonthlyUsage[]
-  limit: number
 }
 
 export interface UserData {
@@ -18,5 +17,12 @@ export interface UserData {
   apiKey: string
   dailyUsage: DailyUsage[]
   monthlyUsage: MonthlyUsage[]
-  limit: number
+  subscription: Subscription
+}
+
+export interface Subscription {
+  id: number
+  name: string
+  monthly_limit: number
+  price: number
 }

@@ -78,7 +78,6 @@ export const useCommonStore = defineStore('common', {
       { id: 'cdc', title: 'Stream / Change Data Capture' }
     ] as ModeOption[],
     currentPage: '',
-    selectedPlan: null as string | null,
     isBackendConnected: false
   }),
   actions: {
@@ -183,8 +182,7 @@ export const useCommonStore = defineStore('common', {
           this.userData = {
             ...this.userData,
             dailyUsage,
-            monthlyUsage: monthlyData.usage,
-            limit: monthlyData.limit
+            monthlyUsage: monthlyData.usage
           }
         }
       } catch (error) {
@@ -207,7 +205,6 @@ export const useCommonStore = defineStore('common', {
       this.showModal = false
     },
     showNotification(msg: string, type: Notification['type'] = 'info') {
-      console.log(`Adding notification: ${msg} with type: ${type}`)
       const newNotification: Notification = { id: uuidv4(), msg, type }
       this.notificationQueue.push(newNotification)
       setTimeout(() => this.dismissNotification(newNotification.id), 5000)
@@ -251,7 +248,10 @@ export const useCommonStore = defineStore('common', {
       }
     },
     setSelectedPlan(planId: string) {
-      this.selectedPlan = planId
+      if (this.userData) {
+        //todo: implement this
+        // this.userData.subscription = planId
+      }
     },
     setBackendConnected(status: boolean) {
       this.isBackendConnected = status
@@ -262,7 +262,7 @@ export const useCommonStore = defineStore('common', {
     isStreamsPage: (state) => state.currentPage === 'ManageStream',
     apiKey: (state) => state.userData?.apiKey || null,
     userID: (state) => state.userData?.userID || null,
-    monthlyLimit: (state) => state.userData?.limit || null,
+    monthlyLimit: (state) => state.userData?.subscription.monthly_limit || null,
     dailyUsage: (state) => state.userData?.dailyUsage || null,
     monthlyUsage: (state) => state.userData?.monthlyUsage || null,
     currentMonthUsage: (state) => {
