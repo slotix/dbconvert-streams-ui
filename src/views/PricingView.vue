@@ -20,13 +20,16 @@
           </div>
 
           <h2 class="text-2xl font-semibold text-gray-800 mb-6">Choose Your Plan</h2>
-          <stripe-pricing-table
-            :pricing-table-id="pricingTableId"
-            :publishable-key="stripePublishableKey"
-            class="w-full"
-            @subscription-completed="handleSubscriptionCompleted"
-          />
-
+          <div v-if="isStripePricingTableLoaded">
+            <stripe-pricing-table
+              :pricing-table-id="pricingTableId"
+              :publishable-key="stripePublishableKey"
+              class="w-full"
+            ></stripe-pricing-table>
+          </div>
+          <div v-else class="text-center py-8">
+            <p class="text-gray-600">Loading pricing options...</p>
+          </div>
 
           <div class="mt-8 bg-gray-50 border border-gray-200 rounded-md p-4">
             <h3 class="text-lg font-semibold text-gray-800 mb-2">Need Help?</h3>
@@ -42,7 +45,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useCommonStore } from '@/stores/common'
 import type { Subscription } from '@/types/user'
 
@@ -52,10 +55,22 @@ const pricingTableId = import.meta.env.VITE_STRIPE_PRICING_TABLE_ID
 
 const currentPlan = computed<Subscription | null>(() => commonStore.userData?.subscription || null)
 
-function handleSubscriptionCompleted(event: any) {
-  console.log('Subscription completed:', event)
-  commonStore.setSelectedPlan(event.subscription.id)
-}
+const isStripePricingTableLoaded = ref(false)
+
+onMounted(() => {
+  const checkStripeLoaded = setInterval(() => {
+    if (window.customElements.get('stripe-pricing-table')) {
+      isStripePricingTableLoaded.value = true
+      clearInterval(checkStripeLoaded)
+      // window.addEventListener('stripe-pricing-table:subscription-created', handleSubscriptionCreated)
+    }
+  }, 100)
+})
+
+// function handleSubscriptionCreated(event: CustomEvent) {
+//   console.log('Subscription created:', event.detail)
+//   commonStore.setSelectedPlan(event.detail.subscription.id)
+// }
 
 function formatDataSize(bytes: number): string {
   const gigabytes = bytes / (1024 * 1024 * 1024)
