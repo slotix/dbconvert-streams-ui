@@ -6,8 +6,8 @@ import {
   PlayIcon,
   Square2StackIcon,
   TrashIcon,
-  ClipboardIcon
 } from '@heroicons/vue/24/solid'
+import { ClipboardIcon } from '@heroicons/vue/24/outline'
 import { mapActions, mapState } from 'pinia'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'

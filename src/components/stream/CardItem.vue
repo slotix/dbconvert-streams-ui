@@ -52,7 +52,7 @@
             source?.name || 'N/A'
           }}</span>
           <span v-if="source && source.id" class="text-xs text-gray-500 ml-1"
-            >({{ source.id }})</span
+            > • {{ source.id }}</span
           >
         </div>
         <div>
@@ -61,7 +61,7 @@
             target?.name || 'N/A'
           }}</span>
           <span v-if="target && target.id" class="text-xs text-gray-500 ml-1"
-            >({{ target.id }})</span
+            > • {{ target.id }}</span
           >
         </div>
         <div class="flex flex-wrap items-start">
