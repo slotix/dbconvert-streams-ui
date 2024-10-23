@@ -14,6 +14,11 @@ export interface MonthlyUsageResponse {
 
 export interface UserData {
   userID: string
+  email: string
+  stripeCustomerId: string
+  trialEnd: number
+  currentPeriodStart: number
+  currentPeriodEnd: number
   apiKey: string
   dailyUsage: DailyUsage[]
   monthlyUsage: MonthlyUsage[]
