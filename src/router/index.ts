@@ -8,6 +8,8 @@ import ManageStreamView from '@/views/ManageStreamView.vue'
 import MonitorStreamView from '@/views/MonitorStreamView.vue'
 import UserView from '@/views/UserView.vue'
 import NotFound from '@/views/NotFound.vue'
+import SubscriptionConfirmationView from '@/views/SubscriptionConfirmationView.vue'
+
 const routes = [
   {
     path: '/',
@@ -45,6 +47,11 @@ const routes = [
     path: '/pricing',
     name: 'Pricing',
     component: PricingView
+  },
+  {
+    path: '/subscription-confirmation',
+    name: 'SubscriptionConfirmation',
+    component: SubscriptionConfirmationView
   },
   {
     path: '/:catchAll(.*)',
