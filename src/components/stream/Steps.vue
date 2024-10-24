@@ -1,6 +1,6 @@
 <template>
   <div class="relative">
-    <div v-for="step in allSteps" :key="step.id">
+    <div v-for="step in editSteps" :key="step.id">
       <div v-show="currentStepIndex === step.id" class="p-4">
         <div class="flex items-center space-x-3 mb-4">
           <img class="h-8 w-8" :src="step.img" :alt="step.title" />
@@ -76,8 +76,8 @@ const router = useRouter()
 const store = useStreamsStore()
 const commonStore = useCommonStore()
 
-const allSteps = commonStore.steps
-const stepsCount = commonStore.steps.length
+const editSteps = commonStore.steps.slice(0, 3)
+const stepsCount = commonStore.steps.length-1
 
 const currentStepIndex = ref(1)
 const currentStreamConfig = store.currentStreamConfig
@@ -103,7 +103,7 @@ function prev() {
 }
 
 watch(currentStepIndex, (newVal) => {
-  store.currentStep = allSteps[newVal - 1]
+  store.currentStep = editSteps[newVal - 1]
 })
 
 async function saveStream() {
@@ -124,6 +124,6 @@ function cancelStream() {
 }
 
 onMounted(() => {
-  store.currentStep = allSteps[0]
+  store.currentStep = editSteps[0]
 })
 </script>

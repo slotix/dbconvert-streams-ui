@@ -66,7 +66,14 @@ export const useCommonStore = defineStore('common', {
         description:
           'Choose or create a target connection where your data will be transferred, completing the stream configuration process.',
         img: '/images/steps/destination-step.svg'
-      }
+      },
+      {
+        id: 4,
+        name: 'start',
+        title: 'Start and monitor your stream',
+        description: 'Initiate the data transfer process by starting your stream and monitoring the progress, ensuring a smooth migration or synchronization of data from the source to the target.',
+        img: '/images/steps/start-step.svg'
+      },
     ] as Step[],
     operationMap: {
       insert: 'Insert',
