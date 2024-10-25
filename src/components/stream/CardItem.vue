@@ -5,7 +5,7 @@
       @click="selectStream"
     >
       <div class="flex items-center justify-between bg-gray-100 p-4">
-        <div class="flex items-center space-x-2">
+        <div class="item w-4/5 flex items-center space-x-2">
           <img
             v-if="source && source.type"
             class="h-8 w-8 rounded-full"
@@ -20,14 +20,12 @@
             :alt="target.type + ' logo'"
           />
         </div>
-        <span
-          class="rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20"
-        >
+        <span class="rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
           {{ stream.mode }}
         </span>
       </div>
-      <div class="flex-grow p-4 space-y-3 text-sm">
-        <div class="text-gray-800 font-bold text-sm mb-2 truncate">
+      <div class="flex-grow space-y-2 px-6 py-4">
+        <div class="uppercase tracking-wide text-sm font-medium text-gray-800 truncate">
           {{ stream.name }}
         </div>
         <div class="text-xs text-gray-500 flex items-center">
@@ -46,36 +44,42 @@
             <ClipboardIcon class="h-4 w-4" />
           </button>
         </div>
-        <div>
-          <span class="font-semibold text-gray-800">Source: </span>
-          <span :class="{ 'text-red-500': !source || !source.name }">{{
-            source?.name || 'N/A'
-          }}</span>
-          <span v-if="source && source.id" class="text-xs text-gray-500 ml-1"
-            > • {{ source.id }}</span
-          >
-        </div>
-        <div>
-          <span class="font-semibold text-gray-800">Target: </span>
-          <span :class="{ 'text-red-500': !target || !target.name }">{{
-            target?.name || 'N/A'
-          }}</span>
-          <span v-if="target && target.id" class="text-xs text-gray-500 ml-1"
-            > • {{ target.id }}</span
-          >
-        </div>
-        <div class="flex flex-wrap items-start">
-          <span class="font-semibold text-gray-800 mr-1">Tables: </span>
-          <span>
-            [{{ displayedTables.join(', ') }}{{ remainingTablesCount > 0 ? ', ...' : '' }}]
-          </span>
-          <span v-if="remainingTablesCount > 0" class="text-xs italic ml-1">
-            ({{ remainingTablesCount }} more)
+        <div class="flex-auto md:text-left w-full space-y-2 text-gray-500">
+          <span class="mx-auto font-semibold text-gray-800">
+            Source:
+            <span class="font-normal pl-3" :class="{ 'text-red-500': !source || !source.name }">
+              {{ source?.name || 'N/A' }}
+              <span v-if="source && source.id" class="text-xs text-gray-500 ml-1">
+                • {{ source.id }}
+              </span>
+            </span>
           </span>
         </div>
-        <div class="text-gray-600 flex items-center">
-          <CalendarIcon class="h-4 w-4 mr-1" aria-hidden="true" />
-          <span class="font-normal pl-3">{{ streamCreated }}</span>
+        <div class="flex-auto md:text-left w-full space-y-2 text-gray-500">
+          <span class="mx-auto font-semibold text-gray-800">
+            Target:
+            <span class="font-normal pl-3" :class="{ 'text-red-500': !target || !target.name }">
+              {{ target?.name || 'N/A' }}
+              <span v-if="target && target.id" class="text-xs text-gray-500 ml-1">
+                • {{ target.id }}
+              </span>
+            </span>
+          </span>
+        </div>
+        <div class="flex-auto md:text-left w-full space-y-2 text-gray-500">
+          <span class="mx-auto font-semibold text-gray-800">
+            Tables:
+            <span class="font-normal pl-3">
+              [{{ displayedTables.join(', ') }}{{ remainingTablesCount > 0 ? ', ...' : '' }}]
+              <span v-if="remainingTablesCount > 0" class="text-xs italic ml-1">
+                ({{ remainingTablesCount }} more)
+              </span>
+            </span>
+          </span>
+        </div>
+        <div class="inline-flex text-gray-600">
+          <CalendarIcon class="h-4 w-4" aria-hidden="true" />
+          <span class="text-sm pl-3">{{ streamCreated }}</span>
         </div>
       </div>
       <div class="mt-auto flex divide-x divide-gray-200">

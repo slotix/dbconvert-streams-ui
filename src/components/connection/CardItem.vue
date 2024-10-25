@@ -53,9 +53,9 @@
         <div v-else class="flex-auto px-6 md:text-left w-full space-y-2 text-gray-500 h-[24px]">
           <!-- Placeholder to maintain consistent height -->
         </div>
-        <span class="px-6 pt-4 pb-4 inline-flex font-bold text-gray-600">
-          <CalendarIcon class="h-6 w-6" aria-hidden="true" />
-          <span class="font-normal pl-3">{{ connectionCreated }}</span>
+        <span class="px-6 pt-4 pb-4 inline-flex text-gray-600">
+          <CalendarIcon class="h-4 w-4" aria-hidden="true" />
+          <span class="text-sm pl-3">{{ connectionCreated }}</span>
         </span>
       </div>
       <div v-show="!isStreamsPage" class="mt-auto flex divide-x divide-gray-200">

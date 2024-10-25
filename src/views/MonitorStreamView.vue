@@ -3,35 +3,27 @@
     <div class="bg-white flex flex-col max-w-7xl mx-auto py-6 px-8">
       <h1 class="text-3xl font-bold text-gray-900 mb-2">
         <span v-if="isBackendConnected">
-          Monitor stream: 
+          Monitor stream:
           <span class="text-gray-500 text-lg font-normal">{{ monitoringStore.streamID }}</span>
         </span>
         <span v-else>Stream Monitoring Unavailable</span>
       </h1>
-      <p v-if="isBackendConnected" class="text-gray-500 text-sm mb-4">
-        Config: <span>{{ currentStreamConfig.name }}</span>
-      </p>
       <div v-if="isBackendConnected && monitoringStore.streamID != ''" class="flex space-x-2">
-        <button
-          v-if="!isPaused"
-          class="px-4 py-2 bg-cyan-500 text-white font-semibold rounded-md hover:bg-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 transition-colors duration-200 flex items-center justify-center"
-          @click="pauseStream"
-        >
+        <button v-if="!isPaused" :disabled="isStreamFinished"
+          class="px-4 py-2 bg-cyan-500 text-white font-semibold rounded-md hover:bg-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 transition-colors duration-200 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+          @click="pauseStream">
           <PauseIcon class="h-5 w-5 mr-2" />
           Pause
         </button>
-        <button
-          v-else
-          class="px-4 py-2 bg-cyan-500 text-white font-semibold rounded-md hover:bg-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 transition-colors duration-200 flex items-center justify-center"
-          @click="resumeStream"
-        >
+        <button v-else :disabled="isStreamFinished"
+          class="px-4 py-2 bg-cyan-500 text-white font-semibold rounded-md hover:bg-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 transition-colors duration-200 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+          @click="resumeStream">
           <PlayIcon class="h-5 w-5 mr-2" />
           Resume
         </button>
-        <button
-          class="px-4 py-2 bg-red-500 text-white font-semibold rounded-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors duration-200 flex items-center justify-center"
-          @click="stopStream"
-        >
+        <button :disabled="isStreamFinished"
+          class="px-4 py-2 bg-red-500 text-white font-semibold rounded-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors duration-200 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+          @click="stopStream">
           <StopIcon class="h-5 w-5 mr-2" />
           Stop
         </button>
@@ -131,4 +123,6 @@ const handleStreamError = (error: any, defaultMessage: string) => {
   const errorMessage = error instanceof Error ? error.message : defaultMessage
   commonStore.showNotification(errorMessage, 'error')
 }
+
+const isStreamFinished = computed(() => monitoringStore.currentStage?.title === 'Finished')
 </script>

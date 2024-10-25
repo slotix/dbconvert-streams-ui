@@ -144,7 +144,10 @@ export const useStreamsStore = defineStore('streams', {
     setFilter(filter: string) {
       this.currentFilter = filter
     },
-
+    addStream() {
+      this.resetCurrentStream()
+      useConnectionsStore().resetCurrentConnection()
+    },
     saveStream: debounce(async function (this: any) {
       try {
         this.prepareStreamData()

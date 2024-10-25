@@ -1,7 +1,7 @@
 import axios, { AxiosInstance, AxiosError } from 'axios'
 import { handleApiError, handleUnauthorizedError } from '@/utils/errorHandler'
 import { DailyUsage, MonthlyUsageResponse, UserData } from '@/types/user'
-
+import { ServiceStatus, ServiceStatusResponse } from '@/types/common'
 // Define the shape of the API responses
 interface ApiResponse<T> {
   data: T
@@ -109,6 +109,15 @@ const getMonthlyUsage = async (apiKey: string): Promise<MonthlyUsageResponse> =>
   }
 }
 
+const getServiceStatus = async (): Promise<ServiceStatusResponse> => {
+  try {
+    const response: ApiResponse<ServiceStatusResponse> = await backendClient.get('/services/status')
+    return response.data
+  } catch (error) {
+    return handleUnauthorizedError(error as AxiosError)
+  }
+}
+
 export default {
   getUserDataFromSentry,
   updateAPIKey,
@@ -116,5 +125,6 @@ export default {
   backendHealthCheck,
   sentryHealthCheck,
   getDailyUsage,
-  getMonthlyUsage
+  getMonthlyUsage,
+  getServiceStatus
 }
