@@ -98,8 +98,7 @@ export default {
     const isBackendConnected = computed(() => commonStore.isBackendConnected)
 
     const addStream = () => {
-      streamsStore.resetCurrentStream()
-      connectionsStore.resetCurrentConnection()
+      streamsStore.addStream()
     }
 
     onMounted(async () => {

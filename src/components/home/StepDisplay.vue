@@ -1,86 +1,64 @@
-<!-- src/components/step-display/StepDisplay.vue -->
+<!-- src/components/home/StepDisplay.vue -->
 <template>
-  <section class="max-w-7xl mx-auto px-4 py-10">
-    <div v-for="(step, index) in steps" :key="step.id">
-      <div
-        class="flex"
-        :class="{
-          'flex-row': (index + 1) % 2 != 0,
-          'flex-row-reverse': (index + 1) % 2 == 0
-        }"
-      >
-        <div class="hidden md:flex flex-col items-center">
-          <div
-            class="w-32 py-5 border border-gray-300 rounded-lg mr-4 uppercase flex flex-col items-center justify-center"
-          >
-            <div class="text-3xl font-black text-gray-500">Step {{ index + 1 }}</div>
-          </div>
-          <div class="h-full border-l-2 border-transparent">
-            <div
-              class="border-l-2 h-full border-gray-300 border-dashed"
-              :class="{
-                'mr-4': (index + 1) % 2 != 0,
-                'ml-2': (index + 1) % 2 == 0
-              }"
-            ></div>
-          </div>
-        </div>
-        <div class="flex-auto rounded">
-          <div class="flex md:flex-row flex-col items-center">
-            <div class="flex-auto">
-              <div class="md:hidden text-sm font-normal uppercase pt-3 pl-3 text-gray-500">
-                <span class="font-black">Step {{ index + 1 }}</span> - LOREM
-              </div>
-              <div class="p-3 text-3xl text-gray-800 font">
-                {{ step.title }}
-              </div>
-              <div class="px-3 pb-6">
-                {{ step.description }}
-              </div>
-            </div>
-            <div class="md:w-96 w-full p-5">
-              <img :src="step.img" :alt="step.title" class="object-scale-down" />
+  <div class="bg-white shadow rounded-lg p-6">
+    <h2 class="text-xl font-semibold text-gray-900 mb-6">Getting Started</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div v-for="(step, index) in steps" :key="step.id" class="relative">
+        <!-- Step Container -->
+        <div class="flex items-start gap-6">
+          <!-- Step Number -->
+          <div class="hidden md:flex flex-shrink-0 mt-2">
+            <div class="w-10 h-10 flex items-center justify-center bg-gray-50 rounded-full border border-gray-200">
+              <span class="text-lg font-bold text-gray-700">{{ index + 1 }}</span>
             </div>
           </div>
+
+          <!-- Step Image -->
+          <div class="hidden md:block flex-shrink-0">
+            <img 
+              :src="step.img" 
+              :alt="step.title" 
+              class="w-16 h-16 object-contain rounded-lg"
+              loading="lazy"
+            />
+          </div>
+
+          <!-- Step Content -->
+          <div class="flex-auto">
+            <!-- Mobile Step Number -->
+            <div class="md:hidden text-sm font-medium text-gray-500 mb-2">
+              Step {{ index + 1 }}
+            </div>
+            
+            <!-- Title and Description -->
+            <h3 class="text-lg font-semibold text-gray-800 mb-2">
+              {{ step.title }}
+            </h3>
+            <p class="text-sm text-gray-600">
+              {{ step.description }}
+            </p>
+
+            <!-- Mobile Image -->
+            <div class="md:hidden mt-4">
+              <img 
+                :src="step.img" 
+                :alt="step.title" 
+                class="w-16 h-16 object-contain rounded-lg"
+                loading="lazy"
+              />
+            </div>
+          </div>
         </div>
-      </div>
-      <div
-        v-if="index != Object.keys(steps).length - 1"
-        class="flex items-start"
-        :class="{
-          'flex-row': (index + 1) % 2 != 0,
-          'flex-row-reverse': (index + 1) % 2 == 0
-        }"
-      >
-        <div class="border-t-2 border-r-2 border-transparent">
-          <div
-            class="w-16 h-16 border-gray-300 border-dashed border-b-2"
-            :class="{
-              'ml-16 border-l-2 rounded-bl-full': (index + 1) % 2 != 0,
-              'mr-16 border-r-2 rounded-br-full': (index + 1) % 2 == 0
-            }"
-          ></div>
-        </div>
-        <div class="border-t-2 border-transparent flex-auto">
-          <div class="h-16 border-b-2 border-gray-300 border-dashed"></div>
-        </div>
-        <div
-          class="w-16 mt-16 h-16 border-gray-300 border-dashed border-t-2"
-          :class="{
-            'ml-16 border-l-2 rounded-tl-full': (index + 1) % 2 == 0,
-            'mr-16 border-r-2 rounded-tr-full': (index + 1) % 2 != 0
-          }"
-        ></div>
       </div>
     </div>
-  </section>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { defineProps } from 'vue'
 import type { Step } from '@/stores/common'
 
-const props = defineProps<{ steps: Step[] }>()
+defineProps<{ steps: Step[] }>()
 </script>
 
 <style scoped>
