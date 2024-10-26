@@ -7,9 +7,9 @@
         <!-- Step Container -->
         <div class="flex items-start gap-6">
           <!-- Step Number -->
-          <div class="hidden md:flex flex-shrink-0 mt-2">
+          <div class="hidden md:flex flex-shrink-0 mt-4">
             <div class="w-10 h-10 flex items-center justify-center bg-gray-50 rounded-full border border-gray-200">
-              <span class="text-lg font-bold text-gray-700">{{ index + 1 }}</span>
+              <span class="text-lg font-bold text-gray-700 ">{{ index + 1 }}</span>
             </div>
           </div>
 

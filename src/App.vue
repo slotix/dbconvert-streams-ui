@@ -213,7 +213,7 @@ import {
   ChartBarSquareIcon,
   KeyIcon,
   ComputerDesktopIcon,
-  WalletIcon,
+  CreditCardIcon,
   UserIcon
 } from '@heroicons/vue/24/outline'
 
@@ -235,7 +235,7 @@ const navigation = ref<NavigationItem[]>([
   { name: 'Streams', href: '/streams', icon: ArrowPathIcon },
   { name: 'Monitor Stream', href: '/monitor', icon: ComputerDesktopIcon },
   { name: 'User', href: '/user', icon: UserIcon },
-  { name: 'Pricing', href: '/pricing', icon: WalletIcon }
+  { name: 'Pricing', href: '/pricing', icon: CreditCardIcon }
 ])
 
 const sidebarOpen = ref(false)
