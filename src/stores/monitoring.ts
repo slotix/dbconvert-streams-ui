@@ -39,11 +39,12 @@ const statusEnum = {
   UNDEFINED: 0,
   READY: 1,
   RUNNING: 2,
-  FAILED: 3,
-  TIME_LIMIT_REACHED: 4,
-  EVENT_LIMIT_REACHED: 5,
-  STOPPED: 6,
-  FINISHED: 7
+  PAUSED: 3,
+  FAILED: 4,
+  TIME_LIMIT_REACHED: 5,
+  EVENT_LIMIT_REACHED: 6,
+  STOPPED: 7,
+  FINISHED: 8
 } as const
 
 export const useMonitoringStore = defineStore('monitoring', {
@@ -87,13 +88,14 @@ export const useMonitoringStore = defineStore('monitoring', {
   }),
   getters: {
     currentStage(state: State): Stage | null {
-      if (this.stats.length > 0) {
+      // Only check status if not already finished
+      if (this.stats.length > 0 && state.currentStageID !== 4) {
         const runningNodesNumber = this.stats.filter((stat: Log) => {
           const statusID = state.status[stat.status as keyof typeof statusEnum]
           return statusID < state.status.FAILED
         }).length
         if (runningNodesNumber === 0) {
-          //that means all nodes are finished
+          // that means all nodes are finished
           const commonStore = useCommonStore()
           commonStore.fetchUsageData()
           state.currentStageID = 4
