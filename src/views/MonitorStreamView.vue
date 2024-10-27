@@ -10,19 +10,19 @@
       </h1>
       <div v-if="isBackendConnected && monitoringStore.streamID != ''" class="flex space-x-2">
         <button v-if="!isPaused" :disabled="isStreamFinished"
-          class="px-4 py-2 bg-cyan-500 text-white font-semibold rounded-md hover:bg-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 transition-colors duration-200 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+          class="px-4 py-2 bg-gray-100 text-cyan-600 font-semibold rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 transition-colors duration-200 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
           @click="pauseStream">
           <PauseIcon class="h-5 w-5 mr-2" />
           Pause
         </button>
         <button v-else :disabled="isStreamFinished"
-          class="px-4 py-2 bg-cyan-500 text-white font-semibold rounded-md hover:bg-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 transition-colors duration-200 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+          class="px-4 py-2 bg-gray-100 text-cyan-600 font-semibold rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 transition-colors duration-200 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
           @click="resumeStream">
           <PlayIcon class="h-5 w-5 mr-2" />
           Resume
         </button>
         <button :disabled="isStreamFinished"
-          class="px-4 py-2 bg-red-500 text-white font-semibold rounded-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors duration-200 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+          class="px-4 py-2 bg-gray-100 text-red-600 font-semibold rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors duration-200 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
           @click="stopStream">
           <StopIcon class="h-5 w-5 mr-2" />
           Stop
