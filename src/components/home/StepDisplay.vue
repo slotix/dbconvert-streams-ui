@@ -58,9 +58,10 @@
 import { defineProps } from 'vue'
 import type { Step } from '@/stores/common'
 
-defineProps<{ steps: Step[] }>()
+interface Props {
+  steps: Step[]
+}
+
+const props = defineProps<Props>()
 </script>
 
-<style scoped>
-/* Add any component-specific styles here */
-</style>

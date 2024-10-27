@@ -38,20 +38,13 @@
 import { ref } from 'vue'
 import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/vue/24/outline'
 
-const props = defineProps({
-  table: {
-    type: Object,
-    required: true
-  },
-  isSelected: {
-    type: Boolean,
-    default: false
-  },
-  colspan: {
-    type: Number,
-    required: true
-  }
-})
+interface Props {
+  table: any
+  isSelected: boolean
+  colspan: number
+}
+
+const props = defineProps<Props>()
 
 const emit = defineEmits(['selectTable', 'checkboxChange', 'toggleSettings'])
 

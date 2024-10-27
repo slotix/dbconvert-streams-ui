@@ -19,7 +19,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
 import MySQLParams from './MySQLParams.vue'
 import PostgreSQLParams from './PostgreSQLParams.vue'
@@ -35,12 +35,11 @@ import SQLiteParams from './SQLiteParams.vue'
 import SSHParams from './SSHParams.vue'
 import SSLParams from './SSLParams.vue'
 
-const props = defineProps({
-  connectionType: {
-    type: String,
-    required: true
-  }
-})
+interface Props {
+  connectionType: string
+}
+
+const props = defineProps<Props>()
 
 const tabs = ref(['Direct', 'SSH', 'SSL'])
 const currentTab = ref('')
@@ -66,7 +65,7 @@ const changeDBType = () => {
   currentTab.value = 'Direct'
 }
 
-const changeTab = (tab) => {
+const changeTab = (tab: string) => {
   currentTab.value = tab
 }
 
@@ -78,9 +77,9 @@ const showTabs = computed(() => {
 
 const paramsComponent = computed(() => {
   if (currentTab.value === 'Direct') {
-    return componentMap[props.connectionType] || null
+    return componentMap[props.connectionType as keyof typeof componentMap] || null
   } else {
-    return componentMap[currentTab.value] || null
+    return componentMap[currentTab.value as keyof typeof componentMap] || null
   }
 })
 

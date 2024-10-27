@@ -3,7 +3,7 @@
     <div class="relative mt-2">
       <ComboboxInput
         class="w-full rounded-md border-0 bg-white py-1.5 pl-3 pr-12 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-gray-600 sm:text-sm sm:leading-6"
-        :display-value="(tp) => tp?.type"
+        :display-value="(tp: any) => tp?.type"
         @change="query = $event.target.value"
       />
       <ComboboxButton
@@ -54,7 +54,7 @@
   </Combobox>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { CheckIcon, ChevronUpDownIcon, FunnelIcon } from '@heroicons/vue/24/outline'
 import { useConnectionsStore } from '@/stores/connections'
@@ -68,9 +68,11 @@ import {
 } from '@headlessui/vue'
 
 const dbTypes = useConnectionsStore().dbTypes
-const props = defineProps({
-  isFilterIcon: Boolean
-})
+interface Props {
+  isFilterIcon: boolean
+}
+
+const props = defineProps<Props>()
 const selectedDBType = ref(dbTypes[0])
 const query = ref('')
 const filteredDbTypes = computed(() =>
@@ -88,3 +90,4 @@ watch(selectedDBType, (newVal) => {
   emit('update:selected-db-type', newVal)
 })
 </script>
+

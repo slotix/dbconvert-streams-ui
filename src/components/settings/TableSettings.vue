@@ -45,9 +45,11 @@ import { useStreamsStore } from '@/stores/streamConfig'
 import Operations from './Operations.vue'
 import { StreamConfig, Table } from '@/types/streamConfig'
 
-const props = defineProps<{
+interface Props {
   table: Table
-}>()
+}
+
+const props = defineProps<Props>()
 
 const streamsStore = useStreamsStore()
 const currentStreamConfig = streamsStore.currentStreamConfig as StreamConfig | null

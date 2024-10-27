@@ -51,14 +51,16 @@
     </div>
   </Listbox>
 </template>
-<script setup>
+<script setup lang="ts">
 import { ref, watch } from 'vue'
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/vue'
 import { CheckCircleIcon, ChevronUpDownIcon } from '@heroicons/vue/20/solid'
 import { useCommonStore } from '@/stores/common.js'
-const props = defineProps({
-  tableOperations: Array
-})
+interface Props {
+  tableOperations: string[]
+}
+
+const props = defineProps<Props>()
 const emits = defineEmits(['update:tableOperations'])
 const selectedOperations = ref(props.tableOperations)
 
@@ -69,7 +71,9 @@ watch(selectedOperations, (newValue) => {
   emits('update:tableOperations', newValue)
 })
 
-const formattedOperations = (operations) => {
-  return operations.map((operation) => operationMap[operation] || operation).join(', ')
+const formattedOperations = (operations: string[]) => {
+  return operations
+    .map((operation) => operationMap[operation as keyof typeof operationMap] || operation)
+    .join(', ')
 }
 </script>

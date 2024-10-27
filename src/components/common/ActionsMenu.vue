@@ -83,13 +83,18 @@
   </Menu>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue'
 import { Square2StackIcon, TrashIcon, EllipsisHorizontalIcon } from '@heroicons/vue/24/solid'
 import { useCommonStore } from '@/stores/common'
 import { computed } from 'vue'
 import { vTooltip } from '@/directives/tooltip'
-const props = defineProps(['position'])
+
+interface Props {
+  position?: 'bottom' | 'card'
+}
+
+const props = defineProps<Props>()
 const viewType = computed(() => {
   return useCommonStore().currentViewType
 })

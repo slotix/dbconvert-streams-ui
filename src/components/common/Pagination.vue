@@ -22,17 +22,16 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed } from 'vue'
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/vue/20/solid'
-const props = defineProps({
-  totalPages: {
-    type: Number
-  },
-  itemsPerPage: {
-    type: Number
-  }
-})
+
+interface Props {
+  totalPages: number
+  itemsPerPage: number
+}
+
+const props = defineProps<Props>()
 const emits = defineEmits(['update:currentPage'])
 const currentPage = ref(1)
 // const itemsPerPage = 20 // Set the number of items to display per page

@@ -36,7 +36,7 @@
   </main>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
 import Connections from '@/components/connection/Connections.vue'
 import Add from '@/components/connection/Add.vue'
@@ -53,9 +53,11 @@ const commonStore = useCommonStore()
 const currentStep = computed(() => store.currentStep)
 const currentStreamConfig = computed(() => store.currentStreamConfig)
 
-const props = defineProps({
-  mode: String
-})
+interface Props {
+  mode: string
+}
+
+const props = defineProps<Props>()
 
 const dlgTp = computed(() => commonStore.dlgType)
 </script>
