@@ -150,13 +150,8 @@ export const useCommonStore = defineStore('common', {
         throw error
       }
     },
-    async userDataFromSentry() {
+    async userDataFromSentry(token: string) {
       try {
-        const token = await getToken()
-        if (!token) {
-          this.showNotification('No token provided', 'error')
-          return
-        }
         const response = await api.getUserDataFromSentry(token)
         this.userData = response
       } catch (error) {
@@ -240,7 +235,7 @@ export const useCommonStore = defineStore('common', {
         ])
 
         if (this.sentryHealthy && this.apiHealthy) {
-          await this.userDataFromSentry()
+          await this.userDataFromSentry(token)
           if (this.userData?.apiKey) {
             await this.loadUserConfigs()
           }
