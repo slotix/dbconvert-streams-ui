@@ -18,8 +18,18 @@
                 Trial ends {{ trialEnd ? formatDate(trialEnd) : 'N/A' }}
               </div>
 
+              <!-- Canceled badge -->
+              <div v-if="isCanceled"
+                class="inline-flex items-center mb-4 px-3 py-1 bg-red-50 text-red-800 rounded-full text-sm">
+                <ExclamationCircleIcon class="w-4 h-4 mr-1.5" />
+                Subscription Canceled
+              </div>
+
               <!-- Plan name and price -->
-              <h3 class="text-2xl font-semibold text-gray-800 mb-2">DBConvert {{ currentPlan.name }}</h3>
+              <h3 class="text-2xl font-semibold text-gray-800 mb-2">
+                DBConvert {{ currentPlan.name }}
+                <span v-if="isCanceled" class="text-gray-500 text-base">(Canceled)</span>
+              </h3>
 
               <div v-if="showFreePlanBlock">
                 <div class="flex items-baseline mb-2">
@@ -33,13 +43,27 @@
               </div>
               <div v-else>
                 <div class="flex items-baseline mb-2">
-                  <span v-if="currentPeriodEnd">Your subscription renews on {{ formatDate(currentPeriodEnd) }}</span>
+                  <span v-if="currentPeriodEnd" class="text-gray-600">
+                    {{ isCanceled ? 'Access expires' : 'Your subscription renews' }} on {{ formatDate(currentPeriodEnd) }}
+                  </span>
                 </div>
+                
+                <!-- Add warning for canceled subscriptions -->
+                <p v-if="isCanceled" class="text-red-600 mb-4">
+                  Your subscription has been canceled and will not renew. You'll continue to have access until the end of your current billing period.
+                </p>
               </div>
-              <!-- Manage subscription button -->
-              <a :href="customerPortalUrl" target="_blank" rel="noopener noreferrer"
-                class="inline-block px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors">
-                Manage Subscription
+              <!-- Update manage subscription button -->
+              <a :href="customerPortalUrl" 
+                 target="_blank" 
+                 rel="noopener noreferrer"
+                 :class="[
+                   'inline-block px-4 py-2 rounded-md transition-colors',
+                   isCanceled 
+                     ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                     : 'bg-gray-600 hover:bg-gray-700 text-white'
+                 ]">
+                {{ isCanceled ? 'Reactivate Subscription' : 'Manage Subscription' }}
               </a>
             </div>
           </div>
@@ -71,7 +95,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useCommonStore } from '@/stores/common'
 import type { Subscription } from '@/types/user'
-import { ClockIcon } from '@heroicons/vue/24/solid'
+import { ClockIcon, ExclamationCircleIcon } from '@heroicons/vue/24/solid'
 
 const commonStore = useCommonStore()
 const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY
@@ -84,6 +108,10 @@ const currentPeriodStart = computed<number | null>(() => commonStore.currentPeri
 const currentPeriodEnd = computed<number | null>(() => commonStore.currentPeriodEnd || null)
 const isStripePricingTableLoaded = ref(false)
 const showFreePlanBlock = computed(() => currentPlan.value?.price === 0)
+
+// Add new computed property after other computed properties
+const subscriptionStatus = computed(() => commonStore.userData?.subscriptionStatus || null)
+const isCanceled = computed(() => subscriptionStatus.value === 'canceled')
 
 onMounted(() => {
   const checkStripeLoaded = setInterval(() => {

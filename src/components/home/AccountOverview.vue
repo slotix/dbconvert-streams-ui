@@ -6,12 +6,21 @@
       <div class="flex items-center">
         <div class="flex-shrink-0">
           <div class="bg-gray-50 rounded-md p-4">
-            <CreditCardIcon class="h-8 w-8 text-violet-600" />
+            <CreditCardIcon class="h-8 w-8" :class="{
+              'text-violet-600': subscriptionStatus !== 'canceled',
+              'text-gray-400': subscriptionStatus === 'canceled'
+            }" />
           </div>
         </div>
         <div class="ml-4">
           <p class="text-sm font-medium text-gray-500">Current Subscription</p>
-          <p class="text-lg font-semibold text-gray-900 capitalize">{{ currentPlanName }}</p>
+          <div class="flex items-center gap-2">
+            <p class="text-lg font-semibold text-gray-900 capitalize">{{ currentPlanName }}</p>
+            <span v-if="subscriptionStatus === 'canceled'" 
+                  class="px-2 py-0.5 text-xs font-medium bg-red-100 text-red-800 rounded-full">
+              Canceled
+            </span>
+          </div>
         </div>
       </div>
 
@@ -76,7 +85,12 @@ import { CreditCardIcon, ChartBarIcon, KeyIcon, ChevronRightIcon } from '@heroic
 const commonStore = useCommonStore()
 const router = useRouter()
 
-const currentPlanName = computed(() => commonStore.userData?.subscription?.name || 'Free')
+// Add status computation
+const subscriptionStatus = computed(() => commonStore.userData?.subscriptionStatus || 'active')
+const currentPlanName = computed(() => {
+  const name = commonStore.userData?.subscription?.name || 'Free'
+  return subscriptionStatus.value === 'canceled' ? `${name} ` : name
+})
 
 // Extract usage data
 const usedData = computed(() => commonStore.currentMonthUsage?.data_volume || 0)

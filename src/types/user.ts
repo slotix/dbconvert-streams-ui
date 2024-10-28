@@ -23,6 +23,7 @@ export interface UserData {
   dailyUsage: DailyUsage[]
   monthlyUsage: MonthlyUsage[]
   subscription: Subscription
+  subscriptionStatus: string
 }
 
 export interface Subscription {
