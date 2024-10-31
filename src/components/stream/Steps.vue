@@ -77,13 +77,15 @@ const store = useStreamsStore()
 const commonStore = useCommonStore()
 
 const editSteps = commonStore.steps.slice(0, 3)
-const stepsCount = commonStore.steps.length-1
+const stepsCount = commonStore.steps.length - 1
 
 const currentStepIndex = ref(1)
-const currentStreamConfig = store.currentStreamConfig
+const currentStreamConfig = computed(() => store.currentStreamConfig)
 
 const isSaveDisabled = computed(() => {
-  return currentStreamConfig?.source === '' || currentStreamConfig?.target === ''
+  const source = currentStreamConfig.value?.source
+  const target = currentStreamConfig.value?.target
+  return !source || source.trim() === '' || !target || target.trim() === ''
 })
 
 const stepsBarValue = computed(() => {

@@ -172,14 +172,10 @@ export default defineComponent({
       if (!this.connection) return
       this.setCurrentConnection(this.connection.id)
       if (this.currentStep?.name === 'source') {
-        if (this.currentStreamConfig) {
-          this.currentStreamConfig.source = this.connection.id
-        }
+        this.streamsStore.updateSource(this.connection.id)
       }
       if (this.currentStep?.name === 'target') {
-        if (this.currentStreamConfig) {
-          this.currentStreamConfig.target = this.connection.id
-        }
+        this.streamsStore.updateTarget(this.connection.id)
       }
     }
   }

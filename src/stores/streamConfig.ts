@@ -141,6 +141,16 @@ export const useStreamsStore = defineStore('streams', {
         )
       }
     },
+     updateSource(sourceId: string) {
+      if (this.currentStreamConfig) {
+        this.currentStreamConfig.source = sourceId
+      }
+    },
+    updateTarget(targetId: string) {
+      if (this.currentStreamConfig) {
+        this.currentStreamConfig.target = targetId
+      }
+    },
     setFilter(filter: string) {
       this.currentFilter = filter
     },
