@@ -53,7 +53,7 @@
       </nav>
     </div>
   </div>
-  <div class="divide-y divide-gray-200 overflow-hidden rounded-lg bg-white shadow">
+  <div class="divide-y divide-gray-700 overflow-hidden rounded-lg bg-gray-900 shadow">
     <div ref="logContainer" class="max-h-96 overflow-y-auto px-4 py-5 sm:p-6">
       <div
         v-for="log in filteredLogs"
@@ -63,12 +63,11 @@
           'flex-row',
           'items-center',
           'p-2',
-          'text-gray-800',
           'font-mono',
-          'border-b border-gray-100',
-          { 'bg-white': log.level !== 'warn' && log.level !== 'error' },
-          { 'bg-yellow-100': log.level === 'warn' },
-          { 'bg-red-100': log.level === 'error' }
+          'border-b border-gray-700',
+          { 'bg-gray-900 text-gray-200': log.level !== 'warn' && log.level !== 'error' },
+          { 'bg-yellow-900 text-yellow-100': log.level === 'warn' },
+          { 'bg-red-900 text-red-100': log.level === 'error' }
         ]"
       >
         <div v-if="log.level === 'info'">
@@ -97,7 +96,7 @@
             aria-hidden="true"
           />
         </div>
-        <span class="text-gray-500 tabular-nums text-sm ml-0 mr-2">
+        <span class="text-gray-400 tabular-nums text-sm ml-0 mr-2">
           [{{ formatTimestamp(log.ts) }}]
         </span>
         <span class="basis-5/6">
