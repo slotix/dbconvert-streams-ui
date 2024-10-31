@@ -1,10 +1,16 @@
 <template>
   <Modal @ok="ok">
     <template #dbtypes-combo>
-      <DBTypesListBox @update:selected-db-type="selectDB" />
+      <DBTypesListBox 
+        @update:selected-db-type="selectDB"
+        @update:connection-params="updateConnectionParams" 
+      />
     </template>
     <template #connection-params>
-      <ConnectionParams v-if="connection && connection.type" :connectionType="connection.type" />
+      <ConnectionParams 
+        v-if="connection && connection.type" 
+        :connectionType="connection.type" 
+      />
     </template>
   </Modal>
 </template>
@@ -36,6 +42,18 @@ export default {
       connection.value = conn
     }
 
+    const updateConnectionParams = (params) => {
+      if (currentConnection.value && params) {
+        Object.assign(currentConnection.value, {
+          host: params.host,
+          port: params.port,
+          username: params.username,
+          password: params.password,
+          database: params.database
+        })
+      }
+    }
+
     const ok = async () => {
       try {
         currentConnection.value.type = connection.value.type
@@ -65,6 +83,7 @@ export default {
       showDBCombo,
       currentConnection,
       selectDB,
+      updateConnectionParams,
       ok
     }
   }
