@@ -11,9 +11,13 @@ export interface Connection {
   created?: number
 }
 
-export interface Schema {}
+export interface Schema {
+  name: string;
+}
 
-export interface Database {}
+export interface Database {
+  name: string;
+}
 
 export interface DbType {
   id: number
