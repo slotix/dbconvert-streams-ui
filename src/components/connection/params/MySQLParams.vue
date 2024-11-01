@@ -145,7 +145,7 @@ export default defineComponent({
       refreshDatabases,
       createData,
       createDatabase
-    } = useCommon(defaultConnection as unknown as Connection)
+    } = useCommon<MySQLConnection>(defaultConnection)
 
     const newDatabase = ref('')
 
