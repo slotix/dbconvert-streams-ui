@@ -9,6 +9,9 @@ interface ParsedConnection {
 }
 
 export function parseConnectionString(connectionString: string): ParsedConnection | null {
+  if (connectionString === '') {
+    return null
+  }
   try {
     const url = new URL(connectionString)
     const params: Record<string, string> = {}
