@@ -1,16 +1,5 @@
 <template>
   <div>
-    <div class="mb-4 mt-8 mr-4">
-      <label class="block text-sm font-medium text-gray-700 mb-2 ">Connection String (Optional)</label>
-      <input
-        v-model="connectionString"
-        type="text"
-        class="w-full rounded-md border border-gray-300 py-2 px-4 text-gray-900 shadow-sm focus:ring-2 focus:ring-gray-500 focus:border-transparent"
-        placeholder="e.g. postgresql://user:pass@host:port/dbname"
-        @input="handleConnectionString"
-      />
-    </div>
-    
     <Listbox v-model="selectedDBType" as="div">
       <div class="relative mt-8 mr-4">
         <ListboxButton
@@ -81,15 +70,13 @@ import { ref, onMounted, watch } from 'vue'
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/vue'
 import { CheckIcon, ChevronUpDownIcon } from '@heroicons/vue/24/outline'
 import { useConnectionsStore } from '@/stores/connections'
-import { parseConnectionString } from '@/utils/connectionStringParser'
 
 const connectionsStore = useConnectionsStore()
 const fetchedDbTypes = connectionsStore.dbTypes
 const dbTypes = ref(fetchedDbTypes.slice(1))
 const selectedDBType = ref(dbTypes.value[0])
-const connectionString = ref('')
 
-const emit = defineEmits(['update:selected-db-type', 'update:connection-params'])
+const emit = defineEmits(['update:selected-db-type'])
 
 onMounted(() => {
   emit('update:selected-db-type', selectedDBType.value)
@@ -98,16 +85,4 @@ onMounted(() => {
 watch(selectedDBType, (newVal) => {
   emit('update:selected-db-type', newVal)
 })
-
-const handleConnectionString = () => {
-  const parsed = parseConnectionString(connectionString.value)
-  if (parsed) {
-    // Find matching DB type
-    const matchingType = dbTypes.value.find(t => t.type === parsed.type)
-    if (matchingType) {
-      selectedDBType.value = matchingType
-      emit('update:connection-params', parsed)
-    }
-  }
-}
 </script>

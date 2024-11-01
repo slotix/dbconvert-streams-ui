@@ -1,16 +1,11 @@
 <template>
   <Modal @ok="ok">
     <template #dbtypes-combo>
-      <DBTypesListBox 
-        @update:selected-db-type="selectDB"
-        @update:connection-params="updateConnectionParams" 
-      />
+      <ConnectionStringInput @update:connection-params="updateConnectionParams" />
+      <DBTypesListBox @update:selected-db-type="selectDB" />
     </template>
     <template #connection-params>
-      <ConnectionParams 
-        v-if="connection && connection.type" 
-        :connectionType="connection.type" 
-      />
+      <ConnectionParams v-if="connection && connection.type" :connectionType="connection.type" />
     </template>
   </Modal>
 </template>
@@ -21,6 +16,7 @@ import api from '@/api/connections'
 import Modal from './Modal.vue'
 import ConnectionParams from './params/ConnectionParams.vue'
 import DBTypesListBox from './DBTypesListBox.vue'
+import ConnectionStringInput from './ConnectionStringInput.vue'
 import { useConnectionsStore } from '@/stores/connections'
 import { useCommonStore } from '@/stores/common'
 
@@ -28,7 +24,8 @@ export default {
   components: {
     Modal,
     ConnectionParams,
-    DBTypesListBox
+    DBTypesListBox,
+    ConnectionStringInput
   },
   setup() {
     const connectionsStore = useConnectionsStore()
@@ -43,15 +40,7 @@ export default {
     }
 
     const updateConnectionParams = (params) => {
-      if (currentConnection.value && params) {
-        Object.assign(currentConnection.value, {
-          host: params.host,
-          port: params.port,
-          username: params.username,
-          password: params.password,
-          database: params.database
-        })
-      }
+      connectionsStore.updateConnectionParams(params)
     }
 
     const ok = async () => {

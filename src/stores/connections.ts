@@ -74,6 +74,12 @@ export const useConnectionsStore = defineStore('connections', {
     setFilter(filter: string) {
       this.currentFilter = filter
     },
+    updateConnectionParams(params: any) {
+      if (this.currentConnection && params) {
+        Object.assign(this.currentConnection, params)
+        console.log('Updated connection:', this.currentConnection)
+      }
+    },
     saveConnection: debounce(async function (this: any) {
       try {
         const connection = this.currentConnection
