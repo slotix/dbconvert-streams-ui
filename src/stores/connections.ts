@@ -58,7 +58,7 @@ export const useConnectionsStore = defineStore('connections', {
           return el.type && el.type.toLowerCase().indexOf(state.currentFilter.toLowerCase()) > -1
         })
         .sort((a, b) => (b.created as number) - (a.created as number))
-    }
+    },
   },
   actions: {
     setCurrentConnection(id: string) {

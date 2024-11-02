@@ -2,10 +2,13 @@
   <Modal @ok="ok">
     <template #dbtypes-combo>
       <ConnectionStringInput @update:connection-params="updateConnectionParams" />
-      <DBTypesListBox @update:selected-db-type="selectDB" />
+      <DBTypesListBox 
+        v-model="connection"
+        @update:selected-db-type="selectDB" 
+      />
     </template>
     <template #connection-params>
-      <ConnectionParams v-if="connection && connection.type" :connectionType="connection.type" />
+      <ConnectionParams v-if="connection?.type" :connectionType="connection.type" />
     </template>
   </Modal>
 </template>
@@ -31,21 +34,25 @@ export default {
     const connectionsStore = useConnectionsStore()
     const commonStore = useCommonStore()
 
-    const connection = ref(null)
+    const connectionDBType = ref(null)
     const showDBCombo = ref(false)
     const currentConnection = computed(() => connectionsStore.currentConnection)
 
-    const selectDB = (conn) => {
-      connection.value = conn
+    const selectDBType = (dbType) => {
+      connectionDBType.value = dbType
     }
 
     const updateConnectionParams = (params) => {
-      connectionsStore.updateConnectionParams(params)
+      const dbType = connectionsStore.dbTypes.find(dbType => dbType.type === params.type)
+      if (dbType) {
+        selectDBType(dbType)
+        connectionsStore.updateConnectionParams(params)
+      }
     }
 
     const ok = async () => {
       try {
-        currentConnection.value.type = connection.value.type
+        currentConnection.value.type = connectionDBType.value.type
         const json = JSON.stringify(currentConnection.value)
         const connectionResponse = await api.createConnection(json)
         const databases = await api.getDatabases(connectionResponse.id)
@@ -68,10 +75,10 @@ export default {
     }
 
     return {
-      connection,
+      connection: connectionDBType,
       showDBCombo,
       currentConnection,
-      selectDB,
+      selectDB: selectDBType,
       updateConnectionParams,
       ok
     }

@@ -74,7 +74,15 @@ import { useConnectionsStore } from '@/stores/connections'
 const connectionsStore = useConnectionsStore()
 const fetchedDbTypes = connectionsStore.dbTypes
 const dbTypes = ref(fetchedDbTypes.slice(1))
-const selectedDBType = ref(dbTypes.value[0])
+
+const props = defineProps({
+  modelValue: {
+    type: Object,
+    default: null
+  }
+})
+
+const selectedDBType = ref(props.modelValue || dbTypes.value[0])
 
 const emit = defineEmits(['update:selected-db-type'])
 
@@ -85,4 +93,11 @@ onMounted(() => {
 watch(selectedDBType, (newVal) => {
   emit('update:selected-db-type', newVal)
 })
+
+// Watch for external changes to modelValue
+watch(() => props.modelValue, (newVal) => {
+  if (newVal) {
+    selectedDBType.value = newVal
+  }
+}, { immediate: true })
 </script>
