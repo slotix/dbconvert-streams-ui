@@ -1,14 +1,18 @@
 <template>
-  <div class="relative mt-20 pb-5">
-    <h3 class="text-xl font-semibold leading-6 text-gray-900">Logs</h3>
+  <div class="relative mt-20 mb-4">
+    <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100">
+      System Logs
+      <span class="ml-2 text-sm font-normal text-gray-500">
+        {{ filteredLogs.length }} entries
+      </span>
+    </h3>
   </div>
-  <div>
+  <div class="mb-4">
     <div class="sm:hidden">
-      <label for="tabs" class="sr-only">Select a node</label>
       <select
         id="tabs"
         name="tabs"
-        class="block w-full rounded-md border-gray-300 focus:border-gray-500 focus:ring-gray-500"
+        class="block w-full rounded-lg border-gray-300 bg-gray-50 px-3 py-2 text-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:text-gray-100"
         @change="(event: Event) => changeTab(Number((event.target as HTMLSelectElement)?.selectedIndex) || 0)"
       >
         <option
@@ -22,101 +26,93 @@
       </select>
     </div>
     <div class="hidden sm:block">
-      <nav class="isolate flex divide-x divide-gray-200 rounded-lg shadow" aria-label="Tabs">
-        <a
+      <nav class="flex space-x-1 rounded-xl bg-gray-100 p-1 dark:bg-gray-800" aria-label="Tabs">
+        <button
           v-for="(node, nodeIdx) in store.nodes"
           :key="node.id"
           :class="[
-            node.current ? 'text-gray-900' : 'text-gray-500 hover:text-gray-700',
-            nodeIdx === 0 ? 'rounded-l-lg' : '',
-            nodeIdx === store.nodes.length - 1 ? 'rounded-r-lg' : '',
-            'group relative min-w-0 flex-1 overflow-hidden bg-white py-4 px-4 text-center text-sm font-medium hover:bg-gray-100 focus:z-10'
+            'flex-1 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium',
+            node.current
+              ? 'bg-white text-gray-900 shadow dark:bg-gray-700 dark:text-white'
+              : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-gray-200'
           ]"
-          :aria-current="node.current ? 'page' : undefined"
           @click="changeTab(nodeIdx)"
         >
           <div class="flex flex-col items-center">
-            <span class="text-lg font-medium">{{ node.type }}</span>
-            <span class="text-xs text-gray-500">{{ node.id }}</span>
+            <span class="text-base font-medium">{{ node.type }}</span>
+            <span class="text-xs opacity-75">{{ node.id }}</span>
           </div>
-          <span
-            aria-hidden="true"
-            :class="[
-              node.current ? 'bg-gray-500' : 'bg-transparent',
-              'absolute inset-x-0 bottom-0 h-0.5'
-            ]"
-          />
-        </a>
+        </button>
       </nav>
     </div>
   </div>
-  <div class="divide-y divide-gray-700 overflow-hidden rounded-lg bg-gray-900 shadow">
+  <div class="rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
     <div 
       ref="logContainer" 
       @scroll="handleScroll"
-      class="max-h-96 overflow-y-auto px-4 py-5 sm:p-6"
+      class="max-h-[32rem] overflow-y-auto px-4 py-2 scrollbar-thin scrollbar-track-gray-100 scrollbar-thumb-gray-300 dark:scrollbar-track-gray-800 dark:scrollbar-thumb-gray-600"
     >
       <div 
         v-if="filteredLogs.length === 0" 
-        class="text-center py-4 text-gray-500"
+        class="flex h-32 items-center justify-center text-gray-500 dark:text-gray-400"
       >
-        No logs available for this node
+        <span class="flex items-center">
+          <InformationCircleIcon class="mr-2 h-5 w-5" />
+          No logs available for this node
+        </span>
       </div>
       <div
         v-for="log in filteredLogs"
         :key="log.id"
         :class="[
-          'flex',
-          'flex-row',
-          'items-center',
-          'p-2',
-          'font-mono',
-          'border-b border-gray-700',
-          { 'bg-gray-900 text-gray-200': log.level !== 'warn' && log.level !== 'error' },
-          { 'bg-yellow-900 text-yellow-100': log.level === 'warn' },
-          { 'bg-red-900 text-red-100': log.level === 'error' }
+          'group mb-1 flex items-center rounded-lg p-2 font-mono text-sm transition-colors',
+          {
+            'bg-gray-50 text-gray-900 hover:bg-gray-100 dark:bg-gray-800/50 dark:text-gray-100 dark:hover:bg-gray-800': 
+              log.level !== 'warn' && log.level !== 'error',
+            'bg-yellow-50 text-yellow-800 hover:bg-yellow-100 dark:bg-yellow-900/20 dark:text-yellow-100': 
+              log.level === 'warn',
+            'bg-red-50 text-red-800 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-100': 
+              log.level === 'error'
+          }
         ]"
       >
-        <div v-if="log.level === 'info'">
-          <InformationCircleIcon
-            class="mr-3 h-5 w-5 text-green-600 group-hover:text-green-700"
-            aria-hidden="true"
+        <div class="shrink-0">
+          <component
+            :is="getLogIcon(log.level)"
+            :class="[
+              'h-4 w-4',
+              {
+                'text-blue-500 dark:text-blue-400': log.level === 'info',
+                'text-gray-400 dark:text-gray-500': log.level === 'debug',
+                'text-red-500 dark:text-red-400': log.level === 'error',
+                'text-yellow-500 dark:text-yellow-400': log.level === 'warn'
+              }
+            ]"
           />
         </div>
-        <div v-else-if="log.level === 'debug'">
-          <BugAntIcon
-            class="mr-3 h-5 w-5 text-gray-600 group-hover:text-gray-700"
-            aria-hidden="true"
-          />
-        </div>
-        <div v-else-if="log.level === 'error'">
-          <ExclamationCircleIcon
-            class="mr-3 h-5 w-5 text-red-600 group-hover:text-red-700"
-            aria-hidden="true"
-          />
-        </div>
-        <div v-else-if="log.level === 'warn'">
-          <ExclamationTriangleIcon
-            class="mr-3 h-5 w-5 text-yellow-600 group-hover:text-yellow-700"
-            aria-hidden="true"
-          />
-        </div>
-        <span class="text-gray-400 tabular-nums text-sm ml-0 mr-2">
-          [{{ formatTimestamp(log.ts) }}]
+        <span class="ml-2 mr-3 text-xs tabular-nums text-gray-500 dark:text-gray-400">
+          {{ formatTimestamp(log.ts) }}
         </span>
-        <span class="basis-5/6">
-          {{ log.msg }}
-        </span>
+        <span class="flex-1 break-all">{{ log.msg }}</span>
       </div>
     </div>
   </div>
-  <button
-    v-show="!isScrolledToBottom"
-    @click="scrollToBottom"
-    class="fixed bottom-4 right-4 rounded-full bg-gray-700 p-2 text-white shadow-lg hover:bg-gray-600"
+  <Transition
+    enter-active-class="transition ease-out duration-200"
+    enter-from-class="opacity-0 translate-y-1"
+    enter-to-class="opacity-100 translate-y-0"
+    leave-active-class="transition ease-in duration-150"
+    leave-from-class="opacity-100 translate-y-0"
+    leave-to-class="opacity-0 translate-y-1"
   >
-    <ArrowDownIcon class="h-5 w-5" />
-  </button>
+    <button
+      v-show="!isScrolledToBottom"
+      @click="scrollToBottom"
+      class="fixed bottom-4 right-4 rounded-full bg-gray-900 p-2 text-white shadow-lg transition-colors hover:bg-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600"
+    >
+      <ArrowDownIcon class="h-5 w-5" />
+    </button>
+  </Transition>
 </template>
 
 <script setup lang="ts">
@@ -207,4 +203,41 @@ watch(
     scrollToBottom()
   }
 )
+
+// Helper function to get the correct icon component
+function getLogIcon(level: string) {
+  switch (level) {
+    case 'info':
+      return InformationCircleIcon
+    case 'debug':
+      return BugAntIcon
+    case 'error':
+      return ExclamationCircleIcon
+    case 'warn':
+      return ExclamationTriangleIcon
+    default:
+      return InformationCircleIcon
+  }
+}
 </script>
+
+<style>
+/* Custom scrollbar styling */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: var(--scrollbar-track, #f1f1f1);
+  border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb, #888);
+  border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover, #555);
+}
+</style>
