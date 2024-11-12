@@ -16,6 +16,7 @@
     "@clerk/clerk-js": "^5.18.0",
     "@headlessui/vue": "^1.7.14",
     "@heroicons/vue": "^2.1.5",
+    "@vueuse/core": "^11.2.0",
     "axios": "^1.4.0",
     "bcryptjs": "^2.4.3",
     "echarts": "^5.5.1",
