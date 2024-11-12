@@ -9,7 +9,7 @@
         id="tabs"
         name="tabs"
         class="block w-full rounded-md border-gray-300 focus:border-gray-500 focus:ring-gray-500"
-        @change="changeTab($event.target.selectedIndex)"
+        @change="(event: Event) => changeTab(Number((event.target as HTMLSelectElement)?.selectedIndex) || 0)"
       >
         <option
           v-for="(node, nodeIdx) in store.nodes"
@@ -36,11 +36,8 @@
           @click="changeTab(nodeIdx)"
         >
           <div class="flex flex-col items-center">
-            <!-- Wrap tab content in a flex column -->
             <span class="text-lg font-medium">{{ node.type }}</span>
-            <!-- Tab type as title -->
             <span class="text-xs text-gray-500">{{ node.id }}</span>
-            <!-- Grayed out tab ID -->
           </div>
           <span
             aria-hidden="true"
@@ -54,7 +51,17 @@
     </div>
   </div>
   <div class="divide-y divide-gray-700 overflow-hidden rounded-lg bg-gray-900 shadow">
-    <div ref="logContainer" class="max-h-96 overflow-y-auto px-4 py-5 sm:p-6">
+    <div 
+      ref="logContainer" 
+      @scroll="handleScroll"
+      class="max-h-96 overflow-y-auto px-4 py-5 sm:p-6"
+    >
+      <div 
+        v-if="filteredLogs.length === 0" 
+        class="text-center py-4 text-gray-500"
+      >
+        No logs available for this node
+      </div>
       <div
         v-for="log in filteredLogs"
         :key="log.id"
@@ -82,14 +89,12 @@
             aria-hidden="true"
           />
         </div>
-
         <div v-else-if="log.level === 'error'">
           <ExclamationCircleIcon
             class="mr-3 h-5 w-5 text-red-600 group-hover:text-red-700"
             aria-hidden="true"
           />
         </div>
-
         <div v-else-if="log.level === 'warn'">
           <ExclamationTriangleIcon
             class="mr-3 h-5 w-5 text-yellow-600 group-hover:text-yellow-700"
@@ -105,53 +110,101 @@
       </div>
     </div>
   </div>
+  <button
+    v-show="!isScrolledToBottom"
+    @click="scrollToBottom"
+    class="fixed bottom-4 right-4 rounded-full bg-gray-700 p-2 text-white shadow-lg hover:bg-gray-600"
+  >
+    <ArrowDownIcon class="h-5 w-5" />
+  </button>
 </template>
 
-<script setup>
-import { ref, computed } from 'vue'
-
+<script setup lang="ts">
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { useThrottleFn } from '@vueuse/core'
+import { useMonitoringStore } from '@/stores/monitoring'
 import {
   BugAntIcon,
   InformationCircleIcon,
   ExclamationCircleIcon,
   ExclamationTriangleIcon,
-  ArrowUpIcon,
   ArrowDownIcon
 } from '@heroicons/vue/20/solid'
 
-import { useMonitoringStore } from '@/stores/monitoring'
-const logContainer = ref(null)
-
+// Get store and its types
 const store = useMonitoringStore()
-const logs = store.logs
+const logContainer = ref<HTMLDivElement | null>(null)
+const activeNode = ref<number>(0)
 
-const activeNode = ref(0) // Default active tab index
+// Remove side effects from computed
 const filteredLogs = computed(() => {
-  const activeNodeID = store.nodes[activeNode.value]?.id // Get the ID of the active tab's node
-  if (!activeNodeID) {
-    return [] // If no active node, return an empty array
-  }
-
-  // Filter logs based on the active tab's node ID
-  const filtered = logs.filter((log) => {
-    return log.nodeID === activeNodeID
-  })
-
-  if (logContainer.value) {
-    logContainer.value.scrollTop = logContainer.value.scrollHeight
-  }
-  return filtered
+  const activeNodeID = store.nodes[activeNode.value]?.id
+  if (!activeNodeID) return []
+  return store.logs.filter((log) => log.nodeID === activeNodeID)
 })
 
-const changeTab = (index) => {
-  store.nodes.forEach((tab, idx) => {
-    tab.current = idx === index
+// Properly type the change handler
+const changeTab = (index: number) => {
+  store.nodes.forEach((node, idx) => {
+    node.current = idx === index
   })
   activeNode.value = index
+  
+  nextTick(() => {
+    if (logContainer.value && autoScroll.value) {
+      logContainer.value.scrollTop = logContainer.value.scrollHeight
+    }
+  })
 }
 
-const formatTimestamp = (timestamp) => {
-  const date = new Date(timestamp * 1000) // Convert seconds to milliseconds
-  return date.toLocaleTimeString() // Adjust the formatting based on your preferences
+const formatTimestamp = (timestamp: number): string => {
+  return new Date(timestamp * 1000).toLocaleTimeString(undefined, {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  })
 }
+
+// Scroll control
+const autoScroll = ref(true)
+const isScrolledToBottom = ref(true)
+
+const handleScroll = useThrottleFn(() => {
+  const container = logContainer.value
+  if (!container) return
+  
+  const { scrollTop, scrollHeight, clientHeight } = container
+  isScrolledToBottom.value = Math.abs(scrollHeight - clientHeight - scrollTop) < 10
+  autoScroll.value = isScrolledToBottom.value
+}, 100)
+
+const scrollToBottom = () => {
+  if (logContainer.value) {
+    logContainer.value.scrollTop = logContainer.value.scrollHeight
+    autoScroll.value = true
+  }
+}
+
+// Lifecycle hooks
+onMounted(() => {
+  if (logContainer.value) {
+    logContainer.value.addEventListener('scroll', handleScroll)
+  }
+})
+
+onUnmounted(() => {
+  if (logContainer.value) {
+    logContainer.value.removeEventListener('scroll', handleScroll)
+  }
+})
+
+// Watch for log changes
+watch(
+  () => filteredLogs.value.length,
+  async () => {
+    if (!autoScroll.value) return
+    await nextTick()
+    scrollToBottom()
+  }
+)
 </script>

@@ -6,7 +6,15 @@ import { useCommonStore } from './common'
 // Define types for the state
 interface Node {
   id: string
-  type: string
+  type: NodeType
+  current?: boolean
+}
+
+interface LogLevel {
+  info: 'info'
+  debug: 'debug'
+  warn: 'warn'
+  error: 'error'
 }
 
 interface Log {
@@ -15,6 +23,8 @@ interface Log {
   nodeID: string
   msg: string
   status?: string
+  level: keyof LogLevel
+  ts: number
   [key: string]: any
 }
 
@@ -34,6 +44,7 @@ interface State {
   stages: Stage[]
   status: typeof statusEnum
   streamConfig: StreamConfig
+  maxLogs: number
 }
 const statusEnum = {
   UNDEFINED: 0,
@@ -46,6 +57,13 @@ const statusEnum = {
   STOPPED: 7,
   FINISHED: 8
 } as const
+
+const NodeType = {
+  SOURCE: 'source',
+  TARGET: 'target',
+  API: 'api'
+} as const
+type NodeType = typeof NodeType[keyof typeof NodeType]
 
 export const useMonitoringStore = defineStore('monitoring', {
   state: (): State => ({
@@ -84,7 +102,8 @@ export const useMonitoringStore = defineStore('monitoring', {
       }
     ],
     status: statusEnum,
-    streamConfig: {} as StreamConfig
+    streamConfig: {} as StreamConfig,
+    maxLogs: 1000
   }),
   getters: {
     currentStage(state: State): Stage | null {
@@ -178,10 +197,10 @@ export const useMonitoringStore = defineStore('monitoring', {
             if (!nodeExists) {
               this.nodes.push({
                 id: parsed.nodeID,
-                type: parsed.type
+                type: parsed.type as NodeType
               })
             }
-            this.logs.push(parsed)
+            this.addLog(parsed)
             m.ack()
           }
 
@@ -205,6 +224,12 @@ export const useMonitoringStore = defineStore('monitoring', {
       if (stage) {
         stage.timestamp = Date.now()
       }
+    },
+    addLog(log: Log) {
+      if (this.logs.length >= this.maxLogs) {
+        this.logs = this.logs.slice(-Math.floor(this.maxLogs / 2))
+      }
+      this.logs.push(log)
     }
   }
 })
