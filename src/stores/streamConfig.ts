@@ -4,6 +4,7 @@ import { debounce } from 'lodash'
 import { StreamConfig, Table } from '@/types/streamConfig'
 import { Step } from '@/stores/common'
 import { useConnectionsStore } from '@/stores/connections'
+import { statusEnum, useMonitoringStore } from '@/stores/monitoring'
 
 interface State {
   generateDefaultStreamConfigName(source: string, target: string, tables: Table[]): string
@@ -17,7 +18,6 @@ export const defaultStreamConfigOptions: StreamConfig = {
   id: '',
   name: '',
   mode: 'convert',
-  status: 'idle',
   dataBundleSize: 100,
   reportingIntervals: { source: 3, target: 3 },
   operations: ['insert', 'update', 'delete'],
@@ -236,7 +236,7 @@ export const useStreamsStore = defineStore('streams', {
     async startStream(configID: string) {
       try {
         const resp = await api.startStream(configID)
-        this.updateStreamStatus(configID, 'running')
+        this.updateStreamStatus(statusEnum.RUNNING as unknown as typeof statusEnum)
       } catch (error) {
         console.error('Failed to start stream:', error)
         throw error
@@ -245,7 +245,7 @@ export const useStreamsStore = defineStore('streams', {
     async pauseStream(configID: string) {
       try {
         const resp = await api.pauseStream(configID)
-        this.updateStreamStatus(configID, 'paused')
+        this.updateStreamStatus(statusEnum.PAUSED as unknown as typeof statusEnum)
       } catch (error) {
         console.error('Failed to pause stream:', error)
         throw error
@@ -255,7 +255,7 @@ export const useStreamsStore = defineStore('streams', {
     async resumeStream(configID: string) {
       try {
         const resp = await api.resumeStream(configID)
-        this.updateStreamStatus(configID, 'running')
+        this.updateStreamStatus(statusEnum.RUNNING as unknown as typeof statusEnum)
       } catch (error) {
         console.error('Failed to resume stream:', error)
         throw error
@@ -265,17 +265,15 @@ export const useStreamsStore = defineStore('streams', {
     async stopStream(configID: string) {
       try {
         const resp = await api.stopStream(configID)
-        this.updateStreamStatus(configID, 'stopped')
+        this.updateStreamStatus(statusEnum.STOPPED as unknown as typeof statusEnum)
       } catch (error) {
         console.error('Failed to stop stream:', error)
         throw error
       }
     },
-    updateStreamStatus(id: string, status: StreamConfig['status']) {
-      const streamIndex = this.streamConfigs.findIndex((stream) => stream.id === id)
-      if (streamIndex !== -1) {
-        this.streamConfigs[streamIndex] = { ...this.streamConfigs[streamIndex], status }
-      }
+
+    updateStreamStatus(status: typeof statusEnum) {
+      useMonitoringStore().updateStreamStatus(status)
     },
     resetCurrentStream(this: State) {
       const defaultConfig = {
