@@ -46,7 +46,7 @@ interface State {
   streamConfig: StreamConfig
   maxLogs: number
 }
-const statusEnum = {
+export const statusEnum = {
   UNDEFINED: 0,
   READY: 1,
   RUNNING: 2,
@@ -107,21 +107,32 @@ export const useMonitoringStore = defineStore('monitoring', {
   }),
   getters: {
     currentStage(state: State): Stage | null {
-      // Only check status if not already finished
-      if (this.stats.length > 0 && state.currentStageID !== 4) {
-        const runningNodesNumber = this.stats.filter((stat: Log) => {
-          const statusID = state.status[stat.status as keyof typeof statusEnum]
-          return statusID < state.status.FAILED
-        }).length
-        if (runningNodesNumber === 0) {
-          // that means all nodes are finished
-          const commonStore = useCommonStore()
-          commonStore.fetchUsageData()
-          state.currentStageID = 4
-        }
+      // If no stats yet, return current stage based on stageID
+      if (this.stats.length === 0) {
+        return state.stages.find((stage) => stage.id === state.currentStageID) || null
       }
-      const stage = state.stages.find((stage) => stage.id === state.currentStageID)
-      return stage ? stage : null
+
+      // Check current status of nodes
+      const runningNodesNumber = this.stats.filter((stat: Log) => {
+        const statusID = state.status[stat.status as keyof typeof statusEnum]
+        return statusID < state.status.FAILED
+      }).length
+
+      // Determine stage based on node status and current stats
+      if (runningNodesNumber === 0 && this.stats.some(stat => stat.status === 'FINISHED')) {
+        // All nodes finished
+        state.currentStageID = 4 // Finished stage
+        const commonStore = useCommonStore()
+        commonStore.fetchUsageData()
+      } else if (this.stats.some(stat => stat.events && parseInt(stat.events) > 0)) {
+        // If we have events being processed, we're in data transfer stage
+        state.currentStageID = 3
+      } else if (state.currentStageID < 2) {
+        // Initial stages
+        state.currentStageID = 2
+      }
+
+      return state.stages.find((stage) => stage.id === state.currentStageID) || null
     },
     stagesBarWidth(state: State): string {
       return `${Math.floor((state.currentStageID / state.stages.length) * 100)}%`
@@ -218,12 +229,8 @@ export const useMonitoringStore = defineStore('monitoring', {
         stage.timestamp = Date.now()
       }
     },
-    updateCurrentStage(stageId: number) {
-      this.currentStageID = stageId
-      const stage = this.stages.find(s => s.id === stageId)
-      if (stage) {
-        stage.timestamp = Date.now()
-      }
+    updateStreamStatus(status: typeof statusEnum) {
+      this.status = status
     },
     addLog(log: Log) {
       if (this.logs.length >= this.maxLogs) {
