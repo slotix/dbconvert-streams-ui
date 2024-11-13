@@ -28,6 +28,10 @@
           Stop
         </button>
       </div>
+      <div v-if="isBackendConnected && currentStreamConfig" class="mt-4">
+        <h2 class="text-xl font-semibold">Current Stream Configuration</h2>
+        <pre class="bg-gray-100 p-4 rounded-md">{{ currentStreamConfig }}</pre>
+      </div>
     </div>
   </header>
   <main>
