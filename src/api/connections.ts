@@ -1,7 +1,7 @@
 import axios, { AxiosInstance, AxiosResponse, AxiosError } from 'axios'
 import { handleApiError, handleUnauthorizedError } from '@/utils/errorHandler'
 import { useCommonStore } from '@/stores/common'
-import { Connection, Schema, Database } from '@/types/connections'
+import { Connection, Schema, Database, SSLConfig } from '@/types/connections'
 
 const apiClient: AxiosInstance = axios.create({
   baseURL: 'http://127.0.0.1:8020/api/v1',
@@ -36,6 +36,17 @@ const getConnections = async (): Promise<Connection[]> => {
 const createConnection = async (json: Record<string, unknown>): Promise<Connection> => {
   return executeWithRetry(async () => {
     const commonStore = useCommonStore()
+    
+    // Transform SSL config for API
+    if (json.ssl) {
+      const sslConfig = json.ssl as SSLConfig
+      json.ssl_mode = sslConfig.mode
+      json.ca_cert = sslConfig.ca_cert
+      json.client_cert = sslConfig.client_cert
+      json.client_key = sslConfig.client_key
+      delete json.ssl
+    }
+
     const response: AxiosResponse<Connection> = await apiClient.post('/connections', json, {
       headers: { 'X-API-Key': commonStore.apiKey }
     })
