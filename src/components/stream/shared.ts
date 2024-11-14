@@ -17,6 +17,7 @@ import ActionsMenu from '@/components/common/ActionsMenu.vue'
 import { defineComponent, PropType, computed, ref } from 'vue'
 import { StreamConfig } from '@/types/streamConfig'
 import { DbType } from '@/types/connections'
+import { Switch } from '@headlessui/vue'
 
 export default defineComponent({
   props: {
@@ -40,17 +41,33 @@ export default defineComponent({
     ChevronRightIcon,
     PlayIcon,
     ActionsMenu,
-    ClipboardIcon
+    ClipboardIcon,
+    Switch
   },
   setup(props) {
     const dbTypes = useConnectionsStore().dbTypes
     const steps = useCommonStore().steps
+    const commonStore = useCommonStore()
+    const isJsonView = ref(false)
 
     const isIdExpanded = ref(false)
+    const isExpanded = ref(false)
 
     const toggleIdExpansion = () => {
       isIdExpanded.value = !isIdExpanded.value
     }
+
+    function copyConfig(event: Event) {
+      event.preventDefault()
+      if (props.stream) {
+        navigator.clipboard.writeText(JSON.stringify(props.stream, null, 2))
+        commonStore.showNotification('Configuration copied to clipboard', 'success')
+      }
+    }
+
+    const prettyConfig = computed(() => {
+      return JSON.stringify(props.stream, null, 2)
+    })
 
     const displayedId = computed(() => {
       if (isIdExpanded.value) {
@@ -65,7 +82,11 @@ export default defineComponent({
       steps,
       isIdExpanded,
       toggleIdExpansion,
-      displayedId
+      displayedId,
+      isJsonView,
+      isExpanded,
+      prettyConfig,
+      copyConfig
     }
   },
   methods: {

@@ -28,7 +28,7 @@
               'shadow-[0_1px_4px_rgba(0,0,0,0.15)]'
             ]"
           />
-        </Switch>
+        </Switch> JSON
         <button
           v-tooltip="'Copy configuration'"
           class="text-gray-500 hover:text-gray-700 focus:outline-none"
