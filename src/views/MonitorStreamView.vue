@@ -28,16 +28,16 @@
           Stop
         </button>
       </div>
-      <div v-if="isBackendConnected && currentStreamConfig" class="mt-4">
-        <h2 class="text-xl font-semibold">Current Stream Configuration</h2>
-        <pre class="bg-gray-100 p-4 rounded-md">{{ currentStreamConfig }}</pre>
-      </div>
     </div>
   </header>
   <main>
     <div v-if="isBackendConnected && monitoringStore.streamID != ''" class="antialiased bg-gray-200">
       <div class="flex flex-wrap max-w-7xl mx-auto px-4 overflow-hidden">
         <div class="w-full px-4 overflow-hidden mb-10">
+      <StreamConfigInfo 
+        v-if="isBackendConnected && currentStreamConfig" 
+        :config="currentStreamConfig" 
+      />
           <ProgressContainer />
           <StatContainer />
           <LogContainer />
@@ -73,6 +73,7 @@ import ProgressContainer from '@/components/monitoring/ProgressContainer.vue'
 import { useMonitoringStore } from '@/stores/monitoring'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useCommonStore } from '@/stores/common'
+import StreamConfigInfo from '@/components/stream/StreamConfigInfo.vue'
 
 const monitoringStore = useMonitoringStore()
 const streamsStore = useStreamsStore()
