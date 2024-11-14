@@ -23,16 +23,6 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import MySQLParams from './MySQLParams.vue'
 import PostgreSQLParams from './PostgreSQLParams.vue'
-import SQLServerParams from './SQLServerParams.vue'
-import OracleParams from './OracleParams.vue'
-import AccessParams from './AccessParams.vue'
-import AzureParams from './AzureParams.vue'
-import DB2Params from './DB2Params.vue'
-import FirebirdParams from './FirebirdParams.vue'
-import InterbaseParams from './InterbaseParams.vue'
-import FoxProParams from './FoxProParams.vue'
-import SQLiteParams from './SQLiteParams.vue'
-import SSHParams from './SSHParams.vue'
 import SSLParams from './SSLParams.vue'
 
 interface Props {
@@ -41,22 +31,12 @@ interface Props {
 
 const props = defineProps<Props>()
 
-const tabs = ref(['Direct', 'SSH', 'SSL'])
+const tabs = ref(['Direct', 'SSL'])
 const currentTab = ref('')
 
 const componentMap = {
   MySQL: MySQLParams,
   PostgreSQL: PostgreSQLParams,
-  SQLServer: SQLServerParams,
-  Oracle: OracleParams,
-  Access: AccessParams,
-  Azure: AzureParams,
-  DB2: DB2Params,
-  Firebird: FirebirdParams,
-  Interbase: InterbaseParams,
-  FoxPro: FoxProParams,
-  SQLite: SQLiteParams,
-  SSH: SSHParams,
   SSL: SSLParams
 }
 
