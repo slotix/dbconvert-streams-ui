@@ -36,12 +36,12 @@ const getConnections = async (): Promise<Connection[]> => {
 const createConnection = async (json: Record<string, unknown>): Promise<Connection> => {
   return executeWithRetry(async () => {
     const commonStore = useCommonStore()
-    
+
     // Transform SSL config for API
     if (json.ssl) {
       const sslConfig = json.ssl as SSLConfig
       json.ssl_mode = sslConfig.mode
-      json.ca_cert = sslConfig.ca_cert
+      json.ca = sslConfig.ca
       json.client_cert = sslConfig.client_cert
       json.client_key = sslConfig.client_key
       delete json.ssl

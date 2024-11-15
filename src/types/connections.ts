@@ -1,6 +1,6 @@
 export interface SSLConfig {
   mode: 'disable' | 'require' | 'verify-ca' | 'verify-full'
-  ca_cert?: string
+  ca?: string
   client_cert?: string
   client_key?: string
 }

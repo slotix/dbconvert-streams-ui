@@ -6,11 +6,9 @@
         <div class="items-center w-full space-y-4 text-gray-500">
           <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700">SSL Mode</label>
-            <select
-              :value="localSSLConfig.mode"
+            <select :value="localSSLConfig.mode"
               @change="handleModeChange(($event.target as HTMLSelectElement).value as SSLConfig['mode'])"
-              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500"
-            >
+              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500">
               <option value="disable">Disable</option>
               <option value="require">Require</option>
               <option value="verify-ca">Verify CA</option>
@@ -22,17 +20,10 @@
             <div>
               <label class="block text-sm font-medium text-gray-700">CA Certificate</label>
               <div class="mt-1 flex items-center space-x-2">
-                <input
-                  type="file"
-                  accept=".crt,.pem"
-                  @change="handleCertFileUpload($event, 'ca_cert')"
-                  class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100"
-                />
-                <button
-                  v-if="localSSLConfig.ca_cert"
-                  @click="clearCertificate('ca_cert')"
-                  class="text-red-600 hover:text-red-800"
-                >
+                <input type="file" accept=".crt,.pem" @change="handleCertFileUpload($event, 'ca')"
+                  class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100" />
+                <button v-if="localSSLConfig.ca" @click="clearCertificate('ca')"
+                  class="text-red-600 hover:text-red-800">
                   <TrashIcon class="h-5 w-5" />
                 </button>
               </div>
@@ -41,17 +32,10 @@
             <div>
               <label class="block text-sm font-medium text-gray-700">Client Certificate</label>
               <div class="mt-1 flex items-center space-x-2">
-                <input
-                  type="file"
-                  accept=".crt,.pem"
-                  @change="handleCertFileUpload($event, 'client_cert')"
-                  class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100"
-                />
-                <button
-                  v-if="localSSLConfig.client_cert"
-                  @click="clearCertificate('client_cert')"
-                  class="text-red-600 hover:text-red-800"
-                >
+                <input type="file" accept=".crt,.pem" @change="handleCertFileUpload($event, 'client_cert')"
+                  class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100" />
+                <button v-if="localSSLConfig.client_cert" @click="clearCertificate('client_cert')"
+                  class="text-red-600 hover:text-red-800">
                   <TrashIcon class="h-5 w-5" />
                 </button>
               </div>
@@ -60,17 +44,10 @@
             <div>
               <label class="block text-sm font-medium text-gray-700">Client Key</label>
               <div class="mt-1 flex items-center space-x-2">
-                <input
-                  type="file"
-                  accept=".key,.pem"
-                  @change="handleCertFileUpload($event, 'client_key')"
-                  class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100"
-                />
-                <button
-                  v-if="localSSLConfig.client_key"
-                  @click="clearCertificate('client_key')"
-                  class="text-red-600 hover:text-red-800"
-                >
+                <input type="file" accept=".key,.pem" @change="handleCertFileUpload($event, 'client_key')"
+                  class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100" />
+                <button v-if="localSSLConfig.client_key" @click="clearCertificate('client_key')"
+                  class="text-red-600 hover:text-red-800">
                   <TrashIcon class="h-5 w-5" />
                 </button>
               </div>
@@ -95,7 +72,7 @@ const connection = computed(() => connectionsStore.currentConnection)
 if (!connection.value?.ssl) {
   connection.value!.ssl = {
     mode: 'disable',
-    ca_cert: undefined,
+    ca: undefined,
     client_cert: undefined,
     client_key: undefined
   }
@@ -103,14 +80,14 @@ if (!connection.value?.ssl) {
 
 // Create a local reactive state
 const localSSLConfig = ref<SSLConfig>(
-  connection.value?.ssl 
+  connection.value?.ssl
     ? JSON.parse(JSON.stringify(connection.value.ssl))
     : {
-        mode: 'disable',
-        ca_cert: undefined,
-        client_cert: undefined,
-        client_key: undefined
-      }
+      mode: 'disable',
+      ca: undefined,
+      client_cert: undefined,
+      client_key: undefined
+    }
 )
 
 // Watch for changes in localSSLConfig and update the connection
@@ -131,8 +108,8 @@ function handleModeChange(mode: SSLConfig['mode']) {
 }
 
 const handleCertFileUpload = async (
-  event: Event, 
-  certType: 'ca_cert' | 'client_cert' | 'client_key'
+  event: Event,
+  certType: 'ca' | 'client_cert' | 'client_key'
 ) => {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
@@ -156,4 +133,3 @@ const clearCertificate = (certType: keyof Omit<SSLConfig, 'mode'>) => {
   }
 }
 </script>
-
