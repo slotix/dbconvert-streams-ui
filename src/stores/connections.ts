@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import api from '@/api/connections'
 import { debounce } from 'lodash'
 
-import { Connection, DbType } from '@/types/connections'
+import { Connection, DbType, SSLConfig } from '@/types/connections'
 
 // Define interfaces for the state and other objects
 interface State {
@@ -12,7 +12,7 @@ interface State {
   sourceConnection: Connection | null
   targetConnection: Connection | null
   currentFilter: string
-  ssl: any // Define the proper type if known
+  ssl: SSLConfig | null
 }
 
 export const useConnectionsStore = defineStore('connections', {
@@ -21,15 +21,6 @@ export const useConnectionsStore = defineStore('connections', {
       { id: 0, type: 'All', logo: '/images/db-logos/all.svg' },
       { id: 1, type: 'PostgreSQL', logo: '/images/db-logos/postgresql.svg' },
       { id: 2, type: 'MySQL', logo: '/images/db-logos/mysql.svg' },
-      // { id: 3, type: 'SQLServer', logo: '/images/db-logos/sql-server.svg' },
-      // { id: 4, type: 'Azure', logo: '/images/db-logos/azure.svg' },
-      // { id: 5, type: 'Oracle', logo: '/images/db-logos/oracle.svg' },
-      // { id: 6, type: 'DB2', logo: '/images/db-logos/db2.svg' },
-      // { id: 7, type: 'Firebird', logo: '/images/db-logos/firebird.svg' },
-      // { id: 8, type: 'Interbase', logo: '/images/db-logos/interbase.svg' },
-      // { id: 9, type: 'Access', logo: '/images/db-logos/access.svg' },
-      // { id: 10, type: 'FoxPro', logo: '/images/db-logos/foxpro.svg' },
-      // { id: 11, type: 'SQLite', logo: '/images/db-logos/sqlite.svg' }
     ],
     connections: [],
     currentConnection: null,
@@ -81,13 +72,20 @@ export const useConnectionsStore = defineStore('connections', {
     saveConnection: debounce(async function (this: any) {
       try {
         const connection = this.currentConnection
+        if (!connection) return
+
+        // Create a copy of the connection object
+        const connectionToSave = { ...connection }
+
+        // If SSL config exists, merge it with the connection
         if (this.ssl !== null) {
-          connection!.ssl = this.ssl
+          connectionToSave.ssl = this.ssl
         }
-        if (!connection!.id) {
-          await api.createConnection(connection!)
+
+        if (!connectionToSave.id) {
+          await api.createConnection(connectionToSave)
         } else {
-          await api.updateConnection(connection!)
+          await api.updateConnection(connectionToSave)
         }
         await this.refreshConnections()
       } catch (error) {
@@ -131,6 +129,7 @@ export const useConnectionsStore = defineStore('connections', {
     }, 500),
     resetCurrentConnection() {
       this.currentConnection = null
+      this.ssl = null
     },
     async clearConnections() {
       this.connections.length = 0
