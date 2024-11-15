@@ -83,48 +83,51 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { TrashIcon } from '@heroicons/vue/24/outline'
-import { useCommon } from './common'
-import type { Connection, SSLConfig } from '@/types/connections'
+import { useConnectionsStore } from '@/stores/connections'
+import type { SSLConfig } from '@/types/connections'
 
-interface SSLConnection extends Connection {
-  ssl?: SSLConfig
+const connectionsStore = useConnectionsStore()
+const connection = computed(() => connectionsStore.currentConnection)
+
+// Initialize SSL config with defaults if not present
+if (!connection.value?.ssl) {
+  connection.value!.ssl = {
+    mode: 'disable',
+    ca_cert: undefined,
+    client_cert: undefined,
+    client_key: undefined
+  }
 }
-
-const defaultSSLConfig: SSLConfig = {
-  mode: 'disable',
-  ca_cert: undefined,
-  client_cert: undefined,
-  client_key: undefined
-}
-
-const defaultConnection: SSLConnection = {
-  id: '',
-  name: '',
-  type: '',
-  host: '',
-  port: 0,
-  username: '',
-  password: '',
-  database: '',
-  databases: [],
-  ssl: defaultSSLConfig
-}
-
-const { connection } = useCommon<SSLConnection>(defaultConnection)
 
 // Create a local reactive state
-const localSSLConfig = ref<SSLConfig>({ ...defaultSSLConfig })
+const localSSLConfig = ref<SSLConfig>(
+  connection.value?.ssl 
+    ? JSON.parse(JSON.stringify(connection.value.ssl))
+    : {
+        mode: 'disable',
+        ca_cert: undefined,
+        client_cert: undefined,
+        client_key: undefined
+      }
+)
 
-// Initialize local state from connection
-if (connection.ssl) {
-  localSSLConfig.value = JSON.parse(JSON.stringify(connection.ssl))
-}
+// Watch for changes in localSSLConfig and update the connection
+watch(
+  () => localSSLConfig.value,
+  (newValue) => {
+    if (connection.value) {
+      connection.value.ssl = JSON.parse(JSON.stringify(newValue))
+      // connectionsStore.updateSSLParams(newValue)
+    }
+  },
+  { deep: true }
+)
 
-// Update connection when local state changes
-function updateConnection() {
-  connection.ssl = JSON.parse(JSON.stringify(localSSLConfig.value))
+// Handle SSL mode changes
+function handleModeChange(mode: SSLConfig['mode']) {
+  localSSLConfig.value.mode = mode
 }
 
 const handleCertFileUpload = async (
@@ -141,7 +144,6 @@ const handleCertFileUpload = async (
         ...localSSLConfig.value,
         [certType]: base64String
       }
-      updateConnection()
     }
     reader.readAsDataURL(file)
   }
@@ -152,13 +154,6 @@ const clearCertificate = (certType: keyof Omit<SSLConfig, 'mode'>) => {
     ...localSSLConfig.value,
     [certType]: undefined
   }
-  updateConnection()
-}
-
-// Handle SSL mode changes
-function handleModeChange(mode: SSLConfig['mode']) {
-  localSSLConfig.value.mode = mode
-  updateConnection()
 }
 </script>
 

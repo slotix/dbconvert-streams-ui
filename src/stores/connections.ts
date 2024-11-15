@@ -12,7 +12,6 @@ interface State {
   sourceConnection: Connection | null
   targetConnection: Connection | null
   currentFilter: string
-  ssl: SSLConfig | null
 }
 
 export const useConnectionsStore = defineStore('connections', {
@@ -27,7 +26,6 @@ export const useConnectionsStore = defineStore('connections', {
     sourceConnection: null,
     targetConnection: null,
     currentFilter: '',
-    ssl: null
   }),
   getters: {
     allConnections(state: State): Connection[] {
@@ -129,13 +127,9 @@ export const useConnectionsStore = defineStore('connections', {
     }, 500),
     resetCurrentConnection() {
       this.currentConnection = null
-      this.ssl = null
     },
     async clearConnections() {
       this.connections.length = 0
     },
-    updateSSLParams(ssl: any) {
-      this.ssl = ssl
-    }
   }
 })
