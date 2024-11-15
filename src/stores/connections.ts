@@ -12,7 +12,6 @@ interface State {
   sourceConnection: Connection | null
   targetConnection: Connection | null
   currentFilter: string
-  ssh: any // Define the proper type if known
   ssl: any // Define the proper type if known
 }
 
@@ -37,7 +36,6 @@ export const useConnectionsStore = defineStore('connections', {
     sourceConnection: null,
     targetConnection: null,
     currentFilter: '',
-    ssh: null,
     ssl: null
   }),
   getters: {
@@ -83,9 +81,6 @@ export const useConnectionsStore = defineStore('connections', {
     saveConnection: debounce(async function (this: any) {
       try {
         const connection = this.currentConnection
-        if (this.ssh !== null) {
-          connection!.ssh = this.ssh
-        }
         if (this.ssl !== null) {
           connection!.ssl = this.ssl
         }
@@ -139,9 +134,6 @@ export const useConnectionsStore = defineStore('connections', {
     },
     async clearConnections() {
       this.connections.length = 0
-    },
-    updateSSHParams(ssh: any) {
-      this.ssh = ssh
     },
     updateSSLParams(ssl: any) {
       this.ssl = ssl
