@@ -1,5 +1,5 @@
 <template>
-  <nav v-show="showTabs" class="flex flex-col sm:flex-row max-w-sm mx-auto mb-4 mt-8">
+  <nav class="flex flex-col sm:flex-row max-w-sm mx-auto mb-4 mt-8">
     <button
       v-for="tab in tabs"
       :key="tab"
@@ -51,9 +51,6 @@ const changeTab = (tab: string) => {
 
 watch(() => props.connectionType, changeDBType, { immediate: true })
 
-const showTabs = computed(() => {
-  return !['Access', 'FoxPro', 'SQLite'].includes(props.connectionType)
-})
 
 const paramsComponent = computed(() => {
   if (currentTab.value === 'Direct') {
