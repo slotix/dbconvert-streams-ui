@@ -14,7 +14,7 @@
   <ConnectionName v-model:name="connection.name" />
   <hr />
   <div class="bg-white bg-opacity-5 text-center md:text-left">
-    <div class="items-center w-full p-4 space-y-4 text-gray-500 md:inline-flex md:space-y-0">
+    <div class="items-center w-full p-2 text-gray-500 md:inline-flex">
       <label class="max-w-sm mx-auto md:w-1/3"> Server </label>
       <div class="max-w-sm mx-auto md:w-2/3">
         <div class="relative">
@@ -24,7 +24,7 @@
         </div>
       </div>
     </div>
-    <div class="items-center w-full p-4 space-y-4 text-gray-500 md:inline-flex md:space-y-0">
+    <div class="items-center w-full p-2 text-gray-500 md:inline-flex">
       <label class="max-w-sm mx-auto md:w-1/3"> Port </label>
       <div class="max-w-sm mx-auto md:w-2/3">
         <div class="relative">
@@ -34,7 +34,7 @@
         </div>
       </div>
     </div>
-    <div class="items-center w-full p-4 space-y-4 text-gray-500 md:inline-flex md:space-y-0">
+    <div class="items-center w-full p-2 text-gray-500 md:inline-flex">
       <label class="max-w-sm mx-auto md:w-1/3"> User ID </label>
       <div class="max-w-sm mx-auto md:w-2/3">
         <div class="relative">
@@ -49,7 +49,7 @@
   </div>
   <!-- Separate input box and button for adding a new database -->
   <div v-show="connection.id">
-    <div class="items-center w-full p-4 space-y-4 text-gray-500 md:inline-flex md:space-y-0">
+    <div class="items-center w-full p-2 text-gray-500 md:inline-flex">
       <label class="max-w-sm mx-auto md:w-1/3">Database</label>
       <div class="flex items-center max-w-sm mx-auto md:w-2/3 space-x-2">
         <Combobox v-model="connection.database">
@@ -68,7 +68,8 @@
               leaveTo="opacity-0"
             >
               <ComboboxOptions 
-                class="absolute z-10 w-full mt-1 max-h-60 overflow-auto rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                class="absolute bottom-full z-10 w-full mb-1 max-h-60 overflow-auto rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+              >
                 <ComboboxOption
                   v-for="db in connection.databases"
                   :key="db"
@@ -106,20 +107,25 @@
       </div>
     </div>
     <!-- Separate input box and button for adding a new database -->
-    <div v-show="connection.id" class="items-center w-full p-4 space-y-4 text-gray-500 md:inline-flex md:space-y-0">
+    <div v-show="connection.id" class="items-center w-full p-2 text-gray-500 md:inline-flex">
       <label class="max-w-sm mx-auto md:w-1/3"></label>
       <div class="flex items-center max-w-sm mx-auto md:w-2/3 space-x-2">
-        <input v-model="newDatabase" type="text"
-          class="flex-1 rounded-lg appearance-none border border-gray-300 py-2 px-4 bg-white text-gray-700 placeholder-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-600 sm:text-sm focus:border-transparent"
-          placeholder="Add new database" />
-        <button :disabled="newDatabase === ''"
-          class="inline-flex items-center rounded-lg border border-gray-300 py-2 px-4 text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-600 sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-          @click="createDatabase(newDatabase)">
+        <input 
+          v-model="newDatabase" 
+          type="text"
+          class="w-48 rounded-lg appearance-none border border-gray-300 py-2 px-4 bg-white text-gray-700 placeholder-gray-400 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-gray-600 focus:border-transparent"
+          placeholder="Add new database" 
+        />
+        <button 
+          :disabled="newDatabase === ''"
+          class="whitespace-nowrap inline-flex items-center rounded-lg border border-gray-300 py-2 px-4 text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-600 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          @click="createDatabase(newDatabase)"
+        >
           New database
         </button>
       </div>
     </div>
-    <div class="items-center w-full p-4 space-y-4 text-gray-500 md:inline-flex md:space-y-0">
+    <div class="items-center w-full p-2 text-gray-500 md:inline-flex">
       <label class="max-w-sm mx-auto md:w-1/3">Schema</label>
       <div class="flex items-center max-w-sm mx-auto md:w-2/3 space-x-2">
         <Combobox v-model="connection.schema">
@@ -138,7 +144,8 @@
               leaveTo="opacity-0"
             >
               <ComboboxOptions 
-                class="absolute z-10 w-full mt-1 max-h-60 overflow-auto rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                class="absolute bottom-full z-10 w-full mb-1 max-h-60 overflow-auto rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+              >
                 <ComboboxOption
                   v-for="schema in connection.schemas"
                   :key="schema"
@@ -176,16 +183,20 @@
       </div>
     </div>
     <!-- Separate input box and button for adding a new schema -->
-    <div v-show="connection.id"
-      class="items-center w-full mb-6 p-4 space-y-4 text-gray-500 md:inline-flex md:space-y-0">
+    <div v-show="connection.id" class="items-center w-full p-2 text-gray-500 md:inline-flex">
       <label class="max-w-sm mx-auto md:w-1/3"></label>
       <div class="flex items-center max-w-sm mx-auto md:w-2/3 space-x-2">
-        <input v-model="newSchema" type="text"
-          class="flex-1 rounded-lg appearance-none border border-gray-300 py-2 px-4 bg-white text-gray-700 placeholder-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-600 sm:text-sm focus:border-transparent"
-          placeholder="Add new schema" />
-        <button :disabled="newSchema === ''"
-          class="inline-flex items-center rounded-md border border-gray-300 bg-gray-100 py-2 px-4 text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-600 sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-          @click="createSchema(newSchema)">
+        <input 
+          v-model="newSchema" 
+          type="text"
+          class="w-48 rounded-lg appearance-none border border-gray-300 py-2 px-4 bg-white text-gray-700 placeholder-gray-400 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-gray-600 focus:border-transparent"
+          placeholder="Add new schema" 
+        />
+        <button 
+          :disabled="newSchema === ''"
+          class="whitespace-nowrap inline-flex items-center rounded-lg border border-gray-300 py-2 px-4 text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-600 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          @click="createSchema(newSchema)"
+        >
           New schema
         </button>
       </div>
