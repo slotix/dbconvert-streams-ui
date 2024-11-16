@@ -6,36 +6,26 @@
   </Modal>
 </template>
 
-<script>
+<script setup lang="ts">
 import { computed } from 'vue'
 import Modal from './Modal.vue'
 import ConnectionParams from './params/ConnectionParams.vue'
 import { useConnectionsStore } from '@/stores/connections'
 import { useCommonStore } from '@/stores/common'
+import type { Connection } from '@/types/connections'
 
-export default {
-  components: {
-    Modal,
-    ConnectionParams
-  },
-  setup() {
-    const connectionsStore = useConnectionsStore()
-    const commonStore = useCommonStore()
-    const currentConnection = computed(() => connectionsStore.currentConnection)
+const connectionsStore = useConnectionsStore()
+const commonStore = useCommonStore()
 
-    const ok = async () => {
-      try {
-        await connectionsStore.updateConnection()
-        commonStore.showNotification('Connection updated', 'success')
-      } catch (err) {
-        commonStore.showNotification(err.message)
-      }
-    }
+const currentConnection = computed<Connection | null>(() => connectionsStore.currentConnection)
 
-    return {
-      currentConnection,
-      ok
-    }
+async function ok(): Promise<void> {
+  try {
+    await connectionsStore.updateConnection()
+    commonStore.showNotification('Connection updated', 'success')
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred'
+    commonStore.showNotification(errorMessage)
   }
 }
 </script>

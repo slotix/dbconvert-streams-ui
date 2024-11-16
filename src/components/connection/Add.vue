@@ -2,15 +2,19 @@
   <Modal @ok="ok">
     <template #dbtypes-combo>
       <ConnectionStringInput @update:connection-params="updateConnectionParams" />
-      <DBTypesListBox v-model="connection" @update:selected-db-type="selectDB" />
+      <DBTypesListBox
+        :model-value="connectionDBType"
+        @update:model-value="selectDBType"
+        @update:selected-db-type="selectDBType"
+      />
     </template>
     <template #connection-params>
-      <ConnectionParams v-if="connection?.type" :connectionType="connection.type" />
+      <ConnectionParams v-if="connectionDBType?.type" :connectionType="connectionDBType.type" />
     </template>
   </Modal>
 </template>
 
-<script>
+<script setup lang="ts">
 import { ref, computed } from 'vue'
 import Modal from './Modal.vue'
 import ConnectionParams from './params/ConnectionParams.vue'
@@ -18,64 +22,62 @@ import DBTypesListBox from './DBTypesListBox.vue'
 import ConnectionStringInput from './ConnectionStringInput.vue'
 import { useConnectionsStore } from '@/stores/connections'
 import { useCommonStore } from '@/stores/common'
+import type { DbType } from '@/types/connections'
 
-export default {
-  components: {
-    Modal,
-    ConnectionParams,
-    DBTypesListBox,
-    ConnectionStringInput
-  },
-  setup() {
-    const connectionsStore = useConnectionsStore()
-    const commonStore = useCommonStore()
+const connectionsStore = useConnectionsStore()
+const commonStore = useCommonStore()
 
-    const connectionDBType = ref(null)
-    const showDBCombo = ref(false)
-    const currentConnection = computed(() => connectionsStore.currentConnection)
+const connectionDBType = ref<DbType | null>(null)
+const showDBCombo = ref(false)
+const currentConnection = computed(() => connectionsStore.currentConnection)
 
-    const selectDBType = (dbType) => {
-      connectionDBType.value = dbType
-    }
+function selectDBType(dbType: DbType): void {
+  connectionDBType.value = dbType
+}
 
-    const updateConnectionParams = (params) => {
-      const dbType = connectionsStore.dbTypes.find(dbType => dbType.type === params.type)
-      if (dbType)
-      {
-        selectDBType(dbType)
-        connectionsStore.updateConnectionParams(params)
-      }
-    }
+interface ConnectionParams {
+  type: string
+  [key: string]: unknown
+}
 
-    const ok = async () => {
-      try
-      {
-        // if currentConnection has no id, it's a new connection
-        if (!currentConnection.value.id)
-        {
-          currentConnection.value.type = connectionDBType.value.type
-          await connectionsStore.createConnection()
-          commonStore.showNotification('Connection added', 'success')
-        } else
-        {
-          await connectionsStore.updateConnection()
-          commonStore.showNotification('Connection updated', 'success')
-        }
-        await connectionsStore.refreshConnections()
-      } catch (err)
-      {
-        commonStore.showNotification(err.message)
-      }
-    }
-
-    return {
-      connection: connectionDBType,
-      showDBCombo,
-      currentConnection,
-      selectDB: selectDBType,
-      updateConnectionParams,
-      ok
-    }
+function updateConnectionParams(params: ConnectionParams): void {
+  const dbType = connectionsStore.dbTypes.find(dbType => dbType.type === params.type)
+  if (dbType) {
+    selectDBType(dbType)
+    connectionsStore.updateConnectionParams(params)
   }
 }
+
+async function ok(): Promise<void> {
+  try {
+    // if currentConnection has no id, it's a new connection
+    if (!currentConnection.value?.id) {
+      if (!connectionDBType.value) {
+        throw new Error('Database type not selected')
+      }
+      if (currentConnection.value) {
+        currentConnection.value.type = connectionDBType.value.type
+        await connectionsStore.createConnection()
+        commonStore.showNotification('Connection added', 'success')
+      }
+    } else {
+      await connectionsStore.updateConnection()
+      commonStore.showNotification('Connection updated', 'success')
+    }
+    await connectionsStore.refreshConnections()
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred'
+    commonStore.showNotification(errorMessage)
+  }
+}
+
+// Define what's exposed to the template and parent components
+defineExpose({
+  connectionDBType,
+  showDBCombo,
+  currentConnection,
+  selectDBType,
+  updateConnectionParams,
+  ok
+})
 </script>
