@@ -7,8 +7,7 @@
 </template>
 
 <script>
-import { ref, computed } from 'vue'
-import api from '@/api/connections'
+import { computed } from 'vue'
 import Modal from './Modal.vue'
 import ConnectionParams from './params/ConnectionParams.vue'
 import { useConnectionsStore } from '@/stores/connections'
@@ -26,19 +25,7 @@ export default {
 
     const ok = async () => {
       try {
-        const json = JSON.stringify(currentConnection.value)
-        await api.updateConnection(json)
-
-        const databases = await api.getDatabases(currentConnection.value.id)
-        currentConnection.value.databases = databases
-
-        if (currentConnection.value.type.toLowerCase() === 'postgresql') {
-          const schemas = await api.getSchemas(currentConnection.value.id)
-          currentConnection.value.schemas = schemas
-        }
-
-        await connectionsStore.saveConnection()
-        await connectionsStore.refreshConnections()
+        await connectionsStore.updateConnection()
         commonStore.showNotification('Connection updated', 'success')
       } catch (err) {
         commonStore.showNotification(err.message)

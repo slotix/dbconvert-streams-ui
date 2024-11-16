@@ -2,10 +2,7 @@
   <Modal @ok="ok">
     <template #dbtypes-combo>
       <ConnectionStringInput @update:connection-params="updateConnectionParams" />
-      <DBTypesListBox 
-        v-model="connection"
-        @update:selected-db-type="selectDB" 
-      />
+      <DBTypesListBox v-model="connection" @update:selected-db-type="selectDB" />
     </template>
     <template #connection-params>
       <ConnectionParams v-if="connection?.type" :connectionType="connection.type" />
@@ -15,7 +12,6 @@
 
 <script>
 import { ref, computed } from 'vue'
-import api from '@/api/connections'
 import Modal from './Modal.vue'
 import ConnectionParams from './params/ConnectionParams.vue'
 import DBTypesListBox from './DBTypesListBox.vue'
@@ -44,32 +40,30 @@ export default {
 
     const updateConnectionParams = (params) => {
       const dbType = connectionsStore.dbTypes.find(dbType => dbType.type === params.type)
-      if (dbType) {
+      if (dbType)
+      {
         selectDBType(dbType)
         connectionsStore.updateConnectionParams(params)
       }
     }
 
     const ok = async () => {
-      try {
-        currentConnection.value.type = connectionDBType.value.type
-        const json = JSON.stringify(currentConnection.value)
-        const connectionResponse = await api.createConnection(json)
-        const databases = await api.getDatabases(connectionResponse.id)
-        currentConnection.value.databases = databases
-
-        if (currentConnection.value.type.toLowerCase() === 'postgresql') {
-          const schemas = await api.getSchemas(connectionResponse.id)
-          currentConnection.value.schemas = schemas
+      try
+      {
+        // if currentConnection has no id, it's a new connection
+        if (!currentConnection.value.id)
+        {
+          currentConnection.value.type = connectionDBType.value.type
+          await connectionsStore.createConnection()
+          commonStore.showNotification('Connection added', 'success')
+        } else
+        {
+          await connectionsStore.updateConnection()
+          commonStore.showNotification('Connection updated', 'success')
         }
-
-        currentConnection.value.id = connectionResponse.id
-        currentConnection.value.created = connectionResponse.created
-        // test connection is performed on backend before saving
-        await connectionsStore.saveConnection()
         await connectionsStore.refreshConnections()
-        commonStore.showNotification('Connection added', 'success')
-      } catch (err) {
+      } catch (err)
+      {
         commonStore.showNotification(err.message)
       }
     }

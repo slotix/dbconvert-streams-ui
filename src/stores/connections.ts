@@ -67,25 +67,6 @@ export const useConnectionsStore = defineStore('connections', {
         console.log('Updated connection:', this.currentConnection)
       }
     },
-    saveConnection: debounce(async function (this: any) {
-      try {
-        const connection = this.currentConnection
-        if (!connection) return
-
-        // Create a copy of the connection object
-        const connectionToSave = { ...connection }
-
-        // if (!connectionToSave.id) {
-        //   await api.createConnection(connectionToSave)
-        //} else {
-        await api.updateConnection(connectionToSave)
-        //}
-        await this.refreshConnections()
-      } catch (error) {
-        console.error('Failed to save connection:', error)
-        throw error
-      }
-    }, 500),
     refreshConnections: debounce(async function (this: State) {
       try {
         this.connections = (await api.getConnections()) as Connection[]
@@ -125,6 +106,62 @@ export const useConnectionsStore = defineStore('connections', {
     },
     async clearConnections() {
       this.connections.length = 0
+    },
+    async createConnection() {
+      try {
+        const connectionResponse = await api.createConnection(this.currentConnection as Record<string, unknown>)
+        
+        // Get databases for the new connection
+        const databases = await api.getDatabases(connectionResponse.id)
+        // Get schemas if PostgreSQL
+        let schemas: string[] = []
+        if (this.currentConnection?.type.toLowerCase() === 'postgresql') {
+          const schemaObjects = await api.getSchemas(connectionResponse.id)
+          schemas = schemaObjects.map(schema => schema.name)
+        }
+
+        // Update current connection with response data
+        if (this.currentConnection) {
+          this.currentConnection.id = connectionResponse.id
+          this.currentConnection.created = connectionResponse.created
+          this.currentConnection.databases = databases.map(database => database.name)
+          if (schemas.length > 0) {
+            (this.currentConnection as any).schemas = schemas
+          }
+        }
+
+        return connectionResponse
+      } catch (error) {
+        console.error('Failed to create connection:', error)
+        throw error
+      }
+    },
+    async updateConnection() {
+      try {
+        if (!this.currentConnection) return
+
+        // Update the connection
+        await api.updateConnection(this.currentConnection)
+        
+        // Get databases for the connection
+        const databases = await api.getDatabases(this.currentConnection.id)
+        this.currentConnection.databases = databases.map(database => database.name)
+        
+        // Get schemas if PostgreSQL
+        let schemas: string[] = [];
+        if (this.currentConnection.type.toLowerCase() === 'postgresql') {
+          const schemaObjects = await api.getSchemas(this.currentConnection.id);
+          schemas = schemaObjects.map(schema => schema.name);
+          (this.currentConnection as any).schemas = schemas;
+        }
+
+       // await this.saveConnection();
+        await this.refreshConnections()
+        return this.currentConnection
+      } catch (error) {
+        console.error('Failed to update connection:', error)
+        throw error
+      }
     },
   }
 })
