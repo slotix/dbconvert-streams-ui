@@ -52,10 +52,54 @@
     <div class="items-center w-full p-4 space-y-4 text-gray-500 md:inline-flex md:space-y-0">
       <label class="max-w-sm mx-auto md:w-1/3">Database</label>
       <div class="flex items-center max-w-sm mx-auto md:w-2/3 space-x-2">
-        <ItemsCombo v-model="connection.database" :items="connection.databases" :openUpwards="true" />
-        <button :disabled="!connection.id" type="button"
+        <Combobox v-model="connection.database">
+          <div class="relative w-full">
+            <ComboboxInput 
+              :display-value="(item: unknown) => item as string"
+              :model-value="connection.database"
+              class="w-full rounded-lg border border-gray-300 py-2 px-4 bg-white text-gray-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-600 focus:border-transparent"
+            />
+            <ComboboxButton class="absolute inset-y-0 right-0 flex items-center pr-2">
+              <ChevronUpDownIcon class="h-5 w-5 text-gray-400" aria-hidden="true" />
+            </ComboboxButton>
+            <TransitionRoot
+              leave="transition ease-in duration-100"
+              leaveFrom="opacity-100"
+              leaveTo="opacity-0"
+            >
+              <ComboboxOptions 
+                class="absolute z-10 w-full mt-1 max-h-60 overflow-auto rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                <ComboboxOption
+                  v-for="db in connection.databases"
+                  :key="db"
+                  :value="db"
+                  v-slot="{ active, selected }"
+                  as="template"
+                >
+                  <li :class="[
+                    'relative cursor-default select-none py-2 pl-3 pr-9',
+                    active ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
+                  ]">
+                    <span :class="['block truncate', selected && 'font-semibold']">
+                      {{ db }}
+                    </span>
+                    <span v-if="selected" 
+                      :class="['absolute inset-y-0 right-0 flex items-center pr-4',
+                        active ? 'text-gray-900' : 'text-gray-600']">
+                      <CheckIcon class="h-5 w-5" aria-hidden="true" />
+                    </span>
+                  </li>
+                </ComboboxOption>
+              </ComboboxOptions>
+            </TransitionRoot>
+          </div>
+        </Combobox>
+        <button 
+          :disabled="!connection.id"
+          type="button"
           class="inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-gray-100 text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-          @click="refreshDatabases">
+          @click="refreshDatabases"
+        >
           Refresh
           <ArrowPathIcon class="pl-2 h-5 w-5" aria-hidden="true" />
         </button>
@@ -75,13 +119,57 @@
         </button>
       </div>
     </div>
-    <div v-show="connection.id" class="items-center w-full p-4 space-y-4 text-gray-500 md:inline-flex md:space-y-0">
+    <div class="items-center w-full p-4 space-y-4 text-gray-500 md:inline-flex md:space-y-0">
       <label class="max-w-sm mx-auto md:w-1/3">Schema</label>
       <div class="flex items-center max-w-sm mx-auto md:w-2/3 space-x-2">
-        <ItemsCombo v-model="connection.schema" :items="connection.schemas" :openUpwards="true" />
-        <button :disabled="!connection.id" type="button"
+        <Combobox v-model="connection.schema">
+          <div class="relative w-full">
+            <ComboboxInput 
+              :display-value="(item: unknown) => item as string"
+              :model-value="connection.schema"
+              class="w-full rounded-lg border border-gray-300 py-2 px-4 bg-white text-gray-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-600 focus:border-transparent"
+            />
+            <ComboboxButton class="absolute inset-y-0 right-0 flex items-center pr-2">
+              <ChevronUpDownIcon class="h-5 w-5 text-gray-400" aria-hidden="true" />
+            </ComboboxButton>
+            <TransitionRoot
+              leave="transition ease-in duration-100"
+              leaveFrom="opacity-100"
+              leaveTo="opacity-0"
+            >
+              <ComboboxOptions 
+                class="absolute z-10 w-full mt-1 max-h-60 overflow-auto rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                <ComboboxOption
+                  v-for="schema in connection.schemas"
+                  :key="schema"
+                  :value="schema"
+                  v-slot="{ active, selected }"
+                  as="template"
+                >
+                  <li :class="[
+                    'relative cursor-default select-none py-2 pl-3 pr-9',
+                    active ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
+                  ]">
+                    <span :class="['block truncate', selected && 'font-semibold']">
+                      {{ schema }}
+                    </span>
+                    <span v-if="selected" 
+                      :class="['absolute inset-y-0 right-0 flex items-center pr-4',
+                        active ? 'text-gray-900' : 'text-gray-600']">
+                      <CheckIcon class="h-5 w-5" aria-hidden="true" />
+                    </span>
+                  </li>
+                </ComboboxOption>
+              </ComboboxOptions>
+            </TransitionRoot>
+          </div>
+        </Combobox>
+        <button 
+          :disabled="!connection.id"
+          type="button"
           class="inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-gray-100 text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-          @click="refreshSchemas">
+          @click="refreshSchemas"
+        >
           Refresh
           <ArrowPathIcon class="pl-2 h-5 w-5" aria-hidden="true" />
         </button>
@@ -111,8 +199,8 @@ import { useCommon } from './common'
 import { Connection } from '@/types/connections'
 import ConnectionName from './ConnectionName.vue'
 import PasswordBox from '@/components/common/PasswordBox.vue'
-import ItemsCombo from '@/components/common/ItemsCombo.vue'
-import { ArrowPathIcon } from '@heroicons/vue/24/solid'
+import { ArrowPathIcon, ChevronUpDownIcon, CheckIcon } from '@heroicons/vue/24/solid'
+import { Combobox, ComboboxInput, ComboboxButton, ComboboxOptions, ComboboxOption, TransitionRoot } from '@headlessui/vue'
 
 interface PostgreSQLConnection extends Connection {
   schemas: string[]
@@ -124,8 +212,15 @@ export default defineComponent({
   components: {
     ConnectionName,
     PasswordBox,
-    ItemsCombo,
-    ArrowPathIcon
+    ArrowPathIcon,
+    ChevronUpDownIcon,
+    CheckIcon,
+    Combobox,
+    ComboboxInput,
+    ComboboxButton,
+    ComboboxOptions,
+    ComboboxOption,
+    TransitionRoot
   },
   setup() {
     const defaultConnection: PostgreSQLConnection = {
