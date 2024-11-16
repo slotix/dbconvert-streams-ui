@@ -71,7 +71,7 @@ const connection = computed(() => connectionsStore.currentConnection)
 // Initialize SSL config with defaults if not present
 if (!connection.value?.ssl) {
   connection.value!.ssl = {
-    mode: 'disable',
+    mode: 'require',
     ca: undefined,
     client_cert: undefined,
     client_key: undefined
@@ -83,7 +83,7 @@ const localSSLConfig = ref<SSLConfig>(
   connection.value?.ssl
     ? JSON.parse(JSON.stringify(connection.value.ssl))
     : {
-      mode: 'disable',
+      mode: 'require',
       ca: undefined,
       client_cert: undefined,
       client_key: undefined
