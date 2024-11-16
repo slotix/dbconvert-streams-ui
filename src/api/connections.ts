@@ -105,20 +105,20 @@ const testConnection = async (id: string): Promise<string> => {
   })
 }
 
-const getSchemas = async (id: string): Promise<Schema[]> => {
+const getSchemas = async (id: string): Promise<string[]> => {
   return executeWithRetry(async () => {
     const commonStore = useCommonStore()
-    const response: AxiosResponse<Schema[]> = await apiClient.get(`/connections/${id}/schemas`, {
+    const response: AxiosResponse<string[]> = await apiClient.get(`/connections/${id}/schemas`, {
       headers: { 'X-API-Key': commonStore.apiKey }
     })
     return response.data
   })
 }
 
-const getDatabases = async (id: string): Promise<Database[]> => {
+const getDatabases = async (id: string): Promise<string[]> => {
   return executeWithRetry(async () => {
     const commonStore = useCommonStore()
-    const response: AxiosResponse<Database[]> = await apiClient.get(
+    const response: AxiosResponse<string[]> = await apiClient.get(
       `/connections/${id}/databases`,
       {
         headers: { 'X-API-Key': commonStore.apiKey }

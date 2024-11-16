@@ -111,22 +111,14 @@ export const useConnectionsStore = defineStore('connections', {
       try {
         const connectionResponse = await api.createConnection(this.currentConnection as Record<string, unknown>)
         
-        // Get databases for the new connection
-        const databases = await api.getDatabases(connectionResponse.id)
-        // Get schemas if PostgreSQL
-        let schemas: string[] = []
-        if (this.currentConnection?.type.toLowerCase() === 'postgresql') {
-          const schemaObjects = await api.getSchemas(connectionResponse.id)
-          schemas = schemaObjects.map(schema => schema.name)
-        }
-
-        // Update current connection with response data
         if (this.currentConnection) {
           this.currentConnection.id = connectionResponse.id
           this.currentConnection.created = connectionResponse.created
-          this.currentConnection.databases = databases.map(database => database.name)
-          if (schemas.length > 0) {
-            (this.currentConnection as any).schemas = schemas
+          
+          this.currentConnection.databases = await api.getDatabases(connectionResponse.id)
+
+          if (this.currentConnection.type.toLowerCase() === 'postgresql') {
+            this.currentConnection.schemas = await api.getSchemas(connectionResponse.id)
           }
         }
       } catch (error) {
@@ -138,18 +130,13 @@ export const useConnectionsStore = defineStore('connections', {
       try {
         if (!this.currentConnection) return
 
-        // Update the connection
         await api.updateConnection(this.currentConnection)
         
-        // Get databases for the connection
-        const databases = await api.getDatabases(this.currentConnection.id)
-        this.currentConnection.databases = databases.map(database => database.name)
-        
-        // Get schemas if PostgreSQL
+        this.currentConnection.databases = await api.getDatabases(this.currentConnection.id)
+
         let schemas: string[] = []
         if (this.currentConnection.type.toLowerCase() === 'postgresql') {
-          const schemaObjects = await api.getSchemas(this.currentConnection.id)
-          schemas = schemaObjects.map(schema => schema.name)
+          schemas = await api.getSchemas(this.currentConnection.id)
           this.currentConnection.schemas = schemas
         }
 
