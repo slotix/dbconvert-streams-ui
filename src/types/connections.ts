@@ -15,6 +15,8 @@ export interface Connection {
   password: string
   databases: string[]
   database: string
+  schemas: string[]
+  schema: string
   created?: number
   ssl?: SSLConfig
 }

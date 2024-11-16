@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import api from '@/api/connections'
 import { debounce } from 'lodash'
 
-import { Connection, DbType, SSLConfig } from '@/types/connections'
+import { Connection, DbType  } from '@/types/connections'
 
 // Define interfaces for the state and other objects
 interface State {
@@ -107,7 +107,7 @@ export const useConnectionsStore = defineStore('connections', {
     async clearConnections() {
       this.connections.length = 0
     },
-    async createConnection() {
+    async createConnection(): Promise<void> {
       try {
         const connectionResponse = await api.createConnection(this.currentConnection as Record<string, unknown>)
         
@@ -129,14 +129,12 @@ export const useConnectionsStore = defineStore('connections', {
             (this.currentConnection as any).schemas = schemas
           }
         }
-
-        return connectionResponse
       } catch (error) {
         console.error('Failed to create connection:', error)
         throw error
       }
     },
-    async updateConnection() {
+    async updateConnection(): Promise<void> {
       try {
         if (!this.currentConnection) return
 
@@ -148,16 +146,14 @@ export const useConnectionsStore = defineStore('connections', {
         this.currentConnection.databases = databases.map(database => database.name)
         
         // Get schemas if PostgreSQL
-        let schemas: string[] = [];
+        let schemas: string[] = []
         if (this.currentConnection.type.toLowerCase() === 'postgresql') {
-          const schemaObjects = await api.getSchemas(this.currentConnection.id);
-          schemas = schemaObjects.map(schema => schema.name);
-          (this.currentConnection as any).schemas = schemas;
+          const schemaObjects = await api.getSchemas(this.currentConnection.id)
+          schemas = schemaObjects.map(schema => schema.name)
+          this.currentConnection.schemas = schemas
         }
 
-       // await this.saveConnection();
         await this.refreshConnections()
-        return this.currentConnection
       } catch (error) {
         console.error('Failed to update connection:', error)
         throw error
