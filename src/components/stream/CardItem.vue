@@ -95,16 +95,21 @@
       <div class="mt-auto flex divide-x divide-gray-200">
         <div class="flex w-0 flex-1">
           <button v-tooltip="'Edit stream configuration'" type="button"
-            class="relative -mr-px inline-flex w-0 flex-1 items-center justify-center gap-x-3 rounded-bl-lg border border-gray-300 py-4 text-sm text-gray-700 font-semibold bg-gray-100 hover:bg-gray-200"
+            class="relative inline-flex w-0 flex-1 items-center justify-center gap-x-3 rounded-bl-lg border border-gray-300 py-4 text-sm text-gray-700 font-semibold bg-gray-100 hover:bg-gray-200"
             @click.stop="editStream">
             <PencilIcon class="h-5 w-5 text-gray-700" aria-hidden="true" />
             Edit
           </button>
         </div>
         <div class="-ml-px flex w-0 flex-1">
-          <ActionsMenu v-tooltip="'More stream actions'"
-            class="relative inline-flex w-0 flex-1 items-center justify-center gap-x-3 border-gray-300 border-t border-l py-4 text-sm font-semibold bg-gray-100 hover:bg-gray-200"
-            :position="actionsMenuPosition" @selectRow="selectStream" @editRow="editStream" @cloneRow="cloneStream"
+          <ActionsMenu 
+            v-tooltip="'More stream actions'"
+            class="w-full rounded-none border border-gray-300 bg-gray-100 hover:bg-gray-200"
+            :position="actionsMenuPosition" 
+            :viewType="'cards'"
+            @selectRow="selectStream" 
+            @editRow="editStream" 
+            @cloneRow="cloneStream"
             @deleteRow="deleteStream" />
         </div>
         <div class="-ml-px flex w-0 flex-1">

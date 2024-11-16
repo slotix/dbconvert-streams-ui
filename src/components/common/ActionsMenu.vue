@@ -1,12 +1,14 @@
 <template>
   <Menu as="div" class="relative inline-block text-left">
     <MenuButton
-      class="flex items-center rounded-md ring-gray-100 text-gray-600 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-gray-100"
+      class="relative inline-flex items-center w-full h-full py-4 px-4 text-sm font-semibold text-gray-700"
       @click="$emit('selectRow')"
     >
       <span class="sr-only">Open actions</span>
-      <EllipsisHorizontalIcon class="h-6 w-6 mr-3 ml-3" aria-hidden="true" />
-      <span v-show="viewType === 'cards'" class="mr-5"> More </span>
+      <div class="flex items-center gap-1">
+        <EllipsisHorizontalIcon class="h-6 w-6" aria-hidden="true" />
+        <span v-show="viewType === 'cards'">More</span>
+      </div>
     </MenuButton>
 
     <transition
