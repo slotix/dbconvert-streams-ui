@@ -75,16 +75,11 @@ export const useConnectionsStore = defineStore('connections', {
         // Create a copy of the connection object
         const connectionToSave = { ...connection }
 
-        // If SSL config exists, merge it with the connection
-        if (this.ssl !== null) {
-          connectionToSave.ssl = this.ssl
-        }
-
-        if (!connectionToSave.id) {
-          await api.createConnection(connectionToSave)
-        } else {
-          await api.updateConnection(connectionToSave)
-        }
+        // if (!connectionToSave.id) {
+        //   await api.createConnection(connectionToSave)
+        //} else {
+        await api.updateConnection(connectionToSave)
+        //}
         await this.refreshConnections()
       } catch (error) {
         console.error('Failed to save connection:', error)

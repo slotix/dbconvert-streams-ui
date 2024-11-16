@@ -37,16 +37,6 @@ const createConnection = async (json: Record<string, unknown>): Promise<Connecti
   return executeWithRetry(async () => {
     const commonStore = useCommonStore()
 
-    // Transform SSL config for API
-    if (json.ssl) {
-      const sslConfig = json.ssl as SSLConfig
-      json.ssl_mode = sslConfig.mode
-      json.ca = sslConfig.ca
-      json.client_cert = sslConfig.client_cert
-      json.client_key = sslConfig.client_key
-      delete json.ssl
-    }
-
     const response: AxiosResponse<Connection> = await apiClient.post('/connections', json, {
       headers: { 'X-API-Key': commonStore.apiKey }
     })
