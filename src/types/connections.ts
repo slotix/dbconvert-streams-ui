@@ -13,9 +13,8 @@ export interface Connection {
   port: number
   username: string
   password: string
-  databases: string[]
+  databasesInfo: DatabaseInfo[]
   database: string
-  schemas: string[]
   schema: string
   created?: number
   ssl?: SSLConfig
@@ -33,4 +32,9 @@ export interface DbType {
   id: number
   type: string
   logo: string
+}
+
+export interface DatabaseInfo {
+  name: string
+  schemas?: string[]
 }

@@ -114,10 +114,14 @@ export const useConnectionsStore = defineStore('connections', {
           this.currentConnection.id = response.id
           this.currentConnection.created = response.created
           
-          this.currentConnection.databases = await api.getDatabases(response.id)
+          const databasesInfo = await api.getDatabases(response.id)
+          this.currentConnection.databasesInfo = databasesInfo
 
-          if (this.currentConnection.type.toLowerCase() === 'postgresql') {
-            this.currentConnection.schemas = await api.getSchemas(response.id)
+          if (this.currentConnection.type === 'PostgreSQL' && this.currentConnection.database) {
+            const currentDb = databasesInfo.find(db => db.name === this.currentConnection?.database)
+            if (currentDb?.schemas) {
+              this.currentConnection.schema = currentDb.schemas[0]
+            }
           }
         }
       } catch (error) {
@@ -131,12 +135,14 @@ export const useConnectionsStore = defineStore('connections', {
 
         await api.updateConnection(this.currentConnection)
         
-        this.currentConnection.databases = await api.getDatabases(this.currentConnection.id)
+        const databases = await api.getDatabases(this.currentConnection.id)
+        this.currentConnection.databasesInfo = databases
 
-        let schemas: string[] = []
-        if (this.currentConnection.type.toLowerCase() === 'postgresql') {
-          schemas = await api.getSchemas(this.currentConnection.id)
-          this.currentConnection.schemas = schemas
+        if (this.currentConnection.type === 'PostgreSQL') {
+          const currentDb = databases.find(db => db.name === this.currentConnection?.database)
+          if (currentDb?.schemas) {
+            this.currentConnection.schema = currentDb.schemas[0]
+          }
         }
 
         await this.refreshConnections()

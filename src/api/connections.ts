@@ -1,7 +1,7 @@
 import axios, { AxiosInstance, AxiosResponse, AxiosError } from 'axios'
 import { handleApiError, handleUnauthorizedError } from '@/utils/errorHandler'
 import { useCommonStore } from '@/stores/common'
-import { Connection, Schema, Database, SSLConfig } from '@/types/connections'
+import { Connection, Schema, Database, SSLConfig, DatabaseInfo } from '@/types/connections'
 
 const apiClient: AxiosInstance = axios.create({
   baseURL: 'http://127.0.0.1:8020/api/v1',
@@ -105,20 +105,11 @@ const testConnection = async (id: string): Promise<string> => {
   })
 }
 
-const getSchemas = async (id: string): Promise<string[]> => {
-  return executeWithRetry(async () => {
-    const commonStore = useCommonStore()
-    const response: AxiosResponse<string[]> = await apiClient.get(`/connections/${id}/schemas`, {
-      headers: { 'X-API-Key': commonStore.apiKey }
-    })
-    return response.data
-  })
-}
 
-const getDatabases = async (id: string): Promise<string[]> => {
+const getDatabases = async (id: string): Promise<DatabaseInfo[]> => {
   return executeWithRetry(async () => {
     const commonStore = useCommonStore()
-    const response: AxiosResponse<string[]> = await apiClient.get(
+    const response: AxiosResponse<DatabaseInfo[]> = await apiClient.get(
       `/connections/${id}/databases`,
       {
         headers: { 'X-API-Key': commonStore.apiKey }
@@ -185,7 +176,6 @@ export default {
   deleteConnection,
   cloneConnection,
   testConnection,
-  getSchemas,
   getDatabases,
   createDatabase,
   createSchema,

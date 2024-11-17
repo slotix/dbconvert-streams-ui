@@ -6,7 +6,7 @@ import { ArrowPathIcon, PlusIcon } from '@heroicons/vue/24/solid'
 import { DIALOG_TYPES, useCommonStore } from '@/stores/common'
 import { useConnectionsStore } from '@/stores/connections'
 import api from '@/api/connections'
-import { Connection } from '@/types/connections'
+import { Connection, DatabaseInfo } from '@/types/connections'
 
 function isErrorWithMessage(error: unknown): error is { message: string } {
   return (
@@ -67,9 +67,6 @@ export function useCommon<T extends Connection>(defaultConnection: T) {
     updateConnectionName()
     if (dlgTp.value === DIALOG_TYPES.UPDATE && connectionsStore.currentConnection) {
       await refreshDatabases()
-      if (connection.type === 'PostgreSQL') {
-        await refreshSchemas()
-      }
       Object.assign(connection, connectionsStore.currentConnection)
     }
   })
@@ -78,8 +75,11 @@ export function useCommon<T extends Connection>(defaultConnection: T) {
     try {
       if (connectionsStore.currentConnection) {
         const data = await apiMethod(connectionsStore.currentConnection.id)
-        setProperty(connectionsStore.currentConnection as T, targetProperty, data)
-        // Ensure the connection object is updated with the fetched data
+        
+        if (targetProperty === 'databasesInfo') {
+          setProperty(connectionsStore.currentConnection as T, 'databasesInfo', data)
+        }
+        
         Object.assign(connection, connectionsStore.currentConnection)
       }
     } catch (err) {
@@ -90,14 +90,10 @@ export function useCommon<T extends Connection>(defaultConnection: T) {
       }
     }
   }
-  const refreshSchemas = async () => {
-    if (!connectionsStore.currentConnection || connectionsStore.currentConnection.id === '') return
-    await fetchData(api.getSchemas, 'schemas' as keyof T)
-  }
 
   const refreshDatabases = async () => {
     if (!connectionsStore.currentConnection || connectionsStore.currentConnection.id === '') return
-    await fetchData(api.getDatabases, 'databases' as keyof T)
+    await fetchData(api.getDatabases, 'databasesInfo' as keyof T)
   }
 
   const createData = async (
@@ -118,8 +114,6 @@ export function useCommon<T extends Connection>(defaultConnection: T) {
         commonStore.showNotification(`${String(targetProperty)} created`, 'success')
         if (targetProperty === 'database') {
           await refreshDatabases()
-        } else if (targetProperty === 'schema') {
-          await refreshSchemas()
         }
       }
     } catch (err) {
@@ -132,12 +126,18 @@ export function useCommon<T extends Connection>(defaultConnection: T) {
   }
 
   const createDatabase = async (newDatabase: string) => {
-    await createData(api.createDatabase, newDatabase, 'databases' as keyof T, 'database' as keyof T)
+    await createData(api.createDatabase, newDatabase, 'databasesInfo' as keyof T, 'database' as keyof T)
   }
 
   const createSchema = async (newSchema: string) => {
     await createData(api.createSchema, newSchema, 'schemas' as keyof T, 'schema' as keyof T)
   }
+
+  const databases = computed(() => connection.databasesInfo.map(db => db.name))
+  const currentDatabaseSchemas = computed(() => {
+    const currentDb = connection.databasesInfo.find(db => db.name === connection.database)
+    return currentDb?.schemas || []
+  })
 
   return {
     connection,
@@ -145,7 +145,6 @@ export function useCommon<T extends Connection>(defaultConnection: T) {
     dlgTp,
     updateConnectionName,
     fetchData,
-    refreshSchemas,
     refreshDatabases,
     createData,
     createDatabase,
@@ -154,6 +153,8 @@ export function useCommon<T extends Connection>(defaultConnection: T) {
     PasswordBox,
     ItemsCombo,
     ArrowPathIcon,
-    PlusIcon
+    PlusIcon,
+    databases,
+    currentDatabaseSchemas
   }
 }
