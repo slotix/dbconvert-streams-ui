@@ -109,16 +109,16 @@ export const useConnectionsStore = defineStore('connections', {
     },
     async createConnection(): Promise<void> {
       try {
-        const connectionResponse = await api.createConnection(this.currentConnection as Record<string, unknown>)
+        const response = await api.createConnection(this.currentConnection as Record<string, unknown>)
         
         if (this.currentConnection) {
-          this.currentConnection.id = connectionResponse.id
-          this.currentConnection.created = connectionResponse.created
+          this.currentConnection.id = response.id
+          this.currentConnection.created = response.created
           
-          this.currentConnection.databases = await api.getDatabases(connectionResponse.id)
+          this.currentConnection.databases = await api.getDatabases(response.id)
 
           if (this.currentConnection.type.toLowerCase() === 'postgresql') {
-            this.currentConnection.schemas = await api.getSchemas(connectionResponse.id)
+            this.currentConnection.schemas = await api.getSchemas(response.id)
           }
         }
       } catch (error) {

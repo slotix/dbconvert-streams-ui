@@ -33,11 +33,11 @@ const getConnections = async (): Promise<Connection[]> => {
   })
 }
 
-const createConnection = async (json: Record<string, unknown>): Promise<Connection> => {
+const createConnection = async (json: Record<string, unknown>): Promise<{ id: string; created: number }> => {
   return executeWithRetry(async () => {
     const commonStore = useCommonStore()
 
-    const response: AxiosResponse<Connection> = await apiClient.post('/connections', json, {
+    const response: AxiosResponse<{ id: string; created: number }> = await apiClient.post('/connections', json, {
       headers: { 'X-API-Key': commonStore.apiKey }
     })
     return response.data
