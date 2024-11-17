@@ -89,13 +89,12 @@ export const useConnectionsStore = defineStore('connections', {
     }, 500),
     cloneConnection: debounce(async function (this: any, id: string) {
       try {
-        const resp = (await api.cloneConnection(id)) as Connection
+        const { id: clonedId, created: clonedCreated } = await api.cloneConnection(id)
         this.currentConnection = {
           ...this.currentConnection!,
-          id: resp.id,
-          created: resp.created
+          id: clonedId,
+          created: clonedCreated
         }
-        this.saveConnection()
       } catch (error) {
         console.error('Failed to clone connection:', error)
         throw error
