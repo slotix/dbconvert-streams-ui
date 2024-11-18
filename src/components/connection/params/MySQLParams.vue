@@ -82,9 +82,9 @@
                 class="absolute bottom-full z-10 w-full mb-1 max-h-60 overflow-auto rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
               >
                 <ComboboxOption
-                  v-for="db in connection.databases"
-                  :key="db"
-                  :value="db"
+                  v-for="db in connection.databasesInfo"
+                  :key="db.name"
+                  :value="db.name"
                   v-slot="{ active, selected }"
                   as="template"
                 >
@@ -165,9 +165,8 @@ const defaultConnection: MySQLConnection = {
   port: 3306,
   username: 'root',
   password: '',
-  databases: [],
+  databasesInfo: [],
   database: '',
-  schemas: [],
   schema: ''
 }
 
