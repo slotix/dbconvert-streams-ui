@@ -114,7 +114,7 @@ async function saveStream() {
     router.push({ name: 'Streams' })
     commonStore.showNotification('Stream saved', 'success')
   } catch (err) {
-    commonStore.showNotification(err.message)
+    commonStore.showNotification(err.message, 'error')
   }
 }
 

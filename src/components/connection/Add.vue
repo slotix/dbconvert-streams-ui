@@ -67,7 +67,7 @@ async function ok(): Promise<void> {
     await connectionsStore.refreshConnections()
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred'
-    commonStore.showNotification(errorMessage)
+    commonStore.showNotification(errorMessage, 'error')
   }
 }
 

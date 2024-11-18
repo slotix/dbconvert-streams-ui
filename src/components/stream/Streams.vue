@@ -88,7 +88,7 @@ export default {
       try {
         await streamsStore.refreshStreams()
       } catch (err) {
-        commonStore.showNotification(err.message)
+        commonStore.showNotification(err.message, 'error')
       }
     }
 
@@ -106,7 +106,7 @@ export default {
         await connectionsStore.refreshConnections()
         await fetchStreams()
       } catch (err) {
-        commonStore.showNotification(err.message)
+        commonStore.showNotification(err.message, 'error')
       }
       await commonStore.getViewType()
     })

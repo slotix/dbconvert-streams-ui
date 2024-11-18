@@ -202,9 +202,9 @@ const refreshTables = async () => {
   } catch (err) {
     tables.value = [] // Clear the tables in case of an error
     if (err instanceof Error) {
-      commonStore.showNotification(err.message)
+      commonStore.showNotification(err.message, 'error')
     } else {
-      commonStore.showNotification('An unknown error occurred.')
+      commonStore.showNotification('An unknown error occurred.', 'error')
     }
   }
 }

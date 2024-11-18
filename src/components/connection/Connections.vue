@@ -106,7 +106,7 @@ export default defineComponent({
       try {
         await connectionsStore.refreshConnections()
       } catch (err) {
-        commonStore.showNotification((err as Error).message)
+        commonStore.showNotification((err as Error).message, 'error')
       }
       await commonStore.getViewType()
     })

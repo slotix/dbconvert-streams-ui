@@ -107,7 +107,7 @@ async function test() {
     const status = await api.testConnection(connection.id)
     useCommonStore().showNotification(status, 'success')
   } catch (err) {
-    useCommonStore().showNotification(err.message)
+    useCommonStore().showNotification(err.message, 'error')
   }
 }
 

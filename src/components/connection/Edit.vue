@@ -25,7 +25,7 @@ async function ok(): Promise<void> {
     commonStore.showNotification('Connection updated', 'success')
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred'
-    commonStore.showNotification(errorMessage)
+    commonStore.showNotification(errorMessage, 'error')
   }
 }
 </script>
