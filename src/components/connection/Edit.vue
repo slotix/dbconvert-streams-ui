@@ -23,6 +23,7 @@ async function ok(): Promise<void> {
   try {
     await connectionsStore.updateConnection()
     commonStore.showNotification('Connection updated', 'success')
+    commonStore.closeModal()
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred'
     commonStore.showNotification(errorMessage, 'error')

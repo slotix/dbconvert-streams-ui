@@ -30,23 +30,26 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useConnectionsStore } from '@/stores/connections'
-import { DIALOG_TYPES } from '@/stores/common' // Import the DIALOG_TYPES
+import { DIALOG_TYPES } from '@/stores/common'
+
 const emit = defineEmits(['confirm', 'test', 'cancel'])
+
 const confirm = () => {
   emit('confirm')
-  if (buttonTitle.value === DIALOG_TYPES.UPDATE) {
-    close()
-  }
 }
+
 const test = () => {
   emit('test')
 }
+
 const close = () => {
   emit('cancel')
 }
+
 const props = defineProps({
   dlgType: String
 })
+
 const currentConnection = computed(() => useConnectionsStore().currentConnection)
 const showTestConnectionBtn = computed(() => {
   return true
