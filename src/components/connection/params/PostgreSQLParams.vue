@@ -44,149 +44,116 @@
         </div>
       </div>
     </div>
-    <PasswordBox v-model:password="connection.password" />
-    <hr />
   </div>
   <!-- Separate input box and button for adding a new database -->
-  <div v-show="connection.id">
-    <div class="items-center w-full p-2 text-gray-500 md:inline-flex">
-      <label class="max-w-sm mx-auto md:w-1/3">Database</label>
-      <div class="flex items-center max-w-sm mx-auto md:w-2/3 space-x-2">
-        <Combobox v-model="connection.database" @update:modelValue="updateDatabase">
-          <div class="relative">
-            <ComboboxInput
-              class="w-full rounded-lg border border-gray-300 py-2 px-4 bg-white text-gray-700 placeholder-gray-400 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-gray-600 focus:border-transparent"
-              @change="query = $event.target.value"
-              :displayValue="(item: unknown) => item as string"
-            />
-            <ComboboxButton class="absolute inset-y-0 right-0 flex items-center pr-2">
-              <ChevronUpDownIcon class="h-5 w-5 text-gray-400" aria-hidden="true" />
-            </ComboboxButton>
-            <TransitionRoot
-              leave="transition ease-in duration-100"
-              leaveFrom="opacity-100"
-              leaveTo="opacity-0"
-            >
-              <ComboboxOptions class="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
-                <ComboboxOption
-                  v-for="db in databases"
-                  :key="db"
-                  :value="db"
-                  v-slot="{ selected, active }"
-                  as="template"
-                >
-                  <li :class="[
-                    'relative cursor-default select-none py-2 pl-3 pr-9',
-                    active ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
+  <div class="items-center w-full p-2 text-gray-500 md:inline-flex">
+    <label class="max-w-sm mx-auto md:w-1/3">Database</label>
+    <div class="flex items-center max-w-sm mx-auto md:w-2/3 space-x-2">
+      <Combobox v-model="connection.database" @update:modelValue="updateDatabase">
+        <div class="relative">
+          <ComboboxInput
+            class="w-full rounded-lg border border-gray-300 py-2 px-4 bg-white text-gray-700 placeholder-gray-400 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-gray-600 focus:border-transparent"
+            @change="query = $event.target.value" :displayValue="(item: unknown) => item as string" />
+          <ComboboxButton class="absolute inset-y-0 right-0 flex items-center pr-2">
+            <ChevronUpDownIcon class="h-5 w-5 text-gray-400" aria-hidden="true" />
+          </ComboboxButton>
+          <TransitionRoot leave="transition ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0">
+            <ComboboxOptions
+              class="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
+              <ComboboxOption v-for="db in databases" :key="db" :value="db" v-slot="{ selected, active }" as="template">
+                <li :class="[
+                  'relative cursor-default select-none py-2 pl-3 pr-9',
+                  active ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
+                ]">
+                  <span :class="['block truncate', selected && 'font-semibold']">
+                    {{ db }}
+                  </span>
+                  <span v-if="selected" :class="[
+                    'absolute inset-y-0 right-0 flex items-center pr-4',
+                    active ? 'text-gray-600' : 'text-gray-600'
                   ]">
-                    <span :class="['block truncate', selected && 'font-semibold']">
-                      {{ db }}
-                    </span>
-                    <span
-                      v-if="selected"
-                      :class="[
-                        'absolute inset-y-0 right-0 flex items-center pr-4',
-                        active ? 'text-gray-600' : 'text-gray-600'
-                      ]"
-                    >
-                      <CheckIcon class="h-5 w-5" aria-hidden="true" />
-                    </span>
-                  </li>
-                </ComboboxOption>
-              </ComboboxOptions>
-            </TransitionRoot>
-          </div>
-        </Combobox>
-      </div>
-    </div>
-    <!-- Separate input box and button for adding a new database -->
-    <div v-show="connection.id" class="items-center w-full p-2 text-gray-500 md:inline-flex">
-      <label class="max-w-sm mx-auto md:w-1/3"></label>
-      <div class="flex items-center max-w-sm mx-auto md:w-2/3 space-x-2">
-        <input 
-          v-model="newDatabase" 
-          type="text"
-          class="w-48 rounded-lg appearance-none border border-gray-300 py-2 px-4 bg-white text-gray-700 placeholder-gray-400 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-gray-600 focus:border-transparent"
-          placeholder="Add new database" 
-        />
-        <button 
-          :disabled="newDatabase === ''"
-          class="whitespace-nowrap inline-flex items-center rounded-lg border border-gray-300 py-2 px-4 text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-600 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-          @click="createDatabase(newDatabase)"
-        >
-          New database
-        </button>
-      </div>
-    </div>
-    <div class="items-center w-full p-2 text-gray-500 md:inline-flex">
-      <label class="max-w-sm mx-auto md:w-1/3">Schema</label>
-      <div class="flex items-center max-w-sm mx-auto md:w-2/3 space-x-2">
-        <Combobox v-if="currentDatabaseSchemas.length" v-model="connection.schema">
-          <div class="relative">
-            <ComboboxInput
-              class="w-full rounded-lg border border-gray-300 py-2 px-4 bg-white text-gray-700 placeholder-gray-400 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-gray-600 focus:border-transparent"
-              :displayValue="(item: unknown) => item as string"
-            />
-            <ComboboxButton class="absolute inset-y-0 right-0 flex items-center pr-2">
-              <ChevronUpDownIcon class="h-5 w-5 text-gray-400" aria-hidden="true" />
-            </ComboboxButton>
-            <TransitionRoot
-              leave="transition ease-in duration-100"
-              leaveFrom="opacity-100"
-              leaveTo="opacity-0"
-            >
-              <ComboboxOptions class="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
-                <ComboboxOption
-                  v-for="schema in currentDatabaseSchemas"
-                  :key="schema"
-                  :value="schema"
-                  v-slot="{ selected, active }"
-                  as="template"
-                >
-                  <li :class="[
-                    'relative cursor-default select-none py-2 pl-3 pr-9',
-                    active ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
-                  ]">
-                    <span :class="['block truncate', selected && 'font-semibold']">
-                      {{ schema }}
-                    </span>
-                    <span
-                      v-if="selected"
-                      :class="[
-                        'absolute inset-y-0 right-0 flex items-center pr-4',
-                        active ? 'text-gray-600' : 'text-gray-600'
-                      ]"
-                    >
-                      <CheckIcon class="h-5 w-5" aria-hidden="true" />
-                    </span>
-                  </li>
-                </ComboboxOption>
-              </ComboboxOptions>
-            </TransitionRoot>
-          </div>
-        </Combobox>
-      </div>
-    </div>
-    <!-- Separate input box and button for adding a new schema -->
-    <div v-show="connection.id" class="items-center w-full p-2 text-gray-500 md:inline-flex">
-      <label class="max-w-sm mx-auto md:w-1/3"></label>
-      <div class="flex items-center max-w-sm mx-auto md:w-2/3 space-x-2">
-        <input 
-          v-model="newSchema" 
-          type="text"
-          class="w-48 rounded-lg appearance-none border border-gray-300 py-2 px-4 bg-white text-gray-700 placeholder-gray-400 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-gray-600 focus:border-transparent"
-          placeholder="Add new schema" 
-        />
-        <button 
-          :disabled="newSchema === ''"
-          class="whitespace-nowrap inline-flex items-center rounded-lg border border-gray-300 py-2 px-4 text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-600 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-          @click="createSchema(newSchema)"
-        >
-          New schema
-        </button>
-      </div>
+                    <CheckIcon class="h-5 w-5" aria-hidden="true" />
+                  </span>
+                </li>
+              </ComboboxOption>
+            </ComboboxOptions>
+          </TransitionRoot>
+        </div>
+      </Combobox>
+      <button :disabled="!connection.id" type="button"
+        class="inline-flex justify-center items-center rounded-md border border-gray-300 shadow-sm px-6 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+        @click="refreshDatabases">
+        Refresh
+        <ArrowPathIcon class="ml-2 h-5 w-5" aria-hidden="true" />
+      </button>
     </div>
   </div>
+  <!-- Separate input box and button for adding a new database -->
+  <div class="items-center w-full p-2 text-gray-500 md:inline-flex">
+    <label class="max-w-sm mx-auto md:w-1/3"></label>
+    <div class="flex items-center max-w-sm mx-auto md:w-2/3 space-x-2">
+      <input v-model="newDatabase" type="text"
+        class="w-48 rounded-lg appearance-none border border-gray-300 py-2 px-4 bg-white text-gray-700 placeholder-gray-400 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-gray-600 focus:border-transparent"
+        placeholder="Add new database" />
+      <button :disabled="newDatabase === '' || !connection.id"
+        class="whitespace-nowrap inline-flex items-center rounded-lg border border-gray-300 py-2 px-4 text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-600 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+        @click="createDatabase(newDatabase)">
+        New database
+      </button>
+    </div>
+  </div>
+  <div class="items-center w-full p-2 text-gray-500 md:inline-flex">
+    <label class="max-w-sm mx-auto md:w-1/3">Schema</label>
+    <div class="flex items-center max-w-sm mx-auto md:w-2/3 space-x-2">
+      <Combobox v-model="connection.schema">
+        <div class="relative">
+          <ComboboxInput
+            class="w-full rounded-lg border border-gray-300 py-2 px-4 bg-white text-gray-700 placeholder-gray-400 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-gray-600 focus:border-transparent"
+            :displayValue="(item: unknown) => item as string" />
+          <ComboboxButton class="absolute inset-y-0 right-0 flex items-center pr-2">
+            <ChevronUpDownIcon class="h-5 w-5 text-gray-400" aria-hidden="true" />
+          </ComboboxButton>
+          <TransitionRoot leave="transition ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0">
+            <ComboboxOptions
+              class="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
+              <ComboboxOption v-for="schema in currentDatabaseSchemas" :key="schema" :value="schema"
+                v-slot="{ selected, active }" as="template">
+                <li :class="[
+                  'relative cursor-default select-none py-2 pl-3 pr-9',
+                  active ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
+                ]">
+                  <span :class="['block truncate', selected && 'font-semibold']">
+                    {{ schema }}
+                  </span>
+                  <span v-if="selected" :class="[
+                    'absolute inset-y-0 right-0 flex items-center pr-4',
+                    active ? 'text-gray-600' : 'text-gray-600'
+                  ]">
+                    <CheckIcon class="h-5 w-5" aria-hidden="true" />
+                  </span>
+                </li>
+              </ComboboxOption>
+            </ComboboxOptions>
+          </TransitionRoot>
+        </div>
+      </Combobox>
+    </div>
+  </div>
+  <!-- Separate input box and button for adding a new schema -->
+  <div class="items-center w-full p-2 text-gray-500 md:inline-flex">
+    <label class="max-w-sm mx-auto md:w-1/3"></label>
+    <div class="flex items-center max-w-sm mx-auto md:w-2/3 space-x-2">
+      <input v-model="newSchema" type="text"
+        class="w-48 rounded-lg appearance-none border border-gray-300 py-2 px-4 bg-white text-gray-700 placeholder-gray-400 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-gray-600 focus:border-transparent"
+        placeholder="Add new schema" />
+      <button :disabled="newSchema === '' || !connection.id"
+        class="whitespace-nowrap inline-flex items-center rounded-lg border border-gray-300 py-2 px-4 text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-600 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+        @click="createSchema(newSchema)">
+        New schema
+      </button>
+    </div>
+  </div>
+  <PasswordBox v-model:password="connection.password" />
 </template>
 
 <script lang="ts">
@@ -229,8 +196,8 @@ export default defineComponent({
       username: 'postgres',
       password: '',
       databasesInfo: [],
-      database: '',
-      schema: ''
+      database: 'postgres',
+      schema: 'public'
     }
 
     const {
@@ -257,9 +224,9 @@ export default defineComponent({
 
     const updateDatabase = (newDatabase: string) => {
       connection.database = newDatabase
-      // Reset schema when database changes
+      // Set schema to 'public' by default when changing database
       const newDbSchemas = currentDatabaseSchemas.value
-      connection.schema = newDbSchemas.length > 0 ? newDbSchemas[0] : ''
+      connection.schema = newDbSchemas.includes('public') ? 'public' : newDbSchemas[0] || ''
     }
 
     return {
