@@ -63,6 +63,7 @@ async function ok(): Promise<void> {
     } else {
       await connectionsStore.updateConnection()
       commonStore.showNotification('Connection updated', 'success')
+      commonStore.closeModal()
     }
     await connectionsStore.refreshConnections()
   } catch (err) {
