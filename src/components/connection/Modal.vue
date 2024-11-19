@@ -102,9 +102,8 @@ const showActionBtns = computed(() => {
 })
 
 async function test() {
-  const connection = useConnectionsStore().currentConnection
   try {
-    const status = await api.testConnection(connection.id)
+    const status = await api.testConnection()
     useCommonStore().showNotification(status, 'success')
   } catch (err) {
     useCommonStore().showNotification(err.message, 'error')

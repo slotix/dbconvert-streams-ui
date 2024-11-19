@@ -133,7 +133,7 @@ export const useConnectionsStore = defineStore('connections', {
       try {
         if (!this.currentConnection) return
 
-        await api.updateConnection(this.currentConnection)
+        await api.updateConnection()
         
         const databases = await api.getDatabases(this.currentConnection.id)
         this.currentConnection.databasesInfo = databases

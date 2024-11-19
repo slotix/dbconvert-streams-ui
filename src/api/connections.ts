@@ -2,6 +2,7 @@ import axios, { AxiosInstance, AxiosResponse, AxiosError } from 'axios'
 import { handleApiError, handleUnauthorizedError } from '@/utils/errorHandler'
 import { useCommonStore } from '@/stores/common'
 import { Connection, Schema, Database, SSLConfig, DatabaseInfo } from '@/types/connections'
+import { useConnectionsStore } from '@/stores/connections'
 
 const apiClient: AxiosInstance = axios.create({
   baseURL: 'http://127.0.0.1:8020/api/v1',
@@ -44,15 +45,13 @@ const createConnection = async (json: Record<string, unknown>): Promise<{ id: st
   })
 }
 
-const updateConnection = async (jsonOrObject: string | Record<string, unknown>): Promise<void> => {
+const updateConnection = async (): Promise<void> => {
   return executeWithRetry(async () => {
     const commonStore = useCommonStore()
-
-    // Parse the input if it's a string
-    const json = typeof jsonOrObject === 'string' ? JSON.parse(jsonOrObject) : jsonOrObject
+    const json = useConnectionsStore().currentConnection
 
     // Now we can safely access the id
-    const id = json.id as string
+    const id = json?.id as string
 
     if (!id) {
       throw new Error('Connection ID is undefined or empty')
@@ -87,12 +86,13 @@ const cloneConnection = async (id: string): Promise<Connection> => {
   })
 }
 
-const testConnection = async (id: string): Promise<string> => {
+const testConnection = async (): Promise<string> => {
   return executeWithRetry(async () => {
     const commonStore = useCommonStore()
+    const json = useConnectionsStore().currentConnection
     const response: AxiosResponse<{ ping: string }> = await apiClient.post(
-      `/connections/${id}/ping`,
-      null,
+      `/connections/${json?.id}/ping`,
+      json,
       {
         headers: { 'X-API-Key': commonStore.apiKey }
       }
