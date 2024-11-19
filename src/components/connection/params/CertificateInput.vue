@@ -13,9 +13,13 @@
     </div>
     
     <div class="flex items-center justify-between">
-      <span class="text-sm text-gray-600">
+      <div class="flex items-center text-sm text-gray-600">
+        <CheckCircleIcon
+          v-if="value && !error"
+          class="h-5 w-5 text-green-500 mr-2"
+        />
         {{ error || (value ? 'Certificate stored securely' : 'No file uploaded') }}
-      </span>
+      </div>
       
       <div class="flex items-center space-x-2">
         <input
@@ -62,7 +66,8 @@ import { ref } from 'vue'
 import {
   TrashIcon,
   QuestionMarkCircleIcon,
-  ArrowPathIcon
+  ArrowPathIcon,
+  CheckCircleIcon
 } from '@heroicons/vue/24/outline'
 
 import { vTooltip } from '@/directives/tooltip'

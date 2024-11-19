@@ -52,7 +52,7 @@
 
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
-import { TrashIcon, QuestionMarkCircleIcon } from '@heroicons/vue/24/outline'
+import { QuestionMarkCircleIcon } from '@heroicons/vue/24/outline'
 import { useConnectionsStore } from '@/stores/connections'
 import type { SSLConfig } from '@/types/connections'
 import { vTooltip } from '@/directives/tooltip'
