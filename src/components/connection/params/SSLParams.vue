@@ -1,48 +1,49 @@
 <template>
-  <div class="bg-white bg-opacity-5 text-center md:text-left">
+  <div class="px-6">
     <div class="mt-4">
-      <h3 class="text-lg font-medium text-gray-900 mb-2">SSL Configuration</h3>
-      <div class="bg-white bg-opacity-5 text-center md:text-left p-4">
-        <div class="items-center w-full space-y-4 text-gray-500">
-          <div class="mb-4">
-            <label for="ssl-mode" class="block text-sm font-medium text-gray-700">
+      <h3 class="text-xl font-medium text-gray-900 mb-6">SSL Configuration</h3>
+      <div class="space-y-6">
+        <!-- SSL Mode -->
+        <div class="mb-6">
+          <div class="flex items-center mb-2">
+            <label for="ssl-mode" class="text-sm font-medium text-gray-700">
               SSL Mode
               <span 
                 v-tooltip="'Choose the SSL verification mode for your connection'"
-                class="ml-1 text-gray-400 hover:text-gray-500 cursor-help"
+                class="ml-2 text-gray-400 hover:text-gray-500 cursor-help inline-block"
               >
-                <QuestionMarkCircleIcon class="h-4 w-4 inline" />
+                <QuestionMarkCircleIcon class="h-4 w-4" />
               </span>
             </label>
-            <select
-              id="ssl-mode"
-              :value="localSSLConfig.mode"
-              @change="handleModeChange(($event.target as HTMLSelectElement).value as SSLConfig['mode'])"
-              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500"
-            >
-              <option v-for="mode in SSL_MODES" :key="mode.value" :value="mode.value">
-                {{ mode.label }}
-              </option>
-            </select>
-            <p class="mt-1 text-sm text-gray-500">{{ getSSLModeDescription(localSSLConfig.mode) }}</p>
           </div>
+          <select
+            id="ssl-mode"
+            :value="localSSLConfig.mode"
+            @change="handleModeChange(($event.target as HTMLSelectElement).value as SSLConfig['mode'])"
+            class="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-gray-500 focus:outline-none focus:ring-gray-500 sm:text-sm"
+          >
+            <option v-for="mode in SSL_MODES" :key="mode.value" :value="mode.value">
+              {{ mode.label }}
+            </option>
+          </select>
+          <p class="mt-1 text-sm text-gray-500">{{ getSSLModeDescription(localSSLConfig.mode) }}</p>
+        </div>
 
-          <div v-if="localSSLConfig.mode !== 'disable'" class="space-y-4">
-            <CertificateInput
-              v-for="cert in CERT_TYPES"
-              :key="cert.type"
-              :type="cert.type"
-              :label="cert.label"
-              :description="cert.description"
-              :accept="cert.accept"
-              :maxSize="cert.maxSize"
-              :value="localSSLConfig[cert.type]"
-              :isLoading="isLoading[cert.type] || false"
-              :error="errors[cert.type]"
-              @update="handleCertUpdate(cert.type, $event)"
-              @clear="clearCertificate(cert.type)"
-            />
-          </div>
+        <div v-if="localSSLConfig.mode !== 'disable'" class="space-y-6">
+          <CertificateInput
+            v-for="cert in CERT_TYPES"
+            :key="cert.type"
+            :type="cert.type"
+            :label="cert.label"
+            :description="cert.description"
+            :accept="cert.accept"
+            :maxSize="cert.maxSize"
+            :value="localSSLConfig[cert.type]"
+            :isLoading="isLoading[cert.type] || false"
+            :error="errors[cert.type]"
+            @update="handleCertUpdate(cert.type, $event)"
+            @clear="clearCertificate(cert.type)"
+          />
         </div>
       </div>
     </div>
