@@ -17,39 +17,96 @@
           </div>
 
           <div v-if="localSSLConfig.mode !== 'disable'" class="space-y-4">
-            <div>
+            <div class="certificate-input">
               <label class="block text-sm font-medium text-gray-700">CA Certificate</label>
-              <div class="mt-1 flex items-center space-x-2">
-                <input type="file" accept=".crt,.pem" @change="handleCertFileUpload($event, 'ca')"
-                  class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100" />
-                <button v-if="localSSLConfig.ca" @click="clearCertificate('ca')"
-                  class="text-red-600 hover:text-red-800">
-                  <TrashIcon class="h-5 w-5" />
-                </button>
+              <div class="mt-2 flex items-center justify-between">
+                <div class="flex-1 text-sm text-gray-500">
+                  {{ localSSLConfig.ca ? 'Certificate stored securely' : 'No certificate uploaded' }}
+                </div>
+                <div class="flex items-center space-x-2">
+                  <input
+                    type="file"
+                    accept=".crt,.pem"
+                    class="hidden"
+                    ref="caFileInput"
+                    @change="handleCertFileUpload($event, 'ca')"
+                  />
+                  <button
+                    class="px-3 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                    @click="triggerFileInput('ca')"
+                  >
+                    {{ localSSLConfig.ca ? 'Replace' : 'Upload' }}
+                  </button>
+                  <button
+                    v-if="localSSLConfig.ca"
+                    @click="clearCertificate('ca')"
+                    class="text-red-600 hover:text-red-800"
+                  >
+                    <TrashIcon class="h-5 w-5" />
+                  </button>
+                </div>
               </div>
             </div>
 
-            <div>
+            <div class="certificate-input">
               <label class="block text-sm font-medium text-gray-700">Client Certificate</label>
-              <div class="mt-1 flex items-center space-x-2">
-                <input type="file" accept=".crt,.pem" @change="handleCertFileUpload($event, 'client_cert')"
-                  class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100" />
-                <button v-if="localSSLConfig.client_cert" @click="clearCertificate('client_cert')"
-                  class="text-red-600 hover:text-red-800">
-                  <TrashIcon class="h-5 w-5" />
-                </button>
+              <div class="mt-2 flex items-center justify-between">
+                <div class="flex-1 text-sm text-gray-500">
+                  {{ localSSLConfig.client_cert ? 'Certificate stored securely' : 'No certificate uploaded' }}
+                </div>
+                <div class="flex items-center space-x-2">
+                  <input
+                    type="file"
+                    accept=".crt,.pem"
+                    class="hidden"
+                    ref="clientCertFileInput"
+                    @change="handleCertFileUpload($event, 'client_cert')"
+                  />
+                  <button
+                    class="px-3 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                    @click="triggerFileInput('client_cert')"
+                  >
+                    {{ localSSLConfig.client_cert ? 'Replace' : 'Upload' }}
+                  </button>
+                  <button
+                    v-if="localSSLConfig.client_cert"
+                    @click="clearCertificate('client_cert')"
+                    class="text-red-600 hover:text-red-800"
+                  >
+                    <TrashIcon class="h-5 w-5" />
+                  </button>
+                </div>
               </div>
             </div>
 
-            <div>
+            <div class="certificate-input">
               <label class="block text-sm font-medium text-gray-700">Client Key</label>
-              <div class="mt-1 flex items-center space-x-2">
-                <input type="file" accept=".key,.pem" @change="handleCertFileUpload($event, 'client_key')"
-                  class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100" />
-                <button v-if="localSSLConfig.client_key" @click="clearCertificate('client_key')"
-                  class="text-red-600 hover:text-red-800">
-                  <TrashIcon class="h-5 w-5" />
-                </button>
+              <div class="mt-2 flex items-center justify-between">
+                <div class="flex-1 text-sm text-gray-500">
+                  {{ localSSLConfig.client_key ? 'Key stored securely' : 'No key uploaded' }}
+                </div>
+                <div class="flex items-center space-x-2">
+                  <input
+                    type="file"
+                    accept=".key,.pem"
+                    class="hidden"
+                    ref="clientKeyFileInput"
+                    @change="handleCertFileUpload($event, 'client_key')"
+                  />
+                  <button
+                    class="px-3 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                    @click="triggerFileInput('client_key')"
+                  >
+                    {{ localSSLConfig.client_key ? 'Replace' : 'Upload' }}
+                  </button>
+                  <button
+                    v-if="localSSLConfig.client_key"
+                    @click="clearCertificate('client_key')"
+                    class="text-red-600 hover:text-red-800"
+                  >
+                    <TrashIcon class="h-5 w-5" />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -68,43 +125,53 @@ import type { SSLConfig } from '@/types/connections'
 const connectionsStore = useConnectionsStore()
 const connection = computed(() => connectionsStore.currentConnection)
 
+// File input refs
+const caFileInput = ref<HTMLInputElement | null>(null)
+const clientCertFileInput = ref<HTMLInputElement | null>(null)
+const clientKeyFileInput = ref<HTMLInputElement | null>(null)
+
 // Initialize SSL config with defaults if not present
 if (!connection.value?.ssl) {
   connection.value!.ssl = {
-    mode: 'require',
+    mode: 'disable',
     ca: undefined,
     client_cert: undefined,
     client_key: undefined
   }
 }
 
-// Create a local reactive state
 const localSSLConfig = ref<SSLConfig>(
   connection.value?.ssl
     ? JSON.parse(JSON.stringify(connection.value.ssl))
     : {
-      mode: 'require',
-      ca: undefined,
-      client_cert: undefined,
-      client_key: undefined
-    }
+        mode: 'disable',
+        ca: undefined,
+        client_cert: undefined,
+        client_key: undefined
+      }
 )
 
-// Watch for changes in localSSLConfig and update the connection
 watch(
   () => localSSLConfig.value,
   (newValue) => {
     if (connection.value) {
       connection.value.ssl = JSON.parse(JSON.stringify(newValue))
-      // connectionsStore.updateSSLParams(newValue)
     }
   },
   { deep: true }
 )
 
-// Handle SSL mode changes
 function handleModeChange(mode: SSLConfig['mode']) {
   localSSLConfig.value.mode = mode
+}
+
+function triggerFileInput(type: 'ca' | 'client_cert' | 'client_key') {
+  const inputRefs = {
+    ca: caFileInput,
+    client_cert: clientCertFileInput,
+    client_key: clientKeyFileInput
+  }
+  inputRefs[type].value?.click()
 }
 
 const handleCertFileUpload = async (
