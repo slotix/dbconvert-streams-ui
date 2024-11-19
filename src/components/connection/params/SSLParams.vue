@@ -5,110 +5,43 @@
       <div class="bg-white bg-opacity-5 text-center md:text-left p-4">
         <div class="items-center w-full space-y-4 text-gray-500">
           <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700">SSL Mode</label>
-            <select :value="localSSLConfig.mode"
+            <label for="ssl-mode" class="block text-sm font-medium text-gray-700">
+              SSL Mode
+              <span 
+                v-tooltip="'Choose the SSL verification mode for your connection'"
+                class="ml-1 text-gray-400 hover:text-gray-500 cursor-help"
+              >
+                <QuestionMarkCircleIcon class="h-4 w-4 inline" />
+              </span>
+            </label>
+            <select
+              id="ssl-mode"
+              :value="localSSLConfig.mode"
               @change="handleModeChange(($event.target as HTMLSelectElement).value as SSLConfig['mode'])"
-              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500">
-              <option value="disable">Disable</option>
-              <option value="require">Require</option>
-              <option value="verify-ca">Verify CA</option>
-              <option value="verify-full">Verify Full</option>
+              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500"
+            >
+              <option v-for="mode in SSL_MODES" :key="mode.value" :value="mode.value">
+                {{ mode.label }}
+              </option>
             </select>
+            <p class="mt-1 text-sm text-gray-500">{{ getSSLModeDescription(localSSLConfig.mode) }}</p>
           </div>
 
           <div v-if="localSSLConfig.mode !== 'disable'" class="space-y-4">
-            <div class="certificate-input">
-              <label class="block text-sm font-medium text-gray-700">CA Certificate</label>
-              <div class="mt-2 flex items-center justify-between">
-                <div class="flex-1 text-sm text-gray-500">
-                  {{ localSSLConfig.ca ? 'Certificate stored securely' : 'No certificate uploaded' }}
-                </div>
-                <div class="flex items-center space-x-2">
-                  <input
-                    type="file"
-                    accept=".crt,.pem"
-                    class="hidden"
-                    ref="caFileInput"
-                    @change="handleCertFileUpload($event, 'ca')"
-                  />
-                  <button
-                    class="px-3 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-                    @click="triggerFileInput('ca')"
-                  >
-                    {{ localSSLConfig.ca ? 'Replace' : 'Upload' }}
-                  </button>
-                  <button
-                    v-if="localSSLConfig.ca"
-                    @click="clearCertificate('ca')"
-                    class="text-red-600 hover:text-red-800"
-                  >
-                    <TrashIcon class="h-5 w-5" />
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div class="certificate-input">
-              <label class="block text-sm font-medium text-gray-700">Client Certificate</label>
-              <div class="mt-2 flex items-center justify-between">
-                <div class="flex-1 text-sm text-gray-500">
-                  {{ localSSLConfig.client_cert ? 'Certificate stored securely' : 'No certificate uploaded' }}
-                </div>
-                <div class="flex items-center space-x-2">
-                  <input
-                    type="file"
-                    accept=".crt,.pem"
-                    class="hidden"
-                    ref="clientCertFileInput"
-                    @change="handleCertFileUpload($event, 'client_cert')"
-                  />
-                  <button
-                    class="px-3 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-                    @click="triggerFileInput('client_cert')"
-                  >
-                    {{ localSSLConfig.client_cert ? 'Replace' : 'Upload' }}
-                  </button>
-                  <button
-                    v-if="localSSLConfig.client_cert"
-                    @click="clearCertificate('client_cert')"
-                    class="text-red-600 hover:text-red-800"
-                  >
-                    <TrashIcon class="h-5 w-5" />
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div class="certificate-input">
-              <label class="block text-sm font-medium text-gray-700">Client Key</label>
-              <div class="mt-2 flex items-center justify-between">
-                <div class="flex-1 text-sm text-gray-500">
-                  {{ localSSLConfig.client_key ? 'Key stored securely' : 'No key uploaded' }}
-                </div>
-                <div class="flex items-center space-x-2">
-                  <input
-                    type="file"
-                    accept=".key,.pem"
-                    class="hidden"
-                    ref="clientKeyFileInput"
-                    @change="handleCertFileUpload($event, 'client_key')"
-                  />
-                  <button
-                    class="px-3 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-                    @click="triggerFileInput('client_key')"
-                  >
-                    {{ localSSLConfig.client_key ? 'Replace' : 'Upload' }}
-                  </button>
-                  <button
-                    v-if="localSSLConfig.client_key"
-                    @click="clearCertificate('client_key')"
-                    class="text-red-600 hover:text-red-800"
-                  >
-                    <TrashIcon class="h-5 w-5" />
-                  </button>
-                </div>
-              </div>
-            </div>
+            <CertificateInput
+              v-for="cert in CERT_TYPES"
+              :key="cert.type"
+              :type="cert.type"
+              :label="cert.label"
+              :description="cert.description"
+              :accept="cert.accept"
+              :maxSize="cert.maxSize"
+              :value="localSSLConfig[cert.type]"
+              :isLoading="isLoading[cert.type] || false"
+              :error="errors[cert.type]"
+              @update="handleCertUpdate(cert.type, $event)"
+              @clear="clearCertificate(cert.type)"
+            />
           </div>
         </div>
       </div>
@@ -118,39 +51,69 @@
 
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
-import { TrashIcon } from '@heroicons/vue/24/outline'
+import { TrashIcon, QuestionMarkCircleIcon } from '@heroicons/vue/24/outline'
 import { useConnectionsStore } from '@/stores/connections'
 import type { SSLConfig } from '@/types/connections'
+import { vTooltip } from '@/directives/tooltip'
+import CertificateInput from './CertificateInput.vue'
 
+// Constants
+const SSL_MODES = [
+  { value: 'disable', label: 'Disable' },
+  { value: 'require', label: 'Require' },
+  { value: 'verify-ca', label: 'Verify CA' },
+  { value: 'verify-full', label: 'Verify Full' }
+] as const
+
+const CERT_TYPES = [
+  {
+    type: 'ca',
+    label: 'CA Certificate',
+    description: 'Certificate Authority (CA) certificate for SSL verification',
+    accept: '.crt,.pem',
+    maxSize: 1024 * 1024 // 1MB
+  },
+  {
+    type: 'client_cert',
+    label: 'Client Certificate',
+    description: 'Client certificate for mutual TLS authentication',
+    accept: '.crt,.pem',
+    maxSize: 1024 * 1024
+  },
+  {
+    type: 'client_key',
+    label: 'Client Key',
+    description: 'Private key corresponding to the client certificate',
+    accept: '.key,.pem',
+    maxSize: 1024 * 1024
+  }
+] as const
+
+// Store
 const connectionsStore = useConnectionsStore()
 const connection = computed(() => connectionsStore.currentConnection)
 
-// File input refs
-const caFileInput = ref<HTMLInputElement | null>(null)
-const clientCertFileInput = ref<HTMLInputElement | null>(null)
-const clientKeyFileInput = ref<HTMLInputElement | null>(null)
+// State
+const isLoading = ref<Record<string, boolean>>({
+  ca: false,
+  client_cert: false,
+  client_key: false
+})
+const errors = ref<Record<string, string>>({})
 
-// Initialize SSL config with defaults if not present
-if (!connection.value?.ssl) {
-  connection.value!.ssl = {
-    mode: 'disable',
-    ca: undefined,
-    client_cert: undefined,
-    client_key: undefined
-  }
-}
-
+// Initialize SSL config
 const localSSLConfig = ref<SSLConfig>(
   connection.value?.ssl
     ? JSON.parse(JSON.stringify(connection.value.ssl))
     : {
-        mode: 'disable',
+        mode: 'require',
         ca: undefined,
         client_cert: undefined,
         client_key: undefined
       }
 )
 
+// Watchers
 watch(
   () => localSSLConfig.value,
   (newValue) => {
@@ -161,42 +124,69 @@ watch(
   { deep: true }
 )
 
+// Methods
+function getSSLModeDescription(mode: SSLConfig['mode']): string {
+  const descriptions = {
+    disable: 'No SSL encryption',
+    require: 'Encrypt connection only',
+    'verify-ca': 'Verify server certificate is signed by trusted CA',
+    'verify-full': 'Verify server certificate and hostname match'
+  }
+  return descriptions[mode]
+}
+
 function handleModeChange(mode: SSLConfig['mode']) {
   localSSLConfig.value.mode = mode
+  // Clear errors when mode changes
+  errors.value = {}
 }
 
-function triggerFileInput(type: 'ca' | 'client_cert' | 'client_key') {
-  const inputRefs = {
-    ca: caFileInput,
-    client_cert: clientCertFileInput,
-    client_key: clientKeyFileInput
-  }
-  inputRefs[type].value?.click()
-}
+async function handleCertUpdate(
+  certType: keyof Omit<SSLConfig, 'mode'>,
+  file: File | null
+) {
+  if (!file) return
 
-const handleCertFileUpload = async (
-  event: Event,
-  certType: 'ca' | 'client_cert' | 'client_key'
-) => {
-  const input = event.target as HTMLInputElement
-  const file = input.files?.[0]
-  if (file) {
-    const reader = new FileReader()
-    reader.onload = () => {
-      const base64String = (reader.result as string).split(',')[1]
-      localSSLConfig.value = {
-        ...localSSLConfig.value,
-        [certType]: base64String
-      }
+  try {
+    isLoading.value[certType] = true
+    errors.value[certType] = ''
+
+    // Validate file size
+    if (file.size > CERT_TYPES.find(c => c.type === certType)!.maxSize) {
+      throw new Error('File size exceeds maximum allowed')
     }
-    reader.readAsDataURL(file)
+
+    const base64String = await readFileAsBase64(file)
+    localSSLConfig.value = {
+      ...localSSLConfig.value,
+      [certType]: base64String
+    }
+  } catch (error) {
+    errors.value[certType] = error instanceof Error ? error.message : 'Failed to process file'
+  } finally {
+    isLoading.value[certType] = false
   }
 }
 
-const clearCertificate = (certType: keyof Omit<SSLConfig, 'mode'>) => {
+function clearCertificate(certType: keyof Omit<SSLConfig, 'mode'>) {
   localSSLConfig.value = {
     ...localSSLConfig.value,
     [certType]: undefined
   }
+  errors.value[certType] = ''
+}
+
+// Utilities
+function readFileAsBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      const result = reader.result as string
+      const base64String = result.split(',')[1]
+      resolve(base64String)
+    }
+    reader.onerror = () => reject(new Error('Failed to read file'))
+    reader.readAsDataURL(file)
+  })
 }
 </script>
