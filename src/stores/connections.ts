@@ -193,6 +193,24 @@ export const useConnectionsStore = defineStore('connections', {
       } finally {
         this.isLoadingDatabases = false
       }
+    },
+    async createDatabase(databaseName: string, connectionId: string) {
+      try {
+        await api.createDatabase(databaseName, connectionId)
+        await this.getDatabases(connectionId)
+      } catch (error) {
+        console.error('Failed to create database:', error)
+        throw error
+      }
+    },
+    async createSchema(schemaName: string, connectionId: string) {
+      try {
+        await api.createSchema(schemaName, connectionId)
+        await this.getDatabases(connectionId)
+      } catch (error) {
+        console.error('Failed to create schema:', error)
+        throw error
+      }
     }
   }
 })

@@ -5,8 +5,7 @@ import ItemsCombo from '@/components/common/ItemsCombo.vue'
 import { ArrowPathIcon, PlusIcon } from '@heroicons/vue/24/solid'
 import { DIALOG_TYPES, useCommonStore } from '@/stores/common'
 import { useConnectionsStore } from '@/stores/connections'
-import api from '@/api/connections'
-import { Connection, DatabaseInfo } from '@/types/connections'
+import { Connection } from '@/types/connections'
 
 function isErrorWithMessage(error: unknown): error is { message: string } {
   return (
@@ -74,12 +73,9 @@ export function useCommon<T extends Connection>(defaultConnection: T) {
   const fetchData = async (apiMethod: (id: string) => Promise<any>, targetProperty: keyof T) => {
     try {
       if (connectionsStore.currentConnection) {
-        const data = await apiMethod(connectionsStore.currentConnection.id)
-        
         if (targetProperty === 'databasesInfo') {
-          setProperty(connectionsStore.currentConnection as T, 'databasesInfo', data)
+          await connectionsStore.getDatabases(connectionsStore.currentConnection.id)
         }
-        
         Object.assign(connection, connectionsStore.currentConnection)
       }
     } catch (err) {
@@ -92,20 +88,23 @@ export function useCommon<T extends Connection>(defaultConnection: T) {
   }
 
   const refreshDatabases = async () => {
-    // connectionsStore.getDatabases(connectionsStore.currentConnection!.id)
     if (!connectionsStore.currentConnection || connectionsStore.currentConnection.id === '') return
-    await fetchData(api.getDatabases, 'databasesInfo' as keyof T)
+    await fetchData(connectionsStore.getDatabases, 'databasesInfo' as keyof T)
   }
 
   const createData = async (
-    apiMethod: (data: any, id: string) => Promise<void>,
     newData: any,
     targetArray: keyof T,
     targetProperty: keyof T
   ) => {
     try {
       if (connectionsStore.currentConnection) {
-        await apiMethod(newData, connectionsStore.currentConnection.id)
+        if (targetProperty === 'database') {
+          await connectionsStore.createDatabase(newData, connectionsStore.currentConnection.id)
+        } else if (targetProperty === 'schema') {
+          await connectionsStore.createSchema(newData, connectionsStore.currentConnection.id)
+        }
+        
         const targetArrayValue = getProperty(
           connectionsStore.currentConnection as T,
           targetArray
@@ -113,6 +112,7 @@ export function useCommon<T extends Connection>(defaultConnection: T) {
         targetArrayValue.push(newData)
         setProperty(connectionsStore.currentConnection as T, targetProperty, newData)
         commonStore.showNotification(`${String(targetProperty)} created`, 'success')
+        
         if (targetProperty === 'database') {
           await refreshDatabases()
         }
@@ -127,11 +127,11 @@ export function useCommon<T extends Connection>(defaultConnection: T) {
   }
 
   const createDatabase = async (newDatabase: string) => {
-    await createData(api.createDatabase, newDatabase, 'databasesInfo' as keyof T, 'database' as keyof T)
+    await createData(newDatabase, 'databasesInfo' as keyof T, 'database' as keyof T)
   }
 
   const createSchema = async (newSchema: string) => {
-    await createData(api.createSchema, newSchema, 'schemas' as keyof T, 'schema' as keyof T)
+    await createData(newSchema, 'schemas' as keyof T, 'schema' as keyof T)
   }
 
   const databases = computed(() => connection.databasesInfo.map(db => db.name))
