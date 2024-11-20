@@ -211,6 +211,15 @@ export const useConnectionsStore = defineStore('connections', {
         console.error('Failed to create schema:', error)
         throw error
       }
+    },
+    async getTables(connectionId: string) {
+      try {
+        const tables = await api.getTables(connectionId)
+        return tables
+      } catch (error) {
+        console.error('Failed to get tables:', error)
+        throw error
+      }
     }
   }
 })
