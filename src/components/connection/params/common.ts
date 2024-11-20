@@ -35,6 +35,7 @@ export function useCommon<T extends Connection>(defaultConnection: T) {
   })
 
   const dlgTp = computed(() => commonStore.dlgType)
+  const isEdit = computed(() => dlgTp.value === DIALOG_TYPES.UPDATE)
 
   watch(
     () => connection.host,
@@ -61,7 +62,7 @@ export function useCommon<T extends Connection>(defaultConnection: T) {
       connection.name = connectionsStore.currentConnection?.name || buildConnectionName.value
     }
   }
-
+  
   onMounted(async () => {
     updateConnectionName()
     if (dlgTp.value === DIALOG_TYPES.UPDATE && connectionsStore.currentConnection) {
@@ -70,14 +71,12 @@ export function useCommon<T extends Connection>(defaultConnection: T) {
     }
   })
 
-  const fetchData = async (apiMethod: (id: string) => Promise<any>, targetProperty: keyof T) => {
+  const refreshDatabases = async () => {
     try {
-      if (connectionsStore.currentConnection) {
-        if (targetProperty === 'databasesInfo') {
-          await connectionsStore.getDatabases(connectionsStore.currentConnection.id)
-        }
-        Object.assign(connection, connectionsStore.currentConnection)
-      }
+      if (!connectionsStore.currentConnection?.id) return
+      
+      await connectionsStore.getDatabases(connectionsStore.currentConnection.id)
+      Object.assign(connection, connectionsStore.currentConnection)
     } catch (err) {
       if (isErrorWithMessage(err)) {
         commonStore.showNotification(err.message, 'error')
@@ -85,11 +84,6 @@ export function useCommon<T extends Connection>(defaultConnection: T) {
         commonStore.showNotification('An unknown error occurred', 'error')
       }
     }
-  }
-
-  const refreshDatabases = async () => {
-    if (!connectionsStore.currentConnection || connectionsStore.currentConnection.id === '') return
-    await fetchData(connectionsStore.getDatabases, 'databasesInfo' as keyof T)
   }
 
   const createData = async (
@@ -143,9 +137,9 @@ export function useCommon<T extends Connection>(defaultConnection: T) {
   return {
     connection,
     buildConnectionName,
+    isEdit,
     dlgTp,
     updateConnectionName,
-    fetchData,
     refreshDatabases,
     createData,
     createDatabase,

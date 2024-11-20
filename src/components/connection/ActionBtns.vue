@@ -2,13 +2,18 @@
   <button type="submit" name="submit"
     class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gray-600 text-base font-medium text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:ml-3 sm:w-auto sm:text-sm"
     @click="confirm">
-    {{ buttonTitle }}
+    <span v-if="isUpdatingConnection">
+      <Spinner text="Updating..." size="sm" />
+    </span>
+    <span v-else>
+      {{ buttonTitle }}
+    </span>
   </button>
   <button v-show="showTestConnectionBtn" :disabled="!currentConnection?.id" type="button" name="test"
     class="inline-flex w-full justify-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 sm:ml-3 sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
     @click="test">
     <span v-if="isTestingConnection">
-      <Spinner text="Testing connection..." />
+      <Spinner text="Testing..." size="sm" />
     </span>
     <span v-else>Test Connection</span>
   </button>
@@ -39,6 +44,8 @@ const test = () => {
 const close = () => {
   emit('cancel')
 }
+
+const isUpdatingConnection = computed(() => useConnectionsStore().isUpdatingConnection)
 
 const props = defineProps({
   dlgType: String

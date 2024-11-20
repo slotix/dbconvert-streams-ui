@@ -86,7 +86,6 @@ const showModal = computed(() => {
 const dlgTp = computed(() => {
   return useCommonStore().dlgType
 })
-
 const isShowDBTypesCombo = computed(() => {
   return dlgTp.value === DIALOG_TYPES.SAVE
 })

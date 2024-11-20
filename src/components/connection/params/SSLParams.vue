@@ -107,7 +107,7 @@ const localSSLConfig = ref<SSLConfig>(
   connection.value?.ssl
     ? JSON.parse(JSON.stringify(connection.value.ssl))
     : {
-        mode: 'require',
+        mode: 'disable',
         ca: undefined,
         client_cert: undefined,
         client_key: undefined
