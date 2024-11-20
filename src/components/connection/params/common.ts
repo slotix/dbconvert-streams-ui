@@ -92,6 +92,7 @@ export function useCommon<T extends Connection>(defaultConnection: T) {
   }
 
   const refreshDatabases = async () => {
+    // connectionsStore.getDatabases(connectionsStore.currentConnection!.id)
     if (!connectionsStore.currentConnection || connectionsStore.currentConnection.id === '') return
     await fetchData(api.getDatabases, 'databasesInfo' as keyof T)
   }

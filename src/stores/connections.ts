@@ -2,7 +2,8 @@ import { defineStore } from 'pinia'
 import api from '@/api/connections'
 import { debounce } from 'lodash'
 
-import { Connection, DbType  } from '@/types/connections'
+import { Connection, DbType } from '@/types/connections'
+import { useCommonStore } from './common'
 
 // Define interfaces for the state and other objects
 interface State {
@@ -12,6 +13,10 @@ interface State {
   sourceConnection: Connection | null
   targetConnection: Connection | null
   currentFilter: string
+  isLoadingConnections: boolean
+  isUpdatingConnection: boolean
+  isTestingConnection: boolean
+  isLoadingDatabases: boolean
 }
 
 export const useConnectionsStore = defineStore('connections', {
@@ -26,6 +31,10 @@ export const useConnectionsStore = defineStore('connections', {
     sourceConnection: null,
     targetConnection: null,
     currentFilter: '',
+    isLoadingConnections: false,
+    isUpdatingConnection: false,
+    isTestingConnection: false,
+    isLoadingDatabases: false,
   }),
   getters: {
     allConnections(state: State): Connection[] {
@@ -67,14 +76,21 @@ export const useConnectionsStore = defineStore('connections', {
         console.log('Updated connection:', this.currentConnection)
       }
     },
-    refreshConnections: debounce(async function (this: State) {
+    async refreshConnections() {
+      this.isLoadingConnections = true;
       try {
-        this.connections = (await api.getConnections()) as Connection[]
+        // Simulate a delay for testing
+        // await new Promise((resolve) => setTimeout(resolve, 10000)); // 2 seconds delay
+
+        const response = await api.getConnections();
+        this.connections = response;
       } catch (error) {
-        console.error('Failed to refresh connections:', error)
-        throw error
+        console.error('Failed to refresh connections:', error);
+        throw error;
+      } finally {
+        this.isLoadingConnections = false;
       }
-    }, 500),
+    },
     deleteConnection: debounce(async function (this: any, id: string) {
       try {
         const index = this.connections.findIndex((connection: Connection) => connection.id === id)
@@ -100,6 +116,24 @@ export const useConnectionsStore = defineStore('connections', {
         throw error
       }
     }, 500),
+
+    testConnection: debounce(async function (this: any, id: string) {
+      try {
+        this.isTestingConnection = true;
+        const status = await api.testConnection()
+        this.currentConnection = {
+          ...this.currentConnection!,
+          status: status
+        }
+        useCommonStore().showNotification(status, 'success')
+      } catch (error) {
+        useCommonStore().showNotification('Failed to test connection', 'error')
+        console.error('Failed to test connection:', error)
+        throw error
+      } finally {
+        this.isTestingConnection = false;
+      }
+    }, 500),
     resetCurrentConnection() {
       this.currentConnection = null
     },
@@ -109,11 +143,11 @@ export const useConnectionsStore = defineStore('connections', {
     async createConnection(): Promise<void> {
       try {
         const response = await api.createConnection(this.currentConnection as Record<string, unknown>)
-        
+
         if (this.currentConnection) {
           this.currentConnection.id = response.id
           this.currentConnection.created = response.created
-          
+
           const databasesInfo = await api.getDatabases(response.id)
           this.currentConnection.databasesInfo = databasesInfo
 
@@ -129,27 +163,36 @@ export const useConnectionsStore = defineStore('connections', {
         throw error
       }
     },
-    async updateConnection(): Promise<void> {
+    async updateConnection() {
+      this.isUpdatingConnection = true
       try {
         if (!this.currentConnection) return
 
         await api.updateConnection()
-        
-        const databases = await api.getDatabases(this.currentConnection.id)
-        this.currentConnection.databasesInfo = databases
-
-        if (this.currentConnection.type === 'PostgreSQL') {
-          const currentDb = databases.find(db => db.name === this.currentConnection?.database)
-          if (currentDb?.schemas) {
-            this.currentConnection.schema = currentDb.schemas[0]
-          }
-        }
-
+        await this.getDatabases(this.currentConnection.id)
         await this.refreshConnections()
       } catch (error) {
         console.error('Failed to update connection:', error)
         throw error
+      } finally {
+        this.isUpdatingConnection = false
       }
     },
+    async getDatabases(connectionId: string) {
+      this.isLoadingDatabases = true
+      try {
+        const databases = await api.getDatabases(connectionId)
+        this.currentConnection!.databasesInfo = databases
+
+        if (this.currentConnection!.type === 'PostgreSQL') {
+          const currentDb = databases.find(db => db.name === this.currentConnection?.database)
+          if (currentDb?.schemas) {
+            this.currentConnection!.schema = currentDb.schemas[0]
+          }
+        }
+      } finally {
+        this.isLoadingDatabases = false
+      }
+    }
   }
 })

@@ -83,8 +83,13 @@
       <button :disabled="!connection.id" type="button"
         class="inline-flex justify-center items-center rounded-md border border-gray-300 shadow-sm px-6 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
         @click="refreshDatabases">
-        Refresh
-        <ArrowPathIcon class="ml-2 h-5 w-5" aria-hidden="true" />
+        <template v-if="isLoadingDatabases">
+          <Spinner />
+        </template>
+        <template v-else>
+          Refresh
+          <ArrowPathIcon class="ml-2 h-5 w-5" aria-hidden="true" />
+        </template>
       </button>
     </div>
   </div>
@@ -94,11 +99,11 @@
     <div class="flex items-center max-w-sm mx-auto md:w-2/3 space-x-2">
       <input v-model="newDatabase" type="text"
         class="w-48 rounded-lg appearance-none border border-gray-300 py-2 px-4 bg-white text-gray-700 placeholder-gray-400 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-gray-600 focus:border-transparent"
-        placeholder="Add new database" />
+        placeholder="new database" />
       <button :disabled="newDatabase === '' || !connection.id"
         class="whitespace-nowrap inline-flex items-center rounded-lg border border-gray-300 py-2 px-4 text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-600 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
         @click="createDatabase(newDatabase)">
-        New database
+      Add
       </button>
     </div>
   </div>
@@ -145,11 +150,11 @@
     <div class="flex items-center max-w-sm mx-auto md:w-2/3 space-x-2">
       <input v-model="newSchema" type="text"
         class="w-48 rounded-lg appearance-none border border-gray-300 py-2 px-4 bg-white text-gray-700 placeholder-gray-400 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-gray-600 focus:border-transparent"
-        placeholder="Add new schema" />
+        placeholder="new schema" />
       <button :disabled="newSchema === '' || !connection.id"
         class="whitespace-nowrap inline-flex items-center rounded-lg border border-gray-300 py-2 px-4 text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-600 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
         @click="createSchema(newSchema)">
-        New schema
+      Add
       </button>
     </div>
   </div>
@@ -161,10 +166,14 @@ import { defineComponent, ref, computed } from 'vue'
 import { useCommon } from './common'
 import { Connection } from '@/types/connections'
 import ConnectionName from './ConnectionName.vue'
+import { useConnectionsStore } from '@/stores/connections'
+import { storeToRefs } from 'pinia'
 import PasswordBox from '@/components/common/PasswordBox.vue'
 import { ArrowPathIcon, ChevronUpDownIcon, CheckIcon } from '@heroicons/vue/24/solid'
 import { Combobox, ComboboxInput, ComboboxButton, ComboboxOptions, ComboboxOption, TransitionRoot } from '@headlessui/vue'
 import { DatabaseInfo } from '@/types/connections'
+import Spinner from '@/components/common/Spinner.vue'
+
 interface PostgreSQLConnection extends Connection {
   databasesInfo: DatabaseInfo[]
   database: string
@@ -176,6 +185,7 @@ export default defineComponent({
   components: {
     ConnectionName,
     PasswordBox,
+    Spinner,
     ArrowPathIcon,
     ChevronUpDownIcon,
     CheckIcon,
@@ -187,6 +197,9 @@ export default defineComponent({
     TransitionRoot
   },
   setup() {
+    const connectionsStore = useConnectionsStore()
+    const { isLoadingDatabases } = storeToRefs(connectionsStore)
+
     const defaultConnection: PostgreSQLConnection = {
       id: '',
       name: '',
@@ -215,7 +228,7 @@ export default defineComponent({
     const newDatabase = ref('')
     const newSchema = ref('')
     const query = ref('')
-
+    
     const databases = computed(() => connection.databasesInfo.map(db => db.name))
     const currentDatabaseSchemas = computed(() => {
       const currentDb = connection.databasesInfo.find(db => db.name === connection.database)
@@ -244,7 +257,8 @@ export default defineComponent({
       newDatabase,
       newSchema,
       updateDatabase,
-      query
+      query,
+      isLoadingDatabases
     }
   }
 })

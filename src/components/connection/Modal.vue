@@ -70,7 +70,6 @@
 </template>
 
 <script setup>
-import api from '@/api/connections'
 import { computed } from 'vue'
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue'
 import { XMarkIcon } from '@heroicons/vue/24/outline'
@@ -102,12 +101,7 @@ const showActionBtns = computed(() => {
 })
 
 async function test() {
-  try {
-    const status = await api.testConnection()
-    useCommonStore().showNotification(status, 'success')
-  } catch (err) {
-    useCommonStore().showNotification(err.message, 'error')
-  }
+  useConnectionsStore().testConnection()
 }
 
 function close() {
