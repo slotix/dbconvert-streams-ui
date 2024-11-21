@@ -1,8 +1,8 @@
-import axios, { AxiosInstance, AxiosResponse, AxiosError } from 'axios'
-import { handleApiError, handleUnauthorizedError } from '@/utils/errorHandler'
+import axios, { AxiosInstance, AxiosResponse } from 'axios'
 import { useCommonStore } from '@/stores/common'
-import { Connection, Schema, Database, SSLConfig, DatabaseInfo } from '@/types/connections'
+import { Connection, DatabaseInfo } from '@/types/connections'
 import { useConnectionsStore } from '@/stores/connections'
+import { executeWithRetry, validateApiKey } from './apiClient'
 
 const apiClient: AxiosInstance = axios.create({
   baseURL: 'http://127.0.0.1:8020/api/v1',
@@ -11,22 +11,14 @@ const apiClient: AxiosInstance = axios.create({
   }
 })
 
-const executeWithRetry = async <T>(operation: () => Promise<T>): Promise<T> => {
-  try {
-    return await operation()
-  } catch (error) {
-    if (error instanceof AxiosError && error.response?.status === 401) {
-      await handleUnauthorizedError(error)
-      // Retry the operation after reinitialization
-      return await operation()
-    }
-    throw handleApiError(error)
-  }
-}
+
+
 
 const getConnections = async (): Promise<Connection[]> => {
   return executeWithRetry(async () => {
     const commonStore = useCommonStore()
+    validateApiKey(commonStore.apiKey)
+    
     const response: AxiosResponse<Connection[]> = await apiClient.get('/connections', {
       headers: { 'X-API-Key': commonStore.apiKey }
     })
@@ -37,6 +29,7 @@ const getConnections = async (): Promise<Connection[]> => {
 const createConnection = async (json: Record<string, unknown>): Promise<{ id: string; created: number }> => {
   return executeWithRetry(async () => {
     const commonStore = useCommonStore()
+    validateApiKey(commonStore.apiKey)
 
     const response: AxiosResponse<{ id: string; created: number }> = await apiClient.post('/connections', json, {
       headers: { 'X-API-Key': commonStore.apiKey }

@@ -2,6 +2,7 @@ import axios, { AxiosInstance, AxiosError } from 'axios'
 import { handleApiError, handleUnauthorizedError } from '@/utils/errorHandler'
 import { DailyUsage, MonthlyUsageResponse, UserData } from '@/types/user'
 import { ServiceStatus, ServiceStatusResponse } from '@/types/common'
+import { useCommonStore } from '@/stores/common'
 // Define the shape of the API responses
 interface ApiResponse<T> {
   data: T
@@ -31,6 +32,43 @@ const sentryClient: AxiosInstance = axios.create({
   withCredentials: true
 })
 
+export function validateApiKey(apiKey: string | null): void {
+  if (!apiKey) {
+    throw new Error('EMPTY_API_KEY')
+  }
+}
+
+export const executeWithRetry = async <T>(operation: () => Promise<T>): Promise<T> => {
+  return executeWithEmptyKeyRetry(async () => {
+    try {
+      return await operation()
+    } catch (error) {
+      if (error instanceof AxiosError && error.response?.status === 401) {
+        await handleUnauthorizedError(error)
+        return await operation()
+      }
+      throw handleApiError(error)
+    }
+  })
+}
+
+const executeWithEmptyKeyRetry = async <T>(operation: () => Promise<T>): Promise<T> => {
+  try {
+    return await operation()
+  } catch (error) {
+    if (error instanceof Error && error.message === 'EMPTY_API_KEY') {
+      const commonStore = useCommonStore()
+      const initResult = await commonStore.initApp()
+      if (initResult === 'failed') {
+        throw new Error('Failed to initialize application')
+      }
+      // Retry the operation after initialization
+      return await operation()
+    }
+    throw error
+  }
+}
+
 const getUserDataFromSentry = async (token: string): Promise<UserData> => {
   try {
     const response: ApiResponse<UserData> = await backendClient.get('/user', {
@@ -55,15 +93,17 @@ const updateAPIKey = async (token: string): Promise<UpdateAPIKeyResponse> => {
   }
 }
 
-const loadUserConfigs = async (apiKey: string): Promise<UserData> => {
-  try {
-    const response: ApiResponse<UserData> = await backendClient.get('/user/load-configs', {
-      headers: { 'X-API-Key': apiKey }
-    })
-    return response.data
-  } catch (error) {
-    return handleUnauthorizedError(error as AxiosError)
-  }
+const loadUserConfigs = async (apiKey: string): Promise<void> => {
+  return executeWithEmptyKeyRetry(async () => {
+    validateApiKey(apiKey)
+    try {
+      await backendClient.get('/user/configs', {
+        headers: { 'X-API-Key': apiKey }
+      })
+    } catch (error) {
+      return handleUnauthorizedError(error as AxiosError)
+    }
+  })
 }
 
 const backendHealthCheck = async (): Promise<HealthCheckResponse> => {
@@ -85,28 +125,31 @@ const sentryHealthCheck = async (): Promise<HealthCheckResponse> => {
 }
 
 const getDailyUsage = async (apiKey: string): Promise<DailyUsage[]> => {
-  try {
-    const response: ApiResponse<DailyUsage[]> = await backendClient.get('/user/daily-usage', {
-      headers: { 'X-API-Key': apiKey }
-    })
-    return response.data
-  } catch (error) {
-    return handleUnauthorizedError(error as AxiosError)
-  }
+  return executeWithEmptyKeyRetry(async () => {
+    validateApiKey(apiKey)
+    try {
+      const response: ApiResponse<DailyUsage[]> = await backendClient.get('/user/daily-usage', {
+        headers: { 'X-API-Key': apiKey }
+      })
+      return response.data
+    } catch (error) {
+      return handleUnauthorizedError(error as AxiosError)
+    }
+  })
 }
 
 const getMonthlyUsage = async (apiKey: string): Promise<MonthlyUsageResponse> => {
-  try {
-    const response: ApiResponse<MonthlyUsageResponse> = await backendClient.get(
-      '/user/monthly-usage',
-      {
+  return executeWithEmptyKeyRetry(async () => {
+    validateApiKey(apiKey)
+    try {
+      const response: ApiResponse<MonthlyUsageResponse> = await backendClient.get('/user/monthly-usage', {
         headers: { 'X-API-Key': apiKey }
-      }
-    )
-    return response.data
-  } catch (error) {
-    return handleUnauthorizedError(error as AxiosError)
-  }
+      })
+      return response.data
+    } catch (error) {
+      return handleUnauthorizedError(error as AxiosError)
+    }
+  })
 }
 
 const getServiceStatus = async (): Promise<ServiceStatusResponse> => {
