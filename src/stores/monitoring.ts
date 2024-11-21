@@ -119,9 +119,17 @@ export const useMonitoringStore = defineStore('monitoring', {
       }).length
 
       // Determine stage based on node status and current stats
-      if (runningNodesNumber === 0 && this.stats.some(stat => stat.status === 'FINISHED')) {
+      if (runningNodesNumber === 0 && this.stats.some(stat => stat.status === 'FINISHED' || stat.status === 'STOPPED')) {
         // All nodes finished
         state.currentStageID = 4 // Finished stage
+
+        const stage = this.stages.find(s => s.id === state.currentStageID)
+        const isStopped = this.stats.some(stat => stat.status === 'STOPPED')
+        if (isStopped) {
+          stage!.title = 'Stopped'
+        } else if (this.stats.some(stat => stat.status === 'FINISHED')) {
+          stage!.title = 'Finished'
+        }
         const commonStore = useCommonStore()
         commonStore.fetchUsageData()
       } else if (this.stats.some(stat => stat.events && parseInt(stat.events) > 0)) {
@@ -166,13 +174,14 @@ export const useMonitoringStore = defineStore('monitoring', {
     }
   },
   actions: {
-    setStream(stream: StreamConfig) {
-      this.streamConfig = stream
+    setStreamConfig(streamConfig: StreamConfig) {
+      this.streamConfig = streamConfig
     },
     async consumeLogsFromNATS() {
       while (true) {
         try {
-          const nc = await connect({ servers: 'ws://127.0.0.1:8081' })
+          const natsServer = import.meta.env.VITE_NATS_SERVER
+          const nc = await connect({ servers: natsServer })
           const js = nc.jetstream()
           const jsm: JetStreamManager = await js.jetstreamManager()
 

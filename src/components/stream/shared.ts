@@ -130,7 +130,7 @@ export default defineComponent({
       try {
         await useStreamsStore().startStream(this.stream.id)
         useCommonStore().showNotification('Stream started', 'success')
-        useMonitoringStore().setStream(this.stream)
+        useMonitoringStore().setStreamConfig(this.stream)
         this.$router.push({ name: 'MonitorStream' })
       } catch (err: unknown) {
         if (err instanceof Error) {

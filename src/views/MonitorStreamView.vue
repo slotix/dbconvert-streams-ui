@@ -129,5 +129,5 @@ const handleStreamError = (error: any, defaultMessage: string) => {
   commonStore.showNotification(errorMessage, 'error')
 }
 
-const isStreamFinished = computed(() => monitoringStore.currentStage?.title === 'Finished')
+const isStreamFinished = computed(() => monitoringStore.currentStage?.id === 4)
 </script>
