@@ -169,7 +169,6 @@ export const useConnectionsStore = defineStore('connections', {
         if (!this.currentConnection) return
 
         await api.updateConnection()
-        await this.getDatabases(this.currentConnection.id)
         await this.refreshConnections()
       } catch (error) {
         console.error('Failed to update connection:', error)
