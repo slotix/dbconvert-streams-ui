@@ -119,7 +119,7 @@ export const useMonitoringStore = defineStore('monitoring', {
       }).length
 
       // Determine stage based on node status and current stats
-      if (runningNodesNumber === 0 && this.stats.some(stat => stat.status === 'FINISHED' || stat.status === 'STOPPED')) {
+      if (runningNodesNumber === 0 && (this.stats.some(stat => stat.status === 'FINISHED' || stat.status === 'STOPPED' || stat.status === 'FAILED'))) {
         // All nodes finished
         state.currentStageID = 4 // Finished stage
 
