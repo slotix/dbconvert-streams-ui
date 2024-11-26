@@ -119,7 +119,9 @@ export const useMonitoringStore = defineStore('monitoring', {
       }).length
 
       // Determine stage based on node status and current stats
-      if (runningNodesNumber === 0 && (this.stats.some(stat => stat.status === 'FINISHED' || stat.status === 'STOPPED' || stat.status === 'FAILED'))) {
+      if (runningNodesNumber === 0 && this.stats.every(stat => 
+        ['FINISHED', 'STOPPED', 'FAILED'].includes(stat.status || '')
+      )) {
         // All nodes finished
         state.currentStageID = 4 // Finished stage
 
@@ -127,7 +129,7 @@ export const useMonitoringStore = defineStore('monitoring', {
         const isStopped = this.stats.some(stat => stat.status === 'STOPPED')
         if (isStopped) {
           stage!.title = 'Stopped'
-        } else if (this.stats.some(stat => stat.status === 'FINISHED')) {
+        } else if (this.stats.every(stat => stat.status === 'FINISHED')) {
           stage!.title = 'Finished'
         }
         const commonStore = useCommonStore()
