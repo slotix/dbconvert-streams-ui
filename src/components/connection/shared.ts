@@ -126,19 +126,19 @@ export default defineComponent({
     }
   },
   methods: {
-    ...mapActions(useConnectionsStore, ['setCurrentConnection', 'saveConnection']),
+    //  ...mapActions(useConnectionsStore, ['setCurrentConnection']),
     addConnection(): void {
       this.commonStore.openModal(DIALOG_TYPES.SAVE)
     },
     editConnection(): void {
       if (this.connection) {
-        this.setCurrentConnection(this.connection.id)
+        this.connectionsStore.setCurrentConnection(this.connection.id)
         this.commonStore.openModal(DIALOG_TYPES.UPDATE)
       }
     },
     async cloneConnection(): Promise<void> {
       if (!this.connection) return
-      this.setCurrentConnection(this.connection.id)
+      this.connectionsStore.setCurrentConnection(this.connection.id)
       try {
         await this.connectionsStore.cloneConnection(this.connection.id)
         await this.connectionsStore.refreshConnections()
@@ -154,6 +154,11 @@ export default defineComponent({
     },
     async deleteConn(): Promise<void> {
       if (!this.connection) return
+      
+      if (!confirm('Are you sure you want to delete this connection?')) {
+        return
+      }
+
       try {
         await this.connectionsStore.deleteConnection(this.connection.id)
         await this.connectionsStore.refreshConnections()
@@ -170,7 +175,7 @@ export default defineComponent({
 
     selectConnection(): void {
       if (!this.connection) return
-      this.setCurrentConnection(this.connection.id)
+      this.connectionsStore.setCurrentConnection(this.connection.id)
       if (this.currentStep?.name === 'source') {
         this.streamsStore.updateSource(this.connection.id)
       }

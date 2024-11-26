@@ -96,6 +96,9 @@ export default defineComponent({
       this.$router.push({ name: 'ManageStream', params: { mode: 'edit' } })
     },
     async deleteStream() {
+      if (!confirm('Are you sure you want to delete this stream?')) {
+        return
+      }
       try {
         await useStreamsStore().deleteStream(this.stream.id)
         await useStreamsStore().refreshStreams()
