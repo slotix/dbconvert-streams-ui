@@ -18,7 +18,7 @@ export const defaultStreamConfigOptions: StreamConfig = {
   id: '',
   name: '',
   mode: 'convert',
-  dataBundleSize: 100,
+  dataBundleSize: 500,
   reportingIntervals: { source: 3, target: 3 },
   operations: ['insert', 'update', 'delete'],
   createStructure: true,
