@@ -31,10 +31,19 @@
         >
         <input
           id="dataBundleSize"
-          v-model="dataBundleSize"
+          v-model.number="dataBundleSize"
           type="number"
+          min="0"
+          max="1000"
           class="mt-1 focus:ring-gray-500 focus:border-gray-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+          placeholder="Enter a value between 10 and 1000"
         />
+        <p class="mt-2 text-sm text-gray-500">
+          Please enter a value between 10 and 1000.
+        </p>
+        <p v-if="dataBundleSize < 10 || dataBundleSize > 1000" class="mt-1 text-sm text-red-600">
+          Value must be between 10 and 1000.
+        </p>
       </div>
       <h3 class="text-base mt-6 font-semibold leading-6 text-gray-900">
         Reporting Intervals (seconds)
@@ -132,7 +141,8 @@ const currentStreamConfig = streamsStore.currentStreamConfig as StreamConfig
 const dataBundleSize = computed<number>({
   get: () => currentStreamConfig.dataBundleSize ?? defaultStreamConfigOptions.dataBundleSize,
   set: (newValue) => {
-    currentStreamConfig.dataBundleSize = newValue
+    const clampedValue = Math.min(Math.max(newValue, 10), 1000)
+    currentStreamConfig.dataBundleSize = clampedValue
   }
 })
 
