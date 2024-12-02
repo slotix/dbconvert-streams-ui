@@ -42,11 +42,16 @@
                     :src="logoSrc(source.type)"
                     :alt="source.type + ' logo'" />
                 </div>
-                <span class="font-normal text-sm text-gray-600 break-all block mt-2">
+                <span class="font-normal text-sm break-all block mt-2 flex items-center gap-1"
+                  :class="{'text-red-500': !source || !source.name, 'text-gray-600': source && source.name}">
                   {{ source?.name || 'N/A' }}
+                  <ExclamationCircleIcon v-if="!source || !source.name" 
+                    class="h-4 w-4 text-red-500" 
+                    aria-hidden="true" />
                 </span>
                 <div class="text-sm text-gray-500 mt-1">
-                  <ConnectionStringDisplay :connection="source" />
+                  <ConnectionStringDisplay v-if="source" :connection="source" />
+                  <span v-else class="text-red-500 text-xs">Connection not found</span>
                 </div>
               </span>
             </div>
@@ -66,11 +71,16 @@
                     :src="logoSrc(target.type)"
                     :alt="target.type + ' logo'" />
                 </div>
-                <span class="font-normal text-sm text-gray-600 break-all block mt-2">
+                <span class="font-normal text-sm break-all block mt-2 flex items-center gap-1"
+                  :class="{'text-red-500': !target || !target.name, 'text-gray-600': target && target.name}">
                   {{ target?.name || 'N/A' }}
+                  <ExclamationCircleIcon v-if="!target || !target.name" 
+                    class="h-4 w-4 text-red-500" 
+                    aria-hidden="true" />
                 </span>
                 <div class="text-sm text-gray-500 mt-1">
-                  <ConnectionStringDisplay :connection="target" />
+                  <ConnectionStringDisplay v-if="target" :connection="target" />
+                  <span v-else class="text-red-500 text-xs">Connection not found</span>
                 </div>
               </span>
             </div>
@@ -122,7 +132,6 @@
 
 <script>
 import { defineComponent } from 'vue'
-import { ClipboardIcon } from '@heroicons/vue/24/outline'
 import shared from './shared'
 import { vTooltip } from '@/directives/tooltip'
 

@@ -6,6 +6,7 @@ import {
   PlayIcon,
   Square2StackIcon,
   TrashIcon,
+  ExclamationCircleIcon
 } from '@heroicons/vue/24/solid'
 import { ClipboardIcon } from '@heroicons/vue/24/outline'
 import { mapActions, mapState } from 'pinia'
@@ -44,7 +45,8 @@ export default defineComponent({
     ActionsMenu,
     ClipboardIcon,
     Switch,
-    ConnectionStringDisplay
+    ConnectionStringDisplay,
+    ExclamationCircleIcon
   },
   setup(props) {
     const dbTypes = useConnectionsStore().dbTypes
