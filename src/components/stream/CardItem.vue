@@ -1,22 +1,11 @@
 <template>
-  <div class="w-full py-6">
+  <div class="w-full py-4">
     <div
-      class="bg-white shadow-md rounded-lg overflow-hidden cursor-pointer transform hover:scale-105 duration-300 ease-in-out flex flex-col h-full"
+      class="bg-white shadow-md rounded-lg overflow-hidden cursor-pointer transform hover:scale-105 duration-300 ease-in-out flex flex-col h-full max-w-4xl mx-auto"
       @click="selectStream">
       <div class="flex items-center justify-between bg-gray-100 p-4">
-        <div class="flex items-center space-x-4">
-          <div class="flex items-center space-x-2">
-            <img v-if="source && source.type" class="h-8 w-8 rounded-full" :src="logoSrc(source.type)"
-              :alt="source.type + ' logo'" />
-            <ChevronRightIcon class="h-6 w-6 text-gray-500" aria-hidden="true" />
-            <img v-if="target && target.type" class="h-8 w-8 rounded-full" :src="logoSrc(target.type)"
-              :alt="target.type + ' logo'" />
-          </div>
-
-          <span
-            class="rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
-            {{ stream.mode }}
-          </span>
+        <div class="uppercase tracking-wide text-sm font-medium text-gray-800 truncate">
+          {{ stream.name }}
         </div>
         <div class="flex items-center gap-4">
           <Switch v-model="isJsonView"
@@ -41,42 +30,47 @@
           <pre class="text-sm text-gray-900 whitespace-pre-wrap">{{ prettyConfig }}</pre>
         </div>
       </div>
-      <div v-else class="flex-grow space-y-2 px-6 py-4">
-        <div class="uppercase tracking-wide text-sm font-medium text-gray-800 truncate">
-          {{ stream.name }}
+      <div v-else class="flex-grow space-y-3 px-8 py-6">
+        <div class="relative">
+          <div class="grid grid-cols-2 gap-6">
+            <div class="flex-auto space-y-2 text-gray-500">
+              <span class="mx-auto font-semibold text-gray-800">
+                <div class="flex items-center justify-center space-x-4 mb-4">
+                  Source:
+                  <img v-if="source && source.type" 
+                    class="h-6 w-6 rounded-full ml-2" 
+                    :src="logoSrc(source.type)"
+                    :alt="source.type + ' logo'" />
+                </div>
+                <span class="font-normal break-all" :class="{ 'text-red-500': !source || !source.name }">
+                  {{ source?.name || 'N/A' }}
+                </span>
+              </span>
+            </div>
+            <div class="absolute left-1/2 top-0 h-full -ml-px border-l border-gray-200"></div>
+            <div class="absolute left-1/2 top-0 -translate-x-1/2 z-10 bg-white px-2">
+              <span
+                class="inline-block rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
+                {{ stream.mode }}
+              </span>
+            </div>
+            <div class="flex-auto space-y-2 text-gray-500">
+              <span class="mx-auto font-semibold text-gray-800">
+                <div class="flex items-center justify-center space-x-4 mb-4">
+                  Target:
+                  <img v-if="target && target.type" 
+                    class="h-6 w-6 rounded-full ml-2" 
+                    :src="logoSrc(target.type)"
+                    :alt="target.type + ' logo'" />
+                </div>
+                <span class="font-normal break-all" :class="{ 'text-red-500': !target || !target.name }">
+                  {{ target?.name || 'N/A' }}
+                </span>
+              </span>
+            </div>
+          </div>
         </div>
-        <!-- <div class="text-xs text-gray-500 flex items-center">
-          <span v-tooltip="isIdExpanded ? 'Collapse ID' : 'Expand ID'" class="break-all cursor-pointer"
-            @click.stop="toggleIdExpansion">
-            ID: {{ displayedId }}
-          </span>
-          <button v-tooltip="'Copy full ID'" class="ml-1 text-gray-500 hover:text-gray-700" @click.stop="copyId">
-            <ClipboardIcon class="h-4 w-4" />
-          </button>
-        </div> -->
-        <div class="flex-auto md:text-left w-full space-y-2 text-gray-500">
-          <span class="mx-auto font-semibold text-gray-800">
-            Source:
-            <span class="font-normal pl-3" :class="{ 'text-red-500': !source || !source.name }">
-              {{ source?.name || 'N/A' }}
-              <!-- <span v-if="source && source.id" class="text-xs text-gray-500 ml-1">
-                • {{ source.id }}
-              </span> -->
-            </span>
-          </span>
-        </div>
-        <div class="flex-auto md:text-left w-full space-y-2 text-gray-500">
-          <span class="mx-auto font-semibold text-gray-800">
-            Target:
-            <span class="font-normal pl-3" :class="{ 'text-red-500': !target || !target.name }">
-              {{ target?.name || 'N/A' }}
-              <!-- <span v-if="target && target.id" class="text-xs text-gray-500 ml-1">
-                • {{ target.id }}
-              </span> -->
-            </span>
-          </span>
-        </div>
-        <div class="flex-auto md:text-left w-full space-y-2 text-gray-500">
+        <div class="flex-auto space-y-2 text-gray-500 mt-4">
           <span class="mx-auto font-semibold text-gray-800">
             Tables:
             <span class="font-normal pl-3">
@@ -87,7 +81,7 @@
             </span>
           </span>
         </div>
-        <div class="inline-flex text-gray-600">
+        <div class="inline-flex text-gray-600 mt-4">
           <CalendarIcon class="h-4 w-4" aria-hidden="true" />
           <span class="text-sm pl-3">{{ streamCreated }}</span>
         </div>

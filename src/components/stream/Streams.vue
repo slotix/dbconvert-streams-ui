@@ -34,7 +34,7 @@
         <div
           v-for="stream in streams"
           :key="stream.id"
-          class="w-full px-4 overflow-hidden md:w-1/2 lg:w-1/3"
+          class="w-full px-4 overflow-hidden md:w-1/2 xl:w-1/2"
         >
           <CardItem
             :stream="stream"
