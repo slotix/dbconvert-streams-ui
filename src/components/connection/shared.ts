@@ -15,6 +15,7 @@ import ActionsMenu from '@/components/common/ActionsMenu.vue'
 import { defineComponent, computed, ref, PropType } from 'vue'
 import { Connection, DbType } from '@/types/connections'
 import { generateConnectionString } from '@/utils/connectionStringGenerator'
+import ConnectionStringDisplay from '@/components/common/ConnectionStringDisplay.vue'
 
 export default defineComponent({
   components: {
@@ -25,7 +26,8 @@ export default defineComponent({
     CheckCircleIcon,
     ChevronRightIcon,
     PlayIcon,
-    ActionsMenu
+    ActionsMenu,
+    ConnectionStringDisplay
   },
   props: {
     connection: {

@@ -45,8 +45,8 @@
                 <span class="font-normal text-sm text-gray-600 break-all block mt-2">
                   {{ source?.name || 'N/A' }}
                 </span>
-                <div class="text-sm text-gray-500 mt-1 font-mono break-all">
-                  {{ sourceConnectionString }}
+                <div class="text-sm text-gray-500 mt-1">
+                  <ConnectionStringDisplay :connection="source" />
                 </div>
               </span>
             </div>
@@ -69,8 +69,8 @@
                 <span class="font-normal text-sm text-gray-600 break-all block mt-2">
                   {{ target?.name || 'N/A' }}
                 </span>
-                <div class="text-sm text-gray-500 mt-1 font-mono break-all">
-                  {{ targetConnectionString }}
+                <div class="text-sm text-gray-500 mt-1">
+                  <ConnectionStringDisplay :connection="target" />
                 </div>
               </span>
             </div>
@@ -130,6 +130,6 @@ export default defineComponent({
   ...shared,
   directives: {
     tooltip: vTooltip
-  }
+  },
 })
 </script>

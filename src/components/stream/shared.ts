@@ -19,7 +19,7 @@ import { StreamConfig } from '@/types/streamConfig'
 import { DbType } from '@/types/connections'
 import { Switch } from '@headlessui/vue'
 import { generateConnectionString } from '@/utils/connectionStringGenerator'
-
+import ConnectionStringDisplay from '@/components/common/ConnectionStringDisplay.vue'
 export default defineComponent({
   props: {
     stream: {
@@ -43,7 +43,8 @@ export default defineComponent({
     PlayIcon,
     ActionsMenu,
     ClipboardIcon,
-    Switch
+    Switch,
+    ConnectionStringDisplay
   },
   setup(props) {
     const dbTypes = useConnectionsStore().dbTypes
