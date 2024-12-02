@@ -42,7 +42,7 @@
                     :src="logoSrc(source.type)"
                     :alt="source.type + ' logo'" />
                 </div>
-                <span class="font-normal break-all  block" :class="{ 'text-red-500': !source || !source.name }">
+                <span class="font-normal text-sm text-gray-600 break-all block mt-2">
                   {{ source?.name || 'N/A' }}
                 </span>
               </span>
@@ -63,7 +63,7 @@
                     :src="logoSrc(target.type)"
                     :alt="target.type + ' logo'" />
                 </div>
-                <span class="font-normal break-all block" :class="{ 'text-red-500': !target || !target.name }">
+                <span class="font-normal text-sm text-gray-600 break-all block mt-2">
                   {{ target?.name || 'N/A' }}
                 </span>
               </span>
@@ -73,7 +73,7 @@
         <div class="flex-auto space-y-2 text-gray-500 mt-4">
           <span class="mx-auto font-semibold text-gray-800">
             Tables:
-            <span class="font-normal pl-3">
+            <span class="font-normal text-sm text-gray-600 pl-3">
               [{{ displayedTables.join(', ') }}{{ remainingTablesCount > 0 ? ', ...' : '' }}]
               <span v-if="remainingTablesCount > 0" class="text-xs italic ml-1">
                 ({{ remainingTablesCount }} more)

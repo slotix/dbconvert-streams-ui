@@ -20,7 +20,7 @@
           <div class="px-4 pt-4 md:text-left w-full space-y-2 text-gray-500">
             <span class="mx-auto font-semibold text-gray-800">
               Host:
-              <span class="font-normal pl-3">{{ concatenateValues }} </span>
+              <span class="font-normal text-sm text-gray-600 pl-3">{{ concatenateValues }} </span>
             </span>
           </div>
           <div v-show="selected" class="mt-4 mr-4 items-center">
@@ -37,7 +37,7 @@
         <div class="flex-auto px-6 md:text-left w-full space-y-2 text-gray-500">
           <span class="mx-auto font-semibold text-gray-800">
             Database:
-            <span class="font-normal pl-3">{{ connection.database }}</span>
+            <span class="font-normal text-sm text-gray-600 pl-3">{{ connection.database }}</span>
           </span>
         </div>
         <!-- Add schema information or placeholder -->
@@ -47,7 +47,7 @@
         >
           <span class="mx-auto font-semibold text-gray-800">
             Schema:
-            <span class="font-normal pl-3">{{ connection.schema }}</span>
+            <span class="font-normal text-sm text-gray-600 pl-3">{{ connection.schema }}</span>
           </span>
         </div>
         <div v-else class="flex-auto px-6 md:text-left w-full space-y-2 text-gray-500 h-[24px]">
