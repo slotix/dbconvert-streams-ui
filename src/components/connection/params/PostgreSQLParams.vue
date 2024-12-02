@@ -57,7 +57,13 @@
           <div class="relative">
             <ComboboxInput
               class="w-full rounded-lg border border-gray-300 py-2 px-4 bg-white text-gray-700 placeholder-gray-400 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-gray-600 focus:border-transparent"
-              @change="query = $event.target.value" :displayValue="(item: unknown) => item as string" />
+              :displayValue="(item: unknown) => item as string"
+              @change="(event) => {
+                const target = event.target as HTMLInputElement;
+                connection.database = target.value;
+                updateDatabase(target.value);
+              }"
+            />
             <ComboboxButton class="absolute inset-y-0 right-0 flex items-center pr-2">
               <ChevronUpDownIcon class="h-5 w-5 text-gray-400" aria-hidden="true" />
             </ComboboxButton>
@@ -236,10 +242,13 @@ export default defineComponent({
       return currentDb?.schemas || []
     })
     const updateDatabase = (newDatabase: string) => {
-      connection.database = newDatabase
-      // Set schema to 'public' by default when changing database
-      const newDbSchemas = currentDatabaseSchemas.value
-      connection.schema = newDbSchemas.includes('public') ? 'public' : newDbSchemas[0] || ''
+      connection.database = newDatabase;
+      // Only set schema to 'public' by default when the database exists in the list
+      const dbExists = databases.value.includes(newDatabase);
+      if (dbExists) {
+        const newDbSchemas = currentDatabaseSchemas.value;
+        connection.schema = newDbSchemas.includes('public') ? 'public' : newDbSchemas[0] || '';
+      }
     }
 
     return {

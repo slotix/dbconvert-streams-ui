@@ -53,8 +53,15 @@
         <div class="flex items-center max-w-sm mx-auto md:w-2/3 space-x-2">
           <Combobox v-model="connection.database">
             <div class="relative w-full">
-              <ComboboxInput :display-value="(item: unknown) => item as string" :model-value="connection.database"
-                class="w-full rounded-lg border border-gray-300 py-2 px-4 bg-white text-gray-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-600 focus:border-transparent" />
+              <ComboboxInput 
+                :display-value="(item: unknown) => item as string"
+                :model-value="connection.database"
+                @change="(event) => {
+                  const target = event.target as HTMLInputElement;
+                  connection.database = target.value;
+                }"
+                class="w-full rounded-lg border border-gray-300 py-2 px-4 bg-white text-gray-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-600 focus:border-transparent"
+              />
               <ComboboxButton class="absolute inset-y-0 right-0 flex items-center pr-2">
                 <ChevronUpDownIcon class="h-5 w-5 text-gray-400" aria-hidden="true" />
               </ComboboxButton>
