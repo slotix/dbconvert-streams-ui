@@ -42,7 +42,7 @@
                     :src="logoSrc(source.type)"
                     :alt="source.type + ' logo'" />
                 </div>
-                <span class="font-normal break-all" :class="{ 'text-red-500': !source || !source.name }">
+                <span class="font-normal break-all  block" :class="{ 'text-red-500': !source || !source.name }">
                   {{ source?.name || 'N/A' }}
                 </span>
               </span>
@@ -50,7 +50,7 @@
             <div class="absolute left-1/2 top-0 h-full -ml-px border-l border-gray-200"></div>
             <div class="absolute left-1/2 top-0 -translate-x-1/2 z-10 bg-white px-2">
               <span
-                class="inline-block rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
+                class="whitespace-nowrap inline-block rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
                 {{ stream.mode }}
               </span>
             </div>
@@ -63,7 +63,7 @@
                     :src="logoSrc(target.type)"
                     :alt="target.type + ' logo'" />
                 </div>
-                <span class="font-normal break-all" :class="{ 'text-red-500': !target || !target.name }">
+                <span class="font-normal break-all block" :class="{ 'text-red-500': !target || !target.name }">
                   {{ target?.name || 'N/A' }}
                 </span>
               </span>
@@ -96,15 +96,10 @@
           </button>
         </div>
         <div class="-ml-px flex w-0 flex-1">
-          <ActionsMenu 
-            v-tooltip="'More stream actions'"
+          <ActionsMenu v-tooltip="'More stream actions'"
             class="w-full rounded-none border border-gray-300 bg-gray-100 hover:bg-gray-200"
-            :position="actionsMenuPosition" 
-            :viewType="'cards'"
-            @selectRow="selectStream" 
-            @editRow="editStream" 
-            @cloneRow="cloneStream"
-            @deleteRow="deleteStream" />
+            :position="actionsMenuPosition" :viewType="'cards'" @selectRow="selectStream" @editRow="editStream"
+            @cloneRow="cloneStream" @deleteRow="deleteStream" />
         </div>
         <div class="-ml-px flex w-0 flex-1">
           <button v-tooltip="'Start the stream'" type="button"
