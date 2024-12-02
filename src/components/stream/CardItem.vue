@@ -45,6 +45,9 @@
                 <span class="font-normal text-sm text-gray-600 break-all block mt-2">
                   {{ source?.name || 'N/A' }}
                 </span>
+                <div class="text-sm text-gray-500 mt-1 font-mono break-all">
+                  {{ sourceConnectionString }}
+                </div>
               </span>
             </div>
             <div class="absolute left-1/2 top-0 h-full -ml-px border-l border-gray-200"></div>
@@ -66,6 +69,9 @@
                 <span class="font-normal text-sm text-gray-600 break-all block mt-2">
                   {{ target?.name || 'N/A' }}
                 </span>
+                <div class="text-sm text-gray-500 mt-1 font-mono break-all">
+                  {{ targetConnectionString }}
+                </div>
               </span>
             </div>
           </div>

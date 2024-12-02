@@ -14,6 +14,7 @@ import { useCommonStore, DIALOG_TYPES } from '@/stores/common'
 import ActionsMenu from '@/components/common/ActionsMenu.vue'
 import { defineComponent, computed, ref, PropType } from 'vue'
 import { Connection, DbType } from '@/types/connections'
+import { generateConnectionString } from '@/utils/connectionStringGenerator'
 
 export default defineComponent({
   components: {
@@ -123,6 +124,10 @@ export default defineComponent({
     connectionNameWithId(): string {
       if (!this.connection) return ''
       return `${this.connection.name} (ID: ${this.connection.id})`
+    },
+    connectionString(): string {
+      if (!this.connection) return ''
+      return generateConnectionString(this.connection)
     }
   },
   methods: {

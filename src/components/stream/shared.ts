@@ -18,6 +18,7 @@ import { defineComponent, PropType, computed, ref } from 'vue'
 import { StreamConfig } from '@/types/streamConfig'
 import { DbType } from '@/types/connections'
 import { Switch } from '@headlessui/vue'
+import { generateConnectionString } from '@/utils/connectionStringGenerator'
 
 export default defineComponent({
   props: {
@@ -208,6 +209,16 @@ export default defineComponent({
         return Math.max(0, this.stream.tables.length - this.displayedTables.length)
       }
       return 0
+    },
+    sourceConnectionString(): string {
+      const sourceConnection = useConnectionsStore().connectionByID(this.stream?.source || '')
+      if (!sourceConnection) return ''
+      return generateConnectionString(sourceConnection)
+    },
+    targetConnectionString(): string {
+      const targetConnection = useConnectionsStore().connectionByID(this.stream?.target || '')
+      if (!targetConnection) return ''
+      return generateConnectionString(targetConnection)
     }
   },
   async mounted() {

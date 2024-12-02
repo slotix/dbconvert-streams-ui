@@ -53,6 +53,12 @@
         <div v-else class="flex-auto px-6 md:text-left w-full space-y-2 text-gray-500 h-[24px]">
           <!-- Placeholder to maintain consistent height -->
         </div>
+        <div class="flex-auto px-6 md:text-left w-full space-y-2 text-gray-500">
+          <span class="mx-auto font-semibold text-gray-800">
+            Connection String:
+            <span class="font-normal text-sm text-gray-600 pl-3 font-mono">{{ connectionString }}</span>
+          </span>
+        </div>
         <span class="px-6 pt-4 pb-4 inline-flex text-gray-600">
           <CalendarIcon class="h-4 w-4" aria-hidden="true" />
           <span class="text-sm pl-3">{{ connectionCreated }}</span>
