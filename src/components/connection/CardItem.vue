@@ -45,11 +45,14 @@
         <div v-else class="flex-auto px-6 md:text-left w-full space-y-2 text-gray-500 h-[24px]">
           <!-- Placeholder to maintain consistent height -->
         </div>
-        <div class="flex-auto px-6 md:text-left w-full space-y-2 text-gray-500">
-          <span class="mx-auto font-semibold text-gray-800">
-            Connection String:
-            <ConnectionStringDisplay :connection="connection" />
-          </span>
+        <!-- Connection string section with visual separation -->
+        <div class="mt-2 px-6 pt-2 border-t border-gray-200">
+          <div class="flex-auto md:text-left w-full space-y-2 text-gray-500">
+            <span class="mx-auto font-semibold text-gray-800">
+              Connection String:
+              <ConnectionStringDisplay :connection="connection" />
+            </span>
+          </div>
         </div>
         <span class="px-6 pt-4 pb-4 inline-flex text-gray-600">
           <CalendarIcon class="h-4 w-4" aria-hidden="true" />

@@ -49,9 +49,11 @@
                     class="h-4 w-4 text-red-500" 
                     aria-hidden="true" />
                 </span>
-                <div class="text-sm text-gray-500 mt-1">
-                  <ConnectionStringDisplay v-if="source" :connection="source" />
-                  <span v-else class="text-red-500 text-xs">Connection not found</span>
+                <div class="mt-2 pt-2 border-t border-gray-200">
+                  <div class="text-sm text-gray-500">
+                    <ConnectionStringDisplay v-if="source" :connection="source" />
+                    <span v-else class="text-red-500 text-xs">Connection not found</span>
+                  </div>
                 </div>
               </span>
             </div>
@@ -78,9 +80,11 @@
                     class="h-4 w-4 text-red-500" 
                     aria-hidden="true" />
                 </span>
-                <div class="text-sm text-gray-500 mt-1">
-                  <ConnectionStringDisplay v-if="target" :connection="target" />
-                  <span v-else class="text-red-500 text-xs">Connection not found</span>
+                <div class="mt-2 pt-2 border-t border-gray-200">
+                  <div class="text-sm text-gray-500">
+                    <ConnectionStringDisplay v-if="target" :connection="target" />
+                    <span v-else class="text-red-500 text-xs">Connection not found</span>
+                  </div>
                 </div>
               </span>
             </div>
