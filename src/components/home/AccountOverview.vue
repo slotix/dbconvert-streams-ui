@@ -32,7 +32,8 @@
           </div>
         </div>
         <div class="ml-4 flex-grow">
-          <p class="text-sm font-medium text-gray-500">Usage this month</p>
+          <p class="text-sm font-medium text-gray-500">Current Period Usage </p>  
+          <p class="text-sm text-gray-500">({{ currentPeriodStart ? currentPeriodStart : 'N/A' }} - {{ currentPeriodEnd ? currentPeriodEnd : 'N/A' }})</p>
           <div class="mt-1">
             <div class="flex items-center">
               <span class="text-lg font-semibold text-gray-900">{{ formatDataSize(usedData) }}</span>
@@ -81,7 +82,7 @@ import { computed } from 'vue'
 import { useCommonStore } from '@/stores/common'
 import { useRouter } from 'vue-router'
 import { CreditCardIcon, ChartBarIcon, KeyIcon, ChevronRightIcon } from '@heroicons/vue/24/outline'
-
+import { formatDate, formatDataSize } from '@/utils/formats'
 const commonStore = useCommonStore()
 const router = useRouter()
 
@@ -93,8 +94,8 @@ const currentPlanName = computed(() => {
 })
 
 // Extract usage data
-const usedData = computed(() => commonStore.currentMonthUsage?.data_volume || 0)
-const totalData = computed(() => commonStore.monthlyLimit || 0)
+const usedData = computed(() => commonStore.userData?.subscriptionPeriodUsage?.data_volume || 0)
+const totalData = computed(() => commonStore.userData?.subscription?.monthly_limit || 0)
 
 // Calculate usage percentage
 const usagePercentage = computed(() => {
@@ -102,14 +103,18 @@ const usagePercentage = computed(() => {
   return Math.round((usedData.value / totalData.value) * 100)
 })
 
-function formatDataSize(bytes: number): string {
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
-  if (bytes === 0) return '0 B'
-  const i = Math.floor(Math.log(bytes) / Math.log(1024))
-  return `${(bytes / Math.pow(1024, i)).toFixed(2)} ${sizes[i]}`
-}
-
 function manageApiKey() {
   router.push({ name: 'User' })
 }
+
+// Add period information
+const currentPeriodStart = computed(() => {
+  const date = commonStore.userData?.subscriptionPeriodUsage?.period_start
+  return date ? formatDate(date) : null
+})
+
+const currentPeriodEnd = computed(() => {
+  const date = commonStore.userData?.subscriptionPeriodUsage?.period_end
+  return date ? formatDate(date) : null
+})
 </script>

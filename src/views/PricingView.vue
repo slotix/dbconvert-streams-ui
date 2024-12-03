@@ -44,7 +44,7 @@
               <div v-else>
                 <div class="flex items-baseline mb-2">
                   <span v-if="currentPeriodEnd" class="text-gray-600">
-                    {{ isCanceled ? 'Access expires' : 'Your subscription renews' }} on {{ formatDate(currentPeriodEnd) }}
+                    {{ isCanceled ? 'Access expires' : 'Your subscription renews' }} on {{ currentPeriodEnd ? currentPeriodEnd : 'N/A' }}
                   </span>
                 </div>
                 
@@ -96,6 +96,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useCommonStore } from '@/stores/common'
 import type { Subscription } from '@/types/user'
 import { ClockIcon, ExclamationCircleIcon } from '@heroicons/vue/24/solid'
+import { formatDate } from '@/utils/formats'
 
 const commonStore = useCommonStore()
 const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY
@@ -104,8 +105,11 @@ const pricingTableId = import.meta.env.VITE_STRIPE_PRICING_TABLE_ID
 const currentPlan = computed<Subscription | null>(() => commonStore.userData?.subscription ? { ...commonStore.userData.subscription, name: commonStore.userData.subscription.name.charAt(0).toUpperCase() + commonStore.userData.subscription.name.slice(1) } : null)
 const stripeCustomerId = computed<string>(() => commonStore.stripeCustomerId || '')
 const trialEnd = computed<number | null>(() => commonStore.trialEnd || null)
-const currentPeriodStart = computed<number | null>(() => commonStore.currentPeriodStart || null)
-const currentPeriodEnd = computed<number | null>(() => commonStore.currentPeriodEnd || null)
+
+const currentPeriodEnd = computed(() => {
+  const date = commonStore.userData?.subscriptionPeriodUsage?.period_end
+  return date ? formatDate(date) : null
+})
 const isStripePricingTableLoaded = ref(false)
 const showFreePlanBlock = computed(() => currentPlan.value?.price === 0)
 
@@ -121,19 +125,6 @@ onMounted(() => {
     }
   }, 100)
 })
-
-function formatDate(date: number): string {
-  return new Date(date * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-}
-function formatDataSize(bytes: number): string {
-  const gigabytes = bytes / (1024 * 1024 * 1024)
-  return `${gigabytes.toFixed(2)} GB`
-}
-
-function formatPrice(price: number): string {
-  if (price === 0) return 'Free'
-  return `$${price.toFixed(2)} / month`
-}
 
 const customerPortalUrl = 'https://billing.stripe.com/p/login/test_00g6q63wr6DBcfK4gg'
 </script>

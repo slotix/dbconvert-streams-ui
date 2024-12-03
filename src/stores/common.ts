@@ -266,8 +266,15 @@ export const useCommonStore = defineStore('common', {
     userID: (state) => state.userData?.userID || null,
     stripeCustomerId: (state) => state.userData?.stripeCustomerId || null,
     trialEnd: (state) => state.userData?.trialEnd || null,
-    currentPeriodStart: (state) => state.userData?.currentPeriodStart || null,
-    currentPeriodEnd: (state) => state.userData?.currentPeriodEnd || null,
+    currentPeriodStart: (state) => {
+      const date = state.userData?.subscriptionPeriodUsage?.period_start
+      return date ? new Date(date).getTime() / 1000 : null
+    },
+    currentPeriodEnd: (state) => {
+      const date = state.userData?.subscriptionPeriodUsage?.period_end
+      return date ? new Date(date).getTime() / 1000 : null
+    },
+    currentPeriodUsage: (state) => state.userData?.subscriptionPeriodUsage?.data_volume || 0,
     monthlyLimit: (state) => state.userData?.subscription.monthly_limit || null,
     dailyUsage: (state) => state.userData?.dailyUsage || null,
     monthlyUsage: (state) => state.userData?.monthlyUsage || null,

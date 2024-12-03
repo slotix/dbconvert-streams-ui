@@ -12,16 +12,21 @@ export interface MonthlyUsageResponse {
   usage: MonthlyUsage[]
 }
 
+export interface SubscriptionPeriodUsage {
+  period_start: number
+  period_end: number
+  data_volume: number
+}
+
 export interface UserData {
   userID: string
   email: string
   stripeCustomerId: string
   trialEnd: number
-  currentPeriodStart: number
-  currentPeriodEnd: number
   apiKey: string
   dailyUsage: DailyUsage[]
   monthlyUsage: MonthlyUsage[]
+  subscriptionPeriodUsage: SubscriptionPeriodUsage
   subscription: Subscription
   subscriptionStatus: string
 }

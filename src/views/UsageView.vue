@@ -2,26 +2,20 @@
   <div class="usage-view">
     <div class="mb-4">
       <nav class="flex">
-        <button
-          :class="[
-            'py-2 px-4 text-sm font-medium',
-            activeTab === 'daily'
-              ? 'text-blue-600 font-semibold'
-              : 'text-gray-500 hover:text-gray-700'
-          ]"
-          @click="activeTab = 'daily'"
-        >
+        <button :class="[
+          'py-2 px-4 text-sm font-medium',
+          activeTab === 'daily'
+            ? 'text-blue-600 font-semibold'
+            : 'text-gray-500 hover:text-gray-700'
+        ]" @click="activeTab = 'daily'">
           Daily Usage
         </button>
-        <button
-          :class="[
-            'ml-8 py-2 px-4 text-sm font-medium',
-            activeTab === 'monthly'
-              ? 'text-blue-600 font-semibold'
-              : 'text-gray-500 hover:text-gray-700'
-          ]"
-          @click="activeTab = 'monthly'"
-        >
+        <button :class="[
+          'ml-8 py-2 px-4 text-sm font-medium',
+          activeTab === 'monthly'
+            ? 'text-blue-600 font-semibold'
+            : 'text-gray-500 hover:text-gray-700'
+        ]" @click="activeTab = 'monthly'">
           Monthly Usage
         </button>
       </nav>
@@ -55,7 +49,7 @@ import {
 } from 'echarts/components'
 import VChart, { THEME_KEY } from 'vue-echarts'
 import { useCommonStore } from '@/stores/common'
-
+import { formatDataSize } from '@/utils/formats'
 use([
   CanvasRenderer,
   BarChart,
@@ -69,13 +63,7 @@ use([
 const commonStore = useCommonStore()
 const activeTab = ref<'daily' | 'monthly'>('daily')
 
-const formatBytes = (bytes: number): string => {
-  if (bytes === 0) return '0 Bytes'
-  const k = 1024
-  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-}
+
 
 const isDarkTheme = ref(false)
 const currentTheme = computed(() => (isDarkTheme.value ? 'dark' : ''))
@@ -135,7 +123,7 @@ const barChartOption = computed(() => {
       },
       axisLabel: {
         color: isDarkTheme.value ? '#d1d5db' : '#333',
-        formatter: (value: number) => formatBytes(value)
+        formatter: (value: number) => formatDataSize(value)
       }
     },
     series: [
@@ -145,28 +133,28 @@ const barChartOption = computed(() => {
         markLine:
           activeTab.value === 'monthly'
             ? {
-                data: [
-                  {
-                    yAxis: commonStore.monthlyLimit || 0,
-                    label: {
-                      formatter: `Monthly Limit: ${formatBytes(commonStore.monthlyLimit || 0)}`,
-                      position: 'insideEndTop'
-                    },
-                    lineStyle: {
-                      color: 'red',
-                      type: 'dashed'
-                    }
+              data: [
+                {
+                  yAxis: commonStore.monthlyLimit || 0,
+                  label: {
+                    formatter: `Monthly Limit: ${formatDataSize(commonStore.monthlyLimit || 0)}`,
+                    position: 'insideEndTop'
+                  },
+                  lineStyle: {
+                    color: 'red',
+                    type: 'dashed'
                   }
-                ]
-              }
+                }
+              ]
+            }
             : null
       }
     ],
     tooltip: {
       formatter: (params: any) => {
-        const value = `${params.name}: ${formatBytes(params.value)}`
+        const value = `${params.name}: ${formatDataSize(params.value)}`
         if (activeTab.value === 'monthly') {
-          const limit = formatBytes(commonStore.monthlyLimit || 0)
+          const limit = formatDataSize(commonStore.monthlyLimit || 0)
           return `${value}<br>Limit: ${limit}`
         }
         return value
