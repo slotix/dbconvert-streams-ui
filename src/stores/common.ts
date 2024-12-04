@@ -178,13 +178,12 @@ export const useCommonStore = defineStore('common', {
         return
       }
       try {
-        const dailyUsage = await api.getDailyUsage(apiKey)
-        const monthlyData = await api.getMonthlyUsage(apiKey)
+        const combinedUsage = await api.getCombinedUsage(apiKey)
         if (this.userData) {
           this.userData = {
             ...this.userData,
-            dailyUsage,
-            monthlyUsage: monthlyData.usage
+            dailyUsage: combinedUsage.dailyUsage,
+            monthlyUsage: combinedUsage.monthlyUsage
           }
         }
       } catch (error) {

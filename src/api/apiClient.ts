@@ -1,6 +1,6 @@
 import axios, { AxiosInstance, AxiosError } from 'axios'
 import { handleApiError, handleUnauthorizedError } from '@/utils/errorHandler'
-import { DailyUsage, MonthlyUsageResponse, UserData } from '@/types/user'
+import { DailyUsage, MonthlyUsageResponse, UserData, CombinedUsageResponse } from '@/types/user'
 import { ServiceStatus, ServiceStatusResponse } from '@/types/common'
 import { useCommonStore } from '@/stores/common'
 // Define the shape of the API responses
@@ -124,6 +124,16 @@ const sentryHealthCheck = async (): Promise<HealthCheckResponse> => {
   }
 }
 
+const getCombinedUsage = async (apiKey: string): Promise<CombinedUsageResponse> => {
+  return executeWithEmptyKeyRetry(async () => {
+    validateApiKey(apiKey)
+    const response: ApiResponse<CombinedUsageResponse> = await backendClient.get('/user/combined-usage', {
+      headers: { 'X-API-Key': apiKey }
+    })
+    return response.data
+  })
+}
+
 const getDailyUsage = async (apiKey: string): Promise<DailyUsage[]> => {
   return executeWithEmptyKeyRetry(async () => {
     validateApiKey(apiKey)
@@ -169,5 +179,6 @@ export default {
   sentryHealthCheck,
   getDailyUsage,
   getMonthlyUsage,
+  getCombinedUsage,
   getServiceStatus
 }
