@@ -3,6 +3,14 @@
     <div class="mb-4">
       <nav class="flex">
         <button :class="[
+          'ml-8 py-2 px-4 text-sm font-medium',
+          activeTab === 'current'
+            ? 'text-blue-600 font-semibold'
+            : 'text-gray-500 hover:text-gray-700'
+        ]" @click="activeTab = 'current'">
+          Current Period
+        </button>
+        <button :class="[
           'py-2 px-4 text-sm font-medium',
           activeTab === 'daily'
             ? 'text-blue-600 font-semibold'
@@ -32,6 +40,40 @@
         <v-chart ref="chartRef" class="chart" :option="barChartOption" />
       </div>
     </div>
+
+    <div v-if="activeTab === 'current'" class="space-y-6">
+      <div :class="['bg-white rounded-lg', { 'dark-theme': isDarkTheme }]">
+        <div class="p-6">
+          <h3 class="text-lg font-medium text-gray-900 mb-4">Current Billing Period Usage</h3>
+          <div class="space-y-4">
+            <div class="flex justify-between text-sm">
+              <span class="text-gray-500">Period:</span>
+              <span class="text-gray-900">
+                {{ currentPeriodStart || '' }} - {{ currentPeriodEnd || '' }}
+              </span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-gray-500">Used Data:</span>
+              <span class="text-gray-900">{{ formatDataSize(currentPeriodUsage) }}</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-gray-500">Monthly Limit:</span>
+              <span class="text-gray-900">{{ formatDataSize(monthlyLimit || 0) }}</span>
+            </div>
+            <div class="mt-4">
+              <div class="w-full bg-gray-200 rounded-full h-2.5">
+                <div class="bg-blue-600 h-2.5 rounded-full" :style="{ width: `${usagePercentage}%` }" :class="{
+                  'bg-red-600': usagePercentage > 90,
+                  'bg-yellow-600': usagePercentage > 75 && usagePercentage <= 90,
+                  'bg-blue-600': usagePercentage <= 75
+                }"></div>
+              </div>
+              <p class="text-sm text-gray-500 mt-1">{{ usagePercentage }}% used</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -49,7 +91,7 @@ import {
 } from 'echarts/components'
 import VChart, { THEME_KEY } from 'vue-echarts'
 import { useCommonStore } from '@/stores/common'
-import { formatDataSize } from '@/utils/formats'
+import { formatDataSize, formatDateShort, formatMonth, formatDate } from '@/utils/formats'
 use([
   CanvasRenderer,
   BarChart,
@@ -61,9 +103,7 @@ use([
 ])
 
 const commonStore = useCommonStore()
-const activeTab = ref<'daily' | 'monthly'>('daily')
-
-
+const activeTab = ref<'daily' | 'monthly' | 'current'>('current')
 
 const isDarkTheme = ref(false)
 const currentTheme = computed(() => (isDarkTheme.value ? 'dark' : ''))
@@ -72,15 +112,7 @@ const toggleTheme = () => {
   isDarkTheme.value = !isDarkTheme.value
 }
 
-const formatDate = (date: string): string => {
-  const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' }
-  return new Date(date).toLocaleDateString(undefined, options)
-}
 
-const formatMonth = (month: string): string => {
-  const options: Intl.DateTimeFormatOptions = { month: 'short', year: 'numeric' }
-  return new Date(month).toLocaleDateString(undefined, options)
-}
 
 const barChartOption = computed(() => {
   const dailyData = commonStore.userData?.dailyUsage?.map((item) => item.data_volume ?? 0) ?? []
@@ -102,7 +134,7 @@ const barChartOption = computed(() => {
       type: 'category',
       data:
         activeTab.value === 'daily'
-          ? (commonStore.userData?.dailyUsage?.map((item) => formatDate(item.date)) ?? [])
+          ? (commonStore.userData?.dailyUsage?.map((item) => formatDateShort(item.date)) ?? [])
           : (commonStore.userData?.monthlyUsage?.map((item) => formatMonth(item.month)) ?? []),
       axisLine: {
         lineStyle: {
@@ -178,6 +210,24 @@ watch([() => commonStore.dailyUsage, () => commonStore.monthlyUsage, activeTab],
 })
 
 const chartRef = ref<any>(null)
+
+
+const currentPeriodStart = computed(() => {
+  const date = commonStore.userData?.subscriptionPeriodUsage?.period_start
+  return date ? formatDate(date) : null
+})
+
+const currentPeriodEnd = computed(() => {
+  const date = commonStore.userData?.subscriptionPeriodUsage?.period_end
+  return date ? formatDate(date) : null
+})
+const currentPeriodUsage = computed(() => commonStore.currentPeriodUsage)
+const monthlyLimit = computed(() => commonStore.monthlyLimit)
+
+const usagePercentage = computed(() => {
+  if (!monthlyLimit.value || monthlyLimit.value === 0) return 0
+  return Math.round((currentPeriodUsage.value / monthlyLimit.value) * 100)
+})
 </script>
 
 <style scoped>

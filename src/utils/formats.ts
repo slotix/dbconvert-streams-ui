@@ -8,3 +8,12 @@ export function formatDataSize(bytes: number): string {
   const i = Math.floor(Math.log(bytes) / Math.log(1024))
   return `${(bytes / Math.pow(1024, i)).toFixed(2)} ${sizes[i]}`
 }
+export function formatDateShort(date: string): string {
+  const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' }
+  return new Date(date).toLocaleDateString(undefined, options)
+}
+
+export function formatMonth(month: string): string {
+  const options: Intl.DateTimeFormatOptions = { month: 'short', year: 'numeric' }
+  return new Date(month).toLocaleDateString(undefined, options)
+}
