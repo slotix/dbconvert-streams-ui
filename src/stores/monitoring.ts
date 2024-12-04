@@ -123,17 +123,19 @@ export const useMonitoringStore = defineStore('monitoring', {
         ['FINISHED', 'STOPPED', 'FAILED'].includes(stat.status || '')
       )) {
         // All nodes finished
-        state.currentStageID = 4 // Finished stage
-
-        const stage = this.stages.find(s => s.id === state.currentStageID)
-        const isStopped = this.stats.some(stat => stat.status === 'STOPPED')
-        if (isStopped) {
-          stage!.title = 'Stopped'
-        } else if (this.stats.every(stat => stat.status === 'FINISHED')) {
-          stage!.title = 'Finished'
+        if (state.currentStageID !== 4) {  // Only update if not already in finished stage
+          state.currentStageID = 4 // Finished stage
+          const stage = this.stages.find(s => s.id === state.currentStageID)
+          const isStopped = this.stats.some(stat => stat.status === 'STOPPED')
+          if (isStopped) {
+            stage!.title = 'Stopped'
+          } else if (this.stats.every(stat => stat.status === 'FINISHED')) {
+            stage!.title = 'Finished'
+          }
+          // Call fetchUsageData directly
+          const commonStore = useCommonStore()
+          commonStore.fetchUsageData()
         }
-        const commonStore = useCommonStore()
-        commonStore.fetchUsageData()
       } else if (this.stats.some(stat => stat.events && parseInt(stat.events) > 0)) {
         // If we have events being processed, we're in data transfer stage
         state.currentStageID = 3
