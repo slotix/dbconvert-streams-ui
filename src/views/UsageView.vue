@@ -120,10 +120,7 @@ const barChartOption = computed(() => {
 
   const data = activeTab.value === 'daily' ? dailyData : monthlyData
 
-  const maxValue =
-    activeTab.value === 'monthly'
-      ? Math.max(...data, commonStore.monthlyLimit || 0)
-      : Math.max(...data)
+  const maxValue = Math.max(...data)
 
   return {
     grid: {
@@ -147,7 +144,6 @@ const barChartOption = computed(() => {
     },
     yAxis: {
       type: 'value',
-      max: activeTab.value === 'monthly' ? maxValue * 1.1 : undefined,
       axisLine: {
         lineStyle: {
           color: isDarkTheme.value ? '#d1d5db' : '#333'
@@ -162,34 +158,11 @@ const barChartOption = computed(() => {
       {
         data: data,
         type: 'bar',
-        markLine:
-          activeTab.value === 'monthly'
-            ? {
-              data: [
-                {
-                  yAxis: commonStore.monthlyLimit || 0,
-                  label: {
-                    formatter: `Monthly Limit: ${formatDataSize(commonStore.monthlyLimit || 0)}`,
-                    position: 'insideEndTop'
-                  },
-                  lineStyle: {
-                    color: 'red',
-                    type: 'dashed'
-                  }
-                }
-              ]
-            }
-            : null
       }
     ],
     tooltip: {
       formatter: (params: any) => {
-        const value = `${params.name}: ${formatDataSize(params.value)}`
-        if (activeTab.value === 'monthly') {
-          const limit = formatDataSize(commonStore.monthlyLimit || 0)
-          return `${value}<br>Limit: ${limit}`
-        }
-        return value
+        return `${params.name}: ${formatDataSize(params.value)}`
       }
     },
     backgroundColor: isDarkTheme.value ? '#1f2937' : '#ffffff',
