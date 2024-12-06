@@ -18,7 +18,7 @@ const getConnections = async (): Promise<Connection[]> => {
   return executeWithRetry(async () => {
     const commonStore = useCommonStore()
     validateApiKey(commonStore.apiKey)
-    
+
     const response: AxiosResponse<Connection[]> = await apiClient.get('/connections', {
       headers: { 'X-API-Key': commonStore.apiKey }
     })
@@ -83,18 +83,20 @@ const testConnection = async (): Promise<string> => {
   return executeWithRetry(async () => {
     const commonStore = useCommonStore()
     const json = useConnectionsStore().currentConnection
+    if (!json || !json.id) {
+      throw new Error('Connection ID is undefined or empty')
+    }
     const response: AxiosResponse<{ ping: string }> = await apiClient.post(
-      `/connections/${json?.id}/ping`,
+      `/connections/${json.id}/ping`,
       json,
       {
         headers: { 'X-API-Key': commonStore.apiKey }
       }
     )
-    if (response.data.ping === 'ok') {
+     if (response.data.ping === 'ok') {
       return 'Connection Test Passed'
-    } else {
-      throw new Error('Connection Test Failed')
     }
+    return "Connection Test Failed"
   })
 }
 

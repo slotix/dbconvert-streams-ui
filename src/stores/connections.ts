@@ -111,6 +111,7 @@ export const useConnectionsStore = defineStore('connections', {
           id: clonedId,
           created: clonedCreated
         }
+        await this.refreshConnections()
       } catch (error) {
         console.error('Failed to clone connection:', error)
         throw error
@@ -127,7 +128,7 @@ export const useConnectionsStore = defineStore('connections', {
         }
         useCommonStore().showNotification(status, 'success')
       } catch (error) {
-        useCommonStore().showNotification('Failed to test connection', 'error')
+        useCommonStore().showNotification((error as Error).message, 'error')
         console.error('Failed to test connection:', error)
         throw error
       } finally {
