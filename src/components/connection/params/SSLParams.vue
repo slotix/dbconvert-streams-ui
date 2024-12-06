@@ -29,7 +29,7 @@
           <p class="mt-1 text-sm text-gray-500">{{ getSSLModeDescription(localSSLConfig.mode) }}</p>
         </div>
 
-        <div v-if="localSSLConfig.mode !== 'disable'" class="space-y-6">
+        <div v-if="localSSLConfig.mode !== 'disabled'" class="space-y-6">
           <CertificateInput
             v-for="cert in CERT_TYPES"
             :key="cert.type"
@@ -60,7 +60,7 @@ import CertificateInput from './CertificateInput.vue'
 
 // Constants
 const SSL_MODES = [
-  { value: 'disable', label: 'Disable' },
+  { value: 'disabled', label: 'Disabled' },
   { value: 'require', label: 'Require' },
   { value: 'verify-ca', label: 'Verify CA' },
   { value: 'verify-full', label: 'Verify Full' }
@@ -107,7 +107,7 @@ const localSSLConfig = ref<SSLConfig>(
   connection.value?.ssl
     ? JSON.parse(JSON.stringify(connection.value.ssl))
     : {
-        mode: 'disable',
+        mode: 'disabled',
         ca: undefined,
         client_cert: undefined,
         client_key: undefined
@@ -128,7 +128,7 @@ watch(
 // Methods
 function getSSLModeDescription(mode: SSLConfig['mode']): string {
   const descriptions = {
-    disable: 'No SSL encryption',
+    disabled: 'No SSL encryption',
     require: 'Encrypt connection only',
     'verify-ca': 'Verify server certificate is signed by trusted CA',
     'verify-full': 'Verify server certificate and hostname match'
