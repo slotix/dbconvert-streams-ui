@@ -74,13 +74,13 @@ export default defineComponent({
       const milliseconds = this.connection.created * 1000
       const date = new Date(milliseconds)
       return date
-        .toLocaleString('en-US', {
+        .toLocaleString('en-GB', {
           month: 'short',
-          day: 'numeric',
+          day: '2-digit',
           year: 'numeric',
-          hour: 'numeric',
+          hour: '2-digit',
           minute: '2-digit',
-          hour12: true
+          hour12: false
         })
         .replace(',', ' -')
     },

@@ -166,13 +166,13 @@ export default defineComponent({
       if (!this.stream || typeof this.stream.created !== 'number') return ''
       const date = new Date(this.stream.created * 1000)
       return date
-        .toLocaleString('en-US', {
+        .toLocaleString('en-GB', {
           month: 'short',
-          day: 'numeric',
+          day: '2-digit',
           year: 'numeric',
-          hour: 'numeric',
+          hour: '2-digit',
           minute: '2-digit',
-          hour12: true
+          hour12: false
         })
         .replace(',', ' -')
     },
