@@ -105,17 +105,22 @@ export default defineComponent({
     },
     bgRowClass(): (connection: Connection) => object {
       return (connection: Connection) => ({
-        'hover:bg-gray-50': !this.isStreamsPage,
-        'bg-yellow-50':
+        'transition-all duration-300 ease-in-out relative': true,
+        'hover:bg-gray-50/80 hover:shadow-sm': !this.isStreamsPage,
+        'bg-gradient-to-r from-yellow-50 to-yellow-100/100 shadow-lg ring-2 ring-yellow-200':
           this.isStreamsPage &&
           this.currentStep?.name === 'source' &&
           this.currentStreamConfig?.source === connection.id,
-        'bg-green-50':
+        'bg-gradient-to-r from-green-50 to-green-100/100 shadow-lg ring-2 ring-green-200 ':
           this.isStreamsPage &&
           this.currentStep?.name === 'target' &&
           this.currentStreamConfig?.target === connection.id,
-        'hover:bg-yellow-50': this.isStreamsPage && this.currentStep?.name === 'source',
-        'hover:bg-green-50': this.isStreamsPage && this.currentStep?.name === 'target'
+        'hover:bg-yellow-50 hover:shadow-md hover:ring-1 hover:ring-yellow-200 hover:scale-[1.01]':
+          this.isStreamsPage &&
+          this.currentStep?.name === 'source',
+        'hover:bg-green-50 hover:shadow-md hover:ring-1 hover:ring-green-200 hover:scale-[1.01]':
+          this.isStreamsPage &&
+          this.currentStep?.name === 'target'
       })
     },
     actionsMenuPosition(): string {
@@ -130,7 +135,7 @@ export default defineComponent({
     connectionString(): string {
       if (!this.connection) return ''
       return generateConnectionString(this.connection)
-    }
+    },
   },
   methods: {
     //  ...mapActions(useConnectionsStore, ['setCurrentConnection']),
@@ -161,7 +166,7 @@ export default defineComponent({
     },
     async deleteConn(): Promise<void> {
       if (!this.connection) return
-      
+
       if (!confirm('Are you sure you want to delete this connection?')) {
         return
       }
