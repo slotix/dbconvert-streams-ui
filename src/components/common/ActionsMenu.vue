@@ -1,13 +1,13 @@
 <template>
   <Menu as="div" class="relative inline-block text-left">
     <MenuButton
-      class="relative inline-flex items-center w-full h-full py-4 px-4 text-sm font-semibold text-gray-700"
+      class="relative inline-flex items-center justify-center w-full h-full py-4 px-4 text-sm font-semibold text-gray-700"
       @click="$emit('selectRow')"
     >
       <span class="sr-only">Open actions</span>
       <div class="flex items-center gap-1">
         <EllipsisHorizontalIcon class="h-6 w-6" aria-hidden="true" />
-        <span v-show="viewType === 'cards'">More</span>
+        <span v-show="viewType === 'cards'" class="ml-1">More</span>
       </div>
     </MenuButton>
 
