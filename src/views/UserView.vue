@@ -30,9 +30,6 @@
               <h2 class="text-xl font-semibold text-gray-900">
                 API Key Management
               </h2>
-              <span class="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700 ring-1 ring-inset ring-blue-600/20">
-                Secure Access
-              </span>
             </div>
             <ApiKeyView />
           </div>
