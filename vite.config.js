@@ -24,7 +24,6 @@ export default defineConfig({
       output: {
         manualChunks: {
           vendor: ['vue', 'vue-router'],
-          clerk: ['vue-clerk'],
           idb: ['idb'],
           pinia: ['pinia'],
           headlessui: ['@headlessui/vue'],
@@ -35,5 +34,10 @@ export default defineConfig({
         }
       }
     }
+  },
+  optimizeDeps: {
+    include: [
+      // ... existing code ...
+    ]
   }
 })

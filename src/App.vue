@@ -76,7 +76,7 @@
     </div>
 
     <div class="lg:pl-20">
-      <!-- Top bar with login button -->
+      <!-- Top bar -->
       <div
         class="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
         <button type="button" class="-m-2.5 p-2.5 text-gray-700 lg:hidden" @click="sidebarOpen = true">
@@ -89,36 +89,16 @@
 
         <div class="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <div class="flex items-center gap-x-4 lg:gap-x-6">
-            <!-- <button type="button" class="-m-2.5 p-2.5 text-gray-400 hover:text-gray-500">
-              <span class="sr-only">View notifications</span>
-              <BellIcon class="h-6 w-6" aria-hidden="true" />
-            </button> -->
-
-            <!-- Separator -->
             <div class="hidden lg:block lg:h-6 lg:w-px lg:bg-gray-900/10" aria-hidden="true" />
-
-            <!-- Profile dropdown -->
-            <Menu as="div" class="relative">
-              <MenuButton class="-m-1.5 flex items-center p-1.5">
-                <UserButton v-if="isSignedIn" :showName="true" />
-                <SignInButton v-else />
-              </MenuButton>
-            </Menu>
           </div>
         </div>
 
         <NotificationBar class="absolute inset-y-0 right-0 h-16 w-auto" />
       </div>
-      <SignedIn>
-        <div class="py-10 lg:py-6">
-          <RouterView />
-        </div>
-      </SignedIn>
-      <SignedOut>
-        <div class="flex items-center justify-center flex-col text-center pb-16">
-          <SignIn />
-        </div>
-      </SignedOut>
+
+      <div class="py-10 lg:py-6">
+        <RouterView />
+      </div>
     </div>
   </div>
 </template>
@@ -126,14 +106,6 @@
 <script setup lang="ts">
 import { ref, watch, onMounted } from 'vue'
 import { RouterLink, RouterView, useRouter } from 'vue-router'
-import {
-  SignInButton,
-  UserButton,
-  useAuth,
-  SignedIn,
-  SignedOut,
-  SignIn,
-} from 'vue-clerk'
 import NotificationBar from '@/components/common/NotificationBar.vue'
 import { useCommonStore } from '@/stores/common'
 import ApiKeyInput from '@/components/ApiKeyInput.vue'
@@ -157,7 +129,6 @@ import {
 
 import { useExponentialBackoff } from '@/utils/retryUtils'
 
-const { isSignedIn } = useAuth()
 const commonStore = useCommonStore()
 const router = useRouter()
 
@@ -189,18 +160,8 @@ const initializeApp = async () => {
   }
 }
 
-// Watch for changes in isSignedIn and handle accordingly
-watch(isSignedIn, async (newValue) => {
-  if (newValue) {
-    await initializeApp()
-  }
-})
-
-// Call initializeApp when the component is mounted if the user is already signed in
 onMounted(async () => {
-  if (isSignedIn.value) {
-    await initializeApp()
-  }
+  await initializeApp()
 })
 
 // Watch for changes in route and update the current page in the common store
