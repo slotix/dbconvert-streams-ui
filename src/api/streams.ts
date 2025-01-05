@@ -1,7 +1,7 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios'
 import { useCommonStore } from '@/stores/common'
 import { StreamConfig } from '@/types/streamConfig'
-import { executeWithRetry, validateApiKey } from './apiClient'
+import { validateApiKey } from './apiClient'
 
 const apiClient: AxiosInstance = axios.create({
   baseURL: 'http://127.0.0.1:8020/api/v1',
@@ -10,9 +10,7 @@ const apiClient: AxiosInstance = axios.create({
   }
 })
 
-
 const getStreams = async (): Promise<StreamConfig[]> => {
-  return executeWithRetry(async () => {
     const commonStore = useCommonStore()
     validateApiKey(commonStore.apiKey)
     
@@ -20,11 +18,9 @@ const getStreams = async (): Promise<StreamConfig[]> => {
       headers: { 'X-API-Key': commonStore.apiKey }
     })
     return response.data
-  })
 }
 
 const createStream = async (json: Record<string, unknown>): Promise<StreamConfig> => {
-  return executeWithRetry(async () => {
     const commonStore = useCommonStore()
     validateApiKey(commonStore.apiKey)
     
@@ -32,22 +28,18 @@ const createStream = async (json: Record<string, unknown>): Promise<StreamConfig
       headers: { 'X-API-Key': commonStore.apiKey }
     })
     return response.data
-  })
 }
 
 const deleteStream = async (id: string): Promise<void> => {
-  return executeWithRetry(async () => {
     const commonStore = useCommonStore()
     validateApiKey(commonStore.apiKey)
     
     await apiClient.delete(`/stream-configs/${id}`, {
       headers: { 'X-API-Key': commonStore.apiKey }
     })
-  })
 }
 
 const cloneStreamConfig = async (id: string): Promise<StreamConfig> => {
-  return executeWithRetry(async () => {
     const commonStore = useCommonStore()
     validateApiKey(commonStore.apiKey)
     
@@ -59,11 +51,9 @@ const cloneStreamConfig = async (id: string): Promise<StreamConfig> => {
       }
     )
     return response.data
-  })
 }
 
 const startStream = async (id: string): Promise<StreamConfig> => {
-  return executeWithRetry(async () => {
     const commonStore = useCommonStore()
     validateApiKey(commonStore.apiKey)
     
@@ -75,11 +65,9 @@ const startStream = async (id: string): Promise<StreamConfig> => {
       }
     )
     return response.data
-  })
 }
 
 const pauseStream = async (id: string): Promise<StreamConfig> => {
-  return executeWithRetry(async () => {
     const commonStore = useCommonStore()
     validateApiKey(commonStore.apiKey)
     
@@ -91,11 +79,9 @@ const pauseStream = async (id: string): Promise<StreamConfig> => {
       }
     )
     return response.data
-  })
 }
 
 const resumeStream = async (id: string): Promise<StreamConfig> => {
-  return executeWithRetry(async () => {
     const commonStore = useCommonStore()
     validateApiKey(commonStore.apiKey)
     
@@ -107,11 +93,9 @@ const resumeStream = async (id: string): Promise<StreamConfig> => {
       }
     )
     return response.data
-  })
 }
 
 const stopStream = async (id: string): Promise<StreamConfig> => {
-  return executeWithRetry(async () => {
     const commonStore = useCommonStore()
     validateApiKey(commonStore.apiKey)
     
@@ -123,7 +107,6 @@ const stopStream = async (id: string): Promise<StreamConfig> => {
       }
     )
     return response.data
-  })
 }
 
 export default {

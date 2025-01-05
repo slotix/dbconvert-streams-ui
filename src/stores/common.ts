@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia'
 import idb from '@/api/iDBService'
 import api from '@/api/apiClient'
-import { getToken } from '@/utils/auth'
 import { UserData } from '@/types/user'
 import { v4 as uuidv4 } from 'uuid'
 
@@ -42,6 +41,7 @@ export const useCommonStore = defineStore('common', {
     userData: null as UserData | null,
     sentryHealthy: false,
     apiHealthy: false,
+    apiKey: import.meta.env.VITE_API_KEY || null,
     steps: [
       {
         id: 1,
@@ -165,13 +165,12 @@ export const useCommonStore = defineStore('common', {
       }
     },
     async fetchUsageData() {
-      const apiKey = this.userData?.apiKey
-      if (!apiKey) {
+      if (!this.apiKey) {
         console.error('API key not found')
         return
       }
       try {
-        const combinedUsage = await api.getCombinedUsage(apiKey)
+        const combinedUsage = await api.getCombinedUsage(this.apiKey)
         if (this.userData) {
           this.userData = {
             ...this.userData,
@@ -212,24 +211,46 @@ export const useCommonStore = defineStore('common', {
     setCurrentPage(page: string) {
       this.currentPage = page
     },
+    async getApiKey(): Promise<string | null> {
+      // First try to get from environment
+      if (this.apiKey) {
+        return this.apiKey
+      }
+
+      // If not in environment, try to get from localStorage
+      const storedApiKey = localStorage.getItem('apiKey')
+      if (storedApiKey) {
+        this.apiKey = storedApiKey
+        return storedApiKey
+      }
+
+      return null
+    },
+
+    async setApiKey(apiKey: string): Promise<void> {
+      this.apiKey = apiKey
+      localStorage.setItem('apiKey', apiKey)
+    },
+
     async initApp(): Promise<'success' | 'failed'> {
       this.showNotification('Initializing App', 'info')
 
       try {
-        // const token = await getToken()
-        // if (!token) {
-        //   throw new Error('No token provided')
-        // }
-
         await Promise.all([
           this.checkSentryHealth(),
           this.checkAPIHealth()
         ])
 
         if (this.sentryHealthy && this.apiHealthy) {
-          await this.userDataFromSentry(this.userData?.apiKey || '')
-          if (this.userData?.apiKey) {
-            await this.loadUserConfigs()
+          const apiKey = await this.getApiKey()
+          if (apiKey) {
+            await this.userDataFromSentry(apiKey)
+            if (this.userData?.apiKey) {
+              await this.loadUserConfigs()
+            }
+          } else {
+            this.showNotification('Please enter your API key to continue', 'info')
+            return 'failed'
           }
         }
 
@@ -254,7 +275,7 @@ export const useCommonStore = defineStore('common', {
   getters: {
     notificationBar: (state) => state.currentNotification,
     isStreamsPage: (state) => state.currentPage === 'ManageStream',
-    apiKey: (state) => state.userData?.apiKey || null,
+    userApiKey: (state) => state.userData?.apiKey || null,
     userID: (state) => state.userData?.userID || null,
     stripeCustomerId: (state) => state.userData?.stripeCustomerId || null,
     trialEnd: (state) => state.userData?.trialEnd || null,
@@ -277,6 +298,7 @@ export const useCommonStore = defineStore('common', {
           (usage) => new Date(usage.month).getMonth() === currentMonth
         ) || null
       )
-    }
+    },
+    hasValidApiKey: (state) => !!state.apiKey,
   }
 })

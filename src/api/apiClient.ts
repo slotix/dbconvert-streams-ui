@@ -1,9 +1,8 @@
 import axios, { AxiosInstance, AxiosError } from 'axios'
-import { handleApiError, handleUnauthorizedError } from '@/utils/errorHandler'
-import { DailyUsage, MonthlyUsageResponse, UserData, CombinedUsageResponse } from '@/types/user'
-import { ServiceStatus, ServiceStatusResponse } from '@/types/common'
-import { useCommonStore } from '@/stores/common'
-// Define the shape of the API responses
+import { handleApiError } from '@/utils/errorHandler'
+import { UserData, CombinedUsageResponse } from '@/types/user'
+import { ServiceStatusResponse } from '@/types/common'
+
 interface ApiResponse<T> {
   data: T
 }
@@ -33,72 +32,27 @@ export function validateApiKey(apiKey: string | null): void {
   }
 }
 
-export const executeWithRetry = async <T>(operation: () => Promise<T>): Promise<T> => {
-  return executeWithEmptyKeyRetry(async () => {
-    try {
-      return await operation()
-    } catch (error) {
-      if (error instanceof AxiosError && error.response?.status === 401) {
-        await handleUnauthorizedError(error)
-        return await operation()
-      }
-      throw handleApiError(error)
-    }
-  })
-}
-
-const executeWithEmptyKeyRetry = async <T>(operation: () => Promise<T>): Promise<T> => {
-  try {
-    return await operation()
-  } catch (error) {
-    if (error instanceof Error && error.message === 'EMPTY_API_KEY') {
-      const commonStore = useCommonStore()
-      const initResult = await commonStore.initApp()
-      if (initResult === 'failed') {
-        throw new Error('Failed to initialize application')
-      }
-      // Retry the operation after initialization
-      return await operation()
-    }
-    throw error
-  }
-}
-
-// const getUserDataFromSentry = async (token: string): Promise<UserData> => {
-//   try {
-//     const response: ApiResponse<UserData> = await backendClient.get('/user', {
-//       headers: { Authorization: `Bearer ${token}` }
-//     })
-//     return response.data
-//   } catch (error) {
-//     return handleUnauthorizedError(error as AxiosError)
-//   }
-// }
-
 const getUserDataFromSentry = async (apiKey: string): Promise<UserData> => {
   try {
     validateApiKey(apiKey)
-    const response: ApiResponse<UserData> = await backendClient.get('/user/init', {
+    const response: ApiResponse<UserData> = await backendClient.get('/user', {
       headers: { 'X-API-Key': apiKey }
     })
     return response.data
   } catch (error) {
-    return handleUnauthorizedError(error as AxiosError)
+    throw handleApiError(error)
   }
 }
 
-
 const loadUserConfigs = async (apiKey: string): Promise<void> => {
-  return executeWithEmptyKeyRetry(async () => {
-    validateApiKey(apiKey)
-    try {
-      await backendClient.get('/user/configs', {
-        headers: { 'X-API-Key': apiKey }
-      })
-    } catch (error) {
-      return handleUnauthorizedError(error as AxiosError)
-    }
-  })
+  validateApiKey(apiKey)
+  try {
+    await backendClient.get('/user/configs', {
+      headers: { 'X-API-Key': apiKey }
+    })
+  } catch (error) {
+    throw handleApiError(error)
+  }
 }
 
 const backendHealthCheck = async (): Promise<HealthCheckResponse> => {
@@ -120,13 +74,15 @@ const sentryHealthCheck = async (): Promise<HealthCheckResponse> => {
 }
 
 const getCombinedUsage = async (apiKey: string): Promise<CombinedUsageResponse> => {
-  return executeWithEmptyKeyRetry(async () => {
-    validateApiKey(apiKey)
+  validateApiKey(apiKey)
+  try {
     const response: ApiResponse<CombinedUsageResponse> = await backendClient.get('/user/combined-usage', {
       headers: { 'X-API-Key': apiKey }
     })
     return response.data
-  })
+  } catch (error) {
+    throw handleApiError(error)
+  }
 }
 
 const getServiceStatus = async (): Promise<ServiceStatusResponse> => {
@@ -134,7 +90,7 @@ const getServiceStatus = async (): Promise<ServiceStatusResponse> => {
     const response: ApiResponse<ServiceStatusResponse> = await backendClient.get('/services/status')
     return response.data
   } catch (error) {
-    return handleUnauthorizedError(error as AxiosError)
+    throw handleApiError(error)
   }
 }
 

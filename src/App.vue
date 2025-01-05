@@ -1,5 +1,6 @@
 <template>
   <div>
+    <ApiKeyInput />
     <TransitionRoot as="template" :show="sidebarOpen">
       <Dialog as="div" class="relative z-50 lg:hidden" @close="sidebarOpen = false">
         <TransitionChild as="template" enter="transition-opacity ease-linear duration-300" enter-from="opacity-0"
@@ -135,6 +136,7 @@ import {
 } from 'vue-clerk'
 import NotificationBar from '@/components/common/NotificationBar.vue'
 import { useCommonStore } from '@/stores/common'
+import ApiKeyInput from '@/components/ApiKeyInput.vue'
 
 import {
   Dialog,
@@ -175,22 +177,15 @@ const navigation = ref<NavigationItem[]>([
 const sidebarOpen = ref(false)
 
 const initializeApp = async () => {
-  const maxRetries = 10
-  const initialDelay = 1000 // 1 second
-
-  const initWithRetry = useExponentialBackoff(async () => {
+  try {
     const initResult = await commonStore.initApp()
     if (initResult === 'failed') {
       commonStore.setBackendConnected(false)
       throw new Error('Failed to initialize app')
     }
     commonStore.setBackendConnected(true)
-  }, maxRetries, initialDelay)
-
-  try {
-    await initWithRetry()
   } catch (error) {
-    console.error('Failed to initialize app after multiple retries:', error)
+    console.error('Failed to initialize app:', error)
   }
 }
 
