@@ -24,7 +24,7 @@ const db = dbPromise()
 
 const setCurrentViewType = async (type: string): Promise<void> => {
   try {
-    ;(await db).put('settings', type, 'viewType')
+    ; (await db).put('settings', type, 'viewType')
   } catch (error) {
     console.error(error)
   }

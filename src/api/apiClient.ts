@@ -12,11 +12,6 @@ interface HealthCheckResponse {
   status: string
 }
 
-interface UpdateAPIKeyResponse {
-  status: string
-  apiKey: string
-}
-
 const backendClient: AxiosInstance = axios.create({
   baseURL: 'http://127.0.0.1:8020/api/v1',
   headers: {
@@ -69,10 +64,22 @@ const executeWithEmptyKeyRetry = async <T>(operation: () => Promise<T>): Promise
   }
 }
 
-const getUserDataFromSentry = async (token: string): Promise<UserData> => {
+// const getUserDataFromSentry = async (token: string): Promise<UserData> => {
+//   try {
+//     const response: ApiResponse<UserData> = await backendClient.get('/user', {
+//       headers: { Authorization: `Bearer ${token}` }
+//     })
+//     return response.data
+//   } catch (error) {
+//     return handleUnauthorizedError(error as AxiosError)
+//   }
+// }
+
+const getUserDataFromSentry = async (apiKey: string): Promise<UserData> => {
   try {
-    const response: ApiResponse<UserData> = await backendClient.get('/user', {
-      headers: { Authorization: `Bearer ${token}` }
+    validateApiKey(apiKey)
+    const response: ApiResponse<UserData> = await backendClient.get('/user/init', {
+      headers: { 'X-API-Key': apiKey }
     })
     return response.data
   } catch (error) {
@@ -80,18 +87,6 @@ const getUserDataFromSentry = async (token: string): Promise<UserData> => {
   }
 }
 
-const updateAPIKey = async (token: string): Promise<UpdateAPIKeyResponse> => {
-  try {
-    const response: ApiResponse<UpdateAPIKeyResponse> = await backendClient.post(
-      '/user/api-key',
-      {},
-      { headers: { Authorization: `Bearer ${token}` } }
-    )
-    return response.data
-  } catch (error) {
-    return handleUnauthorizedError(error as AxiosError)
-  }
-}
 
 const loadUserConfigs = async (apiKey: string): Promise<void> => {
   return executeWithEmptyKeyRetry(async () => {
@@ -134,34 +129,6 @@ const getCombinedUsage = async (apiKey: string): Promise<CombinedUsageResponse> 
   })
 }
 
-const getDailyUsage = async (apiKey: string): Promise<DailyUsage[]> => {
-  return executeWithEmptyKeyRetry(async () => {
-    validateApiKey(apiKey)
-    try {
-      const response: ApiResponse<DailyUsage[]> = await backendClient.get('/user/daily-usage', {
-        headers: { 'X-API-Key': apiKey }
-      })
-      return response.data
-    } catch (error) {
-      return handleUnauthorizedError(error as AxiosError)
-    }
-  })
-}
-
-const getMonthlyUsage = async (apiKey: string): Promise<MonthlyUsageResponse> => {
-  return executeWithEmptyKeyRetry(async () => {
-    validateApiKey(apiKey)
-    try {
-      const response: ApiResponse<MonthlyUsageResponse> = await backendClient.get('/user/monthly-usage', {
-        headers: { 'X-API-Key': apiKey }
-      })
-      return response.data
-    } catch (error) {
-      return handleUnauthorizedError(error as AxiosError)
-    }
-  })
-}
-
 const getServiceStatus = async (): Promise<ServiceStatusResponse> => {
   try {
     const response: ApiResponse<ServiceStatusResponse> = await backendClient.get('/services/status')
@@ -173,12 +140,9 @@ const getServiceStatus = async (): Promise<ServiceStatusResponse> => {
 
 export default {
   getUserDataFromSentry,
-  updateAPIKey,
   loadUserConfigs,
   backendHealthCheck,
   sentryHealthCheck,
-  getDailyUsage,
-  getMonthlyUsage,
   getCombinedUsage,
   getServiceStatus
 }

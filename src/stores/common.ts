@@ -132,27 +132,20 @@ export const useCommonStore = defineStore('common', {
         }
       })
     },
-    async updateAPIKey() {
+    // async userDataFromSentry(token: string) {
+    //   try {
+    //     const response = await api.getUserDataFromSentry(token)
+    //     this.userData = response
+    //   } catch (error) {
+    //     this.showNotification('Failed to fetch user data', 'error')
+    //     this.userData = null
+    //     throw error
+    //   }
+    // },
+
+    async userDataFromSentry(apiKey: string) {
       try {
-        const token = await getToken()
-        if (!token) {
-          this.showNotification('No token provided', 'error')
-          return
-        }
-        const response = await api.updateAPIKey(token)
-        if (this.userData) {
-          this.userData.apiKey = response.apiKey
-        } else {
-          this.showNotification('User data not available', 'error')
-        }
-      } catch (error) {
-        this.showNotification('Failed to update API key', 'error')
-        throw error
-      }
-    },
-    async userDataFromSentry(token: string) {
-      try {
-        const response = await api.getUserDataFromSentry(token)
+        const response = await api.getUserDataFromSentry(apiKey)
         this.userData = response
       } catch (error) {
         this.showNotification('Failed to fetch user data', 'error')
@@ -221,12 +214,12 @@ export const useCommonStore = defineStore('common', {
     },
     async initApp(): Promise<'success' | 'failed'> {
       this.showNotification('Initializing App', 'info')
-      
+
       try {
-        const token = await getToken()
-        if (!token) {
-          throw new Error('No token provided')
-        }
+        // const token = await getToken()
+        // if (!token) {
+        //   throw new Error('No token provided')
+        // }
 
         await Promise.all([
           this.checkSentryHealth(),
@@ -234,7 +227,7 @@ export const useCommonStore = defineStore('common', {
         ])
 
         if (this.sentryHealthy && this.apiHealthy) {
-          await this.userDataFromSentry(token)
+          await this.userDataFromSentry(this.userData?.apiKey || '')
           if (this.userData?.apiKey) {
             await this.loadUserConfigs()
           }
