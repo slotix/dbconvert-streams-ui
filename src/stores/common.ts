@@ -2,19 +2,13 @@ import { defineStore } from 'pinia'
 import idb from '@/api/iDBService'
 import api from '@/api/apiClient'
 import { UserData } from '@/types/user'
-import { v4 as uuidv4 } from 'uuid'
+import { useToast } from 'vue-toastification'
 
 export const DIALOG_TYPES = {
   SAVE: 'Add',
   SAVE_CHANGES: 'Save Changes',
   UPDATE: 'Update'
 } as const
-
-export interface Notification {
-  id: string
-  type: 'error' | 'success' | 'warning' | 'info'
-  msg: string
-}
 
 export interface Step {
   id: number
@@ -34,9 +28,6 @@ export const useCommonStore = defineStore('common', {
   state: () => ({
     showModal: false,
     dlgType: '' as DialogType | '',
-    notificationQueue: [] as Notification[],
-    currentNotification: null as Notification | null,
-    showNotificationBar: false,
     currentViewType: '',
     userData: null as UserData | null,
     sentryHealthy: false,
@@ -65,7 +56,7 @@ export const useCommonStore = defineStore('common', {
         title: 'Select target or create new connection',
         description:
           'Choose or create a target connection where your data will be transferred, completing the stream configuration process.',
-        img: '/images/steps/destination-step.svg'
+        img: '/images/steps/target-step.svg'
       },
       {
         id: 4,
@@ -113,9 +104,10 @@ export const useCommonStore = defineStore('common', {
           await api.sentryHealthCheck()
           this.sentryHealthy = true
         } catch (error) {
-          this.showNotification('Connection to Sentry failed', 'error')
+          const toast = useToast()
+          toast.error('Connection to Sentry failed')
           this.sentryHealthy = false
-          throw error // Rethrow to trigger retry
+          throw error
         }
       })
     },
@@ -126,29 +118,21 @@ export const useCommonStore = defineStore('common', {
           await api.backendHealthCheck()
           this.apiHealthy = true
         } catch (error) {
-          this.showNotification('Connection to API server failed', 'error')
+          const toast = useToast()
+          toast.error('Connection to API server failed')
           this.apiHealthy = false
-          throw error // Rethrow to trigger retry
+          throw error
         }
       })
     },
-    // async userDataFromSentry(token: string) {
-    //   try {
-    //     const response = await api.getUserDataFromSentry(token)
-    //     this.userData = response
-    //   } catch (error) {
-    //     this.showNotification('Failed to fetch user data', 'error')
-    //     this.userData = null
-    //     throw error
-    //   }
-    // },
 
     async userDataFromSentry(apiKey: string) {
       try {
         const response = await api.getUserDataFromSentry(apiKey)
         this.userData = response
       } catch (error) {
-        this.showNotification('Failed to fetch user data', 'error')
+        const toast = useToast()
+        toast.error('Failed to fetch user data')
         this.userData = null
         throw error
       }
@@ -160,7 +144,8 @@ export const useCommonStore = defineStore('common', {
         }
         await api.loadUserConfigs(this.userData.apiKey)
       } catch (error) {
-        this.showNotification('Failed to load user data', 'error')
+        const toast = useToast()
+        toast.error('Failed to load user data')
         throw error
       }
     },
@@ -197,27 +182,31 @@ export const useCommonStore = defineStore('common', {
     closeModal() {
       this.showModal = false
     },
-    showNotification(msg: string, type: Notification['type'] = 'info') {
-      const newNotification: Notification = { id: uuidv4(), msg, type }
-      this.notificationQueue.push(newNotification)
-      setTimeout(() => this.dismissNotification(newNotification.id), 5000)
-    },
-    dismissNotification(id: string) {
-      const index = this.notificationQueue.findIndex(n => n.id === id)
-      if (index !== -1) {
-        this.notificationQueue.splice(index, 1)
+    showNotification(msg: string, type: 'error' | 'success' | 'warning' | 'info' = 'info') {
+      const toast = useToast()
+      switch (type) {
+        case 'error':
+          toast.error(msg)
+          break
+        case 'success':
+          toast.success(msg)
+          break
+        case 'warning':
+          toast.warning(msg)
+          break
+        case 'info':
+          toast.info(msg)
+          break
       }
     },
     setCurrentPage(page: string) {
       this.currentPage = page
     },
     async getApiKey(): Promise<string | null> {
-      // First try to get from environment
       if (this.apiKey) {
         return this.apiKey
       }
 
-      // If not in environment, try to get from localStorage
       const storedApiKey = localStorage.getItem('apiKey')
       if (storedApiKey) {
         this.apiKey = storedApiKey
@@ -233,7 +222,8 @@ export const useCommonStore = defineStore('common', {
     },
 
     async initApp(): Promise<'success' | 'failed'> {
-      this.showNotification('Initializing App', 'info')
+      const toast = useToast()
+      toast.info('Initializing App')
 
       try {
         await Promise.all([
@@ -249,16 +239,16 @@ export const useCommonStore = defineStore('common', {
               await this.loadUserConfigs()
             }
           } else {
-            this.showNotification('Please enter your API key to continue', 'info')
+            toast.info('Please enter your API key to continue')
             return 'failed'
           }
         }
 
-        this.showNotification('App initialized successfully', 'success')
+        toast.success('App initialized successfully')
         return 'success'
       } catch (error: any) {
         console.error('Failed to initialize app:', error)
-        this.showNotification(`Failed to initialize app: ${error.message}`, 'error')
+        toast.error(`Failed to initialize app: ${error.message}`)
         return 'failed'
       }
     },
@@ -273,7 +263,6 @@ export const useCommonStore = defineStore('common', {
     }
   },
   getters: {
-    notificationBar: (state) => state.currentNotification,
     isStreamsPage: (state) => state.currentPage === 'ManageStream',
     userApiKey: (state) => state.userData?.apiKey || null,
     userID: (state) => state.userData?.userID || null,
