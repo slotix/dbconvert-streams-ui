@@ -16,8 +16,8 @@
           <p class="text-sm font-medium text-gray-500">Current Subscription</p>
           <div class="flex items-center gap-2">
             <p class="text-lg font-semibold text-gray-900 capitalize">{{ currentPlanName }}</p>
-            <span v-if="subscriptionStatus === 'canceled'" 
-                  class="px-2 py-0.5 text-xs font-medium bg-red-100 text-red-800 rounded-full">
+            <span v-if="subscriptionStatus === 'canceled'"
+              class="px-2 py-0.5 text-xs font-medium bg-red-100 text-red-800 rounded-full">
               Canceled
             </span>
           </div>
@@ -32,8 +32,9 @@
           </div>
         </div>
         <div class="ml-4 flex-grow">
-          <p class="text-sm font-medium text-gray-500">Current Period Usage </p>  
-          <p class="text-sm text-gray-500">({{ currentPeriodStart ? currentPeriodStart : 'N/A' }} - {{ currentPeriodEnd ? currentPeriodEnd : 'N/A' }})</p>
+          <p class="text-sm font-medium text-gray-500">Current Period Usage </p>
+          <p class="text-sm text-gray-500">({{ currentPeriodStart ? currentPeriodStart : 'N/A' }} - {{ currentPeriodEnd
+            ? currentPeriodEnd : 'N/A' }})</p>
           <div class="mt-1">
             <div class="flex items-center">
               <span class="text-lg font-semibold text-gray-900">{{ formatDataSize(usedData) }}</span>
@@ -41,15 +42,11 @@
             </div>
             <!-- Progress bar -->
             <div class="w-full bg-gray-200 rounded-full h-2.5 mt-2">
-              <div
-                class="bg-blue-600 h-2.5 rounded-full"
-                :style="{ width: `${usagePercentage}%` }"
-                :class="{
-                  'bg-red-600': usagePercentage > 90,
-                  'bg-yellow-600': usagePercentage > 75 && usagePercentage <= 90,
-                  'bg-blue-600': usagePercentage <= 75
-                }"
-              ></div>
+              <div class="bg-blue-600 h-2.5 rounded-full" :style="{ width: `${usagePercentage}%` }" :class="{
+                'bg-red-600': usagePercentage > 90,
+                'bg-yellow-600': usagePercentage > 75 && usagePercentage <= 90,
+                'bg-blue-600': usagePercentage <= 75
+              }"></div>
             </div>
             <p class="text-sm text-gray-500 mt-1">{{ usagePercentage }}% used</p>
           </div>
@@ -64,10 +61,8 @@
           </div>
         </div>
         <div class="ml-4">
-          <button
-            @click="manageApiKey"
-            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
-          >
+          <button @click="manageApiKey"
+            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
             Manage API Key
             <ChevronRightIcon class="ml-2 h-4 w-4" />
           </button>

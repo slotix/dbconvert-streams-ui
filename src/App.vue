@@ -84,7 +84,6 @@
           <Bars3Icon class="h-6 w-6" aria-hidden="true" />
         </button>
 
-        <!-- Separator -->
         <div class="h-6 w-px bg-gray-900/10 lg:hidden" aria-hidden="true" />
 
         <div class="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
