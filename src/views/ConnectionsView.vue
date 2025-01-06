@@ -1,8 +1,6 @@
 <template>
   <header>
-    <div
-      class="bg-white flex flex-wrap justify-between space-y-4 sm:space-y-0 max-w-7xl mx-auto py-6 px-8"
-    >
+    <div class="bg-white flex flex-wrap justify-between space-y-4 sm:space-y-0 max-w-7xl mx-auto py-6 px-8">
       <h1 class="flex-auto text-3xl font-bold text-gray-900 dark:text-white;">
         <span v-if="isBackendConnected">{{ connectionsCount }} Connections.</span>
         <span v-else>Database Connections Unavailable</span>
@@ -10,10 +8,12 @@
     </div>
   </header>
   <main>
-    <!-- Main area -->
-    <Connections />
-    <Add v-if="dlgTp === DIALOG_TYPES.SAVE" />
-    <Edit v-if="dlgTp === DIALOG_TYPES.UPDATE" />
+    <div class="antialiased bg-gray-50">
+      <!-- Main area -->
+      <Connections />
+      <Add v-if="dlgTp === DIALOG_TYPES.SAVE" />
+      <Edit v-if="dlgTp === DIALOG_TYPES.UPDATE" />
+    </div>
   </main>
 </template>
 

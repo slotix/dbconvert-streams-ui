@@ -1,5 +1,5 @@
 <template>
-  <div class="antialiased bg-gray-200">
+  <div class="antialiased bg-gray-50">
     <!-- Connection error message -->
     <div v-if="!isBackendConnected" class="max-w-7xl mx-auto py-6 px-8">
       <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">

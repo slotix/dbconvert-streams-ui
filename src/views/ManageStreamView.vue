@@ -1,14 +1,10 @@
 <template>
   <header>
-    <div
-      class="bg-white flex flex-wrap justify-between space-y-4 sm:space-y-0 max-w-7xl mx-auto py-6 px-8"
-    >
+    <div class="bg-white flex flex-wrap justify-between space-y-4 sm:space-y-0 max-w-7xl mx-auto py-6 px-8">
       <h1 class="flex-auto text-3xl font-bold text-gray-900 dark:text-white;">
         {{ mode === 'edit' ? 'Edit Stream Config' : 'Add Stream Config' }}:
-        <span
-          v-if="currentStreamConfig"
-          class="text-gray-500 text-lg underline underline-offset-4 decoration-dashed decoration-gray-400"
-        >
+        <span v-if="currentStreamConfig"
+          class="text-gray-500 text-lg underline underline-offset-4 decoration-dashed decoration-gray-400">
           {{ currentStreamConfig.id }}
         </span>
       </h1>
@@ -16,7 +12,7 @@
     </div>
   </header>
   <main>
-    <div class="antialiased bg-gray-200">
+    <div class="antialiased bg-gray-50">
       <div v-if="currentStep !== null" class="mb-20">
         <div v-show="currentStep.name === 'source'">
           <Connections />

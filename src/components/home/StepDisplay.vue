@@ -1,7 +1,6 @@
 <!-- src/components/home/StepDisplay.vue -->
 <template>
-  <div class="bg-white shadow rounded-lg p-6">
-    <h2 class="text-xl font-semibold text-gray-900 mb-6">Getting Started</h2>
+  <div class="bg-white p-6">
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
       <div v-for="(step, index) in steps" :key="step.id" class="relative">
         <!-- Step Container -->
