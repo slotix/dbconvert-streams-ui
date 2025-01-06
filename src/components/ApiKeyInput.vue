@@ -1,9 +1,9 @@
 <template>
-    <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" v-if="!hasValidApiKey">
-        <div class="fixed inset-0 z-10 overflow-y-auto">
+    <div class="fixed inset-0 bg-gray-500 bg-opacity-85 transition-opacity z-40" v-if="!hasValidApiKey">
+        <div class="fixed inset-0 z-50 overflow-y-auto">
             <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
                 <div
-                    class="relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6">
+                    class="relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6 backdrop-blur-sm">
                     <div>
                         <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
                             <key-icon class="h-6 w-6 text-blue-600" aria-hidden="true" />
@@ -18,7 +18,7 @@
                                 </p>
                             </div>
                             <div class="mt-4">
-                                <input type="text" v-model="apiKeyInput"
+                                <input type="password" v-model="apiKeyInput"
                                     class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
                                     placeholder="Enter your API key" @keyup.enter="submitApiKey" />
                             </div>

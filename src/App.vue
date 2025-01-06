@@ -27,7 +27,9 @@
 
               <div class="flex grow flex-col gap-y-5 overflow-y-auto bg-gray-900 px-6 pb-2 ring-1 ring-white/10">
                 <div class="flex h-16 shrink-0 items-center">
-                  <img class="h-8 w-auto" src="/images/logo.svg" alt="DBConvert Streams" />
+                  <RouterLink to="/">
+                    <img class="h-8 w-auto" src="/images/logo.svg" alt="DBConvert Streams" />
+                  </RouterLink>
                 </div>
 
                 <nav class="flex flex-1 flex-col">
@@ -56,7 +58,9 @@
     <div
       class="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-100 lg:block lg:w-20 lg:overflow-y-auto lg:bg-gray-900 lg:pb-10">
       <div class="flex h-16 shrink-0 items-center justify-center">
-        <img class="h-8 w-auto" src="/images/logo.svg" alt="DBConvert Streams" />
+        <RouterLink to="/">
+          <img class="h-8 w-auto" src="/images/logo.svg" alt="DBConvert Streams" />
+        </RouterLink>
       </div>
       <nav class="mt-8">
         <ul role="list" class="flex flex-col items-center space-y-1">
@@ -76,26 +80,15 @@
     </div>
 
     <div class="lg:pl-20">
-      <!-- Top bar -->
-      <div
-        class="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
-        <button type="button" class="-m-2.5 p-2.5 text-gray-700 lg:hidden" @click="sidebarOpen = true">
-          <span class="sr-only">Open sidebar</span>
-          <Bars3Icon class="h-6 w-6" aria-hidden="true" />
-        </button>
+      <button type="button"
+        class="fixed top-0 left-3 p-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors lg:hidden"
+        @click="sidebarOpen = true">
+        <span class="sr-only">Open sidebar</span>
+        <Bars3Icon class="h-5 w-5" aria-hidden="true" />
+      </button>
+      <NotificationBar class="fixed top-3 right-3" />
 
-        <div class="h-6 w-px bg-gray-900/10 lg:hidden" aria-hidden="true" />
-
-        <div class="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <div class="flex items-center gap-x-4 lg:gap-x-6">
-            <div class="hidden lg:block lg:h-6 lg:w-px lg:bg-gray-900/10" aria-hidden="true" />
-          </div>
-        </div>
-
-        <NotificationBar class="absolute inset-y-0 right-0 h-16 w-auto" />
-      </div>
-
-      <div class="py-10 lg:py-6">
+      <div class="py-4">
         <RouterView />
       </div>
     </div>
@@ -112,21 +105,17 @@ import ApiKeyInput from '@/components/ApiKeyInput.vue'
 import {
   Dialog,
   DialogPanel,
-  Menu,
-  MenuButton,
   TransitionChild,
   TransitionRoot
 } from '@headlessui/vue'
 import {
   Bars3Icon,
   ArrowPathIcon,
-  HomeIcon,
   CircleStackIcon,
   XMarkIcon,
   ComputerDesktopIcon
 } from '@heroicons/vue/24/outline'
 
-import { useExponentialBackoff } from '@/utils/retryUtils'
 
 const commonStore = useCommonStore()
 const router = useRouter()
@@ -138,7 +127,6 @@ interface NavigationItem {
 }
 
 const navigation = ref<NavigationItem[]>([
-  { name: 'Home', href: '/', icon: HomeIcon },
   { name: 'Connections', href: '/connections', icon: CircleStackIcon },
   { name: 'Streams', href: '/streams', icon: ArrowPathIcon },
   { name: 'Monitor Stream', href: '/monitor', icon: ComputerDesktopIcon },

@@ -1,14 +1,15 @@
 <!-- src/components/home/QuickActions.vue -->
 <template>
-    <div class="bg-white shadow rounded-lg p-6 h-full">
+    <div class="p-6">
         <h2 class="text-xl font-semibold text-gray-900 mb-6">Quick Actions</h2>
         <div class="space-y-4">
             <!-- Create New Stream -->
-            <div class="flex items-center justify-between group cursor-pointer" @click="createNewStream">
+            <div class="flex items-center justify-between group cursor-pointer hover:bg-gray-50 p-3 rounded-lg transition-colors"
+                @click="createNewStream">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
-                        <div class="bg-gray-50 rounded-md p-4 group-hover:bg-gray-100 transition-colors w-14 h-14 flex items-center justify-center">
-                            <PlusCircleIcon class="h-8 w-8 text-blue-600" />
+                        <div class="bg-blue-50 rounded-lg p-3 group-hover:bg-blue-100 transition-colors">
+                            <PlusCircleIcon class="h-6 w-6 text-blue-600" />
                         </div>
                     </div>
                     <div class="ml-4">
@@ -19,12 +20,13 @@
                 <ArrowTopRightOnSquareIcon class="h-5 w-5 text-gray-400 group-hover:text-gray-600" />
             </div>
 
-            <!-- Add New Database Connection -->
-            <div class="flex items-center justify-between group cursor-pointer" @click="addNewDatabaseConnection">
+            <!-- Create New Connection -->
+            <div class="flex items-center justify-between group cursor-pointer hover:bg-gray-50 p-3 rounded-lg transition-colors"
+                @click="createNewConnection">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
-                        <div class="bg-gray-50 rounded-md p-4 group-hover:bg-gray-100 transition-colors w-14 h-14 flex items-center justify-center">
-                            <LinkIcon class="h-8 w-8 text-purple-600" />
+                        <div class="bg-purple-50 rounded-lg p-3 group-hover:bg-purple-100 transition-colors">
+                            <LinkIcon class="h-6 w-6 text-purple-600" />
                         </div>
                     </div>
                     <div class="ml-4">
@@ -36,11 +38,12 @@
             </div>
 
             <!-- View All Connections -->
-            <div class="flex items-center justify-between group cursor-pointer" @click="viewAllConnections">
+            <div class="flex items-center justify-between group cursor-pointer hover:bg-gray-50 p-3 rounded-lg transition-colors"
+                @click="viewAllConnections">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
-                        <div class="bg-gray-50 rounded-md p-4 group-hover:bg-gray-100 transition-colors w-14 h-14 flex items-center justify-center">
-                            <CircleStackIcon class="h-8 w-8 text-emerald-600" />
+                        <div class="bg-green-50 rounded-lg p-3 group-hover:bg-green-100 transition-colors">
+                            <CircleStackIcon class="h-6 w-6 text-green-600" />
                         </div>
                     </div>
                     <div class="ml-4">
@@ -52,11 +55,12 @@
             </div>
 
             <!-- View All Stream Configurations -->
-            <div class="flex items-center justify-between group cursor-pointer" @click="viewAllStreamConfigurations">
+            <div class="flex items-center justify-between group cursor-pointer hover:bg-gray-50 p-3 rounded-lg transition-colors"
+                @click="viewAllStreamConfigurations">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
-                        <div class="bg-gray-50 rounded-md p-4 group-hover:bg-gray-100 transition-colors w-14 h-14 flex items-center justify-center">
-                            <ArrowPathIcon class="h-8 w-8 text-amber-600" />
+                        <div class="bg-amber-50 rounded-lg p-3 group-hover:bg-amber-100 transition-colors">
+                            <ArrowPathIcon class="h-6 w-6 text-amber-600" />
                         </div>
                     </div>
                     <div class="ml-4">
@@ -73,32 +77,31 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { useStreamsStore } from '@/stores/streamConfig'
-import { useCommonStore } from '@/stores/common'
-import { 
-    CircleStackIcon, 
-    ArrowPathIcon, 
-    PlusCircleIcon, 
+import {
+    PlusCircleIcon,
+    ArrowPathIcon,
+    CircleStackIcon,
     LinkIcon,
     ArrowTopRightOnSquareIcon
 } from '@heroicons/vue/24/outline'
 
 const router = useRouter()
+const streamsStore = useStreamsStore()
 
 function createNewStream() {
-    useStreamsStore().addStream()
-    router.push({ name: 'ManageStream', params: { mode: 'add' } })
+    streamsStore.addStream()
+    router.push('/streams/create')
 }
 
-function addNewDatabaseConnection() {
-    useCommonStore().openModal('Add')
-    router.push({ name: 'Connections' })
+function createNewConnection() {
+    router.push('/connections?action=create')
 }
 
 function viewAllConnections() {
-    router.push({ name: 'Connections' })
+    router.push('/connections')
 }
 
 function viewAllStreamConfigurations() {
-    router.push({ name: 'Streams' })
+    router.push('/streams')
 }
 </script>

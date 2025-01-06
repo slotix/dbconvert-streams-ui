@@ -1,33 +1,40 @@
 <template>
-  <div class="min-h-screen bg-gray-50 py-8">
-    <!-- Page Title -->
-    <div class="max-w-7xl mx-auto px-4 mb-8">
-      <h1 class="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight">
-        DBConvert Streams Dashboard
-      </h1>
-    </div>
-
-    <!-- Actions, Overview, and Status Section -->
-    <div class="max-w-7xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-      <!-- Quick Actions -->
-      <div class="lg:col-span-1">
-        <QuickActions />
-      </div>
-
-      <!-- Account Overview -->
-      <div class="lg:col-span-1">
-        <AccountOverview />
-      </div>
-
-      <!-- System Status -->
-      <div class="lg:col-span-1">
-        <SystemStatus />
+  <div>
+    <!-- White background header -->
+    <div class="bg-white">
+      <div class="max-w-7xl mx-auto py-6 px-8">
+        <h1 class="text-3xl font-bold text-gray-900">
+          DBConvert Streams Dashboard
+        </h1>
       </div>
     </div>
 
-    <!-- Steps Section -->
-    <div class="max-w-7xl mx-auto px-4">
-      <StepDisplay :steps="allSteps" />
+    <!-- Grey background content area -->
+    <div class="bg-gray-200 min-h-screen">
+      <main class="max-w-7xl mx-auto px-4 py-6">
+        <!-- Cards Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <!-- Quick Actions Card -->
+          <div class="bg-white shadow rounded-lg overflow-hidden">
+            <QuickActions />
+          </div>
+
+          <!-- Account Overview Card -->
+          <div class="bg-white shadow rounded-lg overflow-hidden">
+            <AccountOverview />
+          </div>
+
+          <!-- System Status Card -->
+          <div class="bg-white shadow rounded-lg overflow-hidden">
+            <SystemStatus />
+          </div>
+        </div>
+
+        <!-- Getting Started Section -->
+        <div class="mt-6">
+          <StepDisplay :steps="allSteps" />
+        </div>
+      </main>
     </div>
   </div>
 </template>
