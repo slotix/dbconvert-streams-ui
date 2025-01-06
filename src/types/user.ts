@@ -27,6 +27,7 @@ export interface SubscriptionPeriodUsage {
 export interface UserData {
   userID: string
   email: string
+  name: string
   stripeCustomerId: string
   trialEnd: number
   apiKey: string

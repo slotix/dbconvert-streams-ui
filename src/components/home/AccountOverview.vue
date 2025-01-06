@@ -2,6 +2,20 @@
   <div class="p-6">
     <h2 class="text-xl font-semibold text-gray-900 mb-6">Account Overview</h2>
     <div class="space-y-6">
+      <!-- User Info -->
+      <div class="flex items-center group hover:bg-gray-50 p-3 rounded-lg transition-colors">
+        <div class="flex-shrink-0">
+          <div class="bg-indigo-50 rounded-lg p-3 group-hover:bg-indigo-100 transition-colors">
+            <UserIcon class="h-6 w-6 text-indigo-600" />
+          </div>
+        </div>
+        <div class="ml-4">
+          <p class="text-sm font-medium text-gray-500">Account</p>
+          <p class="text-lg font-semibold text-gray-900">{{ userData?.name || 'N/A' }}</p>
+          <p class="text-sm text-gray-500">{{ userData?.email || 'N/A' }}</p>
+        </div>
+      </div>
+
       <!-- Current Plan -->
       <div class="flex items-center group hover:bg-gray-50 p-3 rounded-lg transition-colors">
         <div class="flex-shrink-0">
@@ -57,21 +71,37 @@
       </div>
 
       <!-- API Key Management -->
-      <div
-        class="flex items-center justify-between group cursor-pointer hover:bg-gray-50 p-3 rounded-lg transition-colors"
-        @click="manageApiKey">
+      <div class="group hover:bg-gray-50 p-3 rounded-lg transition-colors">
         <div class="flex items-center">
           <div class="flex-shrink-0">
             <div class="bg-blue-50 rounded-lg p-3 group-hover:bg-blue-100 transition-colors">
               <KeyIcon class="h-6 w-6 text-blue-600" />
             </div>
           </div>
-          <div class="ml-4">
-            <h3 class="text-sm font-semibold text-gray-900">Manage API Key</h3>
-            <p class="text-sm text-gray-500">View or update your API key</p>
+          <div class="ml-4 flex-grow">
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="text-sm font-medium text-gray-500">API Key</h3>
+                <p class="text-xs text-gray-500">Use this key to authenticate your API requests</p>
+              </div>
+              <a href="http://localhost:3000/account" target="_blank"
+                class="text-sm text-blue-600 hover:text-blue-500 flex items-center gap-1">
+                Manage API Key
+                <ArrowTopRightOnSquareIcon class="h-4 w-4" />
+              </a>
+            </div>
+            <div class="mt-2 flex items-center gap-2">
+              <div class="flex-grow relative">
+                <input type="text" readonly :value="maskedApiKey"
+                  class="w-full rounded-md bg-gray-50 px-3 py-2 text-sm text-gray-900 font-mono" />
+                <button @click="copyApiKey"
+                  class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700">
+                  <DocumentDuplicateIcon class="h-4 w-4" />
+                </button>
+              </div>
+            </div>
           </div>
         </div>
-        <ChevronRightIcon class="h-5 w-5 text-gray-400 group-hover:text-gray-600" />
       </div>
     </div>
   </div>
@@ -81,11 +111,20 @@
 import { computed } from 'vue'
 import { useCommonStore } from '@/stores/common'
 import { useRouter } from 'vue-router'
-import { CreditCardIcon, ChartBarIcon, KeyIcon, ChevronRightIcon } from '@heroicons/vue/24/outline'
+import {
+  CreditCardIcon,
+  ChartBarIcon,
+  KeyIcon,
+  UserIcon,
+  DocumentDuplicateIcon,
+  ArrowTopRightOnSquareIcon
+} from '@heroicons/vue/24/outline'
 import { formatDate, formatDataSize } from '@/utils/formats'
 
 const commonStore = useCommonStore()
 const router = useRouter()
+
+const userData = computed(() => commonStore.userData)
 
 // Add status computation
 const subscriptionStatus = computed(() => commonStore.userData?.subscriptionStatus || 'active')
@@ -104,8 +143,20 @@ const usagePercentage = computed(() => {
   return Math.round((usedData.value / totalData.value) * 100)
 })
 
-function manageApiKey() {
-  window.open('http://localhost:3000/account', '_blank')
+const maskedApiKey = computed(() => {
+  const apiKey = commonStore.userData?.apiKey || ''
+  if (!apiKey) return ''
+  const prefix = apiKey.slice(0, 4)
+  const suffix = apiKey.slice(-4)
+  return `${prefix}${'•'.repeat(20)}${suffix}`
+})
+
+async function copyApiKey() {
+  const apiKey = commonStore.userData?.apiKey
+  if (apiKey) {
+    await navigator.clipboard.writeText(apiKey)
+    commonStore.showNotification('API key copied to clipboard', 'success')
+  }
 }
 
 // Add period information
