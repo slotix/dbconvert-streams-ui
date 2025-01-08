@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import idb from '@/api/iDBService'
 import api from '@/api/apiClient'
 import { UserData } from '@/types/user'
+import { ServiceStatus } from '@/types/common'
 import { useToast } from 'vue-toastification'
 
 export const DIALOG_TYPES = {
@@ -33,6 +34,7 @@ export const useCommonStore = defineStore('common', {
     sentryHealthy: false,
     apiHealthy: false,
     apiKey: import.meta.env.VITE_API_KEY || null,
+    serviceStatuses: [] as ServiceStatus[],
     steps: [
       {
         id: 1,
@@ -260,7 +262,17 @@ export const useCommonStore = defineStore('common', {
     },
     setBackendConnected(status: boolean) {
       this.isBackendConnected = status
-    }
+    },
+    async fetchServiceStatus() {
+      try {
+        const response = await api.getServiceStatus()
+        this.serviceStatuses = response.services
+      } catch (error) {
+        console.error('Failed to fetch service status:', error)
+        const toast = useToast()
+        toast.error('Failed to fetch service status')
+      }
+    },
   },
   getters: {
     isStreamsPage: (state) => state.currentPage === 'ManageStream',

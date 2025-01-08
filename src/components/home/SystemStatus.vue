@@ -19,8 +19,8 @@
                     </div>
                 </div>
                 <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium"
-                    :class="getStatusClasses(isBackendConnected)">
-                    {{ getStatusText(isBackendConnected) }}
+                    :class="getStatusClasses(getServiceStatus(service.id))">
+                    {{ getServiceStatus(service.id) }}
                 </span>
             </div>
         </div>
@@ -28,7 +28,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useCommonStore } from '@/stores/common'
 import {
     ServerIcon,
@@ -51,7 +51,7 @@ interface Service {
 const services: Service[] = [
     {
         id: 'api',
-        name: 'dbconvert-streams-api',
+        name: 'stream-api',
         description: 'API Service',
         icon: CloudIcon,
         bgColor: 'bg-blue-50',
@@ -59,7 +59,7 @@ const services: Service[] = [
     },
     {
         id: 'reader',
-        name: 'dbconvert-streams-source-reader',
+        name: 'stream-reader',
         description: 'Source Reader',
         icon: ArrowDownTrayIcon,
         bgColor: 'bg-emerald-50',
@@ -67,14 +67,14 @@ const services: Service[] = [
     },
     {
         id: 'writer',
-        name: 'dbconvert-streams-target-writer',
+        name: 'stream-writer',
         description: 'Target Writer',
         icon: ArrowUpTrayIcon,
         bgColor: 'bg-amber-50',
         iconColor: 'text-amber-600'
     },
     {
-        id: 'queue',
+        id: 'nats',
         name: 'nats',
         description: 'Message Queue',
         icon: QueueListIcon,
@@ -92,12 +92,29 @@ const services: Service[] = [
 ]
 
 const commonStore = useCommonStore()
-const isBackendConnected = computed(() => commonStore.isBackendConnected)
+const pollingInterval = ref<number | null>(null)
 
-const getStatusClasses = (isConnected: boolean) => ({
-    'bg-green-100 text-green-700': isConnected,
-    'bg-red-100 text-red-700': !isConnected
+const getServiceStatus = (serviceId: string): string => {
+    const status = commonStore.serviceStatuses.find(s => s.name.toLowerCase().includes(serviceId))
+    return status?.status || 'unknown'
+}
+
+const getStatusClasses = (status: string) => ({
+    'bg-green-100 text-green-700': status === 'passing',
+    'bg-red-100 text-red-700': status === 'critical',
+    'bg-yellow-100 text-yellow-700': status === 'warning',
+    'bg-gray-100 text-gray-700': status === 'unknown'
 })
 
-const getStatusText = (isConnected: boolean) => isConnected ? 'Passing' : 'Failed'
+onMounted(() => {
+    commonStore.fetchServiceStatus()
+    // Poll for service status every 30 seconds
+    pollingInterval.value = window.setInterval(() => commonStore.fetchServiceStatus(), 30000)
+})
+
+onUnmounted(() => {
+    if (pollingInterval.value) {
+        clearInterval(pollingInterval.value)
+    }
+})
 </script>
