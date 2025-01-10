@@ -58,8 +58,8 @@ const startStream = async (id: string): Promise<StreamConfig> => {
     validateApiKey(commonStore.apiKey)
     
     const response: AxiosResponse<StreamConfig> = await apiClient.post(
-      `/streams/${id}/action`,
-      { action: 'start' },
+      `/streams/${id}/start`,
+      null,
       {
         headers: { 'X-API-Key': commonStore.apiKey }
       }
@@ -72,8 +72,8 @@ const pauseStream = async (id: string): Promise<StreamConfig> => {
     validateApiKey(commonStore.apiKey)
     
     const response: AxiosResponse<StreamConfig> = await apiClient.post(
-      `/streams/${id}/action`,
-      { action: 'pause' },
+      `/streams/${id}/pause`,
+      null,
       {
         headers: { 'X-API-Key': commonStore.apiKey }
       }
@@ -86,8 +86,8 @@ const resumeStream = async (id: string): Promise<StreamConfig> => {
     validateApiKey(commonStore.apiKey)
     
     const response: AxiosResponse<StreamConfig> = await apiClient.post(
-      `/streams/${id}/action`,
-      { action: 'resume' },
+      `/streams/${id}/resume`,
+      null,
       {
         headers: { 'X-API-Key': commonStore.apiKey }
       }
@@ -100,8 +100,8 @@ const stopStream = async (id: string): Promise<StreamConfig> => {
     validateApiKey(commonStore.apiKey)
     
     const response: AxiosResponse<StreamConfig> = await apiClient.post(
-      `/streams/${id}/action`,
-      { action: 'stop' },
+      `/streams/${id}/stop`,
+      null,
       {
         headers: { 'X-API-Key': commonStore.apiKey }
       }
