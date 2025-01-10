@@ -73,17 +73,6 @@ const sentryHealthCheck = async (): Promise<HealthCheckResponse> => {
   }
 }
 
-const getCombinedUsage = async (apiKey: string): Promise<CombinedUsageResponse> => {
-  validateApiKey(apiKey)
-  try {
-    const response: ApiResponse<CombinedUsageResponse> = await backendClient.get('/user/combined-usage', {
-      headers: { 'X-API-Key': apiKey }
-    })
-    return response.data
-  } catch (error) {
-    throw handleApiError(error)
-  }
-}
 
 const getServiceStatus = async (): Promise<ServiceStatusResponse> => {
   try {
@@ -99,6 +88,5 @@ export default {
   loadUserConfigs,
   backendHealthCheck,
   sentryHealthCheck,
-  getCombinedUsage,
   getServiceStatus
 }

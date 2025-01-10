@@ -151,24 +151,6 @@ export const useCommonStore = defineStore('common', {
         throw error
       }
     },
-    async fetchUsageData() {
-      if (!this.apiKey) {
-        console.error('API key not found')
-        return
-      }
-      try {
-        const combinedUsage = await api.getCombinedUsage(this.apiKey)
-        if (this.userData) {
-          this.userData = {
-            ...this.userData,
-            dailyUsage: combinedUsage.dailyUsage,
-            monthlyUsage: combinedUsage.monthlyUsage
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching usage data:', error)
-      }
-    },
     async getViewType() {
       const vType = await idb.getCurrentViewType()
       this.currentViewType = vType

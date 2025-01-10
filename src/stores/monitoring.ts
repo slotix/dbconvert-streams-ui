@@ -132,9 +132,6 @@ export const useMonitoringStore = defineStore('monitoring', {
           } else if (this.stats.every(stat => stat.status === 'FINISHED')) {
             stage!.title = 'Finished'
           }
-          // Call fetchUsageData directly
-          const commonStore = useCommonStore()
-          commonStore.fetchUsageData()
         }
       } else if (this.stats.some(stat => stat.events && parseInt(stat.events) > 0)) {
         // If we have events being processed, we're in data transfer stage
