@@ -44,7 +44,6 @@
           <div class="bg-white rounded-xl shadow-sm border border-gray-100">
             <div class="p-6">
               <h2 class="text-xl font-semibold text-gray-900 flex items-center gap-2">
-                <AcademicCapIcon class="h-6 w-6 text-gray-600" />
                 Getting Started
               </h2>
               <StepDisplay :steps="allSteps" />
@@ -63,8 +62,6 @@ import StepDisplay from '@/components/home/StepDisplay.vue'
 import QuickActions from '@/components/home/QuickActions.vue'
 import AccountOverview from '@/components/home/AccountOverview.vue'
 import SystemStatus from '@/components/home/SystemStatus.vue'
-import { PlusIcon } from '@heroicons/vue/20/solid'
-import { AcademicCapIcon } from '@heroicons/vue/24/outline'
 
 const commonStore = useCommonStore()
 const allSteps = computed(() => commonStore.steps)

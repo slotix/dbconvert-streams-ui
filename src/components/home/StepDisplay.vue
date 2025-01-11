@@ -14,12 +14,7 @@
 
           <!-- Step Image -->
           <div class="hidden md:block flex-shrink-0">
-            <img 
-              :src="step.img" 
-              :alt="step.title" 
-              class="w-16 h-16 object-contain rounded-lg"
-              loading="lazy"
-            />
+            <img :src="step.img" :alt="step.title" class="w-16 h-16 object-contain rounded-lg" loading="lazy" />
           </div>
 
           <!-- Step Content -->
@@ -28,7 +23,7 @@
             <div class="md:hidden text-sm font-medium text-gray-500 mb-2">
               Step {{ index + 1 }}
             </div>
-            
+
             <!-- Title and Description -->
             <h3 class="text-lg font-semibold text-gray-800 mb-2">
               {{ step.title }}
@@ -39,16 +34,22 @@
 
             <!-- Mobile Image -->
             <div class="md:hidden mt-4">
-              <img 
-                :src="step.img" 
-                :alt="step.title" 
-                class="w-16 h-16 object-contain rounded-lg"
-                loading="lazy"
-              />
+              <img :src="step.img" :alt="step.title" class="w-16 h-16 object-contain rounded-lg" loading="lazy" />
             </div>
           </div>
         </div>
       </div>
+    </div>
+    <!-- Documentation Link -->
+    <div class="mt-8 text-center">
+      <a href="https://streams.dbconvert.com/docs" target="_blank" rel="noopener noreferrer"
+        class="inline-flex items-center text-blue-600 hover:text-blue-800">
+        <span class="text-base">View Documentation</span>
+        <svg class="w-5 h-5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+        </svg>
+      </a>
     </div>
   </div>
 </template>
@@ -64,3 +65,4 @@ interface Props {
 const props = defineProps<Props>()
 </script>
 
+a

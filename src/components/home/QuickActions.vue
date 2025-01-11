@@ -2,7 +2,6 @@
 <template>
     <div class="p-6">
         <h2 class="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
-            <BoltIcon class="h-6 w-6 text-gray-600" />
             Quick Actions
         </h2>
         <div class="space-y-4">
@@ -94,7 +93,6 @@ import {
     ClockIcon,
     PlusIcon,
     ArrowRightIcon,
-    BoltIcon
 } from '@heroicons/vue/24/outline'
 
 const router = useRouter()

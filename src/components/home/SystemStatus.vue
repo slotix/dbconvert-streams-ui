@@ -1,7 +1,6 @@
 <template>
     <div class="p-6">
         <h2 class="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
-            <ServerIcon class="h-6 w-6 text-gray-600" />
             System Status
         </h2>
         <div class="space-y-4">
@@ -31,7 +30,6 @@
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useCommonStore } from '@/stores/common'
 import {
-    ServerIcon,
     CloudIcon,
     QueueListIcon,
     ArrowDownTrayIcon,

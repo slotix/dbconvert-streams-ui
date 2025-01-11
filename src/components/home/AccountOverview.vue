@@ -61,7 +61,7 @@
                 <div class="h-2 rounded-full" :style="{ width: `${usagePercentage}%` }" :class="{
                   'bg-red-600': usagePercentage > 90,
                   'bg-yellow-600': usagePercentage > 75 && usagePercentage <= 90,
-                  'bg-blue-600': usagePercentage <= 75
+                  'bg-green-600': usagePercentage <= 75
                 }"></div>
               </div>
               <p class="text-sm text-gray-500 mt-1">{{ usagePercentage }}% used</p>
@@ -84,20 +84,23 @@
                 <h3 class="text-sm font-medium text-gray-500">API Key</h3>
                 <p class="text-xs text-gray-500">Use this key to authenticate your API requests</p>
               </div>
-              <a href="http://localhost:3000/account" target="_blank"
-                class="text-sm text-blue-600 hover:text-blue-500 flex items-center gap-1">
-                Manage API Key
-                <ArrowTopRightOnSquareIcon class="h-4 w-4" />
-              </a>
             </div>
-            <div class="mt-2 flex items-center gap-2">
-              <div class="flex-grow relative">
+            <div class="mt-2 space-y-2">
+              <div class="relative">
                 <input type="text" readonly :value="maskedApiKey"
-                  class="w-full rounded-md bg-gray-50 px-3 py-2 text-sm text-gray-900 font-mono" />
+                  class="w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2 pr-10 text-sm font-mono text-gray-900 focus:ring-0 focus:outline-none" />
                 <button @click="copyApiKey"
-                  class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700">
-                  <DocumentDuplicateIcon class="h-4 w-4" />
+                  class="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-md hover:bg-gray-200 transition-colors group"
+                  title="Copy API Key">
+                  <DocumentDuplicateIcon class="h-4 w-4 text-gray-500 group-hover:text-gray-700" />
                 </button>
+              </div>
+              <div class="flex justify-end">
+                <a href="http://localhost:3000/account" target="_blank"
+                  class="text-sm text-blue-600 hover:text-blue-500 flex items-center gap-1">
+                  Manage API Key
+                  <ArrowTopRightOnSquareIcon class="h-4 w-4" />
+                </a>
               </div>
             </div>
           </div>
