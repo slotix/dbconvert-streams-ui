@@ -105,7 +105,7 @@ function createStream() {
 }
 
 function createConnection() {
-    commonStore.showAddConnectionDialog()
+    commonStore.openAddConnectionDialog()
     router.push('/connections')
 }
 

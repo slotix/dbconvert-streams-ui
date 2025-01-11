@@ -166,6 +166,9 @@ export const useCommonStore = defineStore('common', {
     closeModal() {
       this.showModal = false
     },
+    openAddConnectionDialog() {
+      this.openModal(DIALOG_TYPES.SAVE)
+    },
     showNotification(msg: string, type: 'error' | 'success' | 'warning' | 'info' = 'info') {
       const toast = useToast()
       switch (type) {
