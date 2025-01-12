@@ -5,8 +5,7 @@ import { UserData } from '@/types/user'
 import { ServiceStatus } from '@/types/common'
 import { useToast } from 'vue-toastification'
 import { useMonitoringStore } from './monitoring'
-import { connect, AckPolicy, StringCodec, JetStreamManager, Consumer } from 'nats.ws'
-import { useLogsStore } from './logs'
+import { natsService } from '@/api/natsService'
 
 export const DIALOG_TYPES = {
   SAVE: 'Add',
@@ -214,79 +213,9 @@ export const useCommonStore = defineStore('common', {
     async consumeLogsFromNATS() {
       // Start the logs connection in the background
       setTimeout(async () => {
-        const logsStore = useLogsStore()
         const monitoringStore = useMonitoringStore()
-
-        while (true) {
-          try {
-            const natsServer = import.meta.env.VITE_NATS_SERVER
-            const nc = await connect({ servers: natsServer })
-            const js = nc.jetstream()
-            const jsm: JetStreamManager = await js.jetstreamManager()
-
-            const sc = StringCodec()
-            await jsm.consumers.add('LOGS', {
-              durable_name: 'logsAll',
-              ack_policy: AckPolicy.Explicit
-            })
-
-            const c: Consumer = await js.consumers.get('LOGS', 'logsAll')
-
-            let iter = await c.consume()
-            for await (const m of iter) {
-              let data = sc.decode(m.data)
-              let parsed = JSON.parse(data)
-              parsed.id = m.seq
-              const subjectParts = m.subject.split('.')
-              parsed.type = subjectParts[1]
-              parsed.nodeID = subjectParts[2]
-
-              if (parsed.msg.startsWith('[init]') && parsed.type === 'api') {
-                monitoringStore.nodes = []
-                const parts = parsed.msg.split('ID:')
-                const id = parts[1].trim()
-                monitoringStore.streamID = id
-              }
-              if (parsed.msg.startsWith('[progress]')) {
-                const parts = parsed.msg.split('|')
-                const stage = parts[0].split('STAGE:')[1]
-                monitoringStore.currentStageID = parseInt(stage)
-              }
-              const nodeExists = monitoringStore.nodes.find((node: { id: string }) => node.id === parsed.nodeID)
-              if (!nodeExists) {
-                monitoringStore.nodes.push({
-                  id: parsed.nodeID,
-                  type: parsed.type
-                })
-              }
-
-              // Add to global logs store
-              logsStore.addLog({
-                message: parsed.msg,
-                level: parsed.level,
-                timestamp: parsed.ts,
-                source: `${parsed.type}:${parsed.nodeID}`,
-                details: parsed
-              })
-
-              monitoringStore.addLog(parsed)
-              m.ack()
-            }
-
-            await nc.drain()
-          } catch (error) {
-            console.error('Error in NATS connection:', error)
-            logsStore.addLog({
-              message: `Error in NATS connection: ${error}`,
-              level: 'error',
-              timestamp: Date.now(),
-              source: 'monitoring',
-              details: { error }
-            })
-            // Wait before attempting to reconnect
-            await new Promise((resolve) => setTimeout(resolve, 5000))
-          }
-        }
+        monitoringStore.initNatsHandling()
+        await natsService.connect()
       }, 0)
     },
 

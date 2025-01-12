@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { StreamConfig } from '@/types/streamConfig'
+import { natsService, NatsMessage } from '@/api/natsService'
 
 // Define types for the state
 interface Node {
@@ -190,6 +191,32 @@ export const useMonitoringStore = defineStore('monitoring', {
         this.logs = this.logs.slice(-Math.floor(this.maxLogs / 2))
       }
       this.logs.push(log)
+    },
+    initNatsHandling() {
+      natsService.addMessageHandler((message: NatsMessage) => {
+        if (message.msg.startsWith('[init]') && message.type === 'api') {
+          this.nodes = []
+          const parts = message.msg.split('ID:')
+          const id = parts[1].trim()
+          this.streamID = id
+        }
+        if (message.msg.startsWith('[progress]')) {
+          const parts = message.msg.split('|')
+          const stage = parts[0].split('STAGE:')[1]
+          this.currentStageID = parseInt(stage)
+        }
+        const nodeExists = this.nodes.find((node) => node.id === message.nodeID)
+        if (!nodeExists && (message.type === 'source' || message.type === 'target' || message.type === 'api')) {
+          this.nodes.push({
+            id: message.nodeID,
+            type: message.type as NodeType
+          })
+        }
+        this.addLog({
+          ...message,
+          level: message.level as keyof LogLevel
+        })
+      })
     }
   }
 })
