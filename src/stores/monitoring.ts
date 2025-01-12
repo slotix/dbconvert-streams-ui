@@ -1,7 +1,5 @@
 import { defineStore } from 'pinia'
-import { connect, AckPolicy, StringCodec, JetStreamManager, Consumer } from 'nats.ws'
 import { StreamConfig } from '@/types/streamConfig'
-import { useCommonStore } from './common'
 
 // Define types for the state
 interface Node {
@@ -119,7 +117,7 @@ export const useMonitoringStore = defineStore('monitoring', {
       }).length
 
       // Determine stage based on node status and current stats
-      if (runningNodesNumber === 0 && this.stats.every(stat => 
+      if (runningNodesNumber === 0 && this.stats.every(stat =>
         ['FINISHED', 'STOPPED', 'FAILED'].includes(stat.status || '')
       )) {
         // All nodes finished
@@ -177,61 +175,6 @@ export const useMonitoringStore = defineStore('monitoring', {
   actions: {
     setStreamConfig(streamConfig: StreamConfig) {
       this.streamConfig = streamConfig
-    },
-    async consumeLogsFromNATS() {
-      while (true) {
-        try {
-          const natsServer = import.meta.env.VITE_NATS_SERVER
-          const nc = await connect({ servers: natsServer })
-          const js = nc.jetstream()
-          const jsm: JetStreamManager = await js.jetstreamManager()
-
-          const sc = StringCodec()
-          await jsm.consumers.add('LOGS', {
-            durable_name: 'logsAll',
-            ack_policy: AckPolicy.Explicit
-          })
-
-          const c: Consumer = await js.consumers.get('LOGS', 'logsAll')
-
-          let iter = await c.consume()
-          for await (const m of iter) {
-            let data = sc.decode(m.data)
-            let parsed: Log = JSON.parse(data)
-            parsed.id = m.seq
-            const subjectParts = m.subject.split('.')
-            parsed.type = subjectParts[1]
-            parsed.nodeID = subjectParts[2]
-
-            if (parsed.msg.startsWith('[init]') && parsed.type === 'api') {
-              this.nodes = []
-              const parts = parsed.msg.split('ID:')
-              const id = parts[1].trim()
-              this.streamID = id
-            }
-            if (parsed.msg.startsWith('[progress]')) {
-              const parts = parsed.msg.split('|')
-              const stage = parts[0].split('STAGE:')[1]
-              this.currentStageID = parseInt(stage)
-            }
-            const nodeExists = this.nodes.find((node) => node.id === parsed.nodeID)
-            if (!nodeExists) {
-              this.nodes.push({
-                id: parsed.nodeID,
-                type: parsed.type as NodeType
-              })
-            }
-            this.addLog(parsed)
-            m.ack()
-          }
-
-          await nc.drain()
-        } catch (error) {
-          console.error('Error in NATS connection:', error)
-          // Wait before attempting to reconnect
-          await new Promise((resolve) => setTimeout(resolve, 5000))
-        }
-      }
     },
     setStageTimestamp(stageId: number) {
       const stage = this.stages.find(s => s.id === stageId)

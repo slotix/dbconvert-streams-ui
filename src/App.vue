@@ -92,6 +92,9 @@
         <RouterView />
       </div>
     </div>
+
+    <LogsPanel />
+    <LogsIndicator />
   </div>
 </template>
 
@@ -101,6 +104,8 @@ import { RouterLink, RouterView, useRouter } from 'vue-router'
 import NotificationBar from '@/components/common/NotificationBar.vue'
 import { useCommonStore } from '@/stores/common'
 import ApiKeyInput from '@/components/ApiKeyInput.vue'
+import LogsPanel from '@/components/logs/LogsPanel.vue'
+import LogsIndicator from '@/components/logs/LogsIndicator.vue'
 
 import {
   Dialog,

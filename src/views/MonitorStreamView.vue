@@ -37,7 +37,6 @@
           <StreamConfigInfo v-if="isBackendConnected && currentStreamConfig" :config="currentStreamConfig" />
           <ProgressContainer />
           <StatContainer />
-          <LogContainer />
         </div>
       </div>
     </div>
@@ -62,9 +61,8 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, computed, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { ChartBarSquareIcon, PauseIcon, PlayIcon, StopIcon } from '@heroicons/vue/20/solid'
-import LogContainer from '@/components/monitoring/LogContainer.vue'
 import StatContainer from '@/components/monitoring/StatContainer.vue'
 import ProgressContainer from '@/components/monitoring/ProgressContainer.vue'
 import { useMonitoringStore } from '@/stores/monitoring'
@@ -82,12 +80,6 @@ const currentStreamConfig = computed(() => {
 
 const isPaused = ref(false)
 const isBackendConnected = computed(() => commonStore.isBackendConnected)
-
-onMounted(() => {
-  if (isBackendConnected.value) {
-    monitoringStore.consumeLogsFromNATS()
-  }
-})
 
 const pauseStream = async () => {
   try {
