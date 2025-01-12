@@ -23,7 +23,7 @@ const sentryClient: AxiosInstance = axios.create({
   headers: {
     'Content-Type': 'application/json'
   },
-  withCredentials: true
+  withCredentials: false
 })
 
 export function validateApiKey(apiKey: string | null): void {
