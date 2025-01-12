@@ -160,7 +160,7 @@ export const useConnectionsStore = defineStore('connections', {
           }
         }
       } catch (error) {
-        console.error('Failed to create connection:', error)
+        console.error('[Store] Failed to create connection:', error)
         throw error
       }
     },
