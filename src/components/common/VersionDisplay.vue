@@ -5,5 +5,5 @@
 </template>
 
 <script setup lang="ts">
-const version = '0.5.0' // This should match package.json version
+import { version } from '@/config/version'
 </script>

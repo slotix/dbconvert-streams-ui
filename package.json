@@ -13,7 +13,10 @@
     "start": "vite preview --port $PORT --host 127.0.0.1",
     "test:unit": "vitest",
     "lint": "eslint .",
-    "format": "prettier --write src/"
+    "format": "prettier --write src/",
+    "version:patch": "git add . && git commit -m \"chore: prepare for patch release\" && npm version patch",
+    "version:minor": "git add . && git commit -m \"chore: prepare for minor release\" && npm version minor",
+    "version:major": "git add . && git commit -m \"chore: prepare for major release\" && npm version major"
   },
   "dependencies": {
     "@headlessui/vue": "^1.7.14",
