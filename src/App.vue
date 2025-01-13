@@ -95,6 +95,7 @@
 
     <LogsPanel />
     <LogsIndicator />
+    <VersionDisplay />
   </div>
 </template>
 
@@ -106,6 +107,7 @@ import { useCommonStore } from '@/stores/common'
 import ApiKeyInput from '@/components/ApiKeyInput.vue'
 import LogsPanel from '@/components/logs/LogsPanel.vue'
 import LogsIndicator from '@/components/logs/LogsIndicator.vue'
+import VersionDisplay from '@/components/common/VersionDisplay.vue'
 
 import {
   Dialog,
