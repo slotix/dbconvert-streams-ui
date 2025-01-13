@@ -1,5 +1,9 @@
 export function formatDate(date: number): string {
-  return new Date(date * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  return new Date(date * 1000).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
+  })
 }
 
 export function formatDataSize(bytes: number): string {

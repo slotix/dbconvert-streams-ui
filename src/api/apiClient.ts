@@ -73,7 +73,6 @@ const sentryHealthCheck = async (): Promise<HealthCheckResponse> => {
   }
 }
 
-
 const getServiceStatus = async (): Promise<ServiceStatusResponse> => {
   try {
     const response: ApiResponse<ServiceStatusResponse> = await backendClient.get('/services/status')

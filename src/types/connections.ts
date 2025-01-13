@@ -21,11 +21,11 @@ export interface Connection {
 }
 
 export interface Schema {
-  name: string;
+  name: string
 }
 
 export interface Database {
-  name: string;
+  name: string
 }
 
 export interface DbType {

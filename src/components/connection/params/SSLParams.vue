@@ -8,7 +8,7 @@
           <div class="flex items-center mb-2">
             <label for="ssl-mode" class="text-sm font-medium text-gray-700">
               SSL Mode
-              <span 
+              <span
                 v-tooltip="'Choose the SSL verification mode for your connection'"
                 class="ml-2 text-gray-400 hover:text-gray-500 cursor-help inline-block"
               >
@@ -19,7 +19,9 @@
           <select
             id="ssl-mode"
             :value="localSSLConfig.mode"
-            @change="handleModeChange(($event.target as HTMLSelectElement).value as SSLConfig['mode'])"
+            @change="
+              handleModeChange(($event.target as HTMLSelectElement).value as SSLConfig['mode'])
+            "
             class="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-gray-500 focus:outline-none focus:ring-gray-500 sm:text-sm"
           >
             <option v-for="mode in SSL_MODES" :key="mode.value" :value="mode.value">
@@ -142,10 +144,7 @@ function handleModeChange(mode: SSLConfig['mode']) {
   errors.value = {}
 }
 
-async function handleCertUpdate(
-  certType: keyof Omit<SSLConfig, 'mode'>,
-  file: File | null
-) {
+async function handleCertUpdate(certType: keyof Omit<SSLConfig, 'mode'>, file: File | null) {
   if (!file) return
 
   try {
@@ -153,7 +152,7 @@ async function handleCertUpdate(
     errors.value[certType] = ''
 
     // Validate file size
-    if (file.size > CERT_TYPES.find(c => c.type === certType)!.maxSize) {
+    if (file.size > CERT_TYPES.find((c) => c.type === certType)!.maxSize) {
       throw new Error('File size exceeds maximum allowed')
     }
 

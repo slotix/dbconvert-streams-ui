@@ -15,21 +15,21 @@ export function parseConnectionString(connectionString: string): ParsedConnectio
   try {
     const url = new URL(connectionString)
     const params: Record<string, string> = {}
-    
+
     url.searchParams.forEach((value, key) => {
       params[key] = value
     })
 
     // Extract database type from protocol
     const type = url.protocol.replace(':', '')
-    
+
     // Map common protocol names to our database types
     const typeMap: Record<string, string> = {
-      'postgresql': 'PostgreSQL',
-      'mysql': 'MySQL',
-      'oracle': 'Oracle',
-      'sqlserver': 'SQLServer',
-      'db2': 'DB2'
+      postgresql: 'PostgreSQL',
+      mysql: 'MySQL',
+      oracle: 'Oracle',
+      sqlserver: 'SQLServer',
+      db2: 'DB2'
     }
 
     return {
@@ -49,11 +49,11 @@ export function parseConnectionString(connectionString: string): ParsedConnectio
 
 function getDefaultPort(type: string): number {
   const defaultPorts: Record<string, number> = {
-    'postgresql': 5432,
-    'mysql': 3306,
-    'oracle': 1521,
-    'sqlserver': 1433,
-    'db2': 50000
+    postgresql: 5432,
+    mysql: 3306,
+    oracle: 1521,
+    sqlserver: 1433,
+    db2: 50000
   }
   return defaultPorts[type] || 5432
 }

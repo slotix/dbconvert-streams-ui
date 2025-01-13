@@ -38,9 +38,7 @@
           class="mt-1 focus:ring-gray-500 focus:border-gray-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
           placeholder="Enter a value between 10 and 1000"
         />
-        <p class="mt-2 text-sm text-gray-500">
-          Please enter a value between 10 and 1000.
-        </p>
+        <p class="mt-2 text-sm text-gray-500">Please enter a value between 10 and 1000.</p>
         <p v-if="dataBundleSize < 10 || dataBundleSize > 1000" class="mt-1 text-sm text-red-600">
           Value must be between 10 and 1000.
         </p>

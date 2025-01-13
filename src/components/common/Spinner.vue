@@ -1,10 +1,7 @@
 <template>
   <div class="inline-flex items-center">
     <div
-      :class="[
-        'animate-spin rounded-full border-b-2 border-current',
-        sizeClasses[size ?? 'md']
-      ]"
+      :class="['animate-spin rounded-full border-b-2 border-current', sizeClasses[size ?? 'md']]"
     ></div>
     <span v-if="text" class="ml-2" :class="textClasses[size ?? 'md']">{{ text }}</span>
   </div>
@@ -27,4 +24,4 @@ const textClasses = {
   md: 'text-base',
   lg: 'text-lg'
 }
-</script> 
+</script>

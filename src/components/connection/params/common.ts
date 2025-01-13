@@ -62,7 +62,7 @@ export function useCommon<T extends Connection>(defaultConnection: T) {
       connection.name = connectionsStore.currentConnection?.name || buildConnectionName.value
     }
   }
-  
+
   onMounted(async () => {
     updateConnectionName()
     if (dlgTp.value === DIALOG_TYPES.UPDATE && connectionsStore.currentConnection) {
@@ -74,7 +74,7 @@ export function useCommon<T extends Connection>(defaultConnection: T) {
   const refreshDatabases = async () => {
     try {
       if (!connectionsStore.currentConnection?.id) return
-      
+
       await connectionsStore.getDatabases(connectionsStore.currentConnection.id)
       Object.assign(connection, connectionsStore.currentConnection)
     } catch (err) {
@@ -86,11 +86,7 @@ export function useCommon<T extends Connection>(defaultConnection: T) {
     }
   }
 
-  const createData = async (
-    newData: any,
-    targetArray: keyof T,
-    targetProperty: keyof T
-  ) => {
+  const createData = async (newData: any, targetArray: keyof T, targetProperty: keyof T) => {
     try {
       if (connectionsStore.currentConnection) {
         if (targetProperty === 'database') {
@@ -98,7 +94,7 @@ export function useCommon<T extends Connection>(defaultConnection: T) {
         } else if (targetProperty === 'schema') {
           await connectionsStore.createSchema(newData, connectionsStore.currentConnection.id)
         }
-        
+
         const targetArrayValue = getProperty(
           connectionsStore.currentConnection as T,
           targetArray
@@ -106,7 +102,7 @@ export function useCommon<T extends Connection>(defaultConnection: T) {
         targetArrayValue.push(newData)
         setProperty(connectionsStore.currentConnection as T, targetProperty, newData)
         commonStore.showNotification(`${String(targetProperty)} created`, 'success')
-        
+
         if (targetProperty === 'database') {
           await refreshDatabases()
         }
@@ -128,9 +124,9 @@ export function useCommon<T extends Connection>(defaultConnection: T) {
     await createData(newSchema, 'schemas' as keyof T, 'schema' as keyof T)
   }
 
-  const databases = computed(() => connection.databasesInfo.map(db => db.name))
+  const databases = computed(() => connection.databasesInfo.map((db) => db.name))
   const currentDatabaseSchemas = computed(() => {
-    const currentDb = connection.databasesInfo.find(db => db.name === connection.database)
+    const currentDb = connection.databasesInfo.find((db) => db.name === connection.database)
     return currentDb?.schemas || []
   })
 

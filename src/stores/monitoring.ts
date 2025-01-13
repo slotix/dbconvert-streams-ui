@@ -62,7 +62,7 @@ const NodeType = {
   TARGET: 'target',
   API: 'api'
 } as const
-type NodeType = typeof NodeType[keyof typeof NodeType]
+type NodeType = (typeof NodeType)[keyof typeof NodeType]
 
 export const useMonitoringStore = defineStore('monitoring', {
   state: (): State => ({
@@ -118,21 +118,23 @@ export const useMonitoringStore = defineStore('monitoring', {
       }).length
 
       // Determine stage based on node status and current stats
-      if (runningNodesNumber === 0 && this.stats.every(stat =>
-        ['FINISHED', 'STOPPED', 'FAILED'].includes(stat.status || '')
-      )) {
+      if (
+        runningNodesNumber === 0 &&
+        this.stats.every((stat) => ['FINISHED', 'STOPPED', 'FAILED'].includes(stat.status || ''))
+      ) {
         // All nodes finished
-        if (state.currentStageID !== 4) {  // Only update if not already in finished stage
+        if (state.currentStageID !== 4) {
+          // Only update if not already in finished stage
           state.currentStageID = 4 // Finished stage
-          const stage = this.stages.find(s => s.id === state.currentStageID)
-          const isStopped = this.stats.some(stat => stat.status === 'STOPPED')
+          const stage = this.stages.find((s) => s.id === state.currentStageID)
+          const isStopped = this.stats.some((stat) => stat.status === 'STOPPED')
           if (isStopped) {
             stage!.title = 'Stopped'
-          } else if (this.stats.every(stat => stat.status === 'FINISHED')) {
+          } else if (this.stats.every((stat) => stat.status === 'FINISHED')) {
             stage!.title = 'Finished'
           }
         }
-      } else if (this.stats.some(stat => stat.events && parseInt(stat.events) > 0)) {
+      } else if (this.stats.some((stat) => stat.events && parseInt(stat.events) > 0)) {
         // If we have events being processed, we're in data transfer stage
         state.currentStageID = 3
       } else if (state.currentStageID < 2) {
@@ -178,7 +180,7 @@ export const useMonitoringStore = defineStore('monitoring', {
       this.streamConfig = streamConfig
     },
     setStageTimestamp(stageId: number) {
-      const stage = this.stages.find(s => s.id === stageId)
+      const stage = this.stages.find((s) => s.id === stageId)
       if (stage) {
         stage.timestamp = Date.now()
       }
@@ -206,7 +208,10 @@ export const useMonitoringStore = defineStore('monitoring', {
           this.currentStageID = parseInt(stage)
         }
         const nodeExists = this.nodes.find((node) => node.id === message.nodeID)
-        if (!nodeExists && (message.type === 'source' || message.type === 'target' || message.type === 'api')) {
+        if (
+          !nodeExists &&
+          (message.type === 'source' || message.type === 'target' || message.type === 'api')
+        ) {
           this.nodes.push({
             id: message.nodeID,
             type: message.type as NodeType

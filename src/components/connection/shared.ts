@@ -116,11 +116,9 @@ export default defineComponent({
           this.currentStep?.name === 'target' &&
           this.currentStreamConfig?.target === connection.id,
         'hover:bg-yellow-50 hover:shadow-md hover:ring-1 hover:ring-yellow-200 hover:scale-[1.01]':
-          this.isStreamsPage &&
-          this.currentStep?.name === 'source',
+          this.isStreamsPage && this.currentStep?.name === 'source',
         'hover:bg-green-50 hover:shadow-md hover:ring-1 hover:ring-green-200 hover:scale-[1.01]':
-          this.isStreamsPage &&
-          this.currentStep?.name === 'target'
+          this.isStreamsPage && this.currentStep?.name === 'target'
       })
     },
     actionsMenuPosition(): string {
@@ -135,7 +133,7 @@ export default defineComponent({
     connectionString(): string {
       if (!this.connection) return ''
       return generateConnectionString(this.connection)
-    },
+    }
   },
   methods: {
     //  ...mapActions(useConnectionsStore, ['setCurrentConnection']),

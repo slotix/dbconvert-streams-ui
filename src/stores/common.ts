@@ -66,9 +66,10 @@ export const useCommonStore = defineStore('common', {
         id: 4,
         name: 'start',
         title: 'Start and monitor your stream',
-        description: 'Initiate the data transfer process by starting your stream and monitoring the progress, ensuring a smooth migration or synchronization of data from the source to the target.',
+        description:
+          'Initiate the data transfer process by starting your stream and monitoring the progress, ensuring a smooth migration or synchronization of data from the source to the target.',
         img: '/images/steps/start-step.svg'
-      },
+      }
     ] as Step[],
     operationMap: {
       insert: 'Insert',
@@ -224,10 +225,7 @@ export const useCommonStore = defineStore('common', {
       toast.info('Initializing App')
 
       try {
-        await Promise.all([
-          this.checkSentryHealth(),
-          this.checkAPIHealth()
-        ])
+        await Promise.all([this.checkSentryHealth(), this.checkAPIHealth()])
 
         if (this.sentryHealthy && this.apiHealthy) {
           const apiKey = await this.getApiKey()
@@ -270,7 +268,7 @@ export const useCommonStore = defineStore('common', {
         const toast = useToast()
         toast.error('Failed to fetch service status')
       }
-    },
+    }
   },
   getters: {
     isStreamsPage: (state) => state.currentPage === 'ManageStream',
@@ -298,6 +296,6 @@ export const useCommonStore = defineStore('common', {
         ) || null
       )
     },
-    hasValidApiKey: (state) => !!state.apiKey,
+    hasValidApiKey: (state) => !!state.apiKey
   }
 })

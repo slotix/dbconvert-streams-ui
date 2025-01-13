@@ -1,8 +1,14 @@
 <template>
   <nav class="flex flex-col sm:flex-row max-w-sm mx-auto mb-4 mt-8">
-    <button v-for="tab in tabs" :key="tab" :class="{
-      'border-b-2 font-medium border-gray-500': currentTab === tab
-    }" class="text-gray-500 py-4 px-6 flex-1 hover:text-gray-700 focus:outline-none" @click="changeTab(tab)">
+    <button
+      v-for="tab in tabs"
+      :key="tab"
+      :class="{
+        'border-b-2 font-medium border-gray-500': currentTab === tab
+      }"
+      class="text-gray-500 py-4 px-6 flex-1 hover:text-gray-700 focus:outline-none"
+      @click="changeTab(tab)"
+    >
       {{ tab }}
     </button>
   </nav>
@@ -44,7 +50,6 @@ const changeTab = (tab: string) => {
 }
 
 watch(() => props.connectionType, changeDBType, { immediate: true })
-
 
 const paramsComponent = computed(() => {
   if (currentTab.value === 'Direct') {

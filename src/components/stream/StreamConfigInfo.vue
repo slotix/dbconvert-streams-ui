@@ -2,11 +2,11 @@
   <div v-if="config" class="mt-4 space-y-4">
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-2">
-        <button 
+        <button
           class="text-gray-500 hover:text-gray-700 focus:outline-none"
           @click="isExpanded = !isExpanded"
         >
-          <ChevronRightIcon 
+          <ChevronRightIcon
             class="h-5 w-5 transform transition-transform duration-200"
             :class="{ 'rotate-90': isExpanded }"
           />
@@ -20,7 +20,7 @@
           :class="[isJsonView ? 'bg-gray-600' : 'bg-gray-400']"
         >
           <span class="sr-only">Toggle JSON view</span>
-<span
+          <span
             aria-hidden="true"
             class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out"
             :class="[
@@ -28,7 +28,8 @@
               'shadow-[0_1px_4px_rgba(0,0,0,0.15)]'
             ]"
           />
-        </Switch> JSON
+        </Switch>
+        JSON
         <button
           v-tooltip="'Copy configuration'"
           class="text-gray-500 hover:text-gray-700 focus:outline-none"
@@ -38,7 +39,7 @@
         </button>
       </div>
     </div>
-    
+
     <TransitionExpand>
       <div v-if="isExpanded">
         <!-- JSON View -->
@@ -61,11 +62,11 @@
             <div class="flex justify-between items-center">
               <span class="text-sm font-medium text-gray-500">Mode</span>
               <span class="text-sm">
-                <span 
+                <span
                   :class="[
                     'rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset',
-                    config.mode === 'cdc' 
-                      ? 'bg-blue-50 text-blue-700 ring-blue-600/20' 
+                    config.mode === 'cdc'
+                      ? 'bg-blue-50 text-blue-700 ring-blue-600/20'
                       : 'bg-green-50 text-green-700 ring-green-600/20'
                   ]"
                 >
@@ -87,14 +88,18 @@
                   </span>
                 </div>
                 <div class="divide-y divide-gray-200">
-                  <div 
-                    v-for="table in config.tables" 
-                    :key="table.name" 
+                  <div
+                    v-for="table in config.tables"
+                    :key="table.name"
                     class="grid grid-cols-2 p-2 hover:bg-gray-100 transition-colors"
                   >
                     <span class="text-sm text-gray-900">{{ table.name }}</span>
                     <span class="text-sm text-gray-500">
-                      {{ config.mode === 'cdc' ? (table.operations?.join(', ') || 'None') : (table.query || 'None') }}
+                      {{
+                        config.mode === 'cdc'
+                          ? table.operations?.join(', ') || 'None'
+                          : table.query || 'None'
+                      }}
                     </span>
                   </div>
                 </div>
@@ -140,4 +145,4 @@ function copyConfig() {
 
 <style scoped>
 /* Optional: Add any additional scoped styles if needed */
-</style> 
+</style>

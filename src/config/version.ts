@@ -1,2 +1,2 @@
 // This file is auto-generated during build
-export const version = '__APP_VERSION__' 
+export const version = '__APP_VERSION__'

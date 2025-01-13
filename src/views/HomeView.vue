@@ -21,19 +21,22 @@
           <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
             <!-- Quick Actions Card -->
             <div
-              class="bg-white overflow-hidden rounded-xl shadow-sm border border-gray-100 hover:border-gray-200 transition-all duration-200">
+              class="bg-white overflow-hidden rounded-xl shadow-sm border border-gray-100 hover:border-gray-200 transition-all duration-200"
+            >
               <QuickActions />
             </div>
 
             <!-- Account Overview Card -->
             <div
-              class="bg-white overflow-hidden rounded-xl shadow-sm border border-gray-100 hover:border-gray-200 transition-all duration-200">
+              class="bg-white overflow-hidden rounded-xl shadow-sm border border-gray-100 hover:border-gray-200 transition-all duration-200"
+            >
               <AccountOverview />
             </div>
 
             <!-- System Status Card -->
             <div
-              class="bg-white overflow-hidden rounded-xl shadow-sm border border-gray-100 hover:border-gray-200 transition-all duration-200">
+              class="bg-white overflow-hidden rounded-xl shadow-sm border border-gray-100 hover:border-gray-200 transition-all duration-200"
+            >
               <SystemStatus />
             </div>
           </div>

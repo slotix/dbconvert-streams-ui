@@ -95,9 +95,13 @@ watch(selectedDBType, (newVal) => {
 })
 
 // Watch for external changes to modelValue
-watch(() => props.modelValue, (newVal) => {
-  if (newVal) {
-    selectedDBType.value = newVal
-  }
-}, { immediate: true })
+watch(
+  () => props.modelValue,
+  (newVal) => {
+    if (newVal) {
+      selectedDBType.value = newVal
+    }
+  },
+  { immediate: true }
+)
 </script>

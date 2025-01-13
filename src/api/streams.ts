@@ -11,102 +11,90 @@ const apiClient: AxiosInstance = axios.create({
 })
 
 const getStreams = async (): Promise<StreamConfig[]> => {
-    const commonStore = useCommonStore()
-    validateApiKey(commonStore.apiKey)
-    
-    const response: AxiosResponse<StreamConfig[]> = await apiClient.get('/stream-configs', {
-      headers: { 'X-API-Key': commonStore.apiKey }
-    })
-    return response.data
+  const commonStore = useCommonStore()
+  validateApiKey(commonStore.apiKey)
+
+  const response: AxiosResponse<StreamConfig[]> = await apiClient.get('/stream-configs', {
+    headers: { 'X-API-Key': commonStore.apiKey }
+  })
+  return response.data
 }
 
 const createStream = async (json: Record<string, unknown>): Promise<StreamConfig> => {
-    const commonStore = useCommonStore()
-    validateApiKey(commonStore.apiKey)
-    
-    const response: AxiosResponse<StreamConfig> = await apiClient.post('/stream-configs', json, {
-      headers: { 'X-API-Key': commonStore.apiKey }
-    })
-    return response.data
+  const commonStore = useCommonStore()
+  validateApiKey(commonStore.apiKey)
+
+  const response: AxiosResponse<StreamConfig> = await apiClient.post('/stream-configs', json, {
+    headers: { 'X-API-Key': commonStore.apiKey }
+  })
+  return response.data
 }
 
 const deleteStream = async (id: string): Promise<void> => {
-    const commonStore = useCommonStore()
-    validateApiKey(commonStore.apiKey)
-    
-    await apiClient.delete(`/stream-configs/${id}`, {
-      headers: { 'X-API-Key': commonStore.apiKey }
-    })
+  const commonStore = useCommonStore()
+  validateApiKey(commonStore.apiKey)
+
+  await apiClient.delete(`/stream-configs/${id}`, {
+    headers: { 'X-API-Key': commonStore.apiKey }
+  })
 }
 
 const cloneStreamConfig = async (id: string): Promise<StreamConfig> => {
-    const commonStore = useCommonStore()
-    validateApiKey(commonStore.apiKey)
-    
-    const response: AxiosResponse<StreamConfig> = await apiClient.put(
-      `/stream-configs/${id}/clone`,
-      null,
-      {
-        headers: { 'X-API-Key': commonStore.apiKey }
-      }
-    )
-    return response.data
+  const commonStore = useCommonStore()
+  validateApiKey(commonStore.apiKey)
+
+  const response: AxiosResponse<StreamConfig> = await apiClient.put(
+    `/stream-configs/${id}/clone`,
+    null,
+    {
+      headers: { 'X-API-Key': commonStore.apiKey }
+    }
+  )
+  return response.data
 }
 
 const startStream = async (id: string): Promise<StreamConfig> => {
-    const commonStore = useCommonStore()
-    validateApiKey(commonStore.apiKey)
-    
-    const response: AxiosResponse<StreamConfig> = await apiClient.post(
-      `/streams/${id}/start`,
-      null,
-      {
-        headers: { 'X-API-Key': commonStore.apiKey }
-      }
-    )
-    return response.data
+  const commonStore = useCommonStore()
+  validateApiKey(commonStore.apiKey)
+
+  const response: AxiosResponse<StreamConfig> = await apiClient.post(`/streams/${id}/start`, null, {
+    headers: { 'X-API-Key': commonStore.apiKey }
+  })
+  return response.data
 }
 
 const pauseStream = async (id: string): Promise<StreamConfig> => {
-    const commonStore = useCommonStore()
-    validateApiKey(commonStore.apiKey)
-    
-    const response: AxiosResponse<StreamConfig> = await apiClient.post(
-      `/streams/${id}/pause`,
-      null,
-      {
-        headers: { 'X-API-Key': commonStore.apiKey }
-      }
-    )
-    return response.data
+  const commonStore = useCommonStore()
+  validateApiKey(commonStore.apiKey)
+
+  const response: AxiosResponse<StreamConfig> = await apiClient.post(`/streams/${id}/pause`, null, {
+    headers: { 'X-API-Key': commonStore.apiKey }
+  })
+  return response.data
 }
 
 const resumeStream = async (id: string): Promise<StreamConfig> => {
-    const commonStore = useCommonStore()
-    validateApiKey(commonStore.apiKey)
-    
-    const response: AxiosResponse<StreamConfig> = await apiClient.post(
-      `/streams/${id}/resume`,
-      null,
-      {
-        headers: { 'X-API-Key': commonStore.apiKey }
-      }
-    )
-    return response.data
+  const commonStore = useCommonStore()
+  validateApiKey(commonStore.apiKey)
+
+  const response: AxiosResponse<StreamConfig> = await apiClient.post(
+    `/streams/${id}/resume`,
+    null,
+    {
+      headers: { 'X-API-Key': commonStore.apiKey }
+    }
+  )
+  return response.data
 }
 
 const stopStream = async (id: string): Promise<StreamConfig> => {
-    const commonStore = useCommonStore()
-    validateApiKey(commonStore.apiKey)
-    
-    const response: AxiosResponse<StreamConfig> = await apiClient.post(
-      `/streams/${id}/stop`,
-      null,
-      {
-        headers: { 'X-API-Key': commonStore.apiKey }
-      }
-    )
-    return response.data
+  const commonStore = useCommonStore()
+  validateApiKey(commonStore.apiKey)
+
+  const response: AxiosResponse<StreamConfig> = await apiClient.post(`/streams/${id}/stop`, null, {
+    headers: { 'X-API-Key': commonStore.apiKey }
+  })
+  return response.data
 }
 
 export default {

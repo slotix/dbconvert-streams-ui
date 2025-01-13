@@ -90,4 +90,3 @@ watch(selectedDBType, (newVal) => {
   emit('update:selected-db-type', newVal)
 })
 </script>
-

@@ -20,10 +20,12 @@
         <div class="p-4">
           <div class="flex items-start">
             <div class="flex-shrink-0">
-              <component :is="notificationTypeIcons[notification.type]" 
-                         :class="iconColorClasses[notification.type]"
-                         class="h-6 w-6" 
-                         aria-hidden="true" />
+              <component
+                :is="notificationTypeIcons[notification.type]"
+                :class="iconColorClasses[notification.type]"
+                class="h-6 w-6"
+                aria-hidden="true"
+              />
             </div>
             <div class="ml-3 w-0 flex-1 pt-0.5">
               <p :class="textColorClasses[notification.type]" class="text-sm font-medium">
@@ -48,7 +50,13 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { XMarkIcon, CheckCircleIcon, ExclamationCircleIcon, InformationCircleIcon, ExclamationTriangleIcon } from '@heroicons/vue/24/solid'
+import {
+  XMarkIcon,
+  CheckCircleIcon,
+  ExclamationCircleIcon,
+  InformationCircleIcon,
+  ExclamationTriangleIcon
+} from '@heroicons/vue/24/solid'
 import { useCommonStore, Notification } from '@/stores/common'
 
 const commonStore = useCommonStore()

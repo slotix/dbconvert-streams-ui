@@ -2,10 +2,14 @@
   <div class="antialiased bg-gray-50">
     <!-- Connection error message -->
     <div v-if="!isBackendConnected" class="max-w-7xl mx-auto py-6 px-8">
-      <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+      <div
+        class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative"
+        role="alert"
+      >
         <strong class="font-bold">Connection Error: </strong>
-        <span class="block sm:inline">Unable to connect to the server. Please check your backend services and try
-          again.</span>
+        <span class="block sm:inline"
+          >Unable to connect to the server. Please check your backend services and try again.</span
+        >
       </div>
     </div>
 
@@ -19,7 +23,8 @@
         </div>
         <button
           class="flex items-center justify-center rounded-md bg-gray-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-gray-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-600"
-          @click="addConnection">
+          @click="addConnection"
+        >
           <PlusIcon class="mr-2 h-5 w-5 text-white" aria-hidden="true" />
           New connection
         </button>
@@ -27,11 +32,17 @@
       <!-- End View control buttons -->
 
       <!-- Loading indicator -->
-      <div v-if="isLoadingConnections" class="flex flex-col items-center justify-center h-full bg-gray-200 py-8">
+      <div
+        v-if="isLoadingConnections"
+        class="flex flex-col items-center justify-center h-full bg-gray-200 py-8"
+      >
         <Spinner text="Loading connections..." size="lg" />
       </div>
       <div v-else>
-        <div v-if="connectionsByType.length === 0" class="flex items-center justify-center flex-col text-center pb-16">
+        <div
+          v-if="connectionsByType.length === 0"
+          class="flex items-center justify-center flex-col text-center pb-16"
+        >
           <p class="mt-1 text-lg text-gray-700">
             You haven't created any connections yet.<br />
             Click the button below to create your first connection.
@@ -40,8 +51,11 @@
         </div>
         <div v-else class="max-w-7xl mx-auto px-4">
           <div v-show="currentViewType === 'cards'" class="flex flex-wrap -mx-4">
-            <div v-for="connection in connectionsByType" :key="connection.id"
-              class="w-full px-4 mb-8 md:w-1/2 lg:w-1/3">
+            <div
+              v-for="connection in connectionsByType"
+              :key="connection.id"
+              class="w-full px-4 mb-8 md:w-1/2 lg:w-1/3"
+            >
               <CardItem :connection="connection" :isStreamsPage="isStreamsPage" />
             </div>
           </div>

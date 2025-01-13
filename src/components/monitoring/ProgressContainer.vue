@@ -21,10 +21,7 @@
           class="flex flex-col items-center"
         >
           <div
-            :class="[
-              'w-8 h-8 rounded-full flex items-center justify-center',
-              stageClass(index)
-            ]"
+            :class="['w-8 h-8 rounded-full flex items-center justify-center', stageClass(index)]"
           >
             <span class="text-sm font-semibold">{{ index + 1 }}</span>
           </div>
@@ -34,11 +31,11 @@
               textClass(index),
               index === store.currentStageID - 1 ? 'font-bold' : ''
             ]"
-          >{{ stage.title }}</span>
-          <span
-            v-if="stage.timestamp"
-            class="text-xs mt-1 text-gray-500"
-          >{{ formatTimestamp(stage.timestamp) }}</span>
+            >{{ stage.title }}</span
+          >
+          <span v-if="stage.timestamp" class="text-xs mt-1 text-gray-500">{{
+            formatTimestamp(stage.timestamp)
+          }}</span>
         </div>
       </div>
     </div>
@@ -80,10 +77,13 @@ function formatTimestamp(timestamp: number | null): string {
 }
 
 // Watch for changes in currentStageID and update the timestamp
-watch(() => store.currentStageID, (newStageID) => {
-  const stage = store.stages.find(s => s.id === newStageID)
-  if (stage) {
-    stage.timestamp = Date.now()
+watch(
+  () => store.currentStageID,
+  (newStageID) => {
+    const stage = store.stages.find((s) => s.id === newStageID)
+    if (stage) {
+      stage.timestamp = Date.now()
+    }
   }
-})
+)
 </script>

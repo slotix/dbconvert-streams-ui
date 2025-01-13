@@ -24,7 +24,7 @@ export const useConnectionsStore = defineStore('connections', {
     dbTypes: [
       { id: 0, type: 'All', logo: '/images/db-logos/all.svg' },
       { id: 1, type: 'PostgreSQL', logo: '/images/db-logos/postgresql.svg' },
-      { id: 2, type: 'MySQL', logo: '/images/db-logos/mysql.svg' },
+      { id: 2, type: 'MySQL', logo: '/images/db-logos/mysql.svg' }
     ],
     connections: [],
     currentConnection: null,
@@ -34,7 +34,7 @@ export const useConnectionsStore = defineStore('connections', {
     isLoadingConnections: false,
     isUpdatingConnection: false,
     isTestingConnection: false,
-    isLoadingDatabases: false,
+    isLoadingDatabases: false
   }),
   getters: {
     allConnections(state: State): Connection[] {
@@ -54,7 +54,7 @@ export const useConnectionsStore = defineStore('connections', {
           return el.type && el.type.toLowerCase().indexOf(state.currentFilter.toLowerCase()) > -1
         })
         .sort((a, b) => (b.created as number) - (a.created as number))
-    },
+    }
   },
   actions: {
     setCurrentConnection(id: string) {
@@ -77,18 +77,18 @@ export const useConnectionsStore = defineStore('connections', {
       }
     },
     async refreshConnections() {
-      this.isLoadingConnections = true;
+      this.isLoadingConnections = true
       try {
         // Simulate a delay for testing
         // await new Promise((resolve) => setTimeout(resolve, 10000)); // 2 seconds delay
 
-        const response = await api.getConnections();
-        this.connections = response;
+        const response = await api.getConnections()
+        this.connections = response
       } catch (error) {
-        console.error('Failed to refresh connections:', error);
-        throw error;
+        console.error('Failed to refresh connections:', error)
+        throw error
       } finally {
-        this.isLoadingConnections = false;
+        this.isLoadingConnections = false
       }
     },
     deleteConnection: debounce(async function (this: any, id: string) {
@@ -120,7 +120,7 @@ export const useConnectionsStore = defineStore('connections', {
 
     testConnection: debounce(async function (this: any, id: string) {
       try {
-        this.isTestingConnection = true;
+        this.isTestingConnection = true
         const status = await api.testConnection()
         this.currentConnection = {
           ...this.currentConnection!,
@@ -132,7 +132,7 @@ export const useConnectionsStore = defineStore('connections', {
         console.error('Failed to test connection:', error)
         throw error
       } finally {
-        this.isTestingConnection = false;
+        this.isTestingConnection = false
       }
     }, 500),
     resetCurrentConnection() {
@@ -143,7 +143,9 @@ export const useConnectionsStore = defineStore('connections', {
     },
     async createConnection(): Promise<void> {
       try {
-        const response = await api.createConnection(this.currentConnection as Record<string, unknown>)
+        const response = await api.createConnection(
+          this.currentConnection as Record<string, unknown>
+        )
 
         if (this.currentConnection) {
           this.currentConnection.id = response.id
@@ -153,7 +155,9 @@ export const useConnectionsStore = defineStore('connections', {
           this.currentConnection.databasesInfo = databasesInfo
 
           if (this.currentConnection.type === 'PostgreSQL' && this.currentConnection.database) {
-            const currentDb = databasesInfo.find(db => db.name === this.currentConnection?.database)
+            const currentDb = databasesInfo.find(
+              (db) => db.name === this.currentConnection?.database
+            )
             if (currentDb?.schemas) {
               this.currentConnection.schema = currentDb.schemas[0]
             }
@@ -185,7 +189,7 @@ export const useConnectionsStore = defineStore('connections', {
         this.currentConnection!.databasesInfo = databases
 
         if (this.currentConnection!.type === 'PostgreSQL') {
-          const currentDb = databases.find(db => db.name === this.currentConnection?.database)
+          const currentDb = databases.find((db) => db.name === this.currentConnection?.database)
           if (currentDb?.schemas) {
             this.currentConnection!.schema = currentDb.schemas[0]
           }

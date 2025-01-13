@@ -141,7 +141,7 @@ export const useStreamsStore = defineStore('streams', {
         )
       }
     },
-     updateSource(sourceId: string) {
+    updateSource(sourceId: string) {
       if (this.currentStreamConfig) {
         this.currentStreamConfig.source = sourceId
       }

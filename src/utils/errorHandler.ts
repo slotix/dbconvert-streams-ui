@@ -19,7 +19,7 @@ interface CustomAxiosError extends AxiosError {
 export function handleApiError(error: unknown): Error {
   const axiosError = error as CustomAxiosError
   const message =
-     axiosError.response?.data?.error || axiosError.message || 'An unknown error occurred'
+    axiosError.response?.data?.error || axiosError.message || 'An unknown error occurred'
   return new Error(message as string)
 }
 

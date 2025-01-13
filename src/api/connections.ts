@@ -12,9 +12,6 @@ const apiClient: AxiosInstance = axios.create({
   }
 })
 
-
-
-
 const getConnections = async (): Promise<Connection[]> => {
   const commonStore = useCommonStore()
   validateApiKey(commonStore.apiKey)
@@ -28,13 +25,19 @@ const getConnections = async (): Promise<Connection[]> => {
   }
 }
 
-const createConnection = async (json: Record<string, unknown>): Promise<{ id: string; created: number }> => {
+const createConnection = async (
+  json: Record<string, unknown>
+): Promise<{ id: string; created: number }> => {
   const commonStore = useCommonStore()
   validateApiKey(commonStore.apiKey)
   try {
-    const response: AxiosResponse<{ id: string; created: number }> = await apiClient.post('/connections', json, {
-      headers: { 'X-API-Key': commonStore.apiKey }
-    })
+    const response: AxiosResponse<{ id: string; created: number }> = await apiClient.post(
+      '/connections',
+      json,
+      {
+        headers: { 'X-API-Key': commonStore.apiKey }
+      }
+    )
     return response.data
   } catch (error: any) {
     console.error('[API] Failed to create connection:', error)
@@ -110,12 +113,11 @@ const testConnection = async (): Promise<string> => {
     if (response.data.ping === 'ok') {
       return 'Connection Test Passed'
     }
-    return "Connection Test Failed"
+    return 'Connection Test Failed'
   } catch (error) {
     throw handleApiError(error)
   }
 }
-
 
 const getDatabases = async (id: string): Promise<DatabaseInfo[]> => {
   const commonStore = useCommonStore()
