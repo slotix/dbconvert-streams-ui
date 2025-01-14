@@ -7,13 +7,19 @@
         'border-green-300 ring-2 ring-green-200': selected && currentStep?.name === 'target',
         'border-gray-200/75': !selected
       }" @click="selectConnection">
-      <div class="flex items-center p-2.5 border-b border-gray-200" :class="{
+      <div class="flex items-center justify-between p-2.5 border-b border-gray-200" :class="{
         'bg-yellow-50': selected && currentStep?.name === 'source',
         'bg-green-50': selected && currentStep?.name === 'target',
         'bg-gray-50': !selected
       }">
         <div class="flex items-center gap-3 min-w-0">
-          <img class="h-7 w-7 flex-shrink-0 rounded-full shadow-sm" :src="logoSrc" :alt="connection.type + ' logo'" />
+            <img class="h-7 w-7 flex-shrink-0 rounded-full shadow-sm bg-white ring-1 ring-gray-200" :src="logoSrc"
+              :alt="connection.type + ' logo'" />
+            <div v-if="selected" class="absolute -top-1 -right-1 rounded-full w-3 h-3 border-2 border-white shadow-sm"
+              :class="{
+                'bg-yellow-400': currentStep?.name === 'source',
+                'bg-green-400': currentStep?.name === 'target'
+              }"></div>
           <div class="flex flex-col min-w-0">
             <span class="uppercase tracking-wide text-sm font-semibold truncate" :class="{
               'text-yellow-900': selected && currentStep?.name === 'source',
@@ -38,15 +44,6 @@
                 Host:
                 <span class="font-normal text-sm text-gray-700 pl-2">{{ concatenateValues }} </span>
               </span>
-            </div>
-          </div>
-          <div v-show="selected" class="mt-2 mr-2 items-center flex flex-col">
-            <div class="flex items-center space-x-2 px-3 py-1.5 rounded-full shadow-sm" :class="{
-              'bg-yellow-100 text-yellow-800 border border-yellow-300': currentStep?.name === 'source',
-              'bg-green-100 text-green-800 border border-green-300': currentStep?.name === 'target'
-            }">
-              <CheckCircleIcon class="h-5 w-5" aria-hidden="true" />
-              <span class="text-sm font-medium">{{ currentStep?.name === 'source' ? 'Source' : 'Target' }}</span>
             </div>
           </div>
         </div>
