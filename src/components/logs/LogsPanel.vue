@@ -185,7 +185,7 @@ const filteredLogs = computed(() => {
 
 <template>
     <TransitionRoot as="template" :show="isOpen">
-        <div class="relative z-50">
+        <div class="relative z-30">
             <div class="fixed inset-x-0 bottom-0 max-h-[50vh]">
                 <TransitionChild as="template" enter="transform transition ease-in-out duration-300"
                     enter-from="translate-y-full" enter-to="translate-y-0"
