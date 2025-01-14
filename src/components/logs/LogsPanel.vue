@@ -74,7 +74,7 @@ function getMessageIconColor(message: string): string {
     return 'text-gray-400'
 }
 
-const messageTypes = ['all', 'error', 'warn', 'progress', 'stat', 'info']
+const messageTypes = ['all', 'error & warning', 'progress & stats', 'info']
 const selectedMessageType = ref('all')
 
 const groupedLogs = computed(() => {
@@ -171,10 +171,8 @@ const filteredLogs = computed(() => {
         filtered[nodeId] = logs.filter(log => {
             const msg = log.message.toLowerCase()
             switch (selectedMessageType.value) {
-                case 'error': return msg.includes('error')
-                case 'warn': return msg.includes('warn')
-                case 'progress': return msg.startsWith('[progress]')
-                case 'stat': return msg.startsWith('[stat]')
+                case 'error & warning': return msg.includes('error') || msg.includes('warn')
+                case 'progress & stats': return msg.startsWith('[progress]') || msg.startsWith('[stat]')
                 case 'info': return !msg.includes('error') && !msg.includes('warn')
                     && !msg.startsWith('[progress]') && !msg.startsWith('[stat]')
                 default: return true
