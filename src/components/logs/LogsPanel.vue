@@ -14,7 +14,9 @@ const store = useLogsStore()
 const isOpen = computed(() => store.isLogsPanelOpen)
 
 function formatTimestamp(timestamp: number): string {
-    const date = new Date(timestamp)
+    // Convert milliseconds to seconds if needed
+    const timestampInMs = timestamp < 1e12 ? timestamp * 1000 : timestamp
+    const date = new Date(timestampInMs)
     return date.toLocaleTimeString('en-US', {
         hour12: false,
         hour: '2-digit',
@@ -50,7 +52,6 @@ function getMessageTypeColor(message: string): string {
     if (message.toLowerCase().includes('error')) return 'bg-red-50/80 border-l-4 border-red-400 shadow-sm'
     if (message.toLowerCase().includes('warn')) return 'bg-yellow-50/80 border-l-4 border-yellow-400 shadow-sm'
     if (message.startsWith('[progress]')) return 'bg-blue-50/80 border-l-4 border-blue-400 shadow-sm'
-    if (message.startsWith('[init]')) return 'bg-purple-50/80 border-l-4 border-purple-400 shadow-sm'
     if (message.startsWith('[stat]')) return 'bg-emerald-50/80 border-l-4 border-emerald-400 shadow-sm'
     return 'hover:bg-gray-50 border-l-4 border-gray-300'
 }
@@ -60,7 +61,6 @@ function getMessageIcon(message: string): string {
     if (msg.includes('error')) return '●'
     if (msg.includes('warn')) return '●'
     if (msg.startsWith('[progress]')) return '●'
-    if (msg.startsWith('[init]')) return '●'
     if (msg.startsWith('[stat]')) return '●'
     return '●'
 }
@@ -70,12 +70,11 @@ function getMessageIconColor(message: string): string {
     if (msg.includes('error')) return 'text-red-500'
     if (msg.includes('warn')) return 'text-yellow-500'
     if (msg.startsWith('[progress]')) return 'text-blue-500'
-    if (msg.startsWith('[init]')) return 'text-purple-500'
     if (msg.startsWith('[stat]')) return 'text-emerald-500'
     return 'text-gray-400'
 }
 
-const messageTypes = ['all', 'error', 'warn', 'progress', 'init', 'stat', 'info']
+const messageTypes = ['all', 'error', 'warn', 'progress', 'stat', 'info']
 const selectedMessageType = ref('all')
 
 const groupedLogs = computed(() => {
@@ -175,11 +174,9 @@ const filteredLogs = computed(() => {
                 case 'error': return msg.includes('error')
                 case 'warn': return msg.includes('warn')
                 case 'progress': return msg.startsWith('[progress]')
-                case 'init': return msg.startsWith('[init]')
                 case 'stat': return msg.startsWith('[stat]')
                 case 'info': return !msg.includes('error') && !msg.includes('warn')
-                    && !msg.startsWith('[progress]') && !msg.startsWith('[init]')
-                    && !msg.startsWith('[stat]')
+                    && !msg.startsWith('[progress]') && !msg.startsWith('[stat]')
                 default: return true
             }
         })

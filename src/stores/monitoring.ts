@@ -209,12 +209,6 @@ export const useMonitoringStore = defineStore('monitoring', {
     },
     initNatsHandling() {
       natsService.addMessageHandler((message: NatsMessage) => {
-        if (message.msg.startsWith('[init]') && message.type === 'api') {
-          this.nodes = []
-          const parts = message.msg.split('ID:')
-          const id = parts[1].trim()
-          this.streamID = id
-        }
         if (message.msg.startsWith('[progress]')) {
           const parts = message.msg.split('|')
           const stage = parts[0].split('STAGE:')[1]

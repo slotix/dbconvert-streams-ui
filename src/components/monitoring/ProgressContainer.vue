@@ -72,8 +72,9 @@ function textClass(index: number): string {
 
 function formatTimestamp(timestamp: number | null): string {
   if (!timestamp) return ''
-  const date = new Date(timestamp)
-  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+  const timestampInMs = timestamp < 1e12 ? timestamp * 1000 : timestamp
+  const date = new Date(timestampInMs)
+  return date.toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })
 }
 
 // Watch for changes in currentStageID and update the timestamp
