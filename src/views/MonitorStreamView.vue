@@ -58,6 +58,7 @@
         <p class="mt-1 text-lg text-gray-700">
           Currently, there are no ongoing data transfer processes.
         </p>
+        
       </div>
     </div>
     <div v-else class="antialiased bg-gray-200">

@@ -106,6 +106,16 @@ export const useMonitoringStore = defineStore('monitoring', {
   }),
   getters: {
     currentStage(state: State): Stage | null {
+      // Check for finished status in logs even if no stats yet
+      const lastLogWithStat = state.logs
+        .filter(log => log.msg.startsWith('[stat]'))
+        .pop()
+
+      if (lastLogWithStat?.msg.includes('FINISHED')) {
+        state.currentStageID = 4 // Set to finished stage
+        return state.stages.find((stage) => stage.id === state.currentStageID) || null
+      }
+
       // If no stats yet, return current stage based on stageID
       if (this.stats.length === 0) {
         return state.stages.find((stage) => stage.id === state.currentStageID) || null
@@ -178,6 +188,9 @@ export const useMonitoringStore = defineStore('monitoring', {
   actions: {
     setStreamConfig(streamConfig: StreamConfig) {
       this.streamConfig = streamConfig
+      if (streamConfig.id) {
+        this.streamID = streamConfig.id
+      }
     },
     setStageTimestamp(stageId: number) {
       const stage = this.stages.find((s) => s.id === stageId)
