@@ -1,47 +1,61 @@
 <template>
   <div class="w-full py-2">
     <div
-      class="bg-white shadow-lg rounded-xl overflow-hidden cursor-pointer transform hover:scale-[1.02] hover:shadow-xl duration-300 ease-in-out flex flex-col border border-gray-200/75"
-      @click="selectConnection"
-    >
-      <div class="flex flex-wrap items-center bg-gray-100/75 p-2.5 border-b border-gray-200">
-        <div class="item w-1/5 flex">
-          <img
-            class="h-7 w-7 rounded-full shadow-sm"
-            :src="logoSrc"
-            :alt="connection.type + ' logo'"
-          />
-        </div>
-        <div class="item w-4/5 flex flex-col">
-          <span class="uppercase truncate tracking-wide text-sm font-semibold text-gray-900">
-            {{ connection.name }}
-          </span>
-          <span class="text-xs text-gray-600"> ID: {{ connection.id }} </span>
+      class="bg-white shadow-lg rounded-xl overflow-hidden cursor-pointer transform hover:scale-[1.02] hover:shadow-xl duration-300 ease-in-out flex flex-col border"
+      :class="{
+        'border-yellow-300 ring-2 ring-yellow-200': selected && currentStep?.name === 'source',
+        'border-green-300 ring-2 ring-green-200': selected && currentStep?.name === 'target',
+        'border-gray-200/75': !selected
+      }" @click="selectConnection">
+      <div class="flex items-center p-2.5 border-b border-gray-200" :class="{
+        'bg-yellow-50': selected && currentStep?.name === 'source',
+        'bg-green-50': selected && currentStep?.name === 'target',
+        'bg-gray-50': !selected
+      }">
+        <div class="flex items-center gap-3 min-w-0">
+          <img class="h-7 w-7 flex-shrink-0 rounded-full shadow-sm" :src="logoSrc" :alt="connection.type + ' logo'" />
+          <div class="flex flex-col min-w-0">
+            <span class="uppercase tracking-wide text-sm font-semibold truncate" :class="{
+              'text-yellow-900': selected && currentStep?.name === 'source',
+              'text-green-900': selected && currentStep?.name === 'target',
+              'text-gray-900': !selected
+            }">
+              {{ connection.name }}
+            </span>
+            <span class="text-xs text-gray-600 truncate">ID: {{ connection.id }}</span>
+          </div>
         </div>
       </div>
       <div class="bg-white">
         <div class="px-2 flex items-center justify-between">
           <div class="px-2 pt-2 md:text-left w-full space-y-1.5 text-gray-500">
-            <div class="bg-gray-50/50 rounded-lg p-2.5 border border-gray-100">
+            <div class="rounded-lg p-2.5" :class="{
+              'bg-yellow-50/50': selected && currentStep?.name === 'source',
+              'bg-green-50/50': selected && currentStep?.name === 'target',
+              'bg-gray-50/50': !selected
+            }">
               <span class="mx-auto font-semibold text-gray-900">
                 Host:
                 <span class="font-normal text-sm text-gray-700 pl-2">{{ concatenateValues }} </span>
               </span>
             </div>
           </div>
-          <div v-show="selected" class="mt-2 mr-2 items-center">
-            <CheckCircleIcon
-              class="h-7 w-7"
-              aria-hidden="true"
-              :class="{
-                'text-yellow-600': currentStep != null && currentStep.name === 'source',
-                'text-green-600': currentStep != null && currentStep.name === 'target'
-              }"
-            />
+          <div v-show="selected" class="mt-2 mr-2 items-center flex flex-col">
+            <div class="flex items-center space-x-2 px-3 py-1.5 rounded-full shadow-sm" :class="{
+              'bg-yellow-100 text-yellow-800 border border-yellow-300': currentStep?.name === 'source',
+              'bg-green-100 text-green-800 border border-green-300': currentStep?.name === 'target'
+            }">
+              <CheckCircleIcon class="h-5 w-5" aria-hidden="true" />
+              <span class="text-sm font-medium">{{ currentStep?.name === 'source' ? 'Source' : 'Target' }}</span>
+            </div>
           </div>
         </div>
         <div class="flex-auto px-4 pt-1.5 md:text-left w-full space-y-1.5 text-gray-500">
-          <div class="bg-gray-50/50 rounded-lg p-2.5 border border-gray-100">
+          <div class="rounded-lg p-2.5" :class="{
+            'bg-yellow-50/50': selected && currentStep?.name === 'source',
+            'bg-green-50/50': selected && currentStep?.name === 'target',
+            'bg-gray-50/50': !selected
+          }">
             <span class="mx-auto font-semibold text-gray-900">
               Database:
               <span class="font-normal text-sm text-gray-700 pl-2">{{ connection.database }}</span>
@@ -49,26 +63,28 @@
           </div>
         </div>
         <!-- Add schema information or placeholder -->
-        <div
-          v-if="connection.schema"
-          class="flex-auto px-4 pt-1.5 md:text-left w-full space-y-1.5 text-gray-500"
-        >
-          <div class="bg-gray-50/50 rounded-lg p-2.5 border border-gray-100">
+        <div v-if="connection.schema" class="flex-auto px-4 pt-1.5 md:text-left w-full space-y-1.5 text-gray-500">
+          <div class="rounded-lg p-2.5" :class="{
+            'bg-yellow-50/50': selected && currentStep?.name === 'source',
+            'bg-green-50/50': selected && currentStep?.name === 'target',
+            'bg-gray-50/50': !selected
+          }">
             <span class="mx-auto font-semibold text-gray-900">
               Schema:
               <span class="font-normal text-sm text-gray-700 pl-2">{{ connection.schema }}</span>
             </span>
           </div>
         </div>
-        <div
-          v-else
-          class="flex-auto px-4 pt-1.5 md:text-left w-full space-y-1.5 text-gray-500 h-[24px]"
-        >
+        <div v-else class="flex-auto px-4 pt-1.5 md:text-left w-full space-y-1.5 text-gray-500 h-[24px]">
           <!-- Placeholder to maintain consistent height -->
         </div>
         <!-- Connection string section with visual separation -->
         <div class="mt-1.5 px-4 pt-1.5">
-          <div class="bg-gray-50/50 rounded-lg p-2.5 border border-gray-100">
+          <div class="rounded-lg p-2.5" :class="{
+            'bg-yellow-50/50': selected && currentStep?.name === 'source',
+            'bg-green-50/50': selected && currentStep?.name === 'target',
+            'bg-gray-50/50': !selected
+          }">
             <div class="flex-auto md:text-left w-full space-y-1.5 text-gray-500">
               <span class="mx-auto font-semibold text-gray-900">
                 Connection String:
@@ -82,36 +98,31 @@
           <span class="text-sm pl-2">{{ connectionCreated }}</span>
         </span>
       </div>
-      <div v-show="!isStreamsPage" class="mt-auto flex divide-x divide-gray-200">
+      <div v-show="!isStreamsPage" class="mt-auto flex divide-x divide-gray-200" :class="{
+        'bg-yellow-50': selected && currentStep?.name === 'source',
+        'bg-green-50': selected && currentStep?.name === 'target',
+        'bg-gray-50': !selected
+      }">
         <div class="flex w-0 flex-1">
-          <button
-            v-tooltip="'Edit the connection'"
-            type="button"
+          <button v-tooltip="'Edit the connection'" type="button"
             class="relative -mr-px inline-flex w-0 flex-1 items-center justify-center gap-x-2 rounded-bl-lg border border-gray-200 py-2.5 text-sm text-gray-700 font-semibold bg-gray-50 hover:bg-gray-100"
-            @click="editConnection"
-          >
+            @click="editConnection">
             <PencilIcon class="h-4 w-4" aria-hidden="true" />
             Edit
           </button>
         </div>
         <div class="-ml-px flex w-0 flex-1">
-          <button
-            v-tooltip="'Clone the connection'"
-            type="button"
+          <button v-tooltip="'Clone the connection'" type="button"
             class="relative inline-flex w-0 flex-1 items-center justify-center gap-x-2 border border-gray-200 py-2.5 text-gray-700 text-sm font-semibold bg-gray-50 hover:bg-gray-100"
-            @click.stop="cloneConnection"
-          >
+            @click.stop="cloneConnection">
             <Square2StackIcon class="h-4 w-4" aria-hidden="true" />
             Clone
           </button>
         </div>
         <div class="-ml-px flex w-0 flex-1">
-          <button
-            v-tooltip="'Delete the connection'"
-            type="button"
+          <button v-tooltip="'Delete the connection'" type="button"
             class="relative inline-flex w-0 flex-1 items-center justify-center gap-x-2 rounded-br-lg border border-gray-200 py-2.5 text-sm font-semibold text-red-600 bg-gray-50 hover:bg-gray-100"
-            @click.stop="deleteConn(connection.id)"
-          >
+            @click.stop="deleteConn(connection.id)">
             <TrashIcon class="h-4 w-4 text-red-600" aria-hidden="true" />
             Delete
           </button>
