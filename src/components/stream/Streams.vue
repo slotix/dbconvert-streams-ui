@@ -25,7 +25,8 @@
       <div v-if="streams.length > 0" v-show="viewType === 'cards'"
         class="flex flex-wrap max-w-7xl mx-auto px-4 overflow-hidden">
         <div v-for="stream in streams" :key="stream.id" class="w-full px-4 overflow-hidden md:w-1/2 xl:w-1/2 py-8">
-          <CardItem :stream="stream" :source="connectionByID(stream.source)" :target="connectionByID(stream.target)" />
+          <CardItem :streamConfig="stream" :source="connectionByID(stream.source)"
+            :target="connectionByID(stream.target)" />
         </div>
       </div>
       <div v-else class="flex items-center justify-center flex-col text-center pb-16">

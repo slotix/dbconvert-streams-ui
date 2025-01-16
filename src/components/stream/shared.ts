@@ -23,7 +23,7 @@ import { generateConnectionString } from '@/utils/connectionStringGenerator'
 import ConnectionStringDisplay from '@/components/common/ConnectionStringDisplay.vue'
 export default defineComponent({
   props: {
-    stream: {
+    streamConfig: {
       type: Object as PropType<StreamConfig>,
       required: true
     },
@@ -63,21 +63,21 @@ export default defineComponent({
 
     function copyConfig(event: Event) {
       event.preventDefault()
-      if (props.stream) {
-        navigator.clipboard.writeText(JSON.stringify(props.stream, null, 2))
+      if (props.streamConfig) {
+        navigator.clipboard.writeText(JSON.stringify(props.streamConfig, null, 2))
         commonStore.showNotification('Configuration copied to clipboard', 'success')
       }
     }
 
     const prettyConfig = computed(() => {
-      return JSON.stringify(props.stream, null, 2)
+      return JSON.stringify(props.streamConfig, null, 2)
     })
 
     const displayedId = computed(() => {
       if (isIdExpanded.value) {
-        return props.stream.id
+        return props.streamConfig.id
       }
-      const id = props.stream.id
+      const id = props.streamConfig.id
       return id.length > 13 ? `${id.slice(0, 6)}...${id.slice(-4)}` : id
     })
 
@@ -104,7 +104,7 @@ export default defineComponent({
         return
       }
       try {
-        await useStreamsStore().deleteStream(this.stream.id)
+        await useStreamsStore().deleteStream(this.streamConfig.id)
         await useStreamsStore().refreshStreams()
         useCommonStore().showNotification('Stream deleted', 'success')
       } catch (e: unknown) {
@@ -118,7 +118,7 @@ export default defineComponent({
     },
     async cloneStream() {
       try {
-        await useStreamsStore().cloneStream(this.stream.id)
+        await useStreamsStore().cloneStream(this.streamConfig.id)
         await useStreamsStore().refreshStreams()
         useCommonStore().showNotification('Stream cloned', 'success')
       } catch (e: unknown) {
@@ -131,13 +131,13 @@ export default defineComponent({
       }
     },
     selectStream() {
-      useStreamsStore().setCurrentStream(this.stream.id)
+      useStreamsStore().setCurrentStream(this.streamConfig.id)
     },
     async startStream() {
       try {
-        await useStreamsStore().startStream(this.stream.id)
+        const streamID = await useStreamsStore().startStream(this.streamConfig.id)
         useCommonStore().showNotification('Stream started', 'success')
-        useMonitoringStore().setStreamConfig(this.stream)
+        useMonitoringStore().setStream(streamID, this.streamConfig)
         this.$router.push({ name: 'MonitorStream' })
       } catch (err: unknown) {
         if (err instanceof Error) {
@@ -148,7 +148,7 @@ export default defineComponent({
       }
     },
     copyId() {
-      navigator.clipboard.writeText(this.stream.id).then(
+      navigator.clipboard.writeText(this.streamConfig.id).then(
         () => {
           const commonStore = useCommonStore()
           commonStore.showNotification('Stream ID copied to clipboard', 'success')
@@ -163,8 +163,8 @@ export default defineComponent({
   computed: {
     ...mapState(useStreamsStore, ['currentStreamConfig']),
     streamCreated(): string {
-      if (!this.stream || typeof this.stream.created !== 'number') return ''
-      const date = new Date(this.stream.created * 1000)
+      if (!this.streamConfig || typeof this.streamConfig.created !== 'number') return ''
+      const date = new Date(this.streamConfig.created * 1000)
       return date
         .toLocaleString('en-GB', {
           month: 'short',
@@ -197,29 +197,29 @@ export default defineComponent({
       return index > rowCount / 2 ? 'top' : 'bottom'
     },
     streamNameWithId(): string {
-      if (!this.stream) return ''
-      return `ID: ${this.stream.id}`
+      if (!this.streamConfig) return ''
+      return `ID: ${this.streamConfig.id}`
     },
     displayedTables(): string[] {
       const maxDisplayedTables = 5 // Adjust this number as needed
-      if (this.stream && this.stream.tables && this.stream.tables.length) {
-        return this.stream.tables.slice(0, maxDisplayedTables).map((table) => table.name)
+      if (this.streamConfig && this.streamConfig.tables && this.streamConfig.tables.length) {
+        return this.streamConfig.tables.slice(0, maxDisplayedTables).map((table) => table.name)
       }
       return []
     },
     remainingTablesCount(): number {
-      if (this.stream && this.stream.tables) {
-        return Math.max(0, this.stream.tables.length - this.displayedTables.length)
+      if (this.streamConfig && this.streamConfig.tables) {
+        return Math.max(0, this.streamConfig.tables.length - this.displayedTables.length)
       }
       return 0
     },
     sourceConnectionString(): string {
-      const sourceConnection = useConnectionsStore().connectionByID(this.stream?.source || '')
+      const sourceConnection = useConnectionsStore().connectionByID(this.streamConfig?.source || '')
       if (!sourceConnection) return ''
       return generateConnectionString(sourceConnection)
     },
     targetConnectionString(): string {
-      const targetConnection = useConnectionsStore().connectionByID(this.stream?.target || '')
+      const targetConnection = useConnectionsStore().connectionByID(this.streamConfig?.target || '')
       if (!targetConnection) return ''
       return generateConnectionString(targetConnection)
     }

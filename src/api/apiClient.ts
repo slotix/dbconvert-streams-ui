@@ -39,8 +39,10 @@ const getUserDataFromSentry = async (apiKey: string): Promise<UserData> => {
       headers: { 'X-API-Key': apiKey }
     })
     return response.data
-  } catch (error) {
-    throw handleApiError(error)
+  } catch (error: any) {
+    console.error('[API] Failed to get user data from Sentry:', error)
+    // throw handleApiError(error)
+    throw new Error(error.response?.data || 'An unknown error occurred')
   }
 }
 

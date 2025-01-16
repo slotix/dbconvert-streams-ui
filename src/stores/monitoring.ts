@@ -186,11 +186,9 @@ export const useMonitoringStore = defineStore('monitoring', {
     }
   },
   actions: {
-    setStreamConfig(streamConfig: StreamConfig) {
+    setStream(id: string, streamConfig: StreamConfig) {
+      this.streamID = id
       this.streamConfig = streamConfig
-      if (streamConfig.id) {
-        this.streamID = streamConfig.id
-      }
     },
     setStageTimestamp(stageId: number) {
       const stage = this.stages.find((s) => s.id === stageId)

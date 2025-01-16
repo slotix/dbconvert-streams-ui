@@ -233,10 +233,11 @@ export const useStreamsStore = defineStore('streams', {
         throw error
       }
     },
-    async startStream(configID: string) {
+    async startStream(configID: string): Promise<string> {
       try {
         const resp = await api.startStream(configID)
         this.updateStreamStatus(statusEnum.RUNNING as unknown as typeof statusEnum)
+        return resp
       } catch (error) {
         console.error('Failed to start stream:', error)
         throw error
@@ -244,7 +245,7 @@ export const useStreamsStore = defineStore('streams', {
     },
     async pauseStream(configID: string) {
       try {
-        const resp = await api.pauseStream(configID)
+        await api.pauseStream(configID)
         this.updateStreamStatus(statusEnum.PAUSED as unknown as typeof statusEnum)
       } catch (error) {
         console.error('Failed to pause stream:', error)
@@ -254,7 +255,7 @@ export const useStreamsStore = defineStore('streams', {
 
     async resumeStream(configID: string) {
       try {
-        const resp = await api.resumeStream(configID)
+        await api.resumeStream(configID)
         this.updateStreamStatus(statusEnum.RUNNING as unknown as typeof statusEnum)
       } catch (error) {
         console.error('Failed to resume stream:', error)
@@ -264,7 +265,7 @@ export const useStreamsStore = defineStore('streams', {
 
     async stopStream(configID: string) {
       try {
-        const resp = await api.stopStream(configID)
+        await api.stopStream(configID)
         this.updateStreamStatus(statusEnum.STOPPED as unknown as typeof statusEnum)
       } catch (error) {
         console.error('Failed to stop stream:', error)
