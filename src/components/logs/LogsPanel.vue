@@ -298,6 +298,7 @@ const filteredLogs = computed(() => {
                                     </template>
                                 </tbody>
                             </table>
+                            <div class="h-6"></div>
                         </div>
                     </div>
                 </TransitionChild>
