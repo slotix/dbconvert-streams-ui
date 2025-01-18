@@ -45,6 +45,13 @@
               </svg>
               Trial
             </span>
+            <span v-if="subscriptionStatus === 'canceled'"
+              class="inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-medium bg-red-100 text-red-800 rounded-full">
+              <svg class="w-1 h-1 fill-current" viewBox="0 0 4 4">
+                <circle cx="2" cy="2" r="2" />
+              </svg>
+              Canceled
+            </span>
           </div>
           <div class="mt-1">
             <p class="text-xl font-semibold text-gray-900">{{ currentPlanName }}</p>
@@ -68,6 +75,30 @@
               <a href="http://localhost:3000/account" target="_blank"
                 class="mt-1 inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-500">
                 Update subscription
+                <svg class="ml-1 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd"
+                    d="M5.22 14.78a.75.75 0 001.06 0l7.22-7.22v5.69a.75.75 0 001.5 0v-7.5a.75.75 0 00-.75-.75h-7.5a.75.75 0 000 1.5h5.69l-7.22 7.22a.75.75 0 000 1.06z"
+                    clip-rule="evenodd" />
+                </svg>
+              </a>
+            </div>
+          </div>
+          <div v-if="subscriptionStatus === 'canceled'" class="mt-2 flex items-start space-x-2">
+            <div class="flex-shrink-0 mt-0.5">
+              <svg class="h-4 w-4 text-red-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                fill="currentColor">
+                <path fill-rule="evenodd"
+                  d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zm-1.72 6.97a.75.75 0 10-1.06 1.06L10.94 12l-1.72 1.72a.75.75 0 101.06 1.06L12 13.06l1.72 1.72a.75.75 0 101.06-1.06L13.06 12l1.72-1.72a.75.75 0 10-1.06-1.06L12 10.94l-1.72-1.72z"
+                  clip-rule="evenodd" />
+              </svg>
+            </div>
+            <div class="flex-1">
+              <p class="text-sm text-red-800 font-medium">
+                Your subscription has been canceled
+              </p>
+              <a href="http://localhost:3000/account" target="_blank"
+                class="mt-1 inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-500">
+                Reactivate subscription
                 <svg class="ml-1 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                   <path fill-rule="evenodd"
                     d="M5.22 14.78a.75.75 0 001.06 0l7.22-7.22v5.69a.75.75 0 001.5 0v-7.5a.75.75 0 00-.75-.75h-7.5a.75.75 0 000 1.5h5.69l-7.22 7.22a.75.75 0 000 1.06z"
