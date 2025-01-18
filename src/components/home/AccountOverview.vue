@@ -23,7 +23,8 @@
             <CreditCardIcon class="h-6 w-6" :class="{
               'text-violet-600': subscriptionStatus !== 'canceled' && subscriptionStatus !== 'paused',
               'text-gray-400': subscriptionStatus === 'canceled',
-              'text-yellow-600': subscriptionStatus === 'paused'
+              'text-yellow-600': subscriptionStatus === 'paused',
+              'text-indigo-600': subscriptionStatus === 'trialing'
             }" />
           </div>
         </div>
@@ -37,9 +38,19 @@
               </svg>
               Paused
             </span>
+            <span v-if="subscriptionStatus === 'trialing'"
+              class="inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-medium bg-indigo-100 text-indigo-800 rounded-full">
+              <svg class="w-1 h-1 fill-current" viewBox="0 0 4 4">
+                <circle cx="2" cy="2" r="2" />
+              </svg>
+              Trial
+            </span>
           </div>
           <div class="mt-1">
             <p class="text-xl font-semibold text-gray-900">{{ currentPlanName }}</p>
+            <p v-if="subscriptionStatus === 'trialing' && userData?.trialEnd" class="text-sm text-gray-500 mt-1">
+              Trial ends on {{ formatDate(userData.trialEnd) }}
+            </p>
           </div>
           <div v-if="subscriptionStatus === 'paused'" class="mt-2 flex items-start space-x-2">
             <div class="flex-shrink-0 mt-0.5">
@@ -157,7 +168,6 @@ import {
   KeyIcon,
   UserIcon,
   DocumentDuplicateIcon,
-  ArrowTopRightOnSquareIcon
 } from '@heroicons/vue/24/outline'
 import { formatDate, formatDataSize } from '@/utils/formats'
 
@@ -169,7 +179,10 @@ const userData = computed(() => commonStore.userData)
 // Add status computation
 const subscriptionStatus = computed(() => commonStore.userData?.subscriptionStatus || 'active')
 const currentPlanName = computed(() => {
-  const name = commonStore.userData?.subscription?.name || 'Free'
+  const name = commonStore.userData?.subscription?.name
+  if (subscriptionStatus.value === 'trialing') {
+    return `${name} (Trial)`
+  }
   return subscriptionStatus.value === 'canceled' || subscriptionStatus.value === 'paused' ? `${name} ` : name
 })
 
