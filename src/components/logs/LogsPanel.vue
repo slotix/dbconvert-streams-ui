@@ -48,30 +48,38 @@ function getNodeColor(type: string): string {
     }
 }
 
-function getMessageTypeColor(message: string): string {
-    if (message.toLowerCase().includes('error')) return 'bg-red-50/80 border-l-4 border-red-400 shadow-sm'
-    if (message.toLowerCase().includes('warn')) return 'bg-yellow-50/80 border-l-4 border-yellow-400 shadow-sm'
-    if (message.startsWith('[progress]')) return 'bg-blue-50/80 border-l-4 border-blue-400 shadow-sm'
-    if (message.startsWith('[stat]')) return 'bg-emerald-50/80 border-l-4 border-emerald-400 shadow-sm'
-    return 'hover:bg-gray-50 border-l-4 border-gray-300'
+function getMessageTypeColor(log: SystemLog): string {
+    switch (log.level) {
+        case 'error':
+            return 'bg-red-50/80 border-l-4 border-red-400 shadow-sm'
+        case 'warn':
+            return 'bg-yellow-50/80 border-l-4 border-yellow-400 shadow-sm'
+        case 'debug':
+            return 'bg-blue-50/80 border-l-4 border-blue-400 shadow-sm'
+        case 'info':
+            return 'hover:bg-gray-50 border-l-4 border-gray-300'
+        default:
+            return 'hover:bg-gray-50 border-l-4 border-gray-300'
+    }
 }
 
-function getMessageIcon(message: string): string {
-    const msg = message.toLowerCase()
-    if (msg.includes('error')) return '●'
-    if (msg.includes('warn')) return '●'
-    if (msg.startsWith('[progress]')) return '●'
-    if (msg.startsWith('[stat]')) return '●'
+function getMessageIcon(_log: SystemLog): string {
     return '●'
 }
 
-function getMessageIconColor(message: string): string {
-    const msg = message.toLowerCase()
-    if (msg.includes('error')) return 'text-red-500'
-    if (msg.includes('warn')) return 'text-yellow-500'
-    if (msg.startsWith('[progress]')) return 'text-blue-500'
-    if (msg.startsWith('[stat]')) return 'text-emerald-500'
-    return 'text-gray-400'
+function getMessageIconColor(log: SystemLog): string {
+    switch (log.level) {
+        case 'error':
+            return 'text-red-500'
+        case 'warn':
+            return 'text-yellow-500'
+        case 'debug':
+            return 'text-blue-500'
+        case 'info':
+            return 'text-gray-400'
+        default:
+            return 'text-gray-400'
+    }
 }
 
 const messageTypes = ['all', 'error & warning', 'progress & stats', 'info']
@@ -171,11 +179,16 @@ const filteredLogs = computed(() => {
         filtered[nodeId] = logs.filter(log => {
             const msg = log.message.toLowerCase()
             switch (selectedMessageType.value) {
-                case 'error & warning': return msg.includes('error') || msg.includes('warn')
-                case 'progress & stats': return msg.startsWith('[progress]') || msg.startsWith('[stat]')
-                case 'info': return !msg.includes('error') && !msg.includes('warn')
-                    && !msg.startsWith('[progress]') && !msg.startsWith('[stat]')
-                default: return true
+                case 'error & warning':
+                    return log.level === 'error' || log.level === 'warn'
+                case 'progress & stats':
+                    return msg.startsWith('[progress]') || msg.startsWith('[stat]')
+                case 'info':
+                    return log.level === 'info' &&
+                        !msg.startsWith('[progress]') &&
+                        !msg.startsWith('[stat]')
+                default:
+                    return true
             }
         })
     })
@@ -274,7 +287,7 @@ const filteredLogs = computed(() => {
                                 <tbody class="divide-y divide-gray-100">
                                     <template v-for="(logs, nodeId) in filteredLogs" :key="nodeId">
                                         <tr v-for="log in logs" :key="log.id" class="group transition-all duration-200"
-                                            :class="[getMessageTypeColor(log.message)]">
+                                            :class="[getMessageTypeColor(log)]">
                                             <td class="w-24 py-2 px-4">
                                                 <span
                                                     class="font-mono text-xs text-gray-500 tabular-nums whitespace-nowrap">
@@ -285,8 +298,8 @@ const filteredLogs = computed(() => {
                                                 <div class="flex items-center space-x-3">
                                                     <span
                                                         class="flex-shrink-0 text-lg leading-none transform transition-transform group-hover:scale-110"
-                                                        :class="[getMessageIconColor(log.message)]">
-                                                        {{ getMessageIcon(log.message) }}
+                                                        :class="[getMessageIconColor(log)]">
+                                                        {{ getMessageIcon(log) }}
                                                     </span>
                                                     <span
                                                         class="text-sm text-gray-900 break-words font-mono leading-relaxed">
