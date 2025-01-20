@@ -38,13 +38,6 @@
               </svg>
               Paused
             </span>
-            <span v-if="subscriptionStatus === 'trialing'"
-              class="inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-medium bg-indigo-100 text-indigo-800 rounded-full">
-              <svg class="w-1 h-1 fill-current" viewBox="0 0 4 4">
-                <circle cx="2" cy="2" r="2" />
-              </svg>
-              Trial
-            </span>
             <span v-if="subscriptionStatus === 'canceled'"
               class="inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-medium bg-red-100 text-red-800 rounded-full">
               <svg class="w-1 h-1 fill-current" viewBox="0 0 4 4">
@@ -54,10 +47,20 @@
             </span>
           </div>
           <div class="mt-1">
-            <p class="text-xl font-semibold text-gray-900">{{ currentPlanName }}</p>
+            <p class="text-xl font-semibold text-gray-900">{{ subscriptionStatus === 'trialing' ? 'Trial' :
+              currentPlanName }}</p>
             <p v-if="subscriptionStatus === 'trialing' && userData?.trialEnd" class="text-sm text-gray-500 mt-1">
               Trial ends on {{ formatDate(userData.trialEnd) }}
             </p>
+            <a href="http://localhost:3000/pricing" target="_blank"
+              class="mt-2 inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-500">
+              Manage Subscription
+              <svg class="ml-1 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd"
+                  d="M5.22 14.78a.75.75 0 001.06 0l7.22-7.22v5.69a.75.75 0 001.5 0v-7.5a.75.75 0 00-.75-.75h-7.5a.75.75 0 000 1.5h5.69l-7.22 7.22a.75.75 0 000 1.06z"
+                  clip-rule="evenodd" />
+              </svg>
+            </a>
           </div>
           <div v-if="subscriptionStatus === 'paused'" class="mt-2 flex items-start space-x-2">
             <div class="flex-shrink-0 mt-0.5">
@@ -211,16 +214,15 @@ const userData = computed(() => commonStore.userData)
 const subscriptionStatus = computed(() => commonStore.userData?.subscriptionStatus || 'active')
 const currentPlanName = computed(() => {
   const name = commonStore.userData?.subscription?.name
-  if (subscriptionStatus.value === 'trialing') {
-    return `${name} (Trial)`
+  if (subscriptionStatus.value === 'canceled' || subscriptionStatus.value === 'paused') {
+    return `${name} `
   }
-  return subscriptionStatus.value === 'canceled' || subscriptionStatus.value === 'paused' ? `${name} ` : name
+  return name
 })
 
 // Extract usage data
 const usedData = computed(() => commonStore.userData?.subscriptionPeriodUsage?.data_volume || 0)
 const totalData = computed(() => commonStore.userData?.subscription?.monthly_limit || 0)
-
 // Calculate usage percentage
 const usagePercentage = computed(() => {
   if (totalData.value === 0) return 0
