@@ -11,9 +11,13 @@
       <div>
         <label for="streamName" class="block text-sm font-medium text-gray-700">Stream Name</label>
         <div class="mt-1">
-          <input id="streamName" v-model="streamName" type="text"
+          <input
+            id="streamName"
+            v-model="streamName"
+            type="text"
             class="block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500 sm:text-sm"
-            placeholder="Enter custom name or leave blank for auto-generation" />
+            placeholder="Enter custom name or leave blank for auto-generation"
+          />
         </div>
         <p class="mt-2 text-sm text-gray-500">
           You can leave this field blank for an auto-generated name or enter a custom name.
@@ -32,11 +36,19 @@
 
       <!-- Data Bundle Size -->
       <div>
-        <label for="dataBundleSize" class="block text-sm font-medium text-gray-700">Data Bundle Size</label>
+        <label for="dataBundleSize" class="block text-sm font-medium text-gray-700"
+          >Data Bundle Size</label
+        >
         <div class="mt-1">
-          <input id="dataBundleSize" v-model.number="dataBundleSize" type="number" min="10" max="1000"
+          <input
+            id="dataBundleSize"
+            v-model.number="dataBundleSize"
+            type="number"
+            min="10"
+            max="1000"
             class="block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500 sm:text-sm"
-            placeholder="Enter a value between 10 and 1000" />
+            placeholder="Enter a value between 10 and 1000"
+          />
         </div>
         <p class="mt-2 text-sm text-gray-500">Please enter a value between 10 and 1000.</p>
         <p v-if="dataBundleSize < 10 || dataBundleSize > 1000" class="mt-1 text-sm text-red-600">
@@ -49,19 +61,33 @@
         <h3 class="text-sm font-medium text-gray-900 mb-4">Reporting Intervals (seconds)</h3>
         <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
           <div>
-            <label for="sourceReaderReportingInterval" class="block text-sm font-medium text-gray-700">Source
-              Reader</label>
+            <label
+              for="sourceReaderReportingInterval"
+              class="block text-sm font-medium text-gray-700"
+              >Source Reader</label
+            >
             <div class="mt-1">
-              <input id="sourceReaderReportingInterval" v-model="reportingIntervalsSource" type="number"
-                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500 sm:text-sm" />
+              <input
+                id="sourceReaderReportingInterval"
+                v-model="reportingIntervalsSource"
+                type="number"
+                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500 sm:text-sm"
+              />
             </div>
           </div>
           <div>
-            <label for="targetReaderReportingInterval" class="block text-sm font-medium text-gray-700">Target
-              Writers</label>
+            <label
+              for="targetReaderReportingInterval"
+              class="block text-sm font-medium text-gray-700"
+              >Target Writers</label
+            >
             <div class="mt-1">
-              <input id="targetReaderReportingInterval" v-model="reportingIntervalsTarget" type="number"
-                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500 sm:text-sm" />
+              <input
+                id="targetReaderReportingInterval"
+                v-model="reportingIntervalsTarget"
+                type="number"
+                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500 sm:text-sm"
+              />
             </div>
           </div>
         </div>
@@ -71,22 +97,35 @@
       <div class="space-y-4">
         <div class="relative flex items-start">
           <div class="flex h-5 items-center">
-            <input id="create-target-structure" v-model="createStructure" name="create-target-structure" type="checkbox"
-              class="h-4 w-4 rounded border-gray-300 text-gray-600 focus:ring-gray-500" />
+            <input
+              id="create-target-structure"
+              v-model="createStructure"
+              name="create-target-structure"
+              type="checkbox"
+              class="h-4 w-4 rounded border-gray-300 text-gray-600 focus:ring-gray-500"
+            />
           </div>
           <div class="ml-3 text-sm">
-            <label for="create-target-structure" class="font-medium text-gray-700">Create Structure on Target</label>
+            <label for="create-target-structure" class="font-medium text-gray-700"
+              >Create Structure on Target</label
+            >
           </div>
         </div>
 
         <div class="relative flex items-start">
           <div class="flex h-5 items-center">
-            <input id="skip-index-creation" v-model="skipIndexCreation" name="skip-index-creation" type="checkbox"
-              class="h-4 w-4 rounded border-gray-300 text-gray-600 focus:ring-gray-500" />
+            <input
+              id="skip-index-creation"
+              v-model="skipIndexCreation"
+              name="skip-index-creation"
+              type="checkbox"
+              class="h-4 w-4 rounded border-gray-300 text-gray-600 focus:ring-gray-500"
+            />
           </div>
           <div class="ml-3 text-sm">
-            <label for="skip-index-creation" class="font-medium text-gray-700">Skip Index Creation for All
-              Tables</label>
+            <label for="skip-index-creation" class="font-medium text-gray-700"
+              >Skip Index Creation for All Tables</label
+            >
           </div>
         </div>
       </div>
@@ -96,17 +135,29 @@
         <h3 class="text-sm font-medium text-gray-900 mb-4">Limits</h3>
         <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
           <div>
-            <label for="numberOfEvents" class="block text-sm font-medium text-gray-700">Number of Events</label>
+            <label for="numberOfEvents" class="block text-sm font-medium text-gray-700"
+              >Number of Events</label
+            >
             <div class="mt-1">
-              <input id="numberOfEvents" v-model="limitsNumberOfEvents" type="number"
-                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500 sm:text-sm" />
+              <input
+                id="numberOfEvents"
+                v-model="limitsNumberOfEvents"
+                type="number"
+                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500 sm:text-sm"
+              />
             </div>
           </div>
           <div>
-            <label for="elapsedTime" class="block text-sm font-medium text-gray-700">Elapsed Time (seconds)</label>
+            <label for="elapsedTime" class="block text-sm font-medium text-gray-700"
+              >Elapsed Time (seconds)</label
+            >
             <div class="mt-1">
-              <input id="elapsedTime" v-model="limitsElapsedTime" type="number"
-                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500 sm:text-sm" />
+              <input
+                id="elapsedTime"
+                v-model="limitsElapsedTime"
+                type="number"
+                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500 sm:text-sm"
+              />
             </div>
           </div>
         </div>

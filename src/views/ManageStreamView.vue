@@ -7,8 +7,10 @@
           <div class="flex-1 min-w-0">
             <h1 class="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl">
               {{ mode === 'edit' ? 'Edit Stream Config' : 'Add Stream Config' }}
-              <span v-if="currentStreamConfig"
-                class="ml-2 text-lg font-medium text-gray-500 underline underline-offset-4 decoration-dashed decoration-gray-400">
+              <span
+                v-if="currentStreamConfig"
+                class="ml-2 text-lg font-medium text-gray-500 underline underline-offset-4 decoration-dashed decoration-gray-400"
+              >
                 {{ currentStreamConfig.id }}
               </span>
             </h1>

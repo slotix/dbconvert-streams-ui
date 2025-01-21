@@ -2,11 +2,8 @@
   <Modal @ok="ok">
     <template #dbtypes-combo>
       <ConnectionStringInput @update:connection-params="updateConnectionParams" />
-      <DBTypesListBox
-        :model-value="connectionDBType"
-        @update:model-value="selectDBType"
-        @update:selected-db-type="selectDBType"
-      />
+      <DBTypesListBox :model-value="connectionDBType" @update:model-value="selectDBType"
+        @update:selected-db-type="selectDBType" />
     </template>
     <template #connection-params>
       <ConnectionParams v-if="connectionDBType?.type" :connectionType="connectionDBType.type" />
@@ -22,7 +19,7 @@ import DBTypesListBox from './DBTypesListBox.vue'
 import ConnectionStringInput from './ConnectionStringInput.vue'
 import { useConnectionsStore } from '@/stores/connections'
 import { useCommonStore } from '@/stores/common'
-import type { DbType } from '@/types/connections'
+import type { DbType, Connection } from '@/types/connections'
 
 const connectionsStore = useConnectionsStore()
 const commonStore = useCommonStore()
@@ -35,12 +32,7 @@ function selectDBType(dbType: DbType): void {
   connectionDBType.value = dbType
 }
 
-interface ConnectionParams {
-  type: string
-  [key: string]: unknown
-}
-
-function updateConnectionParams(params: ConnectionParams): void {
+function updateConnectionParams(params: Connection): void {
   const dbType = connectionsStore.dbTypes.find((dbType) => dbType.type === params.type)
   if (dbType) {
     selectDBType(dbType)
@@ -66,9 +58,9 @@ async function ok(): Promise<void> {
       commonStore.closeModal()
     }
     await connectionsStore.refreshConnections()
-  } catch (err: any) {
-    // const errorMessage = err instanceof Error ? err.response.data.error : 'An unknown error occurred'
-    commonStore.showNotification(err.message, 'error')
+  } catch (err: Error | unknown) {
+    const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred'
+    commonStore.showNotification(errorMessage, 'error')
   }
 }
 

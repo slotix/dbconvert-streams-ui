@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import type { StreamConfig } from '@/types/streamConfig'
 import { natsService } from '@/api/natsService'
 import type { NatsMessage } from '@/api/natsService'
+import { NodeTypes, type NodeType } from '@/types/common'
 
 // Define types for the state
 interface Node {
@@ -58,13 +59,6 @@ export const statusEnum = {
   FINISHED: 8
 } as const
 
-const NodeType = {
-  SOURCE: 'source',
-  TARGET: 'target',
-  API: 'api'
-} as const
-type NodeType = (typeof NodeType)[keyof typeof NodeType]
-
 export const useMonitoringStore = defineStore('monitoring', {
   state: (): State => ({
     streamID: '',
@@ -108,9 +102,7 @@ export const useMonitoringStore = defineStore('monitoring', {
   getters: {
     currentStage(state: State): Stage | null {
       // Check for finished status in logs even if no stats yet
-      const lastLogWithStat = state.logs
-        .filter(log => log.msg.startsWith('[stat]'))
-        .pop()
+      const lastLogWithStat = state.logs.filter((log) => log.msg.startsWith('[stat]')).pop()
 
       if (lastLogWithStat?.msg.includes('FINISHED')) {
         state.currentStageID = 4 // Set to finished stage
@@ -216,7 +208,9 @@ export const useMonitoringStore = defineStore('monitoring', {
         const nodeExists = this.nodes.find((node) => node.id === message.nodeID)
         if (
           !nodeExists &&
-          (message.type === 'source' || message.type === 'target' || message.type === 'api')
+          (message.type === NodeTypes.SOURCE ||
+            message.type === NodeTypes.TARGET ||
+            message.type === NodeTypes.API)
         ) {
           this.nodes.push({
             id: message.nodeID,

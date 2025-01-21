@@ -91,8 +91,8 @@
                 <ComboboxOption
                   v-for="db in databases"
                   :key="db"
-                  :value="db"
                   v-slot="{ selected, active }"
+                  :value="db"
                   as="template"
                 >
                   <li
@@ -177,8 +177,8 @@
                 <ComboboxOption
                   v-for="schema in currentDatabaseSchemas"
                   :key="schema"
-                  :value="schema"
                   v-slot="{ selected, active }"
+                  :value="schema"
                   as="template"
                 >
                   <li

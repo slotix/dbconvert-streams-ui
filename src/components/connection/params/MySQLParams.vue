@@ -67,13 +67,13 @@
               <ComboboxInput
                 :display-value="(item: unknown) => item as string"
                 :model-value="connection.database"
+                class="w-full rounded-lg border border-gray-300 py-2 px-4 bg-white text-gray-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-600 focus:border-transparent"
                 @change="
                   (event) => {
                     const target = event.target as HTMLInputElement
                     connection.database = target.value
                   }
                 "
-                class="w-full rounded-lg border border-gray-300 py-2 px-4 bg-white text-gray-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-600 focus:border-transparent"
               />
               <ComboboxButton class="absolute inset-y-0 right-0 flex items-center pr-2">
                 <ChevronUpDownIcon class="h-5 w-5 text-gray-400" aria-hidden="true" />
@@ -89,8 +89,8 @@
                   <ComboboxOption
                     v-for="db in connection.databasesInfo"
                     :key="db.name"
-                    :value="db.name"
                     v-slot="{ active, selected }"
+                    :value="db.name"
                     as="template"
                   >
                     <li

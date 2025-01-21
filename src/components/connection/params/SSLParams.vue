@@ -19,10 +19,10 @@
           <select
             id="ssl-mode"
             :value="localSSLConfig.mode"
+            class="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-gray-500 focus:outline-none focus:ring-gray-500 sm:text-sm"
             @change="
               handleModeChange(($event.target as HTMLSelectElement).value as SSLConfig['mode'])
             "
-            class="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-gray-500 focus:outline-none focus:ring-gray-500 sm:text-sm"
           >
             <option v-for="mode in SSL_MODES" :key="mode.value" :value="mode.value">
               {{ mode.label }}

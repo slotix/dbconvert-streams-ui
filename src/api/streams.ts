@@ -61,9 +61,9 @@ const cloneStreamConfig = async (id: string): Promise<StreamConfig> => {
       `/stream-configs/${id}/clone`,
       null,
       {
-      headers: { 'X-API-Key': commonStore.apiKey }
-    }
-  )
+        headers: { 'X-API-Key': commonStore.apiKey }
+      }
+    )
     return response.data
   } catch (error) {
     throw handleApiError(error)
@@ -74,13 +74,9 @@ const startStream = async (id: string): Promise<string> => {
   const commonStore = useCommonStore()
   validateApiKey(commonStore.apiKey)
   try {
-    const response: AxiosResponse<StreamID> = await apiClient.post(
-      `/streams/${id}/start`,
-      null,
-      {
-        headers: { 'X-API-Key': commonStore.apiKey }
-      }
-    )
+    const response: AxiosResponse<StreamID> = await apiClient.post(`/streams/${id}/start`, null, {
+      headers: { 'X-API-Key': commonStore.apiKey }
+    })
     return response.data.id
   } catch (error) {
     throw handleApiError(error)
@@ -104,9 +100,8 @@ const resumeStream = async (id: string): Promise<void> => {
   validateApiKey(commonStore.apiKey)
   try {
     await apiClient.post(`/streams/${id}/resume`, null, {
-        headers: { 'X-API-Key': commonStore.apiKey }
-      }
-    )
+      headers: { 'X-API-Key': commonStore.apiKey }
+    })
   } catch (error) {
     throw handleApiError(error)
   }
