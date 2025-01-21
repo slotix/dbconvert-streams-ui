@@ -1,6 +1,6 @@
-import axios, { AxiosInstance, AxiosResponse } from 'axios'
+import axios, { type AxiosInstance, type AxiosResponse } from 'axios'
 import { useCommonStore } from '@/stores/common'
-import { Connection, DatabaseInfo } from '@/types/connections'
+import { type Connection, type DatabaseInfo } from '@/types/connections'
 import { useConnectionsStore } from '@/stores/connections'
 import { validateApiKey } from './apiClient'
 import { handleApiError } from '@/utils/errorHandler'

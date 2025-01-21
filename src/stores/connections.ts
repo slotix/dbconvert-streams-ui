@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import api from '@/api/connections'
 import { debounce } from 'lodash'
 
-import { Connection, DbType } from '@/types/connections'
+import type { Connection, DbType } from '@/types/connections'
 import { useCommonStore } from './common'
 
 // Define interfaces for the state and other objects

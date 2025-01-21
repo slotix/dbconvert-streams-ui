@@ -5,7 +5,7 @@ import ItemsCombo from '@/components/common/ItemsCombo.vue'
 import { ArrowPathIcon, PlusIcon } from '@heroicons/vue/24/solid'
 import { DIALOG_TYPES, useCommonStore } from '@/stores/common'
 import { useConnectionsStore } from '@/stores/connections'
-import { Connection } from '@/types/connections'
+import { type Connection } from '@/types/connections'
 
 function isErrorWithMessage(error: unknown): error is { message: string } {
   return (

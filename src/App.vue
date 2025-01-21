@@ -116,7 +116,6 @@
         <span class="sr-only">Open sidebar</span>
         <Bars3Icon class="h-5 w-5" aria-hidden="true" />
       </button>
-      <NotificationBar class="fixed top-3 right-3" />
 
       <div class="py-4">
         <RouterView />
@@ -132,7 +131,6 @@
 <script setup lang="ts">
 import { ref, watch, onMounted } from 'vue'
 import { RouterLink, RouterView, useRouter } from 'vue-router'
-import NotificationBar from '@/components/common/NotificationBar.vue'
 import { useCommonStore } from '@/stores/common'
 import ApiKeyInput from '@/components/ApiKeyInput.vue'
 import LogsPanel from '@/components/logs/LogsPanel.vue'

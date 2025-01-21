@@ -43,7 +43,7 @@
 import { watch, onMounted, computed } from 'vue'
 import { useStreamsStore } from '@/stores/streamConfig'
 import Operations from './Operations.vue'
-import { StreamConfig, Table } from '@/types/streamConfig'
+import { type StreamConfig, type Table } from '@/types/streamConfig'
 
 interface Props {
   table: Table

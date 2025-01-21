@@ -1,7 +1,7 @@
-import axios, { AxiosInstance, AxiosError } from 'axios'
+import axios, { type AxiosInstance, type AxiosError } from 'axios'
 import { handleApiError } from '@/utils/errorHandler'
-import { UserData, CombinedUsageResponse } from '@/types/user'
-import { ServiceStatusResponse } from '@/types/common'
+import { type UserData, type CombinedUsageResponse } from '@/types/user'
+import { type ServiceStatusResponse } from '@/types/common'
 
 interface ApiResponse<T> {
   data: T

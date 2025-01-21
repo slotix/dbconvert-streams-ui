@@ -159,7 +159,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useCommon } from './common'
-import { Connection } from '@/types/connections'
+import { type Connection } from '@/types/connections'
 import ConnectionName from './ConnectionName.vue'
 import PasswordBox from '@/components/common/PasswordBox.vue'
 import {

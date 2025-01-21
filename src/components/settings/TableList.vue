@@ -95,7 +95,7 @@ import TableSettings from './TableSettings.vue'
 import TableRow from './TableRow.vue'
 import { FunnelIcon } from '@heroicons/vue/24/outline'
 import { debounce } from 'lodash'
-import { StreamConfig, Table } from '@/types/streamConfig'
+import { type StreamConfig, type Table } from '@/types/streamConfig'
 
 const streamsStore = useStreamsStore()
 const currentStreamConfig = streamsStore.currentStreamConfig as StreamConfig

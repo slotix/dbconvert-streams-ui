@@ -1,4 +1,4 @@
-import { Directive } from 'vue'
+import type { Directive } from 'vue'
 
 export const vTooltip: Directive = {
   mounted(el, binding) {

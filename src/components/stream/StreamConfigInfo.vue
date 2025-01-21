@@ -116,7 +116,7 @@
 import { ref, computed } from 'vue'
 import { Switch } from '@headlessui/vue'
 import { ClipboardIcon, ChevronRightIcon } from '@heroicons/vue/24/outline'
-import { StreamConfig } from '@/types/streamConfig'
+import { type StreamConfig } from '@/types/streamConfig'
 import { useCommonStore } from '@/stores/common'
 import { vTooltip } from '@/directives/tooltip'
 import TransitionExpand from '@/components/common/TransitionExpand.vue'

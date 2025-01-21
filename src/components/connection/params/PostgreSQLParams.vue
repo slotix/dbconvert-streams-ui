@@ -233,7 +233,7 @@
 <script lang="ts">
 import { defineComponent, ref, computed } from 'vue'
 import { useCommon } from './common'
-import { Connection } from '@/types/connections'
+import { type Connection } from '@/types/connections'
 import ConnectionName from './ConnectionName.vue'
 import { useConnectionsStore } from '@/stores/connections'
 import { storeToRefs } from 'pinia'
@@ -247,7 +247,7 @@ import {
   ComboboxOption,
   TransitionRoot
 } from '@headlessui/vue'
-import { DatabaseInfo } from '@/types/connections'
+import { type DatabaseInfo } from '@/types/connections'
 import Spinner from '@/components/common/Spinner.vue'
 
 interface PostgreSQLConnection extends Connection {

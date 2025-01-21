@@ -1,4 +1,4 @@
-import { openDB, IDBPDatabase } from 'idb'
+import { openDB, type IDBPDatabase } from 'idb'
 
 interface DB extends IDBPDatabase {
   getCurrentViewType: () => Promise<string>

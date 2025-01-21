@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
-import { StreamConfig } from '@/types/streamConfig'
-import { natsService, NatsMessage } from '@/api/natsService'
+import type { StreamConfig } from '@/types/streamConfig'
+import { natsService } from '@/api/natsService'
+import type { NatsMessage } from '@/api/natsService'
 
 // Define types for the state
 interface Node {

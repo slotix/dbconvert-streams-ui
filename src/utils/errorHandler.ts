@@ -1,4 +1,4 @@
-import { AxiosError, AxiosResponse } from 'axios'
+import { AxiosError, type AxiosResponse } from 'axios'
 import { useCommonStore } from '@/stores/common'
 
 // Define an interface for the expected error response data structure

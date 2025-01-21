@@ -120,7 +120,7 @@ import { computed } from 'vue'
 import { useStreamsStore, defaultStreamConfigOptions } from '@/stores/streamConfig'
 import ModeButtons from './ModeButtons.vue'
 import Operations from './Operations.vue'
-import { StreamConfig } from '@/types/streamConfig'
+import { type StreamConfig } from '@/types/streamConfig'
 
 const streamsStore = useStreamsStore()
 const currentStreamConfig = streamsStore.currentStreamConfig as StreamConfig

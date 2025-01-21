@@ -33,7 +33,8 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { useStreamsStore } from '@/stores/streamConfig'
-import { useCommonStore, ModeOption } from '@/stores/common'
+import { useCommonStore } from '@/stores/common'
+import { type ModeOption } from '@/stores/common'
 import { RadioGroup, RadioGroupLabel, RadioGroupOption } from '@headlessui/vue'
 import { CheckCircleIcon } from '@heroicons/vue/20/solid'
 

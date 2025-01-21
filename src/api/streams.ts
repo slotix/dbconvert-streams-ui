@@ -1,6 +1,6 @@
-import axios, { AxiosInstance, AxiosResponse } from 'axios'
+import axios, { type AxiosInstance, type AxiosResponse } from 'axios'
 import { useCommonStore } from '@/stores/common'
-import { StreamConfig, StreamID } from '@/types/streamConfig'
+import { type StreamConfig, type StreamID } from '@/types/streamConfig'
 import { validateApiKey } from './apiClient'
 import { handleApiError } from '@/utils/errorHandler'
 

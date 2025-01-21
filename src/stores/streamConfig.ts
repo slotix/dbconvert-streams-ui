@@ -1,8 +1,9 @@
 import { defineStore } from 'pinia'
 import api from '@/api/streams'
 import { debounce } from 'lodash'
-import { StreamConfig, Table } from '@/types/streamConfig'
-import { Step } from '@/stores/common'
+import type { StreamConfig } from '@/types/streamConfig'
+import type { Table } from '@/types/streamConfig'
+import type { Step } from '@/stores/common'
 import { useConnectionsStore } from '@/stores/connections'
 import { statusEnum, useMonitoringStore } from '@/stores/monitoring'
 

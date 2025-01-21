@@ -1,4 +1,4 @@
-import { connect, AckPolicy, StringCodec, JetStreamManager, Consumer } from 'nats.ws'
+import { connect, AckPolicy, StringCodec, type JetStreamManager, type Consumer } from 'nats.ws'
 import { useLogsStore } from '@/stores/logs'
 
 export interface NatsMessage {
