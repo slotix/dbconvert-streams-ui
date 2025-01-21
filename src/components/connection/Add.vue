@@ -2,8 +2,11 @@
   <Modal @ok="ok">
     <template #dbtypes-combo>
       <ConnectionStringInput @update:connection-params="updateConnectionParams" />
-      <DBTypesListBox :model-value="connectionDBType" @update:model-value="selectDBType"
-        @update:selected-db-type="selectDBType" />
+      <DBTypesListBox
+        :model-value="connectionDBType"
+        @update:model-value="selectDBType"
+        @update:selected-db-type="selectDBType"
+      />
     </template>
     <template #connection-params>
       <ConnectionParams v-if="connectionDBType?.type" :connectionType="connectionDBType.type" />
