@@ -16,7 +16,8 @@
     "baseUrl": ".",
     "types": [
       "webpack-env",
-      "jest"
+      "jest",
+      "vite/client"
     ],
     "paths": {
       "@/*": [
@@ -28,7 +29,8 @@
       "dom",
       "dom.iterable",
       "scripthost"
-    ]
+    ],
+    "isolatedModules": true
   },
   "include": [
     "src/**/*.ts",
@@ -45,5 +47,6 @@
     "*.config.js",
     "vite.config.js",
     "vitest.config.js"
-  ]
+  ],
+  "extends": "@vue/tsconfig/tsconfig.json"
 }
