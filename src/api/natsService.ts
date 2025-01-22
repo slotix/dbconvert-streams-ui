@@ -30,7 +30,19 @@ export class NatsService {
     while (true) {
       try {
         const natsServer = import.meta.env.VITE_NATS_SERVER
-        const nc = await connect({ servers: natsServer })
+        // Ensure the URL is properly formatted
+        const serverUrl = new URL(natsServer)
+        if (!serverUrl.protocol.startsWith('ws')) {
+          throw new Error('NATS server URL must use WebSocket protocol (ws:// or wss://)')
+        }
+        console.log('Attempting to connect to NATS server:', natsServer)
+        const nc = await connect({
+          servers: natsServer,
+          debug: true,
+          maxReconnectAttempts: 10,
+          reconnectTimeWait: 2000
+        })
+        console.log('Successfully connected to NATS server')
         const js = nc.jetstream()
         const jsm: JetStreamManager = await js.jetstreamManager()
 
@@ -66,13 +78,18 @@ export class NatsService {
 
         await nc.drain()
       } catch (error) {
-        console.error('Error in NATS connection:', error)
+        const errorMessage = error instanceof Error ? error.message : String(error)
+        console.error('Error in NATS connection:', {
+          error,
+          server: import.meta.env.VITE_NATS_SERVER,
+          message: errorMessage
+        })
         logsStore.addLog({
-          message: `Error in NATS connection: ${error}`,
+          message: `Error in NATS connection: ${errorMessage}`,
           level: 'error',
           timestamp: Date.now(),
           source: 'monitoring',
-          details: { error }
+          details: { error: errorMessage, server: import.meta.env.VITE_NATS_SERVER }
         })
         // Wait before attempting to reconnect
         await new Promise((resolve) => setTimeout(resolve, 5000))
