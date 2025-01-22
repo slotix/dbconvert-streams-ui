@@ -38,7 +38,7 @@ export class NatsService {
         console.log('Attempting to connect to NATS server:', natsServer)
         const nc = await connect({
           servers: natsServer,
-          debug: true,
+          debug: false,
           maxReconnectAttempts: 10,
           reconnectTimeWait: 2000
         })
