@@ -2,7 +2,15 @@
 import { computed, ref, watch, nextTick } from 'vue'
 import { useLogsStore, type SystemLog } from '@/stores/logs'
 import { TransitionRoot, TransitionChild } from '@headlessui/vue'
-import { XMarkIcon, FunnelIcon } from '@heroicons/vue/24/outline'
+import {
+  XMarkIcon,
+  FunnelIcon,
+  ArrowPathIcon,
+  ChartBarIcon,
+  ArrowTrendingUpIcon,
+  MinusIcon,
+  InformationCircleIcon
+} from '@heroicons/vue/24/outline'
 
 interface LogColumn {
   type: string
@@ -25,14 +33,16 @@ function formatTimestamp(timestamp: number): string {
   })
 }
 
-function getNodeType(source: string): string {
+function getNodeType(source: string | undefined): string {
+  if (!source) return 'system'
   const [type] = source.split(':')
-  return type
+  return type || 'system'
 }
 
-function getNodeId(source: string): string {
+function getNodeId(source: string | undefined): string {
+  if (!source) return 'system'
   const [, id] = source.split(':')
-  return id
+  return id || 'system'
 }
 
 function getNodeColor(type: string): string {
@@ -43,13 +53,22 @@ function getNodeColor(type: string): string {
       return 'text-orange-600'
     case 'target':
       return 'text-cyan-600'
+    case 'system':
+      return 'text-purple-600'
     default:
       return 'text-gray-600'
   }
 }
 
 function getMessageTypeColor(log: SystemLog): string {
-  const msg = log.message.toLowerCase()
+  const msg = log?.message?.toLowerCase() || ''
+
+  // Connection status messages
+  if (msg.includes('connecting') || msg.includes('connected to')) {
+    return 'bg-blue-50/80 border-l-4 border-blue-300'
+  }
+
+  // Stats and progress
   if (msg.startsWith('[stat]')) {
     return 'bg-indigo-50/80 border-l-4 border-indigo-300'
   }
@@ -57,7 +76,12 @@ function getMessageTypeColor(log: SystemLog): string {
     return 'bg-emerald-50/80 border-l-4 border-emerald-300'
   }
 
-  switch (log.level) {
+  // Stack traces and detailed errors (indented messages)
+  if (msg.startsWith('    at ') || msg.startsWith('  at ')) {
+    return 'bg-red-50/40 border-l-4 border-red-200 pl-8 font-mono text-xs'
+  }
+
+  switch (log?.level) {
     case 'error':
       return 'bg-red-50/80 border-l-4 border-red-400 shadow-sm'
     case 'warn':
@@ -71,23 +95,26 @@ function getMessageTypeColor(log: SystemLog): string {
   }
 }
 
-function getMessageIcon(log: SystemLog): string {
-  const msg = log.message.toLowerCase()
-  if (msg.startsWith('[stat]')) return '📊'
-  if (msg.startsWith('[progress]')) return '📈'
-  return '●'
+function getMessageIcon(log: SystemLog): typeof InformationCircleIcon {
+  const msg = log?.message?.toLowerCase() || ''
+  if (msg.includes('connecting')) return ArrowPathIcon
+  if (msg.includes('connected to')) return ArrowPathIcon
+  if (msg.startsWith('[stat]')) return ChartBarIcon
+  if (msg.startsWith('[progress]')) return ArrowTrendingUpIcon
+  if (msg.startsWith('    at ') || msg.startsWith('  at ')) return MinusIcon
+  return InformationCircleIcon
 }
 
 function getMessageIconColor(log: SystemLog): string {
-  const msg = log.message.toLowerCase()
-  if (msg.startsWith('[stat]')) {
-    return 'text-indigo-500'
-  }
-  if (msg.startsWith('[progress]')) {
-    return 'text-emerald-500'
-  }
+  const msg = log?.message?.toLowerCase() || ''
 
-  switch (log.level) {
+  if (msg.includes('connecting')) return 'text-blue-500'
+  if (msg.includes('connected to')) return 'text-blue-600'
+  if (msg.startsWith('[stat]')) return 'text-indigo-500'
+  if (msg.startsWith('[progress]')) return 'text-emerald-500'
+  if (msg.startsWith('    at ') || msg.startsWith('  at ')) return 'text-red-300'
+
+  switch (log?.level) {
     case 'error':
       return 'text-red-500'
     case 'warn':
@@ -314,10 +341,9 @@ watch(() => store.logs.length, () => {
                       </td>
                       <td class="py-2 px-4">
                         <div class="flex items-center space-x-3">
-                          <span
-                            class="flex-shrink-0 text-lg leading-none transform transition-transform group-hover:scale-110"
+                          <span class="flex-shrink-0 transition-transform group-hover:scale-110"
                             :class="[getMessageIconColor(log)]">
-                            {{ getMessageIcon(log) }}
+                            <component :is="getMessageIcon(log)" class="h-4 w-4" />
                           </span>
                           <span class="text-sm text-gray-900 break-words font-mono leading-relaxed">
                             {{ log.message }}

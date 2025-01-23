@@ -15,6 +15,9 @@ export type MessageHandler = (message: NatsMessage) => void
 
 export class NatsService {
   private handlers: MessageHandler[] = []
+  private connection: any = null
+  private isConnecting: boolean = false
+  private shouldReconnect: boolean = true
 
   addMessageHandler(handler: MessageHandler) {
     this.handlers.push(handler)
@@ -24,26 +27,64 @@ export class NatsService {
     this.handlers.forEach((handler) => handler(message))
   }
 
+  async disconnect() {
+    this.shouldReconnect = false
+    if (this.connection) {
+      try {
+        await this.connection.drain()
+        this.connection = null
+      } catch (error) {
+        console.error('Error disconnecting from NATS:', error)
+      }
+    }
+  }
+
   async connect() {
     const logsStore = useLogsStore()
 
-    while (true) {
+    if (this.isConnecting) {
+      console.log('Already attempting to connect to NATS server')
+      return
+    }
+
+    this.shouldReconnect = true
+    this.isConnecting = true
+
+    while (this.shouldReconnect) {
       try {
         const natsServer = import.meta.env.VITE_NATS_SERVER
-        // Ensure the URL is properly formatted
-        const serverUrl = new URL(natsServer)
-        if (!serverUrl.protocol.startsWith('ws')) {
-          throw new Error('NATS server URL must use WebSocket protocol (ws:// or wss://)')
+        if (!natsServer) {
+          throw new Error('NATS server URL is not configured. Please set VITE_NATS_SERVER environment variable.')
         }
+
+        // Ensure the URL is properly formatted
+        try {
+          const serverUrl = new URL(natsServer)
+          if (!serverUrl.protocol.startsWith('ws')) {
+            throw new Error('NATS server URL must use WebSocket protocol (ws:// or wss://)')
+          }
+        } catch (error) {
+          const urlError = error as Error
+          throw new Error(`Invalid NATS server URL: ${natsServer}. Error: ${urlError.message}`)
+        }
+
         console.log('Attempting to connect to NATS server:', natsServer)
-        const nc = await connect({
+
+        // Clean up existing connection if any
+        if (this.connection) {
+          await this.connection.drain()
+          this.connection = null
+        }
+
+        this.connection = await connect({
           servers: natsServer,
           debug: false,
           maxReconnectAttempts: 10,
           reconnectTimeWait: 2000
         })
+
         console.log('Successfully connected to NATS server')
-        const js = nc.jetstream()
+        const js = this.connection.jetstream()
         const jsm: JetStreamManager = await js.jetstreamManager()
 
         const sc = StringCodec()
@@ -56,6 +97,8 @@ export class NatsService {
         let iter = await c.consume()
 
         for await (const m of iter) {
+          if (!this.shouldReconnect) break
+
           let data = sc.decode(m.data)
           let parsed = JSON.parse(data)
           parsed.id = m.seq
@@ -76,23 +119,30 @@ export class NatsService {
           m.ack()
         }
 
-        await nc.drain()
+        if (this.connection) {
+          await this.connection.drain()
+          this.connection = null
+        }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error)
-        console.error('Error in NATS connection:', {
-          error,
+        const errorDetails = {
+          message: errorMessage,
           server: import.meta.env.VITE_NATS_SERVER,
-          message: errorMessage
-        })
+          stack: error instanceof Error ? error.stack : undefined
+        }
+
+        console.error('Error in NATS connection:', errorDetails)
         logsStore.addLog({
           message: `Error in NATS connection: ${errorMessage}`,
           level: 'error',
           timestamp: Date.now(),
           source: 'monitoring',
-          details: { error: errorMessage, server: import.meta.env.VITE_NATS_SERVER }
+          details: errorDetails
         })
         // Wait before attempting to reconnect
         await new Promise((resolve) => setTimeout(resolve, 5000))
+      } finally {
+        this.isConnecting = false
       }
     }
   }
