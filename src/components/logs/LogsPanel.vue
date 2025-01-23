@@ -95,6 +95,16 @@ function getMessageTypeColor(log: SystemLog): string {
   }
 }
 
+function formatDuplicateInfo(log: SystemLog): string {
+  if (!log.details?.duplicateCount) return ''
+  const count = log.details.duplicateCount as number
+  if (count <= 1) return ''
+
+  const lastTimestamp = log.details.lastTimestamp as number
+  const duration = Math.round((lastTimestamp - log.timestamp) / 1000)
+  return `(${count}x in ${duration}s)`
+}
+
 function getMessageIcon(log: SystemLog): typeof InformationCircleIcon {
   const msg = log?.message?.toLowerCase() || ''
   if (msg.includes('connecting')) return ArrowPathIcon
@@ -194,7 +204,9 @@ const totalLogs = computed(() => {
 })
 
 function getShortNodeId(id: string): string {
-  return id.split('_').pop()?.slice(0, 8) || id
+  if (id === 'undefined') return 'default'
+  const shortId = id.split('_').pop()
+  return shortId ? shortId.slice(0, 8) : 'default'
 }
 
 const selectedTab = ref<string>('api')
@@ -347,6 +359,9 @@ watch(() => store.logs.length, () => {
                           </span>
                           <span class="text-sm text-gray-900 break-words font-mono leading-relaxed">
                             {{ log.message }}
+                          </span>
+                          <span v-if="log.details?.duplicateCount" class="text-xs text-gray-500 ml-2">
+                            {{ formatDuplicateInfo(log) }}
                           </span>
                         </div>
                       </td>
