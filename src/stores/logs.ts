@@ -27,6 +27,7 @@ export const useLogsStore = defineStore('logs', {
     logs: [] as SystemLog[],
     maxLogs: 1000,
     isLogsPanelOpen: false,
+    panelHeight: '50vh',
     // Keep track of recent messages to prevent duplicates
     recentMessages: new Map<string, { count: number, timestamp: number }>()
   }),
@@ -99,6 +100,10 @@ export const useLogsStore = defineStore('logs', {
 
     toggleLogsPanel() {
       this.isLogsPanelOpen = !this.isLogsPanelOpen
+    },
+
+    updatePanelHeight(height: string) {
+      this.panelHeight = height
     }
   }
 })

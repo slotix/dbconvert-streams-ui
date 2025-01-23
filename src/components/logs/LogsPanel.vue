@@ -20,6 +20,10 @@ interface LogColumn {
 
 const store = useLogsStore()
 const isOpen = computed(() => store.isLogsPanelOpen)
+const panelHeight = computed({
+  get: () => store.panelHeight,
+  set: (value: string) => store.updatePanelHeight(value)
+})
 
 function formatTimestamp(timestamp: number): string {
   // Convert milliseconds to seconds if needed
@@ -259,16 +263,55 @@ watch(() => store.logs.length, () => {
     }
   })
 })
+
+function startResize(event: MouseEvent) {
+  event.preventDefault()
+
+  // Disable text selection during resize
+  document.body.style.userSelect = 'none'
+  document.body.style.cursor = 'ns-resize'
+
+  const startY = event.clientY
+  const startHeight = parseInt(store.panelHeight)
+
+  function onMouseMove(e: MouseEvent) {
+    e.preventDefault()
+    const delta = startY - e.clientY
+    const newHeight = Math.min(Math.max(startHeight + delta, 200), window.innerHeight * 0.9)
+    store.updatePanelHeight(`${newHeight}px`)
+  }
+
+  function onMouseUp() {
+    document.body.style.userSelect = ''
+    document.body.style.cursor = ''
+    document.removeEventListener('mousemove', onMouseMove)
+    document.removeEventListener('mouseup', onMouseUp)
+  }
+
+  document.addEventListener('mousemove', onMouseMove)
+  document.addEventListener('mouseup', onMouseUp)
+}
 </script>
 
 <template>
   <TransitionRoot as="template" :show="isOpen">
     <div class="relative z-30">
-      <div class="fixed inset-x-0 bottom-0 max-h-[50vh]">
+      <div class="fixed inset-x-0 bottom-0" :style="{ height: panelHeight }">
         <TransitionChild as="template" enter="transform transition ease-in-out duration-300"
           enter-from="translate-y-full" enter-to="translate-y-0" leave="transform transition ease-in-out duration-300"
           leave-from="translate-y-0" leave-to="translate-y-full">
           <div class="w-full h-full bg-white shadow-xl rounded-t-lg overflow-hidden border border-gray-200 lg:pl-20">
+            <!-- Resize Handle -->
+            <div class="absolute top-0 left-0 right-0 flex items-center justify-center select-none">
+              <div class="w-full h-1 bg-gray-200 hover:bg-gray-300 cursor-ns-resize transition-colors"
+                @mousedown.prevent="startResize"></div>
+              <div
+                class="absolute h-4 w-16 -top-2 bg-gray-200 hover:bg-gray-300 rounded-t-md cursor-ns-resize transition-colors flex items-center justify-center"
+                @mousedown.prevent="startResize">
+                <div class="w-6 h-0.5 bg-gray-400 rounded-full"></div>
+              </div>
+            </div>
+
             <div class="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200">
               <div class="flex items-center">
                 <h2 class="text-lg font-medium text-gray-900">System Logs</h2>
@@ -340,7 +383,7 @@ watch(() => store.logs.length, () => {
             </div>
 
             <div v-if="selectedColumn" ref="logsContainer" class="overflow-y-auto h-full px-4 bg-white"
-              style="max-height: calc(50vh - 132px)">
+              :style="{ height: `calc(${panelHeight} - 132px)` }">
               <table class="w-full">
                 <tbody class="divide-y divide-gray-100">
                   <template v-for="(logs, nodeId) in filteredLogs" :key="nodeId">
