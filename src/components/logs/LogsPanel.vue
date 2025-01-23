@@ -49,13 +49,21 @@ function getNodeColor(type: string): string {
 }
 
 function getMessageTypeColor(log: SystemLog): string {
+  const msg = log.message.toLowerCase()
+  if (msg.startsWith('[stat]')) {
+    return 'bg-indigo-50/80 border-l-4 border-indigo-300'
+  }
+  if (msg.startsWith('[progress]')) {
+    return 'bg-emerald-50/80 border-l-4 border-emerald-300'
+  }
+
   switch (log.level) {
     case 'error':
       return 'bg-red-50/80 border-l-4 border-red-400 shadow-sm'
     case 'warn':
       return 'bg-yellow-50/80 border-l-4 border-yellow-400 shadow-sm'
     case 'debug':
-      return 'bg-blue-50/80 border-l-4 border-blue-400 shadow-sm'
+      return 'hover:bg-gray-50 border-l-4 border-gray-400'
     case 'info':
       return 'hover:bg-gray-50 border-l-4 border-gray-300'
     default:
@@ -63,11 +71,22 @@ function getMessageTypeColor(log: SystemLog): string {
   }
 }
 
-function getMessageIcon(_log: SystemLog): string {
+function getMessageIcon(log: SystemLog): string {
+  const msg = log.message.toLowerCase()
+  if (msg.startsWith('[stat]')) return '📊'
+  if (msg.startsWith('[progress]')) return '📈'
   return '●'
 }
 
 function getMessageIconColor(log: SystemLog): string {
+  const msg = log.message.toLowerCase()
+  if (msg.startsWith('[stat]')) {
+    return 'text-indigo-500'
+  }
+  if (msg.startsWith('[progress]')) {
+    return 'text-emerald-500'
+  }
+
   switch (log.level) {
     case 'error':
       return 'text-red-500'
