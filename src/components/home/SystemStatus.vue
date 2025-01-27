@@ -2,11 +2,8 @@
   <div class="p-6">
     <h2 class="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">System Status</h2>
     <div class="space-y-4">
-      <div
-        v-for="service in services"
-        :key="service.id"
-        class="flex items-center justify-between p-4 rounded-xl border border-gray-100 bg-white"
-      >
+      <div v-for="service in services" :key="service.id"
+        class="flex items-center justify-between p-4 rounded-xl border border-gray-100 bg-white">
         <div class="flex items-center">
           <div class="flex-shrink-0">
             <div :class="service.bgColor" class="rounded-lg p-3">
@@ -18,10 +15,8 @@
             <p class="text-sm text-gray-500">{{ service.description }}</p>
           </div>
         </div>
-        <span
-          class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium"
-          :class="getStatusClasses(getServiceStatus(service.id))"
-        >
+        <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium"
+          :class="getStatusClasses(getServiceStatus(service.id))">
           {{ getServiceStatus(service.id) }}
         </span>
       </div>
@@ -37,7 +32,8 @@ import {
   QueueListIcon,
   ArrowDownTrayIcon,
   ArrowUpTrayIcon,
-  KeyIcon
+  KeyIcon,
+  ChartBarIcon
 } from '@heroicons/vue/24/outline'
 
 interface Service {
@@ -89,6 +85,14 @@ const services: Service[] = [
     icon: KeyIcon,
     bgColor: 'bg-rose-50',
     iconColor: 'text-rose-600'
+  },
+  {
+    id: 'sentry',
+    name: 'sentry',
+    description: 'Usage Tracking & Limits',
+    icon: ChartBarIcon,
+    bgColor: 'bg-indigo-50',
+    iconColor: 'text-indigo-600'
   }
 ]
 
@@ -96,6 +100,9 @@ const commonStore = useCommonStore()
 const pollingInterval = ref<number | null>(null)
 
 const getServiceStatus = (serviceId: string): string => {
+  if (serviceId === 'sentry') {
+    return commonStore.sentryHealthy ? 'passing' : 'critical'
+  }
   const status = commonStore.serviceStatuses.find((s) => s.name.toLowerCase().includes(serviceId))
   return status?.status || 'unknown'
 }
