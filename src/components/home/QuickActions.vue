@@ -2,12 +2,11 @@
 <template>
   <div class="p-6">
     <h2 class="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">Quick Actions</h2>
-    <div class="space-y-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <!-- Create Stream -->
       <div class="group cursor-pointer" @click="createStream">
         <div
-          class="flex items-center justify-between p-4 rounded-xl border border-gray-100 bg-white hover:border-indigo-200 hover:bg-indigo-50/50 transition-all duration-200"
-        >
+          class="flex items-center justify-between p-4 rounded-xl border border-gray-100 bg-white hover:border-indigo-200 hover:bg-indigo-50/50 transition-all duration-200">
           <div class="flex items-center">
             <div class="flex-shrink-0">
               <div class="bg-indigo-50 rounded-lg p-3 group-hover:bg-indigo-100 transition-colors">
@@ -19,17 +18,14 @@
               <p class="text-sm text-gray-500">Set up a new data stream</p>
             </div>
           </div>
-          <ArrowRightIcon
-            class="h-5 w-5 text-gray-400 group-hover:text-indigo-600 transition-colors"
-          />
+          <ArrowRightIcon class="h-5 w-5 text-gray-400 group-hover:text-indigo-600 transition-colors" />
         </div>
       </div>
 
       <!-- Create Connection -->
       <div class="group cursor-pointer" @click="createConnection">
         <div
-          class="flex items-center justify-between p-4 rounded-xl border border-gray-100 bg-white hover:border-violet-200 hover:bg-violet-50/50 transition-all duration-200"
-        >
+          class="flex items-center justify-between p-4 rounded-xl border border-gray-100 bg-white hover:border-violet-200 hover:bg-violet-50/50 transition-all duration-200">
           <div class="flex items-center">
             <div class="flex-shrink-0">
               <div class="bg-violet-50 rounded-lg p-3 group-hover:bg-violet-100 transition-colors">
@@ -41,22 +37,17 @@
               <p class="text-sm text-gray-500">Connect a new database</p>
             </div>
           </div>
-          <ArrowRightIcon
-            class="h-5 w-5 text-gray-400 group-hover:text-violet-600 transition-colors"
-          />
+          <ArrowRightIcon class="h-5 w-5 text-gray-400 group-hover:text-violet-600 transition-colors" />
         </div>
       </div>
 
       <!-- View All Connections -->
       <div class="group cursor-pointer" @click="viewAllConnections">
         <div
-          class="flex items-center justify-between p-4 rounded-xl border border-gray-100 bg-white hover:border-emerald-200 hover:bg-emerald-50/50 transition-all duration-200"
-        >
+          class="flex items-center justify-between p-4 rounded-xl border border-gray-100 bg-white hover:border-emerald-200 hover:bg-emerald-50/50 transition-all duration-200">
           <div class="flex items-center">
             <div class="flex-shrink-0">
-              <div
-                class="bg-emerald-50 rounded-lg p-3 group-hover:bg-emerald-100 transition-colors"
-              >
+              <div class="bg-emerald-50 rounded-lg p-3 group-hover:bg-emerald-100 transition-colors">
                 <CircleStackIcon class="h-6 w-6 text-emerald-600" />
               </div>
             </div>
@@ -65,17 +56,14 @@
               <p class="text-sm text-gray-500">View database connections</p>
             </div>
           </div>
-          <ArrowRightIcon
-            class="h-5 w-5 text-gray-400 group-hover:text-emerald-600 transition-colors"
-          />
+          <ArrowRightIcon class="h-5 w-5 text-gray-400 group-hover:text-emerald-600 transition-colors" />
         </div>
       </div>
 
       <!-- View All Stream Configurations -->
       <div class="group cursor-pointer" @click="viewAllStreamConfigurations">
         <div
-          class="flex items-center justify-between p-4 rounded-xl border border-gray-100 bg-white hover:border-amber-200 hover:bg-amber-50/50 transition-all duration-200"
-        >
+          class="flex items-center justify-between p-4 rounded-xl border border-gray-100 bg-white hover:border-amber-200 hover:bg-amber-50/50 transition-all duration-200">
           <div class="flex items-center">
             <div class="flex-shrink-0">
               <div class="bg-amber-50 rounded-lg p-3 group-hover:bg-amber-100 transition-colors">
@@ -87,9 +75,7 @@
               <p class="text-sm text-gray-500">View stream configurations</p>
             </div>
           </div>
-          <ArrowRightIcon
-            class="h-5 w-5 text-gray-400 group-hover:text-amber-600 transition-colors"
-          />
+          <ArrowRightIcon class="h-5 w-5 text-gray-400 group-hover:text-amber-600 transition-colors" />
         </div>
       </div>
     </div>
