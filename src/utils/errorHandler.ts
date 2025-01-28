@@ -4,11 +4,12 @@ import { useCommonStore } from '@/stores/common'
 // Define an interface for the expected error response data structure
 interface ErrorResponseData {
   error?: string
+  data?: string | ErrorResponseData
 }
 
 // Extend AxiosResponse to include ErrorResponseData
 interface CustomAxiosResponse extends AxiosResponse {
-  data: ErrorResponseData
+  data: ErrorResponseData | string
 }
 
 // Extend AxiosError to use CustomAxiosResponse
@@ -18,8 +19,13 @@ interface CustomAxiosError extends AxiosError {
 
 export function handleApiError(error: unknown): Error {
   const axiosError = error as CustomAxiosError
-  const message =
-    axiosError.response?.data?.error || axiosError.message || 'An unknown error occurred'
+  const responseData = axiosError.response?.data
+
+  // Handle different error message formats
+  const message = typeof responseData === 'string'
+    ? responseData
+    : responseData?.error || responseData?.data || axiosError.message || 'An unknown error occurred'
+
   return new Error(message as string)
 }
 
