@@ -272,13 +272,35 @@ function startResize(event: MouseEvent) {
   document.body.style.cursor = 'ns-resize'
 
   const startY = event.clientY
-  const startHeight = parseInt(store.panelHeight)
+  let startHeight: number
+
+  // Handle vh units
+  if (store.panelHeight.endsWith('vh')) {
+    const vh = parseInt(store.panelHeight)
+    startHeight = (window.innerHeight * vh) / 100
+  } else {
+    startHeight = parseInt(store.panelHeight)
+  }
+
+  // Convert initial vh height to pixels to ensure smooth transition
+  if (store.panelHeight.endsWith('vh')) {
+    const pixelHeight = startHeight
+    store.updatePanelHeight(`${pixelHeight}px`)
+  }
+
+  let lastUpdate = Date.now()
+  const THROTTLE_MS = 16 // Approximately 60fps
 
   function onMouseMove(e: MouseEvent) {
     e.preventDefault()
+
+    const now = Date.now()
+    if (now - lastUpdate < THROTTLE_MS) return
+
     const delta = startY - e.clientY
     const newHeight = Math.min(Math.max(startHeight + delta, 200), window.innerHeight * 0.9)
     store.updatePanelHeight(`${newHeight}px`)
+    lastUpdate = now
   }
 
   function onMouseUp() {
