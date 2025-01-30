@@ -131,13 +131,56 @@ export const useCommonStore = defineStore('common', {
       })
     },
 
+    async getApiKey(): Promise<string | null> {
+      if (this.apiKey) {
+        return this.apiKey
+      }
+
+      const storedApiKey = localStorage.getItem('apiKey')
+      if (storedApiKey) {
+        try {
+          // Validate the stored API key
+          await api.validateApiKey(storedApiKey)
+          this.apiKey = storedApiKey
+          return storedApiKey
+        } catch (error) {
+          // If the stored API key is invalid, clear it
+          localStorage.removeItem('apiKey')
+          this.apiKey = null
+          return null
+        }
+      }
+
+      return null
+    },
+
+    async setApiKey(apiKey: string): Promise<void> {
+      try {
+        // Validate the API key before storing
+        await api.validateApiKey(apiKey)
+        this.apiKey = apiKey
+        localStorage.setItem('apiKey', apiKey)
+      } catch (error) {
+        const toast = useToast()
+        toast.error('Invalid API key provided')
+        throw error
+      }
+    },
+
+    async clearApiKey(): Promise<void> {
+      this.apiKey = null
+      localStorage.removeItem('apiKey')
+    },
+
     async userDataFromSentry(apiKey: string) {
       try {
         const response = await api.getUserDataFromSentry(apiKey)
         this.userData = response
       } catch (error) {
+        // Clear invalid API key
+        await this.clearApiKey()
         const toast = useToast()
-        toast.error('Failed to fetch user data')
+        toast.error('Invalid API key. Please enter a valid key to continue.')
         this.userData = null
         throw error
       }
@@ -192,25 +235,6 @@ export const useCommonStore = defineStore('common', {
     setCurrentPage(page: string) {
       this.currentPage = page
     },
-    async getApiKey(): Promise<string | null> {
-      if (this.apiKey) {
-        return this.apiKey
-      }
-
-      const storedApiKey = localStorage.getItem('apiKey')
-      if (storedApiKey) {
-        this.apiKey = storedApiKey
-        return storedApiKey
-      }
-
-      return null
-    },
-
-    async setApiKey(apiKey: string): Promise<void> {
-      this.apiKey = apiKey
-      localStorage.setItem('apiKey', apiKey)
-    },
-
     async consumeLogsFromNATS() {
       // Start the logs connection in the background
       setTimeout(async () => {

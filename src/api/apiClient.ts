@@ -26,23 +26,41 @@ const sentryClient: AxiosInstance = axios.create({
   withCredentials: false
 })
 
-export function validateApiKey(apiKey: string | null): void {
+export async function validateApiKey(apiKey: string | null): Promise<void> {
   if (!apiKey) {
-    throw new Error('EMPTY_API_KEY')
+    throw new Error('API key is required')
+  }
+
+  if (typeof apiKey !== 'string' || apiKey.trim().length === 0) {
+    throw new Error('Invalid API key format')
+  }
+
+  try {
+    // Validate the API key by making a request to a protected endpoint
+    await backendClient.get('/user', {
+      headers: { 'X-API-Key': apiKey }
+    })
+  } catch (error: any) {
+    if (error.response?.status === 401) {
+      throw new Error('Invalid API key')
+    }
+    throw error
   }
 }
 
 const getUserDataFromSentry = async (apiKey: string): Promise<UserData> => {
   try {
-    validateApiKey(apiKey)
+    await validateApiKey(apiKey)
     const response: ApiResponse<UserData> = await backendClient.get('/user', {
       headers: { 'X-API-Key': apiKey }
     })
     return response.data
   } catch (error: any) {
     console.error('[API] Failed to get user data from Sentry:', error)
-    // throw handleApiError(error)
-    throw new Error(error.response?.data || 'An unknown error occurred')
+    if (error.response?.status === 401) {
+      throw new Error('Invalid API key')
+    }
+    throw new Error(error.response?.data?.message || 'Failed to fetch user data')
   }
 }
 
@@ -85,6 +103,7 @@ const getServiceStatus = async (): Promise<ServiceStatusResponse> => {
 }
 
 export default {
+  validateApiKey,
   getUserDataFromSentry,
   loadUserConfigs,
   backendHealthCheck,
