@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import idb from '@/api/iDBService'
+import storage from '@/api/storageService'
 import api from '@/api/apiClient'
 import type { UserData } from '@/types/user'
 import type { ServiceStatus } from '@/types/common'
@@ -198,11 +198,10 @@ export const useCommonStore = defineStore('common', {
       }
     },
     async getViewType() {
-      const vType = await idb.getCurrentViewType()
-      this.currentViewType = vType
+      this.currentViewType = storage.getCurrentViewType()
     },
     async setViewType(vType: string) {
-      await idb.setCurrentViewType(vType)
+      storage.setCurrentViewType(vType)
       this.currentViewType = vType
     },
     openModal(dlgType: DialogType) {
