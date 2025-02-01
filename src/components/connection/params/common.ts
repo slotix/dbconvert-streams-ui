@@ -66,8 +66,8 @@ export function useCommon<T extends Connection>(defaultConnection: T) {
   onMounted(async () => {
     updateConnectionName()
     if (dlgTp.value === DIALOG_TYPES.UPDATE && connectionsStore.currentConnection) {
-      await refreshDatabases()
       Object.assign(connection, connectionsStore.currentConnection)
+      await refreshDatabases()
     }
   })
 
@@ -75,8 +75,12 @@ export function useCommon<T extends Connection>(defaultConnection: T) {
     try {
       if (!connectionsStore.currentConnection?.id) return
 
+      const currentSchema = connection.schema
       await connectionsStore.getDatabases(connectionsStore.currentConnection.id)
-      Object.assign(connection, connectionsStore.currentConnection)
+
+      // Only update the connection while preserving the current schema
+      const updatedConnection = { ...connectionsStore.currentConnection, schema: currentSchema }
+      Object.assign(connection, updatedConnection)
     } catch (err) {
       if (isErrorWithMessage(err)) {
         commonStore.showNotification(err.message, 'error')

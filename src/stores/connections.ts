@@ -188,10 +188,14 @@ export const useConnectionsStore = defineStore('connections', {
         const databases = await api.getDatabases(connectionId)
         this.currentConnection!.databasesInfo = databases
 
+        // Only set schema if it's a new connection or if current schema doesn't exist in the database
         if (this.currentConnection!.type === 'PostgreSQL') {
           const currentDb = databases.find((db) => db.name === this.currentConnection?.database)
           if (currentDb?.schemas) {
-            this.currentConnection!.schema = currentDb.schemas[0]
+            // Only set schema if it's not already set or if current schema is not in the list
+            if (!this.currentConnection!.schema || !currentDb.schemas.includes(this.currentConnection!.schema)) {
+              this.currentConnection!.schema = currentDb.schemas[0]
+            }
           }
         }
       } finally {
