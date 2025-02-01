@@ -200,8 +200,11 @@ export const useConnectionsStore = defineStore('connections', {
     },
     async createDatabase(databaseName: string, connectionId: string) {
       try {
-        await api.createDatabase(databaseName, connectionId)
-        await this.getDatabases(connectionId)
+        const response = await api.createDatabase(databaseName, connectionId)
+        if (response.status === 'success') {
+          await this.getDatabases(connectionId)
+        }
+        return response
       } catch (error) {
         console.error('Failed to create database:', error)
         throw error
@@ -209,8 +212,14 @@ export const useConnectionsStore = defineStore('connections', {
     },
     async createSchema(schemaName: string, connectionId: string) {
       try {
-        await api.createSchema(schemaName, connectionId)
-        await this.getDatabases(connectionId)
+        if (!this.currentConnection?.database) {
+          throw new Error('Database not selected')
+        }
+        const response = await api.createSchema(schemaName, connectionId, this.currentConnection.database)
+        if (response.status === 'success') {
+          await this.getDatabases(connectionId)
+        }
+        return response
       } catch (error) {
         console.error('Failed to create schema:', error)
         throw error

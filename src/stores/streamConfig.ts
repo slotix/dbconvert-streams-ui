@@ -226,7 +226,8 @@ export const useStreamsStore = defineStore('streams', {
         this.currentStreamConfig = {
           ...this.currentStreamConfig!,
           id: resp.id,
-          created: resp.created
+          created: resp.created,
+          name: resp.name
         }
         this.saveStream()
       } catch (error) {

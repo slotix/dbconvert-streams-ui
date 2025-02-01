@@ -95,12 +95,19 @@ export function useCommon<T extends Connection>(defaultConnection: T) {
           await connectionsStore.createSchema(newData, connectionsStore.currentConnection.id)
         }
 
-        const targetArrayValue = getProperty(
-          connectionsStore.currentConnection as T,
-          targetArray
-        ) as unknown as any[]
-        targetArrayValue.push(newData)
-        setProperty(connectionsStore.currentConnection as T, targetProperty, newData)
+        const conn = connectionsStore.currentConnection as any
+        if (!conn[targetArray]) {
+          conn[targetArray] = []
+        }
+
+        const targetArrayValue = conn[targetArray]
+        if (Array.isArray(targetArrayValue)) {
+          targetArrayValue.push(newData)
+        } else {
+          conn[targetArray] = [newData]
+        }
+
+        conn[targetProperty] = newData
         commonStore.showNotification(`${String(targetProperty)} created`, 'success')
 
         if (targetProperty === 'database') {

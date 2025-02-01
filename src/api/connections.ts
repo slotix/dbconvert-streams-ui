@@ -135,31 +135,37 @@ const getDatabases = async (id: string): Promise<DatabaseInfo[]> => {
   }
 }
 
-const createDatabase = async (newDatabase: string, id: string): Promise<void> => {
+const createDatabase = async (newDatabase: string, id: string): Promise<{ status: string }> => {
   const commonStore = useCommonStore()
   validateApiKey(commonStore.apiKey)
   try {
-    await apiClient.post(`/connections/${id}/databases`, newDatabase, {
+    const response: AxiosResponse<{ status: string }> = await apiClient.post(`/connections/${id}/databases`, newDatabase, {
       headers: {
         'Content-Type': 'text/plain',
         'X-API-Key': commonStore.apiKey
       }
     })
+    return response.data
   } catch (error) {
     throw handleApiError(error)
   }
 }
 
-const createSchema = async (newSchema: string, id: string): Promise<void> => {
+const createSchema = async (newSchema: string, id: string, dbName: string): Promise<{ status: string }> => {
   const commonStore = useCommonStore()
   validateApiKey(commonStore.apiKey)
   try {
-    await apiClient.post(`/connections/${id}/schemas`, newSchema, {
-      headers: {
-        'Content-Type': 'text/plain',
-        'X-API-Key': commonStore.apiKey
+    const response: AxiosResponse<{ status: string }> = await apiClient.post(
+      `/connections/${id}/schemas?database=${encodeURIComponent(dbName)}`,
+      newSchema,
+      {
+        headers: {
+          'Content-Type': 'text/plain',
+          'X-API-Key': commonStore.apiKey
+        }
       }
-    })
+    )
+    return response.data
   } catch (error) {
     throw handleApiError(error)
   }
