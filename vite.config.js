@@ -21,7 +21,6 @@ export default defineConfig({
       output: {
         manualChunks: {
           vendor: ['vue', 'vue-router'],
-          idb: ['idb'],
           pinia: ['pinia'],
           headlessui: ['@headlessui/vue'],
           heroicons: ['@heroicons/vue/24/solid', '@heroicons/vue/24/outline'],
