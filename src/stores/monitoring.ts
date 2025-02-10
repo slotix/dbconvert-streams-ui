@@ -3,6 +3,9 @@ import type { StreamConfig } from '@/types/streamConfig'
 import { natsService } from '@/api/natsService'
 import type { NatsMessage } from '@/api/natsService'
 import { NodeTypes, type NodeType } from '@/types/common'
+import { ref } from 'vue'
+import type { StreamStats } from '@/types/streamStats'
+import streamsApi from '@/api/streams'
 
 // Define types for the state
 interface Node {
@@ -46,6 +49,9 @@ interface State {
   status: typeof statusEnum
   streamConfig: StreamConfig
   maxLogs: number
+  streamStats: StreamStats | null
+  isLoadingStats: boolean
+  statsError: Error | null
 }
 export const statusEnum = {
   UNDEFINED: 0,
@@ -97,7 +103,10 @@ export const useMonitoringStore = defineStore('monitoring', {
     ],
     status: statusEnum,
     streamConfig: {} as StreamConfig,
-    maxLogs: 1000
+    maxLogs: 1000,
+    streamStats: null,
+    isLoadingStats: false,
+    statsError: null
   }),
   getters: {
     currentStage(state: State): Stage | null {
@@ -243,6 +252,19 @@ export const useMonitoringStore = defineStore('monitoring', {
           })
         }
       })
+    },
+    async fetchStreamStats(streamId: string) {
+      this.isLoadingStats = true
+      this.statsError = null
+
+      try {
+        this.streamStats = await streamsApi.getStreamStats(streamId)
+      } catch (error) {
+        this.statsError = error as Error
+        this.streamStats = null
+      } finally {
+        this.isLoadingStats = false
+      }
     }
   }
 })
