@@ -120,12 +120,12 @@ const stopStream = async (id: string): Promise<void> => {
   }
 }
 
-const getStreamStats = async (id: string): Promise<StreamStats> => {
+const getCurrentStreamStats = async (): Promise<StreamStats> => {
   const commonStore = useCommonStore()
   validateApiKey(commonStore.apiKey)
 
   try {
-    const response: AxiosResponse<StreamStats> = await apiClient.get(`/streams/${id}/stats`, {
+    const response: AxiosResponse<StreamStats> = await apiClient.get(`/streams/current/stats`, {
       headers: { 'X-API-Key': commonStore.apiKey }
     })
     return response.data
@@ -143,5 +143,5 @@ export default {
   pauseStream,
   resumeStream,
   stopStream,
-  getStreamStats
+  getCurrentStreamStats
 }

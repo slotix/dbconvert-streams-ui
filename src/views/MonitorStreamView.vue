@@ -61,15 +61,17 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { ChartBarSquareIcon, PauseIcon, PlayIcon, StopIcon } from '@heroicons/vue/20/solid'
+import { computed, onMounted } from 'vue'
+import { PauseIcon, PlayIcon, StopIcon } from '@heroicons/vue/20/solid'
 import StatContainer from '@/components/monitoring/StatContainer.vue'
 import ProgressContainer from '@/components/monitoring/ProgressContainer.vue'
 import { useMonitoringStore, statusEnum } from '@/stores/monitoring'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useCommonStore } from '@/stores/common'
 import StreamConfigInfo from '@/components/stream/StreamConfigInfo.vue'
+import { useRoute } from 'vue-router'
 
+const route = useRoute()
 const monitoringStore = useMonitoringStore()
 const streamsStore = useStreamsStore()
 const commonStore = useCommonStore()
@@ -136,4 +138,9 @@ const handleStreamError = (error: any, defaultMessage: string) => {
   const errorMessage = error instanceof Error ? error.message : defaultMessage
   commonStore.showNotification(errorMessage, 'error')
 }
+
+// Restore stream stats on page load
+onMounted(async () => {
+  await monitoringStore.fetchCurrentStreamStats()
+})
 </script>

@@ -304,6 +304,22 @@ export const useStreamsStore = defineStore('streams', {
       }
 
       return name
+    },
+    async getStreamConfigById(configId: string): Promise<StreamConfig | null> {
+      try {
+        // First check if we already have this config in our streams array
+        const existingConfig = this.streamConfigs.find(stream => stream.id === configId)
+        if (existingConfig) {
+          return existingConfig
+        }
+
+        // If not found locally, fetch from API
+        const config = await api.getStreams()
+        return config.find(c => c.id === configId) || null
+      } catch (error) {
+        console.error('Failed to fetch stream config:', error)
+        return null
+      }
     }
   }
 })

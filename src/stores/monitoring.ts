@@ -6,6 +6,7 @@ import { NodeTypes, type NodeType } from '@/types/common'
 import { ref } from 'vue'
 import type { StreamStats } from '@/types/streamStats'
 import streamsApi from '@/api/streams'
+import { useStreamsStore } from '@/stores/streamConfig'
 
 // Define types for the state
 interface Node {
@@ -52,6 +53,7 @@ interface State {
   streamStats: StreamStats | null
   isLoadingStats: boolean
   statsError: Error | null
+  lastStreamId: string | null
 }
 export const statusEnum = {
   UNDEFINED: 0,
@@ -106,7 +108,8 @@ export const useMonitoringStore = defineStore('monitoring', {
     maxLogs: 1000,
     streamStats: null,
     isLoadingStats: false,
-    statsError: null
+    statsError: null,
+    lastStreamId: null as string | null
   }),
   getters: {
     currentStage(state: State): Stage | null {
@@ -253,18 +256,79 @@ export const useMonitoringStore = defineStore('monitoring', {
         }
       })
     },
-    async fetchStreamStats(streamId: string) {
+    async fetchCurrentStreamStats() {
       this.isLoadingStats = true
       this.statsError = null
 
       try {
-        this.streamStats = await streamsApi.getStreamStats(streamId)
+        this.streamStats = await streamsApi.getCurrentStreamStats()
+
+        // Update stream ID and related data
+        if (this.streamStats) {
+          this.streamID = this.streamStats.streamID
+          this.lastStreamId = this.streamStats.streamID
+          const streamStore = useStreamsStore()
+          const config = await streamStore.getStreamConfigById(this.streamStats.configID)
+          if (config) {
+            this.streamConfig = config
+          }
+          this.setStream(this.streamStats.streamID, this.streamConfig)
+
+          // Reset and update nodes based on stream stats
+          this.nodes = []
+          // Map StreamStats nodes to store nodes
+          this.streamStats.nodes.forEach(node => {
+            this.nodes.push({
+              id: node.id,
+              type: node.type as NodeType
+            })
+          })
+
+          // Find source and target nodes from stats
+          const sourceNode = this.streamStats.nodes.find(node => node.type === NodeTypes.SOURCE)
+          const targetNodes = this.streamStats.nodes.find(node => node.type === NodeTypes.TARGET)
+
+          // Update current stage based on node stats
+          if (sourceNode?.stat.status || targetNodes?.stat.status) {
+            const status = sourceNode?.stat.status || targetNodes?.stat.status
+
+            switch (status) {
+              case 'FINISHED':
+                this.currentStageID = 4 // Finished stage
+                break
+              case 'RUNNING':
+                this.currentStageID = 3 // Data transfer stage
+                break
+              case 'INITIALIZING':
+                this.currentStageID = 1 // Init stage
+                break
+              default:
+                this.currentStageID = 1
+            }
+
+            // Update timestamps for completed stages
+            this.stages.forEach(stage => {
+              if (stage.id < this.currentStageID) {
+                stage.timestamp = Date.now()
+              }
+            })
+          }
+        }
       } catch (error) {
         this.statsError = error as Error
         this.streamStats = null
+        this.lastStreamId = null
+        this.streamID = ''
+        this.nodes = []
+        this.currentStageID = 0
       } finally {
         this.isLoadingStats = false
       }
+    },
+    clearStreamStats() {
+      this.streamStats = null
+      this.statsError = null
+      this.lastStreamId = null
     }
   }
 })
