@@ -62,7 +62,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
-import { PauseIcon, PlayIcon, StopIcon } from '@heroicons/vue/20/solid'
+import { PauseIcon, PlayIcon, StopIcon, ChartBarSquareIcon } from '@heroicons/vue/20/solid'
 import StatContainer from '@/components/monitoring/StatContainer.vue'
 import ProgressContainer from '@/components/monitoring/ProgressContainer.vue'
 import { useMonitoringStore, statusEnum } from '@/stores/monitoring'
@@ -83,8 +83,15 @@ const currentStreamConfig = computed(() => {
 type StatusType = typeof statusEnum[keyof typeof statusEnum]
 
 const isPaused = computed(() => {
-  // Check if any node (source or target) is in PAUSED state
-  return monitoringStore.stats.some(stat => stat.status === 'PAUSED')
+  // Check if any node (source or target) is in PAUSED state from stats
+  const isStatsPaused = monitoringStore.stats.some(stat => stat.status === 'PAUSED')
+
+  // Check if any node is paused in streamStats
+  const isStreamStatsPaused = monitoringStore.streamStats?.nodes.some(
+    node => node.stat?.status === 'PAUSED'
+  ) ?? false
+
+  return isStatsPaused || isStreamStatsPaused
 })
 
 const isStreamFinished = computed(() => {

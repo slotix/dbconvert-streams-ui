@@ -21,3 +21,32 @@ export function formatMonth(month: string): string {
   const options: Intl.DateTimeFormatOptions = { month: 'short', year: 'numeric' }
   return new Date(month).toLocaleDateString(undefined, options)
 }
+
+export function formatDuration(nanoseconds: number): string {
+  // Convert nanoseconds to different units
+  const totalSeconds = Math.floor(nanoseconds / 1e9)
+  const h = Math.floor(totalSeconds / 3600)
+  const m = Math.floor((totalSeconds % 3600) / 60)
+  const s = Math.floor(totalSeconds % 60)
+  const ms = Math.floor((nanoseconds % 1e9) / 1e7) // Convert to 2 digit milliseconds
+
+  let result = ''
+
+  if (nanoseconds === 0) return '0s'
+
+  if (h > 0) {
+    result += `${h}h`
+  }
+  if (m > 0) {
+    result += `${m}m`
+  }
+
+  // Format with 2 digit milliseconds
+  result += `${s}.${ms.toString().padStart(2, '0')}s`
+
+  return result
+}
+
+export function formatNumber(num: number): string {
+  return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+}

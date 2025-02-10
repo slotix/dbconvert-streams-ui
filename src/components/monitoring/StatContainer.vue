@@ -57,7 +57,7 @@
         </div>
         <div class="flex items-baseline justify-between md:block lg:flex border-b border-gray-100">
           <dd class="mt-1 flex items-baseline text-2xl font-semibold text-gray-600">
-            {{ stat.rate || stat['avg.rate'] }}
+            {{ stat.rate || stat.avgRate }}
           </dd>
           <dt v-if="stat.rate" class="ml-2 font-medium text-gray-500">
             {{ outType(stat.type).ioType }} rate

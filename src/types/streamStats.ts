@@ -6,6 +6,7 @@ export interface NodeStat {
   reportingInterval: number
   start: string
   duration: number
+  avgRate: number
   status: string
 }
 

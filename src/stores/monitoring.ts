@@ -3,16 +3,15 @@ import type { StreamConfig } from '@/types/streamConfig'
 import { natsService } from '@/api/natsService'
 import type { NatsMessage } from '@/api/natsService'
 import { NodeTypes, type NodeType } from '@/types/common'
-import { ref } from 'vue'
 import type { StreamStats } from '@/types/streamStats'
 import streamsApi from '@/api/streams'
 import { useStreamsStore } from '@/stores/streamConfig'
+import { formatDataSize, formatDuration, formatNumber } from '@/utils/formats'
 
 // Define types for the state
 interface Node {
   id: string
   type: NodeType
-  current?: boolean
 }
 
 interface LogLevel {
@@ -282,6 +281,30 @@ export const useMonitoringStore = defineStore('monitoring', {
               id: node.id,
               type: node.type as NodeType
             })
+
+            // Create a stat log entry from streamStats for each node
+            if (node.stat) {
+              const statMessage = [
+                `[stat] ${node.stat.status}`,
+                formatNumber(node.stat.counter || 0),
+                formatDataSize(node.stat.sumDataSize || 0),
+                node.stat.duration !== undefined ? formatDuration(node.stat.duration) : ''
+              ].filter(Boolean).join(' | ')
+
+              this.addLog({
+                id: Date.now(),
+                type: node.type.toLowerCase(),
+                nodeID: node.id,
+                msg: statMessage,
+                status: node.stat.status,
+                events: formatNumber(node.stat.counter || 0),
+                size: formatDataSize(node.stat.sumDataSize || 0),
+                avgRate: node.stat.avgRate ? `${formatDataSize(node.stat.avgRate)}/s` : '0 B/s',
+                elapsed: node.stat.duration ? formatDuration(node.stat.duration) : '0s',
+                level: 'info',
+                ts: Date.now()
+              })
+            }
           })
 
           // Find source and target nodes from stats
