@@ -161,8 +161,8 @@
             :viewType="'cards'"
             @selectRow="selectStream"
             @editRow="editStream"
-            @cloneRow="cloneStream"
-            @deleteRow="deleteStream"
+            @cloneRow="cloneStreamConfig"
+            @deleteRow="deleteStreamConfig"
           />
         </div>
         <div class="-ml-px flex w-0 flex-1">

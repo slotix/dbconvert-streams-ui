@@ -208,7 +208,7 @@ export const useStreamsStore = defineStore('streams', {
         throw error
       }
     }, 500),
-    deleteStream: debounce(async function (this: State, configID: string) {
+    deleteStreamConfig: debounce(async function (this: State, configID: string) {
       try {
         const index = this.streamConfigs.findIndex((stream: StreamConfig) => stream.id === configID)
         if (index !== -1) {
@@ -220,7 +220,7 @@ export const useStreamsStore = defineStore('streams', {
         throw error
       }
     }, 500),
-    async cloneStream(configID: string) {
+    async cloneStreamConfig(configID: string) {
       try {
         const resp = (await api.cloneStreamConfig(configID)) as unknown as StreamConfig
         this.currentStreamConfig = {
@@ -245,9 +245,9 @@ export const useStreamsStore = defineStore('streams', {
         throw error
       }
     },
-    async pauseStream(configID: string) {
+    async pauseStream(id: string) {
       try {
-        await api.pauseStream(configID)
+        await api.pauseStream(id)
         this.updateStreamStatus(statusEnum.PAUSED as unknown as typeof statusEnum)
       } catch (error) {
         console.error('Failed to pause stream:', error)
@@ -255,9 +255,9 @@ export const useStreamsStore = defineStore('streams', {
       }
     },
 
-    async resumeStream(configID: string) {
+    async resumeStream(id: string) {
       try {
-        await api.resumeStream(configID)
+        await api.resumeStream(id)
         this.updateStreamStatus(statusEnum.RUNNING as unknown as typeof statusEnum)
       } catch (error) {
         console.error('Failed to resume stream:', error)
@@ -265,9 +265,9 @@ export const useStreamsStore = defineStore('streams', {
       }
     },
 
-    async stopStream(configID: string) {
+    async stopStream(id: string) {
       try {
-        await api.stopStream(configID)
+        await api.stopStream(id)
         this.updateStreamStatus(statusEnum.STOPPED as unknown as typeof statusEnum)
       } catch (error) {
         console.error('Failed to stop stream:', error)

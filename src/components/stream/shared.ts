@@ -99,12 +99,12 @@ export default defineComponent({
       this.selectStream()
       this.$router.push({ name: 'ManageStream', params: { mode: 'edit' } })
     },
-    async deleteStream() {
+    async deleteStreamConfig() {
       if (!confirm('Are you sure you want to delete this stream?')) {
         return
       }
       try {
-        await useStreamsStore().deleteStream(this.streamConfig.id)
+        await useStreamsStore().deleteStreamConfig(this.streamConfig.id)
         await useStreamsStore().refreshStreams()
         useCommonStore().showNotification('Stream deleted', 'success')
       } catch (e: unknown) {
@@ -116,9 +116,9 @@ export default defineComponent({
         console.log(e)
       }
     },
-    async cloneStream() {
+    async cloneStreamConfig() {
       try {
-        await useStreamsStore().cloneStream(this.streamConfig.id)
+        await useStreamsStore().cloneStreamConfig(this.streamConfig.id)
         await useStreamsStore().refreshStreams()
         useCommonStore().showNotification('Stream cloned', 'success')
       } catch (e: unknown) {

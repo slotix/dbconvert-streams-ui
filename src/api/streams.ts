@@ -39,7 +39,7 @@ const createStream = async (json: Record<string, unknown>): Promise<StreamConfig
   }
 }
 
-const deleteStream = async (id: string): Promise<void> => {
+const deleteStreamConfig = async (id: string): Promise<void> => {
   const commonStore = useCommonStore()
   validateApiKey(commonStore.apiKey)
 
@@ -122,7 +122,7 @@ const stopStream = async (id: string): Promise<void> => {
 export default {
   getStreams,
   createStream,
-  deleteStream,
+  deleteStream: deleteStreamConfig,
   cloneStreamConfig,
   startStream,
   pauseStream,
