@@ -1,16 +1,10 @@
-import axios, { type AxiosInstance, type AxiosResponse } from 'axios'
 import { useCommonStore } from '@/stores/common'
 import { type StreamConfig, type StreamID } from '@/types/streamConfig'
 import { validateApiKey } from './apiClient'
 import { handleApiError } from '@/utils/errorHandler'
 import { type StreamStats } from '@/types/streamStats'
-
-const apiClient: AxiosInstance = axios.create({
-  baseURL: 'http://127.0.0.1:8020/api/v1',
-  headers: {
-    'Content-Type': 'application/json'
-  }
-})
+import { apiClient } from './apiClient'
+import { type AxiosResponse } from 'axios'
 
 const getStreams = async (): Promise<StreamConfig[]> => {
   const commonStore = useCommonStore()
