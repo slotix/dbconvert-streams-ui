@@ -279,7 +279,7 @@ export default defineComponent({
     const defaultConnection: PostgreSQLConnection = {
       id: '',
       name: '',
-      type: 'PostgreSQL',
+      type: 'postgresql',
       host: 'localhost',
       port: 5432,
       username: 'postgres',

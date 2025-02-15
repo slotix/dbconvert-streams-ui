@@ -6,6 +6,7 @@ import { ArrowPathIcon, PlusIcon } from '@heroicons/vue/24/solid'
 import { DIALOG_TYPES, useCommonStore } from '@/stores/common'
 import { useConnectionsStore } from '@/stores/connections'
 import { type Connection } from '@/types/connections'
+import { normalizeConnectionType } from '@/utils/connectionUtils'
 
 function isErrorWithMessage(error: unknown): error is { message: string } {
   return (
@@ -31,7 +32,8 @@ export function useCommon<T extends Connection>(defaultConnection: T) {
   const connectionsStore = useConnectionsStore()
 
   const buildConnectionName = computed(() => {
-    return `${connection.type}-${connection.host}-${connection.username}`
+    const normalizedType = normalizeConnectionType(connection.type)
+    return `${normalizedType}-${connection.host}-${connection.username}`
   })
 
   const dlgTp = computed(() => commonStore.dlgType)

@@ -24,6 +24,7 @@ import { ref, computed, watch, onMounted } from 'vue'
 import MySQLParams from './MySQLParams.vue'
 import PostgreSQLParams from './PostgreSQLParams.vue'
 import SSLParams from './SSLParams.vue'
+import { normalizeConnectionType } from '@/utils/connectionUtils'
 
 interface Props {
   connectionType: string
@@ -35,10 +36,19 @@ const tabs = ref(['Direct', 'SSL'])
 const currentTab = ref('')
 
 const componentMap = {
-  MySQL: MySQLParams,
-  PostgreSQL: PostgreSQLParams,
+  mysql: MySQLParams,
+  postgresql: PostgreSQLParams,
   SSL: SSLParams
 }
+
+const paramsComponent = computed(() => {
+  if (currentTab.value === 'Direct') {
+    const normalizedType = normalizeConnectionType(props.connectionType)
+    return componentMap[normalizedType as keyof typeof componentMap] || null
+  } else {
+    return componentMap[currentTab.value as keyof typeof componentMap] || null
+  }
+})
 
 const changeDBType = () => {
   tabs.value[0] = 'Direct'
@@ -50,14 +60,6 @@ const changeTab = (tab: string) => {
 }
 
 watch(() => props.connectionType, changeDBType, { immediate: true })
-
-const paramsComponent = computed(() => {
-  if (currentTab.value === 'Direct') {
-    return componentMap[props.connectionType as keyof typeof componentMap] || null
-  } else {
-    return componentMap[currentTab.value as keyof typeof componentMap] || null
-  }
-})
 
 onMounted(changeDBType)
 </script>

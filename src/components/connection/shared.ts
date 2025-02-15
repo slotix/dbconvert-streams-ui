@@ -16,6 +16,7 @@ import { defineComponent, computed, ref, type PropType } from 'vue'
 import { type Connection, type DbType } from '@/types/connections'
 import { generateConnectionString } from '@/utils/connectionStringGenerator'
 import ConnectionStringDisplay from '@/components/common/ConnectionStringDisplay.vue'
+import { normalizeConnectionType } from '@/utils/connectionUtils'
 
 export default defineComponent({
   components: {
@@ -66,7 +67,10 @@ export default defineComponent({
       return this.connectionsByType.length
     },
     logoSrc(): string {
-      const dbType = this.dbTypes.find((f) => f.type === this.connection?.type)
+      const normalizedType = normalizeConnectionType(this.connection?.type || '')
+      const dbType = this.dbTypes.find((f) =>
+        normalizeConnectionType(f.type) === normalizedType
+      )
       return dbType ? dbType.logo : ''
     },
     connectionCreated(): string {

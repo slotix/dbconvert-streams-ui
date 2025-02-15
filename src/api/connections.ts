@@ -99,7 +99,7 @@ const testConnection = async (): Promise<string> => {
   try {
     const response: AxiosResponse<{ ping: string }> = await apiClient.post(
       `/connections/${json.id}/ping`,
-      json,
+      null,
       {
         headers: { 'X-API-Key': commonStore.apiKey }
       }
