@@ -65,7 +65,7 @@
               Trial ends on {{ formatDate(userData.trialEnd) }}
             </p>
             <a
-              href="http://localhost:3000/pricing"
+              href="http://streams.dbconvert.com/pricing"
               target="_blank"
               class="mt-2 inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-500"
             >
@@ -104,7 +104,7 @@
                 {{ trialEnded ? 'Trial period ended' : 'Usage limit exceeded' }}
               </p>
               <a
-                href="http://localhost:3000/account"
+                href="http://streams.dbconvert.com/account"
                 target="_blank"
                 class="mt-1 inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-500"
               >
@@ -142,7 +142,7 @@
             <div class="flex-1">
               <p class="text-sm text-red-800 font-medium">Your subscription has been canceled</p>
               <a
-                href="http://localhost:3000/account"
+                href="http://streams.dbconvert.com/account"
                 target="_blank"
                 class="mt-1 inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-500"
               >
@@ -246,7 +246,7 @@
             </div>
             <div class="flex justify-end">
               <a
-                href="http://localhost:3000/account"
+                href="http://streams.dbconvert.com/account"
                 target="_blank"
                 class="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-500"
               >
