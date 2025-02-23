@@ -1,6 +1,6 @@
 <template>
   <div class="p-6">
-    <h2 class="text-xl font-semibold text-gray-900 mb-6">Account Overview TEST</h2>
+    <h2 class="text-xl font-semibold text-gray-900 mb-6">Account Overview</h2>
     <div class="space-y-6">
       <!-- User Info -->
       <div class="flex items-start group hover:bg-gray-50 p-3 rounded-lg transition-colors">
