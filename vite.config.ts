@@ -1,17 +1,16 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { fileURLToPath, URL } from 'url'
-import { readFileSync } from 'fs'
 import { version } from './package.json'
-
-const packageJson = JSON.parse(readFileSync('./package.json', 'utf-8'))
 
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [vue()],
   define: {
-    __APP_VERSION__: JSON.stringify(packageJson.version),
-    'import.meta.env.PACKAGE_VERSION': JSON.stringify(version)
+    'import.meta.env.PACKAGE_VERSION': JSON.stringify(version),
+    'process.env.VITE_API_URL': JSON.stringify(process.env.VITE_API_URL),
+    'process.env.VITE_NATS_WS_URL': JSON.stringify(process.env.VITE_NATS_WS_URL),
+    'process.env.VITE_SENTRY_DSN': JSON.stringify(process.env.VITE_SENTRY_DSN),
   },
   resolve: {
     alias: {

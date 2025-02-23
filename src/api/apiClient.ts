@@ -20,7 +20,7 @@ interface RetryConfig {
 // Add logging for API configuration
 console.log('[API] Environment configuration:', {
   baseURL: import.meta.env.VITE_BACKEND_URL,
-  // sentryDSN: import.meta.env.VITE_SENTRY_DSN
+  sentryDSN: import.meta.env.VITE_SENTRY_DSN
 })
 
 export const apiClient: AxiosInstance = axios.create({
