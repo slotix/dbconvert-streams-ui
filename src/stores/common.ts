@@ -143,26 +143,35 @@ export const useCommonStore = defineStore('common', {
     },
 
     async getApiKey(): Promise<string | null> {
-      if (this.apiKey) {
-        return this.apiKey
-      }
-
-      const storedApiKey = localStorage.getItem('apiKey')
-      if (storedApiKey) {
-        try {
-          // Validate the stored API key
-          await api.validateApiKey(storedApiKey)
-          this.apiKey = storedApiKey
-          return storedApiKey
-        } catch (error) {
-          // If the stored API key is invalid, clear it
-          localStorage.removeItem('apiKey')
-          this.apiKey = null
-          return null
+      try {
+        if (this.apiKey) {
+          await api.validateApiKey(this.apiKey)
+          return this.apiKey
         }
-      }
 
-      return null
+        const storedApiKey = localStorage.getItem('apiKey')
+        if (storedApiKey) {
+          try {
+            // Validate the stored API key
+            await api.validateApiKey(storedApiKey)
+            this.apiKey = storedApiKey
+            return storedApiKey
+          } catch (error) {
+            // If the stored API key is invalid, clear it
+            localStorage.removeItem('apiKey')
+            this.apiKey = null
+            this.setBackendConnected(false)
+            return null
+          }
+        }
+
+        this.setBackendConnected(false)
+        return null
+      } catch (error) {
+        console.error('Error validating API key:', error)
+        this.setBackendConnected(false)
+        return null
+      }
     },
 
     async setApiKey(apiKey: string): Promise<void> {
@@ -256,7 +265,6 @@ export const useCommonStore = defineStore('common', {
 
     async initApp(): Promise<'success' | 'failed'> {
       const toast = useToast()
-      toast.info('Initializing App')
 
       try {
         await Promise.all([this.checkSentryHealth(), this.checkAPIHealth()])
@@ -303,10 +311,10 @@ export const useCommonStore = defineStore('common', {
         }
         return response
       } catch (error) {
-        if (error instanceof Error && 
-            (error.message.includes('Network Error') || 
-             error.message.includes('timeout') ||
-             error.message.includes('connection'))) {
+        if (error instanceof Error &&
+          (error.message.includes('Network Error') ||
+            error.message.includes('timeout') ||
+            error.message.includes('connection'))) {
           throw error
         }
         console.error('Failed to fetch service status:', error)

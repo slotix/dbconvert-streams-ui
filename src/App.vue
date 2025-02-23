@@ -1,6 +1,6 @@
 <template>
   <div>
-    <ApiKeyInput />
+    <ApiKeyInput v-if="!commonStore.hasValidApiKey && !isInitializing" />
     <div v-if="isInitializing" class="fixed inset-0 bg-gray-900/80 flex items-center justify-center z-50">
       <div class="bg-white p-6 rounded-lg shadow-xl">
         <div class="flex items-center space-x-3">
@@ -154,21 +154,33 @@ const sidebarOpen = ref(false)
 const initializeApp = async () => {
   try {
     isInitializing.value = true
-    const initResult = await commonStore.initApp()
-    if (initResult === 'failed') {
-      commonStore.setBackendConnected(false)
-      throw new Error('Failed to initialize app')
+
+    // Check for API key first
+    const apiKey = await commonStore.getApiKey()
+    // If we have a valid API key, proceed with initialization
+    if (apiKey) {
+      const initResult = await commonStore.initApp()
+      if (initResult === 'failed') {
+        commonStore.setBackendConnected(false)
+        throw new Error('Failed to initialize app')
+      }
+      commonStore.setBackendConnected(true)
+      return 'success'
     }
-    commonStore.setBackendConnected(true)
+    return 'failed'
   } catch (error) {
     console.error('Failed to initialize app:', error)
+    return 'failed'
   } finally {
     isInitializing.value = false
   }
 }
 
 onMounted(async () => {
-  await initializeApp()
+  const result = await initializeApp()
+  if (result === 'failed') {
+    commonStore.clearApiKey() // Clear any invalid API key
+  }
 })
 
 // Watch for changes in route and update the current page in the common store
