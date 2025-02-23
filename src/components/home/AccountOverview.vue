@@ -132,7 +132,7 @@
             <div class="flex items-baseline">
               <span class="text-xl font-semibold text-gray-900">{{
                 formatDataSize(usedData)
-                }}</span>
+              }}</span>
               <span class="text-sm text-gray-500 ml-1">of {{ formatDataSize(totalData) }}</span>
             </div>
             <!-- Progress bar -->
@@ -266,47 +266,5 @@ const currentPeriodEnd = computed(() => {
 const trialEnded = computed(() => {
   const trialEnd = commonStore.userData?.trialEnd
   return trialEnd ? Date.now() > trialEnd * 1000 : false
-})
-
-// Simulate different error states
-function simulateError() {
-  // Simulate initial error
-  commonStore.setError({
-    message: 'Unable to connect to the server. Please check your backend services and try again.',
-    isRetrying: false
-  })
-
-  // Simulate retry sequence
-  setTimeout(() => {
-    commonStore.setError({
-      message: 'Connection attempt 1 of 3...',
-      isRetrying: true
-    })
-  }, 2000)
-
-  setTimeout(() => {
-    commonStore.setError({
-      message: 'Connection attempt 2 of 3...',
-      isRetrying: true
-    })
-  }, 4000)
-
-  setTimeout(() => {
-    commonStore.setError({
-      message: 'Connection attempt 3 of 3...',
-      isRetrying: true
-    })
-  }, 6000)
-
-  setTimeout(() => {
-    commonStore.setError({
-      message: 'Connection failed after 3 attempts. Please check your network connection.',
-      isRetrying: false
-    })
-  }, 8000)
-}
-
-onMounted(() => {
-  simulateError()
 })
 </script>
