@@ -123,6 +123,7 @@ import LogsPanel from '@/components/logs/LogsPanel.vue'
 import LogsIndicator from '@/components/logs/LogsIndicator.vue'
 import VersionDisplay from '@/components/common/VersionDisplay.vue'
 import RouteGuard from '@/components/common/RouteGuard.vue'
+import { initializeApiClient } from '@/api/apiClient'
 
 import { Dialog, DialogPanel, TransitionChild, TransitionRoot } from '@headlessui/vue'
 import {
@@ -177,9 +178,15 @@ const initializeApp = async () => {
 }
 
 onMounted(async () => {
-  const result = await initializeApp()
-  if (result === 'failed') {
-    commonStore.clearApiKey() // Clear any invalid API key
+  try {
+    isInitializing.value = true
+    await initializeApiClient()
+    const result = await initializeApp()
+    if (result === 'failed') {
+      commonStore.clearApiKey()
+    }
+  } finally {
+    isInitializing.value = false
   }
 })
 

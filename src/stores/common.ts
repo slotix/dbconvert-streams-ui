@@ -6,6 +6,7 @@ import type { ServiceStatus } from '@/types/common'
 import { useToast } from 'vue-toastification'
 import { useMonitoringStore } from './monitoring'
 import { natsService } from '@/api/natsService'
+import { useLocalStorage } from '@vueuse/core'
 
 export const DIALOG_TYPES = {
   SAVE: 'Add',
@@ -34,6 +35,30 @@ interface ErrorState {
   retryCount?: number
 }
 
+interface State {
+  showModal: boolean
+  dlgType: DialogType | ''
+  currentViewType: string
+  userData: UserData | null
+  sentryHealthy: boolean
+  apiHealthy: boolean
+  apiKey: string | null
+  serviceStatuses: ServiceStatus[]
+  steps: Step[]
+  operationMap: {
+    insert: string
+    update: string
+    delete: string
+  }
+  modes: ModeOption[]
+  currentPage: string
+  isBackendConnected: boolean
+  error: ErrorState | null
+  isLoading: boolean
+  isLoadingRoute: boolean
+  routeLoadError: string | null
+}
+
 export const useCommonStore = defineStore('common', {
   state: () => ({
     showModal: false,
@@ -42,7 +67,7 @@ export const useCommonStore = defineStore('common', {
     userData: null as UserData | null,
     sentryHealthy: false,
     apiHealthy: false,
-    apiKey: import.meta.env.VITE_API_KEY || null,
+    apiKey: useLocalStorage('dbconvert-api-key', '') as unknown as string | null,
     serviceStatuses: [] as ServiceStatus[],
     steps: [
       {

@@ -195,6 +195,19 @@ export async function getStreams(): Promise<any> {
   }
 }
 
+export async function initializeApiClient() {
+  const commonStore = useCommonStore()
+  const savedApiKey = await commonStore.getApiKey()
+
+  if (savedApiKey) {
+    configureApiClient(savedApiKey)
+  }
+}
+
+export function configureApiClient(apiKey: string): void {
+  apiClient.defaults.headers.common['X-API-Key'] = apiKey
+}
+
 export default {
   validateApiKey,
   getUserDataFromSentry,
