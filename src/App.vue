@@ -102,7 +102,9 @@
       </button>
 
       <div class="py-4">
-        <RouterView v-if="!isInitializing" />
+        <RouteGuard v-if="!isInitializing">
+          <RouterView />
+        </RouteGuard>
       </div>
     </div>
 
@@ -120,6 +122,7 @@ import ApiKeyInput from '@/components/ApiKeyInput.vue'
 import LogsPanel from '@/components/logs/LogsPanel.vue'
 import LogsIndicator from '@/components/logs/LogsIndicator.vue'
 import VersionDisplay from '@/components/common/VersionDisplay.vue'
+import RouteGuard from '@/components/common/RouteGuard.vue'
 
 import { Dialog, DialogPanel, TransitionChild, TransitionRoot } from '@headlessui/vue'
 import {

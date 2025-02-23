@@ -27,6 +27,13 @@ export interface ModeOption {
 }
 
 type DialogType = (typeof DIALOG_TYPES)[keyof typeof DIALOG_TYPES]
+
+interface ErrorState {
+  message: string
+  isRetrying: boolean
+  retryCount?: number
+}
+
 export const useCommonStore = defineStore('common', {
   state: () => ({
     showModal: false,
@@ -81,7 +88,11 @@ export const useCommonStore = defineStore('common', {
       { id: 'cdc', title: 'Stream / Change Data Capture' }
     ] as ModeOption[],
     currentPage: '',
-    isBackendConnected: false
+    isBackendConnected: false,
+    error: null as ErrorState | null,
+    isLoading: false,
+    isLoadingRoute: false,
+    routeLoadError: null as string | null,
   }),
   actions: {
     async retryOperation(
@@ -266,6 +277,7 @@ export const useCommonStore = defineStore('common', {
         }
 
         toast.success('App initialized successfully')
+        this.clearError()
         return 'success'
       } catch (error: any) {
         console.error('Failed to initialize app:', error)
@@ -286,11 +298,59 @@ export const useCommonStore = defineStore('common', {
       try {
         const response = await api.getServiceStatus()
         this.serviceStatuses = response.services
+        if (response.services.every(service => service.status === 'passing')) {
+          this.clearError()
+        }
+        return response
       } catch (error) {
+        if (error instanceof Error && 
+            (error.message.includes('Network Error') || 
+             error.message.includes('timeout') ||
+             error.message.includes('connection'))) {
+          throw error
+        }
         console.error('Failed to fetch service status:', error)
-        const toast = useToast()
-        toast.error('Failed to fetch service status')
       }
+    },
+    setError(error: ErrorState | null) {
+      this.error = error
+    },
+    setLoading(status: boolean) {
+      this.isLoading = status
+    },
+    clearError() {
+      this.error = null
+    },
+    async loadRouteData(route: string): Promise<boolean> {
+      this.isLoadingRoute = true
+      this.routeLoadError = null
+      this.clearError()
+
+      try {
+        switch (route) {
+          case 'connections':
+            // Load connections data
+            await api.getConnections()
+            break
+          case 'streams':
+            // Load streams data
+            await api.getStreams()
+            break
+          case 'dashboard':
+            // Load dashboard data
+            await this.fetchServiceStatus()
+            break
+        }
+        return true
+      } catch (error: any) {
+        this.routeLoadError = error.message
+        return false
+      } finally {
+        this.isLoadingRoute = false
+      }
+    },
+    clearRouteError() {
+      this.routeLoadError = null
     }
   },
   getters: {

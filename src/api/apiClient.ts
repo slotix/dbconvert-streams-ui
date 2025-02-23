@@ -2,7 +2,7 @@ import axios, { type AxiosInstance, type AxiosError } from 'axios'
 import { handleApiError } from '@/utils/errorHandler'
 import { type UserData, type CombinedUsageResponse } from '@/types/user'
 import { type ServiceStatusResponse } from '@/types/common'
-import { logger } from '@/utils/logger'
+import { useCommonStore } from '@/stores/common'
 
 interface ApiResponse<T> {
   data: T
@@ -12,17 +12,23 @@ interface HealthCheckResponse {
   status: string
 }
 
+interface RetryConfig {
+  maxRetries: number
+  delayMs: number
+}
+
 // Add logging for API configuration
 console.log('[API] Environment configuration:', {
   baseURL: import.meta.env.VITE_BACKEND_URL,
-  sentryDSN: import.meta.env.VITE_SENTRY_DSN
+  // sentryDSN: import.meta.env.VITE_SENTRY_DSN
 })
 
 export const apiClient: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_BACKEND_URL,
   headers: {
     'Content-Type': 'application/json'
-  }
+  },
+  timeout: 10000,
 })
 
 const sentryClient: AxiosInstance = axios.create({
@@ -32,25 +38,58 @@ const sentryClient: AxiosInstance = axios.create({
   }
 })
 
-// Add request/response interceptors for logging
+// Only log errors in interceptors
 apiClient.interceptors.request.use(
-  (config) => {
-    console.log(`[API] Making request to: ${config.url}`, config)
-    return config
-  },
+  (config) => config,
   (error) => {
     console.error('[API] Request error:', error)
     return Promise.reject(error)
   }
 )
 
+const defaultRetryConfig: RetryConfig = {
+  maxRetries: 3,
+  delayMs: 1000,
+}
+
 apiClient.interceptors.response.use(
   (response) => {
-    console.log(`[API] Received response from: ${response.config.url}`, response.status)
+    const commonStore = useCommonStore()
+    commonStore.clearError()
     return response
   },
-  (error) => {
-    console.error('[API] Response error:', error.response?.status, error.message)
+  async (error: AxiosError) => {
+    const commonStore = useCommonStore()
+    const config = error.config as any
+
+    // Only handle network/connection errors
+    if (!error.response || error.code === 'ECONNABORTED' || error.message.includes('Network Error')) {
+      // Initialize retry count
+      config.retryCount = config.retryCount ?? 0
+
+      if (config.retryCount < defaultRetryConfig.maxRetries) {
+        config.retryCount += 1
+
+        // Set error state
+        commonStore.setError({
+          message: `Connection attempt ${config.retryCount} of ${defaultRetryConfig.maxRetries}...`,
+          isRetrying: true,
+          retryCount: config.retryCount
+        })
+
+        // Delay before retry
+        await new Promise(resolve => setTimeout(resolve, defaultRetryConfig.delayMs))
+
+        return apiClient(config)
+      }
+
+      // Max retries reached - show final error
+      commonStore.setError({
+        message: 'Unable to connect to the server. Please check your network connection.',
+        isRetrying: false,
+      })
+    }
+
     return Promise.reject(error)
   }
 )
@@ -138,6 +177,24 @@ const getServiceStatus = async (): Promise<ServiceStatusResponse> => {
   }
 }
 
+export async function getConnections(): Promise<any> {
+  try {
+    const response = await apiClient.get('/connections')
+    return response.data
+  } catch (error) {
+    throw handleApiError(error)
+  }
+}
+
+export async function getStreams(): Promise<any> {
+  try {
+    const response = await apiClient.get('/streams')
+    return response.data
+  } catch (error) {
+    throw handleApiError(error)
+  }
+}
+
 export default {
   validateApiKey,
   getUserDataFromSentry,
@@ -145,4 +202,6 @@ export default {
   backendHealthCheck,
   sentryHealthCheck,
   getServiceStatus,
+  getConnections,
+  getStreams,
 }
