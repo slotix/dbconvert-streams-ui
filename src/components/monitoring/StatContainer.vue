@@ -59,18 +59,17 @@
     </div>
   </div>
 </template>
-<script setup>
+<script setup lang="ts">
 import { useCommonStore } from '@/stores/common'
 import { useMonitoringStore } from '@/stores/monitoring'
 
 const steps = useCommonStore().steps
-const step = (name) => steps.find((step) => step.name === name)
+const step = (name: string) => steps.find((step) => step.name === name)
 
 const store = useMonitoringStore()
 
-const outType = (type) => {
-  switch (type)
-  {
+const outType = (type: string) => {
+  switch (type) {
     case 'source':
       return { title: 'Source Reader', ioType: 'input' }
     case 'target':
@@ -80,18 +79,18 @@ const outType = (type) => {
   }
 }
 
-const getStatusColor = (status) => {
-  // Return a class based on the status value
-  switch (status)
-  {
+const getStatusColor = (status: string | undefined) => {
+  if (!status) return ''
+
+  switch (status) {
     case 'FINISHED':
-      return 'text-green-600' // Green color for 'FINISHED' status
+      return 'text-green-600'
     case 'RUNNING':
-      return 'text-blue-600' // Blue color for 'RUNNING' status
+      return 'text-blue-600'
     case 'FAILED':
-      return 'text-red-600' // Red color for 'FAILED' status
+      return 'text-red-600'
     default:
-      return '' // Default class (no color change)
+      return ''
   }
 }
 </script>
