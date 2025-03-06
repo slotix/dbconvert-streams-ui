@@ -20,6 +20,7 @@ interface RetryConfig {
 // Add logging for API configuration
 console.log('[API] Environment configuration:', {
   baseURL: import.meta.env.VITE_BACKEND_URL,
+  natsServer: import.meta.env.VITE_NATS_SERVER,
   // sentryDSN: import.meta.env.VITE_SENTRY_DSN
 })
 
