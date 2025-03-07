@@ -73,7 +73,7 @@ export class NatsService {
       console.log('NATS server URL configured:', this.natsServerUrl);
 
       // Setup WebSocket interceptor
-      setupWebSocketInterceptor();
+      // setupWebSocketInterceptor();
     } catch (error) {
       console.error('Error configuring NATS server URL:', error);
       // Don't throw here, let connect() handle it
