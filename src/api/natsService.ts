@@ -14,6 +14,50 @@ export interface NatsMessage {
 
 export type MessageHandler = (message: NatsMessage) => void
 
+// Add WebSocket interceptor as a fallback mechanism
+// This ensures that even if environment variables aren't loaded correctly,
+// WebSocket connections will still work
+function setupWebSocketInterceptor() {
+  // Save the original WebSocket constructor
+  const OriginalWebSocket = window.WebSocket;
+
+  // Override the WebSocket constructor
+  // We need to use 'any' type here because TypeScript doesn't allow us to
+  // directly override the WebSocket constructor with a function
+  (window as any).WebSocket = function (url: string | URL, protocols?: string | string[]) {
+    // Get the NATS server URL from environment
+    const natsServerUrl = getNatsServerUrl();
+
+    // Convert URL to string if it's a URL object
+    const urlString = url instanceof URL ? url.toString() : url;
+
+    // Replace localhost:8081 with the correct server URL
+    if (urlString.includes('localhost:8081') && !natsServerUrl.includes('localhost:8081')) {
+      const serverUrl = new URL(natsServerUrl);
+      const host = serverUrl.host;
+      console.log('WebSocket interceptor: Redirecting connection from', urlString, 'to', urlString.replace('localhost:8081', host));
+      url = urlString.replace('localhost:8081', host);
+    }
+
+    // Call the original WebSocket constructor with the modified URL
+    return new OriginalWebSocket(url, protocols);
+  };
+
+  // Copy properties from the original WebSocket
+  // We need to use 'any' type here to avoid TypeScript errors
+  const WebSocketCtor = window.WebSocket as any;
+  Object.getOwnPropertyNames(OriginalWebSocket).forEach(prop => {
+    if (prop !== 'prototype' && prop !== 'length' && prop !== 'name') {
+      WebSocketCtor[prop] = (OriginalWebSocket as any)[prop];
+    }
+  });
+
+  // Copy prototype properties
+  WebSocketCtor.prototype = OriginalWebSocket.prototype;
+
+  console.log('WebSocket interceptor installed');
+}
+
 export class NatsService {
   private handlers: MessageHandler[] = []
   private connection: any = null
@@ -27,6 +71,9 @@ export class NatsService {
       this.natsServerUrl = getNatsServerUrl();
       validateWebSocketUrl(this.natsServerUrl);
       console.log('NATS server URL configured:', this.natsServerUrl);
+
+      // Setup WebSocket interceptor
+      setupWebSocketInterceptor();
     } catch (error) {
       console.error('Error configuring NATS server URL:', error);
       // Don't throw here, let connect() handle it
