@@ -19,13 +19,17 @@ interface RetryConfig {
 
 // Add logging for API configuration
 console.log('[API] Environment configuration:', {
-  baseURL: import.meta.env.VITE_BACKEND_URL,
-  natsServer: import.meta.env.VITE_NATS_SERVER,
-  sentryDSN: import.meta.env.VITE_SENTRY_DSN
+  // @ts-ignore
+  baseURL: window.ENV?.VITE_BACKEND_URL || import.meta.env.VITE_BACKEND_URL,
+  // @ts-ignore
+  natsServer: window.ENV?.VITE_NATS_SERVER || import.meta.env.VITE_NATS_SERVER,
+  // @ts-ignore
+  sentryDSN: window.ENV?.VITE_SENTRY_DSN || import.meta.env.VITE_SENTRY_DSN
 })
 
 export const apiClient: AxiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_BACKEND_URL,
+  // @ts-ignore
+  baseURL: window.ENV?.VITE_BACKEND_URL || import.meta.env.VITE_BACKEND_URL,
   headers: {
     'Content-Type': 'application/json'
   },
@@ -33,7 +37,8 @@ export const apiClient: AxiosInstance = axios.create({
 })
 
 const sentryClient: AxiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_SENTRY_DSN,
+  // @ts-ignore
+  baseURL: window.ENV?.VITE_SENTRY_DSN || import.meta.env.VITE_SENTRY_DSN,
   headers: {
     'Content-Type': 'application/json'
   }

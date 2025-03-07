@@ -52,7 +52,9 @@ export class NatsService {
 
     while (this.shouldReconnect) {
       try {
-        const natsServer = import.meta.env.VITE_NATS_SERVER
+        // First try to get the NATS server URL from window.ENV (runtime config)
+        // @ts-ignore
+        const natsServer = window.ENV?.VITE_NATS_SERVER || import.meta.env.VITE_NATS_SERVER
         if (!natsServer) {
           throw new Error('NATS server URL is not configured. Please set VITE_NATS_SERVER environment variable.')
         }
@@ -127,7 +129,8 @@ export class NatsService {
         const errorMessage = error instanceof Error ? error.message : String(error)
         const errorDetails = {
           message: errorMessage,
-          server: import.meta.env.VITE_NATS_SERVER,
+          // @ts-ignore
+          server: window.ENV?.VITE_NATS_SERVER || import.meta.env.VITE_NATS_SERVER,
           stack: error instanceof Error ? error.stack : undefined
         }
 
