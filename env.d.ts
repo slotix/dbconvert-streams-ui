@@ -25,5 +25,6 @@ interface Window {
     VITE_NATS_WS_TLS_VERIFY: boolean
     VITE_BACKEND_URL: string
     VITE_SENTRY_DSN: string
+    [key: string]: any  // Allow additional properties
   }
 }

@@ -6,6 +6,10 @@ import 'vue-toastification/dist/index.css'
 import './assets/style.css'
 import App from './App.vue'
 import router from './router'
+import { logEnvironment } from '@/utils/environment'
+
+// Log environment configuration at startup
+logEnvironment();
 
 const toastOptions: PluginOptions = {
   position: POSITION.TOP_RIGHT,

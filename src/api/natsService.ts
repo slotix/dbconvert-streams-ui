@@ -1,5 +1,6 @@
 import { connect, AckPolicy, StringCodec, type JetStreamManager, type Consumer } from 'nats.ws'
 import { useLogsStore } from '@/stores/logs'
+import { getNatsServerUrl, validateWebSocketUrl, getBooleanEnv } from '@/utils/environment'
 
 export interface NatsMessage {
   id: number
@@ -18,6 +19,19 @@ export class NatsService {
   private connection: any = null
   private isConnecting: boolean = false
   private shouldReconnect: boolean = true
+  private natsServerUrl: string = '';
+
+  constructor() {
+    // Initialize the NATS server URL
+    try {
+      this.natsServerUrl = getNatsServerUrl();
+      validateWebSocketUrl(this.natsServerUrl);
+      console.log('NATS server URL configured:', this.natsServerUrl);
+    } catch (error) {
+      console.error('Error configuring NATS server URL:', error);
+      // Don't throw here, let connect() handle it
+    }
+  }
 
   addMessageHandler(handler: MessageHandler) {
     this.handlers.push(handler)
@@ -52,25 +66,19 @@ export class NatsService {
 
     while (this.shouldReconnect) {
       try {
-        // First try to get the NATS server URL from window.ENV (runtime config)
-        // @ts-ignore
-        const natsServer = window.ENV?.VITE_NATS_SERVER || import.meta.env.VITE_NATS_SERVER
-        if (!natsServer) {
-          throw new Error('NATS server URL is not configured. Please set VITE_NATS_SERVER environment variable.')
+        // Get the NATS server URL (may have changed since constructor)
+        const natsServer = getNatsServerUrl();
+
+        // Validate the URL
+        validateWebSocketUrl(natsServer);
+
+        // Update the stored URL if it changed
+        if (this.natsServerUrl !== natsServer) {
+          console.log('NATS server URL changed from', this.natsServerUrl, 'to', natsServer);
+          this.natsServerUrl = natsServer;
         }
 
-        // Ensure the URL is properly formatted
-        try {
-          const serverUrl = new URL(natsServer)
-          if (!serverUrl.protocol.startsWith('ws')) {
-            throw new Error('NATS server URL must use WebSocket protocol (ws:// or wss://)')
-          }
-        } catch (error) {
-          const urlError = error as Error
-          throw new Error(`Invalid NATS server URL: ${natsServer}. Error: ${urlError.message}`)
-        }
-
-        console.log('Attempting to connect to NATS server:', natsServer)
+        console.log('Attempting to connect to NATS server:', this.natsServerUrl)
 
         // Clean up existing connection if any
         if (this.connection) {
@@ -78,11 +86,16 @@ export class NatsService {
           this.connection = null
         }
 
+        // Connect to NATS
         this.connection = await connect({
-          servers: natsServer,
+          servers: this.natsServerUrl,
           debug: false,
           maxReconnectAttempts: 10,
-          reconnectTimeWait: 2000
+          reconnectTimeWait: 2000,
+          // Use TLS settings from environment if available
+          tls: getBooleanEnv('VITE_NATS_WS_TLS') ? {} : undefined,
+          // Allow reconnect if specified in environment
+          reconnect: getBooleanEnv('VITE_NATS_ALLOW_RECONNECT', true)
         })
 
         console.log('Successfully connected to NATS server')
@@ -129,8 +142,7 @@ export class NatsService {
         const errorMessage = error instanceof Error ? error.message : String(error)
         const errorDetails = {
           message: errorMessage,
-          // @ts-ignore
-          server: window.ENV?.VITE_NATS_SERVER || import.meta.env.VITE_NATS_SERVER,
+          server: this.natsServerUrl,
           stack: error instanceof Error ? error.stack : undefined
         }
 

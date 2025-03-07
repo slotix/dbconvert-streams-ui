@@ -3,6 +3,7 @@ import { handleApiError } from '@/utils/errorHandler'
 import { type UserData, type CombinedUsageResponse } from '@/types/user'
 import { type ServiceStatusResponse } from '@/types/common'
 import { useCommonStore } from '@/stores/common'
+import { getBackendUrl, getNatsServerUrl, getSentryDsn, getApiKey, logEnvironment } from '@/utils/environment'
 
 interface ApiResponse<T> {
   data: T
@@ -17,19 +18,11 @@ interface RetryConfig {
   delayMs: number
 }
 
-// Add logging for API configuration
-console.log('[API] Environment configuration:', {
-  // @ts-ignore
-  baseURL: window.ENV?.VITE_BACKEND_URL || import.meta.env.VITE_BACKEND_URL,
-  // @ts-ignore
-  natsServer: window.ENV?.VITE_NATS_SERVER || import.meta.env.VITE_NATS_SERVER,
-  // @ts-ignore
-  sentryDSN: window.ENV?.VITE_SENTRY_DSN || import.meta.env.VITE_SENTRY_DSN
-})
+// Log environment configuration
+logEnvironment();
 
 export const apiClient: AxiosInstance = axios.create({
-  // @ts-ignore
-  baseURL: window.ENV?.VITE_BACKEND_URL || import.meta.env.VITE_BACKEND_URL,
+  baseURL: getBackendUrl(),
   headers: {
     'Content-Type': 'application/json'
   },
@@ -37,8 +30,7 @@ export const apiClient: AxiosInstance = axios.create({
 })
 
 const sentryClient: AxiosInstance = axios.create({
-  // @ts-ignore
-  baseURL: window.ENV?.VITE_SENTRY_DSN || import.meta.env.VITE_SENTRY_DSN,
+  baseURL: getSentryDsn(),
   headers: {
     'Content-Type': 'application/json'
   }
