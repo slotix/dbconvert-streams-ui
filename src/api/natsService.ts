@@ -77,7 +77,7 @@ export class NatsService {
     try {
       this.natsServerUrl = getNatsServerUrl();
       validateWebSocketUrl(this.natsServerUrl);
-      console.log('NATS server URL configuredd', this.natsServerUrl);
+      console.log('NATS server URL configured', this.natsServerUrl);
 
       // Setup WebSocket interceptor
       setupWebSocketInterceptor();
