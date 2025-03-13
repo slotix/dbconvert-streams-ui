@@ -39,6 +39,13 @@ function setupWebSocketInterceptor() {
       url = urlString.replace('localhost:8081', host);
     }
 
+    // If the URL is using wss:// but the browser is having certificate validation issues,
+    // we can try to use ws:// instead for local development
+    if (urlString.startsWith('wss://localhost') && getBooleanEnv('VITE_NATS_WS_TLS_VERIFY') === false) {
+      console.log('WebSocket interceptor: Converting wss:// to ws:// for local development with self-signed certificates');
+      url = urlString.replace('wss://', 'ws://');
+    }
+
     // Call the original WebSocket constructor with the modified URL
     return new OriginalWebSocket(url, protocols);
   };
@@ -70,10 +77,10 @@ export class NatsService {
     try {
       this.natsServerUrl = getNatsServerUrl();
       validateWebSocketUrl(this.natsServerUrl);
-      console.log('NATS server URL configured:', this.natsServerUrl);
+      console.log('NATS server URL configuredd', this.natsServerUrl);
 
       // Setup WebSocket interceptor
-      // setupWebSocketInterceptor();
+      setupWebSocketInterceptor();
     } catch (error) {
       console.error('Error configuring NATS server URL:', error);
       // Don't throw here, let connect() handle it
@@ -127,6 +134,12 @@ export class NatsService {
 
         console.log('Attempting to connect to NATS server:', this.natsServerUrl)
 
+        // Log TLS settings
+        const useTls = getBooleanEnv('VITE_NATS_WS_TLS');
+        console.log('[DEBUG] NATS connection - TLS enabled:', useTls);
+        console.log('[DEBUG] NATS connection - TLS verify:', getBooleanEnv('VITE_NATS_WS_TLS_VERIFY'));
+        console.log('[DEBUG] NATS connection - Allow reconnect:', getBooleanEnv('VITE_NATS_ALLOW_RECONNECT', true));
+
         // Clean up existing connection if any
         if (this.connection) {
           await this.connection.drain()
@@ -140,7 +153,10 @@ export class NatsService {
           maxReconnectAttempts: 10,
           reconnectTimeWait: 2000,
           // Use TLS settings from environment if available
-          tls: getBooleanEnv('VITE_NATS_WS_TLS') ? {} : undefined,
+          // For WebSocket connections, we don't need to specify TLS options
+          // The browser handles the TLS connection
+          // We just need to use wss:// in the URL
+          tls: useTls ? {} : undefined,
           // Allow reconnect if specified in environment
           reconnect: getBooleanEnv('VITE_NATS_ALLOW_RECONNECT', true)
         })

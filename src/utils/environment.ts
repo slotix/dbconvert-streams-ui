@@ -13,19 +13,25 @@
 export function getNatsServerUrl(): string {
     // First try to get from window.ENV (runtime config)
     const runtimeUrl = window.ENV?.VITE_NATS_SERVER;
+    console.log('[DEBUG] getNatsServerUrl - window.ENV?.VITE_NATS_SERVER:', runtimeUrl);
+
     if (runtimeUrl) {
+        console.log('[DEBUG] getNatsServerUrl - Using runtime URL:', runtimeUrl);
         return runtimeUrl;
     }
 
     // Then try import.meta.env (build time config)
     const buildTimeUrl = import.meta.env.VITE_NATS_SERVER;
+    console.log('[DEBUG] getNatsServerUrl - import.meta.env.VITE_NATS_SERVER:', buildTimeUrl);
+
     if (buildTimeUrl) {
+        console.log('[DEBUG] getNatsServerUrl - Using build time URL:', buildTimeUrl);
         return buildTimeUrl;
     }
 
     // Fallback to a default for development (should never be used in production)
     if (import.meta.env.DEV) {
-        console.warn('No NATS server URL configured. Using default for development: ws://localhost:8081');
+        console.warn('[DEBUG] getNatsServerUrl - No NATS server URL configured. Using default for development: ws://localhost:8081');
         return 'ws://localhost:8081';
     }
 
