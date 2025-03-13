@@ -39,11 +39,13 @@ function setupWebSocketInterceptor() {
       url = urlString.replace('localhost:8081', host);
     }
 
-    // If the URL is using wss:// but the browser is having certificate validation issues,
-    // we can try to use ws:// instead for local development
-    if (urlString.startsWith('wss://localhost/nats') && getBooleanEnv('VITE_NATS_WS_TLS_VERIFY') === false) {
+    // In production, we should always use wss:// for secure connections
+    // This fallback is only for development environments
+    if (urlString.startsWith('wss://') &&
+      getBooleanEnv('VITE_NATS_WS_TLS_VERIFY') === false &&
+      (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
       console.log('WebSocket interceptor: Converting wss:// to ws:// for local development with self-signed certificates');
-      url = urlString.replace('wss://localhost/nats', 'ws://localhost:8082');
+      url = urlString.replace('wss://', 'ws://');
     }
 
     // Call the original WebSocket constructor with the modified URL
@@ -80,7 +82,7 @@ export class NatsService {
       console.log('NATS server URL configured', this.natsServerUrl);
 
       // Setup WebSocket interceptor
-      setupWebSocketInterceptor();
+      // setupWebSocketInterceptor();
     } catch (error) {
       console.error('Error configuring NATS server URL:', error);
       // Don't throw here, let connect() handle it
