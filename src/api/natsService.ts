@@ -41,9 +41,9 @@ function setupWebSocketInterceptor() {
 
     // If the URL is using wss:// but the browser is having certificate validation issues,
     // we can try to use ws:// instead for local development
-    if (urlString.startsWith('wss://localhost') && getBooleanEnv('VITE_NATS_WS_TLS_VERIFY') === false) {
+    if (urlString.startsWith('wss://localhost/nats') && getBooleanEnv('VITE_NATS_WS_TLS_VERIFY') === false) {
       console.log('WebSocket interceptor: Converting wss:// to ws:// for local development with self-signed certificates');
-      url = urlString.replace('wss://', 'ws://');
+      url = urlString.replace('wss://localhost/nats', 'ws://localhost:8082');
     }
 
     // Call the original WebSocket constructor with the modified URL
