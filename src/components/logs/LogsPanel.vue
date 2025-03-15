@@ -39,14 +39,43 @@ function formatTimestamp(timestamp: number): string {
 
 function getNodeType(source: string | undefined): string {
   if (!source) return 'system'
-  const [type] = source.split(':')
-  return type || 'system'
+
+  // If source contains a colon, extract the type part
+  if (source.includes(':')) {
+    const [type] = source.split(':')
+    return type || 'system'
+  }
+
+  // Otherwise, use the source directly as the type
+  // Common types: 'api', 'source', 'target'
+  if (['api', 'source', 'target'].includes(source.toLowerCase())) {
+    return source.toLowerCase()
+  }
+
+  // For other sources, map them to appropriate categories
+  if (source === 'database') return 'source'
+  if (source === 'sse-client') return 'api'
+
+  return 'system'
 }
 
-function getNodeId(source: string | undefined): string {
+function getNodeId(source: string | undefined, log?: SystemLog): string {
+  // If log has a nodeId field, use that
+  if (log && log.nodeId) {
+    return log.nodeId
+  }
+
+  // Otherwise, fall back to extracting from source
   if (!source) return 'system'
-  const [, id] = source.split(':')
-  return id || 'system'
+
+  // If source contains a colon, extract the id part
+  if (source.includes(':')) {
+    const [, id] = source.split(':')
+    return id || 'system'
+  }
+
+  // Otherwise, use the source as both type and id
+  return source
 }
 
 function getNodeColor(type: string): string {
@@ -149,16 +178,19 @@ const groupedLogs = computed(() => {
   const groups: Record<string, Record<string, SystemLog[]>> = {
     api: {},
     source: {},
-    target: {}
+    target: {},
+    system: {}
   }
 
   // Group logs and sort them by timestamp (newest first)
   store.logs.forEach((log) => {
     const source = log.source || ''
     const nodeType = getNodeType(source)
-    const nodeId = getNodeId(source)
+    const nodeId = getNodeId(source, log)
 
-    if (!groups[nodeType]) return
+    if (!groups[nodeType]) {
+      groups[nodeType] = {}
+    }
 
     if (!groups[nodeType][nodeId]) {
       groups[nodeType][nodeId] = []
@@ -170,7 +202,7 @@ const groupedLogs = computed(() => {
   // Sort each group's logs by timestamp (newest first)
   Object.values(groups).forEach((nodeGroups) => {
     Object.values(nodeGroups).forEach((logs) => {
-      logs.sort((a, b) => a.timestamp - b.timestamp)
+      logs.sort((a, b) => a.timestamp - b.timestamp) // Newest first
     })
   })
 
@@ -185,20 +217,31 @@ const nodeColumns = computed(() => {
     columns.push({ type: 'api', nodes: groupedLogs.value['api'] })
   }
 
-  // Add 0ource column
+  // Add Source column
   if (Object.keys(groupedLogs.value['source']).length > 0) {
     columns.push({ type: 'source', nodes: groupedLogs.value['source'] })
   }
 
   // Add Target columns (can be multiple)
   const targetNodes = Object.keys(groupedLogs.value['target'])
-  targetNodes.forEach((nodeId) => {
-    columns.push({
-      type: 'target',
-      nodeId,
-      nodes: { [nodeId]: groupedLogs.value['target'][nodeId] }
+  if (targetNodes.length > 0) {
+    // Create separate columns for each target node with a unique ID
+    targetNodes.forEach((nodeId) => {
+      columns.push({
+        type: 'target',
+        nodeId,
+        nodes: { [nodeId]: groupedLogs.value['target'][nodeId] }
+      })
     })
-  })
+  }
+
+  // Add System column if it exists
+  if (Object.keys(groupedLogs.value['system'] || {}).length > 0) {
+    if (!groupedLogs.value['system']) {
+      groupedLogs.value['system'] = {}
+    }
+    columns.push({ type: 'system', nodes: groupedLogs.value['system'] })
+  }
 
   return columns
 })
@@ -208,9 +251,22 @@ const totalLogs = computed(() => {
 })
 
 function getShortNodeId(id: string): string {
-  if (id === 'undefined') return 'default'
-  const shortId = id.split('_').pop()
-  return shortId ? shortId.slice(0, 8) : 'default'
+  if (!id || id === 'undefined') return 'default'
+
+  // For standard service types, use the type directly
+  if (['api', 'source', 'target', 'system', 'database', 'client'].includes(id)) {
+    return id
+  }
+
+  // For IDs with underscores, extract the last part
+  if (id.includes('_')) {
+    const parts = id.split('_')
+    const lastPart = parts[parts.length - 1]
+    return lastPart.slice(0, 8)
+  }
+
+  // For other IDs, just use the first 8 characters
+  return id.slice(0, 8)
 }
 
 const selectedTab = ref<string>('api')
@@ -230,26 +286,29 @@ const selectedColumn = computed(() =>
 )
 
 const filteredLogs = computed(() => {
-  if (selectedMessageType.value === 'all') return selectedColumn.value?.nodes || {}
-
   const filtered: Record<string, SystemLog[]> = {}
   if (!selectedColumn.value) return filtered
 
   Object.entries(selectedColumn.value.nodes).forEach(([nodeId, logs]) => {
-    filtered[nodeId] = logs.filter((log) => {
-      const msg = log.message.toLowerCase()
-      switch (selectedMessageType.value) {
-        case 'error & warning':
-          return log.level === 'error' || log.level === 'warn'
-        case 'progress & stats':
-          return msg.startsWith('[progress]') || msg.startsWith('[stat]')
-        case 'info':
-          return log.level === 'info' && !msg.startsWith('[progress]') && !msg.startsWith('[stat]')
-        default:
-          return true
-      }
-    })
+    if (selectedMessageType.value === 'all') {
+      filtered[nodeId] = [...logs] // Create a copy to avoid modifying the original
+    } else {
+      filtered[nodeId] = logs.filter((log) => {
+        const msg = log.message?.toLowerCase() || ''
+        switch (selectedMessageType.value) {
+          case 'error & warning':
+            return log.level === 'error' || log.level === 'warn'
+          case 'progress & stats':
+            return msg.startsWith('[progress]') || msg.startsWith('[stat]')
+          case 'info':
+            return log.level === 'info' && !msg.startsWith('[progress]') && !msg.startsWith('[stat]')
+          default:
+            return true
+        }
+      })
+    }
   })
+
   return filtered
 })
 
@@ -313,6 +372,14 @@ function startResize(event: MouseEvent) {
   document.addEventListener('mousemove', onMouseMove)
   document.addEventListener('mouseup', onMouseUp)
 }
+
+// Set the selected tab to the first available tab when tabs change
+watch(() => tabs.value, (newTabs) => {
+  // If the current tab doesn't exist anymore, select the first available tab
+  if (newTabs.length > 0 && !newTabs.some(tab => tab.id === selectedTab.value)) {
+    selectedTab.value = newTabs[0].id
+  }
+}, { immediate: true })
 </script>
 
 <template>

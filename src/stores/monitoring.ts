@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import type { StreamConfig } from '@/types/streamConfig'
 import { natsService } from '@/api/natsService'
 import type { NatsMessage } from '@/api/natsService'
+import { sseLogsService } from '@/api/sseLogsService'
 import { NodeTypes, type NodeType } from '@/types/common'
 import type { StreamStats } from '@/types/streamStats'
 import streamsApi from '@/api/streams'
@@ -211,49 +212,59 @@ export const useMonitoringStore = defineStore('monitoring', {
     },
     initNatsHandling() {
       natsService.addMessageHandler((message: NatsMessage) => {
-        try {
-          // Handle progress messages
-          if (message.msg && message.msg.startsWith('[progress]')) {
-            const parts = message.msg.split('|')
-            const stagePart = parts.find(part => part.includes('STAGE:'))
-            if (stagePart) {
-              const stage = stagePart.split('STAGE:')[1]
-              this.currentStageID = parseInt(stage) || 0
-            }
-          }
-
-          // Handle node registration
-          if (message.nodeID && message.type &&
-            (message.type === NodeTypes.SOURCE ||
-              message.type === NodeTypes.TARGET ||
-              message.type === NodeTypes.API)) {
-            const nodeExists = this.nodes.find((node) => node.id === message.nodeID)
-            if (!nodeExists) {
-              this.nodes.push({
-                id: message.nodeID,
-                type: message.type as NodeType
-              })
-            }
-          }
-
-          // Add log with safe defaults
-          this.addLog({
-            ...message,
-            level: message.level as keyof LogLevel || 'info'
-          })
-        } catch (error) {
-          console.error('Error processing NATS message:', error)
-          // Add error log
-          this.addLog({
-            id: Date.now(),
-            type: 'monitoring',
-            nodeID: 'system',
-            msg: `Error processing NATS message: ${error instanceof Error ? error.message : String(error)}`,
-            level: 'error',
-            ts: Date.now()
-          })
-        }
+        // Process the message
+        this.processMessage(message)
       })
+    },
+    initSSEHandling() {
+      sseLogsService.addMessageHandler((message: any) => {
+        // Process the message
+        this.processMessage(message)
+      })
+    },
+    processMessage(message: any) {
+      try {
+        // Handle progress messages
+        if (message.msg && message.msg.startsWith('[progress]')) {
+          const parts = message.msg.split('|')
+          const stagePart = parts.find((part: string) => part.includes('STAGE:'))
+          if (stagePart) {
+            const stage = stagePart.split('STAGE:')[1]
+            this.currentStageID = parseInt(stage) || 0
+          }
+        }
+
+        // Handle node registration
+        if (message.nodeID && message.type &&
+          (message.type === NodeTypes.SOURCE ||
+            message.type === NodeTypes.TARGET ||
+            message.type === NodeTypes.API)) {
+          const nodeExists = this.nodes.find((node) => node.id === message.nodeID)
+          if (!nodeExists) {
+            this.nodes.push({
+              id: message.nodeID,
+              type: message.type as NodeType
+            })
+          }
+        }
+
+        // Add log with safe defaults
+        this.addLog({
+          ...message,
+          level: message.level as keyof LogLevel || 'info'
+        })
+      } catch (error) {
+        console.error('Error processing message:', error)
+        // Add error log
+        this.addLog({
+          id: Date.now(),
+          type: 'monitoring',
+          nodeID: 'system',
+          msg: `Error processing message: ${error instanceof Error ? error.message : String(error)}`,
+          level: 'error',
+          ts: Date.now()
+        })
+      }
     },
     async fetchCurrentStreamStats() {
       this.isLoadingStats = true

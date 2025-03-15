@@ -6,6 +6,7 @@ import type { ServiceStatus } from '@/types/common'
 import { useToast } from 'vue-toastification'
 import { useMonitoringStore } from './monitoring'
 import { natsService } from '@/api/natsService'
+import { sseLogsService } from '@/api/sseLogsService'
 import { useLocalStorage } from '@vueuse/core'
 
 export const DIALOG_TYPES = {
@@ -288,6 +289,15 @@ export const useCommonStore = defineStore('common', {
       }, 0)
     },
 
+    async consumeLogsFromSSE() {
+      // Start the SSE logs connection in the background
+      setTimeout(async () => {
+        const monitoringStore = useMonitoringStore()
+        monitoringStore.initSSEHandling()
+        await sseLogsService.connect()
+      }, 0)
+    },
+
     async initApp(): Promise<'success' | 'failed'> {
       const toast = useToast()
 
@@ -301,7 +311,8 @@ export const useCommonStore = defineStore('common', {
             if (this.userData?.apiKey) {
               await this.loadUserConfigs()
               // Initialize logs connection (non-blocking)
-              this.consumeLogsFromNATS()
+              // this.consumeLogsFromNATS()
+              this.consumeLogsFromSSE()
             }
           } else {
             toast.info('Please enter your API key to continue')

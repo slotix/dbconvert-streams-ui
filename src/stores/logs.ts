@@ -13,6 +13,7 @@ export interface SystemLog {
   level: keyof LogLevel
   timestamp: number
   source?: string
+  nodeId?: string
   details?: Record<string, unknown>
 }
 

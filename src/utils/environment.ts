@@ -39,6 +39,32 @@ export function getNatsServerUrl(): string {
 }
 
 /**
+ * Get the API URL from environment variables
+ * Prioritizes window.ENV (runtime) over import.meta.env (build time)
+ */
+export function getApiUrl(): string {
+    // First try to get from window.ENV (runtime config)
+    const runtimeUrl = window.ENV?.VITE_API_URL;
+    if (runtimeUrl) {
+        return runtimeUrl;
+    }
+
+    // Then try import.meta.env (build time config)
+    const buildTimeUrl = import.meta.env.VITE_API_URL;
+    if (buildTimeUrl) {
+        return buildTimeUrl;
+    }
+
+    // Fallback to a default for development (should never be used in production)
+    if (import.meta.env.DEV) {
+        console.warn('No API URL configured. Using default for development: /api/v1');
+        return '/api/v1';
+    }
+
+    throw new Error('API URL is not configured. Please set VITE_API_URL environment variable.');
+}
+
+/**
  * Get the backend URL from environment variables
  * Prioritizes window.ENV (runtime) over import.meta.env (build time)
  */
