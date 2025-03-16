@@ -13,7 +13,7 @@ export class SSELogsService {
     private reconnectDelay: number = 3000 // 3 seconds
     private logHeartbeats: boolean = false // Set to false to disable heartbeat logging
     private refreshTimeout: number | null = null
-    private debugMode: boolean = false // Set to true to enable verbose console logging
+    private debugMode: boolean = true // Enable debug mode by default to help diagnose issues
 
     constructor() {
         this.connect = this.connect.bind(this)
@@ -77,25 +77,21 @@ export class SSELogsService {
         }
 
         try {
-            // The backend URL already includes /api/v1, so we need to make sure we don't duplicate it
-            let sseUrl = getBackendUrl()
+            // Get the backend URL
+            let sseUrl = getBackendUrl();
+            console.log('[SSE] Original backend URL:', sseUrl);
 
-            // Check if the URL already contains /api/v1
-            if (sseUrl.includes('/api/v1')) {
-                // If it does, just append /logs/stream directly
-                if (!sseUrl.endsWith('/')) {
-                    sseUrl += '/'
-                }
-                sseUrl += 'logs/stream'
-            } else {
-                // If it doesn't, add the full path
-                if (!sseUrl.endsWith('/')) {
-                    sseUrl += '/'
-                }
-                sseUrl += 'api/v1/logs/stream'
+            // Simple approach: use the host from the backend URL but with a fixed path
+            try {
+                const url = new URL(sseUrl.startsWith('http') ? sseUrl : `http://${sseUrl}`);
+                sseUrl = `${url.protocol}//${url.host}/api/v1/logs/stream`;
+            } catch (error) {
+                console.error('[SSE] Error parsing URL:', error);
+                // Fallback to a direct path
+                sseUrl = '/api/v1/logs/stream';
             }
 
-            if (this.debugMode) console.log('Connecting to SSE logs at:', sseUrl)
+            console.log('[SSE] Final SSE URL:', sseUrl);
             this.eventSource = new EventSource(sseUrl)
 
             this.eventSource.onopen = () => {
@@ -336,6 +332,20 @@ export class SSELogsService {
                 // Log more details about the error only in debug mode
                 if (this.debugMode && error instanceof Event) {
                     console.error('EventSource readyState:', this.eventSource?.readyState);
+                    console.error('EventSource URL:', this.eventSource?.url);
+
+                    // Try to fetch the logs endpoint directly to see what's happening
+                    fetch(sseUrl)
+                        .then(response => {
+                            console.log('Fetch test response:', response.status, response.statusText);
+                            return response.text();
+                        })
+                        .then(text => {
+                            console.log('Fetch test response text:', text.substring(0, 200) + (text.length > 200 ? '...' : ''));
+                        })
+                        .catch(fetchError => {
+                            console.error('Fetch test error:', fetchError);
+                        });
                 }
 
                 // Close the connection
