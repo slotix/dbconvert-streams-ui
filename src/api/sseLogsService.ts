@@ -81,14 +81,31 @@ export class SSELogsService {
             let sseUrl = getBackendUrl();
             console.log('[SSE] Original backend URL:', sseUrl);
 
-            // Simple approach: use the host from the backend URL but with a fixed path
-            try {
-                const url = new URL(sseUrl.startsWith('http') ? sseUrl : `http://${sseUrl}`);
-                sseUrl = `${url.protocol}//${url.host}/api/v1/logs/stream`;
-            } catch (error) {
-                console.error('[SSE] Error parsing URL:', error);
-                // Fallback to a direct path
-                sseUrl = '/api/v1/logs/stream';
+            // Extract the host from the NATS server URL in the environment
+            // The NATS URL looks like: ws://104.236.77.30:8081
+            const natsServer = window.ENV?.VITE_NATS_SERVER || import.meta.env.VITE_NATS_SERVER || '';
+            console.log('[SSE] NATS server URL:', natsServer);
+
+            if (natsServer) {
+                try {
+                    // Extract the host from the NATS URL
+                    const natsUrl = new URL(natsServer);
+                    const host = natsUrl.hostname; // This will be 104.236.77.30
+
+                    if (host) {
+                        sseUrl = `http://${host}/api/v1/logs/stream`;
+                        console.log('[SSE] Using host from NATS URL:', host);
+                    }
+                } catch (error) {
+                    console.error('[SSE] Error parsing NATS URL:', error);
+                }
+            }
+
+            // If we couldn't extract the host, use the original URL
+            if (!sseUrl.startsWith('http')) {
+                // If it's a relative URL, make it absolute with the current origin
+                sseUrl = window.location.origin + (sseUrl.startsWith('/') ? '' : '/') + sseUrl;
+                console.log('[SSE] Using current origin with path:', sseUrl);
             }
 
             console.log('[SSE] Final SSE URL:', sseUrl);
