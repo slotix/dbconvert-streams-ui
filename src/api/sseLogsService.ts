@@ -1,5 +1,5 @@
 import { useLogsStore } from '@/stores/logs'
-import { getApiUrl } from '@/utils/environment'
+import { getBackendUrl } from '@/utils/environment'
 
 export type MessageHandler = (message: any) => void
 
@@ -78,18 +78,11 @@ export class SSELogsService {
 
     try {
       // Get the API URL base
-      const apiUrl = getApiUrl()
-      console.log('[SSE] API URL base:', apiUrl)
+      const backendUrl = getBackendUrl()
+      console.log('[SSE] API URL base:', backendUrl)
 
-      // Extract the host from window.location
-      const host = window.location.host
-      console.log('[SSE] Using window.location.host:', host)
-
-      // Determine if we're on HTTPS
-      const isHttps = window.location.protocol === 'https:'
-
-      // Create the SSE URL - using the consistent path structure
-      const sseUrl = `${isHttps ? 'https' : 'http'}://${host}${apiUrl}/logs/stream`
+      // Create the SSE URL - using the backend URL directly
+      const sseUrl = `${backendUrl}/logs/stream`
       console.log('[SSE] Using SSE URL:', sseUrl)
 
       // Create the EventSource with the URL
@@ -99,38 +92,26 @@ export class SSELogsService {
       this.setupEventHandlers(this.eventSource, logsStore, sseUrl)
 
       // Set a timeout to check if the connection was successful
-      if (isHttps) {
-        setTimeout(() => {
-          if (this.eventSource && this.eventSource.readyState !== EventSource.OPEN) {
-            console.warn('[SSE] HTTPS connection failed or timed out, trying HTTP fallback')
+      setTimeout(() => {
+        if (this.eventSource && this.eventSource.readyState !== EventSource.OPEN) {
+          console.warn('[SSE] Connection failed or timed out')
 
-            // Close the existing connection
-            if (this.eventSource) {
-              this.eventSource.close()
-              this.eventSource = null
-            }
-
-            // Try HTTP fallback
-            const httpUrl = `http://${host}${apiUrl}/logs/stream`
-            console.log('[SSE] Trying HTTP fallback URL:', httpUrl)
-
-            // Add a message to the logs
-            logsStore.addLog({
-              message: 'HTTPS connection to logs failed. Trying HTTP fallback.',
-              level: 'info',
-              timestamp: Date.now(),
-              source: 'sse-client',
-              details: { type: 'connection' }
-            })
-
-            // Create a new EventSource with HTTP
-            this.eventSource = new EventSource(httpUrl)
-
-            // Add the same event handlers to the new EventSource
-            this.setupEventHandlers(this.eventSource, logsStore, httpUrl)
+          // Close the existing connection
+          if (this.eventSource) {
+            this.eventSource.close()
+            this.eventSource = null
           }
-        }, 3000) // 3 second timeout
-      }
+
+          // Add a message to the logs
+          logsStore.addLog({
+            message: 'Connection to logs failed. Please check your network connection.',
+            level: 'warn',
+            timestamp: Date.now(),
+            source: 'sse-client',
+            details: { type: 'connection' }
+          })
+        }
+      }, 3000) // 3 second timeout
     } catch (error) {
       // Always log critical errors
       console.error('Error creating EventSource:', error)
