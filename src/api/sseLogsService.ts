@@ -77,52 +77,42 @@ export class SSELogsService {
         }
 
         try {
-            // Get the backend URL
-            let baseUrl = getBackendUrl();
-            console.log('[SSE] Original backend URL:', baseUrl);
+            // Get the API URL base
+            const apiUrl = getApiUrl()
+            console.log('[SSE] API URL base:', apiUrl)
 
-            // Extract the host from the backend URL
-            let host;
-            try {
-                const url = new URL(baseUrl);
-                host = url.host;
-            } catch (e) {
-                // If baseUrl is a relative path or invalid URL, use window.location
-                host = window.location.host;
-                if (this.debugMode) console.log('[SSE] Using window.location.host:', host);
-            }
+            // Extract the host from window.location
+            const host = window.location.host
+            console.log('[SSE] Using window.location.host:', host)
 
             // Determine if we're on HTTPS
-            const isHttps = window.location.protocol === 'https:';
+            const isHttps = window.location.protocol === 'https:'
 
-            // Create the SSE URL - try HTTPS first if we're on HTTPS, otherwise use HTTP
-            let sseUrl = isHttps
-                ? `https://${host}/api/logs/stream`
-                : `http://${host}/api/logs/stream`;
-
-            console.log('[SSE] Using SSE URL:', sseUrl);
+            // Create the SSE URL - using the consistent path structure
+            const sseUrl = `${isHttps ? 'https' : 'http'}://${host}${apiUrl}/logs/stream`
+            console.log('[SSE] Using SSE URL:', sseUrl)
 
             // Create the EventSource with the URL
-            this.eventSource = new EventSource(sseUrl);
+            this.eventSource = new EventSource(sseUrl)
 
             // Set up event handlers
-            this.setupEventHandlers(this.eventSource, logsStore, sseUrl);
+            this.setupEventHandlers(this.eventSource, logsStore, sseUrl)
 
             // Set a timeout to check if the connection was successful
             if (isHttps) {
                 setTimeout(() => {
                     if (this.eventSource && this.eventSource.readyState !== EventSource.OPEN) {
-                        console.warn('[SSE] HTTPS connection failed or timed out, trying HTTP fallback');
+                        console.warn('[SSE] HTTPS connection failed or timed out, trying HTTP fallback')
 
                         // Close the existing connection
                         if (this.eventSource) {
-                            this.eventSource.close();
-                            this.eventSource = null;
+                            this.eventSource.close()
+                            this.eventSource = null
                         }
 
                         // Try HTTP fallback
-                        const httpUrl = `http://${host}/api/logs/stream`;
-                        console.log('[SSE] Trying HTTP fallback URL:', httpUrl);
+                        const httpUrl = `http://${host}${apiUrl}/logs/stream`
+                        console.log('[SSE] Trying HTTP fallback URL:', httpUrl)
 
                         // Add a message to the logs
                         logsStore.addLog({
@@ -131,28 +121,28 @@ export class SSELogsService {
                             timestamp: Date.now(),
                             source: 'sse-client',
                             details: { type: 'connection' }
-                        });
+                        })
 
                         // Create a new EventSource with HTTP
-                        this.eventSource = new EventSource(httpUrl);
+                        this.eventSource = new EventSource(httpUrl)
 
                         // Add the same event handlers to the new EventSource
-                        this.setupEventHandlers(this.eventSource, logsStore, httpUrl);
+                        this.setupEventHandlers(this.eventSource, logsStore, httpUrl)
                     }
-                }, 3000); // 3 second timeout
+                }, 3000) // 3 second timeout
             }
         } catch (error) {
             // Always log critical errors
-            console.error('Error creating EventSource:', error);
-            this.isConnecting = false;
+            console.error('Error creating EventSource:', error)
+            this.isConnecting = false
         }
     }
 
     // Method to enable/disable debug mode
     setDebugMode(enabled: boolean) {
-        this.debugMode = enabled;
+        this.debugMode = enabled
         if (this.debugMode) {
-            console.log('SSE Logs Service debug mode enabled');
+            console.log('SSE Logs Service debug mode enabled')
         }
     }
 
@@ -170,41 +160,41 @@ export class SSELogsService {
                 timestamp: Date.now(),
                 source: 'sse-client',
                 details: { type: 'connection' }
-            });
+            })
 
             // Only log in debug mode
             if (this.debugMode) {
                 console.log('Current logs store state:', {
                     logCount: logsStore.logs.length,
                     isLogsPanelOpen: logsStore.isLogsPanelOpen
-                });
+                })
             }
 
             // Force refresh the logs panel
-            this.forceRefreshLogsPanel();
+            this.forceRefreshLogsPanel()
         }
 
         eventSource.addEventListener('connection', (event) => {
             try {
                 // Get the raw data
-                const rawData = event.data;
-                if (this.debugMode) console.log('Raw connection event:', rawData);
+                const rawData = event.data
+                if (this.debugMode) console.log('Raw connection event:', rawData)
 
                 // Try to extract JSON from potentially malformed data
-                let data;
+                let data
                 try {
                     // First attempt: try to parse as-is
-                    data = JSON.parse(rawData);
+                    data = JSON.parse(rawData)
                 } catch (parseError) {
-                    if (this.debugMode) console.warn('Failed to parse connection JSON:', parseError);
+                    if (this.debugMode) console.warn('Failed to parse connection JSON:', parseError)
                     // Create a basic object with the raw data as message
                     data = {
                         message: 'Connected to log stream',
                         timestamp: Date.now()
-                    };
+                    }
                 }
 
-                if (this.debugMode) console.log('SSE connection established:', data);
+                if (this.debugMode) console.log('SSE connection established:', data)
 
                 // Add connection message to logs
                 logsStore.addLog({
@@ -213,39 +203,39 @@ export class SSELogsService {
                     timestamp: new Date(data.timestamp || Date.now()).getTime(),
                     source: 'sse-client',
                     details: { type: 'connection' }
-                });
+                })
 
-                if (this.debugMode) console.log('Added connection log, store now has', logsStore.logs.length, 'logs');
+                if (this.debugMode) console.log('Added connection log, store now has', logsStore.logs.length, 'logs')
 
                 // Force refresh the logs panel
-                this.forceRefreshLogsPanel();
+                this.forceRefreshLogsPanel()
             } catch (error) {
-                console.error('Error parsing connection event:', error, event.data);
+                console.error('Error parsing connection event:', error, event.data)
             }
-        });
+        })
 
         eventSource.addEventListener('heartbeat', (event) => {
             try {
                 // Get the raw data
-                const rawData = event.data;
+                const rawData = event.data
 
                 // Try to extract JSON from potentially malformed data
-                let data;
+                let data
                 try {
                     // First attempt: try to parse as-is
-                    data = JSON.parse(rawData);
+                    data = JSON.parse(rawData)
                 } catch (parseError) {
-                    if (this.debugMode) console.warn('Failed to parse heartbeat JSON:', parseError);
+                    if (this.debugMode) console.warn('Failed to parse heartbeat JSON:', parseError)
                     // Create a basic object with the raw data as message
                     data = {
                         type: 'heartbeat',
                         timestamp: Date.now()
-                    };
+                    }
                 }
 
                 // Only log heartbeats if enabled and in debug mode
                 if (this.logHeartbeats && this.debugMode) {
-                    console.log('SSE heartbeat received:', data);
+                    console.log('SSE heartbeat received:', data)
 
                     // Add heartbeat to logs (disabled by default to reduce noise)
                     logsStore.addLog({
@@ -254,41 +244,41 @@ export class SSELogsService {
                         timestamp: new Date(data.timestamp || Date.now()).getTime(),
                         source: 'sse-client',
                         details: { type: 'heartbeat' }
-                    });
+                    })
                 }
             } catch (error) {
-                if (this.debugMode) console.error('Error parsing heartbeat event:', error, event.data);
+                if (this.debugMode) console.error('Error parsing heartbeat event:', error, event.data)
             }
-        });
+        })
 
         eventSource.onmessage = (event) => {
             try {
                 // Get the raw data
-                const rawData = event.data;
-                if (this.debugMode) console.log('Raw SSE message:', rawData);
+                const rawData = event.data
+                if (this.debugMode) console.log('Raw SSE message:', rawData)
 
                 // Try to extract JSON from potentially malformed data
-                let data;
+                let data
                 try {
                     // First attempt: try to parse as-is
-                    data = JSON.parse(rawData);
+                    data = JSON.parse(rawData)
                 } catch (parseError) {
-                    if (this.debugMode) console.warn('Failed to parse JSON directly, trying to extract JSON portion:', parseError);
+                    if (this.debugMode) console.warn('Failed to parse JSON directly, trying to extract JSON portion:', parseError)
 
                     // Second attempt: try to find JSON object in the string
-                    const jsonMatch = rawData.match(/\{.*\}/);
+                    const jsonMatch = rawData.match(/\{.*\}/)
                     if (jsonMatch) {
                         try {
-                            data = JSON.parse(jsonMatch[0]);
+                            data = JSON.parse(jsonMatch[0])
                         } catch (extractError) {
-                            if (this.debugMode) console.error('Failed to parse extracted JSON:', extractError);
+                            if (this.debugMode) console.error('Failed to parse extracted JSON:', extractError)
                             // Create a basic object with the raw data as message
                             data = {
                                 message: rawData,
                                 level: 'info',
                                 timestamp: Date.now(),
                                 source: 'unknown'
-                            };
+                            }
                         }
                     } else {
                         // No JSON found, create a basic object
@@ -297,52 +287,52 @@ export class SSELogsService {
                             level: 'info',
                             timestamp: Date.now(),
                             source: 'unknown'
-                        };
+                        }
                     }
                 }
 
                 // Skip processing if this is a heartbeat message (should be handled by the heartbeat event listener)
                 if (data.type === 'heartbeat') {
-                    return;
+                    return
                 }
 
-                if (this.debugMode) console.log('Processed log message:', data);
+                if (this.debugMode) console.log('Processed log message:', data)
 
                 // Extract message from either message or msg field
-                const message = data.message || data.msg || '';
+                const message = data.message || data.msg || ''
 
                 // Extract level, defaulting to info
-                const level = data.level || 'info';
+                const level = data.level || 'info'
 
                 // Extract timestamp, using current time as fallback
-                const timestamp = new Date(data.timestamp || data.ts || Date.now()).getTime();
+                const timestamp = new Date(data.timestamp || data.ts || Date.now()).getTime()
 
                 // Extract source, using logger, component, caller, or defaulting to unknown
-                let source = data.source || data.logger || data.component || '';
+                let source = data.source || data.logger || data.component || ''
 
                 // If source is empty but caller exists, use the caller as the source
                 if (!source && data.caller) {
                     // Extract the component from the caller path (e.g., "stream-api/connectionHandlers.go:192" -> "api")
                     if (data.caller.includes('stream-api/')) {
-                        source = 'api';
+                        source = 'api'
                     } else if (data.caller.includes('/')) {
                         // Extract the first part of the path
-                        source = data.caller.split('/')[0];
+                        source = data.caller.split('/')[0]
                     } else {
-                        source = 'unknown';
+                        source = 'unknown'
                     }
                 }
 
                 // If source is still empty, default to unknown
                 if (!source) {
-                    source = 'unknown';
+                    source = 'unknown'
                 }
 
                 // Debug log to understand source mapping - only in debug mode
-                if (this.debugMode) console.debug(`Log source mapping: logger=${data.logger}, source=${source}, nodeId=${data.nodeId || 'none'}`);
+                if (this.debugMode) console.debug(`Log source mapping: logger=${data.logger}, source=${source}, nodeId=${data.nodeId || 'none'}`)
 
                 // Extract nodeId directly from the data
-                const nodeId = data.nodeId || null;
+                const nodeId = data.nodeId || null
 
                 // Add to logs store
                 logsStore.addLog({
@@ -352,12 +342,12 @@ export class SSELogsService {
                     source: source,
                     nodeId: nodeId,
                     details: data
-                });
+                })
 
-                if (this.debugMode) console.log('Added log message, store now has', logsStore.logs.length, 'logs');
+                if (this.debugMode) console.log('Added log message, store now has', logsStore.logs.length, 'logs')
 
                 // Force refresh the logs panel
-                this.forceRefreshLogsPanel();
+                this.forceRefreshLogsPanel()
 
                 // Convert to monitoring store format
                 const logEntry = {
@@ -367,12 +357,12 @@ export class SSELogsService {
                     msg: message,
                     level: level,
                     ts: timestamp
-                };
+                }
 
-                this.processMessage(logEntry);
+                this.processMessage(logEntry)
             } catch (error) {
                 // Always log critical errors
-                console.error('Error processing SSE message:', error);
+                console.error('Error processing SSE message:', error)
 
                 // Try to add the raw message to logs anyway
                 try {
@@ -382,73 +372,73 @@ export class SSELogsService {
                         timestamp: Date.now(),
                         source: 'sse-client',
                         details: { error: error instanceof Error ? error.message : String(error), raw: event.data }
-                    });
+                    })
                 } catch (e) {
-                    console.error('Failed to add error log:', e);
+                    console.error('Failed to add error log:', e)
                 }
             }
         }
 
         eventSource.onerror = (error) => {
             // Always log connection errors
-            console.error('SSE connection error');
+            console.error('SSE connection error')
 
             // Log more details about the error only in debug mode
             if (this.debugMode && error instanceof Event) {
-                console.error('EventSource readyState:', this.eventSource?.readyState);
-                console.error('EventSource URL:', this.eventSource?.url);
+                console.error('EventSource readyState:', this.eventSource?.readyState)
+                console.error('EventSource URL:', this.eventSource?.url)
 
                 // Try to fetch the logs endpoint directly to see what's happening
                 fetch(sseUrl)
                     .then(response => {
-                        console.log('Fetch test response:', response.status, response.statusText);
-                        return response.text();
+                        console.log('Fetch test response:', response.status, response.statusText)
+                        return response.text()
                     })
                     .then(text => {
-                        console.log('Fetch test response text:', text.substring(0, 200) + (text.length > 200 ? '...' : ''));
+                        console.log('Fetch test response text:', text.substring(0, 200) + (text.length > 200 ? '...' : ''))
                     })
                     .catch(fetchError => {
-                        console.error('Fetch test error:', fetchError);
-                    });
+                        console.error('Fetch test error:', fetchError)
+                    })
             }
 
             // Close the connection
             if (this.eventSource) {
-                this.eventSource.close();
-                this.eventSource = null;
+                this.eventSource.close()
+                this.eventSource = null
             }
 
             // Add error to logs
-            const logsStore = useLogsStore();
+            const logsStore = useLogsStore()
             logsStore.addLog({
                 message: `SSE connection error: ${error instanceof Event ? 'Connection failed' : error}`,
                 level: 'error',
                 timestamp: Date.now(),
                 source: 'sse-client',
                 details: { type: 'error' }
-            });
+            })
 
             // Attempt to reconnect
             if (this.shouldReconnect) {
-                this.reconnectAttempts++;
+                this.reconnectAttempts++
                 if (this.reconnectAttempts <= this.maxReconnectAttempts) {
-                    if (this.debugMode) console.log(`Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts}) in ${this.reconnectDelay}ms...`);
+                    if (this.debugMode) console.log(`Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts}) in ${this.reconnectDelay}ms...`)
                     setTimeout(() => {
-                        this.isConnecting = false;
-                        this.connect();
-                    }, this.reconnectDelay);
+                        this.isConnecting = false
+                        this.connect()
+                    }, this.reconnectDelay)
                 } else {
                     // Always log critical errors
-                    console.error(`Maximum reconnect attempts (${this.maxReconnectAttempts}) reached.`);
-                    const logsStore = useLogsStore();
+                    console.error(`Maximum reconnect attempts (${this.maxReconnectAttempts}) reached.`)
+                    const logsStore = useLogsStore()
                     logsStore.addLog({
                         message: `Maximum reconnect attempts (${this.maxReconnectAttempts}) reached. Please refresh the page to try again.`,
                         level: 'error',
                         timestamp: Date.now(),
                         source: 'sse-client',
                         details: { type: 'error' }
-                    });
-                    this.isConnecting = false;
+                    })
+                    this.isConnecting = false
                 }
             }
         }

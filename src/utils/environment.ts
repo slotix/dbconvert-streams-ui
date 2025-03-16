@@ -57,8 +57,8 @@ export function getApiUrl(): string {
 
     // Fallback to a default for development (should never be used in production)
     if (import.meta.env.DEV) {
-        console.warn('No API URL configured. Using default for development: /api/v1');
-        return '/api/v1';
+        console.warn('No API URL configured. Using default for development: /api');
+        return '/api';
     }
 
     throw new Error('API URL is not configured. Please set VITE_API_URL environment variable.');
@@ -83,8 +83,8 @@ export function getBackendUrl(): string {
 
     // Fallback to a default for development (should never be used in production)
     if (import.meta.env.DEV) {
-        console.warn('No backend URL configured. Using default for development: http://localhost:8020/api/v1');
-        return 'http://localhost:8020/api/v1';
+        console.warn('No backend URL configured. Using default for development: http://localhost:8020/api');
+        return 'http://localhost:8020/api';
     }
 
     throw new Error('Backend URL is not configured. Please set VITE_BACKEND_URL environment variable.');
