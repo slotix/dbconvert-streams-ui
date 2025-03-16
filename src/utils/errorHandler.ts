@@ -22,9 +22,13 @@ export function handleApiError(error: unknown): Error {
   const responseData = axiosError.response?.data
 
   // Handle different error message formats
-  const message = typeof responseData === 'string'
-    ? responseData
-    : responseData?.error || responseData?.data || axiosError.message || 'An unknown error occurred'
+  const message =
+    typeof responseData === 'string'
+      ? responseData
+      : responseData?.error ||
+        responseData?.data ||
+        axiosError.message ||
+        'An unknown error occurred'
 
   return new Error(message as string)
 }

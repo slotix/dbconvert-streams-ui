@@ -117,7 +117,7 @@ export const useCommonStore = defineStore('common', {
     error: null as ErrorState | null,
     isLoading: false,
     isLoadingRoute: false,
-    routeLoadError: null as string | null,
+    routeLoadError: null as string | null
   }),
   actions: {
     async retryOperation(
@@ -330,15 +330,17 @@ export const useCommonStore = defineStore('common', {
       try {
         const response = await api.getServiceStatus()
         this.serviceStatuses = response.services
-        if (response.services.every(service => service.status === 'passing')) {
+        if (response.services.every((service) => service.status === 'passing')) {
           this.clearError()
         }
         return response
       } catch (error) {
-        if (error instanceof Error &&
+        if (
+          error instanceof Error &&
           (error.message.includes('Network Error') ||
             error.message.includes('timeout') ||
-            error.message.includes('connection'))) {
+            error.message.includes('connection'))
+        ) {
           throw error
         }
         console.error('Failed to fetch service status:', error)

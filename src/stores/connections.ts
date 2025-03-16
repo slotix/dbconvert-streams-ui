@@ -193,7 +193,10 @@ export const useConnectionsStore = defineStore('connections', {
           const currentDb = databases.find((db) => db.name === this.currentConnection?.database)
           if (currentDb?.schemas) {
             // Only set schema if it's not already set or if current schema is not in the list
-            if (!this.currentConnection!.schema || !currentDb.schemas.includes(this.currentConnection!.schema)) {
+            if (
+              !this.currentConnection!.schema ||
+              !currentDb.schemas.includes(this.currentConnection!.schema)
+            ) {
               this.currentConnection!.schema = currentDb.schemas[0]
             }
           }
@@ -219,7 +222,11 @@ export const useConnectionsStore = defineStore('connections', {
         if (!this.currentConnection?.database) {
           throw new Error('Database not selected')
         }
-        const response = await api.createSchema(schemaName, connectionId, this.currentConnection.database)
+        const response = await api.createSchema(
+          schemaName,
+          connectionId,
+          this.currentConnection.database
+        )
         if (response.status === 'success') {
           await this.getDatabases(connectionId)
         }

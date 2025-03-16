@@ -227,10 +227,13 @@ export const useMonitoringStore = defineStore('monitoring', {
         }
 
         // Handle node registration
-        if (message.nodeID && message.type &&
+        if (
+          message.nodeID &&
+          message.type &&
           (message.type === NodeTypes.SOURCE ||
             message.type === NodeTypes.TARGET ||
-            message.type === NodeTypes.API)) {
+            message.type === NodeTypes.API)
+        ) {
           const nodeExists = this.nodes.find((node) => node.id === message.nodeID)
           if (!nodeExists) {
             this.nodes.push({
@@ -243,7 +246,7 @@ export const useMonitoringStore = defineStore('monitoring', {
         // Add log with safe defaults
         this.addLog({
           ...message,
-          level: message.level as keyof LogLevel || 'info'
+          level: (message.level as keyof LogLevel) || 'info'
         })
       } catch (error) {
         console.error('Error processing message:', error)
@@ -279,7 +282,7 @@ export const useMonitoringStore = defineStore('monitoring', {
           // Reset and update nodes based on stream stats
           this.nodes = []
           // Map StreamStats nodes to store nodes
-          this.streamStats.nodes.forEach(node => {
+          this.streamStats.nodes.forEach((node) => {
             this.nodes.push({
               id: node.id,
               type: node.type as NodeType
@@ -292,7 +295,9 @@ export const useMonitoringStore = defineStore('monitoring', {
                 formatNumber(node.stat.counter || 0),
                 formatDataSize(node.stat.sumDataSize || 0),
                 node.stat.duration !== undefined ? formatDuration(node.stat.duration) : ''
-              ].filter(Boolean).join(' | ')
+              ]
+                .filter(Boolean)
+                .join(' | ')
 
               this.addLog({
                 id: Date.now(),
@@ -311,8 +316,8 @@ export const useMonitoringStore = defineStore('monitoring', {
           })
 
           // Find source and target nodes from stats
-          const sourceNode = this.streamStats.nodes.find(node => node.type === NodeTypes.SOURCE)
-          const targetNodes = this.streamStats.nodes.find(node => node.type === NodeTypes.TARGET)
+          const sourceNode = this.streamStats.nodes.find((node) => node.type === NodeTypes.SOURCE)
+          const targetNodes = this.streamStats.nodes.find((node) => node.type === NodeTypes.TARGET)
 
           // Update current stage based on node stats
           if (sourceNode?.stat.status || targetNodes?.stat.status) {
@@ -333,7 +338,7 @@ export const useMonitoringStore = defineStore('monitoring', {
             }
 
             // Update timestamps for completed stages
-            this.stages.forEach(stage => {
+            this.stages.forEach((stage) => {
               if (stage.id < this.currentStageID) {
                 stage.timestamp = Date.now()
               }

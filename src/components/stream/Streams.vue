@@ -2,10 +2,14 @@
   <div class="antialiased bg-gray-50">
     <!-- Connection error message -->
     <div v-if="!isBackendConnected" class="max-w-7xl mx-auto py-6 px-8">
-      <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+      <div
+        class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative"
+        role="alert"
+      >
         <strong class="font-bold">Connection Error: </strong>
-        <span class="block sm:inline">Unable to connect to the server. Please check your backend services and try
-          again.</span>
+        <span class="block sm:inline"
+          >Unable to connect to the server. Please check your backend services and try again.</span
+        >
       </div>
     </div>
 
@@ -14,9 +18,11 @@
         <ToggleView class="py-2 px-8" />
         <div class="flex-grow"></div>
         <router-link :to="{ name: 'ManageStream', params: { mode: 'add' } }">
-          <button type="button"
+          <button
+            type="button"
             class="py-2 px-4 mt-2 flex items-center justify-center rounded-md bg-gray-600 text-center text-sm font-semibold text-white shadow-sm hover:bg-gray-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-600"
-            @click="addStream">
+            @click="addStream"
+          >
             <PlusIcon class="mr-2 h-5 w-5 text-white" aria-hidden="true" />
             New stream
           </button>
@@ -24,21 +30,36 @@
       </div>
 
       <!-- Show cards view if there are streams -->
-      <div v-if="streams.length > 0 && viewType === 'cards'"
-        class="flex flex-wrap max-w-7xl mx-auto px-4 overflow-hidden">
-        <div v-for="stream in streams" :key="stream.id" class="w-full px-4 overflow-hidden md:w-1/2 xl:w-1/2 py-8">
-          <CardItem :streamConfig="stream" :source="connectionByID(stream.source)"
-            :target="connectionByID(stream.target)" />
+      <div
+        v-if="streams.length > 0 && viewType === 'cards'"
+        class="flex flex-wrap max-w-7xl mx-auto px-4 overflow-hidden"
+      >
+        <div
+          v-for="stream in streams"
+          :key="stream.id"
+          class="w-full px-4 overflow-hidden md:w-1/2 xl:w-1/2 py-8"
+        >
+          <CardItem
+            :streamConfig="stream"
+            :source="connectionByID(stream.source)"
+            :target="connectionByID(stream.target)"
+          />
         </div>
       </div>
 
       <!-- Show table view if there are streams -->
-      <div v-if="streams.length > 0 && viewType === 'table'" class="flex flex-wrap mx-6 overflow-hidden">
+      <div
+        v-if="streams.length > 0 && viewType === 'table'"
+        class="flex flex-wrap mx-6 overflow-hidden"
+      >
         <Table />
       </div>
 
       <!-- Show empty state if no streams -->
-      <div v-if="streams.length === 0" class="flex items-center justify-center flex-col text-center pb-16">
+      <div
+        v-if="streams.length === 0"
+        class="flex items-center justify-center flex-col text-center pb-16"
+      >
         <p class="mt-1 text-lg text-gray-700">
           You haven't created any streams yet.<br />
           Click the button below to create your first stream.
@@ -49,7 +70,7 @@
   </div>
 </template>
 <script>
-import { ref, onMounted, computed } from 'vue'
+import { onMounted, computed } from 'vue'
 import Table from './Table.vue'
 import NewCard from './NewCard.vue'
 import ToggleView from '@/components/common/ToggleView.vue'
@@ -77,11 +98,9 @@ export default {
     const commonStore = useCommonStore()
 
     const fetchStreams = async () => {
-      try
-      {
+      try {
         await streamsStore.refreshStreams()
-      } catch (err)
-      {
+      } catch (err) {
         commonStore.showNotification(err.message, 'error')
       }
     }
@@ -96,12 +115,10 @@ export default {
     }
 
     onMounted(async () => {
-      try
-      {
+      try {
         await connectionsStore.refreshConnections()
         await fetchStreams()
-      } catch (err)
-      {
+      } catch (err) {
         commonStore.showNotification(err.message, 'error')
       }
       await commonStore.getViewType()

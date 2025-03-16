@@ -133,19 +133,27 @@ const createDatabase = async (newDatabase: string, id: string): Promise<{ status
   const commonStore = useCommonStore()
   validateApiKey(commonStore.apiKey)
   try {
-    const response: AxiosResponse<{ status: string }> = await apiClient.post(`/connections/${id}/databases`, newDatabase, {
-      headers: {
-        'Content-Type': 'text/plain',
-        'X-API-Key': commonStore.apiKey
+    const response: AxiosResponse<{ status: string }> = await apiClient.post(
+      `/connections/${id}/databases`,
+      newDatabase,
+      {
+        headers: {
+          'Content-Type': 'text/plain',
+          'X-API-Key': commonStore.apiKey
+        }
       }
-    })
+    )
     return response.data
   } catch (error) {
     throw handleApiError(error)
   }
 }
 
-const createSchema = async (newSchema: string, id: string, dbName: string): Promise<{ status: string }> => {
+const createSchema = async (
+  newSchema: string,
+  id: string,
+  dbName: string
+): Promise<{ status: string }> => {
   const commonStore = useCommonStore()
   validateApiKey(commonStore.apiKey)
   try {

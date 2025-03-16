@@ -30,7 +30,7 @@ export const useLogsStore = defineStore('logs', {
     isLogsPanelOpen: false,
     panelHeight: '50vh',
     // Keep track of recent messages to prevent duplicates
-    recentMessages: new Map<string, { count: number, timestamp: number }>()
+    recentMessages: new Map<string, { count: number; timestamp: number }>()
   }),
 
   getters: {
@@ -56,9 +56,9 @@ export const useLogsStore = defineStore('logs', {
       const recentMessage = this.recentMessages.get(dedupKey)
 
       // Check if we've seen this message recently (within 2 seconds)
-      if (recentMessage && (now - recentMessage.timestamp) < 2000) {
+      if (recentMessage && now - recentMessage.timestamp < 2000) {
         // Update the existing log instead of adding a new one
-        const existingLog = this.logs.find(l => this.getDedupKey(l) === dedupKey)
+        const existingLog = this.logs.find((l) => this.getDedupKey(l) === dedupKey)
         if (existingLog) {
           recentMessage.count++
           if (recentMessage.count > 1) {

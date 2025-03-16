@@ -301,7 +301,9 @@ const filteredLogs = computed(() => {
           case 'progress & stats':
             return msg.startsWith('[progress]') || msg.startsWith('[stat]')
           case 'info':
-            return log.level === 'info' && !msg.startsWith('[progress]') && !msg.startsWith('[stat]')
+            return (
+              log.level === 'info' && !msg.startsWith('[progress]') && !msg.startsWith('[stat]')
+            )
           default:
             return true
         }
@@ -315,13 +317,16 @@ const filteredLogs = computed(() => {
 const logsContainer = ref<HTMLElement | null>(null)
 
 // Add watch effect to scroll to bottom when logs change
-watch(() => store.logs.length, () => {
-  nextTick(() => {
-    if (logsContainer.value) {
-      logsContainer.value.scrollTop = logsContainer.value.scrollHeight
-    }
-  })
-})
+watch(
+  () => store.logs.length,
+  () => {
+    nextTick(() => {
+      if (logsContainer.value) {
+        logsContainer.value.scrollTop = logsContainer.value.scrollHeight
+      }
+    })
+  }
+)
 
 function startResize(event: MouseEvent) {
   event.preventDefault()
@@ -374,46 +379,68 @@ function startResize(event: MouseEvent) {
 }
 
 // Set the selected tab to the first available tab when tabs change
-watch(() => tabs.value, (newTabs) => {
-  // If the current tab doesn't exist anymore, select the first available tab
-  if (newTabs.length > 0 && !newTabs.some(tab => tab.id === selectedTab.value)) {
-    selectedTab.value = newTabs[0].id
-  }
-}, { immediate: true })
+watch(
+  () => tabs.value,
+  (newTabs) => {
+    // If the current tab doesn't exist anymore, select the first available tab
+    if (newTabs.length > 0 && !newTabs.some((tab) => tab.id === selectedTab.value)) {
+      selectedTab.value = newTabs[0].id
+    }
+  },
+  { immediate: true }
+)
 </script>
 
 <template>
   <TransitionRoot as="template" :show="isOpen">
     <div class="relative z-30">
       <div class="fixed inset-x-0 bottom-0" :style="{ height: panelHeight }">
-        <TransitionChild as="template" enter="transform transition ease-in-out duration-300"
-          enter-from="translate-y-full" enter-to="translate-y-0" leave="transform transition ease-in-out duration-300"
-          leave-from="translate-y-0" leave-to="translate-y-full">
-          <div class="w-full h-full bg-white shadow-xl rounded-t-lg overflow-hidden border border-gray-200 lg:pl-20">
+        <TransitionChild
+          as="template"
+          enter="transform transition ease-in-out duration-300"
+          enter-from="translate-y-full"
+          enter-to="translate-y-0"
+          leave="transform transition ease-in-out duration-300"
+          leave-from="translate-y-0"
+          leave-to="translate-y-full"
+        >
+          <div
+            class="w-full h-full bg-white shadow-xl rounded-t-lg overflow-hidden border border-gray-200 lg:pl-20"
+          >
             <!-- Resize Handle -->
             <div class="absolute top-0 left-0 right-0 flex items-center justify-center select-none">
-              <div class="w-full h-1 bg-gray-200 hover:bg-gray-300 cursor-ns-resize transition-colors"
-                @mousedown.prevent="startResize"></div>
+              <div
+                class="w-full h-1 bg-gray-200 hover:bg-gray-300 cursor-ns-resize transition-colors"
+                @mousedown.prevent="startResize"
+              ></div>
               <div
                 class="absolute h-4 w-16 -top-2 bg-gray-200 hover:bg-gray-300 rounded-t-md cursor-ns-resize transition-colors flex items-center justify-center"
-                @mousedown.prevent="startResize">
+                @mousedown.prevent="startResize"
+              >
                 <div class="w-6 h-0.5 bg-gray-400 rounded-full"></div>
               </div>
             </div>
 
-            <div class="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200">
+            <div
+              class="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200"
+            >
               <div class="flex items-center">
                 <h2 class="text-lg font-medium text-gray-900">System Logs</h2>
                 <span class="ml-2 text-sm text-gray-500">{{ totalLogs }} entries</span>
               </div>
               <div class="flex items-center space-x-2">
-                <button type="button"
+                <button
+                  type="button"
                   class="px-3 py-1 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
-                  @click="store.clearLogs">
+                  @click="store.clearLogs"
+                >
                   Clear
                 </button>
-                <button type="button" class="text-gray-400 hover:text-gray-600 transition-colors"
-                  @click="store.toggleLogsPanel">
+                <button
+                  type="button"
+                  class="text-gray-400 hover:text-gray-600 transition-colors"
+                  @click="store.toggleLogsPanel"
+                >
                   <XMarkIcon class="h-6 w-6" />
                 </button>
               </div>
@@ -422,36 +449,48 @@ watch(() => tabs.value, (newTabs) => {
             <!-- Tab Navigation -->
             <div class="bg-white px-4 overflow-x-auto border-b border-gray-200">
               <nav class="flex space-x-4 min-w-max py-2" aria-label="Tabs">
-                <button v-for="tab in tabs" :key="tab.id"
+                <button
+                  v-for="tab in tabs"
+                  :key="tab.id"
                   class="group relative px-4 py-2 text-sm font-medium rounded-md focus:outline-none transition-all duration-200"
                   :class="[
                     selectedTab === tab.id
                       ? 'text-gray-900 bg-gray-100 shadow-sm'
                       : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                  ]" @click="selectedTab = tab.id">
+                  ]"
+                  @click="selectedTab = tab.id"
+                >
                   <div class="flex items-center space-x-2">
                     <span :class="[getNodeColor(tab.type), 'capitalize font-semibold']">
                       {{ tab.type }}
                     </span>
                     <template v-if="tab.nodeId">
-                      <span class="text-xs px-1.5 py-0.5 rounded" :class="[
-                        selectedTab === tab.id
-                          ? 'bg-white text-gray-600'
-                          : 'bg-gray-100 text-gray-600'
-                      ]">
+                      <span
+                        class="text-xs px-1.5 py-0.5 rounded"
+                        :class="[
+                          selectedTab === tab.id
+                            ? 'bg-white text-gray-600'
+                            : 'bg-gray-100 text-gray-600'
+                        ]"
+                      >
                         #{{ getShortNodeId(tab.nodeId) }}
                       </span>
                     </template>
-                    <span class="text-xs px-1.5 py-0.5 rounded-full" :class="[
-                      selectedTab === tab.id
-                        ? 'bg-white text-gray-600'
-                        : 'bg-gray-100 text-gray-600'
-                    ]">
+                    <span
+                      class="text-xs px-1.5 py-0.5 rounded-full"
+                      :class="[
+                        selectedTab === tab.id
+                          ? 'bg-white text-gray-600'
+                          : 'bg-gray-100 text-gray-600'
+                      ]"
+                    >
                       {{ tab.count }}
                     </span>
                   </div>
-                  <div class="absolute bottom-0 left-0 w-full h-0.5 transition-colors duration-200"
-                    :class="[selectedTab === tab.id ? getNodeColor(tab.type) : 'bg-transparent']" />
+                  <div
+                    class="absolute bottom-0 left-0 w-full h-0.5 transition-colors duration-200"
+                    :class="[selectedTab === tab.id ? getNodeColor(tab.type) : 'bg-transparent']"
+                  />
                 </button>
               </nav>
             </div>
@@ -460,39 +499,59 @@ watch(() => tabs.value, (newTabs) => {
             <div class="bg-white px-4 py-2 flex items-center space-x-3 border-b border-gray-200">
               <FunnelIcon class="h-4 w-4 text-gray-400" />
               <div class="flex flex-wrap gap-1">
-                <button v-for="type in messageTypes" :key="type"
-                  class="px-2.5 py-1 text-xs rounded-full transition-colors duration-200" :class="[
+                <button
+                  v-for="type in messageTypes"
+                  :key="type"
+                  class="px-2.5 py-1 text-xs rounded-full transition-colors duration-200"
+                  :class="[
                     selectedMessageType === type
                       ? 'bg-gray-700 text-white'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                  ]" @click="selectedMessageType = type">
+                  ]"
+                  @click="selectedMessageType = type"
+                >
                   {{ type }}
                 </button>
               </div>
             </div>
 
-            <div v-if="selectedColumn" ref="logsContainer" class="overflow-y-auto h-full px-4 bg-white"
-              :style="{ height: `calc(${panelHeight} - 132px)` }">
+            <div
+              v-if="selectedColumn"
+              ref="logsContainer"
+              class="overflow-y-auto h-full px-4 bg-white"
+              :style="{ height: `calc(${panelHeight} - 132px)` }"
+            >
               <table class="w-full">
                 <tbody class="divide-y divide-gray-100">
                   <template v-for="(logs, nodeId) in filteredLogs" :key="nodeId">
-                    <tr v-for="log in logs" :key="log.id" class="group transition-all duration-200"
-                      :class="[getMessageTypeColor(log)]">
+                    <tr
+                      v-for="log in logs"
+                      :key="log.id"
+                      class="group transition-all duration-200"
+                      :class="[getMessageTypeColor(log)]"
+                    >
                       <td class="w-24 py-2 px-4">
-                        <span class="font-mono text-xs text-gray-500 tabular-nums whitespace-nowrap">
+                        <span
+                          class="font-mono text-xs text-gray-500 tabular-nums whitespace-nowrap"
+                        >
                           {{ formatTimestamp(log.timestamp) }}
                         </span>
                       </td>
                       <td class="py-2 px-4">
                         <div class="flex items-center space-x-3">
-                          <span class="flex-shrink-0 transition-transform group-hover:scale-110"
-                            :class="[getMessageIconColor(log)]">
+                          <span
+                            class="flex-shrink-0 transition-transform group-hover:scale-110"
+                            :class="[getMessageIconColor(log)]"
+                          >
                             <component :is="getMessageIcon(log)" class="h-4 w-4" />
                           </span>
                           <span class="text-sm text-gray-900 break-words font-mono leading-relaxed">
                             {{ log.message }}
                           </span>
-                          <span v-if="log.details?.duplicateCount" class="text-xs text-gray-500 ml-2">
+                          <span
+                            v-if="log.details?.duplicateCount"
+                            class="text-xs text-gray-500 ml-2"
+                          >
                             {{ formatDuplicateInfo(log) }}
                           </span>
                         </div>

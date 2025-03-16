@@ -20,4 +20,4 @@ export interface StreamStats {
   configID: string
   streamID: string
   nodes: StreamNode[]
-} 
+}

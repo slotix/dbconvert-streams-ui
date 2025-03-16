@@ -1,9 +1,9 @@
 import axios, { type AxiosInstance, type AxiosError } from 'axios'
 import { handleApiError } from '@/utils/errorHandler'
-import { type UserData, type CombinedUsageResponse } from '@/types/user'
+import { type UserData } from '@/types/user'
 import { type ServiceStatusResponse } from '@/types/common'
 import { useCommonStore } from '@/stores/common'
-import { getBackendUrl, getSentryDsn, getApiKey, logEnvironment } from '@/utils/environment'
+import { getBackendUrl, getSentryDsn, logEnvironment } from '@/utils/environment'
 
 interface ApiResponse<T> {
   data: T
@@ -19,14 +19,14 @@ interface RetryConfig {
 }
 
 // Log environment configuration
-logEnvironment();
+logEnvironment()
 
 export const apiClient: AxiosInstance = axios.create({
   baseURL: getBackendUrl(),
   headers: {
     'Content-Type': 'application/json'
   },
-  timeout: 10000,
+  timeout: 10000
 })
 
 const sentryClient: AxiosInstance = axios.create({
@@ -47,7 +47,7 @@ apiClient.interceptors.request.use(
 
 const defaultRetryConfig: RetryConfig = {
   maxRetries: 3,
-  delayMs: 1000,
+  delayMs: 1000
 }
 
 apiClient.interceptors.response.use(
@@ -61,7 +61,11 @@ apiClient.interceptors.response.use(
     const config = error.config as any
 
     // Only handle network/connection errors
-    if (!error.response || error.code === 'ECONNABORTED' || error.message.includes('Network Error')) {
+    if (
+      !error.response ||
+      error.code === 'ECONNABORTED' ||
+      error.message.includes('Network Error')
+    ) {
       // Initialize retry count
       config.retryCount = config.retryCount ?? 0
 
@@ -76,7 +80,7 @@ apiClient.interceptors.response.use(
         })
 
         // Delay before retry
-        await new Promise(resolve => setTimeout(resolve, defaultRetryConfig.delayMs))
+        await new Promise((resolve) => setTimeout(resolve, defaultRetryConfig.delayMs))
 
         return apiClient(config)
       }
@@ -84,7 +88,7 @@ apiClient.interceptors.response.use(
       // Max retries reached - show final error
       commonStore.setError({
         message: 'Unable to connect to the server. Please check your network connection.',
-        isRetrying: false,
+        isRetrying: false
       })
     }
 
@@ -214,5 +218,5 @@ export default {
   sentryHealthCheck,
   getServiceStatus,
   getConnections,
-  getStreams,
+  getStreams
 }

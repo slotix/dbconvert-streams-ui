@@ -9,7 +9,7 @@ export default defineConfig({
   define: {
     'import.meta.env.PACKAGE_VERSION': JSON.stringify(version),
     'process.env.VITE_API_URL': JSON.stringify(process.env.VITE_API_URL),
-    'process.env.VITE_SENTRY_DSN': JSON.stringify(process.env.VITE_SENTRY_DSN),
+    'process.env.VITE_SENTRY_DSN': JSON.stringify(process.env.VITE_SENTRY_DSN)
   },
   resolve: {
     alias: {

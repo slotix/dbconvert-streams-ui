@@ -27,7 +27,10 @@ const { error } = storeToRefs(commonStore)
             <ArrowPathIcon v-else class="h-5 w-5 text-yellow-400 animate-spin" />
           </div>
           <div class="ml-3">
-            <h3 class="text-sm font-medium" :class="error.isRetrying ? 'text-yellow-800' : 'text-red-800'">
+            <h3
+              class="text-sm font-medium"
+              :class="error.isRetrying ? 'text-yellow-800' : 'text-red-800'"
+            >
               {{ error.message }}
             </h3>
           </div>
@@ -35,4 +38,4 @@ const { error } = storeToRefs(commonStore)
       </div>
     </slot>
   </TransitionRoot>
-</template> 
+</template>

@@ -1,6 +1,6 @@
 /**
  * Environment utility functions
- * 
+ *
  * This file provides utility functions for accessing environment variables
  * in a consistent way across the application. It prioritizes runtime configuration
  * (window.ENV) over build-time configuration (import.meta.env).
@@ -11,25 +11,25 @@
  * Prioritizes window.ENV (runtime) over import.meta.env (build time)
  */
 export function getApiUrl(): string {
-    // First try to get from window.ENV (runtime config)
-    const runtimeUrl = window.ENV?.VITE_API_URL;
-    if (runtimeUrl) {
-        return runtimeUrl;
-    }
+  // First try to get from window.ENV (runtime config)
+  const runtimeUrl = window.ENV?.VITE_API_URL
+  if (runtimeUrl) {
+    return runtimeUrl
+  }
 
-    // Then try import.meta.env (build time config)
-    const buildTimeUrl = import.meta.env.VITE_API_URL;
-    if (buildTimeUrl) {
-        return buildTimeUrl;
-    }
+  // Then try import.meta.env (build time config)
+  const buildTimeUrl = import.meta.env.VITE_API_URL
+  if (buildTimeUrl) {
+    return buildTimeUrl
+  }
 
-    // Fallback to a default for development (should never be used in production)
-    if (import.meta.env.DEV) {
-        console.warn('No API URL configured. Using default for development: /api');
-        return '/api';
-    }
+  // Fallback to a default for development (should never be used in production)
+  if (import.meta.env.DEV) {
+    console.warn('No API URL configured. Using default for development: /api')
+    return '/api'
+  }
 
-    throw new Error('API URL is not configured. Please set VITE_API_URL environment variable.');
+  throw new Error('API URL is not configured. Please set VITE_API_URL environment variable.')
 }
 
 /**
@@ -37,25 +37,29 @@ export function getApiUrl(): string {
  * Prioritizes window.ENV (runtime) over import.meta.env (build time)
  */
 export function getBackendUrl(): string {
-    // First try to get from window.ENV (runtime config)
-    const runtimeUrl = window.ENV?.VITE_BACKEND_URL;
-    if (runtimeUrl) {
-        return runtimeUrl;
-    }
+  // First try to get from window.ENV (runtime config)
+  const runtimeUrl = window.ENV?.VITE_BACKEND_URL
+  if (runtimeUrl) {
+    return runtimeUrl
+  }
 
-    // Then try import.meta.env (build time config)
-    const buildTimeUrl = import.meta.env.VITE_BACKEND_URL;
-    if (buildTimeUrl) {
-        return buildTimeUrl;
-    }
+  // Then try import.meta.env (build time config)
+  const buildTimeUrl = import.meta.env.VITE_BACKEND_URL
+  if (buildTimeUrl) {
+    return buildTimeUrl
+  }
 
-    // Fallback to a default for development (should never be used in production)
-    if (import.meta.env.DEV) {
-        console.warn('No backend URL configured. Using default for development: http://localhost:8020/api');
-        return 'http://localhost:8020/api';
-    }
+  // Fallback to a default for development (should never be used in production)
+  if (import.meta.env.DEV) {
+    console.warn(
+      'No backend URL configured. Using default for development: http://localhost:8020/api'
+    )
+    return 'http://localhost:8020/api'
+  }
 
-    throw new Error('Backend URL is not configured. Please set VITE_BACKEND_URL environment variable.');
+  throw new Error(
+    'Backend URL is not configured. Please set VITE_BACKEND_URL environment variable.'
+  )
 }
 
 /**
@@ -63,19 +67,19 @@ export function getBackendUrl(): string {
  * Prioritizes window.ENV (runtime) over import.meta.env (build time)
  */
 export function getSentryDsn(): string {
-    // First try to get from window.ENV (runtime config)
-    const runtimeDsn = window.ENV?.VITE_SENTRY_DSN;
-    if (runtimeDsn) {
-        return runtimeDsn;
-    }
+  // First try to get from window.ENV (runtime config)
+  const runtimeDsn = window.ENV?.VITE_SENTRY_DSN
+  if (runtimeDsn) {
+    return runtimeDsn
+  }
 
-    // Then try import.meta.env (build time config)
-    const buildTimeDsn = import.meta.env.VITE_SENTRY_DSN;
-    if (buildTimeDsn) {
-        return buildTimeDsn;
-    }
+  // Then try import.meta.env (build time config)
+  const buildTimeDsn = import.meta.env.VITE_SENTRY_DSN
+  if (buildTimeDsn) {
+    return buildTimeDsn
+  }
 
-    return '';  // Sentry is optional, so return empty string if not configured
+  return '' // Sentry is optional, so return empty string if not configured
 }
 
 /**
@@ -83,72 +87,30 @@ export function getSentryDsn(): string {
  * Prioritizes window.ENV (runtime) over import.meta.env (build time)
  */
 export function getApiKey(): string {
-    // First try to get from window.ENV (runtime config)
-    const runtimeKey = window.ENV?.VITE_API_KEY;
-    if (runtimeKey) {
-        return runtimeKey;
-    }
+  // First try to get from window.ENV (runtime config)
+  const runtimeKey = window.ENV?.VITE_API_KEY
+  if (runtimeKey) {
+    return runtimeKey
+  }
 
-    // Then try import.meta.env (build time config)
-    const buildTimeKey = import.meta.env.VITE_API_KEY;
-    if (buildTimeKey) {
-        return buildTimeKey;
-    }
+  // Then try import.meta.env (build time config)
+  const buildTimeKey = import.meta.env.VITE_API_KEY
+  if (buildTimeKey) {
+    return buildTimeKey
+  }
 
-    return '';  // API key might be provided later by the user
-}
-
-/**
- * Get a boolean environment variable
- * @param name The name of the environment variable
- * @param defaultValue The default value if the variable is not set
- */
-export function getBooleanEnv(name: string, defaultValue: boolean = false): boolean {
-    // First try to get from window.ENV (runtime config)
-    const runtimeValue = window.ENV?.[name];
-    if (runtimeValue !== undefined) {
-        return runtimeValue === true || runtimeValue === 'true';
-    }
-
-    // Then try import.meta.env (build time config)
-    const buildTimeValue = (import.meta.env as any)[name];
-    if (buildTimeValue !== undefined) {
-        return buildTimeValue === true || buildTimeValue === 'true';
-    }
-
-    return defaultValue;
-}
-
-/**
- * Get a string environment variable
- * @param name The name of the environment variable
- * @param defaultValue The default value if the variable is not set
- */
-export function getStringEnv(name: string, defaultValue: string = ''): string {
-    // First try to get from window.ENV (runtime config)
-    const runtimeValue = window.ENV?.[name];
-    if (runtimeValue !== undefined) {
-        return String(runtimeValue);
-    }
-
-    // Then try import.meta.env (build time config)
-    const buildTimeValue = (import.meta.env as any)[name];
-    if (buildTimeValue !== undefined) {
-        return String(buildTimeValue);
-    }
-
-    return defaultValue;
+  return '' // API key might be provided later by the user
 }
 
 /**
  * Log all environment variables for debugging
  */
 export function logEnvironment(): void {
-    console.log('[Environment] Configuration:', {
-        backendUrl: getBackendUrl(),
-        sentryDsn: getSentryDsn(),
-        apiKey: getApiKey() ? '[REDACTED]' : '[NOT SET]',
-        isDev: import.meta.env.DEV,
-        mode: import.meta.env.MODE
-    });
-} 
+  console.log('[Environment] Configuration:', {
+    backendUrl: getBackendUrl(),
+    sentryDsn: getSentryDsn(),
+    apiKey: getApiKey() ? '[REDACTED]' : '[NOT SET]',
+    isDev: import.meta.env.DEV,
+    mode: import.meta.env.MODE
+  })
+}

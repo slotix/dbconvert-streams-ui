@@ -68,9 +68,7 @@ export default defineComponent({
     },
     logoSrc(): string {
       const normalizedType = normalizeConnectionType(this.connection?.type || '')
-      const dbType = this.dbTypes.find((f) =>
-        normalizeConnectionType(f.type) === normalizedType
-      )
+      const dbType = this.dbTypes.find((f) => normalizeConnectionType(f.type) === normalizedType)
       return dbType ? dbType.logo : ''
     },
     connectionCreated(): string {
