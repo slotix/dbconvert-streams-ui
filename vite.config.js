@@ -25,8 +25,7 @@ export default defineConfig({
           headlessui: ['@headlessui/vue'],
           heroicons: ['@heroicons/vue/24/solid', '@heroicons/vue/24/outline'],
           axios: ['axios'],
-          lodash: ['lodash'],
-          nats: ['nats.ws']
+          lodash: ['lodash']
         }
       }
     }

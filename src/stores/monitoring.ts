@@ -1,7 +1,5 @@
 import { defineStore } from 'pinia'
 import type { StreamConfig } from '@/types/streamConfig'
-import { natsService } from '@/api/natsService'
-import type { NatsMessage } from '@/api/natsService'
 import { sseLogsService } from '@/api/sseLogsService'
 import { NodeTypes, type NodeType } from '@/types/common'
 import type { StreamStats } from '@/types/streamStats'
@@ -209,12 +207,6 @@ export const useMonitoringStore = defineStore('monitoring', {
         this.logs = this.logs.slice(-Math.floor(this.maxLogs / 2))
       }
       this.logs.push(log)
-    },
-    initNatsHandling() {
-      natsService.addMessageHandler((message: NatsMessage) => {
-        // Process the message
-        this.processMessage(message)
-      })
     },
     initSSEHandling() {
       sseLogsService.addMessageHandler((message: any) => {

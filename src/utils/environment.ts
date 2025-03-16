@@ -7,38 +7,6 @@
  */
 
 /**
- * Get the NATS server URL from environment variables
- * Prioritizes window.ENV (runtime) over import.meta.env (build time)
- */
-export function getNatsServerUrl(): string {
-    // First try to get from window.ENV (runtime config)
-    const runtimeUrl = window.ENV?.VITE_NATS_SERVER;
-    console.log('[DEBUG] getNatsServerUrl - window.ENV?.VITE_NATS_SERVER:', runtimeUrl);
-
-    if (runtimeUrl) {
-        console.log('[DEBUG] getNatsServerUrl - Using runtime URL:', runtimeUrl);
-        return runtimeUrl;
-    }
-
-    // Then try import.meta.env (build time config)
-    const buildTimeUrl = import.meta.env.VITE_NATS_SERVER;
-    console.log('[DEBUG] getNatsServerUrl - import.meta.env.VITE_NATS_SERVER:', buildTimeUrl);
-
-    if (buildTimeUrl) {
-        console.log('[DEBUG] getNatsServerUrl - Using build time URL:', buildTimeUrl);
-        return buildTimeUrl;
-    }
-
-    // Fallback to a default for development (should never be used in production)
-    if (import.meta.env.DEV) {
-        console.warn('[DEBUG] getNatsServerUrl - No NATS server URL configured. Using default for development: ws://localhost:8081');
-        return 'ws://localhost:8081';
-    }
-
-    throw new Error('NATS server URL is not configured. Please set VITE_NATS_SERVER environment variable.');
-}
-
-/**
  * Get the API URL from environment variables
  * Prioritizes window.ENV (runtime) over import.meta.env (build time)
  */
@@ -173,37 +141,14 @@ export function getStringEnv(name: string, defaultValue: string = ''): string {
 }
 
 /**
- * Validate a WebSocket URL
- * @param url The URL to validate
- * @returns The validated URL object
- * @throws Error if the URL is invalid
- */
-export function validateWebSocketUrl(url: string): URL {
-    try {
-        const serverUrl = new URL(url);
-        if (!serverUrl.protocol.startsWith('ws')) {
-            throw new Error(`NATS server URL must use WebSocket protocol (ws:// or wss://). Got: ${serverUrl.protocol}`);
-        }
-        return serverUrl;
-    } catch (error) {
-        const urlError = error as Error;
-        throw new Error(`Invalid NATS server URL: ${url}. Error: ${urlError.message}`);
-    }
-}
-
-/**
  * Log all environment variables for debugging
  */
 export function logEnvironment(): void {
     console.log('[Environment] Configuration:', {
-        natsServer: getNatsServerUrl(),
         backendUrl: getBackendUrl(),
         sentryDsn: getSentryDsn(),
         apiKey: getApiKey() ? '[REDACTED]' : '[NOT SET]',
         isDev: import.meta.env.DEV,
-        mode: import.meta.env.MODE,
-        natsWsTls: getBooleanEnv('VITE_NATS_WS_TLS'),
-        natsAllowReconnect: getBooleanEnv('VITE_NATS_ALLOW_RECONNECT', true),
-        natsWsTlsVerify: getBooleanEnv('VITE_NATS_WS_TLS_VERIFY')
+        mode: import.meta.env.MODE
     });
 } 

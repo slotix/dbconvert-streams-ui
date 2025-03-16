@@ -5,7 +5,6 @@ import type { UserData } from '@/types/user'
 import type { ServiceStatus } from '@/types/common'
 import { useToast } from 'vue-toastification'
 import { useMonitoringStore } from './monitoring'
-import { natsService } from '@/api/natsService'
 import { sseLogsService } from '@/api/sseLogsService'
 import { useLocalStorage } from '@vueuse/core'
 
@@ -280,15 +279,6 @@ export const useCommonStore = defineStore('common', {
     setCurrentPage(page: string) {
       this.currentPage = page
     },
-    async consumeLogsFromNATS() {
-      // Start the logs connection in the background
-      setTimeout(async () => {
-        const monitoringStore = useMonitoringStore()
-        monitoringStore.initNatsHandling()
-        await natsService.connect()
-      }, 0)
-    },
-
     async consumeLogsFromSSE() {
       // Start the SSE logs connection in the background
       setTimeout(async () => {
@@ -310,8 +300,6 @@ export const useCommonStore = defineStore('common', {
             await this.userDataFromSentry(apiKey)
             if (this.userData?.apiKey) {
               await this.loadUserConfigs()
-              // Initialize logs connection (non-blocking)
-              // this.consumeLogsFromNATS()
               this.consumeLogsFromSSE()
             }
           } else {

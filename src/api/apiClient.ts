@@ -3,7 +3,7 @@ import { handleApiError } from '@/utils/errorHandler'
 import { type UserData, type CombinedUsageResponse } from '@/types/user'
 import { type ServiceStatusResponse } from '@/types/common'
 import { useCommonStore } from '@/stores/common'
-import { getBackendUrl, getNatsServerUrl, getSentryDsn, getApiKey, logEnvironment } from '@/utils/environment'
+import { getBackendUrl, getSentryDsn, getApiKey, logEnvironment } from '@/utils/environment'
 
 interface ApiResponse<T> {
   data: T

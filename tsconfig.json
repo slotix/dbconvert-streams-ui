@@ -48,5 +48,5 @@
     "vite.config.js",
     "vitest.config.js"
   ],
-  "extends": "@vue/tsconfig/tsconfig.json"
+  "extends": "./node_modules/@vue/tsconfig/tsconfig.json"
 }
