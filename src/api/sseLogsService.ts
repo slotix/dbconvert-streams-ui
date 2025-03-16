@@ -77,36 +77,33 @@ export class SSELogsService {
         }
 
         try {
-            // Get the backend URL
-            let sseUrl = getBackendUrl();
-            console.log('[SSE] Original backend URL:', sseUrl);
+            // Get the backend URL - this is the same approach used in apiClient.ts
+            let baseUrl = getBackendUrl();
+            console.log('[SSE] Original backend URL:', baseUrl);
 
-            // Extract the host from the NATS server URL in the environment
-            // The NATS URL looks like: ws://104.236.77.30:8081
-            const natsServer = window.ENV?.VITE_NATS_SERVER || import.meta.env.VITE_NATS_SERVER || '';
-            console.log('[SSE] NATS server URL:', natsServer);
+            // Extract the host from the URL or use window.location.origin
+            let origin;
 
-            if (natsServer) {
+            // If baseUrl is a relative path (like '/api'), use window.location.origin
+            if (baseUrl.startsWith('/')) {
+                origin = window.location.origin;
+                console.log('[SSE] Using window.location.origin:', origin);
+            } else {
+                // If it's an absolute URL, try to parse it
                 try {
-                    // Extract the host from the NATS URL
-                    const natsUrl = new URL(natsServer);
-                    const host = natsUrl.hostname; // This will be 104.236.77.30
-
-                    if (host) {
-                        sseUrl = `http://${host}/api/v1/logs/stream`;
-                        console.log('[SSE] Using host from NATS URL:', host);
-                    }
+                    const url = new URL(baseUrl);
+                    origin = `${url.protocol}//${url.host}`;
+                    console.log('[SSE] Extracted origin from baseUrl:', origin);
                 } catch (error) {
-                    console.error('[SSE] Error parsing NATS URL:', error);
+                    // If parsing fails, use window.location.origin
+                    origin = window.location.origin;
+                    console.log('[SSE] Fallback to window.location.origin:', origin);
                 }
             }
 
-            // If we couldn't extract the host, use the original URL
-            if (!sseUrl.startsWith('http')) {
-                // If it's a relative URL, make it absolute with the current origin
-                sseUrl = window.location.origin + (sseUrl.startsWith('/') ? '' : '/') + sseUrl;
-                console.log('[SSE] Using current origin with path:', sseUrl);
-            }
+            // Construct the SSE URL with the correct path
+            // The correct path is /api/logs/stream (not /api/v1/logs/stream)
+            const sseUrl = `${origin}/api/logs/stream`;
 
             console.log('[SSE] Final SSE URL:', sseUrl);
             this.eventSource = new EventSource(sseUrl)
