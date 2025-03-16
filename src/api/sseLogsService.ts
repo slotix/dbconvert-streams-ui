@@ -77,38 +77,83 @@ export class SSELogsService {
         }
 
         try {
-            // Get the backend URL - this is the same approach used in apiClient.ts
+            // Get the backend URL
             let baseUrl = getBackendUrl();
             console.log('[SSE] Original backend URL:', baseUrl);
 
-            // Extract the host from the URL or use window.location.origin
-            let origin;
-
-            // If baseUrl is a relative path (like '/api'), use window.location.origin
-            if (baseUrl.startsWith('/')) {
-                origin = window.location.origin;
-                console.log('[SSE] Using window.location.origin:', origin);
-            } else {
-                // If it's an absolute URL, try to parse it
-                try {
-                    const url = new URL(baseUrl);
-                    origin = `${url.protocol}//${url.host}`;
-                    console.log('[SSE] Extracted origin from baseUrl:', origin);
-                } catch (error) {
-                    // If parsing fails, use window.location.origin
-                    origin = window.location.origin;
-                    console.log('[SSE] Fallback to window.location.origin:', origin);
-                }
+            // Extract the host from the backend URL
+            let host;
+            try {
+                const url = new URL(baseUrl);
+                host = url.host;
+            } catch (e) {
+                // If baseUrl is a relative path or invalid URL, use window.location
+                host = window.location.host;
+                if (this.debugMode) console.log('[SSE] Using window.location.host:', host);
             }
 
-            // Construct the SSE URL with the correct path
-            // The correct path is /api/logs/stream (not /api/v1/logs/stream)
-            const sseUrl = `${origin}/api/logs/stream`;
+            // Determine if we're on HTTPS
+            const isHttps = window.location.protocol === 'https:';
 
-            console.log('[SSE] Final SSE URL:', sseUrl);
-            this.eventSource = new EventSource(sseUrl)
+            // First try using the same protocol as the page
+            let sseUrl = `${window.location.protocol}//${host}/api/logs/stream`;
+
+            if (isHttps) {
+                console.log('[SSE] Page loaded over HTTPS, attempting to use HTTPS for logs');
+                console.log('[SSE] If logs don\'t appear, the server may not support HTTPS for the logs endpoint');
+
+                // Add a warning to the logs
+                logsStore.addLog({
+                    message: 'Attempting to connect to logs via HTTPS. If logs don\'t appear, your server may not support HTTPS for the logs endpoint.',
+                    level: 'warn',
+                    timestamp: Date.now(),
+                    source: 'sse-client',
+                    details: { type: 'connection', url: sseUrl }
+                });
+            } else {
+                console.log('[SSE] Page loaded over HTTP, using HTTP for logs');
+            }
+
+            console.log('[SSE] Using SSE URL:', sseUrl);
+
+            // Create the EventSource with the URL
+            this.eventSource = new EventSource(sseUrl);
+
+            // Set a timeout to check if the connection was successful
+            const connectionTimeout = setTimeout(() => {
+                if (this.eventSource && this.eventSource.readyState !== EventSource.OPEN && isHttps) {
+                    console.warn('[SSE] HTTPS connection failed or timed out');
+
+                    // Close the existing connection
+                    if (this.eventSource) {
+                        this.eventSource.close();
+                        this.eventSource = null;
+                    }
+
+                    // Add a warning to the logs
+                    logsStore.addLog({
+                        message: 'HTTPS connection to logs failed. For security reasons, browsers block HTTP connections on HTTPS pages.',
+                        level: 'warn',
+                        timestamp: Date.now(),
+                        source: 'sse-client',
+                        details: { type: 'connection' }
+                    });
+
+                    // Add instructions for the user
+                    logsStore.addLog({
+                        message: 'To view logs, either: 1) Configure your server for HTTPS logs, or 2) Access this page via HTTP instead of HTTPS',
+                        level: 'info',
+                        timestamp: Date.now(),
+                        source: 'sse-client',
+                        details: { type: 'connection' }
+                    });
+                }
+            }, 5000); // 5 second timeout
 
             this.eventSource.onopen = () => {
+                // Clear the connection timeout
+                clearTimeout(connectionTimeout);
+
                 if (this.debugMode) console.log('SSE logs connection opened')
                 this.isConnecting = false
                 this.reconnectAttempts = 0
@@ -340,6 +385,9 @@ export class SSELogsService {
             }
 
             this.eventSource.onerror = (error) => {
+                // Clear the connection timeout
+                clearTimeout(connectionTimeout);
+
                 // Always log connection errors
                 console.error('SSE connection error');
 
