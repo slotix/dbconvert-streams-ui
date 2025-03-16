@@ -88,17 +88,12 @@ export class SSELogsService {
             // Determine if we're on HTTPS
             const isHttps = window.location.protocol === 'https:'
 
-            // Create the SSE URL directly without using string concatenation
-            // This avoids any potential issues with URL normalization
-            const url = new URL(`${isHttps ? 'https' : 'http'}://${host}`);
-            url.pathname = `${apiUrl}/logs/stream`.replace(/\/+/g, '/');
-            const sseUrl = url.toString();
-
+            // Create the SSE URL - using the consistent path structure
+            const sseUrl = `${isHttps ? 'https' : 'http'}://${host}${apiUrl}/logs/stream`
             console.log('[SSE] Using SSE URL:', sseUrl)
 
             // Create the EventSource with the URL
             this.eventSource = new EventSource(sseUrl)
-            console.log('[SSE] Created EventSource with URL:', this.eventSource.url)
 
             // Set up event handlers
             this.setupEventHandlers(this.eventSource, logsStore, sseUrl)
@@ -115,12 +110,9 @@ export class SSELogsService {
                             this.eventSource = null
                         }
 
-                        // Try HTTP fallback with the same URL construction method
-                        const httpUrl = new URL(`http://${host}`);
-                        httpUrl.pathname = `${apiUrl}/logs/stream`.replace(/\/+/g, '/');
-                        const fallbackUrl = httpUrl.toString();
-
-                        console.log('[SSE] Trying HTTP fallback URL:', fallbackUrl)
+                        // Try HTTP fallback
+                        const httpUrl = `http://${host}${apiUrl}/logs/stream`
+                        console.log('[SSE] Trying HTTP fallback URL:', httpUrl)
 
                         // Add a message to the logs
                         logsStore.addLog({
@@ -132,10 +124,10 @@ export class SSELogsService {
                         })
 
                         // Create a new EventSource with HTTP
-                        this.eventSource = new EventSource(fallbackUrl)
+                        this.eventSource = new EventSource(httpUrl)
 
                         // Add the same event handlers to the new EventSource
-                        this.setupEventHandlers(this.eventSource, logsStore, fallbackUrl)
+                        this.setupEventHandlers(this.eventSource, logsStore, httpUrl)
                     }
                 }, 3000) // 3 second timeout
             }
