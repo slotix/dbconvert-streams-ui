@@ -25,10 +25,18 @@ export function getBackendUrl(): string {
 
     // Fallback to a default for development (should never be used in production)
     if (import.meta.env.DEV) {
+        // Check if we're running on localhost
+        const isLocalhost = window.location.hostname === 'localhost' ||
+            window.location.hostname === '127.0.0.1';
+
+        // If we're on localhost, assume direct API access on port 8020
+        // Otherwise, assume Nginx proxy is in place
+        const fallbackUrl = isLocalhost ? 'http://localhost:8020/api/v1' : '/api';
+
         console.warn(
-            'No backend URL configured. Using default for development: http://localhost:8020/api'
-        )
-        return 'http://localhost:8020/api'
+            `No backend URL configured. Using default for development: ${fallbackUrl}`
+        );
+        return fallbackUrl;
     }
 
     throw new Error(
