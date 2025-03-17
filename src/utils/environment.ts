@@ -84,7 +84,6 @@ export function logEnvironment(): void {
         backendUrl: getBackendUrl(),
         sentryDsn: getSentryDsn(),
         apiKey: getApiKey() ? '[REDACTED]' : '[NOT SET]',
-        isDev: import.meta.env.DEV,
         mode: import.meta.env.MODE
     })
 }
