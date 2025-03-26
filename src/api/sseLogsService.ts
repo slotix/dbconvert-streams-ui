@@ -13,7 +13,7 @@ export class SSELogsService {
     private reconnectDelay: number = 3000 // 3 seconds
     private logHeartbeats: boolean = false // Set to false to disable heartbeat logging
     private refreshTimeout: number | null = null
-    private debugMode: boolean = true // Enable debug mode by default to help diagnose issues
+    private debugMode: boolean = false // Enable debug mode by default to help diagnose issues
     private lastHeartbeatTime: number = Date.now()
     private heartbeatCheckInterval: number | null = null
 
@@ -85,11 +85,11 @@ export class SSELogsService {
         try {
             // Get the API URL base
             const backendUrl = getBackendUrl()
-            console.log('[SSE] API URL base:', backendUrl)
+            // console.log('[SSE] API URL base:', backendUrl)
 
             // Create the SSE URL - using the backend URL directly
             const sseUrl = `${backendUrl}/logs/stream`
-            console.log('[SSE] Using SSE URL:', sseUrl)
+            // console.log('[SSE] Using SSE URL:', sseUrl)
 
             // Create the EventSource with the URL
             this.eventSource = new EventSource(sseUrl)
