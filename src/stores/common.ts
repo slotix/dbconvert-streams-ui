@@ -292,6 +292,9 @@ export const useCommonStore = defineStore('common', {
       const toast = useToast()
 
       try {
+        // Set to false initially during initialization
+        this.setBackendConnected(false)
+
         await Promise.all([this.checkSentryHealth(), this.checkAPIHealth()])
 
         if (this.sentryHealthy && this.apiHealthy) {
@@ -301,16 +304,18 @@ export const useCommonStore = defineStore('common', {
             if (this.userData?.apiKey) {
               await this.loadUserConfigs()
               this.consumeLogsFromSSE()
+              // Set to true only after complete successful initialization
+              this.setBackendConnected(true)
+              toast.success('App initialized successfully')
+              this.clearError()
+              return 'success'
             }
-          } else {
-            toast.info('Please enter your API key to continue')
-            return 'failed'
           }
+          toast.info('Please enter your API key to continue')
+          return 'failed'
         }
 
-        toast.success('App initialized successfully')
-        this.clearError()
-        return 'success'
+        return 'failed'
       } catch (error: any) {
         console.error('Failed to initialize app:', error)
         toast.error(`Failed to initialize app: ${error.message}`)
