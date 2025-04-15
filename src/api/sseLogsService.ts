@@ -43,13 +43,6 @@ export class SSELogsService {
         // Set a new timeout to force refresh the logs panel
         this.refreshTimeout = window.setTimeout(() => {
             if (this.debugMode) console.log('Force refreshing logs panel')
-
-            // Force open the logs panel if it's not already open
-            if (!logsStore.isLogsPanelOpen && logsStore.logs.length > 0) {
-                if (this.debugMode) console.log('Opening logs panel to show logs')
-                logsStore.toggleLogsPanel()
-            }
-
             this.refreshTimeout = null
         }, 500)
     }
