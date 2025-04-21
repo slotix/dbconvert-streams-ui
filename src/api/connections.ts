@@ -5,6 +5,7 @@ import { type Connection, type DatabaseInfo } from '@/types/connections'
 import { useConnectionsStore } from '@/stores/connections'
 import { validateApiKey } from './apiClient'
 import { handleApiError } from '@/utils/errorHandler'
+import { type DatabaseMetadata } from '@/types/metadata'
 
 const getConnections = async (): Promise<Connection[]> => {
   const commonStore = useCommonStore()
@@ -173,12 +174,13 @@ const createSchema = async (
   }
 }
 
-const getMeta = async (id: string): Promise<Record<string, unknown>> => {
+
+const getTables = async (id: string): Promise<Record<string, unknown>[]> => {
   const commonStore = useCommonStore()
   validateApiKey(commonStore.apiKey)
   try {
-    const response: AxiosResponse<Record<string, unknown>> = await apiClient.get(
-      `/connections/${id}/meta`,
+    const response: AxiosResponse<Record<string, unknown>[]> = await apiClient.get(
+      `/connections/${id}/tables`,
       {
         headers: { 'X-API-Key': commonStore.apiKey }
       }
@@ -189,12 +191,12 @@ const getMeta = async (id: string): Promise<Record<string, unknown>> => {
   }
 }
 
-const getTables = async (id: string): Promise<Record<string, unknown>[]> => {
+const getMetadata = async (id: string, forceRefresh = false): Promise<DatabaseMetadata> => {
   const commonStore = useCommonStore()
   validateApiKey(commonStore.apiKey)
   try {
-    const response: AxiosResponse<Record<string, unknown>[]> = await apiClient.get(
-      `/connections/${id}/tables`,
+    const response: AxiosResponse<DatabaseMetadata> = await apiClient.get(
+      `/connections/${id}/newmeta${forceRefresh ? '?refresh=true' : ''}`,
       {
         headers: { 'X-API-Key': commonStore.apiKey }
       }
@@ -215,6 +217,6 @@ export default {
   getDatabases,
   createDatabase,
   createSchema,
-  getMeta,
-  getTables
+  getTables,
+  getMetadata
 }

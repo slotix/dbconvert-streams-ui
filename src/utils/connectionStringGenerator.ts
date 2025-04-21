@@ -20,9 +20,9 @@ export function generateConnectionString(
     return ''
   }
 
-  const password = showPassword ? connection.password : '********'
+  const password = showPassword ? connection.password : '****'
   const auth = connection.username
-    ? `${encodeURIComponent(connection.username)}:${encodeURIComponent(password || '')}@`
+    ? `${connection.username}:${encodeURIComponent(password || '')}@`
     : ''
 
   return `${protocol}://${auth}${connection.host}:${connection.port}/${connection.database}`
