@@ -1,129 +1,100 @@
 <template>
-  <div class="w-full py-2">
+  <div class="w-full">
     <div
-      class="bg-white shadow-lg rounded-xl overflow-hidden cursor-pointer transform hover:scale-[1.02] hover:shadow-xl duration-300 ease-in-out flex flex-col border"
+      class="bg-white rounded-lg border overflow-hidden cursor-pointer transform hover:shadow-lg duration-300 ease-in-out flex flex-col h-full"
       :class="{
         'border-yellow-500 ring-2 ring-yellow-400': selected && currentStep?.name === 'source',
         'border-green-500 ring-2 ring-green-400': selected && currentStep?.name === 'target',
-        'border-gray-200/75': !selected
+        'border-gray-200': !selected
       }" @click="selectConnection">
-      <div class="flex items-center justify-between p-3" :class="{
+      <!-- Header -->
+      <div class="border-b px-6 py-4" :class="{
         'bg-yellow-50': selected && currentStep?.name === 'source',
         'bg-green-50': selected && currentStep?.name === 'target',
         'bg-gray-50': !selected
       }">
-        <div class="flex items-center gap-4 min-w-0">
+        <div class="flex items-center gap-3">
           <img
-            class="h-8 w-8 flex-shrink-0 rounded-full shadow-sm bg-white object-contain p-0.5 transition-all duration-300"
+            class="h-8 w-8 rounded-full shadow-sm bg-white object-contain p-0.5 transition-all duration-300 flex-shrink-0"
             :class="{
-              'ring-2 ring-offset-2 ring-yellow-400 shadow-yellow-200/50':
-                selected && currentStep?.name === 'source',
-              'ring-2 ring-offset-2 ring-green-400 shadow-green-200/50':
-                selected && currentStep?.name === 'target',
+              'ring-2 ring-offset-2 ring-yellow-400 shadow-yellow-200/50': selected && currentStep?.name === 'source',
+              'ring-2 ring-offset-2 ring-green-400 shadow-green-200/50': selected && currentStep?.name === 'target',
               'ring-1 ring-gray-200': !selected
             }" :src="logoSrc" :alt="connection.type + ' logo'" />
-          <div class="flex flex-col min-w-0">
-            <span class="uppercase tracking-wide text-sm font-bold truncate" :class="{
-              'text-yellow-900': selected && currentStep?.name === 'source',
-              'text-green-900': selected && currentStep?.name === 'target',
-              'text-gray-900': !selected
-            }">
-              {{ connection.name }}
-            </span>
-            <span class="text-xs text-gray-500 truncate">ID: {{ connection.id }}</span>
+          <div class="min-w-0 flex-1">
+            <h3 class="text-lg font-medium text-gray-900 truncate">{{ connection.name }}</h3>
+            <p class="text-sm text-gray-500 truncate">ID: {{ connection.id }}</p>
           </div>
         </div>
       </div>
-      <div class="bg-white p-4 space-y-3">
-        <div class="rounded-lg p-3 bg-opacity-50" :class="{
-          'bg-yellow-50': selected && currentStep?.name === 'source',
-          'bg-green-50': selected && currentStep?.name === 'target',
-          'bg-gray-50': !selected
-        }">
-          <span class="font-semibold text-gray-900">
-            Host:
-            <span class="font-normal text-gray-700 pl-2">{{ concatenateValues }}</span>
-          </span>
+
+      <!-- Content -->
+      <div class="space-y-6 p-6">
+        <!-- Connection Details -->
+        <div class="space-y-4">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="text-xs font-medium uppercase text-gray-500">Host</label>
+              <p class="mt-1 font-medium text-gray-900">{{ concatenateValues }}</p>
+            </div>
+            <div>
+              <label class="text-xs font-medium uppercase text-gray-500">Database</label>
+              <p class="mt-1 font-medium text-gray-900">{{ connection.database }}</p>
+            </div>
+          </div>
+
+          <div v-if="connection.schema">
+            <label class="text-xs font-medium uppercase text-gray-500">Schema</label>
+            <p class="mt-1 font-medium text-gray-900">{{ connection.schema }}</p>
+          </div>
+
+          <div>
+            <label class="text-xs font-medium uppercase text-gray-500">Connection String</label>
+            <div class="mt-1 flex items-start gap-2 rounded-md bg-gray-50 p-3 font-mono text-sm">
+              <span class="flex-1 break-all text-gray-800">
+                {{ showPassword ? connectionString : connectionString.replace(/(?<=:)[^@]+(?=@) /g, '****') }} </span>
+                  <button @click.stop="showPassword = !showPassword"
+                    class="flex-shrink-0 text-gray-400 hover:text-gray-600">
+                    <EyeIcon v-if="!showPassword" class="h-4 w-4" />
+                    <EyeSlashIcon v-else class="h-4 w-4" />
+                  </button>
+            </div>
+          </div>
         </div>
-        <div class="rounded-lg p-3 bg-opacity-50" :class="{
-          'bg-yellow-50': selected && currentStep?.name === 'source',
-          'bg-green-50': selected && currentStep?.name === 'target',
-          'bg-gray-50': !selected
-        }">
-          <span class="font-semibold text-gray-900">
-            Database:
-            <span class="font-normal text-gray-700 pl-2">{{ connection.database }}</span>
-          </span>
-        </div>
-        <div v-if="connection.schema" class="rounded-lg p-3 bg-opacity-50" :class="{
-          'bg-yellow-50': selected && currentStep?.name === 'source',
-          'bg-green-50': selected && currentStep?.name === 'target',
-          'bg-gray-50': !selected
-        }">
-          <span class="font-semibold text-gray-900">
-            Schema:
-            <span class="font-normal text-gray-700 pl-2">{{ connection.schema }}</span>
-          </span>
-        </div>
-        <div class="rounded-lg p-3 bg-opacity-50" :class="{
-          'bg-yellow-50': selected && currentStep?.name === 'source',
-          'bg-green-50': selected && currentStep?.name === 'target',
-          'bg-gray-50': !selected
-        }">
-          <span class="font-semibold text-gray-900">
-            Connection String:
-            <span class="flex items-center gap-2">
-              <span class="font-normal text-gray-700 pl-2">{{ showPassword ? connectionString :
-                connectionString.replace(/:[^@]*@/, '://****@') }}</span>
-              <button @click.stop="showPassword = !showPassword" class="text-gray-400 hover:text-gray-600">
-                <EyeIcon v-if="!showPassword" class="h-4 w-4" />
-                <EyeSlashIcon v-else class="h-4 w-4" />
-              </button>
-            </span>
-          </span>
-        </div>
-        <div class="flex items-center text-gray-500 pt-1">
-          <CalendarIcon class="h-4 w-4" aria-hidden="true" />
-          <span class="text-sm pl-2">{{ connectionCreated }}</span>
+
+        <!-- Creation Date -->
+        <div class="flex items-center gap-2 pt-4 border-t border-gray-100">
+          <CalendarIcon class="h-4 w-4 text-gray-500" />
+          <span class="text-sm text-gray-500">Created: {{ connectionCreated }}</span>
         </div>
       </div>
-      <div v-show="!isStreamsPage" class="mt-auto flex divide-x divide-gray-200" :class="{
-        'bg-yellow-50': selected && currentStep?.name === 'source',
-        'bg-green-50': selected && currentStep?.name === 'target',
-        'bg-gray-50': !selected
-      }">
-        <div class="flex w-0 flex-1">
-          <button v-tooltip="'View database structure'" type="button"
-            class="relative -mr-px inline-flex w-0 flex-1 items-center justify-center gap-x-2 rounded-bl-lg border border-gray-200 py-2.5 text-sm text-gray-700 font-semibold bg-gray-50 hover:bg-gray-100"
-            @click.stop="$router.push({ name: 'DatabaseMetadata', params: { id: connection.id } })">
-            <TableCellsIcon class="h-4 w-4" aria-hidden="true" />
-            Structure
-          </button>
-        </div>
-        <div class="-ml-px flex w-0 flex-1">
-          <button v-tooltip="'Edit the connection'" type="button"
-            class="relative inline-flex w-0 flex-1 items-center justify-center gap-x-2 border border-gray-200 py-2.5 text-sm text-gray-700 font-semibold bg-gray-50 hover:bg-gray-100"
-            @click="editConnection">
-            <PencilIcon class="h-4 w-4" aria-hidden="true" />
-            Edit
-          </button>
-        </div>
-        <div class="-ml-px flex w-0 flex-1">
-          <button v-tooltip="'Clone the connection'" type="button"
-            class="relative inline-flex w-0 flex-1 items-center justify-center gap-x-2 border border-gray-200 py-2.5 text-gray-700 text-sm font-semibold bg-gray-50 hover:bg-gray-100"
-            @click.stop="cloneConnection">
-            <Square2StackIcon class="h-4 w-4" aria-hidden="true" />
-            Clone
-          </button>
-        </div>
-        <div class="-ml-px flex w-0 flex-1">
-          <button v-tooltip="'Delete the connection'" type="button"
-            class="relative inline-flex w-0 flex-1 items-center justify-center gap-x-2 rounded-br-lg border border-gray-200 py-2.5 text-sm font-semibold text-red-600 bg-gray-50 hover:bg-gray-100"
-            @click.stop="deleteConn(connection.id)">
-            <TrashIcon class="h-4 w-4 text-red-600" aria-hidden="true" />
-            Delete
-          </button>
-        </div>
+
+      <!-- Actions -->
+      <div v-show="!isStreamsPage" class="mt-auto flex divide-x divide-gray-200 border-t">
+        <button v-tooltip="'View database structure'" type="button"
+          class="flex-1 px-4 py-3 text-sm font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 flex items-center justify-center gap-2"
+          @click.stop="$router.push({ name: 'DatabaseMetadata', params: { id: connection.id } })">
+          <TableCellsIcon class="h-4 w-4" />
+          Structure
+        </button>
+        <button v-tooltip="'Edit the connection'" type="button"
+          class="flex-1 px-4 py-3 text-sm font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 flex items-center justify-center gap-2"
+          @click.stop="editConnection">
+          <PencilIcon class="h-4 w-4" />
+          Edit
+        </button>
+        <button v-tooltip="'Clone the connection'" type="button"
+          class="flex-1 px-4 py-3 text-sm font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 flex items-center justify-center gap-2"
+          @click.stop="cloneConnection">
+          <Square2StackIcon class="h-4 w-4" />
+          Clone
+        </button>
+        <button v-tooltip="'Delete the connection'" type="button"
+          class="flex-1 px-4 py-3 text-sm font-medium text-red-600 bg-gray-50 hover:bg-gray-100 flex items-center justify-center gap-2"
+          @click.stop="deleteConn(connection.id)">
+          <TrashIcon class="h-4 w-4" />
+          Delete
+        </button>
       </div>
     </div>
   </div>
