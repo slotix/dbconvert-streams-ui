@@ -208,11 +208,13 @@ const getMetadata = async (id: string, forceRefresh = false): Promise<DatabaseMe
 }
 
 interface TableData {
-  rows: Record<string, any>[]
+  columns: string[]
+  rows: any[][]
   count: number
   total_count: number
   limit: number
   offset: number
+  status: string
 }
 
 const getTableData = async (

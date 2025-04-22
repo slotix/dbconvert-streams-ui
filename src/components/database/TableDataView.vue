@@ -10,11 +10,13 @@ const props = defineProps<{
 }>()
 
 interface TableData {
-    rows: Record<string, any>[]
+    columns: string[]
+    rows: any[][]
     count: number
     total_count: number
     limit: number
     offset: number
+    status: string
 }
 
 const isLoading = ref(false)
@@ -204,16 +206,16 @@ const displayedPages = computed(() => {
                         <!-- Table headers -->
                         <thead class="bg-gray-50">
                             <tr>
-                                <th v-for="(value, key) in tableData.rows[0]" :key="key"
+                                <th v-for="column in tableData.columns" :key="column"
                                     class="px-3 py-2 text-left text-sm font-semibold text-gray-900 bg-gray-50">
-                                    {{ key }}
+                                    {{ column }}
                                 </th>
                             </tr>
                         </thead>
                         <!-- Table body -->
                         <tbody class="divide-y divide-gray-200 bg-white">
-                            <tr v-for="(row, index) in tableData.rows" :key="index">
-                                <td v-for="(value, key) in row" :key="key"
+                            <tr v-for="(row, rowIndex) in tableData.rows" :key="rowIndex">
+                                <td v-for="(value, colIndex) in row" :key="colIndex"
                                     class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
                                     {{ value }}
                                 </td>
