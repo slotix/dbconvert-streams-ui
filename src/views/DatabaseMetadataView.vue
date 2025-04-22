@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { ArrowPathIcon } from '@heroicons/vue/24/outline'
+import { ArrowPathIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/vue/24/outline'
 import { useConnectionsStore } from '@/stores/connections'
 import { type DatabaseMetadata, type SQLTableMeta } from '@/types/metadata'
 import connections from '@/api/connections'
@@ -15,6 +15,7 @@ const isLoading = ref(false)
 const metadata = ref<DatabaseMetadata>()
 const selectedTable = ref<SQLTableMeta>()
 const error = ref<string>()
+const isSidebarCollapsed = ref(false)
 
 async function loadMetadata(forceRefresh = false) {
     isLoading.value = true
@@ -33,6 +34,10 @@ function handleTableSelect(table: SQLTableMeta) {
     selectedTable.value = table
 }
 
+function toggleSidebar() {
+    isSidebarCollapsed.value = !isSidebarCollapsed.value
+}
+
 onMounted(() => {
     loadMetadata()
 })
@@ -40,7 +45,7 @@ onMounted(() => {
 
 <template>
     <div class="min-h-screen bg-gray-50 py-8">
-        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="mx-auto max-w-[98%] px-4 sm:px-6 lg:px-8">
             <!-- Header -->
             <div class="mb-8">
                 <div class="flex items-center justify-between">
@@ -60,9 +65,12 @@ onMounted(() => {
             </div>
 
             <!-- Content -->
-            <div class="grid grid-cols-12 gap-8">
+            <div class="flex gap-8 relative">
                 <!-- Sidebar -->
-                <div class="col-span-4">
+                <div :class="[
+                    'transition-all duration-300 ease-in-out',
+                    isSidebarCollapsed ? 'w-0 opacity-0' : 'w-[300px] opacity-100'
+                ]">
                     <div v-if="metadata" class="sticky top-8">
                         <DatabaseStructureTree :metadata="metadata" @select="handleTableSelect" />
                     </div>
@@ -72,8 +80,19 @@ onMounted(() => {
                     </div>
                 </div>
 
+                <!-- Sidebar Toggle Button -->
+                <button @click="toggleSidebar"
+                    class="absolute left-0 top-1/2 -translate-y-1/2 bg-white shadow-lg rounded-r-lg p-2 hover:bg-gray-50 transition-colors"
+                    :class="{ '-translate-x-1': !isSidebarCollapsed }">
+                    <component :is="isSidebarCollapsed ? ChevronRightIcon : ChevronLeftIcon"
+                        class="h-5 w-5 text-gray-500" />
+                </button>
+
                 <!-- Main Content -->
-                <div class="col-span-8">
+                <div :class="[
+                    'transition-all duration-300 ease-in-out flex-1',
+                    isSidebarCollapsed ? 'ml-8' : ''
+                ]">
                     <div v-if="selectedTable">
                         <TableContainer :table-meta="selectedTable" :show-ddl="true" :connection-id="connectionId"
                             @refresh-metadata="loadMetadata(true)" />

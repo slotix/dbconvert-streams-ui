@@ -28,7 +28,7 @@ const tabs = [
                 <TabList class="flex space-x-8 px-6">
                     <Tab v-for="tab in tabs" :key="tab.name" v-slot="{ selected }" as="template">
                         <button :class="[
-                            'border-b-2 py-4 px-1 text-sm font-medium',
+                            'border-b-2 py-4 px-1 text-sm font-medium whitespace-nowrap',
                             selected
                                 ? 'border-blue-500 text-blue-600'
                                 : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
@@ -40,7 +40,7 @@ const tabs = [
             </div>
 
             <!-- Tab Panels -->
-            <TabPanels>
+            <TabPanels class="overflow-hidden">
                 <!-- Structure Panel -->
                 <TabPanel>
                     <TableMetadataView :table-meta="tableMeta" :show-ddl="showDdl" :connection-id="connectionId"
