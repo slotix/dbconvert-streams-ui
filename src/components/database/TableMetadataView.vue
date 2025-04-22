@@ -6,6 +6,7 @@ import { type SQLTableMeta } from '@/types/metadata'
 const props = defineProps<{
   tableMeta: SQLTableMeta
   showDdl?: boolean
+  connectionId: string
 }>()
 
 const columns = computed(() => props.tableMeta?.Columns || [])
@@ -57,11 +58,14 @@ function getColumnExtra(column: typeof columns.value[0]) {
 </script>
 
 <template>
-  <div class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg">
+  <div :class="[
+    'bg-white',
+    $attrs.class ? $attrs.class : 'shadow-sm ring-1 ring-gray-900/5 rounded-lg'
+  ]">
     <div class="px-4 py-3 border-b border-gray-200">
       <div class="flex items-center justify-between">
         <h3 class="text-lg font-medium leading-6 text-gray-900">
-          {{ tableMeta?.Name || '' }}
+          Table Structure: {{ tableMeta?.Name || '' }}
           <span v-if="tableMeta?.Schema" class="text-sm text-gray-500">
             ({{ tableMeta.Schema }})
           </span>

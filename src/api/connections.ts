@@ -207,6 +207,49 @@ const getMetadata = async (id: string, forceRefresh = false): Promise<DatabaseMe
   }
 }
 
+interface TableData {
+  rows: Record<string, any>[]
+  count: number
+  total_count: number
+  limit: number
+  offset: number
+}
+
+const getTableData = async (
+  connectionId: string,
+  tableName: string,
+  params: {
+    limit: number
+    offset: number
+    skip_count: boolean
+    schema?: string
+  }
+): Promise<TableData> => {
+  const commonStore = useCommonStore()
+  validateApiKey(commonStore.apiKey)
+  try {
+    const queryParams = new URLSearchParams({
+      limit: params.limit.toString(),
+      offset: params.offset.toString(),
+      skip_count: params.skip_count.toString()
+    })
+
+    if (params.schema) {
+      queryParams.append('schema', params.schema)
+    }
+
+    const response: AxiosResponse<TableData> = await apiClient.get(
+      `/connections/${connectionId}/tables/${tableName}/data?${queryParams.toString()}`,
+      {
+        headers: { 'X-API-Key': commonStore.apiKey }
+      }
+    )
+    return response.data
+  } catch (error) {
+    throw handleApiError(error)
+  }
+}
+
 export default {
   getConnections,
   createConnection,
@@ -218,5 +261,6 @@ export default {
   createDatabase,
   createSchema,
   getTables,
-  getMetadata
+  getMetadata,
+  getTableData
 }

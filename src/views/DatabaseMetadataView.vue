@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ArrowPathIcon } from '@heroicons/vue/24/outline'
+import { useConnectionsStore } from '@/stores/connections'
 import { type DatabaseMetadata, type SQLTableMeta } from '@/types/metadata'
 import connections from '@/api/connections'
 import DatabaseStructureTree from '@/components/database/DatabaseStructureTree.vue'
-import TableMetadataView from '@/components/database/TableMetadataView.vue'
+import TableContainer from '@/components/database/TableContainer.vue'
 
 const route = useRoute()
 const connectionId = route.params.id as string
@@ -80,7 +81,7 @@ onMounted(() => {
                 <!-- Main Content -->
                 <div class="col-span-8">
                     <div v-if="selectedTable">
-                        <TableMetadataView :table-meta="selectedTable" :show-ddl="true" />
+                        <TableContainer :table-meta="selectedTable" :show-ddl="true" :connection-id="connectionId" />
                     </div>
                     <div v-else class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg p-8 text-center">
                         <h3 class="text-sm font-medium text-gray-900">No table selected</h3>
