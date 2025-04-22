@@ -7,6 +7,7 @@ import './assets/style.css'
 import App from './App.vue'
 import router from './router'
 import { logEnvironment } from '@/utils/environment'
+import { vTooltip } from '@/directives/tooltip'
 
 // Ensure window.ENV exists
 if (!window.ENV) {
@@ -42,4 +43,5 @@ const app = createApp(App)
 app.use(createPinia())
 app.use(router)
 app.use(Toast, toastOptions)
+app.directive('tooltip', vTooltip)
 app.mount('#app')
