@@ -10,6 +10,10 @@ const props = defineProps<{
     connectionId: string
 }>()
 
+const emit = defineEmits<{
+    (e: 'refresh-metadata'): void
+}>()
+
 const tabs = [
     { name: 'Structure', component: 'TableMetadataView' },
     { name: 'Data', component: 'TableDataView' }
@@ -40,7 +44,7 @@ const tabs = [
                 <!-- Structure Panel -->
                 <TabPanel>
                     <TableMetadataView :table-meta="tableMeta" :show-ddl="showDdl" :connection-id="connectionId"
-                        class="rounded-none shadow-none ring-0" />
+                        class="rounded-none shadow-none ring-0" @refresh-metadata="emit('refresh-metadata')" />
                 </TabPanel>
 
                 <!-- Data Panel -->

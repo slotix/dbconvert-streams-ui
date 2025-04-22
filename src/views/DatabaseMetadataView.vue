@@ -45,12 +45,6 @@ onMounted(() => {
             <div class="mb-8">
                 <div class="flex items-center justify-between">
                     <h1 class="text-2xl font-semibold text-gray-900">Database Structure</h1>
-                    <button type="button"
-                        class="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
-                        :disabled="isLoading" @click="loadMetadata(true)">
-                        <ArrowPathIcon :class="['h-5 w-5 text-gray-400 mr-2', { 'animate-spin': isLoading }]" />
-                        Refresh Metadata
-                    </button>
                 </div>
             </div>
 
@@ -81,7 +75,8 @@ onMounted(() => {
                 <!-- Main Content -->
                 <div class="col-span-8">
                     <div v-if="selectedTable">
-                        <TableContainer :table-meta="selectedTable" :show-ddl="true" :connection-id="connectionId" />
+                        <TableContainer :table-meta="selectedTable" :show-ddl="true" :connection-id="connectionId"
+                            @refresh-metadata="loadMetadata(true)" />
                     </div>
                     <div v-else class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg p-8 text-center">
                         <h3 class="text-sm font-medium text-gray-900">No table selected</h3>

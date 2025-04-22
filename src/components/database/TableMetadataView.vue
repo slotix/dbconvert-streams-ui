@@ -1,12 +1,17 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/vue'
+import { ArrowPathIcon } from '@heroicons/vue/24/outline'
 import { type SQLTableMeta } from '@/types/metadata'
 
 const props = defineProps<{
   tableMeta: SQLTableMeta
   showDdl?: boolean
   connectionId: string
+}>()
+
+const emit = defineEmits<{
+  (e: 'refresh-metadata'): void
 }>()
 
 const columns = computed(() => props.tableMeta?.Columns || [])
@@ -70,6 +75,12 @@ function getColumnExtra(column: typeof columns.value[0]) {
             ({{ tableMeta.Schema }})
           </span>
         </h3>
+        <button type="button"
+          class="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+          @click="emit('refresh-metadata')">
+          <ArrowPathIcon class="h-5 w-5 text-gray-400 mr-2" />
+          Refresh Metadata
+        </button>
       </div>
     </div>
 
