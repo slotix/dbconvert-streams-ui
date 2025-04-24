@@ -31,8 +31,7 @@ const treeData = computed<TreeNode[]>(() => {
 
   // Process each table
   metadataEntries.forEach(([tableName, tableMeta]) => {
-    const schemaName = (tableMeta?.Type?.toLowerCase?.() === 'mysql') ? '' : (tableMeta?.Schema || 'public')
-
+    const schemaName = tableMeta?.Schema
     if (!schemaMap.has(schemaName)) {
       schemaMap.set(schemaName, {
         name: schemaName,

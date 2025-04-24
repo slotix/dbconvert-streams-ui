@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
 import type { Table, Position, Relationship, ForeignKey } from '@/types/schema'
-import { apiClient } from '@/api/apiClient'
 import connections from '@/api/connections'
 
 export const useSchemaStore = defineStore('schema', {
@@ -107,7 +106,7 @@ export const useSchemaStore = defineStore('schema', {
 
                         return {
                             name: tableMeta.Name,
-                            schema: tableMeta.Schema || 'public',
+                            schema: tableMeta.Schema,
                             columns,
                             primaryKeys: tableMeta.PrimaryKeys || [],
                             foreignKeys
