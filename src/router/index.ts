@@ -6,6 +6,7 @@ import ConnectionsView from '@/views/ConnectionsView.vue'
 import ManageStreamView from '@/views/ManageStreamView.vue'
 import MonitorStreamView from '@/views/MonitorStreamView.vue'
 import DatabaseMetadataView from '@/views/DatabaseMetadataView.vue'
+import SchemaViewer from '@/views/SchemaViewer.vue'
 import NotFound from '@/views/NotFound.vue'
 
 const routes = [
@@ -23,6 +24,12 @@ const routes = [
     path: '/connections/:id/metadata',
     name: 'DatabaseMetadata',
     component: DatabaseMetadataView,
+    props: true
+  },
+  {
+    path: '/connections/:id/schema',
+    name: 'SchemaViewer',
+    component: SchemaViewer,
     props: true
   },
   {

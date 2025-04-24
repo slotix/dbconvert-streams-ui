@@ -8,6 +8,15 @@ interface NullableNumber {
     Valid: boolean
 }
 
+export interface SQLForeignKeyMeta {
+    Name: string                    // Name of the foreign key constraint
+    SourceColumn: string           // Column in the current table
+    ReferencedTable: string        // Referenced table name
+    ReferencedColumn: string       // Referenced column name
+    OnUpdate?: string             // ON UPDATE behavior (CASCADE, SET NULL, etc.)
+    OnDelete?: string             // ON DELETE behavior (CASCADE, SET NULL, etc.)
+}
+
 export interface SQLColumnMeta {
     Name: string
     DataType: string
@@ -43,6 +52,7 @@ export interface SQLTableMeta {
     Columns: SQLColumnMeta[]
     Indexes: SQLIndexMeta[]
     PrimaryKeys: string[]
+    ForeignKeys: SQLForeignKeyMeta[]  // Add foreign keys at the table level
     AutoIncrement: string
     DDL: TableDDL
 }
