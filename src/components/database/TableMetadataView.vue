@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/vue'
-import { ArrowPathIcon } from '@heroicons/vue/24/outline'
-import { type SQLTableMeta } from '@/types/metadata'
+import { ArrowPathIcon, KeyIcon, LinkIcon } from '@heroicons/vue/24/outline'
+import { type SQLTableMeta, type SQLForeignKeyMeta } from '@/types/metadata'
 
 const props = defineProps<{
   tableMeta: SQLTableMeta
@@ -14,7 +14,38 @@ const emit = defineEmits<{
   (e: 'refresh-metadata'): void
 }>()
 
-const columns = computed(() => props.tableMeta?.Columns || [])
+const columns = computed(() => {
+  const primaryKeys = new Set(props.tableMeta?.PrimaryKeys || [])
+
+  const foreignKeyColumns = new Set(
+    ((props.tableMeta as any)?.foreignKeys || []).map((fk: any) => {
+      return fk.sourceColumn
+    })
+  )
+
+  return (props.tableMeta?.Columns || []).map(column => {
+    const isPrimaryKey = primaryKeys.has(column.Name)
+    const isForeignKey = foreignKeyColumns.has(column.Name)
+
+    return {
+      ...column,
+      IsPrimaryKey: isPrimaryKey,
+      IsForeignKey: isForeignKey
+    }
+  })
+})
+
+const foreignKeys = computed(() => {
+  return ((props.tableMeta as any)?.foreignKeys || []).map((fk: any) => ({
+    name: fk.name,
+    sourceColumn: fk.sourceColumn,
+    referencedTable: fk.referencedTable,
+    referencedColumn: fk.referencedColumn,
+    onUpdate: fk.onUpdate,
+    onDelete: fk.onDelete
+  }))
+})
+
 const indexes = computed(() => props.tableMeta?.Indexes || [])
 const primaryKeys = computed(() => props.tableMeta?.PrimaryKeys || [])
 const ddl = computed(() => props.tableMeta?.DDL)
@@ -22,8 +53,8 @@ const ddl = computed(() => props.tableMeta?.DDL)
 const tabs = computed(() => {
   const baseTabs = [
     { name: 'Columns', count: columns.value.length },
-    { name: 'Indexes', count: indexes.value.length },
-    { name: 'Primary Keys', count: primaryKeys.value.length }
+    { name: 'Keys', count: primaryKeys.value.length + foreignKeys.value.length },
+    { name: 'Indexes', count: indexes.value.length }
   ]
 
   if (props.showDdl && ddl.value) {
@@ -114,42 +145,81 @@ function getColumnExtra(column: typeof columns.value[0]) {
                 <table class="min-w-full divide-y divide-gray-300">
                   <thead>
                     <tr class="bg-gray-50">
-                      <th class="sticky left-0 bg-gray-50 px-3 py-2 text-left text-sm font-semibold text-gray-900">Name
-                      </th>
+                      <th class="px-3 py-2 text-left text-sm font-semibold text-gray-900">Column</th>
                       <th class="px-3 py-2 text-left text-sm font-semibold text-gray-900">Type</th>
-                      <th class="px-3 py-2 text-left text-sm font-semibold text-gray-900">Nullable</th>
+                      <th class="px-3 py-2 text-left text-sm font-semibold text-gray-900">Null</th>
                       <th class="px-3 py-2 text-left text-sm font-semibold text-gray-900">Default</th>
-                      <th class="px-3 py-2 text-left text-sm font-semibold text-gray-900">Extra</th>
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-gray-200 bg-white">
                     <tr v-for="column in columns" :key="column.Name" class="hover:bg-gray-50">
-                      <td class="sticky left-0 bg-white whitespace-nowrap px-3 py-2 text-sm text-gray-900">
-                        <div class="flex items-center">
-                          <span :class="{ 'font-semibold': column.IsPrimaryKey }">{{ column.Name }}</span>
-                          <span v-if="column.IsPrimaryKey" class="ml-2 text-xs text-blue-600">(PK)</span>
+                      <td class="whitespace-nowrap px-3 py-2 text-sm">
+                        <div class="flex items-center space-x-1.5">
+                          <KeyIcon v-if="column.IsPrimaryKey" class="h-4 w-4 text-blue-600 flex-shrink-0" />
+                          <LinkIcon v-else-if="column.IsForeignKey" class="h-4 w-4 text-purple-600 flex-shrink-0" />
+                          <span :class="{
+                            'font-semibold text-blue-700': column.IsPrimaryKey,
+                            'font-medium text-purple-700': !column.IsPrimaryKey && column.IsForeignKey,
+                            'text-gray-900': !column.IsPrimaryKey && !column.IsForeignKey
+                          }">{{ column.Name }}</span>
                         </div>
                       </td>
                       <td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
                         {{ getColumnType(column) }}
                       </td>
-                      <td class="whitespace-nowrap px-3 py-2 text-sm">
-                        <span :class="[
-                          'inline-flex rounded-full px-2 text-xs font-medium leading-5',
-                          column.IsNullable ? 'bg-gray-100 text-gray-600' : 'bg-gray-100 text-gray-800'
-                        ]">
-                          {{ column.IsNullable ? 'NULL' : 'NOT NULL' }}
-                        </span>
+                      <td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
+                        <input type="checkbox" :checked="column.IsNullable" disabled
+                          class="h-4 w-4 rounded border-gray-300 text-gray-400 cursor-not-allowed" />
                       </td>
                       <td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
                         {{ getColumnDefault(column) }}
                       </td>
-                      <td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
-                        {{ getColumnExtra(column) }}
-                      </td>
                     </tr>
                   </tbody>
                 </table>
+              </div>
+            </div>
+          </div>
+        </TabPanel>
+
+        <!-- Keys Panel -->
+        <TabPanel>
+          <div class="space-y-6">
+            <!-- Primary Keys Section -->
+            <div>
+              <h4 class="text-sm font-medium text-gray-900 mb-3">Primary Keys</h4>
+              <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                <div v-for="pk in primaryKeys" :key="pk" class="flex items-center space-x-2 bg-blue-50 rounded-lg p-3">
+                  <KeyIcon class="h-4 w-4 text-blue-600 flex-shrink-0" />
+                  <span class="text-sm font-medium text-blue-900">{{ pk }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Foreign Keys Section -->
+            <div>
+              <h4 class="text-sm font-medium text-gray-900 mb-3">Foreign Keys</h4>
+              <div class="space-y-3">
+                <div v-for="fk in foreignKeys" :key="fk.name" class="bg-purple-50 rounded-lg p-4">
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                      <LinkIcon class="h-4 w-4 text-purple-600 flex-shrink-0" />
+                      <span class="text-sm font-medium text-purple-900">{{ fk.name }}</span>
+                    </div>
+                  </div>
+                  <div class="mt-2 text-sm text-purple-800">
+                    <div class="grid grid-cols-2 gap-x-4 gap-y-1">
+                      <div>Source Column:</div>
+                      <div class="font-medium">{{ fk.sourceColumn }}</div>
+                      <div>References:</div>
+                      <div class="font-medium">{{ fk.referencedTable }}.{{ fk.referencedColumn }}</div>
+                      <div>On Update:</div>
+                      <div class="font-medium">{{ fk.onUpdate || 'NO ACTION' }}</div>
+                      <div>On Delete:</div>
+                      <div class="font-medium">{{ fk.onDelete || 'NO ACTION' }}</div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -183,16 +253,6 @@ function getColumnExtra(column: typeof columns.value[0]) {
                   {{ column }}
                 </span>
               </div>
-            </div>
-          </div>
-        </TabPanel>
-
-        <!-- Primary Keys Panel -->
-        <TabPanel>
-          <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            <div v-for="pk in primaryKeys" :key="pk"
-              class="flex items-center space-x-2 bg-gray-50 rounded-lg p-3 hover:bg-gray-100 transition-colors">
-              <span class="text-sm text-gray-900">{{ pk }}</span>
             </div>
           </div>
         </TabPanel>

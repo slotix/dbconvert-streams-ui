@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { ChevronRightIcon, ChevronDownIcon, TableCellsIcon, KeyIcon } from '@heroicons/vue/24/outline'
+import { ChevronRightIcon, ChevronDownIcon, TableCellsIcon } from '@heroicons/vue/24/outline'
 import { type DatabaseMetadata, type SQLTableMeta } from '@/types/metadata'
 
 const props = defineProps<{
@@ -141,8 +141,6 @@ function handleTableSelect(table: TreeNode) {
               <TableCellsIcon class="h-4 w-4 mr-1.5 flex-shrink-0"
                 :class="selectedTableName === table.name ? 'text-blue-500' : 'text-gray-400'" />
               <span>{{ table.name }}</span>
-              <KeyIcon v-if="table.meta?.PrimaryKeys?.length" class="h-4 w-4 ml-1.5 flex-shrink-0"
-                :class="selectedTableName === table.name ? 'text-blue-500' : 'text-blue-400'" />
             </div>
           </div>
         </template>
