@@ -79,16 +79,15 @@ function resetTransform() {
 // Initialize mermaid with ERD configuration
 mermaid.initialize({
     startOnLoad: false,
-    theme: 'default',
+    theme: 'neutral',
     er: {
-        diagramPadding: 20,
+        diagramPadding: 32,
         layoutDirection: 'TB',
-        minEntityWidth: 100,
-        minEntityHeight: 75,
-        entityPadding: 15,
-        stroke: 'gray',
-        fill: 'white',
-        fontSize: 12
+        minEntityWidth: 140,
+        minEntityHeight: 90,
+        entityPadding: 24,
+        fontSize: 14,
+        useMaxWidth: true
     },
     securityLevel: 'loose'
 })
@@ -224,7 +223,7 @@ onMounted(() => {
         <div ref="diagramContainer" class="diagram-wrapper" :style="transformStyle" @mousedown="handleMouseDown"
             @wheel.prevent="handleWheel"></div>
         <div class="controls">
-            <button @click="transform.scale = Math.min(2, transform.scale * 1.1)" class="control-btn">
+            <button @click="transform.scale = Math.min(2, transform.scale * 1.5)" class="control-btn">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2">
                     <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -259,6 +258,15 @@ onMounted(() => {
     transform-origin: 0 0;
     will-change: transform;
     user-select: none;
+}
+
+/* Basic hover effect */
+:deep(.entityBox) {
+    transition: all 0.2s ease;
+}
+
+:deep(.entityBox:hover) {
+    filter: brightness(0.95);
 }
 
 .loading,
