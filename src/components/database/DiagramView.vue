@@ -11,6 +11,7 @@ const props = withDefaults(defineProps<{
     relationships: () => []
 })
 
+
 const hasData = computed(() => {
     return props.tables?.length > 0
 })

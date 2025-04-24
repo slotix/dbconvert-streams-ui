@@ -85,22 +85,20 @@ mermaid.initialize({
     startOnLoad: false,
     theme: 'neutral',
     er: {
-        diagramPadding: 40,
-        layoutDirection: 'TB',
-        minEntityWidth: 200,
+        diagramPadding: 20,
+        layoutDirection: 'LR',  // Left to Right layout
+        minEntityWidth: 150,
         minEntityHeight: 100,
-        entityPadding: 20,
-        fontSize: 14,
-        useMaxWidth: true
+        entityPadding: 30,
+        useMaxWidth: false
     },
     themeVariables: {
-        // fontFamily: 'system-ui, -apple-system, sans-serif',
-        // fontSize: '12px',
         lineColor: '#666',
         textColor: '#333',
         mainBkg: 'transparent',
         nodeBorder: '#e5e5e5',
-        clusterBkg: 'transparent'
+        clusterBkg: 'transparent',
+        fontSize: '14px'
     },
     securityLevel: 'loose'
 })
@@ -111,13 +109,29 @@ const diagramDefinition = computed(() => {
 
     // Add entities (tables)
     if (props.tables?.length) {
-        props.tables.forEach(table => {
+        // Sort tables by name for consistent layout
+        const sortedTables = [...props.tables].sort((a, b) => a.name.localeCompare(b.name))
+
+        // Add artificial relationships for layout if no relationships exist
+        if (!props.relationships.length) {
+            lines.push('')
+            // Create a chain of invisible relationships to force multi-row layout
+            for (let i = 0; i < sortedTables.length - 1; i += 3) {
+                if (sortedTables[i + 1]) {
+                    lines.push(`    %% Layout relationship ${i}`)
+                    lines.push(`    ${sortedTables[i].name} ||--|| ${sortedTables[i + 1].name} : ""`)
+                }
+            }
+        }
+
+        sortedTables.forEach(table => {
             if (!table?.columns?.length) return
 
             lines.push('')
             lines.push(`    ${table.name} {`)
             table.columns.forEach(col => {
-                const baseType = col.type.split('(')[0].toLowerCase()
+                // Simplify the type by removing everything after first space or parenthesis
+                const baseType = col.type.split(/[\s(]/)[0].toLowerCase()
                 const comment = [
                     col.isPrimaryKey && 'PK',
                     col.isForeignKey && 'FK'
