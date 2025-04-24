@@ -21,51 +21,40 @@
           <table class="min-w-full divide-y divide-gray-300 bg-white">
             <thead class="text-sm md:text-base">
               <tr class="bg-gray-100 divide-x divide-gray-200">
-                <th
-                  scope="col"
-                  class="px-5 py-3 border-b border-gray-200 text-gray-800 text-left uppercase font-normal"
-                >
+                <th scope="col"
+                  class="px-5 py-3 border-b border-gray-200 text-gray-800 text-left uppercase font-normal">
                   Connection
                 </th>
-                <th
-                  scope="col"
-                  class="hidden px-5 py-3 border-b border-gray-200 text-gray-800 text-left uppercase font-normal lg:table-cell"
-                >
+                <th scope="col"
+                  class="hidden px-5 py-3 border-b border-gray-200 text-gray-800 text-left uppercase font-normal lg:table-cell">
                   Host
                 </th>
-                <th
-                  scope="col"
-                  class="hidden px-5 py-3 border-b border-gray-200 text-gray-800 text-left uppercase font-normal lg:table-cell"
-                >
+                <th scope="col"
+                  class="hidden px-5 py-3 border-b border-gray-200 text-gray-800 text-left uppercase font-normal lg:table-cell">
                   Database
                 </th>
-                <th
-                  scope="col"
-                  class="px-5 py-3 border-b border-gray-200 text-gray-800 text-left uppercase font-normal hidden lg:table-cell"
-                >
+                <th scope="col"
+                  class="px-5 py-3 border-b border-gray-200 text-gray-800 text-left uppercase font-normal hidden lg:table-cell">
                   Created at
                 </th>
-                <th
-                  scope="col"
-                  class="px-5 py-3 border-b border-gray-200 text-gray-800 text-center uppercase font-normal"
-                >
+                <th scope="col"
+                  class="px-5 py-3 border-b border-gray-200 text-gray-800 text-center uppercase font-normal">
+                  Explore
+                </th>
+                <th scope="col"
+                  class="px-5 py-3 border-b border-gray-200 text-gray-800 text-center uppercase font-normal">
                   Edit
                 </th>
-                <th
-                  scope="col"
-                  class="px-5 py-3 border-b border-gray-200 text-gray-800 text-center uppercase font-normal"
-                >
+                <th scope="col"
+                  class="px-5 py-3 border-b border-gray-200 text-gray-800 text-center uppercase font-normal">
                   Actions
                 </th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200 bg-white">
-              <tr
-                v-for="connection in connections"
-                :key="connection.id"
+              <tr v-for="connection in connections" :key="connection.id"
                 class="divide-x divide-gray-200 cursor-pointer border-b border-gray-200 cursor-pointer"
-                :class="bgRowClass(connection)"
-              >
+                :class="bgRowClass(connection)">
                 <TableRow :connection="connection" />
               </tr>
             </tbody>

@@ -148,6 +148,10 @@ export default defineComponent({
         this.commonStore.openModal(DIALOG_TYPES.UPDATE)
       }
     },
+    exploreConnection(): void {
+      if (!this.connection) return
+      this.$router.push({ name: 'DatabaseMetadata', params: { id: this.connection.id } })
+    },
     async cloneConnection(): Promise<void> {
       if (!this.connection) return
       this.connectionsStore.setCurrentConnection(this.connection.id)

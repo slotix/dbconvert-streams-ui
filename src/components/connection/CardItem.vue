@@ -1,14 +1,14 @@
 <template>
   <div class="w-full">
     <div
-      class="bg-white rounded-lg border overflow-hidden cursor-pointer transform hover:shadow-lg duration-300 ease-in-out flex flex-col h-full"
+      class="bg-white rounded-lg border overflow-hidden cursor-pointer transform hover:shadow-lg duration-300 ease-in-out flex flex-col min-h-[400px] max-h-[500px]"
       :class="{
         'border-yellow-500 ring-2 ring-yellow-400': selected && currentStep?.name === 'source',
         'border-green-500 ring-2 ring-green-400': selected && currentStep?.name === 'target',
         'border-gray-200': !selected
       }" @click="selectConnection">
       <!-- Header -->
-      <div class="border-b px-6 py-4" :class="{
+      <div class="border-b px-6 py-4 flex-shrink-0" :class="{
         'bg-yellow-50': selected && currentStep?.name === 'source',
         'bg-green-50': selected && currentStep?.name === 'target',
         'bg-gray-50': !selected
@@ -29,29 +29,33 @@
       </div>
 
       <!-- Content -->
-      <div class="space-y-6 p-6">
+      <div class="space-y-6 p-6 flex-1 overflow-y-auto">
         <!-- Connection Details -->
         <div class="space-y-4">
-          <div class="grid grid-cols-2 gap-4">
-            <div>
+          <div class="grid grid-cols-3 gap-4">
+            <div class="min-w-0">
               <label class="text-xs font-medium uppercase text-gray-500">Host</label>
-              <p class="mt-1 font-medium text-gray-900">{{ concatenateValues }}</p>
+              <p class="mt-1 font-medium text-gray-900 truncate">{{ concatenateValues }}</p>
             </div>
-            <div>
+            <div class="min-w-0">
               <label class="text-xs font-medium uppercase text-gray-500">Database</label>
-              <p class="mt-1 font-medium text-gray-900">{{ connection.database }}</p>
+              <p class="mt-1 font-medium text-gray-900 truncate">{{ connection.database }}</p>
+            </div>
+            <div v-if="connection.type?.toLowerCase().includes('postgres')" class="min-w-0">
+              <label class="text-xs font-medium uppercase text-gray-500">Schema</label>
+              <p class="mt-1 font-medium text-gray-900 truncate">{{ connection.schema }}</p>
             </div>
           </div>
 
-          <div v-if="connection.schema">
+          <div v-if="!connection.type?.toLowerCase().includes('postgres') && connection.schema" class="min-w-0">
             <label class="text-xs font-medium uppercase text-gray-500">Schema</label>
-            <p class="mt-1 font-medium text-gray-900">{{ connection.schema }}</p>
+            <p class="mt-1 font-medium text-gray-900 truncate">{{ connection.schema }}</p>
           </div>
 
-          <div>
+          <div class="min-w-0">
             <label class="text-xs font-medium uppercase text-gray-500">Connection String</label>
             <div class="mt-1 flex items-start gap-2 rounded-md bg-gray-50 p-3 font-mono text-sm">
-              <span class="flex-1 break-all text-gray-800">
+              <span class="flex-1 break-all text-gray-800 overflow-x-auto">
                 {{ showPassword ? connectionString : connectionString.replace(/(?<=:)[^@]+(?=@) /g, '****') }} </span>
                   <button @click.stop="showPassword = !showPassword"
                     class="flex-shrink-0 text-gray-400 hover:text-gray-600">
@@ -65,17 +69,17 @@
         <!-- Creation Date -->
         <div class="flex items-center gap-2 pt-4 border-t border-gray-100">
           <CalendarIcon class="h-4 w-4 text-gray-500" />
-          <span class="text-sm text-gray-500">Created: {{ connectionCreated }}</span>
+          <span class="text-sm text-gray-500 truncate">Created: {{ connectionCreated }}</span>
         </div>
       </div>
 
       <!-- Actions -->
-      <div v-show="!isStreamsPage" class="mt-auto flex divide-x divide-gray-200 border-t">
-        <button v-tooltip="'View database structure'" type="button"
+      <div v-show="!isStreamsPage" class="flex divide-x divide-gray-200 border-t flex-shrink-0">
+        <button v-tooltip="'View tables, data, schema, and AI assistant'" type="button"
           class="flex-1 px-4 py-3 text-sm font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 flex items-center justify-center gap-2"
           @click.stop="$router.push({ name: 'DatabaseMetadata', params: { id: connection.id } })">
           <TableCellsIcon class="h-4 w-4" />
-          Structure
+          Explore
         </button>
         <button v-tooltip="'Edit the connection'" type="button"
           class="flex-1 px-4 py-3 text-sm font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 flex items-center justify-center gap-2"
