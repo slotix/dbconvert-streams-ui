@@ -107,7 +107,7 @@ function handleTableSelect(table: TreeNode) {
 <template>
   <div class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg divide-y divide-gray-200">
     <div class="px-4 py-3">
-      <h3 class="text-base font-semibold leading-6 text-gray-900">Database Structure</h3>
+      <h3 class="text-base font-semibold leading-6 text-gray-900">Tables</h3>
     </div>
 
     <div class="p-4">

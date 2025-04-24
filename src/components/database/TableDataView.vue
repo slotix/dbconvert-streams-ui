@@ -156,7 +156,10 @@ const displayedPages = computed(() => {
         <div class="px-4 py-3 border-b border-gray-200">
             <div class="flex items-center justify-between">
                 <h3 class="text-lg font-medium leading-6 text-gray-900">
-                    Table Data
+                    {{ tableMeta?.Name || '' }}
+                    <span v-if="tableMeta?.Schema" class="text-sm text-gray-500">
+                        ({{ tableMeta.Schema }})
+                    </span>
                 </h3>
                 <div class="flex items-center gap-4">
                     <!-- Items per page selector -->

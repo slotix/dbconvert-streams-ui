@@ -66,8 +66,6 @@ export const useSchemaStore = defineStore('schema', {
                     throw new Error('Invalid metadata response format')
                 }
 
-                console.log('Raw metadata from backend:', metadata)
-
                 // Convert metadata to tables array
                 const tables: Table[] = Object.entries(metadata)
                     .filter(([_, value]) => value && typeof value === 'object')
@@ -98,17 +96,14 @@ export const useSchemaStore = defineStore('schema', {
                         })
 
                         // Map foreign keys to our internal format
-                        const foreignKeys = (tableMeta.foreignKeys || []).map((fk: any) => {
-                            console.log(`Mapping foreign key for ${tableName}:`, fk)
-                            return {
-                                name: fk.name,
-                                column: fk.sourceColumn,
-                                referencedTable: fk.referencedTable,
-                                referencedColumn: fk.referencedColumn,
-                                onUpdate: fk.onUpdate,
-                                onDelete: fk.onDelete
-                            }
-                        })
+                        const foreignKeys = (tableMeta.foreignKeys || []).map((fk: any) => ({
+                            name: fk.name,
+                            column: fk.sourceColumn,
+                            referencedTable: fk.referencedTable,
+                            referencedColumn: fk.referencedColumn,
+                            onUpdate: fk.onUpdate,
+                            onDelete: fk.onDelete
+                        }))
 
                         return {
                             name: tableMeta.Name,
@@ -119,13 +114,10 @@ export const useSchemaStore = defineStore('schema', {
                         }
                     })
 
-                console.log('Processed tables:', tables)
                 this.tables = tables
 
                 // Generate relationships after tables are set
-                const relationships = this.generateRelationships(tables)
-                console.log('Generated relationships:', relationships)
-                this.relationships = relationships
+                this.relationships = this.generateRelationships(tables)
 
                 // Calculate initial positions if they don't exist
                 if (Object.keys(this.tablePositions).length === 0) {
@@ -146,10 +138,7 @@ export const useSchemaStore = defineStore('schema', {
             const processedRelationships = new Set<string>()
 
             tables.forEach(table => {
-                if (!table.foreignKeys?.length) {
-                    console.log(`No foreign keys for table ${table.name}`)
-                    return
-                }
+                if (!table.foreignKeys?.length) return
 
                 table.foreignKeys.forEach(fk => {
                     // Skip if we don't have all the required information
@@ -162,16 +151,13 @@ export const useSchemaStore = defineStore('schema', {
                     const id = `${table.name}.${fk.column}->${fk.referencedTable}.${fk.referencedColumn}`
 
                     // Skip if we've already processed this relationship
-                    if (processedRelationships.has(id)) {
-                        console.log(`Skipping duplicate relationship: ${id}`)
-                        return
-                    }
+                    if (processedRelationships.has(id)) return
                     processedRelationships.add(id)
 
                     // Only add if both tables exist
                     const targetTable = tables.find(t => t.name === fk.referencedTable)
                     if (targetTable) {
-                        const relationship: Relationship = {
+                        relationships.push({
                             id,
                             sourceTable: table.name,
                             sourceColumn: fk.column,
@@ -179,16 +165,13 @@ export const useSchemaStore = defineStore('schema', {
                             targetColumn: fk.referencedColumn,
                             type: 'foreignKey',
                             label: `${fk.column} → ${fk.referencedColumn}`
-                        }
-                        console.log('Adding relationship:', relationship)
-                        relationships.push(relationship)
+                        })
                     } else {
                         console.warn(`Target table ${fk.referencedTable} not found for relationship ${id}`)
                     }
                 })
             })
 
-            console.log(`Generated ${relationships.length} relationships`)
             return relationships
         },
 
@@ -209,7 +192,6 @@ export const useSchemaStore = defineStore('schema', {
                 tableConnections.get(rel.targetTable)?.add(rel.sourceTable)
             })
 
-            // Sort tables by number of relationships (most connected first)
             const sortedTables = [...this.tables].sort((a, b) => {
                 const aConnections = tableConnections.get(a.name)?.size || 0
                 const bConnections = tableConnections.get(b.name)?.size || 0
@@ -244,8 +226,6 @@ export const useSchemaStore = defineStore('schema', {
                     }
                 }
             })
-
-            console.log('Calculated initial positions:', this.tablePositions)
         },
 
         updateTablePosition(tableId: string, position: Position) {
@@ -254,10 +234,6 @@ export const useSchemaStore = defineStore('schema', {
 
         setSelectedTable(tableId: string | null) {
             this.selectedTable = tableId
-        },
-
-        resetView() {
-            this.calculateInitialPositions()
         }
     }
 }) 

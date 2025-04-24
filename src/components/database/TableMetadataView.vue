@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/vue'
 import { ArrowPathIcon, KeyIcon, LinkIcon } from '@heroicons/vue/24/outline'
-import { type SQLTableMeta, type SQLForeignKeyMeta } from '@/types/metadata'
+import { type SQLTableMeta } from '@/types/metadata'
 
 const props = defineProps<{
   tableMeta: SQLTableMeta
@@ -101,7 +101,7 @@ function getColumnExtra(column: typeof columns.value[0]) {
     <div class="px-4 py-3 border-b border-gray-200">
       <div class="flex items-center justify-between">
         <h3 class="text-lg font-medium leading-6 text-gray-900">
-          Table Structure: {{ tableMeta?.Name || '' }}
+          {{ tableMeta?.Name || '' }}
           <span v-if="tableMeta?.Schema" class="text-sm text-gray-500">
             ({{ tableMeta.Schema }})
           </span>

@@ -4,7 +4,7 @@ import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/vue'
 import TableMetadataView from './TableMetadataView.vue'
 import TableDataView from './TableDataView.vue'
 
-const props = defineProps<{
+defineProps<{
     tableMeta: SQLTableMeta
     showDdl?: boolean
     connectionId: string
@@ -18,6 +18,7 @@ const tabs = [
     { name: 'Structure', component: 'TableMetadataView' },
     { name: 'Data', component: 'TableDataView' }
 ]
+
 </script>
 
 <template>
