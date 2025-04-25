@@ -92,43 +92,61 @@ mermaid.initialize({
         minEntityWidth: 150,
         minEntityHeight: 100,
         entityPadding: 30,
-        useMaxWidth: false
+        useMaxWidth: false,
+        titleTopMargin: 25
     },
     themeVariables: {
-        lineColor: '#666',
-        textColor: '#333',
-        mainBkg: 'transparent',
-        nodeBorder: '#e5e5e5',
-        clusterBkg: 'transparent',
-        fontSize: '14px'
+        // lineColor: '#f97316',  // Orange color for relationships
+        // textColor: '#333',
+        // mainBkg: 'transparent',
+        // nodeBorder: '#0d9488',  // Keep teal color for borders
+        // clusterBkg: 'transparent',
+        fontSize: '14px',
+        entityLabel: {
+            fontSize: '16px',
+            fontWeight: 'bold'
+        }
     },
     securityLevel: 'loose'
 })
+
+// Helper function to sanitize names for Mermaid compatibility
+function sanitizeName(name: string): string {
+    // Replace any characters that might cause issues with underscores
+    return name.replace(/[^a-zA-Z0-9]/g, '_')
+}
+
+// Helper function to format column definition
+function formatColumnDef(col: Column): string {
+    // Simplify the type by removing everything after first space or parenthesis
+    const baseType = col.type.split(/[\s(]/)[0].toLowerCase()
+
+    // Format name based on PK/FK status using markdown
+    let formattedName = sanitizeName(col.name)
+    if (col.isPrimaryKey) {
+        formattedName = `**${formattedName}**`  // Bold for PKs
+    } else if (col.isForeignKey) {
+        formattedName = `*${formattedName}*`  // Italics for FKs
+    }
+
+    // Add PK/FK indicators in comment
+    const comment = [
+        col.isPrimaryKey && 'PK',
+        col.isForeignKey && 'FK'
+    ].filter(Boolean).join(', ')
+
+    // Ensure proper spacing and format for Mermaid ERD
+    const commentStr = comment ? ` "${comment}"` : ''
+    return `        ${formattedName} ${baseType}${commentStr}`
+}
 
 // Generate Mermaid ERD diagram definition
 const diagramDefinition = computed(() => {
     const lines = ['erDiagram']
 
-    // Helper function to sanitize names for Mermaid compatibility
-    function sanitizeName(name: string): string {
-        // Replace any characters that might cause issues with underscores
-        return name.replace(/[^a-zA-Z0-9]/g, '_')
-    }
-
-    // Helper function to format column definition
-    function formatColumnDef(col: Column): string {
-        // Simplify the type by removing everything after first space or parenthesis
-        const baseType = col.type.split(/[\s(]/)[0].toLowerCase()
-        const comment = [
-            col.isPrimaryKey && 'PK',
-            col.isForeignKey && 'FK'
-        ].filter(Boolean).join(', ')
-
-        // Ensure proper spacing and format for Mermaid ERD
-        const name = sanitizeName(col.name)
-        const commentStr = comment ? ` "` + comment + `"` : ''
-        return `        ${name} ${baseType}${commentStr}`
-    }
+    // Add class definitions for PK and FK styling
+    lines.push('    classDef pk font-weight:bold')
+    lines.push('    classDef fk font-style:italic')
 
     // Add entities (tables)
     if (props.tables?.length) {
@@ -138,7 +156,8 @@ const diagramDefinition = computed(() => {
         sortedTables.forEach(table => {
             if (!table?.columns?.length) return
 
-            const tableName = sanitizeName(table.name)
+            // Capitalize table name
+            const tableName = sanitizeName(table.name).toUpperCase()
             lines.push('')
             lines.push(`    ${tableName} {`)
             table.columns.forEach(col => {
@@ -148,14 +167,15 @@ const diagramDefinition = computed(() => {
         })
     }
 
-    // Add views
+    // Add views with capitalized names
     if (props.views?.length) {
         const sortedViews = [...props.views].sort((a, b) => a.name.localeCompare(b.name))
 
         sortedViews.forEach(view => {
             if (!view?.columns?.length) return
 
-            const viewName = sanitizeName(view.name)
+            // Capitalize view name
+            const viewName = sanitizeName(view.name).toUpperCase()
             lines.push('')
             lines.push('    %% View')
             lines.push(`    ${viewName} {`)
@@ -165,11 +185,11 @@ const diagramDefinition = computed(() => {
             lines.push('    }')
         })
 
-        // Add relationships between views and their dependent tables
+        // Update relationships to use capitalized table/view names
         props.tables.forEach(table => {
-            const tableName = sanitizeName(table.name)
+            const tableName = sanitizeName(table.name).toUpperCase()
             sortedViews.forEach(view => {
-                const viewName = sanitizeName(view.name)
+                const viewName = sanitizeName(view.name).toUpperCase()
                 // Check if view name contains table name (simple dependency check)
                 if (view.name.toLowerCase().includes(table.name.toLowerCase())) {
                     lines.push(`    ${tableName} ||..|| ${viewName} : "depends on"`)
@@ -178,7 +198,7 @@ const diagramDefinition = computed(() => {
         })
     }
 
-    // Add relationships
+    // Add relationships with capitalized table names
     if (props.relationships?.length) {
         const processedRelationships = new Set<string>()
         lines.push('')
@@ -198,8 +218,8 @@ const diagramDefinition = computed(() => {
 
             if (!sourceTable || !targetTable) return
 
-            const sourceName = sanitizeName(rel.sourceTable)
-            const targetName = sanitizeName(rel.targetTable)
+            const sourceName = sanitizeName(rel.sourceTable).toUpperCase()
+            const targetName = sanitizeName(rel.targetTable).toUpperCase()
 
             if (isJunctionTable(sourceTable.columns)) {
                 // Show N:1 relationship from junction table
@@ -211,7 +231,7 @@ const diagramDefinition = computed(() => {
                     r.id !== rel.id
                 )
                 if (otherRel) {
-                    const otherTargetName = sanitizeName(otherRel.targetTable)
+                    const otherTargetName = sanitizeName(otherRel.targetTable).toUpperCase()
                     lines.push(`    ${targetName} }|--|{ ${otherTargetName} : "M:N"`)
                 }
             } else {
