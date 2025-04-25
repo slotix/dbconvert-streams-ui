@@ -168,7 +168,8 @@ onMounted(() => {
                     <!-- Diagram Panel -->
                     <TabPanel>
                         <div class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg">
-                            <DiagramView :tables="schemaStore.tables" :relationships="schemaStore.relationships" />
+                            <DiagramView :tables="schemaStore.tables" :views="schemaStore.views"
+                                :relationships="schemaStore.relationships" />
                         </div>
                     </TabPanel>
                 </TabPanels>

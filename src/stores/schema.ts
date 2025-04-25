@@ -5,6 +5,7 @@ import connections from '@/api/connections'
 export const useSchemaStore = defineStore('schema', {
     state: () => ({
         tables: [] as Table[],
+        views: [] as Table[],
         relationships: [] as Relationship[],
         tablePositions: {} as Record<string, Position>,
         selectedTable: null as string | null,
@@ -35,6 +36,7 @@ export const useSchemaStore = defineStore('schema', {
             if (this.connectionId !== id) {
                 this.connectionId = id
                 this.tables = []
+                this.views = []
                 this.relationships = []
                 this.tablePositions = {}
                 this.selectedTable = null
@@ -106,7 +108,32 @@ export const useSchemaStore = defineStore('schema', {
                         }
                     })
 
+                // Convert metadata views to views array
+                const views: Table[] = Object.entries(metadata.views || {})
+                    .filter(([_, value]) => value && typeof value === 'object')
+                    .map(([viewName, viewMeta]: [string, any]) => {
+                        // Process columns
+                        const columns = viewMeta.columns.map((col: any) => ({
+                            name: col.Name,
+                            type: col.DataType,
+                            nullable: col.IsNullable,
+                            default: col.DefaultValue?.String,
+                            extra: col.Extra,
+                            isPrimaryKey: false,
+                            isForeignKey: false
+                        }))
+
+                        return {
+                            name: viewMeta.name,
+                            schema: viewMeta.schema,
+                            columns,
+                            primaryKeys: [],
+                            foreignKeys: []
+                        }
+                    })
+
                 this.tables = tables
+                this.views = views
                 this.relationships = this.generateRelationships(tables)
 
                 // Calculate initial positions if they don't exist
@@ -216,54 +243,33 @@ export const useSchemaStore = defineStore('schema', {
         },
 
         calculateInitialPositions() {
-            const GRID_SIZE = 250 // Reduced spacing between tables
-            const COLUMNS = Math.ceil(Math.sqrt(this.tables.length))
+            const GRID_SIZE = 250
+            const ROWS_PER_COLUMN = 5
 
-            // Create a map of table relationships for better positioning
-            const tableConnections = new Map<string, Set<string>>()
-            this.relationships.forEach(rel => {
-                if (!tableConnections.has(rel.sourceTable)) {
-                    tableConnections.set(rel.sourceTable, new Set())
+            // Reset positions
+            this.tablePositions = {}
+
+            // Calculate positions for tables
+            this.tables.forEach((table, index) => {
+                const column = Math.floor(index / ROWS_PER_COLUMN)
+                const row = index % ROWS_PER_COLUMN
+
+                this.tablePositions[table.name] = {
+                    x: column * GRID_SIZE,
+                    y: row * GRID_SIZE
                 }
-                if (!tableConnections.has(rel.targetTable)) {
-                    tableConnections.set(rel.targetTable, new Set())
-                }
-                tableConnections.get(rel.sourceTable)?.add(rel.targetTable)
-                tableConnections.get(rel.targetTable)?.add(rel.sourceTable)
             })
 
-            const sortedTables = [...this.tables].sort((a, b) => {
-                const aConnections = tableConnections.get(a.name)?.size || 0
-                const bConnections = tableConnections.get(b.name)?.size || 0
-                return bConnections - aConnections
-            })
+            // Calculate positions for views
+            // Place views in a new column after the tables
+            const tablesColumns = Math.ceil(this.tables.length / ROWS_PER_COLUMN)
+            this.views.forEach((view, index) => {
+                const row = index % ROWS_PER_COLUMN
+                const column = tablesColumns + Math.floor(index / ROWS_PER_COLUMN)
 
-            // Position tables in a more organized way
-            sortedTables.forEach((table, index) => {
-                const row = Math.floor(index / COLUMNS)
-                const col = index % COLUMNS
-
-                // Add slight offset based on connections to create visual clusters
-                const connectedTables = tableConnections.get(table.name) || new Set()
-                const connectedPositions = Array.from(connectedTables)
-                    .map(tableName => this.tablePositions[tableName])
-                    .filter(pos => pos)
-
-                if (connectedPositions.length > 0) {
-                    // Calculate average position of connected tables
-                    const avgX = connectedPositions.reduce((sum, pos) => sum + pos.x, 0) / connectedPositions.length
-                    const avgY = connectedPositions.reduce((sum, pos) => sum + pos.y, 0) / connectedPositions.length
-
-                    // Move slightly towards connected tables
-                    this.tablePositions[table.name] = {
-                        x: col * GRID_SIZE + 50 + (avgX ? (avgX - col * GRID_SIZE) * 0.2 : 0),
-                        y: row * GRID_SIZE + 50 + (avgY ? (avgY - row * GRID_SIZE) * 0.2 : 0)
-                    }
-                } else {
-                    this.tablePositions[table.name] = {
-                        x: col * GRID_SIZE + 50,
-                        y: row * GRID_SIZE + 50
-                    }
+                this.tablePositions[view.name] = {
+                    x: column * GRID_SIZE,
+                    y: row * GRID_SIZE
                 }
             })
         },

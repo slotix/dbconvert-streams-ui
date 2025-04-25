@@ -7,9 +7,11 @@ import type { Table, Relationship, Column } from '@/types/schema'
 const props = withDefaults(defineProps<{
     tables: Table[]
     relationships: Relationship[]
+    views: Table[]  // Add views prop
 }>(), {
     tables: () => [],
-    relationships: () => []
+    relationships: () => [],
+    views: () => []  // Default empty array for views
 })
 
 const diagramContainer = ref<HTMLElement | null>(null)
@@ -107,40 +109,72 @@ mermaid.initialize({
 const diagramDefinition = computed(() => {
     const lines = ['erDiagram']
 
+    // Helper function to sanitize names for Mermaid compatibility
+    function sanitizeName(name: string): string {
+        // Replace any characters that might cause issues with underscores
+        return name.replace(/[^a-zA-Z0-9]/g, '_')
+    }
+
+    // Helper function to format column definition
+    function formatColumnDef(col: Column): string {
+        // Simplify the type by removing everything after first space or parenthesis
+        const baseType = col.type.split(/[\s(]/)[0].toLowerCase()
+        const comment = [
+            col.isPrimaryKey && 'PK',
+            col.isForeignKey && 'FK'
+        ].filter(Boolean).join(', ')
+
+        // Ensure proper spacing and format for Mermaid ERD
+        const name = sanitizeName(col.name)
+        const commentStr = comment ? ` "` + comment + `"` : ''
+        return `        ${name} ${baseType}${commentStr}`
+    }
+
     // Add entities (tables)
     if (props.tables?.length) {
         // Sort tables by name for consistent layout
         const sortedTables = [...props.tables].sort((a, b) => a.name.localeCompare(b.name))
 
-        // Add artificial relationships for layout if no relationships exist
-        if (!props.relationships.length) {
-            lines.push('')
-            // Create a chain of invisible relationships to force multi-row layout
-            for (let i = 0; i < sortedTables.length - 1; i += 3) {
-                if (sortedTables[i + 1]) {
-                    lines.push(`    %% Layout relationship ${i}`)
-                    lines.push(`    ${sortedTables[i].name} ||--|| ${sortedTables[i + 1].name} : ""`)
-                }
-            }
-        }
-
         sortedTables.forEach(table => {
             if (!table?.columns?.length) return
 
+            const tableName = sanitizeName(table.name)
             lines.push('')
-            lines.push(`    ${table.name} {`)
+            lines.push(`    ${tableName} {`)
             table.columns.forEach(col => {
-                // Simplify the type by removing everything after first space or parenthesis
-                const baseType = col.type.split(/[\s(]/)[0].toLowerCase()
-                const comment = [
-                    col.isPrimaryKey && 'PK',
-                    col.isForeignKey && 'FK'
-                ].filter(Boolean).join(', ')
-
-                const commentStr = comment ? ` "${comment}"` : ''
-                lines.push(`        ${col.name} ${baseType}${commentStr}`)
+                lines.push(formatColumnDef(col))
             })
             lines.push('    }')
+        })
+    }
+
+    // Add views
+    if (props.views?.length) {
+        const sortedViews = [...props.views].sort((a, b) => a.name.localeCompare(b.name))
+
+        sortedViews.forEach(view => {
+            if (!view?.columns?.length) return
+
+            const viewName = sanitizeName(view.name)
+            lines.push('')
+            lines.push('    %% View')
+            lines.push(`    ${viewName} {`)
+            view.columns.forEach(col => {
+                lines.push(formatColumnDef(col))
+            })
+            lines.push('    }')
+        })
+
+        // Add relationships between views and their dependent tables
+        props.tables.forEach(table => {
+            const tableName = sanitizeName(table.name)
+            sortedViews.forEach(view => {
+                const viewName = sanitizeName(view.name)
+                // Check if view name contains table name (simple dependency check)
+                if (view.name.toLowerCase().includes(table.name.toLowerCase())) {
+                    lines.push(`    ${tableName} ||..|| ${viewName} : "depends on"`)
+                }
+            })
         })
     }
 
@@ -164,9 +198,12 @@ const diagramDefinition = computed(() => {
 
             if (!sourceTable || !targetTable) return
 
+            const sourceName = sanitizeName(rel.sourceTable)
+            const targetName = sanitizeName(rel.targetTable)
+
             if (isJunctionTable(sourceTable.columns)) {
                 // Show N:1 relationship from junction table
-                lines.push(`    ${rel.sourceTable} }|--|| ${rel.targetTable} : "N:1"`)
+                lines.push(`    ${sourceName} }|--|| ${targetName} : "N:1"`)
 
                 // Add M:N relationship between main tables
                 const otherRel = props.relationships.find(r =>
@@ -174,11 +211,12 @@ const diagramDefinition = computed(() => {
                     r.id !== rel.id
                 )
                 if (otherRel) {
-                    lines.push(`    ${rel.targetTable} }|--|{ ${otherRel.targetTable} : "M:N"`)
+                    const otherTargetName = sanitizeName(otherRel.targetTable)
+                    lines.push(`    ${targetName} }|--|{ ${otherTargetName} : "M:N"`)
                 }
             } else {
                 // Standard N:1 relationship
-                lines.push(`    ${rel.sourceTable} }|--|| ${rel.targetTable} : "N:1"`)
+                lines.push(`    ${sourceName} }|--|| ${targetName} : "N:1"`)
             }
         })
     }
