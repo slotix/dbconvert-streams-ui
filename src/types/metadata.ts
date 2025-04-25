@@ -57,4 +57,22 @@ export interface SQLTableMeta {
     DDL: TableDDL
 }
 
-export type DatabaseMetadata = Record<string, SQLTableMeta> 
+export interface SQLViewMeta {
+    name: string
+    schema: string
+    database: string
+    columns: SQLColumnMeta[]
+    definition: string
+    isMaterialized: boolean
+    dependsOn: string[] | null
+    ddl: string
+}
+
+export function isSQLViewMeta(obj: SQLTableMeta | SQLViewMeta): obj is SQLViewMeta {
+    return 'definition' in obj && typeof obj.definition === 'string'
+}
+
+export interface DatabaseMetadata {
+    tables: Record<string, SQLTableMeta>
+    views: Record<string, SQLViewMeta>
+} 

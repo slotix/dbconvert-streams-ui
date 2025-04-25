@@ -9,9 +9,12 @@ export interface Column {
 }
 
 export interface ForeignKey {
-    column: string
+    name: string
+    sourceColumn: string
     referencedTable: string
     referencedColumn: string
+    onUpdate?: string
+    onDelete?: string
 }
 
 export interface Table {

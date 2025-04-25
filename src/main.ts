@@ -2,6 +2,13 @@ import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import Toast, { type PluginOptions, POSITION } from 'vue-toastification'
 import 'vue-toastification/dist/index.css'
+import VueHighlightJS from 'vue3-highlightjs'
+import hljs from 'highlight.js/lib/core'
+import sql from 'highlight.js/lib/languages/sql'
+import 'highlight.js/styles/atom-one-dark.css'
+
+// Register SQL language
+hljs.registerLanguage('sql', sql)
 
 import './assets/style.css'
 import App from './App.vue'
@@ -43,5 +50,6 @@ const app = createApp(App)
 app.use(createPinia())
 app.use(router)
 app.use(Toast, toastOptions)
+app.use(VueHighlightJS)
 app.directive('tooltip', vTooltip)
 app.mount('#app')

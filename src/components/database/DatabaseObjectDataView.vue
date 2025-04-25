@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
 import { ArrowPathIcon } from '@heroicons/vue/24/outline'
-import { type SQLTableMeta } from '@/types/metadata'
+import { type SQLTableMeta, type SQLViewMeta } from '@/types/metadata'
 import connections from '@/api/connections'
 
 const props = defineProps<{
-    tableMeta: SQLTableMeta
+    tableMeta: SQLTableMeta | SQLViewMeta
     connectionId: string
+    isView?: boolean
 }>()
 
 interface TableData {
@@ -26,11 +27,26 @@ const currentPage = ref(1)
 const itemsPerPage = ref(25)
 const skipCount = ref(false)
 
+// Helper to get object name regardless of case
+function getObjectName(meta: SQLTableMeta | SQLViewMeta): string {
+    return props.isView ? (meta as SQLViewMeta).name : (meta as SQLTableMeta).Name
+}
+
+// Helper to get schema regardless of case
+function getObjectSchema(meta: SQLTableMeta | SQLViewMeta): string {
+    return props.isView ? (meta as SQLViewMeta).schema : (meta as SQLTableMeta).Schema
+}
+
 async function loadTableData() {
     isLoading.value = true
     error.value = undefined
 
     try {
+        const objectName = getObjectName(props.tableMeta)
+        if (!objectName) {
+            throw new Error('Table/View name is undefined')
+        }
+
         // Reset to page 1 if we enable skip count and we're not on the first page
         if (skipCount.value && currentPage.value !== 1) {
             currentPage.value = 1
@@ -45,10 +61,20 @@ async function loadTableData() {
             limit: itemsPerPage.value,
             offset: offset,
             skip_count: skipCount.value,
-            schema: props.tableMeta.Type?.toLowerCase() === 'postgresql' ? props.tableMeta.Schema : undefined
+            schema: getObjectSchema(props.tableMeta)
         }
 
-        const data = await connections.getTableData(props.connectionId, props.tableMeta.Name, params)
+        console.log('Loading data for:', {
+            isView: props.isView,
+            name: objectName,
+            schema: params.schema,
+            params
+        })
+
+        const data = props.isView
+            ? await connections.getViewData(props.connectionId, objectName, params)
+            : await connections.getTableData(props.connectionId, objectName, params)
+
         tableData.value = data
 
         // If skip_count is true and we got less rows than limit, we're on the last page
@@ -56,7 +82,8 @@ async function loadTableData() {
             currentPage.value = Math.max(1, currentPage.value - 1)
         }
     } catch (err) {
-        error.value = err instanceof Error ? err.message : 'Failed to load table data'
+        console.error('Error loading data:', err)
+        error.value = err instanceof Error ? err.message : 'Failed to load data'
         // Reset to page 1 if we get an error about negative offset
         if (err instanceof Error && err.message.includes('offset must be non-negative')) {
             currentPage.value = 1
@@ -156,10 +183,11 @@ const displayedPages = computed(() => {
         <div class="px-4 py-3 border-b border-gray-200">
             <div class="flex items-center justify-between">
                 <h3 class="text-lg font-medium leading-6 text-gray-900">
-                    {{ tableMeta?.Name || '' }}
-                    <span v-if="tableMeta?.Schema" class="text-sm text-gray-500">
-                        ({{ tableMeta.Schema }})
+                    {{ getObjectName(tableMeta) || 'Unnamed' }}
+                    <span v-if="getObjectSchema(tableMeta)" class="text-sm text-gray-500">
+                        ({{ getObjectSchema(tableMeta) }})
                     </span>
+                    <span v-if="isView" class="ml-2 text-sm text-blue-500">(View)</span>
                 </h3>
                 <div class="flex items-center gap-4">
                     <!-- Items per page selector -->
@@ -173,7 +201,7 @@ const displayedPages = computed(() => {
                             <option :value="100">100</option>
                         </select>
                     </div>
-                    <!-- Skip count toggle -->
+                    <!-- Skip count toggle - show for both tables and views -->
                     <div class="flex items-center gap-2">
                         <input id="skip-count" v-model="skipCount" type="checkbox"
                             class="h-4 w-4 rounded border-gray-300 text-gray-600 focus:ring-gray-500" />

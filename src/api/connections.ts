@@ -174,12 +174,11 @@ const createSchema = async (
   }
 }
 
-
-const getTables = async (id: string): Promise<Record<string, unknown>[]> => {
+const getTables = async (id: string): Promise<string[]> => {
   const commonStore = useCommonStore()
   validateApiKey(commonStore.apiKey)
   try {
-    const response: AxiosResponse<Record<string, unknown>[]> = await apiClient.get(
+    const response: AxiosResponse<string[]> = await apiClient.get(
       `/connections/${id}/tables`,
       {
         headers: { 'X-API-Key': commonStore.apiKey }
@@ -252,6 +251,56 @@ const getTableData = async (
   }
 }
 
+const getViews = async (id: string): Promise<string[]> => {
+  const commonStore = useCommonStore()
+  validateApiKey(commonStore.apiKey)
+  try {
+    const response: AxiosResponse<string[]> = await apiClient.get(
+      `/connections/${id}/views`,
+      {
+        headers: { 'X-API-Key': commonStore.apiKey }
+      }
+    )
+    return response.data
+  } catch (error) {
+    throw handleApiError(error)
+  }
+}
+
+const getViewData = async (
+  connectionId: string,
+  viewName: string,
+  params: {
+    limit: number
+    offset: number
+    skip_count: boolean
+    schema?: string
+  }
+): Promise<TableData> => {
+  const commonStore = useCommonStore()
+  validateApiKey(commonStore.apiKey)
+  try {
+    const queryParams = new URLSearchParams({
+      limit: params.limit.toString(),
+      offset: params.offset.toString()
+    })
+
+    if (params.schema) {
+      queryParams.append('schema', params.schema)
+    }
+
+    const response: AxiosResponse<TableData> = await apiClient.get(
+      `/connections/${connectionId}/views/${viewName}/data?${queryParams.toString()}`,
+      {
+        headers: { 'X-API-Key': commonStore.apiKey }
+      }
+    )
+    return response.data
+  } catch (error) {
+    throw handleApiError(error)
+  }
+}
+
 export default {
   getConnections,
   createConnection,
@@ -264,5 +313,7 @@ export default {
   createSchema,
   getTables,
   getMetadata,
-  getTableData
+  getTableData,
+  getViews,
+  getViewData
 }

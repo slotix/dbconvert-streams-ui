@@ -58,15 +58,14 @@ export const useSchemaStore = defineStore('schema', {
             this.error = null
 
             try {
-                // Use the getMetadata function from connections API
                 const metadata = await connections.getMetadata(this.connectionId, forceRefresh)
 
                 if (!metadata || typeof metadata !== 'object') {
                     throw new Error('Invalid metadata response format')
                 }
 
-                // Convert metadata to tables array
-                const tables: Table[] = Object.entries(metadata)
+                // Convert metadata tables to tables array
+                const tables: Table[] = Object.entries(metadata.tables)
                     .filter(([_, value]) => value && typeof value === 'object')
                     .map(([tableName, tableMeta]: [string, any]) => {
                         // Process columns
@@ -97,7 +96,7 @@ export const useSchemaStore = defineStore('schema', {
                         // Map foreign keys to our internal format
                         const foreignKeys = (tableMeta.foreignKeys || []).map((fk: any) => ({
                             name: fk.name,
-                            column: fk.sourceColumn,
+                            sourceColumn: fk.sourceColumn,
                             referencedTable: fk.referencedTable,
                             referencedColumn: fk.referencedColumn,
                             onUpdate: fk.onUpdate,
@@ -114,8 +113,6 @@ export const useSchemaStore = defineStore('schema', {
                     })
 
                 this.tables = tables
-
-                // Generate relationships after tables are set
                 this.relationships = this.generateRelationships(tables)
 
                 // Calculate initial positions if they don't exist
@@ -125,7 +122,6 @@ export const useSchemaStore = defineStore('schema', {
 
                 this.lastFetchTimestamp = now
             } catch (err) {
-                console.error('API Response Error:', err)
                 this.error = err instanceof Error ? err.message : 'Failed to fetch schema'
             } finally {
                 this.loading = false
@@ -137,38 +133,89 @@ export const useSchemaStore = defineStore('schema', {
             const processedRelationships = new Set<string>()
 
             tables.forEach(table => {
-                if (!table.foreignKeys?.length) return
+                if (table.foreignKeys?.length) {
+                    table.foreignKeys.forEach(fk => {
+                        // Skip if we don't have all the required information
+                        if (!fk.sourceColumn || !fk.referencedTable || !fk.referencedColumn) {
+                            return
+                        }
 
-                table.foreignKeys.forEach(fk => {
-                    // Skip if we don't have all the required information
-                    if (!fk.column || !fk.referencedTable || !fk.referencedColumn) {
-                        console.warn('Invalid foreign key:', fk)
-                        return
+                        // Create a unique ID for the relationship
+                        const id = `${table.name}.${fk.sourceColumn}->${fk.referencedTable}.${fk.referencedColumn}`
+
+                        // Skip if we've already processed this relationship
+                        if (processedRelationships.has(id)) {
+                            return
+                        }
+                        processedRelationships.add(id)
+
+                        // Only add if both tables exist
+                        const targetTable = tables.find(t => t.name === fk.referencedTable)
+                        if (targetTable) {
+                            // Check if this is part of a many-to-many relationship
+                            const isJunctionTable = table.foreignKeys.length === 2 &&
+                                table.primaryKeys.length === 2 &&
+                                table.primaryKeys.every(pk =>
+                                    table.foreignKeys.some(fk => fk.sourceColumn === pk)
+                                )
+
+                            if (isJunctionTable) {
+                                // Find the other foreign key in the junction table
+                                const otherFk = table.foreignKeys.find(otherFk => otherFk !== fk)
+                                if (otherFk) {
+                                    const otherTable = tables.find(t => t.name === otherFk.referencedTable)
+                                    if (otherTable) {
+                                        // Add a many-to-many relationship between the two end tables
+                                        const m2mId = `${fk.referencedTable}.${fk.referencedColumn}<->${otherFk.referencedTable}.${otherFk.referencedColumn}`
+                                        if (!processedRelationships.has(m2mId)) {
+                                            relationships.push({
+                                                id: m2mId,
+                                                sourceTable: fk.referencedTable,
+                                                sourceColumn: fk.referencedColumn,
+                                                targetTable: otherFk.referencedTable,
+                                                targetColumn: otherFk.referencedColumn,
+                                                type: 'foreignKey',
+                                                label: `M:N via ${table.name}`
+                                            })
+                                            processedRelationships.add(m2mId)
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Always add the direct relationship
+                            relationships.push({
+                                id,
+                                sourceTable: table.name,
+                                sourceColumn: fk.sourceColumn,
+                                targetTable: fk.referencedTable,
+                                targetColumn: fk.referencedColumn,
+                                type: 'foreignKey',
+                                label: `${fk.sourceColumn} → ${fk.referencedColumn}`
+                            })
+                        }
+                    })
+                }
+
+                // Special handling for film_text table
+                if (table.name === 'film_text') {
+                    const filmTable = tables.find(t => t.name === 'film')
+                    if (filmTable) {
+                        const id = `film_text.film_id->film.film_id`
+                        if (!processedRelationships.has(id)) {
+                            relationships.push({
+                                id,
+                                sourceTable: 'film_text',
+                                sourceColumn: 'film_id',
+                                targetTable: 'film',
+                                targetColumn: 'film_id',
+                                type: 'foreignKey',
+                                label: 'Full Text Search'
+                            })
+                            processedRelationships.add(id)
+                        }
                     }
-
-                    // Create a unique ID for the relationship
-                    const id = `${table.name}.${fk.column}->${fk.referencedTable}.${fk.referencedColumn}`
-
-                    // Skip if we've already processed this relationship
-                    if (processedRelationships.has(id)) return
-                    processedRelationships.add(id)
-
-                    // Only add if both tables exist
-                    const targetTable = tables.find(t => t.name === fk.referencedTable)
-                    if (targetTable) {
-                        relationships.push({
-                            id,
-                            sourceTable: table.name,
-                            sourceColumn: fk.column,
-                            targetTable: fk.referencedTable,
-                            targetColumn: fk.referencedColumn,
-                            type: 'foreignKey',
-                            label: `${fk.column} → ${fk.referencedColumn}`
-                        })
-                    } else {
-                        console.warn(`Target table ${fk.referencedTable} not found for relationship ${id}`)
-                    }
-                })
+                }
             })
 
             return relationships

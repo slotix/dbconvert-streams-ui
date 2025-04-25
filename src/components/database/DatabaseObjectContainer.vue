@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import { type SQLTableMeta } from '@/types/metadata'
+import { computed } from 'vue'
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/vue'
+import { type SQLTableMeta, type SQLViewMeta } from '@/types/metadata'
 import TableMetadataView from './TableMetadataView.vue'
-import TableDataView from './TableDataView.vue'
+import ViewStructureView from './ViewStructureView.vue'
+import DatabaseObjectDataView from './DatabaseObjectDataView.vue'
 
-defineProps<{
-    tableMeta: SQLTableMeta
+const props = defineProps<{
+    tableMeta: SQLTableMeta | SQLViewMeta
+    isView: boolean
     showDdl?: boolean
     connectionId: string
 }>()
@@ -14,10 +17,32 @@ const emit = defineEmits<{
     (e: 'refresh-metadata'): void
 }>()
 
-const tabs = [
-    { name: 'Structure', component: 'TableMetadataView' },
-    { name: 'Data', component: 'TableDataView' }
-]
+// Debug log to inspect the tableMeta prop
+console.log('DatabaseObjectContainer props:', {
+    tableMeta: props.tableMeta,
+    isView: props.isView
+})
+
+const tabs = computed(() => {
+    const commonTabs = [
+        {
+            name: 'Structure',
+            component: props.isView ? ViewStructureView : TableMetadataView,
+            props: props.isView
+                ? { viewMeta: props.tableMeta as SQLViewMeta }
+                : { tableMeta: props.tableMeta as SQLTableMeta }
+        },
+        {
+            name: 'Data',
+            component: DatabaseObjectDataView,
+            props: {
+                tableMeta: props.tableMeta,
+                isView: props.isView
+            }
+        }
+    ]
+    return commonTabs
+})
 
 </script>
 
@@ -42,16 +67,9 @@ const tabs = [
 
             <!-- Tab Panels -->
             <TabPanels class="overflow-hidden">
-                <!-- Structure Panel -->
-                <TabPanel>
-                    <TableMetadataView :table-meta="tableMeta" :show-ddl="showDdl" :connection-id="connectionId"
-                        class="rounded-none shadow-none ring-0" @refresh-metadata="emit('refresh-metadata')" />
-                </TabPanel>
-
-                <!-- Data Panel -->
-                <TabPanel>
-                    <TableDataView :table-meta="tableMeta" :connection-id="connectionId"
-                        class="rounded-none shadow-none ring-0" />
+                <TabPanel v-for="tab in tabs" :key="tab.name">
+                    <component :is="tab.component" v-bind="tab.props" :show-ddl="showDdl" :connection-id="connectionId"
+                        @refresh-metadata="emit('refresh-metadata')" />
                 </TabPanel>
             </TabPanels>
         </TabGroup>

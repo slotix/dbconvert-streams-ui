@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { ArrowPathIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/vue/24/outline'
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/vue'
 import { useSchemaStore } from '@/stores/schema'
-import { type DatabaseMetadata, type SQLTableMeta } from '@/types/metadata'
+import { type DatabaseMetadata, type SQLTableMeta, type SQLViewMeta } from '@/types/metadata'
 import connections from '@/api/connections'
 import DatabaseStructureTree from '@/components/database/DatabaseStructureTree.vue'
-import TableContainer from '@/components/database/TableContainer.vue'
+import DatabaseObjectContainer from '@/components/database/DatabaseObjectContainer.vue'
 import DiagramView from '@/components/database/DiagramView.vue'
 
 const route = useRoute()
@@ -16,9 +16,18 @@ const schemaStore = useSchemaStore()
 
 const isLoading = ref(false)
 const metadata = ref<DatabaseMetadata>()
-const selectedTable = ref<SQLTableMeta>()
+const selectedObjectName = ref<string | null>(null)
+const selectedObjectType = ref<'table' | 'view' | null>(null)
 const error = ref<string>()
 const isSidebarCollapsed = ref(false)
+
+const selectedObject = computed(() => {
+    if (!metadata.value || !selectedObjectName.value || !selectedObjectType.value) return null
+
+    return selectedObjectType.value === 'table'
+        ? metadata.value.tables[selectedObjectName.value]
+        : metadata.value.views[selectedObjectName.value]
+})
 
 async function loadMetadata(forceRefresh = false) {
     isLoading.value = true
@@ -29,13 +38,11 @@ async function loadMetadata(forceRefresh = false) {
         await schemaStore.fetchSchema(forceRefresh)
 
         // Select the first table by default if none is selected
-        if (!selectedTable.value && metadata.value) {
-            const firstTable = Object.values(metadata.value).find(table =>
-                table && typeof table === 'object' && 'Name' in table
-            ) as SQLTableMeta | undefined
-
-            if (firstTable) {
-                selectedTable.value = firstTable
+        if (!selectedObjectName.value && metadata.value) {
+            const firstTableName = Object.keys(metadata.value.tables)[0]
+            if (firstTableName) {
+                selectedObjectName.value = firstTableName
+                selectedObjectType.value = 'table'
             }
         }
     } catch (err) {
@@ -45,8 +52,9 @@ async function loadMetadata(forceRefresh = false) {
     }
 }
 
-function handleTableSelect(table: SQLTableMeta) {
-    selectedTable.value = table
+function handleObjectSelect(name: string, type: 'table' | 'view') {
+    selectedObjectName.value = name
+    selectedObjectType.value = type
 }
 
 function toggleSidebar() {
@@ -56,19 +64,6 @@ function toggleSidebar() {
 onMounted(() => {
     schemaStore.setConnectionId(connectionId)
     loadMetadata()
-})
-
-// Watch for metadata changes to ensure we have a selected table
-watch(metadata, (newMetadata) => {
-    if (newMetadata && !selectedTable.value) {
-        const firstTable = Object.values(newMetadata).find(table =>
-            table && typeof table === 'object' && 'Name' in table
-        ) as SQLTableMeta | undefined
-
-        if (firstTable) {
-            selectedTable.value = firstTable
-        }
-    }
 })
 </script>
 
@@ -130,7 +125,8 @@ watch(metadata, (newMetadata) => {
                                 isSidebarCollapsed ? 'w-0 opacity-0' : 'w-[300px] opacity-100'
                             ]">
                                 <div v-if="metadata" class="sticky top-8">
-                                    <DatabaseStructureTree :metadata="metadata" @select="handleTableSelect" />
+                                    <DatabaseStructureTree :metadata="metadata" :selected-name="selectedObjectName"
+                                        :selected-type="selectedObjectType" @select="handleObjectSelect" />
                                 </div>
                                 <div v-else-if="isLoading"
                                     class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg p-8 flex items-center justify-center">
@@ -151,16 +147,19 @@ watch(metadata, (newMetadata) => {
                                 'transition-all duration-300 ease-in-out flex-1',
                                 isSidebarCollapsed ? 'ml-8' : ''
                             ]">
-                                <div v-if="selectedTable">
-                                    <TableContainer :table-meta="selectedTable" :show-ddl="true"
-                                        :connection-id="connectionId" @refresh-metadata="loadMetadata(true)" />
-                                </div>
-                                <div v-else
-                                    class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg p-8 text-center">
-                                    <h3 class="text-sm font-medium text-gray-900">No table selected</h3>
-                                    <p class="mt-1 text-sm text-gray-500">
-                                        Select a table from the sidebar to view its structure
-                                    </p>
+                                <div class="flex-1 min-w-0">
+                                    <div v-if="selectedObject">
+                                        <DatabaseObjectContainer :table-meta="selectedObject"
+                                            :is-view="selectedObjectType === 'view'" :show-ddl="true"
+                                            :connection-id="connectionId" @refresh-metadata="loadMetadata(true)" />
+                                    </div>
+                                    <div v-else
+                                        class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg p-8 text-center">
+                                        <h3 class="text-sm font-medium text-gray-900">No object selected</h3>
+                                        <p class="mt-1 text-sm text-gray-500">
+                                            Select a table or view from the sidebar to view its structure
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
                         </div>

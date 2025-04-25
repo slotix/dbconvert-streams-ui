@@ -1,86 +1,103 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { ChevronRightIcon, ChevronDownIcon, TableCellsIcon } from '@heroicons/vue/24/outline'
-import { type DatabaseMetadata, type SQLTableMeta } from '@/types/metadata'
+import { ChevronRightIcon, ChevronDownIcon, TableCellsIcon, ViewfinderCircleIcon } from '@heroicons/vue/24/outline'
+import { type DatabaseMetadata } from '@/types/metadata'
 
 const props = defineProps<{
   metadata: DatabaseMetadata
+  selectedName: string | null
+  selectedType: 'table' | 'view' | null
+}>()
+
+const emit = defineEmits<{
+  (e: 'select', name: string, type: 'table' | 'view'): void
 }>()
 
 const expandedSchemas = ref(new Set<string>())
-const selectedTableName = ref<string>()
 
 interface TreeNode {
   name: string
-  type: 'schema' | 'table'
+  type: 'schema' | 'table' | 'view'
   children: TreeNode[]
-  meta?: SQLTableMeta
+  schema?: string
 }
 
 const treeData = computed<TreeNode[]>(() => {
-  if (!props.metadata || typeof props.metadata !== 'object') {
+  // Return empty array if metadata is not properly initialized
+  if (!props.metadata?.tables && !props.metadata?.views) {
     return []
   }
 
   const schemaMap = new Map<string, TreeNode>()
 
-  // Convert metadata to plain object to avoid proxy issues
-  const metadataEntries = Object.entries(props.metadata).filter(([key, value]) =>
-    typeof value === 'object' && value !== null && !Object.getOwnPropertySymbols(value).length
-  )
-
-  // Process each table
-  metadataEntries.forEach(([tableName, tableMeta]) => {
-    const schemaName = tableMeta?.Schema
+  // Helper function to ensure schema exists
+  function ensureSchema(schemaName: string) {
     if (!schemaMap.has(schemaName)) {
       schemaMap.set(schemaName, {
         name: schemaName,
         type: 'schema',
-        children: [],
+        children: []
       })
       // Auto-expand MySQL (empty schema) and public schema
       if (!schemaName || schemaName === 'public') {
         expandedSchemas.value.add(schemaName)
       }
     }
+    return schemaMap.get(schemaName)!
+  }
 
-    const schema = schemaMap.get(schemaName)!
-    if (!schema.children) {
-      schema.children = []
-    }
+  // Process tables
+  if (props.metadata.tables) {
+    Object.entries(props.metadata.tables).forEach(([tableName, tableMeta]) => {
+      if (tableMeta) {
+        const schemaName = tableMeta.Schema || ''
+        const schema = ensureSchema(schemaName)
+        schema.children.push({
+          name: tableMeta.Name || tableName,
+          type: 'table',
+          children: [],
+          schema: schemaName
+        })
+      }
+    })
+  }
 
-    if (tableMeta && typeof tableMeta === 'object') {
-      schema.children.push({
-        name: tableMeta.Name || tableName,
-        type: 'table',
-        children: [],
-        meta: tableMeta,
-      })
-    }
-  })
+  // Process views
+  if (props.metadata.views) {
+    Object.entries(props.metadata.views).forEach(([viewName, viewMeta]) => {
+      if (viewMeta) {
+        const schemaName = viewMeta.schema || ''
+        const schema = ensureSchema(schemaName)
+        schema.children.push({
+          name: viewMeta.name || viewName,
+          type: 'view',
+          children: [],
+          schema: schemaName
+        })
+      }
+    })
+  }
 
-  // Sort schemas and tables
-  const sortedData = Array.from(schemaMap.values())
+  // Sort schemas and their children
+  return Array.from(schemaMap.values())
     .sort((a, b) => {
-      const nameA = String(a.name || '')
-      const nameB = String(b.name || '')
-      if (!nameA) return -1 // Empty schema (MySQL) comes first
-      if (!nameB) return 1
-      if (nameA === 'public') return -1
-      if (nameB === 'public') return 1
-      return nameA.localeCompare(nameB)
+      if (!a.name) return -1 // Empty schema (MySQL) comes first
+      if (!b.name) return 1
+      if (a.name === 'public') return -1
+      if (b.name === 'public') return 1
+      return (a.name || '').localeCompare(b.name || '')
     })
     .map(schema => ({
       ...schema,
-      children: schema.children?.sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''))) || []
+      children: schema.children.sort((a, b) => {
+        // Sort by type first (tables before views), then by name
+        if (a.type !== b.type) {
+          return a.type === 'table' ? -1 : 1
+        }
+        return (a.name || '').localeCompare(b.name || '')
+      })
     }))
-
-  return sortedData
 })
-
-const emit = defineEmits<{
-  (e: 'select', table: SQLTableMeta): void
-}>()
 
 function toggleSchema(schema: TreeNode) {
   const schemaName = schema.name
@@ -95,51 +112,54 @@ function isSchemaExpanded(schemaName: string): boolean {
   return expandedSchemas.value.has(schemaName)
 }
 
-function handleTableSelect(table: TreeNode) {
-  if (table.meta) {
-    selectedTableName.value = table.name
-    emit('select', table.meta)
+function handleObjectSelect(item: TreeNode) {
+  if (item.type === 'table' || item.type === 'view') {
+    emit('select', item.name, item.type)
   }
+}
+
+function isSelected(item: TreeNode): boolean {
+  return item.name === props.selectedName && item.type === props.selectedType
 }
 </script>
 
 <template>
   <div class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg divide-y divide-gray-200">
     <div class="px-4 py-3">
-      <h3 class="text-base font-semibold leading-6 text-gray-900">Tables</h3>
+      <h3 class="text-base font-semibold leading-6 text-gray-900">Database Objects</h3>
     </div>
 
     <div class="p-4">
-      <div v-if="treeData.length === 0" class="text-center text-gray-500 py-4">
-        No tables found
+      <div v-if="!treeData.length" class="text-center text-gray-500 py-4">
+        No database objects found
       </div>
       <div v-else class="space-y-1">
         <template v-for="schema in treeData" :key="schema.name">
           <!-- Schema (only show if has name - i.e. not MySQL) -->
-          <div v-if="schema.name"
-            class="flex items-center px-2 py-1.5 text-sm text-gray-700 rounded-md hover:bg-gray-100 cursor-pointer"
-            @click="toggleSchema(schema)">
+          <div v-if="schema.name" @click="toggleSchema(schema)"
+            class="flex items-center px-2 py-1.5 text-sm text-gray-700 rounded-md hover:bg-gray-100 cursor-pointer">
             <component :is="isSchemaExpanded(schema.name) ? ChevronDownIcon : ChevronRightIcon"
               class="h-4 w-4 text-gray-400 mr-1.5 flex-shrink-0" />
-            <span class="font-medium">{{ schema.name }}</span>
+            <span class="font-medium">{{ schema.name || 'Default' }}</span>
             <span class="ml-2 text-xs text-gray-500 bg-gray-100 rounded-full px-2 py-0.5">
-              {{ schema.children?.length || 0 }}
+              {{ schema.children.length }}
             </span>
           </div>
 
-          <!-- Tables -->
+          <!-- Tables and Views -->
           <div v-if="isSchemaExpanded(schema.name)" :class="[
             'space-y-1',
-            schema.name ? 'ml-4 border-l border-gray-200' : '' // Only indent if has schema
+            schema.name ? 'ml-4 border-l border-gray-200' : ''
           ]">
-            <div v-for="table in schema.children" :key="table.name"
+            <div v-for="item in schema.children" :key="`${item.type}-${item.name}`" @click="handleObjectSelect(item)"
               class="flex items-center px-2 py-1.5 text-sm rounded-md hover:bg-gray-100 cursor-pointer" :class="[
-                selectedTableName === table.name ? 'bg-blue-50 text-blue-700' : 'text-gray-600',
+                isSelected(item) ? 'bg-blue-50 text-blue-700' : 'text-gray-600',
                 { 'ml-2': schema.name }
-              ]" @click="handleTableSelect(table)">
-              <TableCellsIcon class="h-4 w-4 mr-1.5 flex-shrink-0"
-                :class="selectedTableName === table.name ? 'text-blue-500' : 'text-gray-400'" />
-              <span>{{ table.name }}</span>
+              ]">
+              <component :is="item.type === 'table' ? TableCellsIcon : ViewfinderCircleIcon"
+                class="h-4 w-4 mr-1.5 flex-shrink-0" :class="isSelected(item) ? 'text-blue-500' : 'text-gray-400'" />
+              <span>{{ item.name }}</span>
+              <span v-if="item.type === 'view'" class="ml-2 text-xs text-gray-500">(View)</span>
             </div>
           </div>
         </template>
