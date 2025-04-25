@@ -219,7 +219,7 @@ const displayedPages = computed(() => {
         </div>
 
         <!-- Content -->
-        <div class="p-4">
+        <div class="flex flex-col h-[calc(100vh-16rem)] p-4">
             <!-- Loading state -->
             <div v-if="isLoading" class="flex items-center justify-center py-8">
                 <ArrowPathIcon class="h-8 w-8 text-gray-400 animate-spin" />
@@ -231,23 +231,23 @@ const displayedPages = computed(() => {
             </div>
 
             <!-- Data table -->
-            <div v-else-if="tableData?.rows?.length" class="overflow-x-auto">
-                <div class="relative">
-                    <table class="min-w-full divide-y divide-gray-300">
+            <div v-else-if="tableData?.rows?.length" class="flex flex-col flex-1 min-h-0">
+                <div class="flex-1 overflow-auto border border-gray-200 rounded-lg">
+                    <table class="w-full divide-y divide-gray-300">
                         <!-- Table headers -->
-                        <thead class="bg-gray-50">
+                        <thead class="bg-gray-50 sticky top-0 z-10">
                             <tr>
                                 <th v-for="column in tableData.columns" :key="column"
-                                    class="px-3 py-2 text-left text-sm font-semibold text-gray-900 bg-gray-50">
+                                    class="px-3 py-2 text-left text-sm font-semibold text-gray-900 bg-gray-50 sticky top-0">
                                     {{ column }}
                                 </th>
                             </tr>
                         </thead>
                         <!-- Table body -->
                         <tbody class="divide-y divide-gray-200 bg-white">
-                            <tr v-for="(row, rowIndex) in tableData.rows" :key="rowIndex">
+                            <tr v-for="(row, rowIndex) in tableData.rows" :key="rowIndex" class="hover:bg-gray-50">
                                 <td v-for="(value, colIndex) in row" :key="colIndex"
-                                    class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
+                                    class="px-3 py-2 text-sm text-gray-500">
                                     {{ value }}
                                 </td>
                             </tr>
@@ -256,49 +256,64 @@ const displayedPages = computed(() => {
                 </div>
 
                 <!-- Pagination -->
-                <div class="mt-4 flex items-center justify-between">
-                    <div class="text-sm text-gray-700">
-                        Showing {{ tableData.offset + 1 }} to {{ tableData.offset + tableData.rows.length }}
-                        <template v-if="!skipCount">
-                            of {{ tableData.total_count }}
-                        </template>
-                        rows
-                    </div>
-                    <nav class="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
-                        <button
-                            class="relative inline-flex items-center px-3 py-1.5 text-sm font-medium ring-1 ring-inset ring-gray-300"
-                            :class="[
-                                currentPage === 1
-                                    ? 'text-gray-400 cursor-not-allowed'
-                                    : 'text-gray-900 hover:bg-gray-50 cursor-pointer'
-                            ]" :disabled="currentPage === 1" @click="currentPage = Math.max(1, currentPage - 1)">
+                <div class="mt-4 flex items-center justify-between border-t border-gray-200 bg-white py-3">
+                    <div class="flex flex-1 justify-between sm:hidden">
+                        <button @click="currentPage = Math.max(1, currentPage - 1)" :disabled="currentPage === 1"
+                            class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                            :class="{ 'opacity-50 cursor-not-allowed': currentPage === 1 }">
                             Previous
                         </button>
-                        <template v-if="!skipCount">
-                            <button v-for="page in displayedPages" :key="page"
-                                @click="typeof page === 'number' ? currentPage = page : null" :class="[
-                                    'relative inline-flex items-center px-3 py-1.5 text-sm font-medium ring-1 ring-inset ring-gray-300',
-                                    typeof page === 'number' ? (
-                                        currentPage === page
-                                            ? 'bg-gray-600 text-white'
-                                            : 'text-gray-900 hover:bg-gray-50 cursor-pointer'
-                                    ) : 'text-gray-400 cursor-default'
-                                ]">
-                                {{ page }}
-                            </button>
-                        </template>
-                        <button
-                            class="relative inline-flex items-center px-3 py-1.5 text-sm font-medium ring-1 ring-inset ring-gray-300"
-                            :class="[
-                                (skipCount && tableData?.rows?.length < itemsPerPage) || (!skipCount && currentPage === totalPages)
-                                    ? 'text-gray-400 cursor-not-allowed'
-                                    : 'text-gray-900 hover:bg-gray-50 cursor-pointer'
-                            ]"
+                        <button @click="currentPage = currentPage + 1"
                             :disabled="(skipCount && tableData?.rows?.length < itemsPerPage) || (!skipCount && currentPage === totalPages)"
-                            @click="currentPage = currentPage + 1">
+                            class="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                            :class="{ 'opacity-50 cursor-not-allowed': (skipCount && tableData?.rows?.length < itemsPerPage) || (!skipCount && currentPage === totalPages) }">
                             Next
                         </button>
-                    </nav>
+                    </div>
+                    <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+                        <div class="text-sm text-gray-700">
+                            Showing {{ tableData.offset + 1 }} to {{ tableData.offset + tableData.rows.length }}
+                            <template v-if="!skipCount">
+                                of {{ tableData.total_count }}
+                            </template>
+                            rows
+                        </div>
+                        <nav class="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                            <button
+                                class="relative inline-flex items-center px-3 py-1.5 text-sm font-medium ring-1 ring-inset ring-gray-300"
+                                :class="[
+                                    currentPage === 1
+                                        ? 'text-gray-400 cursor-not-allowed'
+                                        : 'text-gray-900 hover:bg-gray-50 cursor-pointer'
+                                ]" :disabled="currentPage === 1" @click="currentPage = Math.max(1, currentPage - 1)">
+                                Previous
+                            </button>
+                            <template v-if="!skipCount">
+                                <button v-for="page in displayedPages" :key="page"
+                                    @click="typeof page === 'number' ? currentPage = page : null" :class="[
+                                        'relative inline-flex items-center px-3 py-1.5 text-sm font-medium ring-1 ring-inset ring-gray-300',
+                                        typeof page === 'number' ? (
+                                            currentPage === page
+                                                ? 'bg-gray-600 text-white'
+                                                : 'text-gray-900 hover:bg-gray-50 cursor-pointer'
+                                        ) : 'text-gray-400 cursor-default'
+                                    ]">
+                                    {{ page }}
+                                </button>
+                            </template>
+                            <button
+                                class="relative inline-flex items-center px-3 py-1.5 text-sm font-medium ring-1 ring-inset ring-gray-300"
+                                :class="[
+                                    (skipCount && tableData?.rows?.length < itemsPerPage) || (!skipCount && currentPage === totalPages)
+                                        ? 'text-gray-400 cursor-not-allowed'
+                                        : 'text-gray-900 hover:bg-gray-50 cursor-pointer'
+                                ]"
+                                :disabled="(skipCount && tableData?.rows?.length < itemsPerPage) || (!skipCount && currentPage === totalPages)"
+                                @click="currentPage = currentPage + 1">
+                                Next
+                            </button>
+                        </nav>
+                    </div>
                 </div>
             </div>
 
