@@ -190,9 +190,18 @@ const getTables = async (id: string): Promise<string[]> => {
   }
 }
 
+let metadataCache: { [key: string]: { data: DatabaseMetadata; timestamp: number } } = {}
+
 const getMetadata = async (id: string, forceRefresh = false): Promise<DatabaseMetadata> => {
   const commonStore = useCommonStore()
   validateApiKey(commonStore.apiKey)
+
+  // Check cache if not forcing refresh
+  const now = Date.now()
+  if (!forceRefresh && metadataCache[id] && now - metadataCache[id].timestamp < 30000) {
+    return metadataCache[id].data
+  }
+
   try {
     const response: AxiosResponse<DatabaseMetadata> = await apiClient.get(
       `/connections/${id}/newmeta${forceRefresh ? '?refresh=true' : ''}`,
@@ -200,6 +209,13 @@ const getMetadata = async (id: string, forceRefresh = false): Promise<DatabaseMe
         headers: { 'X-API-Key': commonStore.apiKey }
       }
     )
+
+    // Update cache
+    metadataCache[id] = {
+      data: response.data,
+      timestamp: now
+    }
+
     return response.data
   } catch (error) {
     throw handleApiError(error)

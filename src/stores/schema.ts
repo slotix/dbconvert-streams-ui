@@ -48,12 +48,6 @@ export const useSchemaStore = defineStore('schema', {
                 return
             }
 
-            // If we have data and it's less than 30 seconds old, return cached data
-            const now = Date.now()
-            if (!forceRefresh && this.lastFetchTimestamp && this.tables.length > 0 && now - this.lastFetchTimestamp < 30000) {
-                return
-            }
-
             this.loading = true
             this.error = null
 
@@ -120,7 +114,7 @@ export const useSchemaStore = defineStore('schema', {
                     this.calculateInitialPositions()
                 }
 
-                this.lastFetchTimestamp = now
+                this.lastFetchTimestamp = Date.now()
             } catch (err) {
                 this.error = err instanceof Error ? err.message : 'Failed to fetch schema'
             } finally {
