@@ -1,13 +1,7 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed } from 'vue'
 import { ArrowPathIcon } from '@heroicons/vue/24/outline'
 import { type SQLViewMeta } from '@/types/metadata'
-import hljs from 'highlight.js/lib/core'
-import sql from 'highlight.js/lib/languages/sql'
-import 'highlight.js/styles/atom-one-dark.css'
-
-// Register SQL language
-hljs.registerLanguage('sql', sql)
 
 const props = defineProps<{
     viewMeta: SQLViewMeta
@@ -18,17 +12,6 @@ const props = defineProps<{
 const emit = defineEmits<{
     (e: 'refresh-metadata'): void
 }>()
-
-// Highlight SQL code after mount and when definition changes
-onMounted(() => {
-    highlightSql()
-})
-
-function highlightSql() {
-    document.querySelectorAll('pre code').forEach((block) => {
-        hljs.highlightElement(block as HTMLElement)
-    })
-}
 </script>
 
 <template>
@@ -95,7 +78,8 @@ function highlightSql() {
         <div class="px-6 py-4">
             <h4 class="text-sm font-medium text-gray-900 mb-4">Definition</h4>
             <div class="overflow-x-auto">
-                <pre class="hljs rounded-md p-4"><code class="language-sql">{{ viewMeta.definition }}</code></pre>
+                <pre v-highlightjs
+                    class="hljs rounded-md p-4"><code class="language-sql">{{ viewMeta.definition }}</code></pre>
             </div>
         </div>
 
@@ -111,7 +95,8 @@ function highlightSql() {
         <div v-if="showDdl" class="px-6 py-4">
             <h4 class="text-sm font-medium text-gray-900 mb-4">DDL</h4>
             <div class="overflow-x-auto">
-                <pre class="hljs rounded-md p-4"><code class="language-sql">{{ viewMeta.ddl }}</code></pre>
+                <pre v-highlightjs
+                    class="hljs rounded-md p-4"><code class="language-sql">{{ viewMeta.ddl }}</code></pre>
             </div>
         </div>
     </div>
@@ -121,5 +106,30 @@ function highlightSql() {
 .hljs {
     @apply bg-gray-800;
     color: #abb2bf;
+}
+
+/* Add styles to ensure proper background colors */
+.hljs-keyword {
+    @apply text-purple-400;
+}
+
+.hljs-string {
+    @apply text-green-400;
+}
+
+.hljs-number {
+    @apply text-orange-400;
+}
+
+.hljs-operator {
+    @apply text-sky-400;
+}
+
+.hljs-punctuation {
+    @apply text-gray-400;
+}
+
+.hljs-comment {
+    @apply text-gray-500;
 }
 </style>
