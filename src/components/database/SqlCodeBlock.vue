@@ -22,21 +22,15 @@ defineProps<{
       <div class="relative">
         <div class="absolute left-0 top-0 bottom-0 w-12 bg-[#f8f9fa] border-r border-gray-200">
           <div class="py-8">
-            <div
-              v-for="n in (code || '').split('\n').length"
-              :key="n"
-              class="h-[24px] flex items-end justify-end px-3 text-xs font-mono text-gray-400 pb-1"
-            >
+            <div v-for="n in (code || '').split('\n').length" :key="n"
+              class="h-[24px] flex items-end justify-end px-3 text-xs font-mono text-gray-400 pb-1">
               {{ n }}
             </div>
           </div>
         </div>
         <div class="overflow-x-auto">
-          <pre
-            v-highlightjs
-            class="pl-14 py-4 text-sm"
-          ><code class="language-sql block leading-[24px]">{{ code
-                    }}</code></pre>
+          <pre v-highlightjs class="pl-14 py-4 text-sm"><code class="language-sql block leading-[24px] select-text">{{ code
+          }}</code></pre>
         </div>
       </div>
     </div>
@@ -70,12 +64,14 @@ defineProps<{
 
 pre {
   tab-size: 4;
+  user-select: text;
 }
 
 /* Ensure line numbers and code lines align perfectly */
 pre code {
   display: block;
   line-height: 24px;
+  user-select: text;
 }
 </style>
 

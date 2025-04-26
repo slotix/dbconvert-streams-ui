@@ -100,10 +100,6 @@ function getColumnExtra(column: typeof columns.value[0]) {
   }
   return extras.length > 0 ? extras.join(', ') : '-'
 }
-
-function handleCopy(code: string) {
-  navigator.clipboard.writeText(code)
-}
 </script>
 
 <template>
@@ -274,14 +270,14 @@ function handleCopy(code: string) {
               <!-- Create Table -->
               <div>
                 <h4 class="text-sm font-medium text-gray-900 mb-4">Create Table</h4>
-                <SqlCodeBlock :code="ddl.createTable" title="SQL Definition" @copy="handleCopy" />
+                <SqlCodeBlock :code="ddl.createTable" title="SQL Definition" />
               </div>
 
               <!-- Create Indexes -->
               <div v-if="ddl.createIndexes?.length">
                 <h4 class="text-sm font-medium text-gray-900 mb-4">Create Indexes</h4>
                 <div v-for="(indexDdl, i) in ddl.createIndexes" :key="i" class="mt-4">
-                  <SqlCodeBlock :code="indexDdl" title="Index" :index="i + 1" @copy="handleCopy" />
+                  <SqlCodeBlock :code="indexDdl" title="Index" :index="i + 1" />
                 </div>
               </div>
             </div>
