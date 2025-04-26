@@ -1,13 +1,11 @@
 <!-- A reusable component for displaying SQL code with syntax highlighting -->
 <script setup lang="ts">
+import CopyButton from '@/components/common/CopyButton.vue'
+
 defineProps<{
     code: string
     title?: string
     index?: number | string
-}>()
-
-const emit = defineEmits<{
-    (e: 'copy', code: string): void
 }>()
 </script>
 
@@ -18,11 +16,7 @@ const emit = defineEmits<{
                 <template v-if="index">{{ title }} {{ index }}</template>
                 <template v-else>{{ title }}</template>
             </span>
-            <button
-                class="rounded bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 border border-gray-200 focus:outline-none transition-colors"
-                @click="emit('copy', code)">
-                Copy
-            </button>
+            <CopyButton :text="code" />
         </div>
         <div class="bg-white">
             <div class="relative">

@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { ArrowPathIcon } from '@heroicons/vue/24/outline'
 import { type SQLViewMeta } from '@/types/metadata'
 import SqlCodeBlock from './SqlCodeBlock.vue'
+import CopyButton from '@/components/common/CopyButton.vue'
 
 const props = defineProps<{
     viewMeta: SQLViewMeta
@@ -30,11 +31,14 @@ function handleCopy(code: string) {
                 </h3>
                 <p v-if="viewMeta.schema" class="mt-1 text-sm text-gray-500">Schema: {{ viewMeta.schema }}</p>
             </div>
-            <button @click="emit('refresh-metadata')"
-                class="inline-flex items-center rounded-md bg-white px-2.5 py-1.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
-                <ArrowPathIcon class="h-4 w-4 mr-1" />
-                Refresh
-            </button>
+            <div class="flex items-center gap-4">
+                <CopyButton :text="viewMeta.definition" />
+                <button @click="emit('refresh-metadata')"
+                    class="inline-flex items-center rounded-md bg-white px-2.5 py-1.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+                    <ArrowPathIcon class="h-4 w-4 mr-1" />
+                    Refresh
+                </button>
+            </div>
         </div>
 
         <!-- Columns -->
