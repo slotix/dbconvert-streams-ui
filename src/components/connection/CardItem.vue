@@ -6,21 +6,31 @@
         'border-yellow-500 ring-2 ring-yellow-400': selected && currentStep?.name === 'source',
         'border-green-500 ring-2 ring-green-400': selected && currentStep?.name === 'target',
         'border-gray-200': !selected
-      }" @click="selectConnection">
+      }"
+      @click="selectConnection"
+    >
       <!-- Header -->
-      <div class="border-b px-6 py-4 flex-shrink-0" :class="{
-        'bg-yellow-50': selected && currentStep?.name === 'source',
-        'bg-green-50': selected && currentStep?.name === 'target',
-        'bg-gray-50': !selected
-      }">
+      <div
+        class="border-b px-6 py-4 flex-shrink-0"
+        :class="{
+          'bg-yellow-50': selected && currentStep?.name === 'source',
+          'bg-green-50': selected && currentStep?.name === 'target',
+          'bg-gray-50': !selected
+        }"
+      >
         <div class="flex items-center gap-3">
           <img
             class="h-8 w-8 rounded-full shadow-sm bg-white object-contain p-0.5 transition-all duration-300 flex-shrink-0"
             :class="{
-              'ring-2 ring-offset-2 ring-yellow-400 shadow-yellow-200/50': selected && currentStep?.name === 'source',
-              'ring-2 ring-offset-2 ring-green-400 shadow-green-200/50': selected && currentStep?.name === 'target',
+              'ring-2 ring-offset-2 ring-yellow-400 shadow-yellow-200/50':
+                selected && currentStep?.name === 'source',
+              'ring-2 ring-offset-2 ring-green-400 shadow-green-200/50':
+                selected && currentStep?.name === 'target',
               'ring-1 ring-gray-200': !selected
-            }" :src="logoSrc" :alt="connection.type + ' logo'" />
+            }"
+            :src="logoSrc"
+            :alt="connection.type + ' logo'"
+          />
           <div class="min-w-0 flex-1">
             <h3 class="text-lg font-medium text-gray-900 truncate">{{ connection.name }}</h3>
             <p class="text-sm text-gray-500 truncate">ID: {{ connection.id }}</p>
@@ -47,7 +57,10 @@
             </div>
           </div>
 
-          <div v-if="!connection.type?.toLowerCase().includes('postgres') && connection.schema" class="min-w-0">
+          <div
+            v-if="!connection.type?.toLowerCase().includes('postgres') && connection.schema"
+            class="min-w-0"
+          >
             <label class="text-xs font-medium uppercase text-gray-500">Schema</label>
             <p class="mt-1 font-medium text-gray-900 truncate">{{ connection.schema }}</p>
           </div>
@@ -56,12 +69,20 @@
             <label class="text-xs font-medium uppercase text-gray-500">Connection String</label>
             <div class="mt-1 flex items-start gap-2 rounded-md bg-gray-50 p-3 font-mono text-sm">
               <span class="flex-1 break-all text-gray-800 overflow-x-auto">
-                {{ showPassword ? connectionString : connectionString.replace(/(?<=:)[^@]+(?=@) /g, '****') }} </span>
-                  <button @click.stop="showPassword = !showPassword"
-                    class="flex-shrink-0 text-gray-400 hover:text-gray-600">
-                    <EyeIcon v-if="!showPassword" class="h-4 w-4" />
-                    <EyeSlashIcon v-else class="h-4 w-4" />
-                  </button>
+                {{
+                  showPassword
+                    ? connectionString
+                    : connectionString.replace(/(?<=:)[^@]+(?=@) /g, '****')
+                }}
+              </span>
+              <button
+                class="flex-shrink-0 text-gray-400 hover:text-gray-600"
+                @click.stop="showPassword = !showPassword"
+              >
+                >
+                <EyeIcon v-if="!showPassword" class="h-4 w-4" />
+                <EyeSlashIcon v-else class="h-4 w-4" />
+              </button>
             </div>
           </div>
         </div>
@@ -75,27 +96,39 @@
 
       <!-- Actions -->
       <div v-show="!isStreamsPage" class="flex divide-x divide-gray-200 border-t flex-shrink-0">
-        <button v-tooltip="'View tables, data, schema, and AI assistant'" type="button"
+        <button
+          v-tooltip="'View tables, data, schema, and AI assistant'"
+          type="button"
           class="flex-1 px-4 py-3 text-sm font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 flex items-center justify-center gap-2"
-          @click.stop="$router.push({ name: 'DatabaseMetadata', params: { id: connection.id } })">
+          @click.stop="$router.push({ name: 'DatabaseMetadata', params: { id: connection.id } })"
+        >
           <TableCellsIcon class="h-4 w-4" />
           Explore
         </button>
-        <button v-tooltip="'Edit the connection'" type="button"
+        <button
+          v-tooltip="'Edit the connection'"
+          type="button"
           class="flex-1 px-4 py-3 text-sm font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 flex items-center justify-center gap-2"
-          @click.stop="editConnection">
+          @click.stop="editConnection"
+        >
           <PencilIcon class="h-4 w-4" />
           Edit
         </button>
-        <button v-tooltip="'Clone the connection'" type="button"
+        <button
+          v-tooltip="'Clone the connection'"
+          type="button"
           class="flex-1 px-4 py-3 text-sm font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 flex items-center justify-center gap-2"
-          @click.stop="cloneConnection">
+          @click.stop="cloneConnection"
+        >
           <Square2StackIcon class="h-4 w-4" />
           Clone
         </button>
-        <button v-tooltip="'Delete the connection'" type="button"
+        <button
+          v-tooltip="'Delete the connection'"
+          type="button"
           class="flex-1 px-4 py-3 text-sm font-medium text-red-600 bg-gray-50 hover:bg-gray-100 flex items-center justify-center gap-2"
-          @click.stop="deleteConn(connection.id)">
+          @click.stop="deleteConn(connection.id)"
+        >
           <TrashIcon class="h-4 w-4" />
           Delete
         </button>
@@ -112,7 +145,15 @@ import { useCommonStore, DIALOG_TYPES } from '@/stores/common'
 import { type Connection } from '@/types/connections'
 import { normalizeConnectionType } from '@/utils/connectionUtils'
 import { generateConnectionString } from '@/utils/connectionStringGenerator'
-import { PencilIcon, Square2StackIcon, TrashIcon, CalendarIcon, TableCellsIcon, EyeIcon, EyeSlashIcon } from '@heroicons/vue/24/outline'
+import {
+  PencilIcon,
+  Square2StackIcon,
+  TrashIcon,
+  CalendarIcon,
+  TableCellsIcon,
+  EyeIcon,
+  EyeSlashIcon
+} from '@heroicons/vue/24/outline'
 import { ref } from 'vue'
 
 const props = defineProps<{
@@ -131,7 +172,9 @@ const currentStreamConfig = computed(() => streamsStore.currentStreamConfig)
 
 const logoSrc = computed(() => {
   const normalizedType = normalizeConnectionType(props.connection?.type || '')
-  const dbType = connectionsStore.dbTypes.find((f) => normalizeConnectionType(f.type) === normalizedType)
+  const dbType = connectionsStore.dbTypes.find(
+    (f) => normalizeConnectionType(f.type) === normalizedType
+  )
   return dbType ? dbType.logo : ''
 })
 

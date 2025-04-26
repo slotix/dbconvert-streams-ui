@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { ChevronRightIcon, ChevronDownIcon, TableCellsIcon, ViewfinderCircleIcon } from '@heroicons/vue/24/outline'
+import {
+  ChevronRightIcon,
+  ChevronDownIcon,
+  TableCellsIcon,
+  ViewfinderCircleIcon
+} from '@heroicons/vue/24/outline'
 import { type DatabaseMetadata } from '@/types/metadata'
 
 const props = defineProps<{
@@ -87,7 +92,7 @@ const treeData = computed<TreeNode[]>(() => {
       if (b.name === 'public') return 1
       return (a.name || '').localeCompare(b.name || '')
     })
-    .map(schema => ({
+    .map((schema) => ({
       ...schema,
       children: schema.children.sort((a, b) => {
         // Sort by type first (tables before views), then by name
@@ -136,10 +141,15 @@ function isSelected(item: TreeNode): boolean {
       <div v-else class="space-y-1">
         <template v-for="schema in treeData" :key="schema.name">
           <!-- Schema (only show if has name - i.e. not MySQL) -->
-          <div v-if="schema.name" @click="toggleSchema(schema)"
-            class="flex items-center px-2 py-1.5 text-sm text-gray-700 rounded-md hover:bg-gray-100 cursor-pointer">
-            <component :is="isSchemaExpanded(schema.name) ? ChevronDownIcon : ChevronRightIcon"
-              class="h-4 w-4 text-gray-400 mr-1.5 flex-shrink-0" />
+          <div
+            v-if="schema.name"
+            class="flex items-center px-2 py-1.5 text-sm text-gray-700 rounded-md hover:bg-gray-100 cursor-pointer"
+            @click="toggleSchema(schema)"
+          >
+            <component
+              :is="isSchemaExpanded(schema.name) ? ChevronDownIcon : ChevronRightIcon"
+              class="h-4 w-4 text-gray-400 mr-1.5 flex-shrink-0"
+            />
             <span class="font-medium">{{ schema.name || 'Default' }}</span>
             <span class="ml-2 text-xs text-gray-500 bg-gray-100 rounded-full px-2 py-0.5">
               {{ schema.children.length }}
@@ -147,17 +157,25 @@ function isSelected(item: TreeNode): boolean {
           </div>
 
           <!-- Tables and Views -->
-          <div v-if="isSchemaExpanded(schema.name)" :class="[
-            'space-y-1',
-            schema.name ? 'ml-4 border-l border-gray-200' : ''
-          ]">
-            <div v-for="item in schema.children" :key="`${item.type}-${item.name}`" @click="handleObjectSelect(item)"
-              class="flex items-center px-2 py-1.5 text-sm rounded-md hover:bg-gray-100 cursor-pointer" :class="[
+          <div
+            v-if="isSchemaExpanded(schema.name)"
+            :class="['space-y-1', schema.name ? 'ml-4 border-l border-gray-200' : '']"
+          >
+            <div
+              v-for="item in schema.children"
+              :key="`${item.type}-${item.name}`"
+              class="flex items-center px-2 py-1.5 text-sm rounded-md hover:bg-gray-100 cursor-pointer"
+              :class="[
                 isSelected(item) ? 'bg-blue-50 text-blue-700' : 'text-gray-600',
                 { 'ml-2': schema.name }
-              ]">
-              <component :is="item.type === 'table' ? TableCellsIcon : ViewfinderCircleIcon"
-                class="h-4 w-4 mr-1.5 flex-shrink-0" :class="isSelected(item) ? 'text-blue-500' : 'text-gray-400'" />
+              ]"
+              @click="handleObjectSelect(item)"
+            >
+              <component
+                :is="item.type === 'table' ? TableCellsIcon : ViewfinderCircleIcon"
+                class="h-4 w-4 mr-1.5 flex-shrink-0"
+                :class="isSelected(item) ? 'text-blue-500' : 'text-gray-400'"
+              />
               <span>{{ item.name }}</span>
               <span v-if="item.type === 'view'" class="ml-2 text-xs text-gray-500">(View)</span>
             </div>

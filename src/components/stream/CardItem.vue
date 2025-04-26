@@ -2,7 +2,8 @@
   <div class="w-full">
     <div
       class="bg-white rounded-lg border overflow-hidden cursor-pointer transform hover:shadow-lg duration-300 ease-in-out flex flex-col h-full"
-      @click="selectStream">
+      @click="selectStream"
+    >
       <!-- Header -->
       <div class="border-b px-6 py-4 bg-gray-50">
         <div class="flex items-center justify-between">
@@ -10,20 +11,28 @@
             <h3 class="text-lg font-medium text-gray-900 truncate">{{ streamConfig.name }}</h3>
           </div>
           <div class="flex items-center gap-2 ml-4">
-            <Switch v-model="isJsonView"
+            <Switch
+              v-model="isJsonView"
               class="relative inline-flex h-5 w-10 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-gray-600 focus:ring-offset-2"
-              :class="[isJsonView ? 'bg-gray-600' : 'bg-gray-400']">
+              :class="[isJsonView ? 'bg-gray-600' : 'bg-gray-400']"
+            >
               <span class="sr-only">Toggle JSON view</span>
-              <span aria-hidden="true"
+              <span
+                aria-hidden="true"
                 class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out"
                 :class="[
                   isJsonView ? 'translate-x-5' : 'translate-x-0',
                   'shadow-[0_1px_4px_rgba(0,0,0,0.15)]'
-                ]" />
+                ]"
+              />
             </Switch>
             <span class="text-sm text-gray-600">JSON</span>
-            <button v-if="isJsonView" v-tooltip="'Copy configuration'"
-              class="p-1 text-gray-500 hover:text-gray-700 rounded-md hover:bg-gray-100" @click.stop="copyConfig">
+            <button
+              v-if="isJsonView"
+              v-tooltip="'Copy configuration'"
+              class="p-1 text-gray-500 hover:text-gray-700 rounded-md hover:bg-gray-100"
+              @click.stop="copyConfig"
+            >
               <ClipboardIcon class="h-4 w-4" />
             </button>
           </div>
@@ -44,7 +53,8 @@
               <div class="flex items-center justify-between col-span-2 -mb-1">
                 <label class="text-xs font-medium uppercase text-gray-500">Source Connection</label>
                 <span
-                  class="inline-flex items-center rounded-md bg-green-50 px-3 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
+                  class="inline-flex items-center rounded-md bg-green-50 px-3 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20"
+                >
                   {{ streamConfig.mode }}
                 </span>
                 <label class="text-xs font-medium uppercase text-gray-500">Target Connection</label>
@@ -54,13 +64,24 @@
               <div class="space-y-2">
                 <div class="bg-gray-50 rounded-md p-4 border border-gray-200">
                   <div class="flex items-center gap-2 mb-2">
-                    <img v-if="source && source.type" class="h-6 w-6 rounded-full" :src="logoSrc(source.type)"
-                      :alt="source.type + ' logo'" />
-                    <span class="font-medium text-gray-900" :class="{
-                      'text-red-500': !source || !source.name
-                    }">{{ source?.name || 'N/A' }}</span>
-                    <ExclamationCircleIcon v-if="!source || !source.name" class="h-4 w-4 text-red-500"
-                      aria-hidden="true" />
+                    <img
+                      v-if="source && source.type"
+                      class="h-6 w-6 rounded-full"
+                      :src="logoSrc(source.type)"
+                      :alt="source.type + ' logo'"
+                    />
+                    <span
+                      class="font-medium text-gray-900"
+                      :class="{
+                        'text-red-500': !source || !source.name
+                      }"
+                      >{{ source?.name || 'N/A' }}</span
+                    >
+                    <ExclamationCircleIcon
+                      v-if="!source || !source.name"
+                      class="h-4 w-4 text-red-500"
+                      aria-hidden="true"
+                    />
                   </div>
                   <div class="text-sm text-gray-600 mt-2">
                     <ConnectionStringDisplay v-if="source" :connection="source" />
@@ -73,13 +94,24 @@
               <div class="space-y-2">
                 <div class="bg-gray-50 rounded-md p-4 border border-gray-200">
                   <div class="flex items-center gap-2 mb-2">
-                    <img v-if="target && target.type" class="h-6 w-6 rounded-full" :src="logoSrc(target.type)"
-                      :alt="target.type + ' logo'" />
-                    <span class="font-medium text-gray-900" :class="{
-                      'text-red-500': !target || !target.name
-                    }">{{ target?.name || 'N/A' }}</span>
-                    <ExclamationCircleIcon v-if="!target || !target.name" class="h-4 w-4 text-red-500"
-                      aria-hidden="true" />
+                    <img
+                      v-if="target && target.type"
+                      class="h-6 w-6 rounded-full"
+                      :src="logoSrc(target.type)"
+                      :alt="target.type + ' logo'"
+                    />
+                    <span
+                      class="font-medium text-gray-900"
+                      :class="{
+                        'text-red-500': !target || !target.name
+                      }"
+                      >{{ target?.name || 'N/A' }}</span
+                    >
+                    <ExclamationCircleIcon
+                      v-if="!target || !target.name"
+                      class="h-4 w-4 text-red-500"
+                      aria-hidden="true"
+                    />
                   </div>
                   <div class="text-sm text-gray-600 mt-2">
                     <ConnectionStringDisplay v-if="target" :connection="target" />
@@ -111,19 +143,31 @@
 
       <!-- Actions -->
       <div class="mt-auto flex divide-x divide-gray-200 border-t">
-        <button v-tooltip="'Edit stream configuration'" type="button"
+        <button
+          v-tooltip="'Edit stream configuration'"
+          type="button"
           class="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 flex items-center justify-center gap-2"
-          @click.stop="editStream">
+          @click.stop="editStream"
+        >
           <PencilIcon class="h-4 w-4" />
           Edit
         </button>
-        <ActionsMenu v-tooltip="'More stream actions'"
+        <ActionsMenu
+          v-tooltip="'More stream actions'"
           class="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-50 hover:bg-gray-100"
-          :position="actionsMenuPosition" :viewType="'cards'" @selectRow="selectStream" @editRow="editStream"
-          @cloneRow="cloneStreamConfig" @deleteRow="deleteStreamConfig" />
-        <button v-tooltip="'Start the stream'" type="button"
+          :position="actionsMenuPosition"
+          :viewType="'cards'"
+          @selectRow="selectStream"
+          @editRow="editStream"
+          @cloneRow="cloneStreamConfig"
+          @deleteRow="deleteStreamConfig"
+        />
+        <button
+          v-tooltip="'Start the stream'"
+          type="button"
           class="flex-1 px-4 py-2 text-sm font-medium text-green-700 bg-gray-50 hover:bg-gray-100 flex items-center justify-center gap-2"
-          @click.stop="startStream">
+          @click.stop="startStream"
+        >
           <PlayIcon class="h-4 w-4" />
           Start
         </button>

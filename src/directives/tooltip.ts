@@ -2,7 +2,8 @@ import type { Directive } from 'vue'
 
 function createTooltip(text: string): HTMLElement {
   const tooltip = document.createElement('div')
-  tooltip.className = 'fixed z-50 px-2 py-1 text-xs font-medium text-white bg-gray-900 rounded shadow-sm pointer-events-none opacity-0 transition-opacity duration-200'
+  tooltip.className =
+    'fixed z-50 px-2 py-1 text-xs font-medium text-white bg-gray-900 rounded shadow-sm pointer-events-none opacity-0 transition-opacity duration-200'
   tooltip.textContent = text
   return tooltip
 }

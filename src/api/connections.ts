@@ -178,12 +178,9 @@ const getTables = async (id: string): Promise<string[]> => {
   const commonStore = useCommonStore()
   validateApiKey(commonStore.apiKey)
   try {
-    const response: AxiosResponse<string[]> = await apiClient.get(
-      `/connections/${id}/tables`,
-      {
-        headers: { 'X-API-Key': commonStore.apiKey }
-      }
-    )
+    const response: AxiosResponse<string[]> = await apiClient.get(`/connections/${id}/tables`, {
+      headers: { 'X-API-Key': commonStore.apiKey }
+    })
     return response.data
   } catch (error) {
     throw handleApiError(error)
@@ -271,12 +268,9 @@ const getViews = async (id: string): Promise<string[]> => {
   const commonStore = useCommonStore()
   validateApiKey(commonStore.apiKey)
   try {
-    const response: AxiosResponse<string[]> = await apiClient.get(
-      `/connections/${id}/views`,
-      {
-        headers: { 'X-API-Key': commonStore.apiKey }
-      }
-    )
+    const response: AxiosResponse<string[]> = await apiClient.get(`/connections/${id}/views`, {
+      headers: { 'X-API-Key': commonStore.apiKey }
+    })
     return response.data
   } catch (error) {
     throw handleApiError(error)

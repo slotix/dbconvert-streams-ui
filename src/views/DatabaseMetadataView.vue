@@ -135,9 +135,9 @@ onMounted(() => {
                             </div>
 
                             <!-- Sidebar Toggle Button -->
-                            <button @click="toggleSidebar"
+                            <button
                                 class="absolute left-0 top-1/2 -translate-y-1/2 bg-white shadow-lg rounded-r-lg p-2 hover:bg-gray-50 transition-colors"
-                                :class="{ '-translate-x-1': !isSidebarCollapsed }">
+                                :class="{ '-translate-x-1': !isSidebarCollapsed }" @click="toggleSidebar">
                                 <component :is="isSidebarCollapsed ? ChevronRightIcon : ChevronLeftIcon"
                                     class="h-5 w-5 text-gray-500" />
                             </button>

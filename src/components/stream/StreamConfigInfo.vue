@@ -2,27 +2,39 @@
   <div v-if="config" class="mt-4 space-y-4">
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-2">
-        <button class="text-gray-500 hover:text-gray-700 focus:outline-none" @click="isExpanded = !isExpanded">
-          <ChevronRightIcon class="h-5 w-5 transform transition-transform duration-200"
-            :class="{ 'rotate-90': isExpanded }" />
+        <button
+          class="text-gray-500 hover:text-gray-700 focus:outline-none"
+          @click="isExpanded = !isExpanded"
+        >
+          <ChevronRightIcon
+            class="h-5 w-5 transform transition-transform duration-200"
+            :class="{ 'rotate-90': isExpanded }"
+          />
         </button>
         <h2 class="text-xl font-semibold">Current Stream Configuration</h2>
       </div>
       <div class="flex items-center gap-4">
-        <Switch v-model="isJsonView"
+        <Switch
+          v-model="isJsonView"
           class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-gray-600 focus:ring-offset-2"
-          :class="[isJsonView ? 'bg-gray-600' : 'bg-gray-400']">
+          :class="[isJsonView ? 'bg-gray-600' : 'bg-gray-400']"
+        >
           <span class="sr-only">Toggle JSON view</span>
-          <span aria-hidden="true"
+          <span
+            aria-hidden="true"
             class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out"
             :class="[
               isJsonView ? 'translate-x-5' : 'translate-x-0',
               'shadow-[0_1px_4px_rgba(0,0,0,0.15)]'
-            ]" />
+            ]"
+          />
         </Switch>
         JSON
-        <button v-tooltip="'Copy configuration'" class="text-gray-500 hover:text-gray-700 focus:outline-none"
-          @click="copyConfig">
+        <button
+          v-tooltip="'Copy configuration'"
+          class="text-gray-500 hover:text-gray-700 focus:outline-none"
+          @click="copyConfig"
+        >
           <ClipboardIcon class="h-5 w-5" />
         </button>
       </div>
@@ -52,12 +64,14 @@
             <div class="flex justify-between items-center">
               <span class="text-sm font-medium text-gray-500">Mode</span>
               <span class="text-sm">
-                <span :class="[
-                  'rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset',
-                  config.mode === 'cdc'
-                    ? 'bg-blue-50 text-blue-700 ring-blue-600/20'
-                    : 'bg-green-50 text-green-700 ring-green-600/20'
-                ]">
+                <span
+                  :class="[
+                    'rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset',
+                    config.mode === 'cdc'
+                      ? 'bg-blue-50 text-blue-700 ring-blue-600/20'
+                      : 'bg-green-50 text-green-700 ring-green-600/20'
+                  ]"
+                >
                   {{ config.mode }}
                 </span>
               </span>
@@ -69,20 +83,30 @@
             <div class="flex items-center justify-between mb-3">
               <div class="flex items-center gap-2">
                 <h3 class="text-sm font-medium text-gray-700">Selected Tables</h3>
-                <span class="px-2 py-0.5 text-xs font-medium rounded-full bg-gray-100 text-gray-600">
+                <span
+                  class="px-2 py-0.5 text-xs font-medium rounded-full bg-gray-100 text-gray-600"
+                >
                   {{ config.tables.length }} tables
                 </span>
               </div>
               <div class="flex items-center gap-2">
                 <!-- Search input -->
                 <div class="relative">
-                  <input v-model="tableSearch" type="text" placeholder="Search tables..."
-                    class="w-48 text-sm rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500" />
-                  <MagnifyingGlassIcon class="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <input
+                    v-model="tableSearch"
+                    type="text"
+                    placeholder="Search tables..."
+                    class="w-48 text-sm rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500"
+                  />
+                  <MagnifyingGlassIcon
+                    class="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400"
+                  />
                 </div>
                 <!-- Toggle table list button -->
-                <button @click="isTableListExpanded = !isTableListExpanded"
-                  class="inline-flex items-center px-2.5 py-1.5 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 border border-gray-300">
+                <button
+                  class="inline-flex items-center px-2.5 py-1.5 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 border border-gray-300"
+                  @click="isTableListExpanded = !isTableListExpanded"
+                >
                   {{ isTableListExpanded ? 'Hide Tables' : 'Show Tables' }}
                 </button>
               </div>
@@ -107,33 +131,54 @@
                     <table class="min-w-full divide-y divide-gray-200">
                       <thead class="bg-gray-50 sticky top-0 z-10">
                         <tr>
-                          <th scope="col"
-                            class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <th
+                            scope="col"
+                            class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          >
                             Table Name
                           </th>
-                          <th v-if="config.mode === 'cdc' && hasOperations" scope="col"
-                            class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <th
+                            v-if="config.mode === 'cdc' && hasOperations"
+                            scope="col"
+                            class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          >
                             Operations
                           </th>
-                          <th v-if="config.mode === 'convert' && hasQueries" scope="col"
-                            class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <th
+                            v-if="config.mode === 'convert' && hasQueries"
+                            scope="col"
+                            class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          >
                             Query
                           </th>
-                          <th v-if="shouldShowSchema" scope="col"
-                            class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <th
+                            v-if="shouldShowSchema"
+                            scope="col"
+                            class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          >
                             Schema
                           </th>
                         </tr>
                       </thead>
                       <tbody class="bg-white divide-y divide-gray-200">
-                        <tr v-for="table in paginatedTables" :key="table.name" class="hover:bg-gray-50">
+                        <tr
+                          v-for="table in paginatedTables"
+                          :key="table.name"
+                          class="hover:bg-gray-50"
+                        >
                           <td class="px-4 py-2 text-sm text-gray-900">
                             {{ table.name }}
                           </td>
-                          <td v-if="config.mode === 'cdc' && hasOperations" class="px-4 py-2 text-sm text-gray-500">
+                          <td
+                            v-if="config.mode === 'cdc' && hasOperations"
+                            class="px-4 py-2 text-sm text-gray-500"
+                          >
                             {{ table.operations?.join(', ') || '—' }}
                           </td>
-                          <td v-if="config.mode === 'convert' && hasQueries" class="px-4 py-2 text-sm text-gray-500">
+                          <td
+                            v-if="config.mode === 'convert' && hasQueries"
+                            class="px-4 py-2 text-sm text-gray-500"
+                          >
                             {{ table.query || '—' }}
                           </td>
                           <td v-if="shouldShowSchema" class="px-4 py-2 text-sm text-gray-500">
@@ -148,15 +193,21 @@
                 <!-- Pagination -->
                 <div class="mt-2 flex items-center justify-between">
                   <div class="text-sm text-gray-700">
-                    Showing {{ paginationStart }} to {{ paginationEnd }} of {{ filteredTables.length }} tables
+                    Showing {{ paginationStart }} to {{ paginationEnd }} of
+                    {{ filteredTables.length }} tables
                   </div>
                   <nav class="isolate inline-flex -space-x-px rounded-md shadow-sm">
-                    <button v-for="page in displayedPages" :key="page" :class="[
-                      'relative inline-flex items-center px-3 py-1.5 text-sm font-medium',
-                      currentPage === page
-                        ? 'bg-gray-600 text-white'
-                        : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50'
-                    ]" @click="currentPage = page">
+                    <button
+                      v-for="page in displayedPages"
+                      :key="page"
+                      :class="[
+                        'relative inline-flex items-center px-3 py-1.5 text-sm font-medium',
+                        currentPage === page
+                          ? 'bg-gray-600 text-white'
+                          : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50'
+                      ]"
+                      @click="currentPage = page"
+                    >
                       {{ page }}
                     </button>
                   </nav>
@@ -327,7 +378,7 @@ const displayedTableNames = computed(() => {
   if (!props.config?.tables) return ''
   return props.config.tables
     .slice(0, maxDisplayedTables)
-    .map(t => t.name)
+    .map((t) => t.name)
     .join(', ')
 })
 
@@ -339,11 +390,11 @@ const remainingTablesCount = computed(() => {
 
 <style scoped>
 /* Update existing styles */
-.grid>div {
+.grid > div {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.grid>div:hover {
+.grid > div:hover {
   transform: translateY(-2px);
 }
 
@@ -365,7 +416,7 @@ const remainingTablesCount = computed(() => {
   }
 }
 
-.grid>div {
+.grid > div {
   animation: fadeIn 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 

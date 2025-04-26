@@ -2,8 +2,11 @@
   <td class="px-5 py-5" @click="selectConnection">
     <div class="flex items-center">
       <div class="flex-shrink-0">
-        <img :src="logoSrc" :alt="connection.type + ' logo'"
-          class="mx-auto object-cover rounded-full h-6 w-6 hidden md:table-cell" />
+        <img
+          :src="logoSrc"
+          :alt="connection.type + ' logo'"
+          class="mx-auto object-cover rounded-full h-6 w-6 hidden md:table-cell"
+        />
       </div>
       <span class="ml-3 text-gray-900 font-medium whitespace-no-wrap">
         {{ connection.name }}
@@ -21,7 +24,7 @@
       {{ connection.database }}
       <span v-if="connection.schema" class="text-xs text-gray-500 ml-1">{{
         connection.schema
-        }}</span>
+      }}</span>
     </span>
   </td>
   <td class="hidden px-5 py-5 lg:table-cell" @click="selectConnection">
@@ -42,8 +45,14 @@
     </button>
   </td>
   <td class="px-5 py-5">
-    <ActionsMenu :position="actionsMenuPosition" :viewType="'table'" @selectRow="selectConnection"
-      @editRow="editConnection" @cloneRow="cloneConnection" @deleteRow="deleteConn" />
+    <ActionsMenu
+      :position="actionsMenuPosition"
+      :viewType="'table'"
+      @selectRow="selectConnection"
+      @editRow="editConnection"
+      @cloneRow="cloneConnection"
+      @deleteRow="deleteConn"
+    />
   </td>
 </template>
 
