@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, computed, ref, nextTick, onUnmounted } from 'vue'
+import { onMounted, computed, ref, nextTick, onUnmounted, watch } from 'vue'
 import mermaid from 'mermaid'
 import type { Table, Relationship, Column } from '@/types/schema'
 
@@ -84,7 +84,7 @@ function resetTransform() {
 
 // Initialize mermaid with ERD configuration
 mermaid.initialize({
-    startOnLoad: false,
+    startOnLoad: true,
     theme: 'neutral',
     er: {
         diagramPadding: 20,
@@ -92,15 +92,9 @@ mermaid.initialize({
         minEntityWidth: 150,
         minEntityHeight: 100,
         entityPadding: 30,
-        useMaxWidth: false,
-        titleTopMargin: 25
+        useMaxWidth: true
     },
     themeVariables: {
-        // lineColor: '#f97316',  // Orange color for relationships
-        // textColor: '#333',
-        // mainBkg: 'transparent',
-        // nodeBorder: '#0d9488',  // Keep teal color for borders
-        // clusterBkg: 'transparent',
         fontSize: '14px',
         entityLabel: {
             fontSize: '16px',
@@ -244,6 +238,11 @@ const diagramDefinition = computed(() => {
     return lines.join('\n')
 })
 
+// Watch for changes in props and re-render
+watch([() => props.tables, () => props.views, () => props.relationships], () => {
+    debouncedRender()
+}, { deep: true })
+
 async function renderDiagram() {
     if (!diagramContainer.value) return
 
@@ -265,11 +264,9 @@ async function renderDiagram() {
 
         // Render diagram
         await mermaid.run({
-            nodes: [mermaidDiv]
+            nodes: [mermaidDiv],
+            suppressErrors: false
         })
-
-        // Apply custom styles after rendering
-        await nextTick()
 
         isLoading.value = false
     } catch (err) {
@@ -279,30 +276,37 @@ async function renderDiagram() {
     }
 }
 
-// Watch for changes and re-render
+// Debounced render function
 let renderTimeout: number | null = null
-async function debouncedRender() {
+function debouncedRender() {
     if (renderTimeout) {
         window.clearTimeout(renderTimeout)
     }
     renderTimeout = window.setTimeout(() => {
         renderDiagram()
-    }, 100)
+    }, 250) // Increased debounce time
 }
 
 // Initial render
-onMounted(() => {
+onMounted(async () => {
+    // Initialize mermaid
+    await mermaid.init()
+
+    // Initial render
     debouncedRender()
 
     // Add global mouse event listeners
     window.addEventListener('mousemove', handleMouseMove)
     window.addEventListener('mouseup', handleMouseUp)
+})
 
-    // Clean up listeners on unmount
-    onUnmounted(() => {
-        window.removeEventListener('mousemove', handleMouseMove)
-        window.removeEventListener('mouseup', handleMouseUp)
-    })
+// Clean up on unmount
+onUnmounted(() => {
+    if (renderTimeout) {
+        window.clearTimeout(renderTimeout)
+    }
+    window.removeEventListener('mousemove', handleMouseMove)
+    window.removeEventListener('mouseup', handleMouseUp)
 })
 
 // Function to save diagram as SVG

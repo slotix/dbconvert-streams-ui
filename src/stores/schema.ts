@@ -65,29 +65,29 @@ export const useSchemaStore = defineStore('schema', {
                     .filter(([_, value]) => value && typeof value === 'object')
                     .map(([tableName, tableMeta]: [string, any]) => {
                         // Process columns
-                        const columns = tableMeta.Columns.map((col: any) => {
+                        const columns = tableMeta.columns?.map((col: any) => {
                             const isForeignKey = tableMeta.foreignKeys?.some(
-                                (fk: any) => fk.sourceColumn === col.Name
+                                (fk: any) => fk.sourceColumn === col.name
                             ) || false
 
                             // Format type with length/precision
-                            let formattedType = col.DataType
-                            if (col.Length?.Valid) {
-                                formattedType += `(${col.Length.Int64})`
-                            } else if (col.Precision?.Valid) {
-                                formattedType += `(${col.Precision.Int64}${col.Scale?.Valid ? `,${col.Scale.Int64}` : ''})`
+                            let formattedType = col.dataType
+                            if (col.length?.valid && col.length.int64 !== null) {
+                                formattedType += `(${col.length.int64})`
+                            } else if (col.precision?.valid && col.precision.int64 !== null) {
+                                formattedType += `(${col.precision.int64}${col.scale?.valid ? `,${col.scale.int64}` : ''})`
                             }
 
                             return {
-                                name: col.Name,
+                                name: col.name,
                                 type: formattedType,
-                                nullable: col.IsNullable,
-                                default: col.DefaultValue?.String,
-                                extra: col.Extra,
-                                isPrimaryKey: tableMeta.PrimaryKeys?.includes(col.Name) || false,
+                                nullable: col.isNullable,
+                                default: col.defaultValue?.string,
+                                extra: col.extra,
+                                isPrimaryKey: tableMeta.primaryKeys?.includes(col.name) || false,
                                 isForeignKey
                             }
-                        })
+                        }) || []
 
                         // Map foreign keys to our internal format
                         const foreignKeys = (tableMeta.foreignKeys || []).map((fk: any) => ({
@@ -100,10 +100,10 @@ export const useSchemaStore = defineStore('schema', {
                         }))
 
                         return {
-                            name: tableMeta.Name,
-                            schema: tableMeta.Schema,
+                            name: tableMeta.name,
+                            schema: tableMeta.schema,
                             columns,
-                            primaryKeys: tableMeta.PrimaryKeys || [],
+                            primaryKeys: tableMeta.primaryKeys || [],
                             foreignKeys
                         }
                     })
@@ -113,15 +113,15 @@ export const useSchemaStore = defineStore('schema', {
                     .filter(([_, value]) => value && typeof value === 'object')
                     .map(([viewName, viewMeta]: [string, any]) => {
                         // Process columns
-                        const columns = viewMeta.columns.map((col: any) => ({
-                            name: col.Name,
-                            type: col.DataType,
-                            nullable: col.IsNullable,
-                            default: col.DefaultValue?.String,
-                            extra: col.Extra,
+                        const columns = viewMeta.columns?.map((col: any) => ({
+                            name: col.name,
+                            type: col.dataType,
+                            nullable: col.isNullable,
+                            default: col.defaultValue?.string,
+                            extra: col.extra,
                             isPrimaryKey: false,
                             isForeignKey: false
-                        }))
+                        })) || []
 
                         return {
                             name: viewMeta.name,
@@ -143,6 +143,7 @@ export const useSchemaStore = defineStore('schema', {
 
                 this.lastFetchTimestamp = Date.now()
             } catch (err) {
+                console.error('Failed to fetch schema:', err)
                 this.error = err instanceof Error ? err.message : 'Failed to fetch schema'
             } finally {
                 this.loading = false

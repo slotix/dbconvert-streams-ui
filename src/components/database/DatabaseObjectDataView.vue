@@ -29,12 +29,12 @@ const skipCount = ref(false)
 
 // Helper to get object name regardless of case
 function getObjectName(meta: SQLTableMeta | SQLViewMeta): string {
-    return props.isView ? (meta as SQLViewMeta).name : (meta as SQLTableMeta).Name
+    return props.isView ? (meta as SQLViewMeta).name : (meta as SQLTableMeta).name
 }
 
 // Helper to get schema regardless of case
 function getObjectSchema(meta: SQLTableMeta | SQLViewMeta): string {
-    return props.isView ? (meta as SQLViewMeta).schema : (meta as SQLTableMeta).Schema
+    return props.isView ? (meta as SQLViewMeta).schema : (meta as SQLTableMeta).schema
 }
 
 async function loadTableData() {

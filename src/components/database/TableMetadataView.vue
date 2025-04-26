@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue'
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/vue'
 import { ArrowPathIcon, KeyIcon, LinkIcon } from '@heroicons/vue/24/outline'
-import { type SQLTableMeta } from '@/types/metadata'
+import { type SQLTableMeta, type SQLColumnMeta, type SQLIndexMeta } from '@/types/metadata'
 import SqlCodeBlock from './SqlCodeBlock.vue'
 
 const props = defineProps<{
@@ -15,28 +15,28 @@ const emit = defineEmits<{
 }>()
 
 const columns = computed(() => {
-  const primaryKeys = new Set(props.tableMeta?.PrimaryKeys || [])
+  const primaryKeys = new Set(props.tableMeta?.primaryKeys || [])
 
   const foreignKeyColumns = new Set(
-    ((props.tableMeta as any)?.foreignKeys || []).map((fk: any) => {
+    (props.tableMeta?.foreignKeys || []).map((fk: any) => {
       return fk.sourceColumn
     })
   )
 
-  return (props.tableMeta?.Columns || []).map(column => {
-    const isPrimaryKey = primaryKeys.has(column.Name)
-    const isForeignKey = foreignKeyColumns.has(column.Name)
+  return (props.tableMeta?.columns || []).map(column => {
+    const isPrimaryKey = primaryKeys.has(column.name)
+    const isForeignKey = foreignKeyColumns.has(column.name)
 
     return {
       ...column,
-      IsPrimaryKey: isPrimaryKey,
-      IsForeignKey: isForeignKey
+      isPrimaryKey: isPrimaryKey,
+      isForeignKey: isForeignKey
     }
   })
 })
 
 const foreignKeys = computed(() => {
-  return ((props.tableMeta as any)?.foreignKeys || []).map((fk: any) => ({
+  return (props.tableMeta?.foreignKeys || []).map((fk: any) => ({
     name: fk.name,
     sourceColumn: fk.sourceColumn,
     referencedTable: fk.referencedTable,
@@ -46,9 +46,9 @@ const foreignKeys = computed(() => {
   }))
 })
 
-const indexes = computed(() => props.tableMeta?.Indexes || [])
-const primaryKeys = computed(() => props.tableMeta?.PrimaryKeys || [])
-const ddl = computed(() => props.tableMeta?.DDL)
+const indexes = computed(() => props.tableMeta?.indexes || [])
+const primaryKeys = computed(() => props.tableMeta?.primaryKeys || [])
+const ddl = computed(() => props.tableMeta?.ddl)
 
 const tabs = computed(() => {
   const baseTabs = [
@@ -70,26 +70,32 @@ const tabs = computed(() => {
 // Add active tab tracking
 const activeTabIndex = ref(0)
 
-function getColumnType(column: typeof columns.value[0]) {
-  let type = column.DataType
-  if (column.Length.Valid) {
-    type += `(${column.Length.Int64})`
-  } else if (column.Precision.Valid) {
-    type += `(${column.Precision.Int64}${column.Scale.Valid ? `,${column.Scale.Int64}` : ''})`
+function getColumnType(column: SQLColumnMeta) {
+  let type = column.dataType
+
+  if (column.length?.valid && column.length.int64 !== null) {
+    type += `(${column.length.int64})`
+  }
+  else if (column.precision?.valid && column.precision.int64 !== null) {
+    const precisionStr = `${column.precision.int64}`
+    const scaleStr = column.scale?.valid && column.scale.int64 !== null ? `,${column.scale.int64}` : ''
+    type += `(${precisionStr}${scaleStr})`
   }
   return type
 }
 
-function getColumnDefault(column: typeof columns.value[0]) {
-  return column.DefaultValue.Valid ? column.DefaultValue.String : '-'
+function getColumnDefault(column: SQLColumnMeta) {
+  return column.defaultValue?.valid && column.defaultValue.string !== null
+    ? column.defaultValue.string
+    : '-'
 }
 
 function getColumnExtra(column: typeof columns.value[0]) {
   const extras = []
-  if (column.AutoIncrement) {
+  if (column.autoIncrement) {
     extras.push('AUTO_INCREMENT')
   }
-  if (column.IsUnique) {
+  if (column.isUnique) {
     extras.push('UNIQUE')
   }
   return extras.length > 0 ? extras.join(', ') : '-'
@@ -108,9 +114,9 @@ function handleCopy(code: string) {
     <div class="px-4 py-3 border-b border-gray-200">
       <div class="flex items-center justify-between">
         <h3 class="text-lg font-medium leading-6 text-gray-900">
-          {{ tableMeta?.Name || '' }}
-          <span v-if="tableMeta?.Schema" class="text-sm text-gray-500">
-            ({{ tableMeta.Schema }})
+          {{ tableMeta?.name || '' }}
+          <span v-if="tableMeta?.schema" class="text-sm text-gray-500">
+            ({{ tableMeta.schema }})
           </span>
         </h3>
         <button type="button"
@@ -162,13 +168,13 @@ function handleCopy(code: string) {
                       </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-200 bg-white">
-                      <tr v-for="column in columns" :key="column.Name" class="hover:bg-gray-50">
+                      <tr v-for="column in columns" :key="column.name" class="hover:bg-gray-50">
                         <td class="whitespace-nowrap px-3 py-2 text-sm">
                           <div class="flex items-center">
-                            <span class="font-medium text-gray-900">{{ column.Name }}</span>
+                            <span class="font-medium text-gray-900">{{ column.name }}</span>
                             <div class="ml-2 flex items-center space-x-1">
-                              <KeyIcon v-if="column.IsPrimaryKey" class="h-4 w-4 text-amber-400" title="Primary Key" />
-                              <LinkIcon v-if="column.IsForeignKey" class="h-4 w-4 text-blue-400" title="Foreign Key" />
+                              <KeyIcon v-if="column.isPrimaryKey" class="h-4 w-4 text-amber-400" title="Primary Key" />
+                              <LinkIcon v-if="column.isForeignKey" class="h-4 w-4 text-blue-400" title="Foreign Key" />
                             </div>
                           </div>
                         </td>
@@ -176,7 +182,7 @@ function handleCopy(code: string) {
                           {{ getColumnType(column) }}
                         </td>
                         <td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
-                          {{ column.IsNullable ? 'Yes' : 'No' }}
+                          {{ column.isNullable ? 'Yes' : 'No' }}
                         </td>
                         <td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
                           {{ getColumnDefault(column) }}
@@ -244,15 +250,15 @@ function handleCopy(code: string) {
                       </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-200 bg-white">
-                      <tr v-for="index in indexes" :key="index.Name" class="hover:bg-gray-50">
+                      <tr v-for="index in indexes" :key="index.name" class="hover:bg-gray-50">
                         <td class="whitespace-nowrap px-3 py-2 text-sm font-medium text-gray-900">
-                          {{ index.Name }}
+                          {{ index.name }}
                         </td>
                         <td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
-                          {{ index.Columns.join(', ') }}
+                          {{ index.columns.join(', ') }}
                         </td>
                         <td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
-                          {{ index.Type }}
+                          {{ index.type }}
                         </td>
                       </tr>
                     </tbody>

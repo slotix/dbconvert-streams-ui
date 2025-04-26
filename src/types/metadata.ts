@@ -1,42 +1,42 @@
 interface NullableString {
-    String: string
-    Valid: boolean
+    string: string | null
+    valid: boolean
 }
 
 interface NullableNumber {
-    Int64: number
-    Valid: boolean
+    int64: number | null
+    valid: boolean
 }
 
 export interface SQLForeignKeyMeta {
-    Name: string                    // Name of the foreign key constraint
-    SourceColumn: string           // Column in the current table
-    ReferencedTable: string        // Referenced table name
-    ReferencedColumn: string       // Referenced column name
-    OnUpdate?: string             // ON UPDATE behavior (CASCADE, SET NULL, etc.)
-    OnDelete?: string             // ON DELETE behavior (CASCADE, SET NULL, etc.)
+    name: string                    // Name of the foreign key constraint
+    sourceColumn: string           // Column in the current table
+    referencedTable: string        // Referenced table name
+    referencedColumn: string       // Referenced column name
+    onUpdate?: string             // ON UPDATE behavior (CASCADE, SET NULL, etc.)
+    onDelete?: string             // ON DELETE behavior (CASCADE, SET NULL, etc.)
 }
 
 export interface SQLColumnMeta {
-    Name: string
-    DataType: string
-    IsNullable: boolean
-    DefaultValue: NullableString
-    IsPrimaryKey: boolean
-    IsUnique: boolean
-    Length: NullableNumber
-    Precision: NullableNumber
-    Scale: NullableNumber
-    Comment: NullableString
-    AutoIncrement: boolean
+    name: string
+    dataType: string
+    isNullable: boolean
+    defaultValue: NullableString
+    isPrimaryKey: boolean
+    isUnique: boolean
+    length: NullableNumber
+    precision: NullableNumber
+    scale: NullableNumber
+    comment: NullableString
+    autoIncrement: boolean
 }
 
 export interface SQLIndexMeta {
-    Name: string
-    Type: string
-    Columns: string[]
-    IsUnique: boolean
-    IsPrimary: boolean
+    name: string
+    columns: string[]
+    isUnique: boolean
+    isPrimary: boolean
+    type: string  // BTREE, HASH, GIN, etc.
 }
 
 export interface TableDDL {
@@ -45,16 +45,15 @@ export interface TableDDL {
 }
 
 export interface SQLTableMeta {
-    Name: string
-    Schema: string
-    Database: string
-    Type: string
-    Columns: SQLColumnMeta[]
-    Indexes: SQLIndexMeta[]
-    PrimaryKeys: string[]
-    ForeignKeys: SQLForeignKeyMeta[]  // Add foreign keys at the table level
-    AutoIncrement: string
-    DDL: TableDDL
+    name: string
+    schema: string
+    database: string
+    columns: SQLColumnMeta[]
+    indexes: SQLIndexMeta[]
+    primaryKeys: string[]
+    autoIncrement: string
+    foreignKeys: SQLForeignKeyMeta[]  // Add foreign keys at the table level
+    ddl: TableDDL
 }
 
 export interface SQLViewMeta {
@@ -65,10 +64,6 @@ export interface SQLViewMeta {
     definition: string
     isMaterialized: boolean
     dependsOn: string[] | null
-}
-
-export function isSQLViewMeta(obj: SQLTableMeta | SQLViewMeta): obj is SQLViewMeta {
-    return 'definition' in obj && typeof obj.definition === 'string'
 }
 
 export interface DatabaseMetadata {

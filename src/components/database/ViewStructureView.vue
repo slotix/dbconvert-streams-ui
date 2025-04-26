@@ -17,6 +17,26 @@ const emit = defineEmits<{
 function handleCopy(code: string) {
     navigator.clipboard.writeText(code)
 }
+
+function getColumnDefault(column: any) {
+    return column.defaultValue?.valid && column.defaultValue.string !== null
+        ? column.defaultValue.string
+        : '-'
+}
+
+function getColumnType(column: any) {
+    let type = column.dataType
+
+    if (column.length?.valid && column.length.int64 !== null) {
+        type += `(${column.length.int64})`
+    }
+    else if (column.precision?.valid && column.precision.int64 !== null) {
+        const precisionStr = `${column.precision.int64}`
+        const scaleStr = column.scale?.valid && column.scale.int64 !== null ? `,${column.scale.int64}` : ''
+        type += `(${precisionStr}${scaleStr})`
+    }
+    return type
+}
 </script>
 
 <template>
@@ -63,18 +83,18 @@ function handleCopy(code: string) {
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-200">
-                        <tr v-for="column in viewMeta.columns" :key="column.Name">
+                        <tr v-for="column in viewMeta.columns" :key="column.name">
                             <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-0">
-                                {{ column.Name }}
+                                {{ column.name }}
                             </td>
                             <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                                {{ column.DataType }}
+                                {{ getColumnType(column) }}
                             </td>
                             <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                                {{ column.IsNullable ? 'Yes' : 'No' }}
+                                {{ column.isNullable ? 'Yes' : 'No' }}
                             </td>
                             <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                                {{ column.DefaultValue?.Valid ? column.DefaultValue.String : '-' }}
+                                {{ getColumnDefault(column) }}
                             </td>
                         </tr>
                     </tbody>
