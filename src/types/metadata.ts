@@ -65,7 +65,6 @@ export interface SQLViewMeta {
     definition: string
     isMaterialized: boolean
     dependsOn: string[] | null
-    ddl: string
 }
 
 export function isSQLViewMeta(obj: SQLTableMeta | SQLViewMeta): obj is SQLViewMeta {

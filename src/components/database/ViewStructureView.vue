@@ -7,7 +7,6 @@ import CopyButton from '@/components/common/CopyButton.vue'
 
 const props = defineProps<{
     viewMeta: SQLViewMeta
-    showDdl?: boolean
     connectionId: string
 }>()
 
@@ -95,12 +94,6 @@ function handleCopy(code: string) {
             <ul class="list-disc list-inside text-sm text-gray-600">
                 <li v-for="dep in viewMeta.dependsOn" :key="dep">{{ dep }}</li>
             </ul>
-        </div>
-
-        <!-- DDL -->
-        <div v-if="showDdl" class="px-6 py-4">
-            <h4 class="text-sm font-medium text-gray-900 mb-4">DDL</h4>
-            <SqlCodeBlock :code="viewMeta.ddl" title="SQL Definition" @copy="handleCopy" />
         </div>
     </div>
 </template>
