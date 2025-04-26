@@ -7,7 +7,6 @@ import SqlCodeBlock from './SqlCodeBlock.vue'
 
 const props = defineProps<{
   tableMeta: SQLTableMeta
-  showDdl?: boolean
   connectionId: string
 }>()
 
@@ -58,7 +57,7 @@ const tabs = computed(() => {
     { name: 'Indexes', count: indexes.value.length }
   ]
 
-  if (props.showDdl && ddl.value) {
+  if (ddl.value) {
     baseTabs.push({
       name: 'DDL',
       count: (ddl.value.createIndexes?.length || 0) + 1
@@ -264,7 +263,7 @@ function handleCopy(code: string) {
           </TabPanel>
 
           <!-- DDL Panel -->
-          <TabPanel v-if="showDdl && ddl">
+          <TabPanel v-if="ddl">
             <div class="space-y-8">
               <!-- Create Table -->
               <div>

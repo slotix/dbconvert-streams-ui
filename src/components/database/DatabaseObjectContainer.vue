@@ -9,7 +9,6 @@ import DatabaseObjectDataView from './DatabaseObjectDataView.vue'
 const props = defineProps<{
     tableMeta: SQLTableMeta | SQLViewMeta
     isView: boolean
-    showDdl?: boolean
     connectionId: string
 }>()
 
@@ -68,7 +67,7 @@ const tabs = computed(() => {
             <!-- Tab Panels -->
             <TabPanels class="overflow-hidden">
                 <TabPanel v-for="tab in tabs" :key="tab.name">
-                    <component :is="tab.component" v-bind="tab.props" :show-ddl="showDdl" :connection-id="connectionId"
+                    <component :is="tab.component" v-bind="tab.props" :connection-id="connectionId"
                         @refresh-metadata="emit('refresh-metadata')" />
                 </TabPanel>
             </TabPanels>
