@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { ArrowPathIcon } from '@heroicons/vue/24/outline'
 import { type SQLViewMeta } from '@/types/metadata'
+import SqlCodeBlock from './SqlCodeBlock.vue'
 
 const props = defineProps<{
     viewMeta: SQLViewMeta
@@ -12,6 +13,10 @@ const props = defineProps<{
 const emit = defineEmits<{
     (e: 'refresh-metadata'): void
 }>()
+
+function handleCopy(code: string) {
+    navigator.clipboard.writeText(code)
+}
 </script>
 
 <template>
@@ -77,10 +82,7 @@ const emit = defineEmits<{
         <!-- View Definition -->
         <div class="px-6 py-4">
             <h4 class="text-sm font-medium text-gray-900 mb-4">Definition</h4>
-            <div class="overflow-x-auto">
-                <pre v-highlightjs
-                    class="hljs rounded-md p-4"><code class="language-sql">{{ viewMeta.definition }}</code></pre>
-            </div>
+            <SqlCodeBlock :code="viewMeta.definition" title="View Definition" @copy="handleCopy" />
         </div>
 
         <!-- Dependencies -->
@@ -94,42 +96,74 @@ const emit = defineEmits<{
         <!-- DDL -->
         <div v-if="showDdl" class="px-6 py-4">
             <h4 class="text-sm font-medium text-gray-900 mb-4">DDL</h4>
-            <div class="overflow-x-auto">
-                <pre v-highlightjs
-                    class="hljs rounded-md p-4"><code class="language-sql">{{ viewMeta.ddl }}</code></pre>
-            </div>
+            <SqlCodeBlock :code="viewMeta.ddl" title="SQL Definition" @copy="handleCopy" />
         </div>
     </div>
 </template>
 
 <style>
 .hljs {
-    @apply bg-gray-800;
-    color: #abb2bf;
+    @apply bg-white;
+    color: #24292e;
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
-/* Add styles to ensure proper background colors */
+/* SQL specific syntax highlighting */
 .hljs-keyword {
-    @apply text-purple-400;
+    @apply text-[#d73a49] font-semibold;
+    /* red */
 }
 
 .hljs-string {
-    @apply text-green-400;
+    @apply text-[#032f62];
+    /* blue */
 }
 
 .hljs-number {
-    @apply text-orange-400;
+    @apply text-[#005cc5];
+    /* blue */
 }
 
 .hljs-operator {
-    @apply text-sky-400;
+    @apply text-[#d73a49];
+    /* red */
 }
 
 .hljs-punctuation {
-    @apply text-gray-400;
+    @apply text-[#24292e];
+    /* black */
 }
 
 .hljs-comment {
-    @apply text-gray-500;
+    @apply text-[#6a737d] italic;
+    /* gray */
+}
+
+/* Scrollbar styling */
+.overflow-x-auto {
+    scrollbar-width: thin;
+    scrollbar-color: #e5e7eb transparent;
+}
+
+.overflow-x-auto::-webkit-scrollbar {
+    height: 8px;
+    width: 8px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-track {
+    @apply bg-gray-50;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb {
+    @apply bg-gray-300 rounded-full hover:bg-gray-400 transition-colors;
+}
+
+/* Selection styling */
+::selection {
+    @apply bg-blue-100;
+}
+
+pre {
+    tab-size: 4;
 }
 </style>

@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/vue'
 import { ArrowPathIcon, KeyIcon, LinkIcon } from '@heroicons/vue/24/outline'
 import { type SQLTableMeta } from '@/types/metadata'
+import SqlCodeBlock from './SqlCodeBlock.vue'
 
 const props = defineProps<{
   tableMeta: SQLTableMeta
@@ -94,6 +95,10 @@ function getColumnExtra(column: typeof columns.value[0]) {
   }
   return extras.length > 0 ? extras.join(', ') : '-'
 }
+
+function handleCopy(code: string) {
+  navigator.clipboard.writeText(code)
+}
 </script>
 
 <template>
@@ -144,15 +149,17 @@ function getColumnExtra(column: typeof columns.value[0]) {
           <!-- Columns Panel -->
           <TabPanel>
             <div class="overflow-x-auto">
-              <div class="inline-block min-w-full align-middle">
-                <div class="overflow-hidden ring-1 ring-gray-200 rounded-lg">
+              <div class="min-w-[640px]">
+                <div class="ring-1 ring-gray-200 rounded-lg">
                   <table class="min-w-full divide-y divide-gray-300">
                     <thead>
                       <tr class="bg-gray-50">
-                        <th class="px-3 py-2 text-left text-sm font-semibold text-gray-900">Column</th>
-                        <th class="px-3 py-2 text-left text-sm font-semibold text-gray-900">Type</th>
-                        <th class="px-3 py-2 text-left text-sm font-semibold text-gray-900">Null</th>
-                        <th class="px-3 py-2 text-left text-sm font-semibold text-gray-900">Default</th>
+                        <th class="px-3 py-2 text-left text-sm font-semibold text-gray-900 whitespace-nowrap">Column
+                        </th>
+                        <th class="px-3 py-2 text-left text-sm font-semibold text-gray-900 whitespace-nowrap">Type</th>
+                        <th class="px-3 py-2 text-left text-sm font-semibold text-gray-900 whitespace-nowrap">Null</th>
+                        <th class="px-3 py-2 text-left text-sm font-semibold text-gray-900 whitespace-nowrap">Default
+                        </th>
                       </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-200 bg-white">
@@ -262,17 +269,14 @@ function getColumnExtra(column: typeof columns.value[0]) {
               <!-- Create Table -->
               <div>
                 <h4 class="text-sm font-medium text-gray-900 mb-4">Create Table</h4>
-                <div class="overflow-x-auto">
-                  <pre v-highlightjs
-                    class="hljs rounded-md p-4"><code class="language-sql">{{ ddl.createTable }}</code></pre>
-                </div>
+                <SqlCodeBlock :code="ddl.createTable" title="SQL Definition" @copy="handleCopy" />
               </div>
 
               <!-- Create Indexes -->
               <div v-if="ddl.createIndexes?.length">
                 <h4 class="text-sm font-medium text-gray-900 mb-4">Create Indexes</h4>
-                <div v-for="(indexDdl, i) in ddl.createIndexes" :key="i" class="overflow-x-auto mt-4">
-                  <pre v-highlightjs class="hljs rounded-md p-4"><code class="language-sql">{{ indexDdl }}</code></pre>
+                <div v-for="(indexDdl, i) in ddl.createIndexes" :key="i" class="mt-4">
+                  <SqlCodeBlock :code="indexDdl" title="Index" :index="i + 1" @copy="handleCopy" />
                 </div>
               </div>
             </div>
@@ -284,33 +288,5 @@ function getColumnExtra(column: typeof columns.value[0]) {
 </template>
 
 <style>
-.hljs {
-  @apply bg-gray-800;
-  color: #abb2bf;
-}
-
-/* Add styles to ensure proper background colors */
-.hljs-keyword {
-  @apply text-purple-400;
-}
-
-.hljs-string {
-  @apply text-green-400;
-}
-
-.hljs-number {
-  @apply text-orange-400;
-}
-
-.hljs-operator {
-  @apply text-sky-400;
-}
-
-.hljs-punctuation {
-  @apply text-gray-400;
-}
-
-.hljs-comment {
-  @apply text-gray-500;
-}
+/* Remove all the hljs styles since they're now in SqlCodeBlock.vue */
 </style>

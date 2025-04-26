@@ -72,7 +72,7 @@ onMounted(() => {
         <div class="mx-auto max-w-[98%] px-4 sm:px-6 lg:px-8">
             <!-- Header -->
             <div class="mb-8">
-                <div class="flex items-center justify-between">
+                <div class="flex flex-wrap items-center justify-between gap-4">
                     <h1 class="text-2xl font-semibold text-gray-900">Database Explorer</h1>
                 </div>
             </div>
@@ -144,7 +144,7 @@ onMounted(() => {
 
                             <!-- Main Content -->
                             <div :class="[
-                                'transition-all duration-300 ease-in-out flex-1',
+                                'transition-all duration-300 ease-in-out flex-1 min-w-0 overflow-x-auto',
                                 isSidebarCollapsed ? 'ml-8' : ''
                             ]">
                                 <div class="flex-1 min-w-0">

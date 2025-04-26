@@ -232,27 +232,29 @@ const displayedPages = computed(() => {
 
             <!-- Data table -->
             <div v-else-if="tableData?.rows?.length" class="flex flex-col flex-1 min-h-0">
-                <div class="flex-1 overflow-auto border border-gray-200 rounded-lg">
-                    <table class="w-full divide-y divide-gray-300">
-                        <!-- Table headers -->
-                        <thead class="bg-gray-50 sticky top-0 z-10">
-                            <tr>
-                                <th v-for="column in tableData.columns" :key="column"
-                                    class="px-3 py-2 text-left text-sm font-semibold text-gray-900 bg-gray-50 sticky top-0">
-                                    {{ column }}
-                                </th>
-                            </tr>
-                        </thead>
-                        <!-- Table body -->
-                        <tbody class="divide-y divide-gray-200 bg-white">
-                            <tr v-for="(row, rowIndex) in tableData.rows" :key="rowIndex" class="hover:bg-gray-50">
-                                <td v-for="(value, colIndex) in row" :key="colIndex"
-                                    class="px-3 py-2 text-sm text-gray-500">
-                                    {{ value }}
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <div class="flex-1 overflow-x-auto border border-gray-200 rounded-lg">
+                    <div class="min-w-[640px]">
+                        <table class="w-full divide-y divide-gray-300">
+                            <!-- Table headers -->
+                            <thead class="bg-gray-50 sticky top-0 z-10">
+                                <tr>
+                                    <th v-for="column in tableData.columns" :key="column"
+                                        class="px-3 py-2 text-left text-sm font-semibold text-gray-900 bg-gray-50 sticky top-0 whitespace-nowrap">
+                                        {{ column }}
+                                    </th>
+                                </tr>
+                            </thead>
+                            <!-- Table body -->
+                            <tbody class="divide-y divide-gray-200 bg-white">
+                                <tr v-for="(row, rowIndex) in tableData.rows" :key="rowIndex" class="hover:bg-gray-50">
+                                    <td v-for="(value, colIndex) in row" :key="colIndex"
+                                        class="px-3 py-2 text-sm text-gray-500 whitespace-nowrap">
+                                        {{ value }}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
                 <!-- Pagination -->
