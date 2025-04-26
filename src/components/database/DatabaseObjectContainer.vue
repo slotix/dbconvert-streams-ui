@@ -16,11 +16,6 @@ const emit = defineEmits<{
   (e: 'refresh-metadata'): void
 }>()
 
-// Debug log to inspect the tableMeta prop
-console.log('DatabaseObjectContainer props:', {
-  tableMeta: props.tableMeta,
-  isView: props.isView
-})
 
 const tabs = computed(() => {
   const commonTabs = [

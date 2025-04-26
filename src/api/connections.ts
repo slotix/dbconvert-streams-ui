@@ -212,7 +212,6 @@ const getMetadata = async (id: string, forceRefresh = false): Promise<DatabaseMe
       data: response.data,
       timestamp: now
     }
-
     return response.data
   } catch (error) {
     throw handleApiError(error)
