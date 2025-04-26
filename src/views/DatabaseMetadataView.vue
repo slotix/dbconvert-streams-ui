@@ -39,6 +39,13 @@ const selectedObject = computed(() => {
         : metadata.value.views[selectedObjectName.value]
 })
 
+const logoSrc = computed(() => {
+    const dbType = connectionsStore.dbTypes.find(
+        (f) => f.type === connection.value?.type
+    )
+    return dbType ? dbType.logo : ''
+})
+
 async function loadMetadata(forceRefresh = false) {
     isLoading.value = true
     error.value = undefined
@@ -83,8 +90,28 @@ onMounted(async () => {
         <div class="mx-auto max-w-[98%] px-4 sm:px-6 lg:px-8">
             <!-- Header -->
             <div class="mb-8">
-                <div class="flex flex-wrap items-center justify-between gap-4">
-                    <h1 class="text-2xl font-semibold text-gray-900">Database Explorer</h1>
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="flex items-center gap-3">
+                            <img v-if="logoSrc" :src="logoSrc" :alt="connection?.type" class="h-8 w-8 rounded-full" />
+                            <h1 class="text-2xl font-semibold text-gray-900">Database Explorer</h1>
+                        </div>
+                        <div v-if="connection" class="flex items-center gap-2 text-sm text-gray-500">
+                            <span class="font-medium text-gray-700">{{ connection.name }}</span>
+                            <span class="text-gray-400">•</span>
+                            <span>{{ connection.host }}:{{ connection.port }}</span>
+                            <span class="text-gray-400">•</span>
+                            <span>{{ connection.database }}</span>
+                            <span v-if="connection.schema" class="text-gray-400">•</span>
+                            <span v-if="connection.schema">{{ connection.schema }}</span>
+                        </div>
+                    </div>
+                    <button @click="loadMetadata(true)"
+                        class="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+                        :disabled="isLoading">
+                        <ArrowPathIcon :class="['h-5 w-5 text-gray-400 mr-2', { 'animate-spin': isLoading }]" />
+                        Refresh Metadata
+                    </button>
                 </div>
             </div>
 
