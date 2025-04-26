@@ -1,11 +1,11 @@
 interface NullableString {
-    string: string | null
-    valid: boolean
+    String: string | null
+    Valid: boolean
 }
 
 interface NullableNumber {
-    int64: number | null
-    valid: boolean
+    Int64: number | null
+    Valid: boolean
 }
 
 export interface SQLForeignKeyMeta {

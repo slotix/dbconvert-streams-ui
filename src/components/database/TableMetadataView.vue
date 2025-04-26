@@ -73,20 +73,27 @@ const activeTabIndex = ref(0)
 function getColumnType(column: SQLColumnMeta) {
   let type = column.dataType
 
-  if (column.length?.valid && column.length.int64 !== null) {
-    type += `(${column.length.int64})`
+  const length = column.length
+  const precision = column.precision
+  const scale = column.scale
+
+  if (length?.Valid && length.Int64 !== null) {
+    type += `(${length.Int64})`
   }
-  else if (column.precision?.valid && column.precision.int64 !== null) {
-    const precisionStr = `${column.precision.int64}`
-    const scaleStr = column.scale?.valid && column.scale.int64 !== null ? `,${column.scale.int64}` : ''
-    type += `(${precisionStr}${scaleStr})`
+  else if (precision?.Valid && precision.Int64 !== null) {
+    const precisionValue = precision.Int64
+    const scaleStr = scale?.Valid && scale.Int64 !== null ? `,${scale.Int64}` : ''
+    type += `(${precisionValue}${scaleStr})`
   }
   return type
 }
 
 function getColumnDefault(column: SQLColumnMeta) {
-  return column.defaultValue?.valid && column.defaultValue.string !== null
-    ? column.defaultValue.string
+  const defaultValue = column.defaultValue
+  if (!defaultValue) return '-'
+
+  return defaultValue.Valid && defaultValue.String !== null
+    ? defaultValue.String
     : '-'
 }
 
