@@ -10,6 +10,7 @@ const props = defineProps<{
   tableMeta: SQLTableMeta | SQLViewMeta
   isView: boolean
   connectionId: string
+  connectionType: string
 }>()
 
 const emit = defineEmits<{
@@ -46,14 +47,12 @@ const tabs = computed(() => {
       <div class="border-b border-gray-200">
         <TabList class="flex space-x-8 px-6">
           <Tab v-for="tab in tabs" :key="tab.name" v-slot="{ selected }" as="template">
-            <button
-              :class="[
-                'border-b-2 py-4 px-1 text-sm font-medium whitespace-nowrap',
-                selected
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-              ]"
-            >
+            <button :class="[
+              'border-b-2 py-4 px-1 text-sm font-medium whitespace-nowrap',
+              selected
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+            ]">
               {{ tab.name }}
             </button>
           </Tab>
@@ -63,12 +62,8 @@ const tabs = computed(() => {
       <!-- Tab Panels -->
       <TabPanels class="overflow-hidden">
         <TabPanel v-for="tab in tabs" :key="tab.name">
-          <component
-            :is="tab.component"
-            v-bind="tab.props"
-            :connection-id="connectionId"
-            @refresh-metadata="emit('refresh-metadata')"
-          />
+          <component :is="tab.component" v-bind="tab.props" :connection-id="connectionId"
+            :connection-type="connectionType" @refresh-metadata="emit('refresh-metadata')" />
         </TabPanel>
       </TabPanels>
     </TabGroup>

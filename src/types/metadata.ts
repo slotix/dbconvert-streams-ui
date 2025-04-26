@@ -49,11 +49,13 @@ export interface SQLTableMeta {
     schema: string
     database: string
     columns: SQLColumnMeta[]
-    indexes: SQLIndexMeta[]
     primaryKeys: string[]
-    autoIncrement: string
-    foreignKeys: SQLForeignKeyMeta[]  // Add foreign keys at the table level
-    ddl: TableDDL
+    foreignKeys: SQLForeignKeyMeta[]
+    indexes: SQLIndexMeta[]
+    ddl?: {
+        createTable: string
+        createIndexes?: string[]
+    }
 }
 
 export interface SQLViewMeta {

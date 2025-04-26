@@ -4,10 +4,12 @@ import { ArrowPathIcon } from '@heroicons/vue/24/outline'
 import { type SQLViewMeta } from '@/types/metadata'
 import SqlCodeBlock from './SqlCodeBlock.vue'
 import CopyButton from '@/components/common/CopyButton.vue'
+import ViewDefinitionView from './ViewDefinitionView.vue'
 
 const props = defineProps<{
     viewMeta: SQLViewMeta
     connectionId: string
+    connectionType: string
 }>()
 
 const emit = defineEmits<{
@@ -104,8 +106,7 @@ function getColumnType(column: any) {
 
         <!-- View Definition -->
         <div class="px-6 py-4">
-            <h4 class="text-sm font-medium text-gray-900 mb-4">Definition</h4>
-            <SqlCodeBlock :code="viewMeta.definition" title="View Definition" @copy="handleCopy" />
+            <ViewDefinitionView :definition="viewMeta.definition" :connection-type="connectionType" />
         </div>
 
         <!-- Dependencies -->

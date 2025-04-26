@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router'
 import { ArrowPathIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/vue/24/outline'
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/vue'
 import { useSchemaStore } from '@/stores/schema'
+import { useConnectionsStore } from '@/stores/connections'
 import { type DatabaseMetadata, type SQLTableMeta, type SQLViewMeta } from '@/types/metadata'
 import connections from '@/api/connections'
 import DatabaseStructureTree from '@/components/database/DatabaseStructureTree.vue'
@@ -13,6 +14,7 @@ import DiagramView from '@/components/database/DiagramView.vue'
 const route = useRoute()
 const connectionId = route.params.id as string
 const schemaStore = useSchemaStore()
+const connectionsStore = useConnectionsStore()
 
 const isLoading = ref(false)
 const metadata = ref<DatabaseMetadata>()
@@ -20,6 +22,14 @@ const selectedObjectName = ref<string | null>(null)
 const selectedObjectType = ref<'table' | 'view' | null>(null)
 const error = ref<string>()
 const isSidebarCollapsed = ref(false)
+
+const connection = computed(() => {
+    return connectionsStore.connections.find(conn => conn.id === connectionId)
+})
+
+const connectionType = computed(() => {
+    return connection.value?.type || 'sql'
+})
 
 const selectedObject = computed(() => {
     if (!metadata.value || !selectedObjectName.value || !selectedObjectType.value) return null
@@ -61,9 +71,10 @@ function toggleSidebar() {
     isSidebarCollapsed.value = !isSidebarCollapsed.value
 }
 
-onMounted(() => {
+onMounted(async () => {
     schemaStore.setConnectionId(connectionId)
-    loadMetadata()
+    await connectionsStore.refreshConnections()
+    await loadMetadata()
 })
 </script>
 
@@ -150,8 +161,8 @@ onMounted(() => {
                                 <div class="flex-1 min-w-0">
                                     <div v-if="selectedObject">
                                         <DatabaseObjectContainer :table-meta="selectedObject"
-                                            :is-view="selectedObjectType === 'view'" :show-ddl="true"
-                                            :connection-id="connectionId" @refresh-metadata="loadMetadata(true)" />
+                                            :is-view="selectedObjectType === 'view'" :connection-id="connectionId"
+                                            :connection-type="connectionType" @refresh-metadata="loadMetadata(true)" />
                                     </div>
                                     <div v-else
                                         class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg p-8 text-center">

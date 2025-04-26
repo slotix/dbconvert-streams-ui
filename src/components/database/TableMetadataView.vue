@@ -4,10 +4,12 @@ import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/vue'
 import { ArrowPathIcon, KeyIcon, LinkIcon } from '@heroicons/vue/24/outline'
 import { type SQLTableMeta, type SQLColumnMeta, type SQLIndexMeta } from '@/types/metadata'
 import SqlCodeBlock from './SqlCodeBlock.vue'
+import DdlView from './DdlView.vue'
 
 const props = defineProps<{
   tableMeta: SQLTableMeta
   connectionId: string
+  connectionType: string
 }>()
 
 const emit = defineEmits<{
@@ -273,21 +275,7 @@ function getColumnExtra(column: typeof columns.value[0]) {
 
           <!-- DDL Panel -->
           <TabPanel v-if="ddl">
-            <div class="space-y-8">
-              <!-- Create Table -->
-              <div>
-                <h4 class="text-sm font-medium text-gray-900 mb-4">Create Table</h4>
-                <SqlCodeBlock :code="ddl.createTable" title="SQL Definition" />
-              </div>
-
-              <!-- Create Indexes -->
-              <div v-if="ddl.createIndexes?.length">
-                <h4 class="text-sm font-medium text-gray-900 mb-4">Create Indexes</h4>
-                <div v-for="(indexDdl, i) in ddl.createIndexes" :key="i" class="mt-4">
-                  <SqlCodeBlock :code="indexDdl" title="Index" :index="i + 1" />
-                </div>
-              </div>
-            </div>
+            <DdlView :ddl="ddl" :connection-type="connectionType" @refresh-metadata="emit('refresh-metadata')" />
           </TabPanel>
         </TabPanels>
       </TabGroup>
