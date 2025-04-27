@@ -94,7 +94,6 @@ onMounted(async () => {
                     <div class="flex items-center gap-4">
                         <div class="flex items-center gap-3">
                             <img v-if="logoSrc" :src="logoSrc" :alt="connection?.type" class="h-8 w-8 rounded-full" />
-                            <h1 class="text-2xl font-semibold text-gray-900">Database Explorer</h1>
                         </div>
                         <div v-if="connection" class="flex items-center gap-2 text-sm text-gray-500">
                             <span class="font-medium text-gray-700">{{ connection.name }}</span>
