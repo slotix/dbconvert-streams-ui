@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, nextTick } from 'vue'
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/vue'
 import { ArrowPathIcon, KeyIcon, LinkIcon } from '@heroicons/vue/24/outline'
 import { type SQLTableMeta, type SQLColumnMeta, type SQLIndexMeta } from '@/types/metadata'
@@ -15,6 +15,20 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'refresh-metadata'): void
 }>()
+
+const isLoading = ref(false)
+
+function handleRefresh() {
+  isLoading.value = true;
+  emit('refresh-metadata');
+  // Keep spinner for a short duration to provide visual feedback
+  nextTick(() => {
+    const timer = globalThis.setTimeout(() => {
+      isLoading.value = false;
+    }, 1000);
+    return () => globalThis.clearTimeout(timer);
+  });
+}
 
 const columns = computed(() => {
   const primaryKeys = new Set(props.tableMeta?.primaryKeys || [])
@@ -126,8 +140,8 @@ function getColumnExtra(column: typeof columns.value[0]) {
         </h3>
         <button type="button"
           class="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
-          @click="emit('refresh-metadata')">
-          <ArrowPathIcon class="h-5 w-5 text-gray-400 mr-2" />
+          :disabled="isLoading" @click="handleRefresh">
+          <ArrowPathIcon :class="['h-5 w-5 text-gray-400 mr-2', { 'animate-spin': isLoading }]" />
           Refresh Metadata
         </button>
       </div>
