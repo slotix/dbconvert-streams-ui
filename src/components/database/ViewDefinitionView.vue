@@ -3,26 +3,23 @@
 import { computed } from 'vue'
 import { format } from 'sql-formatter'
 import SqlCodeBlock from './SqlCodeBlock.vue'
-import { getDialectFromConnectionType } from '@/utils/sqlDialect'
+import { getFormattingOptions } from '@/components/database/sqlDialect'
+// import { getDialectFromConnectionType } from '@/utils/sqlDialect'
 
 const props = defineProps<{
     definition: string
     connectionType: string
 }>()
 
+const dialect = computed(() => props.connectionType.toLowerCase().includes('mysql') ? 'mysql' : 'postgresql')
+
 const formattedDefinition = computed(() => {
-    return format(props.definition, {
-        language: getDialectFromConnectionType(props.connectionType),
-        keywordCase: 'upper',
-        tabWidth: 2,
-        indentStyle: 'standard'
-    })
+    return format(props.definition, getFormattingOptions(props.connectionType))
 })
 </script>
 
 <template>
-    <div class="space-y-4">
-        <h4 class="text-sm font-medium text-gray-900">View Definition</h4>
-        <SqlCodeBlock :code="formattedDefinition" title="View Definition" />
+    <div class="mt-4">
+        <SqlCodeBlock :code="formattedDefinition" title="SQL Definition" :dialect="dialect" />
     </div>
 </template>

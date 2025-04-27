@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
-import { ArrowPathIcon } from '@heroicons/vue/24/outline'
+import { ArrowPathIcon, KeyIcon } from '@heroicons/vue/24/outline'
 import { type SQLTableMeta, type SQLViewMeta } from '@/types/metadata'
 import connections from '@/api/connections'
 
@@ -64,12 +64,6 @@ async function loadTableData() {
       schema: getObjectSchema(props.tableMeta)
     }
 
-    console.log('Loading data for:', {
-      isView: props.isView,
-      name: objectName,
-      schema: params.schema,
-      params
-    })
 
     const data = props.isView
       ? await connections.getViewData(props.connectionId, objectName, params)
@@ -172,6 +166,12 @@ const displayedPages = computed(() => {
 
   return pages
 })
+
+// Add this computed property after other computed properties
+const primaryKeyColumns = computed(() => {
+  if (props.isView) return new Set()
+  return new Set((props.tableMeta as SQLTableMeta).primaryKeys || [])
+})
 </script>
 
 <template>
@@ -240,7 +240,11 @@ const displayedPages = computed(() => {
                 <tr>
                   <th v-for="column in tableData.columns" :key="column"
                     class="px-3 py-2 text-left text-sm font-semibold text-gray-900 bg-gray-50 sticky top-0 whitespace-nowrap">
-                    {{ column }}
+                    <div class="flex items-center gap-1">
+                      {{ column }}
+                      <KeyIcon v-if="primaryKeyColumns.has(column)" class="h-4 w-4 text-amber-400"
+                        title="Primary Key" />
+                    </div>
                   </th>
                 </tr>
               </thead>
