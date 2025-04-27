@@ -6,18 +6,13 @@
         'border-yellow-500 ring-2 ring-yellow-400': selected && currentStep?.name === 'source',
         'border-green-500 ring-2 ring-green-400': selected && currentStep?.name === 'target',
         'border-gray-200': !selected
-      }"
-      @click="selectConnection"
-    >
+      }" @click="selectConnection">
       <!-- Header -->
-      <div
-        class="border-b px-6 py-4 flex-shrink-0"
-        :class="{
-          'bg-yellow-50': selected && currentStep?.name === 'source',
-          'bg-green-50': selected && currentStep?.name === 'target',
-          'bg-gray-50': !selected
-        }"
-      >
+      <div class="border-b px-6 py-4 flex-shrink-0" :class="{
+        'bg-yellow-50': selected && currentStep?.name === 'source',
+        'bg-green-50': selected && currentStep?.name === 'target',
+        'bg-gray-50': !selected
+      }">
         <div class="flex items-center gap-3">
           <img
             class="h-8 w-8 rounded-full shadow-sm bg-white object-contain p-0.5 transition-all duration-300 flex-shrink-0"
@@ -27,10 +22,7 @@
               'ring-2 ring-offset-2 ring-green-400 shadow-green-200/50':
                 selected && currentStep?.name === 'target',
               'ring-1 ring-gray-200': !selected
-            }"
-            :src="logoSrc"
-            :alt="connection.type + ' logo'"
-          />
+            }" :src="logoSrc" :alt="connection.type + ' logo'" />
           <div class="min-w-0 flex-1">
             <h3 class="text-lg font-medium text-gray-900 truncate">{{ connection.name }}</h3>
             <p class="text-sm text-gray-500 truncate">ID: {{ connection.id }}</p>
@@ -57,10 +49,7 @@
             </div>
           </div>
 
-          <div
-            v-if="!connection.type?.toLowerCase().includes('postgres') && connection.schema"
-            class="min-w-0"
-          >
+          <div v-if="!connection.type?.toLowerCase().includes('postgres') && connection.schema" class="min-w-0">
             <label class="text-xs font-medium uppercase text-gray-500">Schema</label>
             <p class="mt-1 font-medium text-gray-900 truncate">{{ connection.schema }}</p>
           </div>
@@ -72,17 +61,12 @@
                 {{
                   showPassword
                     ? connectionString
-                    : connectionString.replace(/(?<=:)[^@]+(?=@) /g, '****')
-                }}
-              </span>
-              <button
-                class="flex-shrink-0 text-gray-400 hover:text-gray-600"
-                @click.stop="showPassword = !showPassword"
-              >
-                >
-                <EyeIcon v-if="!showPassword" class="h-4 w-4" />
-                <EyeSlashIcon v-else class="h-4 w-4" />
-              </button>
+                    : connectionString.replace(/(?<=:)[^@]+(?=@) /g, '****') }} </span>
+                  <button class="flex-shrink-0 text-gray-400 hover:text-gray-600"
+                    @click.stop="showPassword = !showPassword">
+                    <EyeIcon v-if="!showPassword" class="h-4 w-4" />
+                    <EyeSlashIcon v-else class="h-4 w-4" />
+                  </button>
             </div>
           </div>
         </div>
@@ -96,39 +80,27 @@
 
       <!-- Actions -->
       <div v-show="!isStreamsPage" class="flex divide-x divide-gray-200 border-t flex-shrink-0">
-        <button
-          v-tooltip="'View tables, data, schema, and AI assistant'"
-          type="button"
+        <button v-tooltip="'View tables, data, schema, and AI assistant'" type="button"
           class="flex-1 px-4 py-3 text-sm font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 flex items-center justify-center gap-2"
-          @click.stop="$router.push({ name: 'DatabaseMetadata', params: { id: connection.id } })"
-        >
+          @click.stop="$router.push({ name: 'DatabaseMetadata', params: { id: connection.id } })">
           <TableCellsIcon class="h-4 w-4" />
           Explore
         </button>
-        <button
-          v-tooltip="'Edit the connection'"
-          type="button"
+        <button v-tooltip="'Edit the connection'" type="button"
           class="flex-1 px-4 py-3 text-sm font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 flex items-center justify-center gap-2"
-          @click.stop="editConnection"
-        >
+          @click.stop="editConnection">
           <PencilIcon class="h-4 w-4" />
           Edit
         </button>
-        <button
-          v-tooltip="'Clone the connection'"
-          type="button"
+        <button v-tooltip="'Clone the connection'" type="button"
           class="flex-1 px-4 py-3 text-sm font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 flex items-center justify-center gap-2"
-          @click.stop="cloneConnection"
-        >
+          @click.stop="cloneConnection">
           <Square2StackIcon class="h-4 w-4" />
           Clone
         </button>
-        <button
-          v-tooltip="'Delete the connection'"
-          type="button"
+        <button v-tooltip="'Delete the connection'" type="button"
           class="flex-1 px-4 py-3 text-sm font-medium text-red-600 bg-gray-50 hover:bg-gray-100 flex items-center justify-center gap-2"
-          @click.stop="deleteConn(connection.id)"
-        >
+          @click.stop="deleteConn(connection.id)">
           <TrashIcon class="h-4 w-4" />
           Delete
         </button>

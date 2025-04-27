@@ -198,7 +198,7 @@ import {
   ComputerDesktopIcon,
   DocumentTextIcon,
   UserCircleIcon,
-  TableCellsIcon
+  TableCellsIcon,
 } from '@heroicons/vue/24/outline'
 
 const commonStore = useCommonStore()

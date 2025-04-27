@@ -92,17 +92,16 @@ onMounted(async () => {
             <div class="mb-8">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-4">
-                        <div class="flex items-center gap-3">
-                            <img v-if="logoSrc" :src="logoSrc" :alt="connection?.type" class="h-8 w-8 rounded-full" />
-                        </div>
                         <div v-if="connection" class="flex items-center gap-2 text-sm text-gray-500">
-                            <span class="font-medium text-gray-700">{{ connection.name }}</span>
-                            <span class="text-gray-400">•</span>
-                            <span>{{ connection.host }}:{{ connection.port }}</span>
-                            <span class="text-gray-400">•</span>
-                            <span>{{ connection.database }}</span>
-                            <span v-if="connection.schema" class="text-gray-400">•</span>
-                            <span v-if="connection.schema">{{ connection.schema }}</span>
+                            <div class="flex items-center gap-2">
+                                <span class="font-medium text-gray-700">{{ connection.host }}:{{ connection.port
+                                }}</span>
+                                <span class="text-gray-400">•</span>
+                                <span class="font-medium text-gray-700">{{ connection.database }}</span>
+                                <span v-if="connection.schema" class="text-gray-400">•</span>
+                                <span v-if="connection.schema" class="font-medium text-gray-700">{{ connection.schema
+                                }}</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -167,7 +166,7 @@ onMounted(async () => {
 
                             <!-- Sidebar Toggle Button -->
                             <button
-                                class="absolute left-0 top-1/2 -translate-y-1/2 bg-white shadow-lg rounded-r-lg p-2 hover:bg-gray-50 transition-colors"
+                                class="absolute left-0 top-6  -translate-y-1/2 bg-white shadow-lg rounded-r-lg p-2 hover:bg-gray-50 transition-colors"
                                 :class="{ '-translate-x-1': !isSidebarCollapsed }" @click="toggleSidebar">
                                 <component :is="isSidebarCollapsed ? ChevronRightIcon : ChevronLeftIcon"
                                     class="h-5 w-5 text-gray-500" />

@@ -34,6 +34,19 @@ const currentConnection = computed(() =>
     connectionsStore.connections.find(conn => conn.id === currentConnectionId.value)
 )
 
+// Get connection details for the current connection
+const currentConnectionDetails = computed(() => {
+    const conn = currentConnection.value
+    if (!conn) return null
+    const dbType = connectionsStore.dbTypes.find(
+        (f) => f.type === conn.type
+    )
+    return {
+        ...conn,
+        logo: dbType?.logo || ''
+    }
+})
+
 // Add current connection to recent list if it exists
 function addToRecentConnections() {
     if (!currentConnection.value) return
@@ -161,11 +174,15 @@ watch(currentConnectionId, (newId) => {
                                 <button :class="[
                                     'w-full rounded-lg py-2.5 px-5 text-sm font-medium leading-5',
                                     'ring-white ring-opacity-60 ring-offset-2 focus:outline-none focus:ring-2',
+                                    'flex items-center gap-2',
                                     selected
                                         ? 'bg-white text-blue-700 shadow'
                                         : 'text-gray-600 hover:bg-white/[0.12] hover:text-gray-800'
                                 ]">
-                                    {{ connection.name }}
+                                    <img v-if="currentConnectionDetails && currentConnectionId === connection.id"
+                                        :src="currentConnectionDetails.logo" :alt="currentConnectionDetails.type"
+                                        class="h-5 w-5 rounded-full" />
+                                    <span>{{ connection.name }}</span>
                                 </button>
                                 <!-- Close button -->
                                 <button @click.stop="removeFromRecent(connection.id)"
