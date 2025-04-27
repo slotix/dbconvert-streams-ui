@@ -86,21 +86,21 @@ onMounted(async () => {
 </script>
 
 <template>
-    <div class="min-h-screen bg-gray-50 py-8">
-        <div class="mx-auto max-w-[98%] px-4 sm:px-6 lg:px-8">
+    <div class="min-h-screen bg-gray-50">
+        <div class="mx-auto w-full">
             <!-- Header -->
-            <div class="mb-8">
-                <div class="flex items-center justify-between">
+            <div class="mb-4">
+                <div class="flex items-center justify-between px-2">
                     <div class="flex items-center gap-4">
                         <div v-if="connection" class="flex items-center gap-2 text-sm text-gray-500">
                             <div class="flex items-center gap-2">
                                 <span class="font-medium text-gray-700">{{ connection.host }}:{{ connection.port
-                                }}</span>
+                                    }}</span>
                                 <span class="text-gray-400">•</span>
                                 <span class="font-medium text-gray-700">{{ connection.database }}</span>
                                 <span v-if="connection.schema" class="text-gray-400">•</span>
                                 <span v-if="connection.schema" class="font-medium text-gray-700">{{ connection.schema
-                                }}</span>
+                                    }}</span>
                             </div>
                         </div>
                     </div>

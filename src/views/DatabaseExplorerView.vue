@@ -153,7 +153,7 @@ watch(currentConnectionId, (newId) => {
             </div>
         </header>
 
-        <main class="mx-auto max-w-7xl py-6 sm:px-6 lg:px-8">
+        <main class="mx-auto py-4">
             <!-- No recent connections -->
             <div v-if="recentConnections.length === 0" class="text-center py-12">
                 <p class="text-gray-500">No recently explored connections.</p>
