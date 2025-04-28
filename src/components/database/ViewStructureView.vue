@@ -57,7 +57,10 @@ function getColumnType(column: any) {
 </script>
 
 <template>
-    <div v-if="viewMeta" class="space-y-4">
+    <div v-if="viewMeta" :class="[
+        'bg-white',
+        $attrs.class ? $attrs.class : 'shadow-sm ring-1 ring-gray-900/5 rounded-lg'
+    ]">
         <!-- Header -->
         <div class="px-4 py-3 border-b border-gray-200">
             <div class="flex items-center justify-between">
@@ -68,7 +71,6 @@ function getColumnType(column: any) {
                     </span>
                     <span v-if="viewMeta.isMaterialized" class="text-sm text-gray-500 ml-2">(Materialized)</span>
                 </h3>
-
                 <button type="button"
                     class="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
                     :disabled="isLoading" @click="handleRefresh">

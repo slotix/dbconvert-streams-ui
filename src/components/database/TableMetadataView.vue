@@ -147,153 +147,151 @@ function getColumnExtra(column: typeof columns.value[0]) {
       </div>
     </div>
 
-    <div>
-      <TabGroup v-model="activeTabIndex" as="div">
-        <TabList class="flex space-x-1 border-b border-gray-200 px-4">
-          <Tab v-for="tab in tabs" :key="tab.name" v-slot="{ selected }" as="template">
-            <button :class="[
-              'px-3 py-2 text-sm font-medium leading-5 text-gray-700 whitespace-nowrap',
-              'focus:outline-none focus:ring-2 ring-offset-2 ring-offset-blue-400 ring-white ring-opacity-60',
-              selected
-                ? 'border-blue-500 text-blue-600 border-b-2 -mb-px'
-                : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
+    <TabGroup v-model="activeTabIndex" as="div">
+      <TabList class="flex space-x-1 border-b border-gray-200 px-4">
+        <Tab v-for="tab in tabs" :key="tab.name" v-slot="{ selected }" as="template">
+          <button :class="[
+            'px-3 py-2 text-sm font-medium leading-5 text-gray-700 whitespace-nowrap',
+            'focus:outline-none focus:ring-2 ring-offset-2 ring-offset-blue-400 ring-white ring-opacity-60',
+            selected
+              ? 'border-blue-500 text-blue-600 border-b-2 -mb-px'
+              : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
+          ]">
+            {{ tab.name }}
+            <span :class="[
+              'ml-2 rounded-full px-2.5 py-0.5 text-xs font-medium',
+              selected ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-900'
             ]">
-              {{ tab.name }}
-              <span :class="[
-                'ml-2 rounded-full px-2.5 py-0.5 text-xs font-medium',
-                selected ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-900'
-              ]">
-                {{ tab.count }}
-              </span>
-            </button>
-          </Tab>
-        </TabList>
+              {{ tab.count }}
+            </span>
+          </button>
+        </Tab>
+      </TabList>
 
-        <TabPanels class="p-4">
-          <!-- Columns Panel -->
-          <TabPanel>
-            <div class="overflow-x-auto">
-              <div class="min-w-[640px]">
-                <div class="ring-1 ring-gray-200 rounded-lg">
-                  <table class="min-w-full divide-y divide-gray-300">
-                    <thead>
-                      <tr class="bg-gray-50">
-                        <th class="px-3 py-2 text-left text-sm font-semibold text-gray-900 whitespace-nowrap">Column
-                        </th>
-                        <th class="px-3 py-2 text-left text-sm font-semibold text-gray-900 whitespace-nowrap">Type</th>
-                        <th class="px-3 py-2 text-left text-sm font-semibold text-gray-900 whitespace-nowrap">Null</th>
-                        <th class="px-3 py-2 text-left text-sm font-semibold text-gray-900 whitespace-nowrap">Default
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-200 bg-white">
-                      <tr v-for="column in columns" :key="column.name" class="hover:bg-gray-50">
-                        <td class="whitespace-nowrap px-3 py-2 text-sm">
-                          <div class="flex items-center">
-                            <span class="font-medium text-gray-900">{{ column.name }}</span>
-                            <div class="ml-2 flex items-center space-x-1">
-                              <KeyIcon v-if="column.isPrimaryKey" class="h-4 w-4 text-amber-400" title="Primary Key" />
-                              <LinkIcon v-if="column.isForeignKey" class="h-4 w-4 text-blue-400" title="Foreign Key" />
-                            </div>
+      <TabPanels class="p-4">
+        <!-- Columns Panel -->
+        <TabPanel>
+          <div class="overflow-x-auto">
+            <div class="min-w-[640px]">
+              <div class="ring-1 ring-gray-200 rounded-lg">
+                <table class="min-w-full divide-y divide-gray-300">
+                  <thead>
+                    <tr class="bg-gray-50">
+                      <th class="px-3 py-2 text-left text-sm font-semibold text-gray-900 whitespace-nowrap">Column
+                      </th>
+                      <th class="px-3 py-2 text-left text-sm font-semibold text-gray-900 whitespace-nowrap">Type</th>
+                      <th class="px-3 py-2 text-left text-sm font-semibold text-gray-900 whitespace-nowrap">Null</th>
+                      <th class="px-3 py-2 text-left text-sm font-semibold text-gray-900 whitespace-nowrap">Default
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-gray-200 bg-white">
+                    <tr v-for="column in columns" :key="column.name" class="hover:bg-gray-50">
+                      <td class="whitespace-nowrap px-3 py-2 text-sm">
+                        <div class="flex items-center">
+                          <span class="font-medium text-gray-900">{{ column.name }}</span>
+                          <div class="ml-2 flex items-center space-x-1">
+                            <KeyIcon v-if="column.isPrimaryKey" class="h-4 w-4 text-amber-400" title="Primary Key" />
+                            <LinkIcon v-if="column.isForeignKey" class="h-4 w-4 text-blue-400" title="Foreign Key" />
                           </div>
-                        </td>
-                        <td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
-                          {{ getColumnType(column) }}
-                        </td>
-                        <td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
-                          {{ column.isNullable ? 'Yes' : 'No' }}
-                        </td>
-                        <td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
-                          {{ getColumnDefault(column) }}
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
+                        </div>
+                      </td>
+                      <td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
+                        {{ getColumnType(column) }}
+                      </td>
+                      <td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
+                        {{ column.isNullable ? 'Yes' : 'No' }}
+                      </td>
+                      <td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
+                        {{ getColumnDefault(column) }}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
-          </TabPanel>
+          </div>
+        </TabPanel>
 
-          <!-- Keys Panel -->
-          <TabPanel>
-            <div class="space-y-8">
-              <!-- Primary Keys -->
-              <div v-if="primaryKeys.length > 0">
-                <h4 class="text-sm font-medium text-gray-900 mb-4">Primary Keys</h4>
-                <ul role="list" class="divide-y divide-gray-100">
-                  <li v-for="key in primaryKeys" :key="key" class="flex items-center justify-between gap-x-6 py-3">
-                    <div class="flex min-w-0 gap-x-4">
-                      <KeyIcon class="h-5 w-5 text-amber-400" />
-                      <div class="min-w-0 flex-auto">
-                        <p class="text-sm font-semibold leading-6 text-gray-900">{{ key }}</p>
-                      </div>
+        <!-- Keys Panel -->
+        <TabPanel>
+          <div class="space-y-8">
+            <!-- Primary Keys -->
+            <div v-if="primaryKeys.length > 0">
+              <h4 class="text-sm font-medium text-gray-900 mb-4">Primary Keys</h4>
+              <ul role="list" class="divide-y divide-gray-100">
+                <li v-for="key in primaryKeys" :key="key" class="flex items-center justify-between gap-x-6 py-3">
+                  <div class="flex min-w-0 gap-x-4">
+                    <KeyIcon class="h-5 w-5 text-amber-400" />
+                    <div class="min-w-0 flex-auto">
+                      <p class="text-sm font-semibold leading-6 text-gray-900">{{ key }}</p>
                     </div>
-                  </li>
-                </ul>
-              </div>
+                  </div>
+                </li>
+              </ul>
+            </div>
 
-              <!-- Foreign Keys -->
-              <div v-if="foreignKeys.length > 0">
-                <h4 class="text-sm font-medium text-gray-900 mb-4">Foreign Keys</h4>
-                <ul role="list" class="divide-y divide-gray-100">
-                  <li v-for="key in foreignKeys" :key="key.name" class="flex items-center justify-between gap-x-6 py-3">
-                    <div class="flex min-w-0 gap-x-4">
-                      <LinkIcon class="h-5 w-5 text-blue-400" />
-                      <div class="min-w-0 flex-auto">
-                        <p class="text-sm font-semibold leading-6 text-gray-900">{{ key.name }}</p>
-                        <p class="mt-1 truncate text-xs leading-5 text-gray-500">
-                          {{ key.sourceColumn }} → {{ key.referencedTable }}.{{ key.referencedColumn }}
-                        </p>
-                        <p class="mt-1 truncate text-xs leading-5 text-gray-500">
-                          ON UPDATE {{ key.onUpdate }}, ON DELETE {{ key.onDelete }}
-                        </p>
-                      </div>
+            <!-- Foreign Keys -->
+            <div v-if="foreignKeys.length > 0">
+              <h4 class="text-sm font-medium text-gray-900 mb-4">Foreign Keys</h4>
+              <ul role="list" class="divide-y divide-gray-100">
+                <li v-for="key in foreignKeys" :key="key.name" class="flex items-center justify-between gap-x-6 py-3">
+                  <div class="flex min-w-0 gap-x-4">
+                    <LinkIcon class="h-5 w-5 text-blue-400" />
+                    <div class="min-w-0 flex-auto">
+                      <p class="text-sm font-semibold leading-6 text-gray-900">{{ key.name }}</p>
+                      <p class="mt-1 truncate text-xs leading-5 text-gray-500">
+                        {{ key.sourceColumn }} → {{ key.referencedTable }}.{{ key.referencedColumn }}
+                      </p>
+                      <p class="mt-1 truncate text-xs leading-5 text-gray-500">
+                        ON UPDATE {{ key.onUpdate }}, ON DELETE {{ key.onDelete }}
+                      </p>
                     </div>
-                  </li>
-                </ul>
+                  </div>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </TabPanel>
+
+        <!-- Indexes Panel -->
+        <TabPanel>
+          <div class="overflow-x-auto">
+            <div class="inline-block min-w-full align-middle">
+              <div class="overflow-hidden ring-1 ring-gray-200 rounded-lg">
+                <table class="min-w-full divide-y divide-gray-300">
+                  <thead>
+                    <tr class="bg-gray-50">
+                      <th class="px-3 py-2 text-left text-sm font-semibold text-gray-900">Name</th>
+                      <th class="px-3 py-2 text-left text-sm font-semibold text-gray-900">Columns</th>
+                      <th class="px-3 py-2 text-left text-sm font-semibold text-gray-900">Type</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-gray-200 bg-white">
+                    <tr v-for="index in indexes" :key="index.name" class="hover:bg-gray-50">
+                      <td class="whitespace-nowrap px-3 py-2 text-sm font-medium text-gray-900">
+                        {{ index.name }}
+                      </td>
+                      <td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
+                        {{ index.columns.join(', ') }}
+                      </td>
+                      <td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
+                        {{ index.type }}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
-          </TabPanel>
+          </div>
+        </TabPanel>
 
-          <!-- Indexes Panel -->
-          <TabPanel>
-            <div class="overflow-x-auto">
-              <div class="inline-block min-w-full align-middle">
-                <div class="overflow-hidden ring-1 ring-gray-200 rounded-lg">
-                  <table class="min-w-full divide-y divide-gray-300">
-                    <thead>
-                      <tr class="bg-gray-50">
-                        <th class="px-3 py-2 text-left text-sm font-semibold text-gray-900">Name</th>
-                        <th class="px-3 py-2 text-left text-sm font-semibold text-gray-900">Columns</th>
-                        <th class="px-3 py-2 text-left text-sm font-semibold text-gray-900">Type</th>
-                      </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-200 bg-white">
-                      <tr v-for="index in indexes" :key="index.name" class="hover:bg-gray-50">
-                        <td class="whitespace-nowrap px-3 py-2 text-sm font-medium text-gray-900">
-                          {{ index.name }}
-                        </td>
-                        <td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
-                          {{ index.columns.join(', ') }}
-                        </td>
-                        <td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
-                          {{ index.type }}
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          </TabPanel>
-
-          <!-- DDL Panel -->
-          <TabPanel v-if="ddl">
-            <DdlView :ddl="ddl" :connection-type="connectionType" @refresh-metadata="emit('refresh-metadata')" />
-          </TabPanel>
-        </TabPanels>
-      </TabGroup>
-    </div>
+        <!-- DDL Panel -->
+        <TabPanel v-if="ddl">
+          <DdlView :ddl="ddl" :connection-type="connectionType" @refresh-metadata="emit('refresh-metadata')" />
+        </TabPanel>
+      </TabPanels>
+    </TabGroup>
   </div>
 </template>
 
