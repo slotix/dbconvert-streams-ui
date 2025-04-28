@@ -201,7 +201,7 @@ const getMetadata = async (id: string, forceRefresh = false): Promise<DatabaseMe
 
   try {
     const response: AxiosResponse<DatabaseMetadata> = await apiClient.get(
-      `/connections/${id}/newmeta${forceRefresh ? '?refresh=true' : ''}`,
+      `/connections/${id}/meta${forceRefresh ? '?refresh=true' : ''}`,
       {
         headers: { 'X-API-Key': commonStore.apiKey }
       }

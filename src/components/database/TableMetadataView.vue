@@ -3,7 +3,6 @@ import { computed, ref, nextTick } from 'vue'
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/vue'
 import { ArrowPathIcon, KeyIcon, LinkIcon } from '@heroicons/vue/24/outline'
 import { type SQLTableMeta, type SQLColumnMeta, type SQLIndexMeta } from '@/types/metadata'
-import SqlCodeBlock from './SqlCodeBlock.vue'
 import DdlView from './DdlView.vue'
 
 const props = defineProps<{
