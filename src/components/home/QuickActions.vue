@@ -14,7 +14,7 @@
             <div class="flex items-center">
               <div class="flex-shrink-0">
                 <div class="bg-blue-50 rounded-lg p-2 group-hover:bg-blue-100 transition-colors">
-                  <img v-if="getConnectionLogo(connection.id)" :src="getConnectionLogo(connection.id)"
+                  <img v-if="getConnectionLogo(connection.id)" :src="getConnectionLogo(connection.id) || undefined"
                     :alt="getConnectionType(connection.id)" class="h-6 w-6 object-contain" />
                 </div>
               </div>
@@ -40,7 +40,7 @@
             <div class="flex items-center">
               <div class="flex-shrink-0">
                 <div class="bg-violet-50 rounded-lg p-3 group-hover:bg-violet-100 transition-colors">
-                  <PlusIcon class="h-6 w-6 text-violet-600" />
+                  <CircleStackIcon class="h-6 w-6 text-violet-600" />
                 </div>
               </div>
               <div class="ml-4">
@@ -59,7 +59,7 @@
             <div class="flex items-center">
               <div class="flex-shrink-0">
                 <div class="bg-indigo-50 rounded-lg p-3 group-hover:bg-indigo-100 transition-colors">
-                  <ClockIcon class="h-6 w-6 text-indigo-600" />
+                  <ArrowPathIcon class="h-6 w-6 text-indigo-600" />
                 </div>
               </div>
               <div class="ml-4">

@@ -44,7 +44,7 @@
     <!-- Service Status Cards -->
     <div v-else class="grid gap-3">
       <div v-for="service in services" :key="service.id"
-        class="flex items-center justify-between p-3 rounded-lg border bg-white transition-colors" :class="[
+        class="flex items-center justify-between p-3 rounded-lg bg-white transition-colors" :class="[
           getServiceStatus(service.id) === 'passing'
             ? 'border-emerald-100 hover:bg-emerald-50/50'
             : getServiceStatus(service.id) === 'warning'

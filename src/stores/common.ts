@@ -103,6 +103,41 @@ export const useCommonStore = defineStore('common', {
         img: '/images/steps/start-step.svg'
       }
     ] as Step[],
+
+    homeSteps: [
+      {
+        id: 1,
+        name: 'connect',
+        title: 'Create or select connections',
+        description:
+          'Add a new database connection or choose from your existing connections to prepare for data transfer or further exploration.',
+        img: '/images/steps/connection-step.svg'
+      },
+      {
+        id: 2,
+        name: 'explore',
+        title: 'Explore your databases',
+        description:
+          'Browse your connected databases to view tables, data, and relationships. Use the Database Explorer to understand your schema and data before starting any migration or streaming tasks.',
+        img: '/images/steps/explore-step.svg'
+      },
+      {
+        id: 3,
+        name: 'stream',
+        title: 'Set up a data stream (Migration or CDC)',
+        description:
+          'Configure a new stream to migrate data or enable change data capture (CDC) between your source and target databases. Customize table selection, filtering, and transformation rules.',
+        img: '/images/steps/settings-step.svg'
+      },
+      {
+        id: 4,
+        name: 'monitor',
+        title: 'Monitor and manage your streams',
+        description:
+          'Start your stream and track progress in real time. Monitor data transfer, review logs, and ensure smooth synchronization or migration.',
+        img: '/images/steps/monitor-step.svg'
+      }
+    ] as Step[],
     operationMap: {
       insert: 'Insert',
       update: 'Update',
