@@ -342,6 +342,7 @@ function saveDiagram() {
 <template>
     <div class="mermaid-container">
         <div class="controls">
+            <!-- Zoom controls -->
             <button @click="transform.scale = Math.min(3, transform.scale * 1.2)" class="control-btn" title="Zoom in">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2">
