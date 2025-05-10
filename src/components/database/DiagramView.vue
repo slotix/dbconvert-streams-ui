@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import type { Table, Relationship } from '@/types/schema'
-import MermaidERD from './MermaidERD.vue'
+// import MermaidERD from './MermaidERD.vue'
 import DatabaseDiagramD3 from './DatabaseDiagramD3.vue'
 
 const props = withDefaults(
@@ -21,12 +21,13 @@ const hasData = computed(() => {
   return props.tables?.length > 0 || props.views?.length > 0
 })
 
-const useD3 = ref(false)
+// Always use D3 diagram
+const useD3 = ref(true)
 </script>
 
 <template>
   <div class="h-full relative">
-    <!-- Move Interactive Mode switch to left -->
+    <!-- Interactive Mode switch commented out as we'll only use D3 diagram
     <div class="absolute top-4 left-4 z-50">
       <div class="bg-white rounded-lg shadow-lg px-4 py-2 flex items-center gap-2">
         <span class="text-sm font-medium text-gray-600">Interactive Mode</span>
@@ -57,14 +58,17 @@ const useD3 = ref(false)
         </button>
       </div>
     </div>
+    -->
 
     <!-- Diagram content -->
     <div class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg relative h-full">
       <div v-if="!hasData" class="h-full flex items-center justify-center text-gray-500">
         <p>No tables or views to display</p>
       </div>
-      <DatabaseDiagramD3 v-else-if="useD3" :tables="tables" :relations="relationships" :views="views" />
-      <MermaidERD v-else :tables="tables" :views="views" :relationships="relationships" />
+      <DatabaseDiagramD3 v-else :tables="tables" :relations="relationships" :views="views" />
+      <!-- MermaidERD component kept but not used
+      <MermaidERD v-else-if="!useD3" :tables="tables" :views="views" :relationships="relationships" />
+      -->
     </div>
   </div>
 </template>

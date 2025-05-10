@@ -67,6 +67,21 @@ let node: d3.Selection<SVGGElement, TableNode, SVGGElement, unknown>
 let linkGroup: d3.Selection<SVGGElement, TableLink, SVGGElement, unknown>
 let links: TableLink[] = []
 
+// Define brand colors as constants for consistency
+const BRAND_COLORS = {
+    primary: '#00B2D6',    // Teal/Cyan blue (from logo)
+    secondary: '#F26627',  // Orange (from logo)
+    gray: '#94A3B8',       // Slate gray for neutral elements
+    grayLight: '#E2E8F0',  // Light gray for backgrounds
+    grayDark: '#334155',   // Dark gray for text
+    background: '#F8FAFC', // Very light gray for backgrounds
+    white: '#FFFFFF',      // White
+    highlight: {
+        blue: '#DBEAFE',   // Light blue highlight
+        orange: '#FFEDD5'  // Light orange highlight
+    }
+}
+
 // Initialize the force simulation
 function initializeSimulation(width: number, height: number) {
     return d3.forceSimulation<TableNode>()
@@ -202,8 +217,8 @@ function createVisualization() {
         .append('feMergeNode')
         .attr('in', d => d)
 
-    // Create marker definitions for regular relationships (blue)
-    // Mandatory One (|) - Blue version
+    // Create marker definitions for regular relationships (teal blue)
+    // Mandatory One (|) - Teal blue version
     defs.append('marker')
         .attr('id', 'mandatory-one')
         .attr('viewBox', '-10 -10 20 20')
@@ -214,10 +229,10 @@ function createVisualization() {
         .attr('orient', 'auto')
         .append('path')
         .attr('d', 'M-8,-8L-8,8')  // Vertical bar
-        .attr('stroke', '#3b82f6')  // Blue to match regular relationship lines
+        .attr('stroke', BRAND_COLORS.primary)  // Teal blue
         .attr('stroke-width', '2.5')
 
-    // Mandatory Many (crow's foot) - Blue version
+    // Mandatory Many (crow's foot) - Teal blue version
     defs.append('marker')
         .attr('id', 'mandatory-many')
         .attr('viewBox', '-10 -10 20 20')
@@ -228,11 +243,11 @@ function createVisualization() {
         .attr('orient', 'auto')
         .append('path')
         .attr('d', 'M-8,0L0,-8M-8,0L0,8M-8,-8L-8,8')  // Corrected crow's foot orientation with vertical bar
-        .attr('stroke', '#3b82f6')  // Blue to match regular relationship lines
+        .attr('stroke', BRAND_COLORS.primary)  // Teal blue
         .attr('stroke-width', '2.5')
         .attr('fill', 'none')
 
-    // Double bar for one-to-one relationships - Blue version
+    // Double bar for one-to-one relationships - Teal blue version
     defs.append('marker')
         .attr('id', 'mandatory-one-to-one')
         .attr('viewBox', '-10 -10 20 20')
@@ -243,10 +258,10 @@ function createVisualization() {
         .attr('orient', 'auto')
         .append('path')
         .attr('d', 'M-9,-8L-9,8M-5,-8L-5,8')  // Double vertical bars
-        .attr('stroke', '#3b82f6')  // Blue to match regular relationship lines
+        .attr('stroke', BRAND_COLORS.primary)  // Teal blue
         .attr('stroke-width', '2.5')
 
-    // Optional One (O|) - Blue version
+    // Optional One (O|) - Teal blue version
     defs.append('marker')
         .attr('id', 'optional-one')
         .attr('viewBox', '-10 -10 20 20')
@@ -257,11 +272,11 @@ function createVisualization() {
         .attr('orient', 'auto')
         .append('path')
         .attr('d', 'M-8,0 A3,3 0 1 1 -8,0.01M-8,4L-8,-4')  // Circle with vertical bar
-        .attr('stroke', '#3b82f6')  // Blue to match regular relationship lines
+        .attr('stroke', BRAND_COLORS.primary)  // Teal blue
         .attr('stroke-width', '2.5')
         .attr('fill', 'none')
 
-    // Optional Many (crow's foot with circle) - Blue version
+    // Optional Many (crow's foot with circle) - Teal blue version
     defs.append('marker')
         .attr('id', 'optional-many')
         .attr('viewBox', '-10 -10 20 20')
@@ -272,12 +287,12 @@ function createVisualization() {
         .attr('orient', 'auto')
         .append('path')
         .attr('d', 'M-8,0 A3,3 0 1 1 -8,0.01M-8,0L0,-8M-8,0L0,8M-8,-8L-8,8')  // Corrected orientation
-        .attr('stroke', '#3b82f6')  // Blue to match regular relationship lines
+        .attr('stroke', BRAND_COLORS.primary)  // Teal blue
         .attr('stroke-width', '2.5')
         .attr('fill', 'none')
 
-    // Create marker definitions for junction relationships (green)
-    // Mandatory One (|) - Green version
+    // Create marker definitions for junction relationships (orange)
+    // Mandatory One (|) - Orange version
     defs.append('marker')
         .attr('id', 'junction-mandatory-one')
         .attr('viewBox', '-10 -10 20 20')
@@ -288,10 +303,10 @@ function createVisualization() {
         .attr('orient', 'auto')
         .append('path')
         .attr('d', 'M-8,-8L-8,8')  // Vertical bar
-        .attr('stroke', '#10b981')  // Green to match junction relationship lines
+        .attr('stroke', BRAND_COLORS.secondary)  // Orange
         .attr('stroke-width', '2.5')
 
-    // Mandatory Many (crow's foot) - Green version
+    // Mandatory Many (crow's foot) - Orange version
     defs.append('marker')
         .attr('id', 'junction-mandatory-many')
         .attr('viewBox', '-10 -10 20 20')
@@ -302,11 +317,11 @@ function createVisualization() {
         .attr('orient', 'auto')
         .append('path')
         .attr('d', 'M-8,0L0,-8M-8,0L0,8M-8,-8L-8,8')  // Corrected crow's foot orientation with vertical bar
-        .attr('stroke', '#10b981')  // Green to match junction relationship lines
+        .attr('stroke', BRAND_COLORS.secondary)  // Orange
         .attr('stroke-width', '2.5')
         .attr('fill', 'none')
 
-    // Double bar for one-to-one relationships - Green version
+    // Double bar for one-to-one relationships - Orange version
     defs.append('marker')
         .attr('id', 'junction-mandatory-one-to-one')
         .attr('viewBox', '-10 -10 20 20')
@@ -317,7 +332,7 @@ function createVisualization() {
         .attr('orient', 'auto')
         .append('path')
         .attr('d', 'M-9,-8L-9,8M-5,-8L-5,8')  // Double vertical bars
-        .attr('stroke', '#10b981')  // Green to match junction relationship lines
+        .attr('stroke', BRAND_COLORS.secondary)  // Orange
         .attr('stroke-width', '2.5')
 
     // Prepare data - combine tables and views with null checks
@@ -507,9 +522,9 @@ function createVisualization() {
     linkGroup.append('line')
         .attr('class', 'relationship-line')
         .attr('stroke', d => {
-            if ((d as any).isViewDependency) return '#94a3b8'  // Light slate gray for view dependencies
-            if ((d as any).isJunctionRelation) return '#10b981'  // Emerald for junction relations
-            return '#3b82f6'  // Blue for regular relations
+            if ((d as any).isViewDependency) return BRAND_COLORS.gray  // Gray for view dependencies
+            if ((d as any).isJunctionRelation) return BRAND_COLORS.secondary  // Orange for junction relations
+            return BRAND_COLORS.primary  // Teal blue for regular relations
         })
         .attr('stroke-width', '1.5')
         .attr('stroke-dasharray', d => (d as any).isViewDependency ? '3,3' : 'none')
@@ -622,7 +637,7 @@ function createVisualization() {
                 .attr('y', 14)
                 .attr('class', 'column-name')
                 .attr('data-column-name', col.name)
-                .attr('fill', isPK ? '#3b82f6' : isFK ? '#10b981' : '#334155')
+                .attr('fill', isPK ? BRAND_COLORS.primary : isFK ? BRAND_COLORS.secondary : BRAND_COLORS.grayDark)
                 .style('font-size', '11px')
                 .style('font-weight', isPK || isFK ? '500' : '400')
                 .text(prefix + col.name)
@@ -895,16 +910,16 @@ function updateHighlighting() {
         element.select('rect.table-header')
             .transition()
             .duration(300)
-            .attr('stroke', isSelected ? '#2563eb' : isRelated ? '#10b981' : '#cbd5e1')
+            .attr('stroke', isSelected ? BRAND_COLORS.primary : isRelated ? BRAND_COLORS.secondary : '#cbd5e1')
             .attr('stroke-width', isSelected || isRelated ? 2.5 : 1.5)
-            .attr('fill', isSelected ? '#dbeafe' : isRelated ? '#ecfdf5' : '#e2e8f0')
+            .attr('fill', isSelected ? BRAND_COLORS.highlight.blue : isRelated ? BRAND_COLORS.highlight.orange : BRAND_COLORS.grayLight)
 
         // Apply a subtle highlight effect to the whole table
         element.select('rect.table-body')
             .transition()
             .duration(300)
-            .attr('fill', isSelected ? '#f1f5f9' : isRelated ? '#f8fafc' : '#f8fafc')
-            .attr('stroke', isSelected ? '#bfdbfe' : isRelated ? '#d1fae5' : '#cbd5e1')
+            .attr('fill', isSelected ? '#f1f5f9' : isRelated ? '#fff7ed' : BRAND_COLORS.background)
+            .attr('stroke', isSelected ? '#bfdbfe' : isRelated ? '#fed7aa' : '#cbd5e1')
             .attr('stroke-width', isSelected || isRelated ? 1.5 : 1)
 
         // Dim unrelated tables
@@ -934,7 +949,7 @@ function updateHighlighting() {
                         .transition()
                         .duration(300)
                         .style('font-weight', '600')
-                        .attr('fill', isPrimaryKey ? '#2563eb' : '#10b981')
+                        .attr('fill', isPrimaryKey ? BRAND_COLORS.primary : BRAND_COLORS.secondary)
                         .attr('data-tooltip', fieldRelationships.map(r =>
                             `${r.tableName}.${r.fieldName} → ${r.relatedTableName}.${r.relatedFieldName}`
                         ).join('\n'))
@@ -944,7 +959,7 @@ function updateHighlighting() {
                         .transition()
                         .duration(300)
                         .style('font-weight', '400')
-                        .attr('fill', '#334155')
+                        .attr('fill', BRAND_COLORS.grayDark)
                         .attr('data-tooltip', null)
                 }
             })
@@ -1029,7 +1044,8 @@ function getTableHeight(table: TableNode): number {
         <div ref="svgContainer" class="w-full h-[1200px] bg-gray-50 rounded-lg"></div>
 
         <!-- Controls Panel -->
-        <div class="absolute top-4 right-4 controls-panel p-4 min-w-[240px] space-y-4">
+        <div
+            class="absolute top-4 right-4 controls-panel p-4 min-w-[240px] space-y-4 bg-white rounded-lg shadow-lg border border-gray-200">
             <!-- Zoom Controls -->
             <div class="flex items-center justify-between border-b border-gray-200 pb-3">
                 <span class="text-sm font-medium text-gray-700">Zoom</span>
@@ -1055,8 +1071,8 @@ function getTableHeight(table: TableNode): number {
                         <label class="text-sm font-medium text-gray-700">Link Distance</label>
                         <span class="text-xs text-gray-500 tabular-nums">{{ linkDistance }}px</span>
                     </div>
-                    <input type="range" v-model="linkDistance" min="100" max="500" step="20" class="w-full"
-                        @input="updateForces" />
+                    <input type="range" v-model="linkDistance" min="100" max="500" step="20"
+                        class="w-full control-slider" @input="updateForces" />
                 </div>
 
                 <div>
@@ -1064,8 +1080,8 @@ function getTableHeight(table: TableNode): number {
                         <label class="text-sm font-medium text-gray-700">Charge Strength</label>
                         <span class="text-xs text-gray-500 tabular-nums">{{ chargeStrength }}</span>
                     </div>
-                    <input type="range" v-model="chargeStrength" min="-3000" max="-200" step="100" class="w-full"
-                        @input="updateForces" />
+                    <input type="range" v-model="chargeStrength" min="-3000" max="-200" step="100"
+                        class="w-full control-slider" @input="updateForces" />
                 </div>
 
                 <div>
@@ -1073,8 +1089,8 @@ function getTableHeight(table: TableNode): number {
                         <label class="text-sm font-medium text-gray-700">Collision Radius</label>
                         <span class="text-xs text-gray-500 tabular-nums">{{ collisionRadius }}px</span>
                     </div>
-                    <input type="range" v-model="collisionRadius" min="60" max="200" step="10" class="w-full"
-                        @input="updateForces" />
+                    <input type="range" v-model="collisionRadius" min="60" max="200" step="10"
+                        class="w-full control-slider" @input="updateForces" />
                 </div>
             </div>
         </div>
@@ -1095,7 +1111,7 @@ function getTableHeight(table: TableNode): number {
 
 .table-node:hover .table-header rect,
 .view-node:hover .table-header rect {
-    stroke: #3b82f6;
+    stroke: var(--brand-primary-color, #00B2D6);
     stroke-width: 2px;
 }
 
@@ -1127,20 +1143,20 @@ text {
     transition: stroke 0.3s ease, stroke-width 0.3s ease, fill 0.3s ease, font-weight 0.3s ease;
 }
 
-input[type="range"] {
+.control-slider {
     @apply h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer;
+}
 
-    &::-webkit-slider-thumb {
-        @apply appearance-none w-5 h-5 bg-blue-600 rounded-full hover:bg-blue-700 transition-colors;
-    }
+.control-slider::-webkit-slider-thumb {
+    @apply appearance-none w-5 h-5 bg-cyan-500 rounded-full hover:bg-cyan-600 transition-colors;
+}
 
-    &::-moz-range-thumb {
-        @apply w-5 h-5 bg-blue-600 border-0 rounded-full hover:bg-blue-700 transition-colors;
-    }
+.control-slider::-moz-range-thumb {
+    @apply w-5 h-5 bg-cyan-500 border-0 rounded-full hover:bg-cyan-600 transition-colors;
 }
 
 button {
-    @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1;
+    @apply focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-1;
 }
 
 .space-y-3> :not([hidden])~ :not([hidden]) {
@@ -1183,15 +1199,8 @@ button {
     border: 1px solid #e2e8f0;
 }
 
-.controls-panel h3 {
-    color: #1e293b;
-    font-weight: 600;
-    font-size: 0.875rem;
-}
-
-.controls-panel label {
-    color: #475569;
-    font-size: 0.875rem;
-    font-weight: 500;
+:root {
+    --brand-primary-color: #00B2D6;
+    --brand-secondary-color: #F26627;
 }
 </style>
