@@ -2,7 +2,9 @@
 import { ref, onMounted, watch, onBeforeUnmount } from 'vue'
 import * as d3 from 'd3'
 import type { Table, Relationship } from '@/types/schema'
-import { PlusIcon, MinusIcon, ArrowPathIcon, ViewfinderCircleIcon } from '@heroicons/vue/24/outline'
+import { PlusIcon, MinusIcon, ArrowPathIcon, ViewfinderCircleIcon, ArrowDownTrayIcon } from '@heroicons/vue/24/outline'
+// Import jsPDF type to avoid TypeScript error
+import type { jsPDF } from 'jspdf'
 
 interface TableNode extends d3.SimulationNodeDatum {
     id: string
@@ -85,6 +87,11 @@ const BRAND_COLORS = {
 
 // Add initial transform to track the original diagram state
 let initialTransform: d3.ZoomTransform | null = null;
+
+// Add after the initialTransform declaration
+const exportOptions = ref(false)
+const exportProgress = ref(false)
+const exportType = ref<'svg' | 'png' | 'pdf'>('svg')
 
 // Initialize the force simulation
 function initializeSimulation(width: number, height: number) {
@@ -1336,16 +1343,201 @@ function resetView() {
             .call(zoom.transform, initialTransform)
     }
 }
+
+// Add before the end of the script setup
+// Function to save the diagram as SVG or PNG
+function saveDiagram() {
+    if (!svgContainer.value || !svg) return
+
+    exportProgress.value = true
+
+    try {
+        // Use timeout to allow UI to update before processing
+        setTimeout(() => {
+            if (exportType.value === 'svg') {
+                exportAsSVG()
+            } else if (exportType.value === 'png') {
+                exportAsPNG()
+            } else if (exportType.value === 'pdf') {
+                exportAsPDF()
+            }
+            exportProgress.value = false
+            exportOptions.value = false
+        }, 100)
+    } catch (error) {
+        console.error('Error exporting diagram:', error)
+        exportProgress.value = false
+    }
+}
+
+function exportAsSVG() {
+    // Clone the SVG to avoid modifying the displayed one
+    const svgCopy = svg.node()?.cloneNode(true) as SVGElement
+
+    // Set white background
+    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
+    rect.setAttribute('width', '100%')
+    rect.setAttribute('height', '100%')
+    rect.setAttribute('fill', 'white')
+    svgCopy.insertBefore(rect, svgCopy.firstChild)
+
+    // Get SVG content
+    const svgData = new XMLSerializer().serializeToString(svgCopy)
+    const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' })
+
+    // Download SVG file
+    const url = URL.createObjectURL(svgBlob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'database-diagram.svg'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+}
+
+// Update the exportAsPNG function to include proper null check
+function exportAsPNG() {
+    if (!svgContainer.value) return
+
+    exportProgress.value = true
+
+    try {
+        // We'll use html2canvas which is more reliable for capturing DOM elements
+        import('html2canvas').then(html2canvasModule => {
+            const html2canvas = html2canvasModule.default
+
+            // Capture the SVG container with TypeScript null check
+            const element = svgContainer.value
+            if (!element) {
+                alert('SVG container not found. Please try SVG format instead.')
+                exportProgress.value = false
+                return
+            }
+
+            html2canvas(element, {
+                allowTaint: true,
+                useCORS: true,
+                backgroundColor: 'white',
+                scale: 2 // Higher quality
+            }).then(canvas => {
+                // Convert to data URL
+                const dataUrl = canvas.toDataURL('image/png')
+
+                // Create download link
+                const link = document.createElement('a')
+                link.download = 'database-diagram.png'
+                link.href = dataUrl
+                document.body.appendChild(link)
+                link.click()
+                document.body.removeChild(link)
+
+                exportProgress.value = false
+            }).catch(error => {
+                console.error('Error rendering canvas:', error)
+                alert('Failed to export as PNG. Please try SVG format instead.')
+                exportProgress.value = false
+            })
+        }).catch(error => {
+            console.error('Error loading html2canvas:', error)
+            alert('Failed to load html2canvas library. Please try SVG format instead.')
+            exportProgress.value = false
+        })
+    } catch (error) {
+        console.error('Error in PNG export:', error)
+        alert('An unexpected error occurred. Please try SVG format instead.')
+        exportProgress.value = false
+    }
+}
+
+// Update the PDF export function to use html2canvas as well
+function exportAsPDF() {
+    if (!svgContainer.value) return
+
+    exportProgress.value = true
+
+    try {
+        // First load html2canvas
+        import('html2canvas').then(html2canvasModule => {
+            const html2canvas = html2canvasModule.default
+
+            // Capture the SVG container with TypeScript null check
+            const element = svgContainer.value
+            if (!element) {
+                alert('SVG container not found. Please try SVG format instead.')
+                exportProgress.value = false
+                return
+            }
+
+            html2canvas(element, {
+                allowTaint: true,
+                useCORS: true,
+                backgroundColor: 'white',
+                scale: 2 // Higher quality
+            }).then(canvas => {
+                // Now load jsPDF
+                import('jspdf').then(jsPDFModule => {
+                    try {
+                        const jsPDF = jsPDFModule.default
+
+                        // Get dimensions
+                        const imgWidth = canvas.width
+                        const imgHeight = canvas.height
+
+                        // Determine orientation
+                        const orientation = imgWidth > imgHeight ? 'landscape' : 'portrait'
+
+                        // Create PDF document with proper size
+                        const pdf = new jsPDF({
+                            orientation: orientation,
+                            unit: 'px',
+                            format: [imgWidth, imgHeight]
+                        })
+
+                        // Add image to PDF
+                        const imgData = canvas.toDataURL('image/png')
+                        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight)
+
+                        // Save PDF
+                        pdf.save('database-diagram.pdf')
+
+                        exportProgress.value = false
+                    } catch (error) {
+                        console.error('Error creating PDF:', error)
+                        alert('Failed to create PDF. Please try SVG format instead.')
+                        exportProgress.value = false
+                    }
+                }).catch(error => {
+                    console.error('Error loading jsPDF:', error)
+                    alert('Failed to load PDF library. Please try SVG format instead.')
+                    exportProgress.value = false
+                })
+            }).catch(error => {
+                console.error('Error rendering canvas:', error)
+                alert('Failed to export as PDF. Please try SVG format instead.')
+                exportProgress.value = false
+            })
+        }).catch(error => {
+            console.error('Error loading html2canvas:', error)
+            alert('Failed to load html2canvas library. Please try SVG format instead.')
+            exportProgress.value = false
+        })
+    } catch (error) {
+        console.error('Error in PDF export:', error)
+        alert('An unexpected error occurred. Please try SVG format instead.')
+        exportProgress.value = false
+    }
+}
 </script>
 
 <template>
     <div class="relative">
-        <div ref="svgContainer" class="w-full h-[1200px] bg-gray-50 rounded-lg"></div>
+        <div ref="svgContainer" class="w-full h-[2000px] bg-gray-50 rounded-lg"></div>
 
         <!-- Controls Panel with Tailwind classes -->
         <div
             class="absolute top-4 right-4 p-3 min-w-[220px] bg-white rounded-lg shadow-lg border border-gray-200 space-y-2.5 z-10">
-            <!-- Zoom Controls with Reset Button -->
+            <!-- Zoom Controls with Reset Button and Export Button -->
             <div class="flex items-center justify-between mb-1">
                 <span class="text-xs font-medium text-gray-700">Zoom</span>
                 <div class="flex items-center gap-1">
@@ -1365,7 +1557,42 @@ function resetView() {
                         title="Reset view">
                         <ArrowPathIcon class="w-3.5 h-3.5" />
                     </button>
+                    <button @click="exportOptions = !exportOptions"
+                        class="p-1 ml-1 hover:bg-gray-100 rounded text-gray-600 hover:text-gray-900 transition-colors focus:outline-none focus:ring-1 focus:ring-cyan-500 focus:ring-offset-1"
+                        title="Export diagram">
+                        <ArrowDownTrayIcon class="w-3.5 h-3.5" />
+                    </button>
                 </div>
+            </div>
+
+            <!-- Export Options Panel -->
+            <div v-if="exportOptions" class="p-2 mb-1 bg-gray-50 rounded border border-gray-200">
+                <div class="flex items-center mb-2">
+                    <span class="text-xs font-medium text-gray-700 mr-auto">Export Format</span>
+                </div>
+                <div class="flex gap-2 mb-2 flex-wrap">
+                    <label class="inline-flex items-center cursor-pointer">
+                        <input type="radio" value="svg" v-model="exportType"
+                            class="form-radio h-3.5 w-3.5 text-gray-500 focus:ring-gray-400">
+                        <span class="ml-1.5 text-xs text-gray-700">SVG</span>
+                    </label>
+                    <label class="inline-flex items-center cursor-pointer">
+                        <input type="radio" value="png" v-model="exportType"
+                            class="form-radio h-3.5 w-3.5 text-gray-500 focus:ring-gray-400">
+                        <span class="ml-1.5 text-xs text-gray-700">PNG</span>
+                    </label>
+                    <label class="inline-flex items-center cursor-pointer">
+                        <input type="radio" value="pdf" v-model="exportType"
+                            class="form-radio h-3.5 w-3.5 text-gray-500 focus:ring-gray-400">
+                        <span class="ml-1.5 text-xs text-gray-700">PDF</span>
+                    </label>
+                </div>
+                <button @click="saveDiagram"
+                    class="w-full py-1 bg-gray-500 hover:bg-gray-600 text-white text-xs font-medium rounded focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1 transition-colors"
+                    :disabled="exportProgress">
+                    <span v-if="exportProgress">Exporting...</span>
+                    <span v-else>Download {{ exportType.toUpperCase() }}</span>
+                </button>
             </div>
 
             <!-- Force Controls -->
