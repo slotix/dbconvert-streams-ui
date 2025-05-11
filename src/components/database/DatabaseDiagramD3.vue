@@ -2,7 +2,7 @@
 import { ref, onMounted, watch, onBeforeUnmount } from 'vue'
 import * as d3 from 'd3'
 import type { Table, Relationship } from '@/types/schema'
-import { PlusIcon, MinusIcon } from '@heroicons/vue/24/outline'
+import { PlusIcon, MinusIcon, ArrowPathIcon, ViewfinderCircleIcon } from '@heroicons/vue/24/outline'
 
 interface TableNode extends d3.SimulationNodeDatum {
     id: string
@@ -47,9 +47,10 @@ let simulation: d3.Simulation<TableNode, TableLink>
 let svg: d3.Selection<SVGSVGElement, unknown, null, undefined>
 
 // Add after the props definition:
-const linkDistance = ref(150)
-const chargeStrength = ref(-1000)
-const collisionRadius = ref(80)
+const linkDistance = ref(180)
+const chargeStrength = ref(-600)
+const collisionRadius = ref(150)
+const gridSize = ref(10)
 
 // Add zoom state
 const currentZoom = ref(1)
@@ -82,18 +83,27 @@ const BRAND_COLORS = {
     }
 }
 
+// Add initial transform to track the original diagram state
+let initialTransform: d3.ZoomTransform | null = null;
+
 // Initialize the force simulation
 function initializeSimulation(width: number, height: number) {
     return d3.forceSimulation<TableNode>()
-        .force('link', d3.forceLink<TableNode, TableLink>().id((d) => d.id).distance(linkDistance.value))
-        .force('charge', d3.forceManyBody().strength(chargeStrength.value))
-        .force('center', d3.forceCenter(width / 2, height / 2).strength(0.05)) // Reduce center force
-        .force('collision', d3.forceCollide().radius(collisionRadius.value))
-        .force('x', d3.forceX(width / 2).strength(0.1))
-        .force('y', d3.forceY(height / 2).strength(0.1))
-        .velocityDecay(0.7) // Add drag to slow down movement
-        .alphaMin(0.001) // Reduce minimum alpha to stop simulation sooner
-        .alphaDecay(0.02) // Increase decay rate to reach equilibrium faster
+        .force('link', d3.forceLink<TableNode, TableLink>()
+            .id((d) => d.id)
+            .distance(180)           // more spacing between linked nodes
+            .strength(0.8))          // tighter pull between connected nodes
+        .force('charge', d3.forceManyBody()
+            .strength(-600))         // less aggressive repulsion than -1000
+        .force('center', d3.forceCenter(width / 2, height / 2)
+            .strength(0.05))         // keep mild pull to center
+        .force('collision', d3.forceCollide()
+            .radius(150))            // increased from 90 to 150 for more spacing
+        .force('x', d3.forceX(width / 2).strength(0.05)) // weaker X pull
+        .force('y', d3.forceY(height / 2).strength(0.05)) // weaker Y pull
+        .velocityDecay(0.6)          // more damping = faster stabilization
+        .alphaMin(0.002)             // a bit higher: stops earlier
+        .alphaDecay(0.03)            // cools down faster
 }
 
 // Add this helper function before determineRelationshipType
@@ -152,13 +162,6 @@ function determineRelationshipType(relation: Relationship, isJunctionRelation = 
     }
 }
 
-// Add this function before createVisualization
-function isViewRelationship(link: TableLink, nodes: TableNode[]): boolean {
-    const sourceNode = nodes.find(n => n.id === (typeof link.source === 'string' ? link.source : link.source.id))
-    const targetNode = nodes.find(n => n.id === (typeof link.target === 'string' ? link.target : link.target.id))
-    return (sourceNode?.isView || targetNode?.isView) || false
-}
-
 // Create the visualization
 function createVisualization() {
     if (!svgContainer.value) return
@@ -182,6 +185,9 @@ function createVisualization() {
     // Create a group for zoomable content
     const zoomGroup = svg.append('g')
         .attr('class', 'zoom-group')
+
+    // Add background grid
+    createBackgroundGrid(zoomGroup, width, height)
 
     // Create markers for different relationship types
     const defs = zoomGroup.append('defs')
@@ -232,19 +238,19 @@ function createVisualization() {
         .attr('stroke', BRAND_COLORS.primary)  // Teal blue
         .attr('stroke-width', '2.5')
 
-    // Mandatory Many (crow's foot) - Teal blue version
+    // Mandatory Many (crow's foot) - Teal blue version - Smaller size when selected
     defs.append('marker')
         .attr('id', 'mandatory-many')
         .attr('viewBox', '-10 -10 20 20')
         .attr('refX', 8)
         .attr('refY', 0)
-        .attr('markerWidth', 12)
-        .attr('markerHeight', 12)
+        .attr('markerWidth', 10) // Reduced from 12
+        .attr('markerHeight', 10) // Reduced from 12
         .attr('orient', 'auto')
         .append('path')
-        .attr('d', 'M-8,0L0,-8M-8,0L0,8M-8,-8L-8,8')  // Corrected crow's foot orientation with vertical bar
+        .attr('d', 'M-8,0L0,-7M-8,0L0,7M-8,-7L-8,7')  // Slightly smaller crow's foot
         .attr('stroke', BRAND_COLORS.primary)  // Teal blue
-        .attr('stroke-width', '2.5')
+        .attr('stroke-width', '2')  // Slightly thinner lines
         .attr('fill', 'none')
 
     // Double bar for one-to-one relationships - Teal blue version
@@ -253,13 +259,13 @@ function createVisualization() {
         .attr('viewBox', '-10 -10 20 20')
         .attr('refX', 10)
         .attr('refY', 0)
-        .attr('markerWidth', 12)
-        .attr('markerHeight', 12)
+        .attr('markerWidth', 10) // Reduced from 12
+        .attr('markerHeight', 10) // Reduced from 12
         .attr('orient', 'auto')
         .append('path')
-        .attr('d', 'M-9,-8L-9,8M-5,-8L-5,8')  // Double vertical bars
+        .attr('d', 'M-9,-7L-9,7M-5,-7L-5,7')  // Slightly smaller bars
         .attr('stroke', BRAND_COLORS.primary)  // Teal blue
-        .attr('stroke-width', '2.5')
+        .attr('stroke-width', '2')  // Slightly thinner lines
 
     // Optional One (O|) - Teal blue version
     defs.append('marker')
@@ -267,13 +273,13 @@ function createVisualization() {
         .attr('viewBox', '-10 -10 20 20')
         .attr('refX', 10)
         .attr('refY', 0)
-        .attr('markerWidth', 12)
-        .attr('markerHeight', 12)
+        .attr('markerWidth', 10) // Reduced from 12
+        .attr('markerHeight', 10) // Reduced from 12
         .attr('orient', 'auto')
         .append('path')
         .attr('d', 'M-8,0 A3,3 0 1 1 -8,0.01M-8,4L-8,-4')  // Circle with vertical bar
         .attr('stroke', BRAND_COLORS.primary)  // Teal blue
-        .attr('stroke-width', '2.5')
+        .attr('stroke-width', '2')  // Slightly thinner lines
         .attr('fill', 'none')
 
     // Optional Many (crow's foot with circle) - Teal blue version
@@ -282,13 +288,13 @@ function createVisualization() {
         .attr('viewBox', '-10 -10 20 20')
         .attr('refX', 8)
         .attr('refY', 0)
-        .attr('markerWidth', 12)
-        .attr('markerHeight', 12)
+        .attr('markerWidth', 10) // Reduced from 12
+        .attr('markerHeight', 10) // Reduced from 12
         .attr('orient', 'auto')
         .append('path')
-        .attr('d', 'M-8,0 A3,3 0 1 1 -8,0.01M-8,0L0,-8M-8,0L0,8M-8,-8L-8,8')  // Corrected orientation
+        .attr('d', 'M-8,0 A3,3 0 1 1 -8,0.01M-8,0L0,-7M-8,0L0,7M-8,-7L-8,7')  // Slightly smaller
         .attr('stroke', BRAND_COLORS.primary)  // Teal blue
-        .attr('stroke-width', '2.5')
+        .attr('stroke-width', '2')  // Slightly thinner lines
         .attr('fill', 'none')
 
     // Create marker definitions for junction relationships (orange)
@@ -298,13 +304,13 @@ function createVisualization() {
         .attr('viewBox', '-10 -10 20 20')
         .attr('refX', 10)
         .attr('refY', 0)
-        .attr('markerWidth', 12)
-        .attr('markerHeight', 12)
+        .attr('markerWidth', 10) // Reduced from 12
+        .attr('markerHeight', 10) // Reduced from 12
         .attr('orient', 'auto')
         .append('path')
-        .attr('d', 'M-8,-8L-8,8')  // Vertical bar
+        .attr('d', 'M-8,-7L-8,7')  // Slightly smaller vertical bar
         .attr('stroke', BRAND_COLORS.secondary)  // Orange
-        .attr('stroke-width', '2.5')
+        .attr('stroke-width', '2')  // Slightly thinner lines
 
     // Mandatory Many (crow's foot) - Orange version
     defs.append('marker')
@@ -312,13 +318,13 @@ function createVisualization() {
         .attr('viewBox', '-10 -10 20 20')
         .attr('refX', 8)
         .attr('refY', 0)
-        .attr('markerWidth', 12)
-        .attr('markerHeight', 12)
+        .attr('markerWidth', 10) // Reduced from 12
+        .attr('markerHeight', 10) // Reduced from 12
         .attr('orient', 'auto')
         .append('path')
-        .attr('d', 'M-8,0L0,-8M-8,0L0,8M-8,-8L-8,8')  // Corrected crow's foot orientation with vertical bar
+        .attr('d', 'M-8,0L0,-7M-8,0L0,7M-8,-7L-8,7')  // Slightly smaller crow's foot
         .attr('stroke', BRAND_COLORS.secondary)  // Orange
-        .attr('stroke-width', '2.5')
+        .attr('stroke-width', '2')  // Slightly thinner lines
         .attr('fill', 'none')
 
     // Double bar for one-to-one relationships - Orange version
@@ -327,13 +333,13 @@ function createVisualization() {
         .attr('viewBox', '-10 -10 20 20')
         .attr('refX', 10)
         .attr('refY', 0)
-        .attr('markerWidth', 12)
-        .attr('markerHeight', 12)
+        .attr('markerWidth', 10) // Reduced from 12
+        .attr('markerHeight', 10) // Reduced from 12
         .attr('orient', 'auto')
         .append('path')
-        .attr('d', 'M-9,-8L-9,8M-5,-8L-5,8')  // Double vertical bars
+        .attr('d', 'M-9,-7L-9,7M-5,-7L-5,7')  // Slightly smaller double bars
         .attr('stroke', BRAND_COLORS.secondary)  // Orange
-        .attr('stroke-width', '2.5')
+        .attr('stroke-width', '2')  // Slightly thinner lines
 
     // Prepare data - combine tables and views with null checks
     const nodes: TableNode[] = [
@@ -531,6 +537,85 @@ function createVisualization() {
         // Add marker only at the appropriate end - use empty string to remove marker
         .attr('marker-start', d => '')  // Remove the start marker
         .attr('marker-end', d => `url(#${(d as any).targetMarker})`) // Keep only the end marker
+        // Add hover information to relationship lines
+        .on('mouseenter', function (event, d) {
+            const line = d3.select(this);
+            const sourceTable = typeof d.source === 'string' ? d.source : d.source.id;
+            const targetTable = typeof d.target === 'string' ? d.target : d.target.id;
+
+            // Find the relationship info if available
+            let relationshipType = '';
+            if ((d as any).isJunctionRelation) {
+                relationshipType = 'Junction table relationship';
+            } else if ((d as any).isViewDependency) {
+                relationshipType = 'View dependency';
+            } else {
+                relationshipType = 'Foreign key relationship';
+            }
+
+            // Create the tooltip
+            const tooltip = svg.append('g')
+                .attr('class', 'relationship-tooltip')
+                .attr('pointer-events', 'none');
+
+            // Add background
+            tooltip.append('rect')
+                .attr('rx', 4)
+                .attr('ry', 4)
+                .attr('fill', '#1f2937')
+                .attr('opacity', 0.9);
+
+            // Add text
+            const text = tooltip.append('text')
+                .attr('fill', 'white')
+                .attr('font-size', '12px')
+                .attr('x', 8)
+                .attr('y', 16);
+
+            text.append('tspan')
+                .attr('x', 8)
+                .attr('dy', 0)
+                .text(`${sourceTable} → ${targetTable}`);
+
+            text.append('tspan')
+                .attr('x', 8)
+                .attr('dy', 18)
+                .text(`Type: ${relationshipType}`);
+
+            // Get source and target tables for more details
+            const sourceTableObj = props.tables.find(t => t.name === sourceTable);
+            const targetTableObj = props.tables.find(t => t.name === targetTable);
+
+            // If we have foreign key info, add it
+            if (sourceTableObj?.foreignKeys) {
+                const fk = sourceTableObj.foreignKeys.find(fk =>
+                    fk.referencedTable === targetTable
+                );
+
+                if (fk) {
+                    text.append('tspan')
+                        .attr('x', 8)
+                        .attr('dy', 18)
+                        .text(`${fk.sourceColumn} → ${fk.referencedColumn}`);
+                }
+            }
+
+            // Size and position the background rectangle based on text
+            const bbox = text.node()?.getBBox();
+            if (bbox) {
+                tooltip.select('rect')
+                    .attr('width', bbox.width + 16)
+                    .attr('height', bbox.height + 16);
+
+                // Position tooltip near mouse but not on top of it
+                const [mouseX, mouseY] = d3.pointer(event);
+                tooltip.attr('transform', `translate(${mouseX + 15},${mouseY - bbox.height - 15})`);
+            }
+        })
+        .on('mouseleave', function () {
+            // Remove tooltip on mouse leave
+            svg.selectAll('.relationship-tooltip').remove();
+        });
 
     // Create table/view nodes
     node = zoomGroup.append('g')
@@ -559,25 +644,46 @@ function createVisualization() {
         })
         .attr('rx', 8)
         .attr('ry', 8)
-        .attr('fill', '#f8fafc')
-        .attr('stroke', '#cbd5e1')
-        .attr('stroke-width', 1)
+        .attr('fill', d => d.isView ? '#f8fbfe' : '#f8fafc')  // Lighter blue tint for views instead of pattern
+        .attr('stroke', d => d.isView ? '#94a3b8' : '#cbd5e1')
+        .attr('stroke-width', d => d.isView ? 1.5 : 1)
+        .attr('stroke-dasharray', d => d.isView ? '5,2' : 'none')
         .attr('filter', 'url(#drop-shadow)')
 
     // Add table header
     const header = node.append('g')
         .attr('class', 'table-header')
 
+    // Header background - rounded only at the top corners
     header.append('rect')
         .attr('width', 200)
         .attr('height', 30)
         .attr('rx', 8)
         .attr('ry', 8)
-        .attr('fill', d => d.isView ? '#e2e8f0' : '#e2e8f0')
-        .attr('stroke', '#cbd5e1')
+        .attr('fill', d => d.isView ? '#cbd5e1' : '#e2e8f0')
+        .attr('stroke', d => d.isView ? '#94a3b8' : '#cbd5e1')
         .attr('stroke-width', 1.5)
+        .attr('stroke-dasharray', d => d.isView ? '5,2' : 'none')
+        // Clip bottom corners to make them square
+        .attr('clip-path', 'path("M0,30 L0,8 Q0,0 8,0 L192,0 Q200,0 200,8 L200,30 Z")')
 
-    // Add table body
+    // Add small view icon for views in the header
+    header.filter(d => d.isView)
+        .append('foreignObject')
+        .attr('width', 20)
+        .attr('height', 20)
+        .attr('x', 172)  // Move closer to right side (was 165)
+        .attr('y', 5)
+        .attr('class', 'view-icon')
+        .html(`
+            <div xmlns="http://www.w3.org/1999/xhtml" style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5" style="color: #7e22ce;">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 3.75H6A2.25 2.25 0 0 0 3.75 6v1.5M16.5 3.75H18A2.25 2.25 0 0 1 20.25 6v1.5m0 9V18A2.25 2.25 0 0 1 18 20.25h-1.5m-9 0H6A2.25 2.25 0 0 1 3.75 18v-1.5M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                </svg>
+            </div>
+        `)
+
+    // Add table body with straight top edge
     node.append('rect')
         .attr('class', 'table-body')
         .attr('width', 200)
@@ -587,16 +693,18 @@ function createVisualization() {
             return columnCount * 20 // rows
         })
         .attr('y', 30) // Below header
-        .attr('fill', '#f8fafc')
-        .attr('stroke', '#e2e8f0')
-        .attr('stroke-width', 0.5)
+        .attr('fill', d => d.isView ? '#f8fafc' : '#f8fafc')
+        .attr('stroke', d => d.isView ? '#94a3b8' : '#e2e8f0')
+        .attr('stroke-width', d => d.isView ? 0.8 : 0.5)
+        .attr('stroke-dasharray', d => d.isView ? '5,2' : 'none')
 
     header.append('text')
         .text(d => d.name)
         .attr('x', 10)
         .attr('y', 20)
         .attr('fill', '#1e293b')
-        .attr('font-weight', 600)
+        .attr('font-weight', d => d.isView ? 400 : 600)
+        .attr('font-style', d => d.isView ? 'italic' : 'normal')
         .style('font-size', '13px')
 
     // Add columns with improved styling
@@ -632,7 +740,8 @@ function createVisualization() {
             // Use better icons for primary and foreign keys
             const prefix = isPK ? '🔑 ' : isFK ? '🔗 ' : ''
 
-            row.append('text')
+            // Create a column field with enhanced hover
+            const colField = row.append('text')
                 .attr('x', 10)
                 .attr('y', 14)
                 .attr('class', 'column-name')
@@ -641,6 +750,127 @@ function createVisualization() {
                 .style('font-size', '11px')
                 .style('font-weight', isPK || isFK ? '500' : '400')
                 .text(prefix + col.name)
+                .style('cursor', 'help');
+
+            // Add hover functionality for fields
+            if (isPK || isFK) {
+                colField.on('mouseenter', function (event) {
+                    // Build relationship information
+                    let relationships: string[] = [];
+
+                    if (isPK) {
+                        // Find tables that reference this primary key
+                        props.tables.forEach(t => {
+                            t.foreignKeys?.forEach(fk => {
+                                if (fk.referencedTable === d.name && fk.referencedColumn === col.name) {
+                                    relationships.push(`${t.name}.${fk.sourceColumn} references this column`);
+                                }
+                            });
+                        });
+                    }
+
+                    if (isFK) {
+                        // Find the referenced table/column
+                        table.foreignKeys?.forEach(fk => {
+                            if (fk.sourceColumn === col.name) {
+                                relationships.push(`References ${fk.referencedTable}.${fk.referencedColumn}`);
+                            }
+                        });
+                    }
+
+                    // Create tooltip
+                    const tooltip = svg.append('g')
+                        .attr('class', 'field-tooltip')
+                        .attr('pointer-events', 'none');
+
+                    // Add background
+                    tooltip.append('rect')
+                        .attr('rx', 4)
+                        .attr('ry', 4)
+                        .attr('fill', '#1f2937')
+                        .attr('opacity', 0.9);
+
+                    // Add text
+                    const text = tooltip.append('text')
+                        .attr('fill', 'white')
+                        .attr('font-size', '12px')
+                        .attr('x', 8)
+                        .attr('y', 16);
+
+                    text.append('tspan')
+                        .attr('x', 8)
+                        .attr('dy', 0)
+                        .text(`${d.name}.${col.name}`);
+
+                    text.append('tspan')
+                        .attr('x', 8)
+                        .attr('dy', 18)
+                        .text(`Type: ${col.type}${isPK ? ', Primary Key' : ''}${isFK ? ', Foreign Key' : ''}`);
+
+                    // Add relationship info
+                    relationships.forEach((rel, i) => {
+                        text.append('tspan')
+                            .attr('x', 8)
+                            .attr('dy', 18)
+                            .text(rel);
+                    });
+
+                    // Size and position the background rectangle based on text
+                    const bbox = text.node()?.getBBox();
+                    if (bbox) {
+                        tooltip.select('rect')
+                            .attr('width', bbox.width + 16)
+                            .attr('height', bbox.height + 16);
+
+                        // Get SVG coordinates
+                        const svgPoint = svg.node()?.createSVGPoint();
+                        if (svgPoint) {
+                            svgPoint.x = event.clientX;
+                            svgPoint.y = event.clientY;
+
+                            // Get CTM for transformations
+                            const ctm = svg.node()?.getScreenCTM();
+                            if (ctm) {
+                                // Transform client coordinates to SVG coordinates
+                                const pt = svgPoint.matrixTransform(ctm.inverse());
+
+                                // Get current transform to account for zoom/pan
+                                const transform = d3.zoomTransform(svg.node() as Element);
+
+                                // Position tooltip - ensure it stays within view
+                                const xPos = pt.x + 15;
+                                const yPos = pt.y - bbox.height - 15;
+
+                                // Get container dimensions
+                                const containerWidth = svgContainer.value?.clientWidth || 1000;
+                                const containerHeight = svgContainer.value?.clientHeight || 800;
+
+                                // Adjust position if tooltip would go out of bounds
+                                const tooltipWidth = bbox.width + 16;
+                                const tooltipHeight = bbox.height + 16;
+
+                                // Adjust horizontal position if needed
+                                let adjustedX = xPos;
+                                if (xPos + tooltipWidth > containerWidth / transform.k) {
+                                    adjustedX = Math.max(0, xPos - tooltipWidth - 15);
+                                }
+
+                                // Adjust vertical position if needed
+                                let adjustedY = yPos;
+                                if (yPos < 0) {
+                                    adjustedY = pt.y + 25; // Show below the cursor instead
+                                }
+
+                                tooltip.attr('transform', `translate(${adjustedX},${adjustedY})`);
+                            }
+                        }
+                    }
+                })
+                    .on('mouseleave', function () {
+                        // Remove tooltip on mouse leave
+                        svg.selectAll('.field-tooltip').remove();
+                    });
+            }
 
             // Column type
             row.append('text')
@@ -737,6 +967,9 @@ function createVisualization() {
         selectedTable.value = null
         updateHighlighting()
     })
+
+    // Store initial transform for reset functionality
+    initialTransform = d3.zoomIdentity.translate(width / 2, height / 2).scale(1);
 }
 
 // Drag handlers
@@ -965,7 +1198,7 @@ function updateHighlighting() {
             })
     })
 
-    // Update relationship line highlighting
+    // Update relationship line highlighting with more subtle thickness changes
     if (linkGroup) {
         linkGroup.selectAll<SVGLineElement, TableLink>('line')
             .transition()
@@ -974,7 +1207,7 @@ function updateHighlighting() {
                 const source = typeof d.source === 'string' ? d.source : d.source.id
                 const target = typeof d.target === 'string' ? d.target : d.target.id
                 return (selectedTable.value &&
-                    (source === selectedTable.value || target === selectedTable.value)) ? '2.5' : '1.5'
+                    (source === selectedTable.value || target === selectedTable.value)) ? '2' : '1.5'
             })
             .style('opacity', function (this: SVGLineElement, d: TableLink) {
                 if (!selectedTable.value) return 1
@@ -1033,9 +1266,75 @@ function getTableHeight(table: TableNode): number {
     const baseHeight = 30 // Header height
     const rowHeight = 20 // Height per row
     const numColumns = props.tables.find(t => t.name === table.name)?.columns.length ||
-        props.views.find(v => v.name === table.name)?.columns.length ||
-        0
+        props.views.find(v => v.name === table.name)?.columns.length || 0
     return baseHeight + (numColumns * rowHeight)
+}
+
+// Add a function to create the background grid
+function createBackgroundGrid(container: d3.Selection<SVGGElement, unknown, null, undefined>, width: number, height: number) {
+    const currentGridSize = gridSize.value // Use the ref value
+    const majorGridSize = currentGridSize * 4 // Size for major grid lines (every 4 cells)
+
+    // Create a pattern for the grid
+    const defs = container.append('defs')
+
+    // Create a pattern element
+    const pattern = defs.append('pattern')
+        .attr('id', 'grid')
+        .attr('width', currentGridSize)
+        .attr('height', currentGridSize)
+        .attr('patternUnits', 'userSpaceOnUse')
+
+    // Add minor grid lines
+    pattern.append('path')
+        .attr('d', `M ${currentGridSize} 0 L 0 0 0 ${currentGridSize}`)
+        .attr('fill', 'none')
+        .attr('stroke', '#e5e7eb')
+        .attr('stroke-width', 0.5)
+
+    // Create a background rectangle with the pattern
+    container.append('rect')
+        .attr('width', width * 4) // Make the grid larger than view
+        .attr('height', height * 4)
+        .attr('x', -width) // Position to ensure grid covers entire panning area
+        .attr('y', -height)
+        .attr('fill', 'url(#grid)')
+        .attr('class', 'grid-background')
+
+    // Create major grid lines
+    const majorGrid = container.append('g')
+        .attr('class', 'major-grid')
+
+    // Vertical major grid lines
+    for (let i = 0; i < width * 4 / majorGridSize; i++) {
+        majorGrid.append('line')
+            .attr('x1', i * majorGridSize - width)
+            .attr('y1', -height)
+            .attr('x2', i * majorGridSize - width)
+            .attr('y2', height * 3)
+            .attr('stroke', '#d1d5db')
+            .attr('stroke-width', 1)
+    }
+
+    // Horizontal major grid lines
+    for (let i = 0; i < height * 4 / majorGridSize; i++) {
+        majorGrid.append('line')
+            .attr('x1', -width)
+            .attr('y1', i * majorGridSize - height)
+            .attr('x2', width * 3)
+            .attr('y2', i * majorGridSize - height)
+            .attr('stroke', '#d1d5db')
+            .attr('stroke-width', 1)
+    }
+}
+
+// Add function to reset view to original position and zoom
+function resetView() {
+    if (svg && initialTransform) {
+        svg.transition()
+            .duration(750)
+            .call(zoom.transform, initialTransform)
+    }
 }
 </script>
 
@@ -1043,54 +1342,89 @@ function getTableHeight(table: TableNode): number {
     <div class="relative">
         <div ref="svgContainer" class="w-full h-[1200px] bg-gray-50 rounded-lg"></div>
 
-        <!-- Controls Panel -->
+        <!-- Controls Panel with Tailwind classes -->
         <div
-            class="absolute top-4 right-4 controls-panel p-4 min-w-[240px] space-y-4 bg-white rounded-lg shadow-lg border border-gray-200">
-            <!-- Zoom Controls -->
-            <div class="flex items-center justify-between border-b border-gray-200 pb-3">
-                <span class="text-sm font-medium text-gray-700">Zoom</span>
-                <div class="flex items-center gap-2">
+            class="absolute top-4 right-4 p-3 min-w-[220px] bg-white rounded-lg shadow-lg border border-gray-200 space-y-2.5 z-10">
+            <!-- Zoom Controls with Reset Button -->
+            <div class="flex items-center justify-between mb-1">
+                <span class="text-xs font-medium text-gray-700">Zoom</span>
+                <div class="flex items-center gap-1">
                     <button @click="handleZoom('out')"
-                        class="p-1.5 hover:bg-gray-100 rounded text-gray-600 hover:text-gray-900 transition-colors">
-                        <MinusIcon class="w-4 h-4" />
+                        class="p-1 hover:bg-gray-100 rounded text-gray-600 hover:text-gray-900 transition-colors focus:outline-none focus:ring-1 focus:ring-cyan-500 focus:ring-offset-1">
+                        <MinusIcon class="w-3.5 h-3.5" />
                     </button>
-                    <span class="text-sm text-gray-600 min-w-[48px] text-center">
+                    <span class="text-xs text-gray-600 min-w-[40px] text-center tabular-nums">
                         {{ Math.round(currentZoom * 100) }}%
                     </span>
                     <button @click="handleZoom('in')"
-                        class="p-1.5 hover:bg-gray-100 rounded text-gray-600 hover:text-gray-900 transition-colors">
-                        <PlusIcon class="w-4 h-4" />
+                        class="p-1 hover:bg-gray-100 rounded text-gray-600 hover:text-gray-900 transition-colors focus:outline-none focus:ring-1 focus:ring-cyan-500 focus:ring-offset-1">
+                        <PlusIcon class="w-3.5 h-3.5" />
+                    </button>
+                    <button @click="resetView"
+                        class="p-1 ml-1 hover:bg-gray-100 rounded text-gray-600 hover:text-gray-900 transition-colors focus:outline-none focus:ring-1 focus:ring-cyan-500 focus:ring-offset-1"
+                        title="Reset view">
+                        <ArrowPathIcon class="w-3.5 h-3.5" />
                     </button>
                 </div>
             </div>
 
             <!-- Force Controls -->
-            <div class="space-y-3">
+            <div class="space-y-2">
                 <div>
-                    <div class="flex items-center justify-between mb-1.5">
-                        <label class="text-sm font-medium text-gray-700">Link Distance</label>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="text-xs font-medium text-gray-700">Link Distance</label>
                         <span class="text-xs text-gray-500 tabular-nums">{{ linkDistance }}px</span>
                     </div>
                     <input type="range" v-model="linkDistance" min="100" max="500" step="20"
-                        class="w-full control-slider" @input="updateForces" />
+                        class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer slider-gray"
+                        @input="updateForces" />
                 </div>
 
                 <div>
-                    <div class="flex items-center justify-between mb-1.5">
-                        <label class="text-sm font-medium text-gray-700">Charge Strength</label>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="text-xs font-medium text-gray-700">Charge Strength</label>
                         <span class="text-xs text-gray-500 tabular-nums">{{ chargeStrength }}</span>
                     </div>
                     <input type="range" v-model="chargeStrength" min="-3000" max="-200" step="100"
-                        class="w-full control-slider" @input="updateForces" />
+                        class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer slider-gray"
+                        @input="updateForces" />
                 </div>
 
                 <div>
-                    <div class="flex items-center justify-between mb-1.5">
-                        <label class="text-sm font-medium text-gray-700">Collision Radius</label>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="text-xs font-medium text-gray-700">Collision Radius</label>
                         <span class="text-xs text-gray-500 tabular-nums">{{ collisionRadius }}px</span>
                     </div>
                     <input type="range" v-model="collisionRadius" min="60" max="200" step="10"
-                        class="w-full control-slider" @input="updateForces" />
+                        class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer slider-gray"
+                        @input="updateForces" />
+                </div>
+            </div>
+        </div>
+
+        <!-- Legend with Tailwind classes -->
+        <div class="absolute top-4 left-4 p-3 bg-white bg-opacity-95 rounded-lg shadow-md border border-gray-200 z-10">
+            <h4 class="text-xs font-semibold text-gray-700 mb-1.5">Legend</h4>
+            <div class="space-y-1.5">
+                <div class="flex items-center">
+                    <div class="w-4 h-4 mr-2 bg-white border border-gray-300 rounded"></div>
+                    <span class="text-xs text-gray-700">Table</span>
+                </div>
+                <div class="flex items-center">
+                    <ViewfinderCircleIcon class="w-4 h-4 mr-2 text-purple-600" />
+                    <span class="text-xs text-gray-700 italic font-medium">View</span>
+                </div>
+                <div class="flex items-center">
+                    <div class="w-5 h-0.5 mr-2 bg-cyan-500"></div>
+                    <span class="text-xs text-gray-700">Foreign Key</span>
+                </div>
+                <div class="flex items-center">
+                    <div class="w-5 h-0.5 mr-2 bg-orange-500"></div>
+                    <span class="text-xs text-gray-700">Junction Table</span>
+                </div>
+                <div class="flex items-center">
+                    <div class="w-5 h-0.5 mr-2 border-t border-gray-400 border-dashed"></div>
+                    <span class="text-xs text-gray-700">View Dependency</span>
                 </div>
             </div>
         </div>
@@ -1122,7 +1456,7 @@ function getTableHeight(table: TableNode): number {
 }
 
 .relationship-line:hover {
-    stroke-width: 2.5px;
+    stroke-width: 2px;
 }
 
 marker {
@@ -1135,40 +1469,22 @@ marker path {
     shape-rendering: geometricPrecision;
 }
 
+/* Table header styling */
+.table-header rect {
+    transition: fill 0.3s ease, stroke 0.3s ease;
+}
+
+/* View icon styling */
+.view-icon {
+    opacity: 0.8;
+}
+
 /* Smooth transitions */
 line,
 marker path,
 rect,
 text {
     transition: stroke 0.3s ease, stroke-width 0.3s ease, fill 0.3s ease, font-weight 0.3s ease;
-}
-
-.control-slider {
-    @apply h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer;
-}
-
-.control-slider::-webkit-slider-thumb {
-    @apply appearance-none w-5 h-5 bg-cyan-500 rounded-full hover:bg-cyan-600 transition-colors;
-}
-
-.control-slider::-moz-range-thumb {
-    @apply w-5 h-5 bg-cyan-500 border-0 rounded-full hover:bg-cyan-600 transition-colors;
-}
-
-button {
-    @apply focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-1;
-}
-
-.space-y-3> :not([hidden])~ :not([hidden]) {
-    @apply mt-3;
-}
-
-.space-y-4> :not([hidden])~ :not([hidden]) {
-    @apply mt-4;
-}
-
-.tabular-nums {
-    font-variant-numeric: tabular-nums;
 }
 
 /* Add tooltip styles */
@@ -1191,12 +1507,38 @@ button {
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
 
-/* Controls Panel styling */
-.controls-panel {
-    background-color: white;
-    border-radius: 0.75rem;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    border: 1px solid #e2e8f0;
+/* Slider styles */
+.slider-gray::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #64748b;
+    /* slate-500 */
+    cursor: pointer;
+}
+
+.slider-gray::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #64748b;
+    /* slate-500 */
+    cursor: pointer;
+    border: none;
+}
+
+.slider-gray:focus {
+    outline: none;
+}
+
+.slider-gray:focus::-webkit-slider-thumb {
+    box-shadow: 0 0 0 2px rgba(100, 116, 139, 0.2);
+}
+
+.slider-gray:focus::-moz-range-thumb {
+    box-shadow: 0 0 0 2px rgba(100, 116, 139, 0.2);
 }
 
 :root {

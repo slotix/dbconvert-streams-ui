@@ -4,6 +4,16 @@ import { ArrowPathIcon, KeyIcon } from '@heroicons/vue/24/outline'
 import { type SQLTableMeta, type SQLViewMeta } from '@/types/metadata'
 import connections from '@/api/connections'
 
+// Define brand colors as constants for consistency (matching DatabaseDiagramD3.vue)
+const BRAND_COLORS = {
+  primary: '#00B2D6',    // Teal/Cyan blue (from logo)
+  secondary: '#F26627',  // Orange (from logo)
+  highlight: {
+    blue: '#DBEAFE',   // Light blue highlight
+    orange: '#FFEDD5'  // Light orange highlight
+  }
+}
+
 const props = defineProps<{
   tableMeta: SQLTableMeta | SQLViewMeta
   connectionId: string
@@ -242,8 +252,8 @@ const primaryKeyColumns = computed(() => {
                     class="px-3 py-2 text-left text-sm font-semibold text-gray-900 bg-gray-50 sticky top-0 whitespace-nowrap">
                     <div class="flex items-center gap-1">
                       {{ column }}
-                      <KeyIcon v-if="primaryKeyColumns.has(column)" class="h-4 w-4 text-amber-400"
-                        title="Primary Key" />
+                      <KeyIcon v-if="primaryKeyColumns.has(column)" :style="`color: ${BRAND_COLORS.primary}`"
+                        class="h-4 w-4" title="Primary Key" />
                     </div>
                   </th>
                 </tr>

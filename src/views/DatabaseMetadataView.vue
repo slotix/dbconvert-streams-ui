@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { ArrowPathIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/vue/24/outline'
+import { ArrowPathIcon, ChevronLeftIcon, ChevronRightIcon, TableCellsIcon, ChartBarIcon } from '@heroicons/vue/24/outline'
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/vue'
 import { useSchemaStore } from '@/stores/schema'
 import { useConnectionsStore } from '@/stores/connections'
@@ -95,12 +95,12 @@ onMounted(async () => {
                         <div v-if="connection" class="flex items-center gap-2 text-sm text-gray-500">
                             <div class="flex items-center gap-2">
                                 <span class="font-medium text-gray-700">{{ connection.host }}:{{ connection.port
-                                    }}</span>
+                                }}</span>
                                 <span class="text-gray-400">•</span>
                                 <span class="font-medium text-gray-700">{{ connection.database }}</span>
                                 <span v-if="connection.schema" class="text-gray-400">•</span>
                                 <span v-if="connection.schema" class="font-medium text-gray-700">{{ connection.schema
-                                    }}</span>
+                                }}</span>
                             </div>
                         </div>
                     </div>
@@ -120,27 +120,35 @@ onMounted(async () => {
 
             <!-- Main Tabs -->
             <TabGroup>
-                <TabList class="flex space-x-1 border-b border-gray-200 mb-8">
+                <TabList class="flex space-x-2 mb-8 border-b border-gray-200">
                     <Tab v-slot="{ selected }" as="template">
                         <button :class="[
-                            'px-3 py-2 text-sm font-medium leading-5',
-                            'focus:outline-none focus:ring-2 ring-offset-2 ring-offset-blue-400 ring-white ring-opacity-60',
+                            'px-5 py-2.5 text-sm font-medium rounded-t-lg transition-all duration-200',
+                            'focus:outline-none relative',
                             selected
-                                ? 'border-blue-500 text-blue-600 border-b-2 -mb-px'
-                                : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                ? 'bg-white text-slate-800 border-t border-l border-r border-gray-200 shadow-sm'
+                                : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
                         ]">
-                            Structure & Data
+                            <span class="flex items-center gap-2">
+                                <TableCellsIcon class="h-4 w-4" />
+                                Structure & Data
+                            </span>
+                            <span v-if="selected" class="absolute bottom-0 left-0 w-full h-0.5 bg-slate-600"></span>
                         </button>
                     </Tab>
                     <Tab v-slot="{ selected }" as="template">
                         <button :class="[
-                            'px-3 py-2 text-sm font-medium leading-5',
-                            'focus:outline-none focus:ring-2 ring-offset-2 ring-offset-blue-400 ring-white ring-opacity-60',
+                            'px-5 py-2.5 text-sm font-medium rounded-t-lg transition-all duration-200',
+                            'focus:outline-none relative',
                             selected
-                                ? 'border-blue-500 text-blue-600 border-b-2 -mb-px'
-                                : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                ? 'bg-white text-slate-800 border-t border-l border-r border-gray-200 shadow-sm'
+                                : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
                         ]">
-                            Diagram
+                            <span class="flex items-center gap-2">
+                                <ChartBarIcon class="h-4 w-4" />
+                                Diagram
+                            </span>
+                            <span v-if="selected" class="absolute bottom-0 left-0 w-full h-0.5 bg-slate-600"></span>
                         </button>
                     </Tab>
                 </TabList>

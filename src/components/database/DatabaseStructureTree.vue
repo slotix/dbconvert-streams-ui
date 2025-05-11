@@ -167,11 +167,11 @@ function isSelected(item: TreeNode): boolean {
             :class="['space-y-1', schema.name ? 'ml-4 border-l border-gray-200' : '']">
             <div v-for="item in schema.children" :key="`${item.type}-${item.name}`"
               class="flex items-center px-2 py-1.5 text-sm rounded-md hover:bg-gray-100 cursor-pointer" :class="[
-                isSelected(item) ? 'bg-blue-50 text-blue-700' : 'text-gray-600',
+                isSelected(item) ? 'bg-slate-100 text-slate-700' : 'text-gray-600',
                 { 'ml-2': schema.name }
               ]" @click="handleObjectSelect(item)">
               <component :is="item.type === 'table' ? TableCellsIcon : ViewfinderCircleIcon"
-                class="h-4 w-4 mr-1.5 flex-shrink-0" :class="isSelected(item) ? 'text-blue-500' : 'text-gray-400'" />
+                class="h-4 w-4 mr-1.5 flex-shrink-0" :class="isSelected(item) ? 'text-slate-500' : 'text-gray-400'" />
               <span>{{ item.name }}</span>
               <span v-if="item.type === 'view'" class="ml-2 text-xs text-gray-500">(View)</span>
             </div>

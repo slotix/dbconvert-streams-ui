@@ -5,6 +5,25 @@ import { ArrowPathIcon, KeyIcon, LinkIcon } from '@heroicons/vue/24/outline'
 import { type SQLTableMeta, type SQLColumnMeta, type SQLIndexMeta } from '@/types/metadata'
 import DdlView from './DdlView.vue'
 
+// Define brand colors as constants for consistency (matching DatabaseDiagramD3.vue)
+const BRAND_COLORS = {
+  primary: '#00B2D6',    // Teal/Cyan blue (from logo)
+  secondary: '#F26627',  // Orange (from logo)
+  highlight: {
+    blue: '#DBEAFE',   // Light blue highlight
+    orange: '#FFEDD5'  // Light orange highlight
+  }
+}
+
+// Define gray colors for tabs
+const GRAY_COLORS = {
+  active: {
+    border: '#64748b', // slate-500
+    text: '#1e293b',   // slate-900
+    bg: '#f1f5f9'      // slate-100
+  }
+}
+
 const props = defineProps<{
   tableMeta: SQLTableMeta
   connectionId: string
@@ -138,9 +157,9 @@ function getColumnExtra(column: typeof columns.value[0]) {
           </span>
         </h3>
         <button type="button"
-          class="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+          class="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm border border-gray-200 hover:bg-gray-50 transition-colors duration-150 focus:outline-none focus:ring-1 focus:ring-gray-300 focus:ring-offset-1"
           :disabled="isLoading" @click="handleRefresh">
-          <ArrowPathIcon :class="['h-5 w-5 text-gray-400 mr-2', { 'animate-spin': isLoading }]" />
+          <ArrowPathIcon :class="['h-5 w-5 mr-2', isLoading ? 'text-gray-600 animate-spin' : 'text-gray-400']" />
           Refresh Metadata
         </button>
       </div>
@@ -150,16 +169,16 @@ function getColumnExtra(column: typeof columns.value[0]) {
       <TabList class="flex space-x-1 border-b border-gray-200 px-4">
         <Tab v-for="tab in tabs" :key="tab.name" v-slot="{ selected }" as="template">
           <button :class="[
-            'px-3 py-2 text-sm font-medium leading-5 text-gray-700 whitespace-nowrap',
-            'focus:outline-none focus:ring-2 ring-offset-2 ring-offset-blue-400 ring-white ring-opacity-60',
+            'px-3 py-2 text-sm font-medium leading-5 whitespace-nowrap transition-colors duration-150',
+            'focus:outline-none focus:ring-1 ring-offset-1 ring-gray-300',
             selected
-              ? 'border-blue-500 text-blue-600 border-b-2 -mb-px'
+              ? 'border-b-2 border-slate-500 text-slate-900 -mb-px'
               : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
           ]">
             {{ tab.name }}
             <span :class="[
-              'ml-2 rounded-full px-2.5 py-0.5 text-xs font-medium',
-              selected ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-900'
+              'ml-2 rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors duration-150',
+              selected ? 'bg-slate-100 text-slate-600' : 'bg-gray-100 text-gray-600'
             ]">
               {{ tab.count }}
             </span>
@@ -190,8 +209,10 @@ function getColumnExtra(column: typeof columns.value[0]) {
                         <div class="flex items-center">
                           <span class="font-medium text-gray-900">{{ column.name }}</span>
                           <div class="ml-2 flex items-center space-x-1">
-                            <KeyIcon v-if="column.isPrimaryKey" class="h-4 w-4 text-amber-400" title="Primary Key" />
-                            <LinkIcon v-if="column.isForeignKey" class="h-4 w-4 text-blue-400" title="Foreign Key" />
+                            <KeyIcon v-if="column.isPrimaryKey" :style="`color: ${BRAND_COLORS.primary}`"
+                              class="h-4 w-4" title="Primary Key" />
+                            <LinkIcon v-if="column.isForeignKey" :style="`color: ${BRAND_COLORS.secondary}`"
+                              class="h-4 w-4" title="Foreign Key" />
                           </div>
                         </div>
                       </td>
@@ -221,7 +242,7 @@ function getColumnExtra(column: typeof columns.value[0]) {
               <ul role="list" class="divide-y divide-gray-100">
                 <li v-for="key in primaryKeys" :key="key" class="flex items-center justify-between gap-x-6 py-3">
                   <div class="flex min-w-0 gap-x-4">
-                    <KeyIcon class="h-5 w-5 text-amber-400" />
+                    <KeyIcon :style="`color: ${BRAND_COLORS.primary}`" class="h-5 w-5" />
                     <div class="min-w-0 flex-auto">
                       <p class="text-sm font-semibold leading-6 text-gray-900">{{ key }}</p>
                     </div>
@@ -236,7 +257,7 @@ function getColumnExtra(column: typeof columns.value[0]) {
               <ul role="list" class="divide-y divide-gray-100">
                 <li v-for="key in foreignKeys" :key="key.name" class="flex items-center justify-between gap-x-6 py-3">
                   <div class="flex min-w-0 gap-x-4">
-                    <LinkIcon class="h-5 w-5 text-blue-400" />
+                    <LinkIcon :style="`color: ${BRAND_COLORS.secondary}`" class="h-5 w-5" />
                     <div class="min-w-0 flex-auto">
                       <p class="text-sm font-semibold leading-6 text-gray-900">{{ key.name }}</p>
                       <p class="mt-1 truncate text-xs leading-5 text-gray-500">

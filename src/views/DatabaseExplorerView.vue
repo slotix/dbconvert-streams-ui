@@ -167,17 +167,17 @@ watch(currentConnectionId, (newId) => {
             <div v-else>
                 <TabGroup :selected-index="selectedIndex"
                     @change="index => switchConnection(recentConnections[index].id)">
-                    <TabList class="flex space-x-1 rounded-xl bg-gray-100 p-1">
+                    <TabList class="flex bg-gray-50 p-2 rounded-xl shadow-sm border border-gray-200">
                         <Tab v-for="connection in recentConnections" :key="connection.id" v-slot="{ selected }"
                             as="template">
-                            <div class="relative">
+                            <div class="relative flex-1 mx-1">
                                 <button :class="[
-                                    'w-full rounded-lg py-2.5 px-5 text-sm font-medium leading-5',
-                                    'ring-white ring-opacity-60 ring-offset-2 focus:outline-none focus:ring-2',
-                                    'flex items-center gap-2',
+                                    'w-full rounded-lg py-3 px-4 text-sm font-medium',
+                                    'focus:outline-none',
+                                    'flex items-center justify-center gap-2 transition-all duration-200',
                                     selected
-                                        ? 'bg-white text-blue-700 shadow'
-                                        : 'text-gray-600 hover:bg-white/[0.12] hover:text-gray-800'
+                                        ? 'bg-white text-slate-800 shadow-md border border-gray-200'
+                                        : 'text-gray-600 hover:bg-white hover:text-gray-800 hover:shadow-sm'
                                 ]">
                                     <img v-if="currentConnectionDetails && currentConnectionId === connection.id"
                                         :src="currentConnectionDetails.logo" :alt="currentConnectionDetails.type"
@@ -186,14 +186,14 @@ watch(currentConnectionId, (newId) => {
                                 </button>
                                 <!-- Close button -->
                                 <button @click.stop="removeFromRecent(connection.id)"
-                                    class="absolute -right-1 -top-1 rounded-full bg-gray-200 p-0.5 hover:bg-gray-300">
-                                    <XMarkIcon class="h-4 w-4 text-gray-500" />
+                                    class="absolute -right-1.5 -top-1.5 rounded-full bg-white p-1 hover:bg-gray-100 shadow-sm border border-gray-200 transition-colors">
+                                    <XMarkIcon class="h-3.5 w-3.5 text-gray-500" />
                                 </button>
                             </div>
                         </Tab>
                     </TabList>
 
-                    <div class="mt-4 bg-white rounded-xl p-3">
+                    <div class="mt-6 bg-white rounded-xl p-4 shadow-sm border border-gray-200">
                         <DatabaseMetadataView v-if="currentConnectionId" :key="currentConnectionId"
                             :id="currentConnectionId" />
                         <div v-else class="text-center py-12">

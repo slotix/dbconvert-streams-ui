@@ -5,6 +5,16 @@ import ViewDefinitionView from './ViewDefinitionView.vue'
 import { ref, nextTick, computed } from 'vue'
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/vue'
 
+// Define brand colors as constants for consistency (matching DatabaseDiagramD3.vue)
+const BRAND_COLORS = {
+    primary: '#00B2D6',    // Teal/Cyan blue (from logo)
+    secondary: '#F26627',  // Orange (from logo)
+    highlight: {
+        blue: '#DBEAFE',   // Light blue highlight
+        orange: '#FFEDD5'  // Light orange highlight
+    }
+}
+
 const props = defineProps<{
     viewMeta: SQLViewMeta
     connectionId: string
@@ -72,9 +82,10 @@ function getColumnType(column: any) {
                     <span v-if="viewMeta.isMaterialized" class="text-sm text-gray-500 ml-2">(Materialized)</span>
                 </h3>
                 <button type="button"
-                    class="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+                    class="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm border border-gray-200 hover:bg-gray-50 transition-colors duration-150 focus:outline-none focus:ring-1 focus:ring-gray-300 focus:ring-offset-1"
                     :disabled="isLoading" @click="handleRefresh">
-                    <ArrowPathIcon :class="['h-5 w-5 text-gray-400 mr-2', { 'animate-spin': isLoading }]" />
+                    <ArrowPathIcon
+                        :class="['h-5 w-5 mr-2', isLoading ? 'text-gray-600 animate-spin' : 'text-gray-400']" />
                     Refresh Metadata
                 </button>
             </div>
@@ -84,16 +95,16 @@ function getColumnType(column: any) {
             <TabList class="flex space-x-1 border-b border-gray-200 px-4">
                 <Tab v-for="tab in tabs" :key="tab.name" v-slot="{ selected }" as="template">
                     <button :class="[
-                        'px-3 py-2 text-sm font-medium leading-5 text-gray-700 whitespace-nowrap',
-                        'focus:outline-none focus:ring-2 ring-offset-2 ring-offset-blue-400 ring-white ring-opacity-60',
+                        'px-3 py-2 text-sm font-medium leading-5 whitespace-nowrap transition-colors duration-150',
+                        'focus:outline-none focus:ring-1 ring-offset-1 ring-gray-300',
                         selected
-                            ? 'border-blue-500 text-blue-600 border-b-2 -mb-px'
+                            ? 'border-b-2 border-slate-500 text-slate-900 -mb-px'
                             : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
                     ]">
                         {{ tab.name }}
                         <span :class="[
-                            'ml-2 rounded-full px-2.5 py-0.5 text-xs font-medium',
-                            selected ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-900'
+                            'ml-2 rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors duration-150',
+                            selected ? 'bg-slate-100 text-slate-600' : 'bg-gray-100 text-gray-600'
                         ]">
                             {{ tab.count }}
                         </span>
