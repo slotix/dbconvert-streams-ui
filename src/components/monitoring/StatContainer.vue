@@ -5,7 +5,7 @@
   <div
     class="grid grid-cols-1 divide-y divide-gray-200 overflow-hidden rounded-lg bg-white shadow md:grid-cols-3 md:divide-x md:divide-y-0"
   >
-    <div v-for="stat in store.stats" :key="stat.id">
+    <div v-for="stat in store.stats" :key="stat.nodeID">
       <div class="px-4 py-5 sm:p-6 bg-gray-100">
         <div class="flex items-center">
           <img
