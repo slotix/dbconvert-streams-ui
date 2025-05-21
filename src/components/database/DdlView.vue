@@ -11,21 +11,32 @@ const props = defineProps<{
         createIndexes?: string[]
     }
     connectionType: string
+    onRefreshMetadata?: () => void
 }>()
 
 const dialect = computed(() => props.connectionType.toLowerCase().includes('mysql') ? 'mysql' : 'postgresql')
 
 const formattedCreateTable = computed(() => {
-    return format(props.ddl.createTable, getFormattingOptions(props.connectionType))
+    try {
+        return format(props.ddl.createTable, getFormattingOptions(props.connectionType))
+    } catch (error) {
+        console.error('Error formatting SQL:', error)
+        return props.ddl.createTable
+    }
 })
 
 const formattedIndexes = computed(() => {
     if (!props.ddl.createIndexes?.length) return ''
 
-    // Format each index separately and then join with semicolons and newlines
-    return props.ddl.createIndexes
-        .map(sql => format(sql, getFormattingOptions(props.connectionType)).trim())
-        .join(';\n') + ';'
+    try {
+        // Format each index separately and then join with semicolons and newlines
+        return props.ddl.createIndexes
+            .map(sql => format(sql, getFormattingOptions(props.connectionType)).trim())
+            .join(';\n') + ';'
+    } catch (error) {
+        console.error('Error formatting indexes:', error)
+        return props.ddl.createIndexes.join(';\n') + ';'
+    }
 })
 </script>
 

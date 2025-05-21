@@ -14,7 +14,12 @@ const props = defineProps<{
 const dialect = computed(() => props.connectionType.toLowerCase().includes('mysql') ? 'mysql' : 'postgresql')
 
 const formattedDefinition = computed(() => {
-    return format(props.definition, getFormattingOptions(props.connectionType))
+    try {
+        return format(props.definition, getFormattingOptions(props.connectionType))
+    } catch (error) {
+        console.error('Error formatting view definition:', error)
+        return props.definition
+    }
 })
 </script>
 
