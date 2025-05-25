@@ -35,3 +35,4 @@
     Key Conventions
     - Optimize Web Vitals (LCP, CLS, FID) using tools like Lighthouse or WebPageTest.
     
+    Use yarn for package management.
