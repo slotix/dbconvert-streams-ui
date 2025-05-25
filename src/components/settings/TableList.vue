@@ -51,8 +51,9 @@
       <div v-else class="p-4">
         <div class="space-y-1">
           <template v-for="schemaGroup in groupedTables" :key="schemaGroup.schema">
-            <!-- Schema Header -->
-            <div class="flex items-center justify-between px-3 py-2 text-sm text-gray-700 rounded-md hover:bg-gray-50 cursor-pointer border-b border-gray-100"
+            <!-- Schema Header - only show for PostgreSQL -->
+            <div v-if="sourceConnectionType === 'postgresql' && schemaGroup.schema" 
+              class="flex items-center justify-between px-3 py-2 text-sm text-gray-700 rounded-md hover:bg-gray-50 cursor-pointer border-b border-gray-100"
               @click="toggleSchema(schemaGroup.schema)">
               <div class="flex items-center">
                 <component :is="isSchemaExpanded(schemaGroup.schema) ? ChevronDownIcon : ChevronRightIcon"
@@ -79,8 +80,8 @@
             </div>
 
             <!-- Tables in Schema -->
-            <div v-if="isSchemaExpanded(schemaGroup.schema)"
-              class="space-y-1 ml-4 border-l border-gray-200 pl-4">
+            <div v-if="sourceConnectionType !== 'postgresql' || isSchemaExpanded(schemaGroup.schema)"
+              :class="sourceConnectionType === 'postgresql' && schemaGroup.schema ? 'space-y-1 ml-4 border-l border-gray-200 pl-4' : 'space-y-1'">
               <template v-for="table in schemaGroup.tables" :key="table.name">
                 <!-- Table Row -->
                 <div class="flex items-center justify-between px-3 py-2 text-sm rounded-md hover:bg-gray-50">
@@ -110,7 +111,8 @@
                 </div>
 
                 <!-- Table Settings (immediately under the table) -->
-                <div v-if="selectedTableNames.includes(table.name)" class="ml-8 mt-1 mb-3">
+                <div v-if="selectedTableNames.includes(table.name)" 
+                  :class="sourceConnectionType === 'postgresql' && schemaGroup.schema ? 'ml-8 mt-1 mb-3' : 'ml-4 mt-1 mb-3'">
                   <div class="bg-gray-50 border border-gray-200 rounded-md p-4">
                     <div class="text-xs font-medium text-gray-600 mb-2">
                       Settings for: <span class="font-semibold">{{ getTableDisplayName(table.name) }}</span>
@@ -148,7 +150,17 @@ import { debounce } from 'lodash'
 import { type StreamConfig, type Table } from '@/types/streamConfig'
 
 const streamsStore = useStreamsStore()
+const connectionStore = useConnectionsStore()
 const currentStreamConfig = streamsStore.currentStreamConfig as StreamConfig
+
+// Get the source connection to determine database type
+const sourceConnection = computed(() => {
+  return connectionStore.connections.find(conn => conn.id === currentStreamConfig.source)
+})
+
+const sourceConnectionType = computed(() => {
+  return sourceConnection.value?.type?.toLowerCase() || ''
+})
 
 const tables = ref<Table[]>(
   currentStreamConfig.tables?.map((table) => ({
@@ -190,7 +202,18 @@ const groupedTables = computed<SchemaGroup[]>(() => {
     tables: tables.sort((a, b) => getTableDisplayName(a.name).localeCompare(getTableDisplayName(b.name)))
   }))
 
-  // Sort schemas (public first, then alphabetically)
+  // For non-PostgreSQL databases (like MySQL), don't show schema grouping
+  // Return tables directly without schema headers
+  if (sourceConnectionType.value !== 'postgresql') {
+    // Return a single group with empty schema name to avoid showing schema headers
+    const allTables = groups.flatMap(group => group.tables)
+    return [{
+      schema: '',
+      tables: allTables.sort((a, b) => getTableDisplayName(a.name).localeCompare(getTableDisplayName(b.name)))
+    }]
+  }
+
+  // Sort schemas (public first, then alphabetically) - only for PostgreSQL
   groups.sort((a, b) => {
     if (a.schema === 'public') return -1
     if (b.schema === 'public') return 1
@@ -255,7 +278,13 @@ const totalPages = computed(() => Math.ceil(filteredTables.value.length / itemsP
 // Helper functions
 function getTableSchema(tableName: string): string {
   const parts = tableName.split('.')
-  return parts.length > 1 ? parts[0] : 'public'
+  if (parts.length > 1) {
+    return parts[0]
+  }
+  
+  // For PostgreSQL, default to 'public' schema
+  // For MySQL and others, return empty string (no schema grouping)
+  return sourceConnectionType.value === 'postgresql' ? 'public' : ''
 }
 
 function getTableDisplayName(tableName: string): string {
@@ -264,10 +293,19 @@ function getTableDisplayName(tableName: string): string {
 }
 
 function isSchemaExpanded(schema: string): boolean {
+  // For non-PostgreSQL databases, always show tables (no schema grouping)
+  if (sourceConnectionType.value !== 'postgresql' || schema === '') {
+    return true
+  }
   return expandedSchemas.value.has(schema)
 }
 
 function toggleSchema(schema: string) {
+  // Only allow toggling for PostgreSQL with non-empty schemas
+  if (sourceConnectionType.value !== 'postgresql' || schema === '') {
+    return
+  }
+  
   if (expandedSchemas.value.has(schema)) {
     expandedSchemas.value.delete(schema)
   } else {
