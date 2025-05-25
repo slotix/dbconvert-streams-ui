@@ -31,7 +31,7 @@
               leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
             >
               <DialogPanel
-                class="relative transform overflow-hidden rounded-lg bg-white pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg"
+                class="relative transform overflow-hidden rounded-lg bg-white pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-2xl"
               >
                 <div class="absolute right-0 top-0 hidden pr-4 pt-4 sm:block">
                   <button
@@ -45,7 +45,7 @@
                 </div>
                 <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left">
                   <DialogTitle as="h3" class="text-base font-semibold leading-6 text-gray-900">
-                    {{ dlgTp }} database connection.
+                    {{ modalTitle }}
                   </DialogTitle>
                   <div v-if="isShowDBTypesCombo">
                     <slot name="dbtypes-combo" class="mt-12"></slot>
@@ -56,7 +56,7 @@
                 </div>
                 <div
                   v-if="showActionBtns"
-                  class="bg-gray-100 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6"
+                  class="bg-gray-100 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 mt-6"
                 >
                   <ActionBtns :dlgType="dlgTp" @confirm="confirm" @test="test" @cancel="close" />
                 </div>
@@ -86,6 +86,15 @@ const showModal = computed(() => {
 const dlgTp = computed(() => {
   return useCommonStore().dlgType
 })
+
+const modalTitle = computed(() => {
+  if (currentConnection.value?.id) {
+    return 'Edit database connection'
+  } else {
+    return 'Add database connection'
+  }
+})
+
 const isShowDBTypesCombo = computed(() => {
   return dlgTp.value === DIALOG_TYPES.SAVE
 })

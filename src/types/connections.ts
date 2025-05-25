@@ -1,5 +1,5 @@
 export interface SSLConfig {
-  mode: 'disabled' | 'require' | 'verify-ca' | 'verify-full'
+  mode: string
   ca?: string
   client_cert?: string
   client_key?: string
@@ -15,7 +15,6 @@ export interface Connection {
   password: string
   databasesInfo: DatabaseInfo[]
   database: string
-  schema: string
   created?: number
   ssl?: SSLConfig
 }
@@ -37,4 +36,29 @@ export interface DbType {
 export interface DatabaseInfo {
   name: string
   schemas?: string[]
+}
+
+export interface SchemaFilter {
+  connectionId: string
+  activeSchemas: string[]
+  allSchemas: string[]
+}
+
+export interface MultiSchemaTable {
+  schema: string
+  table: string
+  fullName: string
+  operations: string[]
+}
+
+export interface StreamConfig {
+  name: string
+  source: string
+  target: string
+  mode: string
+  dataBundleSize?: number
+  createStructure?: boolean
+  tables: MultiSchemaTable[]
+  sourceSchemaFilter?: string[]
+  targetSchemaFilter?: string[]
 }

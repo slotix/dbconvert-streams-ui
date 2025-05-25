@@ -98,9 +98,6 @@ onMounted(async () => {
                                 }}</span>
                                 <span class="text-gray-400">•</span>
                                 <span class="font-medium text-gray-700">{{ connection.database }}</span>
-                                <span v-if="connection.schema" class="text-gray-400">•</span>
-                                <span v-if="connection.schema" class="font-medium text-gray-700">{{ connection.schema
-                                }}</span>
                             </div>
                         </div>
                     </div>

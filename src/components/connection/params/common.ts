@@ -77,12 +77,10 @@ export function useCommon<T extends Connection>(defaultConnection: T) {
     try {
       if (!connectionsStore.currentConnection?.id) return
 
-      const currentSchema = connection.schema
       await connectionsStore.getDatabases(connectionsStore.currentConnection.id)
 
-      // Only update the connection while preserving the current schema
-      const updatedConnection = { ...connectionsStore.currentConnection, schema: currentSchema }
-      Object.assign(connection, updatedConnection)
+      // Update the connection with latest database info
+      Object.assign(connection, connectionsStore.currentConnection)
     } catch (err) {
       if (isErrorWithMessage(err)) {
         commonStore.showNotification(err.message, 'error')

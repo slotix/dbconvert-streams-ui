@@ -34,7 +34,7 @@
       <div class="space-y-6 p-6 flex-1 overflow-y-auto">
         <!-- Connection Details -->
         <div class="space-y-4">
-          <div class="grid grid-cols-3 gap-4">
+          <div class="grid grid-cols-2 gap-4">
             <div class="min-w-0">
               <label class="text-xs font-medium uppercase text-gray-500">Host</label>
               <p class="mt-1 font-medium text-gray-900 truncate">{{ concatenateValues }}</p>
@@ -43,15 +43,6 @@
               <label class="text-xs font-medium uppercase text-gray-500">Database</label>
               <p class="mt-1 font-medium text-gray-900 truncate">{{ connection.database }}</p>
             </div>
-            <div v-if="connection.type?.toLowerCase().includes('postgres')" class="min-w-0">
-              <label class="text-xs font-medium uppercase text-gray-500">Schema</label>
-              <p class="mt-1 font-medium text-gray-900 truncate">{{ connection.schema }}</p>
-            </div>
-          </div>
-
-          <div v-if="!connection.type?.toLowerCase().includes('postgres') && connection.schema" class="min-w-0">
-            <label class="text-xs font-medium uppercase text-gray-500">Schema</label>
-            <p class="mt-1 font-medium text-gray-900 truncate">{{ connection.schema }}</p>
           </div>
 
           <div class="min-w-0">
@@ -124,7 +115,8 @@ import {
   CalendarIcon,
   TableCellsIcon,
   EyeIcon,
-  EyeSlashIcon
+  EyeSlashIcon,
+  FunnelIcon
 } from '@heroicons/vue/24/outline'
 import { ref } from 'vue'
 

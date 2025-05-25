@@ -12,42 +12,39 @@
       {{ tab }}
     </button>
   </nav>
-  <div class="container max-w-2xl mx-auto md:w-full">
+  <div class="container mx-auto w-full">
     <keep-alive>
-      <component :is="paramsComponent" />
+      <component :is="paramsComponent" :connectionType="props.connectionType" />
     </keep-alive>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
-import MySQLParams from './MySQLParams.vue'
-import PostgreSQLParams from './PostgreSQLParams.vue'
+import UnifiedConnectionParams from './UnifiedConnectionParams.vue'
 import SSLParams from './SSLParams.vue'
 import { normalizeConnectionType } from '@/utils/connectionUtils'
+import { useConnectionsStore } from '@/stores/connections'
 
 interface Props {
   connectionType: string
 }
 
 const props = defineProps<Props>()
+const connectionsStore = useConnectionsStore()
 
 const tabs = ref(['Direct', 'SSL'])
 const currentTab = ref('')
 
+const currentConnection = computed(() => connectionsStore.currentConnection)
+
 const componentMap = {
-  mysql: MySQLParams,
-  postgresql: PostgreSQLParams,
+  Direct: UnifiedConnectionParams,
   SSL: SSLParams
 }
 
 const paramsComponent = computed(() => {
-  if (currentTab.value === 'Direct') {
-    const normalizedType = normalizeConnectionType(props.connectionType)
-    return componentMap[normalizedType as keyof typeof componentMap] || null
-  } else {
-    return componentMap[currentTab.value as keyof typeof componentMap] || null
-  }
+  return componentMap[currentTab.value as keyof typeof componentMap] || UnifiedConnectionParams
 })
 
 const changeDBType = () => {

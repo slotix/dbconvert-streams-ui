@@ -153,33 +153,19 @@ export const useConnectionsStore = defineStore('connections', {
 
           const databasesInfo = await api.getDatabases(response.id)
           this.currentConnection.databasesInfo = databasesInfo
-
-          if (this.currentConnection.type === 'PostgreSQL' && this.currentConnection.database) {
-            const currentDb = databasesInfo.find(
-              (db) => db.name === this.currentConnection?.database
-            )
-            if (currentDb?.schemas) {
-              this.currentConnection.schema = currentDb.schemas[0]
-            }
-          }
+          // Schema handling moved to explorer/stream contexts
         }
       } catch (error) {
         console.error('[Store] Failed to create connection:', error)
         throw error
       }
     },
-    async updateConnection() {
-      this.isUpdatingConnection = true
+    async updateConnection(): Promise<void> {
       try {
-        if (!this.currentConnection) return
-
         await api.updateConnection()
-        await this.refreshConnections()
       } catch (error) {
-        console.error('Failed to update connection:', error)
+        console.error('[Store] Failed to update connection:', error)
         throw error
-      } finally {
-        this.isUpdatingConnection = false
       }
     },
     async getDatabases(connectionId: string) {
@@ -187,20 +173,7 @@ export const useConnectionsStore = defineStore('connections', {
       try {
         const databases = await api.getDatabases(connectionId)
         this.currentConnection!.databasesInfo = databases
-
-        // Only set schema if it's a new connection or if current schema doesn't exist in the database
-        if (this.currentConnection!.type === 'PostgreSQL') {
-          const currentDb = databases.find((db) => db.name === this.currentConnection?.database)
-          if (currentDb?.schemas) {
-            // Only set schema if it's not already set or if current schema is not in the list
-            if (
-              !this.currentConnection!.schema ||
-              !currentDb.schemas.includes(this.currentConnection!.schema)
-            ) {
-              this.currentConnection!.schema = currentDb.schemas[0]
-            }
-          }
-        }
+        // Schema handling moved to explorer/stream contexts
       } finally {
         this.isLoadingDatabases = false
       }
@@ -244,6 +217,11 @@ export const useConnectionsStore = defineStore('connections', {
         console.error('Failed to get tables:', error)
         throw error
       }
+    },
+    // Helper to check if a connection supports multi-schema operations
+    supportsMultiSchema(connectionId: string): boolean {
+      const connection = this.connections.find(conn => conn.id === connectionId)
+      return connection?.type === 'PostgreSQL' || connection?.type === 'SQL Server' || connection?.type === 'Oracle'
     }
   }
 })

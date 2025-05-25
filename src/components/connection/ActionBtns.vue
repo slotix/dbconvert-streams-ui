@@ -68,6 +68,10 @@ const showTestConnectionBtn = computed(() => {
   return true
 })
 const buttonTitle = computed(() => {
-  return currentConnection.value?.id ? DIALOG_TYPES.UPDATE : props.dlgType
+  if (currentConnection.value?.id) {
+    return 'Update Connection'
+  } else {
+    return 'Add Connection'
+  }
 })
 </script>
