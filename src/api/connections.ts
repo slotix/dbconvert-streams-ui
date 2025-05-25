@@ -310,38 +310,6 @@ const getViewData = async (
   }
 }
 
-const getActiveSchemas = async (id: string): Promise<{activeSchemas: string[], allSchemas: string[]}> => {
-  const commonStore = useCommonStore()
-  validateApiKey(commonStore.apiKey)
-  try {
-    const response: AxiosResponse<{activeSchemas: string[], allSchemas: string[]}> = await apiClient.get(
-      `/connections/${id}/schemas/config`,
-      {
-        headers: { 'X-API-Key': commonStore.apiKey }
-      }
-    )
-    return response.data
-  } catch (error) {
-    throw handleApiError(error)
-  }
-}
-
-const setActiveSchemas = async (id: string, schemas: string[]): Promise<void> => {
-  const commonStore = useCommonStore()
-  validateApiKey(commonStore.apiKey)
-  try {
-    await apiClient.put(
-      `/connections/${id}/schemas/config`,
-      { activeSchemas: schemas },
-      {
-        headers: { 'X-API-Key': commonStore.apiKey }
-      }
-    )
-  } catch (error) {
-    throw handleApiError(error)
-  }
-}
-
 export default {
   getConnections,
   createConnection,
@@ -356,7 +324,5 @@ export default {
   getMetadata,
   getTableData,
   getViews,
-  getViewData,
-  getActiveSchemas,
-  setActiveSchemas
+  getViewData
 }
