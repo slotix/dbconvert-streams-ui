@@ -105,7 +105,6 @@ export default defineComponent({
       }
       try {
         await useStreamsStore().deleteStreamConfig(this.streamConfig.id)
-        await useStreamsStore().refreshStreams()
         useCommonStore().showNotification('Stream deleted', 'success')
       } catch (e: unknown) {
         if (e instanceof Error) {

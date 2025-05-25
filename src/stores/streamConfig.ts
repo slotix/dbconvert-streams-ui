@@ -208,18 +208,21 @@ export const useStreamsStore = defineStore('streams', {
         throw error
       }
     }, 500),
-    deleteStreamConfig: debounce(async function (this: State, configID: string) {
+    deleteStreamConfig: async function (this: State, configID: string) {
       try {
+        // First call the API to delete the stream
+        await api.deleteStream(configID)
+        
+        // Only update local state after successful API call
         const index = this.streamConfigs.findIndex((stream: StreamConfig) => stream.id === configID)
         if (index !== -1) {
           this.streamConfigs.splice(index, 1)
         }
-        await api.deleteStream(configID)
       } catch (error) {
         console.error('Failed to delete stream:', error)
         throw error
       }
-    }, 500),
+    },
     async cloneStreamConfig(configID: string) {
       try {
         const resp = (await api.cloneStreamConfig(configID)) as unknown as StreamConfig
