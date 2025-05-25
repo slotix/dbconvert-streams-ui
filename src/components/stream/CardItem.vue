@@ -53,7 +53,12 @@
               <div class="flex items-center justify-between col-span-2 -mb-1">
                 <label class="text-xs font-medium uppercase text-gray-500">Source Connection</label>
                 <span
-                  class="inline-flex items-center rounded-md bg-green-50 px-3 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20"
+                  :class="[
+                    'inline-flex items-center rounded-md px-3 py-1 text-xs font-medium ring-1 ring-inset',
+                    streamConfig.mode === 'cdc'
+                      ? 'bg-orange-50 text-orange-700 ring-orange-600/20'
+                      : 'bg-green-50 text-green-700 ring-green-600/20'
+                  ]"
                 >
                   {{ streamConfig.mode }}
                 </span>

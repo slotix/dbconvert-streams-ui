@@ -68,7 +68,7 @@
                   :class="[
                     'rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset',
                     config.mode === 'cdc'
-                      ? 'bg-blue-50 text-blue-700 ring-blue-600/20'
+                      ? 'bg-orange-50 text-orange-700 ring-orange-600/20'
                       : 'bg-green-50 text-green-700 ring-green-600/20'
                   ]"
                 >
