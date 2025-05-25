@@ -15,73 +15,124 @@
         Refresh tables
       </button>
     </div>
-    <table
-      class="min-w-full table-fixed divide-y divide-gray-300 border border-gray-400 rounded-md"
-    >
-      <thead v-if="paginatedTables.length > 0">
-        <tr class="bg-gray-100">
-          <th scope="col" class="relative px-7 sm:w-12 sm:px-6">
-            <input
-              id="table-select-all"
-              type="checkbox"
-              class="absolute left-4 top-1/2 -mt-2 h-4 w-4 rounded border-gray-200 text-gray-600 focus:ring-gray-600"
-              :checked="selectAllCheckboxState"
-              :indeterminate="indeterminate"
-              @change="toggleSelectAll"
-            />
-          </th>
-          <th
-            scope="col"
-            colspan="2"
-            class="min-w-[10rem] py-3.5 pr-3 text-left uppercase text-sm font-normal text-gray-800"
-          >
-            <div class="relative rounded-md shadow-sm">
-              <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                <FunnelIcon class="h-5 w-5 text-gray-400" aria-hidden="true" />
+
+    <!-- Search and Select All Controls -->
+    <div class="mb-4 space-y-3">
+      <div class="flex items-center gap-4">
+        <div class="flex-1">
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="Filter tables..."
+            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500 sm:text-sm"
+          />
+        </div>
+        <div class="flex items-center">
+          <input
+            :id="'select-all-checkbox'"
+            :checked="selectAllCheckboxState"
+            :indeterminate="indeterminate"
+            type="checkbox"
+            class="h-4 w-4 text-gray-600 focus:ring-gray-500 border-gray-300 rounded"
+            @change="toggleSelectAll"
+          />
+          <label :for="'select-all-checkbox'" class="ml-2 text-sm text-gray-700">
+            Select All
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Schema-grouped Table List -->
+    <div class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg divide-y divide-gray-200">
+      <div v-if="!groupedTables.length" class="text-center text-gray-500 py-8">
+        No tables found
+      </div>
+      <div v-else class="p-4">
+        <div class="space-y-1">
+          <template v-for="schemaGroup in groupedTables" :key="schemaGroup.schema">
+            <!-- Schema Header -->
+            <div class="flex items-center justify-between px-3 py-2 text-sm text-gray-700 rounded-md hover:bg-gray-50 cursor-pointer border-b border-gray-100"
+              @click="toggleSchema(schemaGroup.schema)">
+              <div class="flex items-center">
+                <component :is="isSchemaExpanded(schemaGroup.schema) ? ChevronDownIcon : ChevronRightIcon"
+                  class="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
+                <span class="font-medium">{{ schemaGroup.schema }}</span>
+                <span class="ml-2 text-xs text-gray-500 bg-gray-100 rounded-full px-2 py-0.5">
+                  {{ schemaGroup.tables.length }}
+                </span>
               </div>
-              <input
-                id="table-search"
-                v-model="searchQuery"
-                type="text"
-                placeholder="Filter tables..."
-                class="block w-full rounded-md border border-gray-300 py-1.5 pl-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-gray-600 sm:text-sm sm:leading-6"
-              />
+              <div class="flex items-center gap-2">
+                <button
+                  @click.stop="selectAllInSchema(schemaGroup.schema)"
+                  class="text-xs text-blue-600 hover:text-blue-800"
+                >
+                  Select All
+                </button>
+                <button
+                  @click.stop="clearAllInSchema(schemaGroup.schema)"
+                  class="text-xs text-gray-500 hover:text-gray-700"
+                >
+                  Clear All
+                </button>
+              </div>
             </div>
-          </th>
-        </tr>
-      </thead>
-      <tbody v-if="paginatedTables.length > 0" class="divide-y divide-gray-200 bg-white">
-        <TableRow
-          v-for="table in paginatedTables"
-          :key="table.name"
-          :table="table"
-          :isSelected="selectedTableNames.includes(table.name)"
-          :colspan="totalColumns"
-          @selectTable="toggleTableSettings"
-          @checkboxChange="handleCheckboxChange"
-          @toggleSettings="toggleTableSettings"
-        >
-          <!-- This slot will be used to add a button to toggle the settings panel -->
-          <template #default>
-            <TableSettings
-              v-if="selectedTableNames.includes(table.name)"
-              :table="table"
-              class="ml-10"
-            />
+
+            <!-- Tables in Schema -->
+            <div v-if="isSchemaExpanded(schemaGroup.schema)"
+              class="space-y-1 ml-4 border-l border-gray-200 pl-4">
+              <template v-for="table in schemaGroup.tables" :key="table.name">
+                <!-- Table Row -->
+                <div class="flex items-center justify-between px-3 py-2 text-sm rounded-md hover:bg-gray-50">
+                  <div class="flex items-center flex-1">
+                    <input
+                      :id="`table-${table.name}`"
+                      v-model="table.selected"
+                      type="checkbox"
+                      class="h-4 w-4 text-gray-600 focus:ring-gray-500 border-gray-300 rounded mr-3"
+                      @change="handleCheckboxChange(table, ($event.target as HTMLInputElement)?.checked || false)"
+                    />
+                    <TableCellsIcon class="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
+                    <label :for="`table-${table.name}`" class="cursor-pointer flex-1">
+                      {{ getTableDisplayName(table.name) }}
+                    </label>
+                  </div>
+                  <button
+                    v-if="table.selected"
+                    @click="toggleTableSettings(table.name)"
+                    class="text-xs font-medium transition-colors"
+                    :class="selectedTableNames.includes(table.name) 
+                      ? 'text-red-600 hover:text-red-800' 
+                      : 'text-blue-600 hover:text-blue-800'"
+                  >
+                    {{ selectedTableNames.includes(table.name) ? '▲ Hide Options' : '▼ Show Options' }}
+                  </button>
+                </div>
+
+                <!-- Table Settings (immediately under the table) -->
+                <div v-if="selectedTableNames.includes(table.name)" class="ml-8 mt-1 mb-3">
+                  <div class="bg-gray-50 border border-gray-200 rounded-md p-4">
+                    <div class="text-xs font-medium text-gray-600 mb-2">
+                      Settings for: <span class="font-semibold">{{ getTableDisplayName(table.name) }}</span>
+                    </div>
+                    <TableSettings :table="table" />
+                  </div>
+                </div>
+              </template>
+            </div>
           </template>
-        </TableRow>
-      </tbody>
-      <tbody v-else>
-        <tr>
-          <td colspan="5" class="text-gray-600 py-4 text-center">No tables found</td>
-        </tr>
-      </tbody>
-    </table>
-    <Pagination
-      :totalPages="filteredTables.length"
-      :itemsPerPage="itemsPerPage"
-      @update:currentPage="updateCurrentPage"
-    />
+        </div>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <div v-if="totalPages > 1" class="mt-4">
+      <Pagination
+        :totalPages="totalPages"
+        :itemsPerPage="itemsPerPage"
+        @update:currentPage="updateCurrentPage"
+      />
+    </div>
   </div>
 </template>
 
@@ -92,8 +143,7 @@ import { useCommonStore } from '@/stores/common'
 import { useConnectionsStore } from '@/stores/connections'
 import Pagination from '@/components/common/Pagination.vue'
 import TableSettings from './TableSettings.vue'
-import TableRow from './TableRow.vue'
-import { FunnelIcon } from '@heroicons/vue/24/outline'
+import { ChevronRightIcon, ChevronDownIcon, TableCellsIcon } from '@heroicons/vue/24/outline'
 import { debounce } from 'lodash'
 import { type StreamConfig, type Table } from '@/types/streamConfig'
 
@@ -103,26 +153,79 @@ const currentStreamConfig = streamsStore.currentStreamConfig as StreamConfig
 const tables = ref<Table[]>(
   currentStreamConfig.tables?.map((table) => ({
     name: table.name,
-    operations: table.operations ?? defaultStreamConfigOptions.operations ?? [], // Default to operations if undefined
-    skipIndexCreation: table.skipIndexCreation !== undefined ? table.skipIndexCreation : false, // Default value for createIndexes
+    operations: table.operations ?? defaultStreamConfigOptions.operations ?? [],
+    skipIndexCreation: table.skipIndexCreation !== undefined ? table.skipIndexCreation : false,
     query: table.query,
     selected: true
   })) || []
 )
+
+const searchQuery = ref('')
+const selectedTableNames = ref<string[]>([])
+const expandedSchemas = ref(new Set<string>())
+const schemasInitialized = ref(false)
+
+// Schema grouping logic
+interface SchemaGroup {
+  schema: string
+  tables: Table[]
+}
+
+const groupedTables = computed<SchemaGroup[]>(() => {
+  const filtered = filteredTables.value
+  const schemaMap = new Map<string, Table[]>()
+
+  // Group tables by schema
+  filtered.forEach(table => {
+    const schema = getTableSchema(table.name)
+    if (!schemaMap.has(schema)) {
+      schemaMap.set(schema, [])
+    }
+    schemaMap.get(schema)!.push(table)
+  })
+
+  // Convert to array and sort
+  const groups = Array.from(schemaMap.entries()).map(([schema, tables]) => ({
+    schema,
+    tables: tables.sort((a, b) => getTableDisplayName(a.name).localeCompare(getTableDisplayName(b.name)))
+  }))
+
+  // Sort schemas (public first, then alphabetically)
+  groups.sort((a, b) => {
+    if (a.schema === 'public') return -1
+    if (b.schema === 'public') return 1
+    return a.schema.localeCompare(b.schema)
+  })
+
+  // Initialize schema expansion only once
+  if (!schemasInitialized.value && groups.length > 0) {
+    if (groups.length === 1) {
+      // Single schema: auto-expand it
+      expandedSchemas.value.add(groups[0].schema)
+    } else {
+      // Multiple schemas: expand public schema by default if it exists, otherwise expand the first one
+      const publicSchema = groups.find(g => g.schema === 'public')
+      if (publicSchema) {
+        expandedSchemas.value.add('public')
+      } else {
+        expandedSchemas.value.add(groups[0].schema)
+      }
+    }
+    schemasInitialized.value = true
+  }
+
+  return groups
+})
 
 const filteredTables = computed(() => {
   if (!searchQuery.value) {
     return tables.value
   }
   const query = searchQuery.value.toLowerCase()
-  currentPage.value = 1
-  return tables.value.filter((item) => item?.name.toLowerCase().includes(query))
-})
-
-const paginatedTables = computed(() => {
-  const startIndex = (currentPage.value - 1) * itemsPerPage
-  const endIndex = startIndex + itemsPerPage
-  return filteredTables.value.slice(startIndex, endIndex)
+  return tables.value.filter((item) => 
+    getTableDisplayName(item.name).toLowerCase().includes(query) ||
+    item.name.toLowerCase().includes(query)
+  )
 })
 
 const checkedTables = computed(() => {
@@ -133,37 +236,84 @@ const checkedTablesCount = computed(() => {
   return checkedTables.value.length
 })
 
-const searchQuery = ref('')
-
-const selectedTableNames = ref<string[]>([])
-const toggleTableSettings = (tableName: string) => {
-  const index = selectedTableNames.value.indexOf(tableName)
-  if (index > -1) {
-    selectedTableNames.value.splice(index, 1) // Remove if open
-  } else {
-    selectedTableNames.value.push(tableName) // Add if not open
-  }
-}
-
-const handleCheckboxChange = (table: Table, checked: boolean) => {
-  table.selected = checked
-  // If additional logic is required when a checkbox changes, add it here.
-  // For example, you may want to emit an event or call an API.
-}
-
-const totalColumns = computed(() => {
-  return 3
-})
-
 const indeterminate = computed(() => {
   const selectedCount = checkedTablesCount.value
   return selectedCount > 0 && selectedCount < tables.value.length
 })
 
-let currentPage = ref(1)
-const itemsPerPage = 10 // Set the number of items to display per page
+const selectAllCheckboxState = computed(() => {
+  const allSelected = tables.value.every((table) => table.selected)
+  const noneSelected = tables.value.every((table) => !table.selected)
+  return allSelected || noneSelected ? allSelected : false
+})
 
-const updateCurrentPage = (newPage: number) => {
+// Pagination
+const currentPage = ref(1)
+const itemsPerPage = 50 // Increase since we're grouping
+const totalPages = computed(() => Math.ceil(filteredTables.value.length / itemsPerPage))
+
+// Helper functions
+function getTableSchema(tableName: string): string {
+  const parts = tableName.split('.')
+  return parts.length > 1 ? parts[0] : 'public'
+}
+
+function getTableDisplayName(tableName: string): string {
+  const parts = tableName.split('.')
+  return parts.length > 1 ? parts[1] : tableName
+}
+
+function isSchemaExpanded(schema: string): boolean {
+  return expandedSchemas.value.has(schema)
+}
+
+function toggleSchema(schema: string) {
+  if (expandedSchemas.value.has(schema)) {
+    expandedSchemas.value.delete(schema)
+  } else {
+    expandedSchemas.value.add(schema)
+  }
+}
+
+function selectAllInSchema(schema: string) {
+  const schemaGroup = groupedTables.value.find(g => g.schema === schema)
+  if (schemaGroup) {
+    schemaGroup.tables.forEach(table => {
+      table.selected = true
+    })
+  }
+}
+
+function clearAllInSchema(schema: string) {
+  const schemaGroup = groupedTables.value.find(g => g.schema === schema)
+  if (schemaGroup) {
+    schemaGroup.tables.forEach(table => {
+      table.selected = false
+    })
+  }
+}
+
+function toggleTableSettings(tableName: string) {
+  const index = selectedTableNames.value.indexOf(tableName)
+  if (index > -1) {
+    selectedTableNames.value.splice(index, 1)
+  } else {
+    selectedTableNames.value.push(tableName)
+  }
+}
+
+function handleCheckboxChange(table: Table, checked: boolean) {
+  table.selected = checked
+}
+
+function toggleSelectAll(event: Event) {
+  const selectAll = (event.target as HTMLInputElement).checked
+  filteredTables.value.forEach((table) => {
+    table.selected = selectAll
+  })
+}
+
+function updateCurrentPage(newPage: number) {
   currentPage.value = newPage
 }
 
@@ -202,8 +352,11 @@ const refreshTables = async () => {
     tables.value = tablesResponse.map((entry: any) =>
       createTableObject(entry, currentStreamConfig.mode)
     )
+    // Reset schema initialization so expansion logic runs again
+    schemasInitialized.value = false
+    expandedSchemas.value.clear()
   } catch (err) {
-    tables.value = [] // Clear the tables in case of an error
+    tables.value = []
     if (err instanceof Error) {
       commonStore.showNotification(err.message, 'error')
     } else {
@@ -211,6 +364,7 @@ const refreshTables = async () => {
     }
   }
 }
+
 watch(
   () => currentStreamConfig.source,
   async (newSource, oldSource) => {
@@ -219,24 +373,8 @@ watch(
     }
   }
 )
-// Wrap the refreshTables function with lodash's debounce
-const debouncedRefreshTables = debounce(refreshTables, 500) // Debounce for 500 milliseconds
 
-// Define selectAllCheckboxState and toggleSelectAll
-let selectAllCheckboxState = computed(() => {
-  const allSelected = tables.value.every((table) => table.selected)
-  const noneSelected = tables.value.every((table) => !table.selected)
-
-  return allSelected || noneSelected ? allSelected : false
-})
-
-const toggleSelectAll = ($event: Event) => {
-  const selectAll = ($event.target as HTMLInputElement).checked
-
-  filteredTables.value.forEach((table) => {
-    table.selected = selectAll
-  })
-}
+const debouncedRefreshTables = debounce(refreshTables, 500)
 
 watch(
   checkedTables,
