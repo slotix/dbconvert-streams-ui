@@ -75,10 +75,12 @@ function getColumnType(column: any) {
         <div class="px-4 py-3 border-b border-gray-200">
             <div class="flex items-center justify-between">
                 <h3 class="text-lg font-medium leading-6 text-gray-900">
-                    {{ viewMeta.name }}
-                    <span v-if="viewMeta.schema" class="text-sm text-gray-500">
-                        ({{ viewMeta.schema }})
-                    </span>
+                    <template v-if="viewMeta.schema && viewMeta.schema !== 'public' && viewMeta.schema !== ''">
+                        {{ viewMeta.schema }}.{{ viewMeta.name }}
+                    </template>
+                    <template v-else>
+                        {{ viewMeta.name }}
+                    </template>
                     <span v-if="viewMeta.isMaterialized" class="text-sm text-gray-500 ml-2">(Materialized)</span>
                 </h3>
                 <button type="button"

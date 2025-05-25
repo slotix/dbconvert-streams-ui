@@ -169,6 +169,38 @@ function determineRelationshipType(relation: Relationship, isJunctionRelation = 
     }
 }
 
+// Add this helper function before the createVisualization function
+function formatColumnType(column: any): string {
+    // The schema store already formats types with size info, so we just need to apply shortcuts
+    let type = column.type || ''
+    
+    // Shorten common long type names while preserving size information
+    const typeShortcuts: { [key: string]: string } = {
+        'timestamp without time zone': 'timestamp',
+        'timestamp with time zone': 'timestamptz',
+        'character varying': 'varchar',
+        'character': 'char',
+        'double precision': 'double',
+        'bigint': 'bigint',
+        'smallint': 'smallint',
+        'boolean': 'bool',
+        'text': 'text',
+        'integer': 'int'
+    }
+    
+    // Apply shortcuts while preserving size information
+    for (const [longForm, shortForm] of Object.entries(typeShortcuts)) {
+        if (type.toLowerCase().startsWith(longForm)) {
+            // Replace the type name but keep any size info that follows
+            const sizeMatch = type.match(/\(.*\)$/)
+            type = shortForm + (sizeMatch ? sizeMatch[0] : '')
+            break
+        }
+    }
+    
+    return type
+}
+
 // Create the visualization
 function createVisualization() {
     if (!svgContainer.value) return
@@ -643,7 +675,7 @@ function createVisualization() {
     // Add table background
     node.append('rect')
         .attr('class', 'table-background')
-        .attr('width', 200)
+        .attr('width', 200) // Reverted back to 200
         .attr('height', d => {
             const columnCount = props.tables.find(t => t.name === d.name)?.columns.length ||
                 props.views.find(v => v.name === d.name)?.columns.length || 0
@@ -663,7 +695,7 @@ function createVisualization() {
 
     // Header background - rounded only at the top corners
     header.append('rect')
-        .attr('width', 200)
+        .attr('width', 200) // Reverted back to 200
         .attr('height', 30)
         .attr('rx', 8)
         .attr('ry', 8)
@@ -672,14 +704,14 @@ function createVisualization() {
         .attr('stroke-width', 1.5)
         .attr('stroke-dasharray', d => d.isView ? '5,2' : 'none')
         // Clip bottom corners to make them square
-        .attr('clip-path', 'path("M0,30 L0,8 Q0,0 8,0 L192,0 Q200,0 200,8 L200,30 Z")')
+        .attr('clip-path', 'path("M0,30 L0,8 Q0,0 8,0 L192,0 Q200,0 200,8 L200,30 Z")') // Reverted back to 200 width
 
     // Add small view icon for views in the header
     header.filter(d => d.isView)
         .append('foreignObject')
         .attr('width', 20)
         .attr('height', 20)
-        .attr('x', 172)  // Move closer to right side (was 165)
+        .attr('x', 172)  // Reverted back to 172
         .attr('y', 5)
         .attr('class', 'view-icon')
         .html(`
@@ -693,7 +725,7 @@ function createVisualization() {
     // Add table body with straight top edge
     node.append('rect')
         .attr('class', 'table-body')
-        .attr('width', 200)
+        .attr('width', 200) // Reverted back to 200
         .attr('height', d => {
             const columnCount = props.tables.find(t => t.name === d.name)?.columns.length ||
                 props.views.find(v => v.name === d.name)?.columns.length || 0
@@ -706,7 +738,13 @@ function createVisualization() {
         .attr('stroke-dasharray', d => d.isView ? '5,2' : 'none')
 
     header.append('text')
-        .text(d => d.name)
+        .text(d => {
+            // Show schema-qualified name for non-public schemas
+            if (d.schema && d.schema !== 'public' && d.schema !== '') {
+                return `${d.schema}.${d.name}`
+            }
+            return d.name
+        })
         .attr('x', 10)
         .attr('y', 20)
         .attr('fill', '#1e293b')
@@ -734,7 +772,7 @@ function createVisualization() {
             // Subtle row background for alternating rows
             if (i % 2 === 1) {
                 row.append('rect')
-                    .attr('width', 200)
+                    .attr('width', 200) // Reverted back to 200
                     .attr('height', 20)
                     .attr('fill', '#f1f5f9')
                     .attr('opacity', 0.5)
@@ -759,6 +797,27 @@ function createVisualization() {
                 .text(prefix + col.name)
                 .style('cursor', 'help');
 
+            // Measure the column name text width to prevent overlap
+            const colFieldNode = colField.node()
+            const colFieldWidth = colFieldNode ? colFieldNode.getBBox().width : 0
+            
+            // Calculate safe position for type text (minimum 10px gap)
+            const minGap = 10
+            const maxTypeX = 190 // Original position
+            const safeTypeX = Math.max(10 + colFieldWidth + minGap, maxTypeX - 60) // Ensure at least 60px for type
+            
+            // If the column name is too long, truncate it with ellipsis
+            const maxColumnWidth = 190 - 10 - minGap - 60 // Available space for column name
+            if (colFieldWidth > maxColumnWidth) {
+                // Truncate the text and add ellipsis
+                let truncatedText = prefix + col.name
+                const colFieldNodeForTruncation = colField.node()
+                while (colFieldNodeForTruncation && colFieldNodeForTruncation.getBBox().width > maxColumnWidth && truncatedText.length > prefix.length + 3) {
+                    truncatedText = truncatedText.slice(0, -1)
+                    colField.text(truncatedText + '...')
+                }
+            }
+
             // Add hover functionality for fields
             if (isPK || isFK) {
                 colField.on('mouseenter', function (event) {
@@ -770,7 +829,11 @@ function createVisualization() {
                         props.tables.forEach(t => {
                             t.foreignKeys?.forEach(fk => {
                                 if (fk.referencedTable === d.name && fk.referencedColumn === col.name) {
-                                    relationships.push(`${t.name}.${fk.sourceColumn} references this column`);
+                                    // Show schema-qualified name for non-public schemas
+                                    const tableName = t.schema && t.schema !== 'public' && t.schema !== '' 
+                                        ? `${t.schema}.${t.name}` 
+                                        : t.name
+                                    relationships.push(`${tableName}.${fk.sourceColumn} references this column`);
                                 }
                             });
                         });
@@ -780,7 +843,12 @@ function createVisualization() {
                         // Find the referenced table/column
                         table.foreignKeys?.forEach(fk => {
                             if (fk.sourceColumn === col.name) {
-                                relationships.push(`References ${fk.referencedTable}.${fk.referencedColumn}`);
+                                // Find the referenced table to get its schema
+                                const referencedTable = props.tables.find(t => t.name === fk.referencedTable)
+                                const referencedTableName = referencedTable?.schema && referencedTable.schema !== 'public' && referencedTable.schema !== '' 
+                                    ? `${referencedTable.schema}.${referencedTable.name}` 
+                                    : fk.referencedTable
+                                relationships.push(`References ${referencedTableName}.${fk.referencedColumn}`);
                             }
                         });
                     }
@@ -807,12 +875,18 @@ function createVisualization() {
                     text.append('tspan')
                         .attr('x', 8)
                         .attr('dy', 0)
-                        .text(`${d.name}.${col.name}`);
+                        .text(() => {
+                            // Show schema-qualified name for non-public schemas
+                            const tableName = d.schema && d.schema !== 'public' && d.schema !== '' 
+                                ? `${d.schema}.${d.name}` 
+                                : d.name
+                            return `${tableName}.${col.name}`
+                        })
 
                     text.append('tspan')
                         .attr('x', 8)
                         .attr('dy', 18)
-                        .text(`Type: ${col.type}${isPK ? ', Primary Key' : ''}${isFK ? ', Foreign Key' : ''}`);
+                        .text(`Type: ${formatColumnType(col)}${isPK ? ', Primary Key' : ''}${isFK ? ', Foreign Key' : ''}`);
 
                     // Add relationship info
                     relationships.forEach((rel, i) => {
@@ -879,14 +953,14 @@ function createVisualization() {
                     });
             }
 
-            // Column type
+            // Column type - positioned at the right with more space
             row.append('text')
-                .attr('x', 190)
+                .attr('x', 190) // Reverted back to 190
                 .attr('y', 14)
                 .attr('text-anchor', 'end')
                 .attr('fill', '#64748b')
                 .style('font-size', '11px')
-                .text(col.type)
+                .text(formatColumnType(col))
         })
     })
 
@@ -909,7 +983,7 @@ function createVisualization() {
                     source.y || 0,
                     target.x || 0,
                     target.y || 0,
-                    200,
+                    200, // Reverted back to 200
                     getTableHeight(source),
                     true // Add padding for better visibility
                 )
@@ -923,7 +997,7 @@ function createVisualization() {
                     source.y || 0,
                     target.x || 0,
                     target.y || 0,
-                    200,
+                    200, // Reverted back to 200
                     getTableHeight(source),
                     true // Add padding for better visibility
                 )
@@ -937,7 +1011,7 @@ function createVisualization() {
                     target.y || 0,
                     source.x || 0,
                     source.y || 0,
-                    200,
+                    200, // Reverted back to 200
                     getTableHeight(target),
                     true // Add padding for better visibility
                 )
@@ -951,7 +1025,7 @@ function createVisualization() {
                     target.y || 0,
                     source.x || 0,
                     source.y || 0,
-                    200,
+                    200, // Reverted back to 200
                     getTableHeight(target),
                     true // Add padding for better visibility
                 )

@@ -151,10 +151,12 @@ function getColumnExtra(column: typeof columns.value[0]) {
     <div class="px-4 py-3 border-b border-gray-200">
       <div class="flex items-center justify-between">
         <h3 class="text-lg font-medium leading-6 text-gray-900">
-          {{ tableMeta?.name || '' }}
-          <span v-if="tableMeta?.schema" class="text-sm text-gray-500">
-            ({{ tableMeta.schema }})
-          </span>
+          <template v-if="tableMeta?.schema && tableMeta.schema !== 'public' && tableMeta.schema !== ''">
+            {{ tableMeta.schema }}.{{ tableMeta?.name || '' }}
+          </template>
+          <template v-else>
+            {{ tableMeta?.name || '' }}
+          </template>
         </h3>
         <button type="button"
           class="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm border border-gray-200 hover:bg-gray-50 transition-colors duration-150 focus:outline-none focus:ring-1 focus:ring-gray-300 focus:ring-offset-1"
@@ -207,13 +209,13 @@ function getColumnExtra(column: typeof columns.value[0]) {
                     <tr v-for="column in columns" :key="column.name" class="hover:bg-gray-50">
                       <td class="whitespace-nowrap px-3 py-2 text-sm">
                         <div class="flex items-center">
-                          <span class="font-medium text-gray-900">{{ column.name }}</span>
-                          <div class="ml-2 flex items-center space-x-1">
+                          <div class="mr-2 flex items-center space-x-1">
                             <KeyIcon v-if="column.isPrimaryKey" :style="`color: ${BRAND_COLORS.primary}`"
                               class="h-4 w-4" title="Primary Key" />
                             <LinkIcon v-if="column.isForeignKey" :style="`color: ${BRAND_COLORS.secondary}`"
                               class="h-4 w-4" title="Foreign Key" />
                           </div>
+                          <span class="font-medium text-gray-900">{{ column.name }}</span>
                         </div>
                       </td>
                       <td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">

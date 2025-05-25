@@ -72,10 +72,10 @@ export const useSchemaStore = defineStore('schema', {
 
                             // Format type with length/precision
                             let formattedType = col.dataType
-                            if (col.length?.valid && col.length.int64 !== null) {
-                                formattedType += `(${col.length.int64})`
-                            } else if (col.precision?.valid && col.precision.int64 !== null) {
-                                formattedType += `(${col.precision.int64}${col.scale?.valid ? `,${col.scale.int64}` : ''})`
+                            if (col.length?.Valid && col.length.Int64 !== null) {
+                                formattedType += `(${col.length.Int64})`
+                            } else if (col.precision?.Valid && col.precision.Int64 !== null) {
+                                formattedType += `(${col.precision.Int64}${col.scale?.Valid ? `,${col.scale.Int64}` : ''})`
                             }
 
                             return {

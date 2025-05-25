@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
-import { ArrowPathIcon, KeyIcon } from '@heroicons/vue/24/outline'
+import { ArrowPathIcon, KeyIcon, LinkIcon } from '@heroicons/vue/24/outline'
 import { type SQLTableMeta, type SQLViewMeta } from '@/types/metadata'
 import connections from '@/api/connections'
 
@@ -53,6 +53,8 @@ async function loadTableData() {
 
   try {
     const objectName = getObjectName(props.tableMeta)
+    const objectSchema = getObjectSchema(props.tableMeta)
+    
     if (!objectName) {
       throw new Error('Table/View name is undefined')
     }
@@ -67,17 +69,21 @@ async function loadTableData() {
       ? (currentPage.value - 1) * itemsPerPage.value
       : Math.max(0, (currentPage.value - 1) * itemsPerPage.value)
 
+    // For non-public schemas, use schema-qualified name in the URL path
+    // For public schema or no schema, use just the table name
+    const apiObjectName = objectSchema && objectSchema !== 'public' && objectSchema !== ''
+      ? `${objectSchema}.${objectName}`
+      : objectName
+
     const params = {
       limit: itemsPerPage.value,
       offset: offset,
-      skip_count: skipCount.value,
-      schema: getObjectSchema(props.tableMeta)
+      skip_count: skipCount.value
     }
 
-
     const data = props.isView
-      ? await connections.getViewData(props.connectionId, objectName, params)
-      : await connections.getTableData(props.connectionId, objectName, params)
+      ? await connections.getViewData(props.connectionId, apiObjectName, params)
+      : await connections.getTableData(props.connectionId, apiObjectName, params)
 
     tableData.value = data
 
@@ -182,6 +188,12 @@ const primaryKeyColumns = computed(() => {
   if (props.isView) return new Set()
   return new Set((props.tableMeta as SQLTableMeta).primaryKeys || [])
 })
+
+const foreignKeyColumns = computed(() => {
+  if (props.isView) return new Set()
+  const foreignKeys = (props.tableMeta as SQLTableMeta).foreignKeys || []
+  return new Set(foreignKeys.map((fk: any) => fk.sourceColumn))
+})
 </script>
 
 <template>
@@ -193,10 +205,12 @@ const primaryKeyColumns = computed(() => {
     <div class="px-4 py-3 border-b border-gray-200">
       <div class="flex items-center justify-between">
         <h3 class="text-lg font-medium leading-6 text-gray-900">
-          {{ getObjectName(tableMeta) || 'Unnamed' }}
-          <span v-if="getObjectSchema(tableMeta)" class="text-sm text-gray-500">
-            ({{ getObjectSchema(tableMeta) }})
-          </span>
+          <template v-if="getObjectSchema(tableMeta) && getObjectSchema(tableMeta) !== 'public' && getObjectSchema(tableMeta) !== ''">
+            {{ getObjectSchema(tableMeta) }}.{{ getObjectName(tableMeta) || 'Unnamed' }}
+          </template>
+          <template v-else>
+            {{ getObjectName(tableMeta) || 'Unnamed' }}
+          </template>
           <span v-if="isView" class="ml-2 text-sm text-blue-500">(View)</span>
         </h3>
         <div class="flex items-center gap-4">
@@ -251,9 +265,11 @@ const primaryKeyColumns = computed(() => {
                   <th v-for="column in tableData.columns" :key="column"
                     class="px-3 py-2 text-left text-sm font-semibold text-gray-900 bg-gray-50 sticky top-0 whitespace-nowrap">
                     <div class="flex items-center gap-1">
-                      {{ column }}
                       <KeyIcon v-if="primaryKeyColumns.has(column)" :style="`color: ${BRAND_COLORS.primary}`"
                         class="h-4 w-4" title="Primary Key" />
+                      <LinkIcon v-if="foreignKeyColumns.has(column)" :style="`color: ${BRAND_COLORS.secondary}`"
+                        class="h-4 w-4" title="Foreign Key" />
+                      {{ column }}
                     </div>
                   </th>
                 </tr>

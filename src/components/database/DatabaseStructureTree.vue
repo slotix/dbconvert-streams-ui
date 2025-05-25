@@ -53,10 +53,6 @@ const treeData = computed<TreeNode[]>(() => {
         type: 'schema',
         children: []
       })
-      // Auto-expand MySQL (empty schema) and public schema
-      if (!schemaName || schemaName === 'public') {
-        expandedSchemas.value.add(schemaName)
-      }
     }
     return schemaMap.get(schemaName)!
   }
@@ -91,6 +87,17 @@ const treeData = computed<TreeNode[]>(() => {
         })
       }
     })
+  }
+
+  // Auto-expand schemas based on total count
+  const totalSchemas = schemaMap.size
+  if (totalSchemas === 1) {
+    // Single schema: auto-expand it
+    const singleSchema = Array.from(schemaMap.keys())[0]
+    expandedSchemas.value.add(singleSchema)
+  } else if (totalSchemas > 1) {
+    // Multiple schemas: collapse all initially
+    expandedSchemas.value.clear()
   }
 
   // Sort schemas and their children
@@ -129,12 +136,20 @@ function isSchemaExpanded(schemaName: string): boolean {
 
 function handleObjectSelect(item: TreeNode) {
   if (item.type === 'table' || item.type === 'view') {
-    emit('select', item.name, item.type)
+    // For non-public schemas, use schema-qualified name
+    const objectName = item.schema && item.schema !== 'public' && item.schema !== ''
+      ? `${item.schema}.${item.name}`
+      : item.name
+    emit('select', objectName, item.type)
   }
 }
 
 function isSelected(item: TreeNode): boolean {
-  return item.name === props.selectedName && item.type === props.selectedType
+  // For non-public schemas, check against schema-qualified name
+  const objectName = item.schema && item.schema !== 'public' && item.schema !== ''
+    ? `${item.schema}.${item.name}`
+    : item.name
+  return objectName === props.selectedName && item.type === props.selectedType
 }
 </script>
 
