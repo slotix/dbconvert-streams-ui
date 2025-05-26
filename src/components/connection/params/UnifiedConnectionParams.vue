@@ -396,7 +396,7 @@ const getDatabasePlaceholder = () => {
   const type = props.connectionType.toLowerCase()
   switch (type) {
     case 'postgresql':
-      return 'postgres, defaultdb, or your database name'
+      return 'postgres, your_database_name'
     case 'mysql':
       return 'your_database_name'
     case 'oracle':
@@ -414,9 +414,9 @@ const getDatabaseHelpText = () => {
   const type = props.connectionType.toLowerCase()
   switch (type) {
     case 'postgresql':
-      return 'PostgreSQL requires a database name. Use "postgres" for most servers, "defaultdb" for DigitalOcean managed databases.'
+      return 'PostgreSQL requires a database name. Most providers use "postgres" as the default database name. Compatible with AWS RDS, Azure Database, Google Cloud SQL, Neon, Supabase, and on-premises servers.'
     case 'mysql':
-      return 'Enter your database name. Avoid system databases like "mysql", "information_schema", "performance_schema".'
+      return 'Enter your database name. Avoid system databases like "mysql", "information_schema", "performance_schema". Compatible with all major cloud providers and on-premises installations.'
     case 'oracle':
       return 'Oracle requires a service name. Use "XE" for Express Edition, "ORCL" for standard installations, or your custom service name.'
     case 'sqlserver':
