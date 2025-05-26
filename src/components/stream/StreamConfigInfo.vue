@@ -90,8 +90,9 @@
                 </span>
                 <!-- Auto-discovery indicator -->
                 <span v-if="isAutoDiscoveryMode" 
-                  class="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-600"
-                  title="Tables were automatically discovered from all schemas">
+                  class="px-2 py-0.5 text-xs font-medium rounded-full bg-gray-100 text-gray-700"
+                  title="Tables were automatically discovered from all schemas"
+                >
                   Auto-discovered
                 </span>
               </div>

@@ -7,7 +7,7 @@
       <div class="mb-4 inline-flex font-medium text-gray-900">
         Selected {{ checkedTablesCount }} of {{ tables.length }} tables
         <!-- Auto-discovery indicator -->
-        <div v-if="isAutoDiscoveryMode" class="ml-3 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+        <div v-if="isAutoDiscoveryMode" class="ml-3 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
           <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
           </svg>
@@ -24,14 +24,17 @@
     </div>
 
     <!-- Auto-discovery explanation -->
-    <div v-if="isAutoDiscoveryMode" class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+    <div v-if="isAutoDiscoveryMode" class="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
       <div class="flex items-start">
-        <svg class="w-5 h-5 text-blue-600 mt-0.5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+        <svg class="w-5 h-5 text-gray-500 mt-0.5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
           <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
         </svg>
-        <div class="text-sm text-blue-700">
-          <p class="font-medium">Auto-Discovery Active</p>
-          <p class="mt-1">These tables were automatically discovered from all schemas in your source database. All user tables are selected by default, while system tables are filtered out.</p>
+        <div>
+          <h4 class="text-sm font-medium text-gray-800 mb-1">Auto-Discovery Active</h4>
+          <p class="text-sm text-gray-600">
+            These tables were automatically discovered from all schemas in your source database. 
+            All user tables are selected by default, while system tables are filtered out.
+          </p>
         </div>
       </div>
     </div>
