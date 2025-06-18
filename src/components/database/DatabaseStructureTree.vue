@@ -137,18 +137,20 @@ function isSchemaExpanded(schemaName: string): boolean {
 function handleObjectSelect(item: TreeNode) {
   if (item.type === 'table' || item.type === 'view') {
     // For non-public schemas, use schema-qualified name
-    const objectName = item.schema && item.schema !== 'public' && item.schema !== ''
-      ? `${item.schema}.${item.name}`
-      : item.name
+    const objectName =
+      item.schema && item.schema !== 'public' && item.schema !== ''
+        ? `${item.schema}.${item.name}`
+        : item.name
     emit('select', objectName, item.type)
   }
 }
 
 function isSelected(item: TreeNode): boolean {
   // For non-public schemas, check against schema-qualified name
-  const objectName = item.schema && item.schema !== 'public' && item.schema !== ''
-    ? `${item.schema}.${item.name}`
-    : item.name
+  const objectName =
+    item.schema && item.schema !== 'public' && item.schema !== ''
+      ? `${item.schema}.${item.name}`
+      : item.name
   return objectName === props.selectedName && item.type === props.selectedType
 }
 </script>
@@ -166,11 +168,15 @@ function isSelected(item: TreeNode): boolean {
       <div v-else class="space-y-1">
         <template v-for="schema in treeData" :key="schema.name">
           <!-- Schema (only show if has name - i.e. not MySQL) -->
-          <div v-if="schema.name"
+          <div
+            v-if="schema.name"
             class="flex items-center px-2 py-1.5 text-sm text-gray-700 rounded-md hover:bg-gray-100 cursor-pointer"
-            @click="toggleSchema(schema)">
-            <component :is="isSchemaExpanded(schema.name) ? ChevronDownIcon : ChevronRightIcon"
-              class="h-4 w-4 text-gray-400 mr-1.5 flex-shrink-0" />
+            @click="toggleSchema(schema)"
+          >
+            <component
+              :is="isSchemaExpanded(schema.name) ? ChevronDownIcon : ChevronRightIcon"
+              class="h-4 w-4 text-gray-400 mr-1.5 flex-shrink-0"
+            />
             <span class="font-medium">{{ schema.name || 'Default' }}</span>
             <span class="ml-2 text-xs text-gray-500 bg-gray-100 rounded-full px-2 py-0.5">
               {{ schema.children.length }}
@@ -178,15 +184,25 @@ function isSelected(item: TreeNode): boolean {
           </div>
 
           <!-- Tables and Views -->
-          <div v-if="isSchemaExpanded(schema.name)"
-            :class="['space-y-1', schema.name ? 'ml-4 border-l border-gray-200' : '']">
-            <div v-for="item in schema.children" :key="`${item.type}-${item.name}`"
-              class="flex items-center px-2 py-1.5 text-sm rounded-md hover:bg-gray-100 cursor-pointer" :class="[
+          <div
+            v-if="isSchemaExpanded(schema.name)"
+            :class="['space-y-1', schema.name ? 'ml-4 border-l border-gray-200' : '']"
+          >
+            <div
+              v-for="item in schema.children"
+              :key="`${item.type}-${item.name}`"
+              class="flex items-center px-2 py-1.5 text-sm rounded-md hover:bg-gray-100 cursor-pointer"
+              :class="[
                 isSelected(item) ? 'bg-slate-100 text-slate-700' : 'text-gray-600',
                 { 'ml-2': schema.name }
-              ]" @click="handleObjectSelect(item)">
-              <component :is="item.type === 'table' ? TableCellsIcon : ViewfinderCircleIcon"
-                class="h-4 w-4 mr-1.5 flex-shrink-0" :class="isSelected(item) ? 'text-slate-500' : 'text-gray-400'" />
+              ]"
+              @click="handleObjectSelect(item)"
+            >
+              <component
+                :is="item.type === 'table' ? TableCellsIcon : ViewfinderCircleIcon"
+                class="h-4 w-4 mr-1.5 flex-shrink-0"
+                :class="isSelected(item) ? 'text-slate-500' : 'text-gray-400'"
+              />
               <span>{{ item.name }}</span>
               <span v-if="item.type === 'view'" class="ml-2 text-xs text-gray-500">(View)</span>
             </div>

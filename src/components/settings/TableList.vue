@@ -7,9 +7,16 @@
       <div class="mb-4 inline-flex font-medium text-gray-900">
         Selected {{ checkedTablesCount }} of {{ tables.length }} tables
         <!-- Auto-discovery indicator -->
-        <div v-if="isAutoDiscoveryMode" class="ml-3 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+        <div
+          v-if="isAutoDiscoveryMode"
+          class="ml-3 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700"
+        >
           <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+            <path
+              fill-rule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+              clip-rule="evenodd"
+            />
           </svg>
           Auto-discovered
         </div>
@@ -26,14 +33,22 @@
     <!-- Auto-discovery explanation -->
     <div v-if="isAutoDiscoveryMode" class="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
       <div class="flex items-start">
-        <svg class="w-5 h-5 text-gray-500 mt-0.5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-          <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+        <svg
+          class="w-5 h-5 text-gray-500 mt-0.5 mr-2 flex-shrink-0"
+          fill="currentColor"
+          viewBox="0 0 20 20"
+        >
+          <path
+            fill-rule="evenodd"
+            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+            clip-rule="evenodd"
+          />
         </svg>
         <div>
           <h4 class="text-sm font-medium text-gray-800 mb-1">Auto-Discovery Active</h4>
           <p class="text-sm text-gray-600">
-            These tables were automatically discovered from all schemas in your source database. 
-            All user tables are selected by default, while system tables are filtered out.
+            These tables were automatically discovered from all schemas in your source database. All
+            user tables are selected by default, while system tables are filtered out.
           </p>
         </div>
       </div>
@@ -68,19 +83,21 @@
 
     <!-- Schema-grouped Table List -->
     <div class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg divide-y divide-gray-200">
-      <div v-if="!groupedTables.length" class="text-center text-gray-500 py-8">
-        No tables found
-      </div>
+      <div v-if="!groupedTables.length" class="text-center text-gray-500 py-8">No tables found</div>
       <div v-else class="p-4">
         <div class="space-y-1">
           <template v-for="schemaGroup in groupedTables" :key="schemaGroup.schema">
             <!-- Schema Header - only show for PostgreSQL -->
-            <div v-if="sourceConnectionType === 'postgresql' && schemaGroup.schema" 
+            <div
+              v-if="sourceConnectionType === 'postgresql' && schemaGroup.schema"
               class="flex items-center justify-between px-3 py-2 text-sm text-gray-700 rounded-md hover:bg-gray-50 cursor-pointer border-b border-gray-100"
-              @click="toggleSchema(schemaGroup.schema)">
+              @click="toggleSchema(schemaGroup.schema)"
+            >
               <div class="flex items-center">
-                <component :is="isSchemaExpanded(schemaGroup.schema) ? ChevronDownIcon : ChevronRightIcon"
-                  class="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
+                <component
+                  :is="isSchemaExpanded(schemaGroup.schema) ? ChevronDownIcon : ChevronRightIcon"
+                  class="h-4 w-4 text-gray-400 mr-2 flex-shrink-0"
+                />
                 <span class="font-medium">{{ schemaGroup.schema }}</span>
                 <span class="ml-2 text-xs text-gray-500 bg-gray-100 rounded-full px-2 py-0.5">
                   {{ schemaGroup.tables.length }}
@@ -103,18 +120,31 @@
             </div>
 
             <!-- Tables in Schema -->
-            <div v-if="sourceConnectionType !== 'postgresql' || isSchemaExpanded(schemaGroup.schema)"
-              :class="sourceConnectionType === 'postgresql' && schemaGroup.schema ? 'space-y-1 ml-4 border-l border-gray-200 pl-4' : 'space-y-1'">
+            <div
+              v-if="sourceConnectionType !== 'postgresql' || isSchemaExpanded(schemaGroup.schema)"
+              :class="
+                sourceConnectionType === 'postgresql' && schemaGroup.schema
+                  ? 'space-y-1 ml-4 border-l border-gray-200 pl-4'
+                  : 'space-y-1'
+              "
+            >
               <template v-for="table in schemaGroup.tables" :key="table.name">
                 <!-- Table Row -->
-                <div class="flex items-center justify-between px-3 py-2 text-sm rounded-md hover:bg-gray-50">
+                <div
+                  class="flex items-center justify-between px-3 py-2 text-sm rounded-md hover:bg-gray-50"
+                >
                   <div class="flex items-center flex-1">
                     <input
                       :id="`table-${table.name}`"
                       v-model="table.selected"
                       type="checkbox"
                       class="h-4 w-4 text-gray-600 focus:ring-gray-500 border-gray-300 rounded mr-3"
-                      @change="handleCheckboxChange(table, ($event.target as HTMLInputElement)?.checked || false)"
+                      @change="
+                        handleCheckboxChange(
+                          table,
+                          ($event.target as HTMLInputElement)?.checked || false
+                        )
+                      "
                     />
                     <TableCellsIcon class="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
                     <label :for="`table-${table.name}`" class="cursor-pointer flex-1">
@@ -125,20 +155,31 @@
                     v-if="table.selected"
                     @click="toggleTableSettings(table.name)"
                     class="text-xs font-medium transition-colors"
-                    :class="selectedTableNames.includes(table.name) 
-                      ? 'text-red-600 hover:text-red-800' 
-                      : 'text-blue-600 hover:text-blue-800'"
+                    :class="
+                      selectedTableNames.includes(table.name)
+                        ? 'text-red-600 hover:text-red-800'
+                        : 'text-blue-600 hover:text-blue-800'
+                    "
                   >
-                    {{ selectedTableNames.includes(table.name) ? '▲ Hide Options' : '▼ Show Options' }}
+                    {{
+                      selectedTableNames.includes(table.name) ? '▲ Hide Options' : '▼ Show Options'
+                    }}
                   </button>
                 </div>
 
                 <!-- Table Settings (immediately under the table) -->
-                <div v-if="selectedTableNames.includes(table.name)" 
-                  :class="sourceConnectionType === 'postgresql' && schemaGroup.schema ? 'ml-8 mt-1 mb-3' : 'ml-4 mt-1 mb-3'">
+                <div
+                  v-if="selectedTableNames.includes(table.name)"
+                  :class="
+                    sourceConnectionType === 'postgresql' && schemaGroup.schema
+                      ? 'ml-8 mt-1 mb-3'
+                      : 'ml-4 mt-1 mb-3'
+                  "
+                >
                   <div class="bg-gray-50 border border-gray-200 rounded-md p-4">
                     <div class="text-xs font-medium text-gray-600 mb-2">
-                      Settings for: <span class="font-semibold">{{ getTableDisplayName(table.name) }}</span>
+                      Settings for:
+                      <span class="font-semibold">{{ getTableDisplayName(table.name) }}</span>
                     </div>
                     <TableSettings :table="table" />
                   </div>
@@ -178,7 +219,7 @@ const currentStreamConfig = streamsStore.currentStreamConfig as StreamConfig
 
 // Get the source connection to determine database type
 const sourceConnection = computed(() => {
-  return connectionStore.connections.find(conn => conn.id === currentStreamConfig.source)
+  return connectionStore.connections.find((conn) => conn.id === currentStreamConfig.source)
 })
 
 const sourceConnectionType = computed(() => {
@@ -189,7 +230,6 @@ const tables = ref<Table[]>(
   currentStreamConfig.tables?.map((table) => ({
     name: table.name,
     operations: table.operations ?? defaultStreamConfigOptions.operations ?? [],
-    skipIndexCreation: table.skipIndexCreation !== undefined ? table.skipIndexCreation : false,
     query: table.query,
     selected: true
   })) || []
@@ -211,7 +251,7 @@ const groupedTables = computed<SchemaGroup[]>(() => {
   const schemaMap = new Map<string, Table[]>()
 
   // Group tables by schema
-  filtered.forEach(table => {
+  filtered.forEach((table) => {
     const schema = getTableSchema(table.name)
     if (!schemaMap.has(schema)) {
       schemaMap.set(schema, [])
@@ -222,18 +262,24 @@ const groupedTables = computed<SchemaGroup[]>(() => {
   // Convert to array and sort
   const groups = Array.from(schemaMap.entries()).map(([schema, tables]) => ({
     schema,
-    tables: tables.sort((a, b) => getTableDisplayName(a.name).localeCompare(getTableDisplayName(b.name)))
+    tables: tables.sort((a, b) =>
+      getTableDisplayName(a.name).localeCompare(getTableDisplayName(b.name))
+    )
   }))
 
   // For non-PostgreSQL databases (like MySQL), don't show schema grouping
   // Return tables directly without schema headers
   if (sourceConnectionType.value !== 'postgresql') {
     // Return a single group with empty schema name to avoid showing schema headers
-    const allTables = groups.flatMap(group => group.tables)
-    return [{
-      schema: '',
-      tables: allTables.sort((a, b) => getTableDisplayName(a.name).localeCompare(getTableDisplayName(b.name)))
-    }]
+    const allTables = groups.flatMap((group) => group.tables)
+    return [
+      {
+        schema: '',
+        tables: allTables.sort((a, b) =>
+          getTableDisplayName(a.name).localeCompare(getTableDisplayName(b.name))
+        )
+      }
+    ]
   }
 
   // Sort schemas (public first, then alphabetically) - only for PostgreSQL
@@ -250,7 +296,7 @@ const groupedTables = computed<SchemaGroup[]>(() => {
       expandedSchemas.value.add(groups[0].schema)
     } else {
       // Multiple schemas: expand public schema by default if it exists, otherwise expand the first one
-      const publicSchema = groups.find(g => g.schema === 'public')
+      const publicSchema = groups.find((g) => g.schema === 'public')
       if (publicSchema) {
         expandedSchemas.value.add('public')
       } else {
@@ -268,9 +314,10 @@ const filteredTables = computed(() => {
     return tables.value
   }
   const query = searchQuery.value.toLowerCase()
-  return tables.value.filter((item) => 
-    getTableDisplayName(item.name).toLowerCase().includes(query) ||
-    item.name.toLowerCase().includes(query)
+  return tables.value.filter(
+    (item) =>
+      getTableDisplayName(item.name).toLowerCase().includes(query) ||
+      item.name.toLowerCase().includes(query)
   )
 })
 
@@ -300,10 +347,11 @@ const isAutoDiscoveryMode = computed(() => {
   // We can detect this by checking if all tables are selected (default for auto-discovery)
   // and if we have tables from multiple schemas (typical of auto-discovery)
   if (!tables.value.length) return false
-  
-  const allSelected = tables.value.every(table => table.selected)
-  const hasMultipleSchemas = new Set(tables.value.map(table => getTableSchema(table.name))).size > 1
-  
+
+  const allSelected = tables.value.every((table) => table.selected)
+  const hasMultipleSchemas =
+    new Set(tables.value.map((table) => getTableSchema(table.name))).size > 1
+
   // Auto-discovery is likely if all tables are selected and we have multiple schemas
   // or if we have a large number of tables (suggesting full database discovery)
   return allSelected && (hasMultipleSchemas || tables.value.length > 10)
@@ -320,7 +368,7 @@ function getTableSchema(tableName: string): string {
   if (parts.length > 1) {
     return parts[0]
   }
-  
+
   // For PostgreSQL, default to 'public' schema
   // For MySQL and others, return empty string (no schema grouping)
   return sourceConnectionType.value === 'postgresql' ? 'public' : ''
@@ -344,7 +392,7 @@ function toggleSchema(schema: string) {
   if (sourceConnectionType.value !== 'postgresql' || schema === '') {
     return
   }
-  
+
   if (expandedSchemas.value.has(schema)) {
     expandedSchemas.value.delete(schema)
   } else {
@@ -353,18 +401,18 @@ function toggleSchema(schema: string) {
 }
 
 function selectAllInSchema(schema: string) {
-  const schemaGroup = groupedTables.value.find(g => g.schema === schema)
+  const schemaGroup = groupedTables.value.find((g) => g.schema === schema)
   if (schemaGroup) {
-    schemaGroup.tables.forEach(table => {
+    schemaGroup.tables.forEach((table) => {
       table.selected = true
     })
   }
 }
 
 function clearAllInSchema(schema: string) {
-  const schemaGroup = groupedTables.value.find(g => g.schema === schema)
+  const schemaGroup = groupedTables.value.find((g) => g.schema === schema)
   if (schemaGroup) {
-    schemaGroup.tables.forEach(table => {
+    schemaGroup.tables.forEach((table) => {
       table.selected = false
     })
   }
@@ -399,14 +447,12 @@ function createTableObject(entry: any, mode: 'cdc' | 'convert'): Table {
   const name = typeof entry === 'string' ? entry : 'Unknown'
   const operations = entry?.operations ?? defaultStreamConfigOptions.operations ?? []
   const query = entry?.query ?? ''
-  const skipIndexCreation = entry?.skipIndexCreation !== undefined ? entry.skipIndexCreation : false
   const selected = entry?.selected !== undefined ? entry.selected : true
 
   if (mode === 'cdc') {
     return {
       name,
       operations: defaultStreamConfigOptions.operations ?? [],
-      skipIndexCreation: skipIndexCreation,
       query: '',
       selected: selected
     }
@@ -415,7 +461,6 @@ function createTableObject(entry: any, mode: 'cdc' | 'convert'): Table {
       name,
       query,
       operations,
-      skipIndexCreation: skipIndexCreation,
       selected: selected
     }
   }

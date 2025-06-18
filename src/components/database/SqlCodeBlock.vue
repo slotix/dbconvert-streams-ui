@@ -12,7 +12,6 @@ const props = defineProps<{
   dialect: 'mysql' | 'postgresql' | 'sql'
 }>()
 
-
 const formattedCode = computed(() => {
   try {
     return format(props.code, {
@@ -24,27 +23,33 @@ const formattedCode = computed(() => {
     return props.code
   }
 })
-
 </script>
 
 <template>
   <div class="rounded-lg overflow-hidden border border-gray-200">
     <div class="flex items-center justify-between px-4 py-2 bg-gray-100 border-b border-gray-200">
-      <span class="text-sm font-medium text-gray-700">{{ index ? `${title} ${index}` : title }}</span>
+      <span class="text-sm font-medium text-gray-700">{{
+        index ? `${title} ${index}` : title
+      }}</span>
       <CopyButton :text="code" />
     </div>
     <div class="relative bg-white">
       <div class="absolute inset-y-0 left-0 w-12 bg-[#f8f9fa] border-r border-gray-200">
         <div class="py-8">
-          <div v-for="n in formattedCode.split('\n').length" :key="n"
-            class="h-6 flex items-end justify-end px-3 text-xs font-mono text-gray-400 pb-1">
+          <div
+            v-for="n in formattedCode.split('\n').length"
+            :key="n"
+            class="h-6 flex items-end justify-end px-3 text-xs font-mono text-gray-400 pb-1"
+          >
             {{ n }}
           </div>
         </div>
       </div>
       <div class="overflow-x-auto custom-scrollbar">
-        <pre v-highlightjs
-          class="pl-14 py-4"><code class="language-sql block text-sm leading-6 select-text">{{ formattedCode }}</code></pre>
+        <pre
+          v-highlightjs
+          class="pl-14 py-4"
+        ><code class="language-sql block text-sm leading-6 select-text">{{ formattedCode }}</code></pre>
       </div>
     </div>
   </div>

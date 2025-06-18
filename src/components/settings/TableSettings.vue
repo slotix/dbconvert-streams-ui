@@ -23,19 +23,6 @@
         <Operations v-model="table.operations" :prefix="table.name" />
       </div>
     </div>
-    <div class="mt-4">
-      <input
-        :id="`create-indexes-${table.name}`"
-        v-model="table.skipIndexCreation"
-        :name="`create-indexes-${table.name}`"
-        type="checkbox"
-        class="h-4 w-4 text-sm rounded border-gray-300 text-gray-600 focus:ring-gray-600"
-        @change="updateStreamSettings"
-      />
-      <label :for="`create-indexes-${table.name}`" class="text-sm font-medium text-gray-700 pl-2"
-        >Skip Index Creation</label
-      >
-    </div>
   </div>
 </template>
 

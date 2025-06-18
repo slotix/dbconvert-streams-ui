@@ -28,7 +28,7 @@ const emit = defineEmits(['update:connection-params'])
 // Dynamic placeholder based on connection type
 const connectionStringPlaceholder = computed(() => {
   const type = props.connectionType?.toLowerCase()
-  
+
   switch (type) {
     case 'postgresql':
       return 'e.g. postgresql://user:pass@host:port/dbname'

@@ -57,7 +57,6 @@ export interface StreamConfig {
   target: string
   mode: string
   dataBundleSize?: number
-  createStructure?: boolean
   tables: MultiSchemaTable[]
   sourceSchemaFilter?: string[]
   targetSchemaFilter?: string[]

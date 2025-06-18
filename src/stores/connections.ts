@@ -220,8 +220,12 @@ export const useConnectionsStore = defineStore('connections', {
     },
     // Helper to check if a connection supports multi-schema operations
     supportsMultiSchema(connectionId: string): boolean {
-      const connection = this.connections.find(conn => conn.id === connectionId)
-      return connection?.type === 'PostgreSQL' || connection?.type === 'SQL Server' || connection?.type === 'Oracle'
+      const connection = this.connections.find((conn) => conn.id === connectionId)
+      return (
+        connection?.type === 'PostgreSQL' ||
+        connection?.type === 'SQL Server' ||
+        connection?.type === 'Oracle'
+      )
     }
   }
 })

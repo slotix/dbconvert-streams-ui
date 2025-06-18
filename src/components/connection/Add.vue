@@ -1,9 +1,9 @@
 <template>
   <Modal @ok="ok">
     <template #dbtypes-combo>
-      <ConnectionStringInput 
+      <ConnectionStringInput
         :connectionType="connectionDBType?.type"
-        @update:connection-params="updateConnectionParams" 
+        @update:connection-params="updateConnectionParams"
       />
       <DBTypesListBox
         :model-value="connectionDBType"

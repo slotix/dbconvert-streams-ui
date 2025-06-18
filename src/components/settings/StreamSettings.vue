@@ -5,134 +5,119 @@
       <h3 class="text-lg font-medium leading-6 text-gray-900">Global Stream Settings</h3>
     </div>
 
-    <!-- Form -->
-    <div class="mt-6 space-y-6">
-      <!-- Stream Name -->
-      <div>
-        <label for="streamName" class="block text-sm font-medium text-gray-700">Stream Name</label>
-        <div class="mt-1">
-          <input
-            id="streamName"
-            v-model="streamName"
-            type="text"
-            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500 sm:text-sm"
-            placeholder="Enter custom name or leave blank for auto-generation"
-          />
-        </div>
-        <p class="mt-2 text-sm text-gray-500">
-          You can leave this field blank for an auto-generated name or enter a custom name.
-        </p>
-      </div>
-
-      <!-- Mode Selection -->
-      <div class="pt-2">
-        <ModeButtons />
-      </div>
-
-      <!-- CDC Operations -->
-      <div v-if="currentStreamConfig.mode === 'cdc'" class="pt-2">
-        <Operations v-model="operations" />
-      </div>
-
-      <!-- Data Bundle Size -->
-      <div>
-        <label for="dataBundleSize" class="block text-sm font-medium text-gray-700"
-          >Data Bundle Size</label
-        >
-        <div class="mt-1">
-          <input
-            id="dataBundleSize"
-            v-model.number="dataBundleSize"
-            type="number"
-            min="10"
-            max="1000"
-            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500 sm:text-sm"
-            placeholder="Enter a value between 10 and 1000"
-          />
-        </div>
-        <p class="mt-2 text-sm text-gray-500">Please enter a value between 10 and 1000.</p>
-        <p v-if="dataBundleSize < 10 || dataBundleSize > 1000" class="mt-1 text-sm text-red-600">
-          Value must be between 10 and 1000.
-        </p>
-      </div>
-
-      <!-- Reporting Intervals -->
-      <div class="pt-2">
-        <h3 class="text-sm font-medium text-gray-900 mb-4">Reporting Intervals (seconds)</h3>
-        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+    <!-- Form with improved organization -->
+    <div class="mt-6 space-y-8">
+      <!-- Basic Configuration Section -->
+      <div class="bg-white">
+        <h4 class="text-base font-medium text-gray-900 mb-4">Basic Configuration</h4>
+        <div class="space-y-6">
+          <!-- Stream Name -->
           <div>
-            <label
-              for="sourceReaderReportingInterval"
-              class="block text-sm font-medium text-gray-700"
-              >Source Reader</label
+            <label for="streamName" class="block text-sm font-medium text-gray-700"
+              >Stream Name</label
             >
             <div class="mt-1">
               <input
-                id="sourceReaderReportingInterval"
-                v-model="reportingIntervalsSource"
-                type="number"
+                id="streamName"
+                v-model="streamName"
+                type="text"
                 class="block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500 sm:text-sm"
+                placeholder="Enter custom name or leave blank for auto-generation"
               />
             </div>
+            <p class="mt-2 text-sm text-gray-500">
+              You can leave this field blank for an auto-generated name or enter a custom name.
+            </p>
           </div>
+
+          <!-- Mode Selection -->
           <div>
-            <label
-              for="targetReaderReportingInterval"
-              class="block text-sm font-medium text-gray-700"
-              >Target Writers</label
+            <ModeButtons />
+          </div>
+
+          <!-- CDC Operations -->
+          <div v-if="currentStreamConfig.mode === 'cdc'">
+            <Operations v-model="operations" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Database Structure Section -->
+      <div class="bg-gray-50 p-6 rounded-lg">
+        <StructureOptions />
+      </div>
+
+      <!-- Performance & Monitoring Section -->
+      <div class="bg-white">
+        <h4 class="text-base font-medium text-gray-900 mb-4">Performance & Monitoring</h4>
+        <div class="space-y-6">
+          <!-- Data Bundle Size -->
+          <div>
+            <label for="dataBundleSize" class="block text-sm font-medium text-gray-700"
+              >Data Bundle Size</label
             >
             <div class="mt-1">
               <input
-                id="targetReaderReportingInterval"
-                v-model="reportingIntervalsTarget"
+                id="dataBundleSize"
+                v-model.number="dataBundleSize"
                 type="number"
+                min="10"
+                max="1000"
                 class="block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500 sm:text-sm"
+                placeholder="Enter a value between 10 and 1000"
               />
+            </div>
+            <p class="mt-2 text-sm text-gray-500">Please enter a value between 10 and 1000.</p>
+            <p
+              v-if="dataBundleSize < 10 || dataBundleSize > 1000"
+              class="mt-1 text-sm text-red-600"
+            >
+              Value must be between 10 and 1000.
+            </p>
+          </div>
+
+          <!-- Reporting Intervals -->
+          <div>
+            <h5 class="text-sm font-medium text-gray-900 mb-3">Reporting Intervals (seconds)</h5>
+            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+              <div>
+                <label
+                  for="sourceReaderReportingInterval"
+                  class="block text-sm font-medium text-gray-700"
+                  >Source Reader</label
+                >
+                <div class="mt-1">
+                  <input
+                    id="sourceReaderReportingInterval"
+                    v-model="reportingIntervalsSource"
+                    type="number"
+                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500 sm:text-sm"
+                  />
+                </div>
+              </div>
+              <div>
+                <label
+                  for="targetReaderReportingInterval"
+                  class="block text-sm font-medium text-gray-700"
+                  >Target Writers</label
+                >
+                <div class="mt-1">
+                  <input
+                    id="targetReaderReportingInterval"
+                    v-model="reportingIntervalsTarget"
+                    type="number"
+                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500 sm:text-sm"
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Checkboxes -->
-      <div class="space-y-4">
-        <div class="relative flex items-start">
-          <div class="flex h-5 items-center">
-            <input
-              id="create-target-structure"
-              v-model="createStructure"
-              name="create-target-structure"
-              type="checkbox"
-              class="h-4 w-4 rounded border-gray-300 text-gray-600 focus:ring-gray-500"
-            />
-          </div>
-          <div class="ml-3 text-sm">
-            <label for="create-target-structure" class="font-medium text-gray-700"
-              >Create Structure on Target</label
-            >
-          </div>
-        </div>
-
-        <div class="relative flex items-start">
-          <div class="flex h-5 items-center">
-            <input
-              id="skip-index-creation"
-              v-model="skipIndexCreation"
-              name="skip-index-creation"
-              type="checkbox"
-              class="h-4 w-4 rounded border-gray-300 text-gray-600 focus:ring-gray-500"
-            />
-          </div>
-          <div class="ml-3 text-sm">
-            <label for="skip-index-creation" class="font-medium text-gray-700"
-              >Skip Index Creation for All Tables</label
-            >
-          </div>
-        </div>
-      </div>
-
-      <!-- Limits -->
-      <div class="pt-2">
-        <h3 class="text-sm font-medium text-gray-900 mb-4">Limits</h3>
+      <!-- Limits Section -->
+      <div class="bg-white">
+        <h4 class="text-base font-medium text-gray-900 mb-4">Execution Limits</h4>
         <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
           <div>
             <label for="numberOfEvents" class="block text-sm font-medium text-gray-700"
@@ -144,8 +129,12 @@
                 v-model="limitsNumberOfEvents"
                 type="number"
                 class="block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500 sm:text-sm"
+                placeholder="0 = no limit"
               />
             </div>
+            <p class="mt-1 text-xs text-gray-500">
+              Maximum number of events to process (0 = no limit)
+            </p>
           </div>
           <div>
             <label for="elapsedTime" class="block text-sm font-medium text-gray-700"
@@ -157,8 +146,12 @@
                 v-model="limitsElapsedTime"
                 type="number"
                 class="block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500 sm:text-sm"
+                placeholder="0 = no limit"
               />
             </div>
+            <p class="mt-1 text-xs text-gray-500">
+              Maximum execution time in seconds (0 = no limit)
+            </p>
           </div>
         </div>
       </div>
@@ -171,6 +164,7 @@ import { computed } from 'vue'
 import { useStreamsStore, defaultStreamConfigOptions } from '@/stores/streamConfig'
 import ModeButtons from './ModeButtons.vue'
 import Operations from './Operations.vue'
+import StructureOptions from './StructureOptions.vue'
 import { type StreamConfig } from '@/types/streamConfig'
 
 const streamsStore = useStreamsStore()
@@ -229,26 +223,6 @@ const limitsElapsedTime = computed<number>({
     if (currentStreamConfig.limits) {
       currentStreamConfig.limits.elapsedTime = value
     }
-  }
-})
-
-const createStructure = computed<boolean>({
-  get: () =>
-    currentStreamConfig.createStructure !== undefined
-      ? currentStreamConfig.createStructure
-      : defaultStreamConfigOptions.createStructure,
-  set: (value) => {
-    currentStreamConfig.createStructure = value
-  }
-})
-
-const skipIndexCreation = computed<boolean>({
-  get: () =>
-    currentStreamConfig.skipIndexCreation !== undefined
-      ? currentStreamConfig.skipIndexCreation
-      : defaultStreamConfigOptions.skipIndexCreation,
-  set: (value) => {
-    currentStreamConfig.skipIndexCreation = value
   }
 })
 

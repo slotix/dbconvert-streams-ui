@@ -6,14 +6,16 @@
         <label class="max-w-sm mx-auto md:w-1/3">Connection ID</label>
         <div class="max-w-sm mx-auto md:w-2/3">
           <div class="relative">
-            <span class="block rounded-lg bg-white text-gray-700 placeholder-gray-400 shadow-sm text-base py-2 px-4">
+            <span
+              class="block rounded-lg bg-white text-gray-700 placeholder-gray-400 shadow-sm text-base py-2 px-4"
+            >
               {{ connection.id }}
             </span>
           </div>
         </div>
       </div>
     </div>
-    
+
     <!-- Loading state for edit mode -->
     <div v-else class="text-center" :class="isEdit ? '' : 'hidden'">
       <Spinner text="Loading connection..." size="sm" />
@@ -25,16 +27,26 @@
     <!-- Connection Parameters -->
     <div v-if="(isEdit && connection.id) || !isEdit">
       <hr />
-      
+
       <!-- Connection Authentication Group -->
       <div class="bg-white rounded-lg border border-gray-200 p-6 mb-6 shadow-sm">
         <h3 class="text-sm font-medium text-gray-900 mb-6 flex items-center">
-          <svg class="h-4 w-4 mr-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+          <svg
+            class="h-4 w-4 mr-2 text-gray-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+            />
           </svg>
           Connection Details
         </h3>
-        
+
         <div class="space-y-4">
           <!-- Server -->
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
@@ -107,8 +119,18 @@
       <!-- Database Selection Group -->
       <div class="bg-white rounded-lg border border-gray-200 p-6 shadow-sm mb-6">
         <h3 class="text-sm font-medium text-gray-900 mb-6 flex items-center">
-          <svg class="h-4 w-4 mr-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/>
+          <svg
+            class="h-4 w-4 mr-2 text-gray-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"
+            />
           </svg>
           Database Selection
         </h3>
@@ -134,7 +156,9 @@
                     </ComboboxButton>
                   </div>
 
-                  <ComboboxOptions class="absolute z-10 mt-1 max-h-48 max-w-xs overflow-auto rounded-md bg-white py-1 text-sm shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                  <ComboboxOptions
+                    class="absolute z-10 mt-1 max-h-48 max-w-xs overflow-auto rounded-md bg-white py-1 text-sm shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+                  >
                     <ComboboxOption
                       v-for="database in availableDatabases"
                       :key="database"
@@ -149,7 +173,9 @@
                         ]"
                       >
                         <div class="flex items-center">
-                          <span :class="['block truncate', selected ? 'font-medium' : 'font-normal']">
+                          <span
+                            :class="['block truncate', selected ? 'font-medium' : 'font-normal']"
+                          >
                             {{ database }}
                           </span>
                         </div>
@@ -166,16 +192,14 @@
                     </ComboboxOption>
                   </ComboboxOptions>
                 </Combobox>
-                
+
                 <!-- Validation Error -->
                 <p v-if="databaseValidationError" class="text-red-500 text-xs mt-1">
                   {{ databaseValidationError }}
                 </p>
-                
+
                 <!-- Help Text -->
-                <p class="text-xs text-gray-500 mt-1">
-                  💡 {{ getDatabaseHelpText() }}
-                </p>
+                <p class="text-xs text-gray-500 mt-1">💡 {{ getDatabaseHelpText() }}</p>
               </div>
 
               <!-- Refresh Button -->
@@ -186,17 +210,20 @@
                 class="p-2 text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 rounded-md"
                 title="Refresh database list"
               >
-                <ArrowPathIcon 
-                  class="h-5 w-5" 
+                <ArrowPathIcon
+                  class="h-5 w-5"
                   :class="{ 'animate-spin': isLoadingDatabases }"
-                  aria-hidden="true" 
+                  aria-hidden="true"
                 />
               </button>
             </div>
           </div>
 
           <!-- Create Database Section -->
-          <div v-if="connection.id && canCreateDatabase" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+          <div
+            v-if="connection.id && canCreateDatabase"
+            class="grid grid-cols-1 md:grid-cols-3 gap-4 items-start"
+          >
             <label class="text-sm font-medium text-gray-700 pt-2">Create New</label>
             <div class="md:col-span-2 space-y-2">
               <div class="flex items-center space-x-2">
@@ -225,7 +252,7 @@
                   <XMarkIcon class="h-4 w-4" aria-hidden="true" />
                 </button>
               </div>
-              
+
               <!-- New Database Validation Error -->
               <p v-if="newDatabaseValidationError" class="text-red-500 text-xs">
                 {{ newDatabaseValidationError }}
@@ -265,12 +292,12 @@ import {
   ArrowPathIcon,
   XMarkIcon
 } from '@heroicons/vue/24/outline'
-import { 
-  Combobox, 
-  ComboboxInput, 
-  ComboboxButton, 
-  ComboboxOptions, 
-  ComboboxOption 
+import {
+  Combobox,
+  ComboboxInput,
+  ComboboxButton,
+  ComboboxOptions,
+  ComboboxOption
 } from '@headlessui/vue'
 
 interface Props {
@@ -281,10 +308,7 @@ const props = defineProps<Props>()
 
 // Get database capabilities
 const dbCapabilities = useDatabaseCapabilities(computed(() => props.connectionType))
-const {
-  defaultPort,
-  getConnectionDefaults
-} = dbCapabilities
+const { defaultPort, getConnectionDefaults } = dbCapabilities
 
 // Create default connection based on database type
 const createDefaultConnection = (): Connection => ({
@@ -319,20 +343,23 @@ const getDefaultDatabase = (): string => {
   }
 }
 
-const { connection, refreshDatabases, isEdit } = 
-  useCommon<Connection>(createDefaultConnection())
+const { connection, refreshDatabases, isEdit } = useCommon<Connection>(createDefaultConnection())
 
 // Watch for connection type changes and update defaults
-watch(() => props.connectionType, () => {
-  if (!isEdit.value) {
-    // Only update defaults for new connections, not when editing existing ones
-    const defaults = getConnectionDefaults()
-    connection.type = props.connectionType.toLowerCase()
-    connection.port = defaultPort.value
-    connection.username = defaults.username
-    connection.database = getDefaultDatabase()
-  }
-}, { immediate: false })
+watch(
+  () => props.connectionType,
+  () => {
+    if (!isEdit.value) {
+      // Only update defaults for new connections, not when editing existing ones
+      const defaults = getConnectionDefaults()
+      connection.type = props.connectionType.toLowerCase()
+      connection.port = defaultPort.value
+      connection.username = defaults.username
+      connection.database = getDefaultDatabase()
+    }
+  },
+  { immediate: false }
+)
 
 // Local state
 const passwordFieldType = ref('password')
@@ -343,9 +370,7 @@ const newDatabaseValidationError = ref<string | null>(null)
 const newDatabase = ref('')
 
 // Computed properties for available options
-const availableDatabases = computed(() => 
-  connection.databasesInfo.map((db) => db.name)
-)
+const availableDatabases = computed(() => connection.databasesInfo.map((db) => db.name))
 
 const isNoSQL = computed(() => ['mongodb'].includes(props.connectionType.toLowerCase()))
 const canCreateDatabase = computed(() => !isNoSQL.value && connection.id)
@@ -371,7 +396,7 @@ const validateNewDatabase = () => {
 
 const createDatabase = async () => {
   if (!newDatabase.value || !connection.id) return
-  
+
   isCreatingDatabase.value = true
   try {
     await connectionsApi.createDatabase(newDatabase.value, connection.id)
@@ -380,7 +405,8 @@ const createDatabase = async () => {
     // Clear the input
     clearNewDatabase()
   } catch (error) {
-    databaseValidationError.value = error instanceof Error ? error.message : 'Failed to create database'
+    databaseValidationError.value =
+      error instanceof Error ? error.message : 'Failed to create database'
   } finally {
     isCreatingDatabase.value = false
   }
@@ -445,4 +471,4 @@ const getNewDatabasePlaceholder = () => {
       return 'new database name'
   }
 }
-</script> 
+</script>

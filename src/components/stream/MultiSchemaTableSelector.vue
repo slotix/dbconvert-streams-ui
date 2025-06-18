@@ -6,16 +6,10 @@
         <span class="text-sm text-gray-600">
           {{ selectedTables.length }} tables selected across {{ selectedSchemas.size }} schemas
         </span>
-        <button
-          @click="selectAllTables"
-          class="text-sm text-blue-600 hover:text-blue-800"
-        >
+        <button @click="selectAllTables" class="text-sm text-blue-600 hover:text-blue-800">
           Select All
         </button>
-        <button
-          @click="clearAllTables"
-          class="text-sm text-gray-600 hover:text-gray-800"
-        >
+        <button @click="clearAllTables" class="text-sm text-gray-600 hover:text-gray-800">
           Clear All
         </button>
       </div>
@@ -28,7 +22,8 @@
         <h4 class="font-medium text-blue-900">Schema Selection</h4>
       </div>
       <div class="text-sm text-blue-700 mb-3">
-        Choose which schemas to include in the migration. Only tables from selected schemas will be available.
+        Choose which schemas to include in the migration. Only tables from selected schemas will be
+        available.
       </div>
       <div class="flex flex-wrap gap-2">
         <label
@@ -40,12 +35,7 @@
             'bg-gray-100 text-gray-700 border border-gray-300': !schemaFilter.includes(schema)
           }"
         >
-          <input
-            type="checkbox"
-            :value="schema"
-            v-model="schemaFilter"
-            class="sr-only"
-          />
+          <input type="checkbox" :value="schema" v-model="schemaFilter" class="sr-only" />
           <span>{{ schema }}</span>
           <span v-if="getSchemaTableCount(schema) > 0" class="ml-1 text-xs opacity-75">
             ({{ getSchemaTableCount(schema) }})
@@ -72,7 +62,9 @@
           <div class="flex items-center justify-between">
             <div class="flex items-center space-x-3">
               <h4 class="font-medium text-gray-900">{{ schema }}</h4>
-              <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+              <span
+                class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800"
+              >
                 {{ getSchemaTableCount(schema) }} tables
               </span>
               <span
@@ -119,7 +111,9 @@
               <div class="flex items-center justify-between">
                 <span class="text-sm font-medium text-gray-900">{{ table.name }}</span>
                 <div class="flex items-center space-x-2">
-                  <span class="text-xs text-gray-500">{{ table.columns?.length || 0 }} columns</span>
+                  <span class="text-xs text-gray-500"
+                    >{{ table.columns?.length || 0 }} columns</span
+                  >
                   <span
                     v-if="table.primaryKeys?.length"
                     class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800"
@@ -145,12 +139,19 @@
       <TableCellsIcon class="mx-auto h-12 w-12 text-gray-400" />
       <h3 class="mt-2 text-sm font-medium text-gray-900">No tables found</h3>
       <p class="mt-1 text-sm text-gray-500">
-        {{ schemaFilter.length === 0 ? 'Select schemas to view available tables.' : 'No tables available in selected schemas.' }}
+        {{
+          schemaFilter.length === 0
+            ? 'Select schemas to view available tables.'
+            : 'No tables available in selected schemas.'
+        }}
       </p>
     </div>
 
     <!-- Selection Summary -->
-    <div v-if="selectedTables.length > 0" class="bg-green-50 border border-green-200 rounded-md p-4">
+    <div
+      v-if="selectedTables.length > 0"
+      class="bg-green-50 border border-green-200 rounded-md p-4"
+    >
       <div class="flex items-center space-x-2 mb-2">
         <CheckCircleIcon class="h-5 w-5 text-green-600" />
         <h4 class="font-medium text-green-900">Migration Summary</h4>
@@ -175,11 +176,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import { 
-  FunnelIcon, 
-  TableCellsIcon, 
-  CheckCircleIcon 
-} from '@heroicons/vue/24/outline'
+import { FunnelIcon, TableCellsIcon, CheckCircleIcon } from '@heroicons/vue/24/outline'
 import Spinner from '@/components/common/Spinner.vue'
 import { useDatabaseCapabilities } from '@/composables/useDatabaseCapabilities'
 import { type MultiSchemaTable } from '@/types/connections'
@@ -215,14 +212,14 @@ const selectedTables = computed(() => props.modelValue)
 
 const selectedSchemas = computed(() => {
   const schemas = new Set<string>()
-  selectedTables.value.forEach(table => schemas.add(table.schema))
+  selectedTables.value.forEach((table) => schemas.add(table.schema))
   return schemas
 })
 
 const filteredSchemas = computed(() => {
   if (schemaFilter.value.length === 0) return []
-  return schemaFilter.value.filter(schema => 
-    tablesBySchema.value[schema] && tablesBySchema.value[schema].length > 0
+  return schemaFilter.value.filter(
+    (schema) => tablesBySchema.value[schema] && tablesBySchema.value[schema].length > 0
   )
 })
 
@@ -240,20 +237,18 @@ const getTablesInSchema = (schema: string): SQLTableMeta[] => {
 }
 
 const isTableSelected = (schema: string, tableName: string): boolean => {
-  return selectedTables.value.some(
-    table => table.schema === schema && table.table === tableName
-  )
+  return selectedTables.value.some((table) => table.schema === schema && table.table === tableName)
 }
 
 // Actions
 const toggleTable = (schema: string, tableName: string) => {
   const fullName = `${schema}.${tableName}`
   const currentTables = [...selectedTables.value]
-  
+
   const existingIndex = currentTables.findIndex(
-    table => table.schema === schema && table.table === tableName
+    (table) => table.schema === schema && table.table === tableName
   )
-  
+
   if (existingIndex >= 0) {
     // Remove table
     currentTables.splice(existingIndex, 1)
@@ -266,18 +261,16 @@ const toggleTable = (schema: string, tableName: string) => {
       operations: ['insert', 'update', 'delete']
     })
   }
-  
+
   emit('update:modelValue', currentTables)
 }
 
 const selectAllInSchema = (schema: string) => {
   const currentTables = [...selectedTables.value]
   const tablesInSchema = getTablesInSchema(schema)
-  
-  tablesInSchema.forEach(table => {
-    const exists = currentTables.some(
-      t => t.schema === schema && t.table === table.name
-    )
+
+  tablesInSchema.forEach((table) => {
+    const exists = currentTables.some((t) => t.schema === schema && t.table === table.name)
     if (!exists) {
       currentTables.push({
         schema,
@@ -287,22 +280,20 @@ const selectAllInSchema = (schema: string) => {
       })
     }
   })
-  
+
   emit('update:modelValue', currentTables)
 }
 
 const clearAllInSchema = (schema: string) => {
-  const currentTables = selectedTables.value.filter(
-    table => table.schema !== schema
-  )
+  const currentTables = selectedTables.value.filter((table) => table.schema !== schema)
   emit('update:modelValue', currentTables)
 }
 
 const selectAllTables = () => {
   const allTables: MultiSchemaTable[] = []
-  
-  filteredSchemas.value.forEach(schema => {
-    getTablesInSchema(schema).forEach(table => {
+
+  filteredSchemas.value.forEach((schema) => {
+    getTablesInSchema(schema).forEach((table) => {
       allTables.push({
         schema,
         table: table.name,
@@ -311,7 +302,7 @@ const selectAllTables = () => {
       })
     })
   })
-  
+
   emit('update:modelValue', allTables)
 }
 
@@ -322,28 +313,28 @@ const clearAllTables = () => {
 // Load data
 const loadMetadata = async () => {
   if (!props.connectionId) return
-  
+
   isLoading.value = true
   try {
     // Get metadata for the connection
     const metadata = await connectionsApi.getMetadata(props.connectionId, true)
-    
+
     // Group tables by schema
     const grouped: Record<string, SQLTableMeta[]> = {}
-    Object.values(metadata.tables).forEach(table => {
+    Object.values(metadata.tables).forEach((table) => {
       const schema = table.schema || 'public'
       if (!grouped[schema]) {
         grouped[schema] = []
       }
       grouped[schema].push(table)
     })
-    
+
     tablesBySchema.value = grouped
     availableSchemas.value = Object.keys(grouped).sort()
-    
+
     // Initialize schema filter with non-system schemas
     if (schemaFilter.value.length === 0) {
-      schemaFilter.value = availableSchemas.value.filter(schema => !isSystemSchema(schema))
+      schemaFilter.value = availableSchemas.value.filter((schema) => !isSystemSchema(schema))
     }
   } catch (error) {
     console.error('Failed to load table metadata:', error)
@@ -360,4 +351,4 @@ onMounted(() => {
     loadMetadata()
   }
 })
-</script> 
+</script>

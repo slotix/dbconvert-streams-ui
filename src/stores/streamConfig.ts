@@ -22,16 +22,18 @@ export const defaultStreamConfigOptions: StreamConfig = {
   dataBundleSize: 500,
   reportingIntervals: { source: 3, target: 3 },
   operations: ['insert', 'update', 'delete'],
-  createStructure: true,
+  structureOptions: {
+    tables: 'create_if_not_exists',
+    indexes: 'create_if_not_exists',
+    foreignKeys: 'create_if_not_exists'
+  },
   limits: { numberOfEvents: 0, elapsedTime: 0 },
-  tables: [],
-  skipIndexCreation: false
+  tables: []
 }
 
 const defaultTableOptions: Partial<Table> = {
   query: '',
   operations: ['insert', 'update', 'delete'],
-  skipIndexCreation: false,
   selected: false
 }
 
@@ -44,6 +46,15 @@ const omitDefaults = (stream: StreamConfig): Partial<StreamConfig> => {
         continue
       }
       if (typeof stream[key] === 'object' && stream[key] !== null) {
+        // Special handling for structureOptions
+        if (key === 'structureOptions') {
+          const currentOptions = stream[key] as any
+          const defaultOptions = defaultStreamConfigOptions[key] as any
+          if (JSON.stringify(currentOptions) !== JSON.stringify(defaultOptions)) {
+            filteredStream[key] = stream[key]
+          }
+          continue
+        }
         if (JSON.stringify(stream[key]) === JSON.stringify(defaultStreamConfigOptions[key])) {
           continue
         }
@@ -127,13 +138,14 @@ export const useStreamsStore = defineStore('streams', {
         .reverse()
     },
     currentStreamIndexInArray(state: State): number {
-      return state.streamConfigs.indexOf(state.currentStreamConfig!)
+      return state.streamConfigs.indexOf(this.currentStreamConfig!)
     }
   },
   actions: {
     setCurrentStream(id: string) {
       const curStream = this.streamConfigs.find((c) => c.id === id)
       this.currentStreamConfig = curStream ? curStream : { ...defaultStreamConfigOptions }
+
       if (this.currentStreamConfig && !this.currentStreamConfig.name) {
         this.currentStreamConfig.name = this.generateDefaultStreamConfigName(
           this.currentStreamConfig.source || '',
@@ -169,6 +181,7 @@ export const useStreamsStore = defineStore('streams', {
             this.currentStreamConfig.tables || []
           )
         }
+
         const stream = await api.createStream(this.currentStreamConfig as StreamConfig)
 
         this.resetCurrentStream()
@@ -202,125 +215,104 @@ export const useStreamsStore = defineStore('streams', {
     },
     refreshStreams: debounce(async function (this: State) {
       try {
-        this.streamConfigs = (await api.getStreams()) as unknown as StreamConfig[]
-      } catch (error) {
-        console.error('Failed to refresh streams:', error)
-        throw error
+        this.streamConfigs = await api.getStreams()
+      } catch (err) {
+        console.error('Failed to fetch streams:', err)
       }
     }, 500),
-    deleteStreamConfig: async function (this: State, configID: string) {
+    async deleteStreamConfig(configID: string) {
       try {
-        // First call the API to delete the stream
         await api.deleteStream(configID)
-        
-        // Only update local state after successful API call
-        const index = this.streamConfigs.findIndex((stream: StreamConfig) => stream.id === configID)
-        if (index !== -1) {
-          this.streamConfigs.splice(index, 1)
-        }
-      } catch (error) {
-        console.error('Failed to delete stream:', error)
-        throw error
+        await this.refreshStreams()
+      } catch (err) {
+        console.error('Failed to delete stream config:', err)
+        throw err
       }
     },
     async cloneStreamConfig(configID: string) {
       try {
-        const resp = (await api.cloneStreamConfig(configID)) as unknown as StreamConfig
-        this.currentStreamConfig = {
-          ...this.currentStreamConfig!,
-          id: resp.id,
-          created: resp.created,
-          name: resp.name
-        }
-        this.saveStream()
-      } catch (error) {
-        console.error('Failed to clone stream:', error)
-        throw error
+        await api.cloneStreamConfig(configID)
+        await this.refreshStreams()
+      } catch (err) {
+        console.error('Failed to clone stream config:', err)
+        throw err
       }
     },
     async startStream(configID: string): Promise<string> {
       try {
-        const resp = await api.startStream(configID)
-        this.updateStreamStatus(statusEnum.RUNNING as unknown as typeof statusEnum)
-        return resp
-      } catch (error) {
-        console.error('Failed to start stream:', error)
-        throw error
+        const streamID = await api.startStream(configID)
+        const monitoringStore = useMonitoringStore()
+        monitoringStore.streamID = streamID
+        return streamID
+      } catch (err) {
+        console.error('Failed to start stream:', err)
+        throw err
       }
     },
     async pauseStream(id: string) {
       try {
         await api.pauseStream(id)
-        this.updateStreamStatus(statusEnum.PAUSED as unknown as typeof statusEnum)
-      } catch (error) {
-        console.error('Failed to pause stream:', error)
-        throw error
+        // Optionally update the monitoring store
+        // const monitoringStore = useMonitoringStore()
+        // monitoringStore.updateStreamStatus(statusEnum.paused)
+      } catch (err) {
+        console.error('Failed to pause stream:', err)
+        throw err
       }
     },
-
     async resumeStream(id: string) {
       try {
         await api.resumeStream(id)
-        this.updateStreamStatus(statusEnum.RUNNING as unknown as typeof statusEnum)
-      } catch (error) {
-        console.error('Failed to resume stream:', error)
-        throw error
+        // Optionally update the monitoring store
+        // const monitoringStore = useMonitoringStore()
+        // monitoringStore.updateStreamStatus(statusEnum.running)
+      } catch (err) {
+        console.error('Failed to resume stream:', err)
+        throw err
       }
     },
-
     async stopStream(id: string) {
       try {
         await api.stopStream(id)
-        this.updateStreamStatus(statusEnum.STOPPED as unknown as typeof statusEnum)
-      } catch (error) {
-        console.error('Failed to stop stream:', error)
-        throw error
+        // Stream status will be updated via monitoring events
+      } catch (err) {
+        console.error('Failed to stop stream:', err)
+        throw err
       }
     },
-
     updateStreamStatus(status: typeof statusEnum) {
-      useMonitoringStore().updateStreamStatus(status)
+      // This can be used to update the stream status based on monitoring events
     },
     resetCurrentStream(this: State) {
-      const defaultConfig = {
+      this.currentStreamConfig = {
         ...defaultStreamConfigOptions,
         id: '',
+        name: '',
         source: '',
-        target: ''
-      }
-      this.currentStreamConfig = {
-        ...defaultConfig
+        target: '',
+        tables: []
       }
     },
     async clearStreams(this: State) {
-      this.streamConfigs.length = 0
+      this.streamConfigs = []
     },
     generateDefaultStreamConfigName(source: string, target: string, tables: Table[]): string {
-      const sourceType = useConnectionsStore().connectionByID(source)?.type || 'Unknown'
-      const targetType = useConnectionsStore().connectionByID(target)?.type || 'Unknown'
-      const tableCount = tables.length
-      const firstTableName = tables[0]?.name || 'unknown'
+      const connectionsStore = useConnectionsStore()
+      const sourceConnection = connectionsStore.connectionByID(source)
+      const targetConnection = connectionsStore.connectionByID(target)
 
-      let name = `${sourceType}_to_${targetType}_${firstTableName}`
-      if (tableCount > 1) {
-        name += `_and_${tableCount - 1}_more`
-      }
+      const sourceType = sourceConnection?.type || 'unknown'
+      const targetType = targetConnection?.type || 'unknown'
+      const tableCount = tables.length || 'all'
 
-      return name
+      return `${sourceType}_to_${targetType}_${tableCount}_tables`
     },
     async getStreamConfigById(configId: string): Promise<StreamConfig | null> {
       try {
-        // First check if we already have this config in our streams array
-        const existingConfig = this.streamConfigs.find((stream) => stream.id === configId)
-        if (existingConfig) {
-          return existingConfig
-        }
-
-        // If not found locally, fetch from API
-        const config = await api.getStreams()
-        return config.find((c) => c.id === configId) || null
+        const streamConfigs = await api.getStreams()
+        return streamConfigs.find((config) => config.id === configId) || null
       } catch (error) {
-        console.error('Failed to fetch stream config:', error)
+        console.error('Failed to get stream config by ID:', error)
         return null
       }
     }

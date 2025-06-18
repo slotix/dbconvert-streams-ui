@@ -4,11 +4,24 @@ export interface Table {
   query: string
   operations: string[]
   selected: boolean
-  skipIndexCreation?: boolean
 }
 
 export interface StreamID {
   id: string
+}
+
+// Structure strategy options matching the backend - updated with clearer naming
+export type StructureStrategy =
+  | 'create_if_not_exists'
+  | 'fail_if_exists'
+  | 'drop_and_recreate'
+  | 'disabled'
+
+// New simplified structure options from swagger.yaml
+export interface StructureOptions {
+  tables?: StructureStrategy
+  indexes?: StructureStrategy
+  foreignKeys?: StructureStrategy
 }
 
 export interface StreamConfig {
@@ -22,8 +35,10 @@ export interface StreamConfig {
     target: number
   }
   operations?: string[]
-  createStructure: boolean
-  skipIndexCreation: boolean
+
+  // Structure options
+  structureOptions?: StructureOptions
+
   limits: {
     numberOfEvents: number
     elapsedTime: number
@@ -31,6 +46,7 @@ export interface StreamConfig {
   tables?: Table[]
   [key: string]: any
 }
+
 export interface ReportingIntervals {
   source: number
   target: number

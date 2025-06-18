@@ -3,11 +3,11 @@ export interface DatabaseCapabilities {
   hasSchemas: boolean
   hasMultipleSchemas: boolean
   hasSystemSchemas: boolean
-  
+
   // Connection features
   defaultPort: number
   protocolName: string
-  
+
   // Schema/Database structure
   hierarchyLevels: ('database' | 'schema' | 'table' | 'collection')[]
   systemObjects: {
@@ -15,13 +15,13 @@ export interface DatabaseCapabilities {
     schemas?: string[]
     tables?: string[]
   }
-  
+
   // UI specific features
   supportsSchemaFiltering: boolean
   requiresSchemaSelection: boolean
   canCreateDatabases: boolean
   canCreateSchemas: boolean
-  
+
   // Display preferences
   displayName: string
   logo: string
@@ -51,7 +51,7 @@ export const DATABASE_CAPABILITIES: DatabaseTypeRegistry = {
     logo: '/images/db-logos/postgresql.svg',
     primaryColor: '#336791'
   },
-  
+
   mysql: {
     hasSchemas: false,
     hasMultipleSchemas: false,
@@ -70,7 +70,7 @@ export const DATABASE_CAPABILITIES: DatabaseTypeRegistry = {
     logo: '/images/db-logos/mysql.svg',
     primaryColor: '#4479A1'
   },
-  
+
   oracle: {
     hasSchemas: true,
     hasMultipleSchemas: true,
@@ -89,7 +89,7 @@ export const DATABASE_CAPABILITIES: DatabaseTypeRegistry = {
     logo: '/images/db-logos/oracle.svg',
     primaryColor: '#F80000'
   },
-  
+
   sqlserver: {
     hasSchemas: true,
     hasMultipleSchemas: true,
@@ -109,7 +109,7 @@ export const DATABASE_CAPABILITIES: DatabaseTypeRegistry = {
     logo: '/images/db-logos/sqlserver.svg',
     primaryColor: '#CC2927'
   },
-  
+
   mongodb: {
     hasSchemas: false,
     hasMultipleSchemas: false,
@@ -164,4 +164,4 @@ export function getDefaultPort(dbType: string): number {
 export function canCreateSchemas(dbType: string): boolean {
   const capabilities = getDatabaseCapabilities(dbType)
   return capabilities?.canCreateSchemas || false
-} 
+}

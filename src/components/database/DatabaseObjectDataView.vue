@@ -6,11 +6,11 @@ import connections from '@/api/connections'
 
 // Define brand colors as constants for consistency (matching DatabaseDiagramD3.vue)
 const BRAND_COLORS = {
-  primary: '#00B2D6',    // Teal/Cyan blue (from logo)
-  secondary: '#F26627',  // Orange (from logo)
+  primary: '#00B2D6', // Teal/Cyan blue (from logo)
+  secondary: '#F26627', // Orange (from logo)
   highlight: {
-    blue: '#DBEAFE',   // Light blue highlight
-    orange: '#FFEDD5'  // Light orange highlight
+    blue: '#DBEAFE', // Light blue highlight
+    orange: '#FFEDD5' // Light orange highlight
   }
 }
 
@@ -54,7 +54,7 @@ async function loadTableData() {
   try {
     const objectName = getObjectName(props.tableMeta)
     const objectSchema = getObjectSchema(props.tableMeta)
-    
+
     if (!objectName) {
       throw new Error('Table/View name is undefined')
     }
@@ -71,9 +71,10 @@ async function loadTableData() {
 
     // For non-public schemas, use schema-qualified name in the URL path
     // For public schema or no schema, use just the table name
-    const apiObjectName = objectSchema && objectSchema !== 'public' && objectSchema !== ''
-      ? `${objectSchema}.${objectName}`
-      : objectName
+    const apiObjectName =
+      objectSchema && objectSchema !== 'public' && objectSchema !== ''
+        ? `${objectSchema}.${objectName}`
+        : objectName
 
     const params = {
       limit: itemsPerPage.value,
@@ -105,10 +106,14 @@ async function loadTableData() {
 }
 
 // Reset pagination and reload data when table changes
-watch(() => props.tableMeta, () => {
-  currentPage.value = 1
-  loadTableData()
-}, { deep: true })
+watch(
+  () => props.tableMeta,
+  () => {
+    currentPage.value = 1
+    loadTableData()
+  },
+  { deep: true }
+)
 
 // Reload data when page or items per page changes
 watch([currentPage, skipCount], () => {
@@ -197,15 +202,23 @@ const foreignKeyColumns = computed(() => {
 </script>
 
 <template>
-  <div :class="[
-    'bg-white',
-    $attrs.class ? $attrs.class : 'shadow-sm ring-1 ring-gray-900/5 rounded-lg'
-  ]">
+  <div
+    :class="[
+      'bg-white',
+      $attrs.class ? $attrs.class : 'shadow-sm ring-1 ring-gray-900/5 rounded-lg'
+    ]"
+  >
     <!-- Header -->
     <div class="px-4 py-3 border-b border-gray-200">
       <div class="flex items-center justify-between">
         <h3 class="text-lg font-medium leading-6 text-gray-900">
-          <template v-if="getObjectSchema(tableMeta) && getObjectSchema(tableMeta) !== 'public' && getObjectSchema(tableMeta) !== ''">
+          <template
+            v-if="
+              getObjectSchema(tableMeta) &&
+              getObjectSchema(tableMeta) !== 'public' &&
+              getObjectSchema(tableMeta) !== ''
+            "
+          >
             {{ getObjectSchema(tableMeta) }}.{{ getObjectName(tableMeta) || 'Unnamed' }}
           </template>
           <template v-else>
@@ -217,8 +230,11 @@ const foreignKeyColumns = computed(() => {
           <!-- Items per page selector -->
           <div class="flex items-center gap-2">
             <label for="items-per-page" class="text-sm text-gray-600">Rows per page:</label>
-            <select id="items-per-page" v-model="itemsPerPage"
-              class="rounded-md border-gray-300 py-1.5 text-sm focus:border-gray-500 focus:ring-gray-500">
+            <select
+              id="items-per-page"
+              v-model="itemsPerPage"
+              class="rounded-md border-gray-300 py-1.5 text-sm focus:border-gray-500 focus:ring-gray-500"
+            >
               <option :value="10">10</option>
               <option :value="25">25</option>
               <option :value="50">50</option>
@@ -227,15 +243,22 @@ const foreignKeyColumns = computed(() => {
           </div>
           <!-- Skip count toggle - show for both tables and views -->
           <div class="flex items-center gap-2">
-            <input id="skip-count" v-model="skipCount" type="checkbox"
-              class="h-4 w-4 rounded border-gray-300 text-gray-600 focus:ring-gray-500" />
+            <input
+              id="skip-count"
+              v-model="skipCount"
+              type="checkbox"
+              class="h-4 w-4 rounded border-gray-300 text-gray-600 focus:ring-gray-500"
+            />
             <label for="skip-count" class="text-sm text-gray-600">Skip row count</label>
           </div>
         </div>
         <!-- Refresh button -->
-        <button type="button"
+        <button
+          type="button"
           class="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
-          :disabled="isLoading" @click="loadTableData">
+          :disabled="isLoading"
+          @click="loadTableData"
+        >
           <ArrowPathIcon :class="['h-5 w-5 text-gray-400 mr-2', { 'animate-spin': isLoading }]" />
           Refresh Data
         </button>
@@ -262,13 +285,24 @@ const foreignKeyColumns = computed(() => {
               <!-- Table headers -->
               <thead class="bg-gray-50 sticky top-0 z-10">
                 <tr>
-                  <th v-for="column in tableData.columns" :key="column"
-                    class="px-3 py-2 text-left text-sm font-semibold text-gray-900 bg-gray-50 sticky top-0 whitespace-nowrap">
+                  <th
+                    v-for="column in tableData.columns"
+                    :key="column"
+                    class="px-3 py-2 text-left text-sm font-semibold text-gray-900 bg-gray-50 sticky top-0 whitespace-nowrap"
+                  >
                     <div class="flex items-center gap-1">
-                      <KeyIcon v-if="primaryKeyColumns.has(column)" :style="`color: ${BRAND_COLORS.primary}`"
-                        class="h-4 w-4" title="Primary Key" />
-                      <LinkIcon v-if="foreignKeyColumns.has(column)" :style="`color: ${BRAND_COLORS.secondary}`"
-                        class="h-4 w-4" title="Foreign Key" />
+                      <KeyIcon
+                        v-if="primaryKeyColumns.has(column)"
+                        :style="`color: ${BRAND_COLORS.primary}`"
+                        class="h-4 w-4"
+                        title="Primary Key"
+                      />
+                      <LinkIcon
+                        v-if="foreignKeyColumns.has(column)"
+                        :style="`color: ${BRAND_COLORS.secondary}`"
+                        class="h-4 w-4"
+                        title="Foreign Key"
+                      />
                       {{ column }}
                     </div>
                   </th>
@@ -276,9 +310,16 @@ const foreignKeyColumns = computed(() => {
               </thead>
               <!-- Table body -->
               <tbody class="divide-y divide-gray-200 bg-white">
-                <tr v-for="(row, rowIndex) in tableData.rows" :key="rowIndex" class="hover:bg-gray-50">
-                  <td v-for="(value, colIndex) in row" :key="colIndex"
-                    class="px-3 py-2 text-sm text-gray-500 whitespace-nowrap">
+                <tr
+                  v-for="(row, rowIndex) in tableData.rows"
+                  :key="rowIndex"
+                  class="hover:bg-gray-50"
+                >
+                  <td
+                    v-for="(value, colIndex) in row"
+                    :key="colIndex"
+                    class="px-3 py-2 text-sm text-gray-500 whitespace-nowrap"
+                  >
                     {{ value }}
                   </td>
                 </tr>
@@ -290,58 +331,83 @@ const foreignKeyColumns = computed(() => {
         <!-- Pagination -->
         <div class="mt-4 flex items-center justify-between border-t border-gray-200 bg-white py-3">
           <div class="flex flex-1 justify-between sm:hidden">
-            <button @click="currentPage = Math.max(1, currentPage - 1)" :disabled="currentPage === 1"
+            <button
+              @click="currentPage = Math.max(1, currentPage - 1)"
+              :disabled="currentPage === 1"
               class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-              :class="{ 'opacity-50 cursor-not-allowed': currentPage === 1 }">
+              :class="{ 'opacity-50 cursor-not-allowed': currentPage === 1 }"
+            >
               Previous
             </button>
-            <button @click="currentPage = currentPage + 1"
-              :disabled="(skipCount && tableData?.rows?.length < itemsPerPage) || (!skipCount && currentPage === totalPages)"
+            <button
+              @click="currentPage = currentPage + 1"
+              :disabled="
+                (skipCount && tableData?.rows?.length < itemsPerPage) ||
+                (!skipCount && currentPage === totalPages)
+              "
               class="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-              :class="{ 'opacity-50 cursor-not-allowed': (skipCount && tableData?.rows?.length < itemsPerPage) || (!skipCount && currentPage === totalPages) }">
+              :class="{
+                'opacity-50 cursor-not-allowed':
+                  (skipCount && tableData?.rows?.length < itemsPerPage) ||
+                  (!skipCount && currentPage === totalPages)
+              }"
+            >
               Next
             </button>
           </div>
           <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
             <div class="text-sm text-gray-700">
               Showing {{ tableData.offset + 1 }} to {{ tableData.offset + tableData.rows.length }}
-              <template v-if="!skipCount">
-                of {{ tableData.total_count }}
-              </template>
+              <template v-if="!skipCount"> of {{ tableData.total_count }} </template>
               rows
             </div>
-            <nav class="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+            <nav
+              class="isolate inline-flex -space-x-px rounded-md shadow-sm"
+              aria-label="Pagination"
+            >
               <button
                 class="relative inline-flex items-center px-3 py-1.5 text-sm font-medium ring-1 ring-inset ring-gray-300"
                 :class="[
                   currentPage === 1
                     ? 'text-gray-400 cursor-not-allowed'
                     : 'text-gray-900 hover:bg-gray-50 cursor-pointer'
-                ]" :disabled="currentPage === 1" @click="currentPage = Math.max(1, currentPage - 1)">
+                ]"
+                :disabled="currentPage === 1"
+                @click="currentPage = Math.max(1, currentPage - 1)"
+              >
                 Previous
               </button>
               <template v-if="!skipCount">
-                <button v-for="page in displayedPages" :key="page"
-                  @click="typeof page === 'number' ? currentPage = page : null" :class="[
+                <button
+                  v-for="page in displayedPages"
+                  :key="page"
+                  @click="typeof page === 'number' ? (currentPage = page) : null"
+                  :class="[
                     'relative inline-flex items-center px-3 py-1.5 text-sm font-medium ring-1 ring-inset ring-gray-300',
-                    typeof page === 'number' ? (
-                      currentPage === page
+                    typeof page === 'number'
+                      ? currentPage === page
                         ? 'bg-gray-600 text-white'
                         : 'text-gray-900 hover:bg-gray-50 cursor-pointer'
-                    ) : 'text-gray-400 cursor-default'
-                  ]">
+                      : 'text-gray-400 cursor-default'
+                  ]"
+                >
                   {{ page }}
                 </button>
               </template>
               <button
                 class="relative inline-flex items-center px-3 py-1.5 text-sm font-medium ring-1 ring-inset ring-gray-300"
                 :class="[
-                  (skipCount && tableData?.rows?.length < itemsPerPage) || (!skipCount && currentPage === totalPages)
+                  (skipCount && tableData?.rows?.length < itemsPerPage) ||
+                  (!skipCount && currentPage === totalPages)
                     ? 'text-gray-400 cursor-not-allowed'
                     : 'text-gray-900 hover:bg-gray-50 cursor-pointer'
                 ]"
-                :disabled="(skipCount && tableData?.rows?.length < itemsPerPage) || (!skipCount && currentPage === totalPages)"
-                @click="currentPage = currentPage + 1">
+                :disabled="
+                  (skipCount && tableData?.rows?.length < itemsPerPage) ||
+                  (!skipCount && currentPage === totalPages)
+                "
+                @click="currentPage = currentPage + 1"
+              >
                 Next
               </button>
             </nav>

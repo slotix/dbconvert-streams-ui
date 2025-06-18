@@ -1,15 +1,15 @@
 import { computed, type Ref } from 'vue'
-import { 
-  getDatabaseCapabilities, 
-  supportsSchemas, 
+import {
+  getDatabaseCapabilities,
+  supportsSchemas,
   supportsSchemaFiltering,
   canCreateSchemas,
   getDefaultPort,
-  type DatabaseCapabilities 
+  type DatabaseCapabilities
 } from '@/types/databaseCapabilities'
 
 export function useDatabaseCapabilities(databaseType: Ref<string> | string) {
-  const dbType = computed(() => 
+  const dbType = computed(() =>
     typeof databaseType === 'string' ? databaseType : databaseType.value
   )
 
@@ -18,14 +18,18 @@ export function useDatabaseCapabilities(databaseType: Ref<string> | string) {
   // Core capabilities
   const hasSchemas = computed(() => supportsSchemas(dbType.value))
   const hasMultipleSchemas = computed(() => capabilities.value?.hasMultipleSchemas || false)
-  const requiresSchemaSelection = computed(() => capabilities.value?.requiresSchemaSelection || false)
+  const requiresSchemaSelection = computed(
+    () => capabilities.value?.requiresSchemaSelection || false
+  )
   const supportsSchemaFilter = computed(() => supportsSchemaFiltering(dbType.value))
   const canCreateSchema = computed(() => canCreateSchemas(dbType.value))
   const canCreateDatabase = computed(() => capabilities.value?.canCreateDatabases || false)
 
   // Connection defaults
   const defaultPort = computed(() => getDefaultPort(dbType.value))
-  const protocolName = computed(() => capabilities.value?.protocolName || dbType.value.toLowerCase())
+  const protocolName = computed(
+    () => capabilities.value?.protocolName || dbType.value.toLowerCase()
+  )
 
   // UI display
   const displayName = computed(() => capabilities.value?.displayName || dbType.value)
@@ -33,7 +37,9 @@ export function useDatabaseCapabilities(databaseType: Ref<string> | string) {
   const primaryColor = computed(() => capabilities.value?.primaryColor || '#6B7280')
 
   // Hierarchy and structure
-  const hierarchyLevels = computed(() => capabilities.value?.hierarchyLevels || ['database', 'table'])
+  const hierarchyLevels = computed(
+    () => capabilities.value?.hierarchyLevels || ['database', 'table']
+  )
   const showDatabaseLevel = computed(() => hierarchyLevels.value.includes('database'))
   const showSchemaLevel = computed(() => hierarchyLevels.value.includes('schema'))
   const showTableLevel = computed(() => hierarchyLevels.value.includes('table'))
@@ -48,7 +54,11 @@ export function useDatabaseCapabilities(databaseType: Ref<string> | string) {
   const isPostgreSQL = computed(() => dbType.value.toLowerCase().includes('postgres'))
   const isMySQL = computed(() => dbType.value.toLowerCase().includes('mysql'))
   const isOracle = computed(() => dbType.value.toLowerCase().includes('oracle'))
-  const isSQLServer = computed(() => dbType.value.toLowerCase().includes('sqlserver') || dbType.value.toLowerCase().includes('mssql'))
+  const isSQLServer = computed(
+    () =>
+      dbType.value.toLowerCase().includes('sqlserver') ||
+      dbType.value.toLowerCase().includes('mssql')
+  )
   const isMongoDB = computed(() => dbType.value.toLowerCase().includes('mongo'))
   const isSQL = computed(() => !isMongoDB.value)
   const isNoSQL = computed(() => isMongoDB.value)
@@ -88,23 +98,23 @@ export function useDatabaseCapabilities(databaseType: Ref<string> | string) {
 
   // Schema filtering helpers - moved to explorer/stream contexts
   const shouldShowSchemaSection = computed(() => false) // Schema selection moved to explorer/stream
-  const shouldShowSchemaFilterButton = computed(() => false) // Schema filtering moved to explorer/stream  
+  const shouldShowSchemaFilterButton = computed(() => false) // Schema filtering moved to explorer/stream
   const shouldShowCreateSchemaButton = computed(() => false) // Schema creation moved to explorer/stream
 
   // Validation helpers
   const validateConnection = (connection: any) => {
     const errors: string[] = []
-    
+
     if (!connection.host) errors.push('Host is required')
     if (!connection.port) errors.push('Port is required')
     if (!connection.username) errors.push('Username is required')
-    
+
     if (showDatabaseLevel.value && !connection.database) {
       errors.push('Database is required')
     }
-    
+
     // Schema validation removed - handled in explorer/stream contexts
-    
+
     return {
       isValid: errors.length === 0,
       errors
@@ -120,26 +130,26 @@ export function useDatabaseCapabilities(databaseType: Ref<string> | string) {
     supportsSchemaFilter,
     canCreateSchema,
     canCreateDatabase,
-    
+
     // Connection info
     defaultPort,
     protocolName,
     displayName,
     logo,
     primaryColor,
-    
+
     // Structure
     hierarchyLevels,
     showDatabaseLevel,
     showSchemaLevel,
     showTableLevel,
     showCollectionLevel,
-    
+
     // System objects
     systemDatabases,
     systemSchemas,
     systemTables,
-    
+
     // Database type checks
     isPostgreSQL,
     isMySQL,
@@ -148,14 +158,14 @@ export function useDatabaseCapabilities(databaseType: Ref<string> | string) {
     isMongoDB,
     isSQL,
     isNoSQL,
-    
+
     // UI helpers
     shouldShowSchemaSection,
     shouldShowSchemaFilterButton,
     shouldShowCreateSchemaButton,
-    
+
     // Defaults and validation
     getConnectionDefaults,
     validateConnection
   }
-} 
+}
