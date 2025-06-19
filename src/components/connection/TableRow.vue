@@ -8,10 +8,13 @@
           class="mx-auto object-cover rounded-full h-6 w-6 hidden md:table-cell"
         />
       </div>
-      <span class="ml-3 text-gray-900 font-medium whitespace-no-wrap">
-        <span class="text-sm text-gray-900 font-medium">{{ connection.name }}</span>
-        <span v-if="connection.id" class="text-xs text-gray-500 ml-1">{{ connection.id }}</span>
-      </span>
+      <div class="ml-3 flex flex-col gap-1">
+        <div class="flex items-center gap-2">
+          <span class="text-sm text-gray-900 font-medium">{{ connection.name }}</span>
+          <CloudProviderBadge :cloud-provider="connection.cloud_provider" size="sm" />
+        </div>
+        <span v-if="connection.id" class="text-xs text-gray-500">{{ connection.id }}</span>
+      </div>
     </div>
   </td>
   <td class="hidden px-5 py-5 lg:table-cell" @click="selectConnection">
@@ -55,6 +58,7 @@
 
 <script>
 import ActionsMenu from '@/components/common/ActionsMenu.vue'
+import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
 import shared from './shared'
 import { PencilIcon, TableCellsIcon } from '@heroicons/vue/24/outline'
 export default Object.assign({}, shared, {

@@ -18,22 +18,36 @@
           'bg-gray-50': !selected
         }"
       >
-        <div class="flex items-center gap-3">
-          <img
-            class="h-8 w-8 rounded-full shadow-sm bg-white object-contain p-0.5 transition-all duration-300 flex-shrink-0"
-            :class="{
-              'ring-2 ring-offset-2 ring-yellow-400 shadow-yellow-200/50':
-                selected && currentStep?.name === 'source',
-              'ring-2 ring-offset-2 ring-green-400 shadow-green-200/50':
-                selected && currentStep?.name === 'target',
-              'ring-1 ring-gray-200': !selected
-            }"
-            :src="logoSrc"
-            :alt="connection.type + ' logo'"
-          />
+        <div class="flex items-start gap-3">
+          <div
+            :class="getDatabaseIconStyle(connection.type)"
+            class="rounded-lg p-2.5 transition-all duration-200 hover:shadow-md flex-shrink-0"
+          >
+            <img
+              class="h-7 w-7 object-contain"
+              :src="logoSrc"
+              :alt="connection.type + ' logo'"
+            />
+          </div>
           <div class="min-w-0 flex-1">
-            <h3 class="text-lg font-medium text-gray-900 truncate">{{ connection.name }}</h3>
-            <p class="text-sm text-gray-500 truncate">ID: {{ connection.id }}</p>
+            <div class="flex items-center justify-between">
+              <h3 class="text-lg font-medium text-gray-900 truncate pr-2">{{ connection.name }}</h3>
+              <div class="flex items-center gap-1.5 flex-shrink-0">
+                <button
+                  v-if="documentationUrl"
+                  v-tooltip="'View setup documentation'"
+                  class="text-gray-400 hover:text-blue-600 transition-colors"
+                  @click.stop="openDocumentation"
+                >
+                  <DocumentTextIcon class="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 mt-1">
+              <CloudProviderBadge :cloud-provider="connection.cloud_provider" size="sm" />
+              <span class="text-xs text-gray-400">•</span>
+              <p class="text-xs text-gray-500 truncate font-mono">{{ connection.id }}</p>
+            </div>
           </div>
         </div>
       </div>
@@ -45,7 +59,9 @@
           <div class="grid grid-cols-2 gap-4">
             <div class="min-w-0">
               <label class="text-xs font-medium uppercase text-gray-500">Host</label>
-              <p class="mt-1 font-medium text-gray-900 truncate">{{ concatenateValues }}</p>
+              <p class="mt-1 font-medium text-gray-900 truncate" :title="concatenateValues">
+                {{ showPassword ? concatenateValues : truncatedHost }}
+              </p>
             </div>
             <div class="min-w-0">
               <label class="text-xs font-medium uppercase text-gray-500">Database</label>
@@ -60,16 +76,26 @@
                 {{
                   showPassword
                     ? connectionString
-                    : connectionString.replace(/(?<=:)[^@]+(?=@) /g, '****')
+                    : truncatedConnectionString.replace(/(?<=:)[^@]+(?=@)/g, '****')
                 }}
               </span>
-              <button
-                class="flex-shrink-0 text-gray-400 hover:text-gray-600"
-                @click.stop="showPassword = !showPassword"
-              >
-                <EyeIcon v-if="!showPassword" class="h-4 w-4" />
-                <EyeSlashIcon v-else class="h-4 w-4" />
-              </button>
+              <div class="flex flex-col gap-1">
+                <button
+                  class="flex-shrink-0 text-gray-400 hover:text-gray-600"
+                  @click.stop="showPassword = !showPassword"
+                  :title="showPassword ? 'Hide password and truncate' : 'Show password and full details'"
+                >
+                  <EyeIcon v-if="!showPassword" class="h-4 w-4" />
+                  <EyeSlashIcon v-else class="h-4 w-4" />
+                </button>
+                <button
+                  class="flex-shrink-0 text-gray-400 hover:text-gray-600"
+                  @click.stop="copyConnectionString"
+                  :title="'Copy connection string to clipboard'"
+                >
+                  <ClipboardIcon class="h-4 w-4" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -140,9 +166,12 @@ import {
   TableCellsIcon,
   EyeIcon,
   EyeSlashIcon,
-  FunnelIcon
+  ClipboardIcon,
+  DocumentTextIcon
 } from '@heroicons/vue/24/outline'
 import { ref } from 'vue'
+import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
+import { getDocumentationUrl } from '@/utils/documentationUtils'
 
 const props = defineProps<{
   connection: Connection
@@ -203,10 +232,66 @@ const selected = computed(() => {
   return isSourceStreamSelected || isTargetStreamSelected
 })
 
+const documentationUrl = computed(() => {
+  if (!props.connection) return null
+  return getDocumentationUrl(props.connection.cloud_provider, props.connection.type)
+})
+
 const connectionString = computed(() => {
   if (!props.connection) return ''
   return generateConnectionString(props.connection, showPassword.value)
 })
+
+const truncatedHost = computed(() => {
+  const fullHost = concatenateValues.value
+  if (fullHost.length <= 30) return fullHost
+  
+  // For cloud providers, try to show the important part
+  if (fullHost.includes('.')) {
+    const parts = fullHost.split('.')
+    if (parts.length > 3) {
+      // Show first part and last 2 parts with ellipsis
+      return `${parts[0]}...${parts.slice(-2).join('.')}`
+    }
+  }
+  
+  // Simple truncation for other cases
+  return `${fullHost.substring(0, 30)}...`
+})
+
+const truncatedConnectionString = computed(() => {
+  const fullString = connectionString.value
+  if (fullString.length <= 60) return fullString
+  
+  // For connection strings, truncate in the middle to preserve protocol and end
+  const start = fullString.substring(0, 30)
+  const end = fullString.substring(fullString.length - 30)
+  return `${start}...${end}`
+})
+
+function getDatabaseIconStyle(dbType: string): string {
+  const normalizedType = normalizeConnectionType(dbType?.toLowerCase() || '')
+  
+  // Database-specific brand colors with subtle backgrounds
+  const styles: Record<string, string> = {
+    'postgresql': 'bg-blue-100 ring-2 ring-blue-200/50',
+    'postgres': 'bg-blue-100 ring-2 ring-blue-200/50',
+    'mysql': 'bg-orange-100 ring-2 ring-orange-200/50',
+    'mongodb': 'bg-green-100 ring-2 ring-green-200/50',
+    'mongo': 'bg-green-100 ring-2 ring-green-200/50',
+    'redis': 'bg-red-100 ring-2 ring-red-200/50',
+    'sqlite': 'bg-gray-100 ring-2 ring-gray-200/50',
+    'mariadb': 'bg-orange-100 ring-2 ring-orange-200/50',
+    'mssql': 'bg-blue-100 ring-2 ring-blue-200/50',
+    'sqlserver': 'bg-blue-100 ring-2 ring-blue-200/50',
+    'oracle': 'bg-red-100 ring-2 ring-red-200/50',
+    'cassandra': 'bg-purple-100 ring-2 ring-purple-200/50',
+    'elasticsearch': 'bg-yellow-100 ring-2 ring-yellow-200/50',
+    'clickhouse': 'bg-yellow-100 ring-2 ring-yellow-200/50'
+  }
+  
+  return styles[normalizedType] || 'bg-gray-100 ring-2 ring-gray-200/50'
+}
 
 function editConnection(): void {
   if (props.connection) {
@@ -232,6 +317,38 @@ function selectConnection(): void {
   }
   if (currentStep.value?.name === 'target') {
     streamsStore.updateTarget(props.connection.id)
+  }
+}
+
+async function copyConnectionString(): Promise<void> {
+  if (!props.connection) return
+  
+  try {
+    const fullConnectionString = generateConnectionString(props.connection, true) // Always copy with password
+    await navigator.clipboard.writeText(fullConnectionString)
+    
+    // Optional: Show a brief success indication (you could add a toast notification here)
+    console.log('Connection string copied to clipboard')
+  } catch (error) {
+    console.error('Failed to copy connection string:', error)
+    // Fallback for older browsers
+    try {
+      const textArea = document.createElement('textarea')
+      textArea.value = generateConnectionString(props.connection, true)
+      document.body.appendChild(textArea)
+      textArea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textArea)
+      console.log('Connection string copied to clipboard (fallback)')
+    } catch (fallbackError) {
+      console.error('Fallback copy also failed:', fallbackError)
+    }
+  }
+}
+
+function openDocumentation(): void {
+  if (documentationUrl.value) {
+    window.open(documentationUrl.value, '_blank', 'noopener,noreferrer')
   }
 }
 </script>

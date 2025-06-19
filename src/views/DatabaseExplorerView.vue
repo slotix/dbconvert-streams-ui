@@ -6,6 +6,7 @@ import { useConnectionsStore } from '@/stores/connections'
 import { Tab, TabGroup, TabList, TabPanels, TabPanel } from '@headlessui/vue'
 import { XMarkIcon } from '@heroicons/vue/20/solid'
 import DatabaseMetadataView from './DatabaseMetadataView.vue'
+import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
 
 const MAX_RECENT_CONNECTIONS = 5
 const route = useRoute()
@@ -93,6 +94,12 @@ function removeFromRecent(connectionId: string) {
 // Switch to a different connection
 function switchConnection(connectionId: string) {
   router.push(`/explorer/${connectionId}`)
+}
+
+// Get cloud provider for a connection
+function getConnectionCloudProvider(connectionId: string) {
+  const connection = connectionsStore.connections.find((conn) => conn.id === connectionId)
+  return connection?.cloud_provider || ''
 }
 
 // If we have a current connection ID but it's not in recent connections, add it
@@ -199,7 +206,13 @@ watch(currentConnectionId, (newId) => {
                     :alt="currentConnectionDetails.type"
                     class="h-5 w-5 rounded-full"
                   />
-                  <span>{{ connection.name }}</span>
+                  <div class="flex items-center gap-2 min-w-0">
+                    <span class="truncate max-w-[120px]" :title="connection.name">{{ connection.name }}</span>
+                    <CloudProviderBadge 
+                      :cloud-provider="getConnectionCloudProvider(connection.id)" 
+                      size="sm"
+                    />
+                  </div>
                 </button>
                 <!-- Close button -->
                 <button

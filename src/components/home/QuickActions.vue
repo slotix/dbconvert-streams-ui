@@ -18,7 +18,10 @@
           >
             <div class="flex items-center">
               <div class="flex-shrink-0">
-                <div class="bg-blue-50 rounded-lg p-2 group-hover:bg-blue-100 transition-colors">
+                <div 
+                  :class="getDatabaseIconStyle(getConnectionType(connection.id))"
+                  class="rounded-lg p-2 transition-all duration-200 hover:shadow-md"
+                >
                   <img
                     v-if="getConnectionLogo(connection.id)"
                     :src="getConnectionLogo(connection.id) || undefined"
@@ -27,9 +30,21 @@
                   />
                 </div>
               </div>
-              <div class="ml-4">
-                <h3 class="text-sm font-semibold text-gray-900">{{ connection.name }}</h3>
-                <p class="text-sm text-gray-500">{{ getConnectionDetails(connection.id) }}</p>
+              <div class="ml-4 flex-1 min-w-0">
+                <div class="flex items-center gap-2 min-w-0">
+                  <h3 class="text-sm font-semibold text-gray-900 truncate max-w-[180px]" :title="connection.name">{{ connection.name }}</h3>
+                  <CloudProviderBadge :cloud-provider="getCloudProvider(connection.id)" size="sm" />
+                  <button
+                    v-if="getDocumentationUrl(getCloudProvider(connection.id), getConnectionType(connection.id))"
+                    v-tooltip="'View setup documentation'"
+                    class="flex-shrink-0 text-gray-400 hover:text-blue-600 transition-colors"
+                    @click.stop="openDocumentation(getCloudProvider(connection.id), getConnectionType(connection.id))"
+                  >
+                    <DocumentTextIcon class="h-3 w-3" />
+                  </button>
+                </div>
+                <p class="text-sm text-gray-500 truncate" :title="getConnectionHost(connection.id)">{{ getConnectionHost(connection.id) }}</p>
+                <p class="text-xs text-gray-400 truncate" :title="getConnectionDatabase(connection.id)">{{ getConnectionDatabase(connection.id) }}</p>
               </div>
             </div>
             <ArrowRightIcon
@@ -107,8 +122,12 @@ import {
   CircleStackIcon,
   ClockIcon,
   PlusIcon,
-  ArrowRightIcon
+  ArrowRightIcon,
+  DocumentTextIcon
 } from '@heroicons/vue/24/outline'
+import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
+import { normalizeConnectionType } from '@/utils/connectionUtils'
+import { getDocumentationUrl } from '@/utils/documentationUtils'
 
 const router = useRouter()
 const commonStore = useCommonStore()
@@ -134,10 +153,85 @@ function getConnectionType(connectionId: string) {
   return connection?.type || ''
 }
 
+function getConnectionHost(connectionId: string) {
+  const connection = connectionsStore.connections.find((conn) => conn.id === connectionId)
+  if (!connection) return ''
+  
+  // Truncate long hostnames for better display
+  let displayHost = connection.host
+  if (displayHost.length > 35) {
+    // For cloud providers, try to show the important part
+    if (displayHost.includes('.')) {
+      const parts = displayHost.split('.')
+      if (parts.length > 3) {
+        // Show first part and last 2 parts with ellipsis
+        displayHost = `${parts[0]}...${parts.slice(-2).join('.')}`
+      }
+    } else {
+      // Simple truncation for other cases
+      displayHost = `${displayHost.substring(0, 30)}...`
+    }
+  }
+  
+  return `${displayHost}:${connection.port}`
+}
+
+function getConnectionDatabase(connectionId: string) {
+  const connection = connectionsStore.connections.find((conn) => conn.id === connectionId)
+  if (!connection) return ''
+  return `Database: ${connection.database}`
+}
+
 function getConnectionDetails(connectionId: string) {
   const connection = connectionsStore.connections.find((conn) => conn.id === connectionId)
   if (!connection) return ''
-  return `${connection.host}:${connection.port} • ${connection.database}`
+  
+  // Truncate long hostnames for better display
+  let displayHost = connection.host
+  if (displayHost.length > 30) {
+    // For cloud providers, try to show the important part
+    if (displayHost.includes('.')) {
+      const parts = displayHost.split('.')
+      if (parts.length > 3) {
+        // Show first part and last 2 parts with ellipsis
+        displayHost = `${parts[0]}...${parts.slice(-2).join('.')}`
+      }
+    } else {
+      // Simple truncation for other cases
+      displayHost = `${displayHost.substring(0, 25)}...`
+    }
+  }
+  
+  return `${displayHost}:${connection.port} • ${connection.database}`
+}
+
+function getCloudProvider(connectionId: string) {
+  const connection = connectionsStore.connections.find((conn) => conn.id === connectionId)
+  return connection?.cloud_provider || ''
+}
+
+function getDatabaseIconStyle(dbType: string): string {
+  const normalizedType = normalizeConnectionType(dbType?.toLowerCase() || '')
+  
+  // Database-specific brand colors with subtle backgrounds
+  const styles: Record<string, string> = {
+    'postgresql': 'bg-blue-100 ring-2 ring-blue-200/50',
+    'postgres': 'bg-blue-100 ring-2 ring-blue-200/50',
+    'mysql': 'bg-orange-100 ring-2 ring-orange-200/50',
+    'mongodb': 'bg-green-100 ring-2 ring-green-200/50',
+    'mongo': 'bg-green-100 ring-2 ring-green-200/50',
+    'redis': 'bg-red-100 ring-2 ring-red-200/50',
+    'sqlite': 'bg-gray-100 ring-2 ring-gray-200/50',
+    'mariadb': 'bg-orange-100 ring-2 ring-orange-200/50',
+    'mssql': 'bg-blue-100 ring-2 ring-blue-200/50',
+    'sqlserver': 'bg-blue-100 ring-2 ring-blue-200/50',
+    'oracle': 'bg-red-100 ring-2 ring-red-200/50',
+    'cassandra': 'bg-purple-100 ring-2 ring-purple-200/50',
+    'elasticsearch': 'bg-yellow-100 ring-2 ring-yellow-200/50',
+    'clickhouse': 'bg-yellow-100 ring-2 ring-yellow-200/50'
+  }
+  
+  return styles[normalizedType] || 'bg-gray-100 ring-2 ring-gray-200/50'
 }
 
 function exploreConnection(connectionId: string) {
@@ -160,5 +254,12 @@ function viewAllConnections() {
 
 function viewAllStreamConfigurations() {
   router.push('/streams')
+}
+
+function openDocumentation(cloudProvider?: string, dbType?: string): void {
+  const url = getDocumentationUrl(cloudProvider, dbType)
+  if (url) {
+    window.open(url, '_blank', 'noopener,noreferrer')
+  }
 }
 </script>

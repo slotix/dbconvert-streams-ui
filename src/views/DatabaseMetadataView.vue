@@ -16,6 +16,7 @@ import connections from '@/api/connections'
 import DatabaseStructureTree from '@/components/database/DatabaseStructureTree.vue'
 import DatabaseObjectContainer from '@/components/database/DatabaseObjectContainer.vue'
 import DiagramView from '@/components/database/DiagramView.vue'
+import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
 
 const route = useRoute()
 const connectionId = route.params.id as string
@@ -96,7 +97,7 @@ onMounted(async () => {
       <div class="mb-4">
         <div class="flex items-center justify-between px-2">
           <div class="flex items-center gap-4">
-            <div v-if="connection" class="flex items-center gap-2 text-sm text-gray-500">
+            <div v-if="connection" class="flex items-center gap-4 text-sm text-gray-500">
               <div class="flex items-center gap-2">
                 <span class="font-medium text-gray-700"
                   >{{ connection.host }}:{{ connection.port }}</span
@@ -104,6 +105,7 @@ onMounted(async () => {
                 <span class="text-gray-400">•</span>
                 <span class="font-medium text-gray-700">{{ connection.database }}</span>
               </div>
+              <CloudProviderBadge :cloud-provider="connection.cloud_provider" />
             </div>
           </div>
         </div>

@@ -69,12 +69,17 @@
               <div class="space-y-2">
                 <div class="bg-gray-50 rounded-md p-4 border border-gray-200">
                   <div class="flex items-center gap-2 mb-2">
-                    <img
+                    <div
                       v-if="source && source.type"
-                      class="h-6 w-6 rounded-full"
-                      :src="logoSrc(source.type)"
-                      :alt="source.type + ' logo'"
-                    />
+                      :class="getDatabaseIconStyle(source.type)"
+                      class="rounded-lg p-1.5 transition-all duration-200 hover:shadow-md"
+                    >
+                      <img
+                        class="h-5 w-5 object-contain"
+                        :src="logoSrc(source.type)"
+                        :alt="source.type + ' logo'"
+                      />
+                    </div>
                     <span
                       class="font-medium text-gray-900"
                       :class="{
@@ -82,6 +87,15 @@
                       }"
                       >{{ source?.name || 'N/A' }}</span
                     >
+                    <CloudProviderBadge v-if="source" :cloud-provider="source.cloud_provider" />
+                    <button
+                      v-if="source && getDocumentationUrl(source.cloud_provider, source.type)"
+                      v-tooltip="'View setup documentation'"
+                      class="flex-shrink-0 text-gray-400 hover:text-blue-600 transition-colors"
+                      @click.stop="openDocumentation(source.cloud_provider, source.type)"
+                    >
+                      <DocumentTextIcon class="h-3 w-3" />
+                    </button>
                     <ExclamationCircleIcon
                       v-if="!source || !source.name"
                       class="h-4 w-4 text-red-500"
@@ -99,12 +113,17 @@
               <div class="space-y-2">
                 <div class="bg-gray-50 rounded-md p-4 border border-gray-200">
                   <div class="flex items-center gap-2 mb-2">
-                    <img
+                    <div
                       v-if="target && target.type"
-                      class="h-6 w-6 rounded-full"
-                      :src="logoSrc(target.type)"
-                      :alt="target.type + ' logo'"
-                    />
+                      :class="getDatabaseIconStyle(target.type)"
+                      class="rounded-lg p-1.5 transition-all duration-200 hover:shadow-md"
+                    >
+                      <img
+                        class="h-5 w-5 object-contain"
+                        :src="logoSrc(target.type)"
+                        :alt="target.type + ' logo'"
+                      />
+                    </div>
                     <span
                       class="font-medium text-gray-900"
                       :class="{
@@ -112,6 +131,15 @@
                       }"
                       >{{ target?.name || 'N/A' }}</span
                     >
+                    <CloudProviderBadge v-if="target" :cloud-provider="target.cloud_provider" />
+                    <button
+                      v-if="target && getDocumentationUrl(target.cloud_provider, target.type)"
+                      v-tooltip="'View setup documentation'"
+                      class="flex-shrink-0 text-gray-400 hover:text-blue-600 transition-colors"
+                      @click.stop="openDocumentation(target.cloud_provider, target.type)"
+                    >
+                      <DocumentTextIcon class="h-3 w-3" />
+                    </button>
                     <ExclamationCircleIcon
                       v-if="!target || !target.name"
                       class="h-4 w-4 text-red-500"
