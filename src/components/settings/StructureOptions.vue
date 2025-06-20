@@ -3,7 +3,10 @@
     <div class="border-b border-gray-200 pb-4">
       <h3 class="text-lg font-medium leading-6 text-gray-900">Database Structure Options</h3>
       <p class="mt-1 text-sm text-gray-500">
-        Configure how database structures should be handled during synchronization.
+        Configure how database structures should be handled during data migration and synchronization operations.
+        <a href="https://docs.dbconvert.com/streams/database-structure-options.html" target="_blank" class="text-blue-600 hover:text-blue-800 underline ml-1">
+          Learn more about strategies →
+        </a>
       </p>
     </div>
 
@@ -20,11 +23,10 @@
         >
           <option value="create_if_not_exists">Create If Not Exists (default, safe)</option>
           <option value="fail_if_exists">Fail If Exists (strict validation)</option>
-          <option value="drop_and_recreate">Drop & Recreate (destructive)</option>
           <option value="disabled">Disabled (don't create)</option>
         </select>
         <p class="mt-1 text-xs text-gray-500">
-          Controls CREATE TABLE statements. Creates tables only if they don't already exist.
+          Controls CREATE TABLE statements.
         </p>
       </div>
 
@@ -40,11 +42,10 @@
         >
           <option value="create_if_not_exists">Create If Not Exists (default, safe)</option>
           <option value="fail_if_exists">Fail If Exists (strict validation)</option>
-          <option value="drop_and_recreate">Drop & Recreate (development)</option>
           <option value="disabled">Disabled (performance tuning)</option>
         </select>
         <p class="mt-1 text-xs text-gray-500">
-          Controls CREATE INDEX statements. 'Disabled' can improve performance in CDC scenarios.
+          Controls CREATE INDEX statements.
         </p>
       </div>
 
@@ -60,11 +61,10 @@
         >
           <option value="create_if_not_exists">Create If Not Exists (default, safe)</option>
           <option value="fail_if_exists">Fail If Exists (strict validation)</option>
-          <option value="drop_and_recreate">Drop & Recreate (development)</option>
           <option value="disabled">Disabled (performance/CDC)</option>
         </select>
         <p class="mt-1 text-xs text-gray-500">
-          Controls ALTER TABLE ADD CONSTRAINT statements. 'Disabled' is often used in CDC mode.
+          Controls ALTER TABLE ADD CONSTRAINT statements.
         </p>
       </div>
     </div>

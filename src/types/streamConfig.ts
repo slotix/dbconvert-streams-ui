@@ -14,7 +14,6 @@ export interface StreamID {
 export type StructureStrategy =
   | 'create_if_not_exists'
   | 'fail_if_exists'
-  | 'drop_and_recreate'
   | 'disabled'
 
 // New simplified structure options from swagger.yaml
