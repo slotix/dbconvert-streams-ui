@@ -134,13 +134,17 @@ export default defineComponent({
     })
 
     onMounted(async () => {
+      // First, try to load connections from localStorage
+      connectionsStore.initializeFromStorage()
+      
       try {
-        // Only try to refresh connections if we're properly initialized
-        if (commonStore.isBackendConnected) {
+        // Only try to refresh connections if we're properly initialized and cache is expired
+        if (commonStore.isBackendConnected && (connectionsStore.shouldRefreshFromAPI() || connectionsStore.connections.length === 0)) {
           await connectionsStore.refreshConnections()
         }
       } catch (err) {
         commonStore.showNotification((err as Error).message, 'error')
+        // If API call fails, we still have the cached data from localStorage
       }
       await commonStore.getViewType()
     })

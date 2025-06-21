@@ -23,10 +23,10 @@
                   class="rounded-lg p-2 transition-all duration-200 hover:shadow-md"
                 >
                   <img
-                    v-if="getConnectionLogo(connection.id)"
-                    :src="getConnectionLogo(connection.id) || undefined"
+                    :src="getConnectionLogo(connection.id) || '/images/db-logos/all.svg'"
                     :alt="getConnectionType(connection.id)"
                     class="h-6 w-6 object-contain"
+                    @error="(e) => { (e.target as HTMLImageElement).src = '/images/db-logos/all.svg' }"
                   />
                 </div>
               </div>
@@ -104,7 +104,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCommonStore } from '@/stores/common'
 import { useStreamsStore } from '@/stores/streamConfig'
@@ -124,18 +124,57 @@ const commonStore = useCommonStore()
 const streamsStore = useStreamsStore()
 const connectionsStore = useConnectionsStore()
 
-// Get recent connections from localStorage
+// Get recent connections from localStorage, but filter out ones that don't exist in the store
 const recentConnections = computed(() => {
   const recentConnectionsData = JSON.parse(localStorage.getItem('recentConnections') || '[]')
-  return recentConnectionsData.slice().reverse() // Show most recent first
+  
+  // Only show connections that actually exist in the store
+  const validConnections = recentConnectionsData.filter((recentConn: any) => {
+    return connectionsStore.connections.some(conn => conn.id === recentConn.id)
+  })
+  
+  return validConnections.slice().reverse() // Show most recent first
 })
 
 function getConnectionLogo(connectionId: string) {
   const connection = connectionsStore.connections.find((conn) => conn.id === connectionId)
   if (!connection) return null
 
-  const dbType = connectionsStore.dbTypes.find((f) => f.type === connection.type)
-  return dbType?.logo || null
+  // Normalize the connection type to match dbTypes
+  const normalizedType = normalizeConnectionType(connection.type)
+  
+  // First try exact match
+  let dbType = connectionsStore.dbTypes.find((f) => 
+    normalizeConnectionType(f.type.toLowerCase()) === normalizedType.toLowerCase()
+  )
+  
+  // If no exact match, try partial match for common variations
+  if (!dbType) {
+    const typeVariations: Record<string, string[]> = {
+      'postgresql': ['postgres', 'pg', 'postgresql'],
+      'mysql': ['mysql', 'mariadb'],
+      'sqlserver': ['sql server', 'mssql', 'sqlserver', 'microsoft sql server'],
+      'oracle': ['oracle', 'oracledb'],
+      'sqlite': ['sqlite', 'sqlite3'],
+      'mariadb': ['mariadb', 'mysql'],
+      'cockroachdb': ['cockroach', 'cockroachdb', 'crdb'],
+      'mongodb': ['mongo', 'mongodb'],
+      'firebird': ['firebird', 'fb'],
+      'interbase': ['interbase', 'ib']
+    }
+    
+    const lowerType = normalizedType.toLowerCase()
+    for (const [dbTypeName, variations] of Object.entries(typeVariations)) {
+      if (variations.some(variation => lowerType.includes(variation) || variation.includes(lowerType))) {
+        dbType = connectionsStore.dbTypes.find((f) => 
+          normalizeConnectionType(f.type.toLowerCase()) === dbTypeName
+        )
+        if (dbType) break
+      }
+    }
+  }
+  
+  return dbType?.logo || '/images/db-logos/all.svg' // Fallback to generic logo
 }
 
 function getConnectionType(connectionId: string) {
@@ -246,5 +285,17 @@ function viewAllStreamConfigurations() {
   router.push('/streams')
 }
 
+// Clean up localStorage if connections no longer exist
+onMounted(() => {
+  // Clean up recent connections that no longer exist
+  const recentConnectionsData = JSON.parse(localStorage.getItem('recentConnections') || '[]')
+  const validConnections = recentConnectionsData.filter((recentConn: any) => {
+    return connectionsStore.connections.some(conn => conn.id === recentConn.id)
+  })
+  
+  if (validConnections.length !== recentConnectionsData.length) {
+    localStorage.setItem('recentConnections', JSON.stringify(validConnections))
+  }
+})
 
 </script>

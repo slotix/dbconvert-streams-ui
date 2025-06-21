@@ -332,6 +332,10 @@ const initializeApp = async () => {
 onMounted(async () => {
   try {
     isInitializing.value = true
+    
+    // Initialize connections from localStorage early
+    connectionsStore.initializeFromStorage()
+    
     await initializeApiClient()
     const result = await initializeApp()
     if (result === 'failed') {

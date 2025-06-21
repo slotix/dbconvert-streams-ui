@@ -19,12 +19,34 @@ interface State {
   isLoadingDatabases: boolean
 }
 
+// Constants for localStorage keys
+const CONNECTIONS_STORAGE_KEY = 'dbconvert-connections'
+const CONNECTIONS_TIMESTAMP_KEY = 'dbconvert-connections-timestamp'
+const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes in milliseconds
+
 export const useConnectionsStore = defineStore('connections', {
   state: (): State => ({
     dbTypes: [
       { id: 0, type: 'All', logo: '/images/db-logos/all.svg' },
       { id: 1, type: 'PostgreSQL', logo: '/images/db-logos/postgresql.svg' },
-      { id: 2, type: 'MySQL', logo: '/images/db-logos/mysql.svg' }
+      { id: 2, type: 'MySQL', logo: '/images/db-logos/mysql.svg' },
+      { id: 3, type: 'MariaDB', logo: '/images/db-logos/mariadb.svg' },
+      { id: 4, type: 'Oracle', logo: '/images/db-logos/oracle.svg' },
+      { id: 5, type: 'SQL Server', logo: '/images/db-logos/sql-server.svg' },
+      { id: 6, type: 'SQLite', logo: '/images/db-logos/sqlite.svg' },
+      { id: 7, type: 'Firebird', logo: '/images/db-logos/firebird.svg' },
+      { id: 8, type: 'Interbase', logo: '/images/db-logos/interbase.svg' },
+      { id: 9, type: 'Access', logo: '/images/db-logos/access.svg' },
+      { id: 10, type: 'CockroachDB', logo: '/images/db-logos/cockroachdb.svg' },
+      { id: 11, type: 'TiDB', logo: '/images/db-logos/tidb.svg' },
+      { id: 12, type: 'YugabyteDB', logo: '/images/db-logos/yugabyte.svg' },
+      { id: 13, type: 'SingleStore', logo: '/images/db-logos/singlestore.svg' },
+      { id: 14, type: 'Percona', logo: '/images/db-logos/percona.svg' },
+      { id: 15, type: 'Greenplum', logo: '/images/db-logos/greenplum.svg' },
+      { id: 16, type: 'EDB', logo: '/images/db-logos/edb.svg' },
+      { id: 17, type: 'Citus', logo: '/images/db-logos/citus.svg' },
+      { id: 18, type: 'Aurora', logo: '/images/db-logos/aurora.svg' },
+      { id: 19, type: 'Vitess', logo: '/images/db-logos/vitess.svg' }
     ],
     connections: [],
     currentConnection: null,
@@ -57,6 +79,78 @@ export const useConnectionsStore = defineStore('connections', {
     }
   },
   actions: {
+    // Persistence methods
+    saveConnectionsToStorage() {
+      try {
+        // Only save basic connection info, exclude sensitive data like passwords
+        const connectionsToSave = this.connections.map(conn => ({
+          id: conn.id,
+          name: conn.name,
+          type: conn.type,
+          host: conn.host,
+          port: conn.port,
+          username: conn.username,
+          database: conn.database,
+          created: conn.created,
+          cloud_provider: conn.cloud_provider,
+          // Exclude password and other sensitive data
+        }))
+        
+        localStorage.setItem(CONNECTIONS_STORAGE_KEY, JSON.stringify(connectionsToSave))
+        localStorage.setItem(CONNECTIONS_TIMESTAMP_KEY, Date.now().toString())
+      } catch (error) {
+        console.warn('Failed to save connections to localStorage:', error)
+      }
+    },
+
+    loadConnectionsFromStorage(): Connection[] {
+      try {
+        const timestamp = localStorage.getItem(CONNECTIONS_TIMESTAMP_KEY)
+        const now = Date.now()
+        
+        // Check if cache is expired
+        if (!timestamp || (now - parseInt(timestamp)) > CACHE_DURATION) {
+          return []
+        }
+        
+        const savedConnections = localStorage.getItem(CONNECTIONS_STORAGE_KEY)
+        if (savedConnections) {
+          return JSON.parse(savedConnections)
+        }
+      } catch (error) {
+        console.warn('Failed to load connections from localStorage:', error)
+      }
+      return []
+    },
+
+    clearConnectionsStorage() {
+      try {
+        localStorage.removeItem(CONNECTIONS_STORAGE_KEY)
+        localStorage.removeItem(CONNECTIONS_TIMESTAMP_KEY)
+      } catch (error) {
+        console.warn('Failed to clear connections from localStorage:', error)
+      }
+    },
+
+    initializeFromStorage() {
+      const savedConnections = this.loadConnectionsFromStorage()
+      if (savedConnections.length > 0) {
+        this.connections = savedConnections
+      }
+    },
+
+    shouldRefreshFromAPI(): boolean {
+      try {
+        const timestamp = localStorage.getItem(CONNECTIONS_TIMESTAMP_KEY)
+        if (!timestamp) return true
+        
+        const now = Date.now()
+        return (now - parseInt(timestamp)) > CACHE_DURATION
+      } catch (error) {
+        return true
+      }
+    },
+
     setCurrentConnection(id: string) {
       const curConnection = this.connections.filter((c) => {
         return c.id === id
@@ -84,6 +178,9 @@ export const useConnectionsStore = defineStore('connections', {
 
         const response = await api.getConnections()
         this.connections = response
+        
+        // Save to localStorage after successful fetch
+        this.saveConnectionsToStorage()
       } catch (error) {
         console.error('Failed to refresh connections:', error)
         throw error
@@ -98,6 +195,9 @@ export const useConnectionsStore = defineStore('connections', {
           this.connections.splice(index, 1)
         }
         await api.deleteConnection(id)
+        
+        // Update localStorage after deletion
+        this.saveConnectionsToStorage()
       } catch (error) {
         console.error('Failed to delete connection:', error)
         throw error
@@ -140,6 +240,7 @@ export const useConnectionsStore = defineStore('connections', {
     },
     async clearConnections() {
       this.connections.length = 0
+      this.clearConnectionsStorage()
     },
     async createConnection(): Promise<void> {
       try {
@@ -154,6 +255,9 @@ export const useConnectionsStore = defineStore('connections', {
           const databasesInfo = await api.getDatabases(response.id)
           this.currentConnection.databasesInfo = databasesInfo
           // Schema handling moved to explorer/stream contexts
+          
+          // Refresh connections to get the latest data and update storage
+          await this.refreshConnections()
         }
       } catch (error) {
         console.error('[Store] Failed to create connection:', error)
@@ -163,6 +267,8 @@ export const useConnectionsStore = defineStore('connections', {
     async updateConnection(): Promise<void> {
       try {
         await api.updateConnection()
+        // Refresh connections to get the latest data and update storage
+        await this.refreshConnections()
       } catch (error) {
         console.error('[Store] Failed to update connection:', error)
         throw error
@@ -226,6 +332,38 @@ export const useConnectionsStore = defineStore('connections', {
         connection?.type === 'SQL Server' ||
         connection?.type === 'Oracle'
       )
+    },
+    async forceRefreshConnections() {
+      this.clearConnectionsStorage()
+      await this.refreshConnections()
+    },
+
+    // Debug method to check cache status
+    getCacheInfo() {
+      try {
+        const timestamp = localStorage.getItem(CONNECTIONS_TIMESTAMP_KEY)
+        const connections = localStorage.getItem(CONNECTIONS_STORAGE_KEY)
+        const now = Date.now()
+        
+        if (!timestamp || !connections) {
+          return { hasCache: false, expired: true, age: 0, connectionCount: 0 }
+        }
+        
+        const age = now - parseInt(timestamp)
+        const expired = age > CACHE_DURATION
+        const connectionCount = JSON.parse(connections).length
+        
+        return {
+          hasCache: true,
+          expired,
+          age: Math.round(age / 1000), // in seconds
+          maxAge: Math.round(CACHE_DURATION / 1000), // in seconds
+          connectionCount,
+          timestamp: new Date(parseInt(timestamp)).toISOString()
+        }
+      } catch (error) {
+        return { hasCache: false, expired: true, age: 0, connectionCount: 0, error: (error as Error).message }
+      }
     }
   }
 })
