@@ -2,67 +2,6 @@
   <div class="p-6 space-y-6">
     <h2 class="text-xl font-semibold text-gray-900">System Status</h2>
 
-    <!-- Error Display only for connection errors -->
-    <ErrorDisplay v-if="shouldShowError" class="mb-6">
-      <template #default="{ error }">
-        <div
-          class="rounded-lg border p-4"
-          :class="[
-            error.isRetrying ? 'bg-yellow-50 border-yellow-200' : 'bg-red-50 border-red-200'
-          ]"
-        >
-          <div class="flex items-center">
-            <div class="flex-shrink-0">
-              <!-- Spinner for retry state -->
-              <svg
-                v-if="error.isRetrying"
-                class="animate-spin h-5 w-5 text-yellow-600"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  class="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  stroke-width="4"
-                ></circle>
-                <path
-                  class="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                ></path>
-              </svg>
-              <!-- Error icon for final error state -->
-              <svg
-                v-else
-                class="h-5 w-5 text-red-600"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fill-rule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z"
-                  clip-rule="evenodd"
-                />
-              </svg>
-            </div>
-            <div class="ml-3">
-              <h3
-                class="text-sm font-medium"
-                :class="error.isRetrying ? 'text-yellow-800' : 'text-red-800'"
-              >
-                {{ error.message }}
-              </h3>
-            </div>
-          </div>
-        </div>
-      </template>
-    </ErrorDisplay>
-
     <!-- Loading state -->
     <div v-if="isInitialLoading" class="animate-pulse space-y-4">
       <div v-for="i in 6" :key="i" class="h-16 bg-gray-100 rounded-lg"></div>
@@ -115,7 +54,6 @@ import {
   KeyIcon,
   ChartBarIcon
 } from '@heroicons/vue/24/outline'
-import ErrorDisplay from '@/components/common/ErrorDisplay.vue'
 
 interface Service {
   id: string
@@ -182,26 +120,12 @@ const pollingInterval = ref<number | null>(null)
 const serviceStatuses = computed(() => commonStore.serviceStatuses)
 const isInitialLoading = ref(true)
 
-// Check if all services are healthy
-const areAllServicesHealthy = computed(() => {
-  return services.every((service) => {
-    const status = getServiceStatus(service.id)
-    return status === 'passing'
-  })
-})
-
-// Only show errors if we're not in initialization and have actual connection issues
-const shouldShowError = computed(() => {
-  return (
-    commonStore.error &&
-    !isInitialLoading.value &&
-    commonStore.isBackendConnected &&
-    // Only show error if services are actually failing
-    !areAllServicesHealthy.value
-  )
-})
-
 const getServiceStatus = (serviceId: string): string => {
+  // If backend is disconnected, all services are unavailable
+  if (!commonStore.isBackendConnected) {
+    return 'unavailable'
+  }
+  
   if (serviceId === 'sentry') {
     return commonStore.sentryHealthy ? 'passing' : 'critical'
   }
@@ -213,7 +137,7 @@ const getStatusClasses = (status: string) => ({
   'bg-emerald-100 text-emerald-700': status === 'passing',
   'bg-red-100 text-red-700': status === 'critical',
   'bg-yellow-100 text-yellow-700': status === 'warning',
-  'bg-gray-100 text-gray-700': status === 'unknown'
+  'bg-gray-100 text-gray-700': status === 'unknown' || status === 'unavailable'
 })
 
 onMounted(async () => {
@@ -227,12 +151,17 @@ onMounted(async () => {
     isInitialLoading.value = false
   }
 
-  // Start polling after initial load
+  // Start polling after initial load - reduced to 10 seconds for more responsive updates
   pollingInterval.value = window.setInterval(() => {
-    commonStore.fetchServiceStatus().then(() => {
-      commonStore.clearError()
-    })
-  }, 30000)
+    // Only poll if backend is connected
+    if (commonStore.isBackendConnected) {
+      commonStore.fetchServiceStatus().then(() => {
+        commonStore.clearError()
+      }).catch((error) => {
+        console.warn('Service status polling failed:', error)
+      })
+    }
+  }, 10000)
 })
 
 onUnmounted(() => {

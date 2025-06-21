@@ -57,6 +57,7 @@ interface State {
   isLoading: boolean
   isLoadingRoute: boolean
   routeLoadError: string | null
+  healthCheckInterval: number | null
 }
 
 export const useCommonStore = defineStore('common', {
@@ -152,7 +153,8 @@ export const useCommonStore = defineStore('common', {
     error: null as ErrorState | null,
     isLoading: false,
     isLoadingRoute: false,
-    routeLoadError: null as string | null
+    routeLoadError: null as string | null,
+    healthCheckInterval: null as number | null
   }),
   actions: {
     async retryOperation(
@@ -216,12 +218,22 @@ export const useCommonStore = defineStore('common', {
             await api.validateApiKey(storedApiKey)
             this.apiKey = storedApiKey
             return storedApiKey
-          } catch (error) {
-            // If the stored API key is invalid, clear it
-            localStorage.removeItem('apiKey')
-            this.apiKey = null
+          } catch (error: any) {
+            // Only clear API key for authentication errors (401)
+            // Keep it for network errors so user doesn't have to re-enter on connection issues
+            if (error.response?.status === 401 || error.message === 'Invalid API key') {
+              console.log('API key is invalid, clearing from storage')
+              localStorage.removeItem('apiKey')
+              this.apiKey = null
+              this.setBackendConnected(false)
+              return null
+            }
+            
+            // For network errors, keep the API key but mark backend as disconnected
+            console.log('Network error during API key validation, keeping stored key:', error.message)
+            this.apiKey = storedApiKey
             this.setBackendConnected(false)
-            return null
+            return storedApiKey
           }
         }
 
@@ -256,12 +268,20 @@ export const useCommonStore = defineStore('common', {
       try {
         const response = await api.getUserDataFromSentry(apiKey)
         this.userData = response
-      } catch (error) {
-        // Clear invalid API key
-        await this.clearApiKey()
+      } catch (error: any) {
         const toast = useToast()
-        toast.error('Invalid API key. Please enter a valid key to continue.')
-        this.userData = null
+        
+        // Only clear API key for authentication errors (401)
+        if (error.response?.status === 401 || error.message === 'Invalid API key') {
+          console.log('API key is invalid, clearing from storage')
+          await this.clearApiKey()
+          toast.error('Invalid API key. Please enter a valid key to continue.')
+          this.userData = null
+        } else {
+          // For network errors, keep the API key and show appropriate message
+          console.log('Network error during user data fetch, keeping API key:', error.message)
+          toast.error('Unable to connect to server. Please check your connection and try again.')
+        }
         throw error
       }
     },
@@ -330,30 +350,67 @@ export const useCommonStore = defineStore('common', {
         // Set to false initially during initialization
         this.setBackendConnected(false)
 
-        await Promise.all([this.checkSentryHealth(), this.checkAPIHealth()])
+        // Check if we have a stored API key first
+        const apiKey = await this.getApiKey()
+        if (!apiKey) {
+          toast.info('Please enter your API key to continue')
+          return 'failed'
+        }
+
+        // Try to check backend health
+        try {
+          await Promise.all([this.checkSentryHealth(), this.checkAPIHealth()])
+        } catch (healthError) {
+          console.log('Health check failed, attempting to work with cached data:', healthError)
+          // Continue with offline mode if we have an API key
+        }
 
         if (this.sentryHealthy && this.apiHealthy) {
-          const apiKey = await this.getApiKey()
-          if (apiKey) {
+          // Online mode - full initialization
+          try {
             await this.userDataFromSentry(apiKey)
             if (this.userData?.apiKey) {
               await this.loadUserConfigs()
               this.consumeLogsFromSSE()
-              // Set to true only after complete successful initialization
               this.setBackendConnected(true)
               toast.success('App initialized successfully')
               this.clearError()
+              
+              // Start real-time health monitoring
+              this.startHealthMonitoring()
+              
               return 'success'
             }
+          } catch (error: any) {
+            // If authentication fails, let it bubble up
+            if (error.response?.status === 401 || error.message === 'Invalid API key') {
+              throw error
+            }
+            // For other errors, try to work with cached data
+            console.log('Failed to fetch user data, working with cached data:', error.message)
+            toast.warning('Working in offline mode. Some features may be limited.')
+            return 'success'
           }
-          toast.info('Please enter your API key to continue')
-          return 'failed'
+        } else {
+          // Offline mode - work with stored API key and cached data
+          console.log('Backend unavailable, working in offline mode')
+          toast.warning('Unable to connect to server. Working with cached data.')
+          
+          // Start monitoring to detect when backend comes back online
+          this.startHealthMonitoring()
+          
+          return 'success'
         }
 
         return 'failed'
       } catch (error: any) {
         console.error('Failed to initialize app:', error)
-        toast.error(`Failed to initialize app: ${error.message}`)
+        // Only show error toast for authentication failures
+        if (error.response?.status === 401 || error.message === 'Invalid API key') {
+          toast.error('Invalid API key. Please enter a valid key to continue.')
+        } else {
+          toast.error(`Failed to initialize app: ${error.message}`)
+        }
         return 'failed'
       }
     },
@@ -425,6 +482,60 @@ export const useCommonStore = defineStore('common', {
     },
     clearRouteError() {
       this.routeLoadError = null
+    },
+
+    // Real-time health monitoring
+    async performHealthCheck() {
+      try {
+        // Quick health check without retries for monitoring
+        await api.backendHealthCheck()
+        
+        // If we get here, backend is healthy
+        if (!this.isBackendConnected) {
+          console.log('Backend connection restored')
+          this.setBackendConnected(true)
+          this.apiHealthy = true
+          this.sentryHealthy = true
+          this.clearError()
+          
+          const toast = useToast()
+          toast.success('Connection restored!')
+        }
+      } catch (error) {
+        // Backend is down
+        if (this.isBackendConnected) {
+          console.log('Backend connection lost')
+          this.setBackendConnected(false)
+          this.apiHealthy = false
+          this.sentryHealthy = false
+          
+          // Only show toast once when connection is first lost
+          const toast = useToast()
+          toast.warning('Backend connection lost. Working in offline mode.')
+        }
+      }
+    },
+
+    startHealthMonitoring() {
+      // Don't start if already monitoring
+      if (this.healthCheckInterval) {
+        return
+      }
+
+      console.log('Starting real-time health monitoring')
+      
+      // Check every 10 seconds
+      this.healthCheckInterval = window.setInterval(() => {
+        this.performHealthCheck()
+      }, 10000)
+    },
+
+    stopHealthMonitoring() {
+      if (this.healthCheckInterval) {
+        console.log('Stopping health monitoring')
+        clearInterval(this.healthCheckInterval)
+        this.healthCheckInterval = null
+      }
     }
   },
   getters: {

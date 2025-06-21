@@ -1,6 +1,6 @@
 <template>
   <div
-    v-if="!hasValidApiKey"
+    v-if="shouldShowApiKeyPrompt"
     class="fixed inset-0 bg-gray-500 bg-opacity-85 transition-opacity z-40"
   >
     <div class="fixed inset-0 z-50 overflow-y-auto">
@@ -63,7 +63,18 @@ import { KeyIcon } from '@heroicons/vue/24/outline'
 
 const store = useCommonStore()
 const apiKeyInput = ref('')
-const hasValidApiKey = computed(() => store.hasValidApiKey)
+
+// Only show API key prompt when we truly don't have an API key stored
+// Don't show it during connection issues when we have a valid key
+const shouldShowApiKeyPrompt = computed(() => {
+  // If we have an API key stored (even if backend is disconnected), don't show prompt
+  if (store.apiKey) {
+    return false
+  }
+  
+  // Only show if we truly don't have an API key
+  return !store.hasValidApiKey
+})
 
 async function submitApiKey() {
   if (!apiKeyInput.value) return

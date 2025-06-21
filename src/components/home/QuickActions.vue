@@ -16,7 +16,7 @@
           <div
             class="flex items-center justify-between p-4 rounded-xl border border-gray-100 bg-white hover:border-blue-200 hover:bg-blue-50/50 transition-all duration-200"
           >
-            <div class="flex items-center">
+            <div class="flex items-center min-w-0 flex-1 pr-3">
               <div class="flex-shrink-0">
                 <div 
                   :class="getDatabaseIconStyle(getConnectionType(connection.id))"
@@ -32,16 +32,18 @@
               </div>
               <div class="ml-4 flex-1 min-w-0">
                 <div class="flex items-center gap-2 min-w-0">
-                  <h3 class="text-sm font-semibold text-gray-900 truncate max-w-[180px]" :title="connection.name">{{ connection.name }}</h3>
-                  <CloudProviderBadge :cloud-provider="getCloudProvider(connection.id)" :db-type="getConnectionType(connection.id)" size="sm" />
+                  <h3 class="text-sm font-semibold text-gray-900 truncate flex-1 min-w-0" :title="connection.name">{{ connection.name }}</h3>
+                  <CloudProviderBadge :cloud-provider="getCloudProvider(connection.id)" :db-type="getConnectionType(connection.id)" size="sm" class="flex-shrink-0" />
                 </div>
                 <p class="text-sm text-gray-500 truncate" :title="getConnectionHost(connection.id)">{{ getConnectionHost(connection.id) }}</p>
                 <p class="text-xs text-gray-400 truncate" :title="getConnectionDatabase(connection.id)">{{ getConnectionDatabase(connection.id) }}</p>
               </div>
             </div>
-            <ArrowRightIcon
-              class="h-5 w-5 text-gray-400 group-hover:text-blue-600 transition-colors"
-            />
+            <div class="flex-shrink-0 ml-2">
+              <ArrowRightIcon
+                class="h-5 w-5 text-gray-400 group-hover:text-blue-600 transition-colors"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -186,19 +188,22 @@ function getConnectionHost(connectionId: string) {
   const connection = connectionsStore.connections.find((conn) => conn.id === connectionId)
   if (!connection) return ''
   
-  // Truncate long hostnames for better display
+  // More aggressive truncation for long hostnames to ensure arrow visibility
   let displayHost = connection.host
-  if (displayHost.length > 35) {
+  if (displayHost.length > 25) {
     // For cloud providers, try to show the important part
     if (displayHost.includes('.')) {
       const parts = displayHost.split('.')
       if (parts.length > 3) {
         // Show first part and last 2 parts with ellipsis
         displayHost = `${parts[0]}...${parts.slice(-2).join('.')}`
+      } else {
+        // Simple truncation for shorter domain names
+        displayHost = `${displayHost.substring(0, 22)}...`
       }
     } else {
       // Simple truncation for other cases
-      displayHost = `${displayHost.substring(0, 30)}...`
+      displayHost = `${displayHost.substring(0, 22)}...`
     }
   }
   
@@ -208,7 +213,14 @@ function getConnectionHost(connectionId: string) {
 function getConnectionDatabase(connectionId: string) {
   const connection = connectionsStore.connections.find((conn) => conn.id === connectionId)
   if (!connection) return ''
-  return `Database: ${connection.database}`
+  
+  let dbName = connection.database
+  // Truncate database name if it's too long
+  if (dbName.length > 20) {
+    dbName = `${dbName.substring(0, 17)}...`
+  }
+  
+  return `Database: ${dbName}`
 }
 
 function getConnectionDetails(connectionId: string) {

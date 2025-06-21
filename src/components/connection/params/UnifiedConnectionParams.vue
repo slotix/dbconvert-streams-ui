@@ -440,7 +440,7 @@ const getDatabaseHelpText = () => {
   const type = props.connectionType.toLowerCase()
   switch (type) {
     case 'postgresql':
-      return 'PostgreSQL requires a database name. Most providers use "postgres" as the default database name. Compatible with AWS RDS, Azure Database, Google Cloud SQL, Neon, Supabase, and on-premises servers.'
+      return 'Enter the database name you want to connect to. Database names vary by provider and setup - check your provider documentation for the correct name. Common examples: "postgres", "defaultdb", "neondb", or your custom database name.'
     case 'mysql':
       return 'Enter your database name. Avoid system databases like "mysql", "information_schema", "performance_schema". Compatible with all major cloud providers and on-premises installations.'
     case 'oracle':

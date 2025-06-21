@@ -186,6 +186,38 @@
               </div>
             </RouterLink>
           </li>
+          
+          <!-- Connection Status in Navigation -->
+          <li class="mt-4 pt-4 border-t border-gray-700">
+            <div
+              :class="[
+                'group flex items-center justify-center p-2 rounded-md',
+                commonStore.isBackendConnected
+                  ? 'text-green-400 bg-green-900/20'
+                  : commonStore.error
+                    ? 'text-red-400 bg-red-900/20'
+                    : 'text-yellow-400 bg-yellow-900/20'
+              ]"
+              :title="getConnectionStatusText()"
+            >
+              <div
+                :class="[
+                  'h-4 w-4 rounded-full border-2',
+                  commonStore.isBackendConnected
+                    ? 'bg-green-400 border-green-400 animate-pulse'
+                    : commonStore.error
+                      ? 'bg-red-400 border-red-400'
+                      : 'bg-yellow-400 border-yellow-400'
+                ]"
+              ></div>
+              <!-- Show tooltip on hover -->
+              <div
+                class="absolute left-20 hidden group-hover:block bg-gray-900 text-white px-2 py-1 rounded text-sm whitespace-nowrap z-50"
+              >
+                {{ getConnectionStatusText() }}
+              </div>
+            </div>
+          </li>
         </ul>
       </nav>
 
@@ -251,7 +283,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, computed } from 'vue'
+import { ref, watch, onMounted, onUnmounted, computed, watchEffect } from 'vue'
 import { RouterLink, RouterView, useRouter } from 'vue-router'
 import { useCommonStore } from '@/stores/common'
 import { useConnectionsStore } from '@/stores/connections'
@@ -306,6 +338,100 @@ const navigation = computed(() => {
 
 const sidebarOpen = ref(false)
 
+const getConnectionStatusText = () => {
+  if (commonStore.isBackendConnected) {
+    return 'Connected'
+  } else if (commonStore.error) {
+    return 'Connection Error'
+  } else {
+    return 'Offline Mode'
+  }
+}
+
+// Dynamic browser tab title and favicon management
+const baseTitle = 'DBConvert Streams'
+
+const createStatusFavicon = (color: string) => {
+  // Create a simple colored circle favicon
+  const canvas = document.createElement('canvas')
+  canvas.width = 32
+  canvas.height = 32
+  const ctx = canvas.getContext('2d')
+  
+  if (ctx) {
+    // Clear canvas
+    ctx.clearRect(0, 0, 32, 32)
+    
+    // Draw background circle
+    ctx.fillStyle = '#1f2937' // Dark gray background
+    ctx.beginPath()
+    ctx.arc(16, 16, 15, 0, 2 * Math.PI)
+    ctx.fill()
+    
+    // Draw status circle
+    ctx.fillStyle = color
+    ctx.beginPath()
+    ctx.arc(16, 16, 10, 0, 2 * Math.PI)
+    ctx.fill()
+    
+    // Add a subtle border
+    ctx.strokeStyle = '#ffffff'
+    ctx.lineWidth = 1
+    ctx.beginPath()
+    ctx.arc(16, 16, 10, 0, 2 * Math.PI)
+    ctx.stroke()
+  }
+  
+  return canvas.toDataURL()
+}
+
+const updateFavicon = (dataUrl: string) => {
+  let link = document.querySelector("link[rel*='icon']") as HTMLLinkElement
+  if (!link) {
+    link = document.createElement('link')
+    link.rel = 'icon'
+    document.head.appendChild(link)
+  }
+  link.href = dataUrl
+}
+
+const updateBrowserTabTitle = () => {
+  const status = getConnectionStatusText()
+  let faviconColor = ''
+  
+  if (commonStore.isBackendConnected) {
+    faviconColor = '#10b981' // Green
+  } else if (commonStore.error) {
+    faviconColor = '#ef4444' // Red
+  } else {
+    faviconColor = '#f59e0b' // Yellow/Orange
+  }
+  
+  // Update tab title (no emoji prefix since we have the favicon)
+  document.title = `${baseTitle} - ${status}`
+  
+  // Update favicon
+  const faviconDataUrl = createStatusFavicon(faviconColor)
+  updateFavicon(faviconDataUrl)
+}
+
+// Store original favicon to restore on unmount
+const originalFavicon = document.querySelector("link[rel*='icon']")?.getAttribute('href') || '/favicon.svg'
+
+// Watch for connection status changes and update tab title + favicon
+watchEffect(() => {
+  updateBrowserTabTitle()
+})
+
+// Restore original favicon and title when component unmounts
+onUnmounted(() => {
+  document.title = baseTitle
+  updateFavicon(originalFavicon)
+  
+  // Stop health monitoring
+  commonStore.stopHealthMonitoring()
+})
+
 const initializeApp = async () => {
   try {
     isInitializing.value = true
@@ -338,8 +464,10 @@ onMounted(async () => {
     
     await initializeApiClient()
     const result = await initializeApp()
-    if (result === 'failed') {
-      commonStore.clearApiKey()
+    // Don't clear API key here - let the individual methods handle it
+    // Only clear if there's no API key at all
+    if (result === 'failed' && !commonStore.apiKey) {
+      console.log('No API key found during initialization')
     }
   } finally {
     isInitializing.value = false
