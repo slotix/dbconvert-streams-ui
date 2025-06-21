@@ -105,7 +105,7 @@ onMounted(async () => {
                 <span class="text-gray-400">•</span>
                 <span class="font-medium text-gray-700">{{ connection.database }}</span>
               </div>
-              <CloudProviderBadge :cloud-provider="connection.cloud_provider" />
+              <CloudProviderBadge :cloud-provider="connection.cloud_provider" :db-type="connection.type" />
             </div>
           </div>
         </div>

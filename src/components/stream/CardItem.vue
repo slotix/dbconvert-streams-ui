@@ -9,6 +9,16 @@
         <div class="flex items-center justify-between">
           <div class="flex items-center min-w-0 flex-1">
             <h3 class="text-lg font-medium text-gray-900 truncate">{{ streamConfig.name }}</h3>
+            <span
+              :class="[
+                'ml-3 inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset',
+                streamConfig.mode === 'cdc'
+                  ? 'bg-orange-50 text-orange-700 ring-orange-600/20'
+                  : 'bg-green-50 text-green-700 ring-green-600/20'
+              ]"
+            >
+              {{ streamConfig.mode }}
+            </span>
           </div>
           <div class="flex items-center gap-2 ml-4">
             <Switch
@@ -40,146 +50,119 @@
       </div>
 
       <!-- Content -->
-      <div class="space-y-6 p-6">
-        <div v-if="isJsonView" class="space-y-1.5">
-          <div class="rounded-md bg-gray-50 p-3 font-mono text-sm">
-            <pre class="text-gray-900 whitespace-pre-wrap">{{ prettyConfig }}</pre>
+      <div class="flex-1 p-6">
+        <div v-if="isJsonView" class="h-full">
+          <div class="rounded-md bg-gray-50 p-4 h-full overflow-auto">
+            <pre class="text-gray-900 whitespace-pre-wrap text-sm font-mono">{{ prettyConfig }}</pre>
           </div>
         </div>
-        <div v-else class="space-y-6">
+        <div v-else class="space-y-6 h-full flex flex-col">
           <!-- Connection Details -->
           <div class="space-y-4">
-            <div class="grid grid-cols-2 gap-6">
-              <div class="flex items-center justify-between col-span-2 -mb-1">
-                <label class="text-xs font-medium uppercase text-gray-500">Source Connection</label>
-                <span
-                  :class="[
-                    'inline-flex items-center rounded-md px-3 py-1 text-xs font-medium ring-1 ring-inset',
-                    streamConfig.mode === 'cdc'
-                      ? 'bg-orange-50 text-orange-700 ring-orange-600/20'
-                      : 'bg-green-50 text-green-700 ring-green-600/20'
-                  ]"
-                >
-                  {{ streamConfig.mode }}
-                </span>
-                <label class="text-xs font-medium uppercase text-gray-500">Target Connection</label>
-              </div>
-
-              <!-- Source Connection -->
-              <div class="space-y-2">
-                <div class="bg-gray-50 rounded-md p-4 border border-gray-200">
-                  <div class="flex items-center gap-2 mb-2">
-                    <div
-                      v-if="source && source.type"
-                      :class="getDatabaseIconStyle(source.type)"
-                      class="rounded-lg p-1.5 transition-all duration-200 hover:shadow-md"
-                    >
-                      <img
-                        class="h-5 w-5 object-contain"
-                        :src="logoSrc(source.type)"
-                        :alt="source.type + ' logo'"
-                      />
-                    </div>
-                    <span
-                      class="font-medium text-gray-900"
-                      :class="{
-                        'text-red-500': !source || !source.name
-                      }"
-                      >{{ source?.name || 'N/A' }}</span
-                    >
-                    <CloudProviderBadge v-if="source" :cloud-provider="source.cloud_provider" />
-                    <button
-                      v-if="source && getDocumentationUrl(source.cloud_provider, source.type)"
-                      v-tooltip="'View setup documentation'"
-                      class="flex-shrink-0 text-gray-400 hover:text-blue-600 transition-colors"
-                      @click.stop="openDocumentation(source.cloud_provider, source.type)"
-                    >
-                      <DocumentTextIcon class="h-3 w-3" />
-                    </button>
-                    <ExclamationCircleIcon
-                      v-if="!source || !source.name"
-                      class="h-4 w-4 text-red-500"
-                      aria-hidden="true"
+            <!-- Source Connection -->
+            <div>
+              <label class="block text-xs font-medium uppercase text-gray-500 mb-2">Source Connection</label>
+              <div class="bg-gray-50 rounded-md p-4 border border-gray-200">
+                <div class="flex items-center gap-2 mb-2">
+                  <div
+                    v-if="source && source.type"
+                    :class="getDatabaseIconStyle(source.type)"
+                    class="flex-shrink-0 rounded-lg p-1.5 transition-all duration-200 hover:shadow-md"
+                  >
+                    <img
+                      class="h-5 w-5 object-contain"
+                      :src="logoSrc(source.type)"
+                      :alt="source.type + ' logo'"
                     />
                   </div>
-                  <div class="text-sm text-gray-600 mt-2">
-                    <ConnectionStringDisplay v-if="source" :connection="source" />
-                    <span v-else class="text-red-500 text-xs">Connection not found</span>
-                  </div>
+                  <span
+                    class="font-medium text-gray-900 truncate"
+                    :class="{
+                      'text-red-500': !source || !source.name
+                    }"
+                    >{{ source?.name || 'N/A' }}</span
+                  >
+                  <CloudProviderBadge v-if="source" :cloud-provider="source.cloud_provider" :db-type="source.type" />
+                  <ExclamationCircleIcon
+                    v-if="!source || !source.name"
+                    class="h-4 w-4 text-red-500 flex-shrink-0"
+                    aria-hidden="true"
+                  />
+                </div>
+                <div class="text-sm text-gray-600">
+                  <ConnectionStringDisplay v-if="source" :connection="source" />
+                  <span v-else class="text-red-500 text-xs">Connection not found</span>
                 </div>
               </div>
+            </div>
 
-              <!-- Target Connection -->
-              <div class="space-y-2">
-                <div class="bg-gray-50 rounded-md p-4 border border-gray-200">
-                  <div class="flex items-center gap-2 mb-2">
-                    <div
-                      v-if="target && target.type"
-                      :class="getDatabaseIconStyle(target.type)"
-                      class="rounded-lg p-1.5 transition-all duration-200 hover:shadow-md"
-                    >
-                      <img
-                        class="h-5 w-5 object-contain"
-                        :src="logoSrc(target.type)"
-                        :alt="target.type + ' logo'"
-                      />
-                    </div>
-                    <span
-                      class="font-medium text-gray-900"
-                      :class="{
-                        'text-red-500': !target || !target.name
-                      }"
-                      >{{ target?.name || 'N/A' }}</span
-                    >
-                    <CloudProviderBadge v-if="target" :cloud-provider="target.cloud_provider" />
-                    <button
-                      v-if="target && getDocumentationUrl(target.cloud_provider, target.type)"
-                      v-tooltip="'View setup documentation'"
-                      class="flex-shrink-0 text-gray-400 hover:text-blue-600 transition-colors"
-                      @click.stop="openDocumentation(target.cloud_provider, target.type)"
-                    >
-                      <DocumentTextIcon class="h-3 w-3" />
-                    </button>
-                    <ExclamationCircleIcon
-                      v-if="!target || !target.name"
-                      class="h-4 w-4 text-red-500"
-                      aria-hidden="true"
+            <!-- Target Connection -->
+            <div>
+              <label class="block text-xs font-medium uppercase text-gray-500 mb-2">Target Connection</label>
+              <div class="bg-gray-50 rounded-md p-4 border border-gray-200">
+                <div class="flex items-center gap-2 mb-2">
+                  <div
+                    v-if="target && target.type"
+                    :class="getDatabaseIconStyle(target.type)"
+                    class="flex-shrink-0 rounded-lg p-1.5 transition-all duration-200 hover:shadow-md"
+                  >
+                    <img
+                      class="h-5 w-5 object-contain"
+                      :src="logoSrc(target.type)"
+                      :alt="target.type + ' logo'"
                     />
                   </div>
-                  <div class="text-sm text-gray-600 mt-2">
-                    <ConnectionStringDisplay v-if="target" :connection="target" />
-                    <span v-else class="text-red-500 text-xs">Connection not found</span>
-                  </div>
+                  <span
+                    class="font-medium text-gray-900 truncate"
+                    :class="{
+                      'text-red-500': !target || !target.name
+                    }"
+                    >{{ target?.name || 'N/A' }}</span
+                  >
+                  <CloudProviderBadge v-if="target" :cloud-provider="target.cloud_provider" :db-type="target.type" />
+                  <ExclamationCircleIcon
+                    v-if="!target || !target.name"
+                    class="h-4 w-4 text-red-500 flex-shrink-0"
+                    aria-hidden="true"
+                  />
+                </div>
+                <div class="text-sm text-gray-600">
+                  <ConnectionStringDisplay v-if="target" :connection="target" />
+                  <span v-else class="text-red-500 text-xs">Connection not found</span>
                 </div>
               </div>
             </div>
 
             <!-- Tables Section -->
             <div>
-              <label class="text-xs font-medium uppercase text-gray-500">Tables</label>
-              <p class="mt-1 text-sm text-gray-900">
-                {{ displayedTables.join(', ') }}{{ remainingTablesCount > 0 ? ', ...' : '' }}
-                <span v-if="remainingTablesCount > 0" class="text-xs text-gray-500 italic ml-1">
-                  ({{ remainingTablesCount }} more)
-                </span>
-              </p>
+              <label class="block text-xs font-medium uppercase text-gray-500 mb-2">Tables</label>
+              <div class="bg-gray-50 rounded-md p-3 border border-gray-200">
+                <p class="text-sm text-gray-900">
+                  {{ displayedTables.join(', ') }}{{ remainingTablesCount > 0 ? ', ...' : '' }}
+                  <span v-if="remainingTablesCount > 0" class="text-xs text-gray-500 italic ml-1">
+                    ({{ remainingTablesCount }} more)
+                  </span>
+                </p>
+              </div>
             </div>
           </div>
 
           <!-- Creation Date -->
-          <div class="flex items-center gap-2 pt-4 border-t border-gray-100">
-            <CalendarIcon class="h-4 w-4 text-gray-500" />
-            <span class="text-sm text-gray-500">Created: {{ streamCreated }}</span>
+          <div class="mt-auto pt-4 border-t border-gray-100">
+            <div class="flex items-center gap-2">
+              <CalendarIcon class="h-4 w-4 text-gray-500" />
+              <span class="text-sm text-gray-500">Created: {{ streamCreated }}</span>
+            </div>
           </div>
         </div>
       </div>
 
       <!-- Actions -->
-      <div class="mt-auto flex divide-x divide-gray-200 border-t">
+      <div class="flex divide-x divide-gray-200 border-t">
         <button
           v-tooltip="'Edit stream configuration'"
           type="button"
-          class="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 flex items-center justify-center gap-2"
+          class="flex-1 px-4 py-3 text-sm font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 flex items-center justify-center gap-2 transition-colors"
           @click.stop="editStream"
         >
           <PencilIcon class="h-4 w-4" />
@@ -187,7 +170,7 @@
         </button>
         <ActionsMenu
           v-tooltip="'More stream actions'"
-          class="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-50 hover:bg-gray-100"
+          class="flex-1 px-4 py-3 text-sm font-medium text-gray-700 bg-gray-50 hover:bg-gray-100"
           :position="actionsMenuPosition"
           :viewType="'cards'"
           @selectRow="selectStream"
@@ -198,7 +181,7 @@
         <button
           v-tooltip="'Start the stream'"
           type="button"
-          class="flex-1 px-4 py-2 text-sm font-medium text-green-700 bg-gray-50 hover:bg-gray-100 flex items-center justify-center gap-2"
+          class="flex-1 px-4 py-3 text-sm font-medium text-green-700 bg-gray-50 hover:bg-gray-100 flex items-center justify-center gap-2 transition-colors"
           @click.stop="startStream"
         >
           <PlayIcon class="h-4 w-4" />

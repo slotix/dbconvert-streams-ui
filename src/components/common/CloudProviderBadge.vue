@@ -14,22 +14,32 @@
     />
     <CloudIcon v-else :class="logoSizeClasses" class="flex-shrink-0" />
     <span class="whitespace-nowrap">{{ displayName }}</span>
+    <button
+      v-if="documentationUrl"
+      v-tooltip="'View setup documentation'"
+      class="flex-shrink-0 hover:opacity-70 transition-opacity"
+      @click.stop="openDocumentation"
+    >
+      <QuestionMarkCircleIcon :class="helpIconSizeClasses" />
+    </button>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { CloudIcon } from '@heroicons/vue/24/outline'
+import { CloudIcon, QuestionMarkCircleIcon } from '@heroicons/vue/24/outline'
 import {
   isCloudConnection,
   getCloudProviderDisplayName,
   getCloudProviderLogo,
   getCloudProviderBadgeStyle
 } from '@/utils/cloudProviderUtils'
+import { getDocumentationUrl } from '@/utils/documentationUtils'
 
 interface Props {
   cloudProvider?: string
   size?: 'sm' | 'md' | 'lg'
+  dbType?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -49,6 +59,11 @@ const providerLogo = computed(() => {
 const badgeStyle = computed(() => {
   if (!props.cloudProvider) return { bgColor: 'bg-gray-100', textColor: 'text-gray-700' }
   return getCloudProviderBadgeStyle(props.cloudProvider)
+})
+
+const documentationUrl = computed(() => {
+  if (!props.cloudProvider || !props.dbType) return null
+  return getDocumentationUrl(props.cloudProvider, props.dbType)
 })
 
 const sizeClasses = computed(() => {
@@ -72,4 +87,31 @@ const logoSizeClasses = computed(() => {
       return 'h-4 w-4'
   }
 })
+
+const helpIconSizeClasses = computed(() => {
+  switch (props.size) {
+    case 'sm':
+      return 'h-4 w-4'
+    case 'lg':
+      return 'h-6 w-6'
+    default: // md
+      return 'h-5 w-5'
+  }
+})
+
+const openDocumentation = () => {
+  if (documentationUrl.value) {
+    window.open(documentationUrl.value, '_blank', 'noopener,noreferrer')
+  }
+}
+</script>
+
+<script lang="ts">
+import { vTooltip } from '@/directives/tooltip'
+
+export default {
+  directives: {
+    tooltip: vTooltip
+  }
+}
 </script> 

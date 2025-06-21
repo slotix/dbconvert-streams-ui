@@ -146,13 +146,6 @@
                             Table Name
                           </th>
                           <th
-                            v-if="config.mode === 'cdc' && hasOperations"
-                            scope="col"
-                            class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                          >
-                            Operations
-                          </th>
-                          <th
                             v-if="config.mode === 'convert' && hasQueries"
                             scope="col"
                             class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
@@ -176,12 +169,6 @@
                         >
                           <td class="px-4 py-2 text-sm text-gray-900">
                             {{ table.name }}
-                          </td>
-                          <td
-                            v-if="config.mode === 'cdc' && hasOperations"
-                            class="px-4 py-2 text-sm text-gray-500"
-                          >
-                            {{ table.operations?.join(', ') || '—' }}
                           </td>
                           <td
                             v-if="config.mode === 'convert' && hasQueries"
@@ -262,7 +249,7 @@ const prettyConfig = computed(() => {
     target: targetConnection.value?.name || config.target,
     tables: config.tables?.map((t) => ({
       name: t.name,
-      ...(config.mode === 'cdc' ? { operations: t.operations || [] } : { query: t.query || '' })
+      ...(config.mode === 'convert' ? { query: t.query || '' } : {})
     }))
   }
 
@@ -276,12 +263,7 @@ function copyConfig() {
   }
 }
 
-// Add helper function for operation count badge colors
-function getOperationsBadgeColor(count: number): string {
-  if (count === 0) return 'bg-gray-100 text-gray-600'
-  if (count < 2) return 'bg-yellow-100 text-yellow-700'
-  return 'bg-green-100 text-green-700'
-}
+// Helper functions removed - no longer using table-level operations
 
 const tableSearch = ref('')
 const currentPage = ref(1)
@@ -340,15 +322,7 @@ function toggleTableDetails(tableName: string) {
   }
 }
 
-const tablesWithNoOps = computed(() => paginatedTables.value.filter((t) => !t.operations?.length))
-
-const tablesWithPartialOps = computed(() =>
-  paginatedTables.value.filter((t) => t.operations?.length === 1)
-)
-
-const tablesWithFullOps = computed(() =>
-  paginatedTables.value.filter((t) => t.operations?.length === 2)
-)
+// Operations-related computed properties removed - no longer using table-level operations
 
 // Replace the connection-related computed properties with:
 
@@ -375,7 +349,7 @@ function getTableSchema(tableName: string) {
   return parts.length > 1 ? parts[0] : 'public'
 }
 
-const hasOperations = computed(() => props.config?.tables?.some((t) => t.operations?.length > 0))
+// hasOperations removed - no longer using table-level operations
 
 const hasQueries = computed(() => props.config?.tables?.some((t) => t.query))
 

@@ -32,19 +32,9 @@
           <div class="min-w-0 flex-1">
             <div class="flex items-center justify-between">
               <h3 class="text-lg font-medium text-gray-900 truncate pr-2">{{ connection.name }}</h3>
-              <div class="flex items-center gap-1.5 flex-shrink-0">
-                <button
-                  v-if="documentationUrl"
-                  v-tooltip="'View setup documentation'"
-                  class="text-gray-400 hover:text-blue-600 transition-colors"
-                  @click.stop="openDocumentation"
-                >
-                  <DocumentTextIcon class="h-4 w-4" />
-                </button>
-              </div>
             </div>
             <div class="flex items-center gap-2 mt-1">
-              <CloudProviderBadge :cloud-provider="connection.cloud_provider" size="sm" />
+              <CloudProviderBadge :cloud-provider="connection.cloud_provider" :db-type="connection.type" size="sm" />
               <span class="text-xs text-gray-400">•</span>
               <p class="text-xs text-gray-500 truncate font-mono">{{ connection.id }}</p>
             </div>
@@ -166,12 +156,10 @@ import {
   TableCellsIcon,
   EyeIcon,
   EyeSlashIcon,
-  ClipboardIcon,
-  DocumentTextIcon
+  ClipboardIcon
 } from '@heroicons/vue/24/outline'
 import { ref } from 'vue'
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
-import { getDocumentationUrl } from '@/utils/documentationUtils'
 
 const props = defineProps<{
   connection: Connection
@@ -232,10 +220,7 @@ const selected = computed(() => {
   return isSourceStreamSelected || isTargetStreamSelected
 })
 
-const documentationUrl = computed(() => {
-  if (!props.connection) return null
-  return getDocumentationUrl(props.connection.cloud_provider, props.connection.type)
-})
+
 
 const connectionString = computed(() => {
   if (!props.connection) return ''
@@ -346,9 +331,5 @@ async function copyConnectionString(): Promise<void> {
   }
 }
 
-function openDocumentation(): void {
-  if (documentationUrl.value) {
-    window.open(documentationUrl.value, '_blank', 'noopener,noreferrer')
-  }
-}
+
 </script>

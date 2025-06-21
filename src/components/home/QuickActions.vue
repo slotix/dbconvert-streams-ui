@@ -33,15 +33,7 @@
               <div class="ml-4 flex-1 min-w-0">
                 <div class="flex items-center gap-2 min-w-0">
                   <h3 class="text-sm font-semibold text-gray-900 truncate max-w-[180px]" :title="connection.name">{{ connection.name }}</h3>
-                  <CloudProviderBadge :cloud-provider="getCloudProvider(connection.id)" size="sm" />
-                  <button
-                    v-if="getDocumentationUrl(getCloudProvider(connection.id), getConnectionType(connection.id))"
-                    v-tooltip="'View setup documentation'"
-                    class="flex-shrink-0 text-gray-400 hover:text-blue-600 transition-colors"
-                    @click.stop="openDocumentation(getCloudProvider(connection.id), getConnectionType(connection.id))"
-                  >
-                    <DocumentTextIcon class="h-3 w-3" />
-                  </button>
+                  <CloudProviderBadge :cloud-provider="getCloudProvider(connection.id)" :db-type="getConnectionType(connection.id)" size="sm" />
                 </div>
                 <p class="text-sm text-gray-500 truncate" :title="getConnectionHost(connection.id)">{{ getConnectionHost(connection.id) }}</p>
                 <p class="text-xs text-gray-400 truncate" :title="getConnectionDatabase(connection.id)">{{ getConnectionDatabase(connection.id) }}</p>
@@ -122,12 +114,10 @@ import {
   CircleStackIcon,
   ClockIcon,
   PlusIcon,
-  ArrowRightIcon,
-  DocumentTextIcon
+  ArrowRightIcon
 } from '@heroicons/vue/24/outline'
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
 import { normalizeConnectionType } from '@/utils/connectionUtils'
-import { getDocumentationUrl } from '@/utils/documentationUtils'
 
 const router = useRouter()
 const commonStore = useCommonStore()
@@ -256,10 +246,5 @@ function viewAllStreamConfigurations() {
   router.push('/streams')
 }
 
-function openDocumentation(cloudProvider?: string, dbType?: string): void {
-  const url = getDocumentationUrl(cloudProvider, dbType)
-  if (url) {
-    window.open(url, '_blank', 'noopener,noreferrer')
-  }
-}
+
 </script>

@@ -50,7 +50,6 @@ export interface MultiSchemaTable {
   schema: string
   table: string
   fullName: string
-  operations: string[]
 }
 
 export interface StreamConfig {

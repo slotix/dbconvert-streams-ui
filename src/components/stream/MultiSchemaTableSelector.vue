@@ -257,8 +257,7 @@ const toggleTable = (schema: string, tableName: string) => {
     currentTables.push({
       schema,
       table: tableName,
-      fullName,
-      operations: ['insert', 'update', 'delete']
+      fullName
     })
   }
 
@@ -275,8 +274,7 @@ const selectAllInSchema = (schema: string) => {
       currentTables.push({
         schema,
         table: table.name,
-        fullName: `${schema}.${table.name}`,
-        operations: ['insert', 'update', 'delete']
+        fullName: `${schema}.${table.name}`
       })
     }
   })
@@ -297,8 +295,7 @@ const selectAllTables = () => {
       allTables.push({
         schema,
         table: table.name,
-        fullName: `${schema}.${table.name}`,
-        operations: ['insert', 'update', 'delete']
+        fullName: `${schema}.${table.name}`
       })
     })
   })

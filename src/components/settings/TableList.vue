@@ -152,7 +152,7 @@
                     </label>
                   </div>
                   <button
-                    v-if="table.selected"
+                    v-if="table.selected && !isCDCMode"
                     @click="toggleTableSettings(table.name)"
                     class="text-xs font-medium transition-colors"
                     :class="
@@ -169,7 +169,7 @@
 
                 <!-- Table Settings (immediately under the table) -->
                 <div
-                  v-if="selectedTableNames.includes(table.name)"
+                  v-if="selectedTableNames.includes(table.name) && !isCDCMode"
                   :class="
                     sourceConnectionType === 'postgresql' && schemaGroup.schema
                       ? 'ml-8 mt-1 mb-3'
@@ -229,7 +229,6 @@ const sourceConnectionType = computed(() => {
 const tables = ref<Table[]>(
   currentStreamConfig.tables?.map((table) => ({
     name: table.name,
-    operations: table.operations ?? defaultStreamConfigOptions.operations ?? [],
     query: table.query,
     selected: true
   })) || []
@@ -357,6 +356,11 @@ const isAutoDiscoveryMode = computed(() => {
   return allSelected && (hasMultipleSchemas || tables.value.length > 10)
 })
 
+// Check if current mode is CDC - table-level settings are not needed for CDC mode
+const isCDCMode = computed(() => {
+  return currentStreamConfig.mode === 'cdc'
+})
+
 // Pagination
 const currentPage = ref(1)
 const itemsPerPage = 50 // Increase since we're grouping
@@ -445,14 +449,12 @@ function updateCurrentPage(newPage: number) {
 // Helper function to create table objects based on the current stream mode
 function createTableObject(entry: any, mode: 'cdc' | 'convert'): Table {
   const name = typeof entry === 'string' ? entry : 'Unknown'
-  const operations = entry?.operations ?? defaultStreamConfigOptions.operations ?? []
   const query = entry?.query ?? ''
   const selected = entry?.selected !== undefined ? entry.selected : true
 
   if (mode === 'cdc') {
     return {
       name,
-      operations: defaultStreamConfigOptions.operations ?? [],
       query: '',
       selected: selected
     }
@@ -460,7 +462,6 @@ function createTableObject(entry: any, mode: 'cdc' | 'convert'): Table {
     return {
       name,
       query,
-      operations,
       selected: selected
     }
   }

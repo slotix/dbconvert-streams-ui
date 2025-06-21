@@ -8,7 +8,7 @@ import {
   TrashIcon,
   ExclamationCircleIcon
 } from '@heroicons/vue/24/solid'
-import { ClipboardIcon, DocumentTextIcon } from '@heroicons/vue/24/outline'
+import { ClipboardIcon, QuestionMarkCircleIcon } from '@heroicons/vue/24/outline'
 import { mapActions, mapState } from 'pinia'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
@@ -51,7 +51,7 @@ export default defineComponent({
     ConnectionStringDisplay,
     ExclamationCircleIcon,
     CloudProviderBadge,
-    DocumentTextIcon
+    QuestionMarkCircleIcon
   },
   setup(props) {
     const dbTypes = useConnectionsStore().dbTypes

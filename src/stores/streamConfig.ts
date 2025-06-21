@@ -33,7 +33,6 @@ export const defaultStreamConfigOptions: StreamConfig = {
 
 const defaultTableOptions: Partial<Table> = {
   query: '',
-  operations: ['insert', 'update', 'delete'],
   selected: false
 }
 
@@ -84,16 +83,9 @@ const omitDefaults = (stream: StreamConfig): Partial<StreamConfig> => {
       }
 
       if (stream.mode === 'convert') {
-        delete filteredTable.operations
+        delete filteredTable.query
       } else if (stream.mode === 'cdc') {
         delete filteredTable.query
-      }
-
-      // Omit default operations if they match the default value
-      if (
-        JSON.stringify(filteredTable.operations) === JSON.stringify(defaultTableOptions.operations)
-      ) {
-        delete filteredTable.operations
       }
 
       return filteredTable as Table

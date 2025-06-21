@@ -2,7 +2,6 @@
 export interface Table {
   name: string
   query: string
-  operations: string[]
   selected: boolean
 }
 

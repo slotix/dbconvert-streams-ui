@@ -102,6 +102,12 @@ function getConnectionCloudProvider(connectionId: string) {
   return connection?.cloud_provider || ''
 }
 
+// Get connection type for a connection
+function getConnectionType(connectionId: string) {
+  const connection = connectionsStore.connections.find((conn) => conn.id === connectionId)
+  return connection?.type || ''
+}
+
 // If we have a current connection ID but it's not in recent connections, add it
 function initializeCurrentConnection() {
   if (
@@ -210,6 +216,7 @@ watch(currentConnectionId, (newId) => {
                     <span class="truncate max-w-[120px]" :title="connection.name">{{ connection.name }}</span>
                     <CloudProviderBadge 
                       :cloud-provider="getConnectionCloudProvider(connection.id)" 
+                      :db-type="getConnectionType(connection.id)"
                       size="sm"
                     />
                   </div>

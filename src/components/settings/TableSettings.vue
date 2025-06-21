@@ -1,27 +1,20 @@
 <template>
-  <div v-if="table">
-    <div v-if="isConvertMode">
-      <label
-        :for="`custom-query-${table.name}`"
-        class="block text-sm font-medium leading-6 text-gray-900 mt-4"
-        >Custom Query.</label
-      >
-      <div>
-        <textarea
-          :id="`custom-query-${table.name}`"
-          v-model="table.query"
-          :name="`custom-query-${table.name}`"
-          rows="2"
-          class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-gray-600 sm:text-sm sm:leading-6"
-          placeholder="Integrate conditions, sorting, and limiting as needed..."
-          @input="updateStreamSettings"
-        ></textarea>
-      </div>
-    </div>
-    <div v-else>
-      <div class="mt-2">
-        <Operations v-model="table.operations" :prefix="table.name" />
-      </div>
+  <div v-if="table && isConvertMode">
+    <label
+      :for="`custom-query-${table.name}`"
+      class="block text-sm font-medium leading-6 text-gray-900 mt-4"
+      >Custom Query.</label
+    >
+    <div>
+      <textarea
+        :id="`custom-query-${table.name}`"
+        v-model="table.query"
+        :name="`custom-query-${table.name}`"
+        rows="2"
+        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-gray-600 sm:text-sm sm:leading-6"
+        placeholder="Integrate conditions, sorting, and limiting as needed..."
+        @input="updateStreamSettings"
+      ></textarea>
     </div>
   </div>
 </template>
@@ -29,7 +22,6 @@
 <script setup lang="ts">
 import { watch, onMounted, computed } from 'vue'
 import { useStreamsStore } from '@/stores/streamConfig'
-import Operations from './Operations.vue'
 import { type StreamConfig, type Table } from '@/types/streamConfig'
 
 interface Props {
