@@ -122,7 +122,7 @@ export const useConnectionsStore = defineStore('connections', {
         this.isLoadingConnections = false
       }
     },
-    deleteConnection: debounce(async function (this: any, id: string) {
+    async _deleteConnection(id: string) {
       try {
         const index = this.connections.findIndex((connection: Connection) => connection.id === id)
         if (index !== -1) {
@@ -133,8 +133,8 @@ export const useConnectionsStore = defineStore('connections', {
         console.error('Failed to delete connection:', error)
         throw error
       }
-    }, 500),
-    cloneConnection: debounce(async function (this: any, id: string) {
+    },
+    async _cloneConnection(id: string) {
       try {
         const { id: clonedId, created: clonedCreated } = await api.cloneConnection(id)
         this.currentConnection = {
@@ -147,9 +147,8 @@ export const useConnectionsStore = defineStore('connections', {
         console.error('Failed to clone connection:', error)
         throw error
       }
-    }, 500),
-
-    testConnection: debounce(async function (this: any, id: string) {
+    },
+    async _testConnection(id: string) {
       try {
         this.isTestingConnection = true
         const status = await api.testConnection()
@@ -165,6 +164,15 @@ export const useConnectionsStore = defineStore('connections', {
       } finally {
         this.isTestingConnection = false
       }
+    },
+    deleteConnection: debounce(function(this: any, id: string) {
+      return this._deleteConnection(id)
+    }, 500),
+    cloneConnection: debounce(function(this: any, id: string) {
+      return this._cloneConnection(id)
+    }, 500),
+    testConnection: debounce(function(this: any, id: string) {
+      return this._testConnection(id)
     }, 500),
     resetCurrentConnection() {
       this.currentConnection = null

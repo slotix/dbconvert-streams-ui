@@ -11,10 +11,11 @@ export function debounce<T extends (...args: any[]) => any>(
 ): (...args: Parameters<T>) => void {
   let timeout: ReturnType<typeof setTimeout> | null = null
 
-  return function executedFunction(...args: Parameters<T>) {
+  return function executedFunction(this: any, ...args: Parameters<T>) {
+    const context = this
     const later = () => {
       timeout = null
-      if (!immediate) func(...args)
+      if (!immediate) func.apply(context, args)
     }
 
     const callNow = immediate && !timeout
@@ -26,7 +27,7 @@ export function debounce<T extends (...args: any[]) => any>(
     timeout = setTimeout(later, wait)
 
     if (callNow) {
-      func(...args)
+      func.apply(context, args)
     }
   }
 } 

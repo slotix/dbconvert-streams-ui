@@ -19,6 +19,7 @@ export interface Connection {
   ssl?: SSLConfig
   // Cloud provider detection - empty string means not a cloud provider
   cloud_provider?: string
+  status?: string
 }
 
 export interface Schema {
