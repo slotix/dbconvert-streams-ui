@@ -10,12 +10,13 @@ export class SSELogsService {
   private shouldReconnect: boolean = true
   private reconnectAttempts: number = 0
   private maxReconnectAttempts: number = 5
-  private reconnectDelay: number = 3000 // 3 seconds
+  private reconnectDelay: number = 10000 // 10 seconds
   private logHeartbeats: boolean = false // Set to false to disable heartbeat logging
   private refreshTimeout: number | null = null
   private debugMode: boolean = false // Enable debug mode by default to help diagnose issues
   private lastHeartbeatTime: number = Date.now()
   private heartbeatCheckInterval: number | null = null
+  private isConnected: boolean = false // Add connection state tracking
 
   constructor() {
     this.connect = this.connect.bind(this)
@@ -49,6 +50,7 @@ export class SSELogsService {
 
   async disconnect() {
     this.shouldReconnect = false
+    this.isConnected = false
     if (this.eventSource) {
       this.eventSource.close()
       this.eventSource = null
@@ -63,8 +65,9 @@ export class SSELogsService {
   async connect() {
     const logsStore = useLogsStore()
 
-    if (this.isConnecting) {
-      if (this.debugMode) console.log('Already connecting to SSE logs')
+    // Prevent multiple concurrent connections
+    if (this.isConnecting || this.isConnected) {
+      if (this.debugMode) console.log('Already connecting/connected to SSE logs')
       return
     }
 
@@ -140,6 +143,7 @@ export class SSELogsService {
     eventSource.onopen = () => {
       if (this.debugMode) console.log('SSE logs connection opened')
       this.isConnecting = false
+      this.isConnected = true
       this.reconnectAttempts = 0
 
       // Add a log entry to confirm connection
@@ -418,6 +422,7 @@ export class SSELogsService {
         this.eventSource.close()
         this.eventSource = null
       }
+      this.isConnected = false
 
       // Add error to logs
       const logsStore = useLogsStore()
