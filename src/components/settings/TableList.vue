@@ -210,7 +210,7 @@ import { useConnectionsStore } from '@/stores/connections'
 import Pagination from '@/components/common/Pagination.vue'
 import TableSettings from './TableSettings.vue'
 import { ChevronRightIcon, ChevronDownIcon, TableCellsIcon } from '@heroicons/vue/24/outline'
-import { debounce } from 'lodash'
+import { debounce } from '@/utils/debounce'
 import { type StreamConfig, type Table } from '@/types/streamConfig'
 
 const streamsStore = useStreamsStore()

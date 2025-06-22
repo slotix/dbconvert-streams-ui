@@ -1,5 +1,7 @@
 // src/router/index.ts
 import { createRouter, createWebHistory } from 'vue-router'
+
+// Static imports for stability during development
 import HomeView from '@/views/HomeView.vue'
 import StreamsView from '@/views/StreamsView.vue'
 import ConnectionsView from '@/views/ConnectionsView.vue'

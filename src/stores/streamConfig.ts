@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
 import api from '@/api/streams'
-import { debounce } from 'lodash'
 import type { StreamConfig } from '@/types/streamConfig'
 import type { Table } from '@/types/streamConfig'
 import type { Step } from '@/stores/common'
@@ -163,14 +162,14 @@ export const useStreamsStore = defineStore('streams', {
       this.resetCurrentStream()
       useConnectionsStore().resetCurrentConnection()
     },
-    saveStream: debounce(async function (this: any) {
+    async saveStream() {
       try {
         this.prepareStreamData()
-        if (!this.currentStreamConfig.name) {
-          this.currentStreamConfig.name = this.generateDefaultStreamConfigName(
-            this.currentStreamConfig.source,
-            this.currentStreamConfig.target,
-            this.currentStreamConfig.tables || []
+        if (!this.currentStreamConfig?.name) {
+          this.currentStreamConfig!.name = this.generateDefaultStreamConfigName(
+            this.currentStreamConfig?.source || '',
+            this.currentStreamConfig?.target || '',
+            this.currentStreamConfig?.tables || []
           )
         }
 
@@ -185,8 +184,8 @@ export const useStreamsStore = defineStore('streams', {
         console.error('Failed to save stream:', err)
         throw err
       }
-    }, 500),
-    prepareStreamData(this: State) {
+    },
+    prepareStreamData() {
       if (this.currentStreamConfig) {
         const refinedStream = omitDefaults(this.currentStreamConfig)
         // Create a new object excluding default values
@@ -205,13 +204,13 @@ export const useStreamsStore = defineStore('streams', {
         this.currentStreamConfig = newStream
       }
     },
-    refreshStreams: debounce(async function (this: State) {
+    async refreshStreams() {
       try {
         this.streamConfigs = await api.getStreams()
       } catch (err) {
         console.error('Failed to fetch streams:', err)
       }
-    }, 500),
+    },
     async deleteStreamConfig(configID: string) {
       try {
         await api.deleteStream(configID)
@@ -275,7 +274,7 @@ export const useStreamsStore = defineStore('streams', {
     updateStreamStatus(status: typeof statusEnum) {
       // This can be used to update the stream status based on monitoring events
     },
-    resetCurrentStream(this: State) {
+    resetCurrentStream() {
       this.currentStreamConfig = {
         ...defaultStreamConfigOptions,
         id: '',
@@ -285,7 +284,7 @@ export const useStreamsStore = defineStore('streams', {
         tables: []
       }
     },
-    async clearStreams(this: State) {
+    async clearStreams() {
       this.streamConfigs = []
     },
     generateDefaultStreamConfigName(source: string, target: string, tables: Table[]): string {

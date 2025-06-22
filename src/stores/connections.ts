@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import api from '@/api/connections'
-import { debounce } from 'lodash'
+import { debounce } from '@/utils/debounce'
 
 import type { Connection, DbType } from '@/types/connections'
 import { useCommonStore } from './common'

@@ -189,8 +189,11 @@ export default defineComponent({
     },
     logoSrc(): (tp: string) => string {
       return (tp: string) => {
-        const dbType = this.dbTypes.find((f: DbType) => f.type === tp)
-        return dbType ? dbType.logo : ''
+        const normalizedInput = normalizeConnectionType(tp?.toLowerCase() || '')
+        const dbType = this.dbTypes.find((f: DbType) => 
+          normalizeConnectionType(f.type.toLowerCase()) === normalizedInput
+        )
+        return dbType ? dbType.logo : '/images/db-logos/all.svg' // Fallback to generic logo
       }
     },
     getDatabaseIconStyle(): (dbType: string) => string {
