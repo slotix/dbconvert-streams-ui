@@ -442,7 +442,7 @@ const getDatabaseHelpText = () => {
     case 'postgresql':
       return 'Enter the database name you want to connect to. Database names vary by provider and setup - check your provider documentation for the correct name. Common examples: "postgres", "defaultdb", "neondb", or your custom database name.'
     case 'mysql':
-      return 'Enter your database name. Avoid system databases like "mysql", "information_schema", "performance_schema". Compatible with all major cloud providers and on-premises installations.'
+      return 'Enter your database name. Compatible with all major cloud providers and on-premises installations.'
     case 'oracle':
       return 'Oracle requires a service name. Use "XE" for Express Edition, "ORCL" for standard installations, or your custom service name.'
     case 'sqlserver':
