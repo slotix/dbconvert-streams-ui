@@ -7,6 +7,7 @@ import { useToast } from 'vue-toastification'
 import { useMonitoringStore } from './monitoring'
 import { sseLogsService } from '@/api/sseLogsService'
 import { useLocalStorage } from '@vueuse/core'
+import { ref } from 'vue'
 
 export const DIALOG_TYPES = {
   SAVE: 'Add',
@@ -177,31 +178,29 @@ export const useCommonStore = defineStore('common', {
       }
     },
     async checkSentryHealth() {
+      // Use shorter retry delays for faster initialization
       await this.retryOperation(async () => {
         try {
           await api.sentryHealthCheck()
           this.sentryHealthy = true
         } catch (error) {
-          const toast = useToast()
-          toast.error('Connection to Sentry failed')
           this.sentryHealthy = false
           throw error
         }
-      })
+      }, 2, 1000) // 2 retries with 1 second delay instead of 3 retries with 5 second delay
     },
 
     async checkAPIHealth() {
+      // Use shorter retry delays for faster initialization
       await this.retryOperation(async () => {
         try {
           await api.backendHealthCheck()
           this.apiHealthy = true
         } catch (error) {
-          const toast = useToast()
-          toast.error('Connection to API server failed')
           this.apiHealthy = false
           throw error
         }
-      })
+      }, 2, 1000) // 2 retries with 1 second delay instead of 3 retries with 5 second delay
     },
 
     async getApiKey(): Promise<string | null> {
@@ -236,6 +235,22 @@ export const useCommonStore = defineStore('common', {
             return storedApiKey
           }
         }
+
+        // // Development mode: if we're in development and no API key is stored, 
+        // // try using a dummy key to test automatic connection
+        // if (import.meta.env.DEV) {
+        //   console.log('Development mode: Using dummy API key for testing')
+        //   const dummyKey = 'dev-test-key'
+        //   try {
+        //     // Try to validate the dummy key - if backend is in TEST_ENV mode, this should work
+        //     await api.validateApiKey(dummyKey)
+        //     this.apiKey = dummyKey
+        //     return dummyKey
+        //   } catch (error) {
+        //     console.log('Dummy API key validation failed, backend may not be in TEST_ENV mode')
+        //     // Fall through to return null
+        //   }
+        // }
 
         this.setBackendConnected(false)
         return null
@@ -370,6 +385,7 @@ export const useCommonStore = defineStore('common', {
           try {
             await this.userDataFromSentry(apiKey)
             if (this.userData?.apiKey) {
+              // CRITICAL: Always make the one-time initialization call to /user/configs
               await this.loadUserConfigs()
               this.consumeLogsFromSSE()
               this.setBackendConnected(true)
@@ -391,9 +407,28 @@ export const useCommonStore = defineStore('common', {
             toast.warning('Working in offline mode. Some features may be limited.')
             return 'success'
           }
+        } else if (this.apiHealthy) {
+          // Backend API is healthy but Sentry might not be - still try to initialize
+          console.log('Backend API healthy, attempting initialization even if Sentry is down')
+          try {
+            // Try to load user configs directly since we have API access
+            await this.loadUserConfigs()
+            this.setBackendConnected(true)
+            toast.success('App initialized successfully (limited features)')
+            this.clearError()
+            
+            // Start real-time health monitoring
+            this.startHealthMonitoring()
+            
+            return 'success'
+          } catch (error: any) {
+            console.log('Failed to initialize with API only:', error)
+            // Fall through to offline mode
+          }
         } else {
           // Offline mode - work with stored API key and cached data
           console.log('Backend unavailable, working in offline mode')
+          this.setBackendConnected(false) // Add this line to properly set offline state
           toast.warning('Unable to connect to server. Working with cached data.')
           
           // Start monitoring to detect when backend comes back online
@@ -401,16 +436,21 @@ export const useCommonStore = defineStore('common', {
           
           return 'success'
         }
-
+        
+        // Fallback return - should not reach here normally
         return 'failed'
       } catch (error: any) {
-        console.error('Failed to initialize app:', error)
-        // Only show error toast for authentication failures
+        console.error('App initialization failed:', error)
+        
+        // Clear API key only for authentication errors
         if (error.response?.status === 401 || error.message === 'Invalid API key') {
+          await this.clearApiKey()
           toast.error('Invalid API key. Please enter a valid key to continue.')
         } else {
-          toast.error(`Failed to initialize app: ${error.message}`)
+          toast.error('Failed to initialize app. Please try again.')
         }
+        
+        this.setBackendConnected(false)
         return 'failed'
       }
     },
@@ -487,24 +527,46 @@ export const useCommonStore = defineStore('common', {
     // Real-time health monitoring
     async performHealthCheck() {
       try {
-        // Quick health check without retries for monitoring
-        await api.backendHealthCheck()
+        // Quick health check without retries for monitoring - check both services
+        await Promise.all([
+          api.backendHealthCheck(),
+          api.sentryHealthCheck()
+        ])
         
-        // If we get here, backend is healthy
+        // If we get here, both backend and sentry are healthy
         if (!this.isBackendConnected) {
-          console.log('Backend connection restored')
+          console.log('🔄 Backend connection restored')
           this.setBackendConnected(true)
           this.apiHealthy = true
           this.sentryHealthy = true
           this.clearError()
           
+          // Re-initialize user configs when backend comes back online
+          // This ensures the /user/configs call is made and connections are available
+          // Do this in the background without failing the health check
+          setTimeout(async () => {
+            try {
+              if (this.apiKey) {
+                await api.loadUserConfigs(this.apiKey)
+                console.log('✅ User configs reloaded after reconnection')
+                
+                // Explicitly trigger connections reload after user configs are loaded
+                // Emit a custom event that connections components can listen to
+                window.dispatchEvent(new CustomEvent('backend-reconnected'))
+              }
+            } catch (error) {
+              console.warn('⚠️ Failed to reload user configs after reconnection:', error)
+              // This is non-critical - the main health check should still succeed
+            }
+          }, 1000) // Small delay to let the connection stabilize
+          
           const toast = useToast()
           toast.success('Connection restored!')
         }
       } catch (error) {
-        // Backend is down
+        // Backend or Sentry is down
         if (this.isBackendConnected) {
-          console.log('Backend connection lost')
+          console.log('🔌 Backend connection lost')
           this.setBackendConnected(false)
           this.apiHealthy = false
           this.sentryHealthy = false
@@ -522,7 +584,10 @@ export const useCommonStore = defineStore('common', {
         return
       }
 
-      console.log('Starting real-time health monitoring')
+      console.log('🚀 Starting health monitoring')
+      
+      // Perform immediate health check
+      this.performHealthCheck()
       
       // Check every 10 seconds
       this.healthCheckInterval = window.setInterval(() => {
@@ -532,7 +597,6 @@ export const useCommonStore = defineStore('common', {
 
     stopHealthMonitoring() {
       if (this.healthCheckInterval) {
-        console.log('Stopping health monitoring')
         clearInterval(this.healthCheckInterval)
         this.healthCheckInterval = null
       }

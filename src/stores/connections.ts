@@ -19,10 +19,9 @@ interface State {
   isLoadingDatabases: boolean
 }
 
-// Constants for localStorage keys
-const CONNECTIONS_STORAGE_KEY = 'dbconvert-connections'
-const CONNECTIONS_TIMESTAMP_KEY = 'dbconvert-connections-timestamp'
-const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes in milliseconds
+// Removed cache mechanism - connections are now always fetched fresh from API
+// This ensures UI is always in sync with Consul storage via the API
+// Recent connections still use localStorage but are managed separately
 
 export const useConnectionsStore = defineStore('connections', {
   state: (): State => ({
@@ -62,77 +61,34 @@ export const useConnectionsStore = defineStore('connections', {
     }
   },
   actions: {
-    // Persistence methods
-    saveConnectionsToStorage() {
+    // Minimal fallback: load basic connection info from recent connections when API unavailable
+    loadConnectionsFromRecentData() {
       try {
-        // Only save basic connection info, exclude sensitive data like passwords
-        const connectionsToSave = this.connections.map(conn => ({
-          id: conn.id,
-          name: conn.name,
-          type: conn.type,
-          host: conn.host,
-          port: conn.port,
-          username: conn.username,
-          database: conn.database,
-          created: conn.created,
-          cloud_provider: conn.cloud_provider,
-          // Exclude password and other sensitive data
-        }))
-        
-        localStorage.setItem(CONNECTIONS_STORAGE_KEY, JSON.stringify(connectionsToSave))
-        localStorage.setItem(CONNECTIONS_TIMESTAMP_KEY, Date.now().toString())
-      } catch (error) {
-        console.warn('Failed to save connections to localStorage:', error)
-      }
-    },
-
-    loadConnectionsFromStorage(): Connection[] {
-      try {
-        const timestamp = localStorage.getItem(CONNECTIONS_TIMESTAMP_KEY)
-        const now = Date.now()
-        
-        // Check if cache is expired
-        if (!timestamp || (now - parseInt(timestamp)) > CACHE_DURATION) {
-          return []
-        }
-        
-        const savedConnections = localStorage.getItem(CONNECTIONS_STORAGE_KEY)
-        if (savedConnections) {
-          return JSON.parse(savedConnections)
+        const recentConnections = localStorage.getItem('recentConnections')
+        if (recentConnections) {
+          const recentData = JSON.parse(recentConnections)
+          // Convert recent connections to minimal connection objects for display
+          this.connections = recentData.map((recent: any) => ({
+            id: recent.id,
+            name: recent.name,
+            type: recent.type || 'unknown',
+            host: recent.host || '',
+            port: recent.port || '',
+            username: '',
+            password: '',
+            database: recent.database || '',
+            created: 0,
+            cloud_provider: recent.cloud_provider || ''
+          }))
+          console.log('Loaded connections from recent data as fallback')
         }
       } catch (error) {
-        console.warn('Failed to load connections from localStorage:', error)
-      }
-      return []
-    },
-
-    clearConnectionsStorage() {
-      try {
-        localStorage.removeItem(CONNECTIONS_STORAGE_KEY)
-        localStorage.removeItem(CONNECTIONS_TIMESTAMP_KEY)
-      } catch (error) {
-        console.warn('Failed to clear connections from localStorage:', error)
+        console.warn('Failed to load connections from recent data:', error)
       }
     },
 
-    initializeFromStorage() {
-      const savedConnections = this.loadConnectionsFromStorage()
-      if (savedConnections.length > 0) {
-        this.connections = savedConnections
-      }
-    },
-
-    shouldRefreshFromAPI(): boolean {
-      try {
-        const timestamp = localStorage.getItem(CONNECTIONS_TIMESTAMP_KEY)
-        if (!timestamp) return true
-        
-        const now = Date.now()
-        return (now - parseInt(timestamp)) > CACHE_DURATION
-      } catch (error) {
-        return true
-      }
-    },
+    // Removed cache persistence methods - connections are now always fetched fresh from API
+    // This ensures UI is always in sync with Consul storage via the API
 
     setCurrentConnection(id: string) {
       const curConnection = this.connections.filter((c) => {
@@ -156,14 +112,9 @@ export const useConnectionsStore = defineStore('connections', {
     async refreshConnections() {
       this.isLoadingConnections = true
       try {
-        // Simulate a delay for testing
-        // await new Promise((resolve) => setTimeout(resolve, 10000)); // 2 seconds delay
-
         const response = await api.getConnections()
         this.connections = response
-        
-        // Save to localStorage after successful fetch
-        this.saveConnectionsToStorage()
+        // No longer saving to localStorage - always fetch fresh from API
       } catch (error) {
         console.error('Failed to refresh connections:', error)
         throw error
@@ -178,9 +129,6 @@ export const useConnectionsStore = defineStore('connections', {
           this.connections.splice(index, 1)
         }
         await api.deleteConnection(id)
-        
-        // Update localStorage after deletion
-        this.saveConnectionsToStorage()
       } catch (error) {
         console.error('Failed to delete connection:', error)
         throw error
@@ -223,7 +171,6 @@ export const useConnectionsStore = defineStore('connections', {
     },
     async clearConnections() {
       this.connections.length = 0
-      this.clearConnectionsStorage()
     },
     async createConnection(): Promise<void> {
       try {
@@ -317,35 +264,33 @@ export const useConnectionsStore = defineStore('connections', {
       )
     },
     async forceRefreshConnections() {
-      this.clearConnectionsStorage()
       await this.refreshConnections()
     },
 
-    // Debug method to check cache status
-    getCacheInfo() {
+    // Removed cache-related debug methods since we no longer use caching
+    // Connections are always fetched fresh from the API
+    getRecentConnectionsInfo() {
       try {
-        const timestamp = localStorage.getItem(CONNECTIONS_TIMESTAMP_KEY)
-        const connections = localStorage.getItem(CONNECTIONS_STORAGE_KEY)
-        const now = Date.now()
+        const recentConnections = localStorage.getItem('recentConnections')
+        const lastViewedConnectionId = localStorage.getItem('lastViewedConnectionId')
         
-        if (!timestamp || !connections) {
-          return { hasCache: false, expired: true, age: 0, connectionCount: 0 }
+        if (!recentConnections) {
+          return { hasRecentConnections: false, count: 0, lastViewed: null }
         }
         
-        const age = now - parseInt(timestamp)
-        const expired = age > CACHE_DURATION
-        const connectionCount = JSON.parse(connections).length
-        
+        const parsed = JSON.parse(recentConnections)
         return {
-          hasCache: true,
-          expired,
-          age: Math.round(age / 1000), // in seconds
-          maxAge: Math.round(CACHE_DURATION / 1000), // in seconds
-          connectionCount,
-          timestamp: new Date(parseInt(timestamp)).toISOString()
+          hasRecentConnections: true,
+          count: parsed.length,
+          lastViewed: lastViewedConnectionId,
+          connections: parsed.map((conn: any) => ({
+            id: conn.id,
+            name: conn.name,
+            type: conn.type || 'unknown'
+          }))
         }
       } catch (error) {
-        return { hasCache: false, expired: true, age: 0, connectionCount: 0, error: (error as Error).message }
+        return { hasRecentConnections: false, count: 0, lastViewed: null, error: (error as Error).message }
       }
     }
   }

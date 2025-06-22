@@ -12,7 +12,7 @@
             </div>
             <div class="ml-3">
               <p class="text-sm font-medium text-yellow-800">
-                <strong>Offline Mode:</strong> Backend services are currently unavailable. You're viewing cached data with limited functionality.
+                <strong>Offline Mode:</strong> Backend services are currently unavailable. Showing recent connections with limited functionality.
               </p>
             </div>
           </div>
@@ -160,17 +160,18 @@ const retryConnection = async () => {
 }
 
 onMounted(async () => {
-  // First, try to load connections from localStorage
-  connectionsStore.initializeFromStorage()
-  
-  // Then load from API if backend is connected and cache is expired or no connections
-  if (isBackendConnected.value && (connectionsStore.shouldRefreshFromAPI() || connectionsStore.connections.length === 0)) {
+  // Try to load fresh connections from API if backend is connected
+  if (isBackendConnected.value) {
     try {
       await connectionsStore.refreshConnections()
     } catch (error) {
-      console.error('Failed to load connections on home page:', error)
-      // If API call fails, we still have the cached data from localStorage
+      console.error('Failed to load connections from API:', error)
+      // Fallback to recent connections if API fails
+      connectionsStore.loadConnectionsFromRecentData()
     }
+  } else {
+    // Backend is offline - load recent connections as fallback for better UX
+    connectionsStore.loadConnectionsFromRecentData()
   }
 })
 
@@ -180,10 +181,11 @@ watch(
   async (isConnected) => {
     if (isConnected) {
       try {
+        // Backend came online - refresh with fresh API data
         await connectionsStore.refreshConnections()
       } catch (error) {
         console.error('Failed to load connections when backend connected:', error)
-        // If API call fails, we still have the cached data from localStorage
+        // Keep using fallback data if API still fails
       }
     }
   }

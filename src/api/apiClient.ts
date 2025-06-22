@@ -145,27 +145,21 @@ const loadUserConfigs = async (apiKey: string): Promise<void> => {
   }
 }
 
-// Add logging to health check functions
+// Health check functions - minimal logging
 const backendHealthCheck = async (): Promise<HealthCheckResponse> => {
-  // console.log('[API] Checking backend health...')
   try {
     const response: ApiResponse<HealthCheckResponse> = await apiClient.get('/health')
-    console.log('[API] Backend connection successful:', response.data)
     return response.data
   } catch (error) {
-    console.error('[API] Backend connection failed:', error)
     throw handleApiError(error)
   }
 }
 
 const sentryHealthCheck = async (): Promise<HealthCheckResponse> => {
-  // console.log('[API] Checking Sentry health...')
   try {
     const response: ApiResponse<HealthCheckResponse> = await sentryClient.get('/health')
-    console.log('[API] Sentry connection successful:', response.data)
     return response.data
   } catch (error) {
-    console.error('[API] Sentry connection failed:', error)
     throw handleApiError(error)
   }
 }

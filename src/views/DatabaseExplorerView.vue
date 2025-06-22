@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useCommonStore } from '@/stores/common'
 import { useConnectionsStore } from '@/stores/connections'
 import { Tab, TabGroup, TabList, TabPanels, TabPanel } from '@headlessui/vue'
-import { XMarkIcon } from '@heroicons/vue/20/solid'
+import { XMarkIcon, TrashIcon } from '@heroicons/vue/20/solid'
 import DatabaseMetadataView from './DatabaseMetadataView.vue'
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
 
@@ -15,7 +15,7 @@ const commonStore = useCommonStore()
 const connectionsStore = useConnectionsStore()
 
 // Get recent connections from localStorage or initialize empty
-const recentConnections = ref<Array<{ id: string; name: string }>>(
+const recentConnections = ref<Array<{ id: string; name: string; type?: string; host?: string; port?: string; database?: string; cloud_provider?: string }>>(
   JSON.parse(localStorage.getItem('recentConnections') || '[]')
 )
 
@@ -52,7 +52,12 @@ function addToRecentConnections() {
 
   const connection = {
     id: currentConnection.value.id,
-    name: currentConnection.value.name
+    name: currentConnection.value.name,
+    type: currentConnection.value.type,
+    host: currentConnection.value.host,
+    port: currentConnection.value.port?.toString(),
+    database: currentConnection.value.database,
+    cloud_provider: currentConnection.value.cloud_provider || ''
   }
 
   // Only add if it doesn't exist
@@ -94,6 +99,15 @@ function removeFromRecent(connectionId: string) {
 // Switch to a different connection
 function switchConnection(connectionId: string) {
   router.push(`/explorer/${connectionId}`)
+}
+
+// Clear all recent connections
+function clearAllRecentConnections() {
+  recentConnections.value = []
+  localStorage.removeItem('recentConnections')
+  localStorage.removeItem('lastViewedConnectionId')
+  // Navigate back to connections page since no recent connections remain
+  router.push('/connections')
 }
 
 // Get cloud provider for a connection
@@ -160,12 +174,23 @@ watch(currentConnectionId, (newId) => {
           <h1 class="text-3xl font-bold leading-tight tracking-tight text-gray-900">
             Database Explorer
           </h1>
-          <RouterLink
-            to="/connections"
-            class="text-sm text-gray-600 hover:text-gray-900 flex items-center gap-1"
-          >
-            ← Back to Connections
-          </RouterLink>
+          <div class="flex items-center gap-4">
+            <button
+              v-if="recentConnections.length > 0"
+              @click="clearAllRecentConnections"
+              class="text-sm text-gray-400 hover:text-red-500 flex items-center gap-1 px-3 py-1 rounded hover:bg-red-50 transition-colors"
+              title="Clear all recent connections"
+            >
+              <TrashIcon class="h-4 w-4" />
+              Clear All
+            </button>
+            <RouterLink
+              to="/connections"
+              class="text-sm text-gray-600 hover:text-gray-900 flex items-center gap-1"
+            >
+              ← Back to Connections
+            </RouterLink>
+          </div>
         </div>
       </div>
     </header>

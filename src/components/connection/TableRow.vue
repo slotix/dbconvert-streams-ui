@@ -70,6 +70,7 @@ export default Object.assign({}, shared, {
   },
   components: {
     ActionsMenu,
+    CloudProviderBadge,
     PencilIcon,
     TableCellsIcon
   }

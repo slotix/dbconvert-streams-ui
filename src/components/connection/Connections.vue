@@ -76,7 +76,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, computed, watch, onMounted } from 'vue'
+import { defineComponent, ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import Table from './Table.vue'
 import DBTypesCombo from './DBTypesCombo.vue'
 import ToggleView from '@/components/common/ToggleView.vue'
@@ -133,20 +133,37 @@ export default defineComponent({
       }
     })
 
-    onMounted(async () => {
-      // First, try to load connections from localStorage
-      connectionsStore.initializeFromStorage()
-      
+    // Listen for backend reconnection events
+    const handleBackendReconnected = async () => {
       try {
-        // Only try to refresh connections if we're properly initialized and cache is expired
-        if (commonStore.isBackendConnected && (connectionsStore.shouldRefreshFromAPI() || connectionsStore.connections.length === 0)) {
+        await connectionsStore.refreshConnections()
+      } catch (error) {
+        console.error('❌ Failed to reload connections after backend reconnection:', error)
+      }
+    }
+
+    onMounted(async () => {
+      // Try to load fresh connections from API if backend is connected
+      try {
+        if (commonStore.isBackendConnected) {
           await connectionsStore.refreshConnections()
+        } else {
+          // Backend is offline - load recent connections as fallback
+          connectionsStore.loadConnectionsFromRecentData()
         }
       } catch (err) {
         commonStore.showNotification((err as Error).message, 'error')
-        // If API call fails, we still have the cached data from localStorage
+        // Fallback to recent connections if API fails
+        connectionsStore.loadConnectionsFromRecentData()
       }
       await commonStore.getViewType()
+
+      window.addEventListener('backend-reconnected', handleBackendReconnected)
+    })
+
+    // Cleanup event listener when component unmounts
+    onUnmounted(() => {
+      window.removeEventListener('backend-reconnected', handleBackendReconnected)
     })
 
     // Watch for backend connection status changes

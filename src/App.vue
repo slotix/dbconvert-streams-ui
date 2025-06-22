@@ -436,17 +436,13 @@ const initializeApp = async () => {
   try {
     isInitializing.value = true
 
-    // Check for API key first
-    const apiKey = await commonStore.getApiKey()
-    // If we have a valid API key, proceed with initialization
-    if (apiKey) {
-      const initResult = await commonStore.initApp()
-      if (initResult === 'failed') {
-        throw new Error('Failed to initialize app')
-      }
-      return 'success'
+    // Always try to initialize the app - the initApp method now handles 
+    // API key validation and development fallbacks internally
+    const initResult = await commonStore.initApp()
+    if (initResult === 'failed') {
+      throw new Error('Failed to initialize app')
     }
-    return 'failed'
+    return 'success'
   } catch (error) {
     console.error('Failed to initialize app:', error)
     return 'failed'
@@ -460,7 +456,7 @@ onMounted(async () => {
     isInitializing.value = true
     
     // Initialize connections from localStorage early
-    connectionsStore.initializeFromStorage()
+    connectionsStore.loadConnectionsFromRecentData()
     
     await initializeApiClient()
     const result = await initializeApp()

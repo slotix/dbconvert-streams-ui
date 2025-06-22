@@ -5,7 +5,17 @@
 
     <!-- Explore Databases -->
     <div v-if="recentConnections.length > 0" class="mb-8">
-      <h3 class="text-sm font-medium text-gray-500 mb-4">EXPLORE DATABASES</h3>
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-sm font-medium text-gray-500">EXPLORE DATABASES</h3>
+        <button
+          @click="clearRecentConnections"
+          class="text-xs text-gray-400 hover:text-red-500 flex items-center gap-1 px-2 py-1 rounded hover:bg-red-50 transition-colors"
+          title="Clear recent connections"
+        >
+          <TrashIcon class="h-3 w-3" />
+          Clear Recent
+        </button>
+      </div>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div
           v-for="connection in recentConnections.slice(0, 4)"
@@ -106,7 +116,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, watch } from 'vue'
+import { computed, onMounted, watch, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCommonStore } from '@/stores/common'
 import { useStreamsStore } from '@/stores/streamConfig'
@@ -116,7 +126,8 @@ import {
   CircleStackIcon,
   ClockIcon,
   PlusIcon,
-  ArrowRightIcon
+  ArrowRightIcon,
+  TrashIcon
 } from '@heroicons/vue/24/outline'
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
 import { normalizeConnectionType } from '@/utils/connectionUtils'
@@ -126,21 +137,30 @@ const commonStore = useCommonStore()
 const streamsStore = useStreamsStore()
 const connectionsStore = useConnectionsStore()
 
-// Get recent connections from localStorage, but filter out ones that don't exist in the store
-const recentConnections = computed(() => {
+// Get recent connections from localStorage - they persist indefinitely until manually cleared
+const recentConnections = ref<any[]>([])
+
+// Load recent connections from localStorage
+function loadRecentConnections() {
   const recentConnectionsData = JSON.parse(localStorage.getItem('recentConnections') || '[]')
-  
-  // Only show connections that actually exist in the store
-  const validConnections = recentConnectionsData.filter((recentConn: any) => {
-    return connectionsStore.connections.some(conn => conn.id === recentConn.id)
-  })
-  
-  return validConnections.slice().reverse() // Show most recent first
-})
+  recentConnections.value = recentConnectionsData.slice().reverse() // Show most recent first
+}
 
 function getConnectionLogo(connectionId: string) {
   const connection = connectionsStore.connections.find((conn) => conn.id === connectionId)
-  if (!connection) return null
+  if (!connection) {
+    // Fallback: try to get type from recent connections data in localStorage
+    const recentConnectionsData = JSON.parse(localStorage.getItem('recentConnections') || '[]')
+    const recentConn = recentConnectionsData.find((conn: any) => conn.id === connectionId)
+    if (recentConn && recentConn.type) {
+      const normalizedType = normalizeConnectionType(recentConn.type)
+      const dbType = connectionsStore.dbTypes.find((f) => 
+        normalizeConnectionType(f.type.toLowerCase()) === normalizedType.toLowerCase()
+      )
+      return dbType?.logo || '/images/db-logos/all.svg'
+    }
+    return '/images/db-logos/all.svg' // Ultimate fallback
+  }
 
   // Normalize the connection type to match dbTypes
   const normalizedType = normalizeConnectionType(connection.type)
@@ -181,74 +201,136 @@ function getConnectionLogo(connectionId: string) {
 
 function getConnectionType(connectionId: string) {
   const connection = connectionsStore.connections.find((conn) => conn.id === connectionId)
-  return connection?.type || ''
+  if (connection) return connection.type || ''
+  
+  // Fallback: try to get type from recent connections data
+  const recentConnectionsData = JSON.parse(localStorage.getItem('recentConnections') || '[]')
+  const recentConn = recentConnectionsData.find((conn: any) => conn.id === connectionId)
+  return recentConn?.type || ''
 }
 
 function getConnectionHost(connectionId: string) {
   const connection = connectionsStore.connections.find((conn) => conn.id === connectionId)
-  if (!connection) return ''
-  
-  // More aggressive truncation for long hostnames to ensure arrow visibility
-  let displayHost = connection.host
-  if (displayHost.length > 25) {
-    // For cloud providers, try to show the important part
-    if (displayHost.includes('.')) {
-      const parts = displayHost.split('.')
-      if (parts.length > 3) {
-        // Show first part and last 2 parts with ellipsis
-        displayHost = `${parts[0]}...${parts.slice(-2).join('.')}`
+  if (connection) {
+    // More aggressive truncation for long hostnames to ensure arrow visibility
+    let displayHost = connection.host
+    if (displayHost.length > 25) {
+      // For cloud providers, try to show the important part
+      if (displayHost.includes('.')) {
+        const parts = displayHost.split('.')
+        if (parts.length > 3) {
+          // Show first part and last 2 parts with ellipsis
+          displayHost = `${parts[0]}...${parts.slice(-2).join('.')}`
+        } else {
+          // Simple truncation for shorter domain names
+          displayHost = `${displayHost.substring(0, 22)}...`
+        }
       } else {
-        // Simple truncation for shorter domain names
+        // Simple truncation for other cases
         displayHost = `${displayHost.substring(0, 22)}...`
       }
-    } else {
-      // Simple truncation for other cases
-      displayHost = `${displayHost.substring(0, 22)}...`
     }
+    return `${displayHost}:${connection.port}`
   }
   
-  return `${displayHost}:${connection.port}`
+  // Fallback: try to get from recent connections data
+  const recentConnectionsData = JSON.parse(localStorage.getItem('recentConnections') || '[]')
+  const recentConn = recentConnectionsData.find((conn: any) => conn.id === connectionId)
+  if (recentConn?.host && recentConn?.port) {
+    let displayHost = recentConn.host
+    if (displayHost.length > 25) {
+      if (displayHost.includes('.')) {
+        const parts = displayHost.split('.')
+        if (parts.length > 3) {
+          displayHost = `${parts[0]}...${parts.slice(-2).join('.')}`
+        } else {
+          displayHost = `${displayHost.substring(0, 22)}...`
+        }
+      } else {
+        displayHost = `${displayHost.substring(0, 22)}...`
+      }
+    }
+    return `${displayHost}:${recentConn.port}`
+  }
+  
+  return ''
 }
 
 function getConnectionDatabase(connectionId: string) {
   const connection = connectionsStore.connections.find((conn) => conn.id === connectionId)
-  if (!connection) return ''
-  
-  let dbName = connection.database
-  // Truncate database name if it's too long
-  if (dbName.length > 20) {
-    dbName = `${dbName.substring(0, 17)}...`
+  if (connection) {
+    let dbName = connection.database
+    // Truncate database name if it's too long
+    if (dbName.length > 20) {
+      dbName = `${dbName.substring(0, 17)}...`
+    }
+    return `Database: ${dbName}`
   }
   
-  return `Database: ${dbName}`
+  // Fallback: try to get from recent connections data
+  const recentConnectionsData = JSON.parse(localStorage.getItem('recentConnections') || '[]')
+  const recentConn = recentConnectionsData.find((conn: any) => conn.id === connectionId)
+  if (recentConn?.database) {
+    let dbName = recentConn.database
+    if (dbName.length > 20) {
+      dbName = `${dbName.substring(0, 17)}...`
+    }
+    return `Database: ${dbName}`
+  }
+  
+  return ''
 }
 
 function getConnectionDetails(connectionId: string) {
   const connection = connectionsStore.connections.find((conn) => conn.id === connectionId)
-  if (!connection) return ''
-  
-  // Truncate long hostnames for better display
-  let displayHost = connection.host
-  if (displayHost.length > 30) {
-    // For cloud providers, try to show the important part
-    if (displayHost.includes('.')) {
-      const parts = displayHost.split('.')
-      if (parts.length > 3) {
-        // Show first part and last 2 parts with ellipsis
-        displayHost = `${parts[0]}...${parts.slice(-2).join('.')}`
+  if (connection) {
+    // Truncate long hostnames for better display
+    let displayHost = connection.host
+    if (displayHost.length > 30) {
+      // For cloud providers, try to show the important part
+      if (displayHost.includes('.')) {
+        const parts = displayHost.split('.')
+        if (parts.length > 3) {
+          // Show first part and last 2 parts with ellipsis
+          displayHost = `${parts[0]}...${parts.slice(-2).join('.')}`
+        }
+      } else {
+        // Simple truncation for other cases
+        displayHost = `${displayHost.substring(0, 25)}...`
       }
-    } else {
-      // Simple truncation for other cases
-      displayHost = `${displayHost.substring(0, 25)}...`
     }
+    return `${displayHost}:${connection.port} • ${connection.database}`
   }
   
-  return `${displayHost}:${connection.port} • ${connection.database}`
+  // Fallback: try to get from recent connections data
+  const recentConnectionsData = JSON.parse(localStorage.getItem('recentConnections') || '[]')
+  const recentConn = recentConnectionsData.find((conn: any) => conn.id === connectionId)
+  if (recentConn?.host && recentConn?.port && recentConn?.database) {
+    let displayHost = recentConn.host
+    if (displayHost.length > 30) {
+      if (displayHost.includes('.')) {
+        const parts = displayHost.split('.')
+        if (parts.length > 3) {
+          displayHost = `${parts[0]}...${parts.slice(-2).join('.')}`
+        }
+      } else {
+        displayHost = `${displayHost.substring(0, 25)}...`
+      }
+    }
+    return `${displayHost}:${recentConn.port} • ${recentConn.database}`
+  }
+  
+  return ''
 }
 
 function getCloudProvider(connectionId: string) {
   const connection = connectionsStore.connections.find((conn) => conn.id === connectionId)
-  return connection?.cloud_provider || ''
+  if (connection) return connection.cloud_provider || ''
+  
+  // Fallback: try to get from recent connections data
+  const recentConnectionsData = JSON.parse(localStorage.getItem('recentConnections') || '[]')
+  const recentConn = recentConnectionsData.find((conn: any) => conn.id === connectionId)
+  return recentConn?.cloud_provider || ''
 }
 
 function getDatabaseIconStyle(dbType: string): string {
@@ -297,17 +379,15 @@ function viewAllStreamConfigurations() {
   router.push('/streams')
 }
 
-// Clean up localStorage if connections no longer exist
+function clearRecentConnections() {
+  localStorage.removeItem('recentConnections')
+  // Update the reactive ref to trigger UI update immediately
+  recentConnections.value = []
+}
+
+// Load recent connections on component mount
 onMounted(() => {
-  // Clean up recent connections that no longer exist
-  const recentConnectionsData = JSON.parse(localStorage.getItem('recentConnections') || '[]')
-  const validConnections = recentConnectionsData.filter((recentConn: any) => {
-    return connectionsStore.connections.some(conn => conn.id === recentConn.id)
-  })
-  
-  if (validConnections.length !== recentConnectionsData.length) {
-    localStorage.setItem('recentConnections', JSON.stringify(validConnections))
-  }
+  loadRecentConnections()
 })
 
 </script>
