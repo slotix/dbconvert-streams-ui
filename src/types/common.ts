@@ -1,6 +1,8 @@
 export interface ServiceStatus {
   name: string
-  status: 'passing' | 'critical' | 'warning' | 'unknown'
+  status: 'passing' | 'critical' | 'unknown' | 'initializing'
+  // Note: 'warning' removed as it's never used in practice
+  // 'critical', 'unknown' both display as 'offline' to user
 }
 
 export interface ServiceStatusResponse {

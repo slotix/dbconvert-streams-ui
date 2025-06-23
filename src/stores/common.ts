@@ -59,6 +59,7 @@ interface State {
   isLoadingRoute: boolean
   routeLoadError: string | null
   healthCheckInterval: number | null
+  initializationStartTime: number
 }
 
 export const useCommonStore = defineStore('common', {
@@ -155,7 +156,8 @@ export const useCommonStore = defineStore('common', {
     isLoading: false,
     isLoadingRoute: false,
     routeLoadError: null as string | null,
-    healthCheckInterval: null as number | null
+    healthCheckInterval: null as number | null,
+    initializationStartTime: Date.now()
   }),
   actions: {
     async retryOperation(
@@ -362,6 +364,8 @@ export const useCommonStore = defineStore('common', {
       const toast = useToast()
 
       try {
+        // Reset initialization time when app starts
+        this.initializationStartTime = Date.now()
         // Set to false initially during initialization
         this.setBackendConnected(false)
 

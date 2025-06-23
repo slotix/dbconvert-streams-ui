@@ -35,7 +35,6 @@
             </div>
             <div class="flex items-center gap-2 mt-1">
               <CloudProviderBadge :cloud-provider="connection.cloud_provider" :db-type="connection.type" size="sm" />
-              <span class="text-xs text-gray-400">•</span>
               <p class="text-xs text-gray-500 truncate font-mono">{{ connection.id }}</p>
             </div>
           </div>
@@ -79,11 +78,13 @@
                   <EyeSlashIcon v-else class="h-4 w-4" />
                 </button>
                 <button
-                  class="flex-shrink-0 text-gray-400 hover:text-gray-600"
+                  class="flex-shrink-0 transition-colors"
+                  :class="isCopied ? 'text-green-500' : 'text-gray-400 hover:text-gray-600'"
                   @click.stop="copyConnectionString"
-                  :title="'Copy connection string to clipboard'"
+                  :title="isCopied ? 'Copied!' : 'Copy connection string to clipboard'"
                 >
-                  <ClipboardIcon class="h-4 w-4" />
+                  <ClipboardIcon v-if="!isCopied" class="h-4 w-4" />
+                  <CheckIcon v-else class="h-4 w-4" />
                 </button>
               </div>
             </div>
@@ -156,7 +157,8 @@ import {
   TableCellsIcon,
   EyeIcon,
   EyeSlashIcon,
-  ClipboardIcon
+  ClipboardIcon,
+  CheckIcon
 } from '@heroicons/vue/24/outline'
 import { ref } from 'vue'
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
@@ -170,6 +172,7 @@ const streamsStore = useStreamsStore()
 const commonStore = useCommonStore()
 
 const showPassword = ref(false)
+const isCopied = ref(false)
 
 const isStreamsPage = computed(() => commonStore.isStreamsPage)
 const currentStep = computed(() => streamsStore.currentStep)
@@ -219,8 +222,6 @@ const selected = computed(() => {
 
   return isSourceStreamSelected || isTargetStreamSelected
 })
-
-
 
 const connectionString = computed(() => {
   if (!props.connection) return ''
@@ -312,8 +313,14 @@ async function copyConnectionString(): Promise<void> {
     const fullConnectionString = generateConnectionString(props.connection, true) // Always copy with password
     await navigator.clipboard.writeText(fullConnectionString)
     
-    // Optional: Show a brief success indication (you could add a toast notification here)
-    console.log('Connection string copied to clipboard')
+    // Show success indication
+    isCopied.value = true
+    
+    // Reset the copied state after 2 seconds
+    setTimeout(() => {
+      isCopied.value = false
+    }, 2000)
+    
   } catch (error) {
     console.error('Failed to copy connection string:', error)
     // Fallback for older browsers
@@ -324,12 +331,19 @@ async function copyConnectionString(): Promise<void> {
       textArea.select()
       document.execCommand('copy')
       document.body.removeChild(textArea)
-      console.log('Connection string copied to clipboard (fallback)')
+      
+      // Show success indication for fallback too
+      isCopied.value = true
+      
+      // Reset the copied state after 2 seconds
+      setTimeout(() => {
+        isCopied.value = false
+      }, 2000)
+      
     } catch (fallbackError) {
       console.error('Fallback copy also failed:', fallbackError)
     }
   }
 }
-
 
 </script>
