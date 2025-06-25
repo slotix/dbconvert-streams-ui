@@ -15,10 +15,16 @@
               <key-icon class="h-6 w-6 text-gray-600" aria-hidden="true" />
             </div>
             <div class="mt-3 text-center sm:mt-5">
-              <h3 class="text-base font-semibold leading-6 text-gray-900">Enter your API Key</h3>
+              <h3 class="text-base font-semibold leading-6 text-gray-900">
+                {{ isKeyExpired ? 'API Key Expired' : 'Enter your API Key' }}
+              </h3>
               <div class="mt-2">
                 <p class="text-sm text-gray-500">
-                  Please enter your API key to continue. Don't have an account yet?
+                  {{ isKeyExpired 
+                    ? 'Your API key has expired or is no longer valid. Please enter a new API key to continue.' 
+                    : 'Please enter your API key to continue.' 
+                  }}
+                  Don't have an account yet?
                   <a
                     href="https://streams.dbconvert.com/account"
                     target="_blank"
@@ -64,17 +70,11 @@ import { KeyIcon } from '@heroicons/vue/24/outline'
 const store = useCommonStore()
 const apiKeyInput = ref('')
 
-// Only show API key prompt when we truly don't have an API key stored
-// Don't show it during connection issues when we have a valid key
-const shouldShowApiKeyPrompt = computed(() => {
-  // If we have an API key stored (even if backend is disconnected), don't show prompt
-  if (store.apiKey) {
-    return false
-  }
-  
-  // Only show if we truly don't have an API key
-  return !store.hasValidApiKey
-})
+// Show API key prompt when we need an API key (either missing or invalidated)
+const shouldShowApiKeyPrompt = computed(() => store.needsApiKey)
+
+// Check if the key was invalidated (expired) vs never set
+const isKeyExpired = computed(() => store.apiKeyInvalidated)
 
 async function submitApiKey() {
   if (!apiKeyInput.value) return

@@ -60,7 +60,15 @@ apiClient.interceptors.response.use(
     const commonStore = useCommonStore()
     const config = error.config as any
 
-    // Only handle network/connection errors
+    // Handle 401 Unauthorized errors - invalid or expired API key
+    if (error.response?.status === 401) {
+      console.log('API key is invalid or expired, clearing from storage')
+      // Clear the invalid API key and trigger re-authentication
+      await commonStore.clearApiKey()
+      return Promise.reject(error)
+    }
+
+    // Only handle network/connection errors for retry logic
     if (
       !error.response ||
       error.code === 'ECONNABORTED' ||

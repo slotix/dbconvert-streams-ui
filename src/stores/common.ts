@@ -44,8 +44,10 @@ interface State {
   sentryHealthy: boolean
   apiHealthy: boolean
   apiKey: string | null
+  apiKeyInvalidated: boolean
   serviceStatuses: ServiceStatus[]
   steps: Step[]
+  homeSteps: Step[]
   operationMap: {
     insert: string
     update: string
@@ -71,6 +73,7 @@ export const useCommonStore = defineStore('common', {
     sentryHealthy: false,
     apiHealthy: false,
     apiKey: useLocalStorage('dbconvert-api-key', '') as unknown as string | null,
+    apiKeyInvalidated: false,
     serviceStatuses: [] as ServiceStatus[],
     steps: [
       {
@@ -268,6 +271,7 @@ export const useCommonStore = defineStore('common', {
         // Validate the API key before storing
         await api.validateApiKey(apiKey)
         this.apiKey = apiKey
+        this.apiKeyInvalidated = false
         localStorage.setItem('apiKey', apiKey)
       } catch (error) {
         const toast = useToast()
@@ -278,6 +282,7 @@ export const useCommonStore = defineStore('common', {
 
     async clearApiKey(): Promise<void> {
       this.apiKey = null
+      this.apiKeyInvalidated = true
       localStorage.removeItem('apiKey')
     },
 
@@ -393,6 +398,10 @@ export const useCommonStore = defineStore('common', {
               await this.loadUserConfigs()
               this.consumeLogsFromSSE()
               this.setBackendConnected(true)
+              
+              // Reset invalidated flag on successful initialization
+              this.apiKeyInvalidated = false
+              
               toast.success('App initialized successfully')
               this.clearError()
               
@@ -632,6 +641,7 @@ export const useCommonStore = defineStore('common', {
         ) || null
       )
     },
-    hasValidApiKey: (state) => !!state.apiKey
+    hasValidApiKey: (state) => !!state.apiKey && !state.apiKeyInvalidated,
+    needsApiKey: (state) => !state.apiKey || state.apiKeyInvalidated
   }
 })
