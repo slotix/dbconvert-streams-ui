@@ -34,5 +34,11 @@
   
     Key Conventions
     - Optimize Web Vitals (LCP, CLS, FID) using tools like Lighthouse or WebPageTest.
-    
+
+    Context7 MCP
+    - Use Context7 MCP 
+
+    Playwright MCP
+    - Use Playwright MCP for browser automation and testing.
+
     Use yarn for package management.

@@ -31,3 +31,10 @@ coverage
 .cursorrules
 .cursorignore
 
+# Playwright
+/test-results/
+/playwright-report/
+/playwright/.cache/
+/tests/.auth/
+/tests/screenshots/
+
