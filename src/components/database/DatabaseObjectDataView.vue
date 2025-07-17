@@ -3,6 +3,7 @@ import { ref, watch, computed } from 'vue'
 import { ArrowPathIcon, KeyIcon, LinkIcon } from '@heroicons/vue/24/outline'
 import { type SQLTableMeta, type SQLViewMeta } from '@/types/metadata'
 import connections from '@/api/connections'
+import { formatTableValue } from '@/utils/dataUtils'
 
 // Define brand colors as constants for consistency (matching DatabaseDiagramD3.vue)
 const BRAND_COLORS = {
@@ -320,7 +321,7 @@ const foreignKeyColumns = computed(() => {
                     :key="colIndex"
                     class="px-3 py-2 text-sm text-gray-500 whitespace-nowrap"
                   >
-                    {{ value }}
+                    {{ formatTableValue(value) }}
                   </td>
                 </tr>
               </tbody>
