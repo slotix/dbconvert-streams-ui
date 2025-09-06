@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="flex-auto border-b border-gray-400 pb-5">
-      <h2 class="text-base font-semibold leading-6 text-gray-900">Source tables.</h2>
+      <h2 class="text-base font-semibold leading-6 text-gray-900">Dataset</h2>
     </div>
     <div class="flex items-center justify-between mt-4">
       <div class="mb-4 inline-flex font-medium text-gray-900">
