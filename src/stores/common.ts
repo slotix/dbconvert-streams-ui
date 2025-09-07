@@ -394,8 +394,8 @@ export const useCommonStore = defineStore('common', {
           try {
             await this.userDataFromSentry(apiKey)
             if (this.userData?.apiKey) {
-              // CRITICAL: Always make the one-time initialization call to /user/configs
-              await this.loadUserConfigs()
+              // Load user configs - backend lazy-loads configurations as needed
+              // await this.loadUserConfigs()
               this.consumeLogsFromSSE()
               this.setBackendConnected(true)
               
