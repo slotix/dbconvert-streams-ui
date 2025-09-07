@@ -13,8 +13,7 @@
     <div class="antialiased bg-gray-50">
       <!-- Main area -->
       <Connections />
-      <Add v-if="dlgTp === DIALOG_TYPES.SAVE" />
-      <Edit v-if="dlgTp === DIALOG_TYPES.UPDATE" />
+      <!-- Modal components removed - using wizard routing instead -->
     </div>
   </main>
 </template>
@@ -22,11 +21,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import Connections from '@/components/connection/Connections.vue'
-import Add from '@/components/connection/Add.vue'
-import Edit from '@/components/connection/Edit.vue'
 import { useCommonStore } from '@/stores/common'
 import { useConnectionsStore } from '@/stores/connections'
-import { DIALOG_TYPES } from '@/stores/common'
 
 // Access the connections store
 const connectionsStore = useConnectionsStore()
@@ -34,9 +30,6 @@ const commonStore = useCommonStore()
 
 // Define the function to count connections
 const connectionsCount = computed(() => connectionsStore.countConnections)
-
-// Get the dialog type from the common store
-const dlgTp = computed(() => commonStore.dlgType)
 
 // Check if the backend is connected
 const isBackendConnected = computed(() => commonStore.isBackendConnected)

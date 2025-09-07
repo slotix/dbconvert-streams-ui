@@ -21,7 +21,6 @@ interface State {
 
 // Removed cache mechanism - connections are now always fetched fresh from API
 // This ensures UI is always in sync with Consul storage via the API
-// Recent connections still use localStorage but are managed separately
 
 export const useConnectionsStore = defineStore('connections', {
   state: (): State => ({
@@ -61,40 +60,16 @@ export const useConnectionsStore = defineStore('connections', {
     }
   },
   actions: {
-    // Minimal fallback: load basic connection info from recent connections when API unavailable
-    loadConnectionsFromRecentData() {
-      try {
-        const recentConnections = localStorage.getItem('recentConnections')
-        if (recentConnections) {
-          const recentData = JSON.parse(recentConnections)
-          // Convert recent connections to minimal connection objects for display
-          this.connections = recentData.map((recent: any) => ({
-            id: recent.id,
-            name: recent.name,
-            type: recent.type || 'unknown',
-            host: recent.host || '',
-            port: recent.port || '',
-            username: '',
-            password: '',
-            database: recent.database || '',
-            created: 0,
-            cloud_provider: recent.cloud_provider || ''
-          }))
-          console.log('Loaded connections from recent data as fallback')
-        }
-      } catch (error) {
-        console.warn('Failed to load connections from recent data:', error)
-      }
-    },
 
     // Removed cache persistence methods - connections are now always fetched fresh from API
     // This ensures UI is always in sync with Consul storage via the API
 
     setCurrentConnection(id: string) {
-      const curConnection = this.connections.filter((c) => {
-        return c.id === id
-      })
-      this.currentConnection = curConnection[0]
+      const curConnection = this.connections.find((c) => c.id === id)
+      if (curConnection) {
+        // Create a deep copy to avoid reactivity issues
+        this.currentConnection = JSON.parse(JSON.stringify(curConnection))
+      }
     },
     connectionByID(id: string): Connection | null {
       const connection = this.connections.find((c) => c.id === id)
@@ -148,13 +123,15 @@ export const useConnectionsStore = defineStore('connections', {
         throw error
       }
     },
-    async _testConnection(id: string) {
+    async _testConnection() {
       try {
         this.isTestingConnection = true
         const status = await api.testConnection()
-        this.currentConnection = {
-          ...this.currentConnection!,
-          status: status
+        if (this.currentConnection) {
+          this.currentConnection = {
+            ...this.currentConnection,
+            status: status
+          }
         }
         useCommonStore().showNotification(status, 'success')
       } catch (error) {
@@ -171,8 +148,8 @@ export const useConnectionsStore = defineStore('connections', {
     cloneConnection: debounce(function(this: any, id: string) {
       return this._cloneConnection(id)
     }, 500),
-    testConnection: debounce(function(this: any, id: string) {
-      return this._testConnection(id)
+    testConnection: debounce(function(this: any) {
+      return this._testConnection()
     }, 500),
     resetCurrentConnection() {
       this.currentConnection = null
@@ -189,13 +166,16 @@ export const useConnectionsStore = defineStore('connections', {
         if (this.currentConnection) {
           this.currentConnection.id = response.id
           this.currentConnection.created = response.created
-
-          const databasesInfo = await api.getDatabases(response.id)
-          this.currentConnection.databasesInfo = databasesInfo
-          // Schema handling moved to explorer/stream contexts
+          // Initialize empty databases info - will be loaded later when needed
+          this.currentConnection.databasesInfo = []
           
           // Refresh connections to get the latest data and update storage
-          await this.refreshConnections()
+          try {
+            await this.refreshConnections()
+          } catch (refreshError) {
+            console.warn('[Store] Failed to refresh connections, but connection was created:', refreshError)
+            // Don't fail the whole operation if refresh fails
+          }
         }
       } catch (error) {
         console.error('[Store] Failed to create connection:', error)
@@ -275,31 +255,5 @@ export const useConnectionsStore = defineStore('connections', {
       await this.refreshConnections()
     },
 
-    // Removed cache-related debug methods since we no longer use caching
-    // Connections are always fetched fresh from the API
-    getRecentConnectionsInfo() {
-      try {
-        const recentConnections = localStorage.getItem('recentConnections')
-        const lastViewedConnectionId = localStorage.getItem('lastViewedConnectionId')
-        
-        if (!recentConnections) {
-          return { hasRecentConnections: false, count: 0, lastViewed: null }
-        }
-        
-        const parsed = JSON.parse(recentConnections)
-        return {
-          hasRecentConnections: true,
-          count: parsed.length,
-          lastViewed: lastViewedConnectionId,
-          connections: parsed.map((conn: any) => ({
-            id: conn.id,
-            name: conn.name,
-            type: conn.type || 'unknown'
-          }))
-        }
-      } catch (error) {
-        return { hasRecentConnections: false, count: 0, lastViewed: null, error: (error as Error).message }
-      }
-    }
   }
 })

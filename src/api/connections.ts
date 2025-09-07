@@ -12,7 +12,8 @@ const getConnections = async (): Promise<Connection[]> => {
   validateApiKey(commonStore.apiKey)
   try {
     const response: AxiosResponse<Connection[]> = await apiClient.get('/connections', {
-      headers: { 'X-API-Key': commonStore.apiKey }
+      headers: { 'X-API-Key': commonStore.apiKey },
+      timeout: 30000 // 30 second timeout
     })
     return response.data
   } catch (error) {
@@ -30,7 +31,8 @@ const createConnection = async (
       '/connections',
       json,
       {
-        headers: { 'X-API-Key': commonStore.apiKey }
+        headers: { 'X-API-Key': commonStore.apiKey },
+        timeout: 45000 // 45 second timeout to account for metadata loading
       }
     )
     return response.data
@@ -43,10 +45,15 @@ const createConnection = async (
 const updateConnection = async (): Promise<void> => {
   const commonStore = useCommonStore()
   validateApiKey(commonStore.apiKey)
-  const json = useConnectionsStore().currentConnection
+  const connectionsStore = useConnectionsStore()
+  const json = connectionsStore.currentConnection
+
+  if (!json) {
+    throw new Error('No connection data available')
+  }
 
   // Now we can safely access the id
-  const id = json?.id as string
+  const id = json.id as string
 
   if (!id) {
     throw new Error('Connection ID is undefined or empty')
@@ -94,21 +101,38 @@ const testConnection = async (): Promise<string> => {
   const commonStore = useCommonStore()
   validateApiKey(commonStore.apiKey)
   const json = useConnectionsStore().currentConnection
-  if (!json || !json.id) {
-    throw new Error('Connection ID is undefined or empty')
+  if (!json) {
+    throw new Error('Connection is undefined')
   }
+
   try {
-    const response: AxiosResponse<{ ping: string }> = await apiClient.post(
-      `/connections/${json.id}/ping`,
-      null,
-      {
-        headers: { 'X-API-Key': commonStore.apiKey }
+    // If connection has an ID, use the existing ping endpoint
+    if (json.id) {
+      const response: AxiosResponse<{ ping: string }> = await apiClient.post(
+        `/connections/${json.id}/ping`,
+        null,
+        {
+          headers: { 'X-API-Key': commonStore.apiKey }
+        }
+      )
+      if (response.data.ping === 'ok') {
+        return 'Connection Test Passed'
       }
-    )
-    if (response.data.ping === 'ok') {
-      return 'Connection Test Passed'
+      return 'Connection Test Failed'
+    } else {
+      // For new connections without ID, test with connection parameters
+      const response: AxiosResponse<{ ping: string }> = await apiClient.post(
+        '/connections/test',
+        json,
+        {
+          headers: { 'X-API-Key': commonStore.apiKey }
+        }
+      )
+      if (response.data.ping === 'ok') {
+        return 'Connection Test Passed'
+      }
+      return 'Connection Test Failed'
     }
-    return 'Connection Test Failed'
   } catch (error) {
     throw handleApiError(error)
   }
@@ -121,7 +145,8 @@ const getDatabases = async (id: string): Promise<DatabaseInfo[]> => {
     const response: AxiosResponse<DatabaseInfo[]> = await apiClient.get(
       `/connections/${id}/databases`,
       {
-        headers: { 'X-API-Key': commonStore.apiKey }
+        headers: { 'X-API-Key': commonStore.apiKey },
+        timeout: 15000 // 15 second timeout for faster feedback
       }
     )
     return response.data

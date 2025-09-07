@@ -478,8 +478,6 @@ onMounted(async () => {
   try {
     isInitializing.value = true
     
-    // Initialize connections from localStorage early
-    connectionsStore.loadConnectionsFromRecentData()
     
     await initializeApiClient()
     const result = await initializeApp()

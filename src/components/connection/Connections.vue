@@ -77,6 +77,7 @@
 
 <script lang="ts">
 import { defineComponent, ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
 import Table from './Table.vue'
 import DBTypesCombo from './DBTypesCombo.vue'
 import ToggleView from '@/components/common/ToggleView.vue'
@@ -105,6 +106,7 @@ export default defineComponent({
   setup() {
     const connectionsStore = useConnectionsStore()
     const commonStore = useCommonStore()
+    const router = useRouter()
     const filter = ref<string | null>(null)
 
     const connectionsByType = computed(() => connectionsStore.connectionsByType)
@@ -122,7 +124,8 @@ export default defineComponent({
     }
 
     const addConnection = () => {
-      commonStore.openModal('Add')
+      // Navigate to wizard instead of opening modal
+      router.push('/connections/add')
     }
 
     watch(filter, (newFilter) => {
@@ -147,14 +150,9 @@ export default defineComponent({
       try {
         if (commonStore.isBackendConnected) {
           await connectionsStore.refreshConnections()
-        } else {
-          // Backend is offline - load recent connections as fallback
-          connectionsStore.loadConnectionsFromRecentData()
         }
       } catch (err) {
         commonStore.showNotification((err as Error).message, 'error')
-        // Fallback to recent connections if API fails
-        connectionsStore.loadConnectionsFromRecentData()
       }
       await commonStore.getViewType()
 

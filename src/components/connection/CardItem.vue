@@ -143,6 +143,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { useConnectionsStore } from '@/stores/connections'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useCommonStore, DIALOG_TYPES } from '@/stores/common'
@@ -167,6 +168,7 @@ const props = defineProps<{
   connection: Connection
 }>()
 
+const router = useRouter()
 const connectionsStore = useConnectionsStore()
 const streamsStore = useStreamsStore()
 const commonStore = useCommonStore()
@@ -281,8 +283,8 @@ function getDatabaseIconStyle(dbType: string): string {
 
 function editConnection(): void {
   if (props.connection) {
-    connectionsStore.setCurrentConnection(props.connection.id)
-    commonStore.openModal(DIALOG_TYPES.UPDATE)
+    // Navigate to edit wizard instead of opening modal
+    router.push(`/connections/edit/${props.connection.id}`)
   }
 }
 

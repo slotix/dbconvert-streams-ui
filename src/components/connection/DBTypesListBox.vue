@@ -85,7 +85,7 @@ const props = defineProps({
 
 const selectedDBType = ref(props.modelValue || dbTypes.value[0])
 
-const emit = defineEmits(['update:selected-db-type'])
+const emit = defineEmits(['update:selected-db-type', 'update:modelValue'])
 
 onMounted(() => {
   emit('update:selected-db-type', selectedDBType.value)
@@ -93,6 +93,7 @@ onMounted(() => {
 
 watch(selectedDBType, (newVal) => {
   emit('update:selected-db-type', newVal)
+  emit('update:modelValue', newVal)
 })
 
 // Watch for external changes to modelValue

@@ -57,6 +57,17 @@ export function useCommon<T extends Connection>(defaultConnection: T) {
     { deep: true }
   )
 
+  // Watch for changes FROM store TO local connection (for wizard system)
+  watch(
+    () => connectionsStore.currentConnection,
+    (newConnection) => {
+      if (newConnection && newConnection !== connection) {
+        Object.assign(connection, newConnection)
+      }
+    },
+    { deep: true, immediate: true }
+  )
+
   const updateConnectionName = () => {
     if (dlgTp.value === DIALOG_TYPES.SAVE) {
       connection.name = buildConnectionName.value

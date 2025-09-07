@@ -23,6 +23,17 @@ const routes = [
     component: ConnectionsView
   },
   {
+    path: '/connections/add',
+    name: 'AddConnection',
+    component: () => import('@/views/AddConnectionView.vue')
+  },
+  {
+    path: '/connections/edit/:id',
+    name: 'EditConnection',
+    component: () => import('@/views/EditConnectionView.vue'),
+    props: true
+  },
+  {
     path: '/explorer',
     name: 'DatabaseExplorer',
     component: DatabaseExplorerView,

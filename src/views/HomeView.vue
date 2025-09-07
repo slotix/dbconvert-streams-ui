@@ -166,12 +166,7 @@ onMounted(async () => {
       await connectionsStore.refreshConnections()
     } catch (error) {
       console.error('Failed to load connections from API:', error)
-      // Fallback to recent connections if API fails
-      connectionsStore.loadConnectionsFromRecentData()
     }
-  } else {
-    // Backend is offline - load recent connections as fallback for better UX
-    connectionsStore.loadConnectionsFromRecentData()
   }
 })
 

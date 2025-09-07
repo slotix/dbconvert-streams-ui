@@ -144,8 +144,8 @@ export default defineComponent({
     },
     editConnection(): void {
       if (this.connection) {
-        this.connectionsStore.setCurrentConnection(this.connection.id)
-        this.commonStore.openModal(DIALOG_TYPES.UPDATE)
+        // Navigate to edit wizard instead of opening modal
+        this.$router.push(`/connections/edit/${this.connection.id}`)
       }
     },
     exploreConnection(): void {

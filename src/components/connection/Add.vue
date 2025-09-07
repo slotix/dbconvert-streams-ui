@@ -6,7 +6,7 @@
         @update:connection-params="updateConnectionParams"
       />
       <DBTypesListBox
-        :model-value="connectionDBType"
+        v-model="connectionDBType"
         @update:model-value="selectDBType"
         @update:selected-db-type="selectDBType"
       />
@@ -30,7 +30,7 @@ import type { DbType, Connection } from '@/types/connections'
 const connectionsStore = useConnectionsStore()
 const commonStore = useCommonStore()
 
-const connectionDBType = ref<DbType | null>(null)
+const connectionDBType = ref<DbType | null>(connectionsStore.dbTypes.find(dbType => dbType.type !== 'All') || null)
 const showDBCombo = ref(false)
 const currentConnection = computed(() => connectionsStore.currentConnection)
 
