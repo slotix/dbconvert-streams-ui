@@ -29,8 +29,6 @@
         <div v-show="currentStep.name === 'target'">
           <Connections />
         </div>
-        <Add v-if="dlgTp === DIALOG_TYPES.SAVE" />
-        <Edit v-if="dlgTp === DIALOG_TYPES.UPDATE" />
         <div v-show="currentStep.name === 'streamSettings'">
           <Settings />
         </div>
@@ -42,16 +40,11 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import Connections from '@/components/connection/Connections.vue'
-import Add from '@/components/connection/Add.vue'
-import Edit from '@/components/connection/Edit.vue'
-import { useCommonStore } from '@/stores/common'
 import Steps from '@/components/stream/Steps.vue'
 import Settings from '@/components/settings/Settings.vue'
 import { useStreamsStore } from '@/stores/streamConfig'
-import { DIALOG_TYPES } from '@/stores/common'
 
 const store = useStreamsStore()
-const commonStore = useCommonStore()
 
 const currentStep = computed(() => store.currentStep)
 const currentStreamConfig = computed(() => store.currentStreamConfig)
@@ -61,6 +54,6 @@ interface Props {
 }
 
 const props = defineProps<Props>()
+const mode = computed(() => props.mode)
 
-const dlgTp = computed(() => commonStore.dlgType)
 </script>

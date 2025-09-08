@@ -15,12 +15,16 @@
 
     <!-- Connection Parameters with Tabs -->
     <ConnectionParams v-if="connectionType" :connectionType="connectionType" />
+
+    <!-- Database Access Configuration Notice -->
+    <AccessNotice :publicIp="publicIp" v-if="showAccessNotice" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, watchEffect } from 'vue'
 import ConnectionParams from '../../params/ConnectionParams.vue'
+import AccessNotice from '../../AccessNotice.vue'
 import { useConnectionsStore } from '@/stores/connections'
 
 interface Props {
@@ -48,6 +52,21 @@ const canProceed = computed(() => {
     connection.username?.trim()
     // Note: password can be empty for some configurations
   )
+})
+
+// Compute the IP to show in AccessNotice based on connection host
+const publicIp = computed(() => {
+  const host = connectionsStore.currentConnection?.host
+  if (!host || host === 'localhost' || host === '127.0.0.1') {
+    return '127.0.0.1'
+  }
+  return host
+})
+
+// Only show the access notice when we have connection details filled out
+const showAccessNotice = computed(() => {
+  const connection = connectionsStore.currentConnection
+  return !!(connection?.host && connection?.port)
 })
 
 // Watch for changes and emit can-proceed updates

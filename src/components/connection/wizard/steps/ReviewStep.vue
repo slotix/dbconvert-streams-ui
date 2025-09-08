@@ -137,6 +137,7 @@ const emit = defineEmits<{
 // Always allow proceeding from review step if we have a connection
 const canProceed = computed(() => !!connection.value)
 
+
 // Watch for changes and emit can-proceed updates
 watchEffect(() => {
   emit('update:can-proceed', canProceed.value)

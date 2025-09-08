@@ -13,12 +13,8 @@
       </div>
     </div>
 
-    <!-- Database Access Notice -->
+    <!-- Header section with controls -->
     <div v-else>
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <AccessNotice :public-ip="PUBLIC_IP" />
-      </div>
-      <!-- Header section with controls -->
       <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div class="flex items-center gap-4 flex-wrap">
@@ -87,9 +83,6 @@ import { useConnectionsStore } from '@/stores/connections'
 import { useCommonStore } from '@/stores/common'
 import { PlusIcon } from '@heroicons/vue/24/solid'
 import Spinner from '@/components/common/Spinner.vue'
-import AccessNotice from './AccessNotice.vue'
-
-const PUBLIC_IP = import.meta.env.VITE_PUBLIC_IP || 'YOUR_PUBLIC_IP'
 
 export default defineComponent({
   name: 'Connections',
@@ -101,7 +94,6 @@ export default defineComponent({
     NewCard,
     PlusIcon,
     Spinner,
-    AccessNotice
   },
   setup() {
     const connectionsStore = useConnectionsStore()
@@ -186,8 +178,7 @@ export default defineComponent({
       isStreamsPage,
       addConnection,
       isBackendConnected,
-      isLoadingConnections,
-      PUBLIC_IP
+      isLoadingConnections
     }
   }
 })
