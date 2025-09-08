@@ -18,8 +18,17 @@ import DatabaseObjectContainer from '@/components/database/DatabaseObjectContain
 import DiagramView from '@/components/database/DiagramView.vue'
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
 
-const route = useRoute()
-const connectionId = route.params.id as string
+interface Props {
+  id: string
+  database?: string
+}
+
+const props = defineProps<Props>()
+const emit = defineEmits<{
+  'back-to-databases': []
+}>()
+
+const connectionId = props.id
 const schemaStore = useSchemaStore()
 const connectionsStore = useConnectionsStore()
 
@@ -97,13 +106,22 @@ onMounted(async () => {
       <div class="mb-4">
         <div class="flex items-center justify-between px-2">
           <div class="flex items-center gap-4">
+            <!-- Back Button -->
+            <button
+              @click="emit('back-to-databases')"
+              class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
+            >
+              <ChevronLeftIcon class="h-4 w-4" />
+              Back to Databases
+            </button>
+            
             <div v-if="connection" class="flex items-center gap-4 text-sm text-gray-500">
               <div class="flex items-center gap-2">
                 <span class="font-medium text-gray-700"
                   >{{ connection.host }}:{{ connection.port }}</span
                 >
                 <span class="text-gray-400">•</span>
-                <span class="font-medium text-gray-700">{{ connection.database }}</span>
+                <span class="font-medium text-gray-700">{{ props.database || connection.database }}</span>
               </div>
               <CloudProviderBadge :cloud-provider="connection.cloud_provider" :db-type="connection.type" />
             </div>

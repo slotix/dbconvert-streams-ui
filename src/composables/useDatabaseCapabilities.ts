@@ -24,6 +24,7 @@ export function useDatabaseCapabilities(databaseType: Ref<string> | string) {
   const supportsSchemaFilter = computed(() => supportsSchemaFiltering(dbType.value))
   const canCreateSchema = computed(() => canCreateSchemas(dbType.value))
   const canCreateDatabase = computed(() => capabilities.value?.canCreateDatabases || false)
+  const isDatabaseOptional = computed(() => capabilities.value?.databaseOptional || false)
 
   // Connection defaults
   const defaultPort = computed(() => getDefaultPort(dbType.value))
@@ -109,7 +110,8 @@ export function useDatabaseCapabilities(databaseType: Ref<string> | string) {
     if (!connection.port) errors.push('Port is required')
     if (!connection.username) errors.push('Username is required')
 
-    if (showDatabaseLevel.value && !connection.database) {
+    // Database validation: only require if showDatabaseLevel is true AND databaseOptional is false
+    if (showDatabaseLevel.value && !connection.database && !capabilities.value?.databaseOptional) {
       errors.push('Database is required')
     }
 
@@ -130,6 +132,7 @@ export function useDatabaseCapabilities(databaseType: Ref<string> | string) {
     supportsSchemaFilter,
     canCreateSchema,
     canCreateDatabase,
+    isDatabaseOptional,
 
     // Connection info
     defaultPort,

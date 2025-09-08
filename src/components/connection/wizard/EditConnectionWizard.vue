@@ -20,16 +20,9 @@
       @update:can-proceed="updateCanProceed"
     />
 
-    <!-- Step 2: Database Selection -->
-    <DatabaseSelectionStep
-      v-else-if="currentStepIndex === 1"
-      :connectionType="connection?.type || ''"
-      @update:can-proceed="updateCanProceed"
-    />
-
-    <!-- Step 3: Review -->
+    <!-- Step 2: Review (Database Selection step removed) -->
     <ReviewStep
-      v-else-if="currentStepIndex === 2"
+      v-else-if="currentStepIndex === 1"
       :testResult="testResult"
       :isEditMode="true"
       @update:can-proceed="updateCanProceed"
@@ -42,7 +35,6 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import WizardLayout from './WizardLayout.vue'
 import ConnectionDetailsStep from './steps/ConnectionDetailsStep.vue'
-import DatabaseSelectionStep from './steps/DatabaseSelectionStep.vue'
 import ReviewStep from './steps/ReviewStep.vue'
 import { useConnectionsStore } from '@/stores/connections'
 import { useCommonStore } from '@/stores/common'
@@ -65,17 +57,12 @@ const currentStepIndex = ref(0)
 const canProceed = ref(false)
 const testResult = ref<{ success: boolean; message: string } | undefined>(undefined)
 
-// Wizard steps configuration (consistent with add connection wizard)
+// Wizard steps configuration (Database Selection step removed)
 const wizardSteps = [
   {
     name: 'details',
     title: 'Connection Details',
     description: 'Modify your database connection parameters'
-  },
-  {
-    name: 'database',
-    title: 'Database Selection',
-    description: 'Select or create your target database'
   },
   {
     name: 'review',

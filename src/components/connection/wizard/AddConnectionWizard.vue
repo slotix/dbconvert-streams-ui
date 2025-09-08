@@ -25,16 +25,9 @@
       @update:can-proceed="updateCanProceed"
     />
 
-    <!-- Step 3: Database Selection -->
-    <DatabaseSelectionStep
-      v-else-if="currentStepIndex === 2"
-      :connectionType="selectedDBType?.type || ''"
-      @update:can-proceed="updateCanProceed"
-    />
-
-    <!-- Step 4: Review -->
+    <!-- Step 3: Review (Database Selection step removed) -->
     <ReviewStep
-      v-else-if="currentStepIndex === 3"
+      v-else-if="currentStepIndex === 2"
       :testResult="testResult"
       :isEditMode="false"
       @update:can-proceed="updateCanProceed"
@@ -48,7 +41,6 @@ import { useRouter } from 'vue-router'
 import WizardLayout from './WizardLayout.vue'
 import DatabaseTypeStep from './steps/DatabaseTypeStep.vue'
 import ConnectionDetailsStep from './steps/ConnectionDetailsStep.vue'
-import DatabaseSelectionStep from './steps/DatabaseSelectionStep.vue'
 import ReviewStep from './steps/ReviewStep.vue'
 import { useConnectionsStore } from '@/stores/connections'
 import { useCommonStore } from '@/stores/common'
@@ -66,7 +58,7 @@ const testResult = ref<{ success: boolean; message: string } | undefined>(undefi
 const isConnectionCreated = ref(false)
 const isCreatingConnectionStep = ref(false)
 
-// Wizard steps configuration
+// Wizard steps configuration (Database Selection step removed)
 const wizardSteps = [
   {
     name: 'type',
@@ -77,11 +69,6 @@ const wizardSteps = [
     name: 'details',
     title: 'Connection Details',
     description: 'Enter your database connection parameters'
-  },
-  {
-    name: 'database',
-    title: 'Database Selection',
-    description: 'Select or create your target database'
   },
   {
     name: 'review',
@@ -105,11 +92,11 @@ function initializeNewConnection() {
 // Navigation methods
 async function goToNextStep() {
   if (currentStepIndex.value < wizardSteps.length - 1) {
-    // After connection details step (step 1), create the connection (only once)
+    // After connection details step (step 1), create the connection and go to review
     if (currentStepIndex.value === 1 && !isConnectionCreated.value) {
       isCreatingConnectionStep.value = true
       try {
-        await createConnectionForDatabaseSelection()
+        await createConnectionForReview()
         isConnectionCreated.value = true
       } catch (error: any) {
         // Show error to user
@@ -148,8 +135,8 @@ function updateCanProceed(canProceedValue: boolean) {
   canProceed.value = canProceedValue
 }
 
-// Create connection after details step for database selection
-async function createConnectionForDatabaseSelection() {
+// Create connection after details step and proceed to review
+async function createConnectionForReview() {
   if (!selectedDBType.value) {
     throw new Error('Database type not selected')
   }
@@ -160,17 +147,12 @@ async function createConnectionForDatabaseSelection() {
 
   await connectionsStore.createConnection()
   
-  commonStore.showNotification('Connection created successfully! Now select your database.', 'success')
+  commonStore.showNotification('Connection created successfully!', 'success')
 }
 
-// Final completion - save any changes and navigate
+// Final completion - refresh connections and navigate
 async function createConnection() {
   try {
-    // If database was selected, update the connection to save the database selection
-    if (connectionsStore.currentConnection?.database) {
-      await connectionsStore.updateConnection()
-    }
-    
     await connectionsStore.refreshConnections()
     
     commonStore.showNotification('Connection setup completed successfully!', 'success')

@@ -114,18 +114,26 @@
             </div>
           </div>
         </div>
+
+        <!-- Database Field (Optional) -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+          <label class="text-sm font-medium text-gray-700">Database (Optional)</label>
+          <div class="md:col-span-2">
+            <input
+              v-model="connection.database"
+              type="text"
+              class="w-full rounded-lg border border-gray-300 py-2 px-4 bg-white text-gray-700 placeholder-gray-400 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-gray-600 focus:border-transparent"
+              :placeholder="getDatabasePlaceholder()"
+            />
+            <p class="text-xs text-gray-500 mt-1">💡 Leave blank to browse all databases, or specify one for direct access</p>
+          </div>
+        </div>
       </div>
 
-
-      <!-- 
-        Simplified Workflow: 
-        1. Users connect to the DATABASE SERVER (not specific databases)
-        2. Database selection happens in the Database Explorer
-        3. Stream creation allows selecting specific databases/schemas/tables
-        
-        This matches industry standards (DBeaver, Adminer) and simplifies onboarding.
-        Backend uses default maintenance databases (postgres, mysql) for initial connection.
-      -->
+      <!-- Note about simplified workflow -->
+      <div class="text-xs text-gray-500 italic mt-2">
+        Note: Database selection is now optional. You can connect to the server and explore databases in the Database Explorer.
+      </div>
     </div>
   </div>
 </template>
@@ -246,5 +254,23 @@ const passwordFieldType = ref('password')
 // Event handlers
 const togglePasswordVisibility = () => {
   passwordFieldType.value = passwordFieldType.value === 'password' ? 'text' : 'password'
+}
+
+// Get database placeholder based on connection type
+const getDatabasePlaceholder = () => {
+  if (!connection.value?.type) return 'database_name'
+  
+  const connectionType = connection.value.type.toLowerCase()
+  switch (connectionType) {
+    case 'postgresql':
+    case 'postgres':
+      return 'postgres'
+    case 'mysql':
+      return 'mysql'
+    case 'snowflake':
+      return 'database_name'
+    default:
+      return 'database_name'
+  }
 }
 </script>

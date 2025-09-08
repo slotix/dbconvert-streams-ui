@@ -6,6 +6,7 @@ import { useConnectionsStore } from '@/stores/connections'
 import { Tab, TabGroup, TabList, TabPanels, TabPanel } from '@headlessui/vue'
 import { XMarkIcon, TrashIcon } from '@heroicons/vue/20/solid'
 import DatabaseMetadataView from './DatabaseMetadataView.vue'
+import DatabaseSelectionView from '@/components/database/DatabaseSelectionView.vue'
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
 
 const MAX_RECENT_CONNECTIONS = 5
@@ -24,6 +25,9 @@ const lastViewedConnectionId = ref<string>(localStorage.getItem('lastViewedConne
 
 // Current active connection ID
 const currentConnectionId = computed(() => route.params.id as string)
+
+// Selected database name for detailed view
+const selectedDatabaseName = ref<string | null>(null)
 
 // Selected tab index
 const selectedIndex = computed(() =>
@@ -98,7 +102,13 @@ function removeFromRecent(connectionId: string) {
 
 // Switch to a different connection
 function switchConnection(connectionId: string) {
+  selectedDatabaseName.value = null // Reset database selection when switching connections
   router.push(`/explorer/${connectionId}`)
+}
+
+// Handle database selection
+function handleDatabaseSelect(databaseName: string) {
+  selectedDatabaseName.value = databaseName
 }
 
 // Clear all recent connections
@@ -258,13 +268,25 @@ watch(currentConnectionId, (newId) => {
           </TabList>
 
           <div class="mt-6 bg-white rounded-xl p-4 shadow-sm border border-gray-200">
-            <DatabaseMetadataView
-              v-if="currentConnectionId"
+            <!-- Database Selection View -->
+            <DatabaseSelectionView
+              v-if="currentConnectionId && !selectedDatabaseName"
               :key="currentConnectionId"
-              :id="currentConnectionId"
+              :connection-id="currentConnectionId"
+              @database-selected="handleDatabaseSelect"
             />
+            
+            <!-- Database Metadata View (for selected database) -->
+            <DatabaseMetadataView
+              v-else-if="currentConnectionId && selectedDatabaseName"
+              :key="`${currentConnectionId}-${selectedDatabaseName}`"
+              :id="currentConnectionId"
+              :database="selectedDatabaseName"
+              @back-to-databases="selectedDatabaseName = null"
+            />
+            
             <div v-else class="text-center py-12">
-              <p class="text-gray-500">Select a connection to view its structure.</p>
+              <p class="text-gray-500">Select a connection to view its databases.</p>
             </div>
           </div>
         </TabGroup>

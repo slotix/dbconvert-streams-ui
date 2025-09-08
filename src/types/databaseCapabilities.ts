@@ -21,6 +21,7 @@ export interface DatabaseCapabilities {
   requiresSchemaSelection: boolean
   canCreateDatabases: boolean
   canCreateSchemas: boolean
+  databaseOptional?: boolean // Whether database field is optional during connection
 
   // Display preferences
   displayName: string
@@ -47,6 +48,7 @@ export const DATABASE_CAPABILITIES: DatabaseTypeRegistry = {
     requiresSchemaSelection: true,
     canCreateDatabases: true,
     canCreateSchemas: true,
+    databaseOptional: true, // Allow bootstrap connections to server without specifying database
     displayName: 'PostgreSQL',
     logo: '/images/db-logos/postgresql.svg',
     primaryColor: '#336791'
@@ -66,6 +68,7 @@ export const DATABASE_CAPABILITIES: DatabaseTypeRegistry = {
     requiresSchemaSelection: false,
     canCreateDatabases: true,
     canCreateSchemas: false,
+    databaseOptional: true, // Allow bootstrap connections to server without specifying database
     displayName: 'MySQL',
     logo: '/images/db-logos/mysql.svg',
     primaryColor: '#4479A1'
@@ -127,6 +130,26 @@ export const DATABASE_CAPABILITIES: DatabaseTypeRegistry = {
     displayName: 'MongoDB',
     logo: '/images/db-logos/mongodb.svg',
     primaryColor: '#47A248'
+  },
+
+  snowflake: {
+    hasSchemas: true,
+    hasMultipleSchemas: true,
+    hasSystemSchemas: true,
+    defaultPort: 443,
+    protocolName: 'snowflake',
+    hierarchyLevels: ['database', 'schema', 'table'],
+    systemObjects: {
+      schemas: ['INFORMATION_SCHEMA']
+    },
+    supportsSchemaFiltering: true,
+    requiresSchemaSelection: true,
+    canCreateDatabases: true,
+    canCreateSchemas: true,
+    databaseOptional: true, // Allow bootstrap connections without specifying database
+    displayName: 'Snowflake',
+    logo: '/images/db-logos/snowflake.svg',
+    primaryColor: '#29B5E8'
   }
 }
 
