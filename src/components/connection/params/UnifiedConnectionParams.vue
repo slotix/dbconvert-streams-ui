@@ -1,7 +1,7 @@
 <template>
   <div class="px-4 md:px-6">
     <!-- Connection ID (for existing connections) -->
-    <div v-if="connection.id" class="bg-white bg-opacity-5 text-center md:text-left">
+    <div v-if="connection?.id" class="bg-white bg-opacity-5 text-center md:text-left">
       <div class="items-center w-full p-4 space-y-4 text-gray-500 md:inline-flex md:space-y-0">
         <label class="max-w-sm mx-auto md:w-1/3">Connection ID</label>
         <div class="max-w-sm mx-auto md:w-2/3">
@@ -9,7 +9,7 @@
             <span
               class="block rounded-lg bg-white text-gray-700 placeholder-gray-400 shadow-sm text-base py-2 px-4"
             >
-              {{ connection.id }}
+              {{ connection?.id }}
             </span>
           </div>
         </div>
@@ -22,10 +22,10 @@
     </div>
 
     <!-- Connection Name -->
-    <ConnectionName v-model:name="connection.name" />
+    <ConnectionName v-if="connection" v-model:name="connection.name" />
 
     <!-- Connection Parameters -->
-    <div v-if="(isEdit && connection.id) || !isEdit">
+    <div v-if="connection && ((isEdit && connection.id) || !isEdit)">
       <hr />
 
       <!-- Connection Authentication Group -->
@@ -132,9 +132,9 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { useCommon } from './common'
 import { type Connection } from '@/types/connections'
 import { useDatabaseCapabilities } from '@/composables/useDatabaseCapabilities'
+import { normalizeConnectionType } from '@/utils/connectionUtils'
 import ConnectionName from './ConnectionName.vue'
 import Spinner from '@/components/common/Spinner.vue'
 import { useConnectionsStore } from '@/stores/connections'
@@ -153,44 +153,91 @@ const props = defineProps<Props>()
 const dbCapabilities = useDatabaseCapabilities(computed(() => props.connectionType))
 const { defaultPort, getConnectionDefaults } = dbCapabilities
 
-// Create default connection based on database type
-const createDefaultConnection = (): Connection => ({
-  id: '',
-  name: '',
-  type: props.connectionType.toLowerCase(),
-  host: 'localhost',
-  port: defaultPort.value,
-  username: getConnectionDefaults().username,
-  password: '',
-  databasesInfo: [],
-  // Set default database for backend compatibility
-  database: getDefaultDatabase()
-})
+const connectionsStore = useConnectionsStore()
 
-// Helper function to get default database based on connection type
-const getDefaultDatabase = (): string => {
-  // For the new wizard flow, database selection happens in step 3
-  // Step 2 (connection details) creates bootstrap connections without database names
-  return ''
+// Direct store access - single source of truth
+const connection = computed(() => connectionsStore.currentConnection)
+
+// Helper function to apply connection defaults for a specific database type
+const applyConnectionDefaults = (connectionType: string) => {
+  if (connection.value) {
+    const defaults = getConnectionDefaults()
+    connection.value.type = connectionType.toLowerCase()
+    connection.value.port = defaultPort.value
+    connection.value.username = defaults.username
+    connection.value.database = '' // Empty for new wizard flow
+    
+    // Only set host to localhost if it's empty (don't override existing values)
+    if (!connection.value.host) {
+      connection.value.host = 'localhost'
+    }
+    
+    // Update name after applying defaults (for new connections only)
+    if (!isEdit.value) {
+      updateConnectionName()
+    }
+  }
 }
 
-const connectionsStore = useConnectionsStore()
-const { connection, isEdit } = useCommon<Connection>(createDefaultConnection())
+// Check if we're in edit mode (connection has an ID)
+const isEdit = computed(() => !!(connection.value?.id))
+
+// Auto-generate connection name based on connection details
+const buildConnectionName = computed(() => {
+  if (!connection.value?.type || !connection.value?.host || !connection.value?.username) {
+    return ''
+  }
+  const normalizedType = normalizeConnectionType(connection.value.type)
+  return `${normalizedType}-${connection.value.host}-${connection.value.username}`
+})
+
+// Update connection name based on mode
+const updateConnectionName = () => {
+  if (!connection.value) return
+  
+  if (!isEdit.value) {
+    // New connections: Auto-generate name from connection details
+    if (buildConnectionName.value) {
+      connection.value.name = buildConnectionName.value
+    }
+  } else {
+    // Edit mode: Keep existing name unless it's empty
+    if (!connection.value.name && buildConnectionName.value) {
+      connection.value.name = buildConnectionName.value
+    }
+  }
+}
 
 // Watch for connection type changes and update defaults
 watch(
   () => props.connectionType,
-  () => {
-    if (!isEdit.value) {
+  (newConnectionType) => {
+    if (!isEdit.value && newConnectionType) {
       // Only update defaults for new connections, not when editing existing ones
-      const defaults = getConnectionDefaults()
-      connection.type = props.connectionType.toLowerCase()
-      connection.port = defaultPort.value
-      connection.username = defaults.username
-      connection.database = getDefaultDatabase()
+      applyConnectionDefaults(newConnectionType)
     }
   },
   { immediate: true }
+)
+
+// Watch for host changes to update connection name
+watch(
+  () => connection.value?.host,
+  () => {
+    if (!isEdit.value) {
+      updateConnectionName()
+    }
+  }
+)
+
+// Watch for username changes to update connection name
+watch(
+  () => connection.value?.username,
+  () => {
+    if (!isEdit.value) {
+      updateConnectionName()
+    }
+  }
 )
 
 // Local state

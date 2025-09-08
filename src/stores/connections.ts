@@ -255,5 +255,28 @@ export const useConnectionsStore = defineStore('connections', {
       await this.refreshConnections()
     },
 
+    // Helper methods for connection initialization
+    initializeNewConnection() {
+      this.currentConnection = {
+        id: '',
+        name: '',
+        type: '',
+        host: '',
+        port: 0,
+        username: '',
+        password: '',
+        database: '',
+        created: 0,
+        cloud_provider: '',
+        databasesInfo: []
+      }
+    },
+
+    setConnectionType(dbType: string) {
+      if (this.currentConnection) {
+        this.currentConnection.type = dbType.toLowerCase()
+      }
+    }
+
   }
 })

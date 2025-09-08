@@ -99,19 +99,7 @@ const showTestButton = computed(() => false) // Disable test button for new conn
 function initializeNewConnection() {
   isConnectionCreated.value = false
   isCreatingConnectionStep.value = false
-  connectionsStore.currentConnection = {
-    id: '',
-    name: '',
-    type: '',
-    host: '',
-    port: 0,
-    username: '',
-    password: '',
-    database: '',
-    created: 0,
-    cloud_provider: '',
-    databasesInfo: []
-  }
+  connectionsStore.initializeNewConnection()
 }
 
 // Navigation methods
@@ -148,17 +136,9 @@ function goToPreviousStep() {
 // Event handlers
 function handleDBTypeUpdate(dbType: DbType | null) {
   selectedDBType.value = dbType
-  if (dbType && connectionsStore.currentConnection) {
-    // Update connection type
-    connectionsStore.currentConnection.type = dbType.type
-    
-    // Reset to default values for the new database type
-    // Note: This will trigger the watch in ConnectionDetailsStep to apply defaults
-    connectionsStore.currentConnection.host = 'localhost'
-    connectionsStore.currentConnection.port = 0 // Will be set by the component's watch
-    connectionsStore.currentConnection.username = '' // Will be set by the component's watch
-    connectionsStore.currentConnection.password = ''
-    connectionsStore.currentConnection.database = '' // Empty for wizard flow
+  if (dbType) {
+    // Set connection type - defaults will be applied by UnifiedConnectionParams watch
+    connectionsStore.setConnectionType(dbType.type)
   }
 }
 
@@ -178,7 +158,6 @@ async function createConnectionForDatabaseSelection() {
     throw new Error('Connection details not provided')
   }
 
-  connectionsStore.currentConnection.type = selectedDBType.value.type
   await connectionsStore.createConnection()
   
   commonStore.showNotification('Connection created successfully! Now select your database.', 'success')
