@@ -28,7 +28,7 @@
     <!-- Step 3: Database Selection -->
     <DatabaseSelectionStep
       v-else-if="currentStepIndex === 2"
-      :connectionType="selectedDBType?.type"
+      :connectionType="selectedDBType?.type || ''"
       @update:can-proceed="updateCanProceed"
     />
 
@@ -149,7 +149,16 @@ function goToPreviousStep() {
 function handleDBTypeUpdate(dbType: DbType | null) {
   selectedDBType.value = dbType
   if (dbType && connectionsStore.currentConnection) {
+    // Update connection type
     connectionsStore.currentConnection.type = dbType.type
+    
+    // Reset to default values for the new database type
+    // Note: This will trigger the watch in ConnectionDetailsStep to apply defaults
+    connectionsStore.currentConnection.host = 'localhost'
+    connectionsStore.currentConnection.port = 0 // Will be set by the component's watch
+    connectionsStore.currentConnection.username = '' // Will be set by the component's watch
+    connectionsStore.currentConnection.password = ''
+    connectionsStore.currentConnection.database = '' // Empty for wizard flow
   }
 }
 

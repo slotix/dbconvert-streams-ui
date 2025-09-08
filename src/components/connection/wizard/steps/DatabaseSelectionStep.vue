@@ -207,6 +207,16 @@ watch(() => connection.value?.database, (dbName) => {
   }
 }, { immediate: true })
 
+// Auto-select first database when databases are loaded
+watch(() => availableDatabases.value, (databases) => {
+  // Only auto-select if no database is currently selected and databases are available
+  if (databases && databases.length > 0 && !selectedDatabase.value) {
+    const firstDatabase = databases[0]
+    selectedDatabase.value = firstDatabase
+    updateDatabase(firstDatabase)
+  }
+}, { immediate: true })
+
 // Always allow proceeding (database selection is optional)
 emit('update:can-proceed', true)
 
@@ -267,12 +277,23 @@ const validateNewDatabase = () => {
 const createDatabase = async () => {
   if (!newDatabase.value || !connection.value?.id) return
 
+  const databaseName = newDatabase.value
   isCreatingDatabase.value = true
+  
   try {
-    const response = await connectionsStore.createDatabase(newDatabase.value, connection.value.id)
+    const response = await connectionsStore.createDatabase(databaseName, connection.value.id)
     if (response.status === 'success') {
+      // Clear the input field
       clearNewDatabase()
-      commonStore.showNotification('Database created successfully', 'success')
+      
+      // Refresh the database list to include the newly created database
+      await refreshDatabases()
+      
+      // Auto-select the newly created database
+      selectedDatabase.value = databaseName
+      updateDatabase(databaseName)
+      
+      commonStore.showNotification(`Database "${databaseName}" created and selected successfully`, 'success')
     }
   } catch (error) {
     commonStore.showNotification(

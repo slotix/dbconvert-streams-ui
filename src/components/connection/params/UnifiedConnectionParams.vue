@@ -169,21 +169,9 @@ const createDefaultConnection = (): Connection => ({
 
 // Helper function to get default database based on connection type
 const getDefaultDatabase = (): string => {
-  const type = props.connectionType.toLowerCase()
-  switch (type) {
-    case 'postgresql':
-      return 'postgres' // Required: PostgreSQL always needs a database name
-    case 'mysql':
-      return '' // Optional: MySQL can connect without a database specified
-    case 'oracle':
-      return 'XE' // Required: Oracle needs a service name (XE is common default)
-    case 'sqlserver':
-      return 'master' // Required: SQL Server needs a database (master is system default)
-    case 'mongodb':
-      return '' // Optional: MongoDB can connect without a database specified
-    default:
-      return ''
-  }
+  // For the new wizard flow, database selection happens in step 3
+  // Step 2 (connection details) creates bootstrap connections without database names
+  return ''
 }
 
 const connectionsStore = useConnectionsStore()
@@ -202,7 +190,7 @@ watch(
       connection.database = getDefaultDatabase()
     }
   },
-  { immediate: false }
+  { immediate: true }
 )
 
 // Local state
