@@ -58,13 +58,11 @@
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
             <label class="text-sm font-medium text-gray-700">Folder Path</label>
             <div class="md:col-span-2">
-              <input
+              <FolderSelector
                 v-model="connection.path"
-                type="text"
-                class="w-full rounded-lg border border-gray-300 py-2 px-4 bg-white text-gray-700 placeholder-gray-400 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-gray-600 focus:border-transparent"
                 placeholder="/home/user/Documents/my-data-folder"
+                help-text="📁 Select the folder containing your data files (CSV, JSON, JSONL, Parquet)"
               />
-              <p class="text-xs text-gray-500 mt-1">📁 Enter the full path to the folder containing your data files</p>
             </div>
           </div>
         </div>
@@ -91,6 +89,7 @@ import { ref, computed, watch } from 'vue'
 import { type Connection } from '@/types/connections'
 import ConnectionName from './ConnectionName.vue'
 import Spinner from '@/components/common/Spinner.vue'
+import FolderSelector from '@/components/common/FolderSelector.vue'
 import { useConnectionsStore } from '@/stores/connections'
 
 interface Props {
