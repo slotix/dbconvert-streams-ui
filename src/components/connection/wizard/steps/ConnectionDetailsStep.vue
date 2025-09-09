@@ -44,7 +44,15 @@ const canProceed = computed(() => {
   const connection = connectionsStore.currentConnection
   if (!connection) return false
   
-  // Basic validation - check if required fields are present
+  // For Files connections, only require name and folder path
+  if (props.connectionType === 'Files') {
+    return !!(
+      connection.name?.trim() &&
+      connection.path?.trim() // path field contains the folder path for files
+    )
+  }
+  
+  // Basic validation for database connections - check if required fields are present
   return !!(
     connection.name?.trim() &&
     connection.host?.trim() &&
@@ -63,10 +71,14 @@ const publicIp = computed(() => {
   return host
 })
 
-// Only show the access notice when we have connection details filled out
+// Only show the access notice when we have connection details filled out (not for Files)
 const showAccessNotice = computed(() => {
   const connection = connectionsStore.currentConnection
-  return !!(connection?.host && connection?.port)
+  return !!(
+    props.connectionType !== 'Files' &&
+    connection?.host && 
+    connection?.port
+  )
 })
 
 // Watch for changes and emit can-proceed updates

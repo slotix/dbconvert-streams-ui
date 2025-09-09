@@ -62,8 +62,8 @@ const isCreatingConnectionStep = ref(false)
 const wizardSteps = [
   {
     name: 'type',
-    title: 'Choose Database Type',
-    description: 'Select the type of database you want to connect to'
+    title: 'Choose Connection Type',
+    description: 'Select the type of data source you want to connect to'
   },
   {
     name: 'details',

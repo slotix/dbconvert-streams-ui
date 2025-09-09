@@ -20,6 +20,8 @@ export interface Connection {
   // Cloud provider detection - empty string means not a cloud provider
   cloud_provider?: string
   status?: string
+  // Path field for file format connections
+  path?: string
 }
 
 export interface Schema {

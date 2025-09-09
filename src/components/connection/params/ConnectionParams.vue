@@ -1,27 +1,36 @@
 <template>
-  <nav class="flex flex-col sm:flex-row max-w-sm mx-auto mb-4 mt-8">
-    <button
-      v-for="tab in tabs"
-      :key="tab"
-      :class="{
-        'border-b-2 font-medium border-gray-500': currentTab === tab
-      }"
-      class="text-gray-500 py-4 px-6 flex-1 hover:text-gray-700 focus:outline-none"
-      @click="changeTab(tab)"
-    >
-      {{ tab }}
-    </button>
-  </nav>
-  <div class="container mx-auto w-full">
-    <keep-alive>
-      <component :is="paramsComponent" :connectionType="props.connectionType" />
-    </keep-alive>
+  <!-- Local Files - No tabs needed -->
+  <div v-if="isLocalFiles" class="container mx-auto w-full">
+    <LocalFilesConnectionParams :connectionType="props.connectionType" />
+  </div>
+  
+  <!-- Database connections - Show tabs -->
+  <div v-else>
+    <nav class="flex flex-col sm:flex-row max-w-sm mx-auto mb-4 mt-8">
+      <button
+        v-for="tab in tabs"
+        :key="tab"
+        :class="{
+          'border-b-2 font-medium border-gray-500': currentTab === tab
+        }"
+        class="text-gray-500 py-4 px-6 flex-1 hover:text-gray-700 focus:outline-none"
+        @click="changeTab(tab)"
+      >
+        {{ tab }}
+      </button>
+    </nav>
+    <div class="container mx-auto w-full">
+      <keep-alive>
+        <component :is="paramsComponent" :connectionType="props.connectionType" />
+      </keep-alive>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
 import UnifiedConnectionParams from './UnifiedConnectionParams.vue'
+import LocalFilesConnectionParams from './LocalFilesConnectionParams.vue'
 import SSLParams from './SSLParams.vue'
 import { normalizeConnectionType } from '@/utils/connectionUtils'
 import { useConnectionsStore } from '@/stores/connections'
@@ -37,6 +46,11 @@ const tabs = ref(['Direct', 'SSL'])
 const currentTab = ref('')
 
 const currentConnection = computed(() => connectionsStore.currentConnection)
+
+// Check if this is a Files connection
+const isLocalFiles = computed(() => {
+  return props.connectionType === 'Files'
+})
 
 const componentMap = {
   Direct: UnifiedConnectionParams,
