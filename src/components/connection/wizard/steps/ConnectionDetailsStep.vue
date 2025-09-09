@@ -44,8 +44,8 @@ const canProceed = computed(() => {
   const connection = connectionsStore.currentConnection
   if (!connection) return false
   
-  // For Files connections, only require name and folder path
-  if (props.connectionType === 'Files') {
+  // For Files connections, only require name and folder path (case-insensitive)
+  if (props.connectionType?.toLowerCase() === 'files') {
     return !!(
       connection.name?.trim() &&
       connection.path?.trim() // path field contains the folder path for files
@@ -75,7 +75,7 @@ const publicIp = computed(() => {
 const showAccessNotice = computed(() => {
   const connection = connectionsStore.currentConnection
   return !!(
-    props.connectionType !== 'Files' &&
+    props.connectionType?.toLowerCase() !== 'files' &&
     connection?.host && 
     connection?.port
   )

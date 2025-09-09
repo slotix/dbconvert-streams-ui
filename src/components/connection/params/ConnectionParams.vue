@@ -47,9 +47,9 @@ const currentTab = ref('')
 
 const currentConnection = computed(() => connectionsStore.currentConnection)
 
-// Check if this is a Files connection
+// Check if this is a Files connection (case-insensitive)
 const isLocalFiles = computed(() => {
-  return props.connectionType === 'Files'
+  return props.connectionType?.toLowerCase() === 'files'
 })
 
 const componentMap = {

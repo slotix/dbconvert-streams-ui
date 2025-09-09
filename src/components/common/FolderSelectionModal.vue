@@ -328,10 +328,7 @@ const sortedEntries = computed(() => {
 // Methods
 const closeModal = () => {
   emit('update:isOpen', false)
-  resetState()
-}
-
-const resetState = () => {
+  // Reset state when closing
   error.value = ''
   entries.value = []
   selectedPath.value = ''
@@ -347,13 +344,12 @@ const loadRoots = async () => {
 }
 
 const loadDirectory = async (path: string) => {
-  if (!path) return
-  
   loading.value = true
   error.value = ''
   
   try {
-    const response = await listDirectory(path)
+    // listDirectory handles empty/undefined path by defaulting to home directory
+    const response = await listDirectory(path || undefined)
     
     currentPath.value = response.path
     entries.value = response.entries
@@ -477,15 +473,25 @@ const confirmSelection = async () => {
 // Watchers
 watch(() => props.isOpen, (isOpen) => {
   if (isOpen) {
-    resetState()
+    // Clear errors and entries but preserve selectedPath if we have an initialPath
+    error.value = ''
+    entries.value = []
+    manualPathEdit.value = false
+    
+    // Set initial path before loading anything
+    if (props.initialPath) {
+      selectedPath.value = props.initialPath
+    } else {
+      selectedPath.value = ''
+    }
+    
     loadRoots()
     
     // Load initial directory
     if (props.initialPath) {
-      selectedPath.value = props.initialPath
       loadDirectory(props.initialPath)
     } else {
-      // Load user home directory by default
+      // Load user home directory by default - get home directory from backend
       loadDirectory('')
     }
   }
@@ -493,9 +499,15 @@ watch(() => props.isOpen, (isOpen) => {
 
 onMounted(() => {
   if (props.isOpen) {
-    loadRoots()
+    // Set initial path
     if (props.initialPath) {
       selectedPath.value = props.initialPath
+    }
+    
+    loadRoots()
+    
+    // Load initial directory
+    if (props.initialPath) {
       loadDirectory(props.initialPath)
     } else {
       loadDirectory('')

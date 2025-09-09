@@ -61,7 +61,7 @@
               <FolderSelector
                 v-model="connection.path"
                 placeholder="/home/user/Documents/my-data-folder"
-                help-text="📁 Select the folder containing your data files (CSV, JSON, JSONL, Parquet)"
+                help-text="📁 Select the folder containing your data files"
               />
             </div>
           </div>
@@ -72,7 +72,7 @@
       <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
         <h4 class="text-sm font-medium text-blue-900 mb-2">Supported File Formats</h4>
         <p class="text-xs text-blue-700">
-          📊 CSV, JSON, JSONL, Parquet files are supported. Mixed formats in the same folder are allowed.
+          📊 CSV, JSON, JSONL, Parquet files (.gz compressed versions also supported). Mixed formats in the same folder are allowed.
         </p>
       </div>
 

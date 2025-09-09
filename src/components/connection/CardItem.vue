@@ -43,49 +43,69 @@
 
       <!-- Content -->
       <div class="space-y-6 p-6 flex-1 overflow-y-auto">
-        <!-- Connection Details -->
+        <!-- Connection Details - Different content for file vs database connections -->
         <div class="space-y-4">
-          <div class="grid grid-cols-2 gap-4">
+          <!-- File Connection Details -->
+          <div v-if="isFileConnection" class="space-y-4">
             <div class="min-w-0">
-              <label class="text-xs font-medium uppercase text-gray-500">Host</label>
-              <p class="mt-1 font-medium text-gray-900 truncate" :title="concatenateValues">
-                {{ showPassword ? concatenateValues : truncatedHost }}
+              <label class="text-xs font-medium uppercase text-gray-500">Folder Path</label>
+              <p class="mt-1 font-medium text-gray-900 break-all" :title="connection.path">
+                {{ connection.path || 'No path configured' }}
               </p>
             </div>
+            
             <div class="min-w-0">
-              <label class="text-xs font-medium uppercase text-gray-500">Database</label>
-              <p class="mt-1 font-medium text-gray-900 truncate">{{ connection.database }}</p>
+              <label class="text-xs font-medium uppercase text-gray-500">Supported Formats</label>
+              <p class="mt-1 text-sm text-gray-700">
+                📊 CSV, JSON, JSONL, Parquet files (.gz supported)
+              </p>
             </div>
           </div>
+          
+          <!-- Database Connection Details -->
+          <div v-else>
+            <div class="grid grid-cols-2 gap-4">
+              <div class="min-w-0">
+                <label class="text-xs font-medium uppercase text-gray-500">Host</label>
+                <p class="mt-1 font-medium text-gray-900 truncate" :title="concatenateValues">
+                  {{ showPassword ? concatenateValues : truncatedHost }}
+                </p>
+              </div>
+              <div class="min-w-0">
+                <label class="text-xs font-medium uppercase text-gray-500">Database</label>
+                <p class="mt-1 font-medium text-gray-900 truncate">{{ connection.database }}</p>
+              </div>
+            </div>
 
-          <div class="min-w-0">
-            <label class="text-xs font-medium uppercase text-gray-500">Connection String</label>
-            <div class="mt-1 flex items-start gap-2 rounded-md bg-gray-50 p-3 font-mono text-sm">
-              <span class="flex-1 break-all text-gray-800 overflow-x-auto">
-                {{
-                  showPassword
-                    ? connectionString
-                    : truncatedConnectionString.replace(/(?<=:)[^@]+(?=@)/g, '****')
-                }}
-              </span>
-              <div class="flex flex-col gap-1">
-                <button
-                  class="flex-shrink-0 text-gray-400 hover:text-gray-600"
-                  @click.stop="showPassword = !showPassword"
-                  :title="showPassword ? 'Hide password and truncate' : 'Show password and full details'"
-                >
-                  <EyeIcon v-if="!showPassword" class="h-4 w-4" />
-                  <EyeSlashIcon v-else class="h-4 w-4" />
-                </button>
-                <button
-                  class="flex-shrink-0 transition-colors"
-                  :class="isCopied ? 'text-green-500' : 'text-gray-400 hover:text-gray-600'"
-                  @click.stop="copyConnectionString"
-                  :title="isCopied ? 'Copied!' : 'Copy connection string to clipboard'"
-                >
-                  <ClipboardIcon v-if="!isCopied" class="h-4 w-4" />
-                  <CheckIcon v-else class="h-4 w-4" />
-                </button>
+            <div class="min-w-0">
+              <label class="text-xs font-medium uppercase text-gray-500">Connection String</label>
+              <div class="mt-1 flex items-start gap-2 rounded-md bg-gray-50 p-3 font-mono text-sm">
+                <span class="flex-1 break-all text-gray-800 overflow-x-auto">
+                  {{
+                    showPassword
+                      ? connectionString
+                      : truncatedConnectionString.replace(/(?<=:)[^@]+(?=@)/g, '****')
+                  }}
+                </span>
+                <div class="flex flex-col gap-1">
+                  <button
+                    class="flex-shrink-0 text-gray-400 hover:text-gray-600"
+                    @click.stop="showPassword = !showPassword"
+                    :title="showPassword ? 'Hide password and truncate' : 'Show password and full details'"
+                  >
+                    <EyeIcon v-if="!showPassword" class="h-4 w-4" />
+                    <EyeSlashIcon v-else class="h-4 w-4" />
+                  </button>
+                  <button
+                    class="flex-shrink-0 transition-colors"
+                    :class="isCopied ? 'text-green-500' : 'text-gray-400 hover:text-gray-600'"
+                    @click.stop="copyConnectionString"
+                    :title="isCopied ? 'Copied!' : 'Copy connection string to clipboard'"
+                  >
+                    <ClipboardIcon v-if="!isCopied" class="h-4 w-4" />
+                    <CheckIcon v-else class="h-4 w-4" />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -186,6 +206,11 @@ const logoSrc = computed(() => {
     (f) => normalizeConnectionType(f.type) === normalizedType
   )
   return dbType ? dbType.logo : ''
+})
+
+// Check if this is a file connection (case-insensitive)
+const isFileConnection = computed(() => {
+  return props.connection?.type?.toLowerCase() === 'files'
 })
 
 const connectionCreated = computed(() => {
