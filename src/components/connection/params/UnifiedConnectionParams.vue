@@ -268,7 +268,9 @@ const getDatabasePlaceholder = () => {
     case 'mysql':
       return 'mysql'
     case 'snowflake':
-      return 'database_name'
+      return 'MYDB'
+    case 'files':
+      return 'subfolder'
     default:
       return 'database_name'
   }

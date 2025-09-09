@@ -38,6 +38,10 @@ const connectionStringPlaceholder = computed(() => {
       return 'e.g. oracle://user:pass@host:port/service'
     case 'sqlserver':
       return 'e.g. sqlserver://user:pass@host:port/dbname'
+    case 'snowflake':
+      return 'e.g. snowflake://user:pass@account.region.snowflakecomputing.com:443/dbname'
+    case 'files':
+      return 'e.g. file:///path/to/data/folder'
     case 'mongodb':
       return 'e.g. mongodb://user:pass@host:port/dbname'
     default:

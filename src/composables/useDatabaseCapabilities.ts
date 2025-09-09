@@ -60,9 +60,12 @@ export function useDatabaseCapabilities(databaseType: Ref<string> | string) {
       dbType.value.toLowerCase().includes('sqlserver') ||
       dbType.value.toLowerCase().includes('mssql')
   )
+  const isSnowflake = computed(() => dbType.value.toLowerCase().includes('snowflake'))
+  const isFiles = computed(() => dbType.value.toLowerCase().includes('files'))
   const isMongoDB = computed(() => dbType.value.toLowerCase().includes('mongo'))
-  const isSQL = computed(() => !isMongoDB.value)
+  const isSQL = computed(() => !isMongoDB.value && !isFiles.value)
   const isNoSQL = computed(() => isMongoDB.value)
+  const isFileStorage = computed(() => isFiles.value)
 
   // Connection form helpers
   const getConnectionDefaults = () => ({
@@ -77,6 +80,8 @@ export function useDatabaseCapabilities(databaseType: Ref<string> | string) {
     if (isPostgreSQL.value) return 'postgres'
     if (isOracle.value) return 'system'
     if (isSQLServer.value) return 'sa'
+    if (isSnowflake.value) return ''
+    if (isFiles.value) return '' // No authentication for local files
     if (isMongoDB.value) return 'admin'
     return ''
   }
@@ -86,6 +91,8 @@ export function useDatabaseCapabilities(databaseType: Ref<string> | string) {
     if (isMySQL.value) return ''
     if (isOracle.value) return 'XE'
     if (isSQLServer.value) return 'master'
+    if (isSnowflake.value) return ''
+    if (isFiles.value) return '' // Optional folder path
     if (isMongoDB.value) return ''
     return ''
   }
@@ -94,6 +101,8 @@ export function useDatabaseCapabilities(databaseType: Ref<string> | string) {
     if (isPostgreSQL.value) return 'public'
     if (isSQLServer.value) return 'dbo'
     if (isOracle.value) return 'hr'
+    if (isSnowflake.value) return 'PUBLIC'
+    if (isFiles.value) return '' // No schemas for files
     return ''
   }
 
@@ -158,9 +167,12 @@ export function useDatabaseCapabilities(databaseType: Ref<string> | string) {
     isMySQL,
     isOracle,
     isSQLServer,
+    isSnowflake,
+    isFiles,
     isMongoDB,
     isSQL,
     isNoSQL,
+    isFileStorage,
 
     // UI helpers
     shouldShowSchemaSection,

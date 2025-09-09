@@ -27,7 +27,9 @@ export const useConnectionsStore = defineStore('connections', {
     dbTypes: [
       { id: 0, type: 'All', logo: '/images/db-logos/all.svg' },
       { id: 1, type: 'PostgreSQL', logo: '/images/db-logos/postgresql.svg' },
-      { id: 2, type: 'MySQL', logo: '/images/db-logos/mysql.svg' }
+      { id: 2, type: 'MySQL', logo: '/images/db-logos/mysql.svg' },
+      { id: 3, type: 'Snowflake', logo: '/images/db-logos/snowflake.svg' },
+      { id: 4, type: 'Files', logo: '/images/db-logos/csv.svg' }
     ],
     connections: [],
     currentConnection: null,

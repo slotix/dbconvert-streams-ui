@@ -150,6 +150,24 @@ export const DATABASE_CAPABILITIES: DatabaseTypeRegistry = {
     displayName: 'Snowflake',
     logo: '/images/db-logos/snowflake.svg',
     primaryColor: '#29B5E8'
+  },
+
+  files: {
+    hasSchemas: false,
+    hasMultipleSchemas: false,
+    hasSystemSchemas: false,
+    defaultPort: 0, // Not applicable for file connections
+    protocolName: 'file',
+    hierarchyLevels: ['database', 'table'], // folders = "databases", files = "tables"
+    systemObjects: {},
+    supportsSchemaFiltering: false,
+    requiresSchemaSelection: false,
+    canCreateDatabases: true, // Can create new folders
+    canCreateSchemas: false,
+    databaseOptional: true, // Optional folder specification
+    displayName: 'Files',
+    logo: '/images/db-logos/csv.svg',
+    primaryColor: '#10B981'
   }
 }
 
