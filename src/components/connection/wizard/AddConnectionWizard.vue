@@ -1,47 +1,88 @@
 <template>
-  <WizardLayout
-    :steps="wizardSteps"
-    :currentStepIndex="currentStepIndex"
-    :canProceed="canProceed"
-    :isProcessing="isCreatingConnection"
-    :isTestingConnection="isTestingConnection"
-    :showTestButton="showTestButton"
-    @next-step="goToNextStep"
-    @previous-step="goToPreviousStep"
-    @finish="createConnection"
-    @cancel="cancelWizard"
-  >
-    <!-- Step 1: Database Type Selection -->
-    <DatabaseTypeStep
-      v-if="currentStepIndex === 0"
-      @update:selected-db-type="handleDBTypeUpdate"
-      @update:can-proceed="updateCanProceed"
-    />
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+      <h1 class="text-2xl font-bold text-gray-900">Add New Connection</h1>
+      <p class="mt-2 text-sm text-gray-600">Create a new database connection for streaming data</p>
+    </div>
 
-    <!-- Step 2: Connection Details -->
-    <ConnectionDetailsStep
-      v-else-if="currentStepIndex === 1"
-      :connectionType="selectedDBType?.type"
-      @update:can-proceed="updateCanProceed"
-    />
+    <!-- Database Type Selection -->
+    <div v-if="currentStep === 'type'" class="space-y-6">
+      <DatabaseTypeStep
+        @update:selected-db-type="handleDBTypeUpdate"
+        @update:can-proceed="updateCanProceed"
+      />
+      
+      <!-- Action Buttons -->
+      <div class="flex justify-between">
+        <button
+          @click="cancelWizard"
+          type="button"
+          class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+        >
+          Cancel
+        </button>
+        <button
+          @click="goToDetails"
+          :disabled="!canProceed"
+          type="button"
+          class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent text-sm font-medium rounded-md text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Continue
+        </button>
+      </div>
+    </div>
 
-    <!-- Step 3: Review (Database Selection step removed) -->
-    <ReviewStep
-      v-else-if="currentStepIndex === 2"
-      :testResult="testResult"
-      :isEditMode="false"
-      @update:can-proceed="updateCanProceed"
-    />
-  </WizardLayout>
+    <!-- Connection Details -->
+    <div v-else-if="currentStep === 'details'" class="space-y-6">
+      <ConnectionDetailsStep
+        :connectionType="selectedDBType?.type"
+        @update:can-proceed="updateCanProceed"
+      />
+      
+      <!-- Action Buttons -->
+      <div class="flex justify-between">
+        <button
+          @click="goBackToType"
+          type="button"
+          class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+        >
+          Back
+        </button>
+        <div class="flex space-x-3">
+          <button
+            @click="cancelWizard"
+            type="button"
+            class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+          >
+            Cancel
+          </button>
+          <button
+            @click="createConnection"
+            :disabled="!canProceed || isCreatingConnection"
+            type="button"
+            class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent text-sm font-medium rounded-md text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <span v-if="isCreatingConnection" class="flex items-center">
+              <svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Creating...
+            </span>
+            <span v-else>Create Connection</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import WizardLayout from './WizardLayout.vue'
 import DatabaseTypeStep from './steps/DatabaseTypeStep.vue'
 import ConnectionDetailsStep from './steps/ConnectionDetailsStep.vue'
-import ReviewStep from './steps/ReviewStep.vue'
 import { useConnectionsStore } from '@/stores/connections'
 import { useCommonStore } from '@/stores/common'
 import type { DbType } from '@/types/connections'
@@ -50,74 +91,29 @@ const router = useRouter()
 const connectionsStore = useConnectionsStore()
 const commonStore = useCommonStore()
 
-// Wizard state
-const currentStepIndex = ref(0)
+// Form state
+const currentStep = ref<'type' | 'details'>('type')
 const selectedDBType = ref<DbType | null>(null)
 const canProceed = ref(false)
-const testResult = ref<{ success: boolean; message: string } | undefined>(undefined)
-const isConnectionCreated = ref(false)
 const isCreatingConnectionStep = ref(false)
-
-// Wizard steps configuration (Database Selection step removed)
-const wizardSteps = [
-  {
-    name: 'type',
-    title: 'Choose Connection Type',
-    description: 'Select the type of data source you want to connect to'
-  },
-  {
-    name: 'details',
-    title: 'Connection Details',
-    description: 'Enter your database connection parameters'
-  },
-  {
-    name: 'review',
-    title: 'Review & Complete',
-    description: 'Review your settings and complete the setup'
-  }
-]
 
 // Computed properties
 const isCreatingConnection = computed(() => connectionsStore.isUpdatingConnection || isCreatingConnectionStep.value)
-const isTestingConnection = computed(() => connectionsStore.isTestingConnection)
-const showTestButton = computed(() => false) // Disable test button for new connections
 
-// Initialize a new connection when the wizard starts
+// Initialize a new connection when the form starts
 function initializeNewConnection() {
-  isConnectionCreated.value = false
   isCreatingConnectionStep.value = false
   connectionsStore.initializeNewConnection()
 }
 
 // Navigation methods
-async function goToNextStep() {
-  if (currentStepIndex.value < wizardSteps.length - 1) {
-    // After connection details step (step 1), create the connection and go to review
-    if (currentStepIndex.value === 1 && !isConnectionCreated.value) {
-      isCreatingConnectionStep.value = true
-      try {
-        await createConnectionForReview()
-        isConnectionCreated.value = true
-      } catch (error: any) {
-        // Show error to user
-        commonStore.showNotification(
-          `Failed to create connection: ${error.message || 'Unknown error'}`, 
-          'error'
-        )
-        return // Don't advance step if connection creation failed
-      } finally {
-        isCreatingConnectionStep.value = false
-      }
-    }
-    currentStepIndex.value++
-    canProceed.value = false // Reset for next step
-  }
+function goToDetails() {
+  currentStep.value = 'details'
+  canProceed.value = false // Reset for next step
 }
 
-function goToPreviousStep() {
-  if (currentStepIndex.value > 0) {
-    currentStepIndex.value--
-  }
+function goBackToType() {
+  currentStep.value = 'type'
 }
 
 // Event handlers
@@ -135,38 +131,36 @@ function updateCanProceed(canProceedValue: boolean) {
   canProceed.value = canProceedValue
 }
 
-// Create connection after details step and proceed to review
-async function createConnectionForReview() {
+// Create connection and complete setup
+async function createConnection() {
   if (!selectedDBType.value) {
-    throw new Error('Database type not selected')
+    commonStore.showNotification('Database type not selected', 'error')
+    return
   }
   
   if (!connectionsStore.currentConnection) {
-    throw new Error('Connection details not provided')
+    commonStore.showNotification('Connection details not provided', 'error')
+    return
   }
 
-  await connectionsStore.createConnection()
-  
-  commonStore.showNotification('Connection created successfully!', 'success')
-}
-
-// Final completion - refresh connections and navigate
-async function createConnection() {
+  isCreatingConnectionStep.value = true
   try {
+    await connectionsStore.createConnection()
     await connectionsStore.refreshConnections()
     
-    commonStore.showNotification('Connection setup completed successfully!', 'success')
+    commonStore.showNotification('Connection created successfully!', 'success')
     // Navigate back to connections list
     router.push('/connections')
   } catch (error: any) {
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred'
-    commonStore.showNotification(errorMessage, 'error')
+    commonStore.showNotification(`Failed to create connection: ${errorMessage}`, 'error')
+  } finally {
+    isCreatingConnectionStep.value = false
   }
 }
 
 function cancelWizard() {
   // Reset state
-  isConnectionCreated.value = false
   isCreatingConnectionStep.value = false
   connectionsStore.currentConnection = null
   // Navigate back to connections list

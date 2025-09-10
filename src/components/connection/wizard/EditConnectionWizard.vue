@@ -1,41 +1,95 @@
 <template>
-  <WizardLayout
-    :steps="wizardSteps"
-    :currentStepIndex="currentStepIndex"
-    :canProceed="canProceed"
-    :isProcessing="isUpdatingConnection"
-    :isTestingConnection="isTestingConnection"
-    :isEditMode="true"
-    :showTestButton="showTestButton"
-    @next-step="goToNextStep"
-    @previous-step="goToPreviousStep"
-    @finish="updateConnection"
-    @test="testConnection"
-    @cancel="cancelWizard"
-  >
-    <!-- Step 1: Connection Details -->
-    <ConnectionDetailsStep
-      v-if="currentStepIndex === 0"
-      :connectionType="connection?.type"
-      @update:can-proceed="updateCanProceed"
-    />
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+      <h1 class="text-2xl font-bold text-gray-900">Edit Connection</h1>
+      <p class="mt-2 text-sm text-gray-600">Update your database connection settings</p>
+    </div>
 
-    <!-- Step 2: Review (Database Selection step removed) -->
-    <ReviewStep
-      v-else-if="currentStepIndex === 1"
-      :testResult="testResult"
-      :isEditMode="true"
-      @update:can-proceed="updateCanProceed"
-    />
-  </WizardLayout>
+    <!-- Connection Details -->
+    <div class="space-y-6">
+      <ConnectionDetailsStep
+        :connectionType="connection?.type"
+        @update:can-proceed="updateCanProceed"
+      />
+      
+      <!-- Action Buttons -->
+      <div class="flex justify-between">
+        <button
+          @click="cancelWizard"
+          type="button"
+          class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+        >
+          Cancel
+        </button>
+        <div class="flex space-x-3">
+          <button
+            @click="testConnection"
+            :disabled="!canProceed || isTestingConnection"
+            type="button"
+            class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <span v-if="isTestingConnection" class="flex items-center">
+              <svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-gray-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Testing...
+            </span>
+            <span v-else>Test Connection</span>
+          </button>
+          <button
+            @click="updateConnection"
+            :disabled="!canProceed || isUpdatingConnection"
+            type="button"
+            class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent text-sm font-medium rounded-md text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <span v-if="isUpdatingConnection" class="flex items-center">
+              <svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Updating...
+            </span>
+            <span v-else>Update Connection</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Test Result -->
+      <div v-if="testResult" class="border rounded-lg p-4">
+        <div class="flex items-center">
+          <div
+            :class="[
+              testResult.success
+                ? 'text-green-600 bg-green-100'
+                : 'text-red-600 bg-red-100',
+              'rounded-full p-1 mr-3'
+            ]"
+          >
+            <svg v-if="testResult.success" class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+            </svg>
+            <svg v-else class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          <div>
+            <p class="font-medium" :class="testResult.success ? 'text-green-800' : 'text-red-800'">
+              {{ testResult.success ? 'Connection Successful' : 'Connection Failed' }}
+            </p>
+            <p class="text-sm text-gray-600">{{ testResult.message }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import WizardLayout from './WizardLayout.vue'
 import ConnectionDetailsStep from './steps/ConnectionDetailsStep.vue'
-import ReviewStep from './steps/ReviewStep.vue'
 import { useConnectionsStore } from '@/stores/connections'
 import { useCommonStore } from '@/stores/common'
 import type { Connection } from '@/types/connections'
@@ -52,30 +106,14 @@ interface Props {
 
 const props = defineProps<Props>()
 
-// Wizard state
-const currentStepIndex = ref(0)
+// Form state
 const canProceed = ref(false)
 const testResult = ref<{ success: boolean; message: string } | undefined>(undefined)
-
-// Wizard steps configuration (Database Selection step removed)
-const wizardSteps = [
-  {
-    name: 'details',
-    title: 'Connection Details',
-    description: 'Modify your database connection parameters'
-  },
-  {
-    name: 'review',
-    title: 'Review & Update',
-    description: 'Review your changes and update the connection'
-  }
-]
 
 // Computed properties
 const connection = computed(() => connectionsStore.currentConnection)
 const isUpdatingConnection = computed(() => connectionsStore.isUpdatingConnection)
 const isTestingConnection = computed(() => connectionsStore.isTestingConnection)
-const showTestButton = computed(() => !!connection.value)
 
 // Get connection ID from props or route params
 const connectionId = computed(() => props.connectionId || route.params.id as string)
@@ -112,19 +150,6 @@ async function loadConnectionForEdit() {
   }
 }
 
-// Navigation methods
-function goToNextStep() {
-  if (currentStepIndex.value < wizardSteps.length - 1) {
-    currentStepIndex.value++
-    canProceed.value = false // Reset for next step
-  }
-}
-
-function goToPreviousStep() {
-  if (currentStepIndex.value > 0) {
-    currentStepIndex.value--
-  }
-}
 
 // Event handlers
 function updateCanProceed(canProceedValue: boolean) {
