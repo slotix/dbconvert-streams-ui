@@ -64,14 +64,14 @@
           
           <!-- Database Connection Details -->
           <div v-else>
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid gap-4" :class="connection.database ? 'grid-cols-2' : 'grid-cols-1'">
               <div class="min-w-0">
                 <label class="text-xs font-medium uppercase text-gray-500">Host</label>
                 <p class="mt-1 font-medium text-gray-900 truncate" :title="concatenateValues">
                   {{ showPassword ? concatenateValues : truncatedHost }}
                 </p>
               </div>
-              <div class="min-w-0">
+              <div v-if="connection.database" class="min-w-0">
                 <label class="text-xs font-medium uppercase text-gray-500">Database</label>
                 <p class="mt-1 font-medium text-gray-900 truncate">{{ connection.database }}</p>
               </div>
