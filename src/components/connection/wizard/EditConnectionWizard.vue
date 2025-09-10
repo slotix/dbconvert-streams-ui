@@ -30,7 +30,7 @@
             class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <span v-if="isTestingConnection" class="flex items-center">
-              <svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-gray-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <svg class="animate-spin -ml-1 mr-3 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
@@ -56,29 +56,15 @@
         </div>
       </div>
 
-      <!-- Test Result -->
-      <div v-if="testResult" class="border rounded-lg p-4">
+      <!-- Test Result (only show error messages) -->
+      <div v-if="testResult && !testResult.success" class="border border-red-200 rounded-lg p-4 bg-red-50">
         <div class="flex items-center">
-          <div
-            :class="[
-              testResult.success
-                ? 'text-green-600 bg-green-100'
-                : 'text-red-600 bg-red-100',
-              'rounded-full p-1 mr-3'
-            ]"
-          >
-            <svg v-if="testResult.success" class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-            </svg>
-            <svg v-else class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-            </svg>
-          </div>
+          <svg class="h-5 w-5 text-red-600 mr-3" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+          </svg>
           <div>
-            <p class="font-medium" :class="testResult.success ? 'text-green-800' : 'text-red-800'">
-              {{ testResult.success ? 'Connection Successful' : 'Connection Failed' }}
-            </p>
-            <p class="text-sm text-gray-600">{{ testResult.message }}</p>
+            <p class="font-medium text-red-800">Connection Failed</p>
+            <p class="text-sm text-red-700">{{ testResult.message }}</p>
           </div>
         </div>
       </div>
@@ -157,8 +143,8 @@ function updateCanProceed(canProceedValue: boolean) {
 }
 
 async function testConnection() {
+  testResult.value = undefined // Clear previous results first
   try {
-    testResult.value = undefined
     await connectionsStore.testConnection()
     testResult.value = {
       success: true,

@@ -58,6 +58,21 @@
             Cancel
           </button>
           <button
+            @click="testConnection"
+            :disabled="!canProceed || isTestingConnection"
+            type="button"
+            class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <span v-if="isTestingConnection" class="flex items-center">
+              <svg class="animate-spin -ml-1 mr-3 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Testing...
+            </span>
+            <span v-else>Test Connection</span>
+          </button>
+          <button
             @click="createConnection"
             :disabled="!canProceed || isCreatingConnection"
             type="button"
@@ -66,12 +81,25 @@
             <span v-if="isCreatingConnection" class="flex items-center">
               <svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
               Creating...
             </span>
             <span v-else>Create Connection</span>
           </button>
+        </div>
+      </div>
+
+      <!-- Test Result (only show error messages) -->
+      <div v-if="testResult && !testResult.success" class="border border-red-200 rounded-lg p-4 bg-red-50">
+        <div class="flex items-center">
+          <svg class="h-5 w-5 text-red-600 mr-3" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+          </svg>
+          <div>
+            <p class="font-medium text-red-800">Connection Failed</p>
+            <p class="text-sm text-red-700">{{ testResult.message }}</p>
+          </div>
         </div>
       </div>
     </div>
@@ -96,9 +124,11 @@ const currentStep = ref<'type' | 'details'>('type')
 const selectedDBType = ref<DbType | null>(null)
 const canProceed = ref(false)
 const isCreatingConnectionStep = ref(false)
+const testResult = ref<{ success: boolean; message: string } | undefined>(undefined)
 
 // Computed properties
 const isCreatingConnection = computed(() => connectionsStore.isUpdatingConnection || isCreatingConnectionStep.value)
+const isTestingConnection = computed(() => connectionsStore.isTestingConnection)
 
 // Initialize a new connection when the form starts
 function initializeNewConnection() {
@@ -129,6 +159,22 @@ function handleDBTypeUpdate(dbType: DbType | null) {
 
 function updateCanProceed(canProceedValue: boolean) {
   canProceed.value = canProceedValue
+}
+
+async function testConnection() {
+  testResult.value = undefined // Clear previous results first
+  try {
+    await connectionsStore.testConnection()
+    testResult.value = {
+      success: true,
+      message: 'Connection established successfully!'
+    }
+  } catch (error: any) {
+    testResult.value = {
+      success: false,
+      message: error.message || 'Failed to establish connection'
+    }
+  }
 }
 
 // Create connection and complete setup
