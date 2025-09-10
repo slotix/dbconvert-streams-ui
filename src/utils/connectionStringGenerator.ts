@@ -16,7 +16,7 @@ export function generateConnectionString(
 
   const protocol = protocolMap[connection.type] || connection.type.toLowerCase()
 
-  if (!connection.host || !connection.port || !connection.database) {
+  if (!connection.host || !connection.port) {
     return ''
   }
 
@@ -25,5 +25,8 @@ export function generateConnectionString(
     ? `${connection.username}:${encodeURIComponent(password || '')}@`
     : ''
 
-  return `${protocol}://${auth}${connection.host}:${connection.port}/${connection.database}`
+  // Include database in path if specified, otherwise omit it
+  const databasePath = connection.database ? `/${connection.database}` : ''
+
+  return `${protocol}://${auth}${connection.host}:${connection.port}${databasePath}`
 }
