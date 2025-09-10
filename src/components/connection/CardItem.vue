@@ -49,16 +49,41 @@
           <div v-if="isFileConnection" class="space-y-4">
             <div class="min-w-0">
               <label class="text-xs font-medium uppercase text-gray-500">Folder Path</label>
-              <p class="mt-1 font-medium text-gray-900 break-all" :title="connection.path">
-                {{ connection.path || 'No path configured' }}
-              </p>
+              <div class="mt-1 flex items-start gap-2 rounded-md bg-gray-50 p-3 font-mono text-sm">
+                <span class="flex-1 break-all text-gray-800 overflow-x-auto">
+                  {{ connection.path || 'No path configured' }}
+                </span>
+                <button
+                  v-if="connection.path"
+                  class="flex-shrink-0 transition-colors"
+                  :class="isPathCopied ? 'text-green-500' : 'text-gray-400 hover:text-gray-600'"
+                  @click.stop="copyFolderPath"
+                  :title="isPathCopied ? 'Copied!' : 'Copy folder path to clipboard'"
+                >
+                  <ClipboardIcon v-if="!isPathCopied" class="h-4 w-4" />
+                  <CheckIcon v-else class="h-4 w-4" />
+                </button>
+              </div>
             </div>
             
             <div class="min-w-0">
-              <label class="text-xs font-medium uppercase text-gray-500">Supported Formats</label>
-              <p class="mt-1 text-sm text-gray-700">
-                📊 CSV, JSON, JSONL, Parquet files (.gz supported)
-              </p>
+              <label class="text-xs font-medium uppercase text-gray-500">Files</label>
+              <div class="mt-1 text-sm text-gray-700">
+                <div v-if="loadingFiles" class="flex items-center gap-2">
+                  <div class="animate-spin h-3 w-3 border border-gray-300 border-t-gray-600 rounded-full"></div>
+                  <span>Loading files...</span>
+                </div>
+                <div v-else-if="folderFiles.length > 0">
+                  <span class="text-gray-900 font-medium">{{ displayedFiles }}</span>
+                  <span v-if="remainingFilesCount > 0" class="text-gray-500"> ({{ remainingFilesCount }} more)</span>
+                </div>
+                <div v-else-if="hasPath" class="text-gray-500">
+                  No supported files found
+                </div>
+                <div v-else class="text-gray-500">
+                  No path configured
+                </div>
+              </div>
             </div>
           </div>
           
@@ -162,7 +187,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watchEffect } from 'vue'
 import { useRouter } from 'vue-router'
 import { useConnectionsStore } from '@/stores/connections'
 import { useStreamsStore } from '@/stores/streamConfig'
@@ -170,6 +195,7 @@ import { useCommonStore, DIALOG_TYPES } from '@/stores/common'
 import { type Connection } from '@/types/connections'
 import { normalizeConnectionType } from '@/utils/connectionUtils'
 import { generateConnectionString } from '@/utils/connectionStringGenerator'
+import { listDirectory, type FileSystemEntry } from '@/api/fileSystem'
 import {
   PencilIcon,
   Square2StackIcon,
@@ -181,7 +207,6 @@ import {
   ClipboardIcon,
   CheckIcon
 } from '@heroicons/vue/24/outline'
-import { ref } from 'vue'
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
 
 const props = defineProps<{
@@ -195,6 +220,9 @@ const commonStore = useCommonStore()
 
 const showPassword = ref(false)
 const isCopied = ref(false)
+const isPathCopied = ref(false)
+const loadingFiles = ref(false)
+const folderFiles = ref<FileSystemEntry[]>([])
 
 const isStreamsPage = computed(() => commonStore.isStreamsPage)
 const currentStep = computed(() => streamsStore.currentStep)
@@ -211,6 +239,37 @@ const logoSrc = computed(() => {
 // Check if this is a file connection (case-insensitive)
 const isFileConnection = computed(() => {
   return props.connection?.type?.toLowerCase() === 'files'
+})
+
+// Check if connection has a path configured
+const hasPath = computed(() => {
+  return !!(props.connection?.path?.trim())
+})
+
+// Filter files to show only supported formats
+const supportedFiles = computed(() => {
+  const supportedExtensions = ['.csv', '.json', '.jsonl', '.parquet', '.gz']
+  return folderFiles.value.filter(file => 
+    file.type === 'file' && 
+    supportedExtensions.some(ext => file.name.toLowerCase().endsWith(ext))
+  )
+})
+
+// Display files similar to how tables are shown
+const displayedFiles = computed(() => {
+  const files = supportedFiles.value
+  if (files.length === 0) return ''
+  
+  const maxDisplay = 3
+  const fileNames = files.slice(0, maxDisplay).map(f => f.name)
+  
+  return fileNames.join(', ')
+})
+
+const remainingFilesCount = computed(() => {
+  const total = supportedFiles.value.length
+  const displayed = Math.min(3, total)
+  return Math.max(0, total - displayed)
 })
 
 const connectionCreated = computed(() => {
@@ -372,5 +431,67 @@ async function copyConnectionString(): Promise<void> {
     }
   }
 }
+
+async function copyFolderPath(): Promise<void> {
+  if (!props.connection?.path) return
+  
+  try {
+    await navigator.clipboard.writeText(props.connection.path)
+    
+    // Show success indication
+    isPathCopied.value = true
+    
+    // Reset the copied state after 2 seconds
+    setTimeout(() => {
+      isPathCopied.value = false
+    }, 2000)
+    
+  } catch (error) {
+    console.error('Failed to copy folder path:', error)
+    // Fallback for older browsers
+    try {
+      const textArea = document.createElement('textarea')
+      textArea.value = props.connection.path
+      document.body.appendChild(textArea)
+      textArea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textArea)
+      
+      // Show success indication for fallback too
+      isPathCopied.value = true
+      
+      // Reset the copied state after 2 seconds
+      setTimeout(() => {
+        isPathCopied.value = false
+      }, 2000)
+      
+    } catch (fallbackError) {
+      console.error('Fallback copy also failed:', fallbackError)
+    }
+  }
+}
+
+// Load files for file connections
+async function loadFiles() {
+  if (!isFileConnection.value || !hasPath.value) return
+  
+  loadingFiles.value = true
+  try {
+    const result = await listDirectory(props.connection.path)
+    folderFiles.value = result.entries
+  } catch (error) {
+    console.error('Failed to load files:', error)
+    folderFiles.value = []
+  } finally {
+    loadingFiles.value = false
+  }
+}
+
+// Load files when connection is a file connection and has a path
+watchEffect(() => {
+  if (isFileConnection.value && hasPath.value) {
+    loadFiles()
+  }
+})
 
 </script>
