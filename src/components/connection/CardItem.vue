@@ -191,7 +191,7 @@ import { computed, ref, watchEffect } from 'vue'
 import { useRouter } from 'vue-router'
 import { useConnectionsStore } from '@/stores/connections'
 import { useStreamsStore } from '@/stores/streamConfig'
-import { useCommonStore, DIALOG_TYPES } from '@/stores/common'
+import { useCommonStore } from '@/stores/common'
 import { type Connection } from '@/types/connections'
 import { normalizeConnectionType } from '@/utils/connectionUtils'
 import { generateConnectionString } from '@/utils/connectionStringGenerator'
@@ -372,9 +372,21 @@ function editConnection(): void {
   }
 }
 
-function cloneConnection(): void {
+async function cloneConnection(): Promise<void> {
+  if (!props.connection) return
   connectionsStore.setCurrentConnection(props.connection.id)
-  commonStore.openModal(DIALOG_TYPES.SAVE)
+  try {
+    await connectionsStore.cloneConnection(props.connection.id)
+    await connectionsStore.refreshConnections()
+    commonStore.showNotification('Connection cloned', 'success')
+  } catch (e: unknown) {
+    if (e instanceof Error) {
+      commonStore.showNotification(e.message, 'error')
+    } else {
+      commonStore.showNotification('An unknown error occurred', 'error')
+    }
+    console.error(e)
+  }
 }
 
 function deleteConn(id: string): void {
