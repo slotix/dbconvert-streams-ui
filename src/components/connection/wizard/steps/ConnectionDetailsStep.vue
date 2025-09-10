@@ -1,7 +1,7 @@
 <template>
   <div class="space-y-6">
     <!-- Connection Type Display -->
-    <div v-if="connectionType" class="flex items-center p-3 bg-gray-50 rounded-lg">
+    <div v-if="connectionType && !hideTypeDisplay" class="flex items-center p-3 bg-gray-50 rounded-lg">
       <img
         :src="getDBTypeLogo(connectionType)"
         :alt="connectionType + ' logo'"
@@ -29,6 +29,7 @@ import { useConnectionsStore } from '@/stores/connections'
 
 interface Props {
   connectionType?: string
+  hideTypeDisplay?: boolean
 }
 
 const props = defineProps<Props>()

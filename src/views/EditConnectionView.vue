@@ -13,7 +13,7 @@
           <div>
             <h1 class="text-2xl font-bold text-gray-900">Edit Connection</h1>
             <p v-if="connection" class="text-sm text-gray-600">
-              Modify {{ connection.name }} ({{ connection.type }})
+              Update {{ connection.name }} settings
             </p>
             <p v-else class="text-sm text-gray-600">Loading connection...</p>
           </div>

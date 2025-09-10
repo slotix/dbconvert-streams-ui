@@ -1,15 +1,11 @@
 <template>
   <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <!-- Header -->
-    <div class="mb-8">
-      <h1 class="text-2xl font-bold text-gray-900">Edit Connection</h1>
-      <p class="mt-2 text-sm text-gray-600">Update your database connection settings</p>
-    </div>
 
     <!-- Connection Details -->
     <div class="space-y-6">
       <ConnectionDetailsStep
         :connectionType="connection?.type"
+        :hideTypeDisplay="true"
         @update:can-proceed="updateCanProceed"
       />
       
@@ -140,6 +136,12 @@ async function loadConnectionForEdit() {
 // Event handlers
 function updateCanProceed(canProceedValue: boolean) {
   canProceed.value = canProceedValue
+}
+
+function getDBTypeLogo(type?: string): string {
+  if (!type) return '/images/db-logos/default.svg'
+  const dbType = connectionsStore.dbTypes.find(db => db.type === type)
+  return dbType?.logo || '/images/db-logos/default.svg'
 }
 
 async function testConnection() {
