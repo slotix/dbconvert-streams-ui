@@ -10,7 +10,7 @@ import {
 import { mapActions, mapState } from 'pinia'
 import { useConnectionsStore } from '@/stores/connections'
 import { useStreamsStore } from '@/stores/streamConfig'
-import { useCommonStore, DIALOG_TYPES } from '@/stores/common'
+import { useCommonStore } from '@/stores/common'
 import ActionsMenu from '@/components/common/ActionsMenu.vue'
 import { defineComponent, computed, ref, type PropType } from 'vue'
 import { type Connection, type DbType } from '@/types/connections'
@@ -140,7 +140,7 @@ export default defineComponent({
   methods: {
     //  ...mapActions(useConnectionsStore, ['setCurrentConnection']),
     addConnection(): void {
-      this.commonStore.openModal(DIALOG_TYPES.SAVE)
+      this.$router.push('/connections/add')
     },
     editConnection(): void {
       if (this.connection) {

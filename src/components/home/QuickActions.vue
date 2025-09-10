@@ -367,8 +367,7 @@ function createStream() {
 }
 
 function createConnection() {
-  commonStore.openAddConnectionDialog()
-  router.push('/connections')
+  router.push('/connections/add')
 }
 
 function viewAllConnections() {

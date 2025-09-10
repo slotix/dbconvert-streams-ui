@@ -9,11 +9,6 @@ import { sseLogsService } from '@/api/sseLogsService'
 import { useLocalStorage } from '@vueuse/core'
 import { ref } from 'vue'
 
-export const DIALOG_TYPES = {
-  SAVE: 'Add',
-  SAVE_CHANGES: 'Save Changes',
-  UPDATE: 'Update'
-} as const
 
 export interface Step {
   id: number
@@ -28,7 +23,6 @@ export interface ModeOption {
   title: string
 }
 
-type DialogType = (typeof DIALOG_TYPES)[keyof typeof DIALOG_TYPES]
 
 interface ErrorState {
   message: string
@@ -37,8 +31,6 @@ interface ErrorState {
 }
 
 interface State {
-  showModal: boolean
-  dlgType: DialogType | ''
   currentViewType: string
   userData: UserData | null
   sentryHealthy: boolean
@@ -66,8 +58,6 @@ interface State {
 
 export const useCommonStore = defineStore('common', {
   state: () => ({
-    showModal: false,
-    dlgType: '' as DialogType | '',
     currentViewType: '',
     userData: null as UserData | null,
     sentryHealthy: false,
@@ -325,16 +315,6 @@ export const useCommonStore = defineStore('common', {
     async setViewType(vType: string) {
       storage.setCurrentViewType(vType)
       this.currentViewType = vType
-    },
-    openModal(dlgType: DialogType) {
-      this.dlgType = dlgType
-      this.showModal = true
-    },
-    closeModal() {
-      this.showModal = false
-    },
-    openAddConnectionDialog() {
-      this.openModal(DIALOG_TYPES.SAVE)
     },
     showNotification(msg: string, type: 'error' | 'success' | 'warning' | 'info' = 'info') {
       const toast = useToast()
