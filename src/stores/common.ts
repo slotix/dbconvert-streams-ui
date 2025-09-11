@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import storage from '@/api/storageService'
-import api from '@/api/apiClient'
+import api, { configureApiClient } from '@/api/apiClient'
 import type { UserData } from '@/types/user'
 import type { ServiceStatus } from '@/types/common'
 import { useToast } from 'vue-toastification'
@@ -202,6 +202,8 @@ export const useCommonStore = defineStore('common', {
       try {
         if (this.apiKey) {
           await api.validateApiKey(this.apiKey)
+          // Ensure the API client is configured with the current key
+          configureApiClient(this.apiKey)
           return this.apiKey
         }
 
@@ -211,6 +213,8 @@ export const useCommonStore = defineStore('common', {
             // Validate the stored API key
             await api.validateApiKey(storedApiKey)
             this.apiKey = storedApiKey
+            // Configure the API client with the validated key
+            configureApiClient(storedApiKey)
             return storedApiKey
           } catch (error: any) {
             // Only clear API key for authentication errors (401)
@@ -226,6 +230,8 @@ export const useCommonStore = defineStore('common', {
             // For network errors, keep the API key but mark backend as disconnected
             console.log('Network error during API key validation, keeping stored key:', error.message)
             this.apiKey = storedApiKey
+            // Configure the API client with the stored key even if validation failed due to network issues
+            configureApiClient(storedApiKey)
             this.setBackendConnected(false)
             return storedApiKey
           }
@@ -263,6 +269,8 @@ export const useCommonStore = defineStore('common', {
         this.apiKey = apiKey
         this.apiKeyInvalidated = false
         localStorage.setItem('apiKey', apiKey)
+        // Configure the API client with the new API key
+        configureApiClient(apiKey)
       } catch (error) {
         const toast = useToast()
         toast.error('Invalid API key provided')
@@ -274,6 +282,8 @@ export const useCommonStore = defineStore('common', {
       this.apiKey = null
       this.apiKeyInvalidated = true
       localStorage.removeItem('apiKey')
+      // Clear the API key header from axios instance
+      configureApiClient('')
     },
 
     async userDataFromSentry(apiKey: string) {
