@@ -32,10 +32,18 @@ export function parseConnectionString(connectionString: string): ParsedConnectio
       db2: 'DB2'
     }
 
+    // Parse port correctly - url.port is a string, so check if it exists before parsing
+    let port: number
+    if (url.port && url.port.trim() !== '') {
+      port = parseInt(url.port, 10)
+    } else {
+      port = getDefaultPort(type)
+    }
+
     return {
       type: typeMap[type] || type,
       host: url.hostname,
-      port: parseInt(url.port) || getDefaultPort(type),
+      port: port,
       username: decodeURIComponent(url.username),
       password: decodeURIComponent(url.password),
       database: url.pathname.replace('/', ''),

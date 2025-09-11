@@ -170,8 +170,16 @@ const applyConnectionDefaults = (connectionType: string) => {
   if (connection.value) {
     const defaults = getConnectionDefaults()
     connection.value.type = connectionType.toLowerCase()
-    connection.value.port = defaultPort.value
-    connection.value.username = defaults.username
+    
+    // Only set port to default if it's not already set (preserve parsed values from connection string)
+    if (!connection.value.port) {
+      connection.value.port = defaultPort.value
+    }
+    
+    // Only set username to default if it's not already set (preserve parsed values from connection string)
+    if (!connection.value.username) {
+      connection.value.username = defaults.username
+    }
     
     // Only clear database if it's not already set (preserve parsed values from connection string)
     if (!connection.value.database) {
