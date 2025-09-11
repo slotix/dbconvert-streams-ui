@@ -73,9 +73,8 @@
                   <div class="animate-spin h-3 w-3 border border-gray-300 border-t-gray-600 rounded-full"></div>
                   <span>Loading files...</span>
                 </div>
-                <div v-else-if="folderFiles.length > 0">
-                  <span class="text-gray-900 font-medium">{{ displayedFiles }}</span>
-                  <span v-if="remainingFilesCount > 0" class="text-gray-500"> ({{ remainingFilesCount }} more)</span>
+                <div v-else-if="totalFileCount > 0" class="text-gray-900 font-medium">
+                  {{ fileSummary }}
                 </div>
                 <div v-else-if="hasPath" class="text-gray-500">
                   No supported files found
@@ -229,6 +228,12 @@ const currentStep = computed(() => streamsStore.currentStep)
 const currentStreamConfig = computed(() => streamsStore.currentStreamConfig)
 
 const logoSrc = computed(() => {
+  // For file connections, show file type icon instead of generic Files icon
+  if (isFileConnection.value && totalFileCount.value > 0) {
+    return getFileTypeIcon()
+  }
+  
+  // For other connections, use the standard database icon
   const normalizedType = normalizeConnectionType(props.connection?.type || '')
   const dbType = connectionsStore.dbTypes.find(
     (f) => normalizeConnectionType(f.type) === normalizedType
@@ -271,6 +276,103 @@ const remainingFilesCount = computed(() => {
   const displayed = Math.min(3, total)
   return Math.max(0, total - displayed)
 })
+
+// File count and size summary
+const totalFileCount = computed(() => {
+  return supportedFiles.value.length
+})
+
+const totalFileSize = computed(() => {
+  return supportedFiles.value.reduce((sum, file) => sum + (file.size || 0), 0)
+})
+
+const fileSummary = computed(() => {
+  const count = totalFileCount.value
+  if (count === 0) return ''
+  
+  const size = totalFileSize.value
+  const sizeStr = formatFileSize(size)
+  
+  if (count === 1) {
+    return `1 file (${sizeStr})`
+  } else {
+    return `${count} files (${sizeStr} total)`
+  }
+})
+
+// File type detection and badges
+const detectedFileTypes = computed(() => {
+  const typeMap = new Map<string, number>()
+  
+  supportedFiles.value.forEach(file => {
+    const extension = getFileExtension(file.name)
+    const type = getFileTypeFromExtension(extension)
+    if (type) {
+      typeMap.set(type, (typeMap.get(type) || 0) + 1)
+    }
+  })
+  
+  return Array.from(typeMap.entries()).map(([type, count]) => ({ type, count }))
+})
+
+
+function getFileExtension(filename: string): string {
+  const match = filename.toLowerCase().match(/\.([^.]+)(?:\.gz)?$/)
+  return match ? match[1] : ''
+}
+
+function getFileTypeFromExtension(extension: string): string | null {
+  const typeMap: Record<string, string> = {
+    'csv': 'CSV',
+    'json': 'JSON', 
+    'jsonl': 'JSONL',
+    'parquet': 'Parquet',
+    'gz': 'Compressed'
+  }
+  return typeMap[extension] || null
+}
+
+function getFileTypeIcon(): string {
+  const types = detectedFileTypes.value
+  
+  if (types.length === 0) {
+    return '/images/db-logos/local-files.svg' // Default Files icon
+  }
+  
+  // If single type, show that type's icon
+  if (types.length === 1) {
+    const type = types[0].type
+    return getIconForFileType(type)
+  }
+  
+  // If multiple types, show mixed files icon
+  return '/images/db-logos/local-files.svg' // Mixed files icon
+}
+
+function getIconForFileType(type: string): string {
+  const iconMap: Record<string, string> = {
+    'CSV': '/images/db-logos/csv.svg',
+    'JSON': '/images/db-logos/json.svg',
+    'JSONL': '/images/db-logos/json.svg',
+    'Parquet': '/images/db-logos/parquet.svg',
+    'Compressed': '/images/db-logos/local-files.svg'
+  }
+  return iconMap[type] || '/images/db-logos/local-files.svg'
+}
+
+// Helper function to format file sizes
+function formatFileSize(bytes: number): string {
+  if (bytes === 0) return '0 B'
+  
+  const units = ['B', 'KB', 'MB', 'GB', 'TB']
+  const k = 1024
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  
+  const value = bytes / Math.pow(k, i)
+  const formatted = i === 0 ? value.toString() : value.toFixed(1)
+  
+  return `${formatted} ${units[i]}`
+}
 
 const connectionCreated = computed(() => {
   if (!props.connection || typeof props.connection.created !== 'number') return ''
