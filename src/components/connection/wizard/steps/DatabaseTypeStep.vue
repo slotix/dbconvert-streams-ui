@@ -112,31 +112,32 @@
       </div>
     </div>
 
-    <!-- Connection String Toggle -->
-    <div class="text-center">
-      <button
-        @click="toggleConnectionString"
-        class="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
-      >
-        <ChevronDownIcon v-if="!showConnectionString" class="h-4 w-4" />
-        <ChevronUpIcon v-else class="h-4 w-4" />
-        Use connection string instead
-      </button>
+    <!-- Divider -->
+    <div class="relative">
+      <div class="absolute inset-0 flex items-center">
+        <div class="w-full border-t border-gray-300" />
+      </div>
+      <div class="relative flex justify-center text-sm">
+        <span class="px-2 bg-white text-gray-500">or</span>
+      </div>
     </div>
 
-    <!-- Connection String Input -->
-    <div v-if="showConnectionString" class="border-t border-gray-200 pt-6">
-      <ConnectionStringInput
-        :connectionType="selectedDBType?.type"
-        @update:connection-params="updateConnectionParams"
-      />
+    <!-- Connection String Section -->
+    <div>
+      <h3 class="text-lg font-medium text-gray-900 mb-4 text-center">Connection String</h3>
+      <div class="max-w-2xl mx-auto">
+        <ConnectionStringInput
+          :connectionType="selectedDBType?.type"
+          @update:connection-params="updateConnectionParams"
+        />
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
-import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from '@heroicons/vue/24/outline'
+import { CheckIcon } from '@heroicons/vue/24/outline'
 import ConnectionStringInput from '../../ConnectionStringInput.vue'
 import { useConnectionsStore } from '@/stores/connections'
 import type { DbType, Connection } from '@/types/connections'
@@ -150,7 +151,6 @@ const props = defineProps<Props>()
 const connectionsStore = useConnectionsStore()
 
 const selectedDBType = ref<DbType | null>(null)
-const showConnectionString = ref(false)
 
 // Get database types from store, separated by category
 const databaseTypes = computed(() => 
@@ -170,7 +170,6 @@ const emit = defineEmits<{
 
 function selectDBType(dbType: DbType) {
   selectedDBType.value = dbType
-  // Keep connection string section expanded if user had opened it
   emit('update:selected-db-type', dbType)
   updateCanProceed()
 }
@@ -178,10 +177,6 @@ function selectDBType(dbType: DbType) {
 function updateCanProceed() {
   const canProceed = !!selectedDBType.value
   emit('update:can-proceed', canProceed)
-}
-
-function toggleConnectionString() {
-  showConnectionString.value = !showConnectionString.value
 }
 
 function updateConnectionParams(params: Connection) {

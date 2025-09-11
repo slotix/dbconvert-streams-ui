@@ -22,10 +22,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, watchEffect } from 'vue'
+import { computed, ref, watchEffect, onMounted, watch } from 'vue'
 import ConnectionParams from '../../params/ConnectionParams.vue'
 import AccessNotice from '../../AccessNotice.vue'
 import { useConnectionsStore } from '@/stores/connections'
+import { getPublicIp, isLocalIp } from '@/utils/ipUtils'
 
 interface Props {
   connectionType?: string
@@ -63,14 +64,42 @@ const canProceed = computed(() => {
   )
 })
 
-// Compute the IP to show in AccessNotice based on connection host
-const publicIp = computed(() => {
-  const host = connectionsStore.currentConnection?.host
-  if (!host || host === 'localhost' || host === '127.0.0.1') {
-    return '127.0.0.1'
+// Store the user's actual public IP address
+const publicIp = ref<string>('Loading...')
+
+// Function to update IP based on connection host
+async function updatePublicIp() {
+  try {
+    const connection = connectionsStore.currentConnection
+    const host = connection?.host
+    
+    // If connecting to localhost/local IP, show local IP
+    if (host && isLocalIp(host)) {
+      publicIp.value = '127.0.0.1'
+    } else if (host) {
+      // For remote databases, show the user's actual public IP
+      publicIp.value = await getPublicIp()
+    } else {
+      publicIp.value = 'Loading...'
+    }
+  } catch (error) {
+    console.warn('Failed to get public IP:', error)
+    publicIp.value = 'Unable to detect'
   }
-  return host
+}
+
+// Fetch IP on mount
+onMounted(() => {
+  updatePublicIp()
 })
+
+// Watch for connection host changes and update IP accordingly
+watch(
+  () => connectionsStore.currentConnection?.host,
+  () => {
+    updatePublicIp()
+  }
+)
 
 // Only show the access notice when we have connection details filled out (not for Files)
 const showAccessNotice = computed(() => {
