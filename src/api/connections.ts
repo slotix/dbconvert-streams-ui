@@ -36,9 +36,10 @@ const createConnection = async (
       }
     )
     return response.data
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[API] Failed to create connection:', error)
-    throw new Error(error.response?.data.error || 'An unknown error occurred')
+    const err = error as { response?: { data?: { error?: string } } }
+    throw new Error(err.response?.data?.error || 'An unknown error occurred')
   }
 }
 
@@ -184,7 +185,7 @@ const createSchema = async (
   validateApiKey(commonStore.apiKey)
   try {
     const response: AxiosResponse<{ status: string }> = await apiClient.post(
-      `/connections/${id}/schemas?database=${encodeURIComponent(dbName)}`,
+      `/connections/${id}/databases/${encodeURIComponent(dbName)}/schemas`,
       newSchema,
       {
         headers: {
@@ -199,11 +200,18 @@ const createSchema = async (
   }
 }
 
-const getTables = async (id: string): Promise<string[]> => {
+const getTables = async (
+  id: string,
+  database: string,
+  options?: { schemas?: string[] }
+): Promise<string[]> => {
   const commonStore = useCommonStore()
   validateApiKey(commonStore.apiKey)
   try {
-    const response: AxiosResponse<string[]> = await apiClient.get(`/connections/${id}/tables`, {
+    const qp = new URLSearchParams()
+    options?.schemas?.forEach((s) => qp.append('schemas', s))
+    const url = `/connections/${id}/databases/${encodeURIComponent(database)}/tables${qp.toString() ? `?${qp.toString()}` : ''}`
+    const response: AxiosResponse<string[]> = await apiClient.get(url, {
       headers: { 'X-API-Key': commonStore.apiKey }
     })
     return response.data
@@ -214,26 +222,33 @@ const getTables = async (id: string): Promise<string[]> => {
 
 let metadataCache: { [key: string]: { data: DatabaseMetadata; timestamp: number } } = {}
 
-const getMetadata = async (id: string, forceRefresh = false): Promise<DatabaseMetadata> => {
+const getMetadata = async (
+  id: string,
+  database: string,
+  forceRefresh = false,
+  options?: { schemas?: string[] }
+): Promise<DatabaseMetadata> => {
   const commonStore = useCommonStore()
   validateApiKey(commonStore.apiKey)
 
   // Check cache if not forcing refresh
   const now = Date.now()
-  if (!forceRefresh && metadataCache[id] && now - metadataCache[id].timestamp < 30000) {
-    return metadataCache[id].data
+  const cacheKey = `${id}:${database}`
+  if (!forceRefresh && metadataCache[cacheKey] && now - metadataCache[cacheKey].timestamp < 30000) {
+    return metadataCache[cacheKey].data
   }
 
   try {
-    const response: AxiosResponse<DatabaseMetadata> = await apiClient.get(
-      `/connections/${id}/meta${forceRefresh ? '?refresh=true' : ''}`,
-      {
-        headers: { 'X-API-Key': commonStore.apiKey }
-      }
-    )
+    const qp = new URLSearchParams()
+    if (forceRefresh) qp.set('refresh', 'true')
+    options?.schemas?.forEach((s) => qp.append('schemas', s))
+    const url = `/connections/${id}/databases/${encodeURIComponent(database)}/meta${qp.toString() ? `?${qp.toString()}` : ''}`
+    const response: AxiosResponse<DatabaseMetadata> = await apiClient.get(url, {
+      headers: { 'X-API-Key': commonStore.apiKey }
+    })
 
     // Update cache
-    metadataCache[id] = {
+    metadataCache[cacheKey] = {
       data: response.data,
       timestamp: now
     }
@@ -245,7 +260,7 @@ const getMetadata = async (id: string, forceRefresh = false): Promise<DatabaseMe
 
 interface TableData {
   columns: string[]
-  rows: any[][]
+  rows: unknown[][]
   count: number
   total_count: number
   limit: number
@@ -255,6 +270,7 @@ interface TableData {
 
 const getTableData = async (
   connectionId: string,
+  database: string,
   tableName: string,
   params: {
     limit: number
@@ -276,23 +292,28 @@ const getTableData = async (
       queryParams.append('schema', params.schema)
     }
 
-    const response: AxiosResponse<TableData> = await apiClient.get(
-      `/connections/${connectionId}/tables/${tableName}/data?${queryParams.toString()}`,
-      {
-        headers: { 'X-API-Key': commonStore.apiKey }
-      }
-    )
+    const url = `/connections/${connectionId}/databases/${encodeURIComponent(database)}/tables/${tableName}/data?${queryParams.toString()}`
+    const response: AxiosResponse<TableData> = await apiClient.get(url, {
+      headers: { 'X-API-Key': commonStore.apiKey }
+    })
     return response.data
   } catch (error) {
     throw handleApiError(error)
   }
 }
 
-const getViews = async (id: string): Promise<string[]> => {
+const getViews = async (
+  id: string,
+  database: string,
+  options?: { schemas?: string[] }
+): Promise<string[]> => {
   const commonStore = useCommonStore()
   validateApiKey(commonStore.apiKey)
   try {
-    const response: AxiosResponse<string[]> = await apiClient.get(`/connections/${id}/views`, {
+    const qp = new URLSearchParams()
+    options?.schemas?.forEach((s) => qp.append('schemas', s))
+    const url = `/connections/${id}/databases/${encodeURIComponent(database)}/views${qp.toString() ? `?${qp.toString()}` : ''}`
+    const response: AxiosResponse<string[]> = await apiClient.get(url, {
       headers: { 'X-API-Key': commonStore.apiKey }
     })
     return response.data
@@ -303,6 +324,7 @@ const getViews = async (id: string): Promise<string[]> => {
 
 const getViewData = async (
   connectionId: string,
+  database: string,
   viewName: string,
   params: {
     limit: number
@@ -323,12 +345,10 @@ const getViewData = async (
       queryParams.append('schema', params.schema)
     }
 
-    const response: AxiosResponse<TableData> = await apiClient.get(
-      `/connections/${connectionId}/views/${viewName}/data?${queryParams.toString()}`,
-      {
-        headers: { 'X-API-Key': commonStore.apiKey }
-      }
-    )
+    const url = `/connections/${connectionId}/databases/${encodeURIComponent(database)}/views/${viewName}/data?${queryParams.toString()}`
+    const response: AxiosResponse<TableData> = await apiClient.get(url, {
+      headers: { 'X-API-Key': commonStore.apiKey }
+    })
     return response.data
   } catch (error) {
     throw handleApiError(error)

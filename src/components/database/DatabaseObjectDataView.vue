@@ -18,12 +18,13 @@ const BRAND_COLORS = {
 const props = defineProps<{
   tableMeta: SQLTableMeta | SQLViewMeta
   connectionId: string
+  database: string
   isView?: boolean
 }>()
 
 interface TableData {
   columns: string[]
-  rows: any[][]
+  rows: unknown[][]
   count: number
   total_count: number
   limit: number
@@ -84,8 +85,8 @@ async function loadTableData() {
     }
 
     const data = props.isView
-      ? await connections.getViewData(props.connectionId, apiObjectName, params)
-      : await connections.getTableData(props.connectionId, apiObjectName, params)
+      ? await connections.getViewData(props.connectionId, props.database, apiObjectName, params)
+      : await connections.getTableData(props.connectionId, props.database, apiObjectName, params)
 
     tableData.value = data
 
@@ -198,7 +199,7 @@ const primaryKeyColumns = computed(() => {
 const foreignKeyColumns = computed(() => {
   if (props.isView) return new Set()
   const foreignKeys = (props.tableMeta as SQLTableMeta).foreignKeys || []
-  return new Set(foreignKeys.map((fk: any) => fk.sourceColumn))
+  return new Set(foreignKeys.map((fk) => fk.sourceColumn))
 })
 </script>
 
@@ -333,15 +334,14 @@ const foreignKeyColumns = computed(() => {
         <div class="mt-4 flex items-center justify-between border-t border-gray-200 bg-white py-3">
           <div class="flex flex-1 justify-between sm:hidden">
             <button
-              @click="currentPage = Math.max(1, currentPage - 1)"
               :disabled="currentPage === 1"
               class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
               :class="{ 'opacity-50 cursor-not-allowed': currentPage === 1 }"
+              @click="currentPage = Math.max(1, currentPage - 1)"
             >
               Previous
             </button>
             <button
-              @click="currentPage = currentPage + 1"
               :disabled="
                 (skipCount && tableData?.rows?.length < itemsPerPage) ||
                 (!skipCount && currentPage === totalPages)
@@ -352,6 +352,7 @@ const foreignKeyColumns = computed(() => {
                   (skipCount && tableData?.rows?.length < itemsPerPage) ||
                   (!skipCount && currentPage === totalPages)
               }"
+              @click="currentPage = currentPage + 1"
             >
               Next
             </button>
@@ -382,7 +383,6 @@ const foreignKeyColumns = computed(() => {
                 <button
                   v-for="page in displayedPages"
                   :key="page"
-                  @click="typeof page === 'number' ? (currentPage = page) : null"
                   :class="[
                     'relative inline-flex items-center px-3 py-1.5 text-sm font-medium ring-1 ring-inset ring-gray-300',
                     typeof page === 'number'
@@ -391,6 +391,7 @@ const foreignKeyColumns = computed(() => {
                         : 'text-gray-900 hover:bg-gray-50 cursor-pointer'
                       : 'text-gray-400 cursor-default'
                   ]"
+                  @click="typeof page === 'number' ? (currentPage = page) : null"
                 >
                   {{ page }}
                 </button>

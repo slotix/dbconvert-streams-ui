@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
-import type { Table, Position, Relationship, ForeignKey } from '@/types/schema'
+import type { Table, Position, Relationship } from '@/types/schema'
 import connections from '@/api/connections'
+import type { SQLTableMeta, SQLViewMeta, SQLColumnMeta, SQLForeignKeyMeta } from '@/types/metadata'
 
 export const useSchemaStore = defineStore('schema', {
   state: () => ({
@@ -12,6 +13,7 @@ export const useSchemaStore = defineStore('schema', {
     loading: false,
     error: null as string | null,
     connectionId: null as string | null,
+    databaseName: null as string | null,
     lastFetchTimestamp: null as number | null
   }),
 
@@ -44,9 +46,25 @@ export const useSchemaStore = defineStore('schema', {
       }
     },
 
+    setDatabaseName(dbName: string) {
+      if (this.databaseName !== dbName) {
+        this.databaseName = dbName
+        this.tables = []
+        this.views = []
+        this.relationships = []
+        this.tablePositions = {}
+        this.selectedTable = null
+        this.lastFetchTimestamp = null
+      }
+    },
+
     async fetchSchema(forceRefresh = false) {
       if (!this.connectionId) {
         this.error = 'No connection ID provided'
+        return
+      }
+      if (!this.databaseName) {
+        this.error = 'No database selected'
         return
       }
 
@@ -54,7 +72,11 @@ export const useSchemaStore = defineStore('schema', {
       this.error = null
 
       try {
-        const metadata = await connections.getMetadata(this.connectionId, forceRefresh)
+        const metadata = await connections.getMetadata(
+          this.connectionId,
+          this.databaseName,
+          forceRefresh
+        )
 
         if (!metadata || typeof metadata !== 'object') {
           throw new Error('Invalid metadata response format')
@@ -63,12 +85,14 @@ export const useSchemaStore = defineStore('schema', {
         // Convert metadata tables to tables array
         const tables: Table[] = Object.entries(metadata.tables)
           .filter(([_, value]) => value && typeof value === 'object')
-          .map(([tableName, tableMeta]: [string, any]) => {
+          .map(([_, tableMeta]: [string, unknown]) => {
+            const tm = tableMeta as SQLTableMeta
             // Process columns
             const columns =
-              tableMeta.columns?.map((col: any) => {
-                const isForeignKey =
-                  tableMeta.foreignKeys?.some((fk: any) => fk.sourceColumn === col.name) || false
+              tm.columns?.map((col: SQLColumnMeta) => {
+                const isForeignKey = Boolean(
+                  tm.foreignKeys?.some((fk: SQLForeignKeyMeta) => fk.sourceColumn === col.name)
+                )
 
                 // Format type with length/precision
                 let formattedType = col.dataType
@@ -82,15 +106,14 @@ export const useSchemaStore = defineStore('schema', {
                   name: col.name,
                   type: formattedType,
                   nullable: col.isNullable,
-                  default: col.defaultValue?.string,
-                  extra: col.extra,
-                  isPrimaryKey: tableMeta.primaryKeys?.includes(col.name) || false,
+                  default: col.defaultValue?.String || undefined,
+                  isPrimaryKey: tm.primaryKeys?.includes(col.name) || false,
                   isForeignKey
                 }
               }) || []
 
             // Map foreign keys to our internal format
-            const foreignKeys = (tableMeta.foreignKeys || []).map((fk: any) => ({
+            const foreignKeys = (tm.foreignKeys || []).map((fk: SQLForeignKeyMeta) => ({
               name: fk.name,
               sourceColumn: fk.sourceColumn,
               referencedTable: fk.referencedTable,
@@ -100,10 +123,10 @@ export const useSchemaStore = defineStore('schema', {
             }))
 
             return {
-              name: tableMeta.name,
-              schema: tableMeta.schema,
+              name: tm.name,
+              schema: tm.schema,
               columns,
-              primaryKeys: tableMeta.primaryKeys || [],
+              primaryKeys: tm.primaryKeys || [],
               foreignKeys
             }
           })
@@ -111,22 +134,22 @@ export const useSchemaStore = defineStore('schema', {
         // Convert metadata views to views array
         const views: Table[] = Object.entries(metadata.views || {})
           .filter(([_, value]) => value && typeof value === 'object')
-          .map(([viewName, viewMeta]: [string, any]) => {
+          .map(([_, viewMeta]: [string, unknown]) => {
+            const vm = viewMeta as SQLViewMeta
             // Process columns
             const columns =
-              viewMeta.columns?.map((col: any) => ({
+              vm.columns?.map((col: SQLColumnMeta) => ({
                 name: col.name,
                 type: col.dataType,
                 nullable: col.isNullable,
-                default: col.defaultValue?.string,
-                extra: col.extra,
+                default: col.defaultValue?.String || undefined,
                 isPrimaryKey: false,
                 isForeignKey: false
               })) || []
 
             return {
-              name: viewMeta.name,
-              schema: viewMeta.schema,
+              name: vm.name,
+              schema: vm.schema,
               columns,
               primaryKeys: [],
               foreignKeys: []

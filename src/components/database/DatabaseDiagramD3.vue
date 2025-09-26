@@ -9,8 +9,6 @@ import {
   ViewfinderCircleIcon,
   ArrowDownTrayIcon
 } from '@heroicons/vue/24/outline'
-// Import jsPDF type to avoid TypeScript error
-import type { jsPDF } from 'jspdf'
 
 interface TableNode extends d3.SimulationNodeDatum {
   id: string
@@ -104,24 +102,27 @@ const exportType = ref<'svg' | 'png' | 'pdf'>('svg')
 
 // Initialize the force simulation
 function initializeSimulation(width: number, height: number) {
-  return d3
-    .forceSimulation<TableNode>()
-    .force(
-      'link',
-      d3
-        .forceLink<TableNode, TableLink>()
-        .id((d) => d.id)
-        .distance(180) // more spacing between linked nodes
-        .strength(0.8)
-    ) // tighter pull between connected nodes
-    .force('charge', d3.forceManyBody().strength(-600)) // less aggressive repulsion than -1000
-    .force('center', d3.forceCenter(width / 2, height / 2).strength(0.05)) // keep mild pull to center
-    .force('collision', d3.forceCollide().radius(150)) // increased from 90 to 150 for more spacing
-    .force('x', d3.forceX(width / 2).strength(0.05)) // weaker X pull
-    .force('y', d3.forceY(height / 2).strength(0.05)) // weaker Y pull
-    .velocityDecay(0.6) // more damping = faster stabilization
-    .alphaMin(0.002) // a bit higher: stops earlier
-    .alphaDecay(0.03) // cools down faster
+  return (
+    d3
+      .forceSimulation<TableNode>()
+      .force(
+        'link',
+        d3
+          .forceLink<TableNode, TableLink>()
+          .id((d: TableNode) => d.id)
+          .distance(180) // more spacing between linked nodes
+          .strength(0.8)
+      ) // tighter pull between connected nodes
+      .force('charge', d3.forceManyBody().strength(-600)) // less aggressive repulsion than -1000
+      // d3.forceCenter has no strength() API; keep mild pull via forceX/forceY below
+      .force('center', d3.forceCenter(width / 2, height / 2))
+      .force('collision', d3.forceCollide().radius(150)) // increased from 90 to 150 for more spacing
+      .force('x', d3.forceX(width / 2).strength(0.05)) // weaker X pull
+      .force('y', d3.forceY(height / 2).strength(0.05)) // weaker Y pull
+      .velocityDecay(0.6) // more damping = faster stabilization
+      .alphaMin(0.002) // a bit higher: stops earlier
+      .alphaDecay(0.03)
+  ) // cools down faster
 }
 
 // Add this helper function before determineRelationshipType
@@ -137,56 +138,9 @@ function isJunctionTable(tableName: string): boolean {
   )
 }
 
-// Update the determineRelationshipType function to correctly handle relationships
-function determineRelationshipType(
-  relation: Relationship,
-  isJunctionRelation = false
-): {
-  type: TableLink['relationship']
-  sourceMarker: string
-  targetMarker: string
-} {
-  const sourceTable = props.tables.find((t) => t.name === relation.sourceTable)
-  const targetTable = props.tables.find((t) => t.name === relation.targetTable)
+// determineRelationshipType helper removed (unused)
 
-  // For junction table relationships
-  if (isJunctionRelation) {
-    // When source is the junction table
-    if (sourceTable?.foreignKeys?.length === 2) {
-      return {
-        type: 'many-to-one',
-        sourceMarker: 'junction-mandatory-many', // Use green crow's foot for junction table
-        targetMarker: 'junction-mandatory-one' // Vertical bar on referenced table side
-      }
-    }
-    // When target is the junction table
-    if (targetTable?.foreignKeys?.length === 2) {
-      return {
-        type: 'one-to-many',
-        sourceMarker: 'junction-mandatory-one', // Vertical bar on referenced table side
-        targetMarker: 'junction-mandatory-many' // Crow's foot on junction table side
-      }
-    }
-  }
-
-  // For regular foreign key relationships
-  const sourceColumn = sourceTable?.columns.find((c) => c.name === relation.sourceColumn)
-  const targetColumn = targetTable?.columns.find((c) => c.name === relation.targetColumn)
-
-  const isSourceNullable = sourceColumn?.nullable || false
-  const isTargetNullable = targetColumn?.nullable || false
-
-  // Default to many-to-one for foreign key relationships
-  // Source table (with foreign key) has the crow's foot (many), Target table (referenced) has the vertical bar (one)
-  return {
-    type: 'many-to-one',
-    sourceMarker: isSourceNullable ? 'optional-many' : 'mandatory-many', // Crow's foot on FK side
-    targetMarker: isTargetNullable ? 'optional-one' : 'mandatory-one' // Vertical bar on PK side
-  }
-}
-
-// Add this helper function before the createVisualization function
-function formatColumnType(column: any): string {
+function formatColumnType(column: { type?: string }): string {
   // The schema store already formats types with size info, so we just need to apply shortcuts
   let type = column.type || ''
 
@@ -266,7 +220,7 @@ function createVisualization() {
     .data(['offsetBlur', 'SourceGraphic'])
     .enter()
     .append('feMergeNode')
-    .attr('in', (d) => d)
+    .attr('in', (d: string) => d)
 
   // Create marker definitions for regular relationships (teal blue)
   // Mandatory One (|) - Teal blue version
@@ -447,12 +401,6 @@ function createVisualization() {
       }
     } else if (!isJunctionTable(relation.targetTable)) {
       // Regular relationship (not involving junction tables)
-      const sourceTable = props.tables.find((t) => t.name === relation.sourceTable)
-      const targetTable = props.tables.find((t) => t.name === relation.targetTable)
-
-      const sourceColumn = sourceTable?.columns.find((c) => c.name === relation.sourceColumn)
-      const isSourceNullable = sourceColumn?.nullable || false
-
       // For regular FK relationships, we use a single line with appropriate markers
       links.push({
         source: relation.sourceTable, // Table with FK (source)
@@ -583,27 +531,26 @@ function createVisualization() {
   linkGroup
     .append('line')
     .attr('class', 'relationship-line')
-    .attr('stroke', (d) => {
-      if ((d as any).isViewDependency) return BRAND_COLORS.gray // Gray for view dependencies
-      if ((d as any).isJunctionRelation) return BRAND_COLORS.secondary // Orange for junction relations
+    .attr('stroke', (d: TableLink) => {
+      if (d.isViewDependency) return BRAND_COLORS.gray // Gray for view dependencies
+      if (d.isJunctionRelation) return BRAND_COLORS.secondary // Orange for junction relations
       return BRAND_COLORS.primary // Teal blue for regular relations
     })
     .attr('stroke-width', '1.5')
-    .attr('stroke-dasharray', (d) => ((d as any).isViewDependency ? '3,3' : 'none'))
+    .attr('stroke-dasharray', (d: TableLink) => (d.isViewDependency ? '3,3' : 'none'))
     // Add marker only at the appropriate end - use empty string to remove marker
-    .attr('marker-start', (d) => '') // Remove the start marker
-    .attr('marker-end', (d) => `url(#${(d as any).targetMarker})`) // Keep only the end marker
+    .attr('marker-start', '') // Remove the start marker
+    .attr('marker-end', (d: TableLink) => (d.targetMarker ? `url(#${d.targetMarker})` : '')) // Keep only the end marker
     // Add hover information to relationship lines
-    .on('mouseenter', function (event, d) {
-      const line = d3.select(this)
+    .on('mouseenter', function (event: MouseEvent, d: TableLink) {
       const sourceTable = typeof d.source === 'string' ? d.source : d.source.id
       const targetTable = typeof d.target === 'string' ? d.target : d.target.id
 
       // Find the relationship info if available
       let relationshipType = ''
-      if ((d as any).isJunctionRelation) {
+      if (d.isJunctionRelation) {
         relationshipType = 'Junction table relationship'
-      } else if ((d as any).isViewDependency) {
+      } else if (d.isViewDependency) {
         relationshipType = 'View dependency'
       } else {
         relationshipType = 'Foreign key relationship'
@@ -637,7 +584,6 @@ function createVisualization() {
 
       // Get source and target tables for more details
       const sourceTableObj = props.tables.find((t) => t.name === sourceTable)
-      const targetTableObj = props.tables.find((t) => t.name === targetTable)
 
       // If we have foreign key info, add it
       if (sourceTableObj?.foreignKeys) {
@@ -676,7 +622,7 @@ function createVisualization() {
     .selectAll<SVGGElement, TableNode>('g')
     .data(nodes)
     .join('g')
-    .attr('class', (d) => (d.isView ? 'view-node' : 'table-node'))
+    .attr('class', (d: TableNode) => (d.isView ? 'view-node' : 'table-node'))
     .call(
       d3
         .drag<SVGGElement, TableNode>()
@@ -684,7 +630,7 @@ function createVisualization() {
         .on('drag', dragged)
         .on('end', dragended)
     )
-    .on('click', (event, d) => {
+    .on('click', (event: MouseEvent, d: TableNode) => {
       event.stopPropagation()
       selectedTable.value = selectedTable.value === d.name ? null : d.name
       updateHighlighting()
@@ -695,7 +641,7 @@ function createVisualization() {
     .append('rect')
     .attr('class', 'table-background')
     .attr('width', 200) // Reverted back to 200
-    .attr('height', (d) => {
+    .attr('height', (d: TableNode) => {
       const columnCount =
         props.tables.find((t) => t.name === d.name)?.columns.length ||
         props.views.find((v) => v.name === d.name)?.columns.length ||
@@ -704,10 +650,10 @@ function createVisualization() {
     })
     .attr('rx', 8)
     .attr('ry', 8)
-    .attr('fill', (d) => (d.isView ? '#f8fbfe' : '#f8fafc')) // Lighter blue tint for views instead of pattern
-    .attr('stroke', (d) => (d.isView ? '#94a3b8' : '#cbd5e1'))
-    .attr('stroke-width', (d) => (d.isView ? 1.5 : 1))
-    .attr('stroke-dasharray', (d) => (d.isView ? '5,2' : 'none'))
+    .attr('fill', (d: TableNode) => (d.isView ? '#f8fbfe' : '#f8fafc')) // Lighter blue tint for views instead of pattern
+    .attr('stroke', (d: TableNode) => (d.isView ? '#94a3b8' : '#cbd5e1'))
+    .attr('stroke-width', (d: TableNode) => (d.isView ? 1.5 : 1))
+    .attr('stroke-dasharray', (d: TableNode) => (d.isView ? '5,2' : 'none'))
     .attr('filter', 'url(#drop-shadow)')
 
   // Add table header
@@ -720,16 +666,16 @@ function createVisualization() {
     .attr('height', 30)
     .attr('rx', 8)
     .attr('ry', 8)
-    .attr('fill', (d) => (d.isView ? '#cbd5e1' : '#e2e8f0'))
-    .attr('stroke', (d) => (d.isView ? '#94a3b8' : '#cbd5e1'))
+    .attr('fill', (d: TableNode) => (d.isView ? '#cbd5e1' : '#e2e8f0'))
+    .attr('stroke', (d: TableNode) => (d.isView ? '#94a3b8' : '#cbd5e1'))
     .attr('stroke-width', 1.5)
-    .attr('stroke-dasharray', (d) => (d.isView ? '5,2' : 'none'))
+    .attr('stroke-dasharray', (d: TableNode) => (d.isView ? '5,2' : 'none'))
     // Clip bottom corners to make them square
     .attr('clip-path', 'path("M0,30 L0,8 Q0,0 8,0 L192,0 Q200,0 200,8 L200,30 Z")') // Reverted back to 200 width
 
   // Add small view icon for views in the header
   header
-    .filter((d) => d.isView)
+    .filter((d: TableNode) => d.isView)
     .append('foreignObject')
     .attr('width', 20)
     .attr('height', 20)
@@ -748,7 +694,7 @@ function createVisualization() {
     .append('rect')
     .attr('class', 'table-body')
     .attr('width', 200) // Reverted back to 200
-    .attr('height', (d) => {
+    .attr('height', (d: TableNode) => {
       const columnCount =
         props.tables.find((t) => t.name === d.name)?.columns.length ||
         props.views.find((v) => v.name === d.name)?.columns.length ||
@@ -756,14 +702,14 @@ function createVisualization() {
       return columnCount * 20 // rows
     })
     .attr('y', 30) // Below header
-    .attr('fill', (d) => (d.isView ? '#f8fafc' : '#f8fafc'))
-    .attr('stroke', (d) => (d.isView ? '#94a3b8' : '#e2e8f0'))
-    .attr('stroke-width', (d) => (d.isView ? 0.8 : 0.5))
-    .attr('stroke-dasharray', (d) => (d.isView ? '5,2' : 'none'))
+    .attr('fill', (d: TableNode) => (d.isView ? '#f8fafc' : '#f8fafc'))
+    .attr('stroke', (d: TableNode) => (d.isView ? '#94a3b8' : '#e2e8f0'))
+    .attr('stroke-width', (d: TableNode) => (d.isView ? 0.8 : 0.5))
+    .attr('stroke-dasharray', (d: TableNode) => (d.isView ? '5,2' : 'none'))
 
   header
     .append('text')
-    .text((d) => {
+    .text((d: TableNode) => {
       // Show schema-qualified name for non-public schemas
       if (d.schema && d.schema !== 'public' && d.schema !== '') {
         return `${d.schema}.${d.name}`
@@ -773,8 +719,8 @@ function createVisualization() {
     .attr('x', 10)
     .attr('y', 20)
     .attr('fill', '#1e293b')
-    .attr('font-weight', (d) => (d.isView ? 400 : 600))
-    .attr('font-style', (d) => (d.isView ? 'italic' : 'normal'))
+    .attr('font-weight', (d: TableNode) => (d.isView ? 400 : 600))
+    .attr('font-style', (d: TableNode) => (d.isView ? 'italic' : 'normal'))
     .style('font-size', '13px')
 
   // Add columns with improved styling
@@ -783,7 +729,7 @@ function createVisualization() {
     .attr('class', 'column-group')
     .attr('transform', 'translate(0, 30)')
 
-  columnGroup.each(function (d) {
+  columnGroup.each(function (this: SVGGElement, d: TableNode) {
     const group = d3.select(this)
     const table =
       props.tables.find((t) => t.name === d.name) || props.views.find((v) => v.name === d.name)
@@ -857,7 +803,7 @@ function createVisualization() {
       // Add hover functionality for fields
       if (isPK || isFK) {
         colField
-          .on('mouseenter', function (event) {
+          .on('mouseenter', function (event: MouseEvent) {
             // Build relationship information
             let relationships: string[] = []
 
@@ -938,7 +884,7 @@ function createVisualization() {
               )
 
             // Add relationship info
-            relationships.forEach((rel, i) => {
+            relationships.forEach((rel) => {
               text.append('tspan').attr('x', 8).attr('dy', 18).text(rel)
             })
 
@@ -1015,7 +961,7 @@ function createVisualization() {
   // Initialize simulation
   simulation = initializeSimulation(width, height).nodes(nodes)
 
-  const linkForce = simulation
+  simulation
     .force<d3.ForceLink<TableNode, TableLink>>('link')!
     .links(links)
     .distance(linkDistance.value)
@@ -1024,7 +970,7 @@ function createVisualization() {
   simulation.on('tick', () => {
     linkGroup
       .selectAll<SVGLineElement, TableLink>('line')
-      .attr('x1', (d) => {
+      .attr('x1', (d: TableLink) => {
         const source = d.source as TableNode
         const target = d.target as TableNode
         const [offsetX] = calculateConnectionPoint(
@@ -1038,7 +984,7 @@ function createVisualization() {
         )
         return (source.x || 0) + offsetX
       })
-      .attr('y1', (d) => {
+      .attr('y1', (d: TableLink) => {
         const source = d.source as TableNode
         const target = d.target as TableNode
         const [, offsetY] = calculateConnectionPoint(
@@ -1052,7 +998,7 @@ function createVisualization() {
         )
         return (source.y || 0) + offsetY
       })
-      .attr('x2', (d) => {
+      .attr('x2', (d: TableLink) => {
         const source = d.source as TableNode
         const target = d.target as TableNode
         const [offsetX] = calculateConnectionPoint(
@@ -1066,7 +1012,7 @@ function createVisualization() {
         )
         return (target.x || 0) + offsetX
       })
-      .attr('y2', (d) => {
+      .attr('y2', (d: TableLink) => {
         const source = d.source as TableNode
         const target = d.target as TableNode
         const [, offsetY] = calculateConnectionPoint(
@@ -1081,11 +1027,11 @@ function createVisualization() {
         return (target.y || 0) + offsetY
       })
       // Re-apply marker attributes on each tick to ensure they're visible and properly positioned
-      .attr('marker-start', (d) => '') // No marker on source
-      .attr('marker-end', (d) => `url(#${(d as any).targetMarker})`) // Only end marker
+      .attr('marker-start', '') // No marker on source
+      .attr('marker-end', (d: TableLink) => (d.targetMarker ? `url(#${d.targetMarker})` : '')) // Only end marker
 
     // Update node positions
-    node.attr('transform', (d) => {
+    node.attr('transform', (d: TableNode) => {
       const x = (d.x || 0) - 100 // Center horizontally (200/2)
       const y = (d.y || 0) - getTableHeight(d) / 2 // Center vertically
       return `translate(${x},${y})`
@@ -1103,18 +1049,18 @@ function createVisualization() {
 }
 
 // Drag handlers
-function dragstarted(event: d3.D3DragEvent<any, TableNode, any>) {
+function dragstarted(event: d3.D3DragEvent<SVGGElement, TableNode, TableNode>) {
   if (!event.active) simulation.alphaTarget(0.1).restart() // Reduce alpha target
   event.subject.fx = event.subject.x
   event.subject.fy = event.subject.y
 }
 
-function dragged(event: d3.D3DragEvent<any, TableNode, any>) {
+function dragged(event: d3.D3DragEvent<SVGGElement, TableNode, TableNode>) {
   event.subject.fx = event.x
   event.subject.fy = event.y
 }
 
-function dragended(event: d3.D3DragEvent<any, TableNode, any>) {
+function dragended(event: d3.D3DragEvent<SVGGElement, TableNode, TableNode>) {
   if (!event.active) simulation.alphaTarget(0)
   // Fix the node position where it was dropped
   event.subject.fx = event.x
@@ -1146,7 +1092,7 @@ onBeforeUnmount(() => {
 
 // Watch for data changes
 watch(
-  [() => props.tables, () => props.relations],
+  [() => props.tables, () => props.relations, () => props.views],
   () => {
     createVisualization()
   },
@@ -1157,17 +1103,17 @@ watch(
 function updateForces() {
   if (!simulation) return
 
-  const linkForce = simulation.force<d3.ForceLink<TableNode, TableLink>>('link')
+  const linkForce = simulation.force('link') as d3.ForceLink<TableNode, TableLink> | undefined
   if (linkForce) {
     linkForce.distance(linkDistance.value)
   }
 
-  const chargeForce = simulation.force<d3.ForceManyBody<TableNode>>('charge')
+  const chargeForce = simulation.force('charge') as d3.ForceManyBody<TableNode> | undefined
   if (chargeForce) {
     chargeForce.strength(chargeStrength.value)
   }
 
-  const collisionForce = simulation.force<d3.ForceCollide<TableNode>>('collision')
+  const collisionForce = simulation.force('collision') as d3.ForceCollide<TableNode> | undefined
   if (collisionForce) {
     collisionForce.radius(collisionRadius.value)
   }
@@ -1188,7 +1134,7 @@ function initializeZoom() {
   zoom = d3
     .zoom<SVGSVGElement, unknown>()
     .scaleExtent([minZoom, maxZoom])
-    .on('zoom', (event) => {
+    .on('zoom', (event: d3.D3ZoomEvent<SVGSVGElement, unknown>) => {
       currentZoom.value = event.transform.k
       svg.select('g.zoom-group').attr('transform', event.transform.toString())
     })
@@ -1280,7 +1226,7 @@ function updateHighlighting() {
 
     // Update table header highlighting
     element
-      .select('rect.table-header')
+      .select('.table-header rect')
       .transition()
       .duration(300)
       .attr(
@@ -1719,39 +1665,32 @@ function exportAsPDF() {
 
     <!-- Controls Panel with Tailwind classes -->
     <div
-      class="absolute top-4 right-4 p-3 min-w-[220px] bg-white rounded-lg shadow-lg border border-gray-200 space-y-2.5 z-10"
-    >
+      class="absolute top-4 right-4 p-3 min-w-[220px] bg-white rounded-lg shadow-lg border border-gray-200 space-y-2.5 z-10">
       <!-- Zoom Controls with Reset Button and Export Button -->
       <div class="flex items-center justify-between mb-1">
         <span class="text-xs font-medium text-gray-700">Zoom</span>
         <div class="flex items-center gap-1">
           <button
-            @click="handleZoom('out')"
             class="p-1 hover:bg-gray-100 rounded text-gray-600 hover:text-gray-900 transition-colors focus:outline-none focus:ring-1 focus:ring-cyan-500 focus:ring-offset-1"
-          >
+            @click="handleZoom('out')">
             <MinusIcon class="w-3.5 h-3.5" />
           </button>
           <span class="text-xs text-gray-600 min-w-[40px] text-center tabular-nums">
             {{ Math.round(currentZoom * 100) }}%
           </span>
           <button
-            @click="handleZoom('in')"
             class="p-1 hover:bg-gray-100 rounded text-gray-600 hover:text-gray-900 transition-colors focus:outline-none focus:ring-1 focus:ring-cyan-500 focus:ring-offset-1"
-          >
+            @click="handleZoom('in')">
             <PlusIcon class="w-3.5 h-3.5" />
           </button>
           <button
-            @click="resetView"
             class="p-1 ml-1 hover:bg-gray-100 rounded text-gray-600 hover:text-gray-900 transition-colors focus:outline-none focus:ring-1 focus:ring-cyan-500 focus:ring-offset-1"
-            title="Reset view"
-          >
+            title="Reset view" @click="resetView">
             <ArrowPathIcon class="w-3.5 h-3.5" />
           </button>
           <button
-            @click="exportOptions = !exportOptions"
             class="p-1 ml-1 hover:bg-gray-100 rounded text-gray-600 hover:text-gray-900 transition-colors focus:outline-none focus:ring-1 focus:ring-cyan-500 focus:ring-offset-1"
-            title="Export diagram"
-          >
+            title="Export diagram" @click="exportOptions = !exportOptions">
             <ArrowDownTrayIcon class="w-3.5 h-3.5" />
           </button>
         </div>
@@ -1764,38 +1703,24 @@ function exportAsPDF() {
         </div>
         <div class="flex gap-2 mb-2 flex-wrap">
           <label class="inline-flex items-center cursor-pointer">
-            <input
-              type="radio"
-              value="svg"
-              v-model="exportType"
-              class="form-radio h-3.5 w-3.5 text-gray-500 focus:ring-gray-400"
-            />
+            <input v-model="exportType" type="radio" value="svg"
+              class="form-radio h-3.5 w-3.5 text-gray-500 focus:ring-gray-400" />
             <span class="ml-1.5 text-xs text-gray-700">SVG</span>
           </label>
           <label class="inline-flex items-center cursor-pointer">
-            <input
-              type="radio"
-              value="png"
-              v-model="exportType"
-              class="form-radio h-3.5 w-3.5 text-gray-500 focus:ring-gray-400"
-            />
+            <input v-model="exportType" type="radio" value="png"
+              class="form-radio h-3.5 w-3.5 text-gray-500 focus:ring-gray-400" />
             <span class="ml-1.5 text-xs text-gray-700">PNG</span>
           </label>
           <label class="inline-flex items-center cursor-pointer">
-            <input
-              type="radio"
-              value="pdf"
-              v-model="exportType"
-              class="form-radio h-3.5 w-3.5 text-gray-500 focus:ring-gray-400"
-            />
+            <input v-model="exportType" type="radio" value="pdf"
+              class="form-radio h-3.5 w-3.5 text-gray-500 focus:ring-gray-400" />
             <span class="ml-1.5 text-xs text-gray-700">PDF</span>
           </label>
         </div>
         <button
-          @click="saveDiagram"
           class="w-full py-1 bg-gray-500 hover:bg-gray-600 text-white text-xs font-medium rounded focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1 transition-colors"
-          :disabled="exportProgress"
-        >
+          :disabled="exportProgress" @click="saveDiagram">
           <span v-if="exportProgress">Exporting...</span>
           <span v-else>Download {{ exportType.toUpperCase() }}</span>
         </button>
@@ -1808,15 +1733,9 @@ function exportAsPDF() {
             <label class="text-xs font-medium text-gray-700">Link Distance</label>
             <span class="text-xs text-gray-500 tabular-nums">{{ linkDistance }}px</span>
           </div>
-          <input
-            type="range"
-            v-model="linkDistance"
-            min="100"
-            max="500"
-            step="20"
+          <input v-model="linkDistance" type="range" min="100" max="500" step="20"
             class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer slider-gray"
-            @input="updateForces"
-          />
+            @input="updateForces" />
         </div>
 
         <div>
@@ -1824,15 +1743,9 @@ function exportAsPDF() {
             <label class="text-xs font-medium text-gray-700">Charge Strength</label>
             <span class="text-xs text-gray-500 tabular-nums">{{ chargeStrength }}</span>
           </div>
-          <input
-            type="range"
-            v-model="chargeStrength"
-            min="-3000"
-            max="-200"
-            step="100"
+          <input v-model="chargeStrength" type="range" min="-3000" max="-200" step="100"
             class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer slider-gray"
-            @input="updateForces"
-          />
+            @input="updateForces" />
         </div>
 
         <div>
@@ -1840,23 +1753,15 @@ function exportAsPDF() {
             <label class="text-xs font-medium text-gray-700">Collision Radius</label>
             <span class="text-xs text-gray-500 tabular-nums">{{ collisionRadius }}px</span>
           </div>
-          <input
-            type="range"
-            v-model="collisionRadius"
-            min="60"
-            max="200"
-            step="10"
+          <input v-model="collisionRadius" type="range" min="60" max="200" step="10"
             class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer slider-gray"
-            @input="updateForces"
-          />
+            @input="updateForces" />
         </div>
       </div>
     </div>
 
     <!-- Legend with Tailwind classes -->
-    <div
-      class="absolute top-4 left-4 p-3 bg-white bg-opacity-95 rounded-lg shadow-md border border-gray-200 z-10"
-    >
+    <div class="absolute top-4 left-4 p-3 bg-white bg-opacity-95 rounded-lg shadow-md border border-gray-200 z-10">
       <h4 class="text-xs font-semibold text-gray-700 mb-1.5">Legend</h4>
       <div class="space-y-1.5">
         <div class="flex items-center">

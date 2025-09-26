@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { useRoute } from 'vue-router'
 import {
   ArrowPathIcon,
   ChevronLeftIcon,
@@ -11,10 +10,13 @@ import {
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/vue'
 import { useSchemaStore } from '@/stores/schema'
 import { useConnectionsStore } from '@/stores/connections'
-import { type DatabaseMetadata, type SQLTableMeta, type SQLViewMeta } from '@/types/metadata'
+import { type DatabaseMetadata } from '@/types/metadata'
 import connections from '@/api/connections'
+// @ts-ignore Vue SFC default export is provided by shims
 import DatabaseStructureTree from '@/components/database/DatabaseStructureTree.vue'
+// @ts-ignore Vue SFC default export is provided by shims
 import DatabaseObjectContainer from '@/components/database/DatabaseObjectContainer.vue'
+// @ts-ignore Vue SFC default export is provided by shims
 import DiagramView from '@/components/database/DiagramView.vue'
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
 
@@ -55,17 +57,21 @@ const selectedObject = computed(() => {
     : metadata.value.views[selectedObjectName.value]
 })
 
-const logoSrc = computed(() => {
-  const dbType = connectionsStore.dbTypes.find((f) => f.type === connection.value?.type)
-  return dbType ? dbType.logo : ''
-})
+// logo is resolved in parent view; no local computation needed
 
 async function loadMetadata(forceRefresh = false) {
   isLoading.value = true
   error.value = undefined
 
   try {
-    metadata.value = await connections.getMetadata(connectionId, forceRefresh)
+    if (!props.database) {
+      throw new Error('No database selected')
+    }
+    // Load hierarchical metadata for selected database
+    metadata.value = await connections.getMetadata(connectionId, props.database, forceRefresh)
+    // Keep schema store in sync for Diagram tab
+    schemaStore.setConnectionId(connectionId)
+    schemaStore.setDatabaseName(props.database)
     await schemaStore.fetchSchema(forceRefresh)
 
     // Select the first table by default if none is selected
@@ -108,22 +114,26 @@ onMounted(async () => {
           <div class="flex items-center gap-4">
             <!-- Back Button -->
             <button
-              @click="emit('back-to-databases')"
               class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
+              @click="emit('back-to-databases')"
             >
               <ChevronLeftIcon class="h-4 w-4" />
               Back to Databases
             </button>
-            
             <div v-if="connection" class="flex items-center gap-4 text-sm text-gray-500">
               <div class="flex items-center gap-2">
                 <span class="font-medium text-gray-700"
                   >{{ connection.host }}:{{ connection.port }}</span
                 >
                 <span class="text-gray-400">•</span>
-                <span class="font-medium text-gray-700">{{ props.database || connection.database }}</span>
+                <span class="font-medium text-gray-700">
+                  {{ props.database || connection.database }}
+                </span>
               </div>
-              <CloudProviderBadge :cloud-provider="connection.cloud_provider" :db-type="connection.type" />
+              <CloudProviderBadge
+                :cloud-provider="connection.cloud_provider"
+                :db-type="connection.type"
+              />
             </div>
           </div>
         </div>
@@ -238,6 +248,7 @@ onMounted(async () => {
                       :is-view="selectedObjectType === 'view'"
                       :connection-id="connectionId"
                       :connection-type="connectionType"
+                      :database="props.database || connection?.database || ''"
                       @refresh-metadata="loadMetadata(true)"
                     />
                   </div>
