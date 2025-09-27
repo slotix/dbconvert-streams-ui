@@ -56,11 +56,13 @@ const currentConnection = computed(() =>
   connectionsStore.connections.find((conn) => conn.id === currentConnectionId.value)
 )
 
-// Get connection details for the current connection
+// Get connection details for the current connection (no fallbacks)
 const currentConnectionDetails = computed(() => {
   const conn = currentConnection.value
   if (!conn) return null
-  const dbType = connectionsStore.dbTypes.find((f) => f.type === conn.type)
+  const dbType = connectionsStore.dbTypes.find(
+    (f) => f.type.toLowerCase() === String(conn.type || '').toLowerCase()
+  )
   return {
     ...conn,
     logo: dbType?.logo || ''
@@ -324,6 +326,9 @@ watch(currentConnectionId, (newId) => {
             <div class="mb-4">
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2 text-sm text-gray-500">
+                  <!-- DB type icon at the very beginning -->
+                  <img v-if="currentConnectionDetails?.logo" :src="currentConnectionDetails.logo"
+                    :alt="currentConnectionDetails?.type || 'db'" class="h-4 w-4 rounded-sm" />
                   <span v-if="displayHostPort" class="font-medium text-gray-700">
                     {{ displayHostPort }}
                   </span>
