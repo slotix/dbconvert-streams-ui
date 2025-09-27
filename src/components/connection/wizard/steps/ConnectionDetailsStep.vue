@@ -1,7 +1,10 @@
 <template>
   <div class="space-y-6">
     <!-- Connection Type Display -->
-    <div v-if="connectionType && !hideTypeDisplay" class="flex items-center p-3 bg-gray-50 rounded-lg">
+    <div
+      v-if="connectionType && !hideTypeDisplay"
+      class="flex items-center p-3 bg-gray-50 rounded-lg"
+    >
       <img
         :src="getDBTypeLogo(connectionType)"
         :alt="connectionType + ' logo'"
@@ -40,12 +43,11 @@ const emit = defineEmits<{
   'update:can-proceed': [canProceed: boolean]
 }>()
 
-
 // Check if we have minimum required connection details
 const canProceed = computed(() => {
   const connection = connectionsStore.currentConnection
   if (!connection) return false
-  
+
   // For Files connections, only require name and folder path (case-insensitive)
   if (props.connectionType?.toLowerCase() === 'files') {
     return !!(
@@ -53,13 +55,15 @@ const canProceed = computed(() => {
       connection.path?.trim() // path field contains the folder path for files
     )
   }
-  
+
   // Basic validation for database connections - check if required fields are present
   return !!(
-    connection.name?.trim() &&
-    connection.host?.trim() &&
-    connection.port &&
-    connection.username?.trim()
+    (
+      connection.name?.trim() &&
+      connection.host?.trim() &&
+      connection.port &&
+      connection.username?.trim()
+    )
     // Note: password can be empty for some configurations
   )
 })
@@ -72,7 +76,7 @@ async function updatePublicIp() {
   try {
     const connection = connectionsStore.currentConnection
     const host = connection?.host
-    
+
     // If connecting to localhost/local IP, show local IP
     if (host && isLocalIp(host)) {
       publicIp.value = '127.0.0.1'
@@ -104,11 +108,7 @@ watch(
 // Only show the access notice when we have connection details filled out (not for Files)
 const showAccessNotice = computed(() => {
   const connection = connectionsStore.currentConnection
-  return !!(
-    props.connectionType?.toLowerCase() !== 'files' &&
-    connection?.host && 
-    connection?.port
-  )
+  return !!(props.connectionType?.toLowerCase() !== 'files' && connection?.host && connection?.port)
 })
 
 // Watch for changes and emit can-proceed updates
@@ -117,7 +117,7 @@ watchEffect(() => {
 })
 
 function getDBTypeLogo(type: string): string {
-  const dbType = connectionsStore.dbTypes.find(db => db.type === type)
+  const dbType = connectionsStore.dbTypes.find((db) => db.type === type)
   return dbType?.logo || '/images/db-logos/default.svg'
 }
 </script>

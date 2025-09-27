@@ -23,7 +23,8 @@ describe('dataUtils', () => {
 
     it('should decode base64 encoded descriptive text like in the film database', () => {
       // Sample base64 encoded text similar to what we see in the database
-      const filmDescription = 'A Epic Drama of a Feminist And a Mad Scientist who must Battle a Teacher in The Canadian Rockies'
+      const filmDescription =
+        'A Epic Drama of a Feminist And a Mad Scientist who must Battle a Teacher in The Canadian Rockies'
       const base64Film = btoa(filmDescription)
       expect(formatTableValue(base64Film)).toBe(filmDescription)
     })
@@ -70,8 +71,9 @@ describe('dataUtils', () => {
 
     it('should not decode base64 that results in binary data', () => {
       // This would result in binary data, so should not be decoded
-      const binaryBase64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=='
+      const binaryBase64 =
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=='
       expect(formatTableValue(binaryBase64)).toBe(binaryBase64)
     })
   })
-}) 
+})

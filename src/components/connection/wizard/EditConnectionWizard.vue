@@ -1,6 +1,5 @@
 <template>
   <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-
     <!-- Connection Details -->
     <div class="space-y-6">
       <ConnectionDetailsStep
@@ -8,7 +7,7 @@
         :hideTypeDisplay="true"
         @update:can-proceed="updateCanProceed"
       />
-      
+
       <!-- Action Buttons -->
       <div class="flex justify-between">
         <button
@@ -26,9 +25,25 @@
             class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <span v-if="isTestingConnection" class="flex items-center">
-              <svg class="animate-spin -ml-1 mr-3 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              <svg
+                class="animate-spin -ml-1 mr-3 h-4 w-4"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  class="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  stroke-width="4"
+                ></circle>
+                <path
+                  class="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
               </svg>
               Testing...
             </span>
@@ -41,9 +56,25 @@
             class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent text-sm font-medium rounded-md text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <span v-if="isUpdatingConnection" class="flex items-center">
-              <svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              <svg
+                class="animate-spin -ml-1 mr-3 h-4 w-4 text-white"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  class="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  stroke-width="4"
+                ></circle>
+                <path
+                  class="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
               </svg>
               Updating...
             </span>
@@ -53,10 +84,17 @@
       </div>
 
       <!-- Test Result (only show error messages) -->
-      <div v-if="testResult && !testResult.success" class="border border-red-200 rounded-lg p-4 bg-red-50">
+      <div
+        v-if="testResult && !testResult.success"
+        class="border border-red-200 rounded-lg p-4 bg-red-50"
+      >
         <div class="flex items-center">
           <svg class="h-5 w-5 text-red-600 mr-3" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+            <path
+              fill-rule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+              clip-rule="evenodd"
+            />
           </svg>
           <div>
             <p class="font-medium text-red-800">Connection Failed</p>
@@ -98,7 +136,7 @@ const isUpdatingConnection = computed(() => connectionsStore.isUpdatingConnectio
 const isTestingConnection = computed(() => connectionsStore.isTestingConnection)
 
 // Get connection ID from props or route params
-const connectionId = computed(() => props.connectionId || route.params.id as string)
+const connectionId = computed(() => props.connectionId || (route.params.id as string))
 
 // Load the connection to edit
 async function loadConnectionForEdit() {
@@ -112,7 +150,7 @@ async function loadConnectionForEdit() {
   try {
     // Try to find connection in existing list first
     let existingConnection = connectionsStore.connectionByID(id)
-    
+
     if (!existingConnection) {
       // If not found, refresh connections and try again
       await connectionsStore.refreshConnections()
@@ -132,7 +170,6 @@ async function loadConnectionForEdit() {
   }
 }
 
-
 // Event handlers
 function updateCanProceed(canProceedValue: boolean) {
   canProceed.value = canProceedValue
@@ -140,7 +177,7 @@ function updateCanProceed(canProceedValue: boolean) {
 
 function getDBTypeLogo(type?: string): string {
   if (!type) return '/images/db-logos/default.svg'
-  const dbType = connectionsStore.dbTypes.find(db => db.type === type)
+  const dbType = connectionsStore.dbTypes.find((db) => db.type === type)
   return dbType?.logo || '/images/db-logos/default.svg'
 }
 
@@ -167,10 +204,10 @@ async function updateConnection() {
     }
 
     await connectionsStore.updateConnection()
-    
+
     commonStore.showNotification('Connection updated successfully', 'success')
     await connectionsStore.refreshConnections()
-    
+
     // Navigate back to connections list
     router.push('/connections')
   } catch (error: any) {

@@ -93,7 +93,7 @@ export default defineComponent({
     CardItem,
     NewCard,
     PlusIcon,
-    Spinner,
+    Spinner
   },
   setup() {
     const connectionsStore = useConnectionsStore()

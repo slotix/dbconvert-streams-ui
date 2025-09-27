@@ -20,9 +20,10 @@
               </h3>
               <div class="mt-2">
                 <p class="text-sm text-gray-500">
-                  {{ isKeyExpired 
-                    ? 'Your API key has expired or is no longer valid. Please enter a new API key to continue.' 
-                    : 'Please enter your API key to continue.' 
+                  {{
+                    isKeyExpired
+                      ? 'Your API key has expired or is no longer valid. Please enter a new API key to continue.'
+                      : 'Please enter your API key to continue.'
                   }}
                   Don't have an account yet?
                   <a

@@ -10,10 +10,7 @@ export interface StreamID {
 }
 
 // Structure strategy options matching the backend - updated with clearer naming
-export type StructureStrategy =
-  | 'create_if_not_exists'
-  | 'fail_if_exists'
-  | 'disabled'
+export type StructureStrategy = 'create_if_not_exists' | 'fail_if_exists' | 'disabled'
 
 // New simplified structure options from swagger.yaml
 export interface StructureOptions {

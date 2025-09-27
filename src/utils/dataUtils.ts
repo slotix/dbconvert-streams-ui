@@ -9,12 +9,12 @@ function isBase64(str: string): boolean {
   if (!str || typeof str !== 'string') {
     return false
   }
-  
+
   // Base64 strings should be at least 4 characters and divisible by 4 (with padding)
   if (str.length < 4) {
     return false
   }
-  
+
   // Allow for base64 strings without padding (common in some APIs)
   if (str.length % 4 !== 0) {
     // Try with padding added
@@ -23,7 +23,7 @@ function isBase64(str: string): boolean {
       return false
     }
   }
-  
+
   // Check if string contains only valid base64 characters
   const base64Regex = /^[A-Za-z0-9+/]*={0,3}$/
   return base64Regex.test(str)
@@ -36,7 +36,7 @@ function tryDecodeBase64(str: string): string {
   if (!str || typeof str !== 'string') {
     return str
   }
-  
+
   try {
     // Only attempt decoding if it looks like base64
     if (isBase64(str)) {
@@ -45,9 +45,9 @@ function tryDecodeBase64(str: string): string {
       while (paddedStr.length % 4 !== 0) {
         paddedStr += '='
       }
-      
+
       const decoded = atob(paddedStr)
-      
+
       // Check if the decoded string contains readable text
       // If it's binary data, it might not be suitable for display
       if (isPrintableText(decoded)) {
@@ -69,13 +69,13 @@ function tryDecodeBase64(str: string): string {
  */
 function isPrintableText(str: string): boolean {
   if (!str) return true
-  
+
   // Count printable characters (space to ~, plus common whitespace)
-  const printableCount = str.split('').filter(char => {
+  const printableCount = str.split('').filter((char) => {
     const code = char.charCodeAt(0)
     return (code >= 32 && code <= 126) || code === 9 || code === 10 || code === 13
   }).length
-  
+
   // If more than 80% of characters are printable, consider it text
   return printableCount / str.length > 0.8
 }
@@ -88,14 +88,14 @@ export function formatTableValue(value: any): string {
   if (value === null) {
     return 'NULL'
   }
-  
+
   if (value === undefined) {
     return ''
   }
-  
+
   // Convert to string if not already
   const stringValue = String(value)
-  
+
   // Debug logging for development mode only
   if (import.meta.env.DEV && stringValue.length > 20 && isBase64(stringValue)) {
     console.log('[DataUtils] Attempting to decode base64:', {
@@ -104,10 +104,10 @@ export function formatTableValue(value: any): string {
       length: stringValue.length
     })
   }
-  
+
   // Try to decode if it looks like base64
   const result = tryDecodeBase64(stringValue)
-  
+
   // Log if decoding was successful (development only)
   if (import.meta.env.DEV && result !== stringValue) {
     console.log('[DataUtils] Successfully decoded base64:', {
@@ -115,7 +115,7 @@ export function formatTableValue(value: any): string {
       decoded: result.substring(0, 100) + (result.length > 100 ? '...' : '')
     })
   }
-  
+
   return result
 }
 
@@ -129,9 +129,12 @@ export function formatTableRow(row: any[]): string[] {
 /**
  * Formats table data for display
  */
-export function formatTableData(data: { columns: string[], rows: any[][] }): { columns: string[], rows: string[][] } {
+export function formatTableData(data: { columns: string[]; rows: any[][] }): {
+  columns: string[]
+  rows: string[][]
+} {
   return {
     columns: data.columns,
     rows: data.rows.map(formatTableRow)
   }
-} 
+}

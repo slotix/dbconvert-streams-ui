@@ -62,7 +62,6 @@ export const useConnectionsStore = defineStore('connections', {
     }
   },
   actions: {
-
     // Removed cache persistence methods - connections are now always fetched fresh from API
     // This ensures UI is always in sync with Consul storage via the API
 
@@ -144,13 +143,13 @@ export const useConnectionsStore = defineStore('connections', {
         this.isTestingConnection = false
       }
     },
-    deleteConnection: debounce(function(this: any, id: string) {
+    deleteConnection: debounce(function (this: any, id: string) {
       return this._deleteConnection(id)
     }, 500),
-    cloneConnection: debounce(function(this: any, id: string) {
+    cloneConnection: debounce(function (this: any, id: string) {
       return this._cloneConnection(id)
     }, 500),
-    testConnection: debounce(function(this: any) {
+    testConnection: debounce(function (this: any) {
       return this._testConnection()
     }, 500),
     resetCurrentConnection() {
@@ -170,12 +169,15 @@ export const useConnectionsStore = defineStore('connections', {
           this.currentConnection.created = response.created
           // Initialize empty databases info - will be loaded later when needed
           this.currentConnection.databasesInfo = []
-          
+
           // Refresh connections to get the latest data and update storage
           try {
             await this.refreshConnections()
           } catch (refreshError) {
-            console.warn('[Store] Failed to refresh connections, but connection was created:', refreshError)
+            console.warn(
+              '[Store] Failed to refresh connections, but connection was created:',
+              refreshError
+            )
             // Don't fail the whole operation if refresh fails
           }
         }
@@ -279,6 +281,5 @@ export const useConnectionsStore = defineStore('connections', {
         this.currentConnection.type = dbType.toLowerCase()
       }
     }
-
   }
 })

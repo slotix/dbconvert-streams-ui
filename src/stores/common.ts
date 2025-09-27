@@ -9,7 +9,6 @@ import { sseLogsService } from '@/api/sseLogsService'
 import { useLocalStorage } from '@vueuse/core'
 import { ref } from 'vue'
 
-
 export interface Step {
   id: number
   name: string
@@ -22,7 +21,6 @@ export interface ModeOption {
   id: 'cdc' | 'convert'
   title: string
 }
-
 
 interface ErrorState {
   message: string
@@ -174,28 +172,36 @@ export const useCommonStore = defineStore('common', {
     },
     async checkSentryHealth() {
       // Use shorter retry delays for faster initialization
-      await this.retryOperation(async () => {
-        try {
-          await api.sentryHealthCheck()
-          this.sentryHealthy = true
-        } catch (error) {
-          this.sentryHealthy = false
-          throw error
-        }
-      }, 2, 1000) // 2 retries with 1 second delay instead of 3 retries with 5 second delay
+      await this.retryOperation(
+        async () => {
+          try {
+            await api.sentryHealthCheck()
+            this.sentryHealthy = true
+          } catch (error) {
+            this.sentryHealthy = false
+            throw error
+          }
+        },
+        2,
+        1000
+      ) // 2 retries with 1 second delay instead of 3 retries with 5 second delay
     },
 
     async checkAPIHealth() {
       // Use shorter retry delays for faster initialization
-      await this.retryOperation(async () => {
-        try {
-          await api.backendHealthCheck()
-          this.apiHealthy = true
-        } catch (error) {
-          this.apiHealthy = false
-          throw error
-        }
-      }, 2, 1000) // 2 retries with 1 second delay instead of 3 retries with 5 second delay
+      await this.retryOperation(
+        async () => {
+          try {
+            await api.backendHealthCheck()
+            this.apiHealthy = true
+          } catch (error) {
+            this.apiHealthy = false
+            throw error
+          }
+        },
+        2,
+        1000
+      ) // 2 retries with 1 second delay instead of 3 retries with 5 second delay
     },
 
     async getApiKey(): Promise<string | null> {
@@ -226,9 +232,12 @@ export const useCommonStore = defineStore('common', {
               this.setBackendConnected(false)
               return null
             }
-            
+
             // For network errors, keep the API key but mark backend as disconnected
-            console.log('Network error during API key validation, keeping stored key:', error.message)
+            console.log(
+              'Network error during API key validation, keeping stored key:',
+              error.message
+            )
             this.apiKey = storedApiKey
             // Configure the API client with the stored key even if validation failed due to network issues
             configureApiClient(storedApiKey)
@@ -237,7 +246,7 @@ export const useCommonStore = defineStore('common', {
           }
         }
 
-        // // Development mode: if we're in development and no API key is stored, 
+        // // Development mode: if we're in development and no API key is stored,
         // // try using a dummy key to test automatic connection
         // if (import.meta.env.DEV) {
         //   console.log('Development mode: Using dummy API key for testing')
@@ -292,7 +301,7 @@ export const useCommonStore = defineStore('common', {
         this.userData = response
       } catch (error: any) {
         const toast = useToast()
-        
+
         // Only clear API key for authentication errors (401)
         if (error.response?.status === 401 || error.message === 'Invalid API key') {
           console.log('API key is invalid, clearing from storage')
@@ -388,16 +397,16 @@ export const useCommonStore = defineStore('common', {
               // await this.loadUserConfigs()
               this.consumeLogsFromSSE()
               this.setBackendConnected(true)
-              
+
               // Reset invalidated flag on successful initialization
               this.apiKeyInvalidated = false
-              
+
               toast.success('App initialized successfully')
               this.clearError()
-              
+
               // Start real-time health monitoring
               this.startHealthMonitoring()
-              
+
               return 'success'
             }
           } catch (error: any) {
@@ -419,10 +428,10 @@ export const useCommonStore = defineStore('common', {
             this.setBackendConnected(true)
             toast.success('App initialized successfully (limited features)')
             this.clearError()
-            
+
             // Start real-time health monitoring
             this.startHealthMonitoring()
-            
+
             return 'success'
           } catch (error: any) {
             console.log('Failed to initialize with API only:', error)
@@ -433,18 +442,18 @@ export const useCommonStore = defineStore('common', {
           console.log('Backend unavailable, working in offline mode')
           this.setBackendConnected(false) // Add this line to properly set offline state
           toast.warning('Unable to connect to server. Working with cached data.')
-          
+
           // Start monitoring to detect when backend comes back online
           this.startHealthMonitoring()
-          
+
           return 'success'
         }
-        
+
         // Fallback return - should not reach here normally
         return 'failed'
       } catch (error: any) {
         console.error('App initialization failed:', error)
-        
+
         // Clear API key only for authentication errors
         if (error.response?.status === 401 || error.message === 'Invalid API key') {
           await this.clearApiKey()
@@ -452,7 +461,7 @@ export const useCommonStore = defineStore('common', {
         } else {
           toast.error('Failed to initialize app. Please try again.')
         }
-        
+
         this.setBackendConnected(false)
         return 'failed'
       }
@@ -531,11 +540,8 @@ export const useCommonStore = defineStore('common', {
     async performHealthCheck() {
       try {
         // Quick health check without retries for monitoring - check both services
-        await Promise.all([
-          api.backendHealthCheck(),
-          api.sentryHealthCheck()
-        ])
-        
+        await Promise.all([api.backendHealthCheck(), api.sentryHealthCheck()])
+
         // If we get here, both backend and sentry are healthy
         if (!this.isBackendConnected) {
           console.log('🔄 Backend connection restored')
@@ -543,7 +549,7 @@ export const useCommonStore = defineStore('common', {
           this.apiHealthy = true
           this.sentryHealthy = true
           this.clearError()
-          
+
           // Re-initialize user configs when backend comes back online
           // This ensures the /user/configs call is made and connections are available
           // Do this in the background without failing the health check
@@ -552,7 +558,7 @@ export const useCommonStore = defineStore('common', {
               if (this.apiKey) {
                 await api.loadUserConfigs(this.apiKey)
                 console.log('✅ User configs reloaded after reconnection')
-                
+
                 // Explicitly trigger connections reload after user configs are loaded
                 // Emit a custom event that connections components can listen to
                 window.dispatchEvent(new CustomEvent('backend-reconnected'))
@@ -562,7 +568,7 @@ export const useCommonStore = defineStore('common', {
               // This is non-critical - the main health check should still succeed
             }
           }, 1000) // Small delay to let the connection stabilize
-          
+
           const toast = useToast()
           toast.success('Connection restored!')
         }
@@ -573,7 +579,7 @@ export const useCommonStore = defineStore('common', {
           this.setBackendConnected(false)
           this.apiHealthy = false
           this.sentryHealthy = false
-          
+
           // Only show toast once when connection is first lost
           const toast = useToast()
           toast.warning('Backend connection lost. Working in offline mode.')
@@ -588,10 +594,10 @@ export const useCommonStore = defineStore('common', {
       }
 
       console.log('🚀 Starting health monitoring')
-      
+
       // Perform immediate health check
       this.performHealthCheck()
-      
+
       // Check every 10 seconds
       this.healthCheckInterval = window.setInterval(() => {
         this.performHealthCheck()

@@ -53,7 +53,9 @@
       <div class="flex-1 p-6">
         <div v-if="isJsonView" class="h-full">
           <div class="rounded-md bg-gray-50 p-4 h-full overflow-auto">
-            <pre class="text-gray-900 whitespace-pre-wrap text-sm font-mono">{{ prettyConfig }}</pre>
+            <pre class="text-gray-900 whitespace-pre-wrap text-sm font-mono">{{
+              prettyConfig
+            }}</pre>
           </div>
         </div>
         <div v-else class="space-y-6 h-full flex flex-col">
@@ -61,7 +63,9 @@
           <div class="space-y-4">
             <!-- Source Connection -->
             <div>
-              <label class="block text-xs font-medium uppercase text-gray-500 mb-2">Source Connection</label>
+              <label class="block text-xs font-medium uppercase text-gray-500 mb-2"
+                >Source Connection</label
+              >
               <div class="bg-gray-50 rounded-md p-4 border border-gray-200">
                 <div class="flex items-center gap-2 mb-2">
                   <div
@@ -82,7 +86,11 @@
                     }"
                     >{{ source?.name || 'N/A' }}</span
                   >
-                  <CloudProviderBadge v-if="source" :cloud-provider="source.cloud_provider" :db-type="source.type" />
+                  <CloudProviderBadge
+                    v-if="source"
+                    :cloud-provider="source.cloud_provider"
+                    :db-type="source.type"
+                  />
                   <ExclamationCircleIcon
                     v-if="!source || !source.name"
                     class="h-4 w-4 text-red-500 flex-shrink-0"
@@ -98,7 +106,9 @@
 
             <!-- Target Connection -->
             <div>
-              <label class="block text-xs font-medium uppercase text-gray-500 mb-2">Target Connection</label>
+              <label class="block text-xs font-medium uppercase text-gray-500 mb-2"
+                >Target Connection</label
+              >
               <div class="bg-gray-50 rounded-md p-4 border border-gray-200">
                 <div class="flex items-center gap-2 mb-2">
                   <div
@@ -119,7 +129,11 @@
                     }"
                     >{{ target?.name || 'N/A' }}</span
                   >
-                  <CloudProviderBadge v-if="target" :cloud-provider="target.cloud_provider" :db-type="target.type" />
+                  <CloudProviderBadge
+                    v-if="target"
+                    :cloud-provider="target.cloud_provider"
+                    :db-type="target.type"
+                  />
                   <ExclamationCircleIcon
                     v-if="!target || !target.name"
                     class="h-4 w-4 text-red-500 flex-shrink-0"

@@ -123,7 +123,9 @@
                 class="w-full rounded-lg border border-gray-300 py-2 px-4 bg-white text-gray-700 placeholder-gray-400 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-gray-600 focus:border-transparent"
                 :placeholder="getDatabasePlaceholder()"
               />
-              <p class="text-xs text-gray-500 mt-1">💡 Leave blank to browse all databases, or specify one for direct access</p>
+              <p class="text-xs text-gray-500 mt-1">
+                💡 Leave blank to browse all databases, or specify one for direct access
+              </p>
             </div>
           </div>
         </div>
@@ -131,7 +133,8 @@
 
       <!-- Note about simplified workflow -->
       <div class="text-xs text-gray-500 italic mt-2">
-        Note: Database selection is now optional. You can connect to the server and explore databases in the Database Explorer.
+        Note: Database selection is now optional. You can connect to the server and explore
+        databases in the Database Explorer.
       </div>
     </div>
   </div>
@@ -145,10 +148,7 @@ import { normalizeConnectionType } from '@/utils/connectionUtils'
 import ConnectionName from './ConnectionName.vue'
 import Spinner from '@/components/common/Spinner.vue'
 import { useConnectionsStore } from '@/stores/connections'
-import {
-  EyeIcon,
-  EyeSlashIcon
-} from '@heroicons/vue/24/outline'
+import { EyeIcon, EyeSlashIcon } from '@heroicons/vue/24/outline'
 
 interface Props {
   connectionType: string
@@ -170,27 +170,27 @@ const applyConnectionDefaults = (connectionType: string) => {
   if (connection.value) {
     const defaults = getConnectionDefaults()
     connection.value.type = connectionType.toLowerCase()
-    
+
     // Only set port to default if it's not already set (preserve parsed values from connection string)
     if (!connection.value.port) {
       connection.value.port = defaultPort.value
     }
-    
+
     // Only set username to default if it's not already set (preserve parsed values from connection string)
     if (!connection.value.username) {
       connection.value.username = defaults.username
     }
-    
+
     // Only clear database if it's not already set (preserve parsed values from connection string)
     if (!connection.value.database) {
       connection.value.database = '' // Empty for new wizard flow
     }
-    
+
     // Only set host to localhost if it's empty (don't override existing values)
     if (!connection.value.host) {
       connection.value.host = 'localhost'
     }
-    
+
     // Update name after applying defaults (for new connections only)
     if (!isEdit.value) {
       updateConnectionName()
@@ -199,7 +199,7 @@ const applyConnectionDefaults = (connectionType: string) => {
 }
 
 // Check if we're in edit mode (connection has an ID)
-const isEdit = computed(() => !!(connection.value?.id))
+const isEdit = computed(() => !!connection.value?.id)
 
 // Auto-generate connection name based on connection details
 const buildConnectionName = computed(() => {
@@ -213,7 +213,7 @@ const buildConnectionName = computed(() => {
 // Update connection name based on mode
 const updateConnectionName = () => {
   if (!connection.value) return
-  
+
   if (!isEdit.value) {
     // New connections: Auto-generate name from connection details
     if (buildConnectionName.value) {
@@ -270,7 +270,7 @@ const togglePasswordVisibility = () => {
 // Get database placeholder based on connection type
 const getDatabasePlaceholder = () => {
   if (!connection.value?.type) return 'database_name'
-  
+
   const connectionType = connection.value.type.toLowerCase()
   switch (connectionType) {
     case 'postgresql':

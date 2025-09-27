@@ -11,7 +11,7 @@
           readonly
         />
       </div>
-      
+
       <!-- Browse button -->
       <button
         @click="openModal"
@@ -35,12 +35,12 @@
         Browse
       </button>
     </div>
-    
+
     <!-- Help text -->
     <p v-if="helpText" class="text-xs text-gray-500">
       {{ helpText }}
     </p>
-    
+
     <!-- Folder Selection Modal -->
     <FolderSelectionModal
       v-model:is-open="showModal"
@@ -79,16 +79,17 @@ const emit = defineEmits<Emits>()
 const showModal = ref(false)
 
 const inputClass = computed(() => {
-  const baseClass = "block w-full rounded-md border shadow-sm text-sm focus:ring-2 focus:ring-offset-2 focus:outline-none"
-  
+  const baseClass =
+    'block w-full rounded-md border shadow-sm text-sm focus:ring-2 focus:ring-offset-2 focus:outline-none'
+
   if (props.error) {
     return `${baseClass} border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500`
   }
-  
+
   if (props.disabled) {
     return `${baseClass} border-gray-300 bg-gray-50 text-gray-500 cursor-not-allowed`
   }
-  
+
   return `${baseClass} border-gray-300 text-gray-700 placeholder-gray-400 focus:ring-blue-500 focus:border-blue-500`
 })
 

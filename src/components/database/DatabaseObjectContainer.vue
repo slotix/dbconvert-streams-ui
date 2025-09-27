@@ -37,15 +37,15 @@ const tabs = computed<TabItem[]>(() => {
       component: props.isView ? ViewStructureView : TableMetadataView,
       props: props.isView
         ? {
-          viewMeta: props.tableMeta as SQLViewMeta,
-          connectionId: props.connectionId,
-          connectionType: props.connectionType
-        }
+            viewMeta: props.tableMeta as SQLViewMeta,
+            connectionId: props.connectionId,
+            connectionType: props.connectionType
+          }
         : {
-          tableMeta: props.tableMeta as SQLTableMeta,
-          connectionId: props.connectionId,
-          connectionType: props.connectionType
-        }
+            tableMeta: props.tableMeta as SQLTableMeta,
+            connectionId: props.connectionId,
+            connectionType: props.connectionType
+          }
     },
     {
       name: 'Data',
@@ -69,12 +69,14 @@ const tabs = computed<TabItem[]>(() => {
       <div class="border-b border-gray-200">
         <TabList class="flex space-x-8 px-6">
           <Tab v-for="tab in tabs" :key="tab.name" v-slot="{ selected }" as="template">
-            <button :class="[
-              'border-b-2 py-4 px-1 text-sm font-medium whitespace-nowrap transition-colors duration-150',
-              selected
-                ? 'border-slate-500 text-slate-600'
-                : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-            ]">
+            <button
+              :class="[
+                'border-b-2 py-4 px-1 text-sm font-medium whitespace-nowrap transition-colors duration-150',
+                selected
+                  ? 'border-slate-500 text-slate-600'
+                  : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+              ]"
+            >
               {{ tab.name }}
             </button>
           </Tab>
@@ -84,7 +86,11 @@ const tabs = computed<TabItem[]>(() => {
       <!-- Tab Panels -->
       <TabPanels class="overflow-hidden">
         <TabPanel v-for="tab in tabs" :key="tab.name">
-          <component :is="tab.component" v-bind="tab.props" @refresh-metadata="emit('refresh-metadata')" />
+          <component
+            :is="tab.component"
+            v-bind="tab.props"
+            @refresh-metadata="emit('refresh-metadata')"
+          />
         </TabPanel>
       </TabPanels>
     </TabGroup>

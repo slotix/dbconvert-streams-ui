@@ -11,7 +11,7 @@
         <div class="flex-1">
           <h3 class="text-lg font-medium text-gray-900">{{ connection?.name }}</h3>
           <p class="text-sm text-gray-600">{{ connection?.type }} Database Connection</p>
-          
+
           <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
             <!-- Connection Details -->
             <div>
@@ -70,9 +70,7 @@
       <div class="flex items-center">
         <div
           :class="[
-            testResult.success
-              ? 'text-green-600 bg-green-100'
-              : 'text-red-600 bg-red-100',
+            testResult.success ? 'text-green-600 bg-green-100' : 'text-red-600 bg-red-100',
             'rounded-full p-1 mr-3'
           ]"
         >
@@ -93,11 +91,14 @@
       <div class="flex">
         <InformationCircleIcon class="h-5 w-5 text-blue-400 mt-0.5 mr-3" />
         <div>
-          <h4 class="text-sm font-medium text-blue-800">Ready to {{ isEditMode ? 'update' : 'create' }}</h4>
+          <h4 class="text-sm font-medium text-blue-800">
+            Ready to {{ isEditMode ? 'update' : 'create' }}
+          </h4>
           <p class="text-sm text-blue-700 mt-1">
-            {{ isEditMode 
-              ? 'Review your changes and click "Update Connection" to save them.'
-              : 'Review your connection details and click "Create Connection" to add it to your connections list.'
+            {{
+              isEditMode
+                ? 'Review your changes and click "Update Connection" to save them.'
+                : 'Review your connection details and click "Create Connection" to add it to your connections list.'
             }}
           </p>
         </div>
@@ -137,7 +138,6 @@ const emit = defineEmits<{
 // Always allow proceeding from review step if we have a connection
 const canProceed = computed(() => !!connection.value)
 
-
 // Watch for changes and emit can-proceed updates
 watchEffect(() => {
   emit('update:can-proceed', canProceed.value)
@@ -145,7 +145,7 @@ watchEffect(() => {
 
 function getDBTypeLogo(type?: string): string {
   if (!type) return '/images/db-logos/default.svg'
-  const dbType = connectionsStore.dbTypes.find(db => db.type === type)
+  const dbType = connectionsStore.dbTypes.find((db) => db.type === type)
   return dbType?.logo || '/images/db-logos/default.svg'
 }
 

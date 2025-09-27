@@ -6,9 +6,11 @@
         <h2 class="text-lg font-semibold text-gray-900">Select Database</h2>
         <p class="text-sm text-gray-500">Choose a database to explore its structure</p>
       </div>
-      <button :disabled="isLoading"
+      <button
+        :disabled="isLoading"
         class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
-        @click="refreshDatabases">
+        @click="refreshDatabases"
+      >
         <ArrowPathIcon :class="['h-4 w-4', isLoading ? 'animate-spin' : '']" />
         Refresh
       </button>
@@ -25,7 +27,8 @@
       <p class="text-red-600 mb-4">{{ error }}</p>
       <button
         class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700"
-        @click="loadDatabases">
+        @click="loadDatabases"
+      >
         <ArrowPathIcon class="h-4 w-4" />
         Retry
       </button>
@@ -35,9 +38,12 @@
     <div v-else-if="databases.length > 0" class="space-y-4">
       <!-- Database Cards -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div v-for="database in databases" :key="database.name"
+        <div
+          v-for="database in databases"
+          :key="database.name"
           class="p-4 border border-gray-200 rounded-lg cursor-pointer hover:shadow-md hover:border-gray-300 transition-all duration-200 group"
-          @click="selectDatabase(database.name)">
+          @click="selectDatabase(database.name)"
+        >
           <div class="flex items-center justify-between">
             <div class="flex items-center space-x-3">
               <div class="p-2 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors">
@@ -45,7 +51,10 @@
               </div>
               <div>
                 <h3 class="font-medium text-gray-900">{{ database.name }}</h3>
-                <p v-if="database.schemas && database.schemas.length > 0" class="text-sm text-gray-500">
+                <p
+                  v-if="database.schemas && database.schemas.length > 0"
+                  class="text-sm text-gray-500"
+                >
                   {{ database.schemas.length }} schema{{ database.schemas.length !== 1 ? 's' : '' }}
                 </p>
               </div>
@@ -64,7 +73,8 @@
           </div>
           <button
             class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100"
-            @click="showCreateDatabase = true">
+            @click="showCreateDatabase = true"
+          >
             <PlusIcon class="h-4 w-4" />
             Create Database
           </button>
@@ -75,20 +85,27 @@
           <div class="space-y-3">
             <div>
               <label class="block text-sm font-medium text-gray-700">Database Name</label>
-              <input v-model="newDatabaseName" type="text"
+              <input
+                v-model="newDatabaseName"
+                type="text"
                 class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                placeholder="Enter database name" @keyup.enter="createDatabase" />
+                placeholder="Enter database name"
+                @keyup.enter="createDatabase"
+              />
             </div>
             <div class="flex items-center gap-2">
-              <button :disabled="!newDatabaseName.trim() || isCreating"
+              <button
+                :disabled="!newDatabaseName.trim() || isCreating"
                 class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50"
-                @click="createDatabase">
+                @click="createDatabase"
+              >
                 <span v-if="isCreating">Creating...</span>
                 <span v-else>Create</span>
               </button>
               <button
                 class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-                @click="cancelCreateDatabase">
+                @click="cancelCreateDatabase"
+              >
                 Cancel
               </button>
             </div>
@@ -103,7 +120,8 @@
       <p class="text-gray-500 mb-4">No databases found</p>
       <button
         class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100"
-        @click="showCreateDatabase = true">
+        @click="showCreateDatabase = true"
+      >
         <PlusIcon class="h-4 w-4" />
         Create Your First Database
       </button>

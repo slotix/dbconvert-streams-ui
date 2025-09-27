@@ -1665,14 +1665,16 @@ function exportAsPDF() {
 
     <!-- Controls Panel with Tailwind classes -->
     <div
-      class="absolute top-4 right-4 p-3 min-w-[220px] bg-white rounded-lg shadow-lg border border-gray-200 space-y-2.5 z-10">
+      class="absolute top-4 right-4 p-3 min-w-[220px] bg-white rounded-lg shadow-lg border border-gray-200 space-y-2.5 z-10"
+    >
       <!-- Zoom Controls with Reset Button and Export Button -->
       <div class="flex items-center justify-between mb-1">
         <span class="text-xs font-medium text-gray-700">Zoom</span>
         <div class="flex items-center gap-1">
           <button
             class="p-1 hover:bg-gray-100 rounded text-gray-600 hover:text-gray-900 transition-colors focus:outline-none focus:ring-1 focus:ring-cyan-500 focus:ring-offset-1"
-            @click="handleZoom('out')">
+            @click="handleZoom('out')"
+          >
             <MinusIcon class="w-3.5 h-3.5" />
           </button>
           <span class="text-xs text-gray-600 min-w-[40px] text-center tabular-nums">
@@ -1680,17 +1682,22 @@ function exportAsPDF() {
           </span>
           <button
             class="p-1 hover:bg-gray-100 rounded text-gray-600 hover:text-gray-900 transition-colors focus:outline-none focus:ring-1 focus:ring-cyan-500 focus:ring-offset-1"
-            @click="handleZoom('in')">
+            @click="handleZoom('in')"
+          >
             <PlusIcon class="w-3.5 h-3.5" />
           </button>
           <button
             class="p-1 ml-1 hover:bg-gray-100 rounded text-gray-600 hover:text-gray-900 transition-colors focus:outline-none focus:ring-1 focus:ring-cyan-500 focus:ring-offset-1"
-            title="Reset view" @click="resetView">
+            title="Reset view"
+            @click="resetView"
+          >
             <ArrowPathIcon class="w-3.5 h-3.5" />
           </button>
           <button
             class="p-1 ml-1 hover:bg-gray-100 rounded text-gray-600 hover:text-gray-900 transition-colors focus:outline-none focus:ring-1 focus:ring-cyan-500 focus:ring-offset-1"
-            title="Export diagram" @click="exportOptions = !exportOptions">
+            title="Export diagram"
+            @click="exportOptions = !exportOptions"
+          >
             <ArrowDownTrayIcon class="w-3.5 h-3.5" />
           </button>
         </div>
@@ -1703,24 +1710,38 @@ function exportAsPDF() {
         </div>
         <div class="flex gap-2 mb-2 flex-wrap">
           <label class="inline-flex items-center cursor-pointer">
-            <input v-model="exportType" type="radio" value="svg"
-              class="form-radio h-3.5 w-3.5 text-gray-500 focus:ring-gray-400" />
+            <input
+              v-model="exportType"
+              type="radio"
+              value="svg"
+              class="form-radio h-3.5 w-3.5 text-gray-500 focus:ring-gray-400"
+            />
             <span class="ml-1.5 text-xs text-gray-700">SVG</span>
           </label>
           <label class="inline-flex items-center cursor-pointer">
-            <input v-model="exportType" type="radio" value="png"
-              class="form-radio h-3.5 w-3.5 text-gray-500 focus:ring-gray-400" />
+            <input
+              v-model="exportType"
+              type="radio"
+              value="png"
+              class="form-radio h-3.5 w-3.5 text-gray-500 focus:ring-gray-400"
+            />
             <span class="ml-1.5 text-xs text-gray-700">PNG</span>
           </label>
           <label class="inline-flex items-center cursor-pointer">
-            <input v-model="exportType" type="radio" value="pdf"
-              class="form-radio h-3.5 w-3.5 text-gray-500 focus:ring-gray-400" />
+            <input
+              v-model="exportType"
+              type="radio"
+              value="pdf"
+              class="form-radio h-3.5 w-3.5 text-gray-500 focus:ring-gray-400"
+            />
             <span class="ml-1.5 text-xs text-gray-700">PDF</span>
           </label>
         </div>
         <button
           class="w-full py-1 bg-gray-500 hover:bg-gray-600 text-white text-xs font-medium rounded focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1 transition-colors"
-          :disabled="exportProgress" @click="saveDiagram">
+          :disabled="exportProgress"
+          @click="saveDiagram"
+        >
           <span v-if="exportProgress">Exporting...</span>
           <span v-else>Download {{ exportType.toUpperCase() }}</span>
         </button>
@@ -1733,9 +1754,15 @@ function exportAsPDF() {
             <label class="text-xs font-medium text-gray-700">Link Distance</label>
             <span class="text-xs text-gray-500 tabular-nums">{{ linkDistance }}px</span>
           </div>
-          <input v-model="linkDistance" type="range" min="100" max="500" step="20"
+          <input
+            v-model="linkDistance"
+            type="range"
+            min="100"
+            max="500"
+            step="20"
             class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer slider-gray"
-            @input="updateForces" />
+            @input="updateForces"
+          />
         </div>
 
         <div>
@@ -1743,9 +1770,15 @@ function exportAsPDF() {
             <label class="text-xs font-medium text-gray-700">Charge Strength</label>
             <span class="text-xs text-gray-500 tabular-nums">{{ chargeStrength }}</span>
           </div>
-          <input v-model="chargeStrength" type="range" min="-3000" max="-200" step="100"
+          <input
+            v-model="chargeStrength"
+            type="range"
+            min="-3000"
+            max="-200"
+            step="100"
             class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer slider-gray"
-            @input="updateForces" />
+            @input="updateForces"
+          />
         </div>
 
         <div>
@@ -1753,15 +1786,23 @@ function exportAsPDF() {
             <label class="text-xs font-medium text-gray-700">Collision Radius</label>
             <span class="text-xs text-gray-500 tabular-nums">{{ collisionRadius }}px</span>
           </div>
-          <input v-model="collisionRadius" type="range" min="60" max="200" step="10"
+          <input
+            v-model="collisionRadius"
+            type="range"
+            min="60"
+            max="200"
+            step="10"
             class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer slider-gray"
-            @input="updateForces" />
+            @input="updateForces"
+          />
         </div>
       </div>
     </div>
 
     <!-- Legend with Tailwind classes -->
-    <div class="absolute top-4 left-4 p-3 bg-white bg-opacity-95 rounded-lg shadow-md border border-gray-200 z-10">
+    <div
+      class="absolute top-4 left-4 p-3 bg-white bg-opacity-95 rounded-lg shadow-md border border-gray-200 z-10"
+    >
       <h4 class="text-xs font-semibold text-gray-700 mb-1.5">Legend</h4>
       <div class="space-y-1.5">
         <div class="flex items-center">

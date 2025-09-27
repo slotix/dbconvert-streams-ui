@@ -9,7 +9,7 @@ export interface CloudProviderInfo {
 
 export const CLOUD_PROVIDERS: Record<string, CloudProviderInfo> = {
   // PostgreSQL Cloud Providers
-  'neon': {
+  neon: {
     name: 'neon',
     displayName: 'Neon',
     logo: '/images/db-logos/neon.svg',
@@ -23,35 +23,35 @@ export const CLOUD_PROVIDERS: Record<string, CloudProviderInfo> = {
     badgeColor: 'bg-orange-100',
     textColor: 'text-orange-700'
   },
-  'azure': {
+  azure: {
     name: 'azure',
     displayName: 'Azure',
     logo: '/images/db-logos/azure.svg',
     badgeColor: 'bg-blue-100',
     textColor: 'text-blue-700'
   },
-  'digitalocean': {
+  digitalocean: {
     name: 'digitalocean',
     displayName: 'DigitalOcean',
     logo: '/images/db-logos/digitalocean.svg',
     badgeColor: 'bg-blue-100',
     textColor: 'text-blue-700'
   },
-  'supabase': {
+  supabase: {
     name: 'supabase',
     displayName: 'Supabase',
     logo: '/images/db-logos/supabase.svg',
     badgeColor: 'bg-green-100',
     textColor: 'text-green-700'
   },
-  'heroku': {
+  heroku: {
     name: 'heroku',
     displayName: 'Heroku',
     logo: '/images/db-logos/heroku.svg',
     badgeColor: 'bg-purple-100',
     textColor: 'text-purple-700'
   },
-  'cockroachdb': {
+  cockroachdb: {
     name: 'cockroachdb',
     displayName: 'CockroachDB',
     logo: '/images/db-logos/cockroachdb.svg',
@@ -65,30 +65,30 @@ export const CLOUD_PROVIDERS: Record<string, CloudProviderInfo> = {
     badgeColor: 'bg-red-100',
     textColor: 'text-red-700'
   },
-  
+
   // MySQL Cloud Providers
-  'planetscale': {
+  planetscale: {
     name: 'planetscale',
     displayName: 'PlanetScale',
     logo: '/images/db-logos/vitess.svg', // Using Vitess logo as PlanetScale is based on Vitess
     badgeColor: 'bg-black',
     textColor: 'text-white'
   },
-  'aiven': {
+  aiven: {
     name: 'aiven',
     displayName: 'Aiven',
     logo: '/images/db-logos/mysql.svg', // Fallback to MySQL logo
     badgeColor: 'bg-teal-100',
     textColor: 'text-teal-700'
   },
-  'tidb': {
+  tidb: {
     name: 'tidb',
     displayName: 'TiDB Cloud',
     logo: '/images/db-logos/tidb.svg',
     badgeColor: 'bg-pink-100',
     textColor: 'text-pink-700'
   },
-  'skysql': {
+  skysql: {
     name: 'skysql',
     displayName: 'SkySQL',
     logo: '/images/db-logos/skysql.svg',
@@ -131,10 +131,13 @@ export function getCloudProviderLogo(providerName: string): string | null {
 /**
  * Get badge styling for cloud provider
  */
-export function getCloudProviderBadgeStyle(providerName: string): { bgColor: string; textColor: string } {
+export function getCloudProviderBadgeStyle(providerName: string): {
+  bgColor: string
+  textColor: string
+} {
   const info = getCloudProviderInfo(providerName)
   return {
     bgColor: info?.badgeColor || 'bg-gray-100',
     textColor: info?.textColor || 'text-gray-700'
   }
-} 
+}

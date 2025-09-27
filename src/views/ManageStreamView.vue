@@ -55,5 +55,4 @@ interface Props {
 
 const props = defineProps<Props>()
 const mode = computed(() => props.mode)
-
 </script>

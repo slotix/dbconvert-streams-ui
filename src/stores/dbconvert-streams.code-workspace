@@ -1,11 +1,11 @@
 {
-	"folders": [
-		{
-			"path": "../../../dbconvert-stream"
-		},
-		{
-			"path": "../.."
-		}
-	],
-	"settings": {}
+  "folders": [
+    {
+      "path": "../../../dbconvert-stream"
+    },
+    {
+      "path": "../.."
+    }
+  ],
+  "settings": {}
 }

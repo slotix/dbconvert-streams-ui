@@ -1,13 +1,12 @@
 <template>
   <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-
     <!-- Database Type Selection -->
     <div v-if="currentStep === 'type'" class="space-y-6">
       <DatabaseTypeStep
         @update:selected-db-type="handleDBTypeUpdate"
         @update:can-proceed="updateCanProceed"
       />
-      
+
       <!-- Action Buttons -->
       <div class="flex justify-between">
         <button
@@ -34,7 +33,7 @@
         :connectionType="selectedDBType?.type"
         @update:can-proceed="updateCanProceed"
       />
-      
+
       <!-- Action Buttons -->
       <div class="flex justify-between">
         <button
@@ -59,9 +58,25 @@
             class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <span v-if="isTestingConnection" class="flex items-center">
-              <svg class="animate-spin -ml-1 mr-3 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              <svg
+                class="animate-spin -ml-1 mr-3 h-4 w-4"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  class="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  stroke-width="4"
+                ></circle>
+                <path
+                  class="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
               </svg>
               Testing...
             </span>
@@ -74,9 +89,25 @@
             class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent text-sm font-medium rounded-md text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <span v-if="isCreatingConnection" class="flex items-center">
-              <svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              <svg
+                class="animate-spin -ml-1 mr-3 h-4 w-4 text-white"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  class="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  stroke-width="4"
+                ></circle>
+                <path
+                  class="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
               </svg>
               Creating...
             </span>
@@ -86,10 +117,17 @@
       </div>
 
       <!-- Test Result (only show error messages) -->
-      <div v-if="testResult && !testResult.success" class="border border-red-200 rounded-lg p-4 bg-red-50">
+      <div
+        v-if="testResult && !testResult.success"
+        class="border border-red-200 rounded-lg p-4 bg-red-50"
+      >
         <div class="flex items-center">
           <svg class="h-5 w-5 text-red-600 mr-3" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+            <path
+              fill-rule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+              clip-rule="evenodd"
+            />
           </svg>
           <div>
             <p class="font-medium text-red-800">Connection Failed</p>
@@ -122,7 +160,9 @@ const isCreatingConnectionStep = ref(false)
 const testResult = ref<{ success: boolean; message: string } | undefined>(undefined)
 
 // Computed properties
-const isCreatingConnection = computed(() => connectionsStore.isUpdatingConnection || isCreatingConnectionStep.value)
+const isCreatingConnection = computed(
+  () => connectionsStore.isUpdatingConnection || isCreatingConnectionStep.value
+)
 const isTestingConnection = computed(() => connectionsStore.isTestingConnection)
 
 // Initialize a new connection when the form starts
@@ -178,7 +218,7 @@ async function createConnection() {
     commonStore.showNotification('Database type not selected', 'error')
     return
   }
-  
+
   if (!connectionsStore.currentConnection) {
     commonStore.showNotification('Connection details not provided', 'error')
     return
@@ -188,7 +228,7 @@ async function createConnection() {
   try {
     await connectionsStore.createConnection()
     await connectionsStore.refreshConnections()
-    
+
     commonStore.showNotification('Connection created successfully!', 'success')
     // Navigate back to connections list
     router.push('/connections')

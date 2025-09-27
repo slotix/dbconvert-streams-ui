@@ -23,18 +23,18 @@
             :class="getDatabaseIconStyle(connection.type)"
             class="rounded-lg p-2.5 transition-all duration-200 hover:shadow-md flex-shrink-0"
           >
-            <img
-              class="h-7 w-7 object-contain"
-              :src="logoSrc"
-              :alt="connection.type + ' logo'"
-            />
+            <img class="h-7 w-7 object-contain" :src="logoSrc" :alt="connection.type + ' logo'" />
           </div>
           <div class="min-w-0 flex-1">
             <div class="flex items-center justify-between">
               <h3 class="text-lg font-medium text-gray-900 truncate pr-2">{{ connection.name }}</h3>
             </div>
             <div class="flex items-center gap-2 mt-1">
-              <CloudProviderBadge :cloud-provider="connection.cloud_provider" :db-type="connection.type" size="sm" />
+              <CloudProviderBadge
+                :cloud-provider="connection.cloud_provider"
+                :db-type="connection.type"
+                size="sm"
+              />
               <p class="text-xs text-gray-500 truncate font-mono">{{ connection.id }}</p>
             </div>
           </div>
@@ -65,27 +65,25 @@
                 </button>
               </div>
             </div>
-            
+
             <div class="min-w-0">
               <label class="text-xs font-medium uppercase text-gray-500">Files</label>
               <div class="mt-1 text-sm text-gray-700">
                 <div v-if="loadingFiles" class="flex items-center gap-2">
-                  <div class="animate-spin h-3 w-3 border border-gray-300 border-t-gray-600 rounded-full"></div>
+                  <div
+                    class="animate-spin h-3 w-3 border border-gray-300 border-t-gray-600 rounded-full"
+                  ></div>
                   <span>Loading files...</span>
                 </div>
                 <div v-else-if="totalFileCount > 0" class="text-gray-900 font-medium">
                   {{ fileSummary }}
                 </div>
-                <div v-else-if="hasPath" class="text-gray-500">
-                  No supported files found
-                </div>
-                <div v-else class="text-gray-500">
-                  No path configured
-                </div>
+                <div v-else-if="hasPath" class="text-gray-500">No supported files found</div>
+                <div v-else class="text-gray-500">No path configured</div>
               </div>
             </div>
           </div>
-          
+
           <!-- Database Connection Details -->
           <div v-else>
             <div class="grid gap-4" :class="connection.database ? 'grid-cols-2' : 'grid-cols-1'">
@@ -115,7 +113,9 @@
                   <button
                     class="flex-shrink-0 text-gray-400 hover:text-gray-600"
                     @click.stop="showPassword = !showPassword"
-                    :title="showPassword ? 'Hide password and truncate' : 'Show password and full details'"
+                    :title="
+                      showPassword ? 'Hide password and truncate' : 'Show password and full details'
+                    "
                   >
                     <EyeIcon v-if="!showPassword" class="h-4 w-4" />
                     <EyeSlashIcon v-else class="h-4 w-4" />
@@ -232,7 +232,7 @@ const logoSrc = computed(() => {
   if (isFileConnection.value && totalFileCount.value > 0) {
     return getFileTypeIcon()
   }
-  
+
   // For other connections, use the standard database icon
   const normalizedType = normalizeConnectionType(props.connection?.type || '')
   const dbType = connectionsStore.dbTypes.find(
@@ -248,15 +248,16 @@ const isFileConnection = computed(() => {
 
 // Check if connection has a path configured
 const hasPath = computed(() => {
-  return !!(props.connection?.path?.trim())
+  return !!props.connection?.path?.trim()
 })
 
 // Filter files to show only supported formats
 const supportedFiles = computed(() => {
   const supportedExtensions = ['.csv', '.json', '.jsonl', '.parquet', '.gz']
-  return folderFiles.value.filter(file => 
-    file.type === 'file' && 
-    supportedExtensions.some(ext => file.name.toLowerCase().endsWith(ext))
+  return folderFiles.value.filter(
+    (file) =>
+      file.type === 'file' &&
+      supportedExtensions.some((ext) => file.name.toLowerCase().endsWith(ext))
   )
 })
 
@@ -264,10 +265,10 @@ const supportedFiles = computed(() => {
 const displayedFiles = computed(() => {
   const files = supportedFiles.value
   if (files.length === 0) return ''
-  
+
   const maxDisplay = 3
-  const fileNames = files.slice(0, maxDisplay).map(f => f.name)
-  
+  const fileNames = files.slice(0, maxDisplay).map((f) => f.name)
+
   return fileNames.join(', ')
 })
 
@@ -289,10 +290,10 @@ const totalFileSize = computed(() => {
 const fileSummary = computed(() => {
   const count = totalFileCount.value
   if (count === 0) return ''
-  
+
   const size = totalFileSize.value
   const sizeStr = formatFileSize(size)
-  
+
   if (count === 1) {
     return `1 file (${sizeStr})`
   } else {
@@ -303,18 +304,17 @@ const fileSummary = computed(() => {
 // File type detection and badges
 const detectedFileTypes = computed(() => {
   const typeMap = new Map<string, number>()
-  
-  supportedFiles.value.forEach(file => {
+
+  supportedFiles.value.forEach((file) => {
     const extension = getFileExtension(file.name)
     const type = getFileTypeFromExtension(extension)
     if (type) {
       typeMap.set(type, (typeMap.get(type) || 0) + 1)
     }
   })
-  
+
   return Array.from(typeMap.entries()).map(([type, count]) => ({ type, count }))
 })
-
 
 function getFileExtension(filename: string): string {
   const match = filename.toLowerCase().match(/\.([^.]+)(?:\.gz)?$/)
@@ -323,39 +323,39 @@ function getFileExtension(filename: string): string {
 
 function getFileTypeFromExtension(extension: string): string | null {
   const typeMap: Record<string, string> = {
-    'csv': 'CSV',
-    'json': 'JSON', 
-    'jsonl': 'JSONL',
-    'parquet': 'Parquet',
-    'gz': 'Compressed'
+    csv: 'CSV',
+    json: 'JSON',
+    jsonl: 'JSONL',
+    parquet: 'Parquet',
+    gz: 'Compressed'
   }
   return typeMap[extension] || null
 }
 
 function getFileTypeIcon(): string {
   const types = detectedFileTypes.value
-  
+
   if (types.length === 0) {
     return '/images/db-logos/local-files.svg' // Default Files icon
   }
-  
+
   // If single type, show that type's icon
   if (types.length === 1) {
     const type = types[0].type
     return getIconForFileType(type)
   }
-  
+
   // If multiple types, show mixed files icon
   return '/images/db-logos/local-files.svg' // Mixed files icon
 }
 
 function getIconForFileType(type: string): string {
   const iconMap: Record<string, string> = {
-    'CSV': '/images/db-logos/csv.svg',
-    'JSON': '/images/db-logos/json.svg',
-    'JSONL': '/images/db-logos/json.svg',
-    'Parquet': '/images/db-logos/parquet.svg',
-    'Compressed': '/images/db-logos/local-files.svg'
+    CSV: '/images/db-logos/csv.svg',
+    JSON: '/images/db-logos/json.svg',
+    JSONL: '/images/db-logos/json.svg',
+    Parquet: '/images/db-logos/parquet.svg',
+    Compressed: '/images/db-logos/local-files.svg'
   }
   return iconMap[type] || '/images/db-logos/local-files.svg'
 }
@@ -363,14 +363,14 @@ function getIconForFileType(type: string): string {
 // Helper function to format file sizes
 function formatFileSize(bytes: number): string {
   if (bytes === 0) return '0 B'
-  
+
   const units = ['B', 'KB', 'MB', 'GB', 'TB']
   const k = 1024
   const i = Math.floor(Math.log(bytes) / Math.log(k))
-  
+
   const value = bytes / Math.pow(k, i)
   const formatted = i === 0 ? value.toString() : value.toFixed(1)
-  
+
   return `${formatted} ${units[i]}`
 }
 
@@ -419,7 +419,7 @@ const connectionString = computed(() => {
 const truncatedHost = computed(() => {
   const fullHost = concatenateValues.value
   if (fullHost.length <= 30) return fullHost
-  
+
   // For cloud providers, try to show the important part
   if (fullHost.includes('.')) {
     const parts = fullHost.split('.')
@@ -428,7 +428,7 @@ const truncatedHost = computed(() => {
       return `${parts[0]}...${parts.slice(-2).join('.')}`
     }
   }
-  
+
   // Simple truncation for other cases
   return `${fullHost.substring(0, 30)}...`
 })
@@ -436,7 +436,7 @@ const truncatedHost = computed(() => {
 const truncatedConnectionString = computed(() => {
   const fullString = connectionString.value
   if (fullString.length <= 60) return fullString
-  
+
   // For connection strings, truncate in the middle to preserve protocol and end
   const start = fullString.substring(0, 30)
   const end = fullString.substring(fullString.length - 30)
@@ -445,25 +445,25 @@ const truncatedConnectionString = computed(() => {
 
 function getDatabaseIconStyle(dbType: string): string {
   const normalizedType = normalizeConnectionType(dbType?.toLowerCase() || '')
-  
+
   // Database-specific brand colors with subtle backgrounds
   const styles: Record<string, string> = {
-    'postgresql': 'bg-blue-100 ring-2 ring-blue-200/50',
-    'postgres': 'bg-blue-100 ring-2 ring-blue-200/50',
-    'mysql': 'bg-orange-100 ring-2 ring-orange-200/50',
-    'mongodb': 'bg-green-100 ring-2 ring-green-200/50',
-    'mongo': 'bg-green-100 ring-2 ring-green-200/50',
-    'redis': 'bg-red-100 ring-2 ring-red-200/50',
-    'sqlite': 'bg-gray-100 ring-2 ring-gray-200/50',
-    'mariadb': 'bg-orange-100 ring-2 ring-orange-200/50',
-    'mssql': 'bg-blue-100 ring-2 ring-blue-200/50',
-    'sqlserver': 'bg-blue-100 ring-2 ring-blue-200/50',
-    'oracle': 'bg-red-100 ring-2 ring-red-200/50',
-    'cassandra': 'bg-purple-100 ring-2 ring-purple-200/50',
-    'elasticsearch': 'bg-yellow-100 ring-2 ring-yellow-200/50',
-    'clickhouse': 'bg-yellow-100 ring-2 ring-yellow-200/50'
+    postgresql: 'bg-blue-100 ring-2 ring-blue-200/50',
+    postgres: 'bg-blue-100 ring-2 ring-blue-200/50',
+    mysql: 'bg-orange-100 ring-2 ring-orange-200/50',
+    mongodb: 'bg-green-100 ring-2 ring-green-200/50',
+    mongo: 'bg-green-100 ring-2 ring-green-200/50',
+    redis: 'bg-red-100 ring-2 ring-red-200/50',
+    sqlite: 'bg-gray-100 ring-2 ring-gray-200/50',
+    mariadb: 'bg-orange-100 ring-2 ring-orange-200/50',
+    mssql: 'bg-blue-100 ring-2 ring-blue-200/50',
+    sqlserver: 'bg-blue-100 ring-2 ring-blue-200/50',
+    oracle: 'bg-red-100 ring-2 ring-red-200/50',
+    cassandra: 'bg-purple-100 ring-2 ring-purple-200/50',
+    elasticsearch: 'bg-yellow-100 ring-2 ring-yellow-200/50',
+    clickhouse: 'bg-yellow-100 ring-2 ring-yellow-200/50'
   }
-  
+
   return styles[normalizedType] || 'bg-gray-100 ring-2 ring-gray-200/50'
 }
 
@@ -508,19 +508,18 @@ function selectConnection(): void {
 
 async function copyConnectionString(): Promise<void> {
   if (!props.connection) return
-  
+
   try {
     const fullConnectionString = generateConnectionString(props.connection, true) // Always copy with password
     await navigator.clipboard.writeText(fullConnectionString)
-    
+
     // Show success indication
     isCopied.value = true
-    
+
     // Reset the copied state after 2 seconds
     setTimeout(() => {
       isCopied.value = false
     }, 2000)
-    
   } catch (error) {
     console.error('Failed to copy connection string:', error)
     // Fallback for older browsers
@@ -531,15 +530,14 @@ async function copyConnectionString(): Promise<void> {
       textArea.select()
       document.execCommand('copy')
       document.body.removeChild(textArea)
-      
+
       // Show success indication for fallback too
       isCopied.value = true
-      
+
       // Reset the copied state after 2 seconds
       setTimeout(() => {
         isCopied.value = false
       }, 2000)
-      
     } catch (fallbackError) {
       console.error('Fallback copy also failed:', fallbackError)
     }
@@ -548,18 +546,17 @@ async function copyConnectionString(): Promise<void> {
 
 async function copyFolderPath(): Promise<void> {
   if (!props.connection?.path) return
-  
+
   try {
     await navigator.clipboard.writeText(props.connection.path)
-    
+
     // Show success indication
     isPathCopied.value = true
-    
+
     // Reset the copied state after 2 seconds
     setTimeout(() => {
       isPathCopied.value = false
     }, 2000)
-    
   } catch (error) {
     console.error('Failed to copy folder path:', error)
     // Fallback for older browsers
@@ -570,15 +567,14 @@ async function copyFolderPath(): Promise<void> {
       textArea.select()
       document.execCommand('copy')
       document.body.removeChild(textArea)
-      
+
       // Show success indication for fallback too
       isPathCopied.value = true
-      
+
       // Reset the copied state after 2 seconds
       setTimeout(() => {
         isPathCopied.value = false
       }, 2000)
-      
     } catch (fallbackError) {
       console.error('Fallback copy also failed:', fallbackError)
     }
@@ -588,7 +584,7 @@ async function copyFolderPath(): Promise<void> {
 // Load files for file connections
 async function loadFiles() {
   if (!isFileConnection.value || !hasPath.value) return
-  
+
   loadingFiles.value = true
   try {
     const result = await listDirectory(props.connection.path)
@@ -607,5 +603,4 @@ watchEffect(() => {
     loadFiles()
   }
 })
-
 </script>

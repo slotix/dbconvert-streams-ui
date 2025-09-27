@@ -8,7 +8,9 @@
           <div class="mt-2">
             <div class="flex items-baseline flex-wrap">
               <span class="text-sm text-blue-700">Configure database access for IP:</span>
-              <code class="ml-2 px-2 py-1 bg-white rounded border border-blue-300 text-blue-800 font-mono text-sm">
+              <code
+                class="ml-2 px-2 py-1 bg-white rounded border border-blue-300 text-blue-800 font-mono text-sm"
+              >
                 {{ publicIp }}
               </code>
             </div>

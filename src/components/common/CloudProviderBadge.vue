@@ -114,4 +114,4 @@ export default {
     tooltip: vTooltip
   }
 }
-</script> 
+</script>

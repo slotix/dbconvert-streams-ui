@@ -21,4 +21,4 @@ export const vHighlightjs: Directive = {
       hljs.highlightElement(codeEl as HTMLElement)
     })
   }
-} 
+}

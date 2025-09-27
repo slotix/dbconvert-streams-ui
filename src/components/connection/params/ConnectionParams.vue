@@ -3,7 +3,7 @@
   <div v-if="isLocalFiles" class="container mx-auto w-full">
     <LocalFilesConnectionParams :connectionType="props.connectionType" />
   </div>
-  
+
   <!-- Database connections - Show tabs -->
   <div v-else>
     <nav class="flex flex-col sm:flex-row max-w-sm mx-auto mb-4 mt-8">

@@ -74,7 +74,7 @@ import { useConnectionsStore } from '@/stores/connections'
 const connectionsStore = useConnectionsStore()
 const fetchedDbTypes = connectionsStore.dbTypes
 // Filter out 'All' option for connection creation, but keep actual database types
-const dbTypes = ref(fetchedDbTypes.filter(dbType => dbType.type !== 'All'))
+const dbTypes = ref(fetchedDbTypes.filter((dbType) => dbType.type !== 'All'))
 
 const props = defineProps({
   modelValue: {

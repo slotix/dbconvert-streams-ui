@@ -22,7 +22,7 @@ export async function getPublicIp(): Promise<string> {
 
   // Create new fetch promise
   ipFetchPromise = fetchPublicIp()
-  
+
   try {
     cachedPublicIp = await ipFetchPromise
     return cachedPublicIp
@@ -49,10 +49,10 @@ async function fetchPublicIp(): Promise<string> {
         method: 'GET',
         timeout: 5000,
         headers: {
-          'Accept': 'text/plain'
+          Accept: 'text/plain'
         }
       })
-      
+
       if (response.ok) {
         const ip = (await response.text()).trim()
         if (isValidIpv4(ip)) {
@@ -72,7 +72,8 @@ async function fetchPublicIp(): Promise<string> {
  * Validate IPv4 address format
  */
 function isValidIpv4(ip: string): boolean {
-  const ipv4Regex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/
+  const ipv4Regex =
+    /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/
   return ipv4Regex.test(ip)
 }
 
@@ -81,19 +82,19 @@ function isValidIpv4(ip: string): boolean {
  */
 export function isLocalIp(ip: string): boolean {
   if (!ip) return false
-  
+
   // Common local/private IP patterns
   const localPatterns = [
-    /^127\./,           // 127.x.x.x (localhost)
-    /^192\.168\./,      // 192.168.x.x (private)
-    /^10\./,            // 10.x.x.x (private)
-    /^172\.(1[6-9]|2[0-9]|3[0-1])\./,  // 172.16.x.x - 172.31.x.x (private)
-    /^169\.254\./,      // 169.254.x.x (link-local)
-    /^::1$/,            // IPv6 localhost
-    /^localhost$/i      // hostname localhost
+    /^127\./, // 127.x.x.x (localhost)
+    /^192\.168\./, // 192.168.x.x (private)
+    /^10\./, // 10.x.x.x (private)
+    /^172\.(1[6-9]|2[0-9]|3[0-1])\./, // 172.16.x.x - 172.31.x.x (private)
+    /^169\.254\./, // 169.254.x.x (link-local)
+    /^::1$/, // IPv6 localhost
+    /^localhost$/i // hostname localhost
   ]
 
-  return localPatterns.some(pattern => pattern.test(ip))
+  return localPatterns.some((pattern) => pattern.test(ip))
 }
 
 /**

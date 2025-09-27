@@ -117,12 +117,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import {
-  CheckIcon,
-  ArrowLeftIcon,
-  ArrowRightIcon,
-  BeakerIcon
-} from '@heroicons/vue/24/outline'
+import { CheckIcon, ArrowLeftIcon, ArrowRightIcon, BeakerIcon } from '@heroicons/vue/24/outline'
 import Spinner from '@/components/common/Spinner.vue'
 
 interface WizardStep {
@@ -152,9 +147,9 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   'next-step': []
   'previous-step': []
-  'finish': []
-  'test': []
-  'cancel': []
+  finish: []
+  test: []
+  cancel: []
 }>()
 
 const currentStep = computed(() => props.steps[props.currentStepIndex])

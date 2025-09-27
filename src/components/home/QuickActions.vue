@@ -28,7 +28,7 @@
           >
             <div class="flex items-center min-w-0 flex-1 pr-3">
               <div class="flex-shrink-0">
-                <div 
+                <div
                   :class="getDatabaseIconStyle(getConnectionType(connection.id))"
                   class="rounded-lg p-2 transition-all duration-200 hover:shadow-md"
                 >
@@ -36,17 +36,38 @@
                     :src="getConnectionLogo(connection.id) || '/images/db-logos/all.svg'"
                     :alt="getConnectionType(connection.id)"
                     class="h-6 w-6 object-contain"
-                    @error="(e) => { (e.target as HTMLImageElement).src = '/images/db-logos/all.svg' }"
+                    @error="
+                      (e) => {
+                        ;(e.target as HTMLImageElement).src = '/images/db-logos/all.svg'
+                      }
+                    "
                   />
                 </div>
               </div>
               <div class="ml-4 flex-1 min-w-0">
                 <div class="flex items-center gap-2 min-w-0">
-                  <h3 class="text-sm font-semibold text-gray-900 truncate flex-1 min-w-0" :title="connection.name">{{ connection.name }}</h3>
-                  <CloudProviderBadge :cloud-provider="getCloudProvider(connection.id)" :db-type="getConnectionType(connection.id)" size="sm" class="flex-shrink-0" />
+                  <h3
+                    class="text-sm font-semibold text-gray-900 truncate flex-1 min-w-0"
+                    :title="connection.name"
+                  >
+                    {{ connection.name }}
+                  </h3>
+                  <CloudProviderBadge
+                    :cloud-provider="getCloudProvider(connection.id)"
+                    :db-type="getConnectionType(connection.id)"
+                    size="sm"
+                    class="flex-shrink-0"
+                  />
                 </div>
-                <p class="text-sm text-gray-500 truncate" :title="getConnectionHost(connection.id)">{{ getConnectionHost(connection.id) }}</p>
-                <p class="text-xs text-gray-400 truncate" :title="getConnectionDatabase(connection.id)">{{ getConnectionDatabase(connection.id) }}</p>
+                <p class="text-sm text-gray-500 truncate" :title="getConnectionHost(connection.id)">
+                  {{ getConnectionHost(connection.id) }}
+                </p>
+                <p
+                  class="text-xs text-gray-400 truncate"
+                  :title="getConnectionDatabase(connection.id)"
+                >
+                  {{ getConnectionDatabase(connection.id) }}
+                </p>
               </div>
             </div>
             <div class="flex-shrink-0 ml-2">
@@ -154,8 +175,8 @@ function getConnectionLogo(connectionId: string) {
     const recentConn = recentConnectionsData.find((conn: any) => conn.id === connectionId)
     if (recentConn && recentConn.type) {
       const normalizedType = normalizeConnectionType(recentConn.type)
-      const dbType = connectionsStore.dbTypes.find((f) => 
-        normalizeConnectionType(f.type.toLowerCase()) === normalizedType.toLowerCase()
+      const dbType = connectionsStore.dbTypes.find(
+        (f) => normalizeConnectionType(f.type.toLowerCase()) === normalizedType.toLowerCase()
       )
       return dbType?.logo || '/images/db-logos/all.svg'
     }
@@ -164,45 +185,49 @@ function getConnectionLogo(connectionId: string) {
 
   // Normalize the connection type to match dbTypes
   const normalizedType = normalizeConnectionType(connection.type)
-  
+
   // First try exact match
-  let dbType = connectionsStore.dbTypes.find((f) => 
-    normalizeConnectionType(f.type.toLowerCase()) === normalizedType.toLowerCase()
+  let dbType = connectionsStore.dbTypes.find(
+    (f) => normalizeConnectionType(f.type.toLowerCase()) === normalizedType.toLowerCase()
   )
-  
+
   // If no exact match, try partial match for common variations
   if (!dbType) {
     const typeVariations: Record<string, string[]> = {
-      'postgresql': ['postgres', 'pg', 'postgresql'],
-      'mysql': ['mysql', 'mariadb'],
-      'sqlserver': ['sql server', 'mssql', 'sqlserver', 'microsoft sql server'],
-      'oracle': ['oracle', 'oracledb'],
-      'sqlite': ['sqlite', 'sqlite3'],
-      'mariadb': ['mariadb', 'mysql'],
-      'cockroachdb': ['cockroach', 'cockroachdb', 'crdb'],
-      'mongodb': ['mongo', 'mongodb'],
-      'firebird': ['firebird', 'fb'],
-      'interbase': ['interbase', 'ib']
+      postgresql: ['postgres', 'pg', 'postgresql'],
+      mysql: ['mysql', 'mariadb'],
+      sqlserver: ['sql server', 'mssql', 'sqlserver', 'microsoft sql server'],
+      oracle: ['oracle', 'oracledb'],
+      sqlite: ['sqlite', 'sqlite3'],
+      mariadb: ['mariadb', 'mysql'],
+      cockroachdb: ['cockroach', 'cockroachdb', 'crdb'],
+      mongodb: ['mongo', 'mongodb'],
+      firebird: ['firebird', 'fb'],
+      interbase: ['interbase', 'ib']
     }
-    
+
     const lowerType = normalizedType.toLowerCase()
     for (const [dbTypeName, variations] of Object.entries(typeVariations)) {
-      if (variations.some(variation => lowerType.includes(variation) || variation.includes(lowerType))) {
-        dbType = connectionsStore.dbTypes.find((f) => 
-          normalizeConnectionType(f.type.toLowerCase()) === dbTypeName
+      if (
+        variations.some(
+          (variation) => lowerType.includes(variation) || variation.includes(lowerType)
+        )
+      ) {
+        dbType = connectionsStore.dbTypes.find(
+          (f) => normalizeConnectionType(f.type.toLowerCase()) === dbTypeName
         )
         if (dbType) break
       }
     }
   }
-  
+
   return dbType?.logo || '/images/db-logos/all.svg' // Fallback to generic logo
 }
 
 function getConnectionType(connectionId: string) {
   const connection = connectionsStore.connections.find((conn) => conn.id === connectionId)
   if (connection) return connection.type || ''
-  
+
   // Fallback: try to get type from recent connections data
   const recentConnectionsData = JSON.parse(localStorage.getItem('recentConnections') || '[]')
   const recentConn = recentConnectionsData.find((conn: any) => conn.id === connectionId)
@@ -232,7 +257,7 @@ function getConnectionHost(connectionId: string) {
     }
     return `${displayHost}:${connection.port}`
   }
-  
+
   // Fallback: try to get from recent connections data
   const recentConnectionsData = JSON.parse(localStorage.getItem('recentConnections') || '[]')
   const recentConn = recentConnectionsData.find((conn: any) => conn.id === connectionId)
@@ -252,7 +277,7 @@ function getConnectionHost(connectionId: string) {
     }
     return `${displayHost}:${recentConn.port}`
   }
-  
+
   return ''
 }
 
@@ -266,7 +291,7 @@ function getConnectionDatabase(connectionId: string) {
     }
     return `Database: ${dbName}`
   }
-  
+
   // Fallback: try to get from recent connections data
   const recentConnectionsData = JSON.parse(localStorage.getItem('recentConnections') || '[]')
   const recentConn = recentConnectionsData.find((conn: any) => conn.id === connectionId)
@@ -277,7 +302,7 @@ function getConnectionDatabase(connectionId: string) {
     }
     return `Database: ${dbName}`
   }
-  
+
   return ''
 }
 
@@ -301,7 +326,7 @@ function getConnectionDetails(connectionId: string) {
     }
     return `${displayHost}:${connection.port} • ${connection.database}`
   }
-  
+
   // Fallback: try to get from recent connections data
   const recentConnectionsData = JSON.parse(localStorage.getItem('recentConnections') || '[]')
   const recentConn = recentConnectionsData.find((conn: any) => conn.id === connectionId)
@@ -319,14 +344,14 @@ function getConnectionDetails(connectionId: string) {
     }
     return `${displayHost}:${recentConn.port} • ${recentConn.database}`
   }
-  
+
   return ''
 }
 
 function getCloudProvider(connectionId: string) {
   const connection = connectionsStore.connections.find((conn) => conn.id === connectionId)
   if (connection) return connection.cloud_provider || ''
-  
+
   // Fallback: try to get from recent connections data
   const recentConnectionsData = JSON.parse(localStorage.getItem('recentConnections') || '[]')
   const recentConn = recentConnectionsData.find((conn: any) => conn.id === connectionId)
@@ -335,25 +360,25 @@ function getCloudProvider(connectionId: string) {
 
 function getDatabaseIconStyle(dbType: string): string {
   const normalizedType = normalizeConnectionType(dbType?.toLowerCase() || '')
-  
+
   // Database-specific brand colors with subtle backgrounds
   const styles: Record<string, string> = {
-    'postgresql': 'bg-blue-100 ring-2 ring-blue-200/50',
-    'postgres': 'bg-blue-100 ring-2 ring-blue-200/50',
-    'mysql': 'bg-orange-100 ring-2 ring-orange-200/50',
-    'mongodb': 'bg-green-100 ring-2 ring-green-200/50',
-    'mongo': 'bg-green-100 ring-2 ring-green-200/50',
-    'redis': 'bg-red-100 ring-2 ring-red-200/50',
-    'sqlite': 'bg-gray-100 ring-2 ring-gray-200/50',
-    'mariadb': 'bg-orange-100 ring-2 ring-orange-200/50',
-    'mssql': 'bg-blue-100 ring-2 ring-blue-200/50',
-    'sqlserver': 'bg-blue-100 ring-2 ring-blue-200/50',
-    'oracle': 'bg-red-100 ring-2 ring-red-200/50',
-    'cassandra': 'bg-purple-100 ring-2 ring-purple-200/50',
-    'elasticsearch': 'bg-yellow-100 ring-2 ring-yellow-200/50',
-    'clickhouse': 'bg-yellow-100 ring-2 ring-yellow-200/50'
+    postgresql: 'bg-blue-100 ring-2 ring-blue-200/50',
+    postgres: 'bg-blue-100 ring-2 ring-blue-200/50',
+    mysql: 'bg-orange-100 ring-2 ring-orange-200/50',
+    mongodb: 'bg-green-100 ring-2 ring-green-200/50',
+    mongo: 'bg-green-100 ring-2 ring-green-200/50',
+    redis: 'bg-red-100 ring-2 ring-red-200/50',
+    sqlite: 'bg-gray-100 ring-2 ring-gray-200/50',
+    mariadb: 'bg-orange-100 ring-2 ring-orange-200/50',
+    mssql: 'bg-blue-100 ring-2 ring-blue-200/50',
+    sqlserver: 'bg-blue-100 ring-2 ring-blue-200/50',
+    oracle: 'bg-red-100 ring-2 ring-red-200/50',
+    cassandra: 'bg-purple-100 ring-2 ring-purple-200/50',
+    elasticsearch: 'bg-yellow-100 ring-2 ring-yellow-200/50',
+    clickhouse: 'bg-yellow-100 ring-2 ring-yellow-200/50'
   }
-  
+
   return styles[normalizedType] || 'bg-gray-100 ring-2 ring-gray-200/50'
 }
 
@@ -388,5 +413,4 @@ function clearRecentConnections() {
 onMounted(() => {
   loadRecentConnections()
 })
-
 </script>

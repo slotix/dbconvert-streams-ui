@@ -11,7 +11,11 @@
       <div class="ml-3 flex flex-col gap-1">
         <div class="flex items-center gap-2">
           <span class="text-sm text-gray-900 font-medium">{{ connection.name }}</span>
-          <CloudProviderBadge :cloud-provider="connection.cloud_provider" :db-type="connection.type" size="sm" />
+          <CloudProviderBadge
+            :cloud-provider="connection.cloud_provider"
+            :db-type="connection.type"
+            size="sm"
+          />
         </div>
         <span v-if="connection.id" class="text-xs text-gray-500">{{ connection.id }}</span>
       </div>

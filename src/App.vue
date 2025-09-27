@@ -1,7 +1,7 @@
 <template>
   <div>
     <ApiKeyInput v-if="commonStore.needsApiKey && !isInitializing" />
-    
+
     <!-- API Key Expired Notification Banner -->
     <div
       v-if="showExpiredBanner"
@@ -10,10 +10,16 @@
       <div class="flex items-center justify-between max-w-7xl mx-auto">
         <div class="flex items-center space-x-3">
           <svg class="h-5 w-5 text-red-200" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+            <path
+              fill-rule="evenodd"
+              d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+              clip-rule="evenodd"
+            />
           </svg>
           <span class="font-medium">API Key Expired</span>
-          <span class="text-red-200">Your API key has expired. Please enter a new one to continue.</span>
+          <span class="text-red-200"
+            >Your API key has expired. Please enter a new one to continue.</span
+          >
         </div>
         <button
           @click="showExpiredBanner = false"
@@ -23,7 +29,7 @@
         </button>
       </div>
     </div>
-    
+
     <div
       v-if="isInitializing"
       class="fixed inset-0 bg-gray-900/80 flex items-center justify-center z-50"
@@ -209,7 +215,7 @@
               </div>
             </RouterLink>
           </li>
-          
+
           <!-- Connection Status in Navigation -->
           <li class="mt-4 pt-4 border-t border-gray-700">
             <div
@@ -380,23 +386,23 @@ const createStatusFavicon = (color: string) => {
   canvas.width = 32
   canvas.height = 32
   const ctx = canvas.getContext('2d')
-  
+
   if (ctx) {
     // Clear canvas
     ctx.clearRect(0, 0, 32, 32)
-    
+
     // Draw background circle
     ctx.fillStyle = '#1f2937' // Dark gray background
     ctx.beginPath()
     ctx.arc(16, 16, 15, 0, 2 * Math.PI)
     ctx.fill()
-    
+
     // Draw status circle
     ctx.fillStyle = color
     ctx.beginPath()
     ctx.arc(16, 16, 10, 0, 2 * Math.PI)
     ctx.fill()
-    
+
     // Add a subtle border
     ctx.strokeStyle = '#ffffff'
     ctx.lineWidth = 1
@@ -404,7 +410,7 @@ const createStatusFavicon = (color: string) => {
     ctx.arc(16, 16, 10, 0, 2 * Math.PI)
     ctx.stroke()
   }
-  
+
   return canvas.toDataURL()
 }
 
@@ -421,7 +427,7 @@ const updateFavicon = (dataUrl: string) => {
 const updateBrowserTabTitle = () => {
   const status = getConnectionStatusText()
   let faviconColor = ''
-  
+
   if (commonStore.isBackendConnected) {
     faviconColor = '#10b981' // Green
   } else if (commonStore.error) {
@@ -429,17 +435,18 @@ const updateBrowserTabTitle = () => {
   } else {
     faviconColor = '#f59e0b' // Yellow/Orange
   }
-  
+
   // Update tab title (no emoji prefix since we have the favicon)
   document.title = `${baseTitle} - ${status}`
-  
+
   // Update favicon
   const faviconDataUrl = createStatusFavicon(faviconColor)
   updateFavicon(faviconDataUrl)
 }
 
 // Store original favicon to restore on unmount
-const originalFavicon = document.querySelector("link[rel*='icon']")?.getAttribute('href') || '/favicon.svg'
+const originalFavicon =
+  document.querySelector("link[rel*='icon']")?.getAttribute('href') || '/favicon.svg'
 
 // Watch for connection status changes and update tab title + favicon
 watchEffect(() => {
@@ -450,7 +457,7 @@ watchEffect(() => {
 onUnmounted(() => {
   document.title = baseTitle
   updateFavicon(originalFavicon)
-  
+
   // Stop health monitoring
   commonStore.stopHealthMonitoring()
 })
@@ -459,7 +466,7 @@ const initializeApp = async () => {
   try {
     isInitializing.value = true
 
-    // Always try to initialize the app - the initApp method now handles 
+    // Always try to initialize the app - the initApp method now handles
     // API key validation and development fallbacks internally
     const initResult = await commonStore.initApp()
     if (initResult === 'failed') {
@@ -477,8 +484,7 @@ const initializeApp = async () => {
 onMounted(async () => {
   try {
     isInitializing.value = true
-    
-    
+
     await initializeApiClient()
     const result = await initializeApp()
     // Don't clear API key here - let the individual methods handle it

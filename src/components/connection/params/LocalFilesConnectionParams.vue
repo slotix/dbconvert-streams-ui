@@ -72,7 +72,8 @@
       <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
         <h4 class="text-sm font-medium text-blue-900 mb-2">Supported File Formats</h4>
         <p class="text-xs text-blue-700">
-          📊 CSV, JSON, JSONL, Parquet files (.gz compressed versions also supported). Mixed formats in the same folder are allowed.
+          📊 CSV, JSON, JSONL, Parquet files (.gz compressed versions also supported). Mixed formats
+          in the same folder are allowed.
         </p>
       </div>
 
@@ -111,12 +112,12 @@ const applyConnectionDefaults = (connectionType: string) => {
     connection.value.username = 'local' // Default username for local files
     connection.value.password = '' // Not needed for local files
     connection.value.database = '' // Not used for local files
-    
+
     // Set path to empty if it's a new connection
     if (!connection.value.path && !isEdit.value) {
       connection.value.path = ''
     }
-    
+
     // Update name after applying defaults (for new connections only)
     if (!isEdit.value) {
       updateConnectionName()
@@ -125,7 +126,7 @@ const applyConnectionDefaults = (connectionType: string) => {
 }
 
 // Check if we're in edit mode (connection has an ID)
-const isEdit = computed(() => !!(connection.value?.id))
+const isEdit = computed(() => !!connection.value?.id)
 
 // Auto-generate connection name based on connection details
 const buildConnectionName = computed(() => {
@@ -139,7 +140,7 @@ const buildConnectionName = computed(() => {
 // Update connection name based on mode
 const updateConnectionName = () => {
   if (!connection.value) return
-  
+
   if (!isEdit.value) {
     // New connections: Auto-generate name from connection details
     if (buildConnectionName.value) {

@@ -1,8 +1,16 @@
 <template>
   <div class="space-y-6">
     <!-- Connection Info Display -->
-    <div v-if="connection" class="flex items-center p-3 bg-green-50 rounded-lg border border-green-200">
-      <svg class="h-5 w-5 text-green-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div
+      v-if="connection"
+      class="flex items-center p-3 bg-green-50 rounded-lg border border-green-200"
+    >
+      <svg
+        class="h-5 w-5 text-green-600 mr-3"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
       </svg>
       <div>
@@ -66,9 +74,7 @@
                       ]"
                     >
                       <div class="flex items-center">
-                        <span
-                          :class="['block truncate', selected ? 'font-medium' : 'font-normal']"
-                        >
+                        <span :class="['block truncate', selected ? 'font-medium' : 'font-normal']">
                           {{ database }}
                         </span>
                       </div>
@@ -87,11 +93,14 @@
               </Combobox>
 
               <!-- Help Text -->
-              <p v-if="!databaseLoadError" class="text-xs text-gray-500 mt-1">💡 {{ getDatabaseHelpText() }}</p>
-              
+              <p v-if="!databaseLoadError" class="text-xs text-gray-500 mt-1">
+                💡 {{ getDatabaseHelpText() }}
+              </p>
+
               <!-- Error message when database loading fails -->
               <p v-if="databaseLoadError" class="text-xs text-red-600 mt-1">
-                ⚠️ Couldn't load databases automatically. You can manually type a database name or fix the connection and try refreshing.
+                ⚠️ Couldn't load databases automatically. You can manually type a database name or
+                fix the connection and try refreshing.
               </p>
             </div>
 
@@ -112,10 +121,7 @@
         </div>
 
         <!-- Create Database Section -->
-        <div
-          v-if="canCreateDatabase"
-          class="grid grid-cols-1 md:grid-cols-3 gap-4 items-start"
-        >
+        <div v-if="canCreateDatabase" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
           <label class="text-sm font-medium text-gray-700 pt-2">Create New</label>
           <div class="md:col-span-2 space-y-2">
             <div class="flex items-center space-x-2">
@@ -161,12 +167,7 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useConnectionsStore } from '@/stores/connections'
 import { useCommonStore } from '@/stores/common'
-import {
-  ChevronUpDownIcon,
-  CheckIcon,
-  ArrowPathIcon,
-  XMarkIcon
-} from '@heroicons/vue/24/outline'
+import { ChevronUpDownIcon, CheckIcon, ArrowPathIcon, XMarkIcon } from '@heroicons/vue/24/outline'
 import {
   Combobox,
   ComboboxInput,
@@ -196,33 +197,46 @@ const databaseLoadError = ref(false)
 
 // Computed properties
 const connection = computed(() => connectionsStore.currentConnection)
-const availableDatabases = computed(() => connection.value?.databasesInfo?.map((db) => db.name) || [])
+const availableDatabases = computed(
+  () => connection.value?.databasesInfo?.map((db) => db.name) || []
+)
 const isNoSQL = computed(() => ['mongodb'].includes(props.connectionType.toLowerCase()))
 const canCreateDatabase = computed(() => !isNoSQL.value && connection.value?.id)
 
 // Initialize selected database from current connection
-watch(() => connection.value?.database, (dbName) => {
-  if (dbName) {
-    selectedDatabase.value = dbName
-  }
-}, { immediate: true })
+watch(
+  () => connection.value?.database,
+  (dbName) => {
+    if (dbName) {
+      selectedDatabase.value = dbName
+    }
+  },
+  { immediate: true }
+)
 
 // Auto-select first database when databases are loaded
-watch(() => availableDatabases.value, (databases) => {
-  // Only auto-select if no database is currently selected and databases are available
-  if (databases && databases.length > 0 && !selectedDatabase.value) {
-    const firstDatabase = databases[0]
-    selectedDatabase.value = firstDatabase
-    updateDatabase(firstDatabase)
-  }
-}, { immediate: true })
+watch(
+  () => availableDatabases.value,
+  (databases) => {
+    // Only auto-select if no database is currently selected and databases are available
+    if (databases && databases.length > 0 && !selectedDatabase.value) {
+      const firstDatabase = databases[0]
+      selectedDatabase.value = firstDatabase
+      updateDatabase(firstDatabase)
+    }
+  },
+  { immediate: true }
+)
 
 // Always allow proceeding (database selection is optional)
 emit('update:can-proceed', true)
 
 // Auto-load databases when component mounts
 onMounted(() => {
-  if (connection.value?.id && (!connection.value.databasesInfo || connection.value.databasesInfo.length === 0)) {
+  if (
+    connection.value?.id &&
+    (!connection.value.databasesInfo || connection.value.databasesInfo.length === 0)
+  ) {
     refreshDatabases()
   }
 })
@@ -245,24 +259,29 @@ const refreshDatabases = async () => {
 
   isLoadingDatabases.value = true
   databaseLoadError.value = false
-  
+
   try {
     await connectionsStore.getDatabases(connection.value.id)
     databaseLoadError.value = false
   } catch (error) {
     databaseLoadError.value = true
     let errorMessage = 'Failed to load databases'
-    
+
     if (error instanceof Error) {
-      if (error.message.includes('timeout') || error.message.includes('connect: connection timed out')) {
-        errorMessage = 'Connection timeout: Unable to reach the database server. Please check your connection details and network connectivity.'
+      if (
+        error.message.includes('timeout') ||
+        error.message.includes('connect: connection timed out')
+      ) {
+        errorMessage =
+          'Connection timeout: Unable to reach the database server. Please check your connection details and network connectivity.'
       } else if (error.message.includes('connect')) {
-        errorMessage = 'Connection failed: Please verify your connection details and ensure the database server is accessible.'
+        errorMessage =
+          'Connection failed: Please verify your connection details and ensure the database server is accessible.'
       } else {
         errorMessage = error.message
       }
     }
-    
+
     commonStore.showNotification(errorMessage, 'error')
     console.warn('Database loading failed, but you can still proceed with the wizard:', error)
   } finally {
@@ -279,21 +298,24 @@ const createDatabase = async () => {
 
   const databaseName = newDatabase.value
   isCreatingDatabase.value = true
-  
+
   try {
     const response = await connectionsStore.createDatabase(databaseName, connection.value.id)
     if (response.status === 'success') {
       // Clear the input field
       clearNewDatabase()
-      
+
       // Refresh the database list to include the newly created database
       await refreshDatabases()
-      
+
       // Auto-select the newly created database
       selectedDatabase.value = databaseName
       updateDatabase(databaseName)
-      
-      commonStore.showNotification(`Database "${databaseName}" created and selected successfully`, 'success')
+
+      commonStore.showNotification(
+        `Database "${databaseName}" created and selected successfully`,
+        'success'
+      )
     }
   } catch (error) {
     commonStore.showNotification(

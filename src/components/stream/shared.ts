@@ -190,8 +190,8 @@ export default defineComponent({
     logoSrc(): (tp: string) => string {
       return (tp: string) => {
         const normalizedInput = normalizeConnectionType(tp?.toLowerCase() || '')
-        const dbType = this.dbTypes.find((f: DbType) => 
-          normalizeConnectionType(f.type.toLowerCase()) === normalizedInput
+        const dbType = this.dbTypes.find(
+          (f: DbType) => normalizeConnectionType(f.type.toLowerCase()) === normalizedInput
         )
         return dbType ? dbType.logo : '/images/db-logos/all.svg' // Fallback to generic logo
       }
@@ -199,25 +199,25 @@ export default defineComponent({
     getDatabaseIconStyle(): (dbType: string) => string {
       return (dbType: string) => {
         const normalizedType = normalizeConnectionType(dbType?.toLowerCase() || '')
-        
+
         // Database-specific brand colors with subtle backgrounds
         const styles: Record<string, string> = {
-          'postgresql': 'bg-blue-100 ring-2 ring-blue-200/50',
-          'postgres': 'bg-blue-100 ring-2 ring-blue-200/50',
-          'mysql': 'bg-orange-100 ring-2 ring-orange-200/50',
-          'mongodb': 'bg-green-100 ring-2 ring-green-200/50',
-          'mongo': 'bg-green-100 ring-2 ring-green-200/50',
-          'redis': 'bg-red-100 ring-2 ring-red-200/50',
-          'sqlite': 'bg-gray-100 ring-2 ring-gray-200/50',
-          'mariadb': 'bg-orange-100 ring-2 ring-orange-200/50',
-          'mssql': 'bg-blue-100 ring-2 ring-blue-200/50',
-          'sqlserver': 'bg-blue-100 ring-2 ring-blue-200/50',
-          'oracle': 'bg-red-100 ring-2 ring-red-200/50',
-          'cassandra': 'bg-purple-100 ring-2 ring-purple-200/50',
-          'elasticsearch': 'bg-yellow-100 ring-2 ring-yellow-200/50',
-          'clickhouse': 'bg-yellow-100 ring-2 ring-yellow-200/50'
+          postgresql: 'bg-blue-100 ring-2 ring-blue-200/50',
+          postgres: 'bg-blue-100 ring-2 ring-blue-200/50',
+          mysql: 'bg-orange-100 ring-2 ring-orange-200/50',
+          mongodb: 'bg-green-100 ring-2 ring-green-200/50',
+          mongo: 'bg-green-100 ring-2 ring-green-200/50',
+          redis: 'bg-red-100 ring-2 ring-red-200/50',
+          sqlite: 'bg-gray-100 ring-2 ring-gray-200/50',
+          mariadb: 'bg-orange-100 ring-2 ring-orange-200/50',
+          mssql: 'bg-blue-100 ring-2 ring-blue-200/50',
+          sqlserver: 'bg-blue-100 ring-2 ring-blue-200/50',
+          oracle: 'bg-red-100 ring-2 ring-red-200/50',
+          cassandra: 'bg-purple-100 ring-2 ring-purple-200/50',
+          elasticsearch: 'bg-yellow-100 ring-2 ring-yellow-200/50',
+          clickhouse: 'bg-yellow-100 ring-2 ring-yellow-200/50'
         }
-        
+
         return styles[normalizedType] || 'bg-gray-100 ring-2 ring-gray-200/50'
       }
     },

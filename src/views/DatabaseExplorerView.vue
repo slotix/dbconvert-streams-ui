@@ -5,9 +5,10 @@ import { useCommonStore } from '@/stores/common'
 import { useConnectionsStore } from '@/stores/connections'
 import { useSchemaStore } from '@/stores/schema'
 import { Tab, TabGroup, TabList, TabPanels, TabPanel } from '@headlessui/vue'
-import { XMarkIcon, TrashIcon } from '@heroicons/vue/20/solid'
+// (Removed TrashIcon as Clear All control was removed)
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
 import ExplorerSidebarTree from '@/components/database/ExplorerSidebarTree.vue'
+import ExplorerBreadcrumb from '@/components/database/ExplorerBreadcrumb.vue'
 import DatabaseObjectContainer from '@/components/database/DatabaseObjectContainer.vue'
 import DiagramView from '@/components/database/DiagramView.vue'
 import connections from '@/api/connections'
@@ -48,10 +49,7 @@ const selectedMeta = ref<SQLTableMeta | SQLViewMeta | null>(null)
 
 const schemaStore = useSchemaStore()
 
-// Selected tab index
-const selectedIndex = computed(() =>
-  recentConnections.value.findIndex((c) => c.id === currentConnectionId.value)
-)
+// (Removed dropdown change handler with the control)
 
 // Get connection details for the current connection
 const currentConnection = computed(() =>
@@ -68,6 +66,26 @@ const currentConnectionDetails = computed(() => {
     logo: dbType?.logo || ''
   }
 })
+
+// Fallbacks from recent connections so header shows host/port on hard refresh
+const recentCurrent = computed(() =>
+  recentConnections.value.find((c) => c.id === (currentConnectionId.value as string))
+)
+
+const displayHostPort = computed(() => {
+  const host = currentConnection.value?.host || recentCurrent.value?.host
+  const port =
+    (currentConnection.value?.port && String(currentConnection.value?.port)) ||
+    recentCurrent.value?.port
+  if (!host || !port) return null
+  return `${host}:${port}`
+})
+
+const displayCloudProvider = computed(
+  () => currentConnection.value?.cloud_provider || recentCurrent.value?.cloud_provider || ''
+)
+
+const displayType = computed(() => currentConnection.value?.type || recentCurrent.value?.type || '')
 
 // Add current connection to recent list if it exists
 function addToRecentConnections() {
@@ -99,31 +117,10 @@ function addToRecentConnections() {
   }
 }
 
-// Remove a connection from recent list
-function removeFromRecent(connectionId: string) {
-  recentConnections.value = recentConnections.value.filter((c) => c.id !== connectionId)
-  localStorage.setItem('recentConnections', JSON.stringify(recentConnections.value))
+// Note: per UX simplification, individual close/remove for a single recent connection
+// was part of the tabs UI and is removed with tabs. "Clear All" remains available.
 
-  // If we removed the current connection, navigate to the first available or connections page
-  if (connectionId === currentConnectionId.value) {
-    if (connectionId === lastViewedConnectionId.value) {
-      lastViewedConnectionId.value = ''
-      localStorage.removeItem('lastViewedConnectionId')
-    }
-    const firstAvailable = recentConnections.value[0]
-    if (firstAvailable) {
-      router.push(`/explorer/${firstAvailable.id}`)
-    } else {
-      router.push('/connections')
-    }
-  }
-}
-
-// Switch to a different connection
-function switchConnection(connectionId: string) {
-  selectedDatabaseName.value = null // Reset database selection when switching connections
-  router.push(`/explorer/${connectionId}`)
-}
+// (Removed switchConnection with the control)
 
 async function handleSidebarSelect(payload: {
   database: string
@@ -181,26 +178,38 @@ async function refreshSelectedMetadata(force = true) {
   if (obj) selectedMeta.value = obj
 }
 
-// Clear all recent connections
-function clearAllRecentConnections() {
-  recentConnections.value = []
-  localStorage.removeItem('recentConnections')
-  localStorage.removeItem('lastViewedConnectionId')
-  // Navigate back to connections page since no recent connections remain
-  router.push('/connections')
+function handleBreadcrumbNavigate(payload: { level: 'database' | 'schema' | 'type' | 'name' }) {
+  // Clicking a breadcrumb level clears deeper selections and updates the query
+  if (payload.level === 'database') {
+    selectedSchemaName.value = null
+    selectedObjectType.value = null
+    selectedObjectName.value = null
+    selectedMeta.value = null
+  } else if (payload.level === 'schema') {
+    selectedObjectType.value = null
+    selectedObjectName.value = null
+    selectedMeta.value = null
+  } else if (payload.level === 'type') {
+    selectedObjectName.value = null
+    selectedMeta.value = null
+  } else if (payload.level === 'name') {
+    // no-op, leaf
+  }
+
+  router.replace({
+    path: `/explorer/${currentConnectionId.value}`,
+    query: {
+      db: selectedDatabaseName.value || undefined,
+      schema: selectedSchemaName.value || undefined,
+      type: selectedObjectType.value || undefined,
+      name: selectedObjectName.value || undefined
+    }
+  })
 }
 
-// Get cloud provider for a connection
-function getConnectionCloudProvider(connectionId: string) {
-  const connection = connectionsStore.connections.find((conn) => conn.id === connectionId)
-  return connection?.cloud_provider || ''
-}
+// (Removed Clear All recent connections control)
 
-// Get connection type for a connection
-function getConnectionType(connectionId: string) {
-  const connection = connectionsStore.connections.find((conn) => conn.id === connectionId)
-  return connection?.type || ''
-}
+// (Removed helpers used only by the old tabs UI)
 
 // If we have a current connection ID but it's not in recent connections, add it
 function initializeCurrentConnection() {
@@ -280,12 +289,6 @@ watch(currentConnectionId, (newId) => {
             Database Explorer
           </h1>
           <div class="flex items-center gap-4">
-            <button v-if="recentConnections.length > 0"
-              class="text-sm text-gray-400 hover:text-red-500 flex items-center gap-1 px-3 py-1 rounded hover:bg-red-50 transition-colors"
-              title="Clear all recent connections" @click="clearAllRecentConnections">
-              <TrashIcon class="h-4 w-4" />
-              Clear All
-            </button>
             <RouterLink to="/connections" class="text-sm text-gray-600 hover:text-gray-900 flex items-center gap-1">
               ← Back to Connections
             </RouterLink>
@@ -304,123 +307,89 @@ watch(currentConnectionId, (newId) => {
         </RouterLink>
       </div>
 
-      <!-- Recent connections tabs -->
+      <!-- Explorer content with simple connection selector -->
       <div v-else>
-        <TabGroup :selected-index="selectedIndex" @change="(index) => switchConnection(recentConnections[index].id)">
-          <TabList class="flex bg-gray-50 p-2 rounded-xl shadow-sm border border-gray-200">
-            <Tab v-for="connection in recentConnections" :key="connection.id" v-slot="{ selected }" as="template">
-              <div class="relative flex-1 mx-1">
-                <button :class="[
-                  'w-full rounded-lg py-3 px-4 text-sm font-medium',
-                  'focus:outline-none',
-                  'flex items-center justify-center gap-2 transition-all duration-200',
-                  selected
-                    ? 'bg-white text-slate-800 shadow-md border border-gray-200'
-                    : 'text-gray-600 hover:bg-white hover:text-gray-800 hover:shadow-sm'
-                ]">
-                  <img v-if="currentConnectionDetails && currentConnectionId === connection.id"
-                    :src="currentConnectionDetails.logo" :alt="currentConnectionDetails.type"
-                    class="h-5 w-5 rounded-full" />
-                  <div class="flex items-center gap-2 min-w-0">
-                    <span class="truncate max-w-[120px]" :title="connection.name">
-                      {{ connection.name }}
-                    </span>
-                    <CloudProviderBadge :cloud-provider="getConnectionCloudProvider(connection.id)"
-                      :db-type="getConnectionType(connection.id)" size="sm" />
-                  </div>
-                </button>
-                <!-- Close button -->
-                <button
-                  class="absolute -right-1.5 -top-1.5 rounded-full bg-white p-1 hover:bg-gray-100 shadow-sm border border-gray-200 transition-colors"
-                  @click.stop="removeFromRecent(connection.id)">
-                  <XMarkIcon class="h-3.5 w-3.5 text-gray-500" />
-                </button>
-              </div>
-            </Tab>
-          </TabList>
-
-          <div class="mt-6 grid grid-cols-12 gap-4">
-            <!-- Sidebar -->
-            <div class="col-span-12 md:col-span-4 lg:col-span-3">
-              <ExplorerSidebarTree v-if="currentConnectionId" :connection-id="currentConnectionId" :selected="{
-                database: selectedDatabaseName || undefined,
-                schema: selectedSchemaName || undefined,
-                type: selectedObjectType || undefined,
-                name: selectedObjectName || undefined
-              }" @select="handleSidebarSelect" />
-            </div>
-            <!-- Right panel -->
-            <div class="col-span-12 md:col-span-8 lg:col-span-9">
-              <div v-if="currentConnectionDetails" class="mb-4">
-                <div class="flex items-center gap-2 text-sm text-gray-500">
-                  <span class="font-medium text-gray-700">
-                    {{ currentConnectionDetails.host }}:{{ currentConnectionDetails.port }}
-                  </span>
-                  <span class="text-gray-400">•</span>
-                  <span class="font-medium text-gray-700">
-                    {{ selectedDatabaseName || 'Select a database' }}
-                  </span>
-                  <CloudProviderBadge :cloud-provider="currentConnectionDetails.cloud_provider || ''"
-                    :db-type="currentConnectionDetails.type || ''" />
-                </div>
-              </div>
-
-              <TabGroup>
-                <TabList class="flex space-x-2 mb-4 border-b border-gray-200">
-                  <Tab v-slot="{ selected }" as="template">
-                    <button :class="[
-                      'px-5 py-2.5 text-sm font-medium rounded-t-lg transition-all duration-200',
-                      'focus:outline-none relative',
-                      selected
-                        ? 'bg-white text-slate-800 border-t border-l border-r border-gray-200 shadow-sm'
-                        : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-                    ]">
-                      Structure & Data
-                      <span v-if="selected" class="absolute bottom-0 left-0 w-full h-0.5 bg-slate-600"></span>
-                    </button>
-                  </Tab>
-                  <Tab v-slot="{ selected }" as="template">
-                    <button :class="[
-                      'px-5 py-2.5 text-sm font-medium rounded-t-lg transition-all duration-200',
-                      'focus:outline-none relative',
-                      selected
-                        ? 'bg-white text-slate-800 border-t border-l border-r border-gray-200 shadow-sm'
-                        : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-                    ]">
-                      Diagram
-                      <span v-if="selected" class="absolute bottom-0 left-0 w-full h-0.5 bg-slate-600"></span>
-                    </button>
-                  </Tab>
-                </TabList>
-
-                <TabPanels>
-                  <TabPanel>
-                    <div class="min-h-[480px]">
-                      <div v-if="selectedMeta">
-                        <DatabaseObjectContainer :table-meta="selectedMeta" :is-view="selectedObjectType === 'view'"
-                          :connection-id="currentConnectionId || ''"
-                          :connection-type="currentConnectionDetails?.type || 'sql'"
-                          :database="selectedDatabaseName || ''" @refresh-metadata="refreshSelectedMetadata(true)" />
-                      </div>
-                      <div v-else class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg p-8 text-center">
-                        <h3 class="text-sm font-medium text-gray-900">No object selected</h3>
-                        <p class="mt-1 text-sm text-gray-500">
-                          Select a table or view from the sidebar to view its structure
-                        </p>
-                      </div>
-                    </div>
-                  </TabPanel>
-                  <TabPanel>
-                    <div class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg">
-                      <DiagramView :tables="schemaStore.tables" :views="schemaStore.views"
-                        :relationships="schemaStore.relationships" />
-                    </div>
-                  </TabPanel>
-                </TabPanels>
-              </TabGroup>
-            </div>
+        <div class="mt-6 grid grid-cols-12 gap-4">
+          <!-- Sidebar -->
+          <div class="col-span-12 md:col-span-4 lg:col-span-3">
+            <ExplorerSidebarTree v-if="currentConnectionId" :connection-id="currentConnectionId" :selected="{
+              database: selectedDatabaseName || undefined,
+              schema: selectedSchemaName || undefined,
+              type: selectedObjectType || undefined,
+              name: selectedObjectName || undefined
+            }" @select="handleSidebarSelect" />
           </div>
-        </TabGroup>
+          <!-- Right panel -->
+          <div class="col-span-12 md:col-span-8 lg:col-span-9">
+            <div class="mb-4">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2 text-sm text-gray-500">
+                  <span v-if="displayHostPort" class="font-medium text-gray-700">
+                    {{ displayHostPort }}
+                  </span>
+                  <span v-if="displayHostPort" class="text-gray-400">•</span>
+                  <ExplorerBreadcrumb :database="selectedDatabaseName" :schema="selectedSchemaName"
+                    :type="selectedObjectType" :name="selectedObjectName" @navigate="handleBreadcrumbNavigate" />
+                </div>
+                <CloudProviderBadge v-if="displayType" :cloud-provider="displayCloudProvider" :db-type="displayType" />
+              </div>
+            </div>
+
+            <TabGroup>
+              <TabList class="flex space-x-2 mb-4 border-b border-gray-200">
+                <Tab v-slot="{ selected }" as="template">
+                  <button :class="[
+                    'px-5 py-2.5 text-sm font-medium rounded-t-lg transition-all duration-200',
+                    'focus:outline-none relative',
+                    selected
+                      ? 'bg-white text-slate-800 border-t border-l border-r border-gray-200 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                  ]">
+                    Structure & Data
+                    <span v-if="selected" class="absolute bottom-0 left-0 w-full h-0.5 bg-slate-600"></span>
+                  </button>
+                </Tab>
+                <Tab v-slot="{ selected }" as="template">
+                  <button :class="[
+                    'px-5 py-2.5 text-sm font-medium rounded-t-lg transition-all duration-200',
+                    'focus:outline-none relative',
+                    selected
+                      ? 'bg-white text-slate-800 border-t border-l border-r border-gray-200 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                  ]">
+                    Diagram
+                    <span v-if="selected" class="absolute bottom-0 left-0 w-full h-0.5 bg-slate-600"></span>
+                  </button>
+                </Tab>
+              </TabList>
+
+              <TabPanels>
+                <TabPanel>
+                  <div class="min-h-[480px]">
+                    <div v-if="selectedMeta">
+                      <DatabaseObjectContainer :table-meta="selectedMeta" :is-view="selectedObjectType === 'view'"
+                        :connection-id="currentConnectionId || ''"
+                        :connection-type="currentConnectionDetails?.type || 'sql'"
+                        :database="selectedDatabaseName || ''" @refresh-metadata="refreshSelectedMetadata(true)" />
+                    </div>
+                    <div v-else class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg p-8 text-center">
+                      <h3 class="text-sm font-medium text-gray-900">No object selected</h3>
+                      <p class="mt-1 text-sm text-gray-500">
+                        Select a table or view from the sidebar to view its structure
+                      </p>
+                    </div>
+                  </div>
+                </TabPanel>
+                <TabPanel>
+                  <div class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg">
+                    <DiagramView :tables="schemaStore.tables" :views="schemaStore.views"
+                      :relationships="schemaStore.relationships" />
+                  </div>
+                </TabPanel>
+              </TabPanels>
+            </TabGroup>
+          </div>
+        </div>
       </div>
     </main>
   </div>

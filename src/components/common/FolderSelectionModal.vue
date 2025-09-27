@@ -36,7 +36,12 @@
                     class="text-gray-400 hover:text-gray-600 focus:outline-none"
                   >
                     <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M6 18L18 6M6 6l12 12"
+                      />
                     </svg>
                   </button>
                 </div>
@@ -66,7 +71,11 @@
               <div class="mb-4">
                 <nav class="flex" aria-label="Breadcrumb">
                   <ol class="flex items-center space-x-2 text-sm">
-                    <li v-for="(segment, index) in pathSegments" :key="index" class="flex items-center">
+                    <li
+                      v-for="(segment, index) in pathSegments"
+                      :key="index"
+                      class="flex items-center"
+                    >
                       <button
                         v-if="index < pathSegments.length - 1"
                         @click="navigateToSegment(index)"
@@ -82,7 +91,12 @@
                         stroke="currentColor"
                         viewBox="0 0 24 24"
                       >
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M9 5l7 7-7 7"
+                        />
                       </svg>
                     </li>
                   </ol>
@@ -189,7 +203,12 @@
                       stroke="currentColor"
                       viewBox="0 0 24 24"
                     >
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M5 13l4 4L19 7"
+                      />
                     </svg>
                     <svg
                       v-else
@@ -217,7 +236,12 @@
                   class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
                   <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                    />
                   </svg>
                   Go Up
                 </button>
@@ -283,18 +307,18 @@ const manualPathEdit = ref(false)
 // Computed properties
 const pathSegments = computed(() => {
   if (!currentPath.value) return []
-  
+
   const path = currentPath.value
   const segments: { name: string; path: string }[] = []
-  
+
   // Handle Windows drive roots
   if (path.match(/^[A-Za-z]:\\/)) {
     const drive = path.substring(0, 3)
     segments.push({ name: drive, path: drive })
-    
+
     const remaining = path.substring(3)
     if (remaining) {
-      const parts = remaining.split(/[/\\]/).filter(part => part)
+      const parts = remaining.split(/[/\\]/).filter((part) => part)
       for (let i = 0; i < parts.length; i++) {
         const segmentPath = drive + parts.slice(0, i + 1).join('\\')
         segments.push({ name: parts[i], path: segmentPath })
@@ -302,15 +326,15 @@ const pathSegments = computed(() => {
     }
   } else {
     // Unix-style paths
-    const parts = path.split('/').filter(part => part)
+    const parts = path.split('/').filter((part) => part)
     segments.push({ name: '/', path: '/' })
-    
+
     for (let i = 0; i < parts.length; i++) {
       const segmentPath = '/' + parts.slice(0, i + 1).join('/')
       segments.push({ name: parts[i], path: segmentPath })
     }
   }
-  
+
   return segments
 })
 
@@ -346,14 +370,14 @@ const loadRoots = async () => {
 const loadDirectory = async (path: string) => {
   loading.value = true
   error.value = ''
-  
+
   try {
     // listDirectory handles empty/undefined path by defaulting to home directory
     const response = await listDirectory(path || undefined)
-    
+
     currentPath.value = response.path
     entries.value = response.entries
-    
+
     // Auto-select current directory if no selection
     if (!selectedPath.value) {
       selectedPath.value = currentPath.value
@@ -395,7 +419,7 @@ const getParentPath = (path: string): string => {
   if (!path || path === '/' || path.match(/^[A-Za-z]:\\?$/)) {
     return ''
   }
-  
+
   // Handle Windows paths
   if (path.includes('\\')) {
     const parts = path.split('\\')
@@ -403,7 +427,7 @@ const getParentPath = (path: string): string => {
     const parent = parts.join('\\')
     return parent.endsWith(':') ? parent + '\\' : parent
   }
-  
+
   // Handle Unix paths
   const parts = path.split('/')
   parts.pop()
@@ -413,7 +437,7 @@ const getParentPath = (path: string): string => {
 const getFolderDisplayName = (path: string): string => {
   if (path === '/') return 'Root'
   if (path.match(/^[A-Za-z]:\\?$/)) return path.replace('\\', '')
-  
+
   const segments = path.split(/[/\\]/)
   return segments[segments.length - 1] || path
 }
@@ -422,12 +446,12 @@ const formatFileSize = (bytes: number): string => {
   const units = ['B', 'KB', 'MB', 'GB']
   let size = bytes
   let unitIndex = 0
-  
+
   while (size >= 1024 && unitIndex < units.length - 1) {
     size /= 1024
     unitIndex++
   }
-  
+
   return `${size.toFixed(1)} ${units[unitIndex]}`
 }
 
@@ -445,7 +469,7 @@ const toggleManualPathEdit = () => {
 
 const validatePath = async (path: string): Promise<boolean> => {
   if (!path) return false
-  
+
   validating.value = true
   try {
     const response = await checkWritable(path)
@@ -459,43 +483,46 @@ const validatePath = async (path: string): Promise<boolean> => {
 
 const confirmSelection = async () => {
   if (!selectedPath.value) return
-  
+
   const isValid = await validatePath(selectedPath.value)
   if (!isValid) {
     error.value = 'Selected folder is not accessible or writable'
     return
   }
-  
+
   emit('select', selectedPath.value)
   closeModal()
 }
 
 // Watchers
-watch(() => props.isOpen, (isOpen) => {
-  if (isOpen) {
-    // Clear errors and entries but preserve selectedPath if we have an initialPath
-    error.value = ''
-    entries.value = []
-    manualPathEdit.value = false
-    
-    // Set initial path before loading anything
-    if (props.initialPath) {
-      selectedPath.value = props.initialPath
-    } else {
-      selectedPath.value = ''
-    }
-    
-    loadRoots()
-    
-    // Load initial directory
-    if (props.initialPath) {
-      loadDirectory(props.initialPath)
-    } else {
-      // Load user home directory by default - get home directory from backend
-      loadDirectory('')
+watch(
+  () => props.isOpen,
+  (isOpen) => {
+    if (isOpen) {
+      // Clear errors and entries but preserve selectedPath if we have an initialPath
+      error.value = ''
+      entries.value = []
+      manualPathEdit.value = false
+
+      // Set initial path before loading anything
+      if (props.initialPath) {
+        selectedPath.value = props.initialPath
+      } else {
+        selectedPath.value = ''
+      }
+
+      loadRoots()
+
+      // Load initial directory
+      if (props.initialPath) {
+        loadDirectory(props.initialPath)
+      } else {
+        // Load user home directory by default - get home directory from backend
+        loadDirectory('')
+      }
     }
   }
-})
+)
 
 onMounted(() => {
   if (props.isOpen) {
@@ -503,9 +530,9 @@ onMounted(() => {
     if (props.initialPath) {
       selectedPath.value = props.initialPath
     }
-    
+
     loadRoots()
-    
+
     // Load initial directory
     if (props.initialPath) {
       loadDirectory(props.initialPath)
