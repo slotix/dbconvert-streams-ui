@@ -56,11 +56,32 @@ type EditorTab = {
   name: string
   meta: SQLTableMeta | SQLViewMeta
   pinned: boolean
+  defaultTab?: 'structure' | 'data'
 }
 
 const pinnedTabs = ref<EditorTab[]>([])
 const previewTab = ref<EditorTab | null>(null)
 const activePinnedIndex = ref<number | null>(null)
+const selectedDefaultTab = ref<'structure' | 'data' | null>(null)
+
+// Right split selection (lightweight preview only)
+const splitConnectionId = ref<string | null>(null)
+const splitDatabaseName = ref<string | null>(null)
+const splitSchemaName = ref<string | null>(null)
+const splitObjectType = ref<ObjectType | null>(null)
+const splitObjectName = ref<string | null>(null)
+const splitMeta = ref<SQLTableMeta | SQLViewMeta | null>(null)
+const splitDefaultTab = ref<'structure' | 'data' | null>(null)
+
+function closeRightSplit() {
+  splitConnectionId.value = null
+  splitDatabaseName.value = null
+  splitSchemaName.value = null
+  splitObjectType.value = null
+  splitObjectName.value = null
+  splitMeta.value = null
+  splitDefaultTab.value = null
+}
 
 function settingAlwaysOpenNewTab(): boolean {
   return localStorage.getItem('explorer.alwaysOpenNewTab') === 'true'
@@ -77,6 +98,7 @@ function activateTabFromState(tab: EditorTab | null) {
   selectedObjectType.value = tab.type
   selectedObjectName.value = tab.name
   selectedMeta.value = tab.meta
+  selectedDefaultTab.value = tab.defaultTab || null
   // keep schema store in sync
   schemaStore.setConnectionId(tab.connectionId)
   schemaStore.setDatabaseName(tab.database)
@@ -101,7 +123,20 @@ function handleOpenFromTree(payload: {
   name: string
   meta: SQLTableMeta | SQLViewMeta
   mode: 'preview' | 'pinned'
+  defaultTab?: 'structure' | 'data'
+  openInRightSplit?: boolean
 }) {
+  // If request is to open in right split, update split-only state and return
+  if (payload.openInRightSplit) {
+    splitConnectionId.value = payload.connectionId
+    splitDatabaseName.value = payload.database
+    splitSchemaName.value = payload.schema || null
+    splitObjectType.value = payload.type
+    splitObjectName.value = payload.name
+    splitMeta.value = payload.meta
+    splitDefaultTab.value = payload.defaultTab || null
+    return
+  }
   const desiredPinned = payload.mode === 'pinned' || settingAlwaysOpenNewTab()
   if (desiredPinned) {
     const key = toKey(payload)
@@ -337,6 +372,12 @@ onMounted(() => {
   }
 })
 
+function getConnectionTypeById(id: string | null): string {
+  if (!id) return 'sql'
+  const conn = connectionsStore.connections.find((c) => c.id === id)
+  return conn?.type || 'sql'
+}
+
 // Watch for route changes to update recent connections and last viewed connection
 watch(currentConnectionId, (newId) => {
   if (newId && currentConnection.value) {
@@ -459,17 +500,49 @@ watch(currentConnectionId, (newId) => {
               <TabPanels>
                 <TabPanel>
                   <div class="min-h-[480px]">
-                    <div v-if="selectedMeta">
-                      <DatabaseObjectContainer :table-meta="selectedMeta" :is-view="selectedObjectType === 'view'"
-                        :connection-id="currentConnectionId || ''"
-                        :connection-type="currentConnectionDetails?.type || 'sql'"
-                        :database="selectedDatabaseName || ''" @refresh-metadata="refreshSelectedMetadata(true)" />
+                    <div v-if="splitMeta" class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                      <!-- Left (primary) -->
+                      <div>
+                        <div v-if="selectedMeta">
+                          <DatabaseObjectContainer :table-meta="selectedMeta" :is-view="selectedObjectType === 'view'"
+                            :connection-id="currentConnectionId || ''"
+                            :connection-type="currentConnectionDetails?.type || 'sql'"
+                            :database="selectedDatabaseName || ''" :default-tab="selectedDefaultTab || 'structure'"
+                            @refresh-metadata="refreshSelectedMetadata(true)" />
+                        </div>
+                        <div v-else class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg p-8 text-center">
+                          <h3 class="text-sm font-medium text-gray-900">No object selected</h3>
+                          <p class="mt-1 text-sm text-gray-500">
+                            Select a table or view from the sidebar to view its structure
+                          </p>
+                        </div>
+                      </div>
+
+                      <!-- Right split -->
+                      <div>
+                        <DatabaseObjectContainer v-if="splitMeta" :table-meta="splitMeta"
+                          :is-view="splitObjectType === 'view'"
+                          :connection-id="splitConnectionId || currentConnectionId || ''"
+                          :connection-type="getConnectionTypeById(splitConnectionId)"
+                          :database="splitDatabaseName || ''" :default-tab="splitDefaultTab || 'structure'"
+                          :closable="true" @close="closeRightSplit" />
+                      </div>
                     </div>
-                    <div v-else class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg p-8 text-center">
-                      <h3 class="text-sm font-medium text-gray-900">No object selected</h3>
-                      <p class="mt-1 text-sm text-gray-500">
-                        Select a table or view from the sidebar to view its structure
-                      </p>
+
+                    <div v-else>
+                      <div v-if="selectedMeta">
+                        <DatabaseObjectContainer :table-meta="selectedMeta" :is-view="selectedObjectType === 'view'"
+                          :connection-id="currentConnectionId || ''"
+                          :connection-type="currentConnectionDetails?.type || 'sql'"
+                          :database="selectedDatabaseName || ''" :default-tab="selectedDefaultTab || 'structure'"
+                          @refresh-metadata="refreshSelectedMetadata(true)" />
+                      </div>
+                      <div v-else class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg p-8 text-center">
+                        <h3 class="text-sm font-medium text-gray-900">No object selected</h3>
+                        <p class="mt-1 text-sm text-gray-500">
+                          Select a table or view from the sidebar to view its structure
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </TabPanel>

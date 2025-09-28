@@ -12,6 +12,7 @@ import { useConnectionsStore } from '@/stores/connections'
 import connectionsApi from '@/api/connections'
 import type { Connection } from '@/types/connections'
 import type { DatabaseMetadata, SQLTableMeta, SQLViewMeta } from '@/types/metadata'
+import { useToast } from 'vue-toastification'
 
 type ObjectType = 'table' | 'view'
 
@@ -25,6 +26,8 @@ const props = defineProps<{
     }
 }>()
 
+type DefaultTab = 'structure' | 'data'
+
 const emit = defineEmits<{
     (
         e: 'open',
@@ -36,6 +39,8 @@ const emit = defineEmits<{
             name: string
             meta: SQLTableMeta | SQLViewMeta
             mode: 'preview' | 'pinned'
+            defaultTab?: DefaultTab
+            openInRightSplit?: boolean
         }
     ): void
     (e: 'expanded-connection', payload: { connectionId: string }): void
@@ -53,6 +58,57 @@ const databasesByConn = ref<Record<string, Array<{ name: string }>>>({})
 const metadataByConnDb = ref<Record<string, Record<string, DatabaseMetadata>>>({})
 
 const searchQuery = ref('')
+
+// Context menu state
+type ContextTarget =
+    | { kind: 'connection'; connectionId: string }
+    | { kind: 'database'; connectionId: string; database: string }
+    | { kind: 'schema'; connectionId: string; database: string; schema: string }
+    | {
+        kind: 'table' | 'view'
+        connectionId: string
+        database: string
+        schema?: string
+        name: string
+    }
+
+const contextMenuVisible = ref(false)
+const contextMenuX = ref(0)
+const contextMenuY = ref(0)
+const contextTarget = ref<ContextTarget | null>(null)
+const hasContextMenu = computed(() => contextMenuVisible.value && !!contextTarget.value)
+const menuTarget = computed<ContextTarget>(() => contextTarget.value as ContextTarget)
+type TableOrViewTarget = Extract<ContextTarget, { kind: 'table' | 'view' }>
+const menuObj = computed<TableOrViewTarget | null>(() =>
+    menuTarget.value && (menuTarget.value.kind === 'table' || menuTarget.value.kind === 'view')
+        ? (menuTarget.value as TableOrViewTarget)
+        : null
+)
+
+function openContextMenu(e: MouseEvent, target: ContextTarget) {
+    e.preventDefault()
+    contextTarget.value = target
+    // Use client coordinates; position with small offset
+    contextMenuX.value = e.clientX + 2
+    contextMenuY.value = e.clientY + 2
+    contextMenuVisible.value = true
+    // Close on outside click or Escape
+    window.addEventListener('click', closeContextMenuOnce, { once: true })
+    window.addEventListener('keydown', onContextKeydown)
+}
+
+function closeContextMenuOnce() {
+    contextMenuVisible.value = false
+    contextTarget.value = null
+    window.removeEventListener('keydown', onContextKeydown)
+}
+
+function onContextKeydown(ev: KeyboardEvent) {
+    if (ev.key === 'Escape') closeContextMenuOnce()
+}
+
+// Global toast
+const toast = useToast()
 
 
 async function loadConnections() {
@@ -156,7 +212,9 @@ function onOpen(
     type: ObjectType,
     name: string,
     mode: 'preview' | 'pinned',
-    schema?: string
+    schema?: string,
+    defaultTab?: DefaultTab,
+    openInRightSplit?: boolean
 ) {
     const meta = metadataByConnDb.value[connId]?.[db]
     if (!meta) return
@@ -164,7 +222,65 @@ function onOpen(
     if (type === 'table') obj = Object.values(meta.tables || {}).find((t) => t.name === name)
     else obj = Object.values(meta.views || {}).find((v) => v.name === name)
     if (!obj) return
-    emit('open', { connectionId: connId, database: db, schema, type, name, meta: obj, mode })
+    emit('open', { connectionId: connId, database: db, schema, type, name, meta: obj, mode, defaultTab, openInRightSplit })
+}
+
+// Context actions
+async function actionTestConnection(id: string) {
+    try {
+        const res = await connectionsApi.pingConnectionById(id)
+        if (res.includes('Passed')) toast.success(res)
+        else toast.error(res)
+    } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : 'Connection test failed'
+        toast.error(msg)
+    }
+}
+
+async function actionRefreshDatabases(id: string) {
+    // Clear cached dbs so ensureDatabases refetches
+    delete databasesByConn.value[id]
+    await ensureDatabases(id)
+    toast.success('Databases refreshed')
+}
+
+async function actionRefreshMetadata(connId: string, db: string) {
+    try {
+        const meta = await connectionsApi.getMetadata(connId, db, true)
+        if (!metadataByConnDb.value[connId]) metadataByConnDb.value[connId] = {}
+        metadataByConnDb.value[connId][db] = meta
+        toast.success('Metadata refreshed')
+    } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : 'Failed to refresh metadata'
+        toast.error(msg)
+    }
+}
+
+async function actionCopy(text: string, label = 'Copied') {
+    try {
+        await navigator.clipboard.writeText(text)
+        toast.success(label)
+    } catch {
+        toast.error('Failed to copy')
+    }
+}
+
+function findTableMeta(connId: string, db: string, name: string, schema?: string) {
+    const meta = metadataByConnDb.value[connId]?.[db]
+    if (!meta) return null
+    const obj = Object.values(meta.tables || {}).find(
+        (t) => t.name === name && (schema ? t.schema === schema : true)
+    )
+    return obj || null
+}
+
+function findViewMeta(connId: string, db: string, name: string, schema?: string) {
+    const meta = metadataByConnDb.value[connId]?.[db]
+    if (!meta) return null
+    const obj = Object.values(meta.views || {}).find(
+        (v) => v.name === name && (schema ? v.schema === schema : true)
+    )
+    return obj || null
 }
 
 // Build schema list and items for a given connection/database
@@ -406,7 +522,8 @@ function getFlatViews(connId: string, db: string): string[] {
                 <div v-else class="space-y-1">
                     <div v-for="conn in filteredConnections" :key="conn.id">
                         <div class="flex items-center px-2 py-1.5 text-sm text-gray-700 rounded-md hover:bg-gray-100 cursor-pointer"
-                            @click="toggleConnection(conn.id)">
+                            @click="toggleConnection(conn.id)"
+                            @contextmenu.stop.prevent="openContextMenu($event, { kind: 'connection', connectionId: conn.id })">
                             <component :is="isConnExpanded(conn.id) ? ChevronDownIcon : ChevronRightIcon"
                                 class="h-4 w-4 text-gray-400 mr-1.5" />
                             <img :src="getDbLogoForType(conn.type)" :alt="conn.type || 'db'"
@@ -431,7 +548,8 @@ function getFlatViews(connId: string, db: string): string[] {
                             <div v-for="db in (databasesByConn[conn.id] || []).filter(d => matchesDbFilter(conn.id, d.name))"
                                 :key="db.name">
                                 <div class="flex items-center px-2 py-1.5 text-sm text-gray-700 rounded-md hover:bg-gray-100 cursor-pointer"
-                                    @click="toggleDb(conn.id, db.name)" :data-explorer-db="`${conn.id}:${db.name}`">
+                                    @click="toggleDb(conn.id, db.name)" :data-explorer-db="`${conn.id}:${db.name}`"
+                                    @contextmenu.stop.prevent="openContextMenu($event, { kind: 'database', connectionId: conn.id, database: db.name })">
                                     <component :is="isDbExpanded(conn.id, db.name) ? ChevronDownIcon : ChevronRightIcon"
                                         class="h-4 w-4 text-gray-400 mr-1.5" />
                                     <span class="font-medium">
@@ -452,6 +570,7 @@ function getFlatViews(connId: string, db: string): string[] {
                                                 :key="schema.name || 'default'">
                                                 <div class="flex items-center px-2 py-1 text-sm text-gray-700 rounded-md hover:bg-gray-100 cursor-pointer"
                                                     @click="toggleSchema(conn.id, db.name, schema.name)"
+                                                    @contextmenu.stop.prevent="openContextMenu($event, { kind: 'schema', connectionId: conn.id, database: db.name, schema: schema.name || '' })"
                                                     :data-explorer-schema="`${conn.id}:${db.name}:${schema.name}`">
                                                     <component :is="isSchemaExpanded(conn.id, db.name, schema.name)
                                                         ? ChevronDownIcon
@@ -482,7 +601,8 @@ function getFlatViews(connId: string, db: string): string[] {
                                                         :data-explorer-obj="`${conn.id}:${db.name}:${schema.name || ''}:table:${t}`"
                                                         @click.stop="onOpen(conn.id, db.name, 'table', t, 'preview', schema.name)"
                                                         @dblclick.stop="onOpen(conn.id, db.name, 'table', t, 'pinned', schema.name)"
-                                                        @click.middle.stop="onOpen(conn.id, db.name, 'table', t, 'pinned', schema.name)">
+                                                        @click.middle.stop="onOpen(conn.id, db.name, 'table', t, 'pinned', schema.name)"
+                                                        @contextmenu.stop.prevent="openContextMenu($event, { kind: 'table', connectionId: conn.id, database: db.name, schema: schema.name || undefined, name: t })">
                                                         <TableCellsIcon class="h-4 w-4 mr-1.5 text-gray-400" />
                                                         <span>
                                                             <template v-for="(p, i) in highlightParts(t)" :key="i">
@@ -506,7 +626,8 @@ function getFlatViews(connId: string, db: string): string[] {
                                                         :data-explorer-obj="`${conn.id}:${db.name}:${schema.name || ''}:view:${v}`"
                                                         @click.stop="onOpen(conn.id, db.name, 'view', v, 'preview', schema.name)"
                                                         @dblclick.stop="onOpen(conn.id, db.name, 'view', v, 'pinned', schema.name)"
-                                                        @click.middle.stop="onOpen(conn.id, db.name, 'view', v, 'pinned', schema.name)">
+                                                        @click.middle.stop="onOpen(conn.id, db.name, 'view', v, 'pinned', schema.name)"
+                                                        @contextmenu.stop.prevent="openContextMenu($event, { kind: 'view', connectionId: conn.id, database: db.name, schema: schema.name || undefined, name: v })">
                                                         <ViewfinderCircleIcon class="h-4 w-4 mr-1.5 text-gray-400" />
                                                         <span>
                                                             <template v-for="(p, i) in highlightParts(v)" :key="i">
@@ -535,7 +656,8 @@ function getFlatViews(connId: string, db: string): string[] {
                                                 :data-explorer-obj="`${conn.id}:${db.name}::table:${t}`"
                                                 @click.stop="onOpen(conn.id, db.name, 'table', t, 'preview')"
                                                 @dblclick.stop="onOpen(conn.id, db.name, 'table', t, 'pinned')"
-                                                @click.middle.stop="onOpen(conn.id, db.name, 'table', t, 'pinned')">
+                                                @click.middle.stop="onOpen(conn.id, db.name, 'table', t, 'pinned')"
+                                                @contextmenu.stop.prevent="openContextMenu($event, { kind: 'table', connectionId: conn.id, database: db.name, name: t })">
                                                 <TableCellsIcon class="h-4 w-4 mr-1.5 text-gray-400" />
                                                 <span>
                                                     <template v-for="(p, i) in highlightParts(t)" :key="i">
@@ -558,7 +680,8 @@ function getFlatViews(connId: string, db: string): string[] {
                                                 :data-explorer-obj="`${conn.id}:${db.name}::view:${v}`"
                                                 @click.stop="onOpen(conn.id, db.name, 'view', v, 'preview')"
                                                 @dblclick.stop="onOpen(conn.id, db.name, 'view', v, 'pinned')"
-                                                @click.middle.stop="onOpen(conn.id, db.name, 'view', v, 'pinned')">
+                                                @click.middle.stop="onOpen(conn.id, db.name, 'view', v, 'pinned')"
+                                                @contextmenu.stop.prevent="openContextMenu($event, { kind: 'view', connectionId: conn.id, database: db.name, name: v })">
                                                 <ViewfinderCircleIcon class="h-4 w-4 mr-1.5 text-gray-400" />
                                                 <span>
                                                     <template v-for="(p, i) in highlightParts(v)" :key="i">
@@ -578,5 +701,84 @@ function getFlatViews(connId: string, db: string): string[] {
                 </div>
             </div>
         </div>
+        <teleport to="body">
+            <div v-if="hasContextMenu">
+                <div class="fixed inset-0 z-40" @click="closeContextMenuOnce"></div>
+                <div class="fixed z-50 bg-white border border-gray-200 rounded-md shadow-lg py-1 text-sm"
+                    :style="{ left: contextMenuX + 'px', top: contextMenuY + 'px', minWidth: '200px' }">
+                    <!-- Connection menu -->
+                    <template v-if="menuTarget.kind === 'connection'">
+                        <button class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
+                            @click="actionTestConnection(menuTarget.connectionId); closeContextMenuOnce()">Test
+                            connection</button>
+                        <button class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
+                            @click="actionRefreshDatabases(menuTarget.connectionId); closeContextMenuOnce()">Refresh</button>
+                    </template>
+                    <!-- Database menu -->
+                    <template v-else-if="menuTarget.kind === 'database'">
+                        <button class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
+                            @click="actionRefreshMetadata((menuTarget as any).connectionId, (menuTarget as any).database); closeContextMenuOnce()">Refresh
+                            metadata</button>
+                        <button class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
+                            @click="actionCopy((menuTarget as any).database, 'Database name copied'); closeContextMenuOnce()">Copy
+                            name</button>
+                    </template>
+                    <!-- Schema menu -->
+                    <template v-else-if="menuTarget.kind === 'schema'">
+                        <button class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
+                            @click="actionRefreshMetadata((menuTarget as any).connectionId, (menuTarget as any).database); closeContextMenuOnce()">Refresh
+                            metadata</button>
+                        <button class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
+                            @click="actionCopy((menuTarget as any).schema, 'Schema name copied'); closeContextMenuOnce()">Copy
+                            name</button>
+                    </template>
+                    <!-- Table/View menu -->
+                    <template v-else-if="menuTarget.kind === 'table' || menuTarget.kind === 'view'">
+                        <button v-if="menuObj" class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
+                            @click="onOpen(menuObj.connectionId, menuObj.database, menuObj.kind, menuObj.name, 'preview', menuObj.schema, 'structure'); closeContextMenuOnce()">
+                            Open Structure
+                        </button>
+                        <button v-if="menuObj" class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
+                            @click="onOpen(menuObj.connectionId, menuObj.database, menuObj.kind, menuObj.name, 'preview', menuObj.schema, 'data'); closeContextMenuOnce()">
+                            Open Data
+                        </button>
+                        <div class="my-1 border-t border-gray-100"></div>
+                        <button v-if="menuObj" class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
+                            @click="onOpen(menuObj.connectionId, menuObj.database, menuObj.kind, menuObj.name, 'preview', menuObj.schema, 'structure', true); closeContextMenuOnce()">
+                            Open in Right Split
+                        </button>
+                        <button v-if="menuObj" class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
+                            @click="onOpen(menuObj.connectionId, menuObj.database, menuObj.kind, menuObj.name, 'preview', menuObj.schema, 'data', true); closeContextMenuOnce()">
+                            Open Data in Right Split
+                        </button>
+                        <button v-if="menuObj" class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
+                            @click="actionCopy(menuObj.name, 'Object name copied'); closeContextMenuOnce()">Copy
+                            name</button>
+                        <button v-if="menuObj" class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
+                            :disabled="menuObj.kind === 'table' ? !findTableMeta(menuObj.connectionId, menuObj.database, menuObj.name, menuObj.schema)?.ddl?.createTable : !findViewMeta(menuObj.connectionId, menuObj.database, menuObj.name, menuObj.schema)?.definition"
+                            @click="
+                                (async () => {
+                                    if (menuObj && menuObj.kind === 'table') {
+                                        const m = findTableMeta(menuObj.connectionId, menuObj.database, menuObj.name, menuObj.schema)
+                                        const ddl = m?.ddl?.createTable || ''
+                                        if (ddl) await actionCopy(ddl, 'Table DDL copied')
+                                        else toast.info('DDL not available')
+                                    } else if (menuObj) {
+                                        const m = findViewMeta(menuObj.connectionId, menuObj.database, menuObj.name, menuObj.schema)
+                                        const ddl = m?.definition || ''
+                                        if (ddl) await actionCopy(ddl, 'View DDL copied')
+                                        else toast.info('Definition not available')
+                                    }
+                                    closeContextMenuOnce()
+                                })()
+                                ">
+                            Copy DDL
+                        </button>
+                    </template>
+                </div>
+            </div>
+
+
+        </teleport>
     </div>
 </template>

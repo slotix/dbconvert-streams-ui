@@ -139,6 +139,23 @@ const testConnection = async (): Promise<string> => {
   }
 }
 
+const pingConnectionById = async (id: string): Promise<string> => {
+  const commonStore = useCommonStore()
+  validateApiKey(commonStore.apiKey)
+  try {
+    const response: AxiosResponse<{ ping: string }> = await apiClient.post(
+      `/connections/${id}/ping`,
+      null,
+      {
+        headers: { 'X-API-Key': commonStore.apiKey }
+      }
+    )
+    return response.data.ping === 'ok' ? 'Connection Test Passed' : 'Connection Test Failed'
+  } catch (error) {
+    throw handleApiError(error)
+  }
+}
+
 const getDatabases = async (id: string): Promise<DatabaseInfo[]> => {
   const commonStore = useCommonStore()
   validateApiKey(commonStore.apiKey)
@@ -362,6 +379,7 @@ export default {
   deleteConnection,
   cloneConnection,
   testConnection,
+  pingConnectionById,
   getDatabases,
   createDatabase,
   createSchema,
