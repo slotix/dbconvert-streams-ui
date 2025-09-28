@@ -7,7 +7,7 @@ import { useSchemaStore } from '@/stores/schema'
 import { Tab, TabGroup, TabList, TabPanels, TabPanel } from '@headlessui/vue'
 // (Removed TrashIcon as Clear All control was removed)
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
-import ExplorerSidebarTree from '@/components/database/ExplorerSidebarTree.vue'
+import ExplorerSidebarConnections from '@/components/database/ExplorerSidebarConnections.vue'
 import ExplorerBreadcrumb from '@/components/database/ExplorerBreadcrumb.vue'
 import DatabaseObjectContainer from '@/components/database/DatabaseObjectContainer.vue'
 import DiagramView from '@/components/database/DiagramView.vue'
@@ -46,6 +46,103 @@ const selectedSchemaName = ref<string | null>(null)
 const selectedObjectType = ref<ObjectType | null>(null)
 const selectedObjectName = ref<string | null>(null)
 const selectedMeta = ref<SQLTableMeta | SQLViewMeta | null>(null)
+
+// Editor tabs: preview and pinned (VS Code model)
+type EditorTab = {
+  connectionId: string
+  database: string
+  schema?: string
+  type: ObjectType
+  name: string
+  meta: SQLTableMeta | SQLViewMeta
+  pinned: boolean
+}
+
+const pinnedTabs = ref<EditorTab[]>([])
+const previewTab = ref<EditorTab | null>(null)
+const activePinnedIndex = ref<number | null>(null)
+
+function settingAlwaysOpenNewTab(): boolean {
+  return localStorage.getItem('explorer.alwaysOpenNewTab') === 'true'
+}
+
+function toKey(t: { database: string; schema?: string; type: ObjectType; name: string }) {
+  return `${t.database}:${t.schema || ''}:${t.type}:${t.name}`
+}
+
+function activateTabFromState(tab: EditorTab | null) {
+  if (!tab) return
+  selectedDatabaseName.value = tab.database
+  selectedSchemaName.value = tab.schema || null
+  selectedObjectType.value = tab.type
+  selectedObjectName.value = tab.name
+  selectedMeta.value = tab.meta
+  // keep schema store in sync
+  schemaStore.setConnectionId(tab.connectionId)
+  schemaStore.setDatabaseName(tab.database)
+  schemaStore.fetchSchema(false)
+  // update route
+  router.replace({
+    path: `/explorer/${tab.connectionId}`,
+    query: {
+      db: tab.database,
+      schema: tab.schema || undefined,
+      type: tab.type,
+      name: tab.name
+    }
+  })
+}
+
+function handleOpenFromTree(payload: {
+  connectionId: string
+  database: string
+  schema?: string
+  type: ObjectType
+  name: string
+  meta: SQLTableMeta | SQLViewMeta
+  mode: 'preview' | 'pinned'
+}) {
+  const desiredPinned = payload.mode === 'pinned' || settingAlwaysOpenNewTab()
+  if (desiredPinned) {
+    const key = toKey(payload)
+    const existingIndex = pinnedTabs.value.findIndex((t) => toKey(t) === key)
+    if (existingIndex === -1) {
+      pinnedTabs.value.push({ ...payload, pinned: true })
+      activePinnedIndex.value = pinnedTabs.value.length - 1
+    } else {
+      activePinnedIndex.value = existingIndex
+    }
+    activateTabFromState(pinnedTabs.value[activePinnedIndex.value!])
+  } else {
+    previewTab.value = { ...payload, pinned: false }
+    activePinnedIndex.value = null
+    activateTabFromState(previewTab.value)
+  }
+}
+
+function closePinned(index: number) {
+  if (index < 0 || index >= pinnedTabs.value.length) return
+  const wasActive = activePinnedIndex.value === index
+  pinnedTabs.value.splice(index, 1)
+  if (!pinnedTabs.value.length) {
+    activePinnedIndex.value = null
+    if (previewTab.value) activateTabFromState(previewTab.value)
+    return
+  }
+  if (wasActive) {
+    const newIndex = Math.min(index, pinnedTabs.value.length - 1)
+    activePinnedIndex.value = newIndex
+    activateTabFromState(pinnedTabs.value[newIndex])
+  } else if ((activePinnedIndex.value || 0) > index) {
+    activePinnedIndex.value = (activePinnedIndex.value || 0) - 1
+  }
+}
+
+function activatePinned(index: number) {
+  if (index < 0 || index >= pinnedTabs.value.length) return
+  activePinnedIndex.value = index
+  activateTabFromState(pinnedTabs.value[index])
+}
 
 const schemaStore = useSchemaStore()
 
@@ -124,39 +221,7 @@ function addToRecentConnections() {
 
 // (Removed switchConnection with the control)
 
-async function handleSidebarSelect(payload: {
-  database: string
-  schema?: string
-  type: ObjectType
-  name: string
-  meta: SQLTableMeta | SQLViewMeta
-}) {
-  const { database, schema, type, name, meta } = payload
-  const dbChanged = selectedDatabaseName.value !== database
-  selectedDatabaseName.value = database
-  selectedSchemaName.value = schema || null
-  selectedObjectType.value = type
-  selectedObjectName.value = name
-  selectedMeta.value = meta
-
-  // Sync schema store and diagram when database changes
-  if (dbChanged) {
-    schemaStore.setConnectionId(currentConnectionId.value)
-    schemaStore.setDatabaseName(database)
-    await schemaStore.fetchSchema(false)
-  }
-
-  // Sync route query for deep link
-  router.replace({
-    path: `/explorer/${currentConnectionId.value}`,
-    query: {
-      db: database,
-      schema: schema || undefined,
-      type,
-      name
-    }
-  })
-}
+// removed old handleSidebarSelect (tree now opens via @open with preview/pin semantics)
 
 async function refreshSelectedMetadata(force = true) {
   if (
@@ -229,11 +294,12 @@ watch(
   (newPath) => {
     if (newPath === '/explorer' && recentConnections.value.length > 0) {
       // Use the last viewed connection if available and still in recent connections
-      const connectionToUse =
-        lastViewedConnectionId.value &&
-          recentConnections.value.find((c) => c.id === lastViewedConnectionId.value)
-          ? lastViewedConnectionId.value
-          : recentConnections.value[recentConnections.value.length - 1].id
+      const existsInRecent =
+        !!lastViewedConnectionId.value &&
+        recentConnections.value.some((c) => c.id === lastViewedConnectionId.value)
+      const connectionToUse = existsInRecent
+        ? lastViewedConnectionId.value
+        : recentConnections.value[recentConnections.value.length - 1].id
 
       router.replace(`/explorer/${connectionToUse}`)
     }
@@ -314,21 +380,18 @@ watch(currentConnectionId, (newId) => {
         <div class="mt-6 grid grid-cols-12 gap-4">
           <!-- Sidebar -->
           <div class="col-span-12 md:col-span-4 lg:col-span-3">
-            <ExplorerSidebarTree v-if="currentConnectionId" :connection-id="currentConnectionId" :selected="{
+            <ExplorerSidebarConnections :initial-expanded-connection-id="currentConnectionId || undefined" :selected="{
               database: selectedDatabaseName || undefined,
               schema: selectedSchemaName || undefined,
               type: selectedObjectType || undefined,
               name: selectedObjectName || undefined
-            }" @select="handleSidebarSelect" />
+            }" @open="handleOpenFromTree" />
           </div>
           <!-- Right panel -->
           <div class="col-span-12 md:col-span-8 lg:col-span-9">
             <div class="mb-4">
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2 text-sm text-gray-500">
-                  <!-- DB type icon at the very beginning -->
-                  <img v-if="currentConnectionDetails?.logo" :src="currentConnectionDetails.logo"
-                    :alt="currentConnectionDetails?.type || 'db'" class="h-4 w-4 rounded-sm" />
                   <span v-if="displayHostPort" class="font-medium text-gray-700">
                     {{ displayHostPort }}
                   </span>
@@ -337,6 +400,31 @@ watch(currentConnectionId, (newId) => {
                     :type="selectedObjectType" :name="selectedObjectName" @navigate="handleBreadcrumbNavigate" />
                 </div>
                 <CloudProviderBadge v-if="displayType" :cloud-provider="displayCloudProvider" :db-type="displayType" />
+              </div>
+            </div>
+
+            <!-- Object tabs (pinned + preview) -->
+            <div class="mb-2">
+              <div class="flex items-center gap-1">
+                <template v-for="(t, i) in pinnedTabs" :key="toKey(t)">
+                  <button
+                    class="px-2 py-1 text-xs rounded border border-gray-300 bg-white hover:bg-gray-50 flex items-center gap-1"
+                    :class="{ 'ring-1 ring-slate-400': activePinnedIndex === i }" @click="activatePinned(i)">
+                    <span class="font-medium">{{ t.name }}</span>
+                    <span class="text-gray-400">{{ t.type === 'table' ? 'T' : 'V' }}</span>
+                    <span class="text-gray-300">|</span>
+                    <span class="text-gray-500">{{ t.database }}</span>
+                    <span role="button" aria-label="Close tab"
+                      class="ml-1 text-gray-400 hover:text-gray-700 cursor-pointer" @click.stop="closePinned(i)">
+                      <span aria-hidden="true">×</span>
+                    </span>
+                  </button>
+                </template>
+                <button v-if="previewTab"
+                  class="px-2 py-1 text-xs rounded border border-dashed border-gray-300 bg-white text-gray-600 italic"
+                  @click="activatePinned(-1)">
+                  {{ previewTab.name }} (Preview)
+                </button>
               </div>
             </div>
 
