@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import {
     ChevronRightIcon,
     ChevronDownIcon,
@@ -53,6 +53,7 @@ const databasesByConn = ref<Record<string, Array<{ name: string }>>>({})
 const metadataByConnDb = ref<Record<string, Record<string, DatabaseMetadata>>>({})
 
 const searchQuery = ref('')
+
 
 async function loadConnections() {
     isLoadingConnections.value = true
@@ -116,6 +117,10 @@ function toggleSchema(connId: string, db: string, schema: string) {
 }
 
 const normalized = (s: string) => s.toLowerCase()
+function includesMatch(hay: string | undefined | null, q: string) {
+    if (!hay) return false
+    return normalized(hay).includes(normalized(q))
+}
 
 function highlightParts(text: string) {
     const q = searchQuery.value.trim()
@@ -216,20 +221,118 @@ watch(
         if (!sel) return
         const connId = props.initialExpandedConnectionId
         if (!connId) return
+        // Expand connection and databases
         expandedConnections.value.add(connId)
         await ensureDatabases(connId)
+
+        if (sel.database) {
+            const dbKey = `${connId}:${sel.database}`
+            expandedDatabases.value.add(dbKey)
+            await ensureMetadata(connId, sel.database)
+        }
+
+        if (sel.database && sel.schema && hasSchemas(connId)) {
+            const schemaKey = `${connId}:${sel.database}:${sel.schema}`
+            expandedSchemas.value.add(schemaKey)
+        }
+
+        // After DOM updates, try to focus the most specific node
+        await nextTick()
+        function focusSelector(selector: string) {
+            const el = document.querySelector<HTMLElement>(selector)
+            if (el) {
+                el.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+                el.classList.add('ring-1', 'ring-slate-300')
+                setTimeout(() => el.classList.remove('ring-1', 'ring-slate-300'), 600)
+            }
+        }
+        if (sel.database && sel.type && sel.name) {
+            const objKey = `${connId}:${sel.database}:${sel.schema || ''}:${sel.type}:${sel.name}`
+            focusSelector(`[data-explorer-obj="${objKey}"]`)
+        } else if (sel.database && sel.schema) {
+            const schemaKey = `${connId}:${sel.database}:${sel.schema}`
+            focusSelector(`[data-explorer-schema="${schemaKey}"]`)
+        } else if (sel.database) {
+            const dbKey = `${connId}:${sel.database}`
+            focusSelector(`[data-explorer-db="${dbKey}"]`)
+        }
+    },
+    { immediate: false }
+)
+
+// When searching, auto-expand connections and databases that match
+watch(
+    () => searchQuery.value,
+    async (q) => {
+        const query = q.trim()
+        if (!query) return
+        // Expand all filtered connections and ensure their databases are loaded
+        const conns = filteredConnections.value
+        for (const c of conns) {
+            if (!expandedConnections.value.has(c.id)) {
+                expandedConnections.value.add(c.id)
+            }
+            await ensureDatabases(c.id)
+            // Expand databases that match the filter
+            const dbs = databasesByConn.value[c.id] || []
+            for (const d of dbs) {
+                if (matchesDbFilter(c.id, d.name)) {
+                    expandedDatabases.value.add(`${c.id}:${d.name}`)
+                    // Optionally ensure metadata so table/view matches appear
+                    ensureMetadata(c.id, d.name).catch(() => { })
+                }
+            }
+        }
     },
     { immediate: false }
 )
 
 const filteredConnections = computed<Connection[]>(() => {
-    const q = normalized(searchQuery.value.trim())
+    const q = searchQuery.value.trim()
     if (!q) return connectionsStore.connections
+    const qn = normalized(q)
     return connectionsStore.connections.filter((c) => {
+        // match by connection label
         const label = `${c.name || ''} ${c.host || ''} ${c.type || ''}`
-        return normalized(label).includes(q)
+        if (normalized(label).includes(qn)) return true
+        // match by database name if loaded
+        const dbs = databasesByConn.value[c.id] || []
+        if (dbs.some((d) => normalized(d.name).includes(qn))) return true
+        // match by schema/table/view if metadata loaded
+        const metaByDb = metadataByConnDb.value[c.id] || {}
+        for (const dbName in metaByDb) {
+            const meta = metaByDb[dbName]
+            // schemas (if present)
+            const hasSchemaHit = Object.values(meta.tables || {}).some((t) =>
+                (t.schema && normalized(t.schema).includes(qn)) || normalized(t.name).includes(qn)
+            )
+            if (hasSchemaHit) return true
+            const hasViewHit = Object.values(meta.views || {}).some((v) =>
+                (v.schema && normalized(v.schema).includes(qn)) || normalized(v.name).includes(qn)
+            )
+            if (hasViewHit) return true
+        }
+        return false
     })
 })
+
+function matchesDbFilter(connId: string, dbName: string): boolean {
+    const q = searchQuery.value.trim()
+    if (!q) return true
+    const qn = normalized(q)
+    if (normalized(dbName).includes(qn)) return true
+    const meta = metadataByConnDb.value[connId]?.[dbName]
+    if (!meta) return false
+    // check schemas, tables, views
+    const tableHit = Object.values(meta.tables || {}).some(
+        (t) => normalized(t.name).includes(qn) || (t.schema && normalized(t.schema).includes(qn))
+    )
+    if (tableHit) return true
+    const viewHit = Object.values(meta.views || {}).some(
+        (v) => normalized(v.name).includes(qn) || (v.schema && normalized(v.schema).includes(qn))
+    )
+    return viewHit
+}
 
 function getDbLogoForType(dbType?: string): string {
     const t = (dbType || '').toString().toLowerCase()
@@ -325,9 +428,10 @@ function getFlatViews(connId: string, db: string): string[] {
                             <div v-if="!databasesByConn[conn.id]?.length" class="text-xs text-gray-500 px-2 py-1">
                                 No databases
                             </div>
-                            <div v-for="db in databasesByConn[conn.id] || []" :key="db.name">
+                            <div v-for="db in (databasesByConn[conn.id] || []).filter(d => matchesDbFilter(conn.id, d.name))"
+                                :key="db.name">
                                 <div class="flex items-center px-2 py-1.5 text-sm text-gray-700 rounded-md hover:bg-gray-100 cursor-pointer"
-                                    @click="toggleDb(conn.id, db.name)">
+                                    @click="toggleDb(conn.id, db.name)" :data-explorer-db="`${conn.id}:${db.name}`">
                                     <component :is="isDbExpanded(conn.id, db.name) ? ChevronDownIcon : ChevronRightIcon"
                                         class="h-4 w-4 text-gray-400 mr-1.5" />
                                     <span class="font-medium">
@@ -347,12 +451,21 @@ function getFlatViews(connId: string, db: string): string[] {
                                             <template v-for="schema in getSchemas(conn.id, db.name)"
                                                 :key="schema.name || 'default'">
                                                 <div class="flex items-center px-2 py-1 text-sm text-gray-700 rounded-md hover:bg-gray-100 cursor-pointer"
-                                                    @click="toggleSchema(conn.id, db.name, schema.name)">
+                                                    @click="toggleSchema(conn.id, db.name, schema.name)"
+                                                    :data-explorer-schema="`${conn.id}:${db.name}:${schema.name}`">
                                                     <component :is="isSchemaExpanded(conn.id, db.name, schema.name)
-                                                            ? ChevronDownIcon
-                                                            : ChevronRightIcon
+                                                        ? ChevronDownIcon
+                                                        : ChevronRightIcon
                                                         " class="h-4 w-4 text-gray-400 mr-1.5" />
-                                                    <span class="font-medium">{{ schema.name || 'default' }}</span>
+                                                    <span class="font-medium">
+                                                        <template
+                                                            v-for="(p, i) in highlightParts(schema.name || 'default')"
+                                                            :key="i">
+                                                            <span v-if="p.match" class="bg-yellow-200/60 rounded px-0.5"
+                                                                v-text="p.text"></span>
+                                                            <span v-else v-text="p.text"></span>
+                                                        </template>
+                                                    </span>
                                                 </div>
                                                 <div v-if="isSchemaExpanded(conn.id, db.name, schema.name)"
                                                     class="ml-4 border-l border-gray-200 pl-2">
@@ -363,15 +476,22 @@ function getFlatViews(connId: string, db: string): string[] {
                                                             {{ schema.tables.length }}
                                                         </span>
                                                     </div>
-                                                    <div v-for="t in schema.tables" :key="t"
+                                                    <div v-for="t in schema.tables.filter(n => !searchQuery || n.toLowerCase().includes(searchQuery.toLowerCase()))"
+                                                        :key="t"
                                                         class="flex items-center px-2 py-1.5 text-sm rounded-md hover:bg-gray-100 cursor-pointer"
-                                                        @click.stop="
-                                                            onOpen(conn.id, db.name, 'table', t, 'preview', schema.name)
-                                                            " @dblclick.stop="
-                                onOpen(conn.id, db.name, 'table', t, 'pinned', schema.name)
-                                ">
+                                                        :data-explorer-obj="`${conn.id}:${db.name}:${schema.name || ''}:table:${t}`"
+                                                        @click.stop="onOpen(conn.id, db.name, 'table', t, 'preview', schema.name)"
+                                                        @dblclick.stop="onOpen(conn.id, db.name, 'table', t, 'pinned', schema.name)"
+                                                        @click.middle.stop="onOpen(conn.id, db.name, 'table', t, 'pinned', schema.name)">
                                                         <TableCellsIcon class="h-4 w-4 mr-1.5 text-gray-400" />
-                                                        <span>{{ t }}</span>
+                                                        <span>
+                                                            <template v-for="(p, i) in highlightParts(t)" :key="i">
+                                                                <span v-if="p.match"
+                                                                    class="bg-yellow-200/60 rounded px-0.5"
+                                                                    v-text="p.text"></span>
+                                                                <span v-else v-text="p.text"></span>
+                                                            </template>
+                                                        </span>
                                                     </div>
                                                     <div
                                                         class="text-xs uppercase tracking-wide text-gray-400 px-2 mt-2 flex items-center justify-between">
@@ -380,15 +500,22 @@ function getFlatViews(connId: string, db: string): string[] {
                                                             {{ schema.views.length }}
                                                         </span>
                                                     </div>
-                                                    <div v-for="v in schema.views" :key="v"
+                                                    <div v-for="v in schema.views.filter(n => !searchQuery || n.toLowerCase().includes(searchQuery.toLowerCase()))"
+                                                        :key="v"
                                                         class="flex items-center px-2 py-1.5 text-sm rounded-md hover:bg-gray-100 cursor-pointer"
-                                                        @click.stop="
-                                                            onOpen(conn.id, db.name, 'view', v, 'preview', schema.name)
-                                                            " @dblclick.stop="
-                                onOpen(conn.id, db.name, 'view', v, 'pinned', schema.name)
-                                ">
+                                                        :data-explorer-obj="`${conn.id}:${db.name}:${schema.name || ''}:view:${v}`"
+                                                        @click.stop="onOpen(conn.id, db.name, 'view', v, 'preview', schema.name)"
+                                                        @dblclick.stop="onOpen(conn.id, db.name, 'view', v, 'pinned', schema.name)"
+                                                        @click.middle.stop="onOpen(conn.id, db.name, 'view', v, 'pinned', schema.name)">
                                                         <ViewfinderCircleIcon class="h-4 w-4 mr-1.5 text-gray-400" />
-                                                        <span>{{ v }}</span>
+                                                        <span>
+                                                            <template v-for="(p, i) in highlightParts(v)" :key="i">
+                                                                <span v-if="p.match"
+                                                                    class="bg-yellow-200/60 rounded px-0.5"
+                                                                    v-text="p.text"></span>
+                                                                <span v-else v-text="p.text"></span>
+                                                            </template>
+                                                        </span>
                                                     </div>
                                                 </div>
                                             </template>
@@ -402,12 +529,21 @@ function getFlatViews(connId: string, db: string): string[] {
                                                     {{ getFlatTables(conn.id, db.name).length }}
                                                 </span>
                                             </div>
-                                            <div v-for="t in getFlatTables(conn.id, db.name)" :key="t"
+                                            <div v-for="t in getFlatTables(conn.id, db.name).filter(n => !searchQuery || n.toLowerCase().includes(searchQuery.toLowerCase()))"
+                                                :key="t"
                                                 class="flex items-center px-2 py-1.5 text-sm rounded-md hover:bg-gray-100 cursor-pointer"
+                                                :data-explorer-obj="`${conn.id}:${db.name}::table:${t}`"
                                                 @click.stop="onOpen(conn.id, db.name, 'table', t, 'preview')"
-                                                @dblclick.stop="onOpen(conn.id, db.name, 'table', t, 'pinned')">
+                                                @dblclick.stop="onOpen(conn.id, db.name, 'table', t, 'pinned')"
+                                                @click.middle.stop="onOpen(conn.id, db.name, 'table', t, 'pinned')">
                                                 <TableCellsIcon class="h-4 w-4 mr-1.5 text-gray-400" />
-                                                <span>{{ t }}</span>
+                                                <span>
+                                                    <template v-for="(p, i) in highlightParts(t)" :key="i">
+                                                        <span v-if="p.match" class="bg-yellow-200/60 rounded px-0.5"
+                                                            v-text="p.text"></span>
+                                                        <span v-else v-text="p.text"></span>
+                                                    </template>
+                                                </span>
                                             </div>
                                             <div
                                                 class="text-xs uppercase tracking-wide text-gray-400 px-2 mt-2 flex items-center justify-between">
@@ -416,12 +552,21 @@ function getFlatViews(connId: string, db: string): string[] {
                                                     {{ getFlatViews(conn.id, db.name).length }}
                                                 </span>
                                             </div>
-                                            <div v-for="v in getFlatViews(conn.id, db.name)" :key="v"
+                                            <div v-for="v in getFlatViews(conn.id, db.name).filter(n => !searchQuery || n.toLowerCase().includes(searchQuery.toLowerCase()))"
+                                                :key="v"
                                                 class="flex items-center px-2 py-1.5 text-sm rounded-md hover:bg-gray-100 cursor-pointer"
+                                                :data-explorer-obj="`${conn.id}:${db.name}::view:${v}`"
                                                 @click.stop="onOpen(conn.id, db.name, 'view', v, 'preview')"
-                                                @dblclick.stop="onOpen(conn.id, db.name, 'view', v, 'pinned')">
+                                                @dblclick.stop="onOpen(conn.id, db.name, 'view', v, 'pinned')"
+                                                @click.middle.stop="onOpen(conn.id, db.name, 'view', v, 'pinned')">
                                                 <ViewfinderCircleIcon class="h-4 w-4 mr-1.5 text-gray-400" />
-                                                <span>{{ v }}</span>
+                                                <span>
+                                                    <template v-for="(p, i) in highlightParts(v)" :key="i">
+                                                        <span v-if="p.match" class="bg-yellow-200/60 rounded px-0.5"
+                                                            v-text="p.text"></span>
+                                                        <span v-else v-text="p.text"></span>
+                                                    </template>
+                                                </span>
                                             </div>
                                         </template>
                                     </template>
