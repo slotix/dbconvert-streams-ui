@@ -6,10 +6,10 @@
         <span class="text-sm text-gray-600">
           {{ selectedTables.length }} tables selected across {{ selectedSchemas.size }} schemas
         </span>
-        <button @click="selectAllTables" class="text-sm text-blue-600 hover:text-blue-800">
+        <button class="text-sm text-blue-600 hover:text-blue-800" @click="selectAllTables">
           Select All
         </button>
-        <button @click="clearAllTables" class="text-sm text-gray-600 hover:text-gray-800">
+        <button class="text-sm text-gray-600 hover:text-gray-800" @click="clearAllTables">
           Clear All
         </button>
       </div>
@@ -35,7 +35,7 @@
             'bg-gray-100 text-gray-700 border border-gray-300': !schemaFilter.includes(schema)
           }"
         >
-          <input type="checkbox" :value="schema" v-model="schemaFilter" class="sr-only" />
+          <input v-model="schemaFilter" type="checkbox" :value="schema" class="sr-only" />
           <span>{{ schema }}</span>
           <span v-if="getSchemaTableCount(schema) > 0" class="ml-1 text-xs opacity-75">
             ({{ getSchemaTableCount(schema) }})
@@ -76,14 +76,14 @@
             </div>
             <div class="flex items-center space-x-2">
               <button
-                @click="selectAllInSchema(schema)"
                 class="text-sm text-blue-600 hover:text-blue-800"
+                @click="selectAllInSchema(schema)"
               >
                 Select All
               </button>
               <button
-                @click="clearAllInSchema(schema)"
                 class="text-sm text-gray-600 hover:text-gray-800"
+                @click="clearAllInSchema(schema)"
               >
                 Clear
               </button>
@@ -104,8 +104,8 @@
             <input
               type="checkbox"
               :checked="isTableSelected(schema, table.name)"
-              @change="toggleTable(schema, table.name)"
               class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              @change="toggleTable(schema, table.name)"
             />
             <div class="ml-3 flex-1">
               <div class="flex items-center justify-between">

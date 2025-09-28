@@ -22,8 +22,8 @@
           >
         </div>
         <button
-          @click="showExpiredBanner = false"
           class="text-red-200 hover:text-white transition-colors"
+          @click="showExpiredBanner = false"
         >
           <XMarkIcon class="h-5 w-5" />
         </button>

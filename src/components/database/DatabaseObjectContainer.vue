@@ -36,6 +36,16 @@ type TabItem = {
 const tabs = computed<TabItem[]>(() => {
   const items: TabItem[] = [
     {
+      name: 'Data',
+      component: DatabaseObjectDataView,
+      props: {
+        tableMeta: props.tableMeta,
+        isView: props.isView,
+        database: props.database,
+        connectionId: props.connectionId
+      }
+    },
+    {
       name: 'Structure',
       component: props.isView ? ViewStructureView : TableMetadataView,
       props: props.isView
@@ -49,22 +59,13 @@ const tabs = computed<TabItem[]>(() => {
           connectionId: props.connectionId,
           connectionType: props.connectionType
         }
-    },
-    {
-      name: 'Data',
-      component: DatabaseObjectDataView,
-      props: {
-        tableMeta: props.tableMeta,
-        isView: props.isView,
-        database: props.database,
-        connectionId: props.connectionId
-      }
     }
   ]
   return items
 })
 
-const defaultIndex = computed(() => (props.defaultTab === 'data' ? 1 : 0))
+// Select Data (index 0) by default unless caller explicitly requests Structure
+const defaultIndex = computed(() => (props.defaultTab === 'structure' ? 1 : 0))
 </script>
 
 <template>

@@ -63,9 +63,9 @@
                   <ComboboxOption
                     v-for="database in availableDatabases"
                     :key="database"
+                    v-slot="{ active, selected }"
                     :value="database"
                     as="template"
-                    v-slot="{ active, selected }"
                   >
                     <li
                       :class="[
@@ -106,10 +106,10 @@
 
             <!-- Refresh Button -->
             <button
-              @click="refreshDatabases"
               :disabled="isLoadingDatabases"
               class="p-2 text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 rounded-md"
               title="Refresh database list"
+              @click="refreshDatabases"
             >
               <ArrowPathIcon
                 class="h-5 w-5"
@@ -133,18 +133,18 @@
                 @input="validateNewDatabase"
               />
               <button
-                @click="createDatabase"
                 :disabled="!newDatabase || isCreatingDatabase"
                 class="px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                @click="createDatabase"
               >
                 <span v-if="isCreatingDatabase">Creating...</span>
                 <span v-else>Create</span>
               </button>
               <button
                 v-if="newDatabase"
-                @click="clearNewDatabase"
                 class="p-2 text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 rounded-md"
                 title="Clear input"
+                @click="clearNewDatabase"
               >
                 <XMarkIcon class="h-4 w-4" aria-hidden="true" />
               </button>

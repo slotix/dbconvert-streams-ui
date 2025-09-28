@@ -11,6 +11,8 @@ import ExplorerSidebarConnections from '@/components/database/ExplorerSidebarCon
 import ExplorerBreadcrumb from '@/components/database/ExplorerBreadcrumb.vue'
 import DatabaseObjectContainer from '@/components/database/DatabaseObjectContainer.vue'
 import DiagramView from '@/components/database/DiagramView.vue'
+import ConnectionDetailsPanel from '@/components/database/ConnectionDetailsPanel.vue'
+import DatabaseOverviewPanel from '@/components/database/DatabaseOverviewPanel.vue'
 import connections from '@/api/connections'
 import type { SQLTableMeta, SQLViewMeta } from '@/types/metadata'
 
@@ -77,6 +79,17 @@ const splitDefaultTab = ref<'structure' | 'data' | null>(null)
 const showDiagram = ref(false)
 const diagramConnectionId = ref<string | null>(null)
 const diagramDatabaseName = ref<string | null>(null)
+
+// Connection details panel (when clicking a connection in the tree)
+const detailsConnectionId = ref<string | null>(null)
+// Database overview (when clicking a database in the tree)
+const overviewConnectionId = ref<string | null>(null)
+const overviewDatabaseName = ref<string | null>(null)
+const detailsConnection = computed(() =>
+  detailsConnectionId.value
+    ? connectionsStore.connections.find((c) => c.id === detailsConnectionId.value) || null
+    : null
+)
 
 // Split sizing/resizer state
 const splitGrow = ref(50) // percentage width for left pane (0..100)
@@ -263,6 +276,11 @@ function handleOpenFromTree(payload: {
 }) {
   // Opening an object should leave diagram mode
   showDiagram.value = false
+  // Hide overview panel when an object is opened
+  overviewConnectionId.value = null
+  overviewDatabaseName.value = null
+  // Hide connection details panel when an object is opened
+  detailsConnectionId.value = null
   // If request is to open in right split, update split-only state and return
   if (payload.openInRightSplit) {
     splitConnectionId.value = payload.connectionId
@@ -294,6 +312,11 @@ function handleOpenFromTree(payload: {
 
 function handleShowDiagram(payload: { connectionId: string; database: string }) {
   // Set database context and diagram mode
+  // Hide connection details panel when switching to diagram mode
+  detailsConnectionId.value = null
+  // Hide overview panel when switching to diagram mode
+  overviewConnectionId.value = null
+  overviewDatabaseName.value = null
   selectedDatabaseName.value = payload.database
   selectedSchemaName.value = null
   selectedObjectType.value = null
@@ -311,6 +334,58 @@ function handleShowDiagram(payload: { connectionId: string; database: string }) 
     path: `/explorer/${payload.connectionId}`,
     query: { db: payload.database }
   })
+}
+
+function handleSelectConnection(payload: { connectionId: string }) {
+  // Always show details for the clicked connection; panel will auto-close on object/diagram selection.
+  detailsConnectionId.value = payload.connectionId
+  showDiagram.value = false
+  overviewConnectionId.value = null
+  overviewDatabaseName.value = null
+  previewTab.value = null
+  pinnedTabs.value = []
+  activePinnedIndex.value = null
+  selectedDatabaseName.value = null
+  selectedSchemaName.value = null
+  selectedObjectType.value = null
+  selectedObjectName.value = null
+  selectedMeta.value = null
+  splitConnectionId.value = null
+  splitDatabaseName.value = null
+  splitSchemaName.value = null
+  splitObjectType.value = null
+  splitObjectName.value = null
+  splitMeta.value = null
+  splitDefaultTab.value = null
+}
+
+function handleSelectDatabase(payload: { connectionId: string; database: string }) {
+  // Show database overview panel and clear other modes
+  detailsConnectionId.value = null
+  showDiagram.value = false
+  previewTab.value = null
+  pinnedTabs.value = []
+  activePinnedIndex.value = null
+  selectedDatabaseName.value = payload.database
+  selectedSchemaName.value = null
+  selectedObjectType.value = null
+  selectedObjectName.value = null
+  selectedMeta.value = null
+  splitConnectionId.value = null
+  splitDatabaseName.value = null
+  splitSchemaName.value = null
+  splitObjectType.value = null
+  splitObjectName.value = null
+  splitMeta.value = null
+  splitDefaultTab.value = null
+  overviewConnectionId.value = payload.connectionId
+  overviewDatabaseName.value = payload.database
+  // Keep schema store in sync (for potential future actions)
+  schemaStore.setConnectionId(payload.connectionId)
+  schemaStore.setDatabaseName(payload.database)
+  schemaStore.fetchSchema(false)
+  // Update route
+  router.replace({ path: `/explorer/${payload.connectionId}`, query: { db: payload.database } })
 }
 
 function closePinned(index: number) {
@@ -606,7 +681,8 @@ watch(currentConnectionId, (newId) => {
               schema: selectedSchemaName || undefined,
               type: selectedObjectType || undefined,
               name: selectedObjectName || undefined
-            }" @open="handleOpenFromTree" @show-diagram="handleShowDiagram" />
+            }" @open="handleOpenFromTree" @show-diagram="handleShowDiagram"
+              @select-connection="handleSelectConnection" @select-database="handleSelectDatabase" />
           </div>
 
           <!-- Divider between sidebar and right panel -->
@@ -668,8 +744,16 @@ watch(currentConnectionId, (newId) => {
               </div>
             </div>
 
-            <!-- Content area: show diagram mode for a database, else show object structure/data -->
-            <div v-if="showDiagram" class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg">
+            <!-- Content area priority: connection details > database overview > diagram mode > object structure/data -->
+            <div v-if="detailsConnection" class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg">
+              <ConnectionDetailsPanel :connection="detailsConnection" />
+            </div>
+            <div v-else-if="overviewConnectionId && overviewDatabaseName"
+              class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg">
+              <DatabaseOverviewPanel :connection-id="overviewConnectionId" :database="overviewDatabaseName"
+                @show-diagram="handleShowDiagram" />
+            </div>
+            <div v-else-if="showDiagram" class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg">
               <DiagramView :tables="schemaStore.tables" :views="schemaStore.views"
                 :relationships="schemaStore.relationships" />
             </div>
@@ -682,7 +766,7 @@ watch(currentConnectionId, (newId) => {
                       <DatabaseObjectContainer :table-meta="selectedMeta" :is-view="selectedObjectType === 'view'"
                         :connection-id="currentConnectionId || ''"
                         :connection-type="currentConnectionDetails?.type || 'sql'"
-                        :database="selectedDatabaseName || ''" :default-tab="selectedDefaultTab || 'structure'"
+                        :database="selectedDatabaseName || ''" :default-tab="selectedDefaultTab || 'data'"
                         @refresh-metadata="refreshSelectedMetadata(true)" />
                     </div>
                     <div v-else class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg p-8 text-center">
@@ -704,7 +788,7 @@ watch(currentConnectionId, (newId) => {
                       :is-view="splitObjectType === 'view'"
                       :connection-id="splitConnectionId || currentConnectionId || ''"
                       :connection-type="getConnectionTypeById(splitConnectionId)" :database="splitDatabaseName || ''"
-                      :default-tab="splitDefaultTab || 'structure'" :closable="true" @close="closeRightSplit" />
+                      :default-tab="splitDefaultTab || 'data'" :closable="true" @close="closeRightSplit" />
                   </div>
                 </div>
 
@@ -713,8 +797,7 @@ watch(currentConnectionId, (newId) => {
                     <DatabaseObjectContainer :table-meta="selectedMeta" :is-view="selectedObjectType === 'view'"
                       :connection-id="currentConnectionId || ''"
                       :connection-type="currentConnectionDetails?.type || 'sql'" :database="selectedDatabaseName || ''"
-                      :default-tab="selectedDefaultTab || 'structure'"
-                      @refresh-metadata="refreshSelectedMetadata(true)" />
+                      :default-tab="selectedDefaultTab || 'data'" @refresh-metadata="refreshSelectedMetadata(true)" />
                   </div>
                   <div v-else class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg p-8 text-center">
                     <h3 class="text-sm font-medium text-gray-900">No object selected</h3>

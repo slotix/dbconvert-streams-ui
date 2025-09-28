@@ -59,9 +59,9 @@
       <div class="flex justify-between">
         <button
           v-if="canGoBack"
-          @click="goToPreviousStep"
           type="button"
           class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+          @click="goToPreviousStep"
         >
           <ArrowLeftIcon class="w-4 h-4 mr-2" />
           Back
@@ -71,10 +71,10 @@
         <div class="flex space-x-3">
           <button
             v-if="showTestButton"
-            @click="$emit('test')"
             type="button"
             :disabled="isTestingConnection"
             class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            @click="$emit('test')"
           >
             <span v-if="isTestingConnection" class="flex items-center">
               <Spinner size="sm" class="mr-2" />
@@ -87,10 +87,10 @@
           </button>
 
           <button
-            @click="handleNextOrFinish"
             type="button"
             :disabled="!canProceed || isProcessing"
             class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent text-sm font-medium rounded-md text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            @click="handleNextOrFinish"
           >
             <span v-if="isProcessing" class="flex items-center">
               <Spinner size="sm" class="mr-2" />
@@ -103,9 +103,9 @@
           </button>
 
           <button
-            @click="$emit('cancel')"
             type="button"
             class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+            @click="$emit('cancel')"
           >
             Cancel
           </button>

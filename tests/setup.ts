@@ -27,16 +27,16 @@ if (TEST_API_KEY === 'your-api-key-here') {
 setup('authenticate with API key', async ({ page }) => {
   // Go to homepage and set API key directly in localStorage
   await page.goto('/')
-  
+
   // Set the API key in localStorage
   await page.evaluate((apiKey) => {
     localStorage.setItem('dbconvert-api-key', apiKey)
   }, TEST_API_KEY)
-  
+
   // Reload to apply the authentication
   await page.reload()
-  
+
   // Save authentication state
   await page.context().storageState({ path: authFile })
   console.log('✅ Authentication setup complete')
-}) 
+})

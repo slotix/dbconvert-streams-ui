@@ -7,13 +7,13 @@
         <button
           v-for="dbType in databaseTypes"
           :key="dbType.id"
-          @click="selectDBType(dbType)"
           :class="[
             selectedDBType?.id === dbType.id
               ? 'ring-2 ring-gray-600 border-gray-600'
               : 'border-gray-300 hover:border-gray-400',
             'relative p-4 border rounded-lg flex flex-col items-center text-center hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-all duration-200'
           ]"
+          @click="selectDBType(dbType)"
         >
           <img
             :src="dbType.logo"
@@ -54,13 +54,13 @@
           <button
             v-for="dbType in localFileTypes"
             :key="dbType.id"
-            @click="selectDBType(dbType)"
             :class="[
               selectedDBType?.id === dbType.id
                 ? 'ring-2 ring-gray-600 border-gray-600'
                 : 'border-gray-300 hover:border-gray-400',
               'relative p-6 border rounded-lg flex flex-col items-center text-center hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-all duration-200 min-w-[160px]'
             ]"
+            @click="selectDBType(dbType)"
           >
             <img
               :src="dbType.logo"

@@ -32,8 +32,8 @@
                 <div class="flex items-center justify-between">
                   <span>Select Folder</span>
                   <button
-                    @click="closeModal"
                     class="text-gray-400 hover:text-gray-600 focus:outline-none"
+                    @click="closeModal"
                   >
                     <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
@@ -59,8 +59,8 @@
                   <button
                     v-for="root in roots"
                     :key="root"
-                    @click="navigateToPath(root)"
                     class="px-3 py-2 text-sm bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                    @click="navigateToPath(root)"
                   >
                     {{ getFolderDisplayName(root) }}
                   </button>
@@ -78,8 +78,8 @@
                     >
                       <button
                         v-if="index < pathSegments.length - 1"
-                        @click="navigateToSegment(index)"
                         class="text-blue-600 hover:text-blue-800 focus:outline-none"
+                        @click="navigateToSegment(index)"
                       >
                         {{ segment.name }}
                       </button>
@@ -193,8 +193,8 @@
                     placeholder="No folder selected"
                   />
                   <button
-                    @click="toggleManualPathEdit"
                     class="absolute right-2 top-2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                    @click="toggleManualPathEdit"
                   >
                     <svg
                       v-if="manualPathEdit"
@@ -232,8 +232,8 @@
               <div class="flex justify-between items-center">
                 <button
                   v-if="currentPath !== initialPath"
-                  @click="goUp"
                   class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  @click="goUp"
                 >
                   <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
@@ -249,15 +249,15 @@
 
                 <div class="flex space-x-3">
                   <button
-                    @click="closeModal"
                     class="inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                    @click="closeModal"
                   >
                     Cancel
                   </button>
                   <button
-                    @click="confirmSelection"
                     :disabled="!selectedPath || validating"
                     class="inline-flex justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                    @click="confirmSelection"
                   >
                     <Spinner v-if="validating" size="sm" class="mr-2" />
                     {{ validating ? 'Validating...' : 'Select Folder' }}

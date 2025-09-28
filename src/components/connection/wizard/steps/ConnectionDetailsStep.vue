@@ -20,7 +20,7 @@
     <ConnectionParams v-if="connectionType" :connectionType="connectionType" />
 
     <!-- Database Access Configuration Notice -->
-    <AccessNotice :publicIp="publicIp" v-if="showAccessNotice" />
+    <AccessNotice v-if="showAccessNotice" :publicIp="publicIp" />
   </div>
 </template>
 

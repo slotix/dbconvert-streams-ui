@@ -72,3 +72,15 @@ export interface DatabaseMetadata {
   tables: Record<string, SQLTableMeta>
   views: Record<string, SQLViewMeta>
 }
+
+export interface DatabaseSummary {
+  database: string
+  schemas?: string[]
+  tables: string[]
+  views: string[]
+  stats: {
+    tables: number
+    views: number
+    schemas?: number
+  }
+}

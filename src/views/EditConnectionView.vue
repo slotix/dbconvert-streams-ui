@@ -4,7 +4,10 @@
     <header class="bg-white shadow-sm">
       <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
         <div class="flex items-center">
-          <button class="mr-4 p-2 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100" @click="goBack">
+          <button
+            class="mr-4 p-2 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+            @click="goBack"
+          >
             <ArrowLeftIcon class="h-5 w-5" />
           </button>
           <div>

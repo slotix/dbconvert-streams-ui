@@ -28,9 +28,9 @@
           </div>
           <div class="flex-shrink-0">
             <button
-              @click="retryConnection"
               :disabled="isRetrying"
               class="bg-yellow-100 hover:bg-yellow-200 text-yellow-800 text-xs font-medium px-3 py-1 rounded-md border border-yellow-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              @click="retryConnection"
             >
               <span v-if="isRetrying" class="flex items-center">
                 <svg

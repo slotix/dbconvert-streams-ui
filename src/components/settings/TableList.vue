@@ -105,14 +105,14 @@
               </div>
               <div class="flex items-center gap-2">
                 <button
-                  @click.stop="selectAllInSchema(schemaGroup.schema)"
                   class="text-xs text-blue-600 hover:text-blue-800"
+                  @click.stop="selectAllInSchema(schemaGroup.schema)"
                 >
                   Select All
                 </button>
                 <button
-                  @click.stop="clearAllInSchema(schemaGroup.schema)"
                   class="text-xs text-gray-500 hover:text-gray-700"
+                  @click.stop="clearAllInSchema(schemaGroup.schema)"
                 >
                   Clear All
                 </button>
@@ -153,13 +153,13 @@
                   </div>
                   <button
                     v-if="table.selected && !isCDCMode"
-                    @click="toggleTableSettings(table.name)"
                     class="text-xs font-medium transition-colors"
                     :class="
                       selectedTableNames.includes(table.name)
                         ? 'text-red-600 hover:text-red-800'
                         : 'text-blue-600 hover:text-blue-800'
                     "
+                    @click="toggleTableSettings(table.name)"
                   >
                     {{
                       selectedTableNames.includes(table.name) ? '▲ Hide Options' : '▼ Show Options'

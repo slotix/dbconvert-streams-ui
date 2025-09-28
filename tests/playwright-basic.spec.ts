@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test'
 test('playwright basic functionality test', async ({ page }) => {
   // Test against a simple public website to verify Playwright is working
   await page.goto('https://example.com')
-  
+
   // Wait for the page to load
   await page.waitForLoadState('networkidle')
 
@@ -18,4 +18,4 @@ test('playwright basic functionality test', async ({ page }) => {
   await page.screenshot({ path: 'tests/screenshots/example-com.png' })
 
   console.log('✅ Playwright is working correctly!')
-}) 
+})

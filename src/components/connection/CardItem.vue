@@ -57,8 +57,8 @@
                   v-if="connection.path"
                   class="flex-shrink-0 transition-colors"
                   :class="isPathCopied ? 'text-green-500' : 'text-gray-400 hover:text-gray-600'"
-                  @click.stop="copyFolderPath"
                   :title="isPathCopied ? 'Copied!' : 'Copy folder path to clipboard'"
+                  @click.stop="copyFolderPath"
                 >
                   <ClipboardIcon v-if="!isPathCopied" class="h-4 w-4" />
                   <CheckIcon v-else class="h-4 w-4" />
@@ -112,10 +112,10 @@
                 <div class="flex flex-col gap-1">
                   <button
                     class="flex-shrink-0 text-gray-400 hover:text-gray-600"
-                    @click.stop="showPassword = !showPassword"
                     :title="
                       showPassword ? 'Hide password and truncate' : 'Show password and full details'
                     "
+                    @click.stop="showPassword = !showPassword"
                   >
                     <EyeIcon v-if="!showPassword" class="h-4 w-4" />
                     <EyeSlashIcon v-else class="h-4 w-4" />
@@ -123,8 +123,8 @@
                   <button
                     class="flex-shrink-0 transition-colors"
                     :class="isCopied ? 'text-green-500' : 'text-gray-400 hover:text-gray-600'"
-                    @click.stop="copyConnectionString"
                     :title="isCopied ? 'Copied!' : 'Copy connection string to clipboard'"
+                    @click.stop="copyConnectionString"
                   >
                     <ClipboardIcon v-if="!isCopied" class="h-4 w-4" />
                     <CheckIcon v-else class="h-4 w-4" />

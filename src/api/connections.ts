@@ -5,7 +5,7 @@ import { type Connection, type DatabaseInfo } from '@/types/connections'
 import { useConnectionsStore } from '@/stores/connections'
 import { validateApiKey } from './apiClient'
 import { handleApiError } from '@/utils/errorHandler'
-import { type DatabaseMetadata } from '@/types/metadata'
+import { type DatabaseMetadata, type DatabaseSummary } from '@/types/metadata'
 
 const getConnections = async (): Promise<Connection[]> => {
   const commonStore = useCommonStore()
@@ -275,6 +275,27 @@ const getMetadata = async (
   }
 }
 
+const getDatabaseSummary = async (
+  id: string,
+  database: string,
+  options?: { schemas?: string[] }
+): Promise<DatabaseSummary> => {
+  const commonStore = useCommonStore()
+  validateApiKey(commonStore.apiKey)
+  try {
+    const qp = new URLSearchParams()
+    qp.set('summary', 'true')
+    options?.schemas?.forEach((s) => qp.append('schemas', s))
+    const url = `/connections/${id}/databases/${encodeURIComponent(database)}/meta?${qp.toString()}`
+    const response: AxiosResponse<DatabaseSummary> = await apiClient.get(url, {
+      headers: { 'X-API-Key': commonStore.apiKey }
+    })
+    return response.data
+  } catch (error) {
+    throw handleApiError(error)
+  }
+}
+
 interface TableData {
   columns: string[]
   rows: unknown[][]
@@ -385,6 +406,7 @@ export default {
   createSchema,
   getTables,
   getMetadata,
+  getDatabaseSummary,
   getTableData,
   getViews,
   getViewData

@@ -8,9 +8,9 @@
       <div class="flex items-center justify-between mb-4">
         <h3 class="text-sm font-medium text-gray-500">EXPLORE DATABASES</h3>
         <button
-          @click="clearRecentConnections"
           class="text-xs text-gray-400 hover:text-red-500 flex items-center gap-1 px-2 py-1 rounded hover:bg-red-50 transition-colors"
           title="Clear recent connections"
+          @click="clearRecentConnections"
         >
           <TrashIcon class="h-3 w-3" />
           Clear Recent

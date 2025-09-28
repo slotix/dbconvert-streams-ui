@@ -21,7 +21,7 @@ export default defineConfig({
     baseURL: 'http://localhost:5173',
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
-    trace: 'on-first-retry',
+    trace: 'on-first-retry'
   },
 
   /* Configure projects for major browsers */
@@ -31,18 +31,18 @@ export default defineConfig({
       testMatch: '**/setup.ts',
       use: {
         /* Don't use stored auth for setup - it creates the auth file */
-        storageState: undefined,
-      },
+        storageState: undefined
+      }
     },
     {
       name: 'chromium',
-      use: { 
+      use: {
         ...devices['Desktop Chrome'],
-        storageState: 'tests/.auth/user.json',
+        storageState: 'tests/.auth/user.json'
       },
-      dependencies: ['setup'],
-    },
-  ],
+      dependencies: ['setup']
+    }
+  ]
 
   /* Run your local dev server before starting the tests */
   /* 
@@ -52,4 +52,4 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
   },
   */
-}) 
+})
