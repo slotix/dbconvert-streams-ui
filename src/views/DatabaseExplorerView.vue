@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useCommonStore } from '@/stores/common'
 import { useConnectionsStore } from '@/stores/connections'
 import { useSchemaStore } from '@/stores/schema'
-import { Tab, TabGroup, TabList, TabPanels, TabPanel } from '@headlessui/vue'
+// Removed headlessui Tab components after moving Diagram to a context-menu action
 // (Removed TrashIcon as Clear All control was removed)
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
 import ExplorerSidebarConnections from '@/components/database/ExplorerSidebarConnections.vue'
@@ -72,6 +72,11 @@ const splitObjectType = ref<ObjectType | null>(null)
 const splitObjectName = ref<string | null>(null)
 const splitMeta = ref<SQLTableMeta | SQLViewMeta | null>(null)
 const splitDefaultTab = ref<'structure' | 'data' | null>(null)
+
+// Diagram mode (database-level)
+const showDiagram = ref(false)
+const diagramConnectionId = ref<string | null>(null)
+const diagramDatabaseName = ref<string | null>(null)
 
 // Split sizing/resizer state
 const splitGrow = ref(50) // percentage width for left pane (0..100)
@@ -256,6 +261,8 @@ function handleOpenFromTree(payload: {
   defaultTab?: 'structure' | 'data'
   openInRightSplit?: boolean
 }) {
+  // Opening an object should leave diagram mode
+  showDiagram.value = false
   // If request is to open in right split, update split-only state and return
   if (payload.openInRightSplit) {
     splitConnectionId.value = payload.connectionId
@@ -283,6 +290,27 @@ function handleOpenFromTree(payload: {
     activePinnedIndex.value = null
     activateTabFromState(previewTab.value)
   }
+}
+
+function handleShowDiagram(payload: { connectionId: string; database: string }) {
+  // Set database context and diagram mode
+  selectedDatabaseName.value = payload.database
+  selectedSchemaName.value = null
+  selectedObjectType.value = null
+  selectedObjectName.value = null
+  selectedMeta.value = null
+  diagramConnectionId.value = payload.connectionId
+  diagramDatabaseName.value = payload.database
+  showDiagram.value = true
+  // Keep schema store in sync
+  schemaStore.setConnectionId(payload.connectionId)
+  schemaStore.setDatabaseName(payload.database)
+  schemaStore.fetchSchema(false)
+  // Update route if switching connections or db context
+  router.replace({
+    path: `/explorer/${payload.connectionId}`,
+    query: { db: payload.database }
+  })
 }
 
 function closePinned(index: number) {
@@ -519,6 +547,15 @@ function getConnectionTypeById(id: string | null): string {
   return conn?.type || 'sql'
 }
 
+// Convenience: trigger diagram mode for the currently selected database
+function showDiagramForCurrentDatabase() {
+  if (!currentConnectionId.value || !selectedDatabaseName.value) return
+  handleShowDiagram({
+    connectionId: currentConnectionId.value,
+    database: selectedDatabaseName.value
+  })
+}
+
 // Watch for route changes to update recent connections and last viewed connection
 watch(currentConnectionId, (newId) => {
   if (newId && currentConnection.value) {
@@ -569,7 +606,7 @@ watch(currentConnectionId, (newId) => {
               schema: selectedSchemaName || undefined,
               type: selectedObjectType || undefined,
               name: selectedObjectName || undefined
-            }" @open="handleOpenFromTree" />
+            }" @open="handleOpenFromTree" @show-diagram="handleShowDiagram" />
           </div>
 
           <!-- Divider between sidebar and right panel -->
@@ -590,6 +627,11 @@ watch(currentConnectionId, (newId) => {
                     :type="selectedObjectType" :name="selectedObjectName" @navigate="handleBreadcrumbNavigate" />
                 </div>
                 <div class="flex items-center gap-2">
+                  <button v-if="selectedDatabaseName && !showDiagram" type="button"
+                    class="px-2 py-1 text-xs rounded border border-gray-300 bg-white hover:bg-gray-50 text-gray-700"
+                    title="Show database diagram" @click="showDiagramForCurrentDatabase">
+                    Show diagram
+                  </button>
                   <button type="button"
                     class="px-2 py-1 text-xs rounded border border-gray-300 bg-white hover:bg-gray-50 text-gray-700"
                     :title="sidebarVisible ? 'Hide Sidebar' : 'Show Sidebar'" @click="toggleSidebar">
@@ -626,97 +668,63 @@ watch(currentConnectionId, (newId) => {
               </div>
             </div>
 
-            <TabGroup>
-              <TabList class="flex space-x-2 mb-4 border-b border-gray-200">
-                <Tab v-slot="{ selected }" as="template">
-                  <button :class="[
-                    'px-5 py-2.5 text-sm font-medium rounded-t-lg transition-all duration-200',
-                    'focus:outline-none relative',
-                    selected
-                      ? 'bg-white text-slate-800 border-t border-l border-r border-gray-200 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-                  ]">
-                    Structure & Data
-                    <span v-if="selected" class="absolute bottom-0 left-0 w-full h-0.5 bg-slate-600"></span>
-                  </button>
-                </Tab>
-                <Tab v-slot="{ selected }" as="template">
-                  <button :class="[
-                    'px-5 py-2.5 text-sm font-medium rounded-t-lg transition-all duration-200',
-                    'focus:outline-none relative',
-                    selected
-                      ? 'bg-white text-slate-800 border-t border-l border-r border-gray-200 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-                  ]">
-                    Diagram
-                    <span v-if="selected" class="absolute bottom-0 left-0 w-full h-0.5 bg-slate-600"></span>
-                  </button>
-                </Tab>
-              </TabList>
-
-              <TabPanels>
-                <TabPanel>
-                  <div class="min-h-[480px]">
-                    <div v-if="splitMeta" ref="splitContainerRef" class="flex flex-row items-stretch">
-                      <!-- Left (primary) -->
-                      <div ref="leftPaneRef" :style="{ flexGrow: splitGrow, flexBasis: '0px' }"
-                        class="min-w-[240px] pr-2">
-                        <div v-if="selectedMeta">
-                          <DatabaseObjectContainer :table-meta="selectedMeta" :is-view="selectedObjectType === 'view'"
-                            :connection-id="currentConnectionId || ''"
-                            :connection-type="currentConnectionDetails?.type || 'sql'"
-                            :database="selectedDatabaseName || ''" :default-tab="selectedDefaultTab || 'structure'"
-                            @refresh-metadata="refreshSelectedMetadata(true)" />
-                        </div>
-                        <div v-else class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg p-8 text-center">
-                          <h3 class="text-sm font-medium text-gray-900">No object selected</h3>
-                          <p class="mt-1 text-sm text-gray-500">
-                            Select a table or view from the sidebar to view its structure
-                          </p>
-                        </div>
-                      </div>
-
-                      <!-- Divider -->
-                      <div role="separator" aria-orientation="vertical"
-                        class="w-1.5 mx-1.5 bg-gray-200 hover:bg-gray-300 cursor-col-resize rounded"
-                        @mousedown.prevent="onDividerMouseDown"></div>
-
-                      <!-- Right split -->
-                      <div :style="{ flexGrow: 100 - splitGrow, flexBasis: '0px' }" class="min-w-[240px] pl-2">
-                        <DatabaseObjectContainer v-if="splitMeta" :table-meta="splitMeta"
-                          :is-view="splitObjectType === 'view'"
-                          :connection-id="splitConnectionId || currentConnectionId || ''"
-                          :connection-type="getConnectionTypeById(splitConnectionId)"
-                          :database="splitDatabaseName || ''" :default-tab="splitDefaultTab || 'structure'"
-                          :closable="true" @close="closeRightSplit" />
-                      </div>
+            <!-- Content area: show diagram mode for a database, else show object structure/data -->
+            <div v-if="showDiagram" class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg">
+              <DiagramView :tables="schemaStore.tables" :views="schemaStore.views"
+                :relationships="schemaStore.relationships" />
+            </div>
+            <div v-else>
+              <div class="min-h-[480px]">
+                <div v-if="splitMeta" ref="splitContainerRef" class="flex flex-row items-stretch">
+                  <!-- Left (primary) -->
+                  <div ref="leftPaneRef" :style="{ flexGrow: splitGrow, flexBasis: '0px' }" class="min-w-[240px] pr-2">
+                    <div v-if="selectedMeta">
+                      <DatabaseObjectContainer :table-meta="selectedMeta" :is-view="selectedObjectType === 'view'"
+                        :connection-id="currentConnectionId || ''"
+                        :connection-type="currentConnectionDetails?.type || 'sql'"
+                        :database="selectedDatabaseName || ''" :default-tab="selectedDefaultTab || 'structure'"
+                        @refresh-metadata="refreshSelectedMetadata(true)" />
                     </div>
-
-                    <div v-else>
-                      <div v-if="selectedMeta">
-                        <DatabaseObjectContainer :table-meta="selectedMeta" :is-view="selectedObjectType === 'view'"
-                          :connection-id="currentConnectionId || ''"
-                          :connection-type="currentConnectionDetails?.type || 'sql'"
-                          :database="selectedDatabaseName || ''" :default-tab="selectedDefaultTab || 'structure'"
-                          @refresh-metadata="refreshSelectedMetadata(true)" />
-                      </div>
-                      <div v-else class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg p-8 text-center">
-                        <h3 class="text-sm font-medium text-gray-900">No object selected</h3>
-                        <p class="mt-1 text-sm text-gray-500">
-                          Select a table or view from the sidebar to view its structure
-                        </p>
-                      </div>
+                    <div v-else class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg p-8 text-center">
+                      <h3 class="text-sm font-medium text-gray-900">No object selected</h3>
+                      <p class="mt-1 text-sm text-gray-500">
+                        Select a table or view from the sidebar to view its structure
+                      </p>
                     </div>
                   </div>
-                </TabPanel>
-                <TabPanel>
-                  <div class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg">
-                    <DiagramView :tables="schemaStore.tables" :views="schemaStore.views"
-                      :relationships="schemaStore.relationships" />
+
+                  <!-- Divider -->
+                  <div role="separator" aria-orientation="vertical"
+                    class="w-1.5 mx-1.5 bg-gray-200 hover:bg-gray-300 cursor-col-resize rounded"
+                    @mousedown.prevent="onDividerMouseDown"></div>
+
+                  <!-- Right split -->
+                  <div :style="{ flexGrow: 100 - splitGrow, flexBasis: '0px' }" class="min-w-[240px] pl-2">
+                    <DatabaseObjectContainer v-if="splitMeta" :table-meta="splitMeta"
+                      :is-view="splitObjectType === 'view'"
+                      :connection-id="splitConnectionId || currentConnectionId || ''"
+                      :connection-type="getConnectionTypeById(splitConnectionId)" :database="splitDatabaseName || ''"
+                      :default-tab="splitDefaultTab || 'structure'" :closable="true" @close="closeRightSplit" />
                   </div>
-                </TabPanel>
-              </TabPanels>
-            </TabGroup>
+                </div>
+
+                <div v-else>
+                  <div v-if="selectedMeta">
+                    <DatabaseObjectContainer :table-meta="selectedMeta" :is-view="selectedObjectType === 'view'"
+                      :connection-id="currentConnectionId || ''"
+                      :connection-type="currentConnectionDetails?.type || 'sql'" :database="selectedDatabaseName || ''"
+                      :default-tab="selectedDefaultTab || 'structure'"
+                      @refresh-metadata="refreshSelectedMetadata(true)" />
+                  </div>
+                  <div v-else class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg p-8 text-center">
+                    <h3 class="text-sm font-medium text-gray-900">No object selected</h3>
+                    <p class="mt-1 text-sm text-gray-500">
+                      Select a table or view from the sidebar to view its structure
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

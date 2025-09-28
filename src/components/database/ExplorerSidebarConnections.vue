@@ -44,6 +44,7 @@ const emit = defineEmits<{
         }
     ): void
     (e: 'expanded-connection', payload: { connectionId: string }): void
+    (e: 'show-diagram', payload: { connectionId: string; database: string }): void
 }>()
 
 const connectionsStore = useConnectionsStore()
@@ -729,6 +730,9 @@ function getFlatViews(connId: string, db: string): string[] {
                         <button class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
                             @click="actionRefreshMetadata((menuTarget as any).connectionId, (menuTarget as any).database); closeContextMenuOnce()">Refresh
                             metadata</button>
+                        <button class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
+                            @click="emit('show-diagram', { connectionId: (menuTarget as any).connectionId, database: (menuTarget as any).database }); closeContextMenuOnce()">Show
+                            diagram</button>
                         <button class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
                             @click="actionCopy((menuTarget as any).database, 'Database name copied'); closeContextMenuOnce()">Copy
                             name</button>
