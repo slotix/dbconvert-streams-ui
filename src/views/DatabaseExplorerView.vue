@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useCommonStore } from '@/stores/common'
 import { useConnectionsStore } from '@/stores/connections'
@@ -72,6 +72,136 @@ const splitObjectType = ref<ObjectType | null>(null)
 const splitObjectName = ref<string | null>(null)
 const splitMeta = ref<SQLTableMeta | SQLViewMeta | null>(null)
 const splitDefaultTab = ref<'structure' | 'data' | null>(null)
+
+// Split sizing/resizer state
+const splitGrow = ref(50) // percentage width for left pane (0..100)
+const isResizing = ref(false)
+const splitContainerRef = ref<HTMLElement | null>(null)
+const leftPaneRef = ref<HTMLElement | null>(null)
+
+let startX = 0
+let startLeftWidth = 0
+let containerWidth = 0
+let prevUserSelect: string | null = null
+
+function onDividerMouseDown(e: MouseEvent) {
+  if (!splitContainerRef.value || !leftPaneRef.value) return
+  isResizing.value = true
+  startX = e.clientX
+  const leftRect = leftPaneRef.value.getBoundingClientRect()
+  const contRect = splitContainerRef.value.getBoundingClientRect()
+  startLeftWidth = leftRect.width
+  containerWidth = contRect.width
+  window.addEventListener('mousemove', onDividerMouseMove)
+  window.addEventListener('mouseup', onDividerMouseUp, { once: true })
+  // Prevent text selection during resize; remember previous value
+  prevUserSelect = document.body.style.userSelect
+  document.body.style.userSelect = 'none'
+}
+
+function onDividerMouseMove(e: MouseEvent) {
+  if (!isResizing.value || !containerWidth) return
+  const dx = e.clientX - startX
+  const newLeft = startLeftWidth + dx
+  const pct = Math.max(20, Math.min(80, (newLeft / containerWidth) * 100))
+  splitGrow.value = pct
+}
+
+function onDividerMouseUp() {
+  isResizing.value = false
+  document.body.style.userSelect = prevUserSelect || ''
+  window.removeEventListener('mousemove', onDividerMouseMove)
+}
+
+onUnmounted(() => {
+  window.removeEventListener('mousemove', onDividerMouseMove)
+})
+
+// Sidebar visibility + resizer state
+const sidebarVisible = ref<boolean>(true)
+const sidebarWidthPct = ref(25) // percentage width for left sidebar
+const lastSidebarWidthPct = ref<number>(25)
+const isSidebarResizing = ref(false)
+const sidebarContainerRef = ref<HTMLElement | null>(null)
+const sidebarRef = ref<HTMLElement | null>(null)
+
+let sbStartX = 0
+let sbStartLeftWidth = 0
+let sbContainerWidth = 0
+let prevBodySelect: string | null = null
+
+function onSidebarDividerMouseDown(e: MouseEvent) {
+  if (!sidebarContainerRef.value || !sidebarRef.value) return
+  isSidebarResizing.value = true
+  sbStartX = e.clientX
+  const leftRect = sidebarRef.value.getBoundingClientRect()
+  const contRect = sidebarContainerRef.value.getBoundingClientRect()
+  sbStartLeftWidth = leftRect.width
+  sbContainerWidth = contRect.width
+  window.addEventListener('mousemove', onSidebarDividerMouseMove)
+  window.addEventListener('mouseup', onSidebarDividerMouseUp, { once: true })
+  prevBodySelect = document.body.style.userSelect
+  document.body.style.userSelect = 'none'
+}
+
+function onSidebarDividerMouseMove(e: MouseEvent) {
+  if (!isSidebarResizing.value || !sbContainerWidth) return
+  const dx = e.clientX - sbStartX
+  const newLeft = sbStartLeftWidth + dx
+  const pct = Math.max(15, Math.min(50, (newLeft / sbContainerWidth) * 100))
+  sidebarWidthPct.value = pct
+}
+
+function onSidebarDividerMouseUp() {
+  isSidebarResizing.value = false
+  document.body.style.userSelect = prevBodySelect || ''
+  window.removeEventListener('mousemove', onSidebarDividerMouseMove)
+  // persist current width
+  try {
+    localStorage.setItem('explorer.sidebarWidthPct', String(Math.round(sidebarWidthPct.value)))
+  } catch {
+    /* ignore persistence errors */
+  }
+  lastSidebarWidthPct.value = sidebarWidthPct.value
+}
+
+onUnmounted(() => {
+  window.removeEventListener('mousemove', onSidebarDividerMouseMove)
+})
+
+function clamp(n: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, n))
+}
+
+function toggleSidebar() {
+  if (sidebarVisible.value) {
+    // hide and remember width
+    lastSidebarWidthPct.value = sidebarWidthPct.value
+    sidebarVisible.value = false
+    try {
+      localStorage.setItem('explorer.sidebarVisible', 'false')
+      localStorage.setItem(
+        'explorer.lastSidebarWidthPct',
+        String(Math.round(lastSidebarWidthPct.value))
+      )
+      localStorage.setItem('explorer.sidebarWidthPct', String(Math.round(sidebarWidthPct.value)))
+    } catch {
+      /* ignore persistence errors */
+    }
+  } else {
+    // show and restore last width
+    sidebarVisible.value = true
+    try {
+      const stored = Number(
+        localStorage.getItem('explorer.lastSidebarWidthPct') || lastSidebarWidthPct.value
+      )
+      sidebarWidthPct.value = clamp(isNaN(stored) ? 25 : stored, 15, 50)
+      localStorage.setItem('explorer.sidebarVisible', 'true')
+    } catch {
+      /* ignore persistence errors */
+    }
+  }
+}
 
 function closeRightSplit() {
   splitConnectionId.value = null
@@ -344,6 +474,17 @@ watch(
 
 onMounted(() => {
   commonStore.setCurrentPage('Database Explorer')
+  // Initialize sidebar persisted state
+  try {
+    const storedVisible = localStorage.getItem('explorer.sidebarVisible')
+    if (storedVisible !== null) sidebarVisible.value = storedVisible === 'true'
+    const storedPct = Number(localStorage.getItem('explorer.sidebarWidthPct') || '')
+    if (!isNaN(storedPct)) sidebarWidthPct.value = clamp(storedPct, 15, 50)
+    const storedLast = Number(localStorage.getItem('explorer.lastSidebarWidthPct') || '')
+    if (!isNaN(storedLast)) lastSidebarWidthPct.value = clamp(storedLast, 15, 50)
+  } catch {
+    /* ignore persistence errors */
+  }
   initializeCurrentConnection()
   // Seed selection from query if present
   const { db, schema, type, name } = route.query as Record<string, string | undefined>
@@ -418,9 +559,11 @@ watch(currentConnectionId, (newId) => {
 
       <!-- Explorer content with simple connection selector -->
       <div v-else>
-        <div class="mt-6 grid grid-cols-12 gap-4">
+        <div ref="sidebarContainerRef" class="mt-6 flex flex-row items-stretch">
           <!-- Sidebar -->
-          <div class="col-span-12 md:col-span-4 lg:col-span-3">
+          <div v-if="sidebarVisible" ref="sidebarRef"
+            :style="{ flexBasis: `calc(${sidebarWidthPct}% - 8px)`, flexGrow: 0, flexShrink: 0 }"
+            class="min-w-[220px] pr-2">
             <ExplorerSidebarConnections :initial-expanded-connection-id="currentConnectionId || undefined" :selected="{
               database: selectedDatabaseName || undefined,
               schema: selectedSchemaName || undefined,
@@ -428,8 +571,14 @@ watch(currentConnectionId, (newId) => {
               name: selectedObjectName || undefined
             }" @open="handleOpenFromTree" />
           </div>
+
+          <!-- Divider between sidebar and right panel -->
+          <div v-if="sidebarVisible" role="separator" aria-orientation="vertical"
+            class="w-1.5 mx-1.5 bg-gray-200 hover:bg-gray-300 cursor-col-resize rounded hidden sm:block"
+            @mousedown.prevent="onSidebarDividerMouseDown"></div>
+
           <!-- Right panel -->
-          <div class="col-span-12 md:col-span-8 lg:col-span-9">
+          <div :style="{ flexBasis: '0px' }" :class="['grow', sidebarVisible ? 'pl-2' : 'pl-0']">
             <div class="mb-4">
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2 text-sm text-gray-500">
@@ -440,7 +589,15 @@ watch(currentConnectionId, (newId) => {
                   <ExplorerBreadcrumb :database="selectedDatabaseName" :schema="selectedSchemaName"
                     :type="selectedObjectType" :name="selectedObjectName" @navigate="handleBreadcrumbNavigate" />
                 </div>
-                <CloudProviderBadge v-if="displayType" :cloud-provider="displayCloudProvider" :db-type="displayType" />
+                <div class="flex items-center gap-2">
+                  <button type="button"
+                    class="px-2 py-1 text-xs rounded border border-gray-300 bg-white hover:bg-gray-50 text-gray-700"
+                    :title="sidebarVisible ? 'Hide Sidebar' : 'Show Sidebar'" @click="toggleSidebar">
+                    {{ sidebarVisible ? 'Hide Sidebar' : 'Show Sidebar' }}
+                  </button>
+                  <CloudProviderBadge v-if="displayType" :cloud-provider="displayCloudProvider"
+                    :db-type="displayType" />
+                </div>
               </div>
             </div>
 
@@ -500,9 +657,10 @@ watch(currentConnectionId, (newId) => {
               <TabPanels>
                 <TabPanel>
                   <div class="min-h-[480px]">
-                    <div v-if="splitMeta" class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div v-if="splitMeta" ref="splitContainerRef" class="flex flex-row items-stretch">
                       <!-- Left (primary) -->
-                      <div>
+                      <div ref="leftPaneRef" :style="{ flexGrow: splitGrow, flexBasis: '0px' }"
+                        class="min-w-[240px] pr-2">
                         <div v-if="selectedMeta">
                           <DatabaseObjectContainer :table-meta="selectedMeta" :is-view="selectedObjectType === 'view'"
                             :connection-id="currentConnectionId || ''"
@@ -518,8 +676,13 @@ watch(currentConnectionId, (newId) => {
                         </div>
                       </div>
 
+                      <!-- Divider -->
+                      <div role="separator" aria-orientation="vertical"
+                        class="w-1.5 mx-1.5 bg-gray-200 hover:bg-gray-300 cursor-col-resize rounded"
+                        @mousedown.prevent="onDividerMouseDown"></div>
+
                       <!-- Right split -->
-                      <div>
+                      <div :style="{ flexGrow: 100 - splitGrow, flexBasis: '0px' }" class="min-w-[240px] pl-2">
                         <DatabaseObjectContainer v-if="splitMeta" :table-meta="splitMeta"
                           :is-view="splitObjectType === 'view'"
                           :connection-id="splitConnectionId || currentConnectionId || ''"

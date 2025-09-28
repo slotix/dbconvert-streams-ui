@@ -110,6 +110,9 @@ function onContextKeydown(ev: KeyboardEvent) {
 // Global toast
 const toast = useToast()
 
+// Fixed, consistent caret icon class across all tree levels
+const caretClass = 'w-[16px] h-[16px] shrink-0 flex-none text-gray-400 mr-1.5'
+
 
 async function loadConnections() {
     isLoadingConnections.value = true
@@ -405,9 +408,16 @@ watch(
 
 const filteredConnections = computed<Connection[]>(() => {
     const q = searchQuery.value.trim()
-    if (!q) return connectionsStore.connections
+    // Use a stable, predictable order: newest first, tie-break by name
+    const base = [...connectionsStore.connections].sort((a, b) => {
+        const ac = Number(a.created || 0)
+        const bc = Number(b.created || 0)
+        if (bc !== ac) return bc - ac
+        return (a.name || '').localeCompare(b.name || '')
+    })
+    if (!q) return base
     const qn = normalized(q)
-    return connectionsStore.connections.filter((c) => {
+    return base.filter((c) => {
         // match by connection label
         const label = `${c.name || ''} ${c.host || ''} ${c.type || ''}`
         if (normalized(label).includes(qn)) return true
@@ -525,7 +535,7 @@ function getFlatViews(connId: string, db: string): string[] {
                             @click="toggleConnection(conn.id)"
                             @contextmenu.stop.prevent="openContextMenu($event, { kind: 'connection', connectionId: conn.id })">
                             <component :is="isConnExpanded(conn.id) ? ChevronDownIcon : ChevronRightIcon"
-                                class="h-4 w-4 text-gray-400 mr-1.5" />
+                                :class="caretClass" />
                             <img :src="getDbLogoForType(conn.type)" :alt="conn.type || 'db'"
                                 class="h-5 w-5 mr-1.5 object-contain" />
                             <span class="font-medium">
@@ -551,7 +561,7 @@ function getFlatViews(connId: string, db: string): string[] {
                                     @click="toggleDb(conn.id, db.name)" :data-explorer-db="`${conn.id}:${db.name}`"
                                     @contextmenu.stop.prevent="openContextMenu($event, { kind: 'database', connectionId: conn.id, database: db.name })">
                                     <component :is="isDbExpanded(conn.id, db.name) ? ChevronDownIcon : ChevronRightIcon"
-                                        class="h-4 w-4 text-gray-400 mr-1.5" />
+                                        :class="caretClass" />
                                     <span class="font-medium">
                                         <template v-for="(p, i) in highlightParts(db.name)" :key="i">
                                             <span v-if="p.match" class="bg-yellow-200/60 rounded px-0.5"
@@ -575,7 +585,7 @@ function getFlatViews(connId: string, db: string): string[] {
                                                     <component :is="isSchemaExpanded(conn.id, db.name, schema.name)
                                                         ? ChevronDownIcon
                                                         : ChevronRightIcon
-                                                        " class="h-4 w-4 text-gray-400 mr-1.5" />
+                                                        " :class="caretClass" />
                                                     <span class="font-medium">
                                                         <template
                                                             v-for="(p, i) in highlightParts(schema.name || 'default')"
