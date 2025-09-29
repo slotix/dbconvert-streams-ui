@@ -65,13 +65,19 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
   <nav aria-label="Breadcrumb" class="text-sm relative">
     <ol class="flex items-center gap-2 text-gray-600">
       <li v-if="props.database" class="inline-flex items-center gap-2">
-        <button class="text-gray-700 font-medium hover:underline" @click="emit('navigate', { level: 'database' })">
+        <button
+          class="text-gray-700 font-medium hover:underline"
+          @click="emit('navigate', { level: 'database' })"
+        >
           {{ props.database }}
         </button>
       </li>
       <li v-if="props.schema" class="inline-flex items-center gap-2">
         <span class="text-gray-400">/</span>
-        <button class="text-gray-700 font-medium hover:underline" @click="emit('navigate', { level: 'schema' })">
+        <button
+          class="text-gray-700 font-medium hover:underline"
+          @click="emit('navigate', { level: 'schema' })"
+        >
           {{ props.schema }}
         </button>
       </li>
@@ -83,25 +89,40 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
       </li>
       <li v-if="props.name" class="inline-flex items-center gap-2">
         <span class="text-gray-400">/</span>
-        <button ref="anchorRef" type="button" class="text-gray-900 font-medium hover:underline" title="Switch object"
-          @click.stop="showPicker = !showPicker">
+        <button
+          ref="anchorRef"
+          type="button"
+          class="text-gray-900 font-medium hover:underline"
+          title="Switch object"
+          @click.stop="showPicker = !showPicker"
+        >
           {{ props.name }}
         </button>
       </li>
     </ol>
 
     <!-- Quick object picker dropdown -->
-    <div v-if="showPicker" ref="menuRef"
-      class="absolute z-30 mt-2 w-80 bg-white border border-gray-200 rounded-md shadow-lg p-2" style="left: 0">
+    <div
+      v-if="showPicker"
+      ref="menuRef"
+      class="absolute z-30 mt-2 w-80 bg-white border border-gray-200 rounded-md shadow-lg p-2"
+      style="left: 0"
+    >
       <SearchInput v-model="search" placeholder="Search tables or views…" size="md" />
       <div class="h-2"></div>
       <div class="max-h-72 overflow-auto">
-        <button v-for="o in filtered" :key="`${o.schema || ''}:${o.type}:${o.name}`"
+        <button
+          v-for="o in filtered"
+          :key="`${o.schema || ''}:${o.type}:${o.name}`"
           class="w-full text-left px-2 py-1.5 text-sm hover:bg-gray-100 rounded flex items-center gap-2"
-          @click="onPick(o)">
+          @click="onPick(o)"
+        >
           <ObjectIcon :object-type="o.type" />
           <span class="text-gray-700">
-            <template v-for="(p, i) in highlightParts((o.schema ? `${o.schema}.` : '') + o.name, search)" :key="i">
+            <template
+              v-for="(p, i) in highlightParts((o.schema ? `${o.schema}.` : '') + o.name, search)"
+              :key="i"
+            >
               <span v-if="p.match" class="bg-yellow-200/60 rounded px-0.5" v-text="p.text"></span>
               <span v-else v-text="p.text"></span>
             </template>

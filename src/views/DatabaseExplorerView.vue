@@ -80,6 +80,19 @@ const showDiagram = ref(false)
 const diagramConnectionId = ref<string | null>(null)
 const diagramDatabaseName = ref<string | null>(null)
 
+// Track which pane is active for breadcrumb/header context
+const activePane = ref<'left' | 'right'>('left')
+
+// Optional: link tabs across splits (Data/Structure)
+const linkTabs = ref<boolean>(localStorage.getItem('explorer.linkTabs') === 'true')
+watch(linkTabs, (val) => {
+  try {
+    localStorage.setItem('explorer.linkTabs', val ? 'true' : 'false')
+  } catch {
+    /* ignore */
+  }
+})
+
 // Connection details panel (when clicking a connection in the tree)
 const detailsConnectionId = ref<string | null>(null)
 // Database overview (when clicking a database in the tree)
@@ -147,6 +160,17 @@ let sbStartX = 0
 let sbStartLeftWidth = 0
 let sbContainerWidth = 0
 let prevBodySelect: string | null = null
+
+function onSidebarDividerDoubleClick() {
+  // Reset sidebar width to default 25%
+  sidebarWidthPct.value = 25
+  try {
+    localStorage.setItem('explorer.sidebarWidthPct', '25')
+    localStorage.setItem('explorer.lastSidebarWidthPct', '25')
+  } catch {
+    /* ignore */
+  }
+}
 
 function onSidebarDividerMouseDown(e: MouseEvent) {
   if (!sidebarContainerRef.value || !sidebarRef.value) return
@@ -221,6 +245,11 @@ function toggleSidebar() {
   }
 }
 
+function onDividerDoubleClick() {
+  // Reset split widths to 50/50
+  splitGrow.value = 50
+}
+
 function closeRightSplit() {
   splitConnectionId.value = null
   splitDatabaseName.value = null
@@ -229,6 +258,13 @@ function closeRightSplit() {
   splitObjectName.value = null
   splitMeta.value = null
   splitDefaultTab.value = null
+  // When right split closes, focus returns to left
+  activePane.value = 'left'
+}
+
+function resetRightSplit() {
+  // Ensure split becomes visible and centered if content pushed it
+  splitGrow.value = 50
 }
 
 function settingAlwaysOpenNewTab(): boolean {
@@ -289,8 +325,18 @@ function handleOpenFromTree(payload: {
     splitObjectType.value = payload.type
     splitObjectName.value = payload.name
     splitMeta.value = payload.meta
-    splitDefaultTab.value = payload.defaultTab || null
+    // If tabs are linked, mirror the left pane's current tab; otherwise honor requested default
+    splitDefaultTab.value = linkTabs.value
+      ? selectedDefaultTab.value || 'data'
+      : payload.defaultTab || null
+    activePane.value = 'right'
     return
+  }
+  // Opening in main area focuses left pane
+  activePane.value = 'left'
+  if (linkTabs.value && splitMeta.value && splitDefaultTab.value) {
+    // If tabs are linked and right split is present, mirror its current tab into the left
+    selectedDefaultTab.value = splitDefaultTab.value
   }
   const desiredPinned = payload.mode === 'pinned' || settingAlwaysOpenNewTab()
   if (desiredPinned) {
@@ -378,6 +424,8 @@ function handleSelectDatabase(payload: { connectionId: string; database: string 
   splitObjectName.value = null
   splitMeta.value = null
   splitDefaultTab.value = null
+  // Database overview shows in the main (left) context
+  activePane.value = 'left'
   overviewConnectionId.value = payload.connectionId
   overviewDatabaseName.value = payload.database
   // Keep schema store in sync (for potential future actions)
@@ -454,18 +502,50 @@ const displayCloudProvider = computed(
 
 const displayType = computed(() => currentConnection.value?.type || recentCurrent.value?.type || '')
 // Objects list for breadcrumb picker (tables + views)
-const breadcrumbObjects = computed<Array<{ name: string; type: 'table' | 'view'; schema?: string }>>(
-  () => [
-    ...schemaStore.tables.map((t) => ({ name: t.name, type: 'table' as const, schema: t.schema })),
-    ...schemaStore.views.map((v) => ({ name: v.name, type: 'view' as const, schema: v.schema }))
-  ]
+const breadcrumbObjects = computed<
+  Array<{ name: string; type: 'table' | 'view'; schema?: string }>
+>(() => [
+  ...schemaStore.tables.map((t) => ({ name: t.name, type: 'table' as const, schema: t.schema })),
+  ...schemaStore.views.map((v) => ({ name: v.name, type: 'view' as const, schema: v.schema }))
+])
+
+// Active context for the global breadcrumb
+const activeDatabaseName = computed(() =>
+  activePane.value === 'right' && splitDatabaseName.value
+    ? splitDatabaseName.value
+    : selectedDatabaseName.value
+)
+const activeSchemaName = computed(() =>
+  activePane.value === 'right' && splitSchemaName.value
+    ? splitSchemaName.value
+    : selectedSchemaName.value
+)
+const activeObjectType = computed(() =>
+  activePane.value === 'right' && splitObjectType.value
+    ? splitObjectType.value
+    : selectedObjectType.value
+)
+const activeObjectName = computed(() =>
+  activePane.value === 'right' && splitObjectName.value
+    ? splitObjectName.value
+    : selectedObjectName.value
 )
 
 // Open object chosen from breadcrumb picker (preview, Data tab)
-async function handlePickFromBreadcrumb(o: { name: string; type: 'table' | 'view'; schema?: string }) {
-  if (!currentConnectionId.value || !selectedDatabaseName.value) return
+async function handlePickFromBreadcrumb(o: {
+  name: string
+  type: 'table' | 'view'
+  schema?: string
+}) {
+  // Resolve target pane context
+  const isRight = activePane.value === 'right'
+  const targetConnId = isRight
+    ? splitConnectionId.value || currentConnectionId.value
+    : currentConnectionId.value
+  const targetDb = isRight ? splitDatabaseName.value : selectedDatabaseName.value
+  if (!targetConnId || !targetDb) return
   try {
-    const meta = await connections.getMetadata(currentConnectionId.value, selectedDatabaseName.value)
+    const meta = await connections.getMetadata(targetConnId, targetDb)
     let obj: SQLTableMeta | SQLViewMeta | undefined
     if (o.type === 'table') {
       obj = Object.values(meta.tables || {}).find(
@@ -478,14 +558,15 @@ async function handlePickFromBreadcrumb(o: { name: string; type: 'table' | 'view
     }
     if (!obj) return
     handleOpenFromTree({
-      connectionId: currentConnectionId.value,
-      database: selectedDatabaseName.value,
+      connectionId: targetConnId,
+      database: targetDb,
       schema: o.schema,
       type: o.type,
       name: o.name,
       meta: obj,
       mode: 'preview',
-      defaultTab: 'data'
+      defaultTab: 'data',
+      openInRightSplit: isRight
     })
   } catch {
     // ignore open errors
@@ -552,7 +633,25 @@ async function refreshSelectedMetadata(force = true) {
 }
 
 function handleBreadcrumbNavigate(payload: { level: 'database' | 'schema' | 'type' | 'name' }) {
-  // Clicking a breadcrumb level clears deeper selections and updates the query
+  // Act on the active pane. For the right split, update local split state only.
+  if (activePane.value === 'right' && (splitMeta.value || splitDatabaseName.value)) {
+    if (payload.level === 'database') {
+      splitSchemaName.value = null
+      splitObjectType.value = null
+      splitObjectName.value = null
+      splitMeta.value = null
+    } else if (payload.level === 'schema') {
+      splitObjectType.value = null
+      splitObjectName.value = null
+      splitMeta.value = null
+    } else if (payload.level === 'type') {
+      splitObjectName.value = null
+      splitMeta.value = null
+    }
+    return
+  }
+
+  // Left pane (primary) updates route
   if (payload.level === 'database') {
     selectedSchemaName.value = null
     selectedObjectType.value = null
@@ -565,8 +664,6 @@ function handleBreadcrumbNavigate(payload: { level: 'database' | 'schema' | 'typ
   } else if (payload.level === 'type') {
     selectedObjectName.value = null
     selectedMeta.value = null
-  } else if (payload.level === 'name') {
-    // no-op, leaf
   }
 
   router.replace({
@@ -660,13 +757,29 @@ function getConnectionTypeById(id: string | null): string {
   return conn?.type || 'sql'
 }
 
+// Tab link helpers
+function onLeftTabChange(t: 'data' | 'structure') {
+  if (linkTabs.value && splitMeta.value) {
+    splitDefaultTab.value = t
+  }
+}
+
+function onRightTabChange(t: 'data' | 'structure') {
+  if (linkTabs.value) {
+    selectedDefaultTab.value = t
+  }
+}
+
 // Convenience: trigger diagram mode for the currently selected database
-function showDiagramForCurrentDatabase() {
-  if (!currentConnectionId.value || !selectedDatabaseName.value) return
-  handleShowDiagram({
-    connectionId: currentConnectionId.value,
-    database: selectedDatabaseName.value
-  })
+// Show diagram for the active pane database
+function showDiagramForActiveDatabase() {
+  const isRight = activePane.value === 'right'
+  const connId = isRight
+    ? splitConnectionId.value || currentConnectionId.value
+    : currentConnectionId.value
+  const db = isRight ? splitDatabaseName.value : selectedDatabaseName.value
+  if (!connId || !db) return
+  handleShowDiagram({ connectionId: connId, database: db })
 }
 
 // Watch for route changes to update recent connections and last viewed connection
@@ -681,7 +794,7 @@ watch(currentConnectionId, (newId) => {
 </script>
 
 <template>
-  <div class="min-h-full">
+  <div class="min-h-full overflow-x-hidden">
     <header class="bg-white shadow">
       <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between">
@@ -697,7 +810,7 @@ watch(currentConnectionId, (newId) => {
       </div>
     </header>
 
-    <main class="mx-auto py-4">
+    <main class="mx-auto py-4 overflow-x-hidden">
       <!-- No recent connections -->
       <div v-if="recentConnections.length === 0" class="text-center py-12">
         <p class="text-gray-500">No recently explored connections.</p>
@@ -709,7 +822,7 @@ watch(currentConnectionId, (newId) => {
 
       <!-- Explorer content with simple connection selector -->
       <div v-else>
-        <div ref="sidebarContainerRef" class="mt-6 flex flex-row items-stretch">
+        <div ref="sidebarContainerRef" class="mt-6 flex flex-row items-stretch min-w-0 overflow-x-hidden">
           <!-- Sidebar -->
           <div v-if="sidebarVisible" ref="sidebarRef"
             :style="{ flexBasis: `calc(${sidebarWidthPct}% - 8px)`, flexGrow: 0, flexShrink: 0 }"
@@ -719,17 +832,20 @@ watch(currentConnectionId, (newId) => {
               schema: selectedSchemaName || undefined,
               type: selectedObjectType || undefined,
               name: selectedObjectName || undefined
-            }" @open="handleOpenFromTree" @show-diagram="handleShowDiagram" @select-connection="handleSelectConnection"
-              @select-database="handleSelectDatabase" />
+            }" @open="handleOpenFromTree" @show-diagram="handleShowDiagram"
+              @select-connection="handleSelectConnection" @select-database="handleSelectDatabase" />
           </div>
 
-          <!-- Divider between sidebar and right panel -->
+          <!-- Divider between sidebar and right panel (wider hit area, always on top) -->
           <div v-if="sidebarVisible" role="separator" aria-orientation="vertical"
-            class="w-1.5 mx-1.5 bg-gray-200 hover:bg-gray-300 cursor-col-resize rounded hidden sm:block"
-            @mousedown.prevent="onSidebarDividerMouseDown"></div>
+            class="relative z-20 mx-1.5 w-3 shrink-0 cursor-col-resize select-none pointer-events-auto"
+            @mousedown.prevent="onSidebarDividerMouseDown" @dblclick="onSidebarDividerDoubleClick">
+            <div class="absolute inset-y-0 left-1/2 -translate-x-1/2 w-[3px] rounded bg-gray-200 hover:bg-gray-300" />
+          </div>
 
           <!-- Right panel -->
-          <div :style="{ flexBasis: '0px' }" :class="['grow', sidebarVisible ? 'pl-2' : 'pl-0']">
+          <div :style="{ flexBasis: '0px' }"
+            :class="['grow', 'min-w-0', 'overflow-x-hidden', sidebarVisible ? 'pl-2' : 'pl-0']">
             <div class="mb-4">
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2 text-sm text-gray-500">
@@ -737,20 +853,29 @@ watch(currentConnectionId, (newId) => {
                     {{ displayHostPort }}
                   </span>
                   <span v-if="displayHostPort" class="text-gray-400">•</span>
-                  <ExplorerBreadcrumb :database="selectedDatabaseName" :schema="selectedSchemaName"
-                    :type="selectedObjectType" :name="selectedObjectName" :objects="breadcrumbObjects"
-                    @navigate="handleBreadcrumbNavigate" @pick-name="(o) => handlePickFromBreadcrumb(o)" />
+                  <ExplorerBreadcrumb :database="activeDatabaseName" :schema="activeSchemaName" :type="activeObjectType"
+                    :name="activeObjectName" :objects="breadcrumbObjects" @navigate="handleBreadcrumbNavigate"
+                    @pick-name="(o) => handlePickFromBreadcrumb(o)" />
                 </div>
                 <div class="flex items-center gap-2">
-                  <button v-if="selectedDatabaseName && !showDiagram" type="button"
+                  <label class="flex items-center gap-1 text-xs text-gray-600 select-none">
+                    <input v-model="linkTabs" type="checkbox" />
+                    Link tabs
+                  </label>
+                  <button v-if="activeDatabaseName && !showDiagram" type="button"
                     class="px-2 py-1 text-xs rounded border border-gray-300 bg-white hover:bg-gray-50 text-gray-700"
-                    title="Show database diagram" @click="showDiagramForCurrentDatabase">
+                    title="Show database diagram" @click="showDiagramForActiveDatabase">
                     Show diagram
                   </button>
                   <button type="button"
                     class="px-2 py-1 text-xs rounded border border-gray-300 bg-white hover:bg-gray-50 text-gray-700"
                     :title="sidebarVisible ? 'Hide Sidebar' : 'Show Sidebar'" @click="toggleSidebar">
                     {{ sidebarVisible ? 'Hide Sidebar' : 'Show Sidebar' }}
+                  </button>
+                  <button v-if="splitMeta" type="button"
+                    class="px-2 py-1 text-xs rounded border border-gray-300 bg-white hover:bg-gray-50 text-gray-700"
+                    title="Center split" @click="resetRightSplit">
+                    Center split
                   </button>
                   <CloudProviderBadge v-if="displayType" :cloud-provider="displayCloudProvider"
                     :db-type="displayType" />
@@ -797,40 +922,58 @@ watch(currentConnectionId, (newId) => {
                 :relationships="schemaStore.relationships" />
             </div>
             <div v-else>
-              <div class="min-h-[480px]">
-                <div v-if="splitMeta" ref="splitContainerRef" class="flex flex-row items-stretch">
+              <div class="min-h-[480px] min-w-0 overflow-x-hidden">
+                <div v-if="splitMeta" ref="splitContainerRef" class="flex flex-row items-stretch min-w-0">
                   <!-- Left (primary) -->
-                  <div ref="leftPaneRef" :style="{ flexGrow: splitGrow, flexBasis: '0px' }" class="min-w-[240px] pr-2">
-                    <div v-if="selectedMeta">
-                      <DatabaseObjectContainer
-                        :key="`left-${selectedObjectType}-${selectedObjectName}-${selectedDefaultTab}`"
-                        :table-meta="selectedMeta" :is-view="selectedObjectType === 'view'"
-                        :connection-id="currentConnectionId || ''"
-                        :connection-type="currentConnectionDetails?.type || 'sql'"
-                        :database="selectedDatabaseName || ''" :default-tab="selectedDefaultTab || 'data'"
-                        @refresh-metadata="refreshSelectedMetadata(true)" />
-                    </div>
-                    <div v-else class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg p-8 text-center">
-                      <h3 class="text-sm font-medium text-gray-900">No object selected</h3>
-                      <p class="mt-1 text-sm text-gray-500">
-                        Select a table or view from the sidebar to view its structure
-                      </p>
+                  <div ref="leftPaneRef" :style="{ flexGrow: splitGrow, flexBasis: '0px' }" :class="[
+                    'min-w-[240px] pr-2 overflow-hidden',
+                    activePane === 'left'
+                      ? 'ring-2 ring-blue-400 rounded-md'
+                      : 'ring-1 ring-transparent'
+                  ]" @mousedown="activePane = 'left'">
+                    <div class="min-w-0">
+                      <div v-if="selectedMeta">
+                        <DatabaseObjectContainer
+                          :key="`left-${selectedObjectType}-${selectedObjectName}-${selectedDefaultTab}`"
+                          :table-meta="selectedMeta" :is-view="selectedObjectType === 'view'"
+                          :connection-id="currentConnectionId || ''"
+                          :connection-type="currentConnectionDetails?.type || 'sql'"
+                          :database="selectedDatabaseName || ''" :default-tab="selectedDefaultTab || 'data'"
+                          @refresh-metadata="refreshSelectedMetadata(true)" @tab-change="onLeftTabChange" />
+                      </div>
+                      <div v-else class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg p-8 text-center">
+                        <h3 class="text-sm font-medium text-gray-900">No object selected</h3>
+                        <p class="mt-1 text-sm text-gray-500">
+                          Select a table or view from the sidebar to view its structure
+                        </p>
+                      </div>
                     </div>
                   </div>
 
-                  <!-- Divider -->
+                  <!-- Divider between primary and right split (wider hit area, always on top) -->
                   <div role="separator" aria-orientation="vertical"
-                    class="w-1.5 mx-1.5 bg-gray-200 hover:bg-gray-300 cursor-col-resize rounded"
-                    @mousedown.prevent="onDividerMouseDown"></div>
+                    class="relative z-20 mx-1.5 w-3 shrink-0 cursor-col-resize select-none pointer-events-auto"
+                    @mousedown.prevent="onDividerMouseDown" @dblclick="onDividerDoubleClick">
+                    <div
+                      class="absolute inset-y-0 left-1/2 -translate-x-1/2 w-[3px] rounded bg-gray-200 hover:bg-gray-300" />
+                  </div>
 
                   <!-- Right split -->
-                  <div :style="{ flexGrow: 100 - splitGrow, flexBasis: '0px' }" class="min-w-[240px] pl-2">
-                    <DatabaseObjectContainer v-if="splitMeta"
-                      :key="`split-${splitObjectType}-${splitObjectName}-${splitDefaultTab}`" :table-meta="splitMeta"
-                      :is-view="splitObjectType === 'view'"
-                      :connection-id="splitConnectionId || currentConnectionId || ''"
-                      :connection-type="getConnectionTypeById(splitConnectionId)" :database="splitDatabaseName || ''"
-                      :default-tab="splitDefaultTab || 'data'" :closable="true" @close="closeRightSplit" />
+                  <div :style="{ flexGrow: 100 - splitGrow, flexBasis: '0px' }" :class="[
+                    'min-w-[240px] pl-2 overflow-hidden',
+                    activePane === 'right'
+                      ? 'ring-2 ring-blue-400 rounded-md'
+                      : 'ring-1 ring-transparent'
+                  ]" @mousedown="activePane = 'right'">
+                    <div class="min-w-0">
+                      <DatabaseObjectContainer v-if="splitMeta"
+                        :key="`split-${splitObjectType}-${splitObjectName}-${splitDefaultTab}`" :table-meta="splitMeta"
+                        :is-view="splitObjectType === 'view'"
+                        :connection-id="splitConnectionId || currentConnectionId || ''"
+                        :connection-type="getConnectionTypeById(splitConnectionId)" :database="splitDatabaseName || ''"
+                        :default-tab="splitDefaultTab || 'data'" :closable="true" @close="closeRightSplit"
+                        @tab-change="onRightTabChange" />
+                    </div>
                   </div>
                 </div>
 
@@ -841,7 +984,8 @@ watch(currentConnectionId, (newId) => {
                       :table-meta="selectedMeta" :is-view="selectedObjectType === 'view'"
                       :connection-id="currentConnectionId || ''"
                       :connection-type="currentConnectionDetails?.type || 'sql'" :database="selectedDatabaseName || ''"
-                      :default-tab="selectedDefaultTab || 'data'" @refresh-metadata="refreshSelectedMetadata(true)" />
+                      :default-tab="selectedDefaultTab || 'data'" @refresh-metadata="refreshSelectedMetadata(true)"
+                      @tab-change="onLeftTabChange" />
                   </div>
                   <div v-else class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg p-8 text-center">
                     <h3 class="text-sm font-medium text-gray-900">No object selected</h3>

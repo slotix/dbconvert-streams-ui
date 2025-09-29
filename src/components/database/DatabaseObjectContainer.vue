@@ -25,6 +25,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'refresh-metadata'): void
   (e: 'close'): void
+  (e: 'tab-change', tab: 'data' | 'structure'): void
 }>()
 
 type TabItem = {
@@ -72,11 +73,16 @@ const selectedIndex = ref<number>(defaultIndex.value)
 watch(defaultIndex, (val) => {
   selectedIndex.value = val
 })
+
+function onTabChange(i: number) {
+  selectedIndex.value = i
+  emit('tab-change', i === 0 ? 'data' : 'structure')
+}
 </script>
 
 <template>
   <div class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg">
-    <TabGroup :selectedIndex="selectedIndex" :defaultIndex="defaultIndex" @change="(i) => (selectedIndex = i)">
+    <TabGroup :selectedIndex="selectedIndex" :defaultIndex="defaultIndex" @change="onTabChange">
       <!-- Main Navigation Tabs + optional close -->
       <div class="border-b border-gray-200 flex items-center justify-between px-6">
         <TabList class="flex space-x-8">
