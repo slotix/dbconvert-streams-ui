@@ -681,8 +681,8 @@ watch(currentConnectionId, (newId) => {
               schema: selectedSchemaName || undefined,
               type: selectedObjectType || undefined,
               name: selectedObjectName || undefined
-            }" @open="handleOpenFromTree" @show-diagram="handleShowDiagram"
-              @select-connection="handleSelectConnection" @select-database="handleSelectDatabase" />
+            }" @open="handleOpenFromTree" @show-diagram="handleShowDiagram" @select-connection="handleSelectConnection"
+              @select-database="handleSelectDatabase" />
           </div>
 
           <!-- Divider between sidebar and right panel -->
@@ -763,7 +763,9 @@ watch(currentConnectionId, (newId) => {
                   <!-- Left (primary) -->
                   <div ref="leftPaneRef" :style="{ flexGrow: splitGrow, flexBasis: '0px' }" class="min-w-[240px] pr-2">
                     <div v-if="selectedMeta">
-                      <DatabaseObjectContainer :table-meta="selectedMeta" :is-view="selectedObjectType === 'view'"
+                      <DatabaseObjectContainer
+                        :key="`left-${selectedObjectType}-${selectedObjectName}-${selectedDefaultTab}`"
+                        :table-meta="selectedMeta" :is-view="selectedObjectType === 'view'"
                         :connection-id="currentConnectionId || ''"
                         :connection-type="currentConnectionDetails?.type || 'sql'"
                         :database="selectedDatabaseName || ''" :default-tab="selectedDefaultTab || 'data'"
@@ -784,7 +786,8 @@ watch(currentConnectionId, (newId) => {
 
                   <!-- Right split -->
                   <div :style="{ flexGrow: 100 - splitGrow, flexBasis: '0px' }" class="min-w-[240px] pl-2">
-                    <DatabaseObjectContainer v-if="splitMeta" :table-meta="splitMeta"
+                    <DatabaseObjectContainer v-if="splitMeta"
+                      :key="`split-${splitObjectType}-${splitObjectName}-${splitDefaultTab}`" :table-meta="splitMeta"
                       :is-view="splitObjectType === 'view'"
                       :connection-id="splitConnectionId || currentConnectionId || ''"
                       :connection-type="getConnectionTypeById(splitConnectionId)" :database="splitDatabaseName || ''"
@@ -794,7 +797,9 @@ watch(currentConnectionId, (newId) => {
 
                 <div v-else>
                   <div v-if="selectedMeta">
-                    <DatabaseObjectContainer :table-meta="selectedMeta" :is-view="selectedObjectType === 'view'"
+                    <DatabaseObjectContainer
+                      :key="`single-${selectedObjectType}-${selectedObjectName}-${selectedDefaultTab}`"
+                      :table-meta="selectedMeta" :is-view="selectedObjectType === 'view'"
                       :connection-id="currentConnectionId || ''"
                       :connection-type="currentConnectionDetails?.type || 'sql'" :database="selectedDatabaseName || ''"
                       :default-tab="selectedDefaultTab || 'data'" @refresh-metadata="refreshSelectedMetadata(true)" />

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, type Component } from 'vue'
+import { computed, ref, watch, type Component } from 'vue'
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/vue'
 import { type SQLTableMeta, type SQLViewMeta } from '@/types/metadata'
 import TableMetadataView from './TableMetadataView.vue'
@@ -66,11 +66,17 @@ const tabs = computed<TabItem[]>(() => {
 
 // Select Data (index 0) by default unless caller explicitly requests Structure
 const defaultIndex = computed(() => (props.defaultTab === 'structure' ? 1 : 0))
+
+// Control the selected tab index so switching defaultTab from the outside takes effect
+const selectedIndex = ref<number>(defaultIndex.value)
+watch(defaultIndex, (val) => {
+  selectedIndex.value = val
+})
 </script>
 
 <template>
   <div class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg">
-    <TabGroup :defaultIndex="defaultIndex">
+    <TabGroup :selectedIndex="selectedIndex" :defaultIndex="defaultIndex" @change="(i) => (selectedIndex = i)">
       <!-- Main Navigation Tabs + optional close -->
       <div class="border-b border-gray-200 flex items-center justify-between px-6">
         <TabList class="flex space-x-8">

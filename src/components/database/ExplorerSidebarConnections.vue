@@ -712,8 +712,8 @@ async function actionCopyDDLFromContext() {
                                                         })
                                                         ">
                                                     <component :is="isSchemaExpanded(conn.id, db.name, schema.name)
-                                                            ? ChevronDownIcon
-                                                            : ChevronRightIcon
+                                                        ? ChevronDownIcon
+                                                        : ChevronRightIcon
                                                         " :class="caretClass" />
                                                     <span class="font-medium">
                                                         <template
@@ -737,23 +737,24 @@ async function actionCopyDDLFromContext() {
                                                     <div v-for="t in schema.tables.filter(
                                                         (n) =>
                                                             !searchQuery || n.toLowerCase().includes(searchQuery.toLowerCase())
-                                                    )" :key="t" class="flex items-center px-2 py-1.5 text-sm rounded-md hover:bg-gray-100 cursor-pointer"
+                                                    )" :key="t"
+                                                        class="flex items-center px-2 py-1.5 text-sm rounded-md hover:bg-gray-100 cursor-pointer"
                                                         :data-explorer-obj="`${conn.id}:${db.name}:${schema.name || ''}:table:${t}`"
                                                         @click.stop="
                                                             onOpen(conn.id, db.name, 'table', t, 'preview', schema.name)
                                                             " @dblclick.stop="
-                                onOpen(conn.id, db.name, 'table', t, 'pinned', schema.name)
-                                " @click.middle.stop="
-                                onOpen(conn.id, db.name, 'table', t, 'pinned', schema.name)
-                                " @contextmenu.stop.prevent="
-                                openContextMenu($event, {
-                                    kind: 'table',
-                                    connectionId: conn.id,
-                                    database: db.name,
-                                    schema: schema.name || undefined,
-                                    name: t
-                                })
-                                ">
+                                                                onOpen(conn.id, db.name, 'table', t, 'pinned', schema.name)
+                                                                " @click.middle.stop="
+                                                                    onOpen(conn.id, db.name, 'table', t, 'pinned', schema.name)
+                                                                    " @contextmenu.stop.prevent="
+                                                                        openContextMenu($event, {
+                                                                            kind: 'table',
+                                                                            connectionId: conn.id,
+                                                                            database: db.name,
+                                                                            schema: schema.name || undefined,
+                                                                            name: t
+                                                                        })
+                                                                        ">
                                                         <TableCellsIcon class="h-4 w-4 mr-1.5 text-gray-400" />
                                                         <span>
                                                             <template v-for="(p, i) in highlightParts(t)" :key="i">
@@ -774,23 +775,24 @@ async function actionCopyDDLFromContext() {
                                                     <div v-for="v in schema.views.filter(
                                                         (n) =>
                                                             !searchQuery || n.toLowerCase().includes(searchQuery.toLowerCase())
-                                                    )" :key="v" class="flex items-center px-2 py-1.5 text-sm rounded-md hover:bg-gray-100 cursor-pointer"
+                                                    )" :key="v"
+                                                        class="flex items-center px-2 py-1.5 text-sm rounded-md hover:bg-gray-100 cursor-pointer"
                                                         :data-explorer-obj="`${conn.id}:${db.name}:${schema.name || ''}:view:${v}`"
                                                         @click.stop="
                                                             onOpen(conn.id, db.name, 'view', v, 'preview', schema.name)
                                                             " @dblclick.stop="
-                                onOpen(conn.id, db.name, 'view', v, 'pinned', schema.name)
-                                " @click.middle.stop="
-                                onOpen(conn.id, db.name, 'view', v, 'pinned', schema.name)
-                                " @contextmenu.stop.prevent="
-                                openContextMenu($event, {
-                                    kind: 'view',
-                                    connectionId: conn.id,
-                                    database: db.name,
-                                    schema: schema.name || undefined,
-                                    name: v
-                                })
-                                ">
+                                                                onOpen(conn.id, db.name, 'view', v, 'pinned', schema.name)
+                                                                " @click.middle.stop="
+                                                                    onOpen(conn.id, db.name, 'view', v, 'pinned', schema.name)
+                                                                    " @contextmenu.stop.prevent="
+                                                                        openContextMenu($event, {
+                                                                            kind: 'view',
+                                                                            connectionId: conn.id,
+                                                                            database: db.name,
+                                                                            schema: schema.name || undefined,
+                                                                            name: v
+                                                                        })
+                                                                        ">
                                                         <ViewfinderCircleIcon class="h-4 w-4 mr-1.5 text-gray-400" />
                                                         <span>
                                                             <template v-for="(p, i) in highlightParts(v)" :key="i">
@@ -815,7 +817,8 @@ async function actionCopyDDLFromContext() {
                                             </div>
                                             <div v-for="t in getFlatTables(conn.id, db.name).filter(
                                                 (n) => !searchQuery || n.toLowerCase().includes(searchQuery.toLowerCase())
-                                            )" :key="t" class="flex items-center px-2 py-1.5 text-sm rounded-md hover:bg-gray-100 cursor-pointer"
+                                            )" :key="t"
+                                                class="flex items-center px-2 py-1.5 text-sm rounded-md hover:bg-gray-100 cursor-pointer"
                                                 :data-explorer-obj="`${conn.id}:${db.name}::table:${t}`"
                                                 @click.stop="onOpen(conn.id, db.name, 'table', t, 'preview')"
                                                 @dblclick.stop="onOpen(conn.id, db.name, 'table', t, 'pinned')"
@@ -846,7 +849,8 @@ async function actionCopyDDLFromContext() {
                                             </div>
                                             <div v-for="v in getFlatViews(conn.id, db.name).filter(
                                                 (n) => !searchQuery || n.toLowerCase().includes(searchQuery.toLowerCase())
-                                            )" :key="v" class="flex items-center px-2 py-1.5 text-sm rounded-md hover:bg-gray-100 cursor-pointer"
+                                            )" :key="v"
+                                                class="flex items-center px-2 py-1.5 text-sm rounded-md hover:bg-gray-100 cursor-pointer"
                                                 :data-explorer-obj="`${conn.id}:${db.name}::view:${v}`"
                                                 @click.stop="onOpen(conn.id, db.name, 'view', v, 'preview')"
                                                 @dblclick.stop="onOpen(conn.id, db.name, 'view', v, 'pinned')"
@@ -920,39 +924,39 @@ async function actionCopyDDLFromContext() {
                     <!-- Table/View menu -->
                     <template v-else-if="menuTarget.kind === 'table' || menuTarget.kind === 'view'">
                         <button v-if="menuObj" class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
-                            @click="onContextOpenStructure(false)">
-                            Open Structure
-                        </button>
-                        <button v-if="menuObj" class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
                             @click="onContextOpenData(false)">
                             Open Data
                         </button>
-                        <div class="my-1 border-t border-gray-100"></div>
                         <button v-if="menuObj" class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
-                            @click="onContextOpenStructure(true)">
-                            Open in Right Split
+                            @click="onContextOpenStructure(false)">
+                            Open Structure
                         </button>
+                        <div class="my-1 border-t border-gray-100"></div>
                         <button v-if="menuObj" class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
                             @click="onContextOpenData(true)">
                             Open Data in Right Split
+                        </button>
+                        <button v-if="menuObj" class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
+                            @click="onContextOpenStructure(true)">
+                            Open Structure in Right Split
                         </button>
                         <button v-if="menuObj" class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
                             @click="onContextCopyObjectName">
                             Copy name
                         </button>
                         <button v-if="menuObj" class="w-full text-left px-3 py-1.5 hover:bg-gray-100" :disabled="menuObj.kind === 'table'
-                                ? !findTableMeta(
-                                    menuObj.connectionId,
-                                    menuObj.database,
-                                    menuObj.name,
-                                    menuObj.schema
-                                )?.ddl?.createTable
-                                : !findViewMeta(
-                                    menuObj.connectionId,
-                                    menuObj.database,
-                                    menuObj.name,
-                                    menuObj.schema
-                                )?.definition
+                            ? !findTableMeta(
+                                menuObj.connectionId,
+                                menuObj.database,
+                                menuObj.name,
+                                menuObj.schema
+                            )?.ddl?.createTable
+                            : !findViewMeta(
+                                menuObj.connectionId,
+                                menuObj.database,
+                                menuObj.name,
+                                menuObj.schema
+                            )?.definition
                             " @click="actionCopyDDLFromContext()">
                             Copy DDL
                         </button>
