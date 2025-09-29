@@ -51,15 +51,15 @@ const tabs = computed<TabItem[]>(() => {
       component: props.isView ? ViewStructureView : TableMetadataView,
       props: props.isView
         ? {
-          viewMeta: props.tableMeta as SQLViewMeta,
-          connectionId: props.connectionId,
-          connectionType: props.connectionType
-        }
+            viewMeta: props.tableMeta as SQLViewMeta,
+            connectionId: props.connectionId,
+            connectionType: props.connectionType
+          }
         : {
-          tableMeta: props.tableMeta as SQLTableMeta,
-          connectionId: props.connectionId,
-          connectionType: props.connectionType
-        }
+            tableMeta: props.tableMeta as SQLTableMeta,
+            connectionId: props.connectionId,
+            connectionType: props.connectionType
+          }
     }
   ]
   return items
@@ -87,18 +87,24 @@ function onTabChange(i: number) {
       <div class="border-b border-gray-200 flex items-center justify-between px-6">
         <TabList class="flex space-x-8">
           <Tab v-for="tab in tabs" :key="tab.name" v-slot="{ selected }" as="template">
-            <button :class="[
-              'border-b-2 py-4 px-1 text-sm font-medium whitespace-nowrap transition-colors duration-150',
-              selected
-                ? 'border-slate-500 text-slate-600'
-                : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-            ]">
+            <button
+              :class="[
+                'border-b-2 py-4 px-1 text-sm font-medium whitespace-nowrap transition-colors duration-150',
+                selected
+                  ? 'border-slate-500 text-slate-600'
+                  : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+              ]"
+            >
               {{ tab.name }}
             </button>
           </Tab>
         </TabList>
-        <button v-if="props.closable" class="text-gray-400 hover:text-gray-700 text-lg leading-none px-2 py-1"
-          aria-label="Close" @click="emit('close')">
+        <button
+          v-if="props.closable"
+          class="text-gray-400 hover:text-gray-700 text-lg leading-none px-2 py-1"
+          aria-label="Close"
+          @click="emit('close')"
+        >
           ×
         </button>
       </div>
@@ -106,7 +112,11 @@ function onTabChange(i: number) {
       <!-- Tab Panels -->
       <TabPanels class="overflow-hidden">
         <TabPanel v-for="tab in tabs" :key="tab.name">
-          <component :is="tab.component" v-bind="tab.props" @refresh-metadata="emit('refresh-metadata')" />
+          <component
+            :is="tab.component"
+            v-bind="tab.props"
+            @refresh-metadata="emit('refresh-metadata')"
+          />
         </TabPanel>
       </TabPanels>
     </TabGroup>
