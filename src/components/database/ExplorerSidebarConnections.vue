@@ -1,18 +1,14 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, nextTick } from 'vue'
-import {
-    ChevronRightIcon,
-    ChevronDownIcon,
-    TableCellsIcon,
-    ViewfinderCircleIcon,
-    ArrowPathIcon,
-    CubeIcon
-} from '@heroicons/vue/24/outline'
+import { ChevronRightIcon, ChevronDownIcon, ArrowPathIcon, CubeIcon } from '@heroicons/vue/24/outline'
+import ObjectIcon from '@/components/common/ObjectIcon.vue'
+import SearchInput from '@/components/common/SearchInput.vue'
 import { useConnectionsStore } from '@/stores/connections'
 import connectionsApi from '@/api/connections'
 import type { Connection } from '@/types/connections'
 import type { DatabaseMetadata, SQLTableMeta, SQLViewMeta } from '@/types/metadata'
 import { useToast } from 'vue-toastification'
+import { highlightParts as splitHighlight } from '@/utils/highlight'
 
 type ObjectType = 'table' | 'view'
 
@@ -179,23 +175,7 @@ function toggleSchema(connId: string, db: string, schema: string) {
 
 const normalized = (s: string) => s.toLowerCase()
 
-function highlightParts(text: string) {
-    const q = searchQuery.value.trim()
-    if (!q) return [{ text, match: false }]
-    const lower = text.toLowerCase()
-    const ql = q.toLowerCase()
-    const parts: Array<{ text: string; match: boolean }> = []
-    let i = 0
-    let idx = lower.indexOf(ql, i)
-    while (idx !== -1) {
-        if (idx > i) parts.push({ text: text.slice(i, idx), match: false })
-        parts.push({ text: text.slice(idx, idx + q.length), match: true })
-        i = idx + q.length
-        idx = lower.indexOf(ql, i)
-    }
-    if (i < text.length) parts.push({ text: text.slice(i), match: false })
-    return parts
-}
+const highlightParts = (text: string) => splitHighlight(text, searchQuery.value)
 
 function isConnExpanded(connId: string) {
     return expandedConnections.value.has(connId)
@@ -621,9 +601,7 @@ async function actionCopyDDLFromContext() {
         <div class="px-3 py-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <h3 class="text-base font-semibold leading-6 text-gray-900">Connections</h3>
             <div class="flex items-center gap-2 w-full md:w-auto min-w-0">
-                <input v-model="searchQuery"
-                    class="px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-slate-400 w-full md:w-40 lg:w-48 xl:w-56 min-w-0"
-                    placeholder="Filter..." type="text" />
+                <SearchInput v-model="searchQuery" placeholder="Filter..." size="sm" />
                 <button
                     class="inline-flex items-center gap-2 px-2 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 whitespace-nowrap"
                     :disabled="isLoadingConnections" @click="loadConnections">
@@ -755,7 +733,7 @@ async function actionCopyDDLFromContext() {
                                                                             name: t
                                                                         })
                                                                         ">
-                                                        <TableCellsIcon class="h-4 w-4 mr-1.5 text-gray-400" />
+                                                        <ObjectIcon object-type="table" class="mr-1.5" />
                                                         <span>
                                                             <template v-for="(p, i) in highlightParts(t)" :key="i">
                                                                 <span v-if="p.match"
@@ -793,7 +771,7 @@ async function actionCopyDDLFromContext() {
                                                                             name: v
                                                                         })
                                                                         ">
-                                                        <ViewfinderCircleIcon class="h-4 w-4 mr-1.5 text-gray-400" />
+                                                        <ObjectIcon object-type="view" class="mr-1.5" />
                                                         <span>
                                                             <template v-for="(p, i) in highlightParts(v)" :key="i">
                                                                 <span v-if="p.match"
@@ -831,7 +809,7 @@ async function actionCopyDDLFromContext() {
                                                         name: t
                                                     })
                                                     ">
-                                                <TableCellsIcon class="h-4 w-4 mr-1.5 text-gray-400" />
+                                                <ObjectIcon object-type="table" class="mr-1.5" />
                                                 <span>
                                                     <template v-for="(p, i) in highlightParts(t)" :key="i">
                                                         <span v-if="p.match" class="bg-yellow-200/60 rounded px-0.5"
@@ -863,7 +841,7 @@ async function actionCopyDDLFromContext() {
                                                         name: v
                                                     })
                                                     ">
-                                                <ViewfinderCircleIcon class="h-4 w-4 mr-1.5 text-gray-400" />
+                                                <ObjectIcon object-type="view" class="mr-1.5" />
                                                 <span>
                                                     <template v-for="(p, i) in highlightParts(v)" :key="i">
                                                         <span v-if="p.match" class="bg-yellow-200/60 rounded px-0.5"

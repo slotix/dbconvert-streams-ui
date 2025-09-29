@@ -453,6 +453,44 @@ const displayCloudProvider = computed(
 )
 
 const displayType = computed(() => currentConnection.value?.type || recentCurrent.value?.type || '')
+// Objects list for breadcrumb picker (tables + views)
+const breadcrumbObjects = computed<Array<{ name: string; type: 'table' | 'view'; schema?: string }>>(
+  () => [
+    ...schemaStore.tables.map((t) => ({ name: t.name, type: 'table' as const, schema: t.schema })),
+    ...schemaStore.views.map((v) => ({ name: v.name, type: 'view' as const, schema: v.schema }))
+  ]
+)
+
+// Open object chosen from breadcrumb picker (preview, Data tab)
+async function handlePickFromBreadcrumb(o: { name: string; type: 'table' | 'view'; schema?: string }) {
+  if (!currentConnectionId.value || !selectedDatabaseName.value) return
+  try {
+    const meta = await connections.getMetadata(currentConnectionId.value, selectedDatabaseName.value)
+    let obj: SQLTableMeta | SQLViewMeta | undefined
+    if (o.type === 'table') {
+      obj = Object.values(meta.tables || {}).find(
+        (t) => t.name === o.name && (o.schema ? t.schema === o.schema : true)
+      )
+    } else {
+      obj = Object.values(meta.views || {}).find(
+        (v) => v.name === o.name && (o.schema ? v.schema === o.schema : true)
+      )
+    }
+    if (!obj) return
+    handleOpenFromTree({
+      connectionId: currentConnectionId.value,
+      database: selectedDatabaseName.value,
+      schema: o.schema,
+      type: o.type,
+      name: o.name,
+      meta: obj,
+      mode: 'preview',
+      defaultTab: 'data'
+    })
+  } catch {
+    // ignore open errors
+  }
+}
 
 // Add current connection to recent list if it exists
 function addToRecentConnections() {
@@ -700,7 +738,8 @@ watch(currentConnectionId, (newId) => {
                   </span>
                   <span v-if="displayHostPort" class="text-gray-400">•</span>
                   <ExplorerBreadcrumb :database="selectedDatabaseName" :schema="selectedSchemaName"
-                    :type="selectedObjectType" :name="selectedObjectName" @navigate="handleBreadcrumbNavigate" />
+                    :type="selectedObjectType" :name="selectedObjectName" :objects="breadcrumbObjects"
+                    @navigate="handleBreadcrumbNavigate" @pick-name="(o) => handlePickFromBreadcrumb(o)" />
                 </div>
                 <div class="flex items-center gap-2">
                   <button v-if="selectedDatabaseName && !showDiagram" type="button"
