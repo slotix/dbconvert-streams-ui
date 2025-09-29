@@ -8,7 +8,9 @@ export default mergeConfig(
   defineConfig({
     test: {
       environment: 'jsdom',
-      exclude: [...configDefaults.exclude, 'e2e/*'],
+      // Only run unit tests from src/__tests__; exclude Playwright e2e in tests/
+      include: ['src/__tests__/**/*.{test,spec}.{ts,tsx,js}'],
+      exclude: [...configDefaults.exclude, 'e2e/*', 'tests/**', 'playwright.config.ts'],
       root: fileURLToPath(new URL('./', import.meta.url)),
       transformMode: {
         web: [/\.[jt]sx$/]
