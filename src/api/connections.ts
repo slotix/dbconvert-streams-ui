@@ -6,6 +6,7 @@ import { useConnectionsStore } from '@/stores/connections'
 import { validateApiKey } from './apiClient'
 import { handleApiError } from '@/utils/errorHandler'
 import { type DatabaseMetadata, type DatabaseSummary } from '@/types/metadata'
+import { type DatabaseOverview } from '@/types/overview'
 
 const getConnections = async (): Promise<Connection[]> => {
   const commonStore = useCommonStore()
@@ -296,6 +297,43 @@ const getDatabaseSummary = async (
   }
 }
 
+// Simple 30s cache for overview responses per (connection:db)
+let overviewCache: { [key: string]: { data: DatabaseOverview; timestamp: number } } = {}
+
+const getDatabaseOverview = async (
+  id: string,
+  database: string,
+  options?: { refresh?: boolean }
+): Promise<DatabaseOverview> => {
+  const commonStore = useCommonStore()
+  validateApiKey(commonStore.apiKey)
+
+  const now = Date.now()
+  const cacheKey = `${id}:${database}`
+  if (
+    !options?.refresh &&
+    overviewCache[cacheKey] &&
+    now - overviewCache[cacheKey].timestamp < 30000
+  ) {
+    return overviewCache[cacheKey].data
+  }
+
+  const qp = new URLSearchParams()
+  if (options?.refresh) qp.set('refresh', 'true')
+
+  const url = `/connections/${id}/databases/${encodeURIComponent(database)}/overview${qp.toString() ? `?${qp.toString()}` : ''}`
+  try {
+    const response = await apiClient.get<DatabaseOverview>(url, {
+      headers: { 'X-API-Key': commonStore.apiKey },
+      timeout: 15000
+    })
+    overviewCache[cacheKey] = { data: response.data, timestamp: now }
+    return response.data
+  } catch (error) {
+    throw handleApiError(error)
+  }
+}
+
 interface TableData {
   columns: string[]
   rows: unknown[][]
@@ -407,6 +445,7 @@ export default {
   getTables,
   getMetadata,
   getDatabaseSummary,
+  getDatabaseOverview,
   getTableData,
   getViews,
   getViewData
