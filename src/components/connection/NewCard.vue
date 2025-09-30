@@ -10,8 +10,8 @@
           src="/images/connections/new-connection.svg"
           alt="Create database connection"
         />
-        <div class="text-lg font-semibold text-gray-800 text-center">Create New Connection</div>
-        <p class="text-gray-600 text-center mb-4">Click here to create a new database connection</p>
+        <div class="text-lg font-semibold text-gray-800 text-center">New Connection</div>
+        <p class="text-gray-600 text-center mb-4">Click here to create a new data connection</p>
       </div>
     </div>
   </div>

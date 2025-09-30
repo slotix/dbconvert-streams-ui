@@ -27,7 +27,7 @@ test('streams page loads', async ({ page }) => {
   await expect(page).toHaveURL(/.*streams.*/)
 })
 
-test('database explorer loads', async ({ page }) => {
+test('data explorer loads', async ({ page }) => {
   await page.goto('/explorer')
 
   // Check for explorer page content - just verify the page loads

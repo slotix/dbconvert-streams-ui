@@ -12,6 +12,11 @@ import {
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps<{ connection: Connection }>()
+const emit = defineEmits<{
+  (e: 'edit'): void
+  (e: 'clone'): void
+  (e: 'delete'): void
+}>()
 
 const showPassword = ref(false)
 const isCopied = ref(false)
@@ -65,6 +70,29 @@ const createdDisplay = computed(() => {
           :cloud-provider="connection.cloud_provider || ''"
           :db-type="connection.type"
         />
+      </div>
+      <div class="hidden sm:flex items-center gap-2">
+        <button
+          type="button"
+          class="inline-flex items-center rounded-md px-3 py-1.5 text-xs font-semibold shadow-sm border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+          @click="emit('edit')"
+        >
+          Edit
+        </button>
+        <button
+          type="button"
+          class="inline-flex items-center rounded-md px-3 py-1.5 text-xs font-semibold shadow-sm border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+          @click="emit('clone')"
+        >
+          Clone
+        </button>
+        <button
+          type="button"
+          class="inline-flex items-center rounded-md px-3 py-1.5 text-xs font-semibold shadow-sm border border-red-300 bg-white text-red-600 hover:bg-red-50"
+          @click="emit('delete')"
+        >
+          Delete
+        </button>
       </div>
     </div>
 

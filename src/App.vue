@@ -355,7 +355,7 @@ const navigation = computed(() => {
   return [
     { name: 'Connections', href: '/connections', icon: CircleStackIcon, show: true },
     {
-      name: 'Database Explorer',
+      name: 'Data Explorer',
       href: '/explorer',
       icon: TableCellsIcon,
       show: true

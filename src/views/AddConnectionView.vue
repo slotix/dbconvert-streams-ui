@@ -11,8 +11,8 @@
             <ArrowLeftIcon class="h-5 w-5" />
           </button>
           <div>
-            <h1 class="text-2xl font-bold text-gray-900">Add New Connection</h1>
-            <p class="text-sm text-gray-600">Create a new database connection</p>
+            <h1 class="text-2xl font-bold text-gray-900">New Connection</h1>
+            <p class="text-sm text-gray-600">Create a new data connection</p>
           </div>
         </div>
       </div>

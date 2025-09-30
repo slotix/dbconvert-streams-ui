@@ -112,7 +112,7 @@ export const useCommonStore = defineStore('common', {
         name: 'explore',
         title: 'Explore your databases',
         description:
-          'Browse your connected databases to view tables, data, and relationships. Use the Database Explorer to understand your schema and data before starting any migration or streaming tasks.',
+          'Browse your connected databases to view tables, data, and relationships. Use the Data Explorer to understand your schema and data before starting any migration or streaming tasks.',
         img: '/images/steps/explore-step.svg'
       },
       {

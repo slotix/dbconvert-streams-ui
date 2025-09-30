@@ -11,6 +11,6 @@ const props = defineProps<{
 <template>
   <component
     :is="props.objectType === 'table' ? TableCellsIcon : ViewfinderCircleIcon"
-    class="h-4 w-4 text-gray-400"
+    class="w-[16px] h-[16px] text-gray-400 shrink-0 flex-none"
   />
 </template>

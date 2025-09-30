@@ -816,7 +816,7 @@ watch(
 )
 
 onMounted(() => {
-  commonStore.setCurrentPage('Database Explorer')
+  commonStore.setCurrentPage('Data Explorer')
   // Initialize sidebar persisted state
   try {
     const storedVisible = localStorage.getItem('explorer.sidebarVisible')
@@ -916,7 +916,7 @@ watch(currentConnectionId, (newId) => {
       <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between">
           <h1 class="text-3xl font-bold leading-tight tracking-tight text-gray-900">
-            Database Explorer
+            Data Explorer
           </h1>
           <div class="flex items-center gap-4">
             <RouterLink
@@ -932,30 +932,6 @@ watch(currentConnectionId, (newId) => {
                 @click="onAddConnection"
               >
                 New connection
-              </button>
-              <button
-                type="button"
-                :disabled="!activeConnectionId"
-                class="inline-flex items-center rounded-md px-3 py-1.5 text-xs font-semibold shadow-sm border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                @click="onEditConnection"
-              >
-                Edit
-              </button>
-              <button
-                type="button"
-                :disabled="!activeConnectionId"
-                class="inline-flex items-center rounded-md px-3 py-1.5 text-xs font-semibold shadow-sm border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                @click="onCloneConnection"
-              >
-                Clone
-              </button>
-              <button
-                type="button"
-                :disabled="!activeConnectionId"
-                class="inline-flex items-center rounded-md px-3 py-1.5 text-xs font-semibold shadow-sm border border-red-300 bg-white text-red-600 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                @click="onDeleteConnection"
-              >
-                Delete
               </button>
             </div>
           </div>
@@ -1117,7 +1093,12 @@ watch(currentConnectionId, (newId) => {
               v-if="detailsConnection"
               class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg"
             >
-              <ConnectionDetailsPanel :connection="detailsConnection" />
+              <ConnectionDetailsPanel
+                :connection="detailsConnection"
+                @edit="onEditConnection"
+                @clone="onCloneConnection"
+                @delete="onDeleteConnection"
+              />
             </div>
             <div
               v-else-if="overviewConnectionId && overviewDatabaseName"

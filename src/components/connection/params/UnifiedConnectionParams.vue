@@ -134,7 +134,7 @@
       <!-- Note about simplified workflow -->
       <div class="text-xs text-gray-500 italic mt-2">
         Note: Database selection is now optional. You can connect to the server and explore
-        databases in the Database Explorer.
+        databases in the Data Explorer.
       </div>
     </div>
   </div>

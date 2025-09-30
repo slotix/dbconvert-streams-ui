@@ -155,7 +155,7 @@
         <!-- Skip Option -->
         <div class="border-t pt-4">
           <p class="text-sm text-gray-600">
-            ℹ️ You can skip database selection and configure it later in the Database Explorer.
+            ℹ️ You can skip database selection and configure it later in the Data Explorer.
           </p>
         </div>
       </div>
