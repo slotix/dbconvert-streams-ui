@@ -26,6 +26,9 @@ const router = useRouter()
 const commonStore = useCommonStore()
 const connectionsStore = useConnectionsStore()
 const connectionsCount = computed(() => connectionsStore.connections.length || 0)
+const connectionsCountLabel = computed(
+  () => `(${connectionsCount.value} connection${connectionsCount.value === 1 ? '' : 's'})`
+)
 const TYPE_FILTER_STORAGE_KEY = 'explorer.connectionType'
 const connectionSearch = ref('')
 const dbTypeOptions = computed<DbType[]>(() => connectionsStore.dbTypes)
@@ -1006,7 +1009,7 @@ watch(currentConnectionId, (newId) => {
             <h1 class="text-3xl font-bold leading-tight tracking-tight text-gray-900">
               Data Explorer
             </h1>
-            <span class="text-lg font-normal text-gray-500">({{ connectionsCount }})</span>
+            <span class="text-lg font-normal text-gray-500">{{ connectionsCountLabel }}</span>
           </div>
           <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
             <Listbox v-if="selectedDbType" v-model="selectedDbType" as="div" class="relative">
@@ -1028,8 +1031,8 @@ watch(currentConnectionId, (newId) => {
                   <ListboxOption
                     v-for="option in dbTypeOptions"
                     :key="option.id"
-                    :value="option"
                     v-slot="{ active, selected }"
+                    :value="option"
                   >
                     <li
                       :class="[
