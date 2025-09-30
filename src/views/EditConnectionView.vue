@@ -47,6 +47,6 @@ const connectionId = computed(() => props.id)
 const connection = computed(() => connectionsStore.currentConnection)
 
 function goBack() {
-  router.push('/connections')
+  router.push('/explorer')
 }
 </script>

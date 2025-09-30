@@ -33,6 +33,6 @@ import AddConnectionWizard from '@/components/connection/wizard/AddConnectionWiz
 const router = useRouter()
 
 function goBack() {
-  router.push('/connections')
+  router.push('/explorer')
 }
 </script>

@@ -227,11 +227,16 @@ async function createConnection() {
   isCreatingConnectionStep.value = true
   try {
     await connectionsStore.createConnection()
+    const newId = connectionsStore.currentConnection?.id
     await connectionsStore.refreshConnections()
 
     commonStore.showNotification('Connection created successfully!', 'success')
-    // Navigate back to connections list
-    router.push('/connections')
+    // Navigate back to explorer and focus the new connection
+    if (newId) {
+      router.push({ path: `/explorer/${newId}`, query: { focus: '1' } })
+    } else {
+      router.push('/explorer')
+    }
   } catch (error: any) {
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred'
     commonStore.showNotification(`Failed to create connection: ${errorMessage}`, 'error')
@@ -245,7 +250,7 @@ function cancelWizard() {
   isCreatingConnectionStep.value = false
   connectionsStore.currentConnection = null
   // Navigate back to connections list
-  router.push('/connections')
+  router.push('/explorer')
 }
 
 // Initialize when component mounts

@@ -140,12 +140,12 @@ export default defineComponent({
   methods: {
     //  ...mapActions(useConnectionsStore, ['setCurrentConnection']),
     addConnection(): void {
-      this.$router.push('/connections/add')
+      this.$router.push('/explorer/add')
     },
     editConnection(): void {
       if (this.connection) {
         // Navigate to edit wizard instead of opening modal
-        this.$router.push(`/connections/edit/${this.connection.id}`)
+        this.$router.push(`/explorer/edit/${this.connection.id}`)
       }
     },
     exploreConnection(): void {

@@ -23,13 +23,15 @@ const routes = [
     component: ConnectionsView
   },
   {
-    path: '/connections/add',
+    path: '/explorer/add',
     name: 'AddConnection',
+    alias: ['/connections/add'],
     component: () => import('@/views/AddConnectionView.vue')
   },
   {
-    path: '/connections/edit/:id',
+    path: '/explorer/edit/:id',
     name: 'EditConnection',
+    alias: ['/connections/edit/:id'],
     component: () => import('@/views/EditConnectionView.vue'),
     props: true
   },

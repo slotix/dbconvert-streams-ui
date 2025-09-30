@@ -392,11 +392,11 @@ function createStream() {
 }
 
 function createConnection() {
-  router.push('/connections/add')
+  router.push('/explorer/add')
 }
 
 function viewAllConnections() {
-  router.push('/connections')
+  router.push('/explorer')
 }
 
 function viewAllStreamConfigurations() {

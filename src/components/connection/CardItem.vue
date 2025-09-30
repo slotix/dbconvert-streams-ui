@@ -470,7 +470,7 @@ function getDatabaseIconStyle(dbType: string): string {
 function editConnection(): void {
   if (props.connection) {
     // Navigate to edit wizard instead of opening modal
-    router.push(`/connections/edit/${props.connection.id}`)
+    router.push(`/explorer/edit/${props.connection.id}`)
   }
 }
 

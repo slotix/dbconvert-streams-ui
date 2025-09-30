@@ -143,7 +143,7 @@ async function loadConnectionForEdit() {
   const id = connectionId.value
   if (!id) {
     commonStore.showNotification('No connection ID provided', 'error')
-    router.push('/connections')
+    router.push('/explorer')
     return
   }
 
@@ -166,7 +166,7 @@ async function loadConnectionForEdit() {
     canProceed.value = true // Enable proceed since we have valid connection data
   } catch (error: any) {
     commonStore.showNotification(`Failed to load connection: ${error.message}`, 'error')
-    router.push('/connections')
+    router.push('/explorer')
   }
 }
 
@@ -208,8 +208,12 @@ async function updateConnection() {
     commonStore.showNotification('Connection updated successfully', 'success')
     await connectionsStore.refreshConnections()
 
-    // Navigate back to connections list
-    router.push('/connections')
+    // Navigate back to explorer and refocus the connection
+    if (connectionId.value) {
+      router.push({ path: `/explorer/${connectionId.value}`, query: { focus: '1' } })
+    } else {
+      router.push('/explorer')
+    }
   } catch (error: any) {
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred'
     commonStore.showNotification(errorMessage, 'error')
@@ -220,7 +224,7 @@ function cancelWizard() {
   // Reset current connection to avoid affecting other operations
   connectionsStore.currentConnection = null
   // Navigate back to connections list
-  router.push('/connections')
+  router.push('/explorer')
 }
 
 // Initialize when component mounts

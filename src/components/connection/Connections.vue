@@ -117,7 +117,7 @@ export default defineComponent({
 
     const addConnection = () => {
       // Navigate to wizard instead of opening modal
-      router.push('/connections/add')
+      router.push('/explorer/add')
     }
 
     watch(filter, (newFilter) => {

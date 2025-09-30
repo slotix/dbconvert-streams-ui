@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useCommonStore } from '@/stores/common'
 import { useConnectionsStore } from '@/stores/connections'
@@ -13,14 +13,73 @@ import DatabaseObjectContainer from '@/components/database/DatabaseObjectContain
 import DiagramView from '@/components/database/DiagramView.vue'
 import ConnectionDetailsPanel from '@/components/database/ConnectionDetailsPanel.vue'
 import DatabaseOverviewPanel from '@/components/database/DatabaseOverviewPanel.vue'
+import SearchInput from '@/components/common/SearchInput.vue'
 import connections from '@/api/connections'
 import type { SQLTableMeta, SQLViewMeta } from '@/types/metadata'
+import type { DbType } from '@/types/connections'
+import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/vue'
+import { ChevronDownIcon, CheckIcon, ArrowPathIcon } from '@heroicons/vue/24/outline'
 
 const MAX_RECENT_CONNECTIONS = 5
 const route = useRoute()
 const router = useRouter()
 const commonStore = useCommonStore()
 const connectionsStore = useConnectionsStore()
+const connectionsCount = computed(() => connectionsStore.connections.length || 0)
+const TYPE_FILTER_STORAGE_KEY = 'explorer.connectionType'
+const connectionSearch = ref('')
+const dbTypeOptions = computed<DbType[]>(() => connectionsStore.dbTypes)
+const selectedDbType = ref<DbType | null>(null)
+const selectedDbTypeLabel = computed(() => selectedDbType.value?.type || 'All')
+let hasInitializedTypeFilter = false
+const focusConnectionId = ref<string | null>(null)
+
+function loadStoredType(): string | null {
+  try {
+    return localStorage.getItem(TYPE_FILTER_STORAGE_KEY)
+  } catch {
+    return null
+  }
+}
+
+function storeType(value: string | null) {
+  try {
+    if (value) localStorage.setItem(TYPE_FILTER_STORAGE_KEY, value)
+    else localStorage.removeItem(TYPE_FILTER_STORAGE_KEY)
+  } catch {
+    /* ignore persistence errors */
+  }
+}
+
+watch(
+  dbTypeOptions,
+  (options) => {
+    if (!options.length) return
+    if (!hasInitializedTypeFilter) {
+      const stored = loadStoredType()
+      selectedDbType.value = stored
+        ? options.find((opt) => opt.type === stored) || options[0]
+        : options[0]
+      hasInitializedTypeFilter = true
+      return
+    }
+    if (selectedDbType.value) {
+      const match = options.find((opt) => opt.type === selectedDbType.value?.type)
+      selectedDbType.value = match || options[0]
+    } else {
+      selectedDbType.value = options[0]
+    }
+  },
+  { immediate: true }
+)
+
+watch(
+  () => selectedDbType.value?.type,
+  (val) => {
+    if (!hasInitializedTypeFilter) return
+    storeType(val || null)
+  }
+)
 
 // Get recent connections from localStorage or initialize empty
 const recentConnections = ref<
@@ -397,6 +456,7 @@ function handleShowDiagram(payload: { connectionId: string; database: string }) 
 
 function handleSelectConnection(payload: { connectionId: string }) {
   // Show details for the clicked connection; keep its tabs state
+  focusConnectionId.value = payload.connectionId
   detailsConnectionId.value = payload.connectionId
   showDiagram.value = false
   overviewConnectionId.value = null
@@ -445,6 +505,23 @@ function handleSelectDatabase(payload: { connectionId: string; database: string 
   // Update route
   router.replace({ path: `/explorer/${payload.connectionId}`, query: { db: payload.database } })
 }
+
+watch(
+  () => route.query.focus || route.query.new,
+  async (flag) => {
+    if (!flag) return
+    const id = currentConnectionId.value
+    if (!id) return
+    handleSelectConnection({ connectionId: id })
+    await nextTick()
+    const clearedQuery = { ...route.query }
+    delete clearedQuery.new
+    delete clearedQuery.focus
+    focusConnectionId.value = id
+    router.replace({ path: `/explorer/${id}`, query: clearedQuery })
+  },
+  { immediate: true }
+)
 
 function closePinned(index: number) {
   if (index < 0 || index >= pinnedTabs.value.length) return
@@ -553,9 +630,22 @@ function activatePreview() {
 
 // Connection actions (reuse existing Connections pages)
 
+function onAddConnection() {
+  router.push('/explorer/add')
+}
+
+async function refreshConnectionsToolbar() {
+  try {
+    await connectionsStore.refreshConnections()
+  } catch (e) {
+    const message = e instanceof Error ? e.message : 'Failed to refresh connections'
+    commonStore.showNotification(message, 'error')
+  }
+}
+
 function onEditConnection() {
   if (!activeConnectionId.value) return
-  router.push(`/connections/edit/${activeConnectionId.value}`)
+  router.push(`/explorer/edit/${activeConnectionId.value}`)
 }
 
 async function onDeleteConnection() {
@@ -577,7 +667,7 @@ async function onDeleteConnection() {
       lastViewedConnectionId.value = ''
     }
     // Navigate away to Connections list after deletion
-    router.push('/connections')
+    router.push('/explorer')
   } catch (e) {
     console.error('Failed to delete connection from Explorer:', e)
   }
@@ -593,7 +683,7 @@ async function onCloneConnection() {
     // After clone, store.currentConnection contains new id
     const newId = connectionsStore.currentConnection?.id
     await connectionsStore.refreshConnections()
-    if (newId) router.push(`/connections/edit/${newId}`)
+    if (newId) router.push(`/explorer/edit/${newId}`)
   } catch (e) {
     console.error('Failed to clone connection from Explorer:', e)
   }
@@ -910,12 +1000,73 @@ watch(currentConnectionId, (newId) => {
 <template>
   <div class="min-h-full overflow-x-hidden">
     <header class="bg-white shadow">
-      <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-        <div class="flex items-center justify-between">
-          <h1 class="text-3xl font-bold leading-tight tracking-tight text-gray-900">
-            Data Explorer
-          </h1>
-          <div class="flex items-center gap-4"></div>
+      <div class="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div class="flex items-baseline gap-2">
+            <h1 class="text-3xl font-bold leading-tight tracking-tight text-gray-900">
+              Data Explorer
+            </h1>
+            <span class="text-lg font-normal text-gray-500">({{ connectionsCount }})</span>
+          </div>
+          <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+            <Listbox v-if="selectedDbType" v-model="selectedDbType" as="div" class="relative">
+              <ListboxButton
+                class="inline-flex items-center gap-2 px-2 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-slate-400 whitespace-nowrap"
+              >
+                <img :src="selectedDbType.logo" :alt="selectedDbType.type" class="h-4 w-4" />
+                <span class="truncate max-w-[120px]">{{ selectedDbType.type }}</span>
+                <ChevronDownIcon class="h-4 w-4 text-gray-400" />
+              </ListboxButton>
+              <transition
+                leave-active-class="transition ease-in duration-100"
+                leave-from-class="opacity-100"
+                leave-to-class="opacity-0"
+              >
+                <ListboxOptions
+                  class="absolute right-0 z-30 mt-1 max-h-60 w-48 overflow-auto rounded-md bg-white py-1 text-sm shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+                >
+                  <ListboxOption
+                    v-for="option in dbTypeOptions"
+                    :key="option.id"
+                    :value="option"
+                    v-slot="{ active, selected }"
+                  >
+                    <li
+                      :class="[
+                        'flex items-center gap-2 px-3 py-1.5 cursor-pointer',
+                        active ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
+                      ]"
+                    >
+                      <img :src="option.logo" :alt="option.type" class="h-4 w-4" />
+                      <span class="truncate">{{ option.type }}</span>
+                      <CheckIcon v-if="selected" class="ml-auto h-4 w-4 text-gray-500" />
+                    </li>
+                  </ListboxOption>
+                </ListboxOptions>
+              </transition>
+            </Listbox>
+            <div class="flex-1 min-w-[180px] sm:min-w-[220px]">
+              <SearchInput v-model="connectionSearch" placeholder="Filter..." size="sm" />
+            </div>
+            <button
+              type="button"
+              class="inline-flex items-center gap-2 px-2 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              :disabled="connectionsStore.isLoadingConnections"
+              @click="refreshConnectionsToolbar"
+            >
+              <ArrowPathIcon
+                :class="['h-4 w-4', connectionsStore.isLoadingConnections ? 'animate-spin' : '']"
+              />
+              Refresh
+            </button>
+            <button
+              type="button"
+              class="inline-flex items-center gap-2 px-2 py-1.5 text-xs font-medium text-white bg-gray-600 border border-gray-600 rounded hover:bg-gray-500"
+              @click="onAddConnection"
+            >
+              New
+            </button>
+          </div>
         </div>
       </div>
     </header>
@@ -925,15 +1076,15 @@ watch(currentConnectionId, (newId) => {
       <div v-if="recentConnections.length === 0" class="text-center py-12">
         <p class="text-gray-500">No recently explored connections.</p>
         <RouterLink
-          to="/connections"
+          to="/explorer/add"
           class="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
         >
-          Select a Connection
+          Create a Connection
         </RouterLink>
       </div>
 
       <!-- Explorer content with simple connection selector -->
-      <div v-else>
+      <div v-else class="px-4 sm:px-6 lg:px-8">
         <div
           ref="sidebarContainerRef"
           class="mt-6 flex flex-row items-stretch min-w-0 overflow-x-hidden"
@@ -947,6 +1098,9 @@ watch(currentConnectionId, (newId) => {
           >
             <ExplorerSidebarConnections
               :initial-expanded-connection-id="currentConnectionId || undefined"
+              :search-query="connectionSearch"
+              :type-filter="selectedDbTypeLabel"
+              :focus-connection-id="focusConnectionId || undefined"
               :selected="{
                 database: selectedDatabaseName || undefined,
                 schema: selectedSchemaName || undefined,
