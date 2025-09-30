@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, nextTick } from 'vue'
+import { useRouter } from 'vue-router'
 import {
   ChevronRightIcon,
   ChevronDownIcon,
@@ -51,6 +52,7 @@ const emit = defineEmits<{
 }>()
 
 const connectionsStore = useConnectionsStore()
+const router = useRouter()
 const isLoadingConnections = ref(false)
 const loadError = ref<string | null>(null)
 const expandedConnections = ref(new Set<string>())
@@ -258,6 +260,43 @@ async function actionCopy(text: string, label = 'Copied') {
     toast.success(label)
   } catch {
     toast.error('Failed to copy')
+  }
+}
+
+// Reuse existing pages/actions
+function actionAddConnection() {
+  router.push('/connections/add')
+}
+function actionEditConnection(id: string) {
+  router.push(`/connections/edit/${id}`)
+}
+async function actionDeleteConnection(id: string) {
+  const conn = connectionsStore.connections.find((c) => c.id === id)
+  const name = conn?.name || conn?.host || 'connection'
+  if (!window.confirm(`Delete ${name}? This cannot be undone.`)) return
+  try {
+    await connectionsStore.deleteConnection(id)
+    // remove cached data
+    delete databasesByConn.value[id]
+    delete metadataByConnDb.value[id]
+    toast.success('Connection deleted')
+  } catch (e) {
+    toast.error('Failed to delete connection')
+    console.error(e)
+  }
+}
+
+async function actionCloneConnection(id: string) {
+  try {
+    connectionsStore.setCurrentConnection(id)
+    await connectionsStore.cloneConnection(id)
+    const newId = connectionsStore.currentConnection?.id
+    await connectionsStore.refreshConnections()
+    if (newId) router.push(`/connections/edit/${newId}`)
+    toast.success('Connection cloned')
+  } catch (e) {
+    toast.error('Failed to clone connection')
+    console.error(e)
   }
 }
 
@@ -617,6 +656,12 @@ async function actionCopyDDLFromContext() {
           <ArrowPathIcon :class="['h-4 w-4', isLoadingConnections ? 'animate-spin' : '']" />
           Refresh
         </button>
+        <button
+          class="inline-flex items-center gap-2 px-2 py-1.5 text-xs font-medium text-white bg-gray-600 border border-gray-600 rounded hover:bg-gray-500 whitespace-nowrap"
+          @click="actionAddConnection"
+        >
+          New
+        </button>
       </div>
     </div>
 
@@ -966,6 +1011,37 @@ async function actionCopyDDLFromContext() {
               @click="onContextRefreshDatabases"
             >
               Refresh
+            </button>
+            <div class="my-1 border-t border-gray-100"></div>
+            <button
+              class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
+              @click="
+                menuTarget.kind === 'connection'
+                  ? actionEditConnection(menuTarget.connectionId)
+                  : undefined
+              "
+            >
+              Edit
+            </button>
+            <button
+              class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
+              @click="
+                menuTarget.kind === 'connection'
+                  ? actionCloneConnection(menuTarget.connectionId)
+                  : undefined
+              "
+            >
+              Clone
+            </button>
+            <button
+              class="w-full text-left px-3 py-1.5 hover:bg-gray-100 text-red-600"
+              @click="
+                menuTarget.kind === 'connection'
+                  ? actionDeleteConnection(menuTarget.connectionId)
+                  : undefined
+              "
+            >
+              Delete
             </button>
           </template>
           <!-- Database menu -->

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch, type Component } from 'vue'
+import { ArrowPathIcon } from '@heroicons/vue/24/outline'
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/vue'
 import { type SQLTableMeta, type SQLViewMeta } from '@/types/metadata'
 import TableMetadataView from './TableMetadataView.vue'
@@ -78,14 +79,43 @@ function onTabChange(i: number) {
   selectedIndex.value = i
   emit('tab-change', i === 0 ? 'data' : 'structure')
 }
+
+// Compose object display name (schema.name when schema is not public/empty)
+const objectDisplayName = computed(() => {
+  const meta = props.tableMeta as Partial<SQLTableMeta & SQLViewMeta>
+  const name = meta?.name || ''
+  const schema = meta?.schema
+  if (schema && schema !== 'public' && schema !== '') return `${schema}.${name}`
+  return name
+})
+
+// Keep refs to the rendered child components so parent can trigger refresh
+type Refreshable = { refresh?: () => Promise<void> | void }
+const panelRefs = ref<Refreshable[]>([])
+const isRefreshing = ref(false)
+async function onRefreshClick() {
+  try {
+    isRefreshing.value = true
+    const comp = panelRefs.value[selectedIndex.value]
+    if (comp && typeof comp.refresh === 'function') {
+      await comp.refresh()
+    } else if (selectedIndex.value === 1) {
+      // Fallback for Structure tab: bubble to parent
+      emit('refresh-metadata')
+    }
+  } finally {
+    // small delay to show spinner feels responsive even if instant
+    setTimeout(() => (isRefreshing.value = false), 300)
+  }
+}
 </script>
 
 <template>
   <div class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg">
     <TabGroup :selectedIndex="selectedIndex" :defaultIndex="defaultIndex" @change="onTabChange">
-      <!-- Main Navigation Tabs + optional close -->
-      <div class="border-b border-gray-200 flex items-center justify-between px-6">
-        <TabList class="flex space-x-8">
+      <!-- Tabs + object name + actions in one row -->
+      <div class="border-b border-gray-200 flex items-center justify-between px-6 gap-3">
+        <TabList class="flex items-center gap-4 flex-wrap">
           <Tab v-for="tab in tabs" :key="tab.name" v-slot="{ selected }" as="template">
             <button
               :class="[
@@ -99,22 +129,39 @@ function onTabChange(i: number) {
             </button>
           </Tab>
         </TabList>
-        <button
-          v-if="props.closable"
-          class="text-gray-400 hover:text-gray-700 text-lg leading-none px-2 py-1"
-          aria-label="Close"
-          @click="emit('close')"
-        >
-          ×
-        </button>
+        <div class="flex items-center gap-3 ml-auto">
+          <div class="text-sm text-gray-600 truncate max-w-[40vw]">
+            {{ objectDisplayName }}
+          </div>
+          <button
+            type="button"
+            class="inline-flex items-center rounded-md bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm border border-gray-200 hover:bg-gray-50"
+            :disabled="isRefreshing"
+            @click="onRefreshClick"
+          >
+            <ArrowPathIcon
+              :class="['h-4 w-4 mr-2', isRefreshing ? 'animate-spin' : 'text-gray-400']"
+            />
+            {{ selectedIndex === 0 ? 'Refresh Data' : 'Refresh Metadata' }}
+          </button>
+          <button
+            v-if="props.closable"
+            class="text-gray-400 hover:text-gray-700 text-lg leading-none px-2 py-1"
+            aria-label="Close"
+            @click="emit('close')"
+          >
+            ×
+          </button>
+        </div>
       </div>
 
       <!-- Tab Panels -->
       <TabPanels class="overflow-hidden">
-        <TabPanel v-for="tab in tabs" :key="tab.name">
+        <TabPanel v-for="(tab, i) in tabs" :key="tab.name">
           <component
             :is="tab.component"
             v-bind="tab.props"
+            :ref="(el: any) => (panelRefs[i] = el)"
             @refresh-metadata="emit('refresh-metadata')"
           />
         </TabPanel>

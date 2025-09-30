@@ -526,7 +526,10 @@ const activeDisplayCloudProvider = computed(() => activeConnection.value?.cloud_
 const currentPreview = computed<
   { kind: 'panel'; label: string } | { kind: 'object'; label: string } | null
 >(() => {
-  if (detailsConnectionId.value) return { kind: 'panel', label: 'Connection details' }
+  if (detailsConnectionId.value) {
+    const name = connectionsStore.connections.find((c) => c.id === detailsConnectionId.value)?.name
+    return { kind: 'panel', label: name || 'Connection' }
+  }
   if (overviewConnectionId.value && overviewDatabaseName.value)
     return { kind: 'panel', label: `${overviewDatabaseName.value} Overview` }
   if (showDiagram.value) return { kind: 'panel', label: 'Diagram' }
@@ -545,6 +548,57 @@ function activatePreview() {
     activePane.value = 'left'
     activePinnedIndex.value = null
     activateTabFromState(previewTab.value)
+  }
+}
+
+// Connection actions (reuse existing Connections pages)
+function onAddConnection() {
+  router.push('/connections/add')
+}
+
+function onEditConnection() {
+  if (!activeConnectionId.value) return
+  router.push(`/connections/edit/${activeConnectionId.value}`)
+}
+
+async function onDeleteConnection() {
+  const id = activeConnectionId.value
+  if (!id) return
+  const conn = connectionsStore.connections.find((c) => c.id === id)
+  const name = conn?.name || conn?.host || 'connection'
+  if (!window.confirm(`Delete ${name}? This cannot be undone.`)) return
+  try {
+    await connectionsStore.deleteConnection(id)
+    // Remove from local recent lists
+    const idx = recentConnections.value.findIndex((c) => c.id === id)
+    if (idx !== -1) {
+      recentConnections.value.splice(idx, 1)
+      localStorage.setItem('recentConnections', JSON.stringify(recentConnections.value))
+    }
+    if (lastViewedConnectionId.value === id) {
+      localStorage.removeItem('lastViewedConnectionId')
+      lastViewedConnectionId.value = ''
+    }
+    // Navigate away to Connections list after deletion
+    router.push('/connections')
+  } catch (e) {
+    console.error('Failed to delete connection from Explorer:', e)
+  }
+}
+
+async function onCloneConnection() {
+  const id = activeConnectionId.value
+  if (!id) return
+  try {
+    // Ensure currentConnection is set for API that uses it
+    connectionsStore.setCurrentConnection(id)
+    await connectionsStore.cloneConnection(id)
+    // After clone, store.currentConnection contains new id
+    const newId = connectionsStore.currentConnection?.id
+    await connectionsStore.refreshConnections()
+    if (newId) router.push(`/connections/edit/${newId}`)
+  } catch (e) {
+    console.error('Failed to clone connection from Explorer:', e)
   }
 }
 // Objects list for breadcrumb picker (tables + views)
@@ -866,6 +920,39 @@ watch(currentConnectionId, (newId) => {
             >
               ← Back to Connections
             </RouterLink>
+            <div class="hidden sm:flex items-center gap-2">
+              <button
+                type="button"
+                class="inline-flex items-center rounded-md bg-gray-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-gray-500"
+                @click="onAddConnection"
+              >
+                New connection
+              </button>
+              <button
+                type="button"
+                :disabled="!activeConnectionId"
+                class="inline-flex items-center rounded-md px-3 py-1.5 text-xs font-semibold shadow-sm border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                @click="onEditConnection"
+              >
+                Edit
+              </button>
+              <button
+                type="button"
+                :disabled="!activeConnectionId"
+                class="inline-flex items-center rounded-md px-3 py-1.5 text-xs font-semibold shadow-sm border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                @click="onCloneConnection"
+              >
+                Clone
+              </button>
+              <button
+                type="button"
+                :disabled="!activeConnectionId"
+                class="inline-flex items-center rounded-md px-3 py-1.5 text-xs font-semibold shadow-sm border border-red-300 bg-white text-red-600 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                @click="onDeleteConnection"
+              >
+                Delete
+              </button>
+            </div>
           </div>
         </div>
       </div>

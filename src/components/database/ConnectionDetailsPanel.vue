@@ -57,8 +57,10 @@ const createdDisplay = computed(() => {
 <template>
   <div class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg">
     <div class="px-4 py-3 border-b flex items-center justify-between">
-      <div class="flex items-center gap-2">
-        <h3 class="text-base font-semibold text-gray-900 truncate">Connection details</h3>
+      <div class="flex items-center gap-2 min-w-0">
+        <h3 class="text-base font-semibold text-gray-900 truncate" :title="connection.name">
+          {{ connection.name || hostWithPort || 'Connection' }}
+        </h3>
         <CloudProviderBadge
           :cloud-provider="connection.cloud_provider || ''"
           :db-type="connection.type"

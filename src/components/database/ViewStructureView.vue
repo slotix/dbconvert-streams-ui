@@ -1,19 +1,11 @@
 <script setup lang="ts">
-import { ArrowPathIcon } from '@heroicons/vue/24/outline'
 import { type SQLViewMeta } from '@/types/metadata'
 import ViewDefinitionView from './ViewDefinitionView.vue'
 import { ref, nextTick, computed } from 'vue'
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/vue'
 
 // Define brand colors as constants for consistency (matching DatabaseDiagramD3.vue)
-const BRAND_COLORS = {
-  primary: '#00B2D6', // Teal/Cyan blue (from logo)
-  secondary: '#F26627', // Orange (from logo)
-  highlight: {
-    blue: '#DBEAFE', // Light blue highlight
-    orange: '#FFEDD5' // Light orange highlight
-  }
-}
+// (colors handled elsewhere)
 
 const props = defineProps<{
   viewMeta: SQLViewMeta
@@ -40,26 +32,51 @@ function handleRefresh() {
   })
 }
 
+// Expose for parent container
+defineExpose({ refresh: handleRefresh })
+
 const tabs = computed(() => [
   { name: 'Columns', count: props.viewMeta?.columns?.length || 0 },
   { name: 'DDL', count: 1 }
 ])
 
-function getColumnDefault(column: any) {
-  return column.defaultValue?.valid && column.defaultValue.string !== null
-    ? column.defaultValue.string
+import type { SQLColumnMeta } from '@/types/metadata'
+
+// Type guards to gracefully handle legacy shapes if present
+function hasValueNumber(obj: unknown): obj is { value: number | null; Valid: boolean } {
+  if (!obj || typeof obj !== 'object') return false
+  return 'value' in obj
+}
+function hasInt64Number(obj: unknown): obj is { Int64: number | null; Valid: boolean } {
+  if (!obj || typeof obj !== 'object') return false
+  return 'Int64' in obj
+}
+
+function getColumnDefault(column: SQLColumnMeta) {
+  return column.defaultValue?.Valid && column.defaultValue.String !== null
+    ? column.defaultValue.String
     : '-'
 }
 
-function getColumnType(column: any) {
+function getColumnType(column: SQLColumnMeta) {
   let type = column.dataType
 
-  if (column.length?.valid && column.length.int64 !== null) {
-    type += `(${column.length.int64})`
-  } else if (column.precision?.valid && column.precision.int64 !== null) {
-    const precisionStr = `${column.precision.int64}`
+  // Prefer current shape { Int64, Valid }, but tolerate legacy { value, Valid }
+  if (column.length && typeof column.length === 'object') {
+    if (hasInt64Number(column.length) && column.length.Valid && column.length.Int64 !== null) {
+      type += `(${column.length.Int64})`
+      return type
+    }
+    if (hasValueNumber(column.length) && column.length.Valid && column.length.value !== null) {
+      type += `(${column.length.value})`
+      return type
+    }
+  }
+
+  if (column.precision?.Valid && column.precision.Int64 !== null) {
+    const precisionStr = `${column.precision.Int64}`
     const scaleStr =
-      column.scale?.valid && column.scale.int64 !== null ? `,${column.scale.int64}` : ''
+      column.scale?.Valid && column.scale.Int64 !== null ? `,${column.scale.Int64}` : ''
     type += `(${precisionStr}${scaleStr})`
   }
   return type
@@ -74,35 +91,7 @@ function getColumnType(column: any) {
       $attrs.class ? $attrs.class : 'shadow-sm ring-1 ring-gray-900/5 rounded-lg'
     ]"
   >
-    <!-- Header -->
-    <div class="px-4 py-3 border-b border-gray-200">
-      <div class="flex items-center justify-between">
-        <h3 class="text-lg font-medium leading-6 text-gray-900">
-          <template
-            v-if="viewMeta.schema && viewMeta.schema !== 'public' && viewMeta.schema !== ''"
-          >
-            {{ viewMeta.schema }}.{{ viewMeta.name }}
-          </template>
-          <template v-else>
-            {{ viewMeta.name }}
-          </template>
-          <span v-if="viewMeta.isMaterialized" class="text-sm text-gray-500 ml-2"
-            >(Materialized)</span
-          >
-        </h3>
-        <button
-          type="button"
-          class="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm border border-gray-200 hover:bg-gray-50 transition-colors duration-150 focus:outline-none focus:ring-1 focus:ring-gray-300 focus:ring-offset-1"
-          :disabled="isLoading"
-          @click="handleRefresh"
-        >
-          <ArrowPathIcon
-            :class="['h-5 w-5 mr-2', isLoading ? 'text-gray-600 animate-spin' : 'text-gray-400']"
-          />
-          Refresh Metadata
-        </button>
-      </div>
-    </div>
+    <!-- Header removed; DatabaseObjectContainer renders tabs, title, and actions -->
 
     <TabGroup v-model="activeTabIndex" as="div">
       <TabList class="flex space-x-1 border-b border-gray-200 px-4">

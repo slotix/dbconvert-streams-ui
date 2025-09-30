@@ -5,14 +5,9 @@ import { type SQLTableMeta, type SQLViewMeta } from '@/types/metadata'
 import connections from '@/api/connections'
 import { formatTableValue } from '@/utils/dataUtils'
 
-// Define brand colors as constants for consistency (matching DatabaseDiagramD3.vue)
 const BRAND_COLORS = {
-  primary: '#00B2D6', // Teal/Cyan blue (from logo)
-  secondary: '#F26627', // Orange (from logo)
-  highlight: {
-    blue: '#DBEAFE', // Light blue highlight
-    orange: '#FFEDD5' // Light orange highlight
-  }
+  primary: '#00B2D6',
+  secondary: '#F26627'
 }
 
 const props = defineProps<{
@@ -39,12 +34,9 @@ const currentPage = ref(1)
 const itemsPerPage = ref(100)
 const skipCount = ref(false)
 
-// Helper to get object name regardless of case
 function getObjectName(meta: SQLTableMeta | SQLViewMeta): string {
   return props.isView ? (meta as SQLViewMeta).name : (meta as SQLTableMeta).name
 }
-
-// Helper to get schema regardless of case
 function getObjectSchema(meta: SQLTableMeta | SQLViewMeta): string {
   return props.isView ? (meta as SQLViewMeta).schema : (meta as SQLTableMeta).schema
 }
@@ -52,52 +44,32 @@ function getObjectSchema(meta: SQLTableMeta | SQLViewMeta): string {
 async function loadTableData() {
   isLoading.value = true
   error.value = undefined
-
   try {
     const objectName = getObjectName(props.tableMeta)
     const objectSchema = getObjectSchema(props.tableMeta)
-
-    if (!objectName) {
-      throw new Error('Table/View name is undefined')
-    }
-
-    // Reset to page 1 if we enable skip count and we're not on the first page
+    if (!objectName) throw new Error('Table/View name is undefined')
     if (skipCount.value && currentPage.value !== 1) {
       currentPage.value = 1
-      return // loadTableData will be called again by the watcher
+      return
     }
-
     const offset = skipCount.value
       ? (currentPage.value - 1) * itemsPerPage.value
       : Math.max(0, (currentPage.value - 1) * itemsPerPage.value)
-
-    // For non-public schemas, use schema-qualified name in the URL path
-    // For public schema or no schema, use just the table name
     const apiObjectName =
       objectSchema && objectSchema !== 'public' && objectSchema !== ''
         ? `${objectSchema}.${objectName}`
         : objectName
-
-    const params = {
-      limit: itemsPerPage.value,
-      offset: offset,
-      skip_count: skipCount.value
-    }
-
+    const params = { limit: itemsPerPage.value, offset, skip_count: skipCount.value }
     const data = props.isView
       ? await connections.getViewData(props.connectionId, props.database, apiObjectName, params)
       : await connections.getTableData(props.connectionId, props.database, apiObjectName, params)
-
     tableData.value = data
-
-    // If skip_count is true and we got less rows than limit, we're on the last page
     if (skipCount.value && data.rows.length < itemsPerPage.value) {
       currentPage.value = Math.max(1, currentPage.value - 1)
     }
   } catch (err) {
     console.error('Error loading data:', err)
     error.value = err instanceof Error ? err.message : 'Failed to load data'
-    // Reset to page 1 if we get an error about negative offset
     if (err instanceof Error && err.message.includes('offset must be non-negative')) {
       currentPage.value = 1
       loadTableData()
@@ -107,7 +79,6 @@ async function loadTableData() {
   }
 }
 
-// Reset pagination and reload data when table changes
 watch(
   () => props.tableMeta,
   () => {
@@ -116,86 +87,50 @@ watch(
   },
   { deep: true }
 )
-
-// Reload data when page or items per page changes
-watch([currentPage, skipCount], () => {
-  loadTableData()
-})
-
-// Handle items per page changes separately
+watch([currentPage, skipCount], () => loadTableData())
 watch(itemsPerPage, () => {
-  // Calculate the first item index of the current page
   const firstItemIndex = (currentPage.value - 1) * itemsPerPage.value
-
-  // Calculate what page this item would be on with the new items per page
   currentPage.value = Math.floor(firstItemIndex / itemsPerPage.value) + 1
-
-  // Ensure we don't exceed the total pages
   if (tableData.value?.total_count) {
     const maxPage = Math.ceil(tableData.value.total_count / itemsPerPage.value)
     currentPage.value = Math.min(currentPage.value, maxPage)
   }
-
-  // Always ensure we're at least on page 1
   currentPage.value = Math.max(1, currentPage.value)
-
   loadTableData()
 })
 
-// Load data initially
 loadTableData()
+
+defineExpose({ refresh: () => loadTableData() })
 
 const totalPages = computed(() => {
   if (!tableData.value?.total_count) return 1
   return Math.ceil(tableData.value.total_count / itemsPerPage.value)
 })
-
 const displayedPages = computed(() => {
   if (!tableData.value?.total_count) return []
-
-  const totalPages = Math.ceil(tableData.value.total_count / itemsPerPage.value)
+  const total = Math.ceil(tableData.value.total_count / itemsPerPage.value)
   const current = currentPage.value
   const pages: (number | string)[] = []
-
-  // Always show first page
   pages.push(1)
-
   if (current <= 4) {
-    // If current page is near start, show first 5 pages + ellipsis + last
-    for (let i = 2; i <= Math.min(5, totalPages); i++) {
-      pages.push(i)
-    }
-    if (totalPages > 5) {
-      pages.push('...')
-      pages.push(totalPages)
-    }
-  } else if (current > totalPages - 4) {
-    // If current page is near end, show first + ellipsis + last 5 pages
-    if (totalPages > 5) {
-      pages.push('...')
-    }
-    for (let i = Math.max(totalPages - 4, 2); i <= totalPages; i++) {
-      pages.push(i)
-    }
+    for (let i = 2; i <= Math.min(5, total); i++) pages.push(i)
+    if (total > 5) pages.push('...', total)
+  } else if (current > total - 4) {
+    if (total > 5) pages.push('...')
+    for (let i = Math.max(total - 4, 2); i <= total; i++) pages.push(i)
   } else {
-    // If current page is in middle, show first + ellipsis + current±2 + ellipsis + last
     pages.push('...')
-    for (let i = current - 2; i <= current + 2; i++) {
-      pages.push(i)
-    }
-    pages.push('...')
-    pages.push(totalPages)
+    for (let i = current - 2; i <= current + 2; i++) pages.push(i)
+    pages.push('...', total)
   }
-
   return pages
 })
 
-// Add this computed property after other computed properties
 const primaryKeyColumns = computed(() => {
   if (props.isView) return new Set()
   return new Set((props.tableMeta as SQLTableMeta).primaryKeys || [])
 })
-
 const foreignKeyColumns = computed(() => {
   if (props.isView) return new Set()
   const foreignKeys = (props.tableMeta as SQLTableMeta).foreignKeys || []
@@ -210,81 +145,46 @@ const foreignKeyColumns = computed(() => {
       $attrs.class ? $attrs.class : 'shadow-sm ring-1 ring-gray-900/5 rounded-lg'
     ]"
   >
-    <!-- Header -->
+    <!-- Toolbar: pagination controls (title/refresh handled by container) -->
     <div class="px-4 py-3 border-b border-gray-200">
-      <div class="flex items-center justify-between">
-        <h3 class="text-lg font-medium leading-6 text-gray-900">
-          <template
-            v-if="
-              getObjectSchema(tableMeta) &&
-              getObjectSchema(tableMeta) !== 'public' &&
-              getObjectSchema(tableMeta) !== ''
-            "
+      <div class="flex items-center justify-end gap-4">
+        <div class="flex items-center gap-2">
+          <label for="items-per-page" class="text-sm text-gray-600">Rows per page:</label>
+          <select
+            id="items-per-page"
+            v-model="itemsPerPage"
+            class="rounded-md border-gray-300 py-1.5 text-sm focus:border-gray-500 focus:ring-gray-500"
           >
-            {{ getObjectSchema(tableMeta) }}.{{ getObjectName(tableMeta) || 'Unnamed' }}
-          </template>
-          <template v-else>
-            {{ getObjectName(tableMeta) || 'Unnamed' }}
-          </template>
-          <span v-if="isView" class="ml-2 text-sm text-blue-500">(View)</span>
-        </h3>
-        <div class="flex items-center gap-4">
-          <!-- Items per page selector -->
-          <div class="flex items-center gap-2">
-            <label for="items-per-page" class="text-sm text-gray-600">Rows per page:</label>
-            <select
-              id="items-per-page"
-              v-model="itemsPerPage"
-              class="rounded-md border-gray-300 py-1.5 text-sm focus:border-gray-500 focus:ring-gray-500"
-            >
-              <option :value="10">10</option>
-              <option :value="25">25</option>
-              <option :value="50">50</option>
-              <option :value="100">100</option>
-            </select>
-          </div>
-          <!-- Skip count toggle - show for both tables and views -->
-          <div class="flex items-center gap-2">
-            <input
-              id="skip-count"
-              v-model="skipCount"
-              type="checkbox"
-              class="h-4 w-4 rounded border-gray-300 text-gray-600 focus:ring-gray-500"
-            />
-            <label for="skip-count" class="text-sm text-gray-600">Skip row count</label>
-          </div>
+            <option :value="10">10</option>
+            <option :value="25">25</option>
+            <option :value="50">50</option>
+            <option :value="100">100</option>
+          </select>
         </div>
-        <!-- Refresh button -->
-        <button
-          type="button"
-          class="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
-          :disabled="isLoading"
-          @click="loadTableData"
-        >
-          <ArrowPathIcon :class="['h-5 w-5 text-gray-400 mr-2', { 'animate-spin': isLoading }]" />
-          Refresh Data
-        </button>
+        <div class="flex items-center gap-2">
+          <input
+            id="skip-count"
+            v-model="skipCount"
+            type="checkbox"
+            class="h-4 w-4 rounded border-gray-300 text-gray-600 focus:ring-gray-500"
+          />
+          <label for="skip-count" class="text-sm text-gray-600">Skip row count</label>
+        </div>
       </div>
     </div>
 
     <!-- Content -->
     <div class="flex flex-col h-[calc(100vh-16rem)] p-4">
-      <!-- Loading state -->
       <div v-if="isLoading" class="flex items-center justify-center py-8">
         <ArrowPathIcon class="h-8 w-8 text-gray-400 animate-spin" />
       </div>
-
-      <!-- Error state -->
       <div v-else-if="error" class="text-center py-8">
         <p class="text-sm text-red-600">{{ error }}</p>
       </div>
-
-      <!-- Data table -->
       <div v-else-if="tableData?.rows?.length" class="flex flex-col flex-1 min-h-0">
         <div class="flex-1 overflow-x-auto border border-gray-200 rounded-lg">
           <div class="min-w-[640px]">
             <table class="w-full divide-y divide-gray-300">
-              <!-- Table headers -->
               <thead class="bg-gray-50 sticky top-0 z-10">
                 <tr>
                   <th
@@ -310,7 +210,6 @@ const foreignKeyColumns = computed(() => {
                   </th>
                 </tr>
               </thead>
-              <!-- Table body -->
               <tbody class="divide-y divide-gray-200 bg-white">
                 <tr
                   v-for="(row, rowIndex) in tableData.rows"
@@ -329,8 +228,6 @@ const foreignKeyColumns = computed(() => {
             </table>
           </div>
         </div>
-
-        <!-- Pagination -->
         <div class="mt-4 flex items-center justify-between border-t border-gray-200 bg-white py-3">
           <div class="flex flex-1 justify-between sm:hidden">
             <button
@@ -416,8 +313,6 @@ const foreignKeyColumns = computed(() => {
           </div>
         </div>
       </div>
-
-      <!-- Empty state -->
       <div v-else class="text-center py-8">
         <p class="text-sm text-gray-500">No data available</p>
       </div>

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, nextTick } from 'vue'
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/vue'
-import { ArrowPathIcon, KeyIcon, LinkIcon } from '@heroicons/vue/24/outline'
-import { type SQLTableMeta, type SQLColumnMeta, type SQLIndexMeta } from '@/types/metadata'
+import { KeyIcon, LinkIcon } from '@heroicons/vue/24/outline'
+import { type SQLTableMeta, type SQLColumnMeta } from '@/types/metadata'
 import DdlView from './DdlView.vue'
 
 // Define brand colors as constants for consistency (matching DatabaseDiagramD3.vue)
@@ -16,13 +16,7 @@ const BRAND_COLORS = {
 }
 
 // Define gray colors for tabs
-const GRAY_COLORS = {
-  active: {
-    border: '#64748b', // slate-500
-    text: '#1e293b', // slate-900
-    bg: '#f1f5f9' // slate-100
-  }
-}
+// (header colors were managed by the container)
 
 const props = defineProps<{
   tableMeta: SQLTableMeta
@@ -48,11 +42,14 @@ function handleRefresh() {
   })
 }
 
+// Expose optional refresh method for parent container
+defineExpose({ refresh: handleRefresh })
+
 const columns = computed(() => {
   const primaryKeys = new Set(props.tableMeta?.primaryKeys || [])
 
   const foreignKeyColumns = new Set(
-    (props.tableMeta?.foreignKeys || []).map((fk: any) => {
+    (props.tableMeta?.foreignKeys || []).map((fk: { sourceColumn: string }) => {
       return fk.sourceColumn
     })
   )
@@ -69,8 +66,16 @@ const columns = computed(() => {
   })
 })
 
+type FK = {
+  name: string
+  sourceColumn: string
+  referencedTable: string
+  referencedColumn: string
+  onUpdate?: string
+  onDelete?: string
+}
 const foreignKeys = computed(() => {
-  return (props.tableMeta?.foreignKeys || []).map((fk: any) => ({
+  return (props.tableMeta?.foreignKeys || []).map((fk: FK) => ({
     name: fk.name,
     sourceColumn: fk.sourceColumn,
     referencedTable: fk.referencedTable,
@@ -128,16 +133,7 @@ function getColumnDefault(column: SQLColumnMeta) {
   return defaultValue.Valid && defaultValue.String !== null ? defaultValue.String : '-'
 }
 
-function getColumnExtra(column: (typeof columns.value)[0]) {
-  const extras = []
-  if (column.autoIncrement) {
-    extras.push('AUTO_INCREMENT')
-  }
-  if (column.isUnique) {
-    extras.push('UNIQUE')
-  }
-  return extras.length > 0 ? extras.join(', ') : '-'
-}
+// extra display removed for compactness
 </script>
 
 <template>
@@ -147,31 +143,7 @@ function getColumnExtra(column: (typeof columns.value)[0]) {
       $attrs.class ? $attrs.class : 'shadow-sm ring-1 ring-gray-900/5 rounded-lg'
     ]"
   >
-    <div class="px-4 py-3 border-b border-gray-200">
-      <div class="flex items-center justify-between">
-        <h3 class="text-lg font-medium leading-6 text-gray-900">
-          <template
-            v-if="tableMeta?.schema && tableMeta.schema !== 'public' && tableMeta.schema !== ''"
-          >
-            {{ tableMeta.schema }}.{{ tableMeta?.name || '' }}
-          </template>
-          <template v-else>
-            {{ tableMeta?.name || '' }}
-          </template>
-        </h3>
-        <button
-          type="button"
-          class="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm border border-gray-200 hover:bg-gray-50 transition-colors duration-150 focus:outline-none focus:ring-1 focus:ring-gray-300 focus:ring-offset-1"
-          :disabled="isLoading"
-          @click="handleRefresh"
-        >
-          <ArrowPathIcon
-            :class="['h-5 w-5 mr-2', isLoading ? 'text-gray-600 animate-spin' : 'text-gray-400']"
-          />
-          Refresh Metadata
-        </button>
-      </div>
-    </div>
+    <!-- Header removed; DatabaseObjectContainer renders tabs, title, and actions -->
 
     <TabGroup v-model="activeTabIndex" as="div">
       <TabList class="flex space-x-1 border-b border-gray-200 px-4">
