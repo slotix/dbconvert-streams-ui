@@ -5,16 +5,18 @@ import {
   ChevronRightIcon,
   ChevronDownIcon,
   ArrowPathIcon,
-  CubeIcon
+  CubeIcon,
+  CheckIcon
 } from '@heroicons/vue/24/outline'
 import ObjectIcon from '@/components/common/ObjectIcon.vue'
 import SearchInput from '@/components/common/SearchInput.vue'
 import { useConnectionsStore } from '@/stores/connections'
 import connectionsApi from '@/api/connections'
-import type { Connection } from '@/types/connections'
+import type { Connection, DbType } from '@/types/connections'
 import type { DatabaseMetadata, SQLTableMeta, SQLViewMeta } from '@/types/metadata'
 import { useToast } from 'vue-toastification'
 import { highlightParts as splitHighlight } from '@/utils/highlight'
+import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/vue'
 
 type ObjectType = 'table' | 'view'
 
@@ -64,6 +66,60 @@ const databasesByConn = ref<Record<string, Array<{ name: string }>>>({})
 const metadataByConnDb = ref<Record<string, Record<string, DatabaseMetadata>>>({})
 
 const searchQuery = ref('')
+
+const TYPE_FILTER_STORAGE_KEY = 'explorer.connectionType'
+const dbTypeOptions = computed<DbType[]>(() => connectionsStore.dbTypes)
+const selectedType = ref<DbType | null>(null)
+let hasRestoredTypeFilter = false
+
+function loadStoredType(): string | null {
+  try {
+    return localStorage.getItem(TYPE_FILTER_STORAGE_KEY)
+  } catch {
+    return null
+  }
+}
+
+function storeType(value: string | null) {
+  try {
+    if (value) localStorage.setItem(TYPE_FILTER_STORAGE_KEY, value)
+    else localStorage.removeItem(TYPE_FILTER_STORAGE_KEY)
+  } catch {
+    /* ignore persistence errors */
+  }
+}
+
+watch(
+  dbTypeOptions,
+  (options) => {
+    if (!options.length) return
+    if (!hasRestoredTypeFilter) {
+      const storedType = loadStoredType()
+      const initial = storedType
+        ? options.find((opt) => opt.type === storedType) || options[0]
+        : options[0]
+      selectedType.value = initial
+      hasRestoredTypeFilter = true
+      return
+    }
+
+    if (selectedType.value) {
+      const match = options.find((opt) => opt.type === selectedType.value?.type)
+      selectedType.value = match || options[0]
+    } else {
+      selectedType.value = options[0]
+    }
+  },
+  { immediate: true }
+)
+
+watch(
+  () => selectedType.value?.type,
+  (val) => {
+    if (!hasRestoredTypeFilter) return
+    storeType(val || null)
+  }
+)
 
 // Context menu state
 type ContextTarget =
@@ -192,6 +248,17 @@ function isDbExpanded(connId: string, db: string) {
 }
 function isSchemaExpanded(connId: string, db: string, schema: string) {
   return expandedSchemas.value.has(`${connId}:${db}:${schema}`)
+}
+
+function matchesTypeFilter(conn: Connection): boolean {
+  const filterLabel = selectedType.value?.type || 'All'
+  const filter = filterLabel.toLowerCase()
+  if (!filter || filter === 'all') return true
+  const connType = (conn.type || '').toLowerCase()
+  if (!connType) return false
+  if (filter === 'postgresql') return connType.includes('postgres')
+  if (filter === 'files') return connType.includes('file')
+  return connType.includes(filter)
 }
 
 function onOpen(
@@ -499,41 +566,52 @@ watch(
 )
 
 // When searching, auto-expand connections and databases that match
-watch(
-  () => searchQuery.value,
-  async (q) => {
-    const query = q.trim()
-    if (!query) return
-    // Expand all filtered connections and ensure their databases are loaded
-    const conns = filteredConnections.value
-    for (const c of conns) {
-      if (!expandedConnections.value.has(c.id)) {
-        expandedConnections.value.add(c.id)
-      }
-      await ensureDatabases(c.id)
-      // Expand databases that match the filter
-      const dbs = databasesByConn.value[c.id] || []
-      for (const d of dbs) {
-        if (matchesDbFilter(c.id, d.name)) {
-          expandedDatabases.value.add(`${c.id}:${d.name}`)
-          // Optionally ensure metadata so table/view matches appear
-          ensureMetadata(c.id, d.name).catch(() => {})
-        }
+async function expandForSearch(query: string) {
+  const trimmed = query.trim()
+  if (!trimmed) return
+  const conns = filteredConnections.value
+  for (const c of conns) {
+    if (!expandedConnections.value.has(c.id)) {
+      expandedConnections.value.add(c.id)
+    }
+    await ensureDatabases(c.id)
+    const dbs = databasesByConn.value[c.id] || []
+    for (const d of dbs) {
+      if (matchesDbFilter(c.id, d.name)) {
+        expandedDatabases.value.add(`${c.id}:${d.name}`)
+        ensureMetadata(c.id, d.name).catch(() => {})
       }
     }
+  }
+}
+
+watch(
+  () => searchQuery.value,
+  (q) => {
+    void expandForSearch(q)
   },
   { immediate: false }
+)
+
+watch(
+  () => selectedType.value?.type,
+  (typeLabel) => {
+    if (!typeLabel) return
+    if (searchQuery.value.trim()) void expandForSearch(searchQuery.value)
+  }
 )
 
 const filteredConnections = computed<Connection[]>(() => {
   const q = searchQuery.value.trim()
   // Use a stable, predictable order: newest first, tie-break by name
-  const base = [...connectionsStore.connections].sort((a, b) => {
-    const ac = Number(a.created || 0)
-    const bc = Number(b.created || 0)
-    if (bc !== ac) return bc - ac
-    return (a.name || '').localeCompare(b.name || '')
-  })
+  const base = [...connectionsStore.connections]
+    .filter((conn) => matchesTypeFilter(conn))
+    .sort((a, b) => {
+      const ac = Number(a.created || 0)
+      const bc = Number(b.created || 0)
+      if (bc !== ac) return bc - ac
+      return (a.name || '').localeCompare(b.name || '')
+    })
   if (!q) return base
   const qn = normalized(q)
   return base.filter((c) => {
@@ -647,7 +725,45 @@ async function actionCopyDDLFromContext() {
     <div class="px-3 py-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
       <h3 class="text-base font-semibold leading-6 text-gray-900">Connections</h3>
       <div class="flex items-center gap-2 w-full md:w-auto min-w-0">
-        <SearchInput v-model="searchQuery" placeholder="Filter..." size="sm" />
+        <Listbox v-if="selectedType" v-model="selectedType" as="div" class="relative shrink-0">
+          <ListboxButton
+            class="inline-flex items-center gap-2 px-2 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-slate-400 whitespace-nowrap"
+          >
+            <img :src="selectedType.logo" :alt="selectedType.type" class="h-4 w-4" />
+            <span class="truncate max-w-[100px]">{{ selectedType.type }}</span>
+            <ChevronDownIcon class="h-4 w-4 text-gray-400" />
+          </ListboxButton>
+          <transition
+            leave-active-class="transition ease-in duration-100"
+            leave-from-class="opacity-100"
+            leave-to-class="opacity-0"
+          >
+            <ListboxOptions
+              class="absolute right-0 z-30 mt-1 max-h-60 w-48 overflow-auto rounded-md bg-white py-1 text-sm shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+            >
+              <ListboxOption
+                v-for="option in dbTypeOptions"
+                :key="option.id"
+                :value="option"
+                v-slot="{ active, selected }"
+              >
+                <li
+                  :class="[
+                    'flex items-center gap-2 px-3 py-1.5 cursor-pointer',
+                    active ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
+                  ]"
+                >
+                  <img :src="option.logo" :alt="option.type" class="h-4 w-4" />
+                  <span class="truncate">{{ option.type }}</span>
+                  <CheckIcon v-if="selected" class="ml-auto h-4 w-4 text-gray-500" />
+                </li>
+              </ListboxOption>
+            </ListboxOptions>
+          </transition>
+        </Listbox>
+        <div class="flex-1 min-w-0">
+          <SearchInput v-model="searchQuery" placeholder="Filter..." size="sm" />
+        </div>
         <button
           class="inline-flex items-center gap-2 px-2 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 whitespace-nowrap"
           :disabled="isLoadingConnections"

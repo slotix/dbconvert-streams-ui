@@ -552,9 +552,6 @@ function activatePreview() {
 }
 
 // Connection actions (reuse existing Connections pages)
-function onAddConnection() {
-  router.push('/connections/add')
-}
 
 function onEditConnection() {
   if (!activeConnectionId.value) return
@@ -918,23 +915,7 @@ watch(currentConnectionId, (newId) => {
           <h1 class="text-3xl font-bold leading-tight tracking-tight text-gray-900">
             Data Explorer
           </h1>
-          <div class="flex items-center gap-4">
-            <RouterLink
-              to="/connections"
-              class="text-sm text-gray-600 hover:text-gray-900 flex items-center gap-1"
-            >
-              ← Back to Connections
-            </RouterLink>
-            <div class="hidden sm:flex items-center gap-2">
-              <button
-                type="button"
-                class="inline-flex items-center rounded-md bg-gray-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-gray-500"
-                @click="onAddConnection"
-              >
-                New connection
-              </button>
-            </div>
-          </div>
+          <div class="flex items-center gap-4"></div>
         </div>
       </div>
     </header>
