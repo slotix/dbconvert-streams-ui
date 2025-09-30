@@ -753,6 +753,11 @@ function handleBreadcrumbNavigate(payload: { level: 'database' | 'schema' | 'typ
 
   // Left pane (primary) updates route
   if (payload.level === 'database') {
+    // Switch to database overview panel for the current database
+    detailsConnectionId.value = null
+    showDiagram.value = false
+    overviewConnectionId.value = currentConnectionId.value
+    overviewDatabaseName.value = selectedDatabaseName.value
     selectedSchemaName.value = null
     selectedObjectType.value = null
     selectedObjectName.value = null

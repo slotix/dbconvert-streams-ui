@@ -32,8 +32,20 @@ export interface OverviewHealthPGSlot {
 }
 
 export interface OverviewHealth {
-  wal?: { level: string; slots: OverviewHealthPGSlot[] }
-  binlog?: { enabled: boolean; format?: string; rowImage?: string }
+  wal?: {
+    level: string
+    slots: OverviewHealthPGSlot[]
+    maxReplicationSlots?: number
+    freeReplicationSlots?: number
+    maxWalSenders?: number
+  }
+  binlog?: {
+    enabled: boolean
+    format?: string
+    rowImage?: string
+    gtidMode?: string
+    serverId?: number
+  }
 }
 
 export interface DatabaseOverview {
