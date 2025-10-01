@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useCommonStore } from '@/stores/common'
 import { useConnectionsStore } from '@/stores/connections'
 import { useSchemaStore } from '@/stores/schema'
+import { useTabsStore } from '@/stores/tabs'
 // Removed headlessui Tab components after moving Diagram to a context-menu action
 // (Removed TrashIcon as Clear All control was removed)
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
@@ -30,6 +31,7 @@ const router = useRouter()
 const commonStore = useCommonStore()
 const connectionsStore = useConnectionsStore()
 const schemaStore = useSchemaStore()
+const tabsStore = useTabsStore()
 const connectionsCount = computed(() => connectionsStore.connections.length || 0)
 const connectionsCountLabel = computed(
   () => `(${connectionsCount.value} connection${connectionsCount.value === 1 ? '' : 's'})`
@@ -122,6 +124,7 @@ const selectedFileMetadata = ref<FileMetadata | null>(null)
 
 // Editor tabs: using local type for compatibility during migration
 type EditorTab = {
+  id: string
   connectionId: string
   // For database objects
   database?: string
@@ -139,10 +142,8 @@ type EditorTab = {
   viewTab?: 'structure' | 'data'
 }
 
-// Editor tabs state - local state working correctly with store's activeConnectionId
-const pinnedTabs = ref<EditorTab[]>([])
-const previewTab = ref<EditorTab | null>(null)
-const activePinnedIndex = ref<number | null>(null)
+// Editor tabs state - now using store for clean architecture
+// Local state replaced with store: tabsStore.pinnedTabs, tabsStore.previewTab, tabsStore.activePinnedIndex
 const selectedDefaultTab = ref<'structure' | 'data' | null>(null)
 
 // Right split selection (lightweight preview only)
@@ -480,21 +481,6 @@ function settingAlwaysOpenNewTab(): boolean {
   return localStorage.getItem('explorer.alwaysOpenNewTab') === 'true'
 }
 
-function toKey(t: {
-  connectionId: string
-  database?: string
-  schema?: string
-  type?: ObjectType
-  name: string
-  filePath?: string
-  tabType?: 'database' | 'file'
-}) {
-  if (t.tabType === 'file' || t.filePath) {
-    return `${t.connectionId}:file:${t.filePath || t.name}`
-  }
-  return `${t.connectionId}:${t.database}:${t.schema || ''}:${t.type}:${t.name}`
-}
-
 function activateTabFromState(tab: EditorTab | null) {
   if (!tab) return
 
@@ -632,23 +618,49 @@ function handleOpenFromTree(payload: {
   }
   const desiredPinned = payload.mode === 'pinned' || settingAlwaysOpenNewTab()
   if (desiredPinned) {
-    const key = toKey(payload)
-    const existingIndex = pinnedTabs.value.findIndex((t) => toKey(t) === key)
-    if (existingIndex === -1) {
-      const initialView = (payload.defaultTab ||
-        (linkTabs.value ? selectedDefaultTab.value || 'data' : 'data')) as 'structure' | 'data'
-      pinnedTabs.value.push({ ...payload, tabType: 'database', pinned: true, viewTab: initialView })
-      activePinnedIndex.value = pinnedTabs.value.length - 1
-    } else {
-      activePinnedIndex.value = existingIndex
-    }
-    activateTabFromState(pinnedTabs.value[activePinnedIndex.value!])
-  } else {
+    // Use store method for pinned tabs
     const initialView = (payload.defaultTab ||
       (linkTabs.value ? selectedDefaultTab.value || 'data' : 'data')) as 'structure' | 'data'
-    previewTab.value = { ...payload, tabType: 'database', pinned: false, viewTab: initialView }
-    activePinnedIndex.value = null
-    activateTabFromState(previewTab.value)
+
+    tabsStore.addDatabaseTab({
+      connectionId: payload.connectionId,
+      database: payload.database,
+      schema: payload.schema,
+      name: payload.name,
+      type: payload.type,
+      meta: payload.meta,
+      viewTab: initialView
+    })
+
+    // Activate the tab that was just added/found
+    const activeTab =
+      tabsStore.activePinnedIndex !== null
+        ? tabsStore.pinnedTabs[tabsStore.activePinnedIndex]
+        : null
+    if (activeTab) {
+      activateTabFromState(activeTab)
+    }
+  } else {
+    // Use store method for preview tab
+    const initialView = (payload.defaultTab ||
+      (linkTabs.value ? selectedDefaultTab.value || 'data' : 'data')) as 'structure' | 'data'
+
+    const previewTab = {
+      id: `preview:${payload.connectionId}:${payload.database || ''}:${payload.schema || ''}:${payload.name}:${payload.type || ''}`,
+      connectionId: payload.connectionId,
+      database: payload.database,
+      schema: payload.schema,
+      name: payload.name,
+      type: payload.type,
+      meta: payload.meta,
+      tabType: 'database' as const,
+      pinned: false,
+      viewTab: initialView
+    }
+
+    tabsStore.setPreviewTab(previewTab)
+    tabsStore.activePinnedIndex = null
+    activateTabFromState(previewTab)
   }
 }
 
@@ -759,34 +771,37 @@ watch(
 )
 
 function closePinned(index: number) {
-  if (index < 0 || index >= pinnedTabs.value.length) return
-  const wasActive = activePinnedIndex.value === index
-  pinnedTabs.value.splice(index, 1)
-  if (!pinnedTabs.value.length) {
-    activePinnedIndex.value = null
-    if (previewTab.value) activateTabFromState(previewTab.value)
+  const wasActive = tabsStore.activePinnedIndex === index
+  tabsStore.closeTab(index)
+
+  // Handle activation after close
+  if (!tabsStore.pinnedTabs.length) {
+    if (tabsStore.previewTab) activateTabFromState(tabsStore.previewTab)
     return
   }
+
   if (wasActive) {
-    const newIndex = Math.min(index, pinnedTabs.value.length - 1)
-    activePinnedIndex.value = newIndex
-    activateTabFromState(pinnedTabs.value[newIndex])
-  } else if ((activePinnedIndex.value || 0) > index) {
-    activePinnedIndex.value = (activePinnedIndex.value || 0) - 1
+    const activeTab =
+      tabsStore.activePinnedIndex !== null
+        ? tabsStore.pinnedTabs[tabsStore.activePinnedIndex]
+        : null
+    if (activeTab) {
+      activateTabFromState(activeTab)
+    }
   }
 }
 
 function activatePinned(index: number) {
-  if (index < 0 || index >= pinnedTabs.value.length) return
+  if (index < 0 || index >= tabsStore.pinnedTabs.length) return
   // Switching to a pinned object should exit details/overview/diagram modes
   detailsConnectionId.value = null
   overviewConnectionId.value = null
   overviewDatabaseName.value = null
   showDiagram.value = false
-  selectedDefaultTab.value = (pinnedTabs.value[index].viewTab || 'data') as 'structure' | 'data'
+  selectedDefaultTab.value = (tabsStore.pinnedTabs[index].viewTab || 'data') as 'structure' | 'data'
   activePane.value = 'left'
-  activePinnedIndex.value = index
-  activateTabFromState(pinnedTabs.value[index])
+  tabsStore.activateTab(index)
+  activateTabFromState(tabsStore.pinnedTabs[index])
 }
 
 // (Removed dropdown change handler with the control)
@@ -815,11 +830,9 @@ const activeConnectionId = computed<string | null>(() => {
   if (overviewConnectionId.value) return overviewConnectionId.value
   if (showDiagram.value && diagramConnectionId.value) return diagramConnectionId.value
 
-  // Get connection ID from active tab - clean and simple
-  const activeTab =
-    activePinnedIndex.value !== null ? pinnedTabs.value[activePinnedIndex.value] : previewTab.value
-  if (activeTab) {
-    return activeTab.connectionId
+  // Use store's reactive connection ID - clean and simple!
+  if (tabsStore.activeConnectionId) {
+    return tabsStore.activeConnectionId
   }
 
   // Fallback to route parameter
@@ -860,21 +873,22 @@ const currentPreview = computed<
   if (overviewConnectionId.value && overviewDatabaseName.value)
     return { kind: 'panel', label: `${overviewDatabaseName.value} Overview` }
   if (showDiagram.value) return { kind: 'panel', label: 'Diagram' }
-  if (previewTab.value) return { kind: 'object', label: `${previewTab.value.name} (Preview)` }
+  if (tabsStore.previewTab)
+    return { kind: 'object', label: `${tabsStore.previewTab.name} (Preview)` }
   return null
 })
 
 function activatePreview() {
   // If we have an object preview, switch to it; for panels, we're already on them
-  if (previewTab.value) {
+  if (tabsStore.previewTab) {
     detailsConnectionId.value = null
     overviewConnectionId.value = null
     overviewDatabaseName.value = null
     showDiagram.value = false
-    selectedDefaultTab.value = (previewTab.value.viewTab || 'data') as 'structure' | 'data'
+    selectedDefaultTab.value = (tabsStore.previewTab.viewTab || 'data') as 'structure' | 'data'
     activePane.value = 'left'
-    activePinnedIndex.value = null
-    activateTabFromState(previewTab.value)
+    tabsStore.activePinnedIndex = null
+    activateTabFromState(tabsStore.previewTab)
   }
 }
 
@@ -1348,32 +1362,42 @@ function handleOpenFile(payload: {
   }
 
   const desiredPinned = payload.mode === 'pinned' || settingAlwaysOpenNewTab()
-  const fileTab: EditorTab = {
-    connectionId: payload.connectionId,
-    name: payload.entry.name,
-    filePath: payload.path,
-    fileEntry: payload.entry,
-    tabType: 'file',
-    pinned: desiredPinned,
-    defaultTab: payload.defaultTab,
-    viewTab: (payload.defaultTab ||
-      (linkTabs.value ? selectedDefaultTab.value || 'data' : 'data')) as 'structure' | 'data'
-  }
 
   if (desiredPinned) {
-    const key = toKey(fileTab)
-    const existingIndex = pinnedTabs.value.findIndex((t) => toKey(t) === key)
-    if (existingIndex === -1) {
-      pinnedTabs.value.push(fileTab)
-      activePinnedIndex.value = pinnedTabs.value.length - 1
-    } else {
-      activePinnedIndex.value = existingIndex
+    // Use store method for file tabs
+    tabsStore.addFileTab({
+      connectionId: payload.connectionId,
+      filePath: payload.path,
+      name: payload.entry.name,
+      fileType: payload.entry.type
+    })
+
+    // The tab is now added, get the active tab and activate it
+    const activeTab =
+      tabsStore.activePinnedIndex !== null
+        ? tabsStore.pinnedTabs[tabsStore.activePinnedIndex]
+        : null
+    if (activeTab) {
+      activateTabFromState(activeTab)
     }
-    activateTabFromState(pinnedTabs.value[activePinnedIndex.value!])
   } else {
-    previewTab.value = fileTab
-    activePinnedIndex.value = null
-    activateTabFromState(previewTab.value)
+    // Create preview tab
+    const fileTab: EditorTab = {
+      id: `preview:file:${payload.path}`,
+      connectionId: payload.connectionId,
+      name: payload.entry.name,
+      filePath: payload.path,
+      fileEntry: payload.entry,
+      tabType: 'file',
+      pinned: false,
+      defaultTab: payload.defaultTab,
+      viewTab: (payload.defaultTab ||
+        (linkTabs.value ? selectedDefaultTab.value || 'data' : 'data')) as 'structure' | 'data'
+    }
+
+    tabsStore.setPreviewTab(fileTab)
+    tabsStore.activePinnedIndex = null
+    activateTabFromState(fileTab)
   }
 }
 
@@ -1417,10 +1441,10 @@ const currentFileEntries = computed<FileSystemEntry[]>(() => {
 function onLeftTabChange(t: 'data' | 'structure') {
   // Persist selected view for the active left object tab
   selectedDefaultTab.value = t
-  if (activePinnedIndex.value !== null && pinnedTabs.value[activePinnedIndex.value]) {
-    pinnedTabs.value[activePinnedIndex.value].viewTab = t
-  } else if (previewTab.value) {
-    previewTab.value.viewTab = t
+  if (tabsStore.activePinnedIndex !== null && tabsStore.pinnedTabs[tabsStore.activePinnedIndex]) {
+    tabsStore.updateActiveTabView(t)
+  } else if (tabsStore.previewTab) {
+    tabsStore.previewTab.viewTab = t
   }
   if (linkTabs.value && splitMeta.value) {
     splitDefaultTab.value = t
@@ -1431,10 +1455,10 @@ function onRightTabChange(t: 'data' | 'structure') {
   if (!linkTabs.value) return
   // When linked, mirror selection to the left and persist
   selectedDefaultTab.value = t
-  if (activePinnedIndex.value !== null && pinnedTabs.value[activePinnedIndex.value]) {
-    pinnedTabs.value[activePinnedIndex.value].viewTab = t
-  } else if (previewTab.value) {
-    previewTab.value.viewTab = t
+  if (tabsStore.activePinnedIndex !== null && tabsStore.pinnedTabs[tabsStore.activePinnedIndex]) {
+    tabsStore.updateActiveTabView(t)
+  } else if (tabsStore.previewTab) {
+    tabsStore.previewTab.viewTab = t
   }
 }
 
@@ -1705,10 +1729,10 @@ watch(
                 >
                   {{ currentPreview.label }}
                 </button>
-                <template v-for="(t, i) in pinnedTabs" :key="toKey(t)">
+                <template v-for="(t, i) in tabsStore.pinnedTabs" :key="tabsStore.generateTabKey(t)">
                   <button
                     class="px-2 py-1 text-xs rounded border border-gray-300 bg-white hover:bg-gray-50 flex items-center gap-1"
-                    :class="{ 'ring-1 ring-slate-400': activePinnedIndex === i }"
+                    :class="{ 'ring-1 ring-slate-400': tabsStore.activePinnedIndex === i }"
                     @click="activatePinned(i)"
                   >
                     <span class="font-medium">{{ t.name }}</span>
@@ -1789,7 +1813,7 @@ watch(
                     <div class="min-w-0">
                       <div v-if="selectedMeta">
                         <DatabaseObjectContainer
-                          :key="`left-db-${activePinnedIndex}-${selectedObjectType}-${selectedObjectName}-${selectedDefaultTab}-${activeConnectionId}`"
+                          :key="`left-db-${tabsStore.activePinnedIndex}-${selectedObjectType}-${selectedObjectName}-${selectedDefaultTab}-${activeConnectionId}`"
                           :table-meta="selectedMeta"
                           :is-view="selectedObjectType === 'view'"
                           :connection-id="activeConnectionId || ''"
@@ -1802,7 +1826,7 @@ watch(
                       </div>
                       <div v-else-if="selectedFileEntry">
                         <DatabaseObjectContainer
-                          :key="`left-file-${activePinnedIndex}-${selectedFileEntry.path}-${selectedDefaultTab}-${activeConnectionId}`"
+                          :key="`left-file-${tabsStore.activePinnedIndex}-${selectedFileEntry.path}-${selectedDefaultTab}-${activeConnectionId}`"
                           :file-entry="selectedFileEntry"
                           :file-metadata="selectedFileMetadata"
                           :connection-id="activeConnectionId || ''"

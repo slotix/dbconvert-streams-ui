@@ -1,18 +1,26 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import type { SQLTableMeta, SQLViewMeta } from '@/types/metadata'
+import type { FileSystemEntry } from '@/api/fileSystem'
 
 export type EditorTab = {
   id: string
   connectionId: string
-  databaseName?: string
-  schemaName?: string
-  objectName?: string
-  objectType?: 'table' | 'view' | 'function' | 'procedure'
+  // For database objects (compatible with local type)
+  database?: string
+  schema?: string
+  name: string
+  type?: 'table' | 'view' // Aligned with ObjectType in component
+  meta?: SQLTableMeta | SQLViewMeta
+  // For file objects
+  filePath?: string
+  fileEntry?: FileSystemEntry
+  fileType?: string
+  // Common properties
   tabType: 'database' | 'file'
   pinned: boolean
+  defaultTab?: 'structure' | 'data'
   viewTab?: 'structure' | 'data'
-  filePath?: string
-  fileType?: string
 }
 
 export const useTabsStore = defineStore('tabs', () => {
@@ -38,16 +46,17 @@ export const useTabsStore = defineStore('tabs', () => {
     if (tab.tabType === 'file') {
       return `file:${tab.filePath}`
     }
-    return `db:${tab.connectionId}:${tab.databaseName || ''}:${tab.schemaName || ''}:${tab.objectName || ''}:${tab.objectType || ''}`
+    return `db:${tab.connectionId}:${tab.database || ''}:${tab.schema || ''}:${tab.name || ''}:${tab.type || ''}`
   }
 
   // Add or activate a database tab
   function addDatabaseTab(payload: {
     connectionId: string
-    databaseName?: string
-    schemaName?: string
-    objectName?: string
-    objectType?: 'table' | 'view' | 'function' | 'procedure'
+    database?: string
+    schema?: string
+    name: string
+    type?: 'table' | 'view' // Aligned with ObjectType
+    meta?: SQLTableMeta | SQLViewMeta
     viewTab?: 'structure' | 'data'
   }) {
     const tab: EditorTab = {
@@ -76,7 +85,12 @@ export const useTabsStore = defineStore('tabs', () => {
   }
 
   // Add or activate a file tab
-  function addFileTab(payload: { connectionId: string; filePath: string; fileType?: string }) {
+  function addFileTab(payload: {
+    connectionId: string
+    filePath: string
+    name: string
+    fileType?: string
+  }) {
     const tab: EditorTab = {
       id: generateTabKey({
         ...payload,
