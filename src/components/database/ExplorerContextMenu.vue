@@ -12,6 +12,12 @@ type ContextTarget =
       schema?: string
       name: string
     }
+  | {
+      kind: 'file'
+      connectionId: string
+      path: string
+      name: string
+    }
 
 const props = defineProps<{
   visible: boolean
@@ -34,6 +40,7 @@ const target = computed(() => props.target as ContextTarget)
 const isTableOrView = computed(
   () => !!props.target && (props.target.kind === 'table' || props.target.kind === 'view')
 )
+const isFile = computed(() => !!props.target && props.target.kind === 'file')
 
 function click(action: string, openInRightSplit?: boolean) {
   if (!props.target) return
@@ -141,13 +148,13 @@ function click(action: string, openInRightSplit?: boolean) {
             class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
             @click="click('open-data', true)"
           >
-            Open Data in Right Split
+            Open Data in Right Pane
           </button>
           <button
             class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
             @click="click('open-structure', true)"
           >
-            Open Structure in Right Split
+            Open Structure in Right Pane
           </button>
           <button
             class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
@@ -161,6 +168,48 @@ function click(action: string, openInRightSplit?: boolean) {
             @click="click('copy-ddl')"
           >
             Copy DDL
+          </button>
+        </template>
+
+        <template v-else-if="isFile">
+          <!-- File menu -->
+          <button
+            class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
+            @click="click('open-data', false)"
+          >
+            Open Data
+          </button>
+          <button
+            class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
+            @click="click('open-structure', false)"
+          >
+            Open Structure
+          </button>
+          <div class="my-1 border-t border-gray-100"></div>
+          <button
+            class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
+            @click="click('open-data', true)"
+          >
+            Open Data in Right Pane
+          </button>
+          <button
+            class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
+            @click="click('open-structure', true)"
+          >
+            Open Structure in Right Pane
+          </button>
+          <div class="my-1 border-t border-gray-100"></div>
+          <button
+            class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
+            @click="click('copy-file-name')"
+          >
+            Copy name
+          </button>
+          <button
+            class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
+            @click="click('copy-file-path')"
+          >
+            Copy path
           </button>
         </template>
       </div>

@@ -16,6 +16,8 @@ import DatabaseOverviewPanel from '@/components/database/DatabaseOverviewPanel.v
 import SearchInput from '@/components/common/SearchInput.vue'
 import connections from '@/api/connections'
 import { listDirectory, type FileSystemEntry } from '@/api/fileSystem'
+import { getFileMetadata } from '@/api/files'
+import { getFileFormat } from '@/utils/fileFormat'
 import type { SQLTableMeta, SQLViewMeta } from '@/types/metadata'
 import type { FileMetadata } from '@/types/files'
 import type { DbType } from '@/types/connections'
@@ -149,6 +151,9 @@ const splitObjectType = ref<ObjectType | null>(null)
 const splitObjectName = ref<string | null>(null)
 const splitMeta = ref<SQLTableMeta | SQLViewMeta | null>(null)
 const splitDefaultTab = ref<'structure' | 'data' | null>(null)
+// File split state
+const splitFileEntry = ref<FileSystemEntry | null>(null)
+const splitFileMetadata = ref<FileMetadata | null>(null)
 
 // Diagram mode (database-level)
 const showDiagram = ref(false)
@@ -173,6 +178,39 @@ watch(linkTabs, (val) => {
     /* ignore */
   }
 })
+
+// Update URL when left pane content changes (only left pane controls URL)
+watch(
+  [
+    selectedFileEntry,
+    selectedMeta,
+    currentConnectionId,
+    selectedDatabaseName,
+    selectedSchemaName,
+    selectedObjectType,
+    selectedObjectName
+  ],
+  () => {
+    if (!currentConnectionId.value) return
+
+    if (selectedFileEntry.value) {
+      router.replace({
+        path: `/explorer/${currentConnectionId.value}`,
+        query: { file: selectedFileEntry.value.path }
+      })
+    } else if (selectedMeta.value) {
+      router.replace({
+        path: `/explorer/${currentConnectionId.value}`,
+        query: {
+          db: selectedDatabaseName.value || undefined,
+          schema: selectedSchemaName.value || undefined,
+          type: selectedObjectType.value || undefined,
+          name: selectedObjectName.value || undefined
+        }
+      })
+    }
+  }
+)
 
 // Connection details panel (when clicking a connection in the tree)
 const detailsConnectionId = ref<string | null>(null)
@@ -339,8 +377,95 @@ function closeRightSplit() {
   splitObjectName.value = null
   splitMeta.value = null
   splitDefaultTab.value = null
+  // Clear file split state
+  splitFileEntry.value = null
+  splitFileMetadata.value = null
   // When right split closes, focus returns to left
   activePane.value = 'left'
+}
+
+function promoteRightSplitToMain() {
+  // Move right split content to main area and close right split
+  if (splitMeta.value && splitConnectionId.value) {
+    // Promote database object to main
+    const payload = {
+      connectionId: splitConnectionId.value,
+      database: splitDatabaseName.value || '',
+      schema: splitSchemaName.value || undefined,
+      type: splitObjectType.value as ObjectType,
+      name: splitObjectName.value || '',
+      meta: splitMeta.value,
+      mode: 'preview' as const,
+      defaultTab: splitDefaultTab.value || undefined
+    }
+
+    // Clear current file state
+    selectedFileEntry.value = null
+    selectedFileMetadata.value = null
+
+    // Handle as regular object opening (will set main area state)
+    handleOpenFromTree({
+      ...payload,
+      openInRightSplit: false
+    })
+
+    // Close right split
+    closeRightSplit()
+  } else if (splitFileEntry.value && splitConnectionId.value) {
+    // Promote file to main
+    const payload = {
+      connectionId: splitConnectionId.value,
+      path: splitFileEntry.value.path,
+      entry: splitFileEntry.value,
+      mode: 'preview' as const,
+      defaultTab: splitDefaultTab.value || undefined
+    }
+
+    // Handle as regular file opening (will set main area state)
+    handleOpenFile({
+      ...payload,
+      openInRightSplit: false
+    })
+
+    // Close right split
+    closeRightSplit()
+  }
+}
+
+function showRightSplitContextMenu(event: MouseEvent) {
+  // Simple context menu for right split - just "Make Primary" option
+  event.preventDefault()
+
+  // Create a simple context menu
+  const menu = document.createElement('div')
+  menu.className =
+    'fixed z-50 bg-white shadow-lg border border-gray-200 rounded-md py-1 min-w-[120px]'
+  menu.style.left = `${event.clientX}px`
+  menu.style.top = `${event.clientY}px`
+
+  const menuItem = document.createElement('button')
+  menuItem.className =
+    'w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2'
+  menuItem.innerHTML = '<span>Make Primary</span>'
+  menuItem.onclick = () => {
+    promoteRightSplitToMain()
+    document.body.removeChild(menu)
+  }
+
+  menu.appendChild(menuItem)
+  document.body.appendChild(menu)
+
+  // Remove menu when clicking elsewhere
+  const removeMenu = () => {
+    if (document.body.contains(menu)) {
+      document.body.removeChild(menu)
+    }
+    document.removeEventListener('click', removeMenu)
+  }
+
+  setTimeout(() => {
+    document.addEventListener('click', removeMenu)
+  }, 0)
 }
 
 function resetRightSplit() {
@@ -390,12 +515,17 @@ function activateTabFromState(tab: EditorTab | null) {
 
     // Set file selection
     selectedFileEntry.value = tab.fileEntry || null
-    selectedFileMetadata.value = null // Will be loaded by the component
+    selectedFileMetadata.value = null // Will be loaded below
 
     if (tab.filePath) {
       selectedFilePathsByConnection.value = {
         [tab.connectionId]: tab.filePath
       }
+    }
+
+    // Load file metadata
+    if (selectedFileEntry.value) {
+      void refreshSelectedFileMetadata()
     }
 
     // Update route for file
@@ -783,27 +913,11 @@ const breadcrumbObjects = computed<
   ...schemaStore.views.map((v) => ({ name: v.name, type: 'view' as const, schema: v.schema }))
 ])
 
-// Active context for the global breadcrumb
-const activeDatabaseName = computed(() =>
-  activePane.value === 'right' && splitDatabaseName.value
-    ? splitDatabaseName.value
-    : selectedDatabaseName.value
-)
-const activeSchemaName = computed(() =>
-  activePane.value === 'right' && splitSchemaName.value
-    ? splitSchemaName.value
-    : selectedSchemaName.value
-)
-const activeObjectType = computed(() =>
-  activePane.value === 'right' && splitObjectType.value
-    ? splitObjectType.value
-    : selectedObjectType.value
-)
-const activeObjectName = computed(() =>
-  activePane.value === 'right' && splitObjectName.value
-    ? splitObjectName.value
-    : selectedObjectName.value
-)
+// Active context for the global breadcrumb (always follows left pane)
+const activeDatabaseName = computed(() => selectedDatabaseName.value)
+const activeSchemaName = computed(() => selectedSchemaName.value)
+const activeObjectType = computed(() => selectedObjectType.value)
+const activeObjectName = computed(() => selectedObjectName.value)
 
 // Open object chosen from breadcrumb picker (preview, Data tab)
 async function handlePickFromBreadcrumb(o: {
@@ -811,12 +925,9 @@ async function handlePickFromBreadcrumb(o: {
   type: 'table' | 'view'
   schema?: string
 }) {
-  // Resolve target pane context
-  const isRight = activePane.value === 'right'
-  const targetConnId = isRight
-    ? splitConnectionId.value || currentConnectionId.value
-    : currentConnectionId.value
-  const targetDb = isRight ? splitDatabaseName.value : selectedDatabaseName.value
+  // Breadcrumb always operates on left pane (main content)
+  const targetConnId = currentConnectionId.value
+  const targetDb = selectedDatabaseName.value
   if (!targetConnId || !targetDb) return
   try {
     const meta = await connections.getMetadata(targetConnId, targetDb)
@@ -840,7 +951,7 @@ async function handlePickFromBreadcrumb(o: {
       meta: obj,
       mode: 'preview',
       defaultTab: 'data',
-      openInRightSplit: isRight
+      openInRightSplit: false // Always open in main area (left pane)
     })
   } catch {
     // ignore open errors
@@ -907,9 +1018,21 @@ async function refreshSelectedMetadata(force = true) {
 }
 
 async function refreshSelectedFileMetadata() {
-  // For file objects, we don't need to refresh metadata from server
-  // as file metadata is typically loaded when the file is selected
-  // This is here for API compatibility with DatabaseObjectContainer
+  if (!selectedFileEntry.value) return
+
+  try {
+    const fileFormat = getFileFormat(selectedFileEntry.value.name)
+    if (!fileFormat) {
+      console.warn('Unable to determine file format for:', selectedFileEntry.value.name)
+      return
+    }
+
+    const metadata = await getFileMetadata(selectedFileEntry.value.path, fileFormat)
+    selectedFileMetadata.value = metadata
+  } catch (error) {
+    console.error('Failed to load file metadata:', error)
+    selectedFileMetadata.value = null
+  }
 }
 
 function handleBreadcrumbNavigate(payload: { level: 'database' | 'schema' | 'type' | 'name' }) {
@@ -1155,8 +1278,9 @@ function handleOpenFile(payload: {
     splitObjectType.value = null
     splitObjectName.value = null
     splitMeta.value = null
-    // Store file info in split state (we'll need to extend split state for files)
-    // For now, we'll handle this in the template
+    // Set file split state
+    splitFileEntry.value = payload.entry
+    splitFileMetadata.value = null // Will be loaded by the component
     splitDefaultTab.value = linkTabs.value
       ? selectedDefaultTab.value || 'data'
       : payload.defaultTab || null
@@ -1424,6 +1548,7 @@ watch(
               @select-connection="handleSelectConnection"
               @select-database="handleSelectDatabase"
               @select-file="handleFileSelect"
+              @open-file="handleOpenFile"
               @request-file-entries="handleRequestFileEntries"
             />
           </div>
@@ -1502,7 +1627,7 @@ watch(
                     {{ sidebarVisible ? 'Hide Sidebar' : 'Show Sidebar' }}
                   </button>
                   <button
-                    v-if="splitMeta"
+                    v-if="splitMeta || splitFileEntry"
                     type="button"
                     class="px-2 py-1 text-xs rounded border border-gray-300 bg-white hover:bg-gray-50 text-gray-700"
                     title="Center split"
@@ -1593,7 +1718,7 @@ watch(
             <div v-else>
               <div class="min-h-[480px] min-w-0 overflow-x-hidden">
                 <div
-                  v-if="splitMeta"
+                  v-if="splitMeta || splitFileEntry"
                   ref="splitContainerRef"
                   class="flex flex-row items-stretch min-w-0"
                 >
@@ -1670,6 +1795,8 @@ watch(
                         : 'ring-1 ring-transparent'
                     ]"
                     @mousedown="activePane = 'right'"
+                    @dblclick="promoteRightSplitToMain"
+                    @contextmenu.prevent="showRightSplitContextMenu"
                   >
                     <div class="min-w-0">
                       <DatabaseObjectContainer
@@ -1680,6 +1807,18 @@ watch(
                         :connection-id="splitConnectionId || currentConnectionId || ''"
                         :connection-type="getConnectionTypeById(splitConnectionId)"
                         :database="splitDatabaseName || ''"
+                        :default-tab="splitDefaultTab || 'data'"
+                        :closable="true"
+                        @close="closeRightSplit"
+                        @tab-change="onRightTabChange"
+                      />
+                      <DatabaseObjectContainer
+                        v-else-if="splitFileEntry"
+                        :key="`split-file-${splitFileEntry.path}-${splitDefaultTab}`"
+                        :file-entry="splitFileEntry"
+                        :file-metadata="splitFileMetadata"
+                        :connection-id="splitConnectionId || currentConnectionId || ''"
+                        :object-type="'file'"
                         :default-tab="splitDefaultTab || 'data'"
                         :closable="true"
                         @close="closeRightSplit"

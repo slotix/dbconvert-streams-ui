@@ -16,6 +16,11 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'select'): void
+  (
+    e: 'open',
+    payload: { entry: FileSystemEntry; mode: 'preview' | 'pinned'; openInRightSplit?: boolean }
+  ): void
+  (e: 'context-menu', payload: { event: MouseEvent; entry: FileSystemEntry }): void
 }>()
 
 const metadata = ref<FileMetadata | null>(null)
@@ -64,6 +69,13 @@ onMounted(() => {
       'bg-sky-50 ring-1 ring-sky-200': selected
     }"
     @click="emit('select')"
+    @dblclick.stop="emit('open', { entry, mode: 'pinned' })"
+    @click.middle.stop="emit('open', { entry, mode: 'pinned' })"
+    @contextmenu.stop.prevent="
+      $event.shiftKey
+        ? emit('open', { entry, mode: 'preview', openInRightSplit: true })
+        : emit('context-menu', { event: $event, entry })
+    "
   >
     <DocumentIcon class="w-[16px] h-[16px] text-gray-400 shrink-0 flex-none mr-1.5" />
     <div class="flex-1 min-w-0">

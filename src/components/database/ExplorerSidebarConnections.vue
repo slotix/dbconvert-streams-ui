@@ -53,6 +53,17 @@ const emit = defineEmits<{
       openInRightSplit?: boolean
     }
   ): void
+  (
+    e: 'open-file',
+    payload: {
+      connectionId: string
+      path: string
+      entry: FileSystemEntry
+      mode: 'preview' | 'pinned'
+      defaultTab?: 'structure' | 'data'
+      openInRightSplit?: boolean
+    }
+  ): void
   (e: 'expanded-connection', payload: { connectionId: string }): void
   (e: 'show-diagram', payload: { connectionId: string; database: string }): void
   (e: 'select-connection', payload: { connectionId: string }): void
@@ -89,6 +100,12 @@ type ContextTarget =
       schema?: string
       name: string
     }
+  | {
+      kind: 'file'
+      connectionId: string
+      path: string
+      name: string
+    }
 
 const contextMenuVisible = ref(false)
 const contextMenuX = ref(0)
@@ -102,6 +119,14 @@ const menuObj = computed<TableOrViewTarget | null>(() =>
     ? (menuTarget.value as TableOrViewTarget)
     : null
 )
+
+// Utility function to find file entry from state
+function findFileEntry(connectionId: string, path: string): FileSystemEntry | undefined {
+  const entries = fileEntriesByConn.value[connectionId]
+  if (!entries) return undefined
+
+  return entries.find((entry) => entry.path === path)
+}
 
 const canCopyDDL = computed(() => {
   const mo = menuObj.value
@@ -386,6 +411,19 @@ function onMenuAction(payload: {
           'data',
           payload.openInRightSplit
         )
+      else if (t.kind === 'file') {
+        const entry = findFileEntry(t.connectionId, t.path)
+        if (entry) {
+          emit('open-file', {
+            connectionId: t.connectionId,
+            path: t.path,
+            entry,
+            mode: 'preview',
+            defaultTab: 'data',
+            openInRightSplit: payload.openInRightSplit
+          })
+        }
+      }
       break
     case 'open-structure':
       if (t.kind === 'table' || t.kind === 'view')
@@ -399,12 +437,31 @@ function onMenuAction(payload: {
           'structure',
           payload.openInRightSplit
         )
+      else if (t.kind === 'file') {
+        const entry = findFileEntry(t.connectionId, t.path)
+        if (entry) {
+          emit('open-file', {
+            connectionId: t.connectionId,
+            path: t.path,
+            entry,
+            mode: 'preview',
+            defaultTab: 'structure',
+            openInRightSplit: payload.openInRightSplit
+          })
+        }
+      }
       break
     case 'copy-object-name':
       if (t.kind === 'table' || t.kind === 'view') actionCopy(t.name, 'Object name copied')
       break
     case 'copy-ddl':
       void actionCopyDDLFromContext()
+      break
+    case 'copy-file-name':
+      if (t.kind === 'file') actionCopy(t.name, 'File name copied')
+      break
+    case 'copy-file-path':
+      if (t.kind === 'file') actionCopy(t.path, 'File path copied')
       break
   }
   closeContextMenuOnce()
@@ -778,6 +835,24 @@ async function actionCopyDDLFromContext() {
                   :selected="selectedFilePathsByConn[conn.id] === entry.path"
                   :search-query="searchQuery"
                   @select="emit('select-file', { connectionId: conn.id, path: entry.path })"
+                  @open="
+                    emit('open-file', {
+                      connectionId: conn.id,
+                      path: entry.path,
+                      entry: entry,
+                      mode: $event.mode,
+                      defaultTab: 'data',
+                      openInRightSplit: $event.openInRightSplit
+                    })
+                  "
+                  @context-menu="
+                    openContextMenu($event.event, {
+                      kind: 'file',
+                      connectionId: conn.id,
+                      path: $event.entry.path,
+                      name: $event.entry.name
+                    })
+                  "
                 />
               </div>
               <div v-else>
