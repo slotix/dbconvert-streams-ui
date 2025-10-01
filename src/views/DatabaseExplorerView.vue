@@ -466,6 +466,9 @@ function handleShowDiagram(payload: { connectionId: string; database: string }) 
 }
 
 function handleSelectConnection(payload: { connectionId: string }) {
+  // Navigate to the connection to update currentConnectionId
+  router.replace({ path: `/explorer/${payload.connectionId}` })
+
   // Show details for the clicked connection; keep its tabs state
   focusConnectionId.value = payload.connectionId
   detailsConnectionId.value = payload.connectionId
@@ -486,8 +489,12 @@ function handleSelectConnection(payload: { connectionId: string }) {
   splitObjectName.value = null
   splitMeta.value = null
   splitDefaultTab.value = null
+
+  // Clear ALL file selections when switching connections to prevent multiple selections
+  selectedFilePathsByConnection.value = {}
+
   if (isFilesConnectionType(payload.connectionId)) {
-    void loadFileEntries(payload.connectionId)
+    void loadFileEntries(payload.connectionId, false)
   }
 }
 
@@ -1022,18 +1029,7 @@ async function loadFileEntries(connectionId: string, force = false) {
       [connectionId]: ''
     }
 
-    const previous = selectedFilePathsByConnection.value[connectionId]
-    const nextSelection =
-      previous && files.some((file) => file.path === previous)
-        ? previous
-        : files.length > 0
-          ? files[0].path
-          : null
-
-    selectedFilePathsByConnection.value = {
-      ...selectedFilePathsByConnection.value,
-      [connectionId]: nextSelection
-    }
+    // Don't auto-select any files - let user explicitly select
   } catch (error: unknown) {
     fileEntriesByConnection.value = {
       ...fileEntriesByConnection.value,
@@ -1059,9 +1055,15 @@ function handleRequestFileEntries(payload: { connectionId: string }) {
 }
 
 function handleFileSelect(payload: { connectionId: string; path: string }) {
+  // Clear ALL file selections and set only the selected one to ensure single selection
   selectedFilePathsByConnection.value = {
-    ...selectedFilePathsByConnection.value,
     [payload.connectionId]: payload.path
+  }
+  // Clear connection focus when a file is selected to avoid double selection appearance
+  focusConnectionId.value = null
+  // Clear connection details when a file is selected to show file content instead
+  if (detailsConnectionId.value === payload.connectionId) {
+    detailsConnectionId.value = null
   }
 }
 
@@ -1342,7 +1344,7 @@ watch(currentConnectionId, (newId) => {
                 </div>
               </div>
             </div>
-            <div v-if="isFileConnection && currentConnectionDetails">
+            <div v-if="isFileConnection && currentConnectionDetails && currentSelectedFilePath">
               <FileConnectionExplorer
                 :connection="currentConnectionDetails"
                 :entries="currentFileEntries"
@@ -1393,6 +1395,7 @@ watch(currentConnectionId, (newId) => {
               >
                 <ConnectionDetailsPanel
                   :connection="detailsConnection"
+                  :file-entries="fileEntriesByConnection[detailsConnection.id] || []"
                   @edit="onEditConnection"
                   @clone="onCloneConnection"
                   @delete="onDeleteConnection"
