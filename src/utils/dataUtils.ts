@@ -55,11 +55,9 @@ function tryDecodeBase64(str: string): string {
       }
     }
     return str
-  } catch (error) {
+  } catch {
     // If decoding fails, return original string
-    if (import.meta.env.DEV) {
-      console.debug('[DataUtils] Base64 decode failed:', error)
-    }
+    // Suppress error logging for common Base64 decoding failures in development
     return str
   }
 }

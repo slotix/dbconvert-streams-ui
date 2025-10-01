@@ -29,6 +29,7 @@ const route = useRoute()
 const router = useRouter()
 const commonStore = useCommonStore()
 const connectionsStore = useConnectionsStore()
+const schemaStore = useSchemaStore()
 const connectionsCount = computed(() => connectionsStore.connections.length || 0)
 const connectionsCountLabel = computed(
   () => `(${connectionsCount.value} connection${connectionsCount.value === 1 ? '' : 's'})`
@@ -119,7 +120,7 @@ const selectedMeta = ref<SQLTableMeta | SQLViewMeta | null>(null)
 const selectedFileEntry = ref<FileSystemEntry | null>(null)
 const selectedFileMetadata = ref<FileMetadata | null>(null)
 
-// Editor tabs: preview and pinned (VS Code model)
+// Editor tabs: using local type for compatibility during migration
 type EditorTab = {
   connectionId: string
   // For database objects
@@ -138,6 +139,7 @@ type EditorTab = {
   viewTab?: 'structure' | 'data'
 }
 
+// Editor tabs state - local state working correctly with store's activeConnectionId
 const pinnedTabs = ref<EditorTab[]>([])
 const previewTab = ref<EditorTab | null>(null)
 const activePinnedIndex = ref<number | null>(null)
@@ -168,6 +170,7 @@ const selectedFilePathsByConnection = ref<Record<string, string | null>>({})
 
 // Track which pane is active for breadcrumb/header context
 const activePane = ref<'left' | 'right'>('left')
+// Component refresh - REMOVED (no longer needed with proper reactive connection IDs)
 
 // Optional: link tabs across splits (Data/Structure)
 const linkTabs = ref<boolean>(localStorage.getItem('explorer.linkTabs') === 'true')
@@ -498,6 +501,8 @@ function activateTabFromState(tab: EditorTab | null) {
   // Clear details panel when activating a tab to ensure unified tab system takes precedence
   detailsConnectionId.value = null
 
+  // Note: Removed componentRefreshKey - reactive connection IDs handle updates properly
+
   if (tab.tabType === 'file') {
     // Handle file tab - clear all database state
     selectedDatabaseName.value = null
@@ -531,7 +536,14 @@ function activateTabFromState(tab: EditorTab | null) {
     // Update route for file
     router.replace({
       path: `/explorer/${tab.connectionId}`,
-      query: { file: tab.filePath }
+      query: {
+        file: tab.filePath,
+        // Explicitly remove database parameters when switching to file tab
+        db: undefined,
+        schema: undefined,
+        type: undefined,
+        name: undefined
+      }
     })
   } else {
     // Handle database tab - clear all file state
@@ -565,7 +577,8 @@ function activateTabFromState(tab: EditorTab | null) {
         db: tab.database || undefined,
         schema: tab.schema || undefined,
         type: tab.type || undefined,
-        name: tab.name || undefined
+        name: tab.name || undefined,
+        file: undefined // Explicitly remove file parameter when switching to database tab
       }
     })
   }
@@ -589,6 +602,11 @@ function handleOpenFromTree(payload: {
   overviewDatabaseName.value = null
   // Hide connection details panel when an object is opened
   detailsConnectionId.value = null
+
+  // Clear file selection state when opening database object
+  selectedFileEntry.value = null
+  selectedFileMetadata.value = null
+  selectedFilePathsByConnection.value = {}
   // If opening into the main area and the target connection differs, swap state
   // With global tabs, no per-connection state swap is needed when switching connections
   // If request is to open in right split, update split-only state and return
@@ -771,8 +789,6 @@ function activatePinned(index: number) {
   activateTabFromState(pinnedTabs.value[index])
 }
 
-const schemaStore = useSchemaStore()
-
 // (Removed dropdown change handler with the control)
 
 // Get connection details for the current connection
@@ -793,24 +809,41 @@ const currentConnectionDetails = computed(() => {
   }
 })
 
-// Active header connection (honor active pane and panels)
+// Active header connection (always follows left pane - primary content)
 const activeConnectionId = computed<string | null>(() => {
-  if (activePane.value === 'right' && splitMeta.value && splitConnectionId.value) {
-    return splitConnectionId.value
-  }
   if (detailsConnectionId.value) return detailsConnectionId.value
   if (overviewConnectionId.value) return overviewConnectionId.value
   if (showDiagram.value && diagramConnectionId.value) return diagramConnectionId.value
-  return currentConnectionId.value as string
+
+  // Get connection ID from active tab - clean and simple
+  const activeTab =
+    activePinnedIndex.value !== null ? pinnedTabs.value[activePinnedIndex.value] : previewTab.value
+  if (activeTab) {
+    return activeTab.connectionId
+  }
+
+  // Fallback to route parameter
+  return (currentConnectionId.value as string) || null
 })
 const activeConnection = computed(() =>
   connectionsStore.connections.find((c) => c.id === activeConnectionId.value)
 )
+
+// Note: Simplified activeConnectionId logic - database components get clean connection IDs
+
 const activeDisplayHostPort = computed(() => {
   const c = activeConnection.value
+  if (!c) return null
+
+  // For file connections, show connection name instead of host:port
+  if (c.type === 'localfiles' || c.type === 'files') {
+    return c.name
+  }
+
+  // For database connections, show host:port
   const host = c?.host
   const port = c?.port && String(c?.port)
-  if (!host || !port) return null
+  if (!host || !port) return c.name // fallback to name if no host/port
   return `${host}:${port}`
 })
 const activeDisplayType = computed(() => activeConnection.value?.type || '')
@@ -1134,7 +1167,19 @@ onMounted(() => {
   initializeCurrentConnection()
   // Seed selection from query if present
   const { db, schema, type, name, file } = route.query as Record<string, string | undefined>
-  if (db) {
+  if (file && isFilesConnectionType(currentConnectionId.value)) {
+    // Clear database state when loading file from URL
+    selectedDatabaseName.value = null
+    selectedSchemaName.value = null
+    selectedObjectType.value = null
+    selectedObjectName.value = null
+    selectedMeta.value = null
+  } else if (db) {
+    // Clear file state when loading database object from URL
+    selectedFileEntry.value = null
+    selectedFileMetadata.value = null
+    selectedFilePathsByConnection.value = {}
+
     selectedDatabaseName.value = db
     selectedSchemaName.value = schema || null
     selectedObjectType.value = (type as ObjectType) || null
@@ -1269,6 +1314,13 @@ function handleOpenFile(payload: {
   overviewDatabaseName.value = null
   // Hide connection details panel when a file is opened
   detailsConnectionId.value = null
+
+  // Clear database selection state when opening file
+  selectedDatabaseName.value = null
+  selectedSchemaName.value = null
+  selectedObjectType.value = null
+  selectedObjectName.value = null
+  selectedMeta.value = null
 
   // If request is to open in right split, update split-only state and return
   if (payload.openInRightSplit) {
@@ -1737,10 +1789,10 @@ watch(
                     <div class="min-w-0">
                       <div v-if="selectedMeta">
                         <DatabaseObjectContainer
-                          :key="`left-${selectedObjectType}-${selectedObjectName}-${selectedDefaultTab}`"
+                          :key="`left-db-${activePinnedIndex}-${selectedObjectType}-${selectedObjectName}-${selectedDefaultTab}-${activeConnectionId}`"
                           :table-meta="selectedMeta"
                           :is-view="selectedObjectType === 'view'"
-                          :connection-id="currentConnectionId || ''"
+                          :connection-id="activeConnectionId || ''"
                           :connection-type="currentConnectionDetails?.type || 'sql'"
                           :database="selectedDatabaseName || ''"
                           :default-tab="selectedDefaultTab || 'data'"
@@ -1750,10 +1802,10 @@ watch(
                       </div>
                       <div v-else-if="selectedFileEntry">
                         <DatabaseObjectContainer
-                          :key="`left-file-${selectedFileEntry.path}-${selectedDefaultTab}`"
+                          :key="`left-file-${activePinnedIndex}-${selectedFileEntry.path}-${selectedDefaultTab}-${activeConnectionId}`"
                           :file-entry="selectedFileEntry"
                           :file-metadata="selectedFileMetadata"
-                          :connection-id="currentConnectionId || ''"
+                          :connection-id="activeConnectionId || ''"
                           :object-type="'file'"
                           :default-tab="selectedDefaultTab || 'data'"
                           @refresh-metadata="refreshSelectedFileMetadata"
@@ -1801,7 +1853,7 @@ watch(
                     <div class="min-w-0">
                       <DatabaseObjectContainer
                         v-if="splitMeta"
-                        :key="`split-${splitObjectType}-${splitObjectName}-${splitDefaultTab}`"
+                        :key="`split-db-${splitConnectionId}-${splitObjectType}-${splitObjectName}-${splitDefaultTab}`"
                         :table-meta="splitMeta"
                         :is-view="splitObjectType === 'view'"
                         :connection-id="splitConnectionId || currentConnectionId || ''"
@@ -1814,7 +1866,7 @@ watch(
                       />
                       <DatabaseObjectContainer
                         v-else-if="splitFileEntry"
-                        :key="`split-file-${splitFileEntry.path}-${splitDefaultTab}`"
+                        :key="`split-file-${splitConnectionId}-${splitFileEntry.path}-${splitDefaultTab}`"
                         :file-entry="splitFileEntry"
                         :file-metadata="splitFileMetadata"
                         :connection-id="splitConnectionId || currentConnectionId || ''"
@@ -1834,7 +1886,7 @@ watch(
                       :key="`single-${selectedObjectType}-${selectedObjectName}-${selectedDefaultTab}`"
                       :table-meta="selectedMeta"
                       :is-view="selectedObjectType === 'view'"
-                      :connection-id="currentConnectionId || ''"
+                      :connection-id="activeConnectionId || ''"
                       :connection-type="currentConnectionDetails?.type || 'sql'"
                       :database="selectedDatabaseName || ''"
                       :default-tab="selectedDefaultTab || 'data'"
