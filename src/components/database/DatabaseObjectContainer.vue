@@ -3,9 +3,13 @@ import { computed, ref, watch, type Component } from 'vue'
 import { ArrowPathIcon } from '@heroicons/vue/24/outline'
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/vue'
 import { type SQLTableMeta, type SQLViewMeta } from '@/types/metadata'
+import { type FileSystemEntry } from '@/api/fileSystem'
+import { type FileMetadata } from '@/types/files'
 import TableMetadataView from './TableMetadataView.vue'
 import ViewStructureView from './ViewStructureView.vue'
 import DatabaseObjectDataView from './DatabaseObjectDataView.vue'
+import FileDataView from '@/components/files/FileDataView.vue'
+import FileStructureView from '@/components/files/FileStructureView.vue'
 
 // Ensure some tooling recognizes these imports are used via options; also sets a friendly name
 defineOptions({
@@ -13,7 +17,7 @@ defineOptions({
   components: { TabGroup, TabList, Tab, TabPanels, TabPanel }
 })
 
-const props = defineProps<{
+type DatabaseProps = {
   tableMeta: SQLTableMeta | SQLViewMeta
   isView: boolean
   connectionId: string
@@ -21,7 +25,27 @@ const props = defineProps<{
   database: string
   defaultTab?: 'structure' | 'data'
   closable?: boolean
-}>()
+  // File-specific props (unused for database objects)
+  fileEntry?: never
+  fileMetadata?: never
+  objectType?: never
+}
+
+type FileProps = {
+  fileEntry: FileSystemEntry
+  fileMetadata: FileMetadata | null
+  connectionId: string
+  defaultTab?: 'structure' | 'data'
+  closable?: boolean
+  objectType: 'file'
+  // Database-specific props (unused for file objects)
+  tableMeta?: never
+  isView?: never
+  connectionType?: never
+  database?: never
+}
+
+const props = defineProps<DatabaseProps | FileProps>()
 
 const emit = defineEmits<{
   (e: 'refresh-metadata'): void
@@ -36,34 +60,61 @@ type TabItem = {
 }
 
 const tabs = computed<TabItem[]>(() => {
-  const items: TabItem[] = [
-    {
-      name: 'Data',
-      component: DatabaseObjectDataView,
-      props: {
-        tableMeta: props.tableMeta,
-        isView: props.isView,
-        database: props.database,
-        connectionId: props.connectionId
+  if ('fileEntry' in props && props.fileEntry) {
+    // File object tabs
+    const fileEntry = props.fileEntry as FileSystemEntry
+    const fileMetadata = 'fileMetadata' in props ? props.fileMetadata : null
+    return [
+      {
+        name: 'Data',
+        component: FileDataView,
+        props: {
+          entry: fileEntry,
+          metadata: fileMetadata,
+          connectionId: props.connectionId
+        }
+      },
+      {
+        name: 'Structure',
+        component: FileStructureView,
+        props: {
+          entry: fileEntry,
+          metadata: fileMetadata,
+          connectionId: props.connectionId
+        }
       }
-    },
-    {
-      name: 'Structure',
-      component: props.isView ? ViewStructureView : TableMetadataView,
-      props: props.isView
-        ? {
-            viewMeta: props.tableMeta as SQLViewMeta,
-            connectionId: props.connectionId,
-            connectionType: props.connectionType
-          }
-        : {
-            tableMeta: props.tableMeta as SQLTableMeta,
-            connectionId: props.connectionId,
-            connectionType: props.connectionType
-          }
-    }
-  ]
-  return items
+    ]
+  } else {
+    // Database object tabs
+    const dbProps = props as DatabaseProps
+    return [
+      {
+        name: 'Data',
+        component: DatabaseObjectDataView,
+        props: {
+          tableMeta: dbProps.tableMeta,
+          isView: dbProps.isView,
+          database: dbProps.database,
+          connectionId: dbProps.connectionId
+        }
+      },
+      {
+        name: 'Structure',
+        component: dbProps.isView ? ViewStructureView : TableMetadataView,
+        props: dbProps.isView
+          ? {
+              viewMeta: dbProps.tableMeta as SQLViewMeta,
+              connectionId: dbProps.connectionId,
+              connectionType: dbProps.connectionType
+            }
+          : {
+              tableMeta: dbProps.tableMeta as SQLTableMeta,
+              connectionId: dbProps.connectionId,
+              connectionType: dbProps.connectionType
+            }
+      }
+    ]
+  }
 })
 
 // Select Data (index 0) by default unless caller explicitly requests Structure
@@ -82,11 +133,18 @@ function onTabChange(i: number) {
 
 // Compose object display name (schema.name when schema is not public/empty)
 const objectDisplayName = computed(() => {
-  const meta = props.tableMeta as Partial<SQLTableMeta & SQLViewMeta>
-  const name = meta?.name || ''
-  const schema = meta?.schema
-  if (schema && schema !== 'public' && schema !== '') return `${schema}.${name}`
-  return name
+  // Check if this is a file object by looking for the fileEntry property
+  if ('fileEntry' in props && props.fileEntry) {
+    // File object - show file name
+    return (props.fileEntry as FileSystemEntry).name
+  } else {
+    // Database object - show schema.name format
+    const meta = (props as DatabaseProps).tableMeta as Partial<SQLTableMeta & SQLViewMeta>
+    const name = meta?.name || ''
+    const schema = meta?.schema
+    if (schema && schema !== 'public' && schema !== '') return `${schema}.${name}`
+    return name
+  }
 })
 
 // Keep refs to the rendered child components so parent can trigger refresh

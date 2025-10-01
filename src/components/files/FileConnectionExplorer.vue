@@ -107,98 +107,189 @@
           Loading preview...
         </div>
         <div v-else-if="metadata && preview">
-          <div class="grid gap-4 md:grid-cols-2 mb-6">
-            <div class="rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-700">
-              <p><span class="font-medium">Rows:</span> {{ formatNumber(metadata.rowCount) }}</p>
-              <p><span class="font-medium">Columns:</span> {{ metadata.columnCount }}</p>
+          <TabGroup>
+            <div class="border-b border-gray-200">
+              <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                <TabList class="flex space-x-8">
+                  <Tab
+                    class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 whitespace-nowrap border-b-2 py-2 px-1 text-sm font-medium ui-selected:border-blue-500 ui-selected:text-blue-600"
+                  >
+                    Data
+                  </Tab>
+                  <Tab
+                    class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 whitespace-nowrap border-b-2 py-2 px-1 text-sm font-medium ui-selected:border-blue-500 ui-selected:text-blue-600"
+                  >
+                    Structure
+                  </Tab>
+                </TabList>
+                <div class="ml-auto flex items-center">
+                  <button
+                    type="button"
+                    class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50"
+                    @click="refreshMetadata"
+                  >
+                    <ArrowPathIcon class="h-3 w-3" />
+                    Refresh Metadata
+                  </button>
+                </div>
+              </nav>
             </div>
-            <div class="rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-700">
-              <p>
-                <span class="font-medium">Sample size:</span>
-                <span v-if="metadata.samplingInfo">
-                  {{ formatNumber(metadata.samplingInfo.rowsProcessed) }} rows ({{
-                    metadata.samplingInfo.isComplete ? 'complete' : 'sampled'
-                  }})
-                </span>
-                <span v-else>Not available</span>
-              </p>
-            </div>
-          </div>
 
-          <div class="mb-6">
-            <h4 class="text-sm font-semibold text-gray-900 mb-2">Columns</h4>
-            <div class="overflow-x-auto">
-              <table class="min-w-full divide-y divide-gray-200 text-sm">
-                <thead class="bg-gray-50">
-                  <tr>
-                    <th class="px-3 py-2 text-left font-medium text-gray-600">Name</th>
-                    <th class="px-3 py-2 text-left font-medium text-gray-600">Type</th>
-                    <th class="px-3 py-2 text-left font-medium text-gray-600">Nullable</th>
-                    <th class="px-3 py-2 text-left font-medium text-gray-600">Sample</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100 bg-white">
-                  <tr v-for="col in metadata.columns" :key="col.name">
-                    <td class="px-3 py-2 font-medium text-gray-900">{{ col.name }}</td>
-                    <td class="px-3 py-2 text-gray-700 uppercase">{{ col.type }}</td>
-                    <td class="px-3 py-2 text-gray-700">{{ col.nullable ? 'Yes' : 'No' }}</td>
-                    <td
-                      class="px-3 py-2 text-gray-500 truncate"
-                      :title="renderSample(col.sampleValues)"
-                    >
-                      {{ renderSample(col.sampleValues) || '—' }}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
+            <TabPanels class="mt-4">
+              <TabPanel>
+                <!-- Data Tab Content -->
+                <div>
+                  <div class="flex items-center justify-between mb-2">
+                    <h4 class="text-sm font-semibold text-gray-900">Data Preview</h4>
+                    <p class="text-xs text-gray-500">
+                      Showing first {{ preview.data.length }} row{{
+                        preview.data.length === 1 ? '' : 's'
+                      }}
+                      of {{ formatNumber(preview.total) }}
+                    </p>
+                  </div>
+                  <div class="overflow-x-auto border border-gray-200 rounded-md">
+                    <table class="min-w-full divide-y divide-gray-200 text-sm">
+                      <thead class="bg-gray-50">
+                        <tr>
+                          <th
+                            v-for="column in preview.schema"
+                            :key="column.name"
+                            class="px-3 py-2 text-left font-medium text-gray-600"
+                          >
+                            {{ column.name }}
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody class="divide-y divide-gray-100 bg-white">
+                        <tr v-if="preview.data.length === 0">
+                          <td
+                            :colspan="preview.schema.length"
+                            class="px-3 py-6 text-center text-gray-500"
+                          >
+                            No data available in this file
+                          </td>
+                        </tr>
+                        <tr v-for="(row, rowIndex) in preview.data" :key="rowIndex">
+                          <td
+                            v-for="column in preview.schema"
+                            :key="column.name"
+                            class="px-3 py-2 whitespace-pre-wrap text-gray-800"
+                          >
+                            {{ formatCell(row[column.name]) }}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </TabPanel>
 
-          <div>
-            <div class="flex items-center justify-between mb-2">
-              <h4 class="text-sm font-semibold text-gray-900">Data Preview</h4>
-              <p class="text-xs text-gray-500">
-                Showing first {{ preview.data.length }} row{{
-                  preview.data.length === 1 ? '' : 's'
-                }}
-                of {{ formatNumber(preview.total) }}
-              </p>
-            </div>
-            <div class="overflow-x-auto border border-gray-200 rounded-md">
-              <table class="min-w-full divide-y divide-gray-200 text-sm">
-                <thead class="bg-gray-50">
-                  <tr>
-                    <th
-                      v-for="column in preview.schema"
-                      :key="column.name"
-                      class="px-3 py-2 text-left font-medium text-gray-600"
-                    >
-                      {{ column.name }}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100 bg-white">
-                  <tr v-if="preview.data.length === 0">
-                    <td
-                      :colspan="preview.schema.length"
-                      class="px-3 py-6 text-center text-gray-500"
-                    >
-                      No data available in this file
-                    </td>
-                  </tr>
-                  <tr v-for="(row, rowIndex) in preview.data" :key="rowIndex">
-                    <td
-                      v-for="column in preview.schema"
-                      :key="column.name"
-                      class="px-3 py-2 whitespace-pre-wrap text-gray-800"
-                    >
-                      {{ formatCell(row[column.name]) }}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
+              <TabPanel>
+                <!-- Structure Tab Content -->
+                <div class="space-y-6">
+                  <!-- File Information -->
+                  <section>
+                    <h4 class="text-sm font-semibold text-gray-900 mb-3">File Information</h4>
+                    <div class="grid gap-4 md:grid-cols-2">
+                      <div
+                        class="rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-700"
+                      >
+                        <p>
+                          <span class="font-medium">Rows:</span>
+                          {{ formatNumber(metadata.rowCount) }}
+                        </p>
+                        <p><span class="font-medium">Columns:</span> {{ metadata.columnCount }}</p>
+                        <p v-if="selectedFormat">
+                          <span class="font-medium">Format:</span>
+                          {{ selectedFormat.toUpperCase() }}
+                        </p>
+                      </div>
+                      <div
+                        class="rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-700"
+                      >
+                        <p><span class="font-medium">Path:</span> {{ selectedEntry.path }}</p>
+                        <p>
+                          <span class="font-medium">Size:</span>
+                          {{ formatFileSize(selectedEntry.size || 0) }}
+                        </p>
+                        <p v-if="metadata.samplingInfo">
+                          <span class="font-medium">Sample size:</span>
+                          {{ formatNumber(metadata.samplingInfo.rowsProcessed) }} rows ({{
+                            metadata.samplingInfo.isComplete ? 'complete' : 'sampled'
+                          }})
+                        </p>
+                      </div>
+                    </div>
+                  </section>
+
+                  <!-- Columns Structure -->
+                  <section>
+                    <h4 class="text-sm font-semibold text-gray-900 mb-3">Columns</h4>
+                    <div class="overflow-x-auto">
+                      <div class="min-w-[640px]">
+                        <div class="ring-1 ring-gray-200 rounded-lg">
+                          <table class="min-w-full divide-y divide-gray-300">
+                            <thead>
+                              <tr class="bg-gray-50">
+                                <th
+                                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                >
+                                  Column
+                                </th>
+                                <th
+                                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                >
+                                  Type
+                                </th>
+                                <th
+                                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                >
+                                  Nullable
+                                </th>
+                                <th
+                                  class="px-3 py-2 text-left text-sm font-semibold text-gray-900 whitespace-nowrap"
+                                >
+                                  Sample Values
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                              <tr
+                                v-for="col in metadata.columns"
+                                :key="col.name"
+                                class="hover:bg-gray-50"
+                              >
+                                <td
+                                  class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"
+                                >
+                                  {{ col.name }}
+                                </td>
+                                <td
+                                  class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 uppercase"
+                                >
+                                  {{ col.type }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                  {{ col.nullable ? 'Yes' : 'No' }}
+                                </td>
+                                <td
+                                  class="px-3 py-2 text-sm text-gray-500 truncate max-w-[200px]"
+                                  :title="renderSample(col.sampleValues)"
+                                >
+                                  {{ renderSample(col.sampleValues) || '—' }}
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+                </div>
+              </TabPanel>
+            </TabPanels>
+          </TabGroup>
         </div>
       </div>
     </section>
@@ -207,6 +298,8 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { TabGroup, TabList, Tab, TabPanels, TabPanel } from '@headlessui/vue'
+import { ArrowPathIcon } from '@heroicons/vue/24/outline'
 import type { Connection } from '@/types/connections'
 import type { FileSystemEntry } from '@/api/fileSystem'
 import filesApi from '@/api/files'
@@ -304,6 +397,12 @@ async function loadPreview(entry: FileSystemEntry) {
     previewError.value = (error as Error).message || 'Failed to load file preview'
   } finally {
     isLoadingPreview.value = false
+  }
+}
+
+function refreshMetadata() {
+  if (selectedEntry.value) {
+    void loadPreview(selectedEntry.value)
   }
 }
 

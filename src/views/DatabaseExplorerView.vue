@@ -17,10 +17,10 @@ import SearchInput from '@/components/common/SearchInput.vue'
 import connections from '@/api/connections'
 import { listDirectory, type FileSystemEntry } from '@/api/fileSystem'
 import type { SQLTableMeta, SQLViewMeta } from '@/types/metadata'
+import type { FileMetadata } from '@/types/files'
 import type { DbType } from '@/types/connections'
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/vue'
 import { ChevronDownIcon, CheckIcon, ArrowPathIcon } from '@heroicons/vue/24/outline'
-import FileConnectionExplorer from '@/components/files/FileConnectionExplorer.vue'
 
 const MAX_RECENT_CONNECTIONS = 5
 const route = useRoute()
@@ -113,14 +113,24 @@ const selectedObjectType = ref<ObjectType | null>(null)
 const selectedObjectName = ref<string | null>(null)
 const selectedMeta = ref<SQLTableMeta | SQLViewMeta | null>(null)
 
+// File selection
+const selectedFileEntry = ref<FileSystemEntry | null>(null)
+const selectedFileMetadata = ref<FileMetadata | null>(null)
+
 // Editor tabs: preview and pinned (VS Code model)
 type EditorTab = {
   connectionId: string
-  database: string
+  // For database objects
+  database?: string
   schema?: string
-  type: ObjectType
+  type?: ObjectType
   name: string
-  meta: SQLTableMeta | SQLViewMeta
+  meta?: SQLTableMeta | SQLViewMeta
+  // For file objects
+  filePath?: string
+  fileEntry?: FileSystemEntry
+  // Common properties
+  tabType: 'database' | 'file'
   pinned: boolean
   defaultTab?: 'structure' | 'data'
   viewTab?: 'structure' | 'data'
@@ -344,36 +354,91 @@ function settingAlwaysOpenNewTab(): boolean {
 
 function toKey(t: {
   connectionId: string
-  database: string
+  database?: string
   schema?: string
-  type: ObjectType
+  type?: ObjectType
   name: string
+  filePath?: string
+  tabType?: 'database' | 'file'
 }) {
+  if (t.tabType === 'file' || t.filePath) {
+    return `${t.connectionId}:file:${t.filePath || t.name}`
+  }
   return `${t.connectionId}:${t.database}:${t.schema || ''}:${t.type}:${t.name}`
 }
 
 function activateTabFromState(tab: EditorTab | null) {
   if (!tab) return
-  selectedDatabaseName.value = tab.database
-  selectedSchemaName.value = tab.schema || null
-  selectedObjectType.value = tab.type
-  selectedObjectName.value = tab.name
-  selectedMeta.value = tab.meta
-  selectedDefaultTab.value = (tab.viewTab || tab.defaultTab || 'data') as 'structure' | 'data'
-  // keep schema store in sync
-  schemaStore.setConnectionId(tab.connectionId)
-  schemaStore.setDatabaseName(tab.database)
-  schemaStore.fetchSchema(false)
-  // update route
-  router.replace({
-    path: `/explorer/${tab.connectionId}`,
-    query: {
-      db: tab.database,
-      schema: tab.schema || undefined,
-      type: tab.type,
-      name: tab.name
+
+  // Clear details panel when activating a tab to ensure unified tab system takes precedence
+  detailsConnectionId.value = null
+
+  if (tab.tabType === 'file') {
+    // Handle file tab - clear all database state
+    selectedDatabaseName.value = null
+    selectedSchemaName.value = null
+    selectedObjectType.value = null
+    selectedObjectName.value = null
+    selectedMeta.value = null
+
+    // Clear other panel states
+    overviewConnectionId.value = null
+    overviewDatabaseName.value = null
+    showDiagram.value = false
+
+    selectedDefaultTab.value = (tab.viewTab || tab.defaultTab || 'data') as 'structure' | 'data'
+
+    // Set file selection
+    selectedFileEntry.value = tab.fileEntry || null
+    selectedFileMetadata.value = null // Will be loaded by the component
+
+    if (tab.filePath) {
+      selectedFilePathsByConnection.value = {
+        [tab.connectionId]: tab.filePath
+      }
     }
-  })
+
+    // Update route for file
+    router.replace({
+      path: `/explorer/${tab.connectionId}`,
+      query: { file: tab.filePath }
+    })
+  } else {
+    // Handle database tab - clear all file state
+    selectedFileEntry.value = null
+    selectedFileMetadata.value = null
+    selectedFilePathsByConnection.value = {}
+
+    // Clear other panel states
+    overviewConnectionId.value = null
+    overviewDatabaseName.value = null
+    showDiagram.value = false
+
+    selectedDatabaseName.value = tab.database || null
+    selectedSchemaName.value = tab.schema || null
+    selectedObjectType.value = tab.type || null
+    selectedObjectName.value = tab.name
+    selectedMeta.value = tab.meta || null
+    selectedDefaultTab.value = (tab.viewTab || tab.defaultTab || 'data') as 'structure' | 'data'
+
+    // keep schema store in sync
+    if (tab.database) {
+      schemaStore.setConnectionId(tab.connectionId)
+      schemaStore.setDatabaseName(tab.database)
+      schemaStore.fetchSchema(false)
+    }
+
+    // update route for database
+    router.replace({
+      path: `/explorer/${tab.connectionId}`,
+      query: {
+        db: tab.database || undefined,
+        schema: tab.schema || undefined,
+        type: tab.type || undefined,
+        name: tab.name || undefined
+      }
+    })
+  }
 }
 
 function handleOpenFromTree(payload: {
@@ -424,7 +489,7 @@ function handleOpenFromTree(payload: {
     if (existingIndex === -1) {
       const initialView = (payload.defaultTab ||
         (linkTabs.value ? selectedDefaultTab.value || 'data' : 'data')) as 'structure' | 'data'
-      pinnedTabs.value.push({ ...payload, pinned: true, viewTab: initialView })
+      pinnedTabs.value.push({ ...payload, tabType: 'database', pinned: true, viewTab: initialView })
       activePinnedIndex.value = pinnedTabs.value.length - 1
     } else {
       activePinnedIndex.value = existingIndex
@@ -433,7 +498,7 @@ function handleOpenFromTree(payload: {
   } else {
     const initialView = (payload.defaultTab ||
       (linkTabs.value ? selectedDefaultTab.value || 'data' : 'data')) as 'structure' | 'data'
-    previewTab.value = { ...payload, pinned: false, viewTab: initialView }
+    previewTab.value = { ...payload, tabType: 'database', pinned: false, viewTab: initialView }
     activePinnedIndex.value = null
     activateTabFromState(previewTab.value)
   }
@@ -471,6 +536,7 @@ function handleSelectConnection(payload: { connectionId: string }) {
 
   // Show details for the clicked connection; keep its tabs state
   focusConnectionId.value = payload.connectionId
+  // Always set detailsConnectionId to show standard connection details panel
   detailsConnectionId.value = payload.connectionId
   showDiagram.value = false
   overviewConnectionId.value = null
@@ -595,11 +661,6 @@ const currentConnectionDetails = computed(() => {
     ...conn,
     logo: dbType?.logo || ''
   }
-})
-
-const isFileConnection = computed(() => {
-  const type = currentConnectionDetails.value?.type || ''
-  return type.toLowerCase().includes('file')
 })
 
 // Active header connection (honor active pane and panels)
@@ -845,6 +906,12 @@ async function refreshSelectedMetadata(force = true) {
   if (obj) selectedMeta.value = obj
 }
 
+async function refreshSelectedFileMetadata() {
+  // For file objects, we don't need to refresh metadata from server
+  // as file metadata is typically loaded when the file is selected
+  // This is here for API compatibility with DatabaseObjectContainer
+}
+
 function handleBreadcrumbNavigate(payload: { level: 'database' | 'schema' | 'type' | 'name' }) {
   // Act on the active pane. For the right split, update local split state only.
   if (activePane.value === 'right' && (splitMeta.value || splitDatabaseName.value)) {
@@ -1064,37 +1131,103 @@ function handleRequestFileEntries(payload: { connectionId: string }) {
   void loadFileEntries(payload.connectionId, true)
 }
 
-function handleFileSelect(payload: { connectionId: string; path: string }) {
-  // Clear ALL file selections and set only the selected one to ensure single selection
-  selectedFilePathsByConnection.value = {
-    [payload.connectionId]: payload.path
+function handleOpenFile(payload: {
+  connectionId: string
+  path: string
+  entry: FileSystemEntry
+  mode: 'preview' | 'pinned'
+  defaultTab?: 'structure' | 'data'
+  openInRightSplit?: boolean
+}) {
+  // Opening a file should leave diagram mode
+  showDiagram.value = false
+  // Hide overview panel when a file is opened
+  overviewConnectionId.value = null
+  overviewDatabaseName.value = null
+  // Hide connection details panel when a file is opened
+  detailsConnectionId.value = null
+
+  // If request is to open in right split, update split-only state and return
+  if (payload.openInRightSplit) {
+    splitConnectionId.value = payload.connectionId
+    splitDatabaseName.value = null
+    splitSchemaName.value = null
+    splitObjectType.value = null
+    splitObjectName.value = null
+    splitMeta.value = null
+    // Store file info in split state (we'll need to extend split state for files)
+    // For now, we'll handle this in the template
+    splitDefaultTab.value = linkTabs.value
+      ? selectedDefaultTab.value || 'data'
+      : payload.defaultTab || null
+    activePane.value = 'right'
+    return
   }
-  // Clear connection focus when a file is selected to avoid double selection appearance
-  focusConnectionId.value = null
-  // Clear connection details when a file is selected to show file content instead
-  if (detailsConnectionId.value === payload.connectionId) {
-    detailsConnectionId.value = null
+
+  // Opening in main area focuses left pane
+  activePane.value = 'left'
+  if (linkTabs.value && splitMeta.value && splitDefaultTab.value) {
+    // If tabs are linked and right split is present, mirror its current tab into the left
+    selectedDefaultTab.value = splitDefaultTab.value
   }
-  // Update URL to include file parameter
-  router.replace({
-    path: `/explorer/${payload.connectionId}`,
-    query: { file: payload.path }
-  })
+
+  const desiredPinned = payload.mode === 'pinned' || settingAlwaysOpenNewTab()
+  const fileTab: EditorTab = {
+    connectionId: payload.connectionId,
+    name: payload.entry.name,
+    filePath: payload.path,
+    fileEntry: payload.entry,
+    tabType: 'file',
+    pinned: desiredPinned,
+    defaultTab: payload.defaultTab,
+    viewTab: (payload.defaultTab ||
+      (linkTabs.value ? selectedDefaultTab.value || 'data' : 'data')) as 'structure' | 'data'
+  }
+
+  if (desiredPinned) {
+    const key = toKey(fileTab)
+    const existingIndex = pinnedTabs.value.findIndex((t) => toKey(t) === key)
+    if (existingIndex === -1) {
+      pinnedTabs.value.push(fileTab)
+      activePinnedIndex.value = pinnedTabs.value.length - 1
+    } else {
+      activePinnedIndex.value = existingIndex
+    }
+    activateTabFromState(pinnedTabs.value[activePinnedIndex.value!])
+  } else {
+    previewTab.value = fileTab
+    activePinnedIndex.value = null
+    activateTabFromState(previewTab.value)
+  }
 }
 
-function clearFileSelection() {
-  const connectionId = currentConnectionId.value
-  if (!connectionId) return
-
-  // Clear file selection
-  selectedFilePathsByConnection.value = {
-    ...selectedFilePathsByConnection.value,
-    [connectionId]: null
+function handleFileSelect(payload: { connectionId: string; path: string }) {
+  // Find the file entry
+  const entries = currentFileEntries.value
+  const entry = entries.find((e) => e.path === payload.path)
+  if (!entry) {
+    // Fallback to old behavior if entry not found
+    selectedFilePathsByConnection.value = {
+      [payload.connectionId]: payload.path
+    }
+    focusConnectionId.value = null
+    if (detailsConnectionId.value === payload.connectionId) {
+      detailsConnectionId.value = null
+    }
+    router.replace({
+      path: `/explorer/${payload.connectionId}`,
+      query: { file: payload.path }
+    })
+    return
   }
 
-  // Update URL to remove file parameter
-  router.replace({
-    path: `/explorer/${connectionId}`
+  // Use the new tab system
+  handleOpenFile({
+    connectionId: payload.connectionId,
+    path: payload.path,
+    entry: entry,
+    mode: 'preview',
+    defaultTab: 'data'
   })
 }
 
@@ -1103,30 +1236,6 @@ const currentFileEntries = computed<FileSystemEntry[]>(() => {
   if (!id) return []
   return fileEntriesByConnection.value[id] || []
 })
-
-const currentFileDirectoryPath = computed(() => {
-  const id = currentConnectionId.value
-  if (!id) return ''
-  return fileDirectoryPathsByConnection.value[id] || currentConnectionDetails.value?.path || ''
-})
-
-const currentFileError = computed(() => {
-  const id = currentConnectionId.value
-  if (!id) return ''
-  return fileEntryErrorsByConnection.value[id] || ''
-})
-
-const currentSelectedFilePath = computed(() => {
-  const id = currentConnectionId.value
-  if (!id) return null
-  return selectedFilePathsByConnection.value[id] || null
-})
-
-function refreshCurrentFileEntries() {
-  if (currentConnectionId.value) {
-    void loadFileEntries(currentConnectionId.value, true)
-  }
-}
 
 // Tab link helpers
 function onLeftTabChange(t: 'data' | 'structure') {
@@ -1166,17 +1275,36 @@ function showDiagramForActiveDatabase() {
 }
 
 // Watch for route changes to update recent connections and last viewed connection
-watch(currentConnectionId, (newId) => {
+watch(currentConnectionId, async (newId) => {
   if (newId && currentConnection.value) {
     addToRecentConnections()
     // Update last viewed connection
     lastViewedConnectionId.value = newId
     localStorage.setItem('lastViewedConnectionId', newId)
     if (isFilesConnectionType(newId)) {
-      void loadFileEntries(newId)
+      await loadFileEntries(newId)
+      // Check if there's a file parameter in the URL
+      const fileParam = route.query.file as string
+      if (fileParam && currentFileEntries.value.length > 0) {
+        handleFileSelect({ connectionId: newId, path: fileParam })
+      }
     }
   }
 })
+
+// Also watch for route query changes to handle direct navigation to files
+watch(
+  () => route.query.file,
+  (filePath) => {
+    if (
+      filePath &&
+      isFilesConnectionType(currentConnectionId.value) &&
+      currentFileEntries.value.length > 0
+    ) {
+      handleFileSelect({ connectionId: currentConnectionId.value, path: filePath as string })
+    }
+  }
+)
 </script>
 
 <template>
@@ -1326,7 +1454,15 @@ watch(currentConnectionId, (newId) => {
                     {{ activeDisplayHostPort }}
                   </span>
                   <span v-if="activeDisplayHostPort" class="text-gray-400">•</span>
+                  <!-- Database breadcrumb -->
                   <ExplorerBreadcrumb
+                    v-if="
+                      !selectedFileEntry &&
+                      (activeDatabaseName ||
+                        activeSchemaName ||
+                        activeObjectType ||
+                        activeObjectName)
+                    "
                     :database="activeDatabaseName"
                     :schema="activeSchemaName"
                     :type="activeObjectType"
@@ -1335,6 +1471,13 @@ watch(currentConnectionId, (newId) => {
                     @navigate="handleBreadcrumbNavigate"
                     @pick-name="(o) => handlePickFromBreadcrumb(o)"
                   />
+                  <!-- File breadcrumb -->
+                  <div v-else-if="selectedFileEntry" class="flex items-center gap-1 text-sm">
+                    <span class="text-gray-600">File:</span>
+                    <span class="font-medium text-gray-900">{{ selectedFileEntry.name }}</span>
+                    <span class="text-gray-400">•</span>
+                    <span class="text-gray-500 text-xs">{{ selectedFileEntry.path }}</span>
+                  </div>
                 </div>
                 <div class="flex items-center gap-2">
                   <label class="flex items-center gap-1 text-xs text-gray-600 select-none">
@@ -1375,197 +1518,215 @@ watch(currentConnectionId, (newId) => {
                 </div>
               </div>
             </div>
-            <div v-if="isFileConnection && currentConnectionDetails && currentSelectedFilePath">
-              <FileConnectionExplorer
-                :connection="currentConnectionDetails"
-                :entries="currentFileEntries"
-                :current-path="currentFileDirectoryPath"
-                :selected-path="currentSelectedFilePath"
-                :load-error="currentFileError"
-                @refresh="refreshCurrentFileEntries"
+            <!-- Object tabs (pinned + preview) -->
+            <div class="mb-2">
+              <div class="flex items-center gap-1">
+                <button
+                  v-if="currentPreview"
+                  class="px-2 py-1 text-xs rounded border border-dashed border-gray-300 bg-white text-gray-600 italic"
+                  @click="activatePreview"
+                >
+                  {{ currentPreview.label }}
+                </button>
+                <template v-for="(t, i) in pinnedTabs" :key="toKey(t)">
+                  <button
+                    class="px-2 py-1 text-xs rounded border border-gray-300 bg-white hover:bg-gray-50 flex items-center gap-1"
+                    :class="{ 'ring-1 ring-slate-400': activePinnedIndex === i }"
+                    @click="activatePinned(i)"
+                  >
+                    <span class="font-medium">{{ t.name }}</span>
+                    <span v-if="t.tabType === 'database'" class="text-gray-400">{{
+                      t.type === 'table' ? 'T' : 'V'
+                    }}</span>
+                    <span v-else class="text-gray-400">F</span>
+                    <span class="text-gray-300">|</span>
+                    <span v-if="t.tabType === 'database'" class="text-gray-500">{{
+                      t.database
+                    }}</span>
+                    <span v-else class="text-gray-500">{{ t.connectionId }}</span>
+                    <span
+                      role="button"
+                      aria-label="Close tab"
+                      class="ml-1 text-gray-400 hover:text-gray-700 cursor-pointer"
+                      @click.stop="closePinned(i)"
+                    >
+                      <span aria-hidden="true">×</span>
+                    </span>
+                  </button>
+                </template>
+              </div>
+            </div>
+
+            <!-- Content area priority: connection details > database overview > diagram mode > object structure/data -->
+            <div
+              v-if="detailsConnection"
+              class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg"
+            >
+              <ConnectionDetailsPanel
+                :connection="detailsConnection"
+                :file-entries="fileEntriesByConnection[detailsConnection.id] || []"
+                @edit="onEditConnection"
+                @clone="onCloneConnection"
+                @delete="onDeleteConnection"
               />
             </div>
-            <template v-else>
-              <!-- Object tabs (pinned + preview) -->
-              <div class="mb-2">
-                <div class="flex items-center gap-1">
-                  <button
-                    v-if="currentPreview"
-                    class="px-2 py-1 text-xs rounded border border-dashed border-gray-300 bg-white text-gray-600 italic"
-                    @click="activatePreview"
-                  >
-                    {{ currentPreview.label }}
-                  </button>
-                  <template v-for="(t, i) in pinnedTabs" :key="toKey(t)">
-                    <button
-                      class="px-2 py-1 text-xs rounded border border-gray-300 bg-white hover:bg-gray-50 flex items-center gap-1"
-                      :class="{ 'ring-1 ring-slate-400': activePinnedIndex === i }"
-                      @click="activatePinned(i)"
-                    >
-                      <span class="font-medium">{{ t.name }}</span>
-                      <span class="text-gray-400">{{ t.type === 'table' ? 'T' : 'V' }}</span>
-                      <span class="text-gray-300">|</span>
-                      <span class="text-gray-500">{{ t.database }}</span>
-                      <span
-                        role="button"
-                        aria-label="Close tab"
-                        class="ml-1 text-gray-400 hover:text-gray-700 cursor-pointer"
-                        @click.stop="closePinned(i)"
-                      >
-                        <span aria-hidden="true">×</span>
-                      </span>
-                    </button>
-                  </template>
-                </div>
-              </div>
-
-              <!-- Content area priority: connection details > database overview > diagram mode > object structure/data -->
-              <div
-                v-if="detailsConnection"
-                class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg"
-              >
-                <ConnectionDetailsPanel
-                  :connection="detailsConnection"
-                  :file-entries="fileEntriesByConnection[detailsConnection.id] || []"
-                  @edit="onEditConnection"
-                  @clone="onCloneConnection"
-                  @delete="onDeleteConnection"
-                />
-              </div>
-              <div
-                v-else-if="overviewConnectionId && overviewDatabaseName"
-                class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg"
-              >
-                <DatabaseOverviewPanel
-                  :connection-id="overviewConnectionId"
-                  :database="overviewDatabaseName"
-                  @show-diagram="handleShowDiagram"
-                />
-              </div>
-              <div
-                v-else-if="showDiagram"
-                class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg"
-              >
-                <DiagramView
-                  :tables="schemaStore.tables"
-                  :views="schemaStore.views"
-                  :relationships="schemaStore.relationships"
-                />
-              </div>
-              <div v-else>
-                <div class="min-h-[480px] min-w-0 overflow-x-hidden">
+            <div
+              v-else-if="overviewConnectionId && overviewDatabaseName"
+              class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg"
+            >
+              <DatabaseOverviewPanel
+                :connection-id="overviewConnectionId"
+                :database="overviewDatabaseName"
+                @show-diagram="handleShowDiagram"
+              />
+            </div>
+            <div
+              v-else-if="showDiagram"
+              class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg"
+            >
+              <DiagramView
+                :tables="schemaStore.tables"
+                :views="schemaStore.views"
+                :relationships="schemaStore.relationships"
+              />
+            </div>
+            <div v-else>
+              <div class="min-h-[480px] min-w-0 overflow-x-hidden">
+                <div
+                  v-if="splitMeta"
+                  ref="splitContainerRef"
+                  class="flex flex-row items-stretch min-w-0"
+                >
+                  <!-- Left (primary) -->
                   <div
-                    v-if="splitMeta"
-                    ref="splitContainerRef"
-                    class="flex flex-row items-stretch min-w-0"
+                    ref="leftPaneRef"
+                    :style="{ flexGrow: splitGrow, flexBasis: '0px' }"
+                    :class="[
+                      'min-w-[240px] pr-2 overflow-hidden',
+                      activePane === 'left'
+                        ? 'ring-2 ring-blue-400 rounded-md'
+                        : 'ring-1 ring-transparent'
+                    ]"
+                    @mousedown="activePane = 'left'"
                   >
-                    <!-- Left (primary) -->
-                    <div
-                      ref="leftPaneRef"
-                      :style="{ flexGrow: splitGrow, flexBasis: '0px' }"
-                      :class="[
-                        'min-w-[240px] pr-2 overflow-hidden',
-                        activePane === 'left'
-                          ? 'ring-2 ring-blue-400 rounded-md'
-                          : 'ring-1 ring-transparent'
-                      ]"
-                      @mousedown="activePane = 'left'"
-                    >
-                      <div class="min-w-0">
-                        <div v-if="selectedMeta">
-                          <DatabaseObjectContainer
-                            :key="`left-${selectedObjectType}-${selectedObjectName}-${selectedDefaultTab}`"
-                            :table-meta="selectedMeta"
-                            :is-view="selectedObjectType === 'view'"
-                            :connection-id="currentConnectionId || ''"
-                            :connection-type="currentConnectionDetails?.type || 'sql'"
-                            :database="selectedDatabaseName || ''"
-                            :default-tab="selectedDefaultTab || 'data'"
-                            @refresh-metadata="refreshSelectedMetadata(true)"
-                            @tab-change="onLeftTabChange"
-                          />
-                        </div>
-                        <div
-                          v-else
-                          class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg p-8 text-center"
-                        >
-                          <h3 class="text-sm font-medium text-gray-900">No object selected</h3>
-                          <p class="mt-1 text-sm text-gray-500">
-                            Select a table or view from the sidebar to view its structure
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- Divider between primary and right split (wider hit area, always on top) -->
-                    <div
-                      role="separator"
-                      aria-orientation="vertical"
-                      class="relative z-20 mx-1.5 w-3 shrink-0 cursor-col-resize select-none pointer-events-auto"
-                      @mousedown.prevent="onDividerMouseDown"
-                      @dblclick="onDividerDoubleClick"
-                    >
-                      <div
-                        class="absolute inset-y-0 left-1/2 -translate-x-1/2 w-[3px] rounded bg-gray-200 hover:bg-gray-300"
-                      />
-                    </div>
-
-                    <!-- Right split -->
-                    <div
-                      :style="{ flexGrow: 100 - splitGrow, flexBasis: '0px' }"
-                      :class="[
-                        'min-w-[240px] pl-2 overflow-hidden',
-                        activePane === 'right'
-                          ? 'ring-2 ring-blue-400 rounded-md'
-                          : 'ring-1 ring-transparent'
-                      ]"
-                      @mousedown="activePane = 'right'"
-                    >
-                      <div class="min-w-0">
+                    <div class="min-w-0">
+                      <div v-if="selectedMeta">
                         <DatabaseObjectContainer
-                          v-if="splitMeta"
-                          :key="`split-${splitObjectType}-${splitObjectName}-${splitDefaultTab}`"
-                          :table-meta="splitMeta"
-                          :is-view="splitObjectType === 'view'"
-                          :connection-id="splitConnectionId || currentConnectionId || ''"
-                          :connection-type="getConnectionTypeById(splitConnectionId)"
-                          :database="splitDatabaseName || ''"
-                          :default-tab="splitDefaultTab || 'data'"
-                          :closable="true"
-                          @close="closeRightSplit"
-                          @tab-change="onRightTabChange"
+                          :key="`left-${selectedObjectType}-${selectedObjectName}-${selectedDefaultTab}`"
+                          :table-meta="selectedMeta"
+                          :is-view="selectedObjectType === 'view'"
+                          :connection-id="currentConnectionId || ''"
+                          :connection-type="currentConnectionDetails?.type || 'sql'"
+                          :database="selectedDatabaseName || ''"
+                          :default-tab="selectedDefaultTab || 'data'"
+                          @refresh-metadata="refreshSelectedMetadata(true)"
+                          @tab-change="onLeftTabChange"
                         />
                       </div>
+                      <div v-else-if="selectedFileEntry">
+                        <DatabaseObjectContainer
+                          :key="`left-file-${selectedFileEntry.path}-${selectedDefaultTab}`"
+                          :file-entry="selectedFileEntry"
+                          :file-metadata="selectedFileMetadata"
+                          :connection-id="currentConnectionId || ''"
+                          :object-type="'file'"
+                          :default-tab="selectedDefaultTab || 'data'"
+                          @refresh-metadata="refreshSelectedFileMetadata"
+                          @tab-change="onLeftTabChange"
+                        />
+                      </div>
+                      <div
+                        v-else
+                        class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg p-8 text-center"
+                      >
+                        <h3 class="text-sm font-medium text-gray-900">No object selected</h3>
+                        <p class="mt-1 text-sm text-gray-500">
+                          Select a table, view, or file from the sidebar to view its content
+                        </p>
+                      </div>
                     </div>
                   </div>
 
-                  <div v-else>
-                    <div v-if="selectedMeta">
-                      <DatabaseObjectContainer
-                        :key="`single-${selectedObjectType}-${selectedObjectName}-${selectedDefaultTab}`"
-                        :table-meta="selectedMeta"
-                        :is-view="selectedObjectType === 'view'"
-                        :connection-id="currentConnectionId || ''"
-                        :connection-type="currentConnectionDetails?.type || 'sql'"
-                        :database="selectedDatabaseName || ''"
-                        :default-tab="selectedDefaultTab || 'data'"
-                        @refresh-metadata="refreshSelectedMetadata(true)"
-                        @tab-change="onLeftTabChange"
-                      />
-                    </div>
+                  <!-- Divider between primary and right split (wider hit area, always on top) -->
+                  <div
+                    role="separator"
+                    aria-orientation="vertical"
+                    class="relative z-20 mx-1.5 w-3 shrink-0 cursor-col-resize select-none pointer-events-auto"
+                    @mousedown.prevent="onDividerMouseDown"
+                    @dblclick="onDividerDoubleClick"
+                  >
                     <div
-                      v-else
-                      class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg p-8 text-center"
-                    >
-                      <h3 class="text-sm font-medium text-gray-900">No object selected</h3>
-                      <p class="mt-1 text-sm text-gray-500">
-                        Select a table or view from the sidebar to view its structure
-                      </p>
+                      class="absolute inset-y-0 left-1/2 -translate-x-1/2 w-[3px] rounded bg-gray-200 hover:bg-gray-300"
+                    />
+                  </div>
+
+                  <!-- Right split -->
+                  <div
+                    :style="{ flexGrow: 100 - splitGrow, flexBasis: '0px' }"
+                    :class="[
+                      'min-w-[240px] pl-2 overflow-hidden',
+                      activePane === 'right'
+                        ? 'ring-2 ring-blue-400 rounded-md'
+                        : 'ring-1 ring-transparent'
+                    ]"
+                    @mousedown="activePane = 'right'"
+                  >
+                    <div class="min-w-0">
+                      <DatabaseObjectContainer
+                        v-if="splitMeta"
+                        :key="`split-${splitObjectType}-${splitObjectName}-${splitDefaultTab}`"
+                        :table-meta="splitMeta"
+                        :is-view="splitObjectType === 'view'"
+                        :connection-id="splitConnectionId || currentConnectionId || ''"
+                        :connection-type="getConnectionTypeById(splitConnectionId)"
+                        :database="splitDatabaseName || ''"
+                        :default-tab="splitDefaultTab || 'data'"
+                        :closable="true"
+                        @close="closeRightSplit"
+                        @tab-change="onRightTabChange"
+                      />
                     </div>
                   </div>
                 </div>
+
+                <div v-else>
+                  <div v-if="selectedMeta">
+                    <DatabaseObjectContainer
+                      :key="`single-${selectedObjectType}-${selectedObjectName}-${selectedDefaultTab}`"
+                      :table-meta="selectedMeta"
+                      :is-view="selectedObjectType === 'view'"
+                      :connection-id="currentConnectionId || ''"
+                      :connection-type="currentConnectionDetails?.type || 'sql'"
+                      :database="selectedDatabaseName || ''"
+                      :default-tab="selectedDefaultTab || 'data'"
+                      @refresh-metadata="refreshSelectedMetadata(true)"
+                      @tab-change="onLeftTabChange"
+                    />
+                  </div>
+                  <div v-else-if="selectedFileEntry">
+                    <DatabaseObjectContainer
+                      :key="`single-file-${selectedFileEntry.path}-${selectedDefaultTab}`"
+                      :file-entry="selectedFileEntry"
+                      :file-metadata="selectedFileMetadata"
+                      :connection-id="currentConnectionId || ''"
+                      :object-type="'file'"
+                      :default-tab="selectedDefaultTab || 'data'"
+                      @refresh-metadata="refreshSelectedFileMetadata"
+                      @tab-change="onLeftTabChange"
+                    />
+                  </div>
+                  <div
+                    v-else
+                    class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg p-8 text-center"
+                  >
+                    <h3 class="text-sm font-medium text-gray-900">No object selected</h3>
+                    <p class="mt-1 text-sm text-gray-500">
+                      Select a table, view, or file from the sidebar to view its content
+                    </p>
+                  </div>
+                </div>
               </div>
-            </template>
+            </div>
           </div>
         </div>
       </div>
