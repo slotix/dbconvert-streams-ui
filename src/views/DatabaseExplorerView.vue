@@ -943,7 +943,7 @@ onMounted(() => {
   }
   initializeCurrentConnection()
   // Seed selection from query if present
-  const { db, schema, type, name } = route.query as Record<string, string | undefined>
+  const { db, schema, type, name, file } = route.query as Record<string, string | undefined>
   if (db) {
     selectedDatabaseName.value = db
     selectedSchemaName.value = schema || null
@@ -968,7 +968,17 @@ onMounted(() => {
     schemaStore.fetchSchema(false)
   }
   if (isFilesConnectionType(currentConnectionId.value)) {
-    void loadFileEntries(currentConnectionId.value as string)
+    void loadFileEntries(currentConnectionId.value as string).then(() => {
+      // If a file parameter is present, select that file
+      if (file) {
+        selectedFilePathsByConnection.value = {
+          [currentConnectionId.value]: file
+        }
+        // Clear connection details to show file content
+        detailsConnectionId.value = null
+        focusConnectionId.value = null
+      }
+    })
   }
 })
 
@@ -1065,6 +1075,27 @@ function handleFileSelect(payload: { connectionId: string; path: string }) {
   if (detailsConnectionId.value === payload.connectionId) {
     detailsConnectionId.value = null
   }
+  // Update URL to include file parameter
+  router.replace({
+    path: `/explorer/${payload.connectionId}`,
+    query: { file: payload.path }
+  })
+}
+
+function clearFileSelection() {
+  const connectionId = currentConnectionId.value
+  if (!connectionId) return
+
+  // Clear file selection
+  selectedFilePathsByConnection.value = {
+    ...selectedFilePathsByConnection.value,
+    [connectionId]: null
+  }
+
+  // Update URL to remove file parameter
+  router.replace({
+    path: `/explorer/${connectionId}`
+  })
 }
 
 const currentFileEntries = computed<FileSystemEntry[]>(() => {

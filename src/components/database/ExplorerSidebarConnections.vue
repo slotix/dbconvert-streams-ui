@@ -5,7 +5,8 @@ import {
   ChevronRightIcon,
   ChevronDownIcon,
   ArrowPathIcon,
-  CubeIcon
+  CubeIcon,
+  FolderIcon
 } from '@heroicons/vue/24/outline'
 import ObjectIcon from '@/components/common/ObjectIcon.vue'
 import { useConnectionsStore } from '@/stores/connections'
@@ -13,7 +14,6 @@ import connectionsApi from '@/api/connections'
 import type { Connection } from '@/types/connections'
 import type { DatabaseMetadata, SQLTableMeta, SQLViewMeta } from '@/types/metadata'
 import type { FileSystemEntry } from '@/api/fileSystem'
-import { getFileFormat } from '@/utils/fileFormat'
 import { useToast } from 'vue-toastification'
 import { highlightParts as splitHighlight } from '@/utils/highlight'
 import ExplorerContextMenu from './ExplorerContextMenu.vue'
@@ -635,10 +635,48 @@ function matchesDbFilter(connId: string, dbName: string): boolean {
   return viewHit
 }
 
+// File type detection for file connections
+function getFileExtension(filename: string): string {
+  const match = filename.toLowerCase().match(/\.([^.]+)(?:\.gz)?$/)
+  return match ? match[1] : ''
+}
+
+function getFileTypeFromExtension(extension: string): string | null {
+  const typeMap: Record<string, string> = {
+    csv: 'CSV',
+    json: 'JSON',
+    jsonl: 'JSONL',
+    parquet: 'Parquet',
+    gz: 'Compressed'
+  }
+  return typeMap[extension] || null
+}
+
+function getIconForFileType(type: string): string {
+  const iconMap: Record<string, string> = {
+    CSV: '/images/db-logos/csv.svg',
+    JSON: '/images/db-logos/json.svg',
+    JSONL: '/images/db-logos/json.svg',
+    Parquet: '/images/db-logos/parquet.svg',
+    Compressed: '/images/db-logos/local-files.svg'
+  }
+  return iconMap[type] || '/images/db-logos/local-files.svg'
+}
+
 function getDbLogoForType(dbType?: string): string {
   const t = (dbType || '').toString().toLowerCase()
   const found = connectionsStore.dbTypes.find((d) => d.type.toLowerCase() === t)
   return found?.logo || '/images/db-logos/all.svg'
+}
+
+// Function to get icon for individual file based on its extension
+function getFileIcon(filename: string): string {
+  const extension = getFileExtension(filename)
+  const type = getFileTypeFromExtension(extension)
+  if (type) {
+    return getIconForFileType(type)
+  }
+  return '/images/db-logos/local-files.svg'
 }
 
 function isMySQL(connId: string): boolean {
@@ -675,11 +713,6 @@ function getFlatViews(connId: string, db: string): string[] {
   return Object.values(meta.views || {})
     .map((v) => v.name)
     .sort((a, b) => a.localeCompare(b))
-}
-
-function getFileFormatLabel(filename: string): string {
-  const format = getFileFormat(filename)
-  return format ? format.toUpperCase() : 'FILE'
 }
 
 function formatFileSize(bytes?: number): string {
@@ -740,7 +773,9 @@ async function actionCopyDDLFromContext() {
                 :class="caretClass"
                 @click.stop="toggleConnection(conn.id)"
               />
+              <FolderIcon v-if="isFileConnection(conn.id)" class="h-5 w-5 mr-1.5 text-yellow-600" />
               <img
+                v-else
                 :src="getDbLogoForType(conn.type)"
                 :alt="conn.type || 'db'"
                 class="h-5 w-5 mr-1.5 object-contain"
@@ -789,22 +824,27 @@ async function actionCopyDDLFromContext() {
                   }"
                   @click="emit('select-file', { connectionId: conn.id, path: entry.path })"
                 >
-                  <ObjectIcon object-type="table" class="mr-1.5" />
+                  <img
+                    :src="getFileIcon(entry.name)"
+                    :alt="getFileExtension(entry.name)"
+                    class="h-5 w-5 mr-1.5 object-contain"
+                  />
                   <div class="flex-1 min-w-0">
-                    <span class="font-medium truncate block">
-                      <template v-for="(p, i) in highlightParts(entry.name)" :key="i">
-                        <span
-                          v-if="p.match"
-                          class="bg-yellow-200/60 rounded px-0.5"
-                          v-text="p.text"
-                        ></span>
-                        <span v-else v-text="p.text"></span>
-                      </template>
-                    </span>
-                    <span class="text-xs text-gray-500">
-                      {{ getFileFormatLabel(entry.name) }}
-                      <template v-if="entry.size"> · {{ formatFileSize(entry.size) }} </template>
-                    </span>
+                    <div class="flex items-center justify-between">
+                      <span class="font-medium truncate">
+                        <template v-for="(p, i) in highlightParts(entry.name)" :key="i">
+                          <span
+                            v-if="p.match"
+                            class="bg-yellow-200/60 rounded px-0.5"
+                            v-text="p.text"
+                          ></span>
+                          <span v-else v-text="p.text"></span>
+                        </template>
+                      </span>
+                      <span v-if="entry.size" class="text-xs text-gray-500 ml-2 flex-shrink-0">
+                        {{ formatFileSize(entry.size) }}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
