@@ -12,8 +12,11 @@ import { useConnectionsStore } from '@/stores/connections'
 import connectionsApi from '@/api/connections'
 import type { Connection } from '@/types/connections'
 import type { DatabaseMetadata, SQLTableMeta, SQLViewMeta } from '@/types/metadata'
+import type { FileSystemEntry } from '@/api/fileSystem'
+import { getFileFormat } from '@/utils/fileFormat'
 import { useToast } from 'vue-toastification'
 import { highlightParts as splitHighlight } from '@/utils/highlight'
+import ExplorerContextMenu from './ExplorerContextMenu.vue'
 
 type ObjectType = 'table' | 'view'
 
@@ -28,6 +31,8 @@ const props = defineProps<{
   searchQuery: string
   typeFilter: string
   focusConnectionId?: string
+  fileEntries?: Record<string, FileSystemEntry[]>
+  selectedFilePaths?: Record<string, string | null>
 }>()
 
 type DefaultTab = 'structure' | 'data'
@@ -51,6 +56,8 @@ const emit = defineEmits<{
   (e: 'show-diagram', payload: { connectionId: string; database: string }): void
   (e: 'select-connection', payload: { connectionId: string }): void
   (e: 'select-database', payload: { connectionId: string; database: string }): void
+  (e: 'select-file', payload: { connectionId: string; path: string }): void
+  (e: 'request-file-entries', payload: { connectionId: string }): void
 }>()
 
 const connectionsStore = useConnectionsStore()
@@ -66,6 +73,8 @@ const databasesByConn = ref<Record<string, Array<{ name: string }>>>({})
 const metadataByConnDb = ref<Record<string, Record<string, DatabaseMetadata>>>({})
 
 const searchQuery = computed(() => props.searchQuery || '')
+const fileEntriesByConn = computed(() => props.fileEntries || {})
+const selectedFilePathsByConn = computed(() => props.selectedFilePaths || {})
 
 // Context menu state
 type ContextTarget =
@@ -92,6 +101,14 @@ const menuObj = computed<TableOrViewTarget | null>(() =>
     ? (menuTarget.value as TableOrViewTarget)
     : null
 )
+
+const canCopyDDL = computed(() => {
+  const mo = menuObj.value
+  if (!mo) return false
+  if (mo.kind === 'table')
+    return !!findTableMeta(mo.connectionId, mo.database, mo.name, mo.schema)?.ddl?.createTable
+  return !!findViewMeta(mo.connectionId, mo.database, mo.name, mo.schema)?.definition
+})
 
 function openContextMenu(e: MouseEvent, target: ContextTarget) {
   e.preventDefault()
@@ -161,7 +178,11 @@ function toggleConnection(connId: string) {
     expandedConnections.value.delete(connId)
   } else {
     expandedConnections.value.add(connId)
-    ensureDatabases(connId).catch(() => {})
+    if (isFileConnection(connId)) {
+      emit('request-file-entries', { connectionId: connId })
+    } else {
+      ensureDatabases(connId).catch(() => {})
+    }
     emit('expanded-connection', { connectionId: connId })
   }
 }
@@ -205,6 +226,11 @@ function matchesTypeFilter(conn: Connection): boolean {
   if (filter === 'postgresql') return connType.includes('postgres')
   if (filter === 'files') return connType.includes('file')
   return connType.includes(filter)
+}
+
+function isFileConnection(connId: string): boolean {
+  const conn = connectionsStore.connections.find((c) => c.id === connId)
+  return (conn?.type || '').toLowerCase().includes('file')
 }
 
 function onOpen(
@@ -310,90 +336,76 @@ async function actionCloneConnection(id: string) {
   }
 }
 
-// Context menu helpers to keep template expressions simple
-function onContextTestConnection() {
-  const t = menuTarget.value
-  if (t && t.kind === 'connection') {
-    actionTestConnection(t.connectionId)
+// Centralized handler for child context menu events
+function onMenuAction(payload: {
+  action: string
+  target: ContextTarget
+  openInRightSplit?: boolean
+}) {
+  const t = payload.target
+  switch (payload.action) {
+    case 'test-connection':
+      if (t.kind === 'connection') actionTestConnection(t.connectionId)
+      break
+    case 'refresh-databases':
+      if (t.kind === 'connection') actionRefreshDatabases(t.connectionId)
+      break
+    case 'edit-connection':
+      if (t.kind === 'connection') actionEditConnection(t.connectionId)
+      break
+    case 'clone-connection':
+      if (t.kind === 'connection') actionCloneConnection(t.connectionId)
+      break
+    case 'delete-connection':
+      if (t.kind === 'connection') actionDeleteConnection(t.connectionId)
+      break
+    case 'refresh-metadata':
+      if (t.kind === 'database' || t.kind === 'schema')
+        actionRefreshMetadata(t.connectionId, t.database)
+      break
+    case 'show-diagram':
+      if (t.kind === 'database')
+        emit('show-diagram', { connectionId: t.connectionId, database: t.database })
+      break
+    case 'copy-database-name':
+      if (t.kind === 'database') actionCopy(t.database, 'Database name copied')
+      break
+    case 'copy-schema-name':
+      if (t.kind === 'schema') actionCopy(t.schema, 'Schema name copied')
+      break
+    case 'open-data':
+      if (t.kind === 'table' || t.kind === 'view')
+        onOpen(
+          t.connectionId,
+          t.database,
+          t.kind,
+          t.name,
+          'preview',
+          t.schema,
+          'data',
+          payload.openInRightSplit
+        )
+      break
+    case 'open-structure':
+      if (t.kind === 'table' || t.kind === 'view')
+        onOpen(
+          t.connectionId,
+          t.database,
+          t.kind,
+          t.name,
+          'preview',
+          t.schema,
+          'structure',
+          payload.openInRightSplit
+        )
+      break
+    case 'copy-object-name':
+      if (t.kind === 'table' || t.kind === 'view') actionCopy(t.name, 'Object name copied')
+      break
+    case 'copy-ddl':
+      void actionCopyDDLFromContext()
+      break
   }
-  closeContextMenuOnce()
-}
-
-function onContextRefreshDatabases() {
-  const t = menuTarget.value
-  if (t && t.kind === 'connection') {
-    actionRefreshDatabases(t.connectionId)
-  }
-  closeContextMenuOnce()
-}
-
-function onContextRefreshMetadata() {
-  const t = menuTarget.value
-  if (t && (t.kind === 'database' || t.kind === 'schema')) {
-    actionRefreshMetadata(t.connectionId, t.database)
-  }
-  closeContextMenuOnce()
-}
-
-function onContextShowDiagram() {
-  const t = menuTarget.value
-  if (t && t.kind === 'database') {
-    emit('show-diagram', { connectionId: t.connectionId, database: t.database })
-  }
-  closeContextMenuOnce()
-}
-
-function onContextCopyDatabaseName() {
-  const t = menuTarget.value
-  if (t && t.kind === 'database') {
-    actionCopy(t.database, 'Database name copied')
-  }
-  closeContextMenuOnce()
-}
-
-function onContextCopySchemaName() {
-  const t = menuTarget.value
-  if (t && t.kind === 'schema') {
-    actionCopy(t.schema, 'Schema name copied')
-  }
-  closeContextMenuOnce()
-}
-
-function onContextCopyObjectName() {
-  const mo = menuObj.value
-  if (mo) actionCopy(mo.name, 'Object name copied')
-  closeContextMenuOnce()
-}
-
-function onContextOpenStructure(openInRightSplit = false) {
-  const mo = menuObj.value
-  if (!mo) return
-  onOpen(
-    mo.connectionId,
-    mo.database,
-    mo.kind,
-    mo.name,
-    'preview',
-    mo.schema,
-    'structure',
-    openInRightSplit
-  )
-  closeContextMenuOnce()
-}
-
-function onContextOpenData(openInRightSplit = false) {
-  const mo = menuObj.value
-  if (!mo) return
-  onOpen(
-    mo.connectionId,
-    mo.database,
-    mo.kind,
-    mo.name,
-    'preview',
-    mo.schema,
-    'data',
-    openInRightSplit
-  )
   closeContextMenuOnce()
 }
 
@@ -458,7 +470,11 @@ onMounted(async () => {
   await loadConnections()
   if (props.initialExpandedConnectionId) {
     expandedConnections.value.add(props.initialExpandedConnectionId)
-    ensureDatabases(props.initialExpandedConnectionId).catch(() => {})
+    if (isFileConnection(props.initialExpandedConnectionId)) {
+      emit('request-file-entries', { connectionId: props.initialExpandedConnectionId })
+    } else {
+      ensureDatabases(props.initialExpandedConnectionId).catch(() => {})
+    }
   }
 })
 
@@ -517,12 +533,16 @@ async function expandForSearch(query: string) {
     if (!expandedConnections.value.has(c.id)) {
       expandedConnections.value.add(c.id)
     }
-    await ensureDatabases(c.id)
-    const dbs = databasesByConn.value[c.id] || []
-    for (const d of dbs) {
-      if (matchesDbFilter(c.id, d.name)) {
-        expandedDatabases.value.add(`${c.id}:${d.name}`)
-        ensureMetadata(c.id, d.name).catch(() => {})
+    if (isFileConnection(c.id)) {
+      emit('request-file-entries', { connectionId: c.id })
+    } else {
+      await ensureDatabases(c.id)
+      const dbs = databasesByConn.value[c.id] || []
+      for (const d of dbs) {
+        if (matchesDbFilter(c.id, d.name)) {
+          expandedDatabases.value.add(`${c.id}:${d.name}`)
+          ensureMetadata(c.id, d.name).catch(() => {})
+        }
       }
     }
   }
@@ -657,6 +677,19 @@ function getFlatViews(connId: string, db: string): string[] {
     .sort((a, b) => a.localeCompare(b))
 }
 
+function getFileFormatLabel(filename: string): string {
+  const format = getFileFormat(filename)
+  return format ? format.toUpperCase() : 'FILE'
+}
+
+function formatFileSize(bytes?: number): string {
+  if (!bytes) return '0 B'
+  const units = ['B', 'KB', 'MB', 'GB', 'TB']
+  const index = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1)
+  const value = bytes / Math.pow(1024, index)
+  return `${value.toFixed(value >= 10 || index == 0 ? 0 : 1)} ${units[index]}`
+}
+
 // Copy DDL for the current context menu object (table/view)
 async function actionCopyDDLFromContext() {
   const mo = menuObj.value
@@ -735,81 +768,270 @@ async function actionCopyDDLFromContext() {
               v-if="isConnExpanded(conn.id)"
               class="ml-4 border-l border-gray-200 pl-2 space-y-1"
             >
-              <div v-if="!databasesByConn[conn.id]?.length" class="text-xs text-gray-500 px-2 py-1">
-                No databases
-              </div>
-              <div
-                v-for="db in (databasesByConn[conn.id] || []).filter((d) =>
-                  matchesDbFilter(conn.id, d.name)
-                )"
-                :key="db.name"
-              >
+              <div v-if="isFileConnection(conn.id)">
                 <div
-                  class="flex items-center px-2 py-1.5 text-sm text-gray-700 rounded-md hover:bg-gray-100 cursor-pointer"
-                  :data-explorer-db="`${conn.id}:${db.name}`"
-                  @click="emit('select-database', { connectionId: conn.id, database: db.name })"
-                  @contextmenu.stop.prevent="
-                    openContextMenu($event, {
-                      kind: 'database',
-                      connectionId: conn.id,
-                      database: db.name
-                    })
-                  "
+                  v-if="!fileEntriesByConn[conn.id]?.some((entry) => entry.type === 'file')"
+                  class="text-xs text-gray-500 px-2 py-1"
                 >
-                  <component
-                    :is="isDbExpanded(conn.id, db.name) ? ChevronDownIcon : ChevronRightIcon"
-                    :class="caretClass"
-                    @click.stop="toggleDb(conn.id, db.name)"
-                  />
-                  <span class="font-medium">
-                    <template v-for="(p, i) in highlightParts(db.name)" :key="i">
-                      <span
-                        v-if="p.match"
-                        class="bg-yellow-200/60 rounded px-0.5"
-                        v-text="p.text"
-                      ></span>
-                      <span v-else v-text="p.text"></span>
-                    </template>
-                  </span>
+                  No files
                 </div>
-
                 <div
-                  v-if="isDbExpanded(conn.id, db.name)"
-                  class="ml-4 border-l border-gray-200 pl-2 space-y-1"
+                  v-for="entry in (fileEntriesByConn[conn.id] || [])
+                    .filter((item) => item.type === 'file')
+                    .filter(
+                      (item) =>
+                        !searchQuery || item.name.toLowerCase().includes(searchQuery.toLowerCase())
+                    )"
+                  :key="entry.path"
+                  class="flex items-center px-2 py-1.5 text-sm rounded-md hover:bg-gray-100 cursor-pointer"
+                  :class="{
+                    'bg-sky-50 ring-1 ring-sky-200': selectedFilePathsByConn[conn.id] === entry.path
+                  }"
+                  @click="emit('select-file', { connectionId: conn.id, path: entry.path })"
                 >
-                  <template v-if="metadataByConnDb[conn.id]?.[db.name]">
-                    <!-- Show schemas only for PostgreSQL -->
-                    <template v-if="hasSchemas(conn.id)">
-                      <template
-                        v-for="schema in getSchemas(conn.id, db.name)"
-                        :key="schema.name || 'default'"
-                      >
+                  <ObjectIcon object-type="table" class="mr-1.5" />
+                  <div class="flex-1 min-w-0">
+                    <span class="font-medium truncate block">
+                      <template v-for="(p, i) in highlightParts(entry.name)" :key="i">
+                        <span
+                          v-if="p.match"
+                          class="bg-yellow-200/60 rounded px-0.5"
+                          v-text="p.text"
+                        ></span>
+                        <span v-else v-text="p.text"></span>
+                      </template>
+                    </span>
+                    <span class="text-xs text-gray-500">
+                      {{ getFileFormatLabel(entry.name) }}
+                      <template v-if="entry.size"> · {{ formatFileSize(entry.size) }} </template>
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div v-else>
+                <div
+                  v-if="!databasesByConn[conn.id]?.length"
+                  class="text-xs text-gray-500 px-2 py-1"
+                >
+                  No databases
+                </div>
+                <div
+                  v-for="db in (databasesByConn[conn.id] || []).filter((d) =>
+                    matchesDbFilter(conn.id, d.name)
+                  )"
+                  :key="db.name"
+                >
+                  <div
+                    class="flex items-center px-2 py-1.5 text-sm text-gray-700 rounded-md hover:bg-gray-100 cursor-pointer"
+                    :data-explorer-db="`${conn.id}:${db.name}`"
+                    @click="emit('select-database', { connectionId: conn.id, database: db.name })"
+                    @contextmenu.stop.prevent="
+                      openContextMenu($event, {
+                        kind: 'database',
+                        connectionId: conn.id,
+                        database: db.name
+                      })
+                    "
+                  >
+                    <component
+                      :is="isDbExpanded(conn.id, db.name) ? ChevronDownIcon : ChevronRightIcon"
+                      :class="caretClass"
+                      @click.stop="toggleDb(conn.id, db.name)"
+                    />
+                    <span class="font-medium">
+                      <template v-for="(p, i) in highlightParts(db.name)" :key="i">
+                        <span
+                          v-if="p.match"
+                          class="bg-yellow-200/60 rounded px-0.5"
+                          v-text="p.text"
+                        ></span>
+                        <span v-else v-text="p.text"></span>
+                      </template>
+                    </span>
+                  </div>
+
+                  <div
+                    v-if="isDbExpanded(conn.id, db.name)"
+                    class="ml-4 border-l border-gray-200 pl-2 space-y-1"
+                  >
+                    <div v-if="metadataByConnDb[conn.id]?.[db.name]">
+                      <!-- Show schemas only for PostgreSQL & Snowflake -->
+                      <div v-if="hasSchemas(conn.id)">
+                        <template
+                          v-for="schema in getSchemas(conn.id, db.name)"
+                          :key="schema.name || 'default'"
+                        >
+                          <div
+                            class="flex items-center px-2 py-1 text-sm text-gray-700 rounded-md hover:bg-gray-100 cursor-pointer"
+                            :data-explorer-schema="`${conn.id}:${db.name}:${schema.name}`"
+                            @click="toggleSchema(conn.id, db.name, schema.name)"
+                            @contextmenu.stop.prevent="
+                              openContextMenu($event, {
+                                kind: 'schema',
+                                connectionId: conn.id,
+                                database: db.name,
+                                schema: schema.name || ''
+                              })
+                            "
+                          >
+                            <component
+                              :is="
+                                isSchemaExpanded(conn.id, db.name, schema.name)
+                                  ? ChevronDownIcon
+                                  : ChevronRightIcon
+                              "
+                              :class="caretClass"
+                            />
+                            <span class="font-medium">
+                              <template
+                                v-for="(p, i) in highlightParts(schema.name || 'default')"
+                                :key="i"
+                              >
+                                <span
+                                  v-if="p.match"
+                                  class="bg-yellow-200/60 rounded px-0.5"
+                                  v-text="p.text"
+                                ></span>
+                                <span v-else v-text="p.text"></span>
+                              </template>
+                            </span>
+                          </div>
+                          <div
+                            v-if="isSchemaExpanded(conn.id, db.name, schema.name)"
+                            class="ml-4 border-l border-gray-200 pl-2"
+                          >
+                            <div
+                              class="text-xs uppercase tracking-wide text-gray-400 px-2 mt-1 flex items-center justify-between"
+                            >
+                              <span>Tables</span>
+                              <span class="text-[11px] font-medium text-gray-500 normal-case">
+                                {{ schema.tables.length }}
+                              </span>
+                            </div>
+                            <div
+                              v-for="t in schema.tables.filter(
+                                (n) =>
+                                  !searchQuery ||
+                                  n.toLowerCase().includes(searchQuery.toLowerCase())
+                              )"
+                              :key="t"
+                              class="flex items-center px-2 py-1.5 text-sm rounded-md hover:bg-gray-100 cursor-pointer"
+                              :data-explorer-obj="`${conn.id}:${db.name}:${schema.name || ''}:table:${t}`"
+                              @click.stop="
+                                onOpen(conn.id, db.name, 'table', t, 'preview', schema.name)
+                              "
+                              @dblclick.stop="
+                                onOpen(conn.id, db.name, 'table', t, 'pinned', schema.name)
+                              "
+                              @click.middle.stop="
+                                onOpen(conn.id, db.name, 'table', t, 'pinned', schema.name)
+                              "
+                              @contextmenu.stop.prevent="
+                                openContextMenu($event, {
+                                  kind: 'table',
+                                  connectionId: conn.id,
+                                  database: db.name,
+                                  schema: schema.name || undefined,
+                                  name: t
+                                })
+                              "
+                            >
+                              <ObjectIcon object-type="table" class="mr-1.5" />
+                              <span>
+                                <template v-for="(p, i) in highlightParts(t)" :key="i">
+                                  <span
+                                    v-if="p.match"
+                                    class="bg-yellow-200/60 rounded px-0.5"
+                                    v-text="p.text"
+                                  ></span>
+                                  <span v-else v-text="p.text"></span>
+                                </template>
+                              </span>
+                            </div>
+                            <div
+                              class="text-xs uppercase tracking-wide text-gray-400 px-2 mt-2 flex items-center justify-between"
+                            >
+                              <span>Views</span>
+                              <span class="text-[11px] font-medium text-gray-500 normal-case">
+                                {{ schema.views.length }}
+                              </span>
+                            </div>
+                            <div
+                              v-for="v in schema.views.filter(
+                                (n) =>
+                                  !searchQuery ||
+                                  n.toLowerCase().includes(searchQuery.toLowerCase())
+                              )"
+                              :key="v"
+                              class="flex items-center px-2 py-1.5 text-sm rounded-md hover:bg-gray-100 cursor-pointer"
+                              :data-explorer-obj="`${conn.id}:${db.name}:${schema.name || ''}:view:${v}`"
+                              @click.stop="
+                                onOpen(conn.id, db.name, 'view', v, 'preview', schema.name)
+                              "
+                              @dblclick.stop="
+                                onOpen(conn.id, db.name, 'view', v, 'pinned', schema.name)
+                              "
+                              @click.middle.stop="
+                                onOpen(conn.id, db.name, 'view', v, 'pinned', schema.name)
+                              "
+                              @contextmenu.stop.prevent="
+                                openContextMenu($event, {
+                                  kind: 'view',
+                                  connectionId: conn.id,
+                                  database: db.name,
+                                  schema: schema.name || undefined,
+                                  name: v
+                                })
+                              "
+                            >
+                              <ObjectIcon object-type="view" class="mr-1.5" />
+                              <span>
+                                <template v-for="(p, i) in highlightParts(v)" :key="i">
+                                  <span
+                                    v-if="p.match"
+                                    class="bg-yellow-200/60 rounded px-0.5"
+                                    v-text="p.text"
+                                  ></span>
+                                  <span v-else v-text="p.text"></span>
+                                </template>
+                              </span>
+                            </div>
+                          </div>
+                        </template>
+                      </div>
+                      <div v-else>
+                        <!-- Flat lists for DBs without schemas (e.g., MySQL) -->
                         <div
-                          class="flex items-center px-2 py-1 text-sm text-gray-700 rounded-md hover:bg-gray-100 cursor-pointer"
-                          :data-explorer-schema="`${conn.id}:${db.name}:${schema.name}`"
-                          @click="toggleSchema(conn.id, db.name, schema.name)"
+                          class="text-xs uppercase tracking-wide text-gray-400 px-2 mt-1 flex items-center justify-between"
+                        >
+                          <span>Tables</span>
+                          <span class="text-[11px] font-medium text-gray-500 normal-case">
+                            {{ getFlatTables(conn.id, db.name).length }}
+                          </span>
+                        </div>
+                        <div
+                          v-for="t in getFlatTables(conn.id, db.name).filter(
+                            (n) =>
+                              !searchQuery || n.toLowerCase().includes(searchQuery.toLowerCase())
+                          )"
+                          :key="t"
+                          class="flex items-center px-2 py-1.5 text-sm rounded-md hover:bg-gray-100 cursor-pointer"
+                          :data-explorer-obj="`${conn.id}:${db.name}::table:${t}`"
+                          @click.stop="onOpen(conn.id, db.name, 'table', t, 'preview')"
+                          @dblclick.stop="onOpen(conn.id, db.name, 'table', t, 'pinned')"
+                          @click.middle.stop="onOpen(conn.id, db.name, 'table', t, 'pinned')"
                           @contextmenu.stop.prevent="
                             openContextMenu($event, {
-                              kind: 'schema',
+                              kind: 'table',
                               connectionId: conn.id,
                               database: db.name,
-                              schema: schema.name || ''
+                              name: t
                             })
                           "
                         >
-                          <component
-                            :is="
-                              isSchemaExpanded(conn.id, db.name, schema.name)
-                                ? ChevronDownIcon
-                                : ChevronRightIcon
-                            "
-                            :class="caretClass"
-                          />
-                          <span class="font-medium">
-                            <template
-                              v-for="(p, i) in highlightParts(schema.name || 'default')"
-                              :key="i"
-                            >
+                          <ObjectIcon object-type="table" class="mr-1.5" />
+                          <span>
+                            <template v-for="(p, i) in highlightParts(t)" :key="i">
                               <span
                                 v-if="p.match"
                                 class="bg-yellow-200/60 rounded px-0.5"
@@ -820,348 +1042,64 @@ async function actionCopyDDLFromContext() {
                           </span>
                         </div>
                         <div
-                          v-if="isSchemaExpanded(conn.id, db.name, schema.name)"
-                          class="ml-4 border-l border-gray-200 pl-2"
+                          class="text-xs uppercase tracking-wide text-gray-400 px-2 mt-2 flex items-center justify-between"
                         >
-                          <div
-                            class="text-xs uppercase tracking-wide text-gray-400 px-2 mt-1 flex items-center justify-between"
-                          >
-                            <span>Tables</span>
-                            <span class="text-[11px] font-medium text-gray-500 normal-case">
-                              {{ schema.tables.length }}
-                            </span>
-                          </div>
-                          <div
-                            v-for="t in schema.tables.filter(
-                              (n) =>
-                                !searchQuery || n.toLowerCase().includes(searchQuery.toLowerCase())
-                            )"
-                            :key="t"
-                            class="flex items-center px-2 py-1.5 text-sm rounded-md hover:bg-gray-100 cursor-pointer"
-                            :data-explorer-obj="`${conn.id}:${db.name}:${schema.name || ''}:table:${t}`"
-                            @click.stop="
-                              onOpen(conn.id, db.name, 'table', t, 'preview', schema.name)
-                            "
-                            @dblclick.stop="
-                              onOpen(conn.id, db.name, 'table', t, 'pinned', schema.name)
-                            "
-                            @click.middle.stop="
-                              onOpen(conn.id, db.name, 'table', t, 'pinned', schema.name)
-                            "
-                            @contextmenu.stop.prevent="
-                              openContextMenu($event, {
-                                kind: 'table',
-                                connectionId: conn.id,
-                                database: db.name,
-                                schema: schema.name || undefined,
-                                name: t
-                              })
-                            "
-                          >
-                            <ObjectIcon object-type="table" class="mr-1.5" />
-                            <span>
-                              <template v-for="(p, i) in highlightParts(t)" :key="i">
-                                <span
-                                  v-if="p.match"
-                                  class="bg-yellow-200/60 rounded px-0.5"
-                                  v-text="p.text"
-                                ></span>
-                                <span v-else v-text="p.text"></span>
-                              </template>
-                            </span>
-                          </div>
-                          <div
-                            class="text-xs uppercase tracking-wide text-gray-400 px-2 mt-2 flex items-center justify-between"
-                          >
-                            <span>Views</span>
-                            <span class="text-[11px] font-medium text-gray-500 normal-case">
-                              {{ schema.views.length }}
-                            </span>
-                          </div>
-                          <div
-                            v-for="v in schema.views.filter(
-                              (n) =>
-                                !searchQuery || n.toLowerCase().includes(searchQuery.toLowerCase())
-                            )"
-                            :key="v"
-                            class="flex items-center px-2 py-1.5 text-sm rounded-md hover:bg-gray-100 cursor-pointer"
-                            :data-explorer-obj="`${conn.id}:${db.name}:${schema.name || ''}:view:${v}`"
-                            @click.stop="
-                              onOpen(conn.id, db.name, 'view', v, 'preview', schema.name)
-                            "
-                            @dblclick.stop="
-                              onOpen(conn.id, db.name, 'view', v, 'pinned', schema.name)
-                            "
-                            @click.middle.stop="
-                              onOpen(conn.id, db.name, 'view', v, 'pinned', schema.name)
-                            "
-                            @contextmenu.stop.prevent="
-                              openContextMenu($event, {
-                                kind: 'view',
-                                connectionId: conn.id,
-                                database: db.name,
-                                schema: schema.name || undefined,
-                                name: v
-                              })
-                            "
-                          >
-                            <ObjectIcon object-type="view" class="mr-1.5" />
-                            <span>
-                              <template v-for="(p, i) in highlightParts(v)" :key="i">
-                                <span
-                                  v-if="p.match"
-                                  class="bg-yellow-200/60 rounded px-0.5"
-                                  v-text="p.text"
-                                ></span>
-                                <span v-else v-text="p.text"></span>
-                              </template>
-                            </span>
-                          </div>
+                          <span>Views</span>
+                          <span class="text-[11px] font-medium text-gray-500 normal-case">
+                            {{ getFlatViews(conn.id, db.name).length }}
+                          </span>
                         </div>
-                      </template>
-                    </template>
-                    <!-- Flat lists for DBs without schemas (e.g., MySQL) -->
-                    <template v-else>
-                      <div
-                        class="text-xs uppercase tracking-wide text-gray-400 px-2 mt-1 flex items-center justify-between"
-                      >
-                        <span>Tables</span>
-                        <span class="text-[11px] font-medium text-gray-500 normal-case">
-                          {{ getFlatTables(conn.id, db.name).length }}
-                        </span>
+                        <div
+                          v-for="v in getFlatViews(conn.id, db.name).filter(
+                            (n) =>
+                              !searchQuery || n.toLowerCase().includes(searchQuery.toLowerCase())
+                          )"
+                          :key="v"
+                          class="flex items-center px-2 py-1.5 text-sm rounded-md hover:bg-gray-100 cursor-pointer"
+                          :data-explorer-obj="`${conn.id}:${db.name}::view:${v}`"
+                          @click.stop="onOpen(conn.id, db.name, 'view', v, 'preview')"
+                          @dblclick.stop="onOpen(conn.id, db.name, 'view', v, 'pinned')"
+                          @click.middle.stop="onOpen(conn.id, db.name, 'view', v, 'pinned')"
+                          @contextmenu.stop.prevent="
+                            openContextMenu($event, {
+                              kind: 'view',
+                              connectionId: conn.id,
+                              database: db.name,
+                              name: v
+                            })
+                          "
+                        >
+                          <ObjectIcon object-type="view" class="mr-1.5" />
+                          <span>
+                            <template v-for="(p, i) in highlightParts(v)" :key="i">
+                              <span
+                                v-if="p.match"
+                                class="bg-yellow-200/60 rounded px-0.5"
+                                v-text="p.text"
+                              ></span>
+                              <span v-else v-text="p.text"></span>
+                            </template>
+                          </span>
+                        </div>
                       </div>
-                      <div
-                        v-for="t in getFlatTables(conn.id, db.name).filter(
-                          (n) => !searchQuery || n.toLowerCase().includes(searchQuery.toLowerCase())
-                        )"
-                        :key="t"
-                        class="flex items-center px-2 py-1.5 text-sm rounded-md hover:bg-gray-100 cursor-pointer"
-                        :data-explorer-obj="`${conn.id}:${db.name}::table:${t}`"
-                        @click.stop="onOpen(conn.id, db.name, 'table', t, 'preview')"
-                        @dblclick.stop="onOpen(conn.id, db.name, 'table', t, 'pinned')"
-                        @click.middle.stop="onOpen(conn.id, db.name, 'table', t, 'pinned')"
-                        @contextmenu.stop.prevent="
-                          openContextMenu($event, {
-                            kind: 'table',
-                            connectionId: conn.id,
-                            database: db.name,
-                            name: t
-                          })
-                        "
-                      >
-                        <ObjectIcon object-type="table" class="mr-1.5" />
-                        <span>
-                          <template v-for="(p, i) in highlightParts(t)" :key="i">
-                            <span
-                              v-if="p.match"
-                              class="bg-yellow-200/60 rounded px-0.5"
-                              v-text="p.text"
-                            ></span>
-                            <span v-else v-text="p.text"></span>
-                          </template>
-                        </span>
-                      </div>
-                      <div
-                        class="text-xs uppercase tracking-wide text-gray-400 px-2 mt-2 flex items-center justify-between"
-                      >
-                        <span>Views</span>
-                        <span class="text-[11px] font-medium text-gray-500 normal-case">
-                          {{ getFlatViews(conn.id, db.name).length }}
-                        </span>
-                      </div>
-                      <div
-                        v-for="v in getFlatViews(conn.id, db.name).filter(
-                          (n) => !searchQuery || n.toLowerCase().includes(searchQuery.toLowerCase())
-                        )"
-                        :key="v"
-                        class="flex items-center px-2 py-1.5 text-sm rounded-md hover:bg-gray-100 cursor-pointer"
-                        :data-explorer-obj="`${conn.id}:${db.name}::view:${v}`"
-                        @click.stop="onOpen(conn.id, db.name, 'view', v, 'preview')"
-                        @dblclick.stop="onOpen(conn.id, db.name, 'view', v, 'pinned')"
-                        @click.middle.stop="onOpen(conn.id, db.name, 'view', v, 'pinned')"
-                        @contextmenu.stop.prevent="
-                          openContextMenu($event, {
-                            kind: 'view',
-                            connectionId: conn.id,
-                            database: db.name,
-                            name: v
-                          })
-                        "
-                      >
-                        <ObjectIcon object-type="view" class="mr-1.5" />
-                        <span>
-                          <template v-for="(p, i) in highlightParts(v)" :key="i">
-                            <span
-                              v-if="p.match"
-                              class="bg-yellow-200/60 rounded px-0.5"
-                              v-text="p.text"
-                            ></span>
-                            <span v-else v-text="p.text"></span>
-                          </template>
-                        </span>
-                      </div>
-                    </template>
-                  </template>
-                  <div v-else class="text-xs text-gray-500 px-2 py-1">Loading metadata…</div>
+                    </div>
+                    <div v-else class="text-xs text-gray-500 px-2 py-1">Loading metadata…</div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+      <ExplorerContextMenu
+        :visible="hasContextMenu"
+        :x="contextMenuX"
+        :y="contextMenuY"
+        :target="contextTarget"
+        :canCopyDDL="canCopyDDL"
+        @menu-action="onMenuAction"
+        @close="closeContextMenuOnce"
+      />
     </div>
-    <teleport to="body">
-      <div v-if="hasContextMenu">
-        <div class="fixed inset-0 z-40" @click="closeContextMenuOnce"></div>
-        <div
-          class="fixed z-50 bg-white border border-gray-200 rounded-md shadow-lg py-1 text-sm"
-          :style="{ left: contextMenuX + 'px', top: contextMenuY + 'px', minWidth: '200px' }"
-        >
-          <!-- Connection menu -->
-          <template v-if="menuTarget.kind === 'connection'">
-            <button
-              class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
-              @click="onContextTestConnection"
-            >
-              Test connection
-            </button>
-            <button
-              class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
-              @click="onContextRefreshDatabases"
-            >
-              Refresh
-            </button>
-            <div class="my-1 border-t border-gray-100"></div>
-            <button
-              class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
-              @click="
-                menuTarget.kind === 'connection'
-                  ? actionEditConnection(menuTarget.connectionId)
-                  : undefined
-              "
-            >
-              Edit
-            </button>
-            <button
-              class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
-              @click="
-                menuTarget.kind === 'connection'
-                  ? actionCloneConnection(menuTarget.connectionId)
-                  : undefined
-              "
-            >
-              Clone
-            </button>
-            <button
-              class="w-full text-left px-3 py-1.5 hover:bg-gray-100 text-red-600"
-              @click="
-                menuTarget.kind === 'connection'
-                  ? actionDeleteConnection(menuTarget.connectionId)
-                  : undefined
-              "
-            >
-              Delete
-            </button>
-          </template>
-          <!-- Database menu -->
-          <template v-else-if="menuTarget.kind === 'database'">
-            <button
-              class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
-              @click="onContextRefreshMetadata"
-            >
-              Refresh metadata
-            </button>
-            <button
-              class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
-              @click="onContextShowDiagram"
-            >
-              Show diagram
-            </button>
-            <button
-              class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
-              @click="onContextCopyDatabaseName"
-            >
-              Copy name
-            </button>
-          </template>
-          <!-- Schema menu -->
-          <template v-else-if="menuTarget.kind === 'schema'">
-            <button
-              class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
-              @click="onContextRefreshMetadata"
-            >
-              Refresh metadata
-            </button>
-            <button
-              class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
-              @click="onContextCopySchemaName"
-            >
-              Copy name
-            </button>
-          </template>
-          <!-- Table/View menu -->
-          <template v-else-if="menuTarget.kind === 'table' || menuTarget.kind === 'view'">
-            <button
-              v-if="menuObj"
-              class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
-              @click="onContextOpenData(false)"
-            >
-              Open Data
-            </button>
-            <button
-              v-if="menuObj"
-              class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
-              @click="onContextOpenStructure(false)"
-            >
-              Open Structure
-            </button>
-            <div class="my-1 border-t border-gray-100"></div>
-            <button
-              v-if="menuObj"
-              class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
-              @click="onContextOpenData(true)"
-            >
-              Open Data in Right Split
-            </button>
-            <button
-              v-if="menuObj"
-              class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
-              @click="onContextOpenStructure(true)"
-            >
-              Open Structure in Right Split
-            </button>
-            <button
-              v-if="menuObj"
-              class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
-              @click="onContextCopyObjectName"
-            >
-              Copy name
-            </button>
-            <button
-              v-if="menuObj"
-              class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
-              :disabled="
-                menuObj.kind === 'table'
-                  ? !findTableMeta(
-                      menuObj.connectionId,
-                      menuObj.database,
-                      menuObj.name,
-                      menuObj.schema
-                    )?.ddl?.createTable
-                  : !findViewMeta(
-                      menuObj.connectionId,
-                      menuObj.database,
-                      menuObj.name,
-                      menuObj.schema
-                    )?.definition
-              "
-              @click="actionCopyDDLFromContext()"
-            >
-              Copy DDL
-            </button>
-          </template>
-        </div>
-      </div>
-    </teleport>
   </div>
 </template>

@@ -376,7 +376,7 @@ const loadDirectory = async (path: string) => {
     const response = await listDirectory(path || undefined)
 
     currentPath.value = response.path
-    entries.value = response.entries
+    entries.value = Array.isArray(response.entries) ? response.entries : []
 
     // Auto-select current directory if no selection
     if (!selectedPath.value) {
