@@ -88,7 +88,7 @@ function handleObjectContextMenu(payload: {
 <template>
   <div>
     <div
-      class="flex items-center px-2 py-1 text-sm text-gray-700 rounded-md hover:bg-gray-100 cursor-pointer"
+      class="flex items-center px-2 py-1 text-sm text-gray-700 rounded-md hover:bg-gray-100 cursor-pointer select-none"
       :data-explorer-schema="`${connectionId}:${database}:${schema.name}`"
       @click="$emit('toggle')"
       @contextmenu.stop.prevent="handleSchemaContextMenu"

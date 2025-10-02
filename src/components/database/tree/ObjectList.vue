@@ -4,11 +4,6 @@ import { highlightParts as splitHighlight } from '@/utils/highlight'
 
 type ObjectType = 'table' | 'view'
 
-interface ObjectItem {
-  name: string
-  schema?: string
-}
-
 const props = defineProps<{
   items: string[]
   objectType: ObjectType
@@ -62,7 +57,7 @@ const filteredItems = () => {
   <div
     v-for="item in filteredItems()"
     :key="item"
-    class="flex items-center px-2 py-1.5 text-sm rounded-md hover:bg-gray-100 cursor-pointer"
+    class="flex items-center px-2 py-1.5 text-sm rounded-md hover:bg-gray-100 cursor-pointer select-none"
     :data-explorer-obj="`${explorerObjPrefix}:${objectType}:${item}`"
     @click.stop="handleClick(item)"
     @dblclick.stop="handleDblClick(item)"

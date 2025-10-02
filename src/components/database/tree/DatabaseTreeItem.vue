@@ -131,7 +131,7 @@ function handleFlatObjectContextMenu(payload: {
 <template>
   <div>
     <div
-      class="flex items-center px-2 py-1.5 text-sm text-gray-700 rounded-md hover:bg-gray-100 cursor-pointer"
+      class="flex items-center px-2 py-1.5 text-sm text-gray-700 rounded-md hover:bg-gray-100 cursor-pointer select-none"
       :data-explorer-db="`${connectionId}:${database.name}`"
       @click="$emit('select-database', { connectionId, database: database.name })"
       @contextmenu.stop.prevent="handleDatabaseContextMenu"

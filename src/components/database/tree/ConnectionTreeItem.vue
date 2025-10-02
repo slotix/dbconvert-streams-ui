@@ -170,7 +170,7 @@ const visibleFileEntries = () => {
     <div
       :data-explorer-connection="connection.id"
       :class="[
-        'flex items-center px-2 py-1.5 text-sm text-gray-700 rounded-md hover:bg-gray-100 cursor-pointer transition-colors',
+        'flex items-center px-2 py-1.5 text-sm text-gray-700 rounded-md hover:bg-gray-100 cursor-pointer transition-colors select-none',
         isFocused ? 'bg-sky-50 ring-1 ring-sky-200' : ''
       ]"
       @click="$emit('select-connection', { connectionId: connection.id })"

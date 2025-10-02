@@ -64,7 +64,7 @@ onMounted(() => {
 
 <template>
   <div
-    class="flex items-center px-2 py-1.5 text-sm rounded-md hover:bg-gray-100 cursor-pointer"
+    class="flex items-center px-2 py-1.5 text-sm rounded-md hover:bg-gray-100 cursor-pointer select-none"
     :class="{
       'bg-sky-50 ring-1 ring-sky-200': selected
     }"
