@@ -8,13 +8,9 @@ import { useTabsStore } from '@/stores/tabs'
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
 import ExplorerSidebarConnections from '@/components/database/ExplorerSidebarConnections.vue'
 import ExplorerBreadcrumb from '@/components/database/ExplorerBreadcrumb.vue'
-import DatabaseObjectContainer from '@/components/database/DatabaseObjectContainer.vue'
-import DiagramView from '@/components/database/DiagramView.vue'
-import ConnectionDetailsPanel from '@/components/database/ConnectionDetailsPanel.vue'
-import DatabaseOverviewPanel from '@/components/database/DatabaseOverviewPanel.vue'
-import FileObjectContainer from '@/components/files/FileObjectContainer.vue'
 import ExplorerHeader from '@/components/explorer/ExplorerHeader.vue'
 import ExplorerTabs from '@/components/explorer/ExplorerTabs.vue'
+import ExplorerContentArea from '@/components/explorer/ExplorerContentArea.vue'
 import connections from '@/api/connections'
 import { getFileMetadata } from '@/api/files'
 import { getFileFormat } from '@/utils/fileFormat'
@@ -62,13 +58,6 @@ const lastViewedConnectionId = ref<string>(localStorage.getItem('lastViewedConne
 
 // Computed properties
 
-const detailsConnection = computed(() =>
-  explorerState.detailsConnectionId.value
-    ? connectionsStore.connections.find((c) => c.id === explorerState.detailsConnectionId.value) ||
-      null
-    : null
-)
-
 const currentFileEntries = computed<FileSystemEntry[]>(() => {
   const id = explorerState.currentConnectionId.value
   if (!id) return []
@@ -76,6 +65,25 @@ const currentFileEntries = computed<FileSystemEntry[]>(() => {
 })
 
 // Event handlers
+function onPromoteRightSplit() {
+  // Move the right split content to the left pane
+  if (splitPane.splitMeta.value) {
+    explorerState.setDatabaseSelection({
+      database: splitPane.splitDatabaseName.value || '',
+      schema: splitPane.splitSchemaName.value || undefined,
+      type: splitPane.splitObjectType.value as 'table' | 'view',
+      name: splitPane.splitObjectName.value || '',
+      meta: splitPane.splitMeta.value
+    })
+    explorerState.selectedDefaultTab.value = splitPane.splitDefaultTab.value
+  } else if (splitPane.splitFileEntry.value) {
+    explorerState.setFileSelection(splitPane.splitFileEntry.value)
+    explorerState.selectedFileMetadata.value = splitPane.splitFileMetadata.value
+    explorerState.selectedDefaultTab.value = splitPane.splitDefaultTab.value
+  }
+  splitPane.closeRightSplit()
+}
+
 function handleOpenFromTree(payload: {
   connectionId: string
   database: string
@@ -946,174 +954,36 @@ onMounted(() => {
             />
 
             <!-- Content area -->
-            <div
-              v-if="detailsConnection"
-              class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg"
-            >
-              <ConnectionDetailsPanel
-                :connection="detailsConnection"
-                :file-entries="currentFileEntries"
-                @edit="onEditConnection"
-                @clone="onCloneConnection"
-                @delete="onDeleteConnection"
-              />
-            </div>
-            <div
-              v-else-if="
-                explorerState.overviewConnectionId.value && explorerState.overviewDatabaseName.value
-              "
-              class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg"
-            >
-              <DatabaseOverviewPanel
-                :connection-id="explorerState.overviewConnectionId.value"
-                :database="explorerState.overviewDatabaseName.value"
-                @show-diagram="handleShowDiagram"
-              />
-            </div>
-            <div
-              v-else-if="explorerState.showDiagram.value"
-              class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg"
-            >
-              <DiagramView
-                :tables="schemaStore.tables"
-                :views="schemaStore.views"
-                :relationships="schemaStore.relationships"
-              />
-            </div>
-            <div v-else>
-              <div class="min-h-[480px] min-w-0 overflow-x-hidden">
-                <div
-                  v-if="splitPane.splitMeta.value || splitPane.splitFileEntry.value"
-                  ref="splitContainerRef"
-                  class="flex flex-row items-stretch min-w-0"
-                >
-                  <!-- Left (primary) -->
-                  <div
-                    ref="leftPaneRef"
-                    :style="{
-                      flexBasis: `${splitPane.splitGrow.value}%`,
-                      flexGrow: 0,
-                      flexShrink: 0
-                    }"
-                    class="min-w-[300px] pr-2 min-h-[480px]"
-                    @mousedown="explorerState.activePane.value = 'left'"
-                  >
-                    <div v-if="explorerState.selectedMeta.value">
-                      <DatabaseObjectContainer
-                        :table-meta="explorerState.selectedMeta.value"
-                        :is-view="explorerState.selectedObjectType.value === 'view'"
-                        :connection-id="explorerState.currentConnectionId.value"
-                        :connection-type="explorerState.activeDisplayType.value || 'sql'"
-                        :database="explorerState.selectedDatabaseName.value || ''"
-                        :default-tab="
-                          (explorerState.selectedDefaultTab.value as 'structure' | 'data') || 'data'
-                        "
-                        @tab-change="onLeftTabChange"
-                      />
-                    </div>
-                    <div v-else-if="explorerState.selectedFileEntry.value">
-                      <FileObjectContainer
-                        :entry="explorerState.selectedFileEntry.value"
-                        :metadata="explorerState.selectedFileMetadata.value"
-                        :connection-id="explorerState.currentConnectionId.value"
-                        :default-tab="
-                          (explorerState.selectedDefaultTab.value as 'structure' | 'data') || 'data'
-                        "
-                        @tab-change="onLeftTabChange"
-                      />
-                    </div>
-                    <div
-                      v-else
-                      class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg p-8 text-center"
-                    >
-                      <p class="text-gray-500">
-                        Select an object from the sidebar to view its details.
-                      </p>
-                    </div>
-                  </div>
-
-                  <!-- Divider -->
-                  <div
-                    role="separator"
-                    aria-orientation="vertical"
-                    class="relative z-20 mx-1.5 w-3 shrink-0 cursor-col-resize select-none pointer-events-auto"
-                    @mousedown.prevent="splitPane.onDividerMouseDown"
-                    @dblclick="splitPane.onDividerDoubleClick"
-                  >
-                    <div
-                      class="absolute inset-y-0 left-1/2 -translate-x-1/2 w-[3px] rounded bg-gray-200 hover:bg-gray-300"
-                    />
-                  </div>
-
-                  <!-- Right split -->
-                  <div
-                    :style="{ flexBasis: '0px' }"
-                    class="grow pl-2 min-h-[480px] min-w-[300px] relative"
-                    @mousedown="explorerState.activePane.value = 'right'"
-                  >
-                    <div v-if="splitPane.splitMeta.value">
-                      <DatabaseObjectContainer
-                        :table-meta="splitPane.splitMeta.value"
-                        :is-view="splitPane.splitObjectType.value === 'view'"
-                        :connection-id="splitPane.splitConnectionId.value || ''"
-                        :connection-type="explorerState.activeDisplayType.value || 'sql'"
-                        :database="splitPane.splitDatabaseName.value || ''"
-                        :default-tab="
-                          (splitPane.splitDefaultTab.value as 'structure' | 'data') || 'data'
-                        "
-                        @tab-change="onRightTabChange"
-                      />
-                    </div>
-                    <div v-else-if="splitPane.splitFileEntry.value">
-                      <FileObjectContainer
-                        :entry="splitPane.splitFileEntry.value"
-                        :metadata="splitPane.splitFileMetadata.value"
-                        :connection-id="splitPane.splitConnectionId.value || ''"
-                        :default-tab="
-                          (splitPane.splitDefaultTab.value as 'structure' | 'data') || 'data'
-                        "
-                        @tab-change="onRightTabChange"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div v-else>
-                  <div v-if="explorerState.selectedMeta.value">
-                    <DatabaseObjectContainer
-                      :table-meta="explorerState.selectedMeta.value"
-                      :is-view="explorerState.selectedObjectType.value === 'view'"
-                      :connection-id="explorerState.currentConnectionId.value"
-                      :connection-type="explorerState.activeDisplayType.value || 'sql'"
-                      :database="explorerState.selectedDatabaseName.value || ''"
-                      :default-tab="
-                        (explorerState.selectedDefaultTab.value as 'structure' | 'data') || 'data'
-                      "
-                      @tab-change="onLeftTabChange"
-                    />
-                  </div>
-                  <div v-else-if="explorerState.selectedFileEntry.value">
-                    <FileObjectContainer
-                      :entry="explorerState.selectedFileEntry.value"
-                      :metadata="explorerState.selectedFileMetadata.value"
-                      :connection-id="explorerState.currentConnectionId.value"
-                      :default-tab="
-                        (explorerState.selectedDefaultTab.value as 'structure' | 'data') || 'data'
-                      "
-                      @tab-change="onLeftTabChange"
-                    />
-                  </div>
-                  <div
-                    v-else
-                    class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg p-8 text-center"
-                  >
-                    <p class="text-gray-500">
-                      Select an object from the sidebar to view its details.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <!-- Content area -->
+            <ExplorerContentArea
+              :connection-id="explorerState.currentConnectionId.value"
+              :details-connection-id="explorerState.detailsConnectionId.value"
+              :overview-connection-id="explorerState.overviewConnectionId.value"
+              :overview-database-name="explorerState.overviewDatabaseName.value"
+              :show-diagram="explorerState.showDiagram.value"
+              :tables="schemaStore.tables as any[]"
+              :views="schemaStore.views as any[]"
+              :relationships="schemaStore.relationships"
+              :selected-meta="explorerState.selectedMeta.value"
+              :selected-file-entry="explorerState.selectedFileEntry.value"
+              :selected-file-metadata="explorerState.selectedFileMetadata.value"
+              :selected-default-tab="explorerState.selectedDefaultTab.value"
+              :link-tabs="explorerState.linkTabs.value"
+              :split-connection-id="splitPane.splitConnectionId.value"
+              :split-meta="splitPane.splitMeta.value"
+              :split-file-entry="splitPane.splitFileEntry.value"
+              :split-file-metadata="splitPane.splitFileMetadata.value"
+              :split-default-tab="splitPane.splitDefaultTab.value"
+              :file-entries="currentFileEntries"
+              @edit-connection="onEditConnection"
+              @clone-connection="onCloneConnection"
+              @delete-connection="onDeleteConnection"
+              @show-diagram="handleShowDiagram"
+              @set-active-pane="(pane) => (explorerState.activePane.value = pane)"
+              @promote-right-split="onPromoteRightSplit"
+              @left-tab-change="onLeftTabChange"
+              @right-tab-change="onRightTabChange"
+            />
           </div>
         </div>
       </div>
