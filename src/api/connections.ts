@@ -368,7 +368,8 @@ const getTableData = async (
       queryParams.append('schema', params.schema)
     }
 
-    const url = `/connections/${connectionId}/databases/${encodeURIComponent(database)}/tables/${tableName}/data?${queryParams.toString()}`
+    const url = `/connections/${connectionId}/databases/${encodeURIComponent(database)}/tables/${encodeURIComponent(tableName)}/data?${queryParams.toString()}`
+
     const response: AxiosResponse<TableData> = await apiClient.get(url, {
       headers: { 'X-API-Key': commonStore.apiKey }
     })
@@ -421,7 +422,8 @@ const getViewData = async (
       queryParams.append('schema', params.schema)
     }
 
-    const url = `/connections/${connectionId}/databases/${encodeURIComponent(database)}/views/${viewName}/data?${queryParams.toString()}`
+    const url = `/connections/${connectionId}/databases/${encodeURIComponent(database)}/views/${encodeURIComponent(viewName)}/data?${queryParams.toString()}`
+
     const response: AxiosResponse<TableData> = await apiClient.get(url, {
       headers: { 'X-API-Key': commonStore.apiKey }
     })

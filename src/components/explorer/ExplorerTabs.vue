@@ -9,8 +9,8 @@
         {{ currentPreview.label }}
       </button>
       <template v-for="(tab, i) in pinnedTabs" :key="generateTabKey(tab)">
-        <button
-          class="px-2 py-1 text-xs rounded border border-gray-300 bg-white hover:bg-gray-50 flex items-center gap-1"
+        <div
+          class="px-2 py-1 text-xs rounded border border-gray-300 bg-white hover:bg-gray-50 flex items-center gap-1 cursor-pointer"
           :class="{ 'ring-1 ring-slate-400': activePinnedIndex === i }"
           @click="$emit('activate-pinned', i)"
         >
@@ -19,13 +19,13 @@
             tab.type === 'table' ? 'T' : 'V'
           }}</span>
           <span v-else class="text-gray-400">F</span>
-          <button
-            class="ml-1 text-gray-400 hover:text-gray-600"
+          <span
+            class="ml-1 text-gray-400 hover:text-gray-600 cursor-pointer"
             @click.stop="$emit('close-pinned', i)"
           >
             ×
-          </button>
-        </button>
+          </span>
+        </div>
       </template>
     </div>
   </div>

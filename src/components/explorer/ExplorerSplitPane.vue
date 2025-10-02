@@ -51,7 +51,7 @@ interface Props {
 const props = defineProps<Props>()
 
 // Define emits
-defineEmits<{
+const emit = defineEmits<{
   'set-active-pane': [pane: 'left' | 'right']
   'promote-right-split': []
 }>()
@@ -97,9 +97,4 @@ function showRightSplitContextMenu(event: MouseEvent) {
     document.addEventListener('click', removeMenu)
   }, 0)
 }
-
-const emit = defineEmits<{
-  'set-active-pane': [pane: 'left' | 'right']
-  'promote-right-split': []
-}>()
 </script>

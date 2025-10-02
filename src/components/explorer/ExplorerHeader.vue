@@ -94,7 +94,7 @@ interface Props {
 }
 
 // Define emits
-defineEmits<{
+const emit = defineEmits<{
   'update:connectionSearch': [value: string]
   refresh: []
   'add-connection': []
@@ -107,12 +107,6 @@ const connectionSearch = computed({
   get: () => props.connectionSearch,
   set: (value) => emit('update:connectionSearch', value)
 })
-
-const emit = defineEmits<{
-  'update:connectionSearch': [value: string]
-  refresh: []
-  'add-connection': []
-}>()
 
 // Connection type filter
 const TYPE_FILTER_STORAGE_KEY = 'explorer.connectionType'

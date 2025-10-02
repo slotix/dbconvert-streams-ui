@@ -55,14 +55,19 @@ async function loadTableData() {
     const offset = skipCount.value
       ? (currentPage.value - 1) * itemsPerPage.value
       : Math.max(0, (currentPage.value - 1) * itemsPerPage.value)
-    const apiObjectName =
-      objectSchema && objectSchema !== 'public' && objectSchema !== ''
-        ? `${objectSchema}.${objectName}`
-        : objectName
-    const params = { limit: itemsPerPage.value, offset, skip_count: skipCount.value }
+
+    const params = {
+      limit: itemsPerPage.value,
+      offset,
+      skip_count: skipCount.value,
+      ...(objectSchema && objectSchema !== 'public' && objectSchema !== ''
+        ? { schema: objectSchema }
+        : {})
+    }
+
     const data = props.isView
-      ? await connections.getViewData(props.connectionId, props.database, apiObjectName, params)
-      : await connections.getTableData(props.connectionId, props.database, apiObjectName, params)
+      ? await connections.getViewData(props.connectionId, props.database, objectName, params)
+      : await connections.getTableData(props.connectionId, props.database, objectName, params)
     tableData.value = data
     if (skipCount.value && data.rows.length < itemsPerPage.value) {
       currentPage.value = Math.max(1, currentPage.value - 1)

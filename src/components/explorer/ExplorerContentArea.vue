@@ -1,23 +1,4 @@
 <template>
-  <!-- Content area p        <template #left>
-          <div v-if="selectedMeta">
-            <DatabaseObjectContainer
-              :connection-id="connectionId"
-              :table-meta="selectedMeta"
-              :default-tab="selectedDefaultTab || undefined"
-              :link-tabs="linkTabs"
-              @tab-change="$emit('left-tab-change', $event)"
-            />
-          </div>
-          <div v-else-if="selectedFileEntry">
-            <FileObjectContainer
-              :entry="selectedFileEntry"
-              :metadata="selectedFileMetadata"
-              :connection-id="connectionId"
-              :default-tab="selectedDefaultTab || undefined"
-              @tab-change="$emit('left-tab-change', $event)"
-            />
-          </div>n details > database overview > diagram mode > object structure/data -->
   <div v-if="detailsConnection" class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg">
     <ConnectionDetailsPanel
       :connection="detailsConnection"
@@ -55,7 +36,7 @@
               :table-meta="selectedMeta"
               :is-view="false"
               :connection-type="'sql'"
-              :database="''"
+              :database="selectedMeta.database"
               :default-tab="selectedDefaultTab || undefined"
               :link-tabs="linkTabs"
               @tab-change="$emit('left-tab-change', $event)"
@@ -82,7 +63,7 @@
               :table-meta="splitMeta"
               :is-view="false"
               :connection-type="'sql'"
-              :database="''"
+              :database="splitMeta.database"
               :default-tab="splitDefaultTab || undefined"
               :link-tabs="linkTabs"
               @tab-change="$emit('right-tab-change', $event)"
@@ -106,7 +87,7 @@
               :table-meta="selectedMeta"
               :is-view="false"
               :connection-type="'sql'"
-              :database="''"
+              :database="selectedMeta.database"
               :default-tab="selectedDefaultTab || undefined"
               :link-tabs="linkTabs"
               @tab-change="$emit('left-tab-change', $event)"
