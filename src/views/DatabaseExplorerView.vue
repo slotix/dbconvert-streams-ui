@@ -252,9 +252,11 @@ function handleSelectConnection(payload: { connectionId: string }) {
   router.replace({ path: `/explorer/${payload.connectionId}` })
 
   focusConnectionId.value = payload.connectionId
-  explorerState.detailsConnectionId.value = payload.connectionId
   explorerState.clearPanelStates()
   explorerState.clearDatabaseSelection()
+
+  // Set detailsConnectionId AFTER clearing panel states
+  explorerState.detailsConnectionId.value = payload.connectionId
 
   splitPane.closeRightSplit()
   fileOps.clearFileSelectionForConnection(payload.connectionId)
