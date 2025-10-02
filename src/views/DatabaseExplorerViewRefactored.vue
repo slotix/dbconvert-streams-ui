@@ -1,0 +1,1122 @@
+<script setup lang="ts">
+import { ref, onMounted, computed, watch, nextTick } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useCommonStore } from '@/stores/common'
+import { useConnectionsStore } from '@/stores/connections'
+import { useSchemaStore } from '@/stores/schema'
+import { useTabsStore } from '@/stores/tabs'
+import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
+import ExplorerSidebarConnections from '@/components/database/ExplorerSidebarConnections.vue'
+import ExplorerBreadcrumb from '@/components/database/ExplorerBreadcrumb.vue'
+import DatabaseObjectContainer from '@/components/database/DatabaseObjectContainer.vue'
+import DiagramView from '@/components/database/DiagramView.vue'
+import ConnectionDetailsPanel from '@/components/database/ConnectionDetailsPanel.vue'
+import DatabaseOverviewPanel from '@/components/database/DatabaseOverviewPanel.vue'
+import FileObjectContainer from '@/components/files/FileObjectContainer.vue'
+import ExplorerHeader from '@/components/explorer/ExplorerHeader.vue'
+import ExplorerTabs from '@/components/explorer/ExplorerTabs.vue'
+import connections from '@/api/connections'
+import { getFileMetadata } from '@/api/files'
+import { getFileFormat } from '@/utils/fileFormat'
+import type { SQLTableMeta, SQLViewMeta } from '@/types/metadata'
+import type { FileSystemEntry } from '@/api/fileSystem'
+
+// Use our new composables
+import { useExplorerState } from '@/composables/useExplorerState'
+import { useFileOperations } from '@/composables/useFileOperations'
+import { useSplitPane } from '@/composables/useSplitPane'
+import { useSidebar } from '@/composables/useSidebar'
+
+const MAX_RECENT_CONNECTIONS = 5
+const route = useRoute()
+const router = useRouter()
+const commonStore = useCommonStore()
+const connectionsStore = useConnectionsStore()
+const schemaStore = useSchemaStore()
+const tabsStore = useTabsStore()
+
+// Use composables for state management
+const explorerState = useExplorerState()
+const fileOps = useFileOperations()
+const splitPane = useSplitPane()
+const sidebar = useSidebar()
+
+// Connection search and filtering
+const connectionSearch = ref('')
+const focusConnectionId = ref<string | null>(null)
+
+// Recent connections management
+const recentConnections = ref<
+  Array<{
+    id: string
+    name: string
+    type?: string
+    host?: string
+    port?: string
+    database?: string
+    cloud_provider?: string
+  }>
+>(JSON.parse(localStorage.getItem('recentConnections') || '[]'))
+
+const lastViewedConnectionId = ref<string>(localStorage.getItem('lastViewedConnectionId') || '')
+
+// Computed properties
+
+const detailsConnection = computed(() =>
+  explorerState.detailsConnectionId.value
+    ? connectionsStore.connections.find((c) => c.id === explorerState.detailsConnectionId.value) ||
+      null
+    : null
+)
+
+const currentFileEntries = computed<FileSystemEntry[]>(() => {
+  const id = explorerState.currentConnectionId.value
+  if (!id) return []
+  return fileOps.getFileEntriesForConnection(id)
+})
+
+// Event handlers
+function handleOpenFromTree(payload: {
+  connectionId: string
+  database: string
+  schema?: string
+  type: 'table' | 'view'
+  name: string
+  meta: SQLTableMeta | SQLViewMeta
+  mode: 'preview' | 'pinned'
+  defaultTab?: 'structure' | 'data'
+  openInRightSplit?: boolean
+}) {
+  // Clear other modes
+  explorerState.clearPanelStates()
+  explorerState.clearFileSelection()
+
+  if (payload.openInRightSplit) {
+    splitPane.setSplitDatabaseContent(payload)
+    explorerState.activePane.value = 'right'
+    return
+  }
+
+  explorerState.activePane.value = 'left'
+  if (
+    explorerState.linkTabs.value &&
+    splitPane.splitMeta.value &&
+    splitPane.splitDefaultTab.value
+  ) {
+    explorerState.selectedDefaultTab.value = splitPane.splitDefaultTab.value
+  }
+
+  const desiredPinned = payload.mode === 'pinned' || settingAlwaysOpenNewTab()
+  if (desiredPinned) {
+    const initialView = (payload.defaultTab ||
+      (explorerState.linkTabs.value
+        ? explorerState.selectedDefaultTab.value || 'data'
+        : 'data')) as 'structure' | 'data'
+
+    tabsStore.addDatabaseTab({
+      connectionId: payload.connectionId,
+      database: payload.database,
+      schema: payload.schema,
+      name: payload.name,
+      type: payload.type,
+      meta: payload.meta,
+      viewTab: initialView
+    })
+
+    const activeTab =
+      tabsStore.activePinnedIndex !== null
+        ? tabsStore.pinnedTabs[tabsStore.activePinnedIndex]
+        : null
+    if (activeTab) {
+      activateTabFromState(activeTab)
+    }
+  } else {
+    const initialView = (payload.defaultTab ||
+      (explorerState.linkTabs.value
+        ? explorerState.selectedDefaultTab.value || 'data'
+        : 'data')) as 'structure' | 'data'
+
+    const previewTab = {
+      id: `preview:${payload.connectionId}:${payload.database || ''}:${payload.schema || ''}:${payload.name}:${payload.type || ''}`,
+      connectionId: payload.connectionId,
+      database: payload.database,
+      schema: payload.schema,
+      name: payload.name,
+      type: payload.type,
+      meta: payload.meta,
+      tabType: 'database' as const,
+      pinned: false,
+      viewTab: initialView
+    }
+
+    tabsStore.setPreviewTab(previewTab)
+    tabsStore.activePinnedIndex = null
+    activateTabFromState(previewTab)
+  }
+}
+
+function handleOpenFile(payload: {
+  connectionId: string
+  path: string
+  entry: FileSystemEntry
+  mode: 'preview' | 'pinned'
+  defaultTab?: 'structure' | 'data'
+  openInRightSplit?: boolean
+}) {
+  explorerState.clearPanelStates()
+  explorerState.clearDatabaseSelection()
+
+  if (payload.openInRightSplit) {
+    splitPane.setSplitFileContent({
+      connectionId: payload.connectionId,
+      entry: payload.entry,
+      defaultTab: explorerState.linkTabs.value
+        ? (explorerState.selectedDefaultTab.value as 'structure' | 'data') || 'data'
+        : payload.defaultTab || 'data'
+    })
+    explorerState.activePane.value = 'right'
+    return
+  }
+
+  explorerState.activePane.value = 'left'
+  const desiredPinned = payload.mode === 'pinned' || settingAlwaysOpenNewTab()
+
+  if (desiredPinned) {
+    tabsStore.addFileTab({
+      connectionId: payload.connectionId,
+      filePath: payload.path,
+      name: payload.entry.name,
+      fileType: payload.entry.type
+    })
+
+    const activeTab =
+      tabsStore.activePinnedIndex !== null
+        ? tabsStore.pinnedTabs[tabsStore.activePinnedIndex]
+        : null
+    if (activeTab) {
+      activateTabFromState(activeTab)
+    }
+  } else {
+    const fileTab = {
+      id: `preview:file:${payload.path}`,
+      connectionId: payload.connectionId,
+      name: payload.entry.name,
+      filePath: payload.path,
+      fileEntry: payload.entry,
+      tabType: 'file' as const,
+      pinned: false,
+      defaultTab: payload.defaultTab,
+      viewTab: (payload.defaultTab ||
+        (explorerState.linkTabs.value
+          ? explorerState.selectedDefaultTab.value || 'data'
+          : 'data')) as 'structure' | 'data'
+    }
+
+    tabsStore.setPreviewTab(fileTab)
+    tabsStore.activePinnedIndex = null
+    activateTabFromState(fileTab)
+  }
+}
+
+function handleShowDiagram(payload: { connectionId: string; database: string }) {
+  explorerState.clearPanelStates()
+  explorerState.setDatabaseSelection({ database: payload.database })
+  explorerState.diagramConnectionId.value = payload.connectionId
+  explorerState.diagramDatabaseName.value = payload.database
+  explorerState.showDiagram.value = true
+
+  schemaStore.setConnectionId(payload.connectionId)
+  schemaStore.setDatabaseName(payload.database)
+  schemaStore.fetchSchema(false)
+
+  router.replace({
+    path: `/explorer/${payload.connectionId}`,
+    query: { db: payload.database }
+  })
+}
+
+function handleSelectConnection(payload: { connectionId: string }) {
+  router.replace({ path: `/explorer/${payload.connectionId}` })
+
+  focusConnectionId.value = payload.connectionId
+  explorerState.detailsConnectionId.value = payload.connectionId
+  explorerState.clearPanelStates()
+  explorerState.clearDatabaseSelection()
+
+  splitPane.closeRightSplit()
+  fileOps.clearFileSelectionForConnection(payload.connectionId)
+
+  if (fileOps.isFilesConnectionType(payload.connectionId)) {
+    void fileOps.loadFileEntries(payload.connectionId, false)
+  }
+}
+
+function handleSelectDatabase(payload: { connectionId: string; database: string }) {
+  explorerState.detailsConnectionId.value = null
+  explorerState.showDiagram.value = false
+  explorerState.setDatabaseSelection({ database: payload.database })
+  splitPane.closeRightSplit()
+  explorerState.activePane.value = 'left'
+  explorerState.overviewConnectionId.value = payload.connectionId
+  explorerState.overviewDatabaseName.value = payload.database
+
+  schemaStore.setConnectionId(payload.connectionId)
+  schemaStore.setDatabaseName(payload.database)
+  schemaStore.fetchSchema(false)
+
+  router.replace({ path: `/explorer/${payload.connectionId}`, query: { db: payload.database } })
+}
+
+function handleFileSelect(payload: { connectionId: string; path: string }) {
+  const entries = currentFileEntries.value
+  const entry = entries.find((e) => e.path === payload.path)
+  if (!entry) {
+    fileOps.setFileSelectionForConnection(payload.connectionId, payload.path)
+    focusConnectionId.value = null
+    if (explorerState.detailsConnectionId.value === payload.connectionId) {
+      explorerState.detailsConnectionId.value = null
+    }
+    router.replace({
+      path: `/explorer/${payload.connectionId}`,
+      query: { file: payload.path }
+    })
+    return
+  }
+
+  handleOpenFile({
+    connectionId: payload.connectionId,
+    path: payload.path,
+    entry: entry,
+    mode: 'preview',
+    defaultTab: 'data'
+  })
+}
+
+function handleRequestFileEntries(payload: { connectionId: string }) {
+  void fileOps.loadFileEntries(payload.connectionId, true)
+}
+
+function settingAlwaysOpenNewTab(): boolean {
+  return localStorage.getItem('explorer.alwaysOpenNewTab') === 'true'
+}
+
+function activateTabFromState(tab: {
+  tabType?: string
+  viewTab?: string
+  defaultTab?: string
+  fileEntry?: FileSystemEntry
+  filePath?: string
+  connectionId: string
+  database?: string
+  schema?: string
+  type?: string
+  name?: string
+  meta?: SQLTableMeta | SQLViewMeta
+}) {
+  if (!tab) return
+
+  explorerState.detailsConnectionId.value = null
+
+  if (tab.tabType === 'file') {
+    explorerState.clearDatabaseSelection()
+    explorerState.clearPanelStates()
+
+    explorerState.selectedDefaultTab.value = (tab.viewTab || tab.defaultTab || 'data') as
+      | 'structure'
+      | 'data'
+
+    if (tab.fileEntry) {
+      explorerState.setFileSelection(tab.fileEntry)
+    }
+
+    if (tab.filePath) {
+      fileOps.setFileSelectionForConnection(tab.connectionId, tab.filePath)
+    }
+
+    if (explorerState.selectedFileEntry.value) {
+      void refreshSelectedFileMetadata()
+    }
+
+    router.replace({
+      path: `/explorer/${tab.connectionId}`,
+      query: {
+        file: tab.filePath,
+        db: undefined,
+        schema: undefined,
+        type: undefined,
+        name: undefined
+      }
+    })
+  } else {
+    explorerState.clearFileSelection()
+    explorerState.clearPanelStates()
+
+    explorerState.setDatabaseSelection({
+      database: tab.database || '',
+      schema: tab.schema,
+      type: tab.type as 'table' | 'view',
+      name: tab.name,
+      meta: tab.meta
+    })
+    explorerState.selectedDefaultTab.value = (tab.viewTab || tab.defaultTab || 'data') as
+      | 'structure'
+      | 'data'
+
+    if (tab.database) {
+      schemaStore.setConnectionId(tab.connectionId)
+      schemaStore.setDatabaseName(tab.database)
+      schemaStore.fetchSchema(false)
+    }
+
+    router.replace({
+      path: `/explorer/${tab.connectionId}`,
+      query: {
+        db: tab.database || undefined,
+        schema: tab.schema || undefined,
+        type: tab.type || undefined,
+        name: tab.name || undefined,
+        file: undefined
+      }
+    })
+  }
+}
+
+function closePinned(index: number) {
+  const wasActive = tabsStore.activePinnedIndex === index
+  tabsStore.closeTab(index)
+
+  if (!tabsStore.pinnedTabs.length) {
+    if (tabsStore.previewTab) activateTabFromState(tabsStore.previewTab)
+    return
+  }
+
+  if (wasActive) {
+    const activeTab =
+      tabsStore.activePinnedIndex !== null
+        ? tabsStore.pinnedTabs[tabsStore.activePinnedIndex]
+        : null
+    if (activeTab) {
+      activateTabFromState(activeTab)
+    }
+  }
+}
+
+function activatePinned(index: number) {
+  if (index < 0 || index >= tabsStore.pinnedTabs.length) return
+  explorerState.clearPanelStates()
+  explorerState.selectedDefaultTab.value = (tabsStore.pinnedTabs[index].viewTab || 'data') as
+    | 'structure'
+    | 'data'
+  explorerState.activePane.value = 'left'
+  tabsStore.activateTab(index)
+  activateTabFromState(tabsStore.pinnedTabs[index])
+}
+
+function activatePreview() {
+  if (tabsStore.previewTab) {
+    explorerState.clearPanelStates()
+    explorerState.selectedDefaultTab.value = (tabsStore.previewTab.viewTab || 'data') as
+      | 'structure'
+      | 'data'
+    explorerState.activePane.value = 'left'
+    tabsStore.activePinnedIndex = null
+    activateTabFromState(tabsStore.previewTab)
+  }
+}
+
+// Header event handlers
+async function onRefreshConnections() {
+  try {
+    await connectionsStore.refreshConnections()
+  } catch (e) {
+    const message = e instanceof Error ? e.message : 'Failed to refresh connections'
+    commonStore.showNotification(message, 'error')
+  }
+}
+
+function onAddConnection() {
+  router.push('/explorer/add')
+}
+
+function onEditConnection() {
+  if (!explorerState.activeConnectionId.value) return
+  router.push(`/explorer/edit/${explorerState.activeConnectionId.value}`)
+}
+
+async function onDeleteConnection() {
+  const id = explorerState.activeConnectionId.value
+  if (!id) return
+  const conn = connectionsStore.connections.find((c) => c.id === id)
+  const name = conn?.name || conn?.host || 'connection'
+  if (!window.confirm(`Delete ${name}? This cannot be undone.`)) return
+  try {
+    await connectionsStore.deleteConnection(id)
+    const idx = recentConnections.value.findIndex((c) => c.id === id)
+    if (idx !== -1) {
+      recentConnections.value.splice(idx, 1)
+      localStorage.setItem('recentConnections', JSON.stringify(recentConnections.value))
+    }
+    if (lastViewedConnectionId.value === id) {
+      localStorage.removeItem('lastViewedConnectionId')
+      lastViewedConnectionId.value = ''
+    }
+    router.push('/explorer')
+  } catch (e) {
+    console.error('Failed to delete connection from Explorer:', e)
+  }
+}
+
+async function onCloneConnection() {
+  const id = explorerState.activeConnectionId.value
+  if (!id) return
+  try {
+    connectionsStore.setCurrentConnection(id)
+    await connectionsStore.cloneConnection(id)
+    const newId = connectionsStore.currentConnection?.id
+    await connectionsStore.refreshConnections()
+    if (newId) router.push(`/explorer/edit/${newId}`)
+  } catch (e) {
+    console.error('Failed to clone connection from Explorer:', e)
+  }
+}
+
+// Breadcrumb handlers
+async function handlePickFromBreadcrumb(o: {
+  name: string
+  type: 'table' | 'view'
+  schema?: string
+}) {
+  const targetConnId = explorerState.currentConnectionId.value
+  const targetDb = explorerState.selectedDatabaseName.value
+  if (!targetConnId || !targetDb) return
+  try {
+    const meta = await connections.getMetadata(targetConnId, targetDb)
+    let obj: SQLTableMeta | SQLViewMeta | undefined
+    if (o.type === 'table') {
+      obj = Object.values(meta.tables || {}).find(
+        (t) => t.name === o.name && (o.schema ? t.schema === o.schema : true)
+      )
+    } else {
+      obj = Object.values(meta.views || {}).find(
+        (v) => v.name === o.name && (o.schema ? v.schema === o.schema : true)
+      )
+    }
+    if (!obj) return
+    handleOpenFromTree({
+      connectionId: targetConnId,
+      database: targetDb,
+      schema: o.schema,
+      type: o.type,
+      name: o.name,
+      meta: obj,
+      mode: 'preview',
+      defaultTab: 'data',
+      openInRightSplit: false
+    })
+  } catch {
+    // ignore open errors
+  }
+}
+
+function handleBreadcrumbNavigate(payload: { level: 'database' | 'schema' | 'type' | 'name' }) {
+  if (
+    explorerState.activePane.value === 'right' &&
+    (splitPane.splitMeta.value || splitPane.splitDatabaseName.value)
+  ) {
+    if (payload.level === 'database') {
+      splitPane.splitSchemaName.value = null
+      splitPane.splitObjectType.value = null
+      splitPane.splitObjectName.value = null
+      splitPane.splitMeta.value = null
+    } else if (payload.level === 'schema') {
+      splitPane.splitObjectType.value = null
+      splitPane.splitObjectName.value = null
+      splitPane.splitMeta.value = null
+    } else if (payload.level === 'type') {
+      splitPane.splitObjectName.value = null
+      splitPane.splitMeta.value = null
+    }
+    return
+  }
+
+  if (payload.level === 'database') {
+    explorerState.detailsConnectionId.value = null
+    explorerState.showDiagram.value = false
+    explorerState.overviewConnectionId.value = explorerState.currentConnectionId.value
+    explorerState.overviewDatabaseName.value = explorerState.selectedDatabaseName.value
+    explorerState.selectedSchemaName.value = null
+    explorerState.selectedObjectType.value = null
+    explorerState.selectedObjectName.value = null
+    explorerState.selectedMeta.value = null
+  } else if (payload.level === 'schema') {
+    explorerState.selectedObjectType.value = null
+    explorerState.selectedObjectName.value = null
+    explorerState.selectedMeta.value = null
+  } else if (payload.level === 'type') {
+    explorerState.selectedObjectName.value = null
+    explorerState.selectedMeta.value = null
+  }
+
+  router.replace({
+    path: `/explorer/${explorerState.currentConnectionId.value}`,
+    query: {
+      db: explorerState.selectedDatabaseName.value || undefined,
+      schema: explorerState.selectedSchemaName.value || undefined,
+      type: explorerState.selectedObjectType.value || undefined,
+      name: explorerState.selectedObjectName.value || undefined
+    }
+  })
+}
+
+// Tab change handlers
+function onLeftTabChange(t: 'data' | 'structure') {
+  explorerState.selectedDefaultTab.value = t
+  if (tabsStore.activePinnedIndex !== null && tabsStore.pinnedTabs[tabsStore.activePinnedIndex]) {
+    tabsStore.updateActiveTabView(t)
+  } else if (tabsStore.previewTab) {
+    tabsStore.previewTab.viewTab = t
+  }
+  if (explorerState.linkTabs.value && splitPane.splitMeta.value) {
+    splitPane.splitDefaultTab.value = t
+  }
+}
+
+function onRightTabChange(t: 'data' | 'structure') {
+  if (!explorerState.linkTabs.value) return
+  explorerState.selectedDefaultTab.value = t
+  if (tabsStore.activePinnedIndex !== null && tabsStore.pinnedTabs[tabsStore.activePinnedIndex]) {
+    tabsStore.updateActiveTabView(t)
+  } else if (tabsStore.previewTab) {
+    tabsStore.previewTab.viewTab = t
+  }
+}
+
+// Helper functions
+async function refreshSelectedFileMetadata() {
+  if (!explorerState.selectedFileEntry.value) return
+
+  try {
+    const fileFormat = getFileFormat(explorerState.selectedFileEntry.value.name)
+    if (!fileFormat) {
+      console.warn(
+        'Unable to determine file format for:',
+        explorerState.selectedFileEntry.value.name
+      )
+      return
+    }
+
+    const metadata = await getFileMetadata(explorerState.selectedFileEntry.value.path, fileFormat)
+    explorerState.selectedFileMetadata.value = metadata
+  } catch (error) {
+    console.error('Failed to load file metadata:', error)
+    explorerState.selectedFileMetadata.value = null
+  }
+}
+
+function addToRecentConnections() {
+  if (!explorerState.currentConnection.value) return
+
+  const connection = {
+    id: explorerState.currentConnection.value.id,
+    name: explorerState.currentConnection.value.name,
+    type: explorerState.currentConnection.value.type,
+    host: explorerState.currentConnection.value.host,
+    port: explorerState.currentConnection.value.port?.toString(),
+    database: explorerState.currentConnection.value.database,
+    cloud_provider: explorerState.currentConnection.value.cloud_provider || ''
+  }
+
+  const existingIndex = recentConnections.value.findIndex((c) => c.id === connection.id)
+  if (existingIndex === -1) {
+    recentConnections.value.push(connection)
+
+    if (recentConnections.value.length > MAX_RECENT_CONNECTIONS) {
+      recentConnections.value = recentConnections.value.slice(-MAX_RECENT_CONNECTIONS)
+    }
+
+    localStorage.setItem('recentConnections', JSON.stringify(recentConnections.value))
+  }
+}
+
+function initializeCurrentConnection() {
+  if (
+    explorerState.currentConnection.value &&
+    !recentConnections.value.find((c) => c.id === explorerState.currentConnectionId.value)
+  ) {
+    addToRecentConnections()
+  }
+}
+
+function showDiagramForActiveDatabase() {
+  const isRight = explorerState.activePane.value === 'right'
+  const connId = isRight
+    ? splitPane.splitConnectionId.value || explorerState.currentConnectionId.value
+    : explorerState.currentConnectionId.value
+  const db = isRight ? splitPane.splitDatabaseName.value : explorerState.selectedDatabaseName.value
+  if (!connId || !db) return
+  handleShowDiagram({ connectionId: connId, database: db })
+}
+
+// Watchers
+watch(
+  () => route.path,
+  (newPath) => {
+    if (newPath === '/explorer' && recentConnections.value.length > 0) {
+      const existsInRecent =
+        !!lastViewedConnectionId.value &&
+        recentConnections.value.some((c) => c.id === lastViewedConnectionId.value)
+      const connectionToUse = existsInRecent
+        ? lastViewedConnectionId.value
+        : recentConnections.value[recentConnections.value.length - 1].id
+
+      router.replace(`/explorer/${connectionToUse}`)
+    }
+  },
+  { immediate: true }
+)
+
+watch(
+  () => route.query.focus || route.query.new,
+  async (flag) => {
+    if (!flag) return
+    const id = explorerState.currentConnectionId.value
+    if (!id) return
+    handleSelectConnection({ connectionId: id })
+    await nextTick()
+    const clearedQuery = { ...route.query }
+    delete clearedQuery.new
+    delete clearedQuery.focus
+    focusConnectionId.value = id
+    router.replace({ path: `/explorer/${id}`, query: clearedQuery })
+  },
+  { immediate: true }
+)
+
+watch(explorerState.currentConnectionId, async (newId) => {
+  if (newId && explorerState.currentConnection.value) {
+    addToRecentConnections()
+    lastViewedConnectionId.value = newId
+    localStorage.setItem('lastViewedConnectionId', newId)
+    if (fileOps.isFilesConnectionType(newId)) {
+      await fileOps.loadFileEntries(newId)
+      const fileParam = route.query.file as string
+      if (fileParam && currentFileEntries.value.length > 0) {
+        handleFileSelect({ connectionId: newId, path: fileParam })
+      }
+    }
+  }
+})
+
+watch(
+  () => route.query.file,
+  (filePath) => {
+    if (
+      filePath &&
+      fileOps.isFilesConnectionType(explorerState.currentConnectionId.value) &&
+      currentFileEntries.value.length > 0
+    ) {
+      handleFileSelect({
+        connectionId: explorerState.currentConnectionId.value,
+        path: filePath as string
+      })
+    }
+  }
+)
+
+// Lifecycle
+onMounted(() => {
+  commonStore.setCurrentPage('Data Explorer')
+  sidebar.initializeSidebar()
+  initializeCurrentConnection()
+
+  // Seed selection from query if present
+  const { db, schema, type, name, file } = route.query as Record<string, string | undefined>
+  if (file && fileOps.isFilesConnectionType(explorerState.currentConnectionId.value)) {
+    explorerState.clearDatabaseSelection()
+  } else if (db) {
+    explorerState.clearFileSelection()
+    fileOps.clearFileSelectionForConnection(explorerState.currentConnectionId.value || '')
+
+    explorerState.setDatabaseSelection({
+      database: db,
+      schema,
+      type: type as 'table' | 'view',
+      name
+    })
+
+    if (type && name) {
+      connections
+        .getMetadata(explorerState.currentConnectionId.value, db)
+        .then((m) => {
+          const obj =
+            type === 'table'
+              ? Object.values(m.tables).find((t) => t.name === name)
+              : Object.values(m.views).find((v) => v.name === name)
+          if (obj) explorerState.selectedMeta.value = obj
+        })
+        .catch(() => void 0)
+    }
+
+    schemaStore.setConnectionId(explorerState.currentConnectionId.value)
+    schemaStore.setDatabaseName(db)
+    schemaStore.fetchSchema(false)
+  }
+
+  if (fileOps.isFilesConnectionType(explorerState.currentConnectionId.value)) {
+    void fileOps.loadFileEntries(explorerState.currentConnectionId.value as string).then(() => {
+      if (file) {
+        fileOps.setFileSelectionForConnection(explorerState.currentConnectionId.value || '', file)
+        explorerState.detailsConnectionId.value = null
+        focusConnectionId.value = null
+      }
+    })
+  }
+})
+</script>
+
+<template>
+  <div class="min-h-full overflow-x-hidden">
+    <ExplorerHeader
+      v-model:connection-search="connectionSearch"
+      @refresh="onRefreshConnections"
+      @add-connection="onAddConnection"
+    />
+
+    <main class="mx-auto py-4 overflow-x-hidden">
+      <!-- No recent connections -->
+      <div v-if="recentConnections.length === 0" class="text-center py-12">
+        <p class="text-gray-500">No recently explored connections.</p>
+        <RouterLink
+          to="/explorer/add"
+          class="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
+        >
+          Create a Connection
+        </RouterLink>
+      </div>
+
+      <!-- Explorer content -->
+      <div v-else class="px-4 sm:px-6 lg:px-8">
+        <div
+          ref="sidebarContainerRef"
+          class="mt-6 flex flex-row items-stretch min-w-0 overflow-x-hidden"
+        >
+          <!-- Sidebar -->
+          <div
+            v-if="sidebar.sidebarVisible.value"
+            ref="sidebarRef"
+            :style="{
+              flexBasis: `calc(${sidebar.sidebarWidthPct.value}% - 8px)`,
+              flexGrow: 0,
+              flexShrink: 0
+            }"
+            class="min-w-[220px] pr-2"
+          >
+            <ExplorerSidebarConnections
+              :initial-expanded-connection-id="explorerState.currentConnectionId.value || undefined"
+              :search-query="connectionSearch"
+              :type-filter="'All'"
+              :focus-connection-id="focusConnectionId || undefined"
+              :file-entries="fileOps.fileEntriesByConnection.value"
+              :selected-file-paths="fileOps.selectedFilePathsByConnection.value"
+              :selected="{
+                database: explorerState.selectedDatabaseName.value || undefined,
+                schema: explorerState.selectedSchemaName.value || undefined,
+                type: explorerState.selectedObjectType.value || undefined,
+                name: explorerState.selectedObjectName.value || undefined
+              }"
+              @open="handleOpenFromTree"
+              @show-diagram="handleShowDiagram"
+              @select-connection="handleSelectConnection"
+              @select-database="handleSelectDatabase"
+              @select-file="handleFileSelect"
+              @open-file="handleOpenFile"
+              @request-file-entries="handleRequestFileEntries"
+            />
+          </div>
+
+          <!-- Sidebar divider -->
+          <div
+            v-if="sidebar.sidebarVisible.value"
+            role="separator"
+            aria-orientation="vertical"
+            class="relative z-20 mx-1.5 w-3 shrink-0 cursor-col-resize select-none pointer-events-auto"
+            @mousedown.prevent="sidebar.onSidebarDividerMouseDown"
+            @dblclick="sidebar.onSidebarDividerDoubleClick"
+          >
+            <div
+              class="absolute inset-y-0 left-1/2 -translate-x-1/2 w-[3px] rounded bg-gray-200 hover:bg-gray-300"
+            />
+          </div>
+
+          <!-- Right panel -->
+          <div
+            :style="{ flexBasis: '0px' }"
+            :class="[
+              'grow',
+              'min-w-0',
+              'overflow-x-hidden',
+              sidebar.sidebarVisible.value ? 'pl-2' : 'pl-0'
+            ]"
+          >
+            <div class="mb-4">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2 text-sm text-gray-500">
+                  <span
+                    v-if="explorerState.activeDisplayHostPort.value"
+                    class="font-medium text-gray-700"
+                  >
+                    {{ explorerState.activeDisplayHostPort.value }}
+                  </span>
+                  <span v-if="explorerState.activeDisplayHostPort.value" class="text-gray-400"
+                    >•</span
+                  >
+                  <!-- Database breadcrumb -->
+                  <ExplorerBreadcrumb
+                    v-if="explorerState.activeDatabaseName.value"
+                    :database="explorerState.activeDatabaseName.value"
+                    :schema="explorerState.activeSchemaName.value"
+                    :type="explorerState.activeObjectType.value"
+                    :name="explorerState.activeObjectName.value"
+                    :objects="explorerState.breadcrumbObjects.value"
+                    @navigate="handleBreadcrumbNavigate"
+                    @pick-name="handlePickFromBreadcrumb"
+                  />
+                  <!-- File breadcrumb -->
+                  <div
+                    v-else-if="explorerState.selectedFileEntry.value"
+                    class="flex items-center gap-1 text-sm"
+                  >
+                    <span class="text-gray-600">File:</span>
+                    <span class="font-medium text-gray-900">{{
+                      explorerState.selectedFileEntry.value.name
+                    }}</span>
+                    <span class="text-gray-400">•</span>
+                    <span class="text-gray-500 text-xs">{{
+                      explorerState.selectedFileEntry.value.path
+                    }}</span>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <label class="flex items-center gap-1 text-xs text-gray-600 select-none">
+                    <input v-model="explorerState.linkTabs.value" type="checkbox" />
+                    Link tabs
+                  </label>
+                  <button
+                    v-if="
+                      explorerState.activeDatabaseName.value && !explorerState.showDiagram.value
+                    "
+                    type="button"
+                    class="px-2 py-1 text-xs rounded border border-gray-300 bg-white hover:bg-gray-50 text-gray-700"
+                    title="Show database diagram"
+                    @click="showDiagramForActiveDatabase"
+                  >
+                    Show diagram
+                  </button>
+                  <button
+                    type="button"
+                    class="px-2 py-1 text-xs rounded border border-gray-300 bg-white hover:bg-gray-50 text-gray-700"
+                    :title="sidebar.sidebarVisible.value ? 'Hide Sidebar' : 'Show Sidebar'"
+                    @click="sidebar.toggleSidebar"
+                  >
+                    {{ sidebar.sidebarVisible.value ? 'Hide Sidebar' : 'Show Sidebar' }}
+                  </button>
+                  <button
+                    v-if="splitPane.splitMeta.value || splitPane.splitFileEntry.value"
+                    type="button"
+                    class="px-2 py-1 text-xs rounded border border-gray-300 bg-white hover:bg-gray-50 text-gray-700"
+                    title="Center split"
+                    @click="splitPane.resetRightSplit"
+                  >
+                    Center split
+                  </button>
+                  <CloudProviderBadge
+                    v-if="explorerState.activeDisplayType.value"
+                    :cloud-provider="explorerState.activeDisplayCloudProvider.value"
+                    :db-type="explorerState.activeDisplayType.value"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <!-- Tabs -->
+            <ExplorerTabs
+              @activate-preview="activatePreview"
+              @activate-pinned="activatePinned"
+              @close-pinned="closePinned"
+            />
+
+            <!-- Content area -->
+            <div
+              v-if="detailsConnection"
+              class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg"
+            >
+              <ConnectionDetailsPanel
+                :connection="detailsConnection"
+                :file-entries="currentFileEntries"
+                @edit="onEditConnection"
+                @clone="onCloneConnection"
+                @delete="onDeleteConnection"
+              />
+            </div>
+            <div
+              v-else-if="
+                explorerState.overviewConnectionId.value && explorerState.overviewDatabaseName.value
+              "
+              class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg"
+            >
+              <DatabaseOverviewPanel
+                :connection-id="explorerState.overviewConnectionId.value"
+                :database="explorerState.overviewDatabaseName.value"
+                @show-diagram="handleShowDiagram"
+              />
+            </div>
+            <div
+              v-else-if="explorerState.showDiagram.value"
+              class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg"
+            >
+              <DiagramView
+                :tables="schemaStore.tables"
+                :views="schemaStore.views"
+                :relationships="schemaStore.relationships"
+              />
+            </div>
+            <div v-else>
+              <div class="min-h-[480px] min-w-0 overflow-x-hidden">
+                <div
+                  v-if="splitPane.splitMeta.value || splitPane.splitFileEntry.value"
+                  ref="splitContainerRef"
+                  class="flex flex-row items-stretch min-w-0"
+                >
+                  <!-- Left (primary) -->
+                  <div
+                    ref="leftPaneRef"
+                    :style="{
+                      flexBasis: `${splitPane.splitGrow.value}%`,
+                      flexGrow: 0,
+                      flexShrink: 0
+                    }"
+                    class="min-w-[300px] pr-2 min-h-[480px]"
+                    @mousedown="explorerState.activePane.value = 'left'"
+                  >
+                    <div v-if="explorerState.selectedMeta.value">
+                      <DatabaseObjectContainer
+                        :table-meta="explorerState.selectedMeta.value"
+                        :is-view="explorerState.selectedObjectType.value === 'view'"
+                        :connection-id="explorerState.currentConnectionId.value"
+                        :connection-type="explorerState.activeDisplayType.value || 'sql'"
+                        :database="explorerState.selectedDatabaseName.value || ''"
+                        :default-tab="
+                          (explorerState.selectedDefaultTab.value as 'structure' | 'data') || 'data'
+                        "
+                        @tab-change="onLeftTabChange"
+                      />
+                    </div>
+                    <div v-else-if="explorerState.selectedFileEntry.value">
+                      <FileObjectContainer
+                        :entry="explorerState.selectedFileEntry.value"
+                        :metadata="explorerState.selectedFileMetadata.value"
+                        :connection-id="explorerState.currentConnectionId.value"
+                        :default-tab="
+                          (explorerState.selectedDefaultTab.value as 'structure' | 'data') || 'data'
+                        "
+                        @tab-change="onLeftTabChange"
+                      />
+                    </div>
+                    <div
+                      v-else
+                      class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg p-8 text-center"
+                    >
+                      <p class="text-gray-500">
+                        Select an object from the sidebar to view its details.
+                      </p>
+                    </div>
+                  </div>
+
+                  <!-- Divider -->
+                  <div
+                    role="separator"
+                    aria-orientation="vertical"
+                    class="relative z-20 mx-1.5 w-3 shrink-0 cursor-col-resize select-none pointer-events-auto"
+                    @mousedown.prevent="splitPane.onDividerMouseDown"
+                    @dblclick="splitPane.onDividerDoubleClick"
+                  >
+                    <div
+                      class="absolute inset-y-0 left-1/2 -translate-x-1/2 w-[3px] rounded bg-gray-200 hover:bg-gray-300"
+                    />
+                  </div>
+
+                  <!-- Right split -->
+                  <div
+                    :style="{ flexBasis: '0px' }"
+                    class="grow pl-2 min-h-[480px] min-w-[300px] relative"
+                    @mousedown="explorerState.activePane.value = 'right'"
+                  >
+                    <div v-if="splitPane.splitMeta.value">
+                      <DatabaseObjectContainer
+                        :table-meta="splitPane.splitMeta.value"
+                        :is-view="splitPane.splitObjectType.value === 'view'"
+                        :connection-id="splitPane.splitConnectionId.value || ''"
+                        :connection-type="explorerState.activeDisplayType.value || 'sql'"
+                        :database="splitPane.splitDatabaseName.value || ''"
+                        :default-tab="
+                          (splitPane.splitDefaultTab.value as 'structure' | 'data') || 'data'
+                        "
+                        @tab-change="onRightTabChange"
+                      />
+                    </div>
+                    <div v-else-if="splitPane.splitFileEntry.value">
+                      <FileObjectContainer
+                        :entry="splitPane.splitFileEntry.value"
+                        :metadata="splitPane.splitFileMetadata.value"
+                        :connection-id="splitPane.splitConnectionId.value || ''"
+                        :default-tab="
+                          (splitPane.splitDefaultTab.value as 'structure' | 'data') || 'data'
+                        "
+                        @tab-change="onRightTabChange"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div v-else>
+                  <div v-if="explorerState.selectedMeta.value">
+                    <DatabaseObjectContainer
+                      :table-meta="explorerState.selectedMeta.value"
+                      :is-view="explorerState.selectedObjectType.value === 'view'"
+                      :connection-id="explorerState.currentConnectionId.value"
+                      :connection-type="explorerState.activeDisplayType.value || 'sql'"
+                      :database="explorerState.selectedDatabaseName.value || ''"
+                      :default-tab="
+                        (explorerState.selectedDefaultTab.value as 'structure' | 'data') || 'data'
+                      "
+                      @tab-change="onLeftTabChange"
+                    />
+                  </div>
+                  <div v-else-if="explorerState.selectedFileEntry.value">
+                    <FileObjectContainer
+                      :entry="explorerState.selectedFileEntry.value"
+                      :metadata="explorerState.selectedFileMetadata.value"
+                      :connection-id="explorerState.currentConnectionId.value"
+                      :default-tab="
+                        (explorerState.selectedDefaultTab.value as 'structure' | 'data') || 'data'
+                      "
+                      @tab-change="onLeftTabChange"
+                    />
+                  </div>
+                  <div
+                    v-else
+                    class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg p-8 text-center"
+                  >
+                    <p class="text-gray-500">
+                      Select an object from the sidebar to view its details.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</template>
