@@ -123,6 +123,7 @@ import ExplorerSplitPane from './ExplorerSplitPane.vue'
 import type { SQLTableMeta, SQLViewMeta } from '@/types/metadata'
 import type { FileSystemEntry } from '@/api/fileSystem'
 import type { FileMetadata } from '@/types/files'
+import type { Table, Relationship } from '@/types/schema'
 
 interface Props {
   connectionId: string
@@ -130,9 +131,9 @@ interface Props {
   overviewConnectionId?: string | null
   overviewDatabaseName?: string | null
   showDiagram?: boolean
-  tables?: SQLTableMeta[]
-  views?: SQLViewMeta[]
-  relationships?: object[]
+  tables?: Table[]
+  views?: Table[]
+  relationships?: Relationship[]
   selectedMeta?: SQLTableMeta | SQLViewMeta | null
   selectedFileEntry?: FileSystemEntry | null
   selectedFileMetadata?: FileMetadata | null
