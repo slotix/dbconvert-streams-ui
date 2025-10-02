@@ -151,7 +151,7 @@ defineExpose({
                     :key="column.name"
                     class="px-3 py-2 text-sm text-gray-500 whitespace-nowrap"
                   >
-                    {{ formatTableValue(row[column.name]) }}
+                    {{ formatTableValue(row[column.name], column.type) }}
                   </td>
                 </tr>
               </tbody>

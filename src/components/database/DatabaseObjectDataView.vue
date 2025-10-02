@@ -141,6 +141,16 @@ const foreignKeyColumns = computed(() => {
   const foreignKeys = (props.tableMeta as SQLTableMeta).foreignKeys || []
   return new Set(foreignKeys.map((fk) => fk.sourceColumn))
 })
+
+// Map column names to their data types for binary data detection
+const columnTypes = computed(() => {
+  const typeMap: Record<string, string> = {}
+  const columns = props.tableMeta.columns || []
+  columns.forEach((col) => {
+    typeMap[col.name] = col.dataType
+  })
+  return typeMap
+})
 </script>
 
 <template>
@@ -226,7 +236,7 @@ const foreignKeyColumns = computed(() => {
                     :key="colIndex"
                     class="px-3 py-2 text-sm text-gray-500 whitespace-nowrap"
                   >
-                    {{ formatTableValue(value) }}
+                    {{ formatTableValue(value, columnTypes[tableData.columns[colIndex]]) }}
                   </td>
                 </tr>
               </tbody>

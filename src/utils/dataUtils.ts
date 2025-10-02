@@ -3,85 +3,57 @@
  */
 
 /**
- * Checks if a string appears to be base64 encoded
+ * Checks if a database field type represents binary/blob data
  */
-function isBase64(str: string): boolean {
-  if (!str || typeof str !== 'string') {
+function isBinaryFieldType(dataType: string): boolean {
+  if (!dataType || typeof dataType !== 'string') {
     return false
   }
 
-  // Base64 strings should be at least 4 characters and divisible by 4 (with padding)
-  if (str.length < 4) {
-    return false
-  }
+  const lowerType = dataType.toLowerCase()
+  const binaryTypes = [
+    'blob',
+    'binary',
+    'varbinary',
+    'bytea',
+    'longblob',
+    'mediumblob',
+    'tinyblob',
+    'image',
+    'picture',
+    'photo'
+  ]
 
-  // Allow for base64 strings without padding (common in some APIs)
-  if (str.length % 4 !== 0) {
-    // Try with padding added
-    const padded = str + '='.repeat(4 - (str.length % 4))
-    if (padded.length % 4 !== 0) {
-      return false
-    }
-  }
-
-  // Check if string contains only valid base64 characters
-  const base64Regex = /^[A-Za-z0-9+/]*={0,3}$/
-  return base64Regex.test(str)
+  return binaryTypes.some((type) => lowerType.includes(type))
 }
 
 /**
- * Attempts to decode a base64 string safely
+ * Gets the appropriate data type indicator for binary fields
  */
-function tryDecodeBase64(str: string): string {
-  if (!str || typeof str !== 'string') {
-    return str
+function getDataTypeIndicator(dataType: string): string {
+  if (!isBinaryFieldType(dataType)) {
+    return ''
   }
 
-  try {
-    // Only attempt decoding if it looks like base64
-    if (isBase64(str)) {
-      // Add padding if necessary for proper base64 decoding
-      let paddedStr = str
-      while (paddedStr.length % 4 !== 0) {
-        paddedStr += '='
-      }
+  const lowerType = dataType.toLowerCase()
 
-      const decoded = atob(paddedStr)
-
-      // Check if the decoded string contains readable text
-      // If it's binary data, it might not be suitable for display
-      if (isPrintableText(decoded)) {
-        return decoded
-      }
-    }
-    return str
-  } catch {
-    // If decoding fails, return original string
-    // Suppress error logging for common Base64 decoding failures in development
-    return str
+  // More specific indicators based on field name patterns
+  if (lowerType.includes('image') || lowerType.includes('picture') || lowerType.includes('photo')) {
+    return '<IMAGE>'
   }
+
+  if (lowerType.includes('blob')) {
+    return '<BLOB>'
+  }
+
+  // Default for any binary type
+  return '<BINARY>'
 }
 
 /**
- * Checks if a string contains mostly printable text
+ * Formats a value for table display, showing data type indicators for binary fields
  */
-function isPrintableText(str: string): boolean {
-  if (!str) return true
-
-  // Count printable characters (space to ~, plus common whitespace)
-  const printableCount = str.split('').filter((char) => {
-    const code = char.charCodeAt(0)
-    return (code >= 32 && code <= 126) || code === 9 || code === 10 || code === 13
-  }).length
-
-  // If more than 80% of characters are printable, consider it text
-  return printableCount / str.length > 0.8
-}
-
-/**
- * Formats a value for table display, handling base64 decoding and null values
- */
-export function formatTableValue(value: any): string {
+export function formatTableValue(value: unknown, dataType?: string): string {
   // Handle null/undefined values
   if (value === null) {
     return 'NULL'
@@ -91,48 +63,40 @@ export function formatTableValue(value: any): string {
     return ''
   }
 
-  // Convert to string if not already
-  const stringValue = String(value)
-
-  // Debug logging for development mode only
-  if (import.meta.env.DEV && stringValue.length > 20 && isBase64(stringValue)) {
-    console.log('[DataUtils] Attempting to decode base64:', {
-      original: stringValue.substring(0, 50) + (stringValue.length > 50 ? '...' : ''),
-      isBase64: isBase64(stringValue),
-      length: stringValue.length
-    })
+  // Check if this is a binary field type and show indicator instead of raw data
+  if (dataType && isBinaryFieldType(dataType)) {
+    const indicator = getDataTypeIndicator(dataType)
+    if (indicator) {
+      return indicator
+    }
   }
 
-  // Try to decode if it looks like base64
-  const result = tryDecodeBase64(stringValue)
-
-  // Log if decoding was successful (development only)
-  if (import.meta.env.DEV && result !== stringValue) {
-    console.log('[DataUtils] Successfully decoded base64:', {
-      original: stringValue.substring(0, 50) + (stringValue.length > 50 ? '...' : ''),
-      decoded: result.substring(0, 100) + (result.length > 100 ? '...' : '')
-    })
-  }
-
-  return result
+  // Convert to string for non-binary fields
+  return String(value)
 }
 
 /**
  * Formats an entire row of table data
  */
-export function formatTableRow(row: any[]): string[] {
-  return row.map(formatTableValue)
+export function formatTableRow(row: unknown[], columnTypes?: string[]): string[] {
+  return row.map((value, index) => {
+    const dataType = columnTypes?.[index]
+    return formatTableValue(value, dataType)
+  })
 }
 
 /**
  * Formats table data for display
  */
-export function formatTableData(data: { columns: string[]; rows: any[][] }): {
+export function formatTableData(
+  data: { columns: string[]; rows: unknown[][] },
+  columnTypes?: string[]
+): {
   columns: string[]
   rows: string[][]
 } {
   return {
     columns: data.columns,
-    rows: data.rows.map(formatTableRow)
+    rows: data.rows.map((row) => formatTableRow(row, columnTypes))
   }
 }
