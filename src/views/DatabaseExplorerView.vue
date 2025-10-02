@@ -40,6 +40,7 @@ const sidebar = useSidebar()
 // Connection search and filtering
 const connectionSearch = ref('')
 const focusConnectionId = ref<string | null>(null)
+const explorerHeaderRef = ref<InstanceType<typeof ExplorerHeader> | null>(null)
 
 // Recent connections management
 const recentConnections = ref<
@@ -57,6 +58,10 @@ const recentConnections = ref<
 const lastViewedConnectionId = ref<string>(localStorage.getItem('lastViewedConnectionId') || '')
 
 // Computed properties
+
+const selectedDbTypeFilter = computed(() => {
+  return explorerHeaderRef.value?.selectedDbTypeLabel || 'All'
+})
 
 const currentFileEntries = computed<FileSystemEntry[]>(() => {
   const id = explorerState.currentConnectionId.value
@@ -785,6 +790,7 @@ onMounted(() => {
 <template>
   <div class="min-h-full overflow-x-hidden">
     <ExplorerHeader
+      ref="explorerHeaderRef"
       v-model:connection-search="connectionSearch"
       @refresh="onRefreshConnections"
       @add-connection="onAddConnection"
@@ -822,7 +828,7 @@ onMounted(() => {
             <ExplorerSidebarConnections
               :initial-expanded-connection-id="explorerState.currentConnectionId.value || undefined"
               :search-query="connectionSearch"
-              :type-filter="'All'"
+              :type-filter="selectedDbTypeFilter"
               :focus-connection-id="focusConnectionId || undefined"
               :file-entries="fileOps.fileEntriesByConnection.value"
               :selected-file-paths="fileOps.selectedFilePathsByConnection.value"
