@@ -10,6 +10,7 @@ import {
 } from '@heroicons/vue/24/outline'
 import ObjectIcon from '@/components/common/ObjectIcon.vue'
 import { useConnectionsStore } from '@/stores/connections'
+import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import connectionsApi from '@/api/connections'
 import type { Connection } from '@/types/connections'
 import type { DatabaseMetadata, SQLTableMeta, SQLViewMeta } from '@/types/metadata'
@@ -73,16 +74,10 @@ const emit = defineEmits<{
 }>()
 
 const connectionsStore = useConnectionsStore()
+const navigationStore = useExplorerNavigationStore()
 const router = useRouter()
 const isLoadingConnections = ref(false)
 const loadError = ref<string | null>(null)
-const expandedConnections = ref(new Set<string>())
-const expandedDatabases = ref(new Set<string>())
-const expandedSchemas = ref(new Set<string>())
-
-// per-connection database list and metadata caches
-const databasesByConn = ref<Record<string, Array<{ name: string }>>>({})
-const metadataByConnDb = ref<Record<string, Record<string, DatabaseMetadata>>>({})
 
 const searchQuery = computed(() => props.searchQuery || '')
 const fileEntriesByConn = computed(() => props.fileEntries || {})
@@ -132,8 +127,10 @@ const canCopyDDL = computed(() => {
   const mo = menuObj.value
   if (!mo) return false
   if (mo.kind === 'table')
-    return !!findTableMeta(mo.connectionId, mo.database, mo.name, mo.schema)?.ddl?.createTable
-  return !!findViewMeta(mo.connectionId, mo.database, mo.name, mo.schema)?.definition
+    return !!navigationStore.findTableMeta(mo.connectionId, mo.database, mo.name, mo.schema)?.ddl
+      ?.createTable
+  return !!navigationStore.findViewMeta(mo.connectionId, mo.database, mo.name, mo.schema)
+    ?.definition
 })
 
 function openContextMenu(e: MouseEvent, target: ContextTarget) {
@@ -177,37 +174,13 @@ async function loadConnections() {
   }
 }
 
-async function ensureDatabases(connectionId: string) {
-  if (databasesByConn.value[connectionId]) return
-  try {
-    const dbs = await connectionsApi.getDatabases(connectionId)
-    databasesByConn.value[connectionId] = dbs.map((d) => ({ name: d.name }))
-  } catch {
-    // store empty to avoid loops; UI will show empty state
-    databasesByConn.value[connectionId] = []
-  }
-}
-
-async function ensureMetadata(connectionId: string, db: string) {
-  if (!metadataByConnDb.value[connectionId]) metadataByConnDb.value[connectionId] = {}
-  if (metadataByConnDb.value[connectionId][db]) return
-  try {
-    const meta = await connectionsApi.getMetadata(connectionId, db)
-    metadataByConnDb.value[connectionId][db] = meta
-  } catch {
-    // leave undefined; UI can handle missing meta
-  }
-}
-
 function toggleConnection(connId: string) {
-  if (expandedConnections.value.has(connId)) {
-    expandedConnections.value.delete(connId)
-  } else {
-    expandedConnections.value.add(connId)
+  navigationStore.toggleConnection(connId)
+  if (navigationStore.isConnectionExpanded(connId)) {
     if (isFileConnection(connId)) {
       emit('request-file-entries', { connectionId: connId })
     } else {
-      ensureDatabases(connId).catch(() => {})
+      navigationStore.ensureDatabases(connId).catch(() => {})
     }
     emit('expanded-connection', { connectionId: connId })
   }
@@ -215,33 +188,20 @@ function toggleConnection(connId: string) {
 
 function toggleDb(connId: string, db: string) {
   const key = `${connId}:${db}`
-  if (expandedDatabases.value.has(key)) {
-    expandedDatabases.value.delete(key)
-  } else {
-    expandedDatabases.value.add(key)
-    ensureMetadata(connId, db).catch(() => {})
+  navigationStore.toggleDatabase(key)
+  if (navigationStore.isDatabaseExpanded(key)) {
+    navigationStore.ensureMetadata(connId, db).catch(() => {})
   }
 }
 
 function toggleSchema(connId: string, db: string, schema: string) {
   const key = `${connId}:${db}:${schema}`
-  if (expandedSchemas.value.has(key)) expandedSchemas.value.delete(key)
-  else expandedSchemas.value.add(key)
+  navigationStore.toggleSchema(key)
 }
 
 const normalized = (s: string) => s.toLowerCase()
 
 const highlightParts = (text: string) => splitHighlight(text, searchQuery.value)
-
-function isConnExpanded(connId: string) {
-  return expandedConnections.value.has(connId)
-}
-function isDbExpanded(connId: string, db: string) {
-  return expandedDatabases.value.has(`${connId}:${db}`)
-}
-function isSchemaExpanded(connId: string, db: string, schema: string) {
-  return expandedSchemas.value.has(`${connId}:${db}:${schema}`)
-}
 
 function matchesTypeFilter(conn: Connection): boolean {
   const filterLabel = props.typeFilter || 'All'
@@ -269,11 +229,9 @@ function onOpen(
   defaultTab?: DefaultTab,
   openInRightSplit?: boolean
 ) {
-  const meta = metadataByConnDb.value[connId]?.[db]
-  if (!meta) return
   let obj: SQLTableMeta | SQLViewMeta | undefined
-  if (type === 'table') obj = Object.values(meta.tables || {}).find((t) => t.name === name)
-  else obj = Object.values(meta.views || {}).find((v) => v.name === name)
+  if (type === 'table') obj = navigationStore.findTableMeta(connId, db, name, schema)
+  else obj = navigationStore.findViewMeta(connId, db, name, schema)
   if (!obj) return
   emit('open', {
     connectionId: connId,
@@ -302,16 +260,14 @@ async function actionTestConnection(id: string) {
 
 async function actionRefreshDatabases(id: string) {
   // Clear cached dbs so ensureDatabases refetches
-  delete databasesByConn.value[id]
-  await ensureDatabases(id)
+  navigationStore.invalidateDatabases(id)
+  await navigationStore.ensureDatabases(id, true)
   toast.success('Databases refreshed')
 }
 
 async function actionRefreshMetadata(connId: string, db: string) {
   try {
-    const meta = await connectionsApi.getMetadata(connId, db, true)
-    if (!metadataByConnDb.value[connId]) metadataByConnDb.value[connId] = {}
-    metadataByConnDb.value[connId][db] = meta
+    await navigationStore.ensureMetadata(connId, db, true)
     toast.success('Metadata refreshed')
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : 'Failed to refresh metadata'
@@ -339,8 +295,7 @@ async function actionDeleteConnection(id: string) {
   try {
     await connectionsStore.deleteConnection(id)
     // remove cached data
-    delete databasesByConn.value[id]
-    delete metadataByConnDb.value[id]
+    navigationStore.invalidateConnection(id)
     toast.success('Connection deleted')
   } catch (e) {
     toast.error('Failed to delete connection')
@@ -467,30 +422,12 @@ function onMenuAction(payload: {
   closeContextMenuOnce()
 }
 
-function findTableMeta(connId: string, db: string, name: string, schema?: string) {
-  const meta = metadataByConnDb.value[connId]?.[db]
-  if (!meta) return null
-  const obj = Object.values(meta.tables || {}).find(
-    (t) => t.name === name && (schema ? t.schema === schema : true)
-  )
-  return obj || null
-}
-
-function findViewMeta(connId: string, db: string, name: string, schema?: string) {
-  const meta = metadataByConnDb.value[connId]?.[db]
-  if (!meta) return null
-  const obj = Object.values(meta.views || {}).find(
-    (v) => v.name === name && (schema ? v.schema === schema : true)
-  )
-  return obj || null
-}
-
 // Build schema list and items for a given connection/database
 function getSchemas(
   connId: string,
   db: string
 ): Array<{ name: string; tables: string[]; views: string[] }> {
-  const meta = metadataByConnDb.value[connId]?.[db]
+  const meta = navigationStore.metadataCache[connId]?.[db]
   if (!meta) return []
   const buckets = new Map<string, { tables: string[]; views: string[] }>()
   Object.values(meta.tables || {}).forEach((t) => {
@@ -527,11 +464,11 @@ function getSchemas(
 onMounted(async () => {
   await loadConnections()
   if (props.initialExpandedConnectionId) {
-    expandedConnections.value.add(props.initialExpandedConnectionId)
+    navigationStore.expandConnection(props.initialExpandedConnectionId)
     if (isFileConnection(props.initialExpandedConnectionId)) {
       emit('request-file-entries', { connectionId: props.initialExpandedConnectionId })
     } else {
-      ensureDatabases(props.initialExpandedConnectionId).catch(() => {})
+      navigationStore.ensureDatabases(props.initialExpandedConnectionId).catch(() => {})
     }
   }
 })
@@ -544,18 +481,18 @@ watch(
     const connId = props.initialExpandedConnectionId
     if (!connId) return
     // Expand connection and databases
-    expandedConnections.value.add(connId)
-    await ensureDatabases(connId)
+    navigationStore.expandConnection(connId)
+    await navigationStore.ensureDatabases(connId)
 
     if (sel.database) {
       const dbKey = `${connId}:${sel.database}`
-      expandedDatabases.value.add(dbKey)
-      await ensureMetadata(connId, sel.database)
+      navigationStore.expandDatabase(dbKey)
+      await navigationStore.ensureMetadata(connId, sel.database)
     }
 
     if (sel.database && sel.schema && hasSchemas(connId)) {
       const schemaKey = `${connId}:${sel.database}:${sel.schema}`
-      expandedSchemas.value.add(schemaKey)
+      navigationStore.expandSchema(schemaKey)
     }
 
     // After DOM updates, try to focus the most specific node
@@ -588,18 +525,18 @@ async function expandForSearch(query: string) {
   if (!trimmed) return
   const conns = filteredConnections.value
   for (const c of conns) {
-    if (!expandedConnections.value.has(c.id)) {
-      expandedConnections.value.add(c.id)
+    if (!navigationStore.isConnectionExpanded(c.id)) {
+      navigationStore.expandConnection(c.id)
     }
     if (isFileConnection(c.id)) {
       emit('request-file-entries', { connectionId: c.id })
     } else {
-      await ensureDatabases(c.id)
-      const dbs = databasesByConn.value[c.id] || []
+      await navigationStore.ensureDatabases(c.id)
+      const dbs = navigationStore.databasesCache[c.id] || []
       for (const d of dbs) {
         if (matchesDbFilter(c.id, d.name)) {
-          expandedDatabases.value.add(`${c.id}:${d.name}`)
-          ensureMetadata(c.id, d.name).catch(() => {})
+          navigationStore.expandDatabase(`${c.id}:${d.name}`)
+          navigationStore.ensureMetadata(c.id, d.name).catch(() => {})
         }
       }
     }
@@ -626,10 +563,12 @@ watch(
   () => props.focusConnectionId,
   async (id) => {
     if (!id) return
-    expandedConnections.value = new Set([id])
-    expandedDatabases.value = new Set()
-    expandedSchemas.value = new Set()
-    await ensureDatabases(id).catch(() => {})
+    // Clear all expansion and focus on this connection only
+    navigationStore.expandedConnections.clear()
+    navigationStore.expandedDatabases.clear()
+    navigationStore.expandedSchemas.clear()
+    navigationStore.expandConnection(id)
+    await navigationStore.ensureDatabases(id).catch(() => {})
     await nextTick(() => {
       const el = document.querySelector<HTMLElement>(`[data-explorer-connection="${id}"]`)
       if (el) el.scrollIntoView({ block: 'nearest' })
@@ -655,10 +594,10 @@ const filteredConnections = computed<Connection[]>(() => {
     const label = `${c.name || ''} ${c.host || ''} ${c.type || ''}`
     if (normalized(label).includes(qn)) return true
     // match by database name if loaded
-    const dbs = databasesByConn.value[c.id] || []
+    const dbs = navigationStore.databasesCache[c.id] || []
     if (dbs.some((d) => normalized(d.name).includes(qn))) return true
     // match by schema/table/view if metadata loaded
-    const metaByDb = metadataByConnDb.value[c.id] || {}
+    const metaByDb = navigationStore.metadataCache[c.id] || {}
     for (const dbName in metaByDb) {
       const meta = metaByDb[dbName]
       // schemas (if present)
@@ -680,7 +619,7 @@ function matchesDbFilter(connId: string, dbName: string): boolean {
   if (!q) return true
   const qn = normalized(q)
   if (normalized(dbName).includes(qn)) return true
-  const meta = metadataByConnDb.value[connId]?.[dbName]
+  const meta = navigationStore.metadataCache[connId]?.[dbName]
   if (!meta) return false
   // check schemas, tables, views
   const tableHit = Object.values(meta.tables || {}).some(
@@ -720,7 +659,7 @@ function hasSchemas(connId: string): boolean {
 }
 
 function getFlatTables(connId: string, db: string): string[] {
-  const meta = metadataByConnDb.value[connId]?.[db]
+  const meta = navigationStore.metadataCache[connId]?.[db]
   if (!meta) return []
   return Object.values(meta.tables || {})
     .map((t) => t.name)
@@ -728,7 +667,7 @@ function getFlatTables(connId: string, db: string): string[] {
 }
 
 function getFlatViews(connId: string, db: string): string[] {
-  const meta = metadataByConnDb.value[connId]?.[db]
+  const meta = navigationStore.metadataCache[connId]?.[db]
   if (!meta) return []
   return Object.values(meta.views || {})
     .map((v) => v.name)
@@ -740,12 +679,12 @@ async function actionCopyDDLFromContext() {
   const mo = menuObj.value
   if (!mo) return
   if (mo.kind === 'table') {
-    const m = findTableMeta(mo.connectionId, mo.database, mo.name, mo.schema)
+    const m = navigationStore.findTableMeta(mo.connectionId, mo.database, mo.name, mo.schema)
     const ddl = m?.ddl?.createTable || ''
     if (ddl) await actionCopy(ddl, 'Table DDL copied')
     else toast.info('DDL not available')
   } else {
-    const m = findViewMeta(mo.connectionId, mo.database, mo.name, mo.schema)
+    const m = navigationStore.findViewMeta(mo.connectionId, mo.database, mo.name, mo.schema)
     const ddl = m?.definition || ''
     if (ddl) await actionCopy(ddl, 'View DDL copied')
     else toast.info('Definition not available')
@@ -781,7 +720,9 @@ async function actionCopyDDLFromContext() {
               "
             >
               <component
-                :is="isConnExpanded(conn.id) ? ChevronDownIcon : ChevronRightIcon"
+                :is="
+                  navigationStore.isConnectionExpanded(conn.id) ? ChevronDownIcon : ChevronRightIcon
+                "
                 :class="caretClass"
                 @click.stop="toggleConnection(conn.id)"
               />
@@ -812,7 +753,7 @@ async function actionCopyDDLFromContext() {
 
             <!-- Databases under connection -->
             <div
-              v-if="isConnExpanded(conn.id)"
+              v-if="navigationStore.isConnectionExpanded(conn.id)"
               class="ml-4 border-l border-gray-200 pl-2 space-y-1"
             >
               <div v-if="isFileConnection(conn.id)">
@@ -857,13 +798,13 @@ async function actionCopyDDLFromContext() {
               </div>
               <div v-else>
                 <div
-                  v-if="!databasesByConn[conn.id]?.length"
+                  v-if="!navigationStore.databasesCache[conn.id]?.length"
                   class="text-xs text-gray-500 px-2 py-1"
                 >
                   No databases
                 </div>
                 <div
-                  v-for="db in (databasesByConn[conn.id] || []).filter((d) =>
+                  v-for="db in (navigationStore.databasesCache[conn.id] || []).filter((d) =>
                     matchesDbFilter(conn.id, d.name)
                   )"
                   :key="db.name"
@@ -881,7 +822,11 @@ async function actionCopyDDLFromContext() {
                     "
                   >
                     <component
-                      :is="isDbExpanded(conn.id, db.name) ? ChevronDownIcon : ChevronRightIcon"
+                      :is="
+                        navigationStore.isDatabaseExpanded(`${conn.id}:${db.name}`)
+                          ? ChevronDownIcon
+                          : ChevronRightIcon
+                      "
                       :class="caretClass"
                       @click.stop="toggleDb(conn.id, db.name)"
                     />
@@ -898,10 +843,10 @@ async function actionCopyDDLFromContext() {
                   </div>
 
                   <div
-                    v-if="isDbExpanded(conn.id, db.name)"
+                    v-if="navigationStore.isDatabaseExpanded(`${conn.id}:${db.name}`)"
                     class="ml-4 border-l border-gray-200 pl-2 space-y-1"
                   >
-                    <div v-if="metadataByConnDb[conn.id]?.[db.name]">
+                    <div v-if="navigationStore.metadataCache[conn.id]?.[db.name]">
                       <!-- Show schemas only for PostgreSQL & Snowflake -->
                       <div v-if="hasSchemas(conn.id)">
                         <template
@@ -923,7 +868,9 @@ async function actionCopyDDLFromContext() {
                           >
                             <component
                               :is="
-                                isSchemaExpanded(conn.id, db.name, schema.name)
+                                navigationStore.isSchemaExpanded(
+                                  `${conn.id}:${db.name}:${schema.name}`
+                                )
                                   ? ChevronDownIcon
                                   : ChevronRightIcon
                               "
@@ -944,7 +891,11 @@ async function actionCopyDDLFromContext() {
                             </span>
                           </div>
                           <div
-                            v-if="isSchemaExpanded(conn.id, db.name, schema.name)"
+                            v-if="
+                              navigationStore.isSchemaExpanded(
+                                `${conn.id}:${db.name}:${schema.name}`
+                              )
+                            "
                             class="ml-4 border-l border-gray-200 pl-2"
                           >
                             <div

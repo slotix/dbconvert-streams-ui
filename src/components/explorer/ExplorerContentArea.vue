@@ -19,7 +19,7 @@
     />
   </div>
   <div v-else-if="showDiagram" class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg">
-    <DiagramView :tables="[] as any[]" :views="[] as any[]" :relationships="[] as any[]" />
+    <DiagramView :tables="tables" :views="views" :relationships="relationships" />
   </div>
   <div v-else>
     <div class="min-h-[480px] min-w-0 overflow-x-hidden">
