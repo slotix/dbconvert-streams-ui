@@ -1,0 +1,218 @@
+<script setup lang="ts">
+import { ChevronRightIcon, ChevronDownIcon } from '@heroicons/vue/24/outline'
+import SchemaTreeItem from './SchemaTreeItem.vue'
+import ObjectList from './ObjectList.vue'
+import { highlightParts as splitHighlight } from '@/utils/highlight'
+
+type ObjectType = 'table' | 'view'
+
+interface SchemaInfo {
+  name: string
+  tables: string[]
+  views: string[]
+}
+
+interface DatabaseInfo {
+  name: string
+}
+
+const props = defineProps<{
+  database: DatabaseInfo
+  connectionId: string
+  isExpanded: boolean
+  hasSchemas: boolean
+  schemas: SchemaInfo[]
+  flatTables: string[]
+  flatViews: string[]
+  searchQuery: string
+  caretClass: string
+  expandedSchemas: Set<string>
+  metadataLoaded: boolean
+}>()
+
+const emit = defineEmits<{
+  (e: 'toggle-database'): void
+  (e: 'toggle-schema', schemaName: string): void
+  (e: 'select-database', payload: { connectionId: string; database: string }): void
+  (
+    e: 'open-object',
+    payload: {
+      type: ObjectType
+      name: string
+      schema?: string
+      mode: 'preview' | 'pinned'
+    }
+  ): void
+  (
+    e: 'contextmenu-database',
+    payload: { event: MouseEvent; connectionId: string; database: string }
+  ): void
+  (
+    e: 'contextmenu-schema',
+    payload: { event: MouseEvent; connectionId: string; database: string; schema: string }
+  ): void
+  (
+    e: 'contextmenu-object',
+    payload: {
+      event: MouseEvent
+      kind: ObjectType
+      connectionId: string
+      database: string
+      schema?: string
+      name: string
+    }
+  ): void
+}>()
+
+const highlightParts = (text: string) => splitHighlight(text, props.searchQuery)
+
+function isSchemaExpanded(schemaName: string): boolean {
+  const key = `${props.connectionId}:${props.database.name}:${schemaName}`
+  return props.expandedSchemas.has(key)
+}
+
+function handleDatabaseContextMenu(event: MouseEvent) {
+  emit('contextmenu-database', {
+    event,
+    connectionId: props.connectionId,
+    database: props.database.name
+  })
+}
+
+function handleSchemaToggle(schemaName: string) {
+  emit('toggle-schema', schemaName)
+}
+
+function handleSchemaContextMenu(payload: {
+  event: MouseEvent
+  connectionId: string
+  database: string
+  schema: string
+}) {
+  emit('contextmenu-schema', payload)
+}
+
+function handleObjectOpen(payload: {
+  type: ObjectType
+  name: string
+  schema?: string
+  mode: 'preview' | 'pinned'
+}) {
+  emit('open-object', payload)
+}
+
+function handleObjectContextMenu(payload: {
+  event: MouseEvent
+  kind: ObjectType
+  connectionId: string
+  database: string
+  schema?: string
+  name: string
+}) {
+  emit('contextmenu-object', payload)
+}
+
+function handleFlatObjectContextMenu(payload: {
+  event: MouseEvent
+  kind: ObjectType
+  name: string
+  schema?: string
+}) {
+  emit('contextmenu-object', {
+    event: payload.event,
+    kind: payload.kind,
+    connectionId: props.connectionId,
+    database: props.database.name,
+    name: payload.name
+  })
+}
+</script>
+
+<template>
+  <div>
+    <div
+      class="flex items-center px-2 py-1.5 text-sm text-gray-700 rounded-md hover:bg-gray-100 cursor-pointer"
+      :data-explorer-db="`${connectionId}:${database.name}`"
+      @click="$emit('select-database', { connectionId, database: database.name })"
+      @contextmenu.stop.prevent="handleDatabaseContextMenu"
+    >
+      <component
+        :is="isExpanded ? ChevronDownIcon : ChevronRightIcon"
+        :class="caretClass"
+        @click.stop="$emit('toggle-database')"
+      />
+      <span class="font-medium">
+        <template v-for="(p, i) in highlightParts(database.name)" :key="i">
+          <span v-if="p.match" class="bg-yellow-200/60 rounded px-0.5" v-text="p.text"></span>
+          <span v-else v-text="p.text"></span>
+        </template>
+      </span>
+    </div>
+
+    <div v-if="isExpanded" class="ml-4 border-l border-gray-200 pl-2 space-y-1">
+      <div v-if="metadataLoaded">
+        <!-- Show schemas only for PostgreSQL & Snowflake -->
+        <div v-if="hasSchemas">
+          <SchemaTreeItem
+            v-for="schema in schemas"
+            :key="schema.name || 'default'"
+            :schema="schema"
+            :connection-id="connectionId"
+            :database="database.name"
+            :is-expanded="isSchemaExpanded(schema.name)"
+            :search-query="searchQuery"
+            :caret-class="caretClass"
+            @toggle="handleSchemaToggle(schema.name)"
+            @open-object="handleObjectOpen"
+            @contextmenu-schema="handleSchemaContextMenu"
+            @contextmenu-object="handleObjectContextMenu"
+          />
+        </div>
+        <div v-else>
+          <!-- Flat lists for DBs without schemas (e.g., MySQL) -->
+          <div
+            class="text-xs uppercase tracking-wide text-gray-400 px-2 mt-1 flex items-center justify-between"
+          >
+            <span>Tables</span>
+            <span class="text-[11px] font-medium text-gray-500 normal-case">
+              {{ flatTables.length }}
+            </span>
+          </div>
+          <ObjectList
+            :items="flatTables"
+            object-type="table"
+            :connection-id="connectionId"
+            :database="database.name"
+            :search-query="searchQuery"
+            :explorer-obj-prefix="`${connectionId}:${database.name}:`"
+            @click="(p) => handleObjectOpen({ type: 'table', ...p })"
+            @dblclick="(p) => handleObjectOpen({ type: 'table', ...p })"
+            @middleclick="(p) => handleObjectOpen({ type: 'table', ...p })"
+            @contextmenu="handleFlatObjectContextMenu"
+          />
+          <div
+            class="text-xs uppercase tracking-wide text-gray-400 px-2 mt-2 flex items-center justify-between"
+          >
+            <span>Views</span>
+            <span class="text-[11px] font-medium text-gray-500 normal-case">
+              {{ flatViews.length }}
+            </span>
+          </div>
+          <ObjectList
+            :items="flatViews"
+            object-type="view"
+            :connection-id="connectionId"
+            :database="database.name"
+            :search-query="searchQuery"
+            :explorer-obj-prefix="`${connectionId}:${database.name}:`"
+            @click="(p) => handleObjectOpen({ type: 'view', ...p })"
+            @dblclick="(p) => handleObjectOpen({ type: 'view', ...p })"
+            @middleclick="(p) => handleObjectOpen({ type: 'view', ...p })"
+            @contextmenu="handleFlatObjectContextMenu"
+          />
+        </div>
+      </div>
+      <div v-else class="text-xs text-gray-500 px-2 py-1">Loading metadata…</div>
+    </div>
+  </div>
+</template>

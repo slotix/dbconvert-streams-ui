@@ -1,24 +1,17 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
-import {
-  ChevronRightIcon,
-  ChevronDownIcon,
-  ArrowPathIcon,
-  CubeIcon,
-  FolderIcon
-} from '@heroicons/vue/24/outline'
-import ObjectIcon from '@/components/common/ObjectIcon.vue'
+import { ArrowPathIcon, CubeIcon } from '@heroicons/vue/24/outline'
 import { useConnectionsStore } from '@/stores/connections'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
+import { useConnectionTreeLogic } from '@/composables/useConnectionTreeLogic'
 import connectionsApi from '@/api/connections'
 import type { Connection } from '@/types/connections'
-import type { DatabaseMetadata, SQLTableMeta, SQLViewMeta } from '@/types/metadata'
+import type { SQLTableMeta, SQLViewMeta } from '@/types/metadata'
 import type { FileSystemEntry } from '@/api/fileSystem'
 import { useToast } from 'vue-toastification'
-import { highlightParts as splitHighlight } from '@/utils/highlight'
 import ExplorerContextMenu from './ExplorerContextMenu.vue'
-import FileEntry from './FileEntry.vue'
+import ConnectionTreeItem from './tree/ConnectionTreeItem.vue'
 
 type ObjectType = 'table' | 'view'
 
@@ -75,10 +68,12 @@ const emit = defineEmits<{
 
 const connectionsStore = useConnectionsStore()
 const navigationStore = useExplorerNavigationStore()
+const treeLogic = useConnectionTreeLogic()
 const router = useRouter()
+const toast = useToast()
+
 const isLoadingConnections = ref(false)
 const loadError = ref<string | null>(null)
-
 const searchQuery = computed(() => props.searchQuery || '')
 const fileEntriesByConn = computed(() => props.fileEntries || {})
 const selectedFilePathsByConn = computed(() => props.selectedFilePaths || {})
@@ -115,14 +110,6 @@ const menuObj = computed<TableOrViewTarget | null>(() =>
     : null
 )
 
-// Utility function to find file entry from state
-function findFileEntry(connectionId: string, path: string): FileSystemEntry | undefined {
-  const entries = fileEntriesByConn.value[connectionId]
-  if (!entries) return undefined
-
-  return entries.find((entry) => entry.path === path)
-}
-
 const canCopyDDL = computed(() => {
   const mo = menuObj.value
   if (!mo) return false
@@ -133,33 +120,43 @@ const canCopyDDL = computed(() => {
     ?.definition
 })
 
-function openContextMenu(e: MouseEvent, target: ContextTarget) {
-  e.preventDefault()
-  contextTarget.value = target
-  // Use client coordinates; position with small offset
-  contextMenuX.value = e.clientX + 2
-  contextMenuY.value = e.clientY + 2
-  contextMenuVisible.value = true
-  // Close on outside click or Escape
-  window.addEventListener('click', closeContextMenuOnce, { once: true })
-  window.addEventListener('keydown', onContextKeydown)
-}
-
-function closeContextMenuOnce() {
-  contextMenuVisible.value = false
-  contextTarget.value = null
-  window.removeEventListener('keydown', onContextKeydown)
-}
-
-function onContextKeydown(ev: KeyboardEvent) {
-  if (ev.key === 'Escape') closeContextMenuOnce()
-}
-
-// Global toast
-const toast = useToast()
-
-// Fixed, consistent caret icon class across all tree levels
+// Fixed, consistent caret icon class
 const caretClass = 'w-[16px] h-[16px] shrink-0 flex-none text-gray-400 mr-1.5'
+
+const normalized = (s: string) => s.toLowerCase()
+
+const filteredConnections = computed<Connection[]>(() => {
+  const q = searchQuery.value.trim()
+  const base = [...connectionsStore.connections]
+    .filter((conn) => treeLogic.matchesTypeFilter(conn, props.typeFilter))
+    .sort((a, b) => {
+      const ac = Number(a.created || 0)
+      const bc = Number(b.created || 0)
+      if (bc !== ac) return bc - ac
+      return (a.name || '').localeCompare(b.name || '')
+    })
+  if (!q) return base
+  const qn = normalized(q)
+  return base.filter((c) => {
+    const label = `${c.name || ''} ${c.host || ''} ${c.type || ''}`
+    if (normalized(label).includes(qn)) return true
+    const dbs = navigationStore.databasesCache[c.id] || []
+    if (dbs.some((d) => normalized(d.name).includes(qn))) return true
+    const metaByDb = navigationStore.metadataCache[c.id] || {}
+    for (const dbName in metaByDb) {
+      const meta = metaByDb[dbName]
+      const hasSchemaHit = Object.values(meta.tables || {}).some(
+        (t) => (t.schema && normalized(t.schema).includes(qn)) || normalized(t.name).includes(qn)
+      )
+      if (hasSchemaHit) return true
+      const hasViewHit = Object.values(meta.views || {}).some(
+        (v) => (v.schema && normalized(v.schema).includes(qn)) || normalized(v.name).includes(qn)
+      )
+      if (hasViewHit) return true
+    }
+    return false
+  })
+})
 
 async function loadConnections() {
   isLoadingConnections.value = true
@@ -177,7 +174,7 @@ async function loadConnections() {
 function toggleConnection(connId: string) {
   navigationStore.toggleConnection(connId)
   if (navigationStore.isConnectionExpanded(connId)) {
-    if (isFileConnection(connId)) {
+    if (treeLogic.isFileConnection(connId)) {
       emit('request-file-entries', { connectionId: connId })
     } else {
       navigationStore.ensureDatabases(connId).catch(() => {})
@@ -197,26 +194,6 @@ function toggleDb(connId: string, db: string) {
 function toggleSchema(connId: string, db: string, schema: string) {
   const key = `${connId}:${db}:${schema}`
   navigationStore.toggleSchema(key)
-}
-
-const normalized = (s: string) => s.toLowerCase()
-
-const highlightParts = (text: string) => splitHighlight(text, searchQuery.value)
-
-function matchesTypeFilter(conn: Connection): boolean {
-  const filterLabel = props.typeFilter || 'All'
-  const filter = filterLabel.toLowerCase()
-  if (!filter || filter === 'all') return true
-  const connType = (conn.type || '').toLowerCase()
-  if (!connType) return false
-  if (filter === 'postgresql') return connType.includes('postgres')
-  if (filter === 'files') return connType.includes('file')
-  return connType.includes(filter)
-}
-
-function isFileConnection(connId: string): boolean {
-  const conn = connectionsStore.connections.find((c) => c.id === connId)
-  return (conn?.type || '').toLowerCase().includes('file')
 }
 
 function onOpen(
@@ -246,6 +223,26 @@ function onOpen(
   })
 }
 
+function openContextMenu(e: MouseEvent, target: ContextTarget) {
+  e.preventDefault()
+  contextTarget.value = target
+  contextMenuX.value = e.clientX + 2
+  contextMenuY.value = e.clientY + 2
+  contextMenuVisible.value = true
+  window.addEventListener('click', closeContextMenuOnce, { once: true })
+  window.addEventListener('keydown', onContextKeydown)
+}
+
+function closeContextMenuOnce() {
+  contextMenuVisible.value = false
+  contextTarget.value = null
+  window.removeEventListener('keydown', onContextKeydown)
+}
+
+function onContextKeydown(ev: KeyboardEvent) {
+  if (ev.key === 'Escape') closeContextMenuOnce()
+}
+
 // Context actions
 async function actionTestConnection(id: string) {
   try {
@@ -259,7 +256,6 @@ async function actionTestConnection(id: string) {
 }
 
 async function actionRefreshDatabases(id: string) {
-  // Clear cached dbs so ensureDatabases refetches
   navigationStore.invalidateDatabases(id)
   await navigationStore.ensureDatabases(id, true)
   toast.success('Databases refreshed')
@@ -284,17 +280,16 @@ async function actionCopy(text: string, label = 'Copied') {
   }
 }
 
-// Reuse existing pages/actions
 function actionEditConnection(id: string) {
   router.push(`/explorer/edit/${id}`)
 }
+
 async function actionDeleteConnection(id: string) {
   const conn = connectionsStore.connections.find((c) => c.id === id)
   const name = conn?.name || conn?.host || 'connection'
   if (!window.confirm(`Delete ${name}? This cannot be undone.`)) return
   try {
     await connectionsStore.deleteConnection(id)
-    // remove cached data
     navigationStore.invalidateConnection(id)
     toast.success('Connection deleted')
   } catch (e) {
@@ -317,7 +312,29 @@ async function actionCloneConnection(id: string) {
   }
 }
 
-// Centralized handler for child context menu events
+async function actionCopyDDLFromContext() {
+  const mo = menuObj.value
+  if (!mo) return
+  if (mo.kind === 'table') {
+    const m = navigationStore.findTableMeta(mo.connectionId, mo.database, mo.name, mo.schema)
+    const ddl = m?.ddl?.createTable || ''
+    if (ddl) await actionCopy(ddl, 'Table DDL copied')
+    else toast.info('DDL not available')
+  } else {
+    const m = navigationStore.findViewMeta(mo.connectionId, mo.database, mo.name, mo.schema)
+    const ddl = m?.definition || ''
+    if (ddl) await actionCopy(ddl, 'View DDL copied')
+    else toast.info('Definition not available')
+  }
+  closeContextMenuOnce()
+}
+
+function findFileEntry(connectionId: string, path: string): FileSystemEntry | undefined {
+  const entries = fileEntriesByConn.value[connectionId]
+  if (!entries) return undefined
+  return entries.find((entry) => entry.path === path)
+}
+
 function onMenuAction(payload: {
   action: string
   target: ContextTarget
@@ -422,42 +439,98 @@ function onMenuAction(payload: {
   closeContextMenuOnce()
 }
 
-// Build schema list and items for a given connection/database
-function getSchemas(
-  connId: string,
-  db: string
-): Array<{ name: string; tables: string[]; views: string[] }> {
-  const meta = navigationStore.metadataCache[connId]?.[db]
-  if (!meta) return []
-  const buckets = new Map<string, { tables: string[]; views: string[] }>()
-  Object.values(meta.tables || {}).forEach((t) => {
-    const s = t.schema || ''
-    if (!buckets.has(s)) buckets.set(s, { tables: [], views: [] })
-    buckets.get(s)!.tables.push(t.name)
+// Event handlers for ConnectionTreeItem
+function handleToggleConnection(conn: Connection) {
+  toggleConnection(conn.id)
+}
+
+function handleToggleDatabase(conn: Connection, dbName: string) {
+  toggleDb(conn.id, dbName)
+}
+
+function handleToggleSchema(conn: Connection, payload: { dbName: string; schemaName: string }) {
+  toggleSchema(conn.id, payload.dbName, payload.schemaName)
+}
+
+function handleOpenObject(
+  conn: Connection,
+  payload: {
+    connectionId: string
+    database: string
+    type: ObjectType
+    name: string
+    schema?: string
+    mode: 'preview' | 'pinned'
+  }
+) {
+  onOpen(
+    payload.connectionId,
+    payload.database,
+    payload.type,
+    payload.name,
+    payload.mode,
+    payload.schema
+  )
+}
+
+function handleContextMenuConnection(payload: { event: MouseEvent; connectionId: string }) {
+  openContextMenu(payload.event, { kind: 'connection', connectionId: payload.connectionId })
+}
+
+function handleContextMenuDatabase(payload: {
+  event: MouseEvent
+  connectionId: string
+  database: string
+}) {
+  openContextMenu(payload.event, {
+    kind: 'database',
+    connectionId: payload.connectionId,
+    database: payload.database
   })
-  Object.values(meta.views || {}).forEach((v) => {
-    const s = v.schema || ''
-    if (!buckets.has(s)) buckets.set(s, { tables: [], views: [] })
-    buckets.get(s)!.views.push(v.name)
+}
+
+function handleContextMenuSchema(payload: {
+  event: MouseEvent
+  connectionId: string
+  database: string
+  schema: string
+}) {
+  openContextMenu(payload.event, {
+    kind: 'schema',
+    connectionId: payload.connectionId,
+    database: payload.database,
+    schema: payload.schema
   })
-  const arr = Array.from(buckets.entries()).map(([name, bucket]) => ({
-    name,
-    tables: bucket.tables.sort((a, b) => a.localeCompare(b)),
-    views: bucket.views.sort((a, b) => a.localeCompare(b))
-  }))
-  // Filter out MySQL default/system schemas
-  const mysqlSystemSchemas = new Set(['information_schema', 'mysql', 'performance_schema', 'sys'])
-  const filtered = isMySQL(connId)
-    ? arr.filter((s) => !mysqlSystemSchemas.has((s.name || '').toLowerCase()))
-    : arr
-  return filtered.sort((a, b) => {
-    const an = a.name
-    const bn = b.name
-    if (!an) return -1
-    if (!bn) return 1
-    if (an === 'public') return -1
-    if (bn === 'public') return 1
-    return an.localeCompare(bn)
+}
+
+function handleContextMenuObject(payload: {
+  event: MouseEvent
+  kind: ObjectType
+  connectionId: string
+  database: string
+  schema?: string
+  name: string
+}) {
+  openContextMenu(payload.event, {
+    kind: payload.kind,
+    connectionId: payload.connectionId,
+    database: payload.database,
+    schema: payload.schema,
+    name: payload.name
+  })
+}
+
+function handleContextMenuFile(payload: {
+  event: MouseEvent
+  connectionId: string
+  path: string
+  name: string
+}) {
+  openContextMenu(payload.event, {
+    kind: 'file',
+    connectionId: payload.connectionId,
+    path: payload.path,
+    name: payload.name
   })
 }
 
@@ -465,7 +538,7 @@ onMounted(async () => {
   await loadConnections()
   if (props.initialExpandedConnectionId) {
     navigationStore.expandConnection(props.initialExpandedConnectionId)
-    if (isFileConnection(props.initialExpandedConnectionId)) {
+    if (treeLogic.isFileConnection(props.initialExpandedConnectionId)) {
       emit('request-file-entries', { connectionId: props.initialExpandedConnectionId })
     } else {
       navigationStore.ensureDatabases(props.initialExpandedConnectionId).catch(() => {})
@@ -473,14 +546,13 @@ onMounted(async () => {
   }
 })
 
-// auto-expand selection path if provided
+// Auto-expand selection path
 watch(
   () => props.selected,
   async (sel) => {
     if (!sel) return
     const connId = props.initialExpandedConnectionId
     if (!connId) return
-    // Expand connection and databases
     navigationStore.expandConnection(connId)
     await navigationStore.ensureDatabases(connId)
 
@@ -490,12 +562,11 @@ watch(
       await navigationStore.ensureMetadata(connId, sel.database)
     }
 
-    if (sel.database && sel.schema && hasSchemas(connId)) {
+    if (sel.database && sel.schema && treeLogic.hasSchemas(connId)) {
       const schemaKey = `${connId}:${sel.database}:${sel.schema}`
       navigationStore.expandSchema(schemaKey)
     }
 
-    // After DOM updates, try to focus the most specific node
     await nextTick()
     function focusSelector(selector: string) {
       const el = document.querySelector<HTMLElement>(selector)
@@ -519,7 +590,7 @@ watch(
   { immediate: false }
 )
 
-// When searching, auto-expand connections and databases that match
+// When searching, auto-expand connections and databases
 async function expandForSearch(query: string) {
   const trimmed = query.trim()
   if (!trimmed) return
@@ -528,7 +599,7 @@ async function expandForSearch(query: string) {
     if (!navigationStore.isConnectionExpanded(c.id)) {
       navigationStore.expandConnection(c.id)
     }
-    if (isFileConnection(c.id)) {
+    if (treeLogic.isFileConnection(c.id)) {
       emit('request-file-entries', { connectionId: c.id })
     } else {
       await navigationStore.ensureDatabases(c.id)
@@ -541,6 +612,23 @@ async function expandForSearch(query: string) {
       }
     }
   }
+}
+
+function matchesDbFilter(connId: string, dbName: string): boolean {
+  const q = searchQuery.value.trim()
+  if (!q) return true
+  const qn = normalized(q)
+  if (normalized(dbName).includes(qn)) return true
+  const meta = navigationStore.metadataCache[connId]?.[dbName]
+  if (!meta) return false
+  const tableHit = Object.values(meta.tables || {}).some(
+    (t) => normalized(t.name).includes(qn) || (t.schema && normalized(t.schema).includes(qn))
+  )
+  if (tableHit) return true
+  const viewHit = Object.values(meta.views || {}).some(
+    (v) => normalized(v.name).includes(qn) || (v.schema && normalized(v.schema).includes(qn))
+  )
+  return viewHit
 }
 
 watch(
@@ -563,7 +651,6 @@ watch(
   () => props.focusConnectionId,
   async (id) => {
     if (!id) return
-    // Clear all expansion and focus on this connection only
     navigationStore.expandedConnections.clear()
     navigationStore.expandedDatabases.clear()
     navigationStore.expandedSchemas.clear()
@@ -575,122 +662,6 @@ watch(
     })
   }
 )
-
-const filteredConnections = computed<Connection[]>(() => {
-  const q = searchQuery.value.trim()
-  // Use a stable, predictable order: newest first, tie-break by name
-  const base = [...connectionsStore.connections]
-    .filter((conn) => matchesTypeFilter(conn))
-    .sort((a, b) => {
-      const ac = Number(a.created || 0)
-      const bc = Number(b.created || 0)
-      if (bc !== ac) return bc - ac
-      return (a.name || '').localeCompare(b.name || '')
-    })
-  if (!q) return base
-  const qn = normalized(q)
-  return base.filter((c) => {
-    // match by connection label
-    const label = `${c.name || ''} ${c.host || ''} ${c.type || ''}`
-    if (normalized(label).includes(qn)) return true
-    // match by database name if loaded
-    const dbs = navigationStore.databasesCache[c.id] || []
-    if (dbs.some((d) => normalized(d.name).includes(qn))) return true
-    // match by schema/table/view if metadata loaded
-    const metaByDb = navigationStore.metadataCache[c.id] || {}
-    for (const dbName in metaByDb) {
-      const meta = metaByDb[dbName]
-      // schemas (if present)
-      const hasSchemaHit = Object.values(meta.tables || {}).some(
-        (t) => (t.schema && normalized(t.schema).includes(qn)) || normalized(t.name).includes(qn)
-      )
-      if (hasSchemaHit) return true
-      const hasViewHit = Object.values(meta.views || {}).some(
-        (v) => (v.schema && normalized(v.schema).includes(qn)) || normalized(v.name).includes(qn)
-      )
-      if (hasViewHit) return true
-    }
-    return false
-  })
-})
-
-function matchesDbFilter(connId: string, dbName: string): boolean {
-  const q = searchQuery.value.trim()
-  if (!q) return true
-  const qn = normalized(q)
-  if (normalized(dbName).includes(qn)) return true
-  const meta = navigationStore.metadataCache[connId]?.[dbName]
-  if (!meta) return false
-  // check schemas, tables, views
-  const tableHit = Object.values(meta.tables || {}).some(
-    (t) => normalized(t.name).includes(qn) || (t.schema && normalized(t.schema).includes(qn))
-  )
-  if (tableHit) return true
-  const viewHit = Object.values(meta.views || {}).some(
-    (v) => normalized(v.name).includes(qn) || (v.schema && normalized(v.schema).includes(qn))
-  )
-  return viewHit
-}
-
-function getDbLogoForType(dbType?: string): string {
-  const t = (dbType || '').toString().toLowerCase()
-  const found = connectionsStore.dbTypes.find((d) => d.type.toLowerCase() === t)
-  return found?.logo || '/images/db-logos/all.svg'
-}
-
-function isMySQL(connId: string): boolean {
-  const conn = connectionsStore.connections.find((c) => c.id === connId)
-  return (conn?.type || '').toLowerCase() === 'mysql'
-}
-
-function isPostgres(connId: string): boolean {
-  const conn = connectionsStore.connections.find((c) => c.id === connId)
-  return (conn?.type || '').toLowerCase() === 'postgresql'
-}
-
-function isSnowflake(connId: string): boolean {
-  const conn = connectionsStore.connections.find((c) => c.id === connId)
-  return (conn?.type || '').toLowerCase() === 'snowflake'
-}
-
-function hasSchemas(connId: string): boolean {
-  // Show schemas for PostgreSQL and Snowflake; hide for others
-  return isPostgres(connId) || isSnowflake(connId)
-}
-
-function getFlatTables(connId: string, db: string): string[] {
-  const meta = navigationStore.metadataCache[connId]?.[db]
-  if (!meta) return []
-  return Object.values(meta.tables || {})
-    .map((t) => t.name)
-    .sort((a, b) => a.localeCompare(b))
-}
-
-function getFlatViews(connId: string, db: string): string[] {
-  const meta = navigationStore.metadataCache[connId]?.[db]
-  if (!meta) return []
-  return Object.values(meta.views || {})
-    .map((v) => v.name)
-    .sort((a, b) => a.localeCompare(b))
-}
-
-// Copy DDL for the current context menu object (table/view)
-async function actionCopyDDLFromContext() {
-  const mo = menuObj.value
-  if (!mo) return
-  if (mo.kind === 'table') {
-    const m = navigationStore.findTableMeta(mo.connectionId, mo.database, mo.name, mo.schema)
-    const ddl = m?.ddl?.createTable || ''
-    if (ddl) await actionCopy(ddl, 'Table DDL copied')
-    else toast.info('DDL not available')
-  } else {
-    const m = navigationStore.findViewMeta(mo.connectionId, mo.database, mo.name, mo.schema)
-    const ddl = m?.definition || ''
-    if (ddl) await actionCopy(ddl, 'View DDL copied')
-    else toast.info('Definition not available')
-  }
-  closeContextMenuOnce()
-}
 </script>
 
 <template>
@@ -707,386 +678,39 @@ async function actionCopyDDLFromContext() {
           <CubeIcon class="h-6 w-6 inline-block mr-2" /> No connections
         </div>
         <div v-else class="space-y-1">
-          <div v-for="conn in filteredConnections" :key="conn.id">
-            <div
-              :data-explorer-connection="conn.id"
-              :class="[
-                'flex items-center px-2 py-1.5 text-sm text-gray-700 rounded-md hover:bg-gray-100 cursor-pointer transition-colors',
-                props.focusConnectionId === conn.id ? 'bg-sky-50 ring-1 ring-sky-200' : ''
-              ]"
-              @click="emit('select-connection', { connectionId: conn.id })"
-              @contextmenu.stop.prevent="
-                openContextMenu($event, { kind: 'connection', connectionId: conn.id })
-              "
-            >
-              <component
-                :is="
-                  navigationStore.isConnectionExpanded(conn.id) ? ChevronDownIcon : ChevronRightIcon
-                "
-                :class="caretClass"
-                @click.stop="toggleConnection(conn.id)"
-              />
-              <FolderIcon v-if="isFileConnection(conn.id)" class="h-5 w-5 mr-1.5 text-yellow-600" />
-              <img
-                v-else
-                :src="getDbLogoForType(conn.type)"
-                :alt="conn.type || 'db'"
-                class="h-5 w-5 mr-1.5 object-contain"
-              />
-              <span class="font-medium">
-                <template
-                  v-for="(p, i) in highlightParts(conn.name || conn.host || 'Connection')"
-                  :key="i"
-                >
-                  <span
-                    v-if="p.match"
-                    class="bg-yellow-200/60 rounded px-0.5"
-                    v-text="p.text"
-                  ></span>
-                  <span v-else v-text="p.text"></span>
-                </template>
-              </span>
-              <span v-if="conn.host && conn.port" class="ml-2 text-xs text-gray-500">
-                {{ conn.host }}:{{ conn.port }}
-              </span>
-            </div>
-
-            <!-- Databases under connection -->
-            <div
-              v-if="navigationStore.isConnectionExpanded(conn.id)"
-              class="ml-4 border-l border-gray-200 pl-2 space-y-1"
-            >
-              <div v-if="isFileConnection(conn.id)">
-                <div
-                  v-if="!fileEntriesByConn[conn.id]?.some((entry) => entry.type === 'file')"
-                  class="text-xs text-gray-500 px-2 py-1"
-                >
-                  No files
-                </div>
-                <FileEntry
-                  v-for="entry in (fileEntriesByConn[conn.id] || [])
-                    .filter((item) => item.type === 'file')
-                    .filter(
-                      (item) =>
-                        !searchQuery || item.name.toLowerCase().includes(searchQuery.toLowerCase())
-                    )"
-                  :key="entry.path"
-                  :entry="entry"
-                  :connection-id="conn.id"
-                  :selected="selectedFilePathsByConn[conn.id] === entry.path"
-                  :search-query="searchQuery"
-                  @select="emit('select-file', { connectionId: conn.id, path: entry.path })"
-                  @open="
-                    emit('open-file', {
-                      connectionId: conn.id,
-                      path: entry.path,
-                      entry: entry,
-                      mode: $event.mode,
-                      defaultTab: 'data',
-                      openInRightSplit: $event.openInRightSplit
-                    })
-                  "
-                  @context-menu="
-                    openContextMenu($event.event, {
-                      kind: 'file',
-                      connectionId: conn.id,
-                      path: $event.entry.path,
-                      name: $event.entry.name
-                    })
-                  "
-                />
-              </div>
-              <div v-else>
-                <div
-                  v-if="!navigationStore.databasesCache[conn.id]?.length"
-                  class="text-xs text-gray-500 px-2 py-1"
-                >
-                  No databases
-                </div>
-                <div
-                  v-for="db in (navigationStore.databasesCache[conn.id] || []).filter((d) =>
-                    matchesDbFilter(conn.id, d.name)
-                  )"
-                  :key="db.name"
-                >
-                  <div
-                    class="flex items-center px-2 py-1.5 text-sm text-gray-700 rounded-md hover:bg-gray-100 cursor-pointer"
-                    :data-explorer-db="`${conn.id}:${db.name}`"
-                    @click="emit('select-database', { connectionId: conn.id, database: db.name })"
-                    @contextmenu.stop.prevent="
-                      openContextMenu($event, {
-                        kind: 'database',
-                        connectionId: conn.id,
-                        database: db.name
-                      })
-                    "
-                  >
-                    <component
-                      :is="
-                        navigationStore.isDatabaseExpanded(`${conn.id}:${db.name}`)
-                          ? ChevronDownIcon
-                          : ChevronRightIcon
-                      "
-                      :class="caretClass"
-                      @click.stop="toggleDb(conn.id, db.name)"
-                    />
-                    <span class="font-medium">
-                      <template v-for="(p, i) in highlightParts(db.name)" :key="i">
-                        <span
-                          v-if="p.match"
-                          class="bg-yellow-200/60 rounded px-0.5"
-                          v-text="p.text"
-                        ></span>
-                        <span v-else v-text="p.text"></span>
-                      </template>
-                    </span>
-                  </div>
-
-                  <div
-                    v-if="navigationStore.isDatabaseExpanded(`${conn.id}:${db.name}`)"
-                    class="ml-4 border-l border-gray-200 pl-2 space-y-1"
-                  >
-                    <div v-if="navigationStore.metadataCache[conn.id]?.[db.name]">
-                      <!-- Show schemas only for PostgreSQL & Snowflake -->
-                      <div v-if="hasSchemas(conn.id)">
-                        <template
-                          v-for="schema in getSchemas(conn.id, db.name)"
-                          :key="schema.name || 'default'"
-                        >
-                          <div
-                            class="flex items-center px-2 py-1 text-sm text-gray-700 rounded-md hover:bg-gray-100 cursor-pointer"
-                            :data-explorer-schema="`${conn.id}:${db.name}:${schema.name}`"
-                            @click="toggleSchema(conn.id, db.name, schema.name)"
-                            @contextmenu.stop.prevent="
-                              openContextMenu($event, {
-                                kind: 'schema',
-                                connectionId: conn.id,
-                                database: db.name,
-                                schema: schema.name || ''
-                              })
-                            "
-                          >
-                            <component
-                              :is="
-                                navigationStore.isSchemaExpanded(
-                                  `${conn.id}:${db.name}:${schema.name}`
-                                )
-                                  ? ChevronDownIcon
-                                  : ChevronRightIcon
-                              "
-                              :class="caretClass"
-                            />
-                            <span class="font-medium">
-                              <template
-                                v-for="(p, i) in highlightParts(schema.name || 'default')"
-                                :key="i"
-                              >
-                                <span
-                                  v-if="p.match"
-                                  class="bg-yellow-200/60 rounded px-0.5"
-                                  v-text="p.text"
-                                ></span>
-                                <span v-else v-text="p.text"></span>
-                              </template>
-                            </span>
-                          </div>
-                          <div
-                            v-if="
-                              navigationStore.isSchemaExpanded(
-                                `${conn.id}:${db.name}:${schema.name}`
-                              )
-                            "
-                            class="ml-4 border-l border-gray-200 pl-2"
-                          >
-                            <div
-                              class="text-xs uppercase tracking-wide text-gray-400 px-2 mt-1 flex items-center justify-between"
-                            >
-                              <span>Tables</span>
-                              <span class="text-[11px] font-medium text-gray-500 normal-case">
-                                {{ schema.tables.length }}
-                              </span>
-                            </div>
-                            <div
-                              v-for="t in schema.tables.filter(
-                                (n) =>
-                                  !searchQuery ||
-                                  n.toLowerCase().includes(searchQuery.toLowerCase())
-                              )"
-                              :key="t"
-                              class="flex items-center px-2 py-1.5 text-sm rounded-md hover:bg-gray-100 cursor-pointer"
-                              :data-explorer-obj="`${conn.id}:${db.name}:${schema.name || ''}:table:${t}`"
-                              @click.stop="
-                                onOpen(conn.id, db.name, 'table', t, 'preview', schema.name)
-                              "
-                              @dblclick.stop="
-                                onOpen(conn.id, db.name, 'table', t, 'pinned', schema.name)
-                              "
-                              @click.middle.stop="
-                                onOpen(conn.id, db.name, 'table', t, 'pinned', schema.name)
-                              "
-                              @contextmenu.stop.prevent="
-                                openContextMenu($event, {
-                                  kind: 'table',
-                                  connectionId: conn.id,
-                                  database: db.name,
-                                  schema: schema.name || undefined,
-                                  name: t
-                                })
-                              "
-                            >
-                              <ObjectIcon object-type="table" class="mr-1.5" />
-                              <span>
-                                <template v-for="(p, i) in highlightParts(t)" :key="i">
-                                  <span
-                                    v-if="p.match"
-                                    class="bg-yellow-200/60 rounded px-0.5"
-                                    v-text="p.text"
-                                  ></span>
-                                  <span v-else v-text="p.text"></span>
-                                </template>
-                              </span>
-                            </div>
-                            <div
-                              class="text-xs uppercase tracking-wide text-gray-400 px-2 mt-2 flex items-center justify-between"
-                            >
-                              <span>Views</span>
-                              <span class="text-[11px] font-medium text-gray-500 normal-case">
-                                {{ schema.views.length }}
-                              </span>
-                            </div>
-                            <div
-                              v-for="v in schema.views.filter(
-                                (n) =>
-                                  !searchQuery ||
-                                  n.toLowerCase().includes(searchQuery.toLowerCase())
-                              )"
-                              :key="v"
-                              class="flex items-center px-2 py-1.5 text-sm rounded-md hover:bg-gray-100 cursor-pointer"
-                              :data-explorer-obj="`${conn.id}:${db.name}:${schema.name || ''}:view:${v}`"
-                              @click.stop="
-                                onOpen(conn.id, db.name, 'view', v, 'preview', schema.name)
-                              "
-                              @dblclick.stop="
-                                onOpen(conn.id, db.name, 'view', v, 'pinned', schema.name)
-                              "
-                              @click.middle.stop="
-                                onOpen(conn.id, db.name, 'view', v, 'pinned', schema.name)
-                              "
-                              @contextmenu.stop.prevent="
-                                openContextMenu($event, {
-                                  kind: 'view',
-                                  connectionId: conn.id,
-                                  database: db.name,
-                                  schema: schema.name || undefined,
-                                  name: v
-                                })
-                              "
-                            >
-                              <ObjectIcon object-type="view" class="mr-1.5" />
-                              <span>
-                                <template v-for="(p, i) in highlightParts(v)" :key="i">
-                                  <span
-                                    v-if="p.match"
-                                    class="bg-yellow-200/60 rounded px-0.5"
-                                    v-text="p.text"
-                                  ></span>
-                                  <span v-else v-text="p.text"></span>
-                                </template>
-                              </span>
-                            </div>
-                          </div>
-                        </template>
-                      </div>
-                      <div v-else>
-                        <!-- Flat lists for DBs without schemas (e.g., MySQL) -->
-                        <div
-                          class="text-xs uppercase tracking-wide text-gray-400 px-2 mt-1 flex items-center justify-between"
-                        >
-                          <span>Tables</span>
-                          <span class="text-[11px] font-medium text-gray-500 normal-case">
-                            {{ getFlatTables(conn.id, db.name).length }}
-                          </span>
-                        </div>
-                        <div
-                          v-for="t in getFlatTables(conn.id, db.name).filter(
-                            (n) =>
-                              !searchQuery || n.toLowerCase().includes(searchQuery.toLowerCase())
-                          )"
-                          :key="t"
-                          class="flex items-center px-2 py-1.5 text-sm rounded-md hover:bg-gray-100 cursor-pointer"
-                          :data-explorer-obj="`${conn.id}:${db.name}::table:${t}`"
-                          @click.stop="onOpen(conn.id, db.name, 'table', t, 'preview')"
-                          @dblclick.stop="onOpen(conn.id, db.name, 'table', t, 'pinned')"
-                          @click.middle.stop="onOpen(conn.id, db.name, 'table', t, 'pinned')"
-                          @contextmenu.stop.prevent="
-                            openContextMenu($event, {
-                              kind: 'table',
-                              connectionId: conn.id,
-                              database: db.name,
-                              name: t
-                            })
-                          "
-                        >
-                          <ObjectIcon object-type="table" class="mr-1.5" />
-                          <span>
-                            <template v-for="(p, i) in highlightParts(t)" :key="i">
-                              <span
-                                v-if="p.match"
-                                class="bg-yellow-200/60 rounded px-0.5"
-                                v-text="p.text"
-                              ></span>
-                              <span v-else v-text="p.text"></span>
-                            </template>
-                          </span>
-                        </div>
-                        <div
-                          class="text-xs uppercase tracking-wide text-gray-400 px-2 mt-2 flex items-center justify-between"
-                        >
-                          <span>Views</span>
-                          <span class="text-[11px] font-medium text-gray-500 normal-case">
-                            {{ getFlatViews(conn.id, db.name).length }}
-                          </span>
-                        </div>
-                        <div
-                          v-for="v in getFlatViews(conn.id, db.name).filter(
-                            (n) =>
-                              !searchQuery || n.toLowerCase().includes(searchQuery.toLowerCase())
-                          )"
-                          :key="v"
-                          class="flex items-center px-2 py-1.5 text-sm rounded-md hover:bg-gray-100 cursor-pointer"
-                          :data-explorer-obj="`${conn.id}:${db.name}::view:${v}`"
-                          @click.stop="onOpen(conn.id, db.name, 'view', v, 'preview')"
-                          @dblclick.stop="onOpen(conn.id, db.name, 'view', v, 'pinned')"
-                          @click.middle.stop="onOpen(conn.id, db.name, 'view', v, 'pinned')"
-                          @contextmenu.stop.prevent="
-                            openContextMenu($event, {
-                              kind: 'view',
-                              connectionId: conn.id,
-                              database: db.name,
-                              name: v
-                            })
-                          "
-                        >
-                          <ObjectIcon object-type="view" class="mr-1.5" />
-                          <span>
-                            <template v-for="(p, i) in highlightParts(v)" :key="i">
-                              <span
-                                v-if="p.match"
-                                class="bg-yellow-200/60 rounded px-0.5"
-                                v-text="p.text"
-                              ></span>
-                              <span v-else v-text="p.text"></span>
-                            </template>
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <div v-else class="text-xs text-gray-500 px-2 py-1">Loading metadata…</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <ConnectionTreeItem
+            v-for="conn in filteredConnections"
+            :key="conn.id"
+            :connection="conn"
+            :is-expanded="navigationStore.isConnectionExpanded(conn.id)"
+            :is-file-connection="treeLogic.isFileConnection(conn.id)"
+            :is-focused="focusConnectionId === conn.id"
+            :databases="
+              (navigationStore.databasesCache[conn.id] || []).filter((d) =>
+                matchesDbFilter(conn.id, d.name)
+              )
+            "
+            :file-entries="fileEntriesByConn[conn.id] || []"
+            :selected-file-path="selectedFilePathsByConn[conn.id] || null"
+            :search-query="searchQuery"
+            :caret-class="caretClass"
+            :expanded-databases="navigationStore.expandedDatabases"
+            :expanded-schemas="navigationStore.expandedSchemas"
+            @toggle-connection="handleToggleConnection(conn)"
+            @select-connection="$emit('select-connection', $event)"
+            @toggle-database="(dbName) => handleToggleDatabase(conn, dbName)"
+            @toggle-schema="(p) => handleToggleSchema(conn, p)"
+            @select-database="$emit('select-database', $event)"
+            @select-file="$emit('select-file', $event)"
+            @open-object="(p) => handleOpenObject(conn, p)"
+            @open-file="$emit('open-file', $event)"
+            @contextmenu-connection="handleContextMenuConnection"
+            @contextmenu-database="handleContextMenuDatabase"
+            @contextmenu-schema="handleContextMenuSchema"
+            @contextmenu-object="handleContextMenuObject"
+            @contextmenu-file="handleContextMenuFile"
+            @request-file-entries="$emit('request-file-entries', $event)"
+          />
         </div>
       </div>
       <ExplorerContextMenu

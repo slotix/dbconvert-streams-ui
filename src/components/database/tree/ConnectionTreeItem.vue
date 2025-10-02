@@ -1,0 +1,250 @@
+<script setup lang="ts">
+import { ChevronRightIcon, ChevronDownIcon, FolderIcon } from '@heroicons/vue/24/outline'
+import DatabaseTreeItem from './DatabaseTreeItem.vue'
+import FileEntry from '../FileEntry.vue'
+import { highlightParts as splitHighlight } from '@/utils/highlight'
+import { useConnectionTreeLogic } from '@/composables/useConnectionTreeLogic'
+import type { Connection } from '@/types/connections'
+import type { FileSystemEntry } from '@/api/fileSystem'
+
+type ObjectType = 'table' | 'view'
+
+interface DatabaseInfo {
+  name: string
+}
+
+const props = defineProps<{
+  connection: Connection
+  isExpanded: boolean
+  isFileConnection: boolean
+  isFocused: boolean
+  databases: DatabaseInfo[]
+  fileEntries: FileSystemEntry[]
+  selectedFilePath: string | null
+  searchQuery: string
+  caretClass: string
+  expandedDatabases: Set<string>
+  expandedSchemas: Set<string>
+}>()
+
+// Use composable directly in component instead of passing functions as props
+const treeLogic = useConnectionTreeLogic()
+
+const emit = defineEmits<{
+  (e: 'toggle-connection'): void
+  (e: 'select-connection', payload: { connectionId: string }): void
+  (e: 'toggle-database', dbName: string): void
+  (e: 'toggle-schema', payload: { dbName: string; schemaName: string }): void
+  (e: 'select-database', payload: { connectionId: string; database: string }): void
+  (e: 'select-file', payload: { connectionId: string; path: string }): void
+  (
+    e: 'open-object',
+    payload: {
+      connectionId: string
+      database: string
+      type: ObjectType
+      name: string
+      schema?: string
+      mode: 'preview' | 'pinned'
+    }
+  ): void
+  (
+    e: 'open-file',
+    payload: {
+      connectionId: string
+      path: string
+      entry: FileSystemEntry
+      mode: 'preview' | 'pinned'
+      defaultTab?: 'structure' | 'data'
+      openInRightSplit?: boolean
+    }
+  ): void
+  (e: 'contextmenu-connection', payload: { event: MouseEvent; connectionId: string }): void
+  (
+    e: 'contextmenu-database',
+    payload: { event: MouseEvent; connectionId: string; database: string }
+  ): void
+  (
+    e: 'contextmenu-schema',
+    payload: { event: MouseEvent; connectionId: string; database: string; schema: string }
+  ): void
+  (
+    e: 'contextmenu-object',
+    payload: {
+      event: MouseEvent
+      kind: ObjectType
+      connectionId: string
+      database: string
+      schema?: string
+      name: string
+    }
+  ): void
+  (
+    e: 'contextmenu-file',
+    payload: { event: MouseEvent; connectionId: string; path: string; name: string }
+  ): void
+  (e: 'request-file-entries', payload: { connectionId: string }): void
+}>()
+
+const highlightParts = (text: string) => splitHighlight(text, props.searchQuery)
+
+function isDatabaseExpanded(dbName: string): boolean {
+  const key = `${props.connection.id}:${dbName}`
+  return props.expandedDatabases.has(key)
+}
+
+function handleConnectionContextMenu(event: MouseEvent) {
+  emit('contextmenu-connection', {
+    event,
+    connectionId: props.connection.id
+  })
+}
+
+function handleDatabaseToggle(dbName: string) {
+  emit('toggle-database', dbName)
+}
+
+function handleSchemaToggle(dbName: string, schemaName: string) {
+  emit('toggle-schema', { dbName, schemaName })
+}
+
+function handleObjectOpen(
+  payload: {
+    type: ObjectType
+    name: string
+    schema?: string
+    mode: 'preview' | 'pinned'
+  },
+  dbName: string
+) {
+  emit('open-object', {
+    connectionId: props.connection.id,
+    database: dbName,
+    ...payload
+  })
+}
+
+function handleFileOpen(payload: {
+  entry: FileSystemEntry
+  mode: 'preview' | 'pinned'
+  openInRightSplit?: boolean
+}) {
+  emit('open-file', {
+    connectionId: props.connection.id,
+    path: payload.entry.path,
+    entry: payload.entry,
+    mode: payload.mode,
+    defaultTab: 'data',
+    openInRightSplit: payload.openInRightSplit
+  })
+}
+
+function handleFileContextMenu(payload: { event: MouseEvent; entry: FileSystemEntry }) {
+  emit('contextmenu-file', {
+    event: payload.event,
+    connectionId: props.connection.id,
+    path: payload.entry.path,
+    name: payload.entry.name
+  })
+}
+
+function handleSelectFile(path: string) {
+  emit('select-file', {
+    connectionId: props.connection.id,
+    path
+  })
+}
+
+const visibleFileEntries = () => {
+  return props.fileEntries
+    .filter((item) => item.type === 'file')
+    .filter(
+      (item) =>
+        !props.searchQuery || item.name.toLowerCase().includes(props.searchQuery.toLowerCase())
+    )
+}
+</script>
+
+<template>
+  <div>
+    <div
+      :data-explorer-connection="connection.id"
+      :class="[
+        'flex items-center px-2 py-1.5 text-sm text-gray-700 rounded-md hover:bg-gray-100 cursor-pointer transition-colors',
+        isFocused ? 'bg-sky-50 ring-1 ring-sky-200' : ''
+      ]"
+      @click="$emit('select-connection', { connectionId: connection.id })"
+      @contextmenu.stop.prevent="handleConnectionContextMenu"
+    >
+      <component
+        :is="isExpanded ? ChevronDownIcon : ChevronRightIcon"
+        :class="caretClass"
+        @click.stop="$emit('toggle-connection')"
+      />
+      <FolderIcon v-if="isFileConnection" class="h-5 w-5 mr-1.5 text-yellow-600" />
+      <img
+        v-else
+        :src="treeLogic.getDbLogoForType(connection.type)"
+        :alt="connection.type || 'db'"
+        class="h-5 w-5 mr-1.5 object-contain"
+      />
+      <span class="font-medium">
+        <template
+          v-for="(p, i) in highlightParts(connection.name || connection.host || 'Connection')"
+          :key="i"
+        >
+          <span v-if="p.match" class="bg-yellow-200/60 rounded px-0.5" v-text="p.text"></span>
+          <span v-else v-text="p.text"></span>
+        </template>
+      </span>
+      <span v-if="connection.host && connection.port" class="ml-2 text-xs text-gray-500">
+        {{ connection.host }}:{{ connection.port }}
+      </span>
+    </div>
+
+    <!-- Databases or Files under connection -->
+    <div v-if="isExpanded" class="ml-4 border-l border-gray-200 pl-2 space-y-1">
+      <div v-if="isFileConnection">
+        <div v-if="!visibleFileEntries().length" class="text-xs text-gray-500 px-2 py-1">
+          No files
+        </div>
+        <FileEntry
+          v-for="entry in visibleFileEntries()"
+          :key="entry.path"
+          :entry="entry"
+          :connection-id="connection.id"
+          :selected="selectedFilePath === entry.path"
+          :search-query="searchQuery"
+          @select="handleSelectFile(entry.path)"
+          @open="handleFileOpen"
+          @context-menu="handleFileContextMenu"
+        />
+      </div>
+      <div v-else>
+        <div v-if="!databases.length" class="text-xs text-gray-500 px-2 py-1">No databases</div>
+        <DatabaseTreeItem
+          v-for="db in databases"
+          :key="db.name"
+          :database="db"
+          :connection-id="connection.id"
+          :is-expanded="isDatabaseExpanded(db.name)"
+          :has-schemas="treeLogic.hasSchemas(connection.id)"
+          :schemas="treeLogic.getSchemas(connection.id, db.name)"
+          :flat-tables="treeLogic.getFlatTables(connection.id, db.name)"
+          :flat-views="treeLogic.getFlatViews(connection.id, db.name)"
+          :search-query="searchQuery"
+          :caret-class="caretClass"
+          :expanded-schemas="expandedSchemas"
+          :metadata-loaded="treeLogic.isMetadataLoaded(connection.id, db.name)"
+          @toggle-database="handleDatabaseToggle(db.name)"
+          @toggle-schema="(schemaName) => handleSchemaToggle(db.name, schemaName)"
+          @select-database="$emit('select-database', $event)"
+          @open-object="(p) => handleObjectOpen(p, db.name)"
+          @contextmenu-database="$emit('contextmenu-database', $event)"
+          @contextmenu-schema="$emit('contextmenu-schema', $event)"
+          @contextmenu-object="$emit('contextmenu-object', $event)"
+        />
+      </div>
+    </div>
+  </div>
+</template>
