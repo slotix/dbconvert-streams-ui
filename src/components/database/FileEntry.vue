@@ -25,6 +25,7 @@ const emit = defineEmits<{
 
 const metadata = ref<FileMetadata | null>(null)
 const isLoadingMetadata = ref(false)
+const metadataError = ref<string | null>(null)
 
 const fileFormat = computed(() => getFileFormat(props.entry.name))
 
@@ -45,10 +46,12 @@ async function loadMetadata() {
   if (!fileFormat.value || isLoadingMetadata.value || metadata.value) return
 
   isLoadingMetadata.value = true
+  metadataError.value = null
   try {
     metadata.value = await filesApi.getFileMetadata(props.entry.path, fileFormat.value)
   } catch (error) {
     console.warn('Failed to load file metadata:', error)
+    metadataError.value = error instanceof Error ? error.message : 'Failed to load metadata'
   } finally {
     isLoadingMetadata.value = false
   }
@@ -89,20 +92,37 @@ onMounted(() => {
           </div>
           <!-- Metadata display similar to database tables -->
           <div
-            v-if="metadata || isLoadingMetadata"
-            class="flex items-center gap-2 text-xs text-gray-500 mt-0.5"
+            v-if="metadata || isLoadingMetadata || metadataError"
+            class="flex items-center gap-2 text-xs mt-0.5"
           >
             <template v-if="isLoadingMetadata">
-              <span class="animate-pulse">Loading...</span>
+              <svg class="animate-spin h-3 w-3 text-gray-400" viewBox="0 0 24 24" fill="none">
+                <circle
+                  class="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  stroke-width="4"
+                />
+                <path
+                  class="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v4l3-3-3-3v4a12 12 0 00-12 12h4z"
+                />
+              </svg>
+            </template>
+            <template v-else-if="metadataError">
+              <span class="text-red-600" :title="metadataError">⚠ Error loading metadata</span>
             </template>
             <template v-else-if="metadata">
-              <span v-if="fileFormat" class="inline-flex items-center">
+              <span v-if="fileFormat" class="inline-flex items-center text-gray-500">
                 {{ fileFormat.toUpperCase() }}
               </span>
-              <span v-if="metadata.rowCount > 0" class="inline-flex items-center">
+              <span v-if="metadata.rowCount > 0" class="inline-flex items-center text-gray-500">
                 {{ formatRowCount(metadata.rowCount) }} rows
               </span>
-              <span v-if="metadata.columnCount > 0" class="inline-flex items-center">
+              <span v-if="metadata.columnCount > 0" class="inline-flex items-center text-gray-500">
                 {{ metadata.columnCount }} col{{ metadata.columnCount !== 1 ? 's' : '' }}
               </span>
             </template>

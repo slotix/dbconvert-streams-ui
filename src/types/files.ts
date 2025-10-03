@@ -9,6 +9,7 @@ export interface FileDataResponse {
   data: Array<Record<string, unknown>>
   schema: FileSchemaField[]
   total: number
+  warnings?: string[]
 }
 
 export interface FileSamplingInfo {
