@@ -1,10 +1,14 @@
 <script setup lang="ts">
+import { ref, watch } from 'vue'
 import { ChevronRightIcon, ChevronDownIcon } from '@heroicons/vue/24/outline'
 import SchemaTreeItem from './SchemaTreeItem.vue'
 import ObjectList from './ObjectList.vue'
 import { highlightParts as splitHighlight } from '@/utils/highlight'
+import { useConnectionTreeLogic } from '@/composables/useConnectionTreeLogic'
 
 type ObjectType = 'table' | 'view'
+
+const treeLogic = useConnectionTreeLogic()
 
 interface SchemaInfo {
   name: string
@@ -65,6 +69,19 @@ const emit = defineEmits<{
 }>()
 
 const highlightParts = (text: string) => splitHighlight(text, props.searchQuery)
+
+const tableSizes = ref<Record<string, number>>({})
+
+// Fetch table sizes when database is expanded
+watch(
+  () => props.isExpanded,
+  async (expanded) => {
+    if (expanded && !Object.keys(tableSizes.value).length) {
+      tableSizes.value = await treeLogic.getTableSizes(props.connectionId, props.database.name)
+    }
+  },
+  { immediate: true }
+)
 
 function isSchemaExpanded(schemaName: string): boolean {
   const key = `${props.connectionId}:${props.database.name}:${schemaName}`
@@ -162,6 +179,7 @@ function handleFlatObjectContextMenu(payload: {
             :is-expanded="isSchemaExpanded(schema.name)"
             :search-query="searchQuery"
             :caret-class="caretClass"
+            :table-sizes="tableSizes"
             @toggle="handleSchemaToggle(schema.name)"
             @open-object="handleObjectOpen"
             @contextmenu-schema="handleSchemaContextMenu"
@@ -185,6 +203,7 @@ function handleFlatObjectContextMenu(payload: {
             :database="database.name"
             :search-query="searchQuery"
             :explorer-obj-prefix="`${connectionId}:${database.name}:`"
+            :table-sizes="tableSizes"
             @click="(p) => handleObjectOpen({ type: 'table', ...p })"
             @dblclick="(p) => handleObjectOpen({ type: 'table', ...p })"
             @middleclick="(p) => handleObjectOpen({ type: 'table', ...p })"

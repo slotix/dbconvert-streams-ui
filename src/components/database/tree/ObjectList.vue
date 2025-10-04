@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import ObjectIcon from '@/components/common/ObjectIcon.vue'
 import { highlightParts as splitHighlight } from '@/utils/highlight'
+import { formatDataSize } from '@/utils/formats'
 
 type ObjectType = 'table' | 'view'
 
@@ -12,6 +13,7 @@ const props = defineProps<{
   schema?: string
   searchQuery: string
   explorerObjPrefix: string
+  tableSizes?: Record<string, number> // Map of table name -> size in bytes
 }>()
 
 const emit = defineEmits<{
@@ -51,25 +53,38 @@ const filteredItems = () => {
   if (!props.searchQuery) return props.items
   return props.items.filter((n) => n.toLowerCase().includes(props.searchQuery.toLowerCase()))
 }
+
+function getTableSize(tableName: string): string | null {
+  if (props.objectType !== 'table' || !props.tableSizes) return null
+  const sizeBytes = props.tableSizes[tableName]
+  return sizeBytes !== undefined ? formatDataSize(sizeBytes) : null
+}
 </script>
 
 <template>
   <div
     v-for="item in filteredItems()"
     :key="item"
-    class="flex items-center px-2 py-1.5 text-sm rounded-md hover:bg-gray-100 cursor-pointer select-none"
+    class="flex items-center justify-between px-2 py-1.5 text-sm rounded-md hover:bg-gray-100 cursor-pointer select-none group"
     :data-explorer-obj="`${explorerObjPrefix}:${objectType}:${item}`"
     @click.stop="handleClick(item)"
     @dblclick.stop="handleDblClick(item)"
     @click.middle.stop="handleMiddleClick(item)"
     @contextmenu.stop.prevent="handleContextMenu($event, item)"
   >
-    <ObjectIcon :object-type="objectType" class="mr-1.5" />
-    <span>
-      <template v-for="(p, i) in highlightParts(item)" :key="i">
-        <span v-if="p.match" class="bg-yellow-200/60 rounded px-0.5" v-text="p.text"></span>
-        <span v-else v-text="p.text"></span>
-      </template>
-    </span>
+    <div class="flex items-center min-w-0 flex-1">
+      <ObjectIcon :object-type="objectType" class="mr-1.5 flex-shrink-0" />
+      <span class="truncate">
+        <template v-for="(p, i) in highlightParts(item)" :key="i">
+          <span v-if="p.match" class="bg-yellow-200/60 rounded px-0.5" v-text="p.text"></span>
+          <span v-else v-text="p.text"></span>
+        </template>
+      </span>
+    </div>
+    <span
+      v-if="getTableSize(item)"
+      class="ml-2 text-xs text-gray-400 group-hover:text-gray-500 flex-shrink-0"
+      >{{ getTableSize(item) }}</span
+    >
   </div>
 </template>

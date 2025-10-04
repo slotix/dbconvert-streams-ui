@@ -1,6 +1,7 @@
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useConnectionsStore } from '@/stores/connections'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
+import connections from '@/api/connections'
 import type { Connection } from '@/types/connections'
 
 interface SchemaInfo {
@@ -114,6 +115,36 @@ export function useConnectionTreeLogic() {
     return connType.includes(filter)
   }
 
+  // Cache for table sizes: { "connId:dbName": { tableName: sizeBytes } }
+  const tableSizesCache = ref<Record<string, Record<string, number>>>({})
+
+  async function getTableSizes(connId: string, dbName: string): Promise<Record<string, number>> {
+    const cacheKey = `${connId}:${dbName}`
+
+    // Return cached if available
+    if (tableSizesCache.value[cacheKey]) {
+      return tableSizesCache.value[cacheKey]
+    }
+
+    // Fetch from database overview
+    try {
+      const overview = await connections.getDatabaseOverview(connId, dbName, { refresh: false })
+
+      // Build map of table name -> size
+      const sizesMap: Record<string, number> = {}
+      overview.allTablesBySize.forEach((table) => {
+        sizesMap[table.name] = table.sizeBytes
+      })
+
+      // Cache it
+      tableSizesCache.value[cacheKey] = sizesMap
+      return sizesMap
+    } catch (e) {
+      console.warn('Failed to fetch table sizes:', e)
+      return {}
+    }
+  }
+
   return {
     isFileConnection,
     getDbLogoForType,
@@ -125,6 +156,7 @@ export function useConnectionTreeLogic() {
     getFlatTables,
     getFlatViews,
     isMetadataLoaded,
-    matchesTypeFilter
+    matchesTypeFilter,
+    getTableSizes
   }
 }

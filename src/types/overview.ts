@@ -55,8 +55,8 @@ export interface DatabaseOverview {
   collation?: string
   counts: { schemas?: number; tables: number; views: number; functions?: number }
   sizeBytes: number
-  topTablesBySize: Array<{ name: string; sizeBytes: number }>
-  topTablesByRows: Array<{ name: string; approxRows: number }>
+  allTablesBySize: Array<{ name: string; sizeBytes: number }>
+  allTablesByRows: Array<{ name: string; approxRows: number }>
   activity: OverviewActivity
   health: OverviewHealth
   notes: OverviewNote[]

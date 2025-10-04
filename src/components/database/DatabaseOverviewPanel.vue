@@ -39,8 +39,8 @@ watch(
   () => load()
 )
 
-const topSize = computed(() => (overview.value?.topTablesBySize || []).slice(0, 10))
-const topRows = computed(() => (overview.value?.topTablesByRows || []).slice(0, 10))
+const topSize = computed(() => (overview.value?.allTablesBySize || []).slice(0, 10))
+const topRows = computed(() => (overview.value?.allTablesByRows || []).slice(0, 10))
 
 // Safe display for total database size
 const sizeBytes = computed(() => overview.value?.sizeBytes)

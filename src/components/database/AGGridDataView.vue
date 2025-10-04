@@ -2,7 +2,14 @@
 import { ref, watch, computed, onBeforeUnmount } from 'vue'
 import { AgGridVue } from 'ag-grid-vue3'
 import { ModuleRegistry, AllCommunityModule } from 'ag-grid-community'
-import type { GridApi, GridReadyEvent, ColDef, GridOptions } from 'ag-grid-community'
+import type {
+  GridApi,
+  GridReadyEvent,
+  ColDef,
+  GridOptions,
+  IDatasource,
+  IGetRowsParams
+} from 'ag-grid-community'
 import { type SQLTableMeta, type SQLViewMeta } from '@/types/metadata'
 import connections from '@/api/connections'
 import { formatTableValue } from '@/utils/dataUtils'
@@ -17,13 +24,40 @@ const props = defineProps<{
   connectionId: string
   database: string
   isView?: boolean
+  approxRows?: number // Optional approximate row count from database overview
 }>()
 
 const gridApi = ref<GridApi | null>(null)
 const error = ref<string>()
 const totalRowCount = ref<number>(0)
 const isLoading = ref(false)
-const rowData = ref<Array<Record<string, unknown>>>([])
+const currentFirstRow = ref<number>(1)
+const currentLastRow = ref<number>(100)
+
+// Watch for approxRows prop changes and update totalRowCount
+watch(
+  () => props.approxRows,
+  (newApproxRows) => {
+    if (newApproxRows && newApproxRows > 0) {
+      totalRowCount.value = newApproxRows
+    } else if (newApproxRows === undefined) {
+      // Reset count when switching to a table not in top tables list
+      totalRowCount.value = 0
+    }
+  },
+  { immediate: true }
+)
+
+// Watch for table changes and reset count
+watch(
+  () => props.tableMeta,
+  () => {
+    totalRowCount.value = 0
+    currentFirstRow.value = 1
+    currentLastRow.value = 100
+  },
+  { deep: true }
+)
 
 function getObjectName(meta: SQLTableMeta | SQLViewMeta): string {
   return props.isView ? (meta as SQLViewMeta).name : (meta as SQLTableMeta).name
@@ -53,10 +87,10 @@ const columnDefs = computed<ColDef[]>(() => {
   }))
 })
 
-// AG Grid options
+// AG Grid options for Infinite Row Model
 const gridOptions = computed<GridOptions>(() => ({
   theme: 'legacy',
-  rowModelType: 'clientSide', // Changed to client-side for better UX
+  rowModelType: 'infinite',
   rowHeight: 32,
   headerHeight: 40,
   suppressCellFocus: true,
@@ -64,65 +98,102 @@ const gridOptions = computed<GridOptions>(() => ({
   enableCellTextSelection: true,
   ensureDomOrder: true,
   domLayout: 'normal',
-  pagination: true,
-  paginationPageSize: 100,
-  paginationPageSizeSelector: [50, 100, 200, 500]
+  cacheBlockSize: 200, // Fetch 200 rows at a time (larger blocks = fewer requests)
+  cacheOverflowSize: 2, // Keep 2 extra blocks in cache before/after viewport
+  maxConcurrentDatasourceRequests: 2, // Allow 2 concurrent requests for faster loading
+  infiniteInitialRowCount: 100,
+  maxBlocksInCache: 20 // Keep more blocks in cache (4000 rows)
 }))
 
-// Load data function for client-side model
-async function loadData() {
-  isLoading.value = true
-  error.value = undefined
+// Create datasource for Infinite Row Model
+function createDatasource(): IDatasource {
+  return {
+    getRows: async (params: IGetRowsParams) => {
+      isLoading.value = true
+      error.value = undefined
 
-  try {
-    const objectName = getObjectName(props.tableMeta)
-    const objectSchema = getObjectSchema(props.tableMeta)
+      try {
+        const objectName = getObjectName(props.tableMeta)
+        const objectSchema = getObjectSchema(props.tableMeta)
 
-    if (!objectName) throw new Error('Table/View name is undefined')
+        if (!objectName) throw new Error('Table/View name is undefined')
 
-    // Load a reasonable amount of data for client-side model
-    const estimatedRows = props.isView
-      ? 1000 // Default for views
-      : 1000 // Default for tables
-    const limit = Math.min(estimatedRows, 5000) // Cap at 5000 rows
-    const queryParams = {
-      limit,
-      offset: 0,
-      skip_count: false,
-      ...(objectSchema && objectSchema !== 'public' && objectSchema !== ''
-        ? { schema: objectSchema }
-        : {})
+        const limit = params.endRow - params.startRow
+        const offset = params.startRow
+
+        const queryParams = {
+          limit,
+          offset,
+          skip_count: offset > 0 && totalRowCount.value > 0, // Skip count if we already have it
+          ...(objectSchema && objectSchema !== 'public' && objectSchema !== ''
+            ? { schema: objectSchema }
+            : {})
+        }
+
+        const data = props.isView
+          ? await connections.getViewData(
+              props.connectionId,
+              props.database,
+              objectName,
+              queryParams
+            )
+          : await connections.getTableData(
+              props.connectionId,
+              props.database,
+              objectName,
+              queryParams
+            )
+
+        // Convert rows array to objects with column names as keys
+        const convertedRowData = data.rows.map((row) => {
+          const obj: Record<string, unknown> = {}
+          data.columns.forEach((colName, idx) => {
+            obj[colName] = row[idx]
+          })
+          return obj
+        })
+
+        // Update total count if we have a real count from API (not -1)
+        if (offset === 0 && data.total_count > 0) {
+          totalRowCount.value = data.total_count
+        }
+
+        // For small tables where we don't have a count, if this is the first block
+        // and we got fewer rows than requested, we know the total
+        if (offset === 0 && totalRowCount.value === 0 && convertedRowData.length < limit) {
+          totalRowCount.value = convertedRowData.length
+        }
+
+        // Use totalRowCount for grid (either from API or approxRows prop)
+        const rowCount = totalRowCount.value > 0 ? totalRowCount.value : undefined
+        params.successCallback(convertedRowData, rowCount)
+
+        // Update visible rows immediately after data loads
+        setTimeout(() => updateVisibleRows(), 100)
+
+        error.value = undefined
+      } catch (err) {
+        console.error('Error loading data:', err)
+        error.value = err instanceof Error ? err.message : 'Failed to load data'
+        params.failCallback()
+      } finally {
+        isLoading.value = false
+      }
     }
-
-    const data = props.isView
-      ? await connections.getViewData(props.connectionId, props.database, objectName, queryParams)
-      : await connections.getTableData(props.connectionId, props.database, objectName, queryParams)
-
-    // Convert rows array to objects with column names as keys
-    const convertedRowData = data.rows.map((row) => {
-      const obj: Record<string, unknown> = {}
-      data.columns.forEach((colName, idx) => {
-        obj[colName] = row[idx]
-      })
-      return obj
-    })
-
-    rowData.value = convertedRowData
-    totalRowCount.value = data.total_count
-  } catch (err) {
-    console.error('Error loading data:', err)
-    error.value = err instanceof Error ? err.message : 'Failed to load data'
-    rowData.value = []
-    totalRowCount.value = 0
-  } finally {
-    isLoading.value = false
   }
 }
 
 // Grid ready handler
 function onGridReady(params: GridReadyEvent) {
   gridApi.value = params.api
-  loadData()
+
+  // Add scroll listener to update position indicator
+  params.api.addEventListener('bodyScroll', updateVisibleRows)
+  params.api.addEventListener('modelUpdated', updateVisibleRows)
+  params.api.addEventListener('firstDataRendered', updateVisibleRows)
+
+  // Set datasource for infinite row model
+  params.api.setGridOption('datasource', createDatasource())
 }
 
 // Reload data when table metadata changes
@@ -130,11 +201,31 @@ watch(
   () => props.tableMeta,
   () => {
     if (gridApi.value) {
-      loadData()
+      gridApi.value.setGridOption('datasource', createDatasource())
     }
   },
   { deep: true }
 )
+
+// Track visible rows for position indicator
+function updateVisibleRows() {
+  if (!gridApi.value || gridApi.value.isDestroyed()) return
+
+  const firstRow = gridApi.value.getFirstDisplayedRowIndex()
+  const lastRow = gridApi.value.getLastDisplayedRowIndex()
+
+  if (firstRow !== null && lastRow !== null && firstRow >= 0 && lastRow >= 0) {
+    currentFirstRow.value = firstRow + 1 // 1-indexed for display
+    currentLastRow.value = lastRow + 1
+  }
+}
+
+// Jump to top functionality
+function jumpToTop() {
+  if (gridApi.value) {
+    gridApi.value.ensureIndexVisible(0, 'top')
+  }
+}
 
 // Export to CSV functionality
 function exportToCsv() {
@@ -182,15 +273,26 @@ onBeforeUnmount(() => {
           </svg>
           Loading...
         </span>
-        <span v-if="rowData.length > 0" class="font-medium">
-          {{ rowData.length.toLocaleString() }} rows
-          <span v-if="rowData.length < totalRowCount" class="text-gray-500">
-            (of {{ totalRowCount.toLocaleString() }} total)
-          </span>
+        <!-- Position indicator -->
+        <span class="font-medium text-gray-900">
+          Showing {{ currentFirstRow.toLocaleString() }}-{{ currentLastRow.toLocaleString() }}
+          <span v-if="totalRowCount > 0"
+            >of {{ totalRowCount.toLocaleString() }} rows
+            <span v-if="approxRows" class="text-xs text-amber-600">(approx)</span></span
+          >
         </span>
       </div>
 
       <div class="flex items-center gap-2">
+        <button
+          v-if="currentFirstRow > 1"
+          type="button"
+          class="px-3 py-1 text-xs rounded border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 transition-colors"
+          title="Jump to first row"
+          @click="jumpToTop"
+        >
+          ↑ Back to Top
+        </button>
         <button
           type="button"
           class="px-3 py-1 text-xs rounded border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 transition-colors"
@@ -219,7 +321,6 @@ onBeforeUnmount(() => {
       }"
     >
       <AgGridVue
-        :rowData="rowData"
         :columnDefs="columnDefs"
         :gridOptions="gridOptions"
         style="width: 100%; height: 100%"

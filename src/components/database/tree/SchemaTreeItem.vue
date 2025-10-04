@@ -18,6 +18,7 @@ const props = defineProps<{
   isExpanded: boolean
   searchQuery: string
   caretClass: string
+  tableSizes?: Record<string, number>
 }>()
 
 const emit = defineEmits<{
@@ -118,6 +119,7 @@ function handleObjectContextMenu(payload: {
         :schema="schema.name"
         :search-query="searchQuery"
         :explorer-obj-prefix="`${connectionId}:${database}:${schema.name || ''}`"
+        :table-sizes="tableSizes"
         @click="(p) => handleObjectOpen('table', p)"
         @dblclick="(p) => handleObjectOpen('table', p)"
         @middleclick="(p) => handleObjectOpen('table', p)"
