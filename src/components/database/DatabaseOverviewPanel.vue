@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from 'vue'
-import connections from '@/api/connections'
-import type { DatabaseOverview } from '@/types/overview'
+import { useDatabaseOverviewStore } from '@/stores/databaseOverview'
 import { formatDataSize } from '@/utils/formats'
 
 const props = defineProps<{
@@ -14,22 +13,19 @@ const emit = defineEmits<{
   (e: 'open-table', payload: { name: string }): void
 }>()
 
-const isLoading = ref(true)
+const overviewStore = useDatabaseOverviewStore()
 const error = ref<string | null>(null)
-const overview = ref<DatabaseOverview | null>(null)
+
+// Get overview data from store (reactive)
+const overview = computed(() => overviewStore.getOverview(props.connectionId, props.database))
+const isLoading = computed(() => overviewStore.isLoading(props.connectionId, props.database))
 
 async function load(refresh = false) {
-  isLoading.value = true
   error.value = null
-  overview.value = null
   try {
-    overview.value = await connections.getDatabaseOverview(props.connectionId, props.database, {
-      refresh
-    })
+    await overviewStore.fetchOverview(props.connectionId, props.database, refresh)
   } catch (e: unknown) {
     error.value = e instanceof Error ? e.message : 'Failed to load database overview'
-  } finally {
-    isLoading.value = false
   }
 }
 

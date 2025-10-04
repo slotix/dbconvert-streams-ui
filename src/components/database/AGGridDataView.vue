@@ -113,7 +113,6 @@ const gridOptions = computed<GridOptions>(() => ({
 function createDatasource(): IDatasource {
   return {
     getRows: async (params: IGetRowsParams) => {
-      // console.log('getRows called:', { startRow: params.startRow, endRow: params.endRow })
       isLoading.value = true
       error.value = undefined
 
@@ -171,7 +170,6 @@ function createDatasource(): IDatasource {
 
         // Use totalRowCount for grid (either from API or approxRows prop)
         const rowCount = totalRowCount.value > 0 ? totalRowCount.value : undefined
-        // console.log('successCallback:', { rows: convertedRowData.length, rowCount })
         params.successCallback(convertedRowData, rowCount)
 
         // Update visible rows immediately after data loads

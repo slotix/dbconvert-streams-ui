@@ -1,14 +1,16 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, watch } from 'vue'
 import { ChevronRightIcon, ChevronDownIcon } from '@heroicons/vue/24/outline'
 import SchemaTreeItem from './SchemaTreeItem.vue'
 import ObjectList from './ObjectList.vue'
 import { highlightParts as splitHighlight } from '@/utils/highlight'
 import { useConnectionTreeLogic } from '@/composables/useConnectionTreeLogic'
+import { useDatabaseOverviewStore } from '@/stores/databaseOverview'
 
 type ObjectType = 'table' | 'view'
 
 const treeLogic = useConnectionTreeLogic()
+const overviewStore = useDatabaseOverviewStore()
 
 interface SchemaInfo {
   name: string
@@ -70,14 +72,17 @@ const emit = defineEmits<{
 
 const highlightParts = (text: string) => splitHighlight(text, props.searchQuery)
 
-const tableSizes = ref<Record<string, number>>({})
+// Get table sizes from store (reactive)
+const tableSizes = computed(() => {
+  return overviewStore.getAllTableSizes(props.connectionId, props.database.name)
+})
 
-// Fetch table sizes when database is expanded
+// Fetch overview data when database is expanded
 watch(
   () => props.isExpanded,
   async (expanded) => {
-    if (expanded && !Object.keys(tableSizes.value).length) {
-      tableSizes.value = await treeLogic.getTableSizes(props.connectionId, props.database.name)
+    if (expanded) {
+      await overviewStore.fetchOverview(props.connectionId, props.database.name)
     }
   },
   { immediate: true }

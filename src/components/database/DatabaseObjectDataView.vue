@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue'
+import { onMounted, computed } from 'vue'
 import { type SQLTableMeta, type SQLViewMeta } from '@/types/metadata'
-import connections from '@/api/connections'
+import { useDatabaseOverviewStore } from '@/stores/databaseOverview'
 import AGGridDataView from './AGGridDataView.vue'
 
 const props = defineProps<{
@@ -11,7 +11,7 @@ const props = defineProps<{
   isView?: boolean
 }>()
 
-const approxRows = ref<number | undefined>(undefined)
+const overviewStore = useDatabaseOverviewStore()
 
 // Get table name for lookup
 const tableName = computed(() => {
@@ -20,34 +20,21 @@ const tableName = computed(() => {
     : (props.tableMeta as SQLTableMeta).name
 })
 
-// Fetch approximate row count from database overview
-async function fetchApproxRows() {
-  if (props.isView) {
-    approxRows.value = undefined
-    return
+// Get approximate row count from store (reactive)
+const approxRows = computed(() => {
+  if (props.isView) return undefined
+  return overviewStore.getTableRowCount(props.connectionId, props.database, tableName.value)
+})
+
+// Fetch overview data on mount
+onMounted(async () => {
+  if (!props.isView) {
+    try {
+      await overviewStore.fetchOverview(props.connectionId, props.database)
+    } catch (e) {
+      console.warn('Failed to fetch database overview:', e)
+    }
   }
-
-  try {
-    const overview = await connections.getDatabaseOverview(props.connectionId, props.database, {
-      refresh: false // Use cached data if available
-    })
-
-    // Find this table in allTablesByRows
-    const tableInfo = overview.allTablesByRows.find((t) => t.name === tableName.value)
-    approxRows.value = tableInfo && tableInfo.approxRows > 0 ? tableInfo.approxRows : undefined
-  } catch (e) {
-    console.warn('Failed to get approximate row count from overview:', e)
-    approxRows.value = undefined
-  }
-}
-
-// Fetch on mount
-onMounted(fetchApproxRows)
-
-// Re-fetch when table changes
-watch(tableName, () => {
-  approxRows.value = undefined // Reset immediately
-  fetchApproxRows()
 })
 </script>
 
