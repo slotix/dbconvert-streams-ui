@@ -98,7 +98,11 @@ const gridOptions = computed<GridOptions>(() => ({
   enableCellTextSelection: true,
   ensureDomOrder: true,
   domLayout: 'normal',
-  cacheBlockSize: 200, // Fetch 200 rows at a time (larger blocks = fewer requests)
+  pagination: true,
+  paginationAutoPageSize: true,
+  // paginationPageSize: 100,
+  // paginationPageSizeSelector: [100, 200, 500, 1000],
+  cacheBlockSize: 200, // Must match paginationPageSize for infinite row model
   cacheOverflowSize: 2, // Keep 2 extra blocks in cache before/after viewport
   maxConcurrentDatasourceRequests: 2, // Allow 2 concurrent requests for faster loading
   infiniteInitialRowCount: 100,
@@ -109,6 +113,7 @@ const gridOptions = computed<GridOptions>(() => ({
 function createDatasource(): IDatasource {
   return {
     getRows: async (params: IGetRowsParams) => {
+      // console.log('getRows called:', { startRow: params.startRow, endRow: params.endRow })
       isLoading.value = true
       error.value = undefined
 
@@ -166,6 +171,7 @@ function createDatasource(): IDatasource {
 
         // Use totalRowCount for grid (either from API or approxRows prop)
         const rowCount = totalRowCount.value > 0 ? totalRowCount.value : undefined
+        // console.log('successCallback:', { rows: convertedRowData.length, rowCount })
         params.successCallback(convertedRowData, rowCount)
 
         // Update visible rows immediately after data loads
@@ -317,7 +323,7 @@ onBeforeUnmount(() => {
       class="ag-theme-alpine"
       :style="{
         width: '100%',
-        height: '500px'
+        height: '750px'
       }"
     >
       <AgGridVue
