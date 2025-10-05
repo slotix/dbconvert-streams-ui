@@ -250,26 +250,33 @@ This ensures:
   - [x] Remove duplicate filter logic
 - [x] Test search across all tree levels (build passed successfully)
 
-### 7. Split useSplitPane
-- [ ] Create `src/composables/useSplitPaneResize.ts`
-  - [ ] Extract `splitGrow` ref
-  - [ ] Extract `isResizing` ref
-  - [ ] Extract `onDividerMouseDown()`
-  - [ ] Extract `onDividerDoubleClick()`
-  - [ ] Pure UI mechanics only
-- [ ] Create `src/stores/splitView.ts`
-  - [ ] Add `splitContent` ref (type, connectionId, data)
-  - [ ] Add `defaultTab` ref
-  - [ ] Add `setSplitContent()` action
-  - [ ] Add `clearSplit()` action
-- [ ] Update `src/views/DatabaseExplorerView.vue`
-  - [ ] Use `useSplitPaneResize()` for UI
-  - [ ] Use `useSplitViewStore()` for content
-  - [ ] Remove old `useSplitPane()` import
-- [ ] Update `src/components/explorer/ExplorerSplitPane.vue`
-  - [ ] Use split view store
-- [ ] Mark `src/composables/useSplitPane.ts` as deprecated
-- [ ] Test split pane resize and content
+### ✅ 7. Split useSplitPane (Completed 2025-10-05)
+- [x] Create `src/composables/useSplitPaneResize.ts`
+  - [x] Extract `splitGrow` ref for percentage width control
+  - [x] Extract `isResizing` ref for drag state
+  - [x] Extract `onDividerMouseDown()` for resize start
+  - [x] Extract `onDividerDoubleClick()` for reset to 50/50
+  - [x] Extract `resetSplitSize()` method
+  - [x] Pure UI mechanics only - no content management
+- [x] Create `src/stores/splitView.ts`
+  - [x] Add `splitContent` ref (union of database/file content types)
+  - [x] Add `defaultTab` ref for new content default
+  - [x] Add `setSplitDatabaseContent()` action
+  - [x] Add `setSplitFileContent()` action
+  - [x] Add `clearSplit()` action
+  - [x] Add getters: `hasContent`, `isDatabaseContent`, `isFileContent`, `connectionId`, `databaseContent`, `fileContent`
+- [x] Update `src/views/DatabaseExplorerView.vue`
+  - [x] Use `useSplitPaneResize()` for UI mechanics
+  - [x] Use `useSplitViewStore()` for content management
+  - [x] Remove old `useSplitPane()` import
+  - [x] Update all split-related function calls to use new APIs
+  - [x] Remove split-related props from ExplorerContentArea
+- [x] Update `src/components/explorer/ExplorerSplitPane.vue`
+  - [x] Use split view store instead of props
+  - [x] Remove split-related props from component interface
+  - [x] Use `useSplitViewStore.hasContent` for split visibility
+- [x] Mark `src/composables/useSplitPane.ts` as deprecated
+- [x] Test split pane resize and content (build passes successfully)
 
 ### 8. Breadcrumb Integration (Optional)
 - [ ] Update `src/stores/schema.ts`

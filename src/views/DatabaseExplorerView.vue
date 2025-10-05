@@ -21,12 +21,14 @@ import type { FileSystemEntry } from '@/api/fileSystem'
 // Use our new composables and stores
 import { useExplorerState } from '@/composables/useExplorerState'
 import { useFileExplorerStore } from '@/stores/fileExplorer'
-import { useSplitPane } from '@/composables/useSplitPane'
+import { useSplitPaneResize } from '@/composables/useSplitPaneResize'
+import { useSplitViewStore } from '@/stores/splitView'
 import { useSidebar } from '@/composables/useSidebar'
 import { usePersistedState } from '@/composables/usePersistedState'
 import { useRecentConnections } from '@/composables/useRecentConnections'
 import { useExplorerRouter } from '@/composables/useExplorerRouter'
 import { useConnectionActions } from '@/composables/useConnectionActions'
+import { useSplitPane } from '@/composables/useSplitPane'
 
 const route = useRoute()
 const router = useRouter()
@@ -39,8 +41,10 @@ const navigationStore = useExplorerNavigationStore()
 // Use composables and stores for state management
 const explorerState = useExplorerState()
 const fileExplorerStore = useFileExplorerStore()
-const splitPane = useSplitPane()
+const splitPaneResize = useSplitPaneResize()
+const splitViewStore = useSplitViewStore()
 const sidebar = useSidebar()
+const splitPane = useSplitPane()
 
 // Connection search and filtering
 const connectionSearch = ref('')
@@ -80,27 +84,28 @@ useExplorerRouter({
 // Event handlers
 function onPromoteRightSplit() {
   // Move the right split content to the left pane
-  if (splitPane.splitMeta.value) {
+  const databaseContent = splitViewStore.databaseContent
+  const fileContent = splitViewStore.fileContent
+
+  if (databaseContent) {
     explorerState.setDatabaseSelection({
-      database: splitPane.splitDatabaseName.value || '',
-      schema: splitPane.splitSchemaName.value || undefined,
-      type: splitPane.splitObjectType.value as 'table' | 'view',
-      name: splitPane.splitObjectName.value || '',
-      meta: splitPane.splitMeta.value
+      database: databaseContent.database,
+      schema: databaseContent.schema,
+      type: databaseContent.objectType,
+      name: databaseContent.objectName,
+      meta: databaseContent.meta
     })
-    const defaultTab = splitPane.splitDefaultTab.value
-    if (defaultTab) {
-      tabsStore.defaultActiveView = defaultTab
+    if (databaseContent.defaultTab) {
+      tabsStore.defaultActiveView = databaseContent.defaultTab
     }
-  } else if (splitPane.splitFileEntry.value) {
-    explorerState.setFileSelection(splitPane.splitFileEntry.value)
-    explorerState.selectedFileMetadata.value = splitPane.splitFileMetadata.value
-    const defaultTab = splitPane.splitDefaultTab.value
-    if (defaultTab) {
-      tabsStore.defaultActiveView = defaultTab
+  } else if (fileContent) {
+    explorerState.setFileSelection(fileContent.entry)
+    explorerState.selectedFileMetadata.value = fileContent.metadata || null
+    if (fileContent.defaultTab) {
+      tabsStore.defaultActiveView = fileContent.defaultTab
     }
   }
-  splitPane.closeRightSplit()
+  splitViewStore.clearSplit()
 }
 
 function handleOpenFromTree(payload: {
@@ -129,15 +134,6 @@ function handleOpenFromTree(payload: {
     fileExplorerStore.clearSelection(previousConnectionId)
   }
 
-  // Set database selection
-  explorerState.setDatabaseSelection({
-    database: payload.database,
-    schema: payload.schema,
-    type: payload.type,
-    name: payload.name,
-    meta: payload.meta
-  })
-
   // Update schema store
   if (payload.database) {
     schemaStore.setConnectionId(payload.connectionId)
@@ -148,15 +144,25 @@ function handleOpenFromTree(payload: {
   // Route is auto-updated by watcher based on state changes
 
   if (payload.openInRightSplit) {
-    splitPane.setSplitDatabaseContent(payload)
+    // For right split, only set split content, don't update left panel selection
+    splitViewStore.setSplitDatabaseContent(payload)
     explorerState.activePane.value = 'right'
     return
   }
 
+  // Set database selection for left panel (only when not opening in right split)
+  explorerState.setDatabaseSelection({
+    database: payload.database,
+    schema: payload.schema,
+    type: payload.type,
+    name: payload.name,
+    meta: payload.meta
+  })
+
   explorerState.activePane.value = 'left'
-  const splitTab = splitPane.splitDefaultTab.value
-  if (tabsStore.linkTabs && splitPane.splitMeta.value && splitTab) {
-    tabsStore.defaultActiveView = splitTab
+  const splitContent = splitViewStore.databaseContent
+  if (tabsStore.linkTabs && splitContent && splitContent.defaultTab) {
+    tabsStore.defaultActiveView = splitContent.defaultTab
   }
 
   const desiredPinned = payload.mode === 'pinned' || settingAlwaysOpenNewTab()
@@ -219,14 +225,11 @@ function handleOpenFile(payload: {
   explorerState.clearPanelStates()
   explorerState.clearDatabaseSelection()
 
-  // Set file selection immediately so breadcrumb updates
-  explorerState.setFileSelection(payload.entry)
-  fileExplorerStore.setSelectedPath(payload.connectionId, payload.path)
-
   // Route is auto-updated by watcher based on state changes
 
   if (payload.openInRightSplit) {
-    splitPane.setSplitFileContent({
+    // For right split, only set split content, don't update left panel selection
+    splitViewStore.setSplitFileContent({
       connectionId: payload.connectionId,
       entry: payload.entry,
       defaultTab: tabsStore.linkTabs
@@ -236,6 +239,10 @@ function handleOpenFile(payload: {
     explorerState.activePane.value = 'right'
     return
   }
+
+  // Set file selection for left panel (only when not opening in right split)
+  explorerState.setFileSelection(payload.entry)
+  fileExplorerStore.setSelectedPath(payload.connectionId, payload.path)
 
   explorerState.activePane.value = 'left'
   const desiredPinned = payload.mode === 'pinned' || settingAlwaysOpenNewTab()
@@ -313,7 +320,7 @@ function handleSelectConnection(payload: { connectionId: string }) {
   explorerState.clearPanelStates()
   explorerState.clearDatabaseSelection()
 
-  splitPane.closeRightSplit()
+  splitViewStore.clearSplit()
   fileExplorerStore.clearSelection(payload.connectionId)
 
   if (fileExplorerStore.isFilesConnectionType(payload.connectionId)) {
@@ -327,7 +334,7 @@ function handleSelectDatabase(payload: { connectionId: string; database: string 
 
   explorerState.clearPanelStates()
   explorerState.setDatabaseSelection({ database: payload.database })
-  splitPane.closeRightSplit()
+  splitViewStore.clearSplit()
   explorerState.activePane.value = 'left'
 
   schemaStore.setConnectionId(payload.connectionId)
@@ -928,11 +935,11 @@ onMounted(() => {
                     {{ sidebar.sidebarVisible.value ? 'Hide Sidebar' : 'Show Sidebar' }}
                   </button>
                   <button
-                    v-if="splitPane.splitMeta.value || splitPane.splitFileEntry.value"
+                    v-if="splitViewStore.hasContent"
                     type="button"
                     class="px-2 py-1 text-xs rounded border border-gray-300 bg-white hover:bg-gray-50 text-gray-700"
                     title="Center split"
-                    @click="splitPane.resetRightSplit"
+                    @click="splitPaneResize.resetSplitSize"
                   >
                     Center split
                   </button>
@@ -965,11 +972,6 @@ onMounted(() => {
               :selected-file-metadata="explorerState.selectedFileMetadata.value"
               :selected-default-tab="tabsStore.defaultActiveView"
               :link-tabs="tabsStore.linkTabs"
-              :split-connection-id="splitPane.splitConnectionId.value"
-              :split-meta="splitPane.splitMeta.value"
-              :split-file-entry="splitPane.splitFileEntry.value"
-              :split-file-metadata="splitPane.splitFileMetadata.value"
-              :split-default-tab="splitPane.splitDefaultTab.value"
               :file-entries="currentFileEntries"
               @edit-connection="onEditConnection"
               @clone-connection="onCloneConnection"

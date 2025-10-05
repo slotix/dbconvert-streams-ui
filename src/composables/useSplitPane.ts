@@ -5,6 +5,14 @@ import type { FileMetadata } from '@/types/files'
 
 type ObjectType = 'table' | 'view'
 
+/**
+ * @deprecated This composable has been split into two parts:
+ * - Use `useSplitPaneResize` for UI mechanics (resizing, drag interactions)
+ * - Use `useSplitViewStore` (Pinia store) for content management
+ *
+ * This composable is kept for backwards compatibility but should not be used in new code.
+ * It will be removed in a future version.
+ */
 export function useSplitPane() {
   // Split sizing/resizer state
   const splitGrow = ref(50) // percentage width for left pane (0..100)

@@ -41,14 +41,8 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useSplitPane } from '@/composables/useSplitPane'
-
-interface Props {
-  splitMeta?: object
-  splitFileEntry?: object
-}
-
-const props = defineProps<Props>()
+import { useSplitPaneResize } from '@/composables/useSplitPaneResize'
+import { useSplitViewStore } from '@/stores/splitView'
 
 // Define emits
 const emit = defineEmits<{
@@ -56,11 +50,13 @@ const emit = defineEmits<{
   'promote-right-split': []
 }>()
 
+// Use the new composables and store
 const { splitGrow, splitContainerRef, leftPaneRef, onDividerMouseDown, onDividerDoubleClick } =
-  useSplitPane()
+  useSplitPaneResize()
+const splitViewStore = useSplitViewStore()
 
-// Check if we have split content
-const hasSplitContent = computed(() => props.splitMeta || props.splitFileEntry)
+// Check if we have split content from store
+const hasSplitContent = computed(() => splitViewStore.hasContent)
 
 function showRightSplitContextMenu(event: MouseEvent) {
   // Simple context menu for right split - just "Make Primary" option

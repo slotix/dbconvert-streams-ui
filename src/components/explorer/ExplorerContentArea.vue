@@ -27,8 +27,6 @@
   <div v-else>
     <div class="min-h-[480px] min-w-0 overflow-x-hidden">
       <ExplorerSplitPane
-        :split-meta="splitMeta || undefined"
-        :split-file-entry="splitFileEntry || undefined"
         @set-active-pane="$emit('set-active-pane', $event)"
         @promote-right-split="$emit('promote-right-split')"
       >
@@ -60,24 +58,24 @@
         </template>
 
         <template #right>
-          <div v-if="splitMeta">
+          <div v-if="splitViewStore.splitContent?.type === 'database'">
             <DatabaseObjectContainer
-              :connection-id="splitConnectionId || ''"
-              :table-meta="splitMeta"
+              :connection-id="connectionId"
+              :table-meta="splitViewStore.splitContent.meta"
               :is-view="false"
               :connection-type="'sql'"
-              :database="splitMeta.database"
-              :default-tab="splitDefaultTab || undefined"
+              :database="splitViewStore.splitContent.meta.database"
+              :default-tab="undefined"
               :link-tabs="linkTabs"
               @tab-change="$emit('right-tab-change', $event)"
             />
           </div>
-          <div v-else-if="splitFileEntry">
+          <div v-else-if="splitViewStore.splitContent?.type === 'file'">
             <FileObjectContainer
-              :entry="splitFileEntry"
-              :metadata="splitFileMetadata"
-              :connection-id="splitConnectionId || ''"
-              :default-tab="splitDefaultTab || undefined"
+              :entry="splitViewStore.splitContent.entry"
+              :metadata="splitViewStore.splitContent.metadata || null"
+              :connection-id="connectionId"
+              :default-tab="undefined"
               @tab-change="$emit('right-tab-change', $event)"
             />
           </div>
@@ -118,6 +116,7 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useConnectionsStore } from '@/stores/connections'
+import { useSplitViewStore } from '@/stores/splitView'
 import ConnectionDetailsPanel from '@/components/database/ConnectionDetailsPanel.vue'
 import DatabaseOverviewPanel from '@/components/database/DatabaseOverviewPanel.vue'
 import DiagramView from '@/components/database/DiagramView.vue'
@@ -140,11 +139,6 @@ interface Props {
   selectedFileMetadata?: FileMetadata | null
   selectedDefaultTab?: 'structure' | 'data' | null
   linkTabs?: boolean
-  splitConnectionId?: string | null
-  splitMeta?: SQLTableMeta | SQLViewMeta | null
-  splitFileEntry?: FileSystemEntry | null
-  splitFileMetadata?: FileMetadata | null
-  splitDefaultTab?: 'structure' | 'data' | null
   fileEntries?: FileSystemEntry[]
 }
 
@@ -158,11 +152,6 @@ const props = withDefaults(defineProps<Props>(), {
   selectedFileMetadata: null,
   selectedDefaultTab: null,
   linkTabs: false,
-  splitConnectionId: null,
-  splitMeta: null,
-  splitFileEntry: null,
-  splitFileMetadata: null,
-  splitDefaultTab: null,
   fileEntries: () => []
 })
 
@@ -180,6 +169,7 @@ defineEmits<{
 
 const route = useRoute()
 const connectionsStore = useConnectionsStore()
+const splitViewStore = useSplitViewStore()
 
 // Computed properties - derive view mode from route
 const databaseFromQuery = computed(() => route.query.db as string | undefined)
