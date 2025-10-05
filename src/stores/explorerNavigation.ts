@@ -38,6 +38,9 @@ export interface OpenFilePayload {
 
 export const useExplorerNavigationStore = defineStore('explorerNavigation', {
   state: () => ({
+    // Active connection ID - SINGLE SOURCE OF TRUTH (synchronous)
+    activeConnectionId: null as string | null,
+
     // Expansion state
     expandedConnections: new Set<string>(),
     expandedDatabases: new Set<string>(),
@@ -111,6 +114,11 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
   },
 
   actions: {
+    // Active connection management
+    setActiveConnectionId(connectionId: string | null) {
+      this.activeConnectionId = connectionId
+    },
+
     // Expansion actions
     toggleConnection(connectionId: string) {
       if (this.expandedConnections.has(connectionId)) {
@@ -162,6 +170,7 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
 
     // Selection actions
     selectConnection(connectionId: string) {
+      this.activeConnectionId = connectionId
       this.selection = {
         connectionId,
         database: undefined,
@@ -173,6 +182,7 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
     },
 
     selectDatabase(connectionId: string, database: string) {
+      this.activeConnectionId = connectionId
       this.selection = {
         connectionId,
         database,
@@ -190,6 +200,7 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
       type: ObjectType,
       name: string
     ) {
+      this.activeConnectionId = connectionId
       this.selection = {
         connectionId,
         database,
@@ -201,6 +212,7 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
     },
 
     selectFile(connectionId: string, path: string) {
+      this.activeConnectionId = connectionId
       this.selection = {
         connectionId,
         database: undefined,

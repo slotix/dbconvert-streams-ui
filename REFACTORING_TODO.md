@@ -5,11 +5,11 @@
 
 ---
 
-## ✅ HIGH PRIORITY: Route as Single Source of Truth (COMPLETED 2025-10-05)
+## ✅ HIGH PRIORITY: Pinia Store as Single Source of Truth (COMPLETED 2025-10-05)
 
 **Priority:** CRITICAL - Must be done before Phase 3
 **Estimated Effort:** 4-6 hours
-**Actual Effort:** ~2 hours
+**Actual Effort:** ~3 hours
 
 ### Problem
 Previously, `activeConnectionId` had 4 different sources:
@@ -25,37 +25,60 @@ This created:
 - ❌ Complexity and hard-to-maintain code
 
 ### Solution Implemented
-**Made the route the single source of truth:**
+**Made Pinia store the single source of truth (synchronous):**
 1. ✅ Removed `overviewConnectionId`, `detailsConnectionId`, `diagramConnectionId`
-2. ✅ All handlers now only update route
-3. ✅ `currentConnectionId` (from route) is the only source
-4. ✅ Simplified `activeConnectionId` to just return `currentConnectionId`
-5. ✅ Added query params for view modes (`?details=true`, `?diagram=true`)
-6. ✅ ExplorerContentArea derives view mode from route
+2. ✅ Added `activeConnectionId` to `explorerNavigationStore` (synchronous state)
+3. ✅ All handlers now update store FIRST, then route (for URL persistence)
+4. ✅ Watchers use store state instead of route params (eliminates race conditions)
+5. ✅ `currentConnectionId` (from route) still exists for URL-based navigation
+6. ✅ Added query params for view modes (`?details=true`, `?diagram=true`)
+7. ✅ ExplorerContentArea derives view mode from route
 
 ### Tasks Completed
 - [x] Audit all uses of `overviewConnectionId`, `detailsConnectionId`, `diagramConnectionId`
-- [x] Refactor `handleOpenFromTree` to only use route
-- [x] Refactor `handleOpenFile` to only use route (already correct)
-- [x] Refactor `handleSelectDatabase` to only use route
-- [x] Refactor `handleShowDiagram` to only use route (added `?diagram=true` query param)
-- [x] Refactor `handleSelectConnection` to only use route (added `?details=true` query param)
+- [x] Add `activeConnectionId` state to `explorerNavigationStore`
+- [x] Add `setActiveConnectionId()` action to store
+- [x] Update all selection actions to set `activeConnectionId`
+- [x] Refactor `handleOpenFromTree` to update store first, then route
+- [x] Refactor `handleOpenFile` to update store first, then route
+- [x] Refactor `handleSelectDatabase` to update store first, then route
+- [x] Refactor `handleShowDiagram` to update store first, then route
+- [x] Refactor `handleSelectConnection` to update store first, then route
+- [x] Refactor `handleFileSelect` to update store first, then route
+- [x] Update ExplorerSidebarConnections watcher to use store instead of route
+- [x] Remove `useRoute` dependency from ExplorerSidebarConnections
 - [x] Remove `overviewConnectionId`, `detailsConnectionId`, `diagramConnectionId` from `useExplorerState`
-- [x] Update ExplorerContentArea to derive view mode from route instead of props
+- [x] Update ExplorerContentArea to derive view mode from route query params
 - [x] Simplify `activeConnectionId` computed to just return `currentConnectionId`
+- [x] Remove all debug logging
 - [x] Build passes with no TypeScript errors
 
 ### Files Updated
+- ✅ `src/stores/explorerNavigation.ts` - added `activeConnectionId` state and `setActiveConnectionId()` action
 - ✅ `src/composables/useExplorerState.ts` - removed 3 connection ID refs, simplified `activeConnectionId` computed
-- ✅ `src/views/DatabaseExplorerView.vue` - removed all assignments to the 3 connection IDs, added query params
+- ✅ `src/views/DatabaseExplorerView.vue` - all handlers now update store first, then route
 - ✅ `src/components/explorer/ExplorerContentArea.vue` - removed connection ID props, derives view from route
+- ✅ `src/components/database/ExplorerSidebarConnections.vue` - watcher uses store instead of route, removed useRoute import
+- ✅ `src/components/database/tree/ConnectionTreeItem.vue` - removed debug logging
 
 ### Success Criteria
-- ✅ Route is the ONLY source for active connection
-- ✅ Breadcrumb always matches URL (no more race conditions)
+- ✅ Pinia store is the synchronous source of truth for active connection
+- ✅ Route is updated asynchronously for URL persistence
+- ✅ No race conditions between store and route updates
+- ✅ Breadcrumb always matches active connection (uses store, not route)
 - ✅ No multiple sources of truth
 - ✅ Code is simpler and easier to understand
 - ✅ TypeScript build passes with no errors
+
+### Architecture Pattern
+**Before:** Route → Component State (async race condition)
+**After:** Component Action → Store (sync) → Route (async for URL only)
+
+This ensures:
+1. Store updates synchronously when user clicks
+2. Watchers see updated store immediately (no race condition)
+3. Route updates asynchronously in background for URL persistence
+4. Deep linking still works (route initializes store on load)
 
 ---
 

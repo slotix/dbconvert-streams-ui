@@ -1,5 +1,8 @@
 <template>
-  <div v-if="showConnectionDetails" class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg">
+  <div
+    v-if="showConnectionDetails && currentConnection"
+    class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg"
+  >
     <ConnectionDetailsPanel
       :connection="currentConnection"
       :file-entries="fileEntries"
@@ -9,7 +12,7 @@
     />
   </div>
   <div
-    v-else-if="showDatabaseOverview"
+    v-else-if="showDatabaseOverview && databaseFromQuery"
     class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg"
   >
     <DatabaseOverviewPanel
@@ -180,14 +183,16 @@ const connectionsStore = useConnectionsStore()
 
 // Computed properties - derive view mode from route
 const databaseFromQuery = computed(() => route.query.db as string | undefined)
-const showConnectionDetails = computed(() => route.query.details === 'true')
+const showConnectionDetails = computed(
+  () => route.query.details === 'true' && currentConnection.value !== null
+)
 const showDatabaseOverview = computed(
   () =>
     !showConnectionDetails.value &&
     !props.showDiagram &&
     !props.selectedMeta &&
     !props.selectedFileEntry &&
-    databaseFromQuery.value
+    !!databaseFromQuery.value
 )
 
 const currentConnection = computed(

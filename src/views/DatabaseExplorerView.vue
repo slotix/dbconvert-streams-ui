@@ -5,6 +5,7 @@ import { useCommonStore } from '@/stores/common'
 import { useConnectionsStore } from '@/stores/connections'
 import { useSchemaStore } from '@/stores/schema'
 import { useTabsStore } from '@/stores/tabs'
+import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
 import ExplorerSidebarConnections from '@/components/database/ExplorerSidebarConnections.vue'
 import ExplorerBreadcrumb from '@/components/database/ExplorerBreadcrumb.vue'
@@ -33,6 +34,7 @@ const commonStore = useCommonStore()
 const connectionsStore = useConnectionsStore()
 const schemaStore = useSchemaStore()
 const tabsStore = useTabsStore()
+const navigationStore = useExplorerNavigationStore()
 
 // Use composables and stores for state management
 const explorerState = useExplorerState()
@@ -115,16 +117,16 @@ function handleOpenFromTree(payload: {
   // Capture current connection before any route changes
   const previousConnectionId = explorerState.currentConnectionId.value
 
+  // Set active connection ID FIRST (synchronous store update - SINGLE SOURCE OF TRUTH)
+  navigationStore.setActiveConnectionId(payload.connectionId)
+
   // Clear other modes
   explorerState.clearPanelStates()
   explorerState.clearFileSelection()
 
-  // Update route immediately if connection is changing
-  if (payload.connectionId !== previousConnectionId) {
-    // Clear file explorer selection when switching connections
-    if (previousConnectionId) {
-      fileExplorerStore.clearSelection(previousConnectionId)
-    }
+  // Clear file explorer selection when switching connections
+  if (payload.connectionId !== previousConnectionId && previousConnectionId) {
+    fileExplorerStore.clearSelection(previousConnectionId)
   }
 
   // Set database selection
@@ -143,14 +145,18 @@ function handleOpenFromTree(payload: {
     schemaStore.fetchSchema(false)
   }
 
-  // Update route - this is now the single source of truth
+  // Update route AFTER store (async route update for URL persistence)
+  // Clear ALL previous query params by setting them to undefined
   router.replace({
     path: `/explorer/${payload.connectionId}`,
     query: {
       db: payload.database || undefined,
       schema: payload.schema || undefined,
       type: payload.type || undefined,
-      name: payload.name || undefined
+      name: payload.name || undefined,
+      file: undefined,
+      details: undefined,
+      diagram: undefined
     }
   })
 
@@ -219,15 +225,25 @@ function handleOpenFile(payload: {
   defaultTab?: 'structure' | 'data'
   openInRightSplit?: boolean
 }) {
+  // Set active connection ID FIRST (synchronous store update)
+  navigationStore.setActiveConnectionId(payload.connectionId)
+
   // Clear other modes
   explorerState.clearPanelStates()
   explorerState.clearDatabaseSelection()
 
-  // Always update route and set file selection immediately
+  // Update route AFTER store (async route update for URL persistence)
+  // Clear database-related query params
   router.replace({
     path: `/explorer/${payload.connectionId}`,
     query: {
-      file: payload.path
+      file: payload.path,
+      db: undefined,
+      schema: undefined,
+      type: undefined,
+      name: undefined,
+      details: undefined,
+      diagram: undefined
     }
   })
 
@@ -288,6 +304,9 @@ function handleOpenFile(payload: {
 }
 
 function handleShowDiagram(payload: { connectionId: string; database: string }) {
+  // Set active connection ID FIRST (synchronous store update)
+  navigationStore.setActiveConnectionId(payload.connectionId)
+
   explorerState.clearPanelStates()
   explorerState.setDatabaseSelection({ database: payload.database })
   explorerState.showDiagram.value = true
@@ -298,12 +317,34 @@ function handleShowDiagram(payload: { connectionId: string; database: string }) 
 
   router.replace({
     path: `/explorer/${payload.connectionId}`,
-    query: { db: payload.database, diagram: 'true' }
+    query: {
+      db: payload.database,
+      diagram: 'true',
+      file: undefined,
+      details: undefined,
+      schema: undefined,
+      type: undefined,
+      name: undefined
+    }
   })
 }
 
 function handleSelectConnection(payload: { connectionId: string }) {
-  router.replace({ path: `/explorer/${payload.connectionId}`, query: { details: 'true' } })
+  // Set active connection ID FIRST (synchronous store update)
+  navigationStore.setActiveConnectionId(payload.connectionId)
+
+  router.replace({
+    path: `/explorer/${payload.connectionId}`,
+    query: {
+      details: 'true',
+      file: undefined,
+      db: undefined,
+      schema: undefined,
+      type: undefined,
+      name: undefined,
+      diagram: undefined
+    }
+  })
 
   focusConnectionId.value = payload.connectionId
   explorerState.clearPanelStates()
@@ -318,6 +359,9 @@ function handleSelectConnection(payload: { connectionId: string }) {
 }
 
 function handleSelectDatabase(payload: { connectionId: string; database: string }) {
+  // Set active connection ID FIRST (synchronous store update)
+  navigationStore.setActiveConnectionId(payload.connectionId)
+
   explorerState.clearPanelStates()
   explorerState.setDatabaseSelection({ database: payload.database })
   splitPane.closeRightSplit()
@@ -327,10 +371,24 @@ function handleSelectDatabase(payload: { connectionId: string; database: string 
   schemaStore.setDatabaseName(payload.database)
   schemaStore.fetchSchema(false)
 
-  router.replace({ path: `/explorer/${payload.connectionId}`, query: { db: payload.database } })
+  router.replace({
+    path: `/explorer/${payload.connectionId}`,
+    query: {
+      db: payload.database,
+      file: undefined,
+      details: undefined,
+      diagram: undefined,
+      schema: undefined,
+      type: undefined,
+      name: undefined
+    }
+  })
 }
 
 function handleFileSelect(payload: { connectionId: string; path: string }) {
+  // Set active connection ID FIRST (synchronous store update)
+  navigationStore.setActiveConnectionId(payload.connectionId)
+
   const entries = currentFileEntries.value
   const entry = entries.find((e) => e.path === payload.path)
   if (!entry) {
@@ -338,7 +396,15 @@ function handleFileSelect(payload: { connectionId: string; path: string }) {
     focusConnectionId.value = null
     router.replace({
       path: `/explorer/${payload.connectionId}`,
-      query: { file: payload.path }
+      query: {
+        file: payload.path,
+        db: undefined,
+        schema: undefined,
+        type: undefined,
+        name: undefined,
+        details: undefined,
+        diagram: undefined
+      }
     })
     return
   }
@@ -400,7 +466,9 @@ function activateTabFromState(tab: {
         db: undefined,
         schema: undefined,
         type: undefined,
-        name: undefined
+        name: undefined,
+        details: undefined,
+        diagram: undefined
       }
     })
   } else {
@@ -429,7 +497,9 @@ function activateTabFromState(tab: {
         schema: tab.schema || undefined,
         type: tab.type || undefined,
         name: tab.name || undefined,
-        file: undefined
+        file: undefined,
+        details: undefined,
+        diagram: undefined
       }
     })
   }
@@ -604,7 +674,10 @@ function handleBreadcrumbNavigate(payload: { level: 'database' | 'schema' | 'typ
       db: explorerState.selectedDatabaseName.value || undefined,
       schema: explorerState.selectedSchemaName.value || undefined,
       type: explorerState.selectedObjectType.value || undefined,
-      name: explorerState.selectedObjectName.value || undefined
+      name: explorerState.selectedObjectName.value || undefined,
+      file: undefined,
+      details: undefined,
+      diagram: undefined
     }
   })
 }
@@ -924,8 +997,8 @@ onMounted(() => {
 
             <!-- Content area -->
             <ExplorerContentArea
-              v-if="explorerState.currentConnectionId.value"
-              :connection-id="explorerState.currentConnectionId.value"
+              v-if="navigationStore.activeConnectionId"
+              :connection-id="navigationStore.activeConnectionId"
               :show-diagram="explorerState.showDiagram.value"
               :tables="schemaStore.tables as any[]"
               :views="schemaStore.views as any[]"

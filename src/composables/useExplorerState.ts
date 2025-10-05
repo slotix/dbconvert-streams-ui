@@ -2,6 +2,7 @@ import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useConnectionsStore } from '@/stores/connections'
 import { useSchemaStore } from '@/stores/schema'
+import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import type { SQLTableMeta, SQLViewMeta } from '@/types/metadata'
 import type { FileSystemEntry } from '@/api/fileSystem'
 import type { FileMetadata } from '@/types/files'
@@ -13,6 +14,7 @@ export function useExplorerState() {
   const router = useRouter()
   const connectionsStore = useConnectionsStore()
   const schemaStore = useSchemaStore()
+  const navigationStore = useExplorerNavigationStore()
 
   // Current connection
   const currentConnectionId = computed(() => route.params.id as string)
@@ -71,8 +73,11 @@ export function useExplorerState() {
   )
 
   // Computed properties for active connection details
-  // Route is now the single source of truth for connection ID
-  const activeConnectionId = computed<string | null>(() => currentConnectionId.value || null)
+  // Pinia store is the SYNCHRONOUS source of truth for connection ID
+  // Route is kept in sync for URL persistence only
+  const activeConnectionId = computed<string | null>(
+    () => navigationStore.activeConnectionId || currentConnectionId.value || null
+  )
 
   const activeConnection = computed(() =>
     connectionsStore.connections.find((c) => c.id === activeConnectionId.value)

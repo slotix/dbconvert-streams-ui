@@ -177,7 +177,12 @@ function onOpen(
   let obj: SQLTableMeta | SQLViewMeta | undefined
   if (type === 'table') obj = navigationStore.findTableMeta(connId, db, name, schema)
   else obj = navigationStore.findViewMeta(connId, db, name, schema)
-  if (!obj) return
+
+  if (!obj) {
+    console.error('[ExplorerSidebarConnections] Metadata not found for', type, name, 'in', db)
+    return
+  }
+
   emit('open', {
     connectionId: connId,
     database: db,
@@ -387,7 +392,8 @@ watch(
   () => props.selected,
   async (sel) => {
     if (!sel) return
-    const connId = props.initialExpandedConnectionId
+    // Use the active connection ID from the store (synchronous, always up-to-date)
+    const connId = navigationStore.activeConnectionId
     if (!connId) return
     navigationStore.expandConnection(connId)
     await navigationStore.ensureDatabases(connId)
