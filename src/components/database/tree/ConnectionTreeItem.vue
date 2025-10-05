@@ -7,6 +7,7 @@ import { highlightParts as splitHighlight } from '@/utils/highlight'
 import { useConnectionTreeLogic } from '@/composables/useConnectionTreeLogic'
 import { useFileExplorerStore } from '@/stores/fileExplorer'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
+import { useTreeSearch } from '@/composables/useTreeSearch'
 import type { Connection } from '@/types/connections'
 import type { FileSystemEntry } from '@/api/fileSystem'
 
@@ -30,6 +31,7 @@ const props = defineProps<{
 const treeLogic = useConnectionTreeLogic()
 const fileExplorerStore = useFileExplorerStore()
 const navigationStore = useExplorerNavigationStore()
+const treeSearch = useTreeSearch(props.searchQuery)
 
 // Get file entries and selected path from store
 const fileEntries = computed(() => fileExplorerStore.getEntries(props.connection.id))
@@ -161,12 +163,7 @@ function handleSelectFile(path: string) {
 }
 
 const visibleFileEntries = computed(() => {
-  return fileEntries.value
-    .filter((item) => item.type === 'file')
-    .filter(
-      (item) =>
-        !props.searchQuery || item.name.toLowerCase().includes(props.searchQuery.toLowerCase())
-    )
+  return treeSearch.filterFileEntries(fileEntries.value)
 })
 </script>
 

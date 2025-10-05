@@ -6,6 +6,7 @@ import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { useConnectionTreeLogic } from '@/composables/useConnectionTreeLogic'
 import { useTreeContextMenu, type ContextTarget } from '@/composables/useTreeContextMenu'
 import { useConnectionActions } from '@/composables/useConnectionActions'
+import { useTreeSearch } from '@/composables/useTreeSearch'
 import type { Connection } from '@/types/connections'
 import type { SQLTableMeta, SQLViewMeta } from '@/types/metadata'
 import type { FileSystemEntry } from '@/api/fileSystem'
@@ -89,39 +90,14 @@ const canCopyDDL = computed(() => {
 // Fixed, consistent caret icon class
 const caretClass = 'w-[16px] h-[16px] shrink-0 flex-none text-gray-400 mr-1.5'
 
-const normalized = (s: string) => s.toLowerCase()
+// Use tree search composable (reactive to searchQuery)
+const treeSearch = computed(() =>
+  useTreeSearch(searchQuery.value, { typeFilter: props.typeFilter as 'database' | 'file' | null })
+)
 
+// Computed for filtered connections using composable
 const filteredConnections = computed<Connection[]>(() => {
-  const q = searchQuery.value.trim()
-  const base = [...connectionsStore.connections]
-    .filter((conn) => treeLogic.matchesTypeFilter(conn, props.typeFilter))
-    .sort((a, b) => {
-      const ac = Number(a.created || 0)
-      const bc = Number(b.created || 0)
-      if (bc !== ac) return bc - ac
-      return (a.name || '').localeCompare(b.name || '')
-    })
-  if (!q) return base
-  const qn = normalized(q)
-  return base.filter((c) => {
-    const label = `${c.name || ''} ${c.host || ''} ${c.type || ''}`
-    if (normalized(label).includes(qn)) return true
-    const dbs = navigationStore.databasesCache[c.id] || []
-    if (dbs.some((d) => normalized(d.name).includes(qn))) return true
-    const metaByDb = navigationStore.metadataCache[c.id] || {}
-    for (const dbName in metaByDb) {
-      const meta = metaByDb[dbName]
-      const hasSchemaHit = Object.values(meta.tables || {}).some(
-        (t) => (t.schema && normalized(t.schema).includes(qn)) || normalized(t.name).includes(qn)
-      )
-      if (hasSchemaHit) return true
-      const hasViewHit = Object.values(meta.views || {}).some(
-        (v) => (v.schema && normalized(v.schema).includes(qn)) || normalized(v.name).includes(qn)
-      )
-      if (hasViewHit) return true
-    }
-    return false
-  })
+  return treeSearch.value.filterConnections(connectionsStore.connections)
 })
 
 async function loadConnections() {
@@ -455,20 +431,7 @@ async function expandForSearch(query: string) {
 }
 
 function matchesDbFilter(connId: string, dbName: string): boolean {
-  const q = searchQuery.value.trim()
-  if (!q) return true
-  const qn = normalized(q)
-  if (normalized(dbName).includes(qn)) return true
-  const meta = navigationStore.metadataCache[connId]?.[dbName]
-  if (!meta) return false
-  const tableHit = Object.values(meta.tables || {}).some(
-    (t) => normalized(t.name).includes(qn) || (t.schema && normalized(t.schema).includes(qn))
-  )
-  if (tableHit) return true
-  const viewHit = Object.values(meta.views || {}).some(
-    (v) => normalized(v.name).includes(qn) || (v.schema && normalized(v.schema).includes(qn))
-  )
-  return viewHit
+  return treeSearch.value.matchesDatabaseFilter(connId, dbName)
 }
 
 watch(

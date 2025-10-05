@@ -229,21 +229,26 @@ This ensures:
   - [x] Remove unused fileExplorerStore import
 - [x] Test expansion state reactivity
 
-### 6. Extract Search Logic
-- [ ] Create `src/composables/useTreeSearch.ts`
-  - [ ] Add `searchQuery` ref
-  - [ ] Add `normalize()` function
-  - [ ] Add `matchesQuery()` function
-  - [ ] Add `filterConnections()` function
-  - [ ] Add `highlightMatches()` function (optional)
-- [ ] Update `src/components/database/ExplorerSidebarConnections.vue`
-  - [ ] Use `useTreeSearch()` composable
-  - [ ] Replace `filteredConnections` logic
-  - [ ] Remove duplicate search code
-- [ ] Update `src/components/database/tree/ConnectionTreeItem.vue`
-  - [ ] Use `useTreeSearch()` for file filtering
-  - [ ] Remove duplicate filter logic
-- [ ] Test search across all tree levels
+### ✅ 6. Extract Search Logic (Completed 2025-10-05)
+- [x] Create `src/composables/useTreeSearch.ts`
+  - [x] Add `searchQuery` parameter for reactive search
+  - [x] Add `normalize()` function for case-insensitive search
+  - [x] Add `matchesQuery()` function for single text matching
+  - [x] Add `matchesAnyQuery()` function for array text matching
+  - [x] Add `filterConnections()` function with full search logic
+  - [x] Add `filterFileEntries()` function for file filtering
+  - [x] Add `matchesDatabaseFilter()` function for database filtering
+  - [x] Add `getHighlightParts()` function for text highlighting
+- [x] Update `src/components/database/ExplorerSidebarConnections.vue`
+  - [x] Import and use `useTreeSearch()` composable
+  - [x] Replace `filteredConnections` logic with composable
+  - [x] Replace `matchesDbFilter` function with composable
+  - [x] Remove duplicate search code (`normalized` function)
+- [x] Update `src/components/database/tree/ConnectionTreeItem.vue`
+  - [x] Import and use `useTreeSearch()` composable
+  - [x] Replace file filtering logic with `treeSearch.filterFileEntries()`
+  - [x] Remove duplicate filter logic
+- [x] Test search across all tree levels (build passed successfully)
 
 ### 7. Split useSplitPane
 - [ ] Create `src/composables/useSplitPaneResize.ts`
