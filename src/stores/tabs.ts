@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { SQLTableMeta, SQLViewMeta } from '@/types/metadata'
 import type { FileSystemEntry } from '@/api/fileSystem'
+import { usePersistedState } from '@/composables/usePersistedState'
 
 export type EditorTab = {
   id: string
@@ -29,6 +30,15 @@ export const useTabsStore = defineStore('tabs', () => {
   const previewTab = ref<EditorTab | null>(null)
   const activePinnedIndex = ref<number | null>(null)
 
+  // Link tabs setting (persisted)
+  const linkTabs = usePersistedState<boolean>('explorer.linkTabs', false, {
+    serializer: (v) => String(v),
+    deserializer: (v) => v === 'true'
+  })
+
+  // Default active view ref (not persisted, but synced when linkTabs is true)
+  const defaultActiveView = ref<'structure' | 'data'>('data')
+
   // Current active tab
   const activeTab = computed(() => {
     return activePinnedIndex.value !== null
@@ -39,6 +49,31 @@ export const useTabsStore = defineStore('tabs', () => {
   // Current active connection ID from the active tab
   const activeConnectionId = computed(() => {
     return activeTab.value?.connectionId || null
+  })
+
+  // Synced default view - updates all tabs when linkTabs is true
+  const syncedDefaultView = computed({
+    get: () => defaultActiveView.value,
+    set: (newView: 'structure' | 'data') => {
+      defaultActiveView.value = newView
+      if (linkTabs.value) {
+        // Update all pinned tabs
+        pinnedTabs.value.forEach((tab) => {
+          tab.viewTab = newView
+        })
+        // Update preview tab
+        if (previewTab.value) {
+          previewTab.value.viewTab = newView
+        }
+      } else {
+        // Only update the active tab when tabs are not linked
+        if (activePinnedIndex.value !== null && pinnedTabs.value[activePinnedIndex.value]) {
+          pinnedTabs.value[activePinnedIndex.value].viewTab = newView
+        } else if (previewTab.value) {
+          previewTab.value.viewTab = newView
+        }
+      }
+    }
   })
 
   // Tab key generation for deduplication
@@ -161,10 +196,13 @@ export const useTabsStore = defineStore('tabs', () => {
     pinnedTabs,
     previewTab,
     activePinnedIndex,
+    linkTabs,
+    defaultActiveView,
 
     // Computed
     activeTab,
     activeConnectionId,
+    syncedDefaultView,
 
     // Actions
     generateTabKey,

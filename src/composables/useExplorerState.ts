@@ -2,7 +2,6 @@ import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useConnectionsStore } from '@/stores/connections'
 import { useSchemaStore } from '@/stores/schema'
-import { usePersistedBoolean } from './usePersistedState'
 import type { SQLTableMeta, SQLViewMeta } from '@/types/metadata'
 import type { FileSystemEntry } from '@/api/fileSystem'
 import type { FileMetadata } from '@/types/files'
@@ -42,10 +41,6 @@ export function useExplorerState() {
 
   // Active pane tracking
   const activePane = ref<'left' | 'right'>('left')
-
-  // Tab states
-  const selectedDefaultTab = ref<'structure' | 'data' | null>(null)
-  const linkTabs = usePersistedBoolean('explorer.linkTabs', false)
 
   // Update URL when selection changes
   watch(
@@ -184,8 +179,6 @@ export function useExplorerState() {
     diagramConnectionId,
     diagramDatabaseName,
     activePane,
-    selectedDefaultTab,
-    linkTabs,
 
     // Computed properties
     activeConnectionId,

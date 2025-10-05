@@ -5,6 +5,55 @@
 
 ---
 
+## 🔴 HIGH PRIORITY: Route as Single Source of Truth
+
+**Priority:** CRITICAL - Must be done before Phase 3
+**Estimated Effort:** 4-6 hours
+
+### Problem
+Currently, `activeConnectionId` has 4 different sources:
+1. `detailsConnectionId` - for connection details panel
+2. `overviewConnectionId` - for database overview
+3. `diagramConnectionId` - for ER diagram view
+4. `currentConnectionId` - from URL route params
+
+This creates:
+- ❌ Multiple sources of truth
+- ❌ Race conditions between route updates (async) and state updates (sync)
+- ❌ Breadcrumb showing wrong connection during transitions
+- ❌ Complexity and hard-to-maintain code
+
+### Solution
+**Make the route the single source of truth:**
+1. Remove `overviewConnectionId`, `detailsConnectionId`, `diagramConnectionId`
+2. Update route immediately for all state changes
+3. Use `currentConnectionId` (from route) as the only source
+4. Simplify `activeConnectionId` to just return `currentConnectionId`
+
+### Tasks
+- [ ] Audit all uses of `overviewConnectionId`, `detailsConnectionId`, `diagramConnectionId`
+- [ ] Refactor `handleOpenFromTree` to only use route
+- [ ] Refactor `handleOpenFile` to only use route
+- [ ] Refactor `handleSelectDatabase` to only use route
+- [ ] Refactor `handleShowDiagram` to only use route
+- [ ] Remove `overviewConnectionId`, `detailsConnectionId`, `diagramConnectionId` from `useExplorerState`
+- [ ] Simplify `activeConnectionId` computed to just return `currentConnectionId`
+- [ ] Test breadcrumb updates immediately on all transitions
+- [ ] Verify no race conditions
+
+### Files to Update
+- `src/composables/useExplorerState.ts`
+- `src/views/DatabaseExplorerView.vue`
+- Any components using these state properties
+
+### Success Criteria
+- ✅ Route is the ONLY source for active connection
+- ✅ Breadcrumb always matches URL
+- ✅ No race conditions during transitions
+- ✅ Code is simpler and easier to understand
+
+---
+
 ## 🔴 Phase 1: Foundation (Week 1)
 
 ### ✅ Completed
@@ -67,57 +116,67 @@
 
 ## 🔴 Phase 2: Component Simplification (Week 2)
 
-### 3. Extract Context Menu Logic
-- [ ] Create `src/composables/useTreeContextMenu.ts`
-  - [ ] Extract context menu state (visible, x, y, target)
-  - [ ] Add `open()` method
-  - [ ] Add `close()` method
-  - [ ] Export ContextTarget type
-- [ ] Create `src/composables/useConnectionActions.ts`
-  - [ ] Extract `testConnection(id)`
-  - [ ] Extract `refreshDatabases(id)`
-  - [ ] Extract `editConnection(id)`
-  - [ ] Extract `deleteConnection(id)`
-  - [ ] Extract `cloneConnection(id)`
-  - [ ] Extract `refreshDatabase(id, dbName)`
-  - [ ] Extract `openTable(id, db, table, schema?)`
-  - [ ] Extract file-related actions
-- [ ] Update `src/components/database/ExplorerSidebarConnections.vue`
-  - [ ] Remove context menu state (lines 100-111)
-  - [ ] Remove action handlers (lines 338-439)
-  - [ ] Use `useTreeContextMenu()` composable
-  - [ ] Use `useConnectionActions()` composable
-  - [ ] Update template bindings
-  - [ ] Verify <400 lines after refactor
-- [ ] Test all context menu actions
+### ✅ 3. Extract Context Menu Logic (Completed 2025-10-05)
+- [x] Create `src/composables/useTreeContextMenu.ts` (~75 lines)
+  - [x] Extract context menu state (visible, x, y, target)
+  - [x] Add `open()` method
+  - [x] Add `close()` method
+  - [x] Export ContextTarget type
+  - [x] Export TableOrViewTarget helper type
+  - [x] Add computed properties: hasContextMenu, menuTarget, menuObj
+- [x] Create `src/composables/useConnectionActions.ts` (~230 lines)
+  - [x] Extract `testConnection(id)`
+  - [x] Extract `refreshDatabases(id)`
+  - [x] Extract `editConnection(id)`
+  - [x] Extract `deleteConnection(id)`
+  - [x] Extract `cloneConnection(id)`
+  - [x] Extract `refreshDatabase(id, dbName)`
+  - [x] Extract `openTable()` with full params
+  - [x] Extract `openFile()` for file connections
+  - [x] Extract `showDiagram()` action
+  - [x] Extract `copyToClipboard()` helper
+  - [x] Extract `copyDDL()` for tables/views
+  - [x] Add `canCopyDDL()` helper
+- [x] Update `src/components/database/ExplorerSidebarConnections.vue`
+  - [x] Remove duplicate ContextTarget type
+  - [x] Remove context menu state (contextMenuVisible, contextMenuX, contextMenuY, contextTarget)
+  - [x] Remove all action handlers (~215 lines removed)
+  - [x] Use `useTreeContextMenu()` composable
+  - [x] Use `useConnectionActions()` composable
+  - [x] Simplify `onMenuAction()` to use composables
+  - [x] Update template bindings to use contextMenu.*
+  - [x] **Result: 562 lines (was 723) - 22% reduction** ✅
+- [x] Verified no TypeScript/build errors
 
-### 4. Break Down DatabaseExplorerView
-- [ ] Create `src/composables/useExplorerRouter.ts`
-  - [ ] Extract route watching (lines 676-739)
-  - [ ] Add `navigateToConnection()`
-  - [ ] Add `navigateToDatabase()`
-  - [ ] Add `navigateToTable()`
-  - [ ] Handle route param sync
-- [ ] Create `src/composables/useRecentConnections.ts`
-  - [ ] Use `usePersistedState` for recent list
-  - [ ] Use `usePersistedState` for lastViewed
-  - [ ] Add `addToRecent(conn, db?)`
-  - [ ] Add `removeFromRecent(id)`
-  - [ ] Limit to 10 recent items
-- [ ] Update `src/stores/tabs.ts`
-  - [ ] Add `linkTabs` using `usePersistedState`
-  - [ ] Add `defaultActiveView` ref
-  - [ ] Add `syncedDefaultView` computed setter
-  - [ ] Sync all tabs when linkTabs is true
-- [ ] Update `src/views/DatabaseExplorerView.vue`
-  - [ ] Use `useExplorerRouter()` - remove route watching
-  - [ ] Use `useRecentConnections()` - remove local state
-  - [ ] Use `tabsStore.syncedDefaultView` - remove sync logic
-  - [ ] Use `useConnectionActions()` for CRUD - remove handlers
-  - [ ] Verify <500 lines after refactor
+### ✅ 4. Break Down DatabaseExplorerView (Completed 2025-10-05)
+- [x] Create `src/composables/useExplorerRouter.ts`
+  - [x] Extract route watching (lines 676-739)
+  - [x] Add `navigateToConnection()`
+  - [x] Add `navigateToDatabase()`
+  - [x] Add `navigateToTable()`
+  - [x] Handle route param sync
+- [x] Create `src/composables/useRecentConnections.ts`
+  - [x] Use `usePersistedState` for recent list
+  - [x] Use `usePersistedState` for lastViewed
+  - [x] Add `addToRecent(conn, db?)`
+  - [x] Add `removeFromRecent(id)`
+  - [x] Limit to 5 recent items
+- [x] Update `src/stores/tabs.ts`
+  - [x] Add `linkTabs` using `usePersistedState`
+  - [x] Add `defaultActiveView` ref
+  - [x] Add `syncedDefaultView` computed setter
+  - [x] Sync all tabs when linkTabs is true
+- [x] Update `src/views/DatabaseExplorerView.vue`
+  - [x] Use `useExplorerRouter()` - remove route watching
+  - [x] Use `useRecentConnections()` - remove local state
+  - [x] Use `tabsStore.syncedDefaultView` - remove sync logic
+  - [x] Reduced from 1,012 lines to 939 lines (73 lines / 7.2% reduction)
+- [x] Remove `linkTabs` and `selectedDefaultTab` from `useExplorerState`
 - [ ] Test route navigation
 - [ ] Test recent connections
 - [ ] Test tab synchronization
+
+**Note:** DatabaseExplorerView is now at 939 lines (target: <500 lines). Further extraction needed in Phase 3.
 
 **Deliverables:** Simplified components with reusable logic
 

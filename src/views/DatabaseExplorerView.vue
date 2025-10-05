@@ -23,8 +23,10 @@ import { useFileExplorerStore } from '@/stores/fileExplorer'
 import { useSplitPane } from '@/composables/useSplitPane'
 import { useSidebar } from '@/composables/useSidebar'
 import { usePersistedState } from '@/composables/usePersistedState'
+import { useRecentConnections } from '@/composables/useRecentConnections'
+import { useExplorerRouter } from '@/composables/useExplorerRouter'
+import { useConnectionActions } from '@/composables/useConnectionActions'
 
-const MAX_RECENT_CONNECTIONS = 5
 const route = useRoute()
 const router = useRouter()
 const commonStore = useCommonStore()
@@ -44,25 +46,13 @@ const focusConnectionId = ref<string | null>(null)
 const explorerHeaderRef = ref<InstanceType<typeof ExplorerHeader> | null>(null)
 
 // Recent connections management
-type RecentConnection = {
-  id: string
-  name: string
-  type?: string
-  host?: string
-  port?: string
-  database?: string
-  cloud_provider?: string
-}
-
-const recentConnections = usePersistedState<RecentConnection[]>('recentConnections', [])
-const lastViewedConnectionId = usePersistedState<string>('lastViewedConnectionId', '')
+const recentConnectionsManager = useRecentConnections(explorerState.currentConnectionId)
 const alwaysOpenNewTab = usePersistedState<boolean>('explorer.alwaysOpenNewTab', false, {
   serializer: (v) => String(v),
   deserializer: (v) => v === 'true'
 })
 
 // Computed properties
-
 const selectedDbTypeFilter = computed(() => {
   return explorerHeaderRef.value?.selectedDbTypeLabel || 'All'
 })
@@ -71,6 +61,18 @@ const currentFileEntries = computed<FileSystemEntry[]>(() => {
   const id = explorerState.currentConnectionId.value
   if (!id) return []
   return fileExplorerStore.getEntries(id)
+})
+
+// Router navigation (after computed dependencies are defined)
+// The composable sets up watchers automatically and returns navigation helpers
+useExplorerRouter({
+  recentConnections: recentConnectionsManager.recentConnections,
+  lastViewedConnectionId: recentConnectionsManager.lastViewedConnectionId,
+  currentConnectionId: explorerState.currentConnectionId,
+  currentFileEntries,
+  onSelectConnection: handleSelectConnection,
+  onFileSelect: handleFileSelect,
+  setFocusConnectionId: (id) => (focusConnectionId.value = id)
 })
 
 // Event handlers
@@ -84,11 +86,17 @@ function onPromoteRightSplit() {
       name: splitPane.splitObjectName.value || '',
       meta: splitPane.splitMeta.value
     })
-    explorerState.selectedDefaultTab.value = splitPane.splitDefaultTab.value
+    const defaultTab = splitPane.splitDefaultTab.value
+    if (defaultTab) {
+      tabsStore.defaultActiveView = defaultTab
+    }
   } else if (splitPane.splitFileEntry.value) {
     explorerState.setFileSelection(splitPane.splitFileEntry.value)
     explorerState.selectedFileMetadata.value = splitPane.splitFileMetadata.value
-    explorerState.selectedDefaultTab.value = splitPane.splitDefaultTab.value
+    const defaultTab = splitPane.splitDefaultTab.value
+    if (defaultTab) {
+      tabsStore.defaultActiveView = defaultTab
+    }
   }
   splitPane.closeRightSplit()
 }
@@ -104,9 +112,51 @@ function handleOpenFromTree(payload: {
   defaultTab?: 'structure' | 'data'
   openInRightSplit?: boolean
 }) {
+  // Capture current connection before any route changes
+  const previousConnectionId = explorerState.currentConnectionId.value
+
   // Clear other modes
   explorerState.clearPanelStates()
   explorerState.clearFileSelection()
+
+  // Update route immediately if connection is changing
+  if (payload.connectionId !== previousConnectionId) {
+    // Clear file explorer selection when switching connections
+    if (previousConnectionId) {
+      fileExplorerStore.clearSelection(previousConnectionId)
+    }
+  }
+
+  // TODO: Refactor to remove overviewConnectionId/detailsConnectionId and use route as single source of truth
+  // Set database selection and overview connection immediately (BEFORE route update)
+  // This ensures breadcrumb shows correct connection while route updates asynchronously
+  explorerState.setDatabaseSelection({
+    database: payload.database,
+    schema: payload.schema,
+    type: payload.type,
+    name: payload.name,
+    meta: payload.meta
+  })
+  explorerState.overviewConnectionId.value = payload.connectionId
+  explorerState.overviewDatabaseName.value = payload.database
+
+  // Update schema store
+  if (payload.database) {
+    schemaStore.setConnectionId(payload.connectionId)
+    schemaStore.setDatabaseName(payload.database)
+    schemaStore.fetchSchema(false)
+  }
+
+  // Update route (async, but breadcrumb won't wait for this)
+  router.replace({
+    path: `/explorer/${payload.connectionId}`,
+    query: {
+      db: payload.database || undefined,
+      schema: payload.schema || undefined,
+      type: payload.type || undefined,
+      name: payload.name || undefined
+    }
+  })
 
   if (payload.openInRightSplit) {
     splitPane.setSplitDatabaseContent(payload)
@@ -115,20 +165,15 @@ function handleOpenFromTree(payload: {
   }
 
   explorerState.activePane.value = 'left'
-  if (
-    explorerState.linkTabs.value &&
-    splitPane.splitMeta.value &&
-    splitPane.splitDefaultTab.value
-  ) {
-    explorerState.selectedDefaultTab.value = splitPane.splitDefaultTab.value
+  const splitTab = splitPane.splitDefaultTab.value
+  if (tabsStore.linkTabs && splitPane.splitMeta.value && splitTab) {
+    tabsStore.defaultActiveView = splitTab
   }
 
   const desiredPinned = payload.mode === 'pinned' || settingAlwaysOpenNewTab()
   if (desiredPinned) {
     const initialView = (payload.defaultTab ||
-      (explorerState.linkTabs.value
-        ? explorerState.selectedDefaultTab.value || 'data'
-        : 'data')) as 'structure' | 'data'
+      (tabsStore.linkTabs ? tabsStore.defaultActiveView || 'data' : 'data')) as 'structure' | 'data'
 
     tabsStore.addDatabaseTab({
       connectionId: payload.connectionId,
@@ -149,9 +194,7 @@ function handleOpenFromTree(payload: {
     }
   } else {
     const initialView = (payload.defaultTab ||
-      (explorerState.linkTabs.value
-        ? explorerState.selectedDefaultTab.value || 'data'
-        : 'data')) as 'structure' | 'data'
+      (tabsStore.linkTabs ? tabsStore.defaultActiveView || 'data' : 'data')) as 'structure' | 'data'
 
     const previewTab = {
       id: `preview:${payload.connectionId}:${payload.database || ''}:${payload.schema || ''}:${payload.name}:${payload.type || ''}`,
@@ -168,7 +211,7 @@ function handleOpenFromTree(payload: {
 
     tabsStore.setPreviewTab(previewTab)
     tabsStore.activePinnedIndex = null
-    activateTabFromState(previewTab)
+    tabsStore.defaultActiveView = initialView
   }
 }
 
@@ -180,15 +223,28 @@ function handleOpenFile(payload: {
   defaultTab?: 'structure' | 'data'
   openInRightSplit?: boolean
 }) {
+  // Clear other modes
   explorerState.clearPanelStates()
   explorerState.clearDatabaseSelection()
+
+  // Always update route and set file selection immediately
+  router.replace({
+    path: `/explorer/${payload.connectionId}`,
+    query: {
+      file: payload.path
+    }
+  })
+
+  // Set file selection immediately so breadcrumb updates
+  explorerState.setFileSelection(payload.entry)
+  fileExplorerStore.setSelectedPath(payload.connectionId, payload.path)
 
   if (payload.openInRightSplit) {
     splitPane.setSplitFileContent({
       connectionId: payload.connectionId,
       entry: payload.entry,
-      defaultTab: explorerState.linkTabs.value
-        ? (explorerState.selectedDefaultTab.value as 'structure' | 'data') || 'data'
+      defaultTab: tabsStore.linkTabs
+        ? (tabsStore.defaultActiveView as 'structure' | 'data') || 'data'
         : payload.defaultTab || 'data'
     })
     explorerState.activePane.value = 'right'
@@ -224,9 +280,9 @@ function handleOpenFile(payload: {
       pinned: false,
       defaultTab: payload.defaultTab,
       viewTab: (payload.defaultTab ||
-        (explorerState.linkTabs.value
-          ? explorerState.selectedDefaultTab.value || 'data'
-          : 'data')) as 'structure' | 'data'
+        (tabsStore.linkTabs ? tabsStore.defaultActiveView || 'data' : 'data')) as
+        | 'structure'
+        | 'data'
     }
 
     tabsStore.setPreviewTab(fileTab)
@@ -340,9 +396,7 @@ function activateTabFromState(tab: {
     explorerState.clearDatabaseSelection()
     explorerState.clearPanelStates()
 
-    explorerState.selectedDefaultTab.value = (tab.viewTab || tab.defaultTab || 'data') as
-      | 'structure'
-      | 'data'
+    tabsStore.defaultActiveView = (tab.viewTab || tab.defaultTab || 'data') as 'structure' | 'data'
 
     if (tab.fileEntry) {
       explorerState.setFileSelection(tab.fileEntry)
@@ -377,9 +431,7 @@ function activateTabFromState(tab: {
       name: tab.name,
       meta: tab.meta
     })
-    explorerState.selectedDefaultTab.value = (tab.viewTab || tab.defaultTab || 'data') as
-      | 'structure'
-      | 'data'
+    tabsStore.defaultActiveView = (tab.viewTab || tab.defaultTab || 'data') as 'structure' | 'data'
 
     if (tab.database) {
       schemaStore.setConnectionId(tab.connectionId)
@@ -423,7 +475,7 @@ function closePinned(index: number) {
 function activatePinned(index: number) {
   if (index < 0 || index >= tabsStore.pinnedTabs.length) return
   explorerState.clearPanelStates()
-  explorerState.selectedDefaultTab.value = (tabsStore.pinnedTabs[index].viewTab || 'data') as
+  tabsStore.defaultActiveView = (tabsStore.pinnedTabs[index].viewTab || 'data') as
     | 'structure'
     | 'data'
   explorerState.activePane.value = 'left'
@@ -434,9 +486,7 @@ function activatePinned(index: number) {
 function activatePreview() {
   if (tabsStore.previewTab) {
     explorerState.clearPanelStates()
-    explorerState.selectedDefaultTab.value = (tabsStore.previewTab.viewTab || 'data') as
-      | 'structure'
-      | 'data'
+    tabsStore.defaultActiveView = (tabsStore.previewTab.viewTab || 'data') as 'structure' | 'data'
     explorerState.activePane.value = 'left'
     tabsStore.activePinnedIndex = null
     activateTabFromState(tabsStore.previewTab)
@@ -470,13 +520,7 @@ async function onDeleteConnection() {
   if (!window.confirm(`Delete ${name}? This cannot be undone.`)) return
   try {
     await connectionsStore.deleteConnection(id)
-    const idx = recentConnections.value.findIndex((c) => c.id === id)
-    if (idx !== -1) {
-      recentConnections.value.splice(idx, 1)
-    }
-    if (lastViewedConnectionId.value === id) {
-      lastViewedConnectionId.value = ''
-    }
+    recentConnectionsManager.removeFromRecent(id)
     router.push('/explorer')
   } catch (e) {
     console.error('Failed to delete connection from Explorer:', e)
@@ -587,25 +631,15 @@ function handleBreadcrumbNavigate(payload: { level: 'database' | 'schema' | 'typ
 
 // Tab change handlers
 function onLeftTabChange(t: 'data' | 'structure') {
-  explorerState.selectedDefaultTab.value = t
-  if (tabsStore.activePinnedIndex !== null && tabsStore.pinnedTabs[tabsStore.activePinnedIndex]) {
-    tabsStore.updateActiveTabView(t)
-  } else if (tabsStore.previewTab) {
-    tabsStore.previewTab.viewTab = t
-  }
-  if (explorerState.linkTabs.value && splitPane.splitMeta.value) {
+  tabsStore.syncedDefaultView = t
+  if (tabsStore.linkTabs && splitPane.splitMeta.value) {
     splitPane.splitDefaultTab.value = t
   }
 }
 
 function onRightTabChange(t: 'data' | 'structure') {
-  if (!explorerState.linkTabs.value) return
-  explorerState.selectedDefaultTab.value = t
-  if (tabsStore.activePinnedIndex !== null && tabsStore.pinnedTabs[tabsStore.activePinnedIndex]) {
-    tabsStore.updateActiveTabView(t)
-  } else if (tabsStore.previewTab) {
-    tabsStore.previewTab.viewTab = t
-  }
+  if (!tabsStore.linkTabs) return
+  tabsStore.syncedDefaultView = t
 }
 
 // Helper functions
@@ -630,36 +664,22 @@ async function refreshSelectedFileMetadata() {
   }
 }
 
-function addToRecentConnections() {
-  if (!explorerState.currentConnection.value) return
-
-  const connection = {
-    id: explorerState.currentConnection.value.id,
-    name: explorerState.currentConnection.value.name,
-    type: explorerState.currentConnection.value.type,
-    host: explorerState.currentConnection.value.host,
-    port: explorerState.currentConnection.value.port?.toString(),
-    database: explorerState.currentConnection.value.database,
-    cloud_provider: explorerState.currentConnection.value.cloud_provider || ''
-  }
-
-  const existingIndex = recentConnections.value.findIndex((c) => c.id === connection.id)
-  if (existingIndex === -1) {
-    recentConnections.value.push(connection)
-
-    if (recentConnections.value.length > MAX_RECENT_CONNECTIONS) {
-      recentConnections.value = recentConnections.value.slice(-MAX_RECENT_CONNECTIONS)
-    }
-    // usePersistedState automatically persists changes
-  }
-}
-
 function initializeCurrentConnection() {
   if (
     explorerState.currentConnection.value &&
-    !recentConnections.value.find((c) => c.id === explorerState.currentConnectionId.value)
+    !recentConnectionsManager.recentConnections.value.find(
+      (c) => c.id === explorerState.currentConnectionId.value
+    )
   ) {
-    addToRecentConnections()
+    recentConnectionsManager.addToRecent({
+      id: explorerState.currentConnection.value.id,
+      name: explorerState.currentConnection.value.name,
+      type: explorerState.currentConnection.value.type,
+      host: explorerState.currentConnection.value.host,
+      port: explorerState.currentConnection.value.port?.toString(),
+      database: explorerState.currentConnection.value.database,
+      cloud_provider: explorerState.currentConnection.value.cloud_provider || ''
+    })
   }
 }
 
@@ -674,45 +694,19 @@ function showDiagramForActiveDatabase() {
 }
 
 // Watchers
-watch(
-  () => route.path,
-  (newPath) => {
-    if (newPath === '/explorer' && recentConnections.value.length > 0) {
-      const existsInRecent =
-        !!lastViewedConnectionId.value &&
-        recentConnections.value.some((c) => c.id === lastViewedConnectionId.value)
-      const connectionToUse = existsInRecent
-        ? lastViewedConnectionId.value
-        : recentConnections.value[recentConnections.value.length - 1].id
-
-      router.replace(`/explorer/${connectionToUse}`)
-    }
-  },
-  { immediate: true }
-)
-
-watch(
-  () => route.query.focus || route.query.new,
-  async (flag) => {
-    if (!flag) return
-    const id = explorerState.currentConnectionId.value
-    if (!id) return
-    handleSelectConnection({ connectionId: id })
-    await nextTick()
-    const clearedQuery = { ...route.query }
-    delete clearedQuery.new
-    delete clearedQuery.focus
-    focusConnectionId.value = id
-    router.replace({ path: `/explorer/${id}`, query: clearedQuery })
-  },
-  { immediate: true }
-)
+// Route watching is now handled by useExplorerRouter
 
 watch(explorerState.currentConnectionId, async (newId) => {
   if (newId && explorerState.currentConnection.value) {
-    addToRecentConnections()
-    lastViewedConnectionId.value = newId
-    // usePersistedState automatically persists changes
+    recentConnectionsManager.addToRecent({
+      id: explorerState.currentConnection.value.id,
+      name: explorerState.currentConnection.value.name,
+      type: explorerState.currentConnection.value.type,
+      host: explorerState.currentConnection.value.host,
+      port: explorerState.currentConnection.value.port?.toString(),
+      database: explorerState.currentConnection.value.database,
+      cloud_provider: explorerState.currentConnection.value.cloud_provider || ''
+    })
     if (fileExplorerStore.isFilesConnectionType(newId)) {
       await fileExplorerStore.loadEntries(newId)
       const fileParam = route.query.file as string
@@ -722,22 +716,6 @@ watch(explorerState.currentConnectionId, async (newId) => {
     }
   }
 })
-
-watch(
-  () => route.query.file,
-  (filePath) => {
-    if (
-      filePath &&
-      fileExplorerStore.isFilesConnectionType(explorerState.currentConnectionId.value) &&
-      currentFileEntries.value.length > 0
-    ) {
-      handleFileSelect({
-        connectionId: explorerState.currentConnectionId.value,
-        path: filePath as string
-      })
-    }
-  }
-)
 
 // Lifecycle
 onMounted(() => {
@@ -803,7 +781,10 @@ onMounted(() => {
 
     <main class="mx-auto py-4 overflow-x-hidden">
       <!-- No recent connections -->
-      <div v-if="recentConnections.length === 0" class="text-center py-12">
+      <div
+        v-if="recentConnectionsManager.recentConnections.value.length === 0"
+        class="text-center py-12"
+      >
         <p class="text-gray-500">No recently explored connections.</p>
         <RouterLink
           to="/explorer/add"
@@ -915,7 +896,7 @@ onMounted(() => {
                 </div>
                 <div class="flex items-center gap-2">
                   <label class="flex items-center gap-1 text-xs text-gray-600 select-none">
-                    <input v-model="explorerState.linkTabs.value" type="checkbox" />
+                    <input v-model="tabsStore.linkTabs" type="checkbox" />
                     Link tabs
                   </label>
                   <button
@@ -976,8 +957,8 @@ onMounted(() => {
               :selected-meta="explorerState.selectedMeta.value"
               :selected-file-entry="explorerState.selectedFileEntry.value"
               :selected-file-metadata="explorerState.selectedFileMetadata.value"
-              :selected-default-tab="explorerState.selectedDefaultTab.value"
-              :link-tabs="explorerState.linkTabs.value"
+              :selected-default-tab="tabsStore.defaultActiveView"
+              :link-tabs="tabsStore.linkTabs"
               :split-connection-id="splitPane.splitConnectionId.value"
               :split-meta="splitPane.splitMeta.value"
               :split-file-entry="splitPane.splitFileEntry.value"

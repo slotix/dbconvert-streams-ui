@@ -1,16 +1,15 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, nextTick } from 'vue'
-import { useRouter } from 'vue-router'
 import { ArrowPathIcon, CubeIcon } from '@heroicons/vue/24/outline'
 import { useConnectionsStore } from '@/stores/connections'
 import { useFileExplorerStore } from '@/stores/fileExplorer'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { useConnectionTreeLogic } from '@/composables/useConnectionTreeLogic'
-import connectionsApi from '@/api/connections'
+import { useTreeContextMenu, type ContextTarget } from '@/composables/useTreeContextMenu'
+import { useConnectionActions } from '@/composables/useConnectionActions'
 import type { Connection } from '@/types/connections'
 import type { SQLTableMeta, SQLViewMeta } from '@/types/metadata'
 import type { FileSystemEntry } from '@/api/fileSystem'
-import { useToast } from 'vue-toastification'
 import ExplorerContextMenu from './ExplorerContextMenu.vue'
 import ConnectionTreeItem from './tree/ConnectionTreeItem.vue'
 
@@ -69,53 +68,24 @@ const connectionsStore = useConnectionsStore()
 const fileExplorerStore = useFileExplorerStore()
 const navigationStore = useExplorerNavigationStore()
 const treeLogic = useConnectionTreeLogic()
-const router = useRouter()
-const toast = useToast()
+
+// Use composables for context menu and actions
+const contextMenu = useTreeContextMenu()
+const actions = useConnectionActions({
+  open: (payload) => emit('open', payload),
+  openFile: (payload) => emit('open-file', payload),
+  showDiagram: (payload) => emit('show-diagram', payload)
+})
 
 const isLoadingConnections = ref(false)
 const loadError = ref<string | null>(null)
 const searchQuery = computed(() => props.searchQuery || '')
 
-// Context menu state
-type ContextTarget =
-  | { kind: 'connection'; connectionId: string }
-  | { kind: 'database'; connectionId: string; database: string }
-  | { kind: 'schema'; connectionId: string; database: string; schema: string }
-  | {
-      kind: 'table' | 'view'
-      connectionId: string
-      database: string
-      schema?: string
-      name: string
-    }
-  | {
-      kind: 'file'
-      connectionId: string
-      path: string
-      name: string
-    }
-
-const contextMenuVisible = ref(false)
-const contextMenuX = ref(0)
-const contextMenuY = ref(0)
-const contextTarget = ref<ContextTarget | null>(null)
-const hasContextMenu = computed(() => contextMenuVisible.value && !!contextTarget.value)
-const menuTarget = computed<ContextTarget>(() => contextTarget.value as ContextTarget)
-type TableOrViewTarget = Extract<ContextTarget, { kind: 'table' | 'view' }>
-const menuObj = computed<TableOrViewTarget | null>(() =>
-  menuTarget.value && (menuTarget.value.kind === 'table' || menuTarget.value.kind === 'view')
-    ? (menuTarget.value as TableOrViewTarget)
-    : null
-)
-
+// Computed for context menu
 const canCopyDDL = computed(() => {
-  const mo = menuObj.value
+  const mo = contextMenu.menuObj.value
   if (!mo) return false
-  if (mo.kind === 'table')
-    return !!navigationStore.findTableMeta(mo.connectionId, mo.database, mo.name, mo.schema)?.ddl
-      ?.createTable
-  return !!navigationStore.findViewMeta(mo.connectionId, mo.database, mo.name, mo.schema)
-    ?.definition
+  return actions.canCopyDDL(mo.connectionId, mo.database, mo.name, mo.kind, mo.schema)
 })
 
 // Fixed, consistent caret icon class
@@ -221,118 +191,7 @@ function onOpen(
   })
 }
 
-function openContextMenu(e: MouseEvent, target: ContextTarget) {
-  e.preventDefault()
-  contextTarget.value = target
-  contextMenuX.value = e.clientX + 2
-  contextMenuY.value = e.clientY + 2
-  contextMenuVisible.value = true
-  window.addEventListener('click', closeContextMenuOnce, { once: true })
-  window.addEventListener('keydown', onContextKeydown)
-}
-
-function closeContextMenuOnce() {
-  contextMenuVisible.value = false
-  contextTarget.value = null
-  window.removeEventListener('keydown', onContextKeydown)
-}
-
-function onContextKeydown(ev: KeyboardEvent) {
-  if (ev.key === 'Escape') closeContextMenuOnce()
-}
-
-// Context actions
-async function actionTestConnection(id: string) {
-  try {
-    const res = await connectionsApi.pingConnectionById(id)
-    if (res.includes('Passed')) toast.success(res)
-    else toast.error(res)
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : 'Connection test failed'
-    toast.error(msg)
-  }
-}
-
-async function actionRefreshDatabases(id: string) {
-  navigationStore.invalidateDatabases(id)
-  await navigationStore.ensureDatabases(id, true)
-  toast.success('Databases refreshed')
-}
-
-async function actionRefreshMetadata(connId: string, db: string) {
-  try {
-    await navigationStore.ensureMetadata(connId, db, true)
-    toast.success('Metadata refreshed')
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : 'Failed to refresh metadata'
-    toast.error(msg)
-  }
-}
-
-async function actionCopy(text: string, label = 'Copied') {
-  try {
-    await navigator.clipboard.writeText(text)
-    toast.success(label)
-  } catch {
-    toast.error('Failed to copy')
-  }
-}
-
-function actionEditConnection(id: string) {
-  router.push(`/explorer/edit/${id}`)
-}
-
-async function actionDeleteConnection(id: string) {
-  const conn = connectionsStore.connections.find((c) => c.id === id)
-  const name = conn?.name || conn?.host || 'connection'
-  if (!window.confirm(`Delete ${name}? This cannot be undone.`)) return
-  try {
-    await connectionsStore.deleteConnection(id)
-    navigationStore.invalidateConnection(id)
-    toast.success('Connection deleted')
-  } catch (e) {
-    toast.error('Failed to delete connection')
-    console.error(e)
-  }
-}
-
-async function actionCloneConnection(id: string) {
-  try {
-    connectionsStore.setCurrentConnection(id)
-    await connectionsStore.cloneConnection(id)
-    const newId = connectionsStore.currentConnection?.id
-    await connectionsStore.refreshConnections()
-    if (newId) router.push(`/explorer/edit/${newId}`)
-    toast.success('Connection cloned')
-  } catch (e) {
-    toast.error('Failed to clone connection')
-    console.error(e)
-  }
-}
-
-async function actionCopyDDLFromContext() {
-  const mo = menuObj.value
-  if (!mo) return
-  if (mo.kind === 'table') {
-    const m = navigationStore.findTableMeta(mo.connectionId, mo.database, mo.name, mo.schema)
-    const ddl = m?.ddl?.createTable || ''
-    if (ddl) await actionCopy(ddl, 'Table DDL copied')
-    else toast.info('DDL not available')
-  } else {
-    const m = navigationStore.findViewMeta(mo.connectionId, mo.database, mo.name, mo.schema)
-    const ddl = m?.definition || ''
-    if (ddl) await actionCopy(ddl, 'View DDL copied')
-    else toast.info('Definition not available')
-  }
-  closeContextMenuOnce()
-}
-
-function findFileEntry(connectionId: string, path: string): FileSystemEntry | undefined {
-  const entries = fileExplorerStore.getEntries(connectionId)
-  if (!entries) return undefined
-  return entries.find((entry) => entry.path === path)
-}
-
+// Simplified menu action handler using composables
 function onMenuAction(payload: {
   action: string
   target: ContextTarget
@@ -341,37 +200,36 @@ function onMenuAction(payload: {
   const t = payload.target
   switch (payload.action) {
     case 'test-connection':
-      if (t.kind === 'connection') actionTestConnection(t.connectionId)
+      if (t.kind === 'connection') actions.testConnection(t.connectionId)
       break
     case 'refresh-databases':
-      if (t.kind === 'connection') actionRefreshDatabases(t.connectionId)
+      if (t.kind === 'connection') actions.refreshDatabases(t.connectionId)
       break
     case 'edit-connection':
-      if (t.kind === 'connection') actionEditConnection(t.connectionId)
+      if (t.kind === 'connection') actions.editConnection(t.connectionId)
       break
     case 'clone-connection':
-      if (t.kind === 'connection') actionCloneConnection(t.connectionId)
+      if (t.kind === 'connection') actions.cloneConnection(t.connectionId)
       break
     case 'delete-connection':
-      if (t.kind === 'connection') actionDeleteConnection(t.connectionId)
+      if (t.kind === 'connection') actions.deleteConnection(t.connectionId)
       break
     case 'refresh-metadata':
       if (t.kind === 'database' || t.kind === 'schema')
-        actionRefreshMetadata(t.connectionId, t.database)
+        actions.refreshDatabase(t.connectionId, t.database)
       break
     case 'show-diagram':
-      if (t.kind === 'database')
-        emit('show-diagram', { connectionId: t.connectionId, database: t.database })
+      if (t.kind === 'database') actions.showDiagram(t.connectionId, t.database)
       break
     case 'copy-database-name':
-      if (t.kind === 'database') actionCopy(t.database, 'Database name copied')
+      if (t.kind === 'database') actions.copyToClipboard(t.database, 'Database name copied')
       break
     case 'copy-schema-name':
-      if (t.kind === 'schema') actionCopy(t.schema, 'Schema name copied')
+      if (t.kind === 'schema') actions.copyToClipboard(t.schema, 'Schema name copied')
       break
     case 'open-data':
       if (t.kind === 'table' || t.kind === 'view')
-        onOpen(
+        actions.openTable(
           t.connectionId,
           t.database,
           t.kind,
@@ -381,23 +239,12 @@ function onMenuAction(payload: {
           'data',
           payload.openInRightSplit
         )
-      else if (t.kind === 'file') {
-        const entry = findFileEntry(t.connectionId, t.path)
-        if (entry) {
-          emit('open-file', {
-            connectionId: t.connectionId,
-            path: t.path,
-            entry,
-            mode: 'preview',
-            defaultTab: 'data',
-            openInRightSplit: payload.openInRightSplit
-          })
-        }
-      }
+      else if (t.kind === 'file')
+        actions.openFile(t.connectionId, t.path, 'preview', 'data', payload.openInRightSplit)
       break
     case 'open-structure':
       if (t.kind === 'table' || t.kind === 'view')
-        onOpen(
+        actions.openTable(
           t.connectionId,
           t.database,
           t.kind,
@@ -407,34 +254,25 @@ function onMenuAction(payload: {
           'structure',
           payload.openInRightSplit
         )
-      else if (t.kind === 'file') {
-        const entry = findFileEntry(t.connectionId, t.path)
-        if (entry) {
-          emit('open-file', {
-            connectionId: t.connectionId,
-            path: t.path,
-            entry,
-            mode: 'preview',
-            defaultTab: 'structure',
-            openInRightSplit: payload.openInRightSplit
-          })
-        }
-      }
+      else if (t.kind === 'file')
+        actions.openFile(t.connectionId, t.path, 'preview', 'structure', payload.openInRightSplit)
       break
     case 'copy-object-name':
-      if (t.kind === 'table' || t.kind === 'view') actionCopy(t.name, 'Object name copied')
+      if (t.kind === 'table' || t.kind === 'view')
+        actions.copyToClipboard(t.name, 'Object name copied')
       break
     case 'copy-ddl':
-      void actionCopyDDLFromContext()
+      if (t.kind === 'table' || t.kind === 'view')
+        void actions.copyDDL(t.connectionId, t.database, t.name, t.kind, t.schema)
       break
     case 'copy-file-name':
-      if (t.kind === 'file') actionCopy(t.name, 'File name copied')
+      if (t.kind === 'file') actions.copyToClipboard(t.name, 'File name copied')
       break
     case 'copy-file-path':
-      if (t.kind === 'file') actionCopy(t.path, 'File path copied')
+      if (t.kind === 'file') actions.copyToClipboard(t.path, 'File path copied')
       break
   }
-  closeContextMenuOnce()
+  contextMenu.close()
 }
 
 // Event handlers for ConnectionTreeItem
@@ -472,7 +310,7 @@ function handleOpenObject(
 }
 
 function handleContextMenuConnection(payload: { event: MouseEvent; connectionId: string }) {
-  openContextMenu(payload.event, { kind: 'connection', connectionId: payload.connectionId })
+  contextMenu.open(payload.event, { kind: 'connection', connectionId: payload.connectionId })
 }
 
 function handleContextMenuDatabase(payload: {
@@ -480,7 +318,7 @@ function handleContextMenuDatabase(payload: {
   connectionId: string
   database: string
 }) {
-  openContextMenu(payload.event, {
+  contextMenu.open(payload.event, {
     kind: 'database',
     connectionId: payload.connectionId,
     database: payload.database
@@ -493,7 +331,7 @@ function handleContextMenuSchema(payload: {
   database: string
   schema: string
 }) {
-  openContextMenu(payload.event, {
+  contextMenu.open(payload.event, {
     kind: 'schema',
     connectionId: payload.connectionId,
     database: payload.database,
@@ -509,7 +347,7 @@ function handleContextMenuObject(payload: {
   schema?: string
   name: string
 }) {
-  openContextMenu(payload.event, {
+  contextMenu.open(payload.event, {
     kind: payload.kind,
     connectionId: payload.connectionId,
     database: payload.database,
@@ -524,7 +362,7 @@ function handleContextMenuFile(payload: {
   path: string
   name: string
 }) {
-  openContextMenu(payload.event, {
+  contextMenu.open(payload.event, {
     kind: 'file',
     connectionId: payload.connectionId,
     path: payload.path,
@@ -710,13 +548,13 @@ watch(
         </div>
       </div>
       <ExplorerContextMenu
-        :visible="hasContextMenu"
-        :x="contextMenuX"
-        :y="contextMenuY"
-        :target="contextTarget"
+        :visible="contextMenu.hasContextMenu.value"
+        :x="contextMenu.contextMenuX.value"
+        :y="contextMenu.contextMenuY.value"
+        :target="contextMenu.contextTarget.value"
         :canCopyDDL="canCopyDDL"
         @menu-action="onMenuAction"
-        @close="closeContextMenuOnce"
+        @close="contextMenu.close"
       />
     </div>
   </div>
