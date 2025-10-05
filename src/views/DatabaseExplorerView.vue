@@ -382,6 +382,9 @@ function activateTabFromState(tab: {
 }) {
   if (!tab) return
 
+  // Set active connection ID FIRST (synchronous store update)
+  navigationStore.setActiveConnectionId(tab.connectionId)
+
   if (tab.tabType === 'file') {
     explorerState.clearDatabaseSelection()
     explorerState.clearPanelStates()
@@ -400,18 +403,7 @@ function activateTabFromState(tab: {
       void refreshSelectedFileMetadata()
     }
 
-    router.replace({
-      path: `/explorer/${tab.connectionId}`,
-      query: {
-        file: tab.filePath,
-        db: undefined,
-        schema: undefined,
-        type: undefined,
-        name: undefined,
-        details: undefined,
-        diagram: undefined
-      }
-    })
+    // Route is auto-updated by watcher based on state changes
   } else {
     explorerState.clearFileSelection()
     explorerState.clearPanelStates()
@@ -431,18 +423,7 @@ function activateTabFromState(tab: {
       schemaStore.fetchSchema(false)
     }
 
-    router.replace({
-      path: `/explorer/${tab.connectionId}`,
-      query: {
-        db: tab.database || undefined,
-        schema: tab.schema || undefined,
-        type: tab.type || undefined,
-        name: tab.name || undefined,
-        file: undefined,
-        details: undefined,
-        diagram: undefined
-      }
-    })
+    // Route is auto-updated by watcher based on state changes
   }
 }
 
@@ -609,18 +590,7 @@ function handleBreadcrumbNavigate(payload: { level: 'database' | 'schema' | 'typ
     explorerState.selectedMeta.value = null
   }
 
-  router.replace({
-    path: `/explorer/${explorerState.currentConnectionId.value}`,
-    query: {
-      db: explorerState.selectedDatabaseName.value || undefined,
-      schema: explorerState.selectedSchemaName.value || undefined,
-      type: explorerState.selectedObjectType.value || undefined,
-      name: explorerState.selectedObjectName.value || undefined,
-      file: undefined,
-      details: undefined,
-      diagram: undefined
-    }
-  })
+  // Route is auto-updated by watcher based on state changes
 }
 
 // Tab change handlers
