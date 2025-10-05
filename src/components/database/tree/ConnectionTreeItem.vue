@@ -6,6 +6,7 @@ import FileEntry from '../FileEntry.vue'
 import { highlightParts as splitHighlight } from '@/utils/highlight'
 import { useConnectionTreeLogic } from '@/composables/useConnectionTreeLogic'
 import { useFileExplorerStore } from '@/stores/fileExplorer'
+import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import type { Connection } from '@/types/connections'
 import type { FileSystemEntry } from '@/api/fileSystem'
 
@@ -23,13 +24,12 @@ const props = defineProps<{
   databases: DatabaseInfo[]
   searchQuery: string
   caretClass: string
-  expandedDatabases: Set<string>
-  expandedSchemas: Set<string>
 }>()
 
-// Use composable and store directly
+// Use composable and stores directly
 const treeLogic = useConnectionTreeLogic()
 const fileExplorerStore = useFileExplorerStore()
+const navigationStore = useExplorerNavigationStore()
 
 // Get file entries and selected path from store
 const fileEntries = computed(() => fileExplorerStore.getEntries(props.connection.id))
@@ -95,7 +95,7 @@ const highlightParts = (text: string) => splitHighlight(text, props.searchQuery)
 
 function isDatabaseExpanded(dbName: string): boolean {
   const key = `${props.connection.id}:${dbName}`
-  return props.expandedDatabases.has(key)
+  return navigationStore.isDatabaseExpanded(key)
 }
 
 function handleConnectionContextMenu(event: MouseEvent) {
@@ -239,7 +239,6 @@ const visibleFileEntries = computed(() => {
           :flat-views="treeLogic.getFlatViews(connection.id, db.name)"
           :search-query="searchQuery"
           :caret-class="caretClass"
-          :expanded-schemas="expandedSchemas"
           :metadata-loaded="treeLogic.isMetadataLoaded(connection.id, db.name)"
           @toggle-database="handleDatabaseToggle(db.name)"
           @toggle-schema="(schemaName) => handleSchemaToggle(db.name, schemaName)"

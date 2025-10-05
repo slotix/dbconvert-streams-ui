@@ -2,7 +2,6 @@
 import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import { ArrowPathIcon, CubeIcon } from '@heroicons/vue/24/outline'
 import { useConnectionsStore } from '@/stores/connections'
-import { useFileExplorerStore } from '@/stores/fileExplorer'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { useConnectionTreeLogic } from '@/composables/useConnectionTreeLogic'
 import { useTreeContextMenu, type ContextTarget } from '@/composables/useTreeContextMenu'
@@ -65,7 +64,6 @@ const emit = defineEmits<{
 }>()
 
 const connectionsStore = useConnectionsStore()
-const fileExplorerStore = useFileExplorerStore()
 const navigationStore = useExplorerNavigationStore()
 const treeLogic = useConnectionTreeLogic()
 
@@ -534,8 +532,6 @@ watch(
             "
             :search-query="searchQuery"
             :caret-class="caretClass"
-            :expanded-databases="navigationStore.expandedDatabases"
-            :expanded-schemas="navigationStore.expandedSchemas"
             @toggle-connection="handleToggleConnection(conn)"
             @select-connection="$emit('select-connection', $event)"
             @toggle-database="(dbName) => handleToggleDatabase(conn, dbName)"

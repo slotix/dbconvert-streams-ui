@@ -212,21 +212,22 @@ This ensures:
 
 ## 🟡 Phase 3: Polish & Optimization (Week 3)
 
-### 5. Remove Expansion State Props
-- [ ] Update `src/components/database/tree/ConnectionTreeItem.vue`
-  - [ ] Remove `expandedDatabases` prop
-  - [ ] Remove `expandedSchemas` prop
-  - [ ] Use `navigationStore.isDatabaseExpanded()` directly
-- [ ] Update `src/components/database/tree/DatabaseTreeItem.vue`
-  - [ ] Remove `expandedSchemas` prop
-  - [ ] Use `navigationStore.isSchemaExpanded()` directly
-- [ ] Update `src/components/database/tree/SchemaTreeItem.vue`
-  - [ ] Remove expansion props
-  - [ ] Use store directly
-- [ ] Update `src/components/database/ExplorerSidebarConnections.vue`
-  - [ ] Remove expansion props from template
-  - [ ] Clean up prop passing
-- [ ] Test expansion state reactivity
+### ✅ 5. Remove Expansion State Props (Completed 2025-10-05)
+- [x] Update `src/components/database/tree/ConnectionTreeItem.vue`
+  - [x] Remove `expandedDatabases` prop
+  - [x] Remove `expandedSchemas` prop
+  - [x] Use `navigationStore.isDatabaseExpanded()` directly
+- [x] Update `src/components/database/tree/DatabaseTreeItem.vue`
+  - [x] Remove `expandedSchemas` prop
+  - [x] Use `navigationStore.isSchemaExpanded()` directly
+- [x] Update `src/components/database/tree/SchemaTreeItem.vue`
+  - [x] No changes needed (no expansion props)
+  - [x] Uses store directly where needed
+- [x] Update `src/components/database/ExplorerSidebarConnections.vue`
+  - [x] Remove expansion props from template
+  - [x] Clean up prop passing
+  - [x] Remove unused fileExplorerStore import
+- [x] Test expansion state reactivity
 
 ### 6. Extract Search Logic
 - [ ] Create `src/composables/useTreeSearch.ts`

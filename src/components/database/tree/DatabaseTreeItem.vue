@@ -4,13 +4,13 @@ import { ChevronRightIcon, ChevronDownIcon } from '@heroicons/vue/24/outline'
 import SchemaTreeItem from './SchemaTreeItem.vue'
 import ObjectList from './ObjectList.vue'
 import { highlightParts as splitHighlight } from '@/utils/highlight'
-import { useConnectionTreeLogic } from '@/composables/useConnectionTreeLogic'
 import { useDatabaseOverviewStore } from '@/stores/databaseOverview'
+import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 
 type ObjectType = 'table' | 'view'
 
-const treeLogic = useConnectionTreeLogic()
 const overviewStore = useDatabaseOverviewStore()
+const navigationStore = useExplorerNavigationStore()
 
 interface SchemaInfo {
   name: string
@@ -32,7 +32,6 @@ const props = defineProps<{
   flatViews: string[]
   searchQuery: string
   caretClass: string
-  expandedSchemas: Set<string>
   metadataLoaded: boolean
 }>()
 
@@ -90,7 +89,7 @@ watch(
 
 function isSchemaExpanded(schemaName: string): boolean {
   const key = `${props.connectionId}:${props.database.name}:${schemaName}`
-  return props.expandedSchemas.has(key)
+  return navigationStore.isSchemaExpanded(key)
 }
 
 function handleDatabaseContextMenu(event: MouseEvent) {
