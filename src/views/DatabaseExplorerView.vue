@@ -145,20 +145,7 @@ function handleOpenFromTree(payload: {
     schemaStore.fetchSchema(false)
   }
 
-  // Update route AFTER store (async route update for URL persistence)
-  // Clear ALL previous query params by setting them to undefined
-  router.replace({
-    path: `/explorer/${payload.connectionId}`,
-    query: {
-      db: payload.database || undefined,
-      schema: payload.schema || undefined,
-      type: payload.type || undefined,
-      name: payload.name || undefined,
-      file: undefined,
-      details: undefined,
-      diagram: undefined
-    }
-  })
+  // Route is auto-updated by watcher based on state changes
 
   if (payload.openInRightSplit) {
     splitPane.setSplitDatabaseContent(payload)
@@ -232,24 +219,11 @@ function handleOpenFile(payload: {
   explorerState.clearPanelStates()
   explorerState.clearDatabaseSelection()
 
-  // Update route AFTER store (async route update for URL persistence)
-  // Clear database-related query params
-  router.replace({
-    path: `/explorer/${payload.connectionId}`,
-    query: {
-      file: payload.path,
-      db: undefined,
-      schema: undefined,
-      type: undefined,
-      name: undefined,
-      details: undefined,
-      diagram: undefined
-    }
-  })
-
   // Set file selection immediately so breadcrumb updates
   explorerState.setFileSelection(payload.entry)
   fileExplorerStore.setSelectedPath(payload.connectionId, payload.path)
+
+  // Route is auto-updated by watcher based on state changes
 
   if (payload.openInRightSplit) {
     splitPane.setSplitFileContent({
@@ -315,26 +289,15 @@ function handleShowDiagram(payload: { connectionId: string; database: string }) 
   schemaStore.setDatabaseName(payload.database)
   schemaStore.fetchSchema(false)
 
-  router.replace({
-    path: `/explorer/${payload.connectionId}`,
-    query: {
-      db: payload.database,
-      diagram: 'true',
-      file: undefined,
-      details: undefined,
-      schema: undefined,
-      type: undefined,
-      name: undefined
-    }
-  })
+  // Route is auto-updated by watcher based on state changes
 }
 
 function handleSelectConnection(payload: { connectionId: string }) {
   // Set active connection ID FIRST (synchronous store update)
   navigationStore.setActiveConnectionId(payload.connectionId)
 
+  // Update route query params (path is auto-updated by watcher)
   router.replace({
-    path: `/explorer/${payload.connectionId}`,
     query: {
       details: 'true',
       file: undefined,
@@ -371,18 +334,7 @@ function handleSelectDatabase(payload: { connectionId: string; database: string 
   schemaStore.setDatabaseName(payload.database)
   schemaStore.fetchSchema(false)
 
-  router.replace({
-    path: `/explorer/${payload.connectionId}`,
-    query: {
-      db: payload.database,
-      file: undefined,
-      details: undefined,
-      diagram: undefined,
-      schema: undefined,
-      type: undefined,
-      name: undefined
-    }
-  })
+  // Route is auto-updated by watcher based on state changes
 }
 
 function handleFileSelect(payload: { connectionId: string; path: string }) {
@@ -394,18 +346,7 @@ function handleFileSelect(payload: { connectionId: string; path: string }) {
   if (!entry) {
     fileExplorerStore.setSelectedPath(payload.connectionId, payload.path)
     focusConnectionId.value = null
-    router.replace({
-      path: `/explorer/${payload.connectionId}`,
-      query: {
-        file: payload.path,
-        db: undefined,
-        schema: undefined,
-        type: undefined,
-        name: undefined,
-        details: undefined,
-        diagram: undefined
-      }
-    })
+    // Route is auto-updated by watcher based on state changes
     return
   }
 
@@ -748,6 +689,52 @@ function showDiagramForActiveDatabase() {
 
 // Watchers
 // Route watching is now handled by useExplorerRouter
+
+// Watch store's activeConnectionId and sync route automatically
+// This is the ONLY place that updates the route - handlers only update store state
+watch(
+  () =>
+    [
+      navigationStore.activeConnectionId,
+      explorerState.selectedDatabaseName.value,
+      explorerState.selectedSchemaName.value,
+      explorerState.selectedObjectType.value,
+      explorerState.selectedObjectName.value,
+      explorerState.selectedFileEntry.value?.path,
+      explorerState.showDiagram.value,
+      route.query.details // This comes from handlers setting it
+    ] as const,
+  ([connId, db, schema, type, name, file, diagram, details]) => {
+    if (!connId) return
+
+    const currentPath = route.path
+    const newPath = `/explorer/${connId}`
+
+    // Build query params from state
+    const query: Record<string, string | undefined> = {}
+
+    if (details === 'true') {
+      query.details = 'true'
+    } else if (file) {
+      query.file = file
+    } else if (db) {
+      query.db = db
+      if (schema) query.schema = schema
+      if (type) query.type = type
+      if (name) query.name = name
+      if (diagram) query.diagram = 'true'
+    }
+
+    // Only update if something changed
+    const pathChanged = newPath !== currentPath
+    const queryChanged = JSON.stringify(query) !== JSON.stringify(route.query)
+
+    if (pathChanged || queryChanged) {
+      router.replace({ path: newPath, query })
+    }
+  },
+  { flush: 'post' }
+)
 
 watch(explorerState.currentConnectionId, async (newId) => {
   if (newId && explorerState.currentConnection.value) {
