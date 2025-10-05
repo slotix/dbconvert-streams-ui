@@ -142,6 +142,7 @@ import { useRouter } from 'vue-router'
 import { useCommonStore } from '@/stores/common'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
+import { usePersistedState } from '@/composables/usePersistedState'
 import {
   ArrowPathIcon,
   CircleStackIcon,
@@ -153,26 +154,32 @@ import {
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
 import { normalizeConnectionType } from '@/utils/connectionUtils'
 
+type RecentConnection = {
+  id: string
+  name: string
+  type?: string
+  host?: string
+  port?: string
+  database?: string
+  cloud_provider?: string
+}
+
 const router = useRouter()
 const commonStore = useCommonStore()
 const streamsStore = useStreamsStore()
 const connectionsStore = useConnectionsStore()
 
-// Get recent connections from localStorage - they persist indefinitely until manually cleared
-const recentConnections = ref<any[]>([])
+// Recent connections persisted to localStorage
+const recentConnectionsRaw = usePersistedState<RecentConnection[]>('recentConnections', [])
 
-// Load recent connections from localStorage
-function loadRecentConnections() {
-  const recentConnectionsData = JSON.parse(localStorage.getItem('recentConnections') || '[]')
-  recentConnections.value = recentConnectionsData.slice().reverse() // Show most recent first
-}
+// Show most recent first (reversed)
+const recentConnections = computed(() => recentConnectionsRaw.value.slice().reverse())
 
 function getConnectionLogo(connectionId: string) {
   const connection = connectionsStore.connections.find((conn) => conn.id === connectionId)
   if (!connection) {
-    // Fallback: try to get type from recent connections data in localStorage
-    const recentConnectionsData = JSON.parse(localStorage.getItem('recentConnections') || '[]')
-    const recentConn = recentConnectionsData.find((conn: any) => conn.id === connectionId)
+    // Fallback: try to get type from recent connections data
+    const recentConn = recentConnectionsRaw.value.find((conn) => conn.id === connectionId)
     if (recentConn && recentConn.type) {
       const normalizedType = normalizeConnectionType(recentConn.type)
       const dbType = connectionsStore.dbTypes.find(
@@ -229,8 +236,7 @@ function getConnectionType(connectionId: string) {
   if (connection) return connection.type || ''
 
   // Fallback: try to get type from recent connections data
-  const recentConnectionsData = JSON.parse(localStorage.getItem('recentConnections') || '[]')
-  const recentConn = recentConnectionsData.find((conn: any) => conn.id === connectionId)
+  const recentConn = recentConnectionsRaw.value.find((conn) => conn.id === connectionId)
   return recentConn?.type || ''
 }
 
@@ -259,8 +265,7 @@ function getConnectionHost(connectionId: string) {
   }
 
   // Fallback: try to get from recent connections data
-  const recentConnectionsData = JSON.parse(localStorage.getItem('recentConnections') || '[]')
-  const recentConn = recentConnectionsData.find((conn: any) => conn.id === connectionId)
+  const recentConn = recentConnectionsRaw.value.find((conn) => conn.id === connectionId)
   if (recentConn?.host && recentConn?.port) {
     let displayHost = recentConn.host
     if (displayHost.length > 25) {
@@ -293,8 +298,7 @@ function getConnectionDatabase(connectionId: string) {
   }
 
   // Fallback: try to get from recent connections data
-  const recentConnectionsData = JSON.parse(localStorage.getItem('recentConnections') || '[]')
-  const recentConn = recentConnectionsData.find((conn: any) => conn.id === connectionId)
+  const recentConn = recentConnectionsRaw.value.find((conn) => conn.id === connectionId)
   if (recentConn?.database) {
     let dbName = recentConn.database
     if (dbName.length > 20) {
@@ -328,8 +332,7 @@ function getConnectionDetails(connectionId: string) {
   }
 
   // Fallback: try to get from recent connections data
-  const recentConnectionsData = JSON.parse(localStorage.getItem('recentConnections') || '[]')
-  const recentConn = recentConnectionsData.find((conn: any) => conn.id === connectionId)
+  const recentConn = recentConnectionsRaw.value.find((conn) => conn.id === connectionId)
   if (recentConn?.host && recentConn?.port && recentConn?.database) {
     let displayHost = recentConn.host
     if (displayHost.length > 30) {
@@ -353,8 +356,7 @@ function getCloudProvider(connectionId: string) {
   if (connection) return connection.cloud_provider || ''
 
   // Fallback: try to get from recent connections data
-  const recentConnectionsData = JSON.parse(localStorage.getItem('recentConnections') || '[]')
-  const recentConn = recentConnectionsData.find((conn: any) => conn.id === connectionId)
+  const recentConn = recentConnectionsRaw.value.find((conn) => conn.id === connectionId)
   return recentConn?.cloud_provider || ''
 }
 
@@ -404,13 +406,7 @@ function viewAllStreamConfigurations() {
 }
 
 function clearRecentConnections() {
-  localStorage.removeItem('recentConnections')
-  // Update the reactive ref to trigger UI update immediately
-  recentConnections.value = []
+  // Clear the persisted state (automatically syncs to localStorage)
+  recentConnectionsRaw.value = []
 }
-
-// Load recent connections on component mount
-onMounted(() => {
-  loadRecentConnections()
-})
 </script>

@@ -1,9 +1,11 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { ChevronRightIcon, ChevronDownIcon, FolderIcon } from '@heroicons/vue/24/outline'
 import DatabaseTreeItem from './DatabaseTreeItem.vue'
 import FileEntry from '../FileEntry.vue'
 import { highlightParts as splitHighlight } from '@/utils/highlight'
 import { useConnectionTreeLogic } from '@/composables/useConnectionTreeLogic'
+import { useFileExplorerStore } from '@/stores/fileExplorer'
 import type { Connection } from '@/types/connections'
 import type { FileSystemEntry } from '@/api/fileSystem'
 
@@ -19,16 +21,19 @@ const props = defineProps<{
   isFileConnection: boolean
   isFocused: boolean
   databases: DatabaseInfo[]
-  fileEntries: FileSystemEntry[]
-  selectedFilePath: string | null
   searchQuery: string
   caretClass: string
   expandedDatabases: Set<string>
   expandedSchemas: Set<string>
 }>()
 
-// Use composable directly in component instead of passing functions as props
+// Use composable and store directly
 const treeLogic = useConnectionTreeLogic()
+const fileExplorerStore = useFileExplorerStore()
+
+// Get file entries and selected path from store
+const fileEntries = computed(() => fileExplorerStore.getEntries(props.connection.id))
+const selectedFilePath = computed(() => fileExplorerStore.getSelectedPath(props.connection.id))
 
 const emit = defineEmits<{
   (e: 'toggle-connection'): void
@@ -155,14 +160,14 @@ function handleSelectFile(path: string) {
   })
 }
 
-const visibleFileEntries = () => {
-  return props.fileEntries
+const visibleFileEntries = computed(() => {
+  return fileEntries.value
     .filter((item) => item.type === 'file')
     .filter(
       (item) =>
         !props.searchQuery || item.name.toLowerCase().includes(props.searchQuery.toLowerCase())
     )
-}
+})
 </script>
 
 <template>
@@ -205,11 +210,11 @@ const visibleFileEntries = () => {
     <!-- Databases or Files under connection -->
     <div v-if="isExpanded" class="ml-4 border-l border-gray-200 pl-2 space-y-1">
       <div v-if="isFileConnection">
-        <div v-if="!visibleFileEntries().length" class="text-xs text-gray-500 px-2 py-1">
+        <div v-if="!visibleFileEntries.length" class="text-xs text-gray-500 px-2 py-1">
           No files
         </div>
         <FileEntry
-          v-for="entry in visibleFileEntries()"
+          v-for="entry in visibleFileEntries"
           :key="entry.path"
           :entry="entry"
           :connection-id="connection.id"

@@ -12,41 +12,54 @@
 - [x] Update components to use overview store
 - [x] Remove composable cache for table sizes
 
-### 1. Create Persistence Layer
-- [ ] Create `src/composables/usePersistedState.ts`
-  - [ ] Implement generic type-safe composable
-  - [ ] Add serializer/deserializer options
-  - [ ] Handle localStorage errors gracefully
-  - [ ] Add watch for reactive persistence
-- [ ] Update `src/views/DatabaseExplorerView.vue` (recentConnections, lastViewed)
-- [ ] Update `src/composables/useExplorerState.ts` (linkTabs)
-- [ ] Update `src/composables/useSidebar.ts` (sidebarVisible)
-- [ ] Update `src/stores/common.ts` (if needed)
+### ✅ 1. Create Persistence Layer (Completed 2025-10-05)
+- [x] Create `src/composables/usePersistedState.ts`
+  - [x] Implement generic type-safe composable
+  - [x] Add serializer/deserializer options
+  - [x] Handle localStorage errors gracefully
+  - [x] Add watch for reactive persistence
+  - [x] Add helper functions: usePersistedBoolean, usePersistedNumber
+- [x] Update `src/views/DatabaseExplorerView.vue` (recentConnections, lastViewed, alwaysOpenNewTab)
+- [x] Update `src/composables/useExplorerState.ts` (linkTabs)
+- [x] Update `src/composables/useSidebar.ts` (sidebarVisible, sidebarWidthPct, lastSidebarWidthPct)
+- [x] Update `src/components/explorer/ExplorerHeader.vue` (connectionType filter)
+- [x] Update `src/components/home/QuickActions.vue` (recentConnections access)
+- [x] Verified no TypeScript errors in dev server
 - [ ] Search for other localStorage usage: `grep -r "localStorage\." src/`
-- [ ] Test all persistence edge cases
+- [ ] Test all persistence edge cases in browser
 
-### 2. Create File Explorer Store
-- [ ] Create `src/stores/fileExplorer.ts`
-  - [ ] Migrate state from `useFileOperations`
-  - [ ] Add `entriesByConnection` ref
-  - [ ] Add `selectedPathsByConnection` ref
-  - [ ] Add `loadingByConnection` ref
-  - [ ] Add `getCurrentEntries` computed
-  - [ ] Add `loadEntries` action
-  - [ ] Add `setSelectedPath` action
-- [ ] Update `src/views/DatabaseExplorerView.vue`
-  - [ ] Remove `currentFileEntries` computed
-  - [ ] Use store directly
-- [ ] Update `src/components/database/ExplorerSidebarConnections.vue`
-  - [ ] Remove file props
-  - [ ] Use store directly
-- [ ] Update `src/components/database/tree/ConnectionTreeItem.vue`
-  - [ ] Remove file props
-  - [ ] Use store directly
-- [ ] Update `src/components/explorer/ExplorerContentArea.vue`
-  - [ ] Use store instead of props
-- [ ] Consider deprecating `src/composables/useFileOperations.ts`
-- [ ] Test file loading and selection
+### ✅ 2. Create File Explorer Store (Completed 2025-10-05)
+- [x] Create `src/stores/fileExplorer.ts`
+  - [x] Migrate state from `useFileOperations`
+  - [x] Add `entriesByConnection` ref
+  - [x] Add `selectedPathsByConnection` ref
+  - [x] Add `loadingByConnection` ref
+  - [x] Add `directoryPathsByConnection` ref
+  - [x] Add `errorsByConnection` ref
+  - [x] Add getter computeds: `getEntries`, `getSelectedPath`, `getDirectoryPath`, `getError`, `isLoading`
+  - [x] Add `loadEntries` action
+  - [x] Add `setSelectedPath` action
+  - [x] Add `clearSelection` action
+  - [x] Add `clearConnectionData` action
+  - [x] Add `loadFileMetadata` action
+- [x] Update `src/views/DatabaseExplorerView.vue`
+  - [x] Replace `useFileOperations` with `useFileExplorerStore`
+  - [x] Update `currentFileEntries` to use store getter
+  - [x] Replace all `fileOps.*` calls with `fileExplorerStore.*`
+  - [x] Remove file-related props from ExplorerSidebarConnections
+- [x] Update `src/components/database/ExplorerSidebarConnections.vue`
+  - [x] Remove `fileEntries` and `selectedFilePaths` props
+  - [x] Import and use `useFileExplorerStore`
+  - [x] Update `findFileEntry` to use store
+  - [x] Remove prop passing to ConnectionTreeItem
+- [x] Update `src/components/database/tree/ConnectionTreeItem.vue`
+  - [x] Remove `fileEntries` and `selectedFilePath` props
+  - [x] Import and use `useFileExplorerStore`
+  - [x] Create computed properties for file data from store
+  - [x] Update `visibleFileEntries` to use computed
+- [x] ExplorerContentArea needs no changes (gets data via computed prop)
+- [x] `useFileOperations.ts` can now be deprecated (optional cleanup)
+- [x] Verified no TypeScript/build errors
 
 **Deliverables:** Type-safe persistence + file explorer store
 

@@ -81,6 +81,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useConnectionsStore } from '@/stores/connections'
+import { usePersistedState } from '@/composables/usePersistedState'
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/vue'
 import { ChevronDownIcon, CheckIcon, ArrowPathIcon } from '@heroicons/vue/24/outline'
 import SearchInput from '@/components/common/SearchInput.vue'
@@ -108,37 +109,22 @@ const connectionSearch = computed({
   set: (value) => emit('update:connectionSearch', value)
 })
 
-// Connection type filter
-const TYPE_FILTER_STORAGE_KEY = 'explorer.connectionType'
+// Connection type filter (persisted) - plain string, not JSON
+const selectedConnectionType = usePersistedState<string | null>('explorer.connectionType', null, {
+  serializer: (value) => value || '',
+  deserializer: (value) => value || null
+})
 const dbTypeOptions = computed<DbType[]>(() => connectionsStore.dbTypes)
 const selectedDbType = ref<DbType | null>(null)
 let hasInitializedTypeFilter = false
-
-function loadStoredType(): string | null {
-  try {
-    return localStorage.getItem(TYPE_FILTER_STORAGE_KEY)
-  } catch {
-    return null
-  }
-}
-
-function storeType(value: string | null) {
-  try {
-    if (value) localStorage.setItem(TYPE_FILTER_STORAGE_KEY, value)
-    else localStorage.removeItem(TYPE_FILTER_STORAGE_KEY)
-  } catch {
-    /* ignore persistence errors */
-  }
-}
 
 watch(
   dbTypeOptions,
   (options) => {
     if (!options.length) return
     if (!hasInitializedTypeFilter) {
-      const stored = loadStoredType()
-      selectedDbType.value = stored
-        ? options.find((opt) => opt.type === stored) || options[0]
+      selectedDbType.value = selectedConnectionType.value
+        ? options.find((opt) => opt.type === selectedConnectionType.value) || options[0]
         : options[0]
       hasInitializedTypeFilter = true
       return
@@ -157,7 +143,7 @@ watch(
   () => selectedDbType.value?.type,
   (val) => {
     if (!hasInitializedTypeFilter) return
-    storeType(val || null)
+    selectedConnectionType.value = val || null
   }
 )
 

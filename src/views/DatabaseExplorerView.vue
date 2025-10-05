@@ -17,11 +17,12 @@ import { getFileFormat } from '@/utils/fileFormat'
 import type { SQLTableMeta, SQLViewMeta } from '@/types/metadata'
 import type { FileSystemEntry } from '@/api/fileSystem'
 
-// Use our new composables
+// Use our new composables and stores
 import { useExplorerState } from '@/composables/useExplorerState'
-import { useFileOperations } from '@/composables/useFileOperations'
+import { useFileExplorerStore } from '@/stores/fileExplorer'
 import { useSplitPane } from '@/composables/useSplitPane'
 import { useSidebar } from '@/composables/useSidebar'
+import { usePersistedState } from '@/composables/usePersistedState'
 
 const MAX_RECENT_CONNECTIONS = 5
 const route = useRoute()
@@ -31,9 +32,9 @@ const connectionsStore = useConnectionsStore()
 const schemaStore = useSchemaStore()
 const tabsStore = useTabsStore()
 
-// Use composables for state management
+// Use composables and stores for state management
 const explorerState = useExplorerState()
-const fileOps = useFileOperations()
+const fileExplorerStore = useFileExplorerStore()
 const splitPane = useSplitPane()
 const sidebar = useSidebar()
 
@@ -43,19 +44,22 @@ const focusConnectionId = ref<string | null>(null)
 const explorerHeaderRef = ref<InstanceType<typeof ExplorerHeader> | null>(null)
 
 // Recent connections management
-const recentConnections = ref<
-  Array<{
-    id: string
-    name: string
-    type?: string
-    host?: string
-    port?: string
-    database?: string
-    cloud_provider?: string
-  }>
->(JSON.parse(localStorage.getItem('recentConnections') || '[]'))
+type RecentConnection = {
+  id: string
+  name: string
+  type?: string
+  host?: string
+  port?: string
+  database?: string
+  cloud_provider?: string
+}
 
-const lastViewedConnectionId = ref<string>(localStorage.getItem('lastViewedConnectionId') || '')
+const recentConnections = usePersistedState<RecentConnection[]>('recentConnections', [])
+const lastViewedConnectionId = usePersistedState<string>('lastViewedConnectionId', '')
+const alwaysOpenNewTab = usePersistedState<boolean>('explorer.alwaysOpenNewTab', false, {
+  serializer: (v) => String(v),
+  deserializer: (v) => v === 'true'
+})
 
 // Computed properties
 
@@ -66,7 +70,7 @@ const selectedDbTypeFilter = computed(() => {
 const currentFileEntries = computed<FileSystemEntry[]>(() => {
   const id = explorerState.currentConnectionId.value
   if (!id) return []
-  return fileOps.getFileEntriesForConnection(id)
+  return fileExplorerStore.getEntries(id)
 })
 
 // Event handlers
@@ -259,10 +263,10 @@ function handleSelectConnection(payload: { connectionId: string }) {
   explorerState.detailsConnectionId.value = payload.connectionId
 
   splitPane.closeRightSplit()
-  fileOps.clearFileSelectionForConnection(payload.connectionId)
+  fileExplorerStore.clearSelection(payload.connectionId)
 
-  if (fileOps.isFilesConnectionType(payload.connectionId)) {
-    void fileOps.loadFileEntries(payload.connectionId, false)
+  if (fileExplorerStore.isFilesConnectionType(payload.connectionId)) {
+    void fileExplorerStore.loadEntries(payload.connectionId, false)
   }
 }
 
@@ -286,7 +290,7 @@ function handleFileSelect(payload: { connectionId: string; path: string }) {
   const entries = currentFileEntries.value
   const entry = entries.find((e) => e.path === payload.path)
   if (!entry) {
-    fileOps.setFileSelectionForConnection(payload.connectionId, payload.path)
+    fileExplorerStore.setSelectedPath(payload.connectionId, payload.path)
     focusConnectionId.value = null
     if (explorerState.detailsConnectionId.value === payload.connectionId) {
       explorerState.detailsConnectionId.value = null
@@ -308,11 +312,11 @@ function handleFileSelect(payload: { connectionId: string; path: string }) {
 }
 
 function handleRequestFileEntries(payload: { connectionId: string }) {
-  void fileOps.loadFileEntries(payload.connectionId, true)
+  void fileExplorerStore.loadEntries(payload.connectionId, true)
 }
 
 function settingAlwaysOpenNewTab(): boolean {
-  return localStorage.getItem('explorer.alwaysOpenNewTab') === 'true'
+  return alwaysOpenNewTab.value
 }
 
 function activateTabFromState(tab: {
@@ -345,7 +349,7 @@ function activateTabFromState(tab: {
     }
 
     if (tab.filePath) {
-      fileOps.setFileSelectionForConnection(tab.connectionId, tab.filePath)
+      fileExplorerStore.setSelectedPath(tab.connectionId, tab.filePath)
     }
 
     if (explorerState.selectedFileEntry.value) {
@@ -469,10 +473,8 @@ async function onDeleteConnection() {
     const idx = recentConnections.value.findIndex((c) => c.id === id)
     if (idx !== -1) {
       recentConnections.value.splice(idx, 1)
-      localStorage.setItem('recentConnections', JSON.stringify(recentConnections.value))
     }
     if (lastViewedConnectionId.value === id) {
-      localStorage.removeItem('lastViewedConnectionId')
       lastViewedConnectionId.value = ''
     }
     router.push('/explorer')
@@ -648,8 +650,7 @@ function addToRecentConnections() {
     if (recentConnections.value.length > MAX_RECENT_CONNECTIONS) {
       recentConnections.value = recentConnections.value.slice(-MAX_RECENT_CONNECTIONS)
     }
-
-    localStorage.setItem('recentConnections', JSON.stringify(recentConnections.value))
+    // usePersistedState automatically persists changes
   }
 }
 
@@ -711,9 +712,9 @@ watch(explorerState.currentConnectionId, async (newId) => {
   if (newId && explorerState.currentConnection.value) {
     addToRecentConnections()
     lastViewedConnectionId.value = newId
-    localStorage.setItem('lastViewedConnectionId', newId)
-    if (fileOps.isFilesConnectionType(newId)) {
-      await fileOps.loadFileEntries(newId)
+    // usePersistedState automatically persists changes
+    if (fileExplorerStore.isFilesConnectionType(newId)) {
+      await fileExplorerStore.loadEntries(newId)
       const fileParam = route.query.file as string
       if (fileParam && currentFileEntries.value.length > 0) {
         handleFileSelect({ connectionId: newId, path: fileParam })
@@ -727,7 +728,7 @@ watch(
   (filePath) => {
     if (
       filePath &&
-      fileOps.isFilesConnectionType(explorerState.currentConnectionId.value) &&
+      fileExplorerStore.isFilesConnectionType(explorerState.currentConnectionId.value) &&
       currentFileEntries.value.length > 0
     ) {
       handleFileSelect({
@@ -746,11 +747,11 @@ onMounted(() => {
 
   // Seed selection from query if present
   const { db, schema, type, name, file } = route.query as Record<string, string | undefined>
-  if (file && fileOps.isFilesConnectionType(explorerState.currentConnectionId.value)) {
+  if (file && fileExplorerStore.isFilesConnectionType(explorerState.currentConnectionId.value)) {
     explorerState.clearDatabaseSelection()
   } else if (db) {
     explorerState.clearFileSelection()
-    fileOps.clearFileSelectionForConnection(explorerState.currentConnectionId.value || '')
+    fileExplorerStore.clearSelection(explorerState.currentConnectionId.value || '')
 
     explorerState.setDatabaseSelection({
       database: db,
@@ -777,14 +778,16 @@ onMounted(() => {
     schemaStore.fetchSchema(false)
   }
 
-  if (fileOps.isFilesConnectionType(explorerState.currentConnectionId.value)) {
-    void fileOps.loadFileEntries(explorerState.currentConnectionId.value as string).then(() => {
-      if (file) {
-        fileOps.setFileSelectionForConnection(explorerState.currentConnectionId.value || '', file)
-        explorerState.detailsConnectionId.value = null
-        focusConnectionId.value = null
-      }
-    })
+  if (fileExplorerStore.isFilesConnectionType(explorerState.currentConnectionId.value)) {
+    void fileExplorerStore
+      .loadEntries(explorerState.currentConnectionId.value as string)
+      .then(() => {
+        if (file) {
+          fileExplorerStore.setSelectedPath(explorerState.currentConnectionId.value || '', file)
+          explorerState.detailsConnectionId.value = null
+          focusConnectionId.value = null
+        }
+      })
   }
 })
 </script>
@@ -832,8 +835,6 @@ onMounted(() => {
               :search-query="connectionSearch"
               :type-filter="selectedDbTypeFilter"
               :focus-connection-id="focusConnectionId || undefined"
-              :file-entries="fileOps.fileEntriesByConnection.value"
-              :selected-file-paths="fileOps.selectedFilePathsByConnection.value"
               :selected="{
                 database: explorerState.selectedDatabaseName.value || undefined,
                 schema: explorerState.selectedSchemaName.value || undefined,

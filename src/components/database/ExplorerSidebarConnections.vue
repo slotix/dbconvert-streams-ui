@@ -3,6 +3,7 @@ import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowPathIcon, CubeIcon } from '@heroicons/vue/24/outline'
 import { useConnectionsStore } from '@/stores/connections'
+import { useFileExplorerStore } from '@/stores/fileExplorer'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { useConnectionTreeLogic } from '@/composables/useConnectionTreeLogic'
 import connectionsApi from '@/api/connections'
@@ -26,8 +27,6 @@ const props = defineProps<{
   searchQuery: string
   typeFilter: string
   focusConnectionId?: string
-  fileEntries?: Record<string, FileSystemEntry[]>
-  selectedFilePaths?: Record<string, string | null>
 }>()
 
 type DefaultTab = 'structure' | 'data'
@@ -67,6 +66,7 @@ const emit = defineEmits<{
 }>()
 
 const connectionsStore = useConnectionsStore()
+const fileExplorerStore = useFileExplorerStore()
 const navigationStore = useExplorerNavigationStore()
 const treeLogic = useConnectionTreeLogic()
 const router = useRouter()
@@ -75,8 +75,6 @@ const toast = useToast()
 const isLoadingConnections = ref(false)
 const loadError = ref<string | null>(null)
 const searchQuery = computed(() => props.searchQuery || '')
-const fileEntriesByConn = computed(() => props.fileEntries || {})
-const selectedFilePathsByConn = computed(() => props.selectedFilePaths || {})
 
 // Context menu state
 type ContextTarget =
@@ -330,7 +328,7 @@ async function actionCopyDDLFromContext() {
 }
 
 function findFileEntry(connectionId: string, path: string): FileSystemEntry | undefined {
-  const entries = fileEntriesByConn.value[connectionId]
+  const entries = fileExplorerStore.getEntries(connectionId)
   if (!entries) return undefined
   return entries.find((entry) => entry.path === path)
 }
@@ -690,8 +688,6 @@ watch(
                 matchesDbFilter(conn.id, d.name)
               )
             "
-            :file-entries="fileEntriesByConn[conn.id] || []"
-            :selected-file-path="selectedFilePathsByConn[conn.id] || null"
             :search-query="searchQuery"
             :caret-class="caretClass"
             :expanded-databases="navigationStore.expandedDatabases"

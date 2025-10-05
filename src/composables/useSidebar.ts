@@ -1,10 +1,13 @@
 import { ref, onUnmounted } from 'vue'
+import { usePersistedBoolean, usePersistedNumber } from './usePersistedState'
 
 export function useSidebar() {
-  // Sidebar visibility + resizer state
-  const sidebarVisible = ref<boolean>(true)
-  const sidebarWidthPct = ref(25) // percentage width for left sidebar
-  const lastSidebarWidthPct = ref<number>(25)
+  // Sidebar visibility + resizer state (persisted)
+  const sidebarVisible = usePersistedBoolean('explorer.sidebarVisible', true)
+  const sidebarWidthPct = usePersistedNumber('explorer.sidebarWidthPct', 25)
+  const lastSidebarWidthPct = usePersistedNumber('explorer.lastSidebarWidthPct', 25)
+
+  // Non-persisted UI state
   const isSidebarResizing = ref(false)
   const sidebarContainerRef = ref<HTMLElement | null>(null)
   const sidebarRef = ref<HTMLElement | null>(null)
@@ -19,14 +22,9 @@ export function useSidebar() {
   }
 
   function onSidebarDividerDoubleClick() {
-    // Reset sidebar width to default 25%
+    // Reset sidebar width to default 25% (auto-persisted by usePersistedNumber)
     sidebarWidthPct.value = 25
-    try {
-      localStorage.setItem('explorer.sidebarWidthPct', '25')
-      localStorage.setItem('explorer.lastSidebarWidthPct', '25')
-    } catch {
-      /* ignore */
-    }
+    lastSidebarWidthPct.value = 25
   }
 
   function onSidebarDividerMouseDown(e: MouseEvent) {
@@ -55,56 +53,26 @@ export function useSidebar() {
     isSidebarResizing.value = false
     document.body.style.userSelect = prevBodySelect || ''
     window.removeEventListener('mousemove', onSidebarDividerMouseMove)
-    // persist current width
-    try {
-      localStorage.setItem('explorer.sidebarWidthPct', String(Math.round(sidebarWidthPct.value)))
-    } catch {
-      /* ignore persistence errors */
-    }
+    // Auto-persisted by usePersistedNumber watcher
     lastSidebarWidthPct.value = sidebarWidthPct.value
   }
 
   function toggleSidebar() {
     if (sidebarVisible.value) {
-      // hide and remember width
+      // Hide and remember width (auto-persisted)
       lastSidebarWidthPct.value = sidebarWidthPct.value
       sidebarVisible.value = false
-      try {
-        localStorage.setItem('explorer.sidebarVisible', 'false')
-        localStorage.setItem(
-          'explorer.lastSidebarWidthPct',
-          String(Math.round(lastSidebarWidthPct.value))
-        )
-        localStorage.setItem('explorer.sidebarWidthPct', String(Math.round(sidebarWidthPct.value)))
-      } catch {
-        /* ignore persistence errors */
-      }
     } else {
-      // show and restore last width
+      // Show and restore last width (auto-persisted)
       sidebarVisible.value = true
-      try {
-        const stored = Number(
-          localStorage.getItem('explorer.lastSidebarWidthPct') || lastSidebarWidthPct.value
-        )
-        sidebarWidthPct.value = clamp(isNaN(stored) ? 25 : stored, 15, 50)
-        localStorage.setItem('explorer.sidebarVisible', 'true')
-      } catch {
-        /* ignore persistence errors */
-      }
+      sidebarWidthPct.value = clamp(lastSidebarWidthPct.value, 15, 50)
     }
   }
 
   function initializeSidebar() {
-    try {
-      const storedVisible = localStorage.getItem('explorer.sidebarVisible')
-      if (storedVisible !== null) sidebarVisible.value = storedVisible === 'true'
-      const storedPct = Number(localStorage.getItem('explorer.sidebarWidthPct') || '')
-      if (!isNaN(storedPct)) sidebarWidthPct.value = clamp(storedPct, 15, 50)
-      const storedLast = Number(localStorage.getItem('explorer.lastSidebarWidthPct') || '')
-      if (!isNaN(storedLast)) lastSidebarWidthPct.value = clamp(storedLast, 15, 50)
-    } catch {
-      /* ignore persistence errors */
-    }
+    // No longer needed - usePersistedState handles initialization automatically
+    // Values are loaded from localStorage when the composable is created
+    // This function kept for backward compatibility but does nothing
   }
 
   onUnmounted(() => {
