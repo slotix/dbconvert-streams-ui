@@ -127,9 +127,7 @@ function handleOpenFromTree(payload: {
     }
   }
 
-  // TODO: Refactor to remove overviewConnectionId/detailsConnectionId and use route as single source of truth
-  // Set database selection and overview connection immediately (BEFORE route update)
-  // This ensures breadcrumb shows correct connection while route updates asynchronously
+  // Set database selection
   explorerState.setDatabaseSelection({
     database: payload.database,
     schema: payload.schema,
@@ -137,8 +135,6 @@ function handleOpenFromTree(payload: {
     name: payload.name,
     meta: payload.meta
   })
-  explorerState.overviewConnectionId.value = payload.connectionId
-  explorerState.overviewDatabaseName.value = payload.database
 
   // Update schema store
   if (payload.database) {
@@ -147,7 +143,7 @@ function handleOpenFromTree(payload: {
     schemaStore.fetchSchema(false)
   }
 
-  // Update route (async, but breadcrumb won't wait for this)
+  // Update route - this is now the single source of truth
   router.replace({
     path: `/explorer/${payload.connectionId}`,
     query: {
@@ -294,8 +290,6 @@ function handleOpenFile(payload: {
 function handleShowDiagram(payload: { connectionId: string; database: string }) {
   explorerState.clearPanelStates()
   explorerState.setDatabaseSelection({ database: payload.database })
-  explorerState.diagramConnectionId.value = payload.connectionId
-  explorerState.diagramDatabaseName.value = payload.database
   explorerState.showDiagram.value = true
 
   schemaStore.setConnectionId(payload.connectionId)
@@ -304,19 +298,16 @@ function handleShowDiagram(payload: { connectionId: string; database: string }) 
 
   router.replace({
     path: `/explorer/${payload.connectionId}`,
-    query: { db: payload.database }
+    query: { db: payload.database, diagram: 'true' }
   })
 }
 
 function handleSelectConnection(payload: { connectionId: string }) {
-  router.replace({ path: `/explorer/${payload.connectionId}` })
+  router.replace({ path: `/explorer/${payload.connectionId}`, query: { details: 'true' } })
 
   focusConnectionId.value = payload.connectionId
   explorerState.clearPanelStates()
   explorerState.clearDatabaseSelection()
-
-  // Set detailsConnectionId AFTER clearing panel states
-  explorerState.detailsConnectionId.value = payload.connectionId
 
   splitPane.closeRightSplit()
   fileExplorerStore.clearSelection(payload.connectionId)
@@ -327,13 +318,10 @@ function handleSelectConnection(payload: { connectionId: string }) {
 }
 
 function handleSelectDatabase(payload: { connectionId: string; database: string }) {
-  explorerState.detailsConnectionId.value = null
-  explorerState.showDiagram.value = false
+  explorerState.clearPanelStates()
   explorerState.setDatabaseSelection({ database: payload.database })
   splitPane.closeRightSplit()
   explorerState.activePane.value = 'left'
-  explorerState.overviewConnectionId.value = payload.connectionId
-  explorerState.overviewDatabaseName.value = payload.database
 
   schemaStore.setConnectionId(payload.connectionId)
   schemaStore.setDatabaseName(payload.database)
@@ -348,9 +336,6 @@ function handleFileSelect(payload: { connectionId: string; path: string }) {
   if (!entry) {
     fileExplorerStore.setSelectedPath(payload.connectionId, payload.path)
     focusConnectionId.value = null
-    if (explorerState.detailsConnectionId.value === payload.connectionId) {
-      explorerState.detailsConnectionId.value = null
-    }
     router.replace({
       path: `/explorer/${payload.connectionId}`,
       query: { file: payload.path }
@@ -389,8 +374,6 @@ function activateTabFromState(tab: {
   meta?: SQLTableMeta | SQLViewMeta
 }) {
   if (!tab) return
-
-  explorerState.detailsConnectionId.value = null
 
   if (tab.tabType === 'file') {
     explorerState.clearDatabaseSelection()
@@ -601,10 +584,7 @@ function handleBreadcrumbNavigate(payload: { level: 'database' | 'schema' | 'typ
   }
 
   if (payload.level === 'database') {
-    explorerState.detailsConnectionId.value = null
     explorerState.showDiagram.value = false
-    explorerState.overviewConnectionId.value = explorerState.currentConnectionId.value
-    explorerState.overviewDatabaseName.value = explorerState.selectedDatabaseName.value
     explorerState.selectedSchemaName.value = null
     explorerState.selectedObjectType.value = null
     explorerState.selectedObjectName.value = null
@@ -762,7 +742,6 @@ onMounted(() => {
       .then(() => {
         if (file) {
           fileExplorerStore.setSelectedPath(explorerState.currentConnectionId.value || '', file)
-          explorerState.detailsConnectionId.value = null
           focusConnectionId.value = null
         }
       })
@@ -947,9 +926,6 @@ onMounted(() => {
             <ExplorerContentArea
               v-if="explorerState.currentConnectionId.value"
               :connection-id="explorerState.currentConnectionId.value"
-              :details-connection-id="explorerState.detailsConnectionId.value"
-              :overview-connection-id="explorerState.overviewConnectionId.value"
-              :overview-database-name="explorerState.overviewDatabaseName.value"
               :show-diagram="explorerState.showDiagram.value"
               :tables="schemaStore.tables as any[]"
               :views="schemaStore.views as any[]"

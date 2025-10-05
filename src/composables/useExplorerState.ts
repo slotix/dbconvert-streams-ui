@@ -32,12 +32,7 @@ export function useExplorerState() {
   const selectedFileMetadata = ref<FileMetadata | null>(null)
 
   // Panel states
-  const detailsConnectionId = ref<string | null>(null)
-  const overviewConnectionId = ref<string | null>(null)
-  const overviewDatabaseName = ref<string | null>(null)
   const showDiagram = ref(false)
-  const diagramConnectionId = ref<string | null>(null)
-  const diagramDatabaseName = ref<string | null>(null)
 
   // Active pane tracking
   const activePane = ref<'left' | 'right'>('left')
@@ -76,12 +71,8 @@ export function useExplorerState() {
   )
 
   // Computed properties for active connection details
-  const activeConnectionId = computed<string | null>(() => {
-    if (detailsConnectionId.value) return detailsConnectionId.value
-    if (overviewConnectionId.value) return overviewConnectionId.value
-    if (showDiagram.value && diagramConnectionId.value) return diagramConnectionId.value
-    return currentConnectionId.value || null
-  })
+  // Route is now the single source of truth for connection ID
+  const activeConnectionId = computed<string | null>(() => currentConnectionId.value || null)
 
   const activeConnection = computed(() =>
     connectionsStore.connections.find((c) => c.id === activeConnectionId.value)
@@ -134,12 +125,7 @@ export function useExplorerState() {
   }
 
   function clearPanelStates() {
-    detailsConnectionId.value = null
-    overviewConnectionId.value = null
-    overviewDatabaseName.value = null
     showDiagram.value = false
-    diagramConnectionId.value = null
-    diagramDatabaseName.value = null
   }
 
   function setDatabaseSelection(payload: {
@@ -172,12 +158,7 @@ export function useExplorerState() {
     selectedMeta,
     selectedFileEntry,
     selectedFileMetadata,
-    detailsConnectionId,
-    overviewConnectionId,
-    overviewDatabaseName,
     showDiagram,
-    diagramConnectionId,
-    diagramDatabaseName,
     activePane,
 
     // Computed properties

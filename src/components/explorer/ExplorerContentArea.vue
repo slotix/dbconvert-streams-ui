@@ -1,7 +1,7 @@
 <template>
-  <div v-if="detailsConnection" class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg">
+  <div v-if="showConnectionDetails" class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg">
     <ConnectionDetailsPanel
-      :connection="detailsConnection"
+      :connection="currentConnection"
       :file-entries="fileEntries"
       @edit="$emit('edit-connection')"
       @clone="$emit('clone-connection')"
@@ -9,12 +9,12 @@
     />
   </div>
   <div
-    v-else-if="overviewConnectionId && overviewDatabaseName"
+    v-else-if="showDatabaseOverview"
     class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg"
   >
     <DatabaseOverviewPanel
-      :connection-id="overviewConnectionId"
-      :database="overviewDatabaseName"
+      :connection-id="connectionId"
+      :database="databaseFromQuery"
       @show-diagram="$emit('show-diagram', $event)"
     />
   </div>
@@ -113,6 +113,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useRoute } from 'vue-router'
 import { useConnectionsStore } from '@/stores/connections'
 import ConnectionDetailsPanel from '@/components/database/ConnectionDetailsPanel.vue'
 import DatabaseOverviewPanel from '@/components/database/DatabaseOverviewPanel.vue'
@@ -127,9 +128,6 @@ import type { Table, Relationship } from '@/types/schema'
 
 interface Props {
   connectionId: string
-  detailsConnectionId?: string | null
-  overviewConnectionId?: string | null
-  overviewDatabaseName?: string | null
   showDiagram?: boolean
   tables?: Table[]
   views?: Table[]
@@ -148,9 +146,6 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  detailsConnectionId: null,
-  overviewConnectionId: null,
-  overviewDatabaseName: null,
   showDiagram: false,
   tables: () => [],
   views: () => [],
@@ -180,12 +175,22 @@ defineEmits<{
   'right-tab-change': [tab: 'data' | 'structure']
 }>()
 
+const route = useRoute()
 const connectionsStore = useConnectionsStore()
 
-// Computed properties
-const detailsConnection = computed(() =>
-  props.detailsConnectionId
-    ? connectionsStore.connections.find((c) => c.id === props.detailsConnectionId) || null
-    : null
+// Computed properties - derive view mode from route
+const databaseFromQuery = computed(() => route.query.db as string | undefined)
+const showConnectionDetails = computed(() => route.query.details === 'true')
+const showDatabaseOverview = computed(
+  () =>
+    !showConnectionDetails.value &&
+    !props.showDiagram &&
+    !props.selectedMeta &&
+    !props.selectedFileEntry &&
+    databaseFromQuery.value
+)
+
+const currentConnection = computed(
+  () => connectionsStore.connections.find((c) => c.id === props.connectionId) || null
 )
 </script>
