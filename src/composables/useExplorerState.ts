@@ -102,13 +102,8 @@ export function useExplorerState() {
   const activeDisplayType = computed(() => activeConnection.value?.type || '')
   const activeDisplayCloudProvider = computed(() => activeConnection.value?.cloud_provider || '')
 
-  // Breadcrumb objects
-  const breadcrumbObjects = computed<
-    Array<{ name: string; type: 'table' | 'view'; schema?: string }>
-  >(() => [
-    ...schemaStore.tables.map((t) => ({ name: t.name, type: 'table' as const, schema: t.schema })),
-    ...schemaStore.views.map((v) => ({ name: v.name, type: 'view' as const, schema: v.schema }))
-  ])
+  // Breadcrumb objects from schema store
+  const breadcrumbObjects = computed(() => schemaStore.breadcrumbItems)
 
   // Active context for breadcrumb
   const activeDatabaseName = computed(() => selectedDatabaseName.value)

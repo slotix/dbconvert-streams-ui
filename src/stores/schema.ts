@@ -30,6 +30,13 @@ export const useSchemaStore = defineStore('schema', {
       return state.relationships.filter(
         (rel) => rel.sourceTable === tableId || rel.targetTable === tableId
       )
+    },
+
+    breadcrumbItems: (state): Array<{ name: string; type: 'table' | 'view'; schema?: string }> => {
+      return [
+        ...state.tables.map((t) => ({ name: t.name, type: 'table' as const, schema: t.schema })),
+        ...state.views.map((v) => ({ name: v.name, type: 'view' as const, schema: v.schema }))
+      ]
     }
   },
 
