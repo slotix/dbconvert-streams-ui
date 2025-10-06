@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, inject } from 'vue'
+import type { ComputedRef } from 'vue'
 import { ChevronRightIcon, ChevronDownIcon, FolderIcon } from '@heroicons/vue/24/outline'
 import DatabaseTreeItem from './DatabaseTreeItem.vue'
 import FileEntry from '../FileEntry.vue'
@@ -23,15 +24,17 @@ const props = defineProps<{
   isFileConnection: boolean
   isFocused: boolean
   databases: DatabaseInfo[]
-  searchQuery: string
-  caretClass: string
 }>()
+
+// Inject search query and caret class from parent
+const searchQuery = inject<ComputedRef<string>>('treeSearchQuery')!
+const caretClass = inject<string>('treeCaretClass')!
 
 // Use composable and stores directly
 const treeLogic = useConnectionTreeLogic()
 const fileExplorerStore = useFileExplorerStore()
 const navigationStore = useExplorerNavigationStore()
-const treeSearch = useTreeSearch(props.searchQuery)
+const treeSearch = computed(() => useTreeSearch(searchQuery.value))
 
 // Get file entries and selected path from store
 const fileEntries = computed(() => fileExplorerStore.getEntries(props.connection.id))
@@ -93,7 +96,7 @@ const emit = defineEmits<{
   (e: 'request-file-entries', payload: { connectionId: string }): void
 }>()
 
-const highlightParts = (text: string) => splitHighlight(text, props.searchQuery)
+const highlightParts = (text: string) => splitHighlight(text, searchQuery.value)
 
 function isDatabaseExpanded(dbName: string): boolean {
   const key = `${props.connection.id}:${dbName}`
@@ -163,7 +166,7 @@ function handleSelectFile(path: string) {
 }
 
 const visibleFileEntries = computed(() => {
-  return treeSearch.filterFileEntries(fileEntries.value)
+  return treeSearch.value.filterFileEntries(fileEntries.value)
 })
 </script>
 
@@ -216,7 +219,6 @@ const visibleFileEntries = computed(() => {
           :entry="entry"
           :connection-id="connection.id"
           :selected="selectedFilePath === entry.path"
-          :search-query="searchQuery"
           @select="handleSelectFile(entry.path)"
           @open="handleFileOpen"
           @context-menu="handleFileContextMenu"

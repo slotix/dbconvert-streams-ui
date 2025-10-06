@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { inject } from 'vue'
+import type { ComputedRef } from 'vue'
 import { ChevronRightIcon, ChevronDownIcon } from '@heroicons/vue/24/outline'
 import ObjectList from './ObjectList.vue'
 import { highlightParts as splitHighlight } from '@/utils/highlight'
@@ -16,10 +18,12 @@ const props = defineProps<{
   connectionId: string
   database: string
   isExpanded: boolean
-  searchQuery: string
-  caretClass: string
   tableSizes?: Record<string, number>
 }>()
+
+// Inject search query and caret class from parent
+const searchQuery = inject<ComputedRef<string>>('treeSearchQuery')!
+const caretClass = inject<string>('treeCaretClass')!
 
 const emit = defineEmits<{
   (e: 'toggle'): void
@@ -49,7 +53,7 @@ const emit = defineEmits<{
   ): void
 }>()
 
-const highlightParts = (text: string) => splitHighlight(text, props.searchQuery)
+const highlightParts = (text: string) => splitHighlight(text, searchQuery.value)
 
 function handleSchemaContextMenu(event: MouseEvent) {
   emit('contextmenu-schema', {
@@ -117,7 +121,6 @@ function handleObjectContextMenu(payload: {
         :connection-id="connectionId"
         :database="database"
         :schema="schema.name"
-        :search-query="searchQuery"
         :explorer-obj-prefix="`${connectionId}:${database}:${schema.name || ''}`"
         :table-sizes="tableSizes"
         @click="(p) => handleObjectOpen('table', p)"
@@ -139,7 +142,6 @@ function handleObjectContextMenu(payload: {
         :connection-id="connectionId"
         :database="database"
         :schema="schema.name"
-        :search-query="searchQuery"
         :explorer-obj-prefix="`${connectionId}:${database}:${schema.name || ''}`"
         @click="(p) => handleObjectOpen('view', p)"
         @dblclick="(p) => handleObjectOpen('view', p)"

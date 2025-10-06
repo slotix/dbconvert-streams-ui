@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, nextTick } from 'vue'
+import { ref, computed, watch, onMounted, nextTick, provide } from 'vue'
 import { ArrowPathIcon, CubeIcon } from '@heroicons/vue/24/outline'
 import { useConnectionsStore } from '@/stores/connections'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
@@ -80,15 +80,16 @@ const isLoadingConnections = ref(false)
 const loadError = ref<string | null>(null)
 const searchQuery = computed(() => props.searchQuery || '')
 
+// Provide search query and caret class to child components (avoid prop drilling)
+provide('treeSearchQuery', searchQuery)
+provide('treeCaretClass', 'w-[16px] h-[16px] shrink-0 flex-none text-gray-400 mr-1.5')
+
 // Computed for context menu
 const canCopyDDL = computed(() => {
   const mo = contextMenu.menuObj.value
   if (!mo) return false
   return actions.canCopyDDL(mo.connectionId, mo.database, mo.name, mo.kind, mo.schema)
 })
-
-// Fixed, consistent caret icon class
-const caretClass = 'w-[16px] h-[16px] shrink-0 flex-none text-gray-400 mr-1.5'
 
 // Use tree search composable (reactive to searchQuery)
 const treeSearch = computed(() =>
@@ -493,8 +494,6 @@ watch(
                 matchesDbFilter(conn.id, d.name)
               )
             "
-            :search-query="searchQuery"
-            :caret-class="caretClass"
             @toggle-connection="handleToggleConnection(conn)"
             @select-connection="$emit('select-connection', $event)"
             @toggle-database="(dbName) => handleToggleDatabase(conn, dbName)"

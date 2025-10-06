@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, inject } from 'vue'
+import type { ComputedRef } from 'vue'
 import { DocumentIcon } from '@heroicons/vue/24/outline'
 import type { FileSystemEntry } from '@/api/fileSystem'
 import type { FileMetadata } from '@/types/files'
@@ -11,8 +12,10 @@ const props = defineProps<{
   entry: FileSystemEntry
   connectionId: string
   selected: boolean
-  searchQuery: string
 }>()
+
+// Inject search query from parent
+const searchQuery = inject<ComputedRef<string>>('treeSearchQuery')!
 
 const emit = defineEmits<{
   (e: 'select'): void

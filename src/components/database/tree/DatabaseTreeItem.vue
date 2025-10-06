@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { computed, watch, inject } from 'vue'
+import type { ComputedRef } from 'vue'
 import { ChevronRightIcon, ChevronDownIcon } from '@heroicons/vue/24/outline'
 import SchemaTreeItem from './SchemaTreeItem.vue'
 import ObjectList from './ObjectList.vue'
@@ -30,10 +31,12 @@ const props = defineProps<{
   schemas: SchemaInfo[]
   flatTables: string[]
   flatViews: string[]
-  searchQuery: string
-  caretClass: string
   metadataLoaded: boolean
 }>()
+
+// Inject search query and caret class from parent
+const searchQuery = inject<ComputedRef<string>>('treeSearchQuery')!
+const caretClass = inject<string>('treeCaretClass')!
 
 const emit = defineEmits<{
   (e: 'toggle-database'): void
@@ -69,7 +72,7 @@ const emit = defineEmits<{
   ): void
 }>()
 
-const highlightParts = (text: string) => splitHighlight(text, props.searchQuery)
+const highlightParts = (text: string) => splitHighlight(text, searchQuery.value)
 
 // Get table sizes from store (reactive)
 const tableSizes = computed(() => {
@@ -181,8 +184,6 @@ function handleFlatObjectContextMenu(payload: {
             :connection-id="connectionId"
             :database="database.name"
             :is-expanded="isSchemaExpanded(schema.name)"
-            :search-query="searchQuery"
-            :caret-class="caretClass"
             :table-sizes="tableSizes"
             @toggle="handleSchemaToggle(schema.name)"
             @open-object="handleObjectOpen"
@@ -205,7 +206,6 @@ function handleFlatObjectContextMenu(payload: {
             object-type="table"
             :connection-id="connectionId"
             :database="database.name"
-            :search-query="searchQuery"
             :explorer-obj-prefix="`${connectionId}:${database.name}:`"
             :table-sizes="tableSizes"
             @click="(p) => handleObjectOpen({ type: 'table', ...p })"
@@ -226,7 +226,6 @@ function handleFlatObjectContextMenu(payload: {
             object-type="view"
             :connection-id="connectionId"
             :database="database.name"
-            :search-query="searchQuery"
             :explorer-obj-prefix="`${connectionId}:${database.name}:`"
             @click="(p) => handleObjectOpen({ type: 'view', ...p })"
             @dblclick="(p) => handleObjectOpen({ type: 'view', ...p })"

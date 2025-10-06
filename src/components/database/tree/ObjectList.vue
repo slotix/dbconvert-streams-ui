@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { inject } from 'vue'
+import type { ComputedRef } from 'vue'
 import ObjectIcon from '@/components/common/ObjectIcon.vue'
 import { highlightParts as splitHighlight } from '@/utils/highlight'
 import { formatDataSize } from '@/utils/formats'
@@ -11,10 +13,12 @@ const props = defineProps<{
   connectionId: string
   database: string
   schema?: string
-  searchQuery: string
   explorerObjPrefix: string
   tableSizes?: Record<string, number> // Map of table name -> size in bytes
 }>()
+
+// Inject search query from parent
+const searchQuery = inject<ComputedRef<string>>('treeSearchQuery')!
 
 const emit = defineEmits<{
   (e: 'click', payload: { name: string; mode: 'preview' }): void
@@ -26,7 +30,7 @@ const emit = defineEmits<{
   ): void
 }>()
 
-const highlightParts = (text: string) => splitHighlight(text, props.searchQuery)
+const highlightParts = (text: string) => splitHighlight(text, searchQuery.value)
 
 function handleClick(name: string) {
   emit('click', { name, mode: 'preview' })
@@ -50,8 +54,8 @@ function handleContextMenu(event: MouseEvent, name: string) {
 }
 
 const filteredItems = () => {
-  if (!props.searchQuery) return props.items
-  return props.items.filter((n) => n.toLowerCase().includes(props.searchQuery.toLowerCase()))
+  if (!searchQuery.value) return props.items
+  return props.items.filter((n) => n.toLowerCase().includes(searchQuery.value.toLowerCase()))
 }
 
 function getTableSize(tableName: string): string | null {

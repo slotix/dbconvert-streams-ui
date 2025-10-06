@@ -813,13 +813,13 @@ onMounted(() => {
       <!-- Explorer content -->
       <div v-else class="px-4 sm:px-6 lg:px-8">
         <div
-          ref="sidebarContainerRef"
+          :ref="(el) => (sidebar.sidebarContainerRef.value = el as HTMLElement)"
           class="mt-6 flex flex-row items-stretch min-w-0 overflow-x-hidden"
         >
           <!-- Sidebar -->
           <div
             v-if="sidebar.sidebarVisible.value"
-            ref="sidebarRef"
+            :ref="(el) => (sidebar.sidebarRef.value = el as HTMLElement)"
             :style="{
               flexBasis: `calc(${sidebar.sidebarWidthPct.value}% - 8px)`,
               flexGrow: 0,
