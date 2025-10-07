@@ -63,5 +63,16 @@ export function getFormattingOptions(dialect: string): SqlFormatterOptions {
     }
   }
 
-  return baseOptions
+  if (normalizedDialect.includes('snowflake')) {
+    return {
+      ...baseOptions,
+      language: 'snowflake'
+    }
+  }
+
+  // Default to SQL (generic) if no specific dialect is detected
+  return {
+    ...baseOptions,
+    language: 'sql'
+  }
 }

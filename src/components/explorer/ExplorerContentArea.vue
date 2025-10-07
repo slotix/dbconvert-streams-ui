@@ -38,7 +38,7 @@
               :connection-id="connectionId"
               :table-meta="selectedMeta"
               :is-view="false"
-              :connection-type="'sql'"
+              :connection-type="currentConnection?.type || 'sql'"
               :database="selectedMeta.database"
               @tab-change="$emit('left-tab-change', $event)"
             />
@@ -65,7 +65,7 @@
               :connection-id="connectionId"
               :table-meta="splitViewStore.splitContent.meta"
               :is-view="false"
-              :connection-type="'sql'"
+              :connection-type="currentConnection?.type || 'sql'"
               :database="splitViewStore.splitContent.meta.database"
               @tab-change="$emit('right-tab-change', $event)"
             />
@@ -88,7 +88,7 @@
               :connection-id="connectionId"
               :table-meta="selectedMeta"
               :is-view="false"
-              :connection-type="'sql'"
+              :connection-type="currentConnection?.type || 'sql'"
               :database="selectedMeta.database"
               @tab-change="$emit('left-tab-change', $event)"
             />

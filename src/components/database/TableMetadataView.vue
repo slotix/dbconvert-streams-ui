@@ -50,6 +50,11 @@ function handleRefresh() {
 // Expose optional refresh method for parent container
 defineExpose({ refresh: handleRefresh })
 
+// Determine the SQL dialect based on connection type
+const sqlDialect = computed(() => {
+  return props.connectionType.toLowerCase()
+})
+
 const columns = computed(() => {
   const primaryKeys = new Set(props.tableMeta?.primaryKeys || [])
 
@@ -351,6 +356,7 @@ function getColumnDefault(column: SQLColumnMeta) {
           <DdlView
             :ddl="ddl"
             :connection-type="connectionType"
+            :dialect="sqlDialect"
             @refresh-metadata="emit('refresh-metadata')"
           />
         </TabPanel>

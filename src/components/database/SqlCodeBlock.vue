@@ -9,17 +9,15 @@ const props = defineProps<{
   code: string
   title?: string
   index?: number | string
-  dialect: 'mysql' | 'postgresql' | 'sql'
+  dialect: string
 }>()
 
 const isLoading = ref(false)
 
 const formattedCode = computed(() => {
   try {
-    return format(props.code, {
-      ...getFormattingOptions(props.dialect),
-      language: props.dialect === 'mysql' ? 'mysql' : 'postgresql'
-    })
+    const options = getFormattingOptions(props.dialect)
+    return format(props.code, options)
   } catch (error) {
     console.warn('SQL formatting failed, falling back to original code:', error)
     return props.code
