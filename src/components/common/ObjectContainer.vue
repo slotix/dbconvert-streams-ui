@@ -144,17 +144,7 @@ if (savedState !== undefined) {
 watch(objectKey, (newKey) => {
   const savedState = tabStateStore.getTabState(newKey)
   selectedIndex.value = savedState ?? 0
-  console.log(`ObjectContainer objectKey changed to ${newKey}, loaded state:`, selectedIndex.value)
 })
-
-// Debug: Add unique identifier for this component instance
-const instanceId = Math.random().toString(36).substr(2, 9)
-console.log(
-  `ObjectContainer ${instanceId} created for ${objectKey.value} with selectedIndex:`,
-  selectedIndex.value,
-  'savedState was:',
-  savedState
-)
 
 function onTabChange(i: number) {
   selectedIndex.value = i
