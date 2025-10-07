@@ -4,7 +4,7 @@ import type { SQLTableMeta, SQLViewMeta } from '@/types/metadata'
 import type { FileSystemEntry } from '@/api/fileSystem'
 import { usePersistedState } from '@/composables/usePersistedState'
 
-export type EditorTab = {
+export type ExplorerTab = {
   id: string
   connectionId: string
   // For database objects (compatible with local type)
@@ -26,8 +26,8 @@ export type EditorTab = {
 
 export const useTabsStore = defineStore('tabs', () => {
   // Tab state
-  const pinnedTabs = ref<EditorTab[]>([])
-  const previewTab = ref<EditorTab | null>(null)
+  const pinnedTabs = ref<ExplorerTab[]>([])
+  const previewTab = ref<ExplorerTab | null>(null)
   const activePinnedIndex = ref<number | null>(null)
 
   // Link tabs setting (persisted)
@@ -77,81 +77,28 @@ export const useTabsStore = defineStore('tabs', () => {
   })
 
   // Tab key generation for deduplication
-  function generateTabKey(tab: EditorTab): string {
+  function generateTabKey(tab: ExplorerTab): string {
     if (tab.tabType === 'file') {
       return `file:${tab.filePath}`
     }
     return `db:${tab.connectionId}:${tab.database || ''}:${tab.schema || ''}:${tab.name || ''}:${tab.type || ''}`
   }
 
-  // Add or activate a database tab
-  function addDatabaseTab(payload: {
-    connectionId: string
-    database?: string
-    schema?: string
-    name: string
-    type?: 'table' | 'view' // Aligned with ObjectType
-    meta?: SQLTableMeta | SQLViewMeta
-    viewTab?: 'structure' | 'data'
-  }) {
-    const tab: EditorTab = {
-      id: generateTabKey({
-        ...payload,
-        tabType: 'database',
-        pinned: true
-      } as EditorTab),
-      ...payload,
-      tabType: 'database',
-      pinned: true,
-      viewTab: payload.viewTab || 'data'
-    }
-
-    const key = generateTabKey(tab)
+  // Add or activate any tab (unified method)
+  function addTab(tab: Omit<ExplorerTab, 'pinned'>) {
+    const fullTab: ExplorerTab = { ...tab, pinned: true }
+    const key = generateTabKey(fullTab)
     const existingIndex = pinnedTabs.value.findIndex((t) => generateTabKey(t) === key)
 
     if (existingIndex >= 0) {
-      // Activate existing tab
-      activePinnedIndex.value = existingIndex
-    } else {
-      // Add new tab
-      pinnedTabs.value.push(tab)
-      activePinnedIndex.value = pinnedTabs.value.length - 1
-    }
-  }
-
-  // Add or activate a file tab
-  function addFileTab(payload: {
-    connectionId: string
-    filePath: string
-    name: string
-    fileType?: string
-    fileEntry?: FileSystemEntry
-    viewTab?: 'structure' | 'data'
-  }) {
-    const tab: EditorTab = {
-      id: generateTabKey({
-        ...payload,
-        tabType: 'file',
-        pinned: true
-      } as EditorTab),
-      ...payload,
-      tabType: 'file',
-      pinned: true,
-      viewTab: payload.viewTab || 'data'
-    }
-
-    const key = generateTabKey(tab)
-    const existingIndex = pinnedTabs.value.findIndex((t) => generateTabKey(t) === key)
-
-    if (existingIndex >= 0) {
-      // Activate existing tab and update fileEntry if provided
-      if (payload.fileEntry) {
-        pinnedTabs.value[existingIndex].fileEntry = payload.fileEntry
+      // Activate existing tab and update any new properties (like fileEntry)
+      if (tab.tabType === 'file' && tab.fileEntry) {
+        pinnedTabs.value[existingIndex].fileEntry = tab.fileEntry
       }
       activePinnedIndex.value = existingIndex
     } else {
       // Add new tab
-      pinnedTabs.value.push(tab)
+      pinnedTabs.value.push(fullTab)
       activePinnedIndex.value = pinnedTabs.value.length - 1
     }
   }
@@ -186,7 +133,7 @@ export const useTabsStore = defineStore('tabs', () => {
   }
 
   // Set preview tab (for hover/temporary display)
-  function setPreviewTab(tab: EditorTab | null) {
+  function setPreviewTab(tab: ExplorerTab | null) {
     previewTab.value = tab
   }
 
@@ -212,8 +159,7 @@ export const useTabsStore = defineStore('tabs', () => {
 
     // Actions
     generateTabKey,
-    addDatabaseTab,
-    addFileTab,
+    addTab,
     closeTab,
     activateTab,
     updateActiveTabView,

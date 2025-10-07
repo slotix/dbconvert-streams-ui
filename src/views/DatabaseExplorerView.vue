@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, watch, nextTick } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useCommonStore } from '@/stores/common'
 import { useConnectionsStore } from '@/stores/connections'
 import { useSchemaStore } from '@/stores/schema'
 import { useTabsStore } from '@/stores/tabs'
+import type { ExplorerTab } from '@/stores/tabs'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
 import ExplorerSidebarConnections from '@/components/database/ExplorerSidebarConnections.vue'
@@ -27,8 +28,6 @@ import { useSidebar } from '@/composables/useSidebar'
 import { usePersistedState } from '@/composables/usePersistedState'
 import { useRecentConnections } from '@/composables/useRecentConnections'
 import { useExplorerRouter } from '@/composables/useExplorerRouter'
-import { useConnectionActions } from '@/composables/useConnectionActions'
-import { useSplitPane } from '@/composables/useSplitPane'
 
 const route = useRoute()
 const router = useRouter()
@@ -44,7 +43,6 @@ const fileExplorerStore = useFileExplorerStore()
 const splitPaneResize = useSplitPaneResize()
 const splitViewStore = useSplitViewStore()
 const sidebar = useSidebar()
-const splitPane = useSplitPane()
 
 // Connection search and filtering
 const connectionSearch = ref('')
@@ -181,14 +179,16 @@ function handleOpenFromTree(payload: {
       pinned: false
     },
     addTabFn: () => {
-      tabsStore.addDatabaseTab({
+      tabsStore.addTab({
+        id: `preview:${payload.connectionId}:${payload.database || ''}:${payload.schema || ''}:${payload.name}:${payload.type || ''}`,
         connectionId: payload.connectionId,
         database: payload.database,
         schema: payload.schema,
         name: payload.name,
         type: payload.type,
         meta: payload.meta,
-        viewTab: payload.defaultTab
+        tabType: 'database',
+        viewTab: payload.defaultTab || 'data'
       })
     }
   })
@@ -245,13 +245,15 @@ function handleOpenFile(payload: {
       defaultTab: payload.defaultTab
     },
     addTabFn: () => {
-      tabsStore.addFileTab({
+      tabsStore.addTab({
+        id: `preview:file:${payload.path}`,
         connectionId: payload.connectionId,
-        filePath: payload.path,
         name: payload.entry.name,
-        fileType: payload.entry.type,
+        filePath: payload.path,
         fileEntry: payload.entry,
-        viewTab: payload.defaultTab
+        fileType: payload.entry.type,
+        tabType: 'file',
+        viewTab: payload.defaultTab || 'data'
       })
     }
   })
@@ -383,27 +385,15 @@ function createOrActivateTab(payload: {
     }
   } else {
     // Set as preview tab with viewTab
-    const tabDataWithView = { ...payload.tabData, viewTab: initialView }
-    tabsStore.setPreviewTab(tabDataWithView as any)
+    const tabDataWithView = { ...payload.tabData, viewTab: initialView } as ExplorerTab
+    tabsStore.setPreviewTab(tabDataWithView)
     tabsStore.activePinnedIndex = null
     tabsStore.defaultActiveView = initialView
-    activateTabFromState(tabDataWithView as any)
+    activateTabFromState(tabDataWithView)
   }
 }
 
-function activateTabFromState(tab: {
-  tabType?: string
-  viewTab?: string
-  defaultTab?: string
-  fileEntry?: FileSystemEntry
-  filePath?: string
-  connectionId: string
-  database?: string
-  schema?: string
-  type?: string
-  name?: string
-  meta?: SQLTableMeta | SQLViewMeta
-}) {
+function activateTabFromState(tab: ExplorerTab) {
   if (!tab) return
 
   // Set active connection ID FIRST (synchronous store update)
@@ -413,14 +403,10 @@ function activateTabFromState(tab: {
     explorerState.clearDatabaseSelection()
     explorerState.clearPanelStates()
 
-    tabsStore.defaultActiveView = (tab.viewTab || tab.defaultTab || 'data') as 'structure' | 'data'
-
-    if (tab.fileEntry) {
-      explorerState.setFileSelection(tab.fileEntry)
-    }
-
-    if (tab.filePath) {
+    // Update file selection state
+    if (tab.fileEntry && tab.filePath) {
       fileExplorerStore.setSelectedPath(tab.connectionId, tab.filePath)
+      explorerState.setFileSelection(tab.fileEntry)
     }
 
     if (explorerState.selectedFileEntry.value) {
@@ -439,6 +425,8 @@ function activateTabFromState(tab: {
       name: tab.name,
       meta: tab.meta
     })
+
+    // Update default active view
     tabsStore.defaultActiveView = (tab.viewTab || tab.defaultTab || 'data') as 'structure' | 'data'
 
     if (tab.database) {
@@ -456,7 +444,9 @@ function closePinned(index: number) {
   tabsStore.closeTab(index)
 
   if (!tabsStore.pinnedTabs.length) {
-    if (tabsStore.previewTab) activateTabFromState(tabsStore.previewTab)
+    if (tabsStore.previewTab) {
+      activateTabFromState(tabsStore.previewTab)
+    }
     return
   }
 
@@ -474,20 +464,27 @@ function closePinned(index: number) {
 function activatePinned(index: number) {
   if (index < 0 || index >= tabsStore.pinnedTabs.length) return
   explorerState.clearPanelStates()
-  tabsStore.defaultActiveView = (tabsStore.pinnedTabs[index].viewTab || 'data') as
-    | 'structure'
-    | 'data'
   explorerState.activePane.value = 'left'
+
+  // Update tab store state
   tabsStore.activateTab(index)
-  activateTabFromState(tabsStore.pinnedTabs[index])
+
+  // Get the activated tab and update all related state
+  const tab = tabsStore.pinnedTabs[index]
+  if (tab) {
+    activateTabFromState(tab)
+  }
 }
 
 function activatePreview() {
   if (tabsStore.previewTab) {
     explorerState.clearPanelStates()
-    tabsStore.defaultActiveView = (tabsStore.previewTab.viewTab || 'data') as 'structure' | 'data'
     explorerState.activePane.value = 'left'
+
+    // Update tab store state
     tabsStore.activePinnedIndex = null
+
+    // Update all related state for the preview tab
     activateTabFromState(tabsStore.previewTab)
   }
 }
@@ -579,22 +576,21 @@ async function handlePickFromBreadcrumb(o: {
 }
 
 function handleBreadcrumbNavigate(payload: { level: 'database' | 'schema' | 'type' | 'name' }) {
-  if (
-    explorerState.activePane.value === 'right' &&
-    (splitPane.splitMeta.value || splitPane.splitDatabaseName.value)
-  ) {
+  if (explorerState.activePane.value === 'right' && splitViewStore.splitContent) {
+    // For right pane navigation, clear split content based on level
     if (payload.level === 'database') {
-      splitPane.splitSchemaName.value = null
-      splitPane.splitObjectType.value = null
-      splitPane.splitObjectName.value = null
-      splitPane.splitMeta.value = null
-    } else if (payload.level === 'schema') {
-      splitPane.splitObjectType.value = null
-      splitPane.splitObjectName.value = null
-      splitPane.splitMeta.value = null
-    } else if (payload.level === 'type') {
-      splitPane.splitObjectName.value = null
-      splitPane.splitMeta.value = null
+      splitViewStore.clearSplit()
+    } else if (splitViewStore.splitContent.type === 'database') {
+      const content = splitViewStore.splitContent
+      if (payload.level === 'schema') {
+        // Keep database and schema, clear object
+        if (content.schema) {
+          splitViewStore.clearSplit()
+        }
+      } else if (payload.level === 'type') {
+        // Clear object selection
+        splitViewStore.clearSplit()
+      }
     }
     return
   }
@@ -620,8 +616,8 @@ function handleBreadcrumbNavigate(payload: { level: 'database' | 'schema' | 'typ
 // Tab change handlers
 function onLeftTabChange(t: 'data' | 'structure') {
   tabsStore.syncedDefaultView = t
-  if (tabsStore.linkTabs && splitPane.splitMeta.value) {
-    splitPane.splitDefaultTab.value = t
+  if (tabsStore.linkTabs && splitViewStore.splitContent) {
+    splitViewStore.setDefaultTab(t)
   }
 }
 
@@ -674,9 +670,13 @@ function initializeCurrentConnection() {
 function showDiagramForActiveDatabase() {
   const isRight = explorerState.activePane.value === 'right'
   const connId = isRight
-    ? splitPane.splitConnectionId.value || explorerState.currentConnectionId.value
+    ? splitViewStore.splitContent?.connectionId || explorerState.currentConnectionId.value
     : explorerState.currentConnectionId.value
-  const db = isRight ? splitPane.splitDatabaseName.value : explorerState.selectedDatabaseName.value
+  const db = isRight
+    ? (splitViewStore.splitContent?.type === 'database'
+        ? splitViewStore.splitContent.database
+        : null) || explorerState.selectedDatabaseName.value
+    : explorerState.selectedDatabaseName.value
   if (!connId || !db) return
   handleShowDiagram({ connectionId: connId, database: db })
 }

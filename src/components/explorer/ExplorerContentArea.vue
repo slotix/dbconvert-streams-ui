@@ -32,7 +32,8 @@
       >
         <template #left>
           <div v-if="selectedMeta">
-            <DatabaseObjectContainer
+            <ObjectContainer
+              object-type="database"
               :connection-id="connectionId"
               :table-meta="selectedMeta"
               :is-view="false"
@@ -44,9 +45,10 @@
             />
           </div>
           <div v-else-if="selectedFileEntry">
-            <FileObjectContainer
-              :entry="selectedFileEntry"
-              :metadata="selectedFileMetadata"
+            <ObjectContainer
+              object-type="file"
+              :file-entry="selectedFileEntry"
+              :file-metadata="selectedFileMetadata"
               :connection-id="connectionId"
               :default-tab="selectedDefaultTab || undefined"
               @tab-change="$emit('left-tab-change', $event)"
@@ -59,7 +61,8 @@
 
         <template #right>
           <div v-if="splitViewStore.splitContent?.type === 'database'">
-            <DatabaseObjectContainer
+            <ObjectContainer
+              object-type="database"
               :connection-id="connectionId"
               :table-meta="splitViewStore.splitContent.meta"
               :is-view="false"
@@ -71,9 +74,10 @@
             />
           </div>
           <div v-else-if="splitViewStore.splitContent?.type === 'file'">
-            <FileObjectContainer
-              :entry="splitViewStore.splitContent.entry"
-              :metadata="splitViewStore.splitContent.metadata || null"
+            <ObjectContainer
+              object-type="file"
+              :file-entry="splitViewStore.splitContent.entry"
+              :file-metadata="splitViewStore.splitContent.metadata || null"
               :connection-id="connectionId"
               :default-tab="undefined"
               @tab-change="$emit('right-tab-change', $event)"
@@ -83,7 +87,8 @@
 
         <template #single>
           <div v-if="selectedMeta">
-            <DatabaseObjectContainer
+            <ObjectContainer
+              object-type="database"
               :connection-id="connectionId"
               :table-meta="selectedMeta"
               :is-view="false"
@@ -95,9 +100,10 @@
             />
           </div>
           <div v-else-if="selectedFileEntry">
-            <FileObjectContainer
-              :entry="selectedFileEntry"
-              :metadata="selectedFileMetadata"
+            <ObjectContainer
+              object-type="file"
+              :file-entry="selectedFileEntry"
+              :file-metadata="selectedFileMetadata"
               :connection-id="connectionId"
               :default-tab="selectedDefaultTab || undefined"
               @tab-change="$emit('left-tab-change', $event)"
@@ -120,9 +126,8 @@ import { useSplitViewStore } from '@/stores/splitView'
 import ConnectionDetailsPanel from '@/components/database/ConnectionDetailsPanel.vue'
 import DatabaseOverviewPanel from '@/components/database/DatabaseOverviewPanel.vue'
 import DiagramView from '@/components/database/DiagramView.vue'
-import DatabaseObjectContainer from '@/components/database/DatabaseObjectContainer.vue'
-import FileObjectContainer from '@/components/files/FileObjectContainer.vue'
 import ExplorerSplitPane from './ExplorerSplitPane.vue'
+import ObjectContainer from '@/components/common/ObjectContainer.vue'
 import type { SQLTableMeta, SQLViewMeta } from '@/types/metadata'
 import type { FileSystemEntry } from '@/api/fileSystem'
 import type { FileMetadata } from '@/types/files'
