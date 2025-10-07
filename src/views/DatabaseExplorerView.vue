@@ -165,33 +165,11 @@ function handleOpenFromTree(payload: {
     tabsStore.defaultActiveView = splitContent.defaultTab
   }
 
-  const desiredPinned = payload.mode === 'pinned' || settingAlwaysOpenNewTab()
-  if (desiredPinned) {
-    const initialView = (payload.defaultTab ||
-      (tabsStore.linkTabs ? tabsStore.defaultActiveView || 'data' : 'data')) as 'structure' | 'data'
-
-    tabsStore.addDatabaseTab({
-      connectionId: payload.connectionId,
-      database: payload.database,
-      schema: payload.schema,
-      name: payload.name,
-      type: payload.type,
-      meta: payload.meta,
-      viewTab: initialView
-    })
-
-    const activeTab =
-      tabsStore.activePinnedIndex !== null
-        ? tabsStore.pinnedTabs[tabsStore.activePinnedIndex]
-        : null
-    if (activeTab) {
-      activateTabFromState(activeTab)
-    }
-  } else {
-    const initialView = (payload.defaultTab ||
-      (tabsStore.linkTabs ? tabsStore.defaultActiveView || 'data' : 'data')) as 'structure' | 'data'
-
-    const previewTab = {
+  // Use unified tab creation logic
+  createOrActivateTab({
+    mode: payload.mode,
+    defaultTab: payload.defaultTab,
+    tabData: {
       id: `preview:${payload.connectionId}:${payload.database || ''}:${payload.schema || ''}:${payload.name}:${payload.type || ''}`,
       connectionId: payload.connectionId,
       database: payload.database,
@@ -200,14 +178,20 @@ function handleOpenFromTree(payload: {
       type: payload.type,
       meta: payload.meta,
       tabType: 'database' as const,
-      pinned: false,
-      viewTab: initialView
+      pinned: false
+    },
+    addTabFn: () => {
+      tabsStore.addDatabaseTab({
+        connectionId: payload.connectionId,
+        database: payload.database,
+        schema: payload.schema,
+        name: payload.name,
+        type: payload.type,
+        meta: payload.meta,
+        viewTab: payload.defaultTab
+      })
     }
-
-    tabsStore.setPreviewTab(previewTab)
-    tabsStore.activePinnedIndex = null
-    tabsStore.defaultActiveView = initialView
-  }
+  })
 }
 
 function handleOpenFile(payload: {
@@ -245,30 +229,12 @@ function handleOpenFile(payload: {
   fileExplorerStore.setSelectedPath(payload.connectionId, payload.path)
 
   explorerState.activePane.value = 'left'
-  const desiredPinned = payload.mode === 'pinned' || settingAlwaysOpenNewTab()
 
-  if (desiredPinned) {
-    tabsStore.addFileTab({
-      connectionId: payload.connectionId,
-      filePath: payload.path,
-      name: payload.entry.name,
-      fileType: payload.entry.type,
-      fileEntry: payload.entry,
-      viewTab: (payload.defaultTab ||
-        (tabsStore.linkTabs ? tabsStore.defaultActiveView || 'data' : 'data')) as
-        | 'structure'
-        | 'data'
-    })
-
-    const activeTab =
-      tabsStore.activePinnedIndex !== null
-        ? tabsStore.pinnedTabs[tabsStore.activePinnedIndex]
-        : null
-    if (activeTab) {
-      activateTabFromState(activeTab)
-    }
-  } else {
-    const fileTab = {
+  // Use unified tab creation logic
+  createOrActivateTab({
+    mode: payload.mode,
+    defaultTab: payload.defaultTab,
+    tabData: {
       id: `preview:file:${payload.path}`,
       connectionId: payload.connectionId,
       name: payload.entry.name,
@@ -276,17 +242,19 @@ function handleOpenFile(payload: {
       fileEntry: payload.entry,
       tabType: 'file' as const,
       pinned: false,
-      defaultTab: payload.defaultTab,
-      viewTab: (payload.defaultTab ||
-        (tabsStore.linkTabs ? tabsStore.defaultActiveView || 'data' : 'data')) as
-        | 'structure'
-        | 'data'
+      defaultTab: payload.defaultTab
+    },
+    addTabFn: () => {
+      tabsStore.addFileTab({
+        connectionId: payload.connectionId,
+        filePath: payload.path,
+        name: payload.entry.name,
+        fileType: payload.entry.type,
+        fileEntry: payload.entry,
+        viewTab: payload.defaultTab
+      })
     }
-
-    tabsStore.setPreviewTab(fileTab)
-    tabsStore.activePinnedIndex = null
-    activateTabFromState(fileTab)
-  }
+  })
 }
 
 function handleShowDiagram(payload: { connectionId: string; database: string }) {
@@ -377,6 +345,50 @@ function handleRequestFileEntries(payload: { connectionId: string }) {
 
 function settingAlwaysOpenNewTab(): boolean {
   return alwaysOpenNewTab.value
+}
+
+// Unified tab creation/activation logic for both database and file tabs
+function createOrActivateTab(payload: {
+  mode: 'preview' | 'pinned'
+  defaultTab?: 'structure' | 'data'
+  tabData: Omit<
+    {
+      id: string
+      connectionId: string
+      name: string
+      tabType: 'database' | 'file'
+      pinned: boolean
+      viewTab?: 'structure' | 'data'
+      [key: string]: unknown
+    },
+    'viewTab'
+  > // EditorTab-like data without viewTab (will be set dynamically)
+  addTabFn: () => void // Function to add pinned tab
+}) {
+  const desiredPinned = payload.mode === 'pinned' || settingAlwaysOpenNewTab()
+  const initialView = (payload.defaultTab ||
+    (tabsStore.linkTabs ? tabsStore.defaultActiveView || 'data' : 'data')) as 'structure' | 'data'
+
+  if (desiredPinned) {
+    // Add as pinned tab (includes viewTab setting)
+    payload.addTabFn()
+
+    // Activate the newly added tab
+    const activeTab =
+      tabsStore.activePinnedIndex !== null
+        ? tabsStore.pinnedTabs[tabsStore.activePinnedIndex]
+        : null
+    if (activeTab) {
+      activateTabFromState(activeTab)
+    }
+  } else {
+    // Set as preview tab with viewTab
+    const tabDataWithView = { ...payload.tabData, viewTab: initialView }
+    tabsStore.setPreviewTab(tabDataWithView as any)
+    tabsStore.activePinnedIndex = null
+    tabsStore.defaultActiveView = initialView
+    activateTabFromState(tabDataWithView as any)
+  }
 }
 
 function activateTabFromState(tab: {
