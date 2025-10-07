@@ -105,12 +105,14 @@ const tabs = computed<TabItem[]>(() => {
           ? {
               viewMeta: props.tableMeta as SQLViewMeta,
               connectionId: props.connectionId,
-              connectionType: props.connectionType
+              connectionType: props.connectionType,
+              objectKey: objectKey.value
             }
           : {
               tableMeta: props.tableMeta as SQLTableMeta,
               connectionId: props.connectionId,
-              connectionType: props.connectionType
+              connectionType: props.connectionType,
+              objectKey: objectKey.value
             }
       }
     ]

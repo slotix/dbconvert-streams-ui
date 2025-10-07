@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { type SQLViewMeta } from '@/types/metadata'
 import ViewDefinitionView from './ViewDefinitionView.vue'
-import { ref, nextTick, computed } from 'vue'
+import { ref, nextTick, computed, watch } from 'vue'
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/vue'
+import { useObjectTabStateStore } from '@/stores/objectTabState'
 
 // Define brand colors as constants for consistency (matching DatabaseDiagramD3.vue)
 // (colors handled elsewhere)
@@ -11,14 +12,36 @@ const props = defineProps<{
   viewMeta: SQLViewMeta
   connectionId: string
   connectionType: string
+  objectKey: string
 }>()
 
 const emit = defineEmits<{
   (e: 'refresh-metadata'): void
 }>()
 
+// Use the Pinia store for sub-tab state management
+const tabStateStore = useObjectTabStateStore()
+
 const isLoading = ref(false)
+
+// Replace local activeTabIndex with store-based state management
 const activeTabIndex = ref(0)
+
+// Watch for objectKey changes and update sub-tab state accordingly
+watch(
+  () => props.objectKey,
+  (newKey) => {
+    const savedState = tabStateStore.getSubTabState(newKey)
+    activeTabIndex.value = savedState ?? 0
+  },
+  { immediate: true }
+)
+
+// Handle sub-tab changes and save to store
+function onSubTabChange(index: number) {
+  activeTabIndex.value = index
+  tabStateStore.setSubTabState(props.objectKey, index)
+}
 
 function handleRefresh() {
   isLoading.value = true
@@ -93,7 +116,8 @@ function getColumnType(column: SQLColumnMeta) {
   >
     <!-- Header removed; DatabaseObjectContainer renders tabs, title, and actions -->
 
-    <TabGroup v-model="activeTabIndex" as="div">
+    <!-- HeadlessUI Tab Implementation with Store Integration -->
+    <TabGroup :selectedIndex="activeTabIndex" as="div" @change="onSubTabChange">
       <TabList class="flex space-x-1 border-b border-gray-200 px-4">
         <Tab v-for="tab in tabs" :key="tab.name" v-slot="{ selected }" as="template">
           <button

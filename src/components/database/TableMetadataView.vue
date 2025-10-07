@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed, ref, nextTick } from 'vue'
+import { computed, ref, nextTick, watch } from 'vue'
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/vue'
 import { KeyIcon, LinkIcon } from '@heroicons/vue/24/outline'
 import { type SQLTableMeta, type SQLColumnMeta } from '@/types/metadata'
+import { useObjectTabStateStore } from '@/stores/objectTabState'
 import DdlView from './DdlView.vue'
 
 // Define brand colors as constants for consistency (matching DatabaseDiagramD3.vue)
@@ -22,11 +23,15 @@ const props = defineProps<{
   tableMeta: SQLTableMeta
   connectionId: string
   connectionType: string
+  objectKey: string
 }>()
 
 const emit = defineEmits<{
   (e: 'refresh-metadata'): void
 }>()
+
+// Use the Pinia store for sub-tab state management
+const tabStateStore = useObjectTabStateStore()
 
 const isLoading = ref(false)
 
@@ -106,8 +111,24 @@ const tabs = computed(() => {
   return baseTabs
 })
 
-// Add active tab tracking
+// Replace local activeTabIndex with store-based state management
 const activeTabIndex = ref(0)
+
+// Watch for objectKey changes and update sub-tab state accordingly
+watch(
+  () => props.objectKey,
+  (newKey) => {
+    const savedState = tabStateStore.getSubTabState(newKey)
+    activeTabIndex.value = savedState ?? 0
+  },
+  { immediate: true }
+)
+
+// Handle sub-tab changes and save to store
+function onSubTabChange(index: number) {
+  activeTabIndex.value = index
+  tabStateStore.setSubTabState(props.objectKey, index)
+}
 
 function getColumnType(column: SQLColumnMeta) {
   let type = column.dataType
@@ -145,7 +166,8 @@ function getColumnDefault(column: SQLColumnMeta) {
   >
     <!-- Header removed; DatabaseObjectContainer renders tabs, title, and actions -->
 
-    <TabGroup v-model="activeTabIndex" as="div">
+    <!-- HeadlessUI Tab Implementation with Store Integration -->
+    <TabGroup :selectedIndex="activeTabIndex" as="div" @change="onSubTabChange">
       <TabList class="flex space-x-1 border-b border-gray-200 px-4">
         <Tab v-for="tab in tabs" :key="tab.name" v-slot="{ selected }" as="template">
           <button
