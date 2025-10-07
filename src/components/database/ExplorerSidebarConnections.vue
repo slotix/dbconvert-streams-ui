@@ -374,6 +374,14 @@ watch(
     // Use the active connection ID from the store (synchronous, always up-to-date)
     const connId = navigationStore.activeConnectionId
     if (!connId) return
+
+    // Skip database operations for file connections
+    if (treeLogic.isFileConnection(connId)) {
+      navigationStore.expandConnection(connId)
+      return
+    }
+
+    // Database connection operations
     navigationStore.expandConnection(connId)
     await navigationStore.ensureDatabases(connId)
 
