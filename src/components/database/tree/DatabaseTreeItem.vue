@@ -34,9 +34,26 @@ const props = defineProps<{
   metadataLoaded: boolean
 }>()
 
-// Inject search query and caret class from parent
+// Inject search query, caret class, and selection from parent
 const searchQuery = inject<ComputedRef<string>>('treeSearchQuery')!
 const caretClass = inject<string>('treeCaretClass')!
+const treeSelection = inject<
+  ComputedRef<{
+    database?: string
+    schema?: string
+    type?: 'table' | 'view' | null
+    name?: string | null
+  }>
+>('treeSelection')!
+
+// Check if this database is currently selected (database selected, but no schema/table)
+const isSelected = computed(() => {
+  return (
+    treeSelection.value.database === props.database.name &&
+    !treeSelection.value.schema &&
+    !treeSelection.value.name
+  )
+})
 
 const emit = defineEmits<{
   (e: 'toggle-database'): void
@@ -155,7 +172,10 @@ function handleFlatObjectContextMenu(payload: {
 <template>
   <div>
     <div
-      class="flex items-center px-2 py-1.5 text-sm text-gray-700 rounded-md hover:bg-gray-100 cursor-pointer select-none"
+      :class="[
+        'flex items-center px-2 py-1.5 text-sm text-gray-700 rounded-md hover:bg-gray-100 cursor-pointer select-none',
+        isSelected ? 'bg-sky-50 ring-1 ring-sky-200' : ''
+      ]"
       :data-explorer-db="`${connectionId}:${database.name}`"
       @click="$emit('select-database', { connectionId, database: database.name })"
       @contextmenu.stop.prevent="handleDatabaseContextMenu"

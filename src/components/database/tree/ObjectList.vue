@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { inject } from 'vue'
+import { inject, computed } from 'vue'
 import type { ComputedRef } from 'vue'
 import ObjectIcon from '@/components/common/ObjectIcon.vue'
 import { highlightParts as splitHighlight } from '@/utils/highlight'
@@ -17,8 +17,26 @@ const props = defineProps<{
   tableSizes?: Record<string, number> // Map of table name -> size in bytes
 }>()
 
-// Inject search query from parent
+// Inject search query and selection from parent
 const searchQuery = inject<ComputedRef<string>>('treeSearchQuery')!
+const treeSelection = inject<
+  ComputedRef<{
+    database?: string
+    schema?: string
+    type?: 'table' | 'view' | null
+    name?: string | null
+  }>
+>('treeSelection')!
+
+// Check if an item is currently selected
+const isItemSelected = (itemName: string) => {
+  return (
+    treeSelection.value.database === props.database &&
+    treeSelection.value.schema === (props.schema || undefined) &&
+    treeSelection.value.type === props.objectType &&
+    treeSelection.value.name === itemName
+  )
+}
 
 const emit = defineEmits<{
   (e: 'click', payload: { name: string; mode: 'preview' }): void
@@ -69,7 +87,10 @@ function getTableSize(tableName: string): string | null {
   <div
     v-for="item in filteredItems()"
     :key="item"
-    class="flex items-center justify-between px-2 py-1.5 text-sm rounded-md hover:bg-gray-100 cursor-pointer select-none group"
+    :class="[
+      'flex items-center justify-between px-2 py-1.5 text-sm rounded-md hover:bg-gray-100 cursor-pointer select-none group',
+      isItemSelected(item) ? 'bg-sky-50 ring-1 ring-sky-200' : ''
+    ]"
     :data-explorer-obj="`${explorerObjPrefix}:${objectType}:${item}`"
     @click.stop="handleClick(item)"
     @dblclick.stop="handleDblClick(item)"

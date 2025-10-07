@@ -125,6 +125,8 @@ export const useTabsStore = defineStore('tabs', () => {
     filePath: string
     name: string
     fileType?: string
+    fileEntry?: FileSystemEntry
+    viewTab?: 'structure' | 'data'
   }) {
     const tab: EditorTab = {
       id: generateTabKey({
@@ -134,14 +136,18 @@ export const useTabsStore = defineStore('tabs', () => {
       } as EditorTab),
       ...payload,
       tabType: 'file',
-      pinned: true
+      pinned: true,
+      viewTab: payload.viewTab || 'data'
     }
 
     const key = generateTabKey(tab)
     const existingIndex = pinnedTabs.value.findIndex((t) => generateTabKey(t) === key)
 
     if (existingIndex >= 0) {
-      // Activate existing tab
+      // Activate existing tab and update fileEntry if provided
+      if (payload.fileEntry) {
+        pinnedTabs.value[existingIndex].fileEntry = payload.fileEntry
+      }
       activePinnedIndex.value = existingIndex
     } else {
       // Add new tab

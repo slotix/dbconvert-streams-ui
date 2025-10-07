@@ -80,9 +80,13 @@ const isLoadingConnections = ref(false)
 const loadError = ref<string | null>(null)
 const searchQuery = computed(() => props.searchQuery || '')
 
-// Provide search query and caret class to child components (avoid prop drilling)
+// Provide search query, caret class, and selection info to child components (avoid prop drilling)
 provide('treeSearchQuery', searchQuery)
 provide('treeCaretClass', 'w-[16px] h-[16px] shrink-0 flex-none text-gray-400 mr-1.5')
+provide(
+  'treeSelection',
+  computed(() => props.selected || {})
+)
 
 // Computed for context menu
 const canCopyDDL = computed(() => {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { inject } from 'vue'
+import { inject, computed } from 'vue'
 import type { ComputedRef } from 'vue'
 import { ChevronRightIcon, ChevronDownIcon } from '@heroicons/vue/24/outline'
 import ObjectList from './ObjectList.vue'
@@ -21,9 +21,26 @@ const props = defineProps<{
   tableSizes?: Record<string, number>
 }>()
 
-// Inject search query and caret class from parent
+// Inject search query, caret class, and selection from parent
 const searchQuery = inject<ComputedRef<string>>('treeSearchQuery')!
 const caretClass = inject<string>('treeCaretClass')!
+const treeSelection = inject<
+  ComputedRef<{
+    database?: string
+    schema?: string
+    type?: 'table' | 'view' | null
+    name?: string | null
+  }>
+>('treeSelection')!
+
+// Check if this schema is currently selected (schema selected, but no table/view)
+const isSelected = computed(() => {
+  return (
+    treeSelection.value.database === props.database &&
+    treeSelection.value.schema === props.schema.name &&
+    !treeSelection.value.name
+  )
+})
 
 const emit = defineEmits<{
   (e: 'toggle'): void
@@ -93,7 +110,10 @@ function handleObjectContextMenu(payload: {
 <template>
   <div>
     <div
-      class="flex items-center px-2 py-1 text-sm text-gray-700 rounded-md hover:bg-gray-100 cursor-pointer select-none"
+      :class="[
+        'flex items-center px-2 py-1 text-sm text-gray-700 rounded-md hover:bg-gray-100 cursor-pointer select-none',
+        isSelected ? 'bg-sky-50 ring-1 ring-sky-200' : ''
+      ]"
       :data-explorer-schema="`${connectionId}:${database}:${schema.name}`"
       @click="$emit('toggle')"
       @contextmenu.stop.prevent="handleSchemaContextMenu"

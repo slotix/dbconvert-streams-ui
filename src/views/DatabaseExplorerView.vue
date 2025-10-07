@@ -252,7 +252,12 @@ function handleOpenFile(payload: {
       connectionId: payload.connectionId,
       filePath: payload.path,
       name: payload.entry.name,
-      fileType: payload.entry.type
+      fileType: payload.entry.type,
+      fileEntry: payload.entry,
+      viewTab: (payload.defaultTab ||
+        (tabsStore.linkTabs ? tabsStore.defaultActiveView || 'data' : 'data')) as
+        | 'structure'
+        | 'data'
     })
 
     const activeTab =
