@@ -47,6 +47,7 @@ const sidebar = useSidebar()
 // Connection search and filtering
 const connectionSearch = ref('')
 const focusConnectionId = ref<string | null>(null)
+
 const explorerHeaderRef = ref<InstanceType<typeof ExplorerHeader> | null>(null)
 
 // Recent connections management
@@ -93,15 +94,9 @@ function onPromoteRightSplit() {
       name: databaseContent.objectName,
       meta: databaseContent.meta
     })
-    if (databaseContent.defaultTab) {
-      tabsStore.defaultActiveView = databaseContent.defaultTab
-    }
   } else if (fileContent) {
     explorerState.setFileSelection(fileContent.entry)
     explorerState.selectedFileMetadata.value = fileContent.metadata || null
-    if (fileContent.defaultTab) {
-      tabsStore.defaultActiveView = fileContent.defaultTab
-    }
   }
   splitViewStore.clearSplit()
 }
@@ -158,10 +153,6 @@ function handleOpenFromTree(payload: {
   })
 
   explorerState.activePane.value = 'left'
-  const splitContent = splitViewStore.databaseContent
-  if (tabsStore.linkTabs && splitContent && splitContent.defaultTab) {
-    tabsStore.defaultActiveView = splitContent.defaultTab
-  }
 
   // Use unified tab creation logic
   createOrActivateTab({
@@ -216,9 +207,7 @@ function handleOpenFile(payload: {
     splitViewStore.setSplitFileContent({
       connectionId: payload.connectionId,
       entry: payload.entry,
-      defaultTab: tabsStore.linkTabs
-        ? (tabsStore.defaultActiveView as 'structure' | 'data') || 'data'
-        : payload.defaultTab || 'data'
+      defaultTab: payload.defaultTab || 'data'
     })
     explorerState.activePane.value = 'right'
     return
@@ -368,8 +357,7 @@ function createOrActivateTab(payload: {
   addTabFn: () => void // Function to add pinned tab
 }) {
   const desiredPinned = payload.mode === 'pinned' || settingAlwaysOpenNewTab()
-  const initialView = (payload.defaultTab ||
-    (tabsStore.linkTabs ? tabsStore.defaultActiveView || 'data' : 'data')) as 'structure' | 'data'
+  const initialView = (payload.defaultTab || 'data') as 'structure' | 'data'
 
   if (desiredPinned) {
     // Add as pinned tab (includes viewTab setting)
@@ -388,7 +376,6 @@ function createOrActivateTab(payload: {
     const tabDataWithView = { ...payload.tabData, viewTab: initialView } as ExplorerTab
     tabsStore.setPreviewTab(tabDataWithView)
     tabsStore.activePinnedIndex = null
-    tabsStore.defaultActiveView = initialView
     activateTabFromState(tabDataWithView)
   }
 }
@@ -425,9 +412,6 @@ function activateTabFromState(tab: ExplorerTab) {
       name: tab.name,
       meta: tab.meta
     })
-
-    // Update default active view
-    tabsStore.defaultActiveView = (tab.viewTab || tab.defaultTab || 'data') as 'structure' | 'data'
 
     if (tab.database) {
       schemaStore.setConnectionId(tab.connectionId)
@@ -613,17 +597,13 @@ function handleBreadcrumbNavigate(payload: { level: 'database' | 'schema' | 'typ
   // Route is auto-updated by watcher based on state changes
 }
 
-// Tab change handlers
-function onLeftTabChange(t: 'data' | 'structure') {
-  tabsStore.syncedDefaultView = t
-  if (tabsStore.linkTabs && splitViewStore.splitContent) {
-    splitViewStore.setDefaultTab(t)
-  }
+// Tab change handlers - now purely local, no global state updates
+function onLeftTabChange(_t: 'data' | 'structure') {
+  // Do nothing - each ObjectContainer manages its own state
 }
 
-function onRightTabChange(t: 'data' | 'structure') {
-  if (!tabsStore.linkTabs) return
-  tabsStore.syncedDefaultView = t
+function onRightTabChange(_t: 'data' | 'structure') {
+  // Do nothing - each ObjectContainer manages its own state
 }
 
 // Helper functions
@@ -928,10 +908,6 @@ onMounted(() => {
                   </div>
                 </div>
                 <div class="flex items-center gap-2">
-                  <label class="flex items-center gap-1 text-xs text-gray-600 select-none">
-                    <input v-model="tabsStore.linkTabs" type="checkbox" />
-                    Link tabs
-                  </label>
                   <button
                     v-if="
                       explorerState.activeDatabaseName.value && !explorerState.showDiagram.value
@@ -987,8 +963,6 @@ onMounted(() => {
               :selected-meta="explorerState.selectedMeta.value"
               :selected-file-entry="explorerState.selectedFileEntry.value"
               :selected-file-metadata="explorerState.selectedFileMetadata.value"
-              :selected-default-tab="tabsStore.defaultActiveView"
-              :link-tabs="tabsStore.linkTabs"
               :file-entries="currentFileEntries"
               @edit-connection="onEditConnection"
               @clone-connection="onCloneConnection"

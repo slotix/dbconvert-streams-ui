@@ -36,9 +36,6 @@ export const useTabsStore = defineStore('tabs', () => {
     deserializer: (v) => v === 'true'
   })
 
-  // Default active view ref (not persisted, but synced when linkTabs is true)
-  const defaultActiveView = ref<'structure' | 'data'>('data')
-
   // Current active tab
   const activeTab = computed(() => {
     return activePinnedIndex.value !== null
@@ -51,29 +48,18 @@ export const useTabsStore = defineStore('tabs', () => {
     return activeTab.value?.connectionId || null
   })
 
-  // Synced default view - updates all tabs when linkTabs is true
-  const syncedDefaultView = computed({
-    get: () => defaultActiveView.value,
-    set: (newView: 'structure' | 'data') => {
-      defaultActiveView.value = newView
-      if (linkTabs.value) {
-        // Update all pinned tabs
-        pinnedTabs.value.forEach((tab) => {
-          tab.viewTab = newView
-        })
-        // Update preview tab
-        if (previewTab.value) {
-          previewTab.value.viewTab = newView
-        }
-      } else {
-        // Only update the active tab when tabs are not linked
-        if (activePinnedIndex.value !== null && pinnedTabs.value[activePinnedIndex.value]) {
-          pinnedTabs.value[activePinnedIndex.value].viewTab = newView
-        } else if (previewTab.value) {
-          previewTab.value.viewTab = newView
-        }
-      }
-    }
+  // Get the most recent view tab from existing tabs (for linkTabs feature)
+  const getMostRecentViewTab = computed(() => {
+    // Look at all tabs to find the most recently used view
+    const allTabs = [...pinnedTabs.value]
+    if (previewTab.value) allTabs.push(previewTab.value)
+
+    // Find tabs with viewTab set and return the most common one
+    const viewTabs = allTabs.map((tab) => tab.viewTab).filter(Boolean)
+    if (viewTabs.length === 0) return 'data'
+
+    // Return the last used one, or 'data' as fallback
+    return viewTabs[viewTabs.length - 1] || 'data'
   })
 
   // Tab key generation for deduplication
@@ -129,6 +115,8 @@ export const useTabsStore = defineStore('tabs', () => {
   function updateActiveTabView(viewTab: 'structure' | 'data') {
     if (activePinnedIndex.value !== null && pinnedTabs.value[activePinnedIndex.value]) {
       pinnedTabs.value[activePinnedIndex.value].viewTab = viewTab
+    } else if (previewTab.value) {
+      previewTab.value.viewTab = viewTab
     }
   }
 
@@ -150,12 +138,11 @@ export const useTabsStore = defineStore('tabs', () => {
     previewTab,
     activePinnedIndex,
     linkTabs,
-    defaultActiveView,
+    getMostRecentViewTab,
 
     // Computed
     activeTab,
     activeConnectionId,
-    syncedDefaultView,
 
     // Actions
     generateTabKey,

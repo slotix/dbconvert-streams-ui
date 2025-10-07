@@ -1,6 +1,7 @@
 import { useTabsStore } from '@/stores/tabs'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { useFileExplorerStore } from '@/stores/fileExplorer'
+import { useObjectTabMemory } from './useObjectTabMemory'
 import type { SQLTableMeta, SQLViewMeta } from '@/types/metadata'
 import type { FileSystemEntry } from '@/api/fileSystem'
 import type { FileMetadata } from '@/types/files'
@@ -32,11 +33,25 @@ export interface OpenFileParams {
  * Unified composable for tab actions (open, activate, close) with type-aware logic
  */
 export function useTabActions() {
+  const tabMemory = useObjectTabMemory()
   const tabsStore = useTabsStore()
   const navigationStore = useExplorerNavigationStore()
   const fileExplorerStore = useFileExplorerStore()
 
   function createDatabaseTab(params: OpenDatabaseObjectParams): Omit<ExplorerTab, 'pinned'> {
+    // Check for remembered preference first
+    let preferredTab = tabMemory.getPreferredTab(
+      params.connectionId,
+      'database',
+      { database: params.database, schema: params.schema, name: params.name },
+      params.defaultTab
+    )
+
+    // If linkTabs is enabled and no specific preference, inherit from existing tabs
+    if (!params.defaultTab && tabsStore.linkTabs && preferredTab === 'data') {
+      preferredTab = tabsStore.getMostRecentViewTab
+    }
+
     return {
       id: `${params.mode}:${params.connectionId}:${params.database || ''}:${params.schema || ''}:${params.name}:${params.type || ''}`,
       connectionId: params.connectionId,
@@ -47,11 +62,24 @@ export function useTabActions() {
       meta: params.meta,
       tabType: 'database',
       defaultTab: params.defaultTab,
-      viewTab: params.defaultTab || (tabsStore.linkTabs ? tabsStore.defaultActiveView : 'data')
+      viewTab: preferredTab
     }
   }
 
   function createFileTab(params: OpenFileParams): Omit<ExplorerTab, 'pinned'> {
+    // Check for remembered preference first
+    let preferredTab = tabMemory.getPreferredTab(
+      params.connectionId,
+      'file',
+      { filePath: params.path },
+      params.defaultTab
+    )
+
+    // If linkTabs is enabled and no specific preference, inherit from existing tabs
+    if (!params.defaultTab && tabsStore.linkTabs && preferredTab === 'data') {
+      preferredTab = tabsStore.getMostRecentViewTab
+    }
+
     return {
       id: `${params.mode}:file:${params.path}`,
       connectionId: params.connectionId,
@@ -61,7 +89,7 @@ export function useTabActions() {
       fileType: params.entry.type,
       tabType: 'file',
       defaultTab: params.defaultTab,
-      viewTab: params.defaultTab || (tabsStore.linkTabs ? tabsStore.defaultActiveView : 'data')
+      viewTab: preferredTab
     }
   }
 
@@ -77,7 +105,6 @@ export function useTabActions() {
       const previewTab: ExplorerTab = { ...tab, pinned: false }
       tabsStore.setPreviewTab(previewTab)
       tabsStore.activePinnedIndex = null
-      tabsStore.defaultActiveView = tab.viewTab as 'structure' | 'data'
     }
 
     return tab
@@ -95,7 +122,6 @@ export function useTabActions() {
       const previewTab: ExplorerTab = { ...tab, pinned: false }
       tabsStore.setPreviewTab(previewTab)
       tabsStore.activePinnedIndex = null
-      tabsStore.defaultActiveView = tab.viewTab as 'structure' | 'data'
     }
 
     return tab
@@ -111,9 +137,6 @@ export function useTabActions() {
         fileExplorerStore.setSelectedPath(tab.connectionId, tab.filePath)
       }
     }
-
-    // Update default active view
-    tabsStore.defaultActiveView = (tab.viewTab || tab.defaultTab || 'data') as 'structure' | 'data'
 
     return tab
   }

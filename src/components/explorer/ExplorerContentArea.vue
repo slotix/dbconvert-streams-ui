@@ -33,24 +33,23 @@
         <template #left>
           <div v-if="selectedMeta">
             <ObjectContainer
+              :key="`left-${selectedMeta.database}.${selectedMeta.schema || 'default'}.${selectedMeta.name}`"
               object-type="database"
               :connection-id="connectionId"
               :table-meta="selectedMeta"
               :is-view="false"
               :connection-type="'sql'"
               :database="selectedMeta.database"
-              :default-tab="selectedDefaultTab || undefined"
-              :link-tabs="linkTabs"
               @tab-change="$emit('left-tab-change', $event)"
             />
           </div>
           <div v-else-if="selectedFileEntry">
             <ObjectContainer
+              :key="`left-${selectedFileEntry.path}`"
               object-type="file"
               :file-entry="selectedFileEntry"
               :file-metadata="selectedFileMetadata"
               :connection-id="connectionId"
-              :default-tab="selectedDefaultTab || undefined"
               @tab-change="$emit('left-tab-change', $event)"
             />
           </div>
@@ -68,8 +67,6 @@
               :is-view="false"
               :connection-type="'sql'"
               :database="splitViewStore.splitContent.meta.database"
-              :default-tab="undefined"
-              :link-tabs="linkTabs"
               @tab-change="$emit('right-tab-change', $event)"
             />
           </div>
@@ -79,7 +76,6 @@
               :file-entry="splitViewStore.splitContent.entry"
               :file-metadata="splitViewStore.splitContent.metadata || null"
               :connection-id="connectionId"
-              :default-tab="undefined"
               @tab-change="$emit('right-tab-change', $event)"
             />
           </div>
@@ -94,8 +90,6 @@
               :is-view="false"
               :connection-type="'sql'"
               :database="selectedMeta.database"
-              :default-tab="selectedDefaultTab || undefined"
-              :link-tabs="linkTabs"
               @tab-change="$emit('left-tab-change', $event)"
             />
           </div>
@@ -105,7 +99,6 @@
               :file-entry="selectedFileEntry"
               :file-metadata="selectedFileMetadata"
               :connection-id="connectionId"
-              :default-tab="selectedDefaultTab || undefined"
               @tab-change="$emit('left-tab-change', $event)"
             />
           </div>
@@ -142,8 +135,6 @@ interface Props {
   selectedMeta?: SQLTableMeta | SQLViewMeta | null
   selectedFileEntry?: FileSystemEntry | null
   selectedFileMetadata?: FileMetadata | null
-  selectedDefaultTab?: 'structure' | 'data' | null
-  linkTabs?: boolean
   fileEntries?: FileSystemEntry[]
 }
 
@@ -155,8 +146,6 @@ const props = withDefaults(defineProps<Props>(), {
   selectedMeta: null,
   selectedFileEntry: null,
   selectedFileMetadata: null,
-  selectedDefaultTab: null,
-  linkTabs: false,
   fileEntries: () => []
 })
 
