@@ -5,6 +5,7 @@ interface LogLevel {
   debug: 'debug'
   warn: 'warn'
   error: 'error'
+  sql: 'sql'
 }
 
 export interface SystemLog {
@@ -15,12 +16,6 @@ export interface SystemLog {
   source?: string
   nodeId?: string
   details?: Record<string, unknown>
-}
-
-interface DedupKey {
-  message: string
-  level: keyof LogLevel
-  sourceType: string
 }
 
 export const useLogsStore = defineStore('logs', {

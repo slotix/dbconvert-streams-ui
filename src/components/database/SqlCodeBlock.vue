@@ -1,7 +1,7 @@
 <!-- A reusable component for displaying SQL code with syntax highlighting -->
 <script setup lang="ts">
 import { format } from 'sql-formatter'
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import CopyButton from '@/components/common/CopyButton.vue'
 import { getFormattingOptions } from '@/components/database/sqlDialect'
 
@@ -10,12 +10,17 @@ const props = defineProps<{
   title?: string
   index?: number | string
   dialect: string
+  compact?: boolean
 }>()
-
-const isLoading = ref(false)
 
 const formattedCode = computed(() => {
   try {
+    // For compact mode, just return the code as-is (it's already properly formatted)
+    if (props.compact) {
+      return props.code
+    }
+
+    // For normal mode, use full formatting
     const options = getFormattingOptions(props.dialect)
     return format(props.code, options)
   } catch (error) {

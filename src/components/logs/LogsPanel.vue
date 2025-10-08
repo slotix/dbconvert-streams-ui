@@ -11,6 +11,7 @@ import {
   MinusIcon,
   InformationCircleIcon
 } from '@heroicons/vue/24/outline'
+import SqlConsoleView from './SqlConsoleView.vue'
 
 interface LogColumn {
   type: string
@@ -37,8 +38,13 @@ function formatTimestamp(timestamp: number): string {
   })
 }
 
-function getNodeType(source: string | undefined): string {
+function getNodeType(source: string | undefined, log?: SystemLog): string {
   if (!source) return 'system'
+
+  // Check if this is a SQL log - give it its own category
+  if (log && isSQLLog(log)) {
+    return 'sql'
+  }
 
   // If source contains a colon, extract the type part
   if (source.includes(':')) {
@@ -80,6 +86,8 @@ function getNodeId(source: string | undefined, log?: SystemLog): string {
 
 function getNodeColor(type: string): string {
   switch (type) {
+    case 'sql':
+      return 'text-purple-600'
     case 'api':
       return 'text-blue-600'
     case 'source':
@@ -87,14 +95,19 @@ function getNodeColor(type: string): string {
     case 'target':
       return 'text-cyan-600'
     case 'system':
-      return 'text-purple-600'
+      return 'text-gray-600'
     default:
       return 'text-gray-600'
   }
 }
 
-function getMessageTypeColor(log: SystemLog): string {
+function getMessageTypeColor(log: SystemLog, forceSQL = false): string {
   const msg = log?.message?.toLowerCase() || ''
+
+  // SQL queries (or when viewing SQL tab)
+  if (forceSQL || isSQLLog(log)) {
+    return 'bg-purple-50/80 border-l-4 border-purple-400'
+  }
 
   // Connection status messages
   if (msg.includes('connecting') || msg.includes('connected to')) {
@@ -174,8 +187,14 @@ function getMessageIconColor(log: SystemLog): string {
 const messageTypes = ['all', 'error & warning', 'progress & stats', 'info']
 const selectedMessageType = ref('all')
 
+// Check if log entry is a SQL query
+function isSQLLog(log: SystemLog): boolean {
+  return log.level === 'sql' || (log.source === 'database' && log.details?.query !== undefined)
+}
+
 const groupedLogs = computed(() => {
   const groups: Record<string, Record<string, SystemLog[]>> = {
+    sql: {},
     api: {},
     source: {},
     target: {},
@@ -185,7 +204,7 @@ const groupedLogs = computed(() => {
   // Group logs and sort them by timestamp (newest first)
   store.logs.forEach((log) => {
     const source = log.source || ''
-    const nodeType = getNodeType(source)
+    const nodeType = getNodeType(source, log)
     const nodeId = getNodeId(source, log)
 
     if (!groups[nodeType]) {
@@ -211,6 +230,11 @@ const groupedLogs = computed(() => {
 
 const nodeColumns = computed(() => {
   const columns: LogColumn[] = []
+
+  // Add SQL column first (most important)
+  if (Object.keys(groupedLogs.value['sql']).length > 0) {
+    columns.push({ type: 'sql', nodes: groupedLogs.value['sql'] })
+  }
 
   // Add API column
   if (Object.keys(groupedLogs.value['api']).length > 0) {
@@ -269,7 +293,7 @@ function getShortNodeId(id: string): string {
   return id.slice(0, 8)
 }
 
-const selectedTab = ref<string>('api')
+const selectedTab = ref<string>('sql')
 
 const tabs = computed(() => {
   return nodeColumns.value.map((col) => ({
@@ -389,6 +413,32 @@ watch(
   },
   { immediate: true }
 )
+
+// Copy SQL query to clipboard
+async function copyQuery(query: string) {
+  try {
+    await navigator.clipboard.writeText(query)
+  } catch (err) {
+    console.error('Failed to copy query:', err)
+  }
+}
+
+// Extract SQL metadata from log details
+function getSQLMetadata(log: SystemLog) {
+  if (!isSQLLog(log) || !log.details) return null
+
+  return {
+    query: log.details.query as string,
+    queryType: log.details.queryType as string,
+    database: log.details.database as string,
+    table: log.details.table as string,
+    schema: log.details.schema as string,
+    durationMs: log.details.durationMs as number,
+    rowCount: log.details.rowCount as number,
+    connectionId: log.details.connectionId as string,
+    error: log.details.error as string
+  }
+}
 </script>
 
 <template>
@@ -461,7 +511,7 @@ watch(
                   @click="selectedTab = tab.id"
                 >
                   <div class="flex items-center space-x-2">
-                    <span :class="[getNodeColor(tab.type), 'capitalize font-semibold']">
+                    <span :class="[getNodeColor(tab.type), 'font-semibold uppercase']">
                       {{ tab.type }}
                     </span>
                     <template v-if="tab.nodeId">
@@ -495,8 +545,11 @@ watch(
               </nav>
             </div>
 
-            <!-- Message Type Filter -->
-            <div class="bg-white px-4 py-2 flex items-center space-x-3 border-b border-gray-200">
+            <!-- Message Type Filter (hidden for SQL tab) -->
+            <div
+              v-if="selectedTab !== 'sql'"
+              class="bg-white px-4 py-2 flex items-center space-x-3 border-b border-gray-200"
+            >
               <FunnelIcon class="h-4 w-4 text-gray-400" />
               <div class="flex flex-wrap gap-1">
                 <button
@@ -515,8 +568,18 @@ watch(
               </div>
             </div>
 
+            <!-- SQL Console View (for SQL tab) -->
             <div
-              v-if="selectedColumn"
+              v-if="selectedColumn && selectedTab === 'sql'"
+              class="h-full bg-white"
+              :style="{ height: `calc(${panelHeight} - 132px)` }"
+            >
+              <SqlConsoleView :logs="Object.values(filteredLogs).flat()" />
+            </div>
+
+            <!-- Regular Table View (for other tabs) -->
+            <div
+              v-else-if="selectedColumn"
               ref="logsContainer"
               class="overflow-y-auto h-full px-4 bg-white"
               :style="{ height: `calc(${panelHeight} - 132px)` }"
@@ -528,7 +591,7 @@ watch(
                       v-for="log in logs"
                       :key="log.id"
                       class="group transition-all duration-200"
-                      :class="[getMessageTypeColor(log)]"
+                      :class="[getMessageTypeColor(log, selectedTab === 'sql')]"
                     >
                       <td class="w-24 py-2 px-4">
                         <span
@@ -538,23 +601,66 @@ watch(
                         </span>
                       </td>
                       <td class="py-2 px-4">
-                        <div class="flex items-center space-x-3">
-                          <span
-                            class="flex-shrink-0 transition-transform group-hover:scale-110"
-                            :class="[getMessageIconColor(log)]"
-                          >
-                            <component :is="getMessageIcon(log)" class="h-4 w-4" />
-                          </span>
-                          <span class="text-sm text-gray-900 break-words font-mono leading-relaxed">
-                            {{ log.message }}
-                          </span>
-                          <span
-                            v-if="log.details?.duplicateCount"
-                            class="text-xs text-gray-500 ml-2"
-                          >
-                            {{ formatDuplicateInfo(log) }}
-                          </span>
-                        </div>
+                        <!-- SQL Log Entry -->
+                        <template v-if="isSQLLog(log)">
+                          <div class="space-y-2">
+                            <div class="flex items-center justify-between">
+                              <div class="flex items-center space-x-3">
+                                <span
+                                  class="text-xs font-semibold px-2 py-0.5 rounded bg-purple-100 text-purple-700"
+                                >
+                                  {{ getSQLMetadata(log)?.queryType || 'SQL' }}
+                                </span>
+                                <span class="text-xs text-gray-600">
+                                  {{ getSQLMetadata(log)?.database }}.{{
+                                    getSQLMetadata(log)?.table
+                                  }}
+                                </span>
+                                <span class="text-xs text-gray-500">
+                                  ⏱ {{ getSQLMetadata(log)?.durationMs }}ms
+                                </span>
+                                <span class="text-xs text-gray-500">
+                                  📊 {{ getSQLMetadata(log)?.rowCount }} rows
+                                </span>
+                              </div>
+                              <button
+                                @click="copyQuery(getSQLMetadata(log)?.query || '')"
+                                class="text-xs px-2 py-1 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
+                                title="Copy query"
+                              >
+                                Copy
+                              </button>
+                            </div>
+                            <div
+                              class="bg-gray-900 text-green-400 p-3 rounded font-mono text-xs overflow-x-auto"
+                            >
+                              <code>{{ getSQLMetadata(log)?.query }}</code>
+                            </div>
+                          </div>
+                        </template>
+
+                        <!-- Regular Log Entry -->
+                        <template v-else>
+                          <div class="flex items-center space-x-3">
+                            <span
+                              class="flex-shrink-0 transition-transform group-hover:scale-110"
+                              :class="[getMessageIconColor(log)]"
+                            >
+                              <component :is="getMessageIcon(log)" class="h-4 w-4" />
+                            </span>
+                            <span
+                              class="text-sm text-gray-900 break-words font-mono leading-relaxed"
+                            >
+                              {{ log.message }}
+                            </span>
+                            <span
+                              v-if="log.details?.duplicateCount"
+                              class="text-xs text-gray-500 ml-2"
+                            >
+                              {{ formatDuplicateInfo(log) }}
+                            </span>
+                          </div>
+                        </template>
                       </td>
                     </tr>
                   </template>
