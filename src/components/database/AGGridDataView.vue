@@ -39,6 +39,7 @@ const whereClause = ref<string>('')
 const whereInput = ref<string>('')
 const whereError = ref<string>()
 const agGridFilters = ref<Record<string, any>>({})
+const agGridWhereSQL = ref<string>('')
 
 // Watch for approxRows prop changes and update totalRowCount
 watch(
@@ -364,6 +365,7 @@ function createDatasource(): IDatasource {
         const filterModel = params.filterModel || {}
         agGridFilters.value = filterModel
         const agGridWhereClause = convertFilterModelToSQL(filterModel)
+        agGridWhereSQL.value = agGridWhereClause
 
         // Debug logging
         if (agGridWhereClause) {
@@ -629,22 +631,42 @@ onBeforeUnmount(() => {
 
     <!-- Active filter indicators -->
     <div
-      v-if="whereClause || activeAgGridFilters.length > 0"
-      class="mb-3 flex flex-wrap items-center gap-2 text-sm"
+      v-if="whereClause || activeAgGridFilters.length > 0 || agGridWhereSQL"
+      class="mb-3 space-y-2"
     >
-      <span
-        v-if="whereClause"
-        class="px-2 py-1 bg-blue-50 border border-blue-200 rounded text-blue-700"
+      <!-- User-friendly filter badges -->
+      <div
+        v-if="whereClause || activeAgGridFilters.length > 0"
+        class="flex flex-wrap items-center gap-2 text-sm"
       >
-        <strong>Manual WHERE:</strong> {{ whereClause }}
-      </span>
-      <span
-        v-for="(filter, index) in activeAgGridFilters"
-        :key="index"
-        class="px-2 py-1 bg-green-50 border border-green-200 rounded text-green-700"
-      >
-        <strong>Column Filter:</strong> {{ filter }}
-      </span>
+        <span
+          v-if="whereClause"
+          class="px-2 py-1 bg-blue-50 border border-blue-200 rounded text-blue-700"
+        >
+          <strong>Manual WHERE:</strong> {{ whereClause }}
+        </span>
+        <span
+          v-for="(filter, index) in activeAgGridFilters"
+          :key="index"
+          class="px-2 py-1 bg-green-50 border border-green-200 rounded text-green-700"
+        >
+          <strong>Column Filter:</strong> {{ filter }}
+        </span>
+      </div>
+
+      <!-- SQL Preview -->
+      <div v-if="agGridWhereSQL || whereClause" class="flex items-start gap-2 text-xs">
+        <span
+          class="font-mono px-2 py-1 bg-gray-100 border border-gray-300 rounded text-gray-800 whitespace-pre-wrap break-all"
+        >
+          <strong class="text-purple-600">SQL WHERE:</strong>
+          <span class="ml-2">{{
+            agGridWhereSQL && whereClause
+              ? `(${agGridWhereSQL}) AND (${whereClause})`
+              : agGridWhereSQL || whereClause
+          }}</span>
+        </span>
+      </div>
     </div>
 
     <!-- Header with stats and actions -->
