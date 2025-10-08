@@ -205,23 +205,23 @@
 
     <!-- Static sidebar for desktop -->
     <div
-      class="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-100 lg:block lg:w-20 lg:overflow-y-auto lg:bg-gray-900 lg:pb-10"
+      class="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-100 lg:block lg:w-20 lg:bg-gray-900 lg:pb-10"
     >
       <div class="flex h-16 shrink-0 items-center justify-center">
         <RouterLink to="/">
           <img class="h-8 w-auto" src="/images/logo.svg" alt="DBConvert Streams" />
         </RouterLink>
       </div>
-      <nav class="mt-8">
-        <ul role="list" class="flex flex-col items-center space-y-1">
-          <li v-for="item in navigation" :key="item.name">
+      <nav class="mt-8 overflow-visible">
+        <ul role="list" class="flex flex-col items-center space-y-1 overflow-visible">
+          <li v-for="item in navigation" :key="item.name" class="overflow-visible">
             <RouterLink
               :to="item.href"
               :class="[
                 $route.path.startsWith(item.href.split('/:')[0])
                   ? 'bg-gray-800 text-white'
                   : 'text-gray-400 hover:text-white hover:bg-gray-800',
-                'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold'
+                'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold relative overflow-visible'
               ]"
             >
               <component :is="item.icon" class="h-6 w-6 shrink-0" aria-hidden="true" />
@@ -229,7 +229,8 @@
 
               <!-- Show tooltip on hover -->
               <div
-                class="absolute left-20 hidden group-hover:block bg-gray-900 text-white px-2 py-1 rounded text-sm whitespace-nowrap"
+                class="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 hidden group-hover:block bg-gray-900 text-white px-2 py-1 rounded text-sm whitespace-nowrap pointer-events-none"
+                style="z-index: 99999"
               >
                 {{ item.name }}
               </div>
@@ -237,10 +238,11 @@
           </li>
 
           <!-- System Logs Button -->
-          <li class="mt-4 pt-4 border-t border-gray-700">
+          <!-- System Logs Button -->
+          <li class="mt-4 pt-4 border-t border-gray-700 overflow-visible">
             <button
               type="button"
-              class="group flex items-center justify-center p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-md relative"
+              class="group flex items-center justify-center p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-md relative w-full overflow-visible"
               @click="logsStore.toggleLogsPanel"
             >
               <ExclamationCircleIcon
@@ -261,7 +263,8 @@
 
               <!-- Show tooltip on hover -->
               <div
-                class="absolute left-20 hidden group-hover:block bg-gray-900 text-white px-2 py-1 rounded text-sm whitespace-nowrap z-50"
+                class="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 hidden group-hover:block bg-gray-900 text-white px-2 py-1 rounded text-sm whitespace-nowrap pointer-events-none"
+                style="z-index: 99999"
               >
                 System Logs ({{ logsStore.logs.length }})
               </div>
@@ -269,10 +272,10 @@
           </li>
 
           <!-- Connection Status in Navigation -->
-          <li class="mt-4 pt-4 border-t border-gray-700">
+          <li class="mt-4 pt-4 border-t border-gray-700 overflow-visible">
             <div
               :class="[
-                'group flex items-center justify-center p-2 rounded-md',
+                'group flex items-center justify-center p-2 rounded-md relative overflow-visible',
                 commonStore.isBackendConnected
                   ? 'text-green-400 bg-green-900/20'
                   : commonStore.error
@@ -293,7 +296,8 @@
               ></div>
               <!-- Show tooltip on hover -->
               <div
-                class="absolute left-20 hidden group-hover:block bg-gray-900 text-white px-2 py-1 rounded text-sm whitespace-nowrap z-50"
+                class="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 hidden group-hover:block bg-gray-900 text-white px-2 py-1 rounded text-sm whitespace-nowrap pointer-events-none"
+                style="z-index: 99999"
               >
                 {{ getConnectionStatusText() }}
               </div>
@@ -309,7 +313,7 @@
             href="https://discord.gg/3CACYYKSAb"
             target="_blank"
             rel="noopener noreferrer"
-            class="group flex items-center justify-center p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-md"
+            class="group flex items-center justify-center p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-md relative"
           >
             <svg class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
               <path
@@ -317,24 +321,42 @@
               />
             </svg>
             <span class="sr-only">Discord</span>
+            <!-- Tooltip -->
+            <div
+              class="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 hidden group-hover:block bg-gray-900 text-white px-2 py-1 rounded text-sm whitespace-nowrap z-[9999] pointer-events-none"
+            >
+              Discord
+            </div>
           </a>
           <a
             href="https://docs.dbconvert.com"
             target="_blank"
             rel="noopener noreferrer"
-            class="group flex items-center justify-center p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-md"
+            class="group flex items-center justify-center p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-md relative"
           >
             <DocumentTextIcon class="h-6 w-6" aria-hidden="true" />
             <span class="sr-only">Documentation</span>
+            <!-- Tooltip -->
+            <div
+              class="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 hidden group-hover:block bg-gray-900 text-white px-2 py-1 rounded text-sm whitespace-nowrap z-[9999] pointer-events-none"
+            >
+              Documentation
+            </div>
           </a>
           <a
             href="https://streams.dbconvert.com/account"
             target="_blank"
             rel="noopener noreferrer"
-            class="group flex items-center justify-center p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-md"
+            class="group flex items-center justify-center p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-md relative"
           >
             <UserCircleIcon class="h-6 w-6" aria-hidden="true" />
             <span class="sr-only">Account</span>
+            <!-- Tooltip -->
+            <div
+              class="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 hidden group-hover:block bg-gray-900 text-white px-2 py-1 rounded text-sm whitespace-nowrap z-[9999] pointer-events-none"
+            >
+              Account
+            </div>
           </a>
         </div>
       </div>
