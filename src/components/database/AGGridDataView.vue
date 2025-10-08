@@ -75,19 +75,60 @@ const columnDefs = computed<ColDef[]>(() => {
   const meta = props.tableMeta
   if (!meta || !meta.columns) return []
 
-  return meta.columns.map((col) => ({
-    field: col.name,
-    headerName: col.name,
-    sortable: true, // Enable server-side sorting
-    filter: false, // Server-side filtering can be added later
-    resizable: true,
-    flex: 1,
-    minWidth: 120,
-    valueFormatter: (params) => formatTableValue(params.value),
-    headerTooltip: `${col.dataType}${col.isNullable ? '' : ' NOT NULL'}`,
-    wrapText: false,
-    autoHeight: false
-  }))
+  const isLargeTable = props.approxRows && props.approxRows > 1000000
+
+  // Build a set of indexed columns for fast lookup
+  const indexedColumns = new Set<string>()
+
+  // Add primary key columns
+  if (!props.isView && (meta as SQLTableMeta).primaryKeys) {
+    ;(meta as SQLTableMeta).primaryKeys.forEach((pk) => indexedColumns.add(pk.toLowerCase()))
+  }
+
+  // Add indexed columns from indexes
+  if (!props.isView && (meta as SQLTableMeta).indexes) {
+    ;(meta as SQLTableMeta).indexes.forEach((idx) => {
+      // Only consider the first column of composite indexes for sorting
+      // (sorting by first column can use the index efficiently)
+      if (idx.columns && idx.columns.length > 0) {
+        indexedColumns.add(idx.columns[0].toLowerCase())
+      }
+    })
+  }
+
+  return meta.columns.map((col) => {
+    const isIndexed = indexedColumns.has(col.name.toLowerCase())
+    const canSort = !isLargeTable || isIndexed
+
+    let tooltip = `${col.dataType}${col.isNullable ? '' : ' NOT NULL'}`
+
+    // Add tooltip info for large tables
+    if (isLargeTable) {
+      if (isIndexed) {
+        tooltip += ' - Indexed (sortable, Ctrl+Click for multi-sort)'
+      } else {
+        tooltip += ' - No index (sorting disabled)'
+      }
+    } else {
+      tooltip += ' - Click to sort, Ctrl+Click for multi-sort'
+    }
+
+    return {
+      field: col.name,
+      headerName: col.name,
+      sortable: canSort,
+      filter: false, // Server-side filtering can be added later
+      resizable: true,
+      flex: 1,
+      minWidth: 120,
+      valueFormatter: (params) => formatTableValue(params.value),
+      headerTooltip: tooltip,
+      wrapText: false,
+      autoHeight: false,
+      // Add header class to distinguish sortable vs non-sortable
+      headerClass: isLargeTable && !isIndexed ? 'ag-header-cell-not-sortable' : undefined
+    }
+  })
 })
 
 // AG Grid options for Infinite Row Model
@@ -109,7 +150,10 @@ const gridOptions = computed<GridOptions>(() => ({
   cacheOverflowSize: 2, // Keep 2 extra blocks in cache before/after viewport
   maxConcurrentDatasourceRequests: 2, // Allow 2 concurrent requests for faster loading
   infiniteInitialRowCount: 100,
-  maxBlocksInCache: 20 // Keep more blocks in cache (4000 rows)
+  maxBlocksInCache: 20, // Keep more blocks in cache (4000 rows)
+  // Enable multi-column sorting with Alt+Click
+  multiSortKey: 'ctrl', // Use Ctrl (or Cmd on Mac) for multi-sort
+  alwaysMultiSort: false // Only multi-sort when holding Ctrl/Cmd
 }))
 
 // Create datasource for Infinite Row Model
@@ -128,11 +172,18 @@ function createDatasource(): IDatasource {
         const limit = params.endRow - params.startRow
         const offset = params.startRow
 
-        // Extract sort information from params
+        // Extract sort information from params (support multi-column sorting)
         const sortModel = params.sortModel || []
         currentSortModel.value = sortModel
-        const orderBy = sortModel.length > 0 ? sortModel[0].colId : undefined
-        const orderDir = sortModel.length > 0 ? sortModel[0].sort?.toUpperCase() : undefined
+
+        // Build comma-separated order_by and order_dir for multi-column sorting
+        let orderBy: string | undefined
+        let orderDir: string | undefined
+
+        if (sortModel.length > 0) {
+          orderBy = sortModel.map((s) => s.colId).join(',')
+          orderDir = sortModel.map((s) => s.sort?.toUpperCase() || 'ASC').join(',')
+        }
 
         const queryParams: {
           limit: number
@@ -314,6 +365,20 @@ onBeforeUnmount(() => {
             <span v-if="approxRows" class="text-xs text-amber-600">(approx)</span></span
           >
         </span>
+        <!-- Large table warning -->
+        <span
+          v-if="approxRows && approxRows > 1000000"
+          class="text-xs text-blue-600 flex items-center gap-1"
+        >
+          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              fill-rule="evenodd"
+              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+              clip-rule="evenodd"
+            />
+          </svg>
+          Large table: only indexed columns are sortable
+        </span>
       </div>
 
       <div class="flex items-center gap-2">
@@ -379,5 +444,28 @@ onBeforeUnmount(() => {
   white-space: normal;
   line-height: 1.5;
   padding: 8px;
+}
+
+/* Style for non-sortable columns in large tables */
+:deep(.ag-header-cell-not-sortable) {
+  opacity: 0.6;
+  cursor: not-allowed !important;
+}
+
+:deep(.ag-header-cell-not-sortable .ag-header-cell-label) {
+  cursor: not-allowed !important;
+}
+
+/* Add a subtle indicator for sortable columns */
+:deep(.ag-header-cell.ag-header-cell-sortable:not(.ag-header-cell-sorted):hover) {
+  background-color: #e8f0fe;
+}
+
+/* Show sort icons for sortable columns on hover */
+:deep(.ag-header-cell.ag-header-cell-sortable:not(.ag-header-cell-sorted):hover::after) {
+  content: '⇅';
+  margin-left: 4px;
+  color: #9ca3af;
+  font-size: 12px;
 }
 </style>
