@@ -85,9 +85,7 @@ import { useMonitoringStore, statusEnum } from '@/stores/monitoring'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useCommonStore } from '@/stores/common'
 import StreamConfigInfo from '@/components/stream/StreamConfigInfo.vue'
-import { useRoute } from 'vue-router'
 
-const route = useRoute()
 const monitoringStore = useMonitoringStore()
 const streamsStore = useStreamsStore()
 const commonStore = useCommonStore()
@@ -158,7 +156,7 @@ const stopStream = async () => {
   }
 }
 
-const handleStreamError = (error: any, defaultMessage: string) => {
+const handleStreamError = (error: unknown, defaultMessage: string) => {
   console.error(error)
   const errorMessage = error instanceof Error ? error.message : defaultMessage
   commonStore.showNotification(errorMessage, 'error')

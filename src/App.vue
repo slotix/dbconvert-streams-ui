@@ -130,6 +130,26 @@
                     </li>
                   </ul>
 
+                  <!-- System Logs Button -->
+                  <div class="pt-4 border-t border-gray-700">
+                    <button
+                      type="button"
+                      class="w-full group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold text-gray-400 hover:text-white hover:bg-gray-800"
+                      @click="handleLogsClick"
+                    >
+                      <ExclamationCircleIcon
+                        v-if="logsStore.hasErrors"
+                        class="h-6 w-6 shrink-0 animate-pulse text-gray-300"
+                        aria-hidden="true"
+                      />
+                      <DocumentTextIcon v-else class="h-6 w-6 shrink-0" aria-hidden="true" />
+                      <span class="flex-1 text-left">System Logs</span>
+                      <span class="ml-auto bg-gray-700 px-1.5 py-0.5 text-xs rounded-full">{{
+                        logsStore.logs.length
+                      }}</span>
+                    </button>
+                  </div>
+
                   <!-- External Links for Mobile -->
                   <div class="mt-auto pt-4 border-t border-gray-700">
                     <ul role="list" class="-mx-2 space-y-1">
@@ -214,6 +234,38 @@
                 {{ item.name }}
               </div>
             </RouterLink>
+          </li>
+
+          <!-- System Logs Button -->
+          <li class="mt-4 pt-4 border-t border-gray-700">
+            <button
+              type="button"
+              class="group flex items-center justify-center p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-md relative"
+              @click="logsStore.toggleLogsPanel"
+            >
+              <ExclamationCircleIcon
+                v-if="logsStore.hasErrors"
+                class="h-6 w-6 shrink-0 animate-pulse text-gray-300"
+                aria-hidden="true"
+              />
+              <DocumentTextIcon v-else class="h-6 w-6 shrink-0" aria-hidden="true" />
+              <span class="sr-only">System Logs</span>
+
+              <!-- Log count badge -->
+              <span
+                v-if="logsStore.logs.length > 0"
+                class="absolute -top-1 -right-1 bg-gray-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center"
+              >
+                {{ logsStore.logs.length > 99 ? '99+' : logsStore.logs.length }}
+              </span>
+
+              <!-- Show tooltip on hover -->
+              <div
+                class="absolute left-20 hidden group-hover:block bg-gray-900 text-white px-2 py-1 rounded text-sm whitespace-nowrap z-50"
+              >
+                System Logs ({{ logsStore.logs.length }})
+              </div>
+            </button>
           </li>
 
           <!-- Connection Status in Navigation -->
@@ -306,7 +358,6 @@
     </div>
 
     <LogsPanel />
-    <LogsIndicator />
     <VersionDisplay />
   </div>
 </template>
@@ -315,10 +366,9 @@
 import { ref, watch, onMounted, onUnmounted, computed, watchEffect } from 'vue'
 import { RouterLink, RouterView, useRouter } from 'vue-router'
 import { useCommonStore } from '@/stores/common'
-import { useConnectionsStore } from '@/stores/connections'
+import { useLogsStore } from '@/stores/logs'
 import ApiKeyInput from '@/components/ApiKeyInput.vue'
 import LogsPanel from '@/components/logs/LogsPanel.vue'
-import LogsIndicator from '@/components/logs/LogsIndicator.vue'
 import VersionDisplay from '@/components/common/VersionDisplay.vue'
 import RouteGuard from '@/components/common/RouteGuard.vue'
 import { initializeApiClient } from '@/api/apiClient'
@@ -334,24 +384,15 @@ import {
   UserCircleIcon,
   TableCellsIcon
 } from '@heroicons/vue/24/outline'
+import { ExclamationCircleIcon } from '@heroicons/vue/24/solid'
 
 const commonStore = useCommonStore()
-const connectionsStore = useConnectionsStore()
+const logsStore = useLogsStore()
 const router = useRouter()
 const isInitializing = ref(true)
 
-interface NavigationItem {
-  name: string
-  href: string
-  icon: any
-  show?: boolean
-}
-
 // All navigation items
 const navigation = computed(() => {
-  const route = router.currentRoute.value
-  const connectionId = route.params.id
-
   return [
     { name: 'Connections', href: '/connections', icon: CircleStackIcon, show: true },
     {
@@ -375,6 +416,11 @@ const getConnectionStatusText = () => {
   } else {
     return 'Offline Mode'
   }
+}
+
+const handleLogsClick = () => {
+  logsStore.toggleLogsPanel()
+  sidebarOpen.value = false
 }
 
 // Dynamic browser tab title and favicon management
