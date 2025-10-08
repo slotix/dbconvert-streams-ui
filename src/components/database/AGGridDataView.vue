@@ -38,6 +38,7 @@ const currentSortModel = ref<SortModelItem[]>([])
 const whereClause = ref<string>('')
 const whereInput = ref<string>('')
 const whereError = ref<string>()
+const agGridFilters = ref<Record<string, any>>({})
 
 // Watch for approxRows prop changes and update totalRowCount
 watch(
@@ -119,11 +120,29 @@ const columnDefs = computed<ColDef[]>(() => {
       tooltip += ' - Click to sort, Ctrl+Click for multi-sort'
     }
 
+    // Determine filter type based on column data type
+    let filterType: string | boolean = 'agTextColumnFilter'
+    if (col.dataType) {
+      const dataType = col.dataType.toLowerCase()
+      if (
+        dataType.includes('int') ||
+        dataType.includes('float') ||
+        dataType.includes('double') ||
+        dataType.includes('decimal') ||
+        dataType.includes('numeric')
+      ) {
+        filterType = 'agNumberColumnFilter'
+      } else if (dataType.includes('date') || dataType.includes('time')) {
+        filterType = 'agDateColumnFilter'
+      }
+    }
+
     return {
       field: col.name,
       headerName: col.name,
       sortable: canSort,
-      filter: false, // Server-side filtering can be added later
+      filter: filterType,
+      floatingFilter: false, // No floating filter - using menu icon instead
       resizable: true,
       flex: 1,
       minWidth: 120,
@@ -136,6 +155,153 @@ const columnDefs = computed<ColDef[]>(() => {
     }
   })
 })
+
+// Computed property to display active AG Grid filters
+const activeAgGridFilters = computed(() => {
+  return Object.entries(agGridFilters.value)
+    .filter(([_, filter]) => filter)
+    .map(([column, filter]) => {
+      const clause = buildFilterClause(column, filter)
+      return clause ? `${column}: ${getFilterDescription(filter)}` : null
+    })
+    .filter(Boolean)
+})
+
+// Get human-readable filter description
+function getFilterDescription(filter: any): string {
+  if (filter.operator && filter.condition1 && filter.condition2) {
+    return `${getSimpleFilterDesc(filter.condition1)} ${filter.operator} ${getSimpleFilterDesc(filter.condition2)}`
+  }
+  return getSimpleFilterDesc(filter)
+}
+
+function getSimpleFilterDesc(filter: any): string {
+  const type = filter.type
+  const value = filter.filter
+
+  switch (type) {
+    case 'equals':
+      return `= ${value}`
+    case 'notEqual':
+      return `≠ ${value}`
+    case 'contains':
+      return `contains "${value}"`
+    case 'notContains':
+      return `not contains "${value}"`
+    case 'startsWith':
+      return `starts with "${value}"`
+    case 'endsWith':
+      return `ends with "${value}"`
+    case 'lessThan':
+      return `< ${value}`
+    case 'lessThanOrEqual':
+      return `≤ ${value}`
+    case 'greaterThan':
+      return `> ${value}`
+    case 'greaterThanOrEqual':
+      return `≥ ${value}`
+    case 'inRange':
+      return `${filter.filter} - ${filter.filterTo}`
+    case 'blank':
+      return 'is blank'
+    case 'notBlank':
+      return 'is not blank'
+    default:
+      return String(value)
+  }
+}
+
+// Convert AG Grid filter model to SQL WHERE clause
+function convertFilterModelToSQL(filterModel: Record<string, any>): string {
+  const whereClauses: string[] = []
+
+  for (const [column, filter] of Object.entries(filterModel)) {
+    if (!filter) continue
+
+    const clause = buildFilterClause(column, filter)
+    if (clause) {
+      whereClauses.push(clause)
+    }
+  }
+
+  return whereClauses.join(' AND ')
+}
+
+function buildFilterClause(column: string, filter: any): string | null {
+  // Handle combined conditions (AND/OR)
+  if (filter.operator) {
+    console.log(`Building compound filter for ${column}:`, filter)
+
+    // AG Grid uses 'conditions' array (newer versions) or 'condition1'/'condition2' (older versions)
+    let condition1: string | null = null
+    let condition2: string | null = null
+
+    if (filter.conditions && Array.isArray(filter.conditions)) {
+      // New format: conditions array
+      condition1 = filter.conditions[0] ? buildFilterClause(column, filter.conditions[0]) : null
+      condition2 = filter.conditions[1] ? buildFilterClause(column, filter.conditions[1]) : null
+    } else {
+      // Old format: condition1 and condition2 properties
+      condition1 = filter.condition1 ? buildFilterClause(column, filter.condition1) : null
+      condition2 = filter.condition2 ? buildFilterClause(column, filter.condition2) : null
+    }
+
+    console.log(`  Condition1: ${condition1}, Condition2: ${condition2}`)
+
+    if (condition1 && condition2) {
+      return `(${condition1} ${filter.operator} ${condition2})`
+    }
+    return condition1 || condition2
+  }
+
+  const filterValue = filter.filter
+
+  // Skip if filter value is missing
+  if (filterValue === undefined || filterValue === null || filterValue === '') {
+    console.log(`Skipping filter for ${column}: no value`)
+    return null
+  }
+
+  // Escape single quotes in string values to prevent SQL injection
+  const escapeValue = (val: any): string => {
+    if (typeof val === 'string') {
+      return val.replace(/'/g, "''")
+    }
+    return String(val)
+  }
+
+  // Build SQL based on filter type
+  switch (filter.type) {
+    case 'equals':
+      return `${column} = '${escapeValue(filterValue)}'`
+    case 'notEqual':
+      return `${column} != '${escapeValue(filterValue)}'`
+    case 'contains':
+      return `${column} LIKE '%${escapeValue(filterValue)}%'`
+    case 'notContains':
+      return `${column} NOT LIKE '%${escapeValue(filterValue)}%'`
+    case 'startsWith':
+      return `${column} LIKE '${escapeValue(filterValue)}%'`
+    case 'endsWith':
+      return `${column} LIKE '%${escapeValue(filterValue)}'`
+    case 'lessThan':
+      return `${column} < ${filterValue}`
+    case 'lessThanOrEqual':
+      return `${column} <= ${filterValue}`
+    case 'greaterThan':
+      return `${column} > ${filterValue}`
+    case 'greaterThanOrEqual':
+      return `${column} >= ${filterValue}`
+    case 'inRange':
+      return `${column} BETWEEN ${filter.filter} AND ${filter.filterTo}`
+    case 'blank':
+      return `(${column} IS NULL OR ${column} = '')`
+    case 'notBlank':
+      return `(${column} IS NOT NULL AND ${column} != '')`
+    default:
+      return null
+  }
+}
 
 // AG Grid options for Infinite Row Model
 const gridOptions = computed<GridOptions>(() => ({
@@ -159,7 +325,10 @@ const gridOptions = computed<GridOptions>(() => ({
   maxBlocksInCache: 20, // Keep more blocks in cache (4000 rows)
   // Enable multi-column sorting with Alt+Click
   multiSortKey: 'ctrl', // Use Ctrl (or Cmd on Mac) for multi-sort
-  alwaysMultiSort: false // Only multi-sort when holding Ctrl/Cmd
+  alwaysMultiSort: false, // Only multi-sort when holding Ctrl/Cmd
+  // Show menu icon in column headers for filters
+  suppressMenuHide: false,
+  columnMenu: 'new'
 }))
 
 // Create datasource for Infinite Row Model
@@ -191,6 +360,27 @@ function createDatasource(): IDatasource {
           orderDir = sortModel.map((s) => s.sort?.toUpperCase() || 'ASC').join(',')
         }
 
+        // Extract filter model from AG Grid and convert to SQL
+        const filterModel = params.filterModel || {}
+        agGridFilters.value = filterModel
+        const agGridWhereClause = convertFilterModelToSQL(filterModel)
+
+        // Debug logging
+        if (agGridWhereClause) {
+          console.log('AG Grid Filter Model:', filterModel)
+          console.log('Converted SQL WHERE:', agGridWhereClause)
+        }
+
+        // Combine AG Grid filters with manual WHERE clause
+        let combinedWhereClause = ''
+        if (agGridWhereClause && whereClause.value) {
+          combinedWhereClause = `(${agGridWhereClause}) AND (${whereClause.value})`
+        } else if (agGridWhereClause) {
+          combinedWhereClause = agGridWhereClause
+        } else if (whereClause.value) {
+          combinedWhereClause = whereClause.value
+        }
+
         const queryParams: {
           limit: number
           offset: number
@@ -202,7 +392,9 @@ function createDatasource(): IDatasource {
         } = {
           limit,
           offset,
-          skip_count: offset > 0 && totalRowCount.value > 0 // Skip count if we already have it
+          // When filters are active, we need accurate count for first page
+          // Skip count only if: no filters AND we already have count AND not first page
+          skip_count: !combinedWhereClause && offset > 0 && totalRowCount.value > 0
         }
 
         // Add optional parameters only if they have values
@@ -215,8 +407,8 @@ function createDatasource(): IDatasource {
         if (orderDir) {
           queryParams.order_dir = orderDir
         }
-        if (whereClause.value) {
-          queryParams.where = whereClause.value
+        if (combinedWhereClause) {
+          queryParams.where = combinedWhereClause
         }
 
         const data = props.isView
@@ -243,7 +435,7 @@ function createDatasource(): IDatasource {
         })
 
         // Update total count if we have a real count from API (not -1)
-        if (offset === 0 && data.total_count > 0) {
+        if (data.total_count > 0) {
           totalRowCount.value = data.total_count
         }
 
@@ -290,6 +482,19 @@ function onGridReady(params: GridReadyEvent) {
   params.api.addEventListener('bodyScroll', updateVisibleRows)
   params.api.addEventListener('modelUpdated', updateVisibleRows)
   params.api.addEventListener('firstDataRendered', updateVisibleRows)
+
+  // Add filter changed listener
+  params.api.addEventListener('filterChanged', () => {
+    // Reset total count so we get fresh count with filters
+    totalRowCount.value = 0
+    currentFirstRow.value = 1
+    currentLastRow.value = 100
+
+    // When filter changes, refresh the datasource
+    if (gridApi.value) {
+      gridApi.value.setGridOption('datasource', createDatasource())
+    }
+  })
 
   // Set datasource for infinite row model
   params.api.setGridOption('datasource', createDatasource())
@@ -422,10 +627,23 @@ onBeforeUnmount(() => {
       {{ whereError }}
     </div>
 
-    <!-- Active filter indicator -->
-    <div v-if="whereClause" class="mb-3 flex items-center gap-2 text-sm">
-      <span class="px-2 py-1 bg-blue-50 border border-blue-200 rounded text-blue-700">
-        <strong>Active Filter:</strong> {{ whereClause }}
+    <!-- Active filter indicators -->
+    <div
+      v-if="whereClause || activeAgGridFilters.length > 0"
+      class="mb-3 flex flex-wrap items-center gap-2 text-sm"
+    >
+      <span
+        v-if="whereClause"
+        class="px-2 py-1 bg-blue-50 border border-blue-200 rounded text-blue-700"
+      >
+        <strong>Manual WHERE:</strong> {{ whereClause }}
+      </span>
+      <span
+        v-for="(filter, index) in activeAgGridFilters"
+        :key="index"
+        class="px-2 py-1 bg-green-50 border border-green-200 rounded text-green-700"
+      >
+        <strong>Column Filter:</strong> {{ filter }}
       </span>
     </div>
 
@@ -565,5 +783,24 @@ onBeforeUnmount(() => {
   margin-left: 4px;
   color: #9ca3af;
   font-size: 12px;
+}
+
+/* Show menu icon for columns with filters */
+:deep(.ag-header-cell-menu-button) {
+  opacity: 0.6;
+}
+
+:deep(.ag-header-cell:hover .ag-header-cell-menu-button) {
+  opacity: 1;
+}
+
+/* Highlight columns that have active filters */
+:deep(.ag-header-cell-filtered) {
+  background-color: #dbeafe !important;
+}
+
+:deep(.ag-header-cell-filtered .ag-header-cell-menu-button) {
+  opacity: 1;
+  color: #2563eb;
 }
 </style>
