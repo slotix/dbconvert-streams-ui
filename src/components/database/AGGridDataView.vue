@@ -35,6 +35,9 @@ const isLoading = ref(false)
 const currentFirstRow = ref<number>(1)
 const currentLastRow = ref<number>(100)
 const currentSortModel = ref<SortModelItem[]>([])
+const whereClause = ref<string>('')
+const whereInput = ref<string>('')
+const whereError = ref<string>()
 
 // Watch for approxRows prop changes and update totalRowCount
 watch(
@@ -58,6 +61,9 @@ watch(
     currentFirstRow.value = 1
     currentLastRow.value = 100
     currentSortModel.value = []
+    whereClause.value = ''
+    whereInput.value = ''
+    whereError.value = undefined
   },
   { deep: true }
 )
@@ -192,6 +198,7 @@ function createDatasource(): IDatasource {
           schema?: string
           order_by?: string
           order_dir?: string
+          where?: string
         } = {
           limit,
           offset,
@@ -207,6 +214,9 @@ function createDatasource(): IDatasource {
         }
         if (orderDir) {
           queryParams.order_dir = orderDir
+        }
+        if (whereClause.value) {
+          queryParams.where = whereClause.value
         }
 
         const data = props.isView
@@ -253,7 +263,17 @@ function createDatasource(): IDatasource {
         error.value = undefined
       } catch (err) {
         console.error('Error loading data:', err)
-        error.value = err instanceof Error ? err.message : 'Failed to load data'
+        const errorMessage = err instanceof Error ? err.message : 'Failed to load data'
+
+        // Check if it's a WHERE clause error
+        if (
+          errorMessage.toLowerCase().includes('where') ||
+          errorMessage.toLowerCase().includes('syntax')
+        ) {
+          whereError.value = errorMessage
+        }
+
+        error.value = errorMessage
         params.failCallback()
       } finally {
         isLoading.value = false
@@ -304,6 +324,39 @@ function updateVisibleRows() {
   }
 }
 
+// Apply WHERE filter
+function applyWhereFilter() {
+  whereError.value = undefined
+  whereClause.value = whereInput.value.trim()
+
+  // Reset to first page when applying filter
+  totalRowCount.value = 0
+  currentFirstRow.value = 1
+  currentLastRow.value = 100
+
+  if (gridApi.value) {
+    // Refresh the datasource with new filter
+    gridApi.value.setGridOption('datasource', createDatasource())
+  }
+}
+
+// Clear WHERE filter
+function clearWhereFilter() {
+  whereInput.value = ''
+  whereClause.value = ''
+  whereError.value = undefined
+
+  // Reset to first page
+  totalRowCount.value = 0
+  currentFirstRow.value = 1
+  currentLastRow.value = 100
+
+  if (gridApi.value) {
+    // Refresh the datasource without filter
+    gridApi.value.setGridOption('datasource', createDatasource())
+  }
+}
+
 // Jump to top functionality
 function jumpToTop() {
   if (gridApi.value) {
@@ -331,6 +384,51 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="flex flex-col h-full">
+    <!-- WHERE filter input -->
+    <div class="mb-3 flex items-center gap-2">
+      <div class="flex-1 flex items-center gap-2">
+        <label class="text-sm font-medium text-gray-700 whitespace-nowrap">WHERE:</label>
+        <input
+          v-model="whereInput"
+          type="text"
+          class="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          placeholder="e.g., amount > 5 AND customer_id = 1"
+          @keyup.enter="applyWhereFilter"
+        />
+        <button
+          type="button"
+          class="px-4 py-1.5 text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          :disabled="!whereInput.trim()"
+          @click="applyWhereFilter"
+        >
+          Apply
+        </button>
+        <button
+          v-if="whereClause"
+          type="button"
+          class="px-4 py-1.5 text-sm rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors"
+          @click="clearWhereFilter"
+        >
+          Clear
+        </button>
+      </div>
+    </div>
+
+    <!-- WHERE error message -->
+    <div
+      v-if="whereError"
+      class="mb-3 p-2 bg-red-50 border border-red-200 rounded-md text-sm text-red-700"
+    >
+      {{ whereError }}
+    </div>
+
+    <!-- Active filter indicator -->
+    <div v-if="whereClause" class="mb-3 flex items-center gap-2 text-sm">
+      <span class="px-2 py-1 bg-blue-50 border border-blue-200 rounded text-blue-700">
+        <strong>Active Filter:</strong> {{ whereClause }}
+      </span>
+    </div>
+
     <!-- Header with stats and actions -->
     <div class="mb-3 flex items-center justify-between">
       <div class="flex items-center gap-4 text-sm text-gray-600">

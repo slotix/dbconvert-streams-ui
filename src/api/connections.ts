@@ -355,6 +355,7 @@ const getTableData = async (
     schema?: string
     order_by?: string
     order_dir?: string
+    where?: string
   }
 ): Promise<TableData> => {
   const commonStore = useCommonStore()
@@ -376,6 +377,10 @@ const getTableData = async (
 
     if (params.order_dir) {
       queryParams.append('order_dir', params.order_dir)
+    }
+
+    if (params.where) {
+      queryParams.append('where', params.where)
     }
 
     const url = `/connections/${connectionId}/databases/${encodeURIComponent(database)}/tables/${encodeURIComponent(tableName)}/data?${queryParams.toString()}`
@@ -420,6 +425,7 @@ const getViewData = async (
     schema?: string
     order_by?: string
     order_dir?: string
+    where?: string
   }
 ): Promise<TableData> => {
   const commonStore = useCommonStore()
@@ -440,6 +446,10 @@ const getViewData = async (
 
     if (params.order_dir) {
       queryParams.append('order_dir', params.order_dir)
+    }
+
+    if (params.where) {
+      queryParams.append('where', params.where)
     }
 
     const url = `/connections/${connectionId}/databases/${encodeURIComponent(database)}/views/${encodeURIComponent(viewName)}/data?${queryParams.toString()}`
