@@ -101,15 +101,6 @@ const dialect = computed(() => {
 
 //   return 'sql'
 // })
-
-// Copy SQL query to clipboard
-async function copyToClipboard() {
-  try {
-    await navigator.clipboard.writeText(combinedSQL.value)
-  } catch (err) {
-    console.error('Failed to copy SQL:', err)
-  }
-}
 </script>
 
 <template>
@@ -119,19 +110,6 @@ async function copyToClipboard() {
     </div>
 
     <div v-else class="overflow-auto h-full">
-      <!-- Header with copy button -->
-      <div
-        class="sticky top-0 bg-gray-100 px-4 py-2 border-b border-gray-200 flex justify-between items-center"
-      >
-        <span class="text-sm font-medium text-gray-700">SQL Query History</span>
-        <button
-          class="px-2 py-1 text-xs bg-gray-200 hover:bg-gray-300 rounded border text-gray-700 hover:text-gray-900 transition-colors"
-          @click="copyToClipboard"
-        >
-          Copy All
-        </button>
-      </div>
-
       <!-- SQL display with syntax highlighting -->
       <div class="p-4">
         <SqlCodeBlock
