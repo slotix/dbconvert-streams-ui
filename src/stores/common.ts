@@ -206,66 +206,27 @@ export const useCommonStore = defineStore('common', {
 
     async getApiKey(): Promise<string | null> {
       try {
-        if (this.apiKey) {
-          await api.validateApiKey(this.apiKey)
-          // Ensure the API client is configured with the current key
+        // If we have an API key in memory and it's not marked as invalidated, use it
+        if (this.apiKey && !this.apiKeyInvalidated) {
           configureApiClient(this.apiKey)
           return this.apiKey
         }
 
+        // Check localStorage for stored API key
         const storedApiKey = localStorage.getItem('apiKey')
         if (storedApiKey) {
-          try {
-            // Validate the stored API key
-            await api.validateApiKey(storedApiKey)
-            this.apiKey = storedApiKey
-            // Configure the API client with the validated key
-            configureApiClient(storedApiKey)
-            return storedApiKey
-          } catch (error: any) {
-            // Only clear API key for authentication errors (401)
-            // Keep it for network errors so user doesn't have to re-enter on connection issues
-            if (error.response?.status === 401 || error.message === 'Invalid API key') {
-              console.log('API key is invalid, clearing from storage')
-              localStorage.removeItem('apiKey')
-              this.apiKey = null
-              this.setBackendConnected(false)
-              return null
-            }
-
-            // For network errors, keep the API key but mark backend as disconnected
-            console.log(
-              'Network error during API key validation, keeping stored key:',
-              error.message
-            )
-            this.apiKey = storedApiKey
-            // Configure the API client with the stored key even if validation failed due to network issues
-            configureApiClient(storedApiKey)
-            this.setBackendConnected(false)
-            return storedApiKey
-          }
+          this.apiKey = storedApiKey
+          // Don't validate immediately - let the first API call handle validation
+          // This prevents the "expired" popup when just loading from localStorage
+          configureApiClient(storedApiKey)
+          return storedApiKey
         }
 
-        // // Development mode: if we're in development and no API key is stored,
-        // // try using a dummy key to test automatic connection
-        // if (import.meta.env.DEV) {
-        //   console.log('Development mode: Using dummy API key for testing')
-        //   const dummyKey = 'dev-test-key'
-        //   try {
-        //     // Try to validate the dummy key - if backend is in TEST_ENV mode, this should work
-        //     await api.validateApiKey(dummyKey)
-        //     this.apiKey = dummyKey
-        //     return dummyKey
-        //   } catch (error) {
-        //     console.log('Dummy API key validation failed, backend may not be in TEST_ENV mode')
-        //     // Fall through to return null
-        //   }
-        // }
-
+        // No API key found
         this.setBackendConnected(false)
         return null
       } catch (error) {
-        console.error('Error validating API key:', error)
+        console.error('Error getting API key:', error)
         this.setBackendConnected(false)
         return null
       }
@@ -293,6 +254,23 @@ export const useCommonStore = defineStore('common', {
       localStorage.removeItem('apiKey')
       // Clear the API key header from axios instance
       configureApiClient('')
+    },
+
+    // Method to refresh API key validation without clearing localStorage
+    async refreshApiKey(): Promise<boolean> {
+      if (!this.apiKey) {
+        return false
+      }
+
+      try {
+        await api.validateApiKey(this.apiKey)
+        this.apiKeyInvalidated = false
+        configureApiClient(this.apiKey)
+        return true
+      } catch (error) {
+        this.apiKeyInvalidated = true
+        return false
+      }
     },
 
     async userDataFromSentry(apiKey: string) {

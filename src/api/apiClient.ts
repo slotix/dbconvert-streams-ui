@@ -62,9 +62,12 @@ apiClient.interceptors.response.use(
 
     // Handle 401 Unauthorized errors - invalid or expired API key
     if (error.response?.status === 401) {
-      console.log('API key is invalid or expired, clearing from storage')
-      // Clear the invalid API key and trigger re-authentication
-      await commonStore.clearApiKey()
+      console.log('Received 401 error - API key expired on server cache, not clearing localStorage')
+
+      // Instead of clearing the API key immediately, just mark it as invalidated
+      // This way the user can re-enter the same key after computer wake-up
+      commonStore.apiKeyInvalidated = true
+
       return Promise.reject(error)
     }
 

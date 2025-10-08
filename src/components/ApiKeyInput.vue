@@ -88,4 +88,9 @@ async function submitApiKey() {
     apiKeyInput.value = ''
   }
 }
+
+// Auto-fill the input with the existing API key if it's just expired (not cleared)
+if (isKeyExpired.value && store.apiKey) {
+  apiKeyInput.value = store.apiKey
+}
 </script>
