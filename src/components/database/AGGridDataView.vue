@@ -8,7 +8,8 @@ import type {
   ColDef,
   GridOptions,
   IDatasource,
-  IGetRowsParams
+  IGetRowsParams,
+  SortModelItem
 } from 'ag-grid-community'
 import { type SQLTableMeta, type SQLViewMeta } from '@/types/metadata'
 import connections from '@/api/connections'
@@ -33,6 +34,7 @@ const totalRowCount = ref<number>(0)
 const isLoading = ref(false)
 const currentFirstRow = ref<number>(1)
 const currentLastRow = ref<number>(100)
+const currentSortModel = ref<SortModelItem[]>([])
 
 // Watch for approxRows prop changes and update totalRowCount
 watch(
@@ -55,6 +57,7 @@ watch(
     totalRowCount.value = 0
     currentFirstRow.value = 1
     currentLastRow.value = 100
+    currentSortModel.value = []
   },
   { deep: true }
 )
@@ -75,7 +78,7 @@ const columnDefs = computed<ColDef[]>(() => {
   return meta.columns.map((col) => ({
     field: col.name,
     headerName: col.name,
-    sortable: false, // Server-side sorting can be added later
+    sortable: true, // Enable server-side sorting
     filter: false, // Server-side filtering can be added later
     resizable: true,
     flex: 1,
@@ -125,13 +128,34 @@ function createDatasource(): IDatasource {
         const limit = params.endRow - params.startRow
         const offset = params.startRow
 
-        const queryParams = {
+        // Extract sort information from params
+        const sortModel = params.sortModel || []
+        currentSortModel.value = sortModel
+        const orderBy = sortModel.length > 0 ? sortModel[0].colId : undefined
+        const orderDir = sortModel.length > 0 ? sortModel[0].sort?.toUpperCase() : undefined
+
+        const queryParams: {
+          limit: number
+          offset: number
+          skip_count: boolean
+          schema?: string
+          order_by?: string
+          order_dir?: string
+        } = {
           limit,
           offset,
-          skip_count: offset > 0 && totalRowCount.value > 0, // Skip count if we already have it
-          ...(objectSchema && objectSchema !== 'public' && objectSchema !== ''
-            ? { schema: objectSchema }
-            : {})
+          skip_count: offset > 0 && totalRowCount.value > 0 // Skip count if we already have it
+        }
+
+        // Add optional parameters only if they have values
+        if (objectSchema && objectSchema !== 'public' && objectSchema !== '') {
+          queryParams.schema = objectSchema
+        }
+        if (orderBy) {
+          queryParams.order_by = orderBy
+        }
+        if (orderDir) {
+          queryParams.order_dir = orderDir
         }
 
         const data = props.isView
@@ -205,6 +229,11 @@ watch(
   () => props.tableMeta,
   () => {
     if (gridApi.value) {
+      // Clear any existing sort state when switching tables
+      gridApi.value.applyColumnState({
+        defaultState: { sort: null }
+      })
+      // Reset the datasource with the new table
       gridApi.value.setGridOption('datasource', createDatasource())
     }
   },

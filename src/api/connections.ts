@@ -353,6 +353,8 @@ const getTableData = async (
     offset: number
     skip_count: boolean
     schema?: string
+    order_by?: string
+    order_dir?: string
   }
 ): Promise<TableData> => {
   const commonStore = useCommonStore()
@@ -366,6 +368,14 @@ const getTableData = async (
 
     if (params.schema) {
       queryParams.append('schema', params.schema)
+    }
+
+    if (params.order_by) {
+      queryParams.append('order_by', params.order_by)
+    }
+
+    if (params.order_dir) {
+      queryParams.append('order_dir', params.order_dir)
     }
 
     const url = `/connections/${connectionId}/databases/${encodeURIComponent(database)}/tables/${encodeURIComponent(tableName)}/data?${queryParams.toString()}`
@@ -408,6 +418,8 @@ const getViewData = async (
     offset: number
     skip_count: boolean
     schema?: string
+    order_by?: string
+    order_dir?: string
   }
 ): Promise<TableData> => {
   const commonStore = useCommonStore()
@@ -420,6 +432,14 @@ const getViewData = async (
 
     if (params.schema) {
       queryParams.append('schema', params.schema)
+    }
+
+    if (params.order_by) {
+      queryParams.append('order_by', params.order_by)
+    }
+
+    if (params.order_dir) {
+      queryParams.append('order_dir', params.order_dir)
     }
 
     const url = `/connections/${connectionId}/databases/${encodeURIComponent(database)}/views/${encodeURIComponent(viewName)}/data?${queryParams.toString()}`
