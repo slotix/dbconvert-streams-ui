@@ -654,6 +654,19 @@ function updateVisibleRows() {
   }
 }
 
+// Refresh data - exposed to parent
+function refresh() {
+  if (gridApi.value) {
+    // This will trigger a fresh data fetch from the backend
+    gridApi.value.setGridOption('datasource', createDatasource())
+  }
+}
+
+// Expose refresh to parent
+defineExpose({
+  refresh
+})
+
 // Cleanup
 onBeforeUnmount(() => {
   const gridElement = document.querySelector('.ag-root') as HTMLElement

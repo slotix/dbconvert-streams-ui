@@ -152,21 +152,9 @@ function onTabChange(i: number) {
   selectedIndex.value = i
   // Save state to Pinia store
   tabStateStore.setTabState(objectKey.value, i)
-  emit('tab-change', i === 0 ? 'data' : 'structure')
+  const activeTab = i === 0 ? 'data' : 'structure'
+  emit('tab-change', activeTab)
 }
-
-// Compose object display name
-const objectDisplayName = computed(() => {
-  if (props.objectType === 'file') {
-    return props.fileEntry?.name || 'Unknown file'
-  } else {
-    const meta = props.tableMeta as Partial<SQLTableMeta & SQLViewMeta>
-    const name = meta?.name || ''
-    const schema = meta?.schema
-    if (schema && schema !== 'public' && schema !== '') return `${schema}.${name}`
-    return name
-  }
-})
 
 // Keep refs to the rendered child components so parent can trigger refresh
 type Refreshable = { refresh?: () => Promise<void> | void }
@@ -184,7 +172,12 @@ async function onRefreshClick() {
     }
   } finally {
     // small delay to show spinner feels responsive even if instant
-    setTimeout(() => (isRefreshing.value = false), props.objectType === 'database' ? 300 : 0)
+    setTimeout(
+      () => {
+        isRefreshing.value = false
+      },
+      props.objectType === 'database' ? 300 : 0
+    )
   }
 }
 </script>
@@ -196,46 +189,37 @@ async function onRefreshClick() {
       $attrs.class ? $attrs.class : 'shadow-sm ring-1 ring-gray-900/5 rounded-lg'
     ]"
   >
-    <!-- Header with tabs and actions -->
-    <div class="border-b border-gray-200 px-4 py-3">
-      <div class="flex items-center gap-4 flex-wrap">
-        <button
-          v-for="(tab, i) in tabs"
-          :key="tab.name"
-          :class="[
-            'border-b-2 py-4 px-1 text-sm font-medium whitespace-nowrap transition-colors duration-150',
-            selectedIndex === i
-              ? 'border-slate-500 text-slate-600'
-              : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-          ]"
-          @click="onTabChange(i)"
-        >
-          {{ tab.name }}
-        </button>
-      </div>
-      <div class="flex items-center gap-3 ml-auto">
-        <div class="text-sm text-gray-600 truncate max-w-[40vw]">
-          {{ objectDisplayName }}
+    <!-- Header with tabs and refresh button -->
+    <div class="border-b border-gray-200 px-4">
+      <div class="flex items-center justify-between -mb-px">
+        <div class="flex items-center gap-4 flex-wrap">
+          <button
+            v-for="(tab, i) in tabs"
+            :key="tab.name"
+            :class="[
+              'border-b-2 py-4 px-1 text-sm font-medium whitespace-nowrap transition-colors duration-150',
+              selectedIndex === i
+                ? 'border-slate-500 text-slate-600'
+                : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+            ]"
+            @click="onTabChange(i)"
+          >
+            {{ tab.name }}
+          </button>
         </div>
-        <button
-          type="button"
-          class="inline-flex items-center rounded-md bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm border border-gray-200 hover:bg-gray-50"
-          :disabled="isRefreshing"
-          @click="onRefreshClick"
-        >
-          <ArrowPathIcon
-            :class="['h-4 w-4 mr-2', isRefreshing ? 'animate-spin' : 'text-gray-400']"
-          />
-          {{ selectedIndex === 0 ? 'Refresh Data' : 'Refresh Metadata' }}
-        </button>
-        <button
-          v-if="props.closable"
-          class="text-gray-400 hover:text-gray-700 text-lg leading-none px-2 py-1"
-          aria-label="Close"
-          @click="emit('close')"
-        >
-          ×
-        </button>
+        <div class="py-2">
+          <button
+            type="button"
+            class="inline-flex items-center rounded-md bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm border border-gray-200 hover:bg-gray-50 transition-colors"
+            :disabled="isRefreshing"
+            @click="onRefreshClick"
+          >
+            <ArrowPathIcon
+              :class="['h-4 w-4 mr-1.5', isRefreshing ? 'animate-spin' : 'text-gray-400']"
+            />
+            {{ selectedIndex === 0 ? 'Refresh Data' : 'Refresh Metadata' }}
+          </button>
+        </div>
       </div>
     </div>
 

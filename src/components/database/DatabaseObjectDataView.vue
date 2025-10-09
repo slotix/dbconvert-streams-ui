@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, computed } from 'vue'
+import { onMounted, computed, ref } from 'vue'
 import { type SQLTableMeta, type SQLViewMeta } from '@/types/metadata'
 import { useDatabaseOverviewStore } from '@/stores/databaseOverview'
 import AGGridDataView from './AGGridDataView.vue'
@@ -36,6 +36,18 @@ onMounted(async () => {
     }
   }
 })
+
+// Ref to AGGridDataView
+const agGridRef = ref<InstanceType<typeof AGGridDataView> | null>(null)
+
+// Expose refresh function to parent
+function refresh() {
+  agGridRef.value?.refresh()
+}
+
+defineExpose({
+  refresh
+})
 </script>
 
 <template>
@@ -47,6 +59,7 @@ onMounted(async () => {
   >
     <div class="p-4">
       <AGGridDataView
+        ref="agGridRef"
         :table-meta="tableMeta"
         :connection-id="connectionId"
         :database="database"
