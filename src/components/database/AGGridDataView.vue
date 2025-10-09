@@ -17,6 +17,7 @@ import connections from '@/api/connections'
 import { formatTableValue } from '@/utils/dataUtils'
 import { vHighlightjs } from '@/directives/highlightjs'
 import ColumnContextMenu from './ColumnContextMenu.vue'
+import AdvancedFilterModal from './AdvancedFilterModal.vue'
 import 'ag-grid-community/styles/ag-grid.css'
 import 'ag-grid-community/styles/ag-theme-alpine.css'
 
@@ -49,6 +50,13 @@ const showContextMenu = ref(false)
 const contextMenuX = ref(0)
 const contextMenuY = ref(0)
 const contextMenuColumn = ref<Column | null>(null)
+
+// Advanced filter modal state
+const showAdvancedFilterModal = ref(false)
+
+// SQL banner expansion state
+const isSqlBannerExpanded = ref(false)
+const SQL_BANNER_MAX_LENGTH = 150
 
 // Watch for approxRows prop changes and update totalRowCount
 watch(
@@ -194,6 +202,69 @@ const orderByClause = computed(() => {
 
   return sortParts.join(', ')
 })
+
+// Computed property for full SQL query display
+const fullSqlQuery = computed(() => {
+  const parts: string[] = []
+
+  if (combinedWhereClause.value) {
+    parts.push(`WHERE ${combinedWhereClause.value}`)
+  }
+
+  if (orderByClause.value) {
+    parts.push(`ORDER BY ${orderByClause.value}`)
+  }
+
+  return parts.join(' ')
+})
+
+// Check if SQL query needs truncation
+const needsTruncation = computed(() => {
+  return fullSqlQuery.value.length > SQL_BANNER_MAX_LENGTH
+})
+
+// Displayed SQL (truncated or full based on expansion state)
+const displayedSql = computed(() => {
+  if (!needsTruncation.value || isSqlBannerExpanded.value) {
+    return fullSqlQuery.value
+  }
+  return fullSqlQuery.value.substring(0, SQL_BANNER_MAX_LENGTH) + '...'
+})
+
+// Toggle SQL banner expansion
+function toggleSqlBanner() {
+  isSqlBannerExpanded.value = !isSqlBannerExpanded.value
+}
+
+// Clear all filters
+function clearAllFilters() {
+  // Clear manual WHERE clause
+  whereInput.value = ''
+  whereClause.value = ''
+  whereError.value = undefined
+
+  // Clear AG Grid filters
+  if (gridApi.value) {
+    gridApi.value.setFilterModel(null)
+  }
+
+  // Clear sorting
+  if (gridApi.value) {
+    gridApi.value.applyColumnState({
+      defaultState: { sort: null }
+    })
+  }
+
+  // Reset to first page
+  totalRowCount.value = 0
+  currentFirstRow.value = 1
+  currentLastRow.value = 100
+
+  // Refresh data
+  if (gridApi.value) {
+    gridApi.value.setGridOption('datasource', createDatasource())
+  }
+}
 
 // Convert AG Grid filter model to SQL WHERE clause
 function convertFilterModelToSQL(filterModel: Record<string, any>): string {
@@ -532,6 +603,28 @@ function closeContextMenu() {
   contextMenuColumn.value = null
 }
 
+// Open advanced filter modal
+function openAdvancedFilterModal() {
+  showAdvancedFilterModal.value = true
+}
+
+// Apply WHERE filter from modal
+function applyWhereFilterFromModal(newWhereClause: string) {
+  whereError.value = undefined
+  whereClause.value = newWhereClause
+  whereInput.value = newWhereClause
+
+  // Reset to first page when applying filter
+  totalRowCount.value = 0
+  currentFirstRow.value = 1
+  currentLastRow.value = 100
+
+  if (gridApi.value) {
+    // Refresh the datasource with new filter
+    gridApi.value.setGridOption('datasource', createDatasource())
+  }
+}
+
 // Reload data when table metadata changes
 watch(
   () => props.tableMeta,
@@ -561,56 +654,6 @@ function updateVisibleRows() {
   }
 }
 
-// Apply WHERE filter
-function applyWhereFilter() {
-  whereError.value = undefined
-  whereClause.value = whereInput.value.trim()
-
-  // Reset to first page when applying filter
-  totalRowCount.value = 0
-  currentFirstRow.value = 1
-  currentLastRow.value = 100
-
-  if (gridApi.value) {
-    // Refresh the datasource with new filter
-    gridApi.value.setGridOption('datasource', createDatasource())
-  }
-}
-
-// Clear WHERE filter
-function clearWhereFilter() {
-  whereInput.value = ''
-  whereClause.value = ''
-  whereError.value = undefined
-
-  // Reset to first page
-  totalRowCount.value = 0
-  currentFirstRow.value = 1
-  currentLastRow.value = 100
-
-  if (gridApi.value) {
-    // Refresh the datasource without filter
-    gridApi.value.setGridOption('datasource', createDatasource())
-  }
-}
-
-// Jump to top functionality
-function jumpToTop() {
-  if (gridApi.value) {
-    gridApi.value.ensureIndexVisible(0, 'top')
-  }
-}
-
-// Export to CSV functionality
-function exportToCsv() {
-  if (gridApi.value) {
-    gridApi.value.exportDataAsCsv({
-      fileName: `${getObjectName(props.tableMeta)}.csv`,
-      allColumns: true
-    })
-  }
-}
-
 // Cleanup
 onBeforeUnmount(() => {
   const gridElement = document.querySelector('.ag-root') as HTMLElement
@@ -625,36 +668,6 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="flex flex-col h-full">
-    <!-- WHERE filter input -->
-    <div class="mb-3 flex items-center gap-2">
-      <div class="flex-1 flex items-center gap-2">
-        <label class="text-sm font-medium text-gray-700 whitespace-nowrap">WHERE:</label>
-        <input
-          v-model="whereInput"
-          type="text"
-          class="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          placeholder="e.g., amount > 5 AND customer_id = 1"
-          @keyup.enter="applyWhereFilter"
-        />
-        <button
-          type="button"
-          class="px-4 py-1.5 text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          :disabled="!whereInput.trim()"
-          @click="applyWhereFilter"
-        >
-          Apply
-        </button>
-        <button
-          v-if="whereClause"
-          type="button"
-          class="px-4 py-1.5 text-sm rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors"
-          @click="clearWhereFilter"
-        >
-          Clear
-        </button>
-      </div>
-    </div>
-
     <!-- WHERE error message -->
     <div
       v-if="whereError"
@@ -663,71 +676,63 @@ onBeforeUnmount(() => {
       {{ whereError }}
     </div>
 
-    <!-- Active filter and sort status bar (like DataGrip) -->
+    <!-- SQL Query Banner (like DataGrip) -->
     <div
-      v-if="combinedWhereClause || orderByClause"
-      class="mb-3 flex items-center gap-3 text-xs font-mono"
+      v-if="fullSqlQuery"
+      class="mb-3 bg-amber-50 border border-amber-200 rounded-md overflow-hidden"
     >
-      <!-- WHERE clause with syntax highlighting -->
-      <div v-if="combinedWhereClause" class="flex items-center gap-1.5">
-        <span class="font-sans text-gray-500 uppercase tracking-wide">WHERE:</span>
-        <code v-highlightjs class="inline-flex">
-          <span class="language-sql px-2 py-0.5 bg-gray-50 border border-gray-300 rounded">{{
-            combinedWhereClause
-          }}</span>
-        </code>
-      </div>
+      <div class="flex items-start gap-2 px-3 py-2">
+        <!-- SQL Content -->
+        <div class="flex-1 min-w-0">
+          <pre
+            v-highlightjs
+            class="m-0 p-0 overflow-x-auto"
+            :class="{
+              'whitespace-pre-wrap': isSqlBannerExpanded,
+              'whitespace-nowrap': !isSqlBannerExpanded
+            }"
+          ><code class="language-sql font-mono text-xs leading-relaxed">{{ displayedSql }}</code></pre>
+        </div>
 
-      <!-- ORDER BY clause with syntax highlighting -->
-      <div v-if="orderByClause" class="flex items-center gap-1.5">
-        <span class="font-sans text-gray-500 uppercase tracking-wide">ORDER BY:</span>
-        <code v-highlightjs class="inline-flex">
-          <span class="language-sql px-2 py-0.5 bg-gray-50 border border-gray-300 rounded">{{
-            orderByClause
-          }}</span>
-        </code>
+        <!-- Action Buttons -->
+        <div class="flex items-center gap-1 flex-shrink-0">
+          <!-- Expand/Collapse button (only show if truncation is needed) -->
+          <button
+            v-if="needsTruncation"
+            type="button"
+            class="px-2 py-1 text-xs text-amber-700 hover:bg-amber-100 rounded transition-colors"
+            :title="isSqlBannerExpanded ? 'Show less' : 'Show more'"
+            @click="toggleSqlBanner"
+          >
+            {{ isSqlBannerExpanded ? 'Show less' : 'Show more' }}
+          </button>
+
+          <!-- Clear filters button -->
+          <button
+            type="button"
+            class="px-2 py-1 text-xs text-amber-700 hover:bg-amber-100 rounded transition-colors flex items-center gap-1"
+            title="Clear all filters and sorting"
+            @click="clearAllFilters"
+          >
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+            Clear
+          </button>
+        </div>
       </div>
     </div>
 
-    <!-- Header with stats and actions -->
-    <div class="mb-3 flex items-center justify-between">
+    <!-- Header with actions -->
+    <div v-if="approxRows && approxRows > 1000000" class="mb-3 flex items-center justify-between">
       <div class="flex items-center gap-4 text-sm text-gray-600">
-        <span v-if="isLoading" class="flex items-center gap-2">
-          <svg
-            class="animate-spin h-4 w-4"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <circle
-              class="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              stroke-width="4"
-            ></circle>
-            <path
-              class="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-            ></path>
-          </svg>
-          Loading...
-        </span>
-        <!-- Position indicator -->
-        <span class="font-medium text-gray-900">
-          Showing {{ currentFirstRow.toLocaleString() }}-{{ currentLastRow.toLocaleString() }}
-          <span v-if="totalRowCount > 0"
-            >of {{ totalRowCount.toLocaleString() }} rows
-            <span v-if="approxRows" class="text-xs text-amber-600">(approx)</span></span
-          >
-        </span>
         <!-- Large table warning -->
-        <span
-          v-if="approxRows && approxRows > 1000000"
-          class="text-xs text-blue-600 flex items-center gap-1"
-        >
+        <span class="text-xs text-blue-600 flex items-center gap-1">
           <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
             <path
               fill-rule="evenodd"
@@ -737,26 +742,6 @@ onBeforeUnmount(() => {
           </svg>
           Large table: only indexed columns are sortable
         </span>
-      </div>
-
-      <div class="flex items-center gap-2">
-        <button
-          v-if="currentFirstRow > 1"
-          type="button"
-          class="px-3 py-1 text-xs rounded border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 transition-colors"
-          title="Jump to first row"
-          @click="jumpToTop"
-        >
-          ↑ Back to Top
-        </button>
-        <button
-          type="button"
-          class="px-3 py-1 text-xs rounded border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 transition-colors"
-          :disabled="!gridApi"
-          @click="exportToCsv"
-        >
-          Export CSV
-        </button>
       </div>
     </div>
 
@@ -792,6 +777,15 @@ onBeforeUnmount(() => {
       :column="contextMenuColumn"
       :grid-api="gridApi"
       @close="closeContextMenu"
+      @open-advanced-filter="openAdvancedFilterModal"
+    />
+
+    <!-- Advanced Filter Modal -->
+    <AdvancedFilterModal
+      :is-open="showAdvancedFilterModal"
+      :current-where-clause="whereClause"
+      @close="showAdvancedFilterModal = false"
+      @apply="applyWhereFilterFromModal"
     />
   </div>
 </template>
