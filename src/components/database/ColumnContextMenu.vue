@@ -1,6 +1,16 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import type { GridApi, Column } from 'ag-grid-community'
+import {
+  ArrowUpIcon,
+  ArrowDownIcon,
+  XCircleIcon,
+  FunnelIcon,
+  ArrowsPointingOutIcon,
+  ArrowPathIcon,
+  MapPinIcon,
+  NoSymbolIcon
+} from '@heroicons/vue/24/outline'
 
 const props = defineProps<{
   x: number
@@ -135,124 +145,105 @@ const openFilter = () => {
 <template>
   <div
     ref="menuRef"
-    class="column-context-menu"
+    class="fixed bg-white border border-gray-300 rounded-md shadow-lg min-w-[200px] py-1 z-[10000]"
     :style="menuStyle"
   >
-    <div class="menu-section">
-      <button @click="sortAscending" class="menu-item">
-        <span class="menu-icon">↑</span>
+    <!-- Sort Section -->
+    <div class="py-1">
+      <button
+        class="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+        @click="sortAscending"
+      >
+        <ArrowUpIcon class="h-4 w-4 text-gray-500" />
         <span>Sort Ascending</span>
       </button>
-      <button @click="sortDescending" class="menu-item">
-        <span class="menu-icon">↓</span>
+      <button
+        class="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+        @click="sortDescending"
+      >
+        <ArrowDownIcon class="h-4 w-4 text-gray-500" />
         <span>Sort Descending</span>
       </button>
-      <button @click="clearSort" class="menu-item">
-        <span class="menu-icon">⊗</span>
+      <button
+        class="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+        @click="clearSort"
+      >
+        <XCircleIcon class="h-4 w-4 text-gray-500" />
         <span>Clear Sort</span>
       </button>
     </div>
 
-    <div class="menu-separator"></div>
+    <div class="border-t border-gray-200"></div>
 
-    <div class="menu-section">
-      <button @click="pinLeft" class="menu-item">
-        <span class="menu-icon">📌</span>
+    <!-- Pin Section -->
+    <div class="py-1">
+      <button
+        class="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+        @click="pinLeft"
+      >
+        <MapPinIcon class="h-4 w-4 text-gray-500 -rotate-45" />
         <span>Pin Left</span>
       </button>
-      <button @click="pinRight" class="menu-item">
-        <span class="menu-icon">📌</span>
+      <button
+        class="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+        @click="pinRight"
+      >
+        <MapPinIcon class="h-4 w-4 text-gray-500 rotate-45" />
         <span>Pin Right</span>
       </button>
-      <button @click="unpinColumn" class="menu-item">
-        <span class="menu-icon">📍</span>
+      <button
+        class="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+        @click="unpinColumn"
+      >
+        <NoSymbolIcon class="h-4 w-4 text-gray-500" />
         <span>Unpin</span>
       </button>
     </div>
 
-    <div class="menu-separator"></div>
+    <div class="border-t border-gray-200"></div>
 
-    <div class="menu-section">
-      <button @click="openFilter" class="menu-item">
-        <span class="menu-icon">⚙</span>
+    <!-- Filter Section -->
+    <div class="py-1">
+      <button
+        class="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+        @click="openFilter"
+      >
+        <FunnelIcon class="h-4 w-4 text-gray-500" />
         <span>Filter...</span>
       </button>
     </div>
 
-    <div class="menu-separator"></div>
+    <div class="border-t border-gray-200"></div>
 
-    <div class="menu-section">
-      <button @click="autoSizeColumn" class="menu-item">
-        <span class="menu-icon">↔</span>
+    <!-- Resize Section -->
+    <div class="py-1">
+      <button
+        class="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+        @click="autoSizeColumn"
+      >
+        <ArrowsPointingOutIcon class="h-4 w-4 text-gray-500" />
         <span>Autosize This Column</span>
       </button>
-      <button @click="autoSizeAllColumns" class="menu-item">
-        <span class="menu-icon">↔</span>
+      <button
+        class="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+        @click="autoSizeAllColumns"
+      >
+        <ArrowsPointingOutIcon class="h-4 w-4 text-gray-500" />
         <span>Autosize All Columns</span>
       </button>
     </div>
 
-    <div class="menu-separator"></div>
+    <div class="border-t border-gray-200"></div>
 
-    <div class="menu-section">
-      <button @click="resetColumns" class="menu-item">
-        <span class="menu-icon">⟲</span>
+    <!-- Reset Section -->
+    <div class="py-1">
+      <button
+        class="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+        @click="resetColumns"
+      >
+        <ArrowPathIcon class="h-4 w-4 text-gray-500" />
         <span>Reset Columns</span>
       </button>
     </div>
   </div>
 </template>
-
-<style scoped>
-.column-context-menu {
-  background: white;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  min-width: 200px;
-  padding: 4px;
-  z-index: 10000;
-  font-size: 14px;
-}
-
-.menu-section {
-  display: flex;
-  flex-direction: column;
-}
-
-.menu-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 12px;
-  border: none;
-  background: none;
-  text-align: left;
-  cursor: pointer;
-  border-radius: 4px;
-  transition: background-color 0.15s;
-  color: #374151;
-  font-size: 14px;
-}
-
-.menu-item:hover {
-  background-color: #f3f4f6;
-}
-
-.menu-item:active {
-  background-color: #e5e7eb;
-}
-
-.menu-icon {
-  width: 20px;
-  display: inline-flex;
-  justify-content: center;
-  font-size: 16px;
-}
-
-.menu-separator {
-  height: 1px;
-  background-color: #e5e7eb;
-  margin: 4px 0;
-}
-</style>
