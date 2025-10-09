@@ -263,6 +263,11 @@ function handleShowDiagram(payload: { connectionId: string; database: string }) 
   // Route is auto-updated by watcher based on state changes
 }
 
+function handleRefreshMetadata() {
+  // Force refresh the schema metadata from the backend
+  schemaStore.fetchSchema(true)
+}
+
 function handleSelectConnection(payload: { connectionId: string }) {
   // Set active connection ID FIRST (synchronous store update)
   navigationStore.setActiveConnectionId(payload.connectionId)
@@ -972,6 +977,7 @@ onMounted(() => {
               @promote-right-split="onPromoteRightSplit"
               @left-tab-change="onLeftTabChange"
               @right-tab-change="onRightTabChange"
+              @refresh-metadata="handleRefreshMetadata"
             />
 
             <!-- Show loading or empty state when no connection is selected -->

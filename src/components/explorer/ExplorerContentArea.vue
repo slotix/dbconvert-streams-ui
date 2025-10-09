@@ -41,6 +41,7 @@
               :connection-type="currentConnection?.type || 'sql'"
               :database="selectedMeta.database"
               @tab-change="$emit('left-tab-change', $event)"
+              @refresh-metadata="$emit('refresh-metadata')"
             />
           </div>
           <div v-else-if="selectedFileEntry">
@@ -51,6 +52,7 @@
               :file-metadata="selectedFileMetadata"
               :connection-id="connectionId"
               @tab-change="$emit('left-tab-change', $event)"
+              @refresh-metadata="$emit('refresh-metadata')"
             />
           </div>
           <div v-else class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg p-8 text-center">
@@ -68,6 +70,7 @@
               :connection-type="currentConnection?.type || 'sql'"
               :database="splitViewStore.splitContent.meta.database"
               @tab-change="$emit('right-tab-change', $event)"
+              @refresh-metadata="$emit('refresh-metadata')"
             />
           </div>
           <div v-else-if="splitViewStore.splitContent?.type === 'file'">
@@ -77,6 +80,7 @@
               :file-metadata="splitViewStore.splitContent.metadata || null"
               :connection-id="connectionId"
               @tab-change="$emit('right-tab-change', $event)"
+              @refresh-metadata="$emit('refresh-metadata')"
             />
           </div>
         </template>
@@ -159,6 +163,7 @@ defineEmits<{
   'promote-right-split': []
   'left-tab-change': [tab: 'data' | 'structure']
   'right-tab-change': [tab: 'data' | 'structure']
+  'refresh-metadata': []
 }>()
 
 const route = useRoute()
