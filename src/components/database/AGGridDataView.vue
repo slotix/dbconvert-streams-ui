@@ -9,11 +9,14 @@ import type {
   GridOptions,
   IDatasource,
   IGetRowsParams,
-  SortModelItem
+  SortModelItem,
+  Column
 } from 'ag-grid-community'
 import { type SQLTableMeta, type SQLViewMeta } from '@/types/metadata'
 import connections from '@/api/connections'
 import { formatTableValue } from '@/utils/dataUtils'
+import { vHighlightjs } from '@/directives/highlightjs'
+import ColumnContextMenu from './ColumnContextMenu.vue'
 import 'ag-grid-community/styles/ag-grid.css'
 import 'ag-grid-community/styles/ag-theme-alpine.css'
 
@@ -40,6 +43,12 @@ const whereInput = ref<string>('')
 const whereError = ref<string>()
 const agGridFilters = ref<Record<string, any>>({})
 const agGridWhereSQL = ref<string>('')
+
+// Context menu state
+const showContextMenu = ref(false)
+const contextMenuX = ref(0)
+const contextMenuY = ref(0)
+const contextMenuColumn = ref<Column | null>(null)
 
 // Watch for approxRows prop changes and update totalRowCount
 watch(
@@ -143,7 +152,9 @@ const columnDefs = computed<ColDef[]>(() => {
       headerName: col.name,
       sortable: canSort,
       filter: filterType,
-      floatingFilter: false, // No floating filter - using menu icon instead
+      floatingFilter: false,
+      suppressHeaderMenuButton: false, // Ensure menu button is shown
+      suppressHeaderFilterButton: true, // Hide the filter button, use menu only
       resizable: true,
       flex: 1,
       minWidth: 120,
@@ -157,60 +168,32 @@ const columnDefs = computed<ColDef[]>(() => {
   })
 })
 
-// Computed property to display active AG Grid filters
-const activeAgGridFilters = computed(() => {
-  return Object.entries(agGridFilters.value)
-    .filter(([_, filter]) => filter)
-    .map(([column, filter]) => {
-      const clause = buildFilterClause(column, filter)
-      return clause ? `${column}: ${getFilterDescription(filter)}` : null
-    })
-    .filter(Boolean)
+// Computed property to generate SQL WHERE clause for display
+const combinedWhereClause = computed(() => {
+  const agGridWhereClause = agGridWhereSQL.value
+  const manualWhere = whereClause.value
+
+  if (agGridWhereClause && manualWhere) {
+    return `(${agGridWhereClause}) AND (${manualWhere})`
+  } else if (agGridWhereClause) {
+    return agGridWhereClause
+  } else if (manualWhere) {
+    return manualWhere
+  }
+  return ''
 })
 
-// Get human-readable filter description
-function getFilterDescription(filter: any): string {
-  if (filter.operator && filter.condition1 && filter.condition2) {
-    return `${getSimpleFilterDesc(filter.condition1)} ${filter.operator} ${getSimpleFilterDesc(filter.condition2)}`
-  }
-  return getSimpleFilterDesc(filter)
-}
+// Computed property to generate ORDER BY clause for display
+const orderByClause = computed(() => {
+  if (currentSortModel.value.length === 0) return ''
 
-function getSimpleFilterDesc(filter: any): string {
-  const type = filter.type
-  const value = filter.filter
+  const sortParts = currentSortModel.value.map((sort) => {
+    const direction = sort.sort?.toUpperCase() || 'ASC'
+    return `${sort.colId} ${direction}`
+  })
 
-  switch (type) {
-    case 'equals':
-      return `= ${value}`
-    case 'notEqual':
-      return `≠ ${value}`
-    case 'contains':
-      return `contains "${value}"`
-    case 'notContains':
-      return `not contains "${value}"`
-    case 'startsWith':
-      return `starts with "${value}"`
-    case 'endsWith':
-      return `ends with "${value}"`
-    case 'lessThan':
-      return `< ${value}`
-    case 'lessThanOrEqual':
-      return `≤ ${value}`
-    case 'greaterThan':
-      return `> ${value}`
-    case 'greaterThanOrEqual':
-      return `≥ ${value}`
-    case 'inRange':
-      return `${filter.filter} - ${filter.filterTo}`
-    case 'blank':
-      return 'is blank'
-    case 'notBlank':
-      return 'is not blank'
-    default:
-      return String(value)
-  }
-}
+  return sortParts.join(', ')
+})
 
 // Convert AG Grid filter model to SQL WHERE clause
 function convertFilterModelToSQL(filterModel: Record<string, any>): string {
@@ -327,9 +310,16 @@ const gridOptions = computed<GridOptions>(() => ({
   // Enable multi-column sorting with Alt+Click
   multiSortKey: 'ctrl', // Use Ctrl (or Cmd on Mac) for multi-sort
   alwaysMultiSort: false, // Only multi-sort when holding Ctrl/Cmd
-  // Show menu icon in column headers for filters
-  suppressMenuHide: false,
-  columnMenu: 'new'
+  // Always show menu icon in column headers
+  suppressMenuHide: true,
+  // Default column settings (Community Edition compatible)
+  defaultColDef: {
+    sortable: true,
+    filter: true,
+    resizable: true,
+    suppressHeaderFilterButton: false,
+    suppressHeaderMenuButton: false
+  }
 }))
 
 // Create datasource for Infinite Row Model
@@ -498,8 +488,48 @@ function onGridReady(params: GridReadyEvent) {
     }
   })
 
+  // Add context menu listener for column headers - wait for next tick to ensure DOM is ready
+  setTimeout(() => {
+    const gridElement = document.querySelector('.ag-root') as HTMLElement
+    if (gridElement) {
+      gridElement.addEventListener('contextmenu', handleContextMenu)
+    }
+  }, 100)
+
   // Set datasource for infinite row model
   params.api.setGridOption('datasource', createDatasource())
+}
+
+// Handle right-click on column headers
+function handleContextMenu(event: MouseEvent) {
+  const target = event.target as HTMLElement
+
+  // Check if click was on a column header
+  const headerCell = target.closest('.ag-header-cell')
+
+  if (headerCell && gridApi.value) {
+    event.preventDefault()
+
+    // Get the column from the header cell
+    const colId = headerCell.getAttribute('col-id')
+
+    if (colId) {
+      const column = gridApi.value.getColumn(colId)
+
+      if (column) {
+        contextMenuColumn.value = column
+        contextMenuX.value = event.clientX
+        contextMenuY.value = event.clientY
+        showContextMenu.value = true
+      }
+    }
+  }
+}
+
+// Close context menu
+function closeContextMenu() {
+  showContextMenu.value = false
+  contextMenuColumn.value = null
 }
 
 // Reload data when table metadata changes
@@ -583,6 +613,10 @@ function exportToCsv() {
 
 // Cleanup
 onBeforeUnmount(() => {
+  const gridElement = document.querySelector('.ag-root') as HTMLElement
+  if (gridElement) {
+    gridElement.removeEventListener('contextmenu', handleContextMenu as EventListener)
+  }
   if (gridApi.value) {
     gridApi.value.destroy()
   }
@@ -629,43 +663,29 @@ onBeforeUnmount(() => {
       {{ whereError }}
     </div>
 
-    <!-- Active filter indicators -->
+    <!-- Active filter and sort status bar (like DataGrip) -->
     <div
-      v-if="whereClause || activeAgGridFilters.length > 0 || agGridWhereSQL"
-      class="mb-3 space-y-2"
+      v-if="combinedWhereClause || orderByClause"
+      class="mb-3 flex items-center gap-3 text-xs font-mono"
     >
-      <!-- User-friendly filter badges -->
-      <div
-        v-if="whereClause || activeAgGridFilters.length > 0"
-        class="flex flex-wrap items-center gap-2 text-sm"
-      >
-        <span
-          v-if="whereClause"
-          class="px-2 py-1 bg-blue-50 border border-blue-200 rounded text-blue-700"
-        >
-          <strong>Manual WHERE:</strong> {{ whereClause }}
-        </span>
-        <span
-          v-for="(filter, index) in activeAgGridFilters"
-          :key="index"
-          class="px-2 py-1 bg-green-50 border border-green-200 rounded text-green-700"
-        >
-          <strong>Column Filter:</strong> {{ filter }}
-        </span>
+      <!-- WHERE clause with syntax highlighting -->
+      <div v-if="combinedWhereClause" class="flex items-center gap-1.5">
+        <span class="font-sans text-gray-500 uppercase tracking-wide">WHERE:</span>
+        <code v-highlightjs class="inline-flex">
+          <span class="language-sql px-2 py-0.5 bg-gray-50 border border-gray-300 rounded">{{
+            combinedWhereClause
+          }}</span>
+        </code>
       </div>
 
-      <!-- SQL Preview -->
-      <div v-if="agGridWhereSQL || whereClause" class="flex items-start gap-2 text-xs">
-        <span
-          class="font-mono px-2 py-1 bg-gray-100 border border-gray-300 rounded text-gray-800 whitespace-pre-wrap break-all"
-        >
-          <strong class="text-purple-600">SQL WHERE:</strong>
-          <span class="ml-2">{{
-            agGridWhereSQL && whereClause
-              ? `(${agGridWhereSQL}) AND (${whereClause})`
-              : agGridWhereSQL || whereClause
+      <!-- ORDER BY clause with syntax highlighting -->
+      <div v-if="orderByClause" class="flex items-center gap-1.5">
+        <span class="font-sans text-gray-500 uppercase tracking-wide">ORDER BY:</span>
+        <code v-highlightjs class="inline-flex">
+          <span class="language-sql px-2 py-0.5 bg-gray-50 border border-gray-300 rounded">{{
+            orderByClause
           }}</span>
-        </span>
+        </code>
       </div>
     </div>
 
@@ -763,6 +783,16 @@ onBeforeUnmount(() => {
         @grid-ready="onGridReady"
       />
     </div>
+
+    <!-- Custom Context Menu -->
+    <ColumnContextMenu
+      v-if="showContextMenu"
+      :x="contextMenuX"
+      :y="contextMenuY"
+      :column="contextMenuColumn"
+      :grid-api="gridApi"
+      @close="closeContextMenu"
+    />
   </div>
 </template>
 
@@ -807,13 +837,29 @@ onBeforeUnmount(() => {
   font-size: 12px;
 }
 
-/* Show menu icon for columns with filters */
+/* Always show menu icon for all columns */
 :deep(.ag-header-cell-menu-button) {
-  opacity: 0.6;
+  opacity: 1 !important;
+  display: inline-flex !important;
+  visibility: visible !important;
+  width: auto !important;
+  height: auto !important;
 }
 
 :deep(.ag-header-cell:hover .ag-header-cell-menu-button) {
-  opacity: 1;
+  opacity: 1 !important;
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Make sure the menu button is visible in the header */
+:deep(.ag-header-cell-comp-wrapper) {
+  display: flex !important;
+  align-items: center !important;
+}
+
+:deep(.ag-header-cell) {
+  display: flex !important;
+  align-items: center !important;
 }
 
 /* Highlight columns that have active filters */
@@ -824,5 +870,37 @@ onBeforeUnmount(() => {
 :deep(.ag-header-cell-filtered .ag-header-cell-menu-button) {
   opacity: 1;
   color: #2563eb;
+}
+
+/* SQL Syntax highlighting for inline code */
+:deep(.hljs) {
+  background: transparent;
+  padding: 0;
+  color: #24292e;
+}
+
+:deep(.hljs-keyword) {
+  color: #d73a49;
+  font-weight: 600;
+}
+
+:deep(.hljs-string) {
+  color: #032f62;
+}
+
+:deep(.hljs-number) {
+  color: #005cc5;
+}
+
+:deep(.hljs-operator) {
+  color: #d73a49;
+}
+
+:deep(.hljs-built_in) {
+  color: #6f42c1;
+}
+
+:deep(.hljs-literal) {
+  color: #005cc5;
 }
 </style>
