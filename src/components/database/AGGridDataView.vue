@@ -714,10 +714,10 @@ onBeforeUnmount(() => {
             v-if="needsTruncation"
             type="button"
             class="px-2 py-1 text-xs text-amber-700 hover:bg-amber-100 rounded transition-colors"
-            :title="isSqlBannerExpanded ? 'Show less' : 'Show more'"
+            :title="isSqlBannerExpanded ? 'Collapse' : 'Expand'"
             @click="toggleSqlBanner"
           >
-            {{ isSqlBannerExpanded ? 'Show less' : 'Show more' }}
+            {{ isSqlBannerExpanded ? 'Collapse' : 'Expand' }}
           </button>
 
           <!-- Clear filters button -->
