@@ -356,11 +356,14 @@ function handleContextMenuFile(payload: {
 
 onMounted(async () => {
   await loadConnections()
+  // Only auto-expand and load databases if there's a specific connection ID in the URL
+  // This happens when user navigates directly to /explorer/connection-id or clicks "Explore" from connection card
   if (props.initialExpandedConnectionId) {
     navigationStore.expandConnection(props.initialExpandedConnectionId)
     if (treeLogic.isFileConnection(props.initialExpandedConnectionId)) {
       emit('request-file-entries', { connectionId: props.initialExpandedConnectionId })
     } else {
+      // Load databases for database connections when explicitly navigating to them
       navigationStore.ensureDatabases(props.initialExpandedConnectionId).catch(() => {})
     }
   }

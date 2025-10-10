@@ -17,9 +17,14 @@ export function useExplorerState() {
   const navigationStore = useExplorerNavigationStore()
 
   // Current connection
-  const currentConnectionId = computed(() => route.params.id as string)
+  const currentConnectionId = computed(() => {
+    const id = route.params.id as string
+    return id && id !== 'undefined' ? id : null
+  })
   const currentConnection = computed(() =>
-    connectionsStore.connections.find((conn) => conn.id === currentConnectionId.value)
+    currentConnectionId.value
+      ? connectionsStore.connections.find((conn) => conn.id === currentConnectionId.value)
+      : null
   )
 
   // Selection state (database as root)
