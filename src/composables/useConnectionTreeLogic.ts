@@ -1,4 +1,3 @@
-import { computed } from 'vue'
 import { useConnectionsStore } from '@/stores/connections'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import type { Connection } from '@/types/connections'
@@ -48,7 +47,17 @@ export function useConnectionTreeLogic() {
     const meta = navigationStore.metadataCache[connId]?.[db]
     if (!meta) return []
 
+    // Initialize buckets for all schemas from the API response
     const buckets = new Map<string, { tables: string[]; views: string[] }>()
+
+    // First, add all schemas from the API response (including empty ones)
+    if (meta.schemas && Array.isArray(meta.schemas)) {
+      meta.schemas.forEach((schemaName: string) => {
+        buckets.set(schemaName, { tables: [], views: [] })
+      })
+    }
+
+    // Then populate tables and views into their respective schemas
     Object.values(meta.tables || {}).forEach((t) => {
       const s = t.schema || ''
       if (!buckets.has(s)) buckets.set(s, { tables: [], views: [] })
