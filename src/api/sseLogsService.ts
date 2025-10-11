@@ -13,7 +13,7 @@ export class SSELogsService {
   private reconnectDelay: number = 10000 // 10 seconds
   private logHeartbeats: boolean = false // Set to false to disable heartbeat logging
   private refreshTimeout: number | null = null
-  private debugMode: boolean = false // Enable debug mode by default to help diagnose issues
+  private debugMode: boolean = false
   private lastHeartbeatTime: number = Date.now()
   private heartbeatCheckInterval: number | null = null
   private isConnected: boolean = false // Add connection state tracking
@@ -342,15 +342,43 @@ export class SSELogsService {
         // Extract nodeId directly from the data
         const nodeId = data.nodeId || null
 
-        // Add to logs store
-        logsStore.addLog({
-          message: message,
-          level: level,
-          timestamp: timestamp,
-          source: source,
-          nodeId: nodeId,
-          details: data
-        })
+        // Check if this is an enhanced SQL log (has connectionId, query, and purpose)
+        const isSQL = data.connectionId && data.query && data.purpose
+
+        if (isSQL) {
+          // This is an enhanced SQL log - route to addSQLLog
+          logsStore.addSQLLog({
+            id: data.id,
+            connectionId: data.connectionId,
+            tabId: data.tabId,
+            database: data.database,
+            schema: data.schema,
+            tableName: data.tableName,
+            query: data.query,
+            params: data.params,
+            queryType: data.queryType,
+            purpose: data.purpose,
+            triggerSource: data.triggerSource,
+            startedAt: data.startedAt,
+            durationMs: data.durationMs,
+            rowCount: data.rowCount,
+            error: data.error,
+            groupId: data.groupId,
+            parentGroupId: data.parentGroupId,
+            repeatCount: data.repeatCount,
+            redacted: data.redacted
+          })
+        } else {
+          // Regular system log - add to legacy logs
+          logsStore.addLog({
+            message: message,
+            level: level,
+            timestamp: timestamp,
+            source: source,
+            nodeId: nodeId,
+            details: data
+          })
+        }
 
         if (this.debugMode)
           console.log('Added log message, store now has', logsStore.logs.length, 'logs')

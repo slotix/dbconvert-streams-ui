@@ -38,13 +38,8 @@ function formatTimestamp(timestamp: number): string {
   })
 }
 
-function getNodeType(source: string | undefined, log?: SystemLog): string {
+function getNodeType(source: string | undefined): string {
   if (!source) return 'system'
-
-  // Check if this is a SQL log - give it its own category
-  if (log && isSQLLog(log)) {
-    return 'sql'
-  }
 
   // If source contains a colon, extract the type part
   if (source.includes(':')) {
@@ -101,13 +96,8 @@ function getNodeColor(type: string): string {
   }
 }
 
-function getMessageTypeColor(log: SystemLog, forceSQL = false): string {
+function getMessageTypeColor(log: SystemLog): string {
   const msg = log?.message?.toLowerCase() || ''
-
-  // SQL queries (or when viewing SQL tab)
-  if (forceSQL || isSQLLog(log)) {
-    return 'bg-purple-50/80 border-l-4 border-purple-400'
-  }
 
   // Connection status messages
   if (msg.includes('connecting') || msg.includes('connected to')) {
@@ -187,11 +177,6 @@ function getMessageIconColor(log: SystemLog): string {
 const messageTypes = ['all', 'error & warning', 'progress & stats', 'info']
 const selectedMessageType = ref('all')
 
-// Check if log entry is a SQL query
-function isSQLLog(log: SystemLog): boolean {
-  return log.level === 'sql' || (log.source === 'database' && log.details?.query !== undefined)
-}
-
 const groupedLogs = computed(() => {
   const groups: Record<string, Record<string, SystemLog[]>> = {
     sql: {},
@@ -201,10 +186,15 @@ const groupedLogs = computed(() => {
     system: {}
   }
 
+  // Add a placeholder for SQL logs if there are any in flatLogs
+  if (store.flatLogs.size > 0) {
+    groups.sql['sql'] = [] // Placeholder - actual SQL logs come from store.flatLogs
+  }
+
   // Group logs and sort them by timestamp (newest first)
   store.logs.forEach((log) => {
     const source = log.source || ''
-    const nodeType = getNodeType(source, log)
+    const nodeType = getNodeType(source)
     const nodeId = getNodeId(source, log)
 
     if (!groups[nodeType]) {
@@ -301,7 +291,7 @@ const tabs = computed(() => {
     label: col.type + (col.nodeId ? ` (${getShortNodeId(col.nodeId)})` : ''),
     type: col.type,
     nodeId: col.nodeId,
-    count: Object.values(col.nodes).flat().length
+    count: col.type === 'sql' ? store.flatLogs.size : Object.values(col.nodes).flat().length
   }))
 })
 
@@ -413,32 +403,6 @@ watch(
   },
   { immediate: true }
 )
-
-// Copy SQL query to clipboard
-async function copyQuery(query: string) {
-  try {
-    await navigator.clipboard.writeText(query)
-  } catch (err) {
-    console.error('Failed to copy query:', err)
-  }
-}
-
-// Extract SQL metadata from log details
-function getSQLMetadata(log: SystemLog) {
-  if (!isSQLLog(log) || !log.details) return null
-
-  return {
-    query: log.details.query as string,
-    queryType: log.details.queryType as string,
-    database: log.details.database as string,
-    table: log.details.table as string,
-    schema: log.details.schema as string,
-    durationMs: log.details.durationMs as number,
-    rowCount: log.details.rowCount as number,
-    connectionId: log.details.connectionId as string,
-    error: log.details.error as string
-  }
-}
 </script>
 
 <template>
@@ -574,7 +538,7 @@ function getSQLMetadata(log: SystemLog) {
               class="h-full bg-white"
               :style="{ height: `calc(${panelHeight} - 132px)` }"
             >
-              <SqlConsoleView :logs="Object.values(filteredLogs).flat()" />
+              <SqlConsoleView />
             </div>
 
             <!-- Regular Table View (for other tabs) -->
@@ -591,7 +555,7 @@ function getSQLMetadata(log: SystemLog) {
                       v-for="log in logs"
                       :key="log.id"
                       class="group transition-all duration-200"
-                      :class="[getMessageTypeColor(log, selectedTab === 'sql')]"
+                      :class="[getMessageTypeColor(log)]"
                     >
                       <td class="w-24 py-2 px-4">
                         <span
@@ -601,66 +565,23 @@ function getSQLMetadata(log: SystemLog) {
                         </span>
                       </td>
                       <td class="py-2 px-4">
-                        <!-- SQL Log Entry -->
-                        <template v-if="isSQLLog(log)">
-                          <div class="space-y-2">
-                            <div class="flex items-center justify-between">
-                              <div class="flex items-center space-x-3">
-                                <span
-                                  class="text-xs font-semibold px-2 py-0.5 rounded bg-purple-100 text-purple-700"
-                                >
-                                  {{ getSQLMetadata(log)?.queryType || 'SQL' }}
-                                </span>
-                                <span class="text-xs text-gray-600">
-                                  {{ getSQLMetadata(log)?.database }}.{{
-                                    getSQLMetadata(log)?.table
-                                  }}
-                                </span>
-                                <span class="text-xs text-gray-500">
-                                  ⏱ {{ getSQLMetadata(log)?.durationMs }}ms
-                                </span>
-                                <span class="text-xs text-gray-500">
-                                  📊 {{ getSQLMetadata(log)?.rowCount }} rows
-                                </span>
-                              </div>
-                              <button
-                                @click="copyQuery(getSQLMetadata(log)?.query || '')"
-                                class="text-xs px-2 py-1 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
-                                title="Copy query"
-                              >
-                                Copy
-                              </button>
-                            </div>
-                            <div
-                              class="bg-gray-900 text-green-400 p-3 rounded font-mono text-xs overflow-x-auto"
-                            >
-                              <code>{{ getSQLMetadata(log)?.query }}</code>
-                            </div>
-                          </div>
-                        </template>
-
-                        <!-- Regular Log Entry -->
-                        <template v-else>
-                          <div class="flex items-center space-x-3">
-                            <span
-                              class="flex-shrink-0 transition-transform group-hover:scale-110"
-                              :class="[getMessageIconColor(log)]"
-                            >
-                              <component :is="getMessageIcon(log)" class="h-4 w-4" />
-                            </span>
-                            <span
-                              class="text-sm text-gray-900 break-words font-mono leading-relaxed"
-                            >
-                              {{ log.message }}
-                            </span>
-                            <span
-                              v-if="log.details?.duplicateCount"
-                              class="text-xs text-gray-500 ml-2"
-                            >
-                              {{ formatDuplicateInfo(log) }}
-                            </span>
-                          </div>
-                        </template>
+                        <div class="flex items-center space-x-3">
+                          <span
+                            class="flex-shrink-0 transition-transform group-hover:scale-110"
+                            :class="[getMessageIconColor(log)]"
+                          >
+                            <component :is="getMessageIcon(log)" class="h-4 w-4" />
+                          </span>
+                          <span class="text-sm text-gray-900 break-words font-mono leading-relaxed">
+                            {{ log.message }}
+                          </span>
+                          <span
+                            v-if="log.details?.duplicateCount"
+                            class="text-xs text-gray-500 ml-2"
+                          >
+                            {{ formatDuplicateInfo(log) }}
+                          </span>
+                        </div>
                       </td>
                     </tr>
                   </template>

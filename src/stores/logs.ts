@@ -18,6 +18,61 @@ export interface SystemLog {
   details?: Record<string, unknown>
 }
 
+// Phase 2: Enhanced SQL Logging Types
+export type LoggingLevel = 'minimal' | 'normal' | 'debug'
+export type QueryPurpose =
+  | 'USER_DATA'
+  | 'USER_ACTION'
+  | 'METADATA'
+  | 'PAGINATION'
+  | 'ESTIMATE'
+  | 'EXPLAIN'
+  | 'BACKGROUND_SYNC'
+
+export type TimeWindow = '5m' | '1h' | 'session' | 'all'
+
+export interface LogFilters {
+  level: LoggingLevel
+  purposes: Set<QueryPurpose>
+  timeWindow: TimeWindow
+  searchText: string
+  errorsOnly: boolean
+  currentTabOnly: boolean
+}
+
+export interface SQLQueryLog {
+  id: string
+  connectionId: string
+  tabId?: string
+  database: string
+  schema?: string
+  tableName?: string
+  query: string
+  params?: unknown[]
+  queryType: string
+  purpose: QueryPurpose
+  triggerSource?: string
+  startedAt: string
+  durationMs: number
+  rowCount: number
+  error?: string
+  groupId?: string
+  parentGroupId?: string
+  repeatCount?: number
+  redacted?: boolean
+}
+
+export interface QueryGroup {
+  groupId: string
+  type: 'table-open' | 'repeated' | 'metadata' | 'pagination'
+  summary: string
+  queryCount: number
+  totalDurationMs: number
+  queryIds: string[]
+  collapsed: boolean
+  hasErrors: boolean
+}
+
 export const useLogsStore = defineStore('logs', {
   state: () => ({
     logs: [] as SystemLog[],
@@ -25,7 +80,38 @@ export const useLogsStore = defineStore('logs', {
     isLogsPanelOpen: false,
     panelHeight: '50vh',
     // Keep track of recent messages to prevent duplicates
-    recentMessages: new Map<string, { count: number; timestamp: number }>()
+    recentMessages: new Map<string, { count: number; timestamp: number }>(),
+
+    // Phase 2: SQL Logs
+    flatLogs: new Map<string, SQLQueryLog>(), // id -> log
+    groups: new Map<string, QueryGroup>(), // groupId -> group
+    displayOrder: [] as string[], // IDs in chronological order
+
+    // Filters
+    filters: {
+      level: 'normal' as LoggingLevel,
+      purposes: new Set<QueryPurpose>([
+        'USER_DATA',
+        'USER_ACTION',
+        'METADATA',
+        'PAGINATION',
+        'ESTIMATE',
+        'EXPLAIN'
+      ]),
+      timeWindow: 'session' as TimeWindow,
+      searchText: '',
+      errorsOnly: false,
+      currentTabOnly: false
+    } as LogFilters,
+
+    // Limits
+    maxLogsPerTab: 500,
+    maxLogsSession: 5000,
+
+    // UI state
+    currentTabId: null as string | null,
+    expandedGroups: new Set<string>(),
+    expandedQueries: new Set<string>()
   }),
 
   getters: {
@@ -36,6 +122,104 @@ export const useLogsStore = defineStore('logs', {
 
     hasErrors: (state) => {
       return state.logs.some((log) => log.level === 'error')
+    },
+
+    // Phase 2: SQL Logs Getters
+    visibleLogs(): (SQLQueryLog | QueryGroup)[] {
+      // Calculate time cutoff
+      const now = Date.now()
+      let cutoff: number | null = null
+      switch (this.filters.timeWindow) {
+        case '5m':
+          cutoff = now - 5 * 60 * 1000
+          break
+        case '1h':
+          cutoff = now - 60 * 60 * 1000
+          break
+        case 'session':
+        case 'all':
+          cutoff = null
+          break
+      }
+
+      // Apply filters
+      const filtered: SQLQueryLog[] = []
+
+      for (const log of this.flatLogs.values()) {
+        // Time window
+        const logTime = new Date(log.startedAt).getTime()
+        if (cutoff && logTime < cutoff) continue
+
+        // Tab filter
+        if (this.filters.currentTabOnly && this.currentTabId && log.tabId !== this.currentTabId) {
+          continue
+        }
+
+        // Level-based filtering
+        let shouldShow = true
+        switch (this.filters.level) {
+          case 'minimal':
+            shouldShow = log.purpose === 'USER_DATA' || log.purpose === 'USER_ACTION'
+            break
+          case 'normal':
+            // Hide background sync unless error
+            if (log.purpose === 'BACKGROUND_SYNC' && !log.error) {
+              shouldShow = false
+            }
+            break
+          case 'debug':
+            shouldShow = true
+            break
+        }
+        if (!shouldShow) continue
+
+        // Purpose filter
+        if (!this.filters.purposes.has(log.purpose)) continue
+
+        // Errors only
+        if (this.filters.errorsOnly && !log.error) continue
+
+        // Search text
+        if (this.filters.searchText) {
+          const search = this.filters.searchText.toLowerCase()
+          const matches =
+            log.query.toLowerCase().includes(search) ||
+            log.database.toLowerCase().includes(search) ||
+            (!!log.schema && log.schema.toLowerCase().includes(search)) ||
+            (!!log.tableName && log.tableName.toLowerCase().includes(search)) ||
+            (!!log.error && log.error.toLowerCase().includes(search))
+          if (!matches) continue
+        }
+
+        filtered.push(log)
+      }
+
+      // Build display tree
+      const result: (SQLQueryLog | QueryGroup)[] = []
+      const processedGroups = new Set<string>()
+
+      for (const log of filtered) {
+        if (log.groupId && !processedGroups.has(log.groupId)) {
+          const group = this.groups.get(log.groupId)
+          if (group) {
+            result.push(group)
+            processedGroups.add(log.groupId)
+          } else {
+            result.push(log)
+          }
+        } else if (!log.groupId) {
+          result.push(log)
+        }
+      }
+
+      return result
+    },
+
+    hasSQLErrors(): boolean {
+      for (const log of this.flatLogs.values()) {
+        if (log.error) return true
+      }
+      return false
     }
   },
 
@@ -100,6 +284,138 @@ export const useLogsStore = defineStore('logs', {
 
     updatePanelHeight(height: string) {
       this.panelHeight = height
+    },
+
+    // Phase 2: SQL Logs Actions
+    addSQLLog(log: SQLQueryLog) {
+      // Store log
+      this.flatLogs.set(log.id, log)
+      this.displayOrder.push(log.id)
+
+      // Trim if needed
+      this.trimSQLLogs()
+
+      // Handle grouping
+      if (log.groupId) {
+        this.updateGroup(log)
+      }
+    },
+
+    addGroup(group: QueryGroup) {
+      this.groups.set(group.groupId, group)
+
+      // Auto-collapse based on type
+      if (group.type === 'metadata' || group.type === 'pagination') {
+        group.collapsed = true
+      } else if (group.hasErrors) {
+        group.collapsed = false
+        this.expandedGroups.add(group.groupId)
+      }
+    },
+
+    updateGroup(log: SQLQueryLog) {
+      if (!log.groupId) return
+
+      let group = this.groups.get(log.groupId)
+      if (!group) {
+        // Create new group
+        group = {
+          groupId: log.groupId,
+          type: this.inferGroupType(log),
+          summary: this.buildGroupSummary(log),
+          queryCount: 0,
+          totalDurationMs: 0,
+          queryIds: [],
+          collapsed: false,
+          hasErrors: false
+        }
+        this.groups.set(log.groupId, group)
+      }
+
+      group.queryCount++
+      group.totalDurationMs += log.durationMs
+      group.queryIds.push(log.id)
+
+      if (log.error) {
+        group.hasErrors = true
+        group.collapsed = false
+      }
+    },
+
+    inferGroupType(log: SQLQueryLog): QueryGroup['type'] {
+      if (log.purpose === 'METADATA') return 'metadata'
+      if (log.purpose === 'PAGINATION') return 'pagination'
+      if (log.repeatCount && log.repeatCount > 1) return 'repeated'
+      return 'table-open'
+    },
+
+    buildGroupSummary(log: SQLQueryLog): string {
+      if (log.purpose === 'METADATA') return 'Schema introspection'
+      if (log.purpose === 'PAGINATION') return 'Grid pagination'
+      if (log.repeatCount && log.repeatCount > 1) return `Repeated query ×${log.repeatCount}`
+      const table = log.tableName || 'table'
+      return `Opened ${log.database}.${table}`
+    },
+
+    trimSQLLogs() {
+      // Per-tab limit
+      const tabCounts = new Map<string, number>()
+      for (const log of this.flatLogs.values()) {
+        if (log.tabId) {
+          tabCounts.set(log.tabId, (tabCounts.get(log.tabId) || 0) + 1)
+        }
+      }
+
+      // Trim oldest from over-limit tabs
+      for (const [tabId, count] of tabCounts) {
+        if (count > this.maxLogsPerTab) {
+          const toRemove = count - this.maxLogsPerTab
+          let removed = 0
+          for (const id of this.displayOrder) {
+            const log = this.flatLogs.get(id)
+            if (log?.tabId === tabId) {
+              this.flatLogs.delete(id)
+              this.displayOrder = this.displayOrder.filter((x) => x !== id)
+              removed++
+              if (removed >= toRemove) break
+            }
+          }
+        }
+      }
+
+      // Session limit (LRU)
+      if (this.flatLogs.size > this.maxLogsSession) {
+        const toRemove = this.flatLogs.size - this.maxLogsSession
+        for (let i = 0; i < toRemove; i++) {
+          const oldestId = this.displayOrder[0]
+          this.flatLogs.delete(oldestId)
+          this.displayOrder.shift()
+        }
+      }
+    },
+
+    toggleGroup(groupId: string) {
+      if (this.expandedGroups.has(groupId)) {
+        this.expandedGroups.delete(groupId)
+      } else {
+        this.expandedGroups.add(groupId)
+      }
+    },
+
+    toggleQuery(queryId: string) {
+      if (this.expandedQueries.has(queryId)) {
+        this.expandedQueries.delete(queryId)
+      } else {
+        this.expandedQueries.add(queryId)
+      }
+    },
+
+    clearSQLLogs() {
+      this.flatLogs.clear()
+      this.groups.clear()
+      this.displayOrder = []
+      this.expandedGroups.clear()
+      this.expandedQueries.clear()
     }
   }
 })
