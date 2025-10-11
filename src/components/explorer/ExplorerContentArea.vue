@@ -37,7 +37,7 @@
               object-type="database"
               :connection-id="connectionId"
               :table-meta="selectedMeta"
-              :is-view="false"
+              :is-view="isSelectedMetaView"
               :connection-type="currentConnection?.type || 'sql'"
               :database="selectedMeta.database"
               @tab-change="$emit('left-tab-change', $event)"
@@ -66,7 +66,7 @@
               object-type="database"
               :connection-id="connectionId"
               :table-meta="splitViewStore.splitContent.meta"
-              :is-view="false"
+              :is-view="'definition' in splitViewStore.splitContent.meta"
               :connection-type="currentConnection?.type || 'sql'"
               :database="splitViewStore.splitContent.meta.database"
               @tab-change="$emit('right-tab-change', $event)"
@@ -91,7 +91,7 @@
               object-type="database"
               :connection-id="connectionId"
               :table-meta="selectedMeta"
-              :is-view="false"
+              :is-view="isSelectedMetaView"
               :connection-type="currentConnection?.type || 'sql'"
               :database="selectedMeta.database"
               @tab-change="$emit('left-tab-change', $event)"
@@ -187,4 +187,10 @@ const showDatabaseOverview = computed(
 const currentConnection = computed(
   () => connectionsStore.connections.find((c) => c.id === props.connectionId) || null
 )
+
+// Helper to detect if selectedMeta is a view (has 'definition' property)
+const isSelectedMetaView = computed(() => {
+  if (!props.selectedMeta) return false
+  return 'definition' in props.selectedMeta
+})
 </script>

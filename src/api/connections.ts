@@ -463,6 +463,54 @@ const getViewData = async (
   }
 }
 
+const getTableExactCount = async (
+  connectionId: string,
+  database: string,
+  tableName: string,
+  params: { schema?: string; where?: string }
+): Promise<{ count: number }> => {
+  const commonStore = useCommonStore()
+  validateApiKey(commonStore.apiKey)
+  try {
+    const qp = new URLSearchParams()
+    if (params.schema) qp.set('schema', params.schema)
+    if (params.where) qp.set('where', params.where)
+
+    const url = `/connections/${connectionId}/databases/${encodeURIComponent(database)}/tables/${encodeURIComponent(tableName)}/count${qp.toString() ? `?${qp.toString()}` : ''}`
+    const response: AxiosResponse<{ count: number; status: string }> = await apiClient.get(url, {
+      headers: { 'X-API-Key': commonStore.apiKey },
+      timeout: 120000 // 2 minute timeout for potentially expensive COUNT(*) queries
+    })
+    return response.data
+  } catch (error) {
+    throw handleApiError(error)
+  }
+}
+
+const getViewExactCount = async (
+  connectionId: string,
+  database: string,
+  viewName: string,
+  params: { schema?: string; where?: string }
+): Promise<{ count: number }> => {
+  const commonStore = useCommonStore()
+  validateApiKey(commonStore.apiKey)
+  try {
+    const qp = new URLSearchParams()
+    if (params.schema) qp.set('schema', params.schema)
+    if (params.where) qp.set('where', params.where)
+
+    const url = `/connections/${connectionId}/databases/${encodeURIComponent(database)}/views/${encodeURIComponent(viewName)}/count${qp.toString() ? `?${qp.toString()}` : ''}`
+    const response: AxiosResponse<{ count: number; status: string }> = await apiClient.get(url, {
+      headers: { 'X-API-Key': commonStore.apiKey },
+      timeout: 120000 // 2 minute timeout for potentially expensive COUNT(*) queries
+    })
+    return response.data
+  } catch (error) {
+    throw handleApiError(error)
+  }
+}
+
 export default {
   getConnections,
   createConnection,
@@ -480,5 +528,7 @@ export default {
   getDatabaseOverview,
   getTableData,
   getViews,
-  getViewData
+  getViewData,
+  getTableExactCount,
+  getViewExactCount
 }

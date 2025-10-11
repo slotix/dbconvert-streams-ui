@@ -45,6 +45,22 @@ const whereError = ref<string>()
 const agGridFilters = ref<Record<string, any>>({})
 const agGridWhereSQL = ref<string>('')
 
+// Exact row count state for views
+const isCountingRows = ref(false)
+const exactRowCount = ref<number | null>(null)
+const countError = ref<string | null>(null)
+
+// Cache for exact counts (persists across table switches)
+// Key format: "connectionId:database:schema:tableName"
+const exactCountCache = ref<Map<string, number>>(new Map())
+
+// Generate cache key for current table/view
+const getCacheKey = () => {
+  const objectName = getObjectName(props.tableMeta)
+  const objectSchema = getObjectSchema(props.tableMeta)
+  return `${props.connectionId}:${props.database}:${objectSchema || ''}:${objectName}`
+}
+
 // Context menu state
 const showContextMenu = ref(false)
 const contextMenuX = ref(0)
@@ -64,6 +80,9 @@ watch(
   (newApproxRows) => {
     if (newApproxRows && newApproxRows > 0) {
       totalRowCount.value = newApproxRows
+    } else if (newApproxRows === -1) {
+      // -1 indicates unknown count (for views)
+      totalRowCount.value = -1
     } else if (newApproxRows === undefined) {
       // Reset count when switching to a table not in top tables list
       totalRowCount.value = 0
@@ -72,7 +91,7 @@ watch(
   { immediate: true }
 )
 
-// Watch for table changes and reset count
+// Watch for table changes and restore/reset count
 watch(
   () => props.tableMeta,
   () => {
@@ -83,6 +102,17 @@ watch(
     whereClause.value = ''
     whereInput.value = ''
     whereError.value = undefined
+    countError.value = null
+
+    // Check if we have a cached exact count for this table
+    const cacheKey = getCacheKey()
+    const cachedCount = exactCountCache.value.get(cacheKey)
+    if (cachedCount !== undefined) {
+      exactRowCount.value = cachedCount
+      totalRowCount.value = cachedCount
+    } else {
+      exactRowCount.value = null
+    }
   },
   { deep: true }
 )
@@ -259,6 +289,10 @@ function clearAllFilters() {
   totalRowCount.value = 0
   currentFirstRow.value = 1
   currentLastRow.value = 100
+
+  // Reset exact count for views
+  exactRowCount.value = null
+  countError.value = null
 
   // Refresh data
   if (gridApi.value) {
@@ -497,13 +531,18 @@ function createDatasource(): IDatasource {
           return obj
         })
 
-        // Update total count if we have a real count from API (not -1)
+        // Update total count if we have a real count from API
         if (data.total_count > 0) {
           totalRowCount.value = data.total_count
+        } else if (data.total_count === -1 && totalRowCount.value <= 0) {
+          // Only set -1 if we don't already have an approximate count
+          // (Views start with -1 from approxRows, tables have positive approxRows)
+          totalRowCount.value = -1
         }
 
         // For small tables where we don't have a count, if this is the first block
         // and we got fewer rows than requested, we know the total
+        // (Don't infer for views with -1)
         if (offset === 0 && totalRowCount.value === 0 && convertedRowData.length < limit) {
           totalRowCount.value = convertedRowData.length
         }
@@ -552,6 +591,10 @@ function onGridReady(params: GridReadyEvent) {
     totalRowCount.value = 0
     currentFirstRow.value = 1
     currentLastRow.value = 100
+
+    // Reset exact count for views
+    exactRowCount.value = null
+    countError.value = null
 
     // When filter changes, refresh the datasource
     if (gridApi.value) {
@@ -654,6 +697,53 @@ function updateVisibleRows() {
   }
 }
 
+// Calculate exact row count for tables and views (on-demand)
+async function calculateExactCount() {
+  isCountingRows.value = true
+  countError.value = null
+
+  try {
+    const objectName = getObjectName(props.tableMeta)
+    const objectSchema = getObjectSchema(props.tableMeta)
+
+    if (!objectName) throw new Error(`${props.isView ? 'View' : 'Table'} name is undefined`)
+
+    // Build parameters
+    const params: { schema?: string; where?: string } = {}
+    if (objectSchema && objectSchema !== 'public' && objectSchema !== '') {
+      params.schema = objectSchema
+    }
+    if (combinedWhereClause.value) {
+      params.where = combinedWhereClause.value
+    }
+
+    // Call appropriate API based on whether it's a view or table
+    const result = props.isView
+      ? await connections.getViewExactCount(props.connectionId, props.database, objectName, params)
+      : await connections.getTableExactCount(props.connectionId, props.database, objectName, params)
+
+    exactRowCount.value = result.count
+    totalRowCount.value = result.count // Update grid's total count
+
+    // Cache the exact count (only if no filters applied)
+    if (!combinedWhereClause.value) {
+      const cacheKey = getCacheKey()
+      exactCountCache.value.set(cacheKey, result.count)
+    }
+
+    // Force AG Grid to refresh with the new exact count
+    if (gridApi.value) {
+      // Trigger a datasource refresh to update pagination with exact count
+      gridApi.value.refreshInfiniteCache()
+    }
+  } catch (err) {
+    console.error('Error calculating exact count:', err)
+    countError.value = err instanceof Error ? err.message : 'Failed to calculate count'
+  } finally {
+    isCountingRows.value = false
+  }
+}
+
 // Refresh data - exposed to parent
 function refresh() {
   if (gridApi.value) {
@@ -741,21 +831,21 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
-    <!-- Header with actions -->
-    <div v-if="approxRows && approxRows > 1000000" class="mb-3 flex items-center justify-between">
-      <div class="flex items-center gap-4 text-sm text-gray-600">
-        <!-- Large table warning -->
-        <span class="text-xs text-blue-600 flex items-center gap-1">
-          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-            <path
-              fill-rule="evenodd"
-              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-              clip-rule="evenodd"
-            />
-          </svg>
-          Large table: only indexed columns are sortable
-        </span>
-      </div>
+    <!-- Large table warning (keep at top) -->
+    <div
+      v-if="!isView && approxRows && approxRows > 1000000"
+      class="mb-3 flex items-center justify-between"
+    >
+      <span class="text-xs text-blue-600 flex items-center gap-1">
+        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+          <path
+            fill-rule="evenodd"
+            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+            clip-rule="evenodd"
+          />
+        </svg>
+        Large table: only indexed columns are sortable
+      </span>
     </div>
 
     <!-- Error message -->
@@ -780,6 +870,93 @@ onBeforeUnmount(() => {
         style="width: 100%; height: 100%"
         @grid-ready="onGridReady"
       />
+    </div>
+
+    <!-- Row count controls below table -->
+    <div
+      v-if="(!isView && approxRows && approxRows > 0) || isView === true"
+      class="mt-3 flex items-center justify-between border-t pt-3"
+    >
+      <div class="flex items-center gap-3">
+        <!-- Approximate count hint -->
+        <span
+          v-if="!isView && totalRowCount > 0 && exactRowCount === null"
+          class="text-xs text-gray-500 flex items-center gap-1"
+        >
+          <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              fill-rule="evenodd"
+              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+              clip-rule="evenodd"
+            />
+          </svg>
+          <span>Count (~{{ totalRowCount.toLocaleString() }}) is approximate</span>
+        </span>
+
+        <!-- Exact count result -->
+        <span v-if="exactRowCount !== null" class="text-sm text-gray-600 flex items-center gap-1">
+          <svg class="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              fill-rule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+              clip-rule="evenodd"
+            />
+          </svg>
+          <span
+            >Exact count:
+            <span class="font-semibold text-green-600">{{
+              exactRowCount.toLocaleString()
+            }}</span></span
+          >
+        </span>
+
+        <!-- Error display -->
+        <span v-if="countError" class="text-sm text-red-600 flex items-center gap-1">
+          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              fill-rule="evenodd"
+              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+              clip-rule="evenodd"
+            />
+          </svg>
+          {{ countError }}
+        </span>
+      </div>
+
+      <!-- Calculate Exact Count button -->
+      <button
+        v-if="exactRowCount === null"
+        type="button"
+        :disabled="isCountingRows"
+        @click="calculateExactCount"
+        class="px-3 py-1.5 text-sm bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+        :title="`Execute COUNT(*) query to get exact ${isView ? 'row' : 'total'} count`"
+      >
+        <svg v-if="isCountingRows" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+          <circle
+            class="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            stroke-width="4"
+          ></circle>
+          <path
+            class="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+          ></path>
+        </svg>
+        <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+          />
+        </svg>
+        <span>{{ isCountingRows ? 'Counting...' : 'Calculate Exact Count' }}</span>
+      </button>
     </div>
 
     <!-- Custom Context Menu -->
