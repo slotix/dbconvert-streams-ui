@@ -1,13 +1,19 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useLogsStore, type SQLQueryLog } from '@/stores/logs'
-import { ChevronDownIcon, ChevronRightIcon, ClipboardIcon } from '@heroicons/vue/24/outline'
+import {
+  ChevronDownIcon,
+  ChevronRightIcon,
+  ClipboardIcon,
+  CheckIcon
+} from '@heroicons/vue/24/outline'
 
 const props = defineProps<{
   log: SQLQueryLog
 }>()
 
 const logsStore = useLogsStore()
+const copied = ref(false)
 
 const isExpanded = computed(() => logsStore.expandedQueries.has(props.log.id))
 
@@ -15,8 +21,16 @@ function toggle() {
   logsStore.toggleQuery(props.log.id)
 }
 
-function copyQuery() {
-  navigator.clipboard.writeText(props.log.query)
+async function copyQuery() {
+  try {
+    await navigator.clipboard.writeText(props.log.query)
+    copied.value = true
+    setTimeout(() => {
+      copied.value = false
+    }, 2000)
+  } catch (error) {
+    console.error('Failed to copy query:', error)
+  }
 }
 
 function getPurposePillClass(purpose: string): string {
@@ -33,8 +47,8 @@ function getPurposePillClass(purpose: string): string {
 }
 
 function getDurationClass(ms: number): string {
-  if (ms < 10) return 'text-green-600'
-  if (ms < 100) return 'text-yellow-600'
+  if (ms < 100) return 'text-green-600'
+  if (ms < 500) return 'text-yellow-600'
   if (ms < 1000) return 'text-orange-600'
   return 'text-red-600'
 }
@@ -106,8 +120,13 @@ function getPurposeLabel(purpose: string): string {
       </span>
 
       <!-- Copy Button -->
-      <button @click.stop="copyQuery" class="p-1 hover:bg-gray-200 rounded" title="Copy query">
-        <ClipboardIcon class="w-4 h-4 text-gray-500" />
+      <button
+        title="Copy query"
+        class="p-1 hover:bg-gray-200 rounded transition-colors"
+        @click.stop="copyQuery"
+      >
+        <CheckIcon v-if="copied" class="w-4 h-4 text-green-600" />
+        <ClipboardIcon v-else class="w-4 h-4 text-gray-500" />
       </button>
     </div>
 
@@ -116,9 +135,12 @@ function getPurposeLabel(purpose: string): string {
       <!-- Full Query -->
       <div class="mb-3">
         <div class="text-xs font-semibold text-gray-700 mb-1">Query:</div>
-        <pre
-          class="text-xs bg-white p-3 rounded border border-gray-200 overflow-x-auto"
-        ><code>{{ log.query }}</code></pre>
+        <div class="bg-white rounded border border-gray-200 overflow-hidden">
+          <pre
+            v-highlightjs
+            class="text-xs p-3 overflow-x-auto"
+          ><code class="language-sql">{{ log.query }}</code></pre>
+        </div>
         <div v-if="log.redacted" class="text-xs text-orange-600 mt-1">
           ⚠️ Query contains redacted sensitive values
         </div>
@@ -147,3 +169,51 @@ function getPurposeLabel(purpose: string): string {
     </div>
   </div>
 </template>
+
+<style scoped>
+/* Smooth transitions */
+.transition-colors {
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+/* SQL syntax highlighting - matching DDL view colors */
+:deep(.hljs) {
+  @apply bg-white font-mono;
+  color: #24292e;
+  padding: 0;
+}
+
+:deep(.hljs-keyword) {
+  @apply text-[#d73a49] font-semibold;
+}
+
+:deep(.hljs-string) {
+  @apply text-[#032f62];
+}
+
+:deep(.hljs-number) {
+  @apply text-[#005cc5];
+}
+
+:deep(.hljs-operator) {
+  @apply text-[#d73a49];
+}
+
+:deep(.hljs-punctuation) {
+  @apply text-[#24292e];
+}
+
+:deep(.hljs-comment) {
+  @apply text-[#6a737d] italic;
+}
+
+:deep(.hljs-function) {
+  @apply text-[#005cc5];
+}
+
+:deep(.hljs-built_in) {
+  @apply text-[#005cc5];
+}
+</style>

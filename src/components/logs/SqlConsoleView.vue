@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import type { SQLQueryLog, QueryGroup } from '@/stores/logs'
 import { useLogsStore } from '@/stores/logs'
 import LogFilters from './LogFilters.vue'
@@ -7,12 +7,61 @@ import QueryRow from './QueryRow.vue'
 import QueryGroupComponent from './QueryGroup.vue'
 
 const logsStore = useLogsStore()
+const searchInputRef = ref<HTMLInputElement | null>(null)
 
 const visibleLogs = computed(() => logsStore.visibleLogs)
 
 function isGroup(item: SQLQueryLog | QueryGroup): item is QueryGroup {
   return 'queryIds' in item
 }
+
+// Keyboard shortcuts
+function handleKeyDown(event: KeyboardEvent) {
+  // Ignore if user is typing in an input field (except search)
+  const target = event.target as HTMLElement
+  if (target.tagName === 'INPUT' && target.id !== 'sql-log-search') {
+    return
+  }
+
+  // Focus search on '/'
+  if (event.key === '/' && !event.ctrlKey && !event.metaKey) {
+    event.preventDefault()
+    searchInputRef.value?.focus()
+    return
+  }
+
+  // Level shortcuts: 1=minimal, 2=normal, 3=debug
+  if (event.key === '1' && !event.ctrlKey && !event.metaKey) {
+    event.preventDefault()
+    logsStore.filters.level = 'minimal'
+  } else if (event.key === '2' && !event.ctrlKey && !event.metaKey) {
+    event.preventDefault()
+    logsStore.filters.level = 'normal'
+  } else if (event.key === '3' && !event.ctrlKey && !event.metaKey) {
+    event.preventDefault()
+    logsStore.filters.level = 'debug'
+  }
+
+  // 'E' for errors-only toggle
+  if (event.key === 'e' && !event.ctrlKey && !event.metaKey) {
+    event.preventDefault()
+    logsStore.filters.errorsOnly = !logsStore.filters.errorsOnly
+  }
+
+  // 'K' for clear logs
+  if (event.key === 'k' && !event.ctrlKey && !event.metaKey) {
+    event.preventDefault()
+    logsStore.clearSQLLogs()
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('keydown', handleKeyDown)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('keydown', handleKeyDown)
+})
 </script>
 
 <template>
