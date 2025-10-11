@@ -17,6 +17,11 @@ export interface SQLForeignKeyMeta {
   onDelete?: string // ON DELETE behavior (CASCADE, SET NULL, etc.)
 }
 
+export interface SQLCheckConstraintMeta {
+  name: string // Name of the CHECK constraint
+  clause: string // The CHECK constraint expression/clause
+}
+
 export interface SQLColumnMeta {
   name: string
   dataType: string
@@ -29,6 +34,7 @@ export interface SQLColumnMeta {
   scale: NullableNumber
   comment: NullableString
   autoIncrement: boolean
+  checkConstraints?: SQLCheckConstraintMeta[]
 }
 
 export interface SQLIndexMeta {

@@ -159,6 +159,22 @@ function getColumnDefault(column: SQLColumnMeta) {
   return defaultValue.Valid && defaultValue.String !== null ? defaultValue.String : '-'
 }
 
+function getColumnCheckConstraints(column: SQLColumnMeta): string {
+  const constraints = column.checkConstraints
+  if (!constraints || constraints.length === 0) return '-'
+
+  // Format multiple constraints nicely
+  return constraints
+    .map((c) => {
+      // Show constraint name if available, otherwise just the clause
+      if (c.name) {
+        return `${c.name}: ${c.clause}`
+      }
+      return c.clause
+    })
+    .join(' AND ')
+}
+
 // extra display removed for compactness
 </script>
 
@@ -226,6 +242,11 @@ function getColumnDefault(column: SQLColumnMeta) {
                       >
                         Default
                       </th>
+                      <th
+                        class="px-3 py-2 text-left text-sm font-semibold text-gray-900 whitespace-nowrap"
+                      >
+                        Check constraints
+                      </th>
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-gray-200 bg-white">
@@ -257,6 +278,12 @@ function getColumnDefault(column: SQLColumnMeta) {
                       </td>
                       <td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
                         {{ getColumnDefault(column) }}
+                      </td>
+                      <td
+                        class="px-3 py-2 text-sm text-gray-500 max-w-xs truncate"
+                        :title="getColumnCheckConstraints(column)"
+                      >
+                        {{ getColumnCheckConstraints(column) }}
                       </td>
                     </tr>
                   </tbody>
