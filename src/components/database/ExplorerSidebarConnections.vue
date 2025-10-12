@@ -123,8 +123,6 @@ function toggleConnection(connId: string) {
   if (navigationStore.isConnectionExpanded(connId)) {
     if (treeLogic.isFileConnection(connId)) {
       emit('request-file-entries', { connectionId: connId })
-    } else {
-      navigationStore.ensureDatabases(connId).catch(() => {})
     }
     emit('expanded-connection', { connectionId: connId })
   }
