@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import type { Table, Position, Relationship } from '@/types/schema'
-import connections from '@/api/connections'
+import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import type { SQLTableMeta, SQLViewMeta, SQLColumnMeta, SQLForeignKeyMeta } from '@/types/metadata'
 
 export const useSchemaStore = defineStore('schema', {
@@ -79,7 +79,8 @@ export const useSchemaStore = defineStore('schema', {
       this.error = null
 
       try {
-        const metadata = await connections.getMetadata(
+        const navigationStore = useExplorerNavigationStore()
+        const metadata = await navigationStore.ensureMetadata(
           this.connectionId,
           this.databaseName,
           forceRefresh
