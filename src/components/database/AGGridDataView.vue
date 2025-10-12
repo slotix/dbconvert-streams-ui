@@ -486,6 +486,7 @@ function createDatasource(): IDatasource {
           order_by?: string
           order_dir?: string
           where?: string
+          tabId?: string
         } = {
           limit,
           offset,
@@ -506,6 +507,10 @@ function createDatasource(): IDatasource {
         }
         if (combinedWhereClause) {
           queryParams.where = combinedWhereClause
+        }
+        // Add tabId for query grouping (use table/view name)
+        if (objectName) {
+          queryParams.tabId = objectName
         }
 
         const data = props.isView
@@ -596,10 +601,8 @@ function onGridReady(params: GridReadyEvent) {
     exactRowCount.value = null
     countError.value = null
 
-    // When filter changes, refresh the datasource
-    if (gridApi.value) {
-      gridApi.value.setGridOption('datasource', createDatasource())
-    }
+    // Note: AG Grid Infinite Row Model automatically purges cache and refetches when filters change
+    // No need to manually call purgeInfiniteCache() - it would cause duplicate fetch
   })
 
   // Add context menu listener for column headers - wait for next tick to ensure DOM is ready
@@ -663,8 +666,8 @@ function applyWhereFilterFromModal(newWhereClause: string) {
   currentLastRow.value = 100
 
   if (gridApi.value) {
-    // Refresh the datasource with new filter
-    gridApi.value.setGridOption('datasource', createDatasource())
+    // Purge and refresh - more efficient than recreating datasource
+    gridApi.value.purgeInfiniteCache()
   }
 }
 
@@ -709,13 +712,15 @@ async function calculateExactCount() {
     if (!objectName) throw new Error(`${props.isView ? 'View' : 'Table'} name is undefined`)
 
     // Build parameters
-    const params: { schema?: string; where?: string } = {}
+    const params: { schema?: string; where?: string; tabId?: string } = {}
     if (objectSchema && objectSchema !== 'public' && objectSchema !== '') {
       params.schema = objectSchema
     }
     if (combinedWhereClause.value) {
       params.where = combinedWhereClause.value
     }
+    // Use table/view name as tabId for SQL logging grouping
+    params.tabId = objectName
 
     // Call appropriate API based on whether it's a view or table
     const result = props.isView

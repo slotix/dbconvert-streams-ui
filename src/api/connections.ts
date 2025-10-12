@@ -467,7 +467,7 @@ const getTableExactCount = async (
   connectionId: string,
   database: string,
   tableName: string,
-  params: { schema?: string; where?: string }
+  params: { schema?: string; where?: string; tabId?: string }
 ): Promise<{ count: number }> => {
   const commonStore = useCommonStore()
   validateApiKey(commonStore.apiKey)
@@ -475,6 +475,7 @@ const getTableExactCount = async (
     const qp = new URLSearchParams()
     if (params.schema) qp.set('schema', params.schema)
     if (params.where) qp.set('where', params.where)
+    if (params.tabId) qp.set('tabId', params.tabId)
 
     const url = `/connections/${connectionId}/databases/${encodeURIComponent(database)}/tables/${encodeURIComponent(tableName)}/count${qp.toString() ? `?${qp.toString()}` : ''}`
     const response: AxiosResponse<{ count: number; status: string }> = await apiClient.get(url, {
@@ -491,7 +492,7 @@ const getViewExactCount = async (
   connectionId: string,
   database: string,
   viewName: string,
-  params: { schema?: string; where?: string }
+  params: { schema?: string; where?: string; tabId?: string }
 ): Promise<{ count: number }> => {
   const commonStore = useCommonStore()
   validateApiKey(commonStore.apiKey)
@@ -499,6 +500,7 @@ const getViewExactCount = async (
     const qp = new URLSearchParams()
     if (params.schema) qp.set('schema', params.schema)
     if (params.where) qp.set('where', params.where)
+    if (params.tabId) qp.set('tabId', params.tabId)
 
     const url = `/connections/${connectionId}/databases/${encodeURIComponent(database)}/views/${encodeURIComponent(viewName)}/count${qp.toString() ? `?${qp.toString()}` : ''}`
     const response: AxiosResponse<{ count: number; status: string }> = await apiClient.get(url, {
