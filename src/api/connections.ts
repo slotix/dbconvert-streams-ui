@@ -256,6 +256,7 @@ const getMetadata = async (
     return metadataCache[cacheKey].data
   }
 
+  // Make the API request
   try {
     const qp = new URLSearchParams()
     if (forceRefresh) qp.set('refresh', 'true')

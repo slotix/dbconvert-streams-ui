@@ -134,7 +134,13 @@ function toggleDb(connId: string, db: string) {
   const key = `${connId}:${db}`
   navigationStore.toggleDatabase(key)
   if (navigationStore.isDatabaseExpanded(key)) {
-    navigationStore.ensureMetadata(connId, db).catch(() => {})
+    // Only fetch if not already loading or loaded (prevent duplicate requests)
+    if (
+      !navigationStore.isMetadataLoading(connId, db) &&
+      !navigationStore.getMetadata(connId, db)
+    ) {
+      navigationStore.ensureMetadata(connId, db).catch(() => {})
+    }
   }
 }
 
@@ -391,7 +397,8 @@ watch(
     if (sel.database) {
       const dbKey = `${connId}:${sel.database}`
       navigationStore.expandDatabase(dbKey)
-      await navigationStore.ensureMetadata(connId, sel.database)
+      // Do NOT fetch metadata here - let toggleDb or expandForSearch handle it
+      // This watcher is only for navigation/highlighting, not data fetching
     }
 
     if (sel.database && sel.schema && treeLogic.hasSchemas(connId)) {
@@ -439,7 +446,13 @@ async function expandForSearch(query: string) {
       for (const d of dbs) {
         if (matchesDbFilter(c.id, d.name)) {
           navigationStore.expandDatabase(`${c.id}:${d.name}`)
-          navigationStore.ensureMetadata(c.id, d.name).catch(() => {})
+          // Only fetch if not already loading or loaded (prevent duplicate requests)
+          if (
+            !navigationStore.isMetadataLoading(c.id, d.name) &&
+            !navigationStore.getMetadata(c.id, d.name)
+          ) {
+            navigationStore.ensureMetadata(c.id, d.name).catch(() => {})
+          }
         }
       }
     }
