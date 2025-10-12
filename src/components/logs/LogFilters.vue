@@ -1,18 +1,33 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useLogsStore } from '@/stores/logs'
-import type { LoggingLevel, TimeWindow } from '@/stores/logs'
+import type { ExportFormat, LoggingLevel, TimeWindow } from '@/stores/logs'
 import {
   AdjustmentsHorizontalIcon,
   ClockIcon,
   MagnifyingGlassIcon,
   ExclamationTriangleIcon,
   TrashIcon,
-  QuestionMarkCircleIcon
+  QuestionMarkCircleIcon,
+  Squares2X2Icon,
+  ListBulletIcon,
+  ArrowDownTrayIcon
 } from '@heroicons/vue/24/outline'
 
 const logsStore = useLogsStore()
 const showShortcuts = ref(false)
+const showExportMenu = ref(false)
+const exportMenuRef = ref<HTMLDivElement | null>(null)
+const emit = defineEmits<{
+  (e: 'export', format: ExportFormat): void
+}>()
+
+const viewMode = computed({
+  get: () => logsStore.viewMode,
+  set: (val: 'grouped' | 'flat') => {
+    logsStore.setViewMode(val)
+  }
+})
 
 const level = computed({
   get: () => logsStore.filters.level,
@@ -45,12 +60,67 @@ const errorsOnly = computed({
 function clearLogs() {
   logsStore.clearSQLLogs()
 }
+
+function toggleExportMenu() {
+  showExportMenu.value = !showExportMenu.value
+}
+
+function selectExportFormat(format: ExportFormat) {
+  emit('export', format)
+  showExportMenu.value = false
+}
+
+function handleDocumentClick(event: MouseEvent) {
+  if (!showExportMenu.value) return
+  const target = event.target as Node | null
+  if (exportMenuRef.value && target && !exportMenuRef.value.contains(target)) {
+    showExportMenu.value = false
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleDocumentClick)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleDocumentClick)
+})
 </script>
 
 <template>
   <div
     class="flex items-center gap-4 px-4 py-2 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200 shadow-sm"
   >
+    <!-- View Mode Switcher -->
+    <div class="flex items-center gap-1 bg-white border border-gray-300 rounded p-0.5">
+      <button
+        :class="[
+          'flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors',
+          viewMode === 'grouped'
+            ? 'bg-blue-500 text-white shadow-sm'
+            : 'text-gray-600 hover:bg-gray-100'
+        ]"
+        title="Grouped view - Related queries grouped together"
+        @click="viewMode = 'grouped'"
+      >
+        <Squares2X2Icon class="w-4 h-4" />
+        <span>Grouped</span>
+      </button>
+      <button
+        :class="[
+          'flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors',
+          viewMode === 'flat'
+            ? 'bg-blue-500 text-white shadow-sm'
+            : 'text-gray-600 hover:bg-gray-100'
+        ]"
+        title="Flat view - All queries in chronological order"
+        @click="viewMode = 'flat'"
+      >
+        <ListBulletIcon class="w-4 h-4" />
+        <span>Flat</span>
+      </button>
+    </div>
+
     <!-- Level Selector -->
     <div class="flex items-center gap-2">
       <AdjustmentsHorizontalIcon class="w-4 h-4 text-gray-500" />
@@ -99,6 +169,41 @@ function clearLogs() {
       <ExclamationTriangleIcon class="w-4 h-4 text-red-600" />
       <span class="text-xs font-semibold text-red-600">Errors Only</span>
     </label>
+
+    <!-- Export Button -->
+    <div ref="exportMenuRef" class="relative">
+      <button
+        class="flex items-center gap-1 px-3 py-1.5 text-xs text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors shadow-sm"
+        @click.stop="toggleExportMenu"
+      >
+        <ArrowDownTrayIcon class="w-3.5 h-3.5" />
+        <span>Export</span>
+      </button>
+
+      <div
+        v-if="showExportMenu"
+        class="absolute right-0 mt-2 w-36 bg-white border border-gray-200 rounded shadow-lg z-50"
+      >
+        <button
+          class="w-full text-left px-3 py-2 text-xs hover:bg-blue-50 transition-colors"
+          @click="selectExportFormat('text')"
+        >
+          Export as Text
+        </button>
+        <button
+          class="w-full text-left px-3 py-2 text-xs hover:bg-blue-50 transition-colors"
+          @click="selectExportFormat('csv')"
+        >
+          Export as CSV
+        </button>
+        <button
+          class="w-full text-left px-3 py-2 text-xs hover:bg-blue-50 transition-colors"
+          @click="selectExportFormat('json')"
+        >
+          Export as JSON
+        </button>
+      </div>
+    </div>
 
     <!-- Clear Button -->
     <button

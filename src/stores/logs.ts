@@ -30,6 +30,7 @@ export type QueryPurpose =
   | 'BACKGROUND_SYNC'
 
 export type TimeWindow = '5m' | '1h' | 'session' | 'all'
+export type ExportFormat = 'text' | 'csv' | 'json'
 
 export interface LogFilters {
   level: LoggingLevel
@@ -73,6 +74,105 @@ export interface QueryGroup {
   hasErrors: boolean
 }
 
+type ExportFieldKey =
+  | 'startedAt'
+  | 'purpose'
+  | 'database'
+  | 'query'
+  | 'durationMs'
+  | 'rowCount'
+  | 'error'
+
+const EXPORT_FIELD_DEFS: Array<{ key: ExportFieldKey; label: string }> = [
+  { key: 'startedAt', label: 'Timestamp' },
+  { key: 'purpose', label: 'Purpose' },
+  { key: 'database', label: 'Database' },
+  { key: 'query', label: 'Query' },
+  { key: 'durationMs', label: 'Duration (ms)' },
+  { key: 'rowCount', label: 'Rows' },
+  { key: 'error', label: 'Error' }
+]
+
+interface FilterMatchOptions {
+  respectTimeWindow?: boolean
+  cutoffOverride?: number | null
+  now?: number
+}
+
+function logMatchesFilters(
+  log: SQLQueryLog,
+  filters: LogFilters,
+  currentTabId: string | null,
+  options: FilterMatchOptions = {}
+): boolean {
+  const { respectTimeWindow = true, cutoffOverride, now = Date.now() } = options
+  let cutoff: number | null = null
+
+  if (cutoffOverride !== undefined) {
+    cutoff = cutoffOverride
+  } else if (respectTimeWindow) {
+    switch (filters.timeWindow) {
+      case '5m':
+        cutoff = now - 5 * 60 * 1000
+        break
+      case '1h':
+        cutoff = now - 60 * 60 * 1000
+        break
+      case 'session':
+      case 'all':
+        cutoff = null
+        break
+    }
+  }
+
+  if (cutoff !== null) {
+    const logTime = new Date(log.startedAt).getTime()
+    if (logTime < cutoff) {
+      return false
+    }
+  }
+
+  if (filters.currentTabOnly && currentTabId && log.tabId !== currentTabId) {
+    return false
+  }
+
+  let shouldShow = true
+  switch (filters.level) {
+    case 'minimal':
+      shouldShow = log.purpose === 'USER_DATA' || log.purpose === 'USER_ACTION'
+      break
+    case 'normal':
+      if (log.purpose === 'BACKGROUND_SYNC' && !log.error) {
+        shouldShow = false
+      }
+      break
+    case 'debug':
+      shouldShow = true
+      break
+  }
+
+  if (!shouldShow) return false
+
+  if (!filters.purposes.has(log.purpose)) return false
+
+  if (filters.errorsOnly && !log.error) return false
+
+  if (filters.searchText) {
+    const search = filters.searchText.trim().toLowerCase()
+    if (search) {
+      const matches =
+        log.query.toLowerCase().includes(search) ||
+        log.database.toLowerCase().includes(search) ||
+        (!!log.schema && log.schema.toLowerCase().includes(search)) ||
+        (!!log.tableName && log.tableName.toLowerCase().includes(search)) ||
+        (!!log.error && log.error.toLowerCase().includes(search))
+      if (!matches) return false
+    }
+  }
+
+  return true
+}
+
 export const useLogsStore = defineStore('logs', {
   state: () => ({
     logs: [] as SystemLog[],
@@ -111,7 +211,8 @@ export const useLogsStore = defineStore('logs', {
     // UI state
     currentTabId: null as string | null,
     expandedGroups: new Set<string>(),
-    expandedQueries: new Set<string>()
+    expandedQueries: new Set<string>(),
+    viewMode: 'grouped' as 'grouped' | 'flat'
   }),
 
   getters: {
@@ -126,72 +227,13 @@ export const useLogsStore = defineStore('logs', {
 
     // Phase 2: SQL Logs Getters
     visibleLogs(): (SQLQueryLog | QueryGroup)[] {
-      // Calculate time cutoff
-      const now = Date.now()
-      let cutoff: number | null = null
-      switch (this.filters.timeWindow) {
-        case '5m':
-          cutoff = now - 5 * 60 * 1000
-          break
-        case '1h':
-          cutoff = now - 60 * 60 * 1000
-          break
-        case 'session':
-        case 'all':
-          cutoff = null
-          break
-      }
-
-      // Apply filters
       const filtered: SQLQueryLog[] = []
+      const now = Date.now()
 
       for (const log of this.flatLogs.values()) {
-        // Time window
-        const logTime = new Date(log.startedAt).getTime()
-        if (cutoff && logTime < cutoff) continue
-
-        // Tab filter
-        if (this.filters.currentTabOnly && this.currentTabId && log.tabId !== this.currentTabId) {
-          continue
+        if (logMatchesFilters(log, this.filters, this.currentTabId, { now })) {
+          filtered.push(log)
         }
-
-        // Level-based filtering
-        let shouldShow = true
-        switch (this.filters.level) {
-          case 'minimal':
-            shouldShow = log.purpose === 'USER_DATA' || log.purpose === 'USER_ACTION'
-            break
-          case 'normal':
-            // Hide background sync unless error
-            if (log.purpose === 'BACKGROUND_SYNC' && !log.error) {
-              shouldShow = false
-            }
-            break
-          case 'debug':
-            shouldShow = true
-            break
-        }
-        if (!shouldShow) continue
-
-        // Purpose filter
-        if (!this.filters.purposes.has(log.purpose)) continue
-
-        // Errors only
-        if (this.filters.errorsOnly && !log.error) continue
-
-        // Search text
-        if (this.filters.searchText) {
-          const search = this.filters.searchText.toLowerCase()
-          const matches =
-            log.query.toLowerCase().includes(search) ||
-            log.database.toLowerCase().includes(search) ||
-            (!!log.schema && log.schema.toLowerCase().includes(search)) ||
-            (!!log.tableName && log.tableName.toLowerCase().includes(search)) ||
-            (!!log.error && log.error.toLowerCase().includes(search))
-          if (!matches) continue
-        }
-
-        filtered.push(log)
       }
 
       // Build display tree
@@ -416,6 +458,80 @@ export const useLogsStore = defineStore('logs', {
       this.displayOrder = []
       this.expandedGroups.clear()
       this.expandedQueries.clear()
+    },
+
+    setViewMode(mode: 'grouped' | 'flat') {
+      this.viewMode = mode
+    },
+
+    getOrderedLogs(): SQLQueryLog[] {
+      const ordered: SQLQueryLog[] = []
+      for (const id of this.displayOrder) {
+        const log = this.flatLogs.get(id)
+        if (log) ordered.push(log)
+      }
+      return ordered
+    },
+
+    exportLogs(format: ExportFormat) {
+      const now = Date.now()
+      const logs = this.getOrderedLogs().filter((log) =>
+        logMatchesFilters(log, this.filters, this.currentTabId, { respectTimeWindow: true, now })
+      )
+      if (logs.length === 0) return
+
+      const records = logs.map((log) => ({
+        startedAt: new Date(log.startedAt).toISOString(),
+        purpose: log.purpose,
+        database: log.database,
+        query: log.query.replace(/\s+/g, ' ').trim(),
+        durationMs: log.durationMs,
+        rowCount: log.rowCount,
+        error: log.error ?? ''
+      }))
+
+      let payload = ''
+      let extension = 'log'
+      let mime = 'text/plain'
+
+      if (format === 'json') {
+        payload = JSON.stringify(records, null, 2)
+        extension = 'json'
+        mime = 'application/json'
+      } else if (format === 'csv') {
+        const header = EXPORT_FIELD_DEFS.map((field) => csvEscape(field.label)).join(',')
+        const rows = records.map((record) =>
+          EXPORT_FIELD_DEFS.map((field) => csvEscape(String(record[field.key] ?? ''))).join(',')
+        )
+        payload = [header, ...rows].join('\n')
+        extension = 'csv'
+      } else {
+        const header = EXPORT_FIELD_DEFS.map((field) => field.label).join('\t')
+        const rows = records.map((record) =>
+          EXPORT_FIELD_DEFS.map((field) => String(record[field.key] ?? '')).join('\t')
+        )
+        payload = [header, ...rows].join('\n')
+      }
+
+      downloadFile(payload, extension, mime)
     }
   }
 })
+
+function csvEscape(value: string): string {
+  if (/["\n,\r]/.test(value)) {
+    return `"${value.replace(/"/g, '""')}"`
+  }
+  return value
+}
+
+function downloadFile(content: string, extension: string, mime: string) {
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
+  const link = document.createElement('a')
+  link.href = URL.createObjectURL(new Blob([content], { type: mime }))
+  link.download = `sql-logs-${timestamp}.${extension}`
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(link.href)
+}
