@@ -251,26 +251,6 @@ export const useSchemaStore = defineStore('schema', {
             }
           })
         }
-
-        // Special handling for film_text table
-        if (table.name === 'film_text') {
-          const filmTable = tables.find((t) => t.name === 'film')
-          if (filmTable) {
-            const id = `film_text.film_id->film.film_id`
-            if (!processedRelationships.has(id)) {
-              relationships.push({
-                id,
-                sourceTable: 'film_text',
-                sourceColumn: 'film_id',
-                targetTable: 'film',
-                targetColumn: 'film_id',
-                type: 'foreignKey',
-                label: 'Full Text Search'
-              })
-              processedRelationships.add(id)
-            }
-          }
-        }
       })
 
       return relationships
