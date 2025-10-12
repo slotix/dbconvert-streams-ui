@@ -396,9 +396,19 @@ watch(
 
     if (sel.database) {
       const dbKey = `${connId}:${sel.database}`
+      // Only fetch metadata if we're expanding a previously collapsed database
+      const wasExpanded = navigationStore.isDatabaseExpanded(dbKey)
       navigationStore.expandDatabase(dbKey)
-      // Do NOT fetch metadata here - let toggleDb or expandForSearch handle it
-      // This watcher is only for navigation/highlighting, not data fetching
+
+      // If database was NOT already expanded, we need to fetch metadata
+      // (toggleDb won't be called in this case since user clicked the DB name, not chevron)
+      if (!wasExpanded) {
+        const isLoading = navigationStore.isMetadataLoading(connId, sel.database)
+        const hasMetadata = navigationStore.getMetadata(connId, sel.database) !== null
+        if (!isLoading && !hasMetadata) {
+          await navigationStore.ensureMetadata(connId, sel.database)
+        }
+      }
     }
 
     if (sel.database && sel.schema && treeLogic.hasSchemas(connId)) {
