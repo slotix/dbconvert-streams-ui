@@ -38,10 +38,9 @@ function getPurposePillClass(purpose: string): string {
     USER_DATA: 'bg-blue-600 text-white',
     USER_ACTION: 'bg-blue-700 text-white',
     METADATA: 'bg-gray-500 text-white',
-    PAGINATION: 'bg-purple-600 text-white',
+    PAGINATION: 'bg-orange-600 text-white',
     ESTIMATE: 'bg-teal-600 text-white',
-    EXPLAIN: 'bg-orange-600 text-white',
-    BACKGROUND_SYNC: 'bg-gray-400 text-white'
+    EXPLAIN: 'bg-purple-600 text-white'
   }
   return classes[purpose] || 'bg-gray-600 text-white'
 }

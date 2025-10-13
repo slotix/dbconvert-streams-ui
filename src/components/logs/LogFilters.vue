@@ -154,7 +154,6 @@ onBeforeUnmount(() => {
       >
         <option value="minimal">Minimal</option>
         <option value="normal">Normal</option>
-        <option value="debug">Debug</option>
       </select>
     </div>
 
@@ -265,10 +264,6 @@ onBeforeUnmount(() => {
           <div class="flex justify-between">
             <span class="text-gray-600">Normal level</span>
             <kbd class="px-2 py-0.5 bg-gray-100 border border-gray-300 rounded">2</kbd>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-gray-600">Debug level</span>
-            <kbd class="px-2 py-0.5 bg-gray-100 border border-gray-300 rounded">3</kbd>
           </div>
           <div class="flex justify-between">
             <span class="text-gray-600">Toggle errors only</span>

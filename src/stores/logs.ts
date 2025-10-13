@@ -19,7 +19,7 @@ export interface SystemLog {
 }
 
 // Phase 2: Enhanced SQL Logging Types
-export type LoggingLevel = 'minimal' | 'normal' | 'debug'
+export type LoggingLevel = 'minimal' | 'normal'
 export type QueryPurpose =
   | 'USER_DATA'
   | 'USER_ACTION'
@@ -27,7 +27,6 @@ export type QueryPurpose =
   | 'PAGINATION'
   | 'ESTIMATE'
   | 'EXPLAIN'
-  | 'BACKGROUND_SYNC'
 
 export type TimeWindow = '5m' | '1h' | 'session' | 'all'
 export type ExportFormat = 'text' | 'csv' | 'json'
@@ -136,24 +135,21 @@ function logMatchesFilters(
     return false
   }
 
-  let shouldShow = true
+  // Level-based filtering
   switch (filters.level) {
     case 'minimal':
-      shouldShow = log.purpose === 'USER_DATA' || log.purpose === 'USER_ACTION'
-      break
-    case 'normal':
-      if (log.purpose === 'BACKGROUND_SYNC' && !log.error) {
-        shouldShow = false
+      // Only show USER_DATA and USER_ACTION
+      if (log.purpose !== 'USER_DATA' && log.purpose !== 'USER_ACTION') {
+        return false
       }
       break
-    case 'debug':
-      shouldShow = true
+    case 'normal':
+      // Check purposes filter
+      if (!filters.purposes.has(log.purpose)) {
+        return false
+      }
       break
   }
-
-  if (!shouldShow) return false
-
-  if (!filters.purposes.has(log.purpose)) return false
 
   if (filters.errorsOnly && !log.error) return false
 

@@ -53,16 +53,13 @@ function handleKeyDown(event: KeyboardEvent) {
     return
   }
 
-  // Level shortcuts: 1=minimal, 2=normal, 3=debug
+  // Level shortcuts: 1=minimal, 2=normal
   if (event.key === '1' && !event.ctrlKey && !event.metaKey) {
     event.preventDefault()
     logsStore.filters.level = 'minimal'
   } else if (event.key === '2' && !event.ctrlKey && !event.metaKey) {
     event.preventDefault()
     logsStore.filters.level = 'normal'
-  } else if (event.key === '3' && !event.ctrlKey && !event.metaKey) {
-    event.preventDefault()
-    logsStore.filters.level = 'debug'
   }
 
   // 'E' for errors-only toggle
