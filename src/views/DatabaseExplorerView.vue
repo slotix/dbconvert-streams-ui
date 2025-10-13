@@ -602,13 +602,13 @@ function handleBreadcrumbNavigate(payload: { level: 'database' | 'schema' | 'typ
   // Route is auto-updated by watcher based on state changes
 }
 
-// Tab change handlers - now purely local, no global state updates
-function onLeftTabChange(_t: 'data' | 'structure') {
-  // Do nothing - each ObjectContainer manages its own state
+// Tab change handlers - update tab state so ExplorerTabs reflects current view
+function onLeftTabChange(tab: 'data' | 'structure') {
+  tabsStore.updateActiveTabView(tab)
 }
 
-function onRightTabChange(_t: 'data' | 'structure') {
-  // Do nothing - each ObjectContainer manages its own state
+function onRightTabChange(_tab: 'data' | 'structure') {
+  // no-op — split pane doesn’t map to the tab strip
 }
 
 // Helper functions
@@ -759,7 +759,7 @@ onMounted(() => {
 
     if (type && name) {
       connections
-        .getMetadata(explorerState.currentConnectionId.value, db)
+        .getMetadata(explorerState.currentConnectionId.value || '', db)
         .then((m) => {
           const obj =
             type === 'table'
@@ -770,7 +770,7 @@ onMounted(() => {
         .catch(() => void 0)
     }
 
-    schemaStore.setConnectionId(explorerState.currentConnectionId.value)
+    schemaStore.setConnectionId(explorerState.currentConnectionId.value || '')
     schemaStore.setDatabaseName(db)
     schemaStore.fetchSchema(false)
   }
