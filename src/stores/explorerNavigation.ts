@@ -46,22 +46,21 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
     expandedDatabases: new Set<string>(),
     expandedSchemas: new Set<string>(),
 
-    // Metadata cache - indexed by connectionId -> database -> metadata
-    metadataCache: {} as Record<string, Record<string, DatabaseMetadata>>,
+    // Metadata state - stores fetched data for UI reactivity only (NOT HTTP caching)
+    // Backend handles HTTP caching with 30s TTL
+    metadataState: {} as Record<string, Record<string, DatabaseMetadata>>,
 
-    // Database list cache - indexed by connectionId
-    databasesCache: {} as Record<string, Array<{ name: string }>>,
+    // Database list state - stores fetched lists for UI reactivity only (NOT HTTP caching)
+    databasesState: {} as Record<string, Array<{ name: string }>>,
 
     // Current selection
     selection: null as NavigationSelection | null,
 
     // Loading states
     loadingDatabases: {} as Record<string, boolean>,
-    loadingMetadata: {} as Record<string, boolean>, // key: connectionId:database
+    loadingMetadata: {} as Record<string, boolean> // key: connectionId:database
 
-    // Timestamps for cache invalidation (in milliseconds)
-    metadataCacheTimestamps: {} as Record<string, number>, // key: connectionId:database
-    databasesCacheTimestamps: {} as Record<string, number> // key: connectionId
+    // Removed timestamp-based cache validation - backend handles caching with X-Cache header
   }),
 
   getters: {
@@ -78,11 +77,11 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
     },
 
     getDatabases: (state) => (connectionId: string) => {
-      return state.databasesCache[connectionId] || null
+      return state.databasesState[connectionId] || null
     },
 
     getMetadata: (state) => (connectionId: string, database: string) => {
-      return state.metadataCache[connectionId]?.[database] || null
+      return state.metadataState[connectionId]?.[database] || null
     },
 
     isMetadataLoading: (state) => (connectionId: string, database: string) => {
@@ -92,25 +91,10 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
 
     isDatabasesLoading: (state) => (connectionId: string) => {
       return state.loadingDatabases[connectionId] || false
-    },
-
-    // Check if cache is stale (older than 5 minutes)
-    isMetadataStale: (state) => (connectionId: string, database: string) => {
-      const key = `${connectionId}:${database}`
-      const timestamp = state.metadataCacheTimestamps[key]
-      if (!timestamp) return true
-      const now = Date.now()
-      const FIVE_MINUTES = 5 * 60 * 1000
-      return now - timestamp > FIVE_MINUTES
-    },
-
-    isDatabasesCacheStale: (state) => (connectionId: string) => {
-      const timestamp = state.databasesCacheTimestamps[connectionId]
-      if (!timestamp) return true
-      const now = Date.now()
-      const FIVE_MINUTES = 5 * 60 * 1000
-      return now - timestamp > FIVE_MINUTES
     }
+
+    // Removed isMetadataStale and isDatabasesCacheStale getters
+    // Backend now handles cache expiration with 30s TTL
   },
 
   actions: {
@@ -229,27 +213,22 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
 
     // Data fetching actions
     async ensureDatabases(connectionId: string, forceRefresh = false) {
-      // Return cached if available and not stale
-      if (
-        !forceRefresh &&
-        this.databasesCache[connectionId] &&
-        !this.isDatabasesCacheStale(connectionId)
-      ) {
-        return this.databasesCache[connectionId]
+      // Return cached if available (for UI reactivity only, not HTTP caching)
+      if (!forceRefresh && this.databasesState[connectionId]) {
+        return this.databasesState[connectionId]
       }
 
       // Avoid duplicate requests
       if (this.loadingDatabases[connectionId]) {
-        return this.databasesCache[connectionId] || []
+        return this.databasesState[connectionId] || []
       }
 
       this.loadingDatabases[connectionId] = true
 
       try {
         const dbs = await connectionsApi.getDatabases(connectionId)
-        this.databasesCache[connectionId] = dbs.map((d) => ({ name: d.name }))
-        this.databasesCacheTimestamps[connectionId] = Date.now()
-        return this.databasesCache[connectionId]
+        this.databasesState[connectionId] = dbs.map((d) => ({ name: d.name }))
+        return this.databasesState[connectionId]
       } catch (error) {
         // Silently fail for databases - component will handle empty state
         // Only log in development to avoid console noise
@@ -257,8 +236,7 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
           console.warn(`Failed to load databases for ${connectionId}:`, error)
         }
         // Store empty array to avoid retry loops
-        this.databasesCache[connectionId] = []
-        this.databasesCacheTimestamps[connectionId] = Date.now()
+        this.databasesState[connectionId] = []
         return []
       } finally {
         this.loadingDatabases[connectionId] = false
@@ -268,18 +246,14 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
     async ensureMetadata(connectionId: string, database: string, forceRefresh = false) {
       const cacheKey = `${connectionId}:${database}`
 
-      // Return cached if available and not stale
-      if (
-        !forceRefresh &&
-        this.metadataCache[connectionId]?.[database] &&
-        !this.isMetadataStale(connectionId, database)
-      ) {
-        return this.metadataCache[connectionId][database]
+      // Return cached if available (for UI reactivity only, not HTTP caching)
+      if (!forceRefresh && this.metadataState[connectionId]?.[database]) {
+        return this.metadataState[connectionId][database]
       }
 
       // Avoid duplicate requests
       if (this.loadingMetadata[cacheKey]) {
-        return this.metadataCache[connectionId]?.[database] || null
+        return this.metadataState[connectionId]?.[database] || null
       }
 
       this.loadingMetadata[cacheKey] = true
@@ -288,12 +262,11 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
         const meta = await connectionsApi.getMetadata(connectionId, database, forceRefresh)
 
         // Initialize connection cache if needed
-        if (!this.metadataCache[connectionId]) {
-          this.metadataCache[connectionId] = {}
+        if (!this.metadataState[connectionId]) {
+          this.metadataState[connectionId] = {}
         }
 
-        this.metadataCache[connectionId][database] = meta
-        this.metadataCacheTimestamps[cacheKey] = Date.now()
+        this.metadataState[connectionId][database] = meta
         return meta
       } catch (error) {
         // Silently fail for metadata - component will handle empty state
@@ -307,39 +280,27 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
       }
     },
 
-    // Cache management
+    // Cache management (UI state only - not HTTP caching)
     invalidateMetadata(connectionId: string, database: string) {
-      const cacheKey = `${connectionId}:${database}`
-      if (this.metadataCache[connectionId]) {
-        delete this.metadataCache[connectionId][database]
+      if (this.metadataState[connectionId]) {
+        delete this.metadataState[connectionId][database]
       }
-      delete this.metadataCacheTimestamps[cacheKey]
     },
 
     invalidateDatabases(connectionId: string) {
-      delete this.databasesCache[connectionId]
-      delete this.databasesCacheTimestamps[connectionId]
+      delete this.databasesState[connectionId]
     },
 
     invalidateConnection(connectionId: string) {
-      // Clear all cached data for a connection
-      delete this.databasesCache[connectionId]
-      delete this.databasesCacheTimestamps[connectionId]
-      delete this.metadataCache[connectionId]
-
-      // Clear metadata timestamps for this connection
-      Object.keys(this.metadataCacheTimestamps).forEach((key) => {
-        if (key.startsWith(`${connectionId}:`)) {
-          delete this.metadataCacheTimestamps[key]
-        }
-      })
+      // Clear all cached UI state for a connection
+      delete this.databasesState[connectionId]
+      delete this.metadataState[connectionId]
     },
 
     clearAllCache() {
-      this.metadataCache = {}
-      this.databasesCache = {}
-      this.metadataCacheTimestamps = {}
-      this.databasesCacheTimestamps = {}
+      // Clear all UI state caches
+      this.metadataState = {}
+      this.databasesState = {}
     },
 
     // Utility to find table metadata
@@ -349,7 +310,7 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
       tableName: string,
       schema?: string
     ): SQLTableMeta | undefined {
-      const metadata = this.metadataCache[connectionId]?.[database]
+      const metadata = this.metadataState[connectionId]?.[database]
       if (!metadata?.tables) return undefined
 
       return Object.values(metadata.tables).find((t) => {
@@ -367,7 +328,7 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
       viewName: string,
       schema?: string
     ): SQLViewMeta | undefined {
-      const metadata = this.metadataCache[connectionId]?.[database]
+      const metadata = this.metadataState[connectionId]?.[database]
       if (!metadata?.views) return undefined
 
       return Object.values(metadata.views).find((v) => {

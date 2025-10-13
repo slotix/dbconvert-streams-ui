@@ -238,8 +238,8 @@ const getTables = async (
   }
 }
 
-let metadataCache: { [key: string]: { data: DatabaseMetadata; timestamp: number } } = {}
-
+// Removed frontend metadataCache - backend now handles caching with 30s TTL
+// Backend returns X-Cache header to indicate HIT/MISS status
 const getMetadata = async (
   id: string,
   database: string,
@@ -249,14 +249,6 @@ const getMetadata = async (
   const commonStore = useCommonStore()
   validateApiKey(commonStore.apiKey)
 
-  // Check cache if not forcing refresh
-  const now = Date.now()
-  const cacheKey = `${id}:${database}`
-  if (!forceRefresh && metadataCache[cacheKey] && now - metadataCache[cacheKey].timestamp < 30000) {
-    return metadataCache[cacheKey].data
-  }
-
-  // Make the API request
   try {
     const qp = new URLSearchParams()
     if (forceRefresh) qp.set('refresh', 'true')
@@ -266,11 +258,7 @@ const getMetadata = async (
       headers: { 'X-API-Key': commonStore.apiKey }
     })
 
-    // Update cache
-    metadataCache[cacheKey] = {
-      data: response.data,
-      timestamp: now
-    }
+    // Backend cache status available in response.headers['x-cache'] (HIT/MISS)
     return response.data
   } catch (error) {
     throw handleApiError(error)
@@ -298,9 +286,8 @@ const getDatabaseSummary = async (
   }
 }
 
-// Simple 30s cache for overview responses per (connection:db)
-let overviewCache: { [key: string]: { data: DatabaseOverview; timestamp: number } } = {}
-
+// Removed frontend overviewCache - backend now handles caching with 30s TTL
+// Backend returns X-Cache header to indicate HIT/MISS status
 const getDatabaseOverview = async (
   id: string,
   database: string,
@@ -308,16 +295,6 @@ const getDatabaseOverview = async (
 ): Promise<DatabaseOverview> => {
   const commonStore = useCommonStore()
   validateApiKey(commonStore.apiKey)
-
-  const now = Date.now()
-  const cacheKey = `${id}:${database}`
-  if (
-    !options?.refresh &&
-    overviewCache[cacheKey] &&
-    now - overviewCache[cacheKey].timestamp < 30000
-  ) {
-    return overviewCache[cacheKey].data
-  }
 
   const qp = new URLSearchParams()
   if (options?.refresh) qp.set('refresh', 'true')
@@ -328,7 +305,7 @@ const getDatabaseOverview = async (
       headers: { 'X-API-Key': commonStore.apiKey },
       timeout: 15000
     })
-    overviewCache[cacheKey] = { data: response.data, timestamp: now }
+    // Backend cache status available in response.headers['x-cache'] (HIT/MISS)
     return response.data
   } catch (error) {
     throw handleApiError(error)

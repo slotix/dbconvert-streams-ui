@@ -44,7 +44,7 @@ export function useConnectionTreeLogic() {
   }
 
   function getSchemas(connId: string, db: string): SchemaInfo[] {
-    const meta = navigationStore.metadataCache[connId]?.[db]
+    const meta = navigationStore.metadataState[connId]?.[db]
     if (!meta) return []
 
     // Initialize buckets for all schemas from the API response
@@ -93,7 +93,7 @@ export function useConnectionTreeLogic() {
   }
 
   function getFlatTables(connId: string, db: string): string[] {
-    const meta = navigationStore.metadataCache[connId]?.[db]
+    const meta = navigationStore.metadataState[connId]?.[db]
     if (!meta) return []
     return Object.values(meta.tables || {})
       .map((t) => t.name)
@@ -101,7 +101,7 @@ export function useConnectionTreeLogic() {
   }
 
   function getFlatViews(connId: string, db: string): string[] {
-    const meta = navigationStore.metadataCache[connId]?.[db]
+    const meta = navigationStore.metadataState[connId]?.[db]
     if (!meta) return []
     return Object.values(meta.views || {})
       .map((v) => v.name)
@@ -109,7 +109,7 @@ export function useConnectionTreeLogic() {
   }
 
   function isMetadataLoaded(connId: string, dbName: string): boolean {
-    return !!navigationStore.metadataCache[connId]?.[dbName]
+    return !!navigationStore.metadataState[connId]?.[dbName]
   }
 
   function matchesTypeFilter(conn: Connection, typeFilter: string): boolean {

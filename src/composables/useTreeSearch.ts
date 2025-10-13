@@ -69,11 +69,11 @@ export function useTreeSearch(searchQuery: string, options: UseTreeSearchOptions
       if (normalize(connectionLabel).includes(normalizedQuery)) return true
 
       // Search in database names
-      const databases = navigationStore.databasesCache[connection.id] || []
+      const databases = navigationStore.databasesState[connection.id] || []
       if (databases.some((db) => normalize(db.name).includes(normalizedQuery))) return true
 
       // Search in metadata (tables and views)
-      const metadataByDatabase = navigationStore.metadataCache[connection.id] || {}
+      const metadataByDatabase = navigationStore.metadataState[connection.id] || {}
       for (const databaseName in metadataByDatabase) {
         const metadata = metadataByDatabase[databaseName]
 
@@ -123,7 +123,7 @@ export function useTreeSearch(searchQuery: string, options: UseTreeSearchOptions
     if (normalize(databaseName).includes(normalizedQuery)) return true
 
     // Check metadata
-    const metadata = navigationStore.metadataCache[connectionId]?.[databaseName]
+    const metadata = navigationStore.metadataState[connectionId]?.[databaseName]
     if (!metadata) return false
 
     // Check tables

@@ -450,7 +450,7 @@ async function expandForSearch(query: string) {
       emit('request-file-entries', { connectionId: c.id })
     } else {
       await navigationStore.ensureDatabases(c.id)
-      const dbs = navigationStore.databasesCache[c.id] || []
+      const dbs = navigationStore.databasesState[c.id] || []
       for (const d of dbs) {
         if (matchesDbFilter(c.id, d.name)) {
           navigationStore.expandDatabase(`${c.id}:${d.name}`)
@@ -526,7 +526,7 @@ watch(
             :is-file-connection="treeLogic.isFileConnection(conn.id)"
             :is-focused="focusConnectionId === conn.id"
             :databases="
-              (navigationStore.databasesCache[conn.id] || []).filter((d) =>
+              (navigationStore.databasesState[conn.id] || []).filter((d) =>
                 matchesDbFilter(conn.id, d.name)
               )
             "
