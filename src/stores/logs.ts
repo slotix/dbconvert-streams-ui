@@ -212,7 +212,8 @@ export const useLogsStore = defineStore('logs', {
     currentTabId: null as string | null,
     expandedGroups: new Set<string>(),
     expandedQueries: new Set<string>(),
-    viewMode: 'grouped' as 'grouped' | 'flat'
+    viewMode: 'grouped' as 'grouped' | 'flat',
+    sortOrder: (localStorage.getItem('sqlLogSortOrder') || 'newest') as 'newest' | 'oldest'
   }),
 
   getters: {
@@ -235,6 +236,13 @@ export const useLogsStore = defineStore('logs', {
           filtered.push(log)
         }
       }
+
+      // Sort filtered logs based on sortOrder preference
+      filtered.sort((a, b) => {
+        const timeA = new Date(a.startedAt).getTime()
+        const timeB = new Date(b.startedAt).getTime()
+        return this.sortOrder === 'newest' ? timeB - timeA : timeA - timeB
+      })
 
       // Build display tree
       const result: (SQLQueryLog | QueryGroup)[] = []
@@ -462,6 +470,16 @@ export const useLogsStore = defineStore('logs', {
 
     setViewMode(mode: 'grouped' | 'flat') {
       this.viewMode = mode
+    },
+
+    toggleSortOrder() {
+      this.sortOrder = this.sortOrder === 'newest' ? 'oldest' : 'newest'
+      localStorage.setItem('sqlLogSortOrder', this.sortOrder)
+    },
+
+    setSortOrder(order: 'newest' | 'oldest') {
+      this.sortOrder = order
+      localStorage.setItem('sqlLogSortOrder', order)
     },
 
     getOrderedLogs(): SQLQueryLog[] {

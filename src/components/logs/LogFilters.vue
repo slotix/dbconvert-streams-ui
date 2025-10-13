@@ -11,7 +11,9 @@ import {
   QuestionMarkCircleIcon,
   Squares2X2Icon,
   ListBulletIcon,
-  ArrowDownTrayIcon
+  ArrowDownTrayIcon,
+  ArrowUpIcon,
+  ArrowDownIcon
 } from '@heroicons/vue/24/outline'
 
 const logsStore = useLogsStore()
@@ -57,8 +59,14 @@ const errorsOnly = computed({
   }
 })
 
+const sortOrder = computed(() => logsStore.sortOrder)
+
 function clearLogs() {
   logsStore.clearSQLLogs()
+}
+
+function toggleSortOrder() {
+  logsStore.toggleSortOrder()
 }
 
 function toggleExportMenu() {
@@ -120,6 +128,21 @@ onBeforeUnmount(() => {
         <span>Flat</span>
       </button>
     </div>
+
+    <!-- Sort Order Toggle -->
+    <button
+      class="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors"
+      :title="`Sort: ${sortOrder === 'newest' ? 'Newest on top' : 'Oldest on top'} (click to toggle)`"
+      @click="toggleSortOrder"
+    >
+      <component
+        :is="sortOrder === 'newest' ? ArrowDownIcon : ArrowUpIcon"
+        class="w-3.5 h-3.5 text-gray-600"
+      />
+      <span class="text-gray-700 font-medium">{{
+        sortOrder === 'newest' ? 'Newest' : 'Oldest'
+      }}</span>
+    </button>
 
     <!-- Level Selector -->
     <div class="flex items-center gap-2">
@@ -250,6 +273,10 @@ onBeforeUnmount(() => {
           <div class="flex justify-between">
             <span class="text-gray-600">Toggle errors only</span>
             <kbd class="px-2 py-0.5 bg-gray-100 border border-gray-300 rounded">E</kbd>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-600">Toggle sort order</span>
+            <kbd class="px-2 py-0.5 bg-gray-100 border border-gray-300 rounded">S</kbd>
           </div>
           <div class="flex justify-between">
             <span class="text-gray-600">Clear logs</span>

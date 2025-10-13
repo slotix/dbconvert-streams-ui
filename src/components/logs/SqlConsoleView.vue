@@ -76,6 +76,12 @@ function handleKeyDown(event: KeyboardEvent) {
     event.preventDefault()
     logsStore.clearSQLLogs()
   }
+
+  // 'S' for sort order toggle
+  if (event.key === 's' && !event.ctrlKey && !event.metaKey) {
+    event.preventDefault()
+    logsStore.toggleSortOrder()
+  }
 }
 
 onMounted(() => {
