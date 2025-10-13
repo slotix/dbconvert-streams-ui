@@ -1,5 +1,32 @@
 import { defineStore } from 'pinia'
 
+// localStorage keys for user preferences
+const STORAGE_KEYS = {
+  viewMode: 'sqlLogViewMode',
+  sortOrder: 'sqlLogSortOrder',
+  level: 'sqlLogLevel',
+  timeWindow: 'sqlLogTimeWindow',
+  errorsOnly: 'sqlLogErrorsOnly'
+} as const
+
+// Helper functions for localStorage persistence
+function loadFromStorage<T>(key: string, defaultValue: T): T {
+  try {
+    const stored = localStorage.getItem(key)
+    return stored ? (JSON.parse(stored) as T) : defaultValue
+  } catch {
+    return defaultValue
+  }
+}
+
+function saveToStorage(key: string, value: unknown): void {
+  try {
+    localStorage.setItem(key, JSON.stringify(value))
+  } catch (e) {
+    console.warn(`Failed to save ${key} to localStorage:`, e)
+  }
+}
+
 interface LogLevel {
   info: 'info'
   debug: 'debug'
@@ -170,47 +197,56 @@ function logMatchesFilters(
 }
 
 export const useLogsStore = defineStore('logs', {
-  state: () => ({
-    logs: [] as SystemLog[],
-    maxLogs: 1000,
-    isLogsPanelOpen: false,
-    panelHeight: '50vh',
-    // Keep track of recent messages to prevent duplicates
-    recentMessages: new Map<string, { count: number; timestamp: number }>(),
+  state: () => {
+    // Clean up old unused localStorage keys
+    try {
+      localStorage.removeItem('sqlLogPurposes')
+    } catch (e) {
+      // Ignore errors
+    }
 
-    // Phase 2: SQL Logs
-    flatLogs: new Map<string, SQLQueryLog>(), // id -> log
-    groups: new Map<string, QueryGroup>(), // groupId -> group
-    displayOrder: [] as string[], // IDs in chronological order
+    return {
+      logs: [] as SystemLog[],
+      maxLogs: 1000,
+      isLogsPanelOpen: false,
+      panelHeight: '50vh',
+      // Keep track of recent messages to prevent duplicates
+      recentMessages: new Map<string, { count: number; timestamp: number }>(),
 
-    // Filters
-    filters: {
-      level: 'normal' as LoggingLevel,
-      purposes: new Set<QueryPurpose>([
-        'USER_DATA',
-        'USER_ACTION',
-        'METADATA',
-        'PAGINATION',
-        'ESTIMATE',
-        'EXPLAIN'
-      ]),
-      timeWindow: 'session' as TimeWindow,
-      searchText: '',
-      errorsOnly: false,
-      currentTabOnly: false
-    } as LogFilters,
+      // Phase 2: SQL Logs
+      flatLogs: new Map<string, SQLQueryLog>(), // id -> log
+      groups: new Map<string, QueryGroup>(), // groupId -> group
+      displayOrder: [] as string[], // IDs in chronological order
 
-    // Limits
-    maxLogsPerTab: 500,
-    maxLogsSession: 5000,
+      // Filters (with persisted preferences)
+      filters: {
+        level: loadFromStorage<LoggingLevel>(STORAGE_KEYS.level, 'normal'),
+        purposes: new Set<QueryPurpose>([
+          'USER_DATA',
+          'USER_ACTION',
+          'METADATA',
+          'PAGINATION',
+          'ESTIMATE',
+          'EXPLAIN'
+        ]),
+        timeWindow: loadFromStorage<TimeWindow>(STORAGE_KEYS.timeWindow, 'session'),
+        searchText: '', // Not persisted - session specific
+        errorsOnly: loadFromStorage<boolean>(STORAGE_KEYS.errorsOnly, false),
+        currentTabOnly: false // Not persisted - session specific
+      } as LogFilters,
 
-    // UI state
-    currentTabId: null as string | null,
-    expandedGroups: new Set<string>(),
-    expandedQueries: new Set<string>(),
-    viewMode: 'grouped' as 'grouped' | 'flat',
-    sortOrder: (localStorage.getItem('sqlLogSortOrder') || 'newest') as 'newest' | 'oldest'
-  }),
+      // Limits
+      maxLogsPerTab: 500,
+      maxLogsSession: 5000,
+
+      // UI state (with persisted preferences)
+      currentTabId: null as string | null,
+      expandedGroups: new Set<string>(),
+      expandedQueries: new Set<string>(),
+      viewMode: loadFromStorage<'grouped' | 'flat'>(STORAGE_KEYS.viewMode, 'grouped'),
+      sortOrder: loadFromStorage<'newest' | 'oldest'>(STORAGE_KEYS.sortOrder, 'newest')
+    }
+  },
 
   getters: {
     filteredLogs: (state) => (level?: keyof LogLevel) => {
@@ -466,16 +502,33 @@ export const useLogsStore = defineStore('logs', {
 
     setViewMode(mode: 'grouped' | 'flat') {
       this.viewMode = mode
+      saveToStorage(STORAGE_KEYS.viewMode, mode)
     },
 
     toggleSortOrder() {
       this.sortOrder = this.sortOrder === 'newest' ? 'oldest' : 'newest'
-      localStorage.setItem('sqlLogSortOrder', this.sortOrder)
+      saveToStorage(STORAGE_KEYS.sortOrder, this.sortOrder)
     },
 
     setSortOrder(order: 'newest' | 'oldest') {
       this.sortOrder = order
-      localStorage.setItem('sqlLogSortOrder', order)
+      saveToStorage(STORAGE_KEYS.sortOrder, order)
+    },
+
+    // Filter preference persistence
+    setLevel(level: LoggingLevel) {
+      this.filters.level = level
+      saveToStorage(STORAGE_KEYS.level, level)
+    },
+
+    setTimeWindow(timeWindow: TimeWindow) {
+      this.filters.timeWindow = timeWindow
+      saveToStorage(STORAGE_KEYS.timeWindow, timeWindow)
+    },
+
+    setErrorsOnly(errorsOnly: boolean) {
+      this.filters.errorsOnly = errorsOnly
+      saveToStorage(STORAGE_KEYS.errorsOnly, errorsOnly)
     },
 
     getOrderedLogs(): SQLQueryLog[] {

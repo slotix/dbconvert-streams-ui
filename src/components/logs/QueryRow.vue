@@ -7,6 +7,7 @@ import {
   ClipboardIcon,
   CheckIcon
 } from '@heroicons/vue/24/outline'
+import { getPurposePillClass, getDurationClass, formatTime } from '@/utils/sqlLogHelpers'
 
 const props = defineProps<{
   log: SQLQueryLog
@@ -31,39 +32,6 @@ async function copyQuery() {
   } catch (error) {
     console.error('Failed to copy query:', error)
   }
-}
-
-function getPurposePillClass(purpose: string): string {
-  const classes: Record<string, string> = {
-    USER_DATA: 'bg-blue-600 text-white',
-    USER_ACTION: 'bg-blue-700 text-white',
-    METADATA: 'bg-gray-500 text-white',
-    PAGINATION: 'bg-orange-600 text-white',
-    ESTIMATE: 'bg-teal-600 text-white',
-    EXPLAIN: 'bg-purple-600 text-white'
-  }
-  return classes[purpose] || 'bg-gray-600 text-white'
-}
-
-function getDurationClass(ms: number): string {
-  if (ms < 100) return 'text-green-600'
-  if (ms < 500) return 'text-yellow-600'
-  if (ms < 1000) return 'text-orange-600'
-  return 'text-red-600'
-}
-
-function formatTime(timestamp: string): string {
-  const date = new Date(timestamp)
-  return (
-    date.toLocaleTimeString('en-US', {
-      hour12: false,
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
-    }) +
-    '.' +
-    String(date.getMilliseconds()).padStart(3, '0')
-  )
 }
 
 function getPurposeLabel(purpose: string): string {

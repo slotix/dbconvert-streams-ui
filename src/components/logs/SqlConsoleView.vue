@@ -56,16 +56,16 @@ function handleKeyDown(event: KeyboardEvent) {
   // Level shortcuts: 1=minimal, 2=normal
   if (event.key === '1' && !event.ctrlKey && !event.metaKey) {
     event.preventDefault()
-    logsStore.filters.level = 'minimal'
+    logsStore.setLevel('minimal')
   } else if (event.key === '2' && !event.ctrlKey && !event.metaKey) {
     event.preventDefault()
-    logsStore.filters.level = 'normal'
+    logsStore.setLevel('normal')
   }
 
   // 'E' for errors-only toggle
   if (event.key === 'e' && !event.ctrlKey && !event.metaKey) {
     event.preventDefault()
-    logsStore.filters.errorsOnly = !logsStore.filters.errorsOnly
+    logsStore.setErrorsOnly(!logsStore.filters.errorsOnly)
   }
 
   // 'K' for clear logs

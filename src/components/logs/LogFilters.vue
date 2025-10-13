@@ -34,28 +34,28 @@ const viewMode = computed({
 const level = computed({
   get: () => logsStore.filters.level,
   set: (val: LoggingLevel) => {
-    logsStore.filters.level = val
+    logsStore.setLevel(val)
   }
 })
 
 const timeWindow = computed({
   get: () => logsStore.filters.timeWindow,
   set: (val: TimeWindow) => {
-    logsStore.filters.timeWindow = val
+    logsStore.setTimeWindow(val)
   }
 })
 
 const searchText = computed({
   get: () => logsStore.filters.searchText,
   set: (val: string) => {
-    logsStore.filters.searchText = val
+    logsStore.filters.searchText = val // Don't persist - session specific
   }
 })
 
 const errorsOnly = computed({
   get: () => logsStore.filters.errorsOnly,
   set: (val: boolean) => {
-    logsStore.filters.errorsOnly = val
+    logsStore.setErrorsOnly(val)
   }
 })
 
