@@ -371,7 +371,6 @@ export class SSELogsService {
             tableName: data.tableName,
             query: data.query,
             params: data.params,
-            queryType: data.queryType,
             purpose: data.purpose,
             triggerSource: data.triggerSource,
             startedAt: data.startedAt,

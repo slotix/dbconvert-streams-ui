@@ -23,9 +23,6 @@ const locationLabel = computed(() => {
   )
   return parts.join('.')
 })
-const queryTypeLabel = computed(() =>
-  typeof props.log.queryType === 'string' ? props.log.queryType.toUpperCase() : props.log.queryType
-)
 const oneLinePreview = computed(() => {
   const normalized = props.log.query.replace(/\s+/g, ' ').trim()
   if (normalized.length <= 160) return normalized
@@ -76,11 +73,6 @@ function getPurposeLabel(purpose: string): string {
         >
           {{ getPurposeLabel(log.purpose) }}
         </span>
-      </span>
-
-      <!-- Query Type -->
-      <span class="query-meta query-meta--type text-gray-600 uppercase">
-        {{ queryTypeLabel }}
       </span>
 
       <!-- Database.Table -->
@@ -136,7 +128,6 @@ function getPurposeLabel(purpose: string): string {
       <div class="grid grid-cols-2 gap-2 text-xs">
         <div><span class="font-semibold">Connection:</span> {{ log.connectionId }}</div>
         <div v-if="log.tabId"><span class="font-semibold">Tab:</span> {{ log.tabId }}</div>
-        <div><span class="font-semibold">Type:</span> {{ log.queryType }}</div>
         <div v-if="log.triggerSource">
           <span class="font-semibold">Trigger:</span> {{ log.triggerSource }}
         </div>
@@ -177,13 +168,6 @@ function getPurposeLabel(purpose: string): string {
 .query-meta--purpose {
   width: 130px;
   flex-shrink: 0;
-}
-
-.query-meta--type {
-  width: 80px;
-  flex-shrink: 0;
-  text-align: right;
-  font-weight: 600;
 }
 
 .query-meta--location {
@@ -227,10 +211,6 @@ function getPurposeLabel(purpose: string): string {
 }
 
 @media (max-width: 1024px) {
-  .query-meta--type {
-    display: none;
-  }
-
   .query-meta--rows {
     display: none;
   }

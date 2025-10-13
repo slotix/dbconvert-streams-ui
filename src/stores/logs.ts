@@ -76,7 +76,6 @@ export interface SQLQueryLog {
   tableName?: string
   query: string
   params?: unknown[]
-  queryType: string
   purpose: QueryPurpose
   triggerSource?: string
   startedAt: string

@@ -17,9 +17,6 @@ const locationLabel = computed(() => {
   return parts.join('.')
 })
 const formattedRowCount = computed(() => props.log.rowCount.toLocaleString())
-const queryTypeLabel = computed(() =>
-  typeof props.log.queryType === 'string' ? props.log.queryType.toUpperCase() : ''
-)
 const fullQuery = computed(() => props.log.query.trim())
 const oneLineQuery = computed(() => {
   const flattened = fullQuery.value.replace(/\s+/g, ' ').trim()
@@ -66,9 +63,6 @@ function closeFullQuery() {
         >
           {{ purposeLabel }}
         </span>
-      </span>
-      <span class="flat-meta flat-meta--type text-gray-600 uppercase">
-        {{ queryTypeLabel }}
       </span>
       <span class="flat-meta flat-meta--location" :title="locationLabel">
         {{ locationLabel }}
@@ -135,7 +129,7 @@ function closeFullQuery() {
 
 .flat-row-header {
   display: grid;
-  grid-template-columns: 110px 140px 80px minmax(220px, 2fr) 90px 110px minmax(80px, auto) auto;
+  grid-template-columns: 110px 140px minmax(220px, 2fr) 90px 110px minmax(80px, auto) auto;
   align-items: center;
   gap: 0.75rem;
 }
@@ -145,7 +139,6 @@ function closeFullQuery() {
     grid-template-columns: 100px 120px minmax(160px, 1fr) 80px 80px auto;
   }
 
-  .flat-meta--type,
   .flat-meta--status {
     display: none;
   }
@@ -162,12 +155,6 @@ function closeFullQuery() {
 .flat-meta--purpose {
   width: 140px;
   flex-shrink: 0;
-}
-
-.flat-meta--type {
-  width: 80px;
-  text-align: right;
-  font-weight: 600;
 }
 
 .flat-meta--location {
