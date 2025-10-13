@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useLogsStore } from '@/stores/logs'
-import type { ExportFormat, LoggingLevel, TimeWindow } from '@/stores/logs'
+import type { ExportFormat, TimeWindow } from '@/stores/logs'
 import {
   AdjustmentsHorizontalIcon,
   ClockIcon,
@@ -13,8 +13,11 @@ import {
   ListBulletIcon,
   ArrowDownTrayIcon,
   ArrowUpIcon,
-  ArrowDownIcon
+  ArrowDownIcon,
+  CheckIcon,
+  ChevronDownIcon
 } from '@heroicons/vue/24/outline'
+import { Listbox, ListboxButton, ListboxOption, ListboxOptions, Switch } from '@headlessui/vue'
 
 const logsStore = useLogsStore()
 const showShortcuts = ref(false)
@@ -24,6 +27,14 @@ const emit = defineEmits<{
   (e: 'export', format: ExportFormat): void
 }>()
 
+// Time window options
+const timeWindowOptions = [
+  { value: '5m' as TimeWindow, label: '5 min' },
+  { value: '1h' as TimeWindow, label: '1 hour' },
+  { value: 'session' as TimeWindow, label: 'Session' },
+  { value: 'all' as TimeWindow, label: 'All' }
+]
+
 const viewMode = computed({
   get: () => logsStore.viewMode,
   set: (val: 'grouped' | 'flat') => {
@@ -31,10 +42,11 @@ const viewMode = computed({
   }
 })
 
-const level = computed({
-  get: () => logsStore.filters.level,
-  set: (val: LoggingLevel) => {
-    logsStore.setLevel(val)
+// Toggle for level (true = normal, false = minimal)
+const isNormalLevel = computed({
+  get: () => logsStore.filters.level === 'normal',
+  set: (val: boolean) => {
+    logsStore.setLevel(val ? 'normal' : 'minimal')
   }
 })
 
@@ -97,7 +109,7 @@ onBeforeUnmount(() => {
 
 <template>
   <div
-    class="flex items-center gap-4 px-4 py-2 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200 shadow-sm"
+    class="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200 shadow-sm"
   >
     <!-- View Mode Switcher -->
     <div class="flex items-center gap-1 bg-white border border-gray-300 rounded p-0.5">
@@ -144,33 +156,78 @@ onBeforeUnmount(() => {
       }}</span>
     </button>
 
-    <!-- Level Selector -->
-    <div class="flex items-center gap-2">
+    <!-- Level Toggle -->
+    <div class="flex items-center gap-1.5" title="Logging Level">
       <AdjustmentsHorizontalIcon class="w-4 h-4 text-gray-500" />
-      <label class="text-xs font-semibold text-gray-700">Level:</label>
-      <select
-        v-model="level"
-        class="text-xs border border-gray-300 rounded px-2 py-1 bg-white hover:border-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+      <span class="text-xs text-gray-600">Minimal</span>
+      <Switch
+        v-model="isNormalLevel"
+        class="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
+        :class="[isNormalLevel ? 'bg-blue-600' : 'bg-gray-300']"
       >
-        <option value="minimal">Minimal</option>
-        <option value="normal">Normal</option>
-      </select>
+        <span class="sr-only">Toggle logging level</span>
+        <span
+          aria-hidden="true"
+          class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+          :class="[isNormalLevel ? 'translate-x-4' : 'translate-x-0']"
+        />
+      </Switch>
+      <span class="text-xs text-gray-600">Normal</span>
     </div>
 
     <!-- Time Window -->
-    <div class="flex items-center gap-2">
-      <ClockIcon class="w-4 h-4 text-gray-500" />
-      <label class="text-xs font-semibold text-gray-700">Time:</label>
-      <select
-        v-model="timeWindow"
-        class="text-xs border border-gray-300 rounded px-2 py-1 bg-white hover:border-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+    <Listbox v-model="timeWindow" as="div" class="relative">
+      <div class="flex items-center gap-1">
+        <ClockIcon class="w-4 h-4 text-gray-500" title="Time Window" />
+        <ListboxButton
+          class="relative text-xs border border-gray-300 rounded pl-1.5 pr-6 py-1 bg-white hover:border-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors text-left min-w-[70px]"
+        >
+          <span class="block truncate">{{
+            timeWindowOptions.find((o) => o.value === timeWindow)?.label
+          }}</span>
+          <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-1">
+            <ChevronDownIcon class="h-3 w-3 text-gray-400" aria-hidden="true" />
+          </span>
+        </ListboxButton>
+      </div>
+      <transition
+        leave-active-class="transition ease-in duration-100"
+        leave-from-class="opacity-100"
+        leave-to-class="opacity-0"
       >
-        <option value="5m">Last 5 min</option>
-        <option value="1h">Last 1 hour</option>
-        <option value="session">Session</option>
-        <option value="all">All</option>
-      </select>
-    </div>
+        <ListboxOptions
+          class="absolute z-10 mt-1 max-h-60 w-28 overflow-auto rounded-md bg-white py-1 text-xs shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+        >
+          <ListboxOption
+            v-for="option in timeWindowOptions"
+            :key="option.value"
+            v-slot="{ active, selected }"
+            :value="option.value"
+            as="template"
+          >
+            <li
+              :class="[
+                active ? 'bg-blue-600 text-white' : 'text-gray-900',
+                'relative cursor-pointer select-none py-1.5 pl-2 pr-8'
+              ]"
+            >
+              <span :class="[selected ? 'font-semibold' : 'font-normal', 'block truncate']">
+                {{ option.label }}
+              </span>
+              <span
+                v-if="selected"
+                :class="[
+                  active ? 'text-white' : 'text-blue-600',
+                  'absolute inset-y-0 right-0 flex items-center pr-2'
+                ]"
+              >
+                <CheckIcon class="h-3.5 w-3.5" aria-hidden="true" />
+              </span>
+            </li>
+          </ListboxOption>
+        </ListboxOptions>
+      </transition>
+    </Listbox>
 
     <!-- Search -->
     <div class="flex-1 relative">
