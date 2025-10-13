@@ -3,7 +3,6 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useLogsStore } from '@/stores/logs'
 import type { ExportFormat, TimeWindow } from '@/stores/logs'
 import {
-  AdjustmentsHorizontalIcon,
   ClockIcon,
   MagnifyingGlassIcon,
   ExclamationTriangleIcon,
@@ -15,9 +14,11 @@ import {
   ArrowUpIcon,
   ArrowDownIcon,
   CheckIcon,
-  ChevronDownIcon
+  ChevronDownIcon,
+  DocumentTextIcon,
+  Bars3BottomLeftIcon
 } from '@heroicons/vue/24/outline'
-import { Listbox, ListboxButton, ListboxOption, ListboxOptions, Switch } from '@headlessui/vue'
+import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/vue'
 
 const logsStore = useLogsStore()
 const showShortcuts = ref(false)
@@ -42,13 +43,10 @@ const viewMode = computed({
   }
 })
 
-// Toggle for level (true = normal, false = minimal)
-const isNormalLevel = computed({
-  get: () => logsStore.filters.level === 'normal',
-  set: (val: boolean) => {
-    logsStore.setLevel(val ? 'normal' : 'minimal')
-  }
-})
+// Logging density toggle state
+const isNormalLevel = computed(() => logsStore.filters.level === 'normal')
+const levelLabel = computed(() => (isNormalLevel.value ? 'Normal' : 'Minimal'))
+const levelIcon = computed(() => (isNormalLevel.value ? DocumentTextIcon : Bars3BottomLeftIcon))
 
 const timeWindow = computed({
   get: () => logsStore.filters.timeWindow,
@@ -81,6 +79,10 @@ function toggleSortOrder() {
   logsStore.toggleSortOrder()
 }
 
+function toggleLevel() {
+  logsStore.setLevel(isNormalLevel.value ? 'minimal' : 'normal')
+}
+
 function toggleExportMenu() {
   showExportMenu.value = !showExportMenu.value
 }
@@ -111,228 +113,239 @@ onBeforeUnmount(() => {
   <div
     class="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200 shadow-sm"
   >
-    <!-- View Mode Switcher -->
-    <div class="flex items-center gap-1 bg-white border border-gray-300 rounded p-0.5">
-      <button
-        :class="[
-          'flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors',
-          viewMode === 'grouped'
-            ? 'bg-blue-500 text-white shadow-sm'
-            : 'text-gray-600 hover:bg-gray-100'
-        ]"
-        title="Grouped view - Related queries grouped together"
-        @click="viewMode = 'grouped'"
-      >
-        <Squares2X2Icon class="w-4 h-4" />
-        <span>Grouped</span>
-      </button>
-      <button
-        :class="[
-          'flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors',
-          viewMode === 'flat'
-            ? 'bg-blue-500 text-white shadow-sm'
-            : 'text-gray-600 hover:bg-gray-100'
-        ]"
-        title="Flat view - All queries in chronological order"
-        @click="viewMode = 'flat'"
-      >
-        <ListBulletIcon class="w-4 h-4" />
-        <span>Flat</span>
-      </button>
-    </div>
-
-    <!-- Sort Order Toggle -->
-    <button
-      class="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors"
-      :title="`Sort: ${sortOrder === 'newest' ? 'Newest on top' : 'Oldest on top'} (click to toggle)`"
-      @click="toggleSortOrder"
-    >
-      <component
-        :is="sortOrder === 'newest' ? ArrowDownIcon : ArrowUpIcon"
-        class="w-3.5 h-3.5 text-gray-600"
-      />
-      <span class="text-gray-700 font-medium">{{
-        sortOrder === 'newest' ? 'Newest' : 'Oldest'
-      }}</span>
-    </button>
-
-    <!-- Level Toggle -->
-    <div class="flex items-center gap-1.5" title="Logging Level">
-      <AdjustmentsHorizontalIcon class="w-4 h-4 text-gray-500" />
-      <span class="text-xs text-gray-600">Minimal</span>
-      <Switch
-        v-model="isNormalLevel"
-        class="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
-        :class="[isNormalLevel ? 'bg-blue-600' : 'bg-gray-300']"
-      >
-        <span class="sr-only">Toggle logging level</span>
-        <span
-          aria-hidden="true"
-          class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
-          :class="[isNormalLevel ? 'translate-x-4' : 'translate-x-0']"
-        />
-      </Switch>
-      <span class="text-xs text-gray-600">Normal</span>
-    </div>
-
-    <!-- Time Window -->
-    <Listbox v-model="timeWindow" as="div" class="relative">
-      <div class="flex items-center gap-1">
-        <ClockIcon class="w-4 h-4 text-gray-500" title="Time Window" />
-        <ListboxButton
-          class="relative text-xs border border-gray-300 rounded pl-1.5 pr-6 py-1 bg-white hover:border-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors text-left min-w-[70px]"
+    <div class="flex items-center gap-2">
+      <!-- View Mode Switcher -->
+      <div class="flex items-center gap-1 bg-white border border-gray-300 rounded p-0.5">
+        <button
+          :class="[
+            'flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors',
+            viewMode === 'grouped'
+              ? 'bg-blue-500 text-white shadow-sm'
+              : 'text-gray-600 hover:bg-gray-100'
+          ]"
+          title="Grouped view - Related queries grouped together"
+          @click="viewMode = 'grouped'"
         >
-          <span class="block truncate">{{
+          <Squares2X2Icon class="w-4 h-4" />
+          <span>Grouped</span>
+        </button>
+        <button
+          :class="[
+            'flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors',
+            viewMode === 'flat'
+              ? 'bg-blue-500 text-white shadow-sm'
+              : 'text-gray-600 hover:bg-gray-100'
+          ]"
+          title="Flat view - All queries in chronological order"
+          @click="viewMode = 'flat'"
+        >
+          <ListBulletIcon class="w-4 h-4" />
+          <span>Flat</span>
+        </button>
+      </div>
+
+      <!-- Level Toggle -->
+      <button
+        class="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-gray-300 rounded transition-colors shadow-sm"
+        :class="
+          isNormalLevel
+            ? 'bg-blue-50 text-blue-700 border-blue-200'
+            : 'bg-white text-gray-600 hover:bg-gray-50'
+        "
+        title="Toggle log density"
+        @click="toggleLevel"
+      >
+        <component :is="levelIcon" class="w-4 h-4" />
+        <span class="font-medium">{{ levelLabel }}</span>
+      </button>
+    </div>
+
+    <div class="hidden sm:block h-6 border-l border-gray-200" />
+
+    <div class="flex items-center gap-2">
+      <!-- Sort Order Toggle -->
+      <button
+        class="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors"
+        :title="`Sort: ${sortOrder === 'newest' ? 'Newest on top' : 'Oldest on top'} (click to toggle)`"
+        @click="toggleSortOrder"
+      >
+        <component
+          :is="sortOrder === 'newest' ? ArrowDownIcon : ArrowUpIcon"
+          class="w-3.5 h-3.5 text-gray-600"
+        />
+        <span class="text-gray-700 font-medium">{{
+          sortOrder === 'newest' ? 'Newest' : 'Oldest'
+        }}</span>
+      </button>
+
+      <!-- Time Window -->
+      <Listbox v-model="timeWindow" as="div" class="relative">
+        <ListboxButton
+          class="relative flex items-center gap-1.5 text-xs border border-gray-300 rounded pl-2 pr-6 py-1 bg-white hover:border-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors text-left min-w-[88px]"
+          title="Time Window"
+        >
+          <ClockIcon class="w-4 h-4 text-gray-500" />
+          <span class="flex-1 truncate text-left">{{
             timeWindowOptions.find((o) => o.value === timeWindow)?.label
           }}</span>
           <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-1">
             <ChevronDownIcon class="h-3 w-3 text-gray-400" aria-hidden="true" />
           </span>
         </ListboxButton>
-      </div>
-      <transition
-        leave-active-class="transition ease-in duration-100"
-        leave-from-class="opacity-100"
-        leave-to-class="opacity-0"
-      >
-        <ListboxOptions
-          class="absolute z-10 mt-1 max-h-60 w-28 overflow-auto rounded-md bg-white py-1 text-xs shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+        <transition
+          leave-active-class="transition ease-in duration-100"
+          leave-from-class="opacity-100"
+          leave-to-class="opacity-0"
         >
-          <ListboxOption
-            v-for="option in timeWindowOptions"
-            :key="option.value"
-            v-slot="{ active, selected }"
-            :value="option.value"
-            as="template"
+          <ListboxOptions
+            class="absolute z-10 mt-1 max-h-60 w-28 overflow-auto rounded-md bg-white py-1 text-xs shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
           >
-            <li
-              :class="[
-                active ? 'bg-blue-600 text-white' : 'text-gray-900',
-                'relative cursor-pointer select-none py-1.5 pl-2 pr-8'
-              ]"
+            <ListboxOption
+              v-for="option in timeWindowOptions"
+              :key="option.value"
+              v-slot="{ active, selected }"
+              :value="option.value"
+              as="template"
             >
-              <span :class="[selected ? 'font-semibold' : 'font-normal', 'block truncate']">
-                {{ option.label }}
-              </span>
-              <span
-                v-if="selected"
+              <li
                 :class="[
-                  active ? 'text-white' : 'text-blue-600',
-                  'absolute inset-y-0 right-0 flex items-center pr-2'
+                  active ? 'bg-blue-600 text-white' : 'text-gray-900',
+                  'relative cursor-pointer select-none py-1.5 pl-2 pr-8'
                 ]"
               >
-                <CheckIcon class="h-3.5 w-3.5" aria-hidden="true" />
-              </span>
-            </li>
-          </ListboxOption>
-        </ListboxOptions>
-      </transition>
-    </Listbox>
-
-    <!-- Search -->
-    <div class="flex-1 relative">
-      <MagnifyingGlassIcon class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-      <input
-        v-model="searchText"
-        type="text"
-        placeholder="Search queries, tables, errors..."
-        class="w-full text-xs border border-gray-300 rounded pl-9 pr-3 py-1.5 bg-white hover:border-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
-      />
+                <span :class="[selected ? 'font-semibold' : 'font-normal', 'block truncate']">
+                  {{ option.label }}
+                </span>
+                <span
+                  v-if="selected"
+                  :class="[
+                    active ? 'text-white' : 'text-blue-600',
+                    'absolute inset-y-0 right-0 flex items-center pr-2'
+                  ]"
+                >
+                  <CheckIcon class="h-3.5 w-3.5" aria-hidden="true" />
+                </span>
+              </li>
+            </ListboxOption>
+          </ListboxOptions>
+        </transition>
+      </Listbox>
     </div>
 
-    <!-- Errors Toggle -->
-    <label
-      class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 px-2 py-1 rounded transition-colors"
-    >
-      <input v-model="errorsOnly" type="checkbox" class="rounded text-red-600" />
-      <ExclamationTriangleIcon class="w-4 h-4 text-red-600" />
-      <span class="text-xs font-semibold text-red-600">Errors Only</span>
-    </label>
+    <div class="hidden sm:block h-6 border-l border-gray-200" />
 
-    <!-- Export Button -->
-    <div ref="exportMenuRef" class="relative">
-      <button
-        class="flex items-center gap-1 px-3 py-1.5 text-xs text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors shadow-sm"
-        @click.stop="toggleExportMenu"
-      >
-        <ArrowDownTrayIcon class="w-3.5 h-3.5" />
-        <span>Export</span>
-      </button>
-
-      <div
-        v-if="showExportMenu"
-        class="absolute right-0 mt-2 w-36 bg-white border border-gray-200 rounded shadow-lg z-50"
-      >
-        <button
-          class="w-full text-left px-3 py-2 text-xs hover:bg-blue-50 transition-colors"
-          @click="selectExportFormat('text')"
-        >
-          Export as Text
-        </button>
-        <button
-          class="w-full text-left px-3 py-2 text-xs hover:bg-blue-50 transition-colors"
-          @click="selectExportFormat('csv')"
-        >
-          Export as CSV
-        </button>
-        <button
-          class="w-full text-left px-3 py-2 text-xs hover:bg-blue-50 transition-colors"
-          @click="selectExportFormat('json')"
-        >
-          Export as JSON
-        </button>
+    <div class="flex items-center gap-2 flex-1 min-w-0">
+      <!-- Search -->
+      <div class="flex-1 relative">
+        <MagnifyingGlassIcon
+          class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2"
+        />
+        <input
+          v-model="searchText"
+          type="text"
+          placeholder="Search queries, tables, errors..."
+          class="w-full text-xs border border-gray-300 rounded pl-9 pr-3 py-1.5 bg-white hover:border-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+        />
       </div>
+
+      <!-- Errors Toggle -->
+      <label
+        class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 px-2 py-1 rounded transition-colors"
+      >
+        <input v-model="errorsOnly" type="checkbox" class="rounded text-red-600" />
+        <ExclamationTriangleIcon class="w-4 h-4 text-red-600" />
+        <span class="text-xs font-semibold text-red-600">Errors Only</span>
+      </label>
     </div>
 
-    <!-- Clear Button -->
-    <button
-      class="flex items-center gap-1 px-3 py-1.5 text-xs text-white bg-red-600 rounded hover:bg-red-700 transition-colors shadow-sm"
-      @click="clearLogs"
-    >
-      <TrashIcon class="w-3.5 h-3.5" />
-      <span>Clear</span>
-    </button>
+    <div class="hidden sm:block h-6 border-l border-gray-200" />
 
-    <!-- Keyboard Shortcuts Help -->
-    <div class="relative">
+    <div class="flex items-center gap-2">
+      <!-- Export Button -->
+      <div ref="exportMenuRef" class="relative">
+        <button
+          class="flex items-center gap-1 px-3 py-1.5 text-xs text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors shadow-sm"
+          @click.stop="toggleExportMenu"
+        >
+          <ArrowDownTrayIcon class="w-3.5 h-3.5" />
+          <span>Export</span>
+        </button>
+
+        <div
+          v-if="showExportMenu"
+          class="absolute right-0 mt-2 w-36 bg-white border border-gray-200 rounded shadow-lg z-50"
+        >
+          <button
+            class="w-full text-left px-3 py-2 text-xs hover:bg-blue-50 transition-colors"
+            @click="selectExportFormat('text')"
+          >
+            Export as Text
+          </button>
+          <button
+            class="w-full text-left px-3 py-2 text-xs hover:bg-blue-50 transition-colors"
+            @click="selectExportFormat('csv')"
+          >
+            Export as CSV
+          </button>
+          <button
+            class="w-full text-left px-3 py-2 text-xs hover:bg-blue-50 transition-colors"
+            @click="selectExportFormat('json')"
+          >
+            Export as JSON
+          </button>
+        </div>
+      </div>
+
+      <!-- Clear Button -->
       <button
-        class="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
-        title="Keyboard shortcuts"
-        @click="showShortcuts = !showShortcuts"
+        class="flex items-center gap-1 px-3 py-1.5 text-xs text-white bg-red-600 rounded hover:bg-red-700 transition-colors shadow-sm"
+        @click="clearLogs"
       >
-        <QuestionMarkCircleIcon class="w-5 h-5" />
+        <TrashIcon class="w-3.5 h-3.5" />
+        <span>Clear</span>
       </button>
 
-      <!-- Shortcuts Tooltip -->
-      <div
-        v-if="showShortcuts"
-        class="absolute right-0 top-full mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg p-3 z-50 text-xs"
-      >
-        <div class="font-semibold text-gray-700 mb-2">Keyboard Shortcuts</div>
-        <div class="space-y-1.5">
-          <div class="flex justify-between">
-            <span class="text-gray-600">Focus search</span>
-            <kbd class="px-2 py-0.5 bg-gray-100 border border-gray-300 rounded">/ </kbd>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-gray-600">Minimal level</span>
-            <kbd class="px-2 py-0.5 bg-gray-100 border border-gray-300 rounded">1</kbd>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-gray-600">Normal level</span>
-            <kbd class="px-2 py-0.5 bg-gray-100 border border-gray-300 rounded">2</kbd>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-gray-600">Toggle errors only</span>
-            <kbd class="px-2 py-0.5 bg-gray-100 border border-gray-300 rounded">E</kbd>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-gray-600">Toggle sort order</span>
-            <kbd class="px-2 py-0.5 bg-gray-100 border border-gray-300 rounded">S</kbd>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-gray-600">Clear logs</span>
-            <kbd class="px-2 py-0.5 bg-gray-100 border border-gray-300 rounded">K</kbd>
+      <!-- Keyboard Shortcuts Help -->
+      <div class="relative">
+        <button
+          class="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
+          title="Keyboard shortcuts"
+          @click="showShortcuts = !showShortcuts"
+        >
+          <QuestionMarkCircleIcon class="w-5 h-5" />
+        </button>
+
+        <!-- Shortcuts Tooltip -->
+        <div
+          v-if="showShortcuts"
+          class="absolute right-0 top-full mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg p-3 z-50 text-xs"
+        >
+          <div class="font-semibold text-gray-700 mb-2">Keyboard Shortcuts</div>
+          <div class="space-y-1.5">
+            <div class="flex justify-between">
+              <span class="text-gray-600">Focus search</span>
+              <kbd class="px-2 py-0.5 bg-gray-100 border border-gray-300 rounded">/ </kbd>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-600">Minimal level</span>
+              <kbd class="px-2 py-0.5 bg-gray-100 border border-gray-300 rounded">1</kbd>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-600">Normal level</span>
+              <kbd class="px-2 py-0.5 bg-gray-100 border border-gray-300 rounded">2</kbd>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-600">Toggle errors only</span>
+              <kbd class="px-2 py-0.5 bg-gray-100 border border-gray-300 rounded">E</kbd>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-600">Toggle sort order</span>
+              <kbd class="px-2 py-0.5 bg-gray-100 border border-gray-300 rounded">S</kbd>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-600">Clear logs</span>
+              <kbd class="px-2 py-0.5 bg-gray-100 border border-gray-300 rounded">K</kbd>
+            </div>
           </div>
         </div>
       </div>
