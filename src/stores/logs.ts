@@ -244,7 +244,8 @@ export const useLogsStore = defineStore('logs', {
       expandedGroups: new Set<string>(),
       expandedQueries: new Set<string>(),
       viewMode: loadFromStorage<'grouped' | 'flat'>(STORAGE_KEYS.viewMode, 'grouped'),
-      sortOrder: loadFromStorage<'newest' | 'oldest'>(STORAGE_KEYS.sortOrder, 'newest')
+      sortOrder: loadFromStorage<'newest' | 'oldest'>(STORAGE_KEYS.sortOrder, 'newest'),
+      lastAutoExpandedGroupId: null as string | null
     }
   },
 
@@ -389,9 +390,19 @@ export const useLogsStore = defineStore('logs', {
       // Auto-collapse based on type
       if (group.type === 'metadata' || group.type === 'pagination') {
         group.collapsed = true
-      } else if (group.hasErrors) {
+      } else {
         group.collapsed = false
+      }
+
+      if (group.hasErrors) {
         this.expandedGroups.add(group.groupId)
+        this.ensureFirstQueryExpanded(group.groupId)
+        this.lastAutoExpandedGroupId = null
+        return
+      }
+
+      if (!group.collapsed) {
+        this.autoExpandGroup(group.groupId)
       }
     },
 
@@ -421,6 +432,12 @@ export const useLogsStore = defineStore('logs', {
       if (log.error) {
         group.hasErrors = true
         group.collapsed = false
+        this.expandedGroups.add(group.groupId)
+        this.ensureFirstQueryExpanded(group.groupId)
+        this.lastAutoExpandedGroupId = null
+      } else if (group.queryCount === 1) {
+        // First log in the group - auto expand
+        this.autoExpandGroup(group.groupId)
       }
     },
 
@@ -479,8 +496,16 @@ export const useLogsStore = defineStore('logs', {
     toggleGroup(groupId: string) {
       if (this.expandedGroups.has(groupId)) {
         this.expandedGroups.delete(groupId)
+        this.collapseQueriesForGroup(groupId)
+        if (this.lastAutoExpandedGroupId === groupId) {
+          this.lastAutoExpandedGroupId = null
+        }
       } else {
         this.expandedGroups.add(groupId)
+        this.ensureFirstQueryExpanded(groupId)
+        if (this.lastAutoExpandedGroupId === groupId) {
+          this.lastAutoExpandedGroupId = null
+        }
       }
     },
 
@@ -492,12 +517,60 @@ export const useLogsStore = defineStore('logs', {
       }
     },
 
+    autoExpandGroup(groupId: string) {
+      const group = this.groups.get(groupId)
+      if (!group) return
+
+      if (this.lastAutoExpandedGroupId && this.lastAutoExpandedGroupId !== groupId) {
+        this.collapseQueriesForGroup(this.lastAutoExpandedGroupId)
+        this.expandedGroups.delete(this.lastAutoExpandedGroupId)
+      }
+
+      this.expandedGroups.add(groupId)
+      this.ensureFirstQueryExpanded(groupId)
+      this.lastAutoExpandedGroupId = groupId
+    },
+
+    ensureFirstQueryExpanded(groupId: string) {
+      const group = this.groups.get(groupId)
+      if (!group || group.queryIds.length === 0) return
+      const firstQueryId = group.queryIds[0]
+      if (!this.expandedQueries.has(firstQueryId)) {
+        this.expandedQueries.add(firstQueryId)
+      }
+    },
+
+    collapseQueriesForGroup(groupId: string) {
+      const group = this.groups.get(groupId)
+      if (!group) return
+      for (const queryId of group.queryIds) {
+        this.expandedQueries.delete(queryId)
+      }
+    },
+
+    expandAllGroups() {
+      for (const [groupId, group] of this.groups.entries()) {
+        this.expandedGroups.add(groupId)
+        if (group.queryIds.length > 0) {
+          this.ensureFirstQueryExpanded(groupId)
+        }
+      }
+      this.lastAutoExpandedGroupId = null
+    },
+
+    collapseAllGroups() {
+      this.expandedGroups.clear()
+      this.expandedQueries.clear()
+      this.lastAutoExpandedGroupId = null
+    },
+
     clearSQLLogs() {
       this.flatLogs.clear()
       this.groups.clear()
       this.displayOrder = []
       this.expandedGroups.clear()
       this.expandedQueries.clear()
+      this.lastAutoExpandedGroupId = null
     },
 
     setViewMode(mode: 'grouped' | 'flat') {

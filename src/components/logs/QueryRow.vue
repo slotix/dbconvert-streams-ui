@@ -17,6 +17,20 @@ const logsStore = useLogsStore()
 const copied = ref(false)
 
 const isExpanded = computed(() => logsStore.expandedQueries.has(props.log.id))
+const locationLabel = computed(() => {
+  const parts = [props.log.database, props.log.schema, props.log.tableName].filter(
+    (part) => !!part && part !== ''
+  )
+  return parts.join('.')
+})
+const queryTypeLabel = computed(() =>
+  typeof props.log.queryType === 'string' ? props.log.queryType.toUpperCase() : props.log.queryType
+)
+const oneLinePreview = computed(() => {
+  const normalized = props.log.query.replace(/\s+/g, ' ').trim()
+  if (normalized.length <= 160) return normalized
+  return `${normalized.slice(0, 157).trimEnd()} ...`
+})
 
 function toggle() {
   logsStore.toggleQuery(props.log.id)
@@ -45,56 +59,53 @@ function getPurposeLabel(purpose: string): string {
     :class="{ 'bg-red-50': log.error }"
   >
     <!-- Header Row -->
-    <div class="flex items-center gap-3 px-4 py-2 cursor-pointer" @click="toggle">
+    <div class="query-row-header hover:bg-gray-50" @click="toggle">
       <!-- Expand Icon -->
-      <component
-        :is="isExpanded ? ChevronDownIcon : ChevronRightIcon"
-        class="w-4 h-4 text-gray-500 flex-shrink-0"
-      />
+      <component :is="isExpanded ? ChevronDownIcon : ChevronRightIcon" class="query-expander" />
 
       <!-- Timestamp -->
-      <span class="text-xs font-mono text-gray-500 flex-shrink-0">
+      <span class="query-meta query-meta--time">
         {{ formatTime(log.startedAt) }}
       </span>
 
       <!-- Purpose Pill -->
-      <span
-        class="text-xs font-semibold px-2 py-0.5 rounded flex-shrink-0"
-        :class="getPurposePillClass(log.purpose)"
-      >
-        {{ getPurposeLabel(log.purpose) }}
+      <span class="query-meta query-meta--purpose">
+        <span
+          class="px-2 py-0.5 rounded font-semibold uppercase tracking-wide"
+          :class="getPurposePillClass(log.purpose)"
+        >
+          {{ getPurposeLabel(log.purpose) }}
+        </span>
+      </span>
+
+      <!-- Query Type -->
+      <span class="query-meta query-meta--type text-gray-600 uppercase">
+        {{ queryTypeLabel }}
       </span>
 
       <!-- Database.Table -->
-      <span class="text-xs text-gray-700 truncate flex-shrink-0">
-        {{ log.database }}{{ log.schema ? '.' + log.schema : ''
-        }}{{ log.tableName ? '.' + log.tableName : '' }}
+      <span class="query-meta query-meta--location" :title="locationLabel">
+        {{ locationLabel }}
       </span>
 
       <!-- Duration -->
-      <span class="text-xs font-semibold flex-shrink-0" :class="getDurationClass(log.durationMs)">
-        ⏱ {{ log.durationMs }}ms
+      <span class="query-meta query-meta--duration" :class="getDurationClass(log.durationMs)">
+        {{ log.durationMs }}ms
       </span>
 
       <!-- Row Count -->
-      <span class="text-xs text-gray-500 flex-shrink-0">
-        📊 {{ log.rowCount.toLocaleString() }} rows
-      </span>
-
-      <!-- Query Preview -->
-      <span class="text-xs text-gray-600 truncate flex-1 font-mono">
-        {{ log.query.substring(0, 80) }}{{ log.query.length > 80 ? '...' : '' }}
-      </span>
+      <span class="query-meta query-meta--rows"> {{ log.rowCount.toLocaleString() }} rows </span>
 
       <!-- Copy Button -->
-      <button
-        title="Copy query"
-        class="p-1 hover:bg-gray-200 rounded transition-colors"
-        @click.stop="copyQuery"
-      >
+      <button title="Copy query" class="query-copy-button" @click.stop="copyQuery">
         <CheckIcon v-if="copied" class="w-4 h-4 text-green-600" />
         <ClipboardIcon v-else class="w-4 h-4 text-gray-500" />
       </button>
+    </div>
+
+    <!-- Collapsed Preview -->
+    <div v-if="!isExpanded" class="query-preview">
+      <span class="query-preview__text">{{ oneLinePreview }}</span>
     </div>
 
     <!-- Expanded Details -->
@@ -143,6 +154,90 @@ function getPurposeLabel(purpose: string): string {
   transition:
     background-color 0.2s ease,
     color 0.2s ease;
+}
+
+.query-row-header {
+  @apply flex items-center gap-3 px-4 py-2 cursor-pointer;
+}
+
+.query-expander {
+  @apply w-4 h-4 text-gray-500 flex-shrink-0;
+}
+
+.query-meta {
+  @apply text-xs text-gray-600;
+}
+
+.query-meta--time {
+  @apply font-mono text-gray-500;
+  width: 90px;
+  flex-shrink: 0;
+}
+
+.query-meta--purpose {
+  width: 130px;
+  flex-shrink: 0;
+}
+
+.query-meta--type {
+  width: 80px;
+  flex-shrink: 0;
+  text-align: right;
+  font-weight: 600;
+}
+
+.query-meta--location {
+  @apply text-gray-700;
+  flex: 1 1 220px;
+  min-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.query-meta--duration {
+  @apply font-semibold text-right;
+  width: 90px;
+  flex-shrink: 0;
+}
+
+.query-meta--rows {
+  @apply text-gray-500 text-right;
+  width: 110px;
+  flex-shrink: 0;
+}
+
+.query-copy-button {
+  @apply ml-auto p-1 rounded transition-colors;
+}
+
+.query-copy-button:hover {
+  @apply bg-gray-200;
+}
+
+.query-preview {
+  @apply px-12 pb-3;
+}
+
+.query-preview__text {
+  @apply text-xs font-mono text-gray-600 bg-gray-100 border border-gray-200 rounded px-3 py-1 block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 1024px) {
+  .query-meta--type {
+    display: none;
+  }
+
+  .query-meta--rows {
+    display: none;
+  }
+
+  .query-meta--location {
+    min-width: 140px;
+  }
 }
 
 /* SQL syntax highlighting - matching DDL view colors */

@@ -16,7 +16,9 @@ import {
   CheckIcon,
   ChevronDownIcon,
   DocumentTextIcon,
-  Bars3BottomLeftIcon
+  Bars3BottomLeftIcon,
+  ArrowsPointingInIcon,
+  ArrowsPointingOutIcon
 } from '@heroicons/vue/24/outline'
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/vue'
 
@@ -70,6 +72,10 @@ const errorsOnly = computed({
 })
 
 const sortOrder = computed(() => logsStore.sortOrder)
+const groupCount = computed(() => Array.from(logsStore.groups.keys()).length)
+const expandedGroupCount = computed(() => Array.from(logsStore.expandedGroups.values()).length)
+const hasGroups = computed(() => groupCount.value > 0)
+const canCollapseGroups = computed(() => expandedGroupCount.value > 0)
 
 function clearLogs() {
   logsStore.clearSQLLogs()
@@ -85,6 +91,16 @@ function toggleLevel() {
 
 function toggleExportMenu() {
   showExportMenu.value = !showExportMenu.value
+}
+
+function expandAllGroups() {
+  if (!hasGroups.value) return
+  logsStore.expandAllGroups()
+}
+
+function collapseAllGroups() {
+  if (!canCollapseGroups.value) return
+  logsStore.collapseAllGroups()
 }
 
 function selectExportFormat(format: ExportFormat) {
@@ -141,6 +157,39 @@ onBeforeUnmount(() => {
         >
           <ListBulletIcon class="w-4 h-4" />
           <span>Flat</span>
+        </button>
+      </div>
+
+      <!-- Expand/Collapse Controls -->
+      <div
+        v-if="viewMode === 'grouped'"
+        class="flex items-center gap-1 bg-white border border-gray-300 rounded p-0.5"
+      >
+        <button
+          :class="[
+            'flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors',
+            hasGroups ? 'text-gray-600 hover:bg-gray-100' : 'text-gray-400 cursor-not-allowed'
+          ]"
+          :disabled="!hasGroups"
+          title="Expand all groups"
+          @click="expandAllGroups"
+        >
+          <ArrowsPointingOutIcon class="w-4 h-4" />
+          <span>Expand</span>
+        </button>
+        <button
+          :class="[
+            'flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors',
+            canCollapseGroups
+              ? 'text-gray-600 hover:bg-gray-100'
+              : 'text-gray-400 cursor-not-allowed'
+          ]"
+          :disabled="!canCollapseGroups"
+          title="Collapse all groups"
+          @click="collapseAllGroups"
+        >
+          <ArrowsPointingInIcon class="w-4 h-4" />
+          <span>Collapse</span>
         </button>
       </div>
 
