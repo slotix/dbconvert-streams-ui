@@ -103,6 +103,13 @@ watch(
     whereInput.value = ''
     whereError.value = undefined
     countError.value = null
+    agGridFilters.value = {}
+    agGridWhereSQL.value = ''
+
+    if (gridApi.value) {
+      // Clear any AG Grid column filters carried over from the previous table
+      gridApi.value.setFilterModel(null)
+    }
 
     // Check if we have a cached exact count for this table
     const cacheKey = getCacheKey()
