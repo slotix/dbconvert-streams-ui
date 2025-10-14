@@ -80,9 +80,20 @@ const isSqlBannerExpanded = ref(false)
 const SQL_BANNER_MAX_LENGTH = 150
 
 // Watch for approxRows prop changes and update totalRowCount
+// Only update if we don't have an exact count saved
 watch(
   () => props.approxRows,
   (newApproxRows) => {
+    // Check if we have a saved exact count - if so, don't overwrite with approx
+    const savedState = tabStateStore.getAGGridDataState(props.objectKey)
+    if (savedState && savedState.exactRowCount !== null) {
+      // Use the saved exact count
+      totalRowCount.value = savedState.exactRowCount
+      exactRowCount.value = savedState.exactRowCount
+      return
+    }
+
+    // Otherwise use approxRows
     if (newApproxRows && newApproxRows > 0) {
       totalRowCount.value = newApproxRows
     } else if (newApproxRows === -1) {
@@ -101,7 +112,6 @@ watch(
   () => props.tableMeta,
   () => {
     const savedState = tabStateStore.getAGGridDataState(props.objectKey)
-    console.log('[AGGridDataView] Restoring state for key:', props.objectKey, savedState)
 
     if (savedState) {
       // Restore state from store
@@ -112,8 +122,6 @@ watch(
       exactRowCount.value = savedState.exactRowCount || null
       agGridFilters.value = savedState.filterModel || {}
 
-      console.log('[AGGridDataView] Restored sort model:', currentSortModel.value)
-
       // Apply saved filters and sort to grid
       if (gridApi.value) {
         // Set filter model
@@ -121,7 +129,6 @@ watch(
 
         // Apply sort model
         if (savedState.sortModel && savedState.sortModel.length > 0) {
-          console.log('[AGGridDataView] Applying sort to grid:', savedState.sortModel)
           const columnState = savedState.sortModel.map((sort, index) => ({
             colId: sort.colId,
             sort: sort.sort,
@@ -134,7 +141,6 @@ watch(
         }
       }
     } else {
-      console.log('[AGGridDataView] No saved state found for key:', props.objectKey)
       // Reset to default state
       totalRowCount.value = 0
       currentFirstRow.value = 1
@@ -667,7 +673,6 @@ function onGridReady(params: GridReadyEvent) {
 
   // Restore saved state before setting datasource
   const savedState = tabStateStore.getAGGridDataState(props.objectKey)
-  console.log('[AGGridDataView] onGridReady - restoring state for key:', props.objectKey, savedState)
 
   if (savedState) {
     // Restore filters
@@ -677,7 +682,6 @@ function onGridReady(params: GridReadyEvent) {
 
     // Restore sort - apply before setting datasource
     if (savedState.sortModel && savedState.sortModel.length > 0) {
-      console.log('[AGGridDataView] onGridReady - applying sort:', savedState.sortModel)
       const columnState = savedState.sortModel.map((sort, index) => ({
         colId: sort.colId,
         sort: sort.sort,
@@ -758,12 +762,11 @@ watch(
       // Reset the datasource with the new table
       gridApi.value.setGridOption('datasource', createDatasource())
 
-      // Apply saved state AFTER setting datasource (nextTick to ensure grid is ready)
+      // Apply saved state AFTER setting datasource (setTimeout to ensure grid is ready)
       setTimeout(() => {
         if (!gridApi.value) return
 
         if (savedState && savedState.sortModel && savedState.sortModel.length > 0) {
-          console.log('[AGGridDataView] Applying sort after datasource reset:', savedState.sortModel)
           const columnState = savedState.sortModel.map((sort, index) => ({
             colId: sort.colId,
             sort: sort.sort,
@@ -795,11 +798,6 @@ watch(
     exactRowCount.value
   ] as const,
   ([sortModel, filterModel, where, totalCount, exactCount]) => {
-    console.log('[AGGridDataView] Saving state for key:', props.objectKey, {
-      sortModel,
-      filterModel,
-      whereClause: where
-    })
     tabStateStore.setAGGridDataState(props.objectKey, {
       sortModel,
       filterModel,
