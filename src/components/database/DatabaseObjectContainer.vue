@@ -23,6 +23,7 @@ type DatabaseProps = {
   connectionId: string
   connectionType: string
   database: string
+  objectKey: string // Unique key for this table/view tab
   defaultTab?: 'structure' | 'data'
   closable?: boolean
   // File-specific props (unused for database objects)
@@ -95,7 +96,8 @@ const tabs = computed<TabItem[]>(() => {
           tableMeta: dbProps.tableMeta,
           isView: dbProps.isView,
           database: dbProps.database,
-          connectionId: dbProps.connectionId
+          connectionId: dbProps.connectionId,
+          objectKey: dbProps.objectKey
         }
       },
       {

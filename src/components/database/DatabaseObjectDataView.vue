@@ -9,6 +9,7 @@ const props = defineProps<{
   connectionId: string
   database: string
   isView?: boolean
+  objectKey: string // Unique key for this table/view tab
 }>()
 
 const overviewStore = useDatabaseOverviewStore()
@@ -65,6 +66,7 @@ defineExpose({
         :database="database"
         :is-view="isView"
         :approx-rows="approxRows"
+        :object-key="objectKey"
       />
     </div>
   </div>

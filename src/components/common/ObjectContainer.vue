@@ -95,7 +95,8 @@ const tabs = computed<TabItem[]>(() => {
           tableMeta: props.tableMeta,
           isView: props.isView,
           database: props.database,
-          connectionId: props.connectionId
+          connectionId: props.connectionId,
+          objectKey: objectKey.value
         }
       },
       {
@@ -124,7 +125,9 @@ const tabs = computed<TabItem[]>(() => {
 
 function getObjectKey(): string {
   if (props.objectType === 'database' && props.tableMeta) {
-    return `db-${props.tableMeta.database}-${props.tableMeta.schema || 'default'}-${props.tableMeta.name}`
+    const key = `db-${props.tableMeta.database}-${props.tableMeta.schema || 'default'}-${props.tableMeta.name}`
+    console.log('[ObjectContainer] Generated objectKey:', key, 'for table:', props.tableMeta.name)
+    return key
   } else if (props.objectType === 'file' && props.fileEntry) {
     return `file-${props.fileEntry.path}`
   }

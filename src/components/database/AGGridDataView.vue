@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, computed, onBeforeUnmount } from 'vue'
+import { ref, watch, computed, onBeforeUnmount, onMounted } from 'vue'
 import { AgGridVue } from 'ag-grid-vue3'
 import { ModuleRegistry, AllCommunityModule } from 'ag-grid-community'
 import type {
@@ -16,6 +16,7 @@ import { type SQLTableMeta, type SQLViewMeta } from '@/types/metadata'
 import connections from '@/api/connections'
 import { formatTableValue } from '@/utils/dataUtils'
 import { vHighlightjs } from '@/directives/highlightjs'
+import { useObjectTabStateStore } from '@/stores/objectTabState'
 import ColumnContextMenu from './ColumnContextMenu.vue'
 import AdvancedFilterModal from './AdvancedFilterModal.vue'
 import 'ag-grid-community/styles/ag-grid.css'
@@ -30,7 +31,11 @@ const props = defineProps<{
   database: string
   isView?: boolean
   approxRows?: number // Optional approximate row count from database overview
+  objectKey: string // Unique key for this table/view tab (from paneTabs store)
 }>()
+
+// Store for persisting tab state including AG Grid data state
+const tabStateStore = useObjectTabStateStore()
 
 const gridApi = ref<GridApi | null>(null)
 const error = ref<string>()
@@ -91,34 +96,71 @@ watch(
   { immediate: true }
 )
 
-// Watch for table changes and restore/reset count
+// Watch for table changes and restore state from store or reset
 watch(
   () => props.tableMeta,
   () => {
-    totalRowCount.value = 0
-    currentFirstRow.value = 1
-    currentLastRow.value = 100
-    currentSortModel.value = []
-    whereClause.value = ''
-    whereInput.value = ''
-    whereError.value = undefined
-    countError.value = null
-    agGridFilters.value = {}
-    agGridWhereSQL.value = ''
+    const savedState = tabStateStore.getAGGridDataState(props.objectKey)
+    console.log('[AGGridDataView] Restoring state for key:', props.objectKey, savedState)
 
-    if (gridApi.value) {
-      // Clear any AG Grid column filters carried over from the previous table
-      gridApi.value.setFilterModel(null)
-    }
+    if (savedState) {
+      // Restore state from store
+      currentSortModel.value = savedState.sortModel || []
+      whereClause.value = savedState.whereClause || ''
+      whereInput.value = savedState.whereClause || ''
+      totalRowCount.value = savedState.totalRowCount || 0
+      exactRowCount.value = savedState.exactRowCount || null
+      agGridFilters.value = savedState.filterModel || {}
 
-    // Check if we have a cached exact count for this table
-    const cacheKey = getCacheKey()
-    const cachedCount = exactCountCache.value.get(cacheKey)
-    if (cachedCount !== undefined) {
-      exactRowCount.value = cachedCount
-      totalRowCount.value = cachedCount
+      console.log('[AGGridDataView] Restored sort model:', currentSortModel.value)
+
+      // Apply saved filters and sort to grid
+      if (gridApi.value) {
+        // Set filter model
+        gridApi.value.setFilterModel(savedState.filterModel || null)
+
+        // Apply sort model
+        if (savedState.sortModel && savedState.sortModel.length > 0) {
+          console.log('[AGGridDataView] Applying sort to grid:', savedState.sortModel)
+          const columnState = savedState.sortModel.map((sort, index) => ({
+            colId: sort.colId,
+            sort: sort.sort,
+            sortIndex: index
+          }))
+          gridApi.value.applyColumnState({
+            state: columnState,
+            defaultState: { sort: null }
+          })
+        }
+      }
     } else {
-      exactRowCount.value = null
+      console.log('[AGGridDataView] No saved state found for key:', props.objectKey)
+      // Reset to default state
+      totalRowCount.value = 0
+      currentFirstRow.value = 1
+      currentLastRow.value = 100
+      currentSortModel.value = []
+      whereClause.value = ''
+      whereInput.value = ''
+      whereError.value = undefined
+      countError.value = null
+      agGridFilters.value = {}
+      agGridWhereSQL.value = ''
+
+      if (gridApi.value) {
+        // Clear any AG Grid column filters carried over from the previous table
+        gridApi.value.setFilterModel(null)
+      }
+
+      // Check if we have a cached exact count for this table
+      const cacheKey = getCacheKey()
+      const cachedCount = exactCountCache.value.get(cacheKey)
+      if (cachedCount !== undefined) {
+        exactRowCount.value = cachedCount
+        totalRowCount.value = cachedCount
+      } else {
+        exactRowCount.value = null
+      }
     }
   },
   { deep: true }
@@ -300,6 +342,15 @@ function clearAllFilters() {
   // Reset exact count for views
   exactRowCount.value = null
   countError.value = null
+
+  // Clear state from store
+  tabStateStore.setAGGridDataState(props.objectKey, {
+    sortModel: [],
+    filterModel: {},
+    whereClause: '',
+    totalRowCount: 0,
+    exactRowCount: null
+  })
 
   // Refresh data
   if (gridApi.value) {
@@ -614,7 +665,32 @@ function onGridReady(params: GridReadyEvent) {
     }
   }, 100)
 
-  // Set datasource for infinite row model
+  // Restore saved state before setting datasource
+  const savedState = tabStateStore.getAGGridDataState(props.objectKey)
+  console.log('[AGGridDataView] onGridReady - restoring state for key:', props.objectKey, savedState)
+
+  if (savedState) {
+    // Restore filters
+    if (savedState.filterModel && Object.keys(savedState.filterModel).length > 0) {
+      params.api.setFilterModel(savedState.filterModel)
+    }
+
+    // Restore sort - apply before setting datasource
+    if (savedState.sortModel && savedState.sortModel.length > 0) {
+      console.log('[AGGridDataView] onGridReady - applying sort:', savedState.sortModel)
+      const columnState = savedState.sortModel.map((sort, index) => ({
+        colId: sort.colId,
+        sort: sort.sort,
+        sortIndex: index
+      }))
+      params.api.applyColumnState({
+        state: columnState,
+        defaultState: { sort: null }
+      })
+    }
+  }
+
+  // Set datasource for infinite row model (this will use the restored sort/filter state)
   params.api.setGridOption('datasource', createDatasource())
 }
 
@@ -677,13 +753,60 @@ watch(
   () => props.tableMeta,
   () => {
     if (gridApi.value) {
-      // Clear any existing sort state when switching tables
-      gridApi.value.applyColumnState({
-        defaultState: { sort: null }
-      })
+      const savedState = tabStateStore.getAGGridDataState(props.objectKey)
+
       // Reset the datasource with the new table
       gridApi.value.setGridOption('datasource', createDatasource())
+
+      // Apply saved state AFTER setting datasource (nextTick to ensure grid is ready)
+      setTimeout(() => {
+        if (!gridApi.value) return
+
+        if (savedState && savedState.sortModel && savedState.sortModel.length > 0) {
+          console.log('[AGGridDataView] Applying sort after datasource reset:', savedState.sortModel)
+          const columnState = savedState.sortModel.map((sort, index) => ({
+            colId: sort.colId,
+            sort: sort.sort,
+            sortIndex: index
+          }))
+          gridApi.value.applyColumnState({
+            state: columnState,
+            defaultState: { sort: null }
+          })
+        } else {
+          // Clear any existing sort state when switching tables (only if no saved state)
+          gridApi.value.applyColumnState({
+            defaultState: { sort: null }
+          })
+        }
+      }, 100)
     }
+  },
+  { deep: true }
+)
+
+// Save AG Grid state to store when it changes
+watch(
+  () => [
+    currentSortModel.value,
+    agGridFilters.value,
+    whereClause.value,
+    totalRowCount.value,
+    exactRowCount.value
+  ] as const,
+  ([sortModel, filterModel, where, totalCount, exactCount]) => {
+    console.log('[AGGridDataView] Saving state for key:', props.objectKey, {
+      sortModel,
+      filterModel,
+      whereClause: where
+    })
+    tabStateStore.setAGGridDataState(props.objectKey, {
+      sortModel,
+      filterModel,
+      whereClause: where,
+      totalRowCount: totalCount,
+      exactRowCount: exactCount
+    })
   },
   { deep: true }
 )
@@ -761,6 +884,21 @@ function refresh() {
 // Expose refresh to parent
 defineExpose({
   refresh
+})
+
+// Initialize and restore state on mount
+onMounted(() => {
+  const savedState = tabStateStore.getAGGridDataState(props.objectKey)
+
+  if (savedState) {
+    // Restore state from store
+    currentSortModel.value = savedState.sortModel || []
+    whereClause.value = savedState.whereClause || ''
+    whereInput.value = savedState.whereClause || ''
+    totalRowCount.value = savedState.totalRowCount || 0
+    exactRowCount.value = savedState.exactRowCount || null
+    agGridFilters.value = savedState.filterModel || {}
+  }
 })
 
 // Cleanup
