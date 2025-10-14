@@ -96,12 +96,16 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { XMarkIcon } from '@heroicons/vue/20/solid'
-import { useSplitPaneResize } from '@/composables/useSplitPaneResize'
+import {
+  useSplitPaneResize,
+  type SplitPaneResizeController
+} from '@/composables/useSplitPaneResize'
 import { usePaneTabsStore } from '@/stores/paneTabs'
 
 // Define props
 const props = defineProps<{
   activePane: 'left' | 'right'
+  splitPaneResize?: SplitPaneResizeController
 }>()
 
 // Define emits
@@ -111,8 +115,10 @@ const emit = defineEmits<{
 }>()
 
 // Use composables and store
+const splitPaneResize = props.splitPaneResize ?? useSplitPaneResize()
+
 const { splitGrow, splitContainerRef, leftPaneRef, onDividerMouseDown, onDividerDoubleClick } =
-  useSplitPaneResize()
+  splitPaneResize
 const paneTabsStore = usePaneTabsStore()
 
 // Check if we have right pane content

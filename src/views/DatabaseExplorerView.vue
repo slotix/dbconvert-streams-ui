@@ -658,7 +658,7 @@ onMounted(() => {
                     title="Reset pane sizes to 50/50"
                     @click="splitPaneResize.resetSplitSize"
                   >
-                    Balance Panes
+                    Even Split
                   </button>
                   <CloudProviderBadge
                     v-if="explorerState.activeDisplayType.value"
@@ -679,6 +679,7 @@ onMounted(() => {
               :relationships="schemaStore.relationships"
               :file-entries="currentFileEntries"
               :active-pane="paneTabsStore.activePane"
+              :split-pane-resize="splitPaneResize"
               @edit-connection="onEditConnection"
               @clone-connection="onCloneConnection"
               @delete-connection="onDeleteConnection"

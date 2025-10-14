@@ -28,6 +28,7 @@
     <div class="min-h-[480px] min-w-0 overflow-x-hidden">
       <ExplorerSplitPane
         :active-pane="activePane"
+        :split-pane-resize="props.splitPaneResize"
         @set-active-pane="handleSetActivePane"
         @close-right-pane="handleCloseRightPane"
       >
@@ -187,6 +188,7 @@ import ConnectionDetailsPanel from '@/components/database/ConnectionDetailsPanel
 import DatabaseOverviewPanel from '@/components/database/DatabaseOverviewPanel.vue'
 import DiagramView from '@/components/database/DiagramView.vue'
 import ExplorerSplitPane from './ExplorerSplitPane.vue'
+import type { SplitPaneResizeController } from '@/composables/useSplitPaneResize'
 import PaneNavigationTabs from './PaneNavigationTabs.vue'
 import PaneBreadcrumb from './PaneBreadcrumb.vue'
 import ObjectContainer from '@/components/common/ObjectContainer.vue'
@@ -201,6 +203,7 @@ interface Props {
   relationships?: Relationship[]
   fileEntries?: FileSystemEntry[]
   activePane: 'left' | 'right'
+  splitPaneResize?: SplitPaneResizeController
 }
 
 const props = withDefaults(defineProps<Props>(), {

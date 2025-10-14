@@ -92,3 +92,5 @@ export function useSplitPaneResize() {
     resetSplitSize
   }
 }
+
+export type SplitPaneResizeController = ReturnType<typeof useSplitPaneResize>
