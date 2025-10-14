@@ -40,6 +40,7 @@ const sidebar = useSidebar()
 // Connection search and filtering
 const connectionSearch = ref('')
 const focusConnectionId = ref<string | null>(null)
+const showConnectionDetails = ref(route.query.details === 'true')
 
 const explorerHeaderRef = ref<InstanceType<typeof ExplorerHeader> | null>(null)
 
@@ -90,6 +91,9 @@ function handleOpenFromTree(payload: {
 
   // Set active connection ID FIRST (synchronous store update - SINGLE SOURCE OF TRUTH)
   navigationStore.setActiveConnectionId(payload.connectionId)
+  connectionsStore.setCurrentConnection(payload.connectionId)
+
+  showConnectionDetails.value = false
 
   // Clear old state
   explorerState.clearPanelStates()
@@ -139,6 +143,9 @@ function handleOpenFile(payload: {
 }) {
   // Set active connection ID FIRST (synchronous store update)
   navigationStore.setActiveConnectionId(payload.connectionId)
+  connectionsStore.setCurrentConnection(payload.connectionId)
+
+  showConnectionDetails.value = false
 
   // Clear old state
   explorerState.clearPanelStates()
@@ -175,6 +182,8 @@ function handleShowDiagram(payload: { connectionId: string; database: string }) 
   // Set active connection ID FIRST (synchronous store update)
   navigationStore.setActiveConnectionId(payload.connectionId)
 
+  showConnectionDetails.value = false
+
   explorerState.clearPanelStates()
   explorerState.setDatabaseSelection({ database: payload.database })
   explorerState.showDiagram.value = true
@@ -194,6 +203,9 @@ function handleRefreshMetadata() {
 function handleSelectConnection(payload: { connectionId: string }) {
   // Set active connection ID FIRST (synchronous store update)
   navigationStore.setActiveConnectionId(payload.connectionId)
+
+  connectionsStore.setCurrentConnection(payload.connectionId)
+  showConnectionDetails.value = true
 
   // Update route query params (path is auto-updated by watcher)
   router.replace({
@@ -223,9 +235,16 @@ function handleSelectDatabase(payload: { connectionId: string; database: string 
   // Set active connection ID FIRST (synchronous store update)
   navigationStore.setActiveConnectionId(payload.connectionId)
 
+  connectionsStore.setCurrentConnection(payload.connectionId)
+  showConnectionDetails.value = false
+
   explorerState.clearPanelStates()
   explorerState.setDatabaseSelection({ database: payload.database })
+  paneTabsStore.closePreviewTab('left')
+  paneTabsStore.closeAllTabs('left')
   explorerState.activePane.value = 'left'
+
+  explorerState.showDiagram.value = false
 
   schemaStore.setConnectionId(payload.connectionId)
   schemaStore.setDatabaseName(payload.database)
@@ -237,6 +256,8 @@ function handleSelectDatabase(payload: { connectionId: string; database: string 
 function handleFileSelect(payload: { connectionId: string; path: string }) {
   // Set active connection ID FIRST (synchronous store update)
   navigationStore.setActiveConnectionId(payload.connectionId)
+
+  showConnectionDetails.value = false
 
   const entries = currentFileEntries.value
   const entry = entries.find((e) => e.path === payload.path)
@@ -406,7 +427,8 @@ watch(
       explorerState.selectedObjectName.value,
       explorerState.selectedFileEntry.value?.path,
       explorerState.showDiagram.value,
-      route.query.details // This comes from handlers setting it
+      route.query.details, // This comes from handlers setting it
+      showConnectionDetails.value
     ] as const,
   ([connId, db, schema, type, name, file, diagram, details]) => {
     if (!connId) return
@@ -416,17 +438,22 @@ watch(
 
     // Build query params from state
     const query: Record<string, string | undefined> = {}
+    const hasFile = Boolean(file)
+    const hasDatabaseSelection = Boolean(db)
+    const hasDiagram = Boolean(diagram) && hasDatabaseSelection
+    const shouldShowDetails =
+      showConnectionDetails.value && !hasFile && !hasDatabaseSelection && !hasDiagram
 
-    if (details === 'true') {
-      query.details = 'true'
-    } else if (file) {
+    if (hasFile) {
       query.file = file
-    } else if (db) {
+    } else if (hasDatabaseSelection) {
       query.db = db
       if (schema) query.schema = schema
       if (type) query.type = type
       if (name) query.name = name
-      if (diagram) query.diagram = 'true'
+      if (hasDiagram) query.diagram = 'true'
+    } else if (shouldShowDetails) {
+      query.details = 'true'
     }
 
     // Only update if something changed
@@ -438,6 +465,16 @@ watch(
     }
   },
   { flush: 'post' }
+)
+
+watch(
+  () => route.query.details,
+  (val) => {
+    const wantsDetails = val === 'true'
+    if (wantsDetails !== showConnectionDetails.value) {
+      showConnectionDetails.value = wantsDetails
+    }
+  }
 )
 
 watch(explorerState.currentConnectionId, async (newId) => {

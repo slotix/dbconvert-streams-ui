@@ -119,8 +119,15 @@ async function loadConnections() {
 }
 
 function toggleConnection(connId: string) {
+  const wasExpanded = navigationStore.isConnectionExpanded(connId)
   navigationStore.toggleConnection(connId)
-  if (navigationStore.isConnectionExpanded(connId)) {
+  const isExpanded = navigationStore.isConnectionExpanded(connId)
+
+  if (isExpanded && !wasExpanded && !treeLogic.isFileConnection(connId)) {
+    void navigationStore.ensureDatabases(connId)
+  }
+
+  if (isExpanded) {
     if (treeLogic.isFileConnection(connId)) {
       emit('request-file-entries', { connectionId: connId })
     }
