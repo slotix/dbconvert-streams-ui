@@ -26,6 +26,7 @@ const searchQuery = inject<ComputedRef<string>>('treeSearchQuery')!
 const caretClass = inject<string>('treeCaretClass')!
 const treeSelection = inject<
   ComputedRef<{
+    connectionId?: string
     database?: string
     schema?: string
     type?: 'table' | 'view' | null
@@ -36,9 +37,22 @@ const treeSelection = inject<
 // Check if this schema is currently selected (schema selected, but no table/view)
 const isSelected = computed(() => {
   return (
+    treeSelection.value.connectionId === props.connectionId &&
     treeSelection.value.database === props.database &&
     treeSelection.value.schema === props.schema.name &&
     !treeSelection.value.name
+  )
+})
+
+// Check if this schema is an ancestor of the active selection
+const isAncestorOfActive = computed(() => {
+  // Schema is ancestor if a table/view is selected in this schema
+  return (
+    treeSelection.value.connectionId === props.connectionId &&
+    treeSelection.value.database === props.database &&
+    treeSelection.value.schema === props.schema.name &&
+    treeSelection.value.name &&
+    !isSelected.value
   )
 })
 
@@ -112,7 +126,7 @@ function handleObjectContextMenu(payload: {
     <div
       :class="[
         'flex items-center px-2 py-1 text-sm text-gray-700 rounded-md hover:bg-gray-100 cursor-pointer select-none',
-        isSelected ? 'bg-sky-50 ring-1 ring-sky-200' : ''
+        isSelected ? 'bg-sky-50 ring-1 ring-sky-200' : isAncestorOfActive ? 'bg-sky-50/40' : ''
       ]"
       :data-explorer-schema="`${connectionId}:${database}:${schema.name}`"
       @click="$emit('toggle')"

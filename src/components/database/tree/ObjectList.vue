@@ -21,6 +21,7 @@ const props = defineProps<{
 const searchQuery = inject<ComputedRef<string>>('treeSearchQuery')!
 const treeSelection = inject<
   ComputedRef<{
+    connectionId?: string
     database?: string
     schema?: string
     type?: 'table' | 'view' | null
@@ -28,9 +29,10 @@ const treeSelection = inject<
   }>
 >('treeSelection')!
 
-// Check if an item is currently selected
+// Check if an item is currently selected (active pane)
 const isItemSelected = (itemName: string) => {
   return (
+    treeSelection.value.connectionId === props.connectionId &&
     treeSelection.value.database === props.database &&
     treeSelection.value.schema === (props.schema || undefined) &&
     treeSelection.value.type === props.objectType &&

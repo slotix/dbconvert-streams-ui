@@ -790,13 +790,14 @@ watch(
 
 // Save AG Grid state to store when it changes
 watch(
-  () => [
-    currentSortModel.value,
-    agGridFilters.value,
-    whereClause.value,
-    totalRowCount.value,
-    exactRowCount.value
-  ] as const,
+  () =>
+    [
+      currentSortModel.value,
+      agGridFilters.value,
+      whereClause.value,
+      totalRowCount.value,
+      exactRowCount.value
+    ] as const,
   ([sortModel, filterModel, where, totalCount, exactCount]) => {
     tabStateStore.setAGGridDataState(props.objectKey, {
       sortModel,

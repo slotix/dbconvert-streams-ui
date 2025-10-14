@@ -19,6 +19,7 @@ type ObjectType = 'table' | 'view'
 const props = defineProps<{
   initialExpandedConnectionId?: string
   selected?: {
+    connectionId?: string
     database?: string
     schema?: string
     type?: ObjectType | null
@@ -389,8 +390,7 @@ watch(
   () => props.selected,
   async (sel) => {
     if (!sel) return
-    // Use the active connection ID from the store (synchronous, always up-to-date)
-    const connId = navigationStore.activeConnectionId
+    const connId = sel.connectionId
     if (!connId) return
 
     // Skip database operations for file connections

@@ -39,6 +39,7 @@ const searchQuery = inject<ComputedRef<string>>('treeSearchQuery')!
 const caretClass = inject<string>('treeCaretClass')!
 const treeSelection = inject<
   ComputedRef<{
+    connectionId?: string
     database?: string
     schema?: string
     type?: 'table' | 'view' | null
@@ -49,9 +50,21 @@ const treeSelection = inject<
 // Check if this database is currently selected (database selected, but no schema/table)
 const isSelected = computed(() => {
   return (
+    treeSelection.value.connectionId === props.connectionId &&
     treeSelection.value.database === props.database.name &&
     !treeSelection.value.schema &&
     !treeSelection.value.name
+  )
+})
+
+// Check if this database is an ancestor of the active selection
+const isAncestorOfActive = computed(() => {
+  // Database is ancestor if a table/view is selected in this database
+  return (
+    treeSelection.value.connectionId === props.connectionId &&
+    treeSelection.value.database === props.database.name &&
+    (treeSelection.value.schema || treeSelection.value.name) &&
+    !isSelected.value
   )
 })
 
@@ -174,7 +187,7 @@ function handleFlatObjectContextMenu(payload: {
     <div
       :class="[
         'flex items-center px-2 py-1.5 text-sm text-gray-700 rounded-md hover:bg-gray-100 cursor-pointer select-none',
-        isSelected ? 'bg-sky-50 ring-1 ring-sky-200' : ''
+        isSelected ? 'bg-sky-50 ring-1 ring-sky-200' : isAncestorOfActive ? 'bg-sky-50/40' : ''
       ]"
       :data-explorer-db="`${connectionId}:${database.name}`"
       @click="$emit('select-database', { connectionId, database: database.name })"

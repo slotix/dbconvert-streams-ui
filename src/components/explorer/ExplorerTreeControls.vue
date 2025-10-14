@@ -4,11 +4,17 @@
       <Listbox v-if="selectedDbType" v-model="selectedDbType" as="div" class="relative">
         <ListboxButton
           class="inline-flex items-center gap-2 px-2 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-slate-400 whitespace-nowrap min-w-[100px]"
-          :title="selectedDbType.type === 'All' ? 'Connections: Show all database and file sources' : `Filter by ${selectedDbType.type}`"
+          :title="
+            selectedDbType.type === 'All'
+              ? 'Connections: Show all database and file sources'
+              : `Filter by ${selectedDbType.type}`
+          "
         >
           <RectangleStackIcon v-if="selectedDbType.type === 'All'" class="h-4 w-4 text-gray-500" />
           <img v-else :src="selectedDbType.logo" :alt="selectedDbType.type" class="h-4 w-4" />
-          <span class="truncate">{{ selectedDbType.type === 'All' ? 'Connections' : selectedDbType.type }}</span>
+          <span class="truncate">{{
+            selectedDbType.type === 'All' ? 'Connections' : selectedDbType.type
+          }}</span>
           <ChevronDownIcon class="h-4 w-4 text-gray-400" />
         </ListboxButton>
         <transition

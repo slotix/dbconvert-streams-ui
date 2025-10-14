@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useCommonStore } from '@/stores/common'
 import { useConnectionsStore } from '@/stores/connections'
 import { useSchemaStore } from '@/stores/schema'
-import { usePaneTabsStore, type PaneId } from '@/stores/paneTabs'
+import { usePaneTabsStore, type PaneId, type PaneTab } from '@/stores/paneTabs'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
 import ExplorerSidebarConnections from '@/components/database/ExplorerSidebarConnections.vue'
@@ -74,6 +74,60 @@ useExplorerRouter({
   onFileSelect: handleFileSelect,
   setFocusConnectionId: (id) => (focusConnectionId.value = id)
 })
+
+// Computed: drive tree highlight from the active pane tab (fallback to explicit explorer selection)
+const treeSelection = computed(() => {
+  const activePane = paneTabsStore.activePane
+  const activeState = paneTabsStore.getPaneState(activePane)
+  const activePinnedIndex = activeState.activePinnedIndex
+  const activePinnedTab =
+    activePinnedIndex !== null ? activeState.pinnedTabs[activePinnedIndex] : null
+  const activePreviewTab = activeState.previewTab
+  const activeTab = activePinnedTab || activePreviewTab
+
+  if (activeTab && activeTab.tabType === 'database' && activeTab.database) {
+    return {
+      connectionId: activeTab.connectionId,
+      database: activeTab.database,
+      schema: activeTab.schema || undefined,
+      type: activeTab.type || undefined,
+      name: activeTab.name || undefined
+    }
+  }
+
+  return {
+    connectionId: explorerState.activeConnectionId.value || undefined,
+    database: explorerState.selectedDatabaseName.value || undefined,
+    schema: explorerState.selectedSchemaName.value || undefined,
+    type: explorerState.selectedObjectType.value || undefined,
+    name: explorerState.selectedObjectName.value || undefined
+  }
+})
+
+// Common computed helpers for watcher dependencies
+const activeConnectionId = computed(
+  () => navigationStore.activeConnectionId || explorerState.currentConnectionId.value || null
+)
+const selectedDatabase = computed(() => explorerState.selectedDatabaseName.value)
+const selectedSchema = computed(() => explorerState.selectedSchemaName.value)
+const selectedObjectType = computed(() => explorerState.selectedObjectType.value)
+const selectedObjectName = computed(() => explorerState.selectedObjectName.value)
+const selectedFilePath = computed(() => explorerState.selectedFileEntry.value?.path || null)
+const leftActiveTab = computed<PaneTab | null>(() => paneTabsStore.getActiveTab('left'))
+const rightActiveTab = computed<PaneTab | null>(() => paneTabsStore.getActiveTab('right'))
+
+function clearRightPaneQueryParams() {
+  const nextQuery = { ...route.query }
+  delete nextQuery.rightDb
+  delete nextQuery.rightType
+  delete nextQuery.rightName
+  delete nextQuery.rightSchema
+  if (nextQuery.pane === 'right') {
+    delete nextQuery.pane
+  }
+
+  router.replace({ path: route.path, query: nextQuery })
+}
 
 // Event handlers
 function handleOpenFromTree(payload: {
@@ -242,7 +296,6 @@ function handleSelectDatabase(payload: { connectionId: string; database: string 
   explorerState.clearPanelStates()
   explorerState.setDatabaseSelection({ database: payload.database })
   paneTabsStore.closePreviewTab('left')
-  paneTabsStore.closeAllTabs('left')
   explorerState.activePane.value = 'left'
 
   explorerState.showDiagram.value = false
@@ -411,26 +464,32 @@ function showDiagramForActiveDatabase() {
 // Watch store's activeConnectionId and sync route automatically
 // Also watch pane tabs to include table/view selections for both panes
 watch(
-  () =>
-    [
-      navigationStore.activeConnectionId,
-      explorerState.selectedDatabaseName.value,
-      explorerState.selectedSchemaName.value,
-      explorerState.selectedObjectType.value,
-      explorerState.selectedObjectName.value,
-      explorerState.selectedFileEntry.value?.path,
-      explorerState.showDiagram.value,
-      route.query.details, // This comes from handlers setting it
-      showConnectionDetails.value,
-      paneTabsStore.leftPaneState.previewTab,
-      paneTabsStore.leftPaneState.activePinnedIndex,
-      paneTabsStore.leftPaneState.pinnedTabs,
-      paneTabsStore.rightPaneState.previewTab,
-      paneTabsStore.rightPaneState.activePinnedIndex,
-      paneTabsStore.rightPaneState.pinnedTabs,
-      paneTabsStore.activePane
-    ] as const,
-  ([connId, db, schema, type, name, file, diagram, details]) => {
+  [
+    activeConnectionId,
+    selectedDatabase,
+    selectedSchema,
+    selectedObjectType,
+    selectedObjectName,
+    selectedFilePath,
+    () => explorerState.showDiagram.value,
+    () => showConnectionDetails.value,
+    leftActiveTab,
+    rightActiveTab,
+    () => paneTabsStore.activePane
+  ],
+  ([
+    connId,
+    db,
+    schema,
+    type,
+    name,
+    file,
+    diagram,
+    connectionDetails,
+    leftTab,
+    rightTab,
+    activePane
+  ]) => {
     if (!connId) return
 
     const currentPath = route.path
@@ -442,10 +501,10 @@ watch(
     const hasDatabaseSelection = Boolean(db)
     const hasDiagram = Boolean(diagram) && hasDatabaseSelection
     const shouldShowDetails =
-      showConnectionDetails.value && !hasFile && !hasDatabaseSelection && !hasDiagram
+      Boolean(connectionDetails) && !hasFile && !hasDatabaseSelection && !hasDiagram
 
     if (hasFile) {
-      query.file = file
+      if (file != null) query.file = file
     } else if (hasDatabaseSelection) {
       if (db != null) query.db = db
       if (schema) query.schema = schema
@@ -457,13 +516,13 @@ watch(
     }
 
     // Add left pane table/view info
-    const leftTab = paneTabsStore.getActiveTab('left')
     if (
       leftTab &&
       leftTab.tabType === 'database' &&
       leftTab.type &&
       leftTab.name &&
-      leftTab.database
+      leftTab.database &&
+      leftTab.connectionId === connId
     ) {
       query.db = leftTab.database
       query.type = leftTab.type
@@ -472,13 +531,13 @@ watch(
     }
 
     // Add right pane table/view info
-    const rightTab = paneTabsStore.getActiveTab('right')
     if (
       rightTab &&
       rightTab.tabType === 'database' &&
       rightTab.type &&
       rightTab.name &&
-      rightTab.database
+      rightTab.database &&
+      rightTab.connectionId === connId
     ) {
       query.rightDb = rightTab.database
       query.rightType = rightTab.type
@@ -487,9 +546,9 @@ watch(
     }
 
     // Add active pane indicator
-    if (paneTabsStore.activePane === 'right' && rightTab) {
+    if (activePane === 'right' && rightTab && rightTab.connectionId === connId) {
       query.pane = 'right'
-    } else if (paneTabsStore.activePane === 'left' && leftTab) {
+    } else if (activePane === 'left' && leftTab && leftTab.connectionId === connId) {
       query.pane = 'left'
     }
 
@@ -548,14 +607,34 @@ watch(
       explorerState.currentConnectionId.value &&
       (rightType === 'table' || rightType === 'view')
     ) {
+      const rightSchema = route.query.rightSchema as string | undefined
+
+      const rightState = paneTabsStore.getPaneState('right')
+      const matchesSelection = (tab: PaneTab | null | undefined) =>
+        Boolean(
+          tab &&
+            tab.tabType === 'database' &&
+            tab.connectionId === explorerState.currentConnectionId.value &&
+            tab.database === rightDb &&
+            tab.type === rightType &&
+            tab.name === rightName &&
+            (tab.schema || undefined) === (rightSchema || undefined)
+        )
+
+      const hasMatchingTab =
+        matchesSelection(rightState.previewTab) ||
+        rightState.pinnedTabs.some((tab) => matchesSelection(tab))
+
+      if (hasMatchingTab) {
+        return
+      }
+
+      let obj: SQLTableMeta | SQLViewMeta | undefined
       try {
         const meta = await connections.getMetadata(
           explorerState.currentConnectionId.value,
           rightDb as string
         )
-        const rightSchema = route.query.rightSchema as string | undefined
-
-        let obj: SQLTableMeta | SQLViewMeta | undefined
         if (rightType === 'table') {
           obj = Object.values(meta.tables || {}).find(
             (t) => t.name === rightName && (!rightSchema || t.schema === rightSchema)
@@ -565,22 +644,26 @@ watch(
             (v) => v.name === rightName && (!rightSchema || v.schema === rightSchema)
           )
         }
-
-        if (obj) {
-          // Open in right pane
-          handleOpenFromTree({
-            connectionId: explorerState.currentConnectionId.value,
-            database: rightDb as string,
-            schema: rightSchema,
-            type: rightType as 'table' | 'view',
-            name: rightName as string,
-            meta: obj,
-            mode: 'preview',
-            openInRightSplit: true
-          })
-        }
       } catch (error) {
         console.warn('Failed to restore right pane tab from URL:', error)
+        clearRightPaneQueryParams()
+        return
+      }
+
+      if (obj) {
+        // Open in right pane
+        handleOpenFromTree({
+          connectionId: explorerState.currentConnectionId.value,
+          database: rightDb as string,
+          schema: rightSchema,
+          type: rightType as 'table' | 'view',
+          name: rightName as string,
+          meta: obj,
+          mode: 'preview',
+          openInRightSplit: true
+        })
+      } else {
+        clearRightPaneQueryParams()
       }
     }
 
@@ -702,12 +785,7 @@ onMounted(() => {
               :search-query="connectionSearch"
               :type-filter="selectedDbTypeFilter"
               :focus-connection-id="focusConnectionId || undefined"
-              :selected="{
-                database: explorerState.selectedDatabaseName.value || undefined,
-                schema: explorerState.selectedSchemaName.value || undefined,
-                type: explorerState.selectedObjectType.value || undefined,
-                name: explorerState.selectedObjectName.value || undefined
-              }"
+              :selected="treeSelection"
               @open="handleOpenFromTree"
               @show-diagram="handleShowDiagram"
               @select-connection="handleSelectConnection"
