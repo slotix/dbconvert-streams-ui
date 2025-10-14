@@ -212,9 +212,6 @@ function handleSelectConnection(payload: { connectionId: string }) {
   explorerState.clearPanelStates()
   explorerState.clearDatabaseSelection()
 
-  // Clear both panes when selecting a connection
-  paneTabsStore.clearPane('left')
-  paneTabsStore.clearPane('right')
   fileExplorerStore.clearSelection(payload.connectionId)
 
   if (fileExplorerStore.isFilesConnectionType(payload.connectionId)) {
@@ -620,17 +617,7 @@ onMounted(() => {
           >
             <div class="mb-4">
               <div class="flex items-center justify-between">
-                <div class="flex items-center gap-2 text-sm text-gray-500">
-                  <span
-                    v-if="explorerState.activeDisplayHostPort.value"
-                    class="font-medium text-gray-700"
-                  >
-                    {{ explorerState.activeDisplayHostPort.value }}
-                  </span>
-                  <span v-if="explorerState.activeDisplayHostPort.value" class="text-gray-400"
-                    >•</span
-                  >
-                </div>
+                <div class="flex items-center gap-2 text-sm text-gray-500"></div>
                 <div class="flex items-center gap-2">
                   <button
                     v-if="

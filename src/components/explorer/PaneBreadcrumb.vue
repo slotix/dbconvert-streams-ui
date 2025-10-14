@@ -3,6 +3,7 @@
     <!-- Database object breadcrumb -->
     <ExplorerBreadcrumb
       v-if="breadcrumbData.database"
+      :connection-label="breadcrumbData.connectionLabel"
       :database="breadcrumbData.database"
       :schema="breadcrumbData.schema"
       :type="breadcrumbData.type"
@@ -14,6 +15,10 @@
 
     <!-- File breadcrumb -->
     <div v-else-if="breadcrumbData.filePath" class="flex items-center gap-1 text-sm text-gray-600">
+      <template v-if="breadcrumbData.connectionLabel">
+        <span class="font-medium text-gray-700">{{ breadcrumbData.connectionLabel }}</span>
+        <span class="text-gray-400">/</span>
+      </template>
       <span class="text-gray-500">File:</span>
       <span class="font-medium text-gray-900">{{ breadcrumbData.fileName }}</span>
       <span class="text-gray-400">•</span>
@@ -31,6 +36,7 @@
 import { computed } from 'vue'
 import ExplorerBreadcrumb from '@/components/database/ExplorerBreadcrumb.vue'
 import { usePaneTabsStore, type PaneId } from '@/stores/paneTabs'
+import { useConnectionsStore } from '@/stores/connections'
 import type { DatabaseMetadata } from '@/types/metadata'
 
 const props = defineProps<{
@@ -44,6 +50,24 @@ const emit = defineEmits<{
 }>()
 
 const store = usePaneTabsStore()
+const connectionsStore = useConnectionsStore()
+
+function formatConnectionLabel(connectionId: string | undefined) {
+  if (!connectionId) return null
+  const conn = connectionsStore.connections.find((c) => c.id === connectionId)
+  if (!conn) return null
+
+  if (conn.type === 'localfiles' || conn.type === 'files') {
+    return conn.name || conn.id
+  }
+
+  const host = conn.host?.trim()
+  const port = conn.port ? String(conn.port) : ''
+
+  if (host && port) return `${host}:${port}`
+  if (host) return host
+  return conn.name || null
+}
 
 // Get breadcrumb data from active tab in this pane
 const breadcrumbData = computed(() => {
@@ -51,6 +75,7 @@ const breadcrumbData = computed(() => {
 
   if (!activeTab) {
     return {
+      connectionLabel: null,
       database: null,
       schema: null,
       type: null,
@@ -63,6 +88,7 @@ const breadcrumbData = computed(() => {
 
   if (activeTab.tabType === 'file') {
     return {
+      connectionLabel: formatConnectionLabel(activeTab.connectionId),
       database: null,
       schema: null,
       type: null,
@@ -102,6 +128,7 @@ const breadcrumbData = computed(() => {
   }
 
   return {
+    connectionLabel: formatConnectionLabel(activeTab.connectionId),
     database: activeTab.database || null,
     schema: activeTab.schema || null,
     type: activeTab.type || null,

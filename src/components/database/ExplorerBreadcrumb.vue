@@ -7,6 +7,7 @@ import { highlightParts } from '@/utils/highlight'
 type ObjectType = 'table' | 'view'
 
 const props = defineProps<{
+  connectionLabel?: string | null
   database?: string | null
   schema?: string | null
   type?: ObjectType | null
@@ -64,7 +65,11 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
 <template>
   <nav aria-label="Breadcrumb" class="text-sm relative">
     <ol class="flex items-center gap-2 text-gray-600">
+      <li v-if="props.connectionLabel" class="inline-flex items-center gap-2">
+        <span class="text-gray-700 font-medium">{{ props.connectionLabel }}</span>
+      </li>
       <li v-if="props.database" class="inline-flex items-center gap-2">
+        <span v-if="props.connectionLabel" class="text-gray-400">/</span>
         <button
           class="text-gray-700 font-medium hover:underline"
           @click="emit('navigate', { level: 'database' })"
