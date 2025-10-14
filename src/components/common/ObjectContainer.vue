@@ -27,6 +27,7 @@ const props = defineProps<{
   objectType: 'database' | 'file'
   connectionId: string
   closable?: boolean
+  paneId?: string // Optional pane identifier (e.g., 'left', 'right') for independent state per pane
   // Database-specific props
   tableMeta?: SQLTableMeta | SQLViewMeta
   isView?: boolean
@@ -124,10 +125,12 @@ const tabs = computed<TabItem[]>(() => {
 // Global Map is defined in the script block above
 
 function getObjectKey(): string {
+  const panePrefix = props.paneId ? `${props.paneId}:` : ''
+
   if (props.objectType === 'database' && props.tableMeta) {
-    return `db-${props.tableMeta.database}-${props.tableMeta.schema || 'default'}-${props.tableMeta.name}`
+    return `${panePrefix}db-${props.tableMeta.database}-${props.tableMeta.schema || 'default'}-${props.tableMeta.name}`
   } else if (props.objectType === 'file' && props.fileEntry) {
-    return `file-${props.fileEntry.path}`
+    return `${panePrefix}file-${props.fileEntry.path}`
   }
   return 'unknown'
 }
