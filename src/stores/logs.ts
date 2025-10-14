@@ -48,12 +48,13 @@ export interface SystemLog {
 // Phase 2: Enhanced SQL Logging Types
 export type LoggingLevel = 'minimal' | 'normal'
 export type QueryPurpose =
-  | 'USER_DATA'
-  | 'USER_ACTION'
   | 'METADATA'
-  | 'PAGINATION'
-  | 'ESTIMATE'
-  | 'EXPLAIN'
+  | 'DATA_FETCH'
+  | 'COUNT_ESTIMATE'
+  | 'PLAN_ANALYSIS'
+  | 'DDL_MANAGEMENT'
+  | 'BACKGROUND_TASK'
+  | 'UTILITY'
 
 export type TimeWindow = '5m' | '1h' | 'session' | 'all'
 export type ExportFormat = 'text' | 'csv' | 'json'
@@ -90,7 +91,16 @@ export interface SQLQueryLog {
 
 export interface QueryGroup {
   groupId: string
-  type: 'table-open' | 'repeated' | 'metadata' | 'pagination'
+  type:
+    | 'metadata'
+    | 'data-fetch'
+    | 'count-estimate'
+    | 'plan-analysis'
+    | 'ddl-management'
+    | 'background-task'
+    | 'utility'
+    | 'repeated'
+    | 'unknown'
   summary: string
   queryCount: number
   totalDurationMs: number
@@ -164,8 +174,8 @@ function logMatchesFilters(
   // Level-based filtering
   switch (filters.level) {
     case 'minimal':
-      // Only show USER_DATA and USER_ACTION
-      if (log.purpose !== 'USER_DATA' && log.purpose !== 'USER_ACTION') {
+      // Only show user-focused activity (data fetches and quick counts)
+      if (log.purpose !== 'DATA_FETCH' && log.purpose !== 'COUNT_ESTIMATE') {
         return false
       }
       break
@@ -221,12 +231,13 @@ export const useLogsStore = defineStore('logs', {
       filters: {
         level: loadFromStorage<LoggingLevel>(STORAGE_KEYS.level, 'normal'),
         purposes: new Set<QueryPurpose>([
-          'USER_DATA',
-          'USER_ACTION',
           'METADATA',
-          'PAGINATION',
-          'ESTIMATE',
-          'EXPLAIN'
+          'DATA_FETCH',
+          'COUNT_ESTIMATE',
+          'PLAN_ANALYSIS',
+          'DDL_MANAGEMENT',
+          'BACKGROUND_TASK',
+          'UTILITY'
         ]),
         timeWindow: loadFromStorage<TimeWindow>(STORAGE_KEYS.timeWindow, 'session'),
         searchText: '', // Not persisted - session specific
@@ -387,7 +398,11 @@ export const useLogsStore = defineStore('logs', {
       this.groups.set(group.groupId, group)
 
       // Auto-collapse based on type
-      if (group.type === 'metadata' || group.type === 'pagination') {
+      if (
+        group.type === 'metadata' ||
+        group.type === 'background-task' ||
+        group.type === 'utility'
+      ) {
         group.collapsed = true
       } else {
         group.collapsed = false
@@ -441,18 +456,53 @@ export const useLogsStore = defineStore('logs', {
     },
 
     inferGroupType(log: SQLQueryLog): QueryGroup['type'] {
-      if (log.purpose === 'METADATA') return 'metadata'
-      if (log.purpose === 'PAGINATION') return 'pagination'
       if (log.repeatCount && log.repeatCount > 1) return 'repeated'
-      return 'table-open'
+
+      switch (log.purpose) {
+        case 'METADATA':
+          return 'metadata'
+        case 'DATA_FETCH':
+          return 'data-fetch'
+        case 'COUNT_ESTIMATE':
+          return 'count-estimate'
+        case 'PLAN_ANALYSIS':
+          return 'plan-analysis'
+        case 'DDL_MANAGEMENT':
+          return 'ddl-management'
+        case 'BACKGROUND_TASK':
+          return 'background-task'
+        case 'UTILITY':
+          return 'utility'
+        default:
+          return 'unknown'
+      }
     },
 
     buildGroupSummary(log: SQLQueryLog): string {
-      if (log.purpose === 'METADATA') return 'Schema introspection'
-      if (log.purpose === 'PAGINATION') return 'Grid pagination'
       if (log.repeatCount && log.repeatCount > 1) return `Repeated query ×${log.repeatCount}`
-      const table = log.tableName || 'table'
-      return `Opened ${log.database}.${table}`
+
+      switch (log.purpose) {
+        case 'METADATA':
+          return 'Schema introspection'
+        case 'DATA_FETCH': {
+          const table = log.tableName || 'data'
+          return `Data fetch for ${log.database}.${table}`
+        }
+        case 'COUNT_ESTIMATE':
+          return 'Row count estimate'
+        case 'PLAN_ANALYSIS':
+          return 'Execution plan analysis'
+        case 'DDL_MANAGEMENT':
+          return 'Schema management operation'
+        case 'BACKGROUND_TASK':
+          return 'Background task'
+        case 'UTILITY':
+          return 'Utility query'
+        default: {
+          const table = log.tableName || 'table'
+          return `Query activity on ${log.database}.${table}`
+        }
+      }
     },
 
     trimSQLLogs() {

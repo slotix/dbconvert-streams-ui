@@ -7,7 +7,12 @@ import {
   ClipboardIcon,
   CheckIcon
 } from '@heroicons/vue/24/outline'
-import { getPurposePillClass, getDurationClass, formatTime } from '@/utils/sqlLogHelpers'
+import {
+  getPurposePillClass,
+  getDurationClass,
+  formatTime,
+  getPurposeLabel
+} from '@/utils/sqlLogHelpers'
 
 const props = defineProps<{
   log: SQLQueryLog
@@ -45,9 +50,6 @@ async function copyQuery() {
   }
 }
 
-function getPurposeLabel(purpose: string): string {
-  return purpose.replace(/_/g, ' ')
-}
 </script>
 
 <template>

@@ -2,14 +2,19 @@
 import { computed, ref } from 'vue'
 import type { SQLQueryLog } from '@/stores/logs'
 import { ClipboardIcon, CheckIcon } from '@heroicons/vue/24/outline'
-import { getPurposePillClass, getDurationClass, formatTime } from '@/utils/sqlLogHelpers'
+import {
+  getPurposePillClass,
+  getDurationClass,
+  formatTime,
+  getPurposeLabel
+} from '@/utils/sqlLogHelpers'
 
 const props = defineProps<{
   log: SQLQueryLog
 }>()
 
 const copied = ref(false)
-const purposeLabel = computed(() => props.log.purpose.replace(/_/g, ' '))
+const purposeLabel = computed(() => getPurposeLabel(props.log.purpose))
 const locationLabel = computed(() => {
   const parts = [props.log.database, props.log.schema, props.log.tableName].filter(
     (part) => !!part && part !== ''

@@ -2,19 +2,28 @@
  * Shared utility functions for SQL log components
  */
 
+const PURPOSE_PRESENTATION: Record<string, { label: string; classes: string }> = {
+  METADATA: { label: 'Metadata', classes: 'bg-gray-500 text-white' },
+  DATA_FETCH: { label: 'Data Fetch', classes: 'bg-green-600 text-white' },
+  COUNT_ESTIMATE: { label: 'Count Estimate', classes: 'bg-orange-500 text-white' },
+  PLAN_ANALYSIS: { label: 'Plan Analysis', classes: 'bg-purple-600 text-white' },
+  DDL_MANAGEMENT: { label: 'DDL Management', classes: 'bg-blue-600 text-white' },
+  BACKGROUND_TASK: { label: 'Background Task', classes: 'bg-yellow-400 text-gray-900' },
+  UTILITY: { label: 'Utility', classes: 'bg-gray-400 text-white' }
+}
+
 /**
  * Get the Tailwind CSS classes for a query purpose pill
  */
 export function getPurposePillClass(purpose: string): string {
-  const classes: Record<string, string> = {
-    USER_DATA: 'bg-blue-600 text-white',
-    USER_ACTION: 'bg-blue-700 text-white',
-    METADATA: 'bg-gray-500 text-white',
-    PAGINATION: 'bg-orange-600 text-white',
-    ESTIMATE: 'bg-teal-600 text-white',
-    EXPLAIN: 'bg-purple-600 text-white'
-  }
-  return classes[purpose] || 'bg-gray-600 text-white'
+  return PURPOSE_PRESENTATION[purpose]?.classes ?? 'bg-gray-600 text-white'
+}
+
+/**
+ * Get a human-readable label for a query purpose
+ */
+export function getPurposeLabel(purpose: string): string {
+  return PURPOSE_PRESENTATION[purpose]?.label ?? purpose.replace(/_/g, ' ')
 }
 
 /**

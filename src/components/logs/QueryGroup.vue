@@ -23,9 +23,14 @@ function toggle() {
 function getGroupTypeClass(type: string): string {
   const classes: Record<string, string> = {
     metadata: 'bg-gray-100 border-gray-300',
-    pagination: 'bg-orange-50 border-orange-300',
-    repeated: 'bg-yellow-50 border-yellow-300',
-    'table-open': 'bg-blue-50 border-blue-300'
+    'data-fetch': 'bg-green-50 border-green-300',
+    'count-estimate': 'bg-orange-50 border-orange-300',
+    'plan-analysis': 'bg-purple-50 border-purple-300',
+    'ddl-management': 'bg-blue-50 border-blue-300',
+    'background-task': 'bg-yellow-50 border-yellow-300',
+    utility: 'bg-slate-100 border-slate-300',
+    repeated: 'bg-amber-50 border-amber-300',
+    unknown: 'bg-gray-100 border-gray-300'
   }
   return classes[type] || 'bg-gray-100 border-gray-300'
 }
