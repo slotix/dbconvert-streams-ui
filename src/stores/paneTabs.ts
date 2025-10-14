@@ -157,11 +157,8 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
     const fullTab: PaneTab = { ...tab, pinned: mode === 'pinned' }
     const key = generateTabKey(fullTab)
 
-    console.log('[paneTabs] Adding tab to pane:', paneId, 'Tab:', tab.name, 'Mode:', mode)
-
     // Show pane if not visible
     showPane(paneId)
-    console.log('[paneTabs] Visible panes after showPane:', Array.from(visiblePanes.value))
 
     if (mode === 'pinned') {
       // Check if already exists in pinned tabs

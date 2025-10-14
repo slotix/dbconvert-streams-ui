@@ -469,12 +469,6 @@ function createDatasource(): IDatasource {
         const agGridWhereClause = convertFilterModelToSQL(filterModel)
         agGridWhereSQL.value = agGridWhereClause
 
-        // Debug logging
-        if (agGridWhereClause) {
-          console.log('AG Grid Filter Model:', filterModel)
-          console.log('Converted SQL WHERE:', agGridWhereClause)
-        }
-
         // Combine AG Grid filters with manual WHERE clause
         let combinedWhereClause = ''
         if (agGridWhereClause && whereClause.value) {

@@ -111,8 +111,8 @@ function handleOpenFromTree(payload: {
     schemaStore.fetchSchema(false)
   }
 
-  // Determine target pane
-  const targetPane: PaneId = payload.openInRightSplit ? 'right' : 'left'
+  // Determine target pane - use active pane if openInRightSplit is not explicitly specified
+  const targetPane: PaneId = payload.openInRightSplit ? 'right' : paneTabsStore.activePane || 'left'
 
   // Add tab to the appropriate pane
   paneTabsStore.addTab(
@@ -151,8 +151,8 @@ function handleOpenFile(payload: {
   explorerState.clearPanelStates()
   explorerState.clearDatabaseSelection()
 
-  // Determine target pane
-  const targetPane: PaneId = payload.openInRightSplit ? 'right' : 'left'
+  // Determine target pane - use active pane if openInRightSplit is not explicitly specified
+  const targetPane: PaneId = payload.openInRightSplit ? 'right' : paneTabsStore.activePane || 'left'
 
   // Set file selection
   if (!payload.openInRightSplit) {
@@ -447,7 +447,7 @@ watch(
     if (hasFile) {
       query.file = file
     } else if (hasDatabaseSelection) {
-      query.db = db
+      if (db != null) query.db = db
       if (schema) query.schema = schema
       if (type) query.type = type
       if (name) query.name = name
