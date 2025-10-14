@@ -4,26 +4,20 @@ import { useRoute, useRouter } from 'vue-router'
 import { useCommonStore } from '@/stores/common'
 import { useConnectionsStore } from '@/stores/connections'
 import { useSchemaStore } from '@/stores/schema'
-import { useTabsStore } from '@/stores/tabs'
-import type { ExplorerTab } from '@/stores/tabs'
+import { usePaneTabsStore, type PaneId } from '@/stores/paneTabs'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
 import ExplorerSidebarConnections from '@/components/database/ExplorerSidebarConnections.vue'
-import ExplorerBreadcrumb from '@/components/database/ExplorerBreadcrumb.vue'
 import ExplorerHeader from '@/components/explorer/ExplorerHeader.vue'
-import ExplorerTabs from '@/components/explorer/ExplorerTabs.vue'
 import ExplorerContentArea from '@/components/explorer/ExplorerContentArea.vue'
 import connections from '@/api/connections'
-import { getFileMetadata } from '@/api/files'
-import { getFileFormat } from '@/utils/fileFormat'
 import type { SQLTableMeta, SQLViewMeta } from '@/types/metadata'
 import type { FileSystemEntry } from '@/api/fileSystem'
 
-// Use our new composables and stores
+// Use our composables and stores
 import { useExplorerState } from '@/composables/useExplorerState'
 import { useFileExplorerStore } from '@/stores/fileExplorer'
 import { useSplitPaneResize } from '@/composables/useSplitPaneResize'
-import { useSplitViewStore } from '@/stores/splitView'
 import { useSidebar } from '@/composables/useSidebar'
 import { usePersistedState } from '@/composables/usePersistedState'
 import { useRecentConnections } from '@/composables/useRecentConnections'
@@ -34,14 +28,13 @@ const router = useRouter()
 const commonStore = useCommonStore()
 const connectionsStore = useConnectionsStore()
 const schemaStore = useSchemaStore()
-const tabsStore = useTabsStore()
+const paneTabsStore = usePaneTabsStore()
 const navigationStore = useExplorerNavigationStore()
 
 // Use composables and stores for state management
 const explorerState = useExplorerState()
 const fileExplorerStore = useFileExplorerStore()
 const splitPaneResize = useSplitPaneResize()
-const splitViewStore = useSplitViewStore()
 const sidebar = useSidebar()
 
 // Connection search and filtering
@@ -81,26 +74,6 @@ useExplorerRouter({
 })
 
 // Event handlers
-function onPromoteRightSplit() {
-  // Move the right split content to the left pane
-  const databaseContent = splitViewStore.databaseContent
-  const fileContent = splitViewStore.fileContent
-
-  if (databaseContent) {
-    explorerState.setDatabaseSelection({
-      database: databaseContent.database,
-      schema: databaseContent.schema,
-      type: databaseContent.objectType,
-      name: databaseContent.objectName,
-      meta: databaseContent.meta
-    })
-  } else if (fileContent) {
-    explorerState.setFileSelection(fileContent.entry)
-    explorerState.selectedFileMetadata.value = fileContent.metadata || null
-  }
-  splitViewStore.clearSplit()
-}
-
 function handleOpenFromTree(payload: {
   connectionId: string
   database: string
@@ -118,7 +91,7 @@ function handleOpenFromTree(payload: {
   // Set active connection ID FIRST (synchronous store update - SINGLE SOURCE OF TRUTH)
   navigationStore.setActiveConnectionId(payload.connectionId)
 
-  // Clear other modes
+  // Clear old state
   explorerState.clearPanelStates()
   explorerState.clearFileSelection()
 
@@ -134,55 +107,26 @@ function handleOpenFromTree(payload: {
     schemaStore.fetchSchema(false)
   }
 
-  // Route is auto-updated by watcher based on state changes
+  // Determine target pane
+  const targetPane: PaneId = payload.openInRightSplit ? 'right' : 'left'
 
-  if (payload.openInRightSplit) {
-    // For right split, only set split content, don't update left panel selection
-    splitViewStore.setSplitDatabaseContent(payload)
-    explorerState.activePane.value = 'right'
-    return
-  }
-
-  // Set database selection for left panel (only when not opening in right split)
-  explorerState.setDatabaseSelection({
-    database: payload.database,
-    schema: payload.schema,
-    type: payload.type,
-    name: payload.name,
-    meta: payload.meta
-  })
-
-  explorerState.activePane.value = 'left'
-
-  // Use unified tab creation logic
-  createOrActivateTab({
-    mode: payload.mode,
-    defaultTab: payload.defaultTab,
-    tabData: {
-      id: `preview:${payload.connectionId}:${payload.database || ''}:${payload.schema || ''}:${payload.name}:${payload.type || ''}`,
+  // Add tab to the appropriate pane
+  paneTabsStore.addTab(
+    targetPane,
+    {
+      id: `${payload.connectionId}:${payload.database || ''}:${payload.schema || ''}:${payload.name}:${payload.type || ''}`,
       connectionId: payload.connectionId,
       database: payload.database,
       schema: payload.schema,
       name: payload.name,
       type: payload.type,
       meta: payload.meta,
-      tabType: 'database' as const,
-      pinned: false
+      tabType: 'database'
     },
-    addTabFn: () => {
-      tabsStore.addTab({
-        id: `preview:${payload.connectionId}:${payload.database || ''}:${payload.schema || ''}:${payload.name}:${payload.type || ''}`,
-        connectionId: payload.connectionId,
-        database: payload.database,
-        schema: payload.schema,
-        name: payload.name,
-        type: payload.type,
-        meta: payload.meta,
-        tabType: 'database',
-        viewTab: payload.defaultTab || 'data'
-      })
-    }
-  })
+    alwaysOpenNewTab.value ? 'pinned' : payload.mode
+  )
+
+  // Route is auto-updated by watcher based on state changes
 }
 
 function handleOpenFile(payload: {
@@ -196,56 +140,35 @@ function handleOpenFile(payload: {
   // Set active connection ID FIRST (synchronous store update)
   navigationStore.setActiveConnectionId(payload.connectionId)
 
-  // Clear other modes
+  // Clear old state
   explorerState.clearPanelStates()
   explorerState.clearDatabaseSelection()
 
-  // Route is auto-updated by watcher based on state changes
+  // Determine target pane
+  const targetPane: PaneId = payload.openInRightSplit ? 'right' : 'left'
 
-  if (payload.openInRightSplit) {
-    // For right split, only set split content, don't update left panel selection
-    splitViewStore.setSplitFileContent({
-      connectionId: payload.connectionId,
-      entry: payload.entry,
-      defaultTab: payload.defaultTab || 'data'
-    })
-    explorerState.activePane.value = 'right'
-    return
+  // Set file selection
+  if (!payload.openInRightSplit) {
+    explorerState.setFileSelection(payload.entry)
+    fileExplorerStore.setSelectedPath(payload.connectionId, payload.path)
   }
 
-  // Set file selection for left panel (only when not opening in right split)
-  explorerState.setFileSelection(payload.entry)
-  fileExplorerStore.setSelectedPath(payload.connectionId, payload.path)
-
-  explorerState.activePane.value = 'left'
-
-  // Use unified tab creation logic
-  createOrActivateTab({
-    mode: payload.mode,
-    defaultTab: payload.defaultTab,
-    tabData: {
-      id: `preview:file:${payload.path}`,
+  // Add tab to the appropriate pane
+  paneTabsStore.addTab(
+    targetPane,
+    {
+      id: `file:${payload.path}`,
       connectionId: payload.connectionId,
       name: payload.entry.name,
       filePath: payload.path,
       fileEntry: payload.entry,
-      tabType: 'file' as const,
-      pinned: false,
-      defaultTab: payload.defaultTab
+      fileType: payload.entry.type,
+      tabType: 'file'
     },
-    addTabFn: () => {
-      tabsStore.addTab({
-        id: `preview:file:${payload.path}`,
-        connectionId: payload.connectionId,
-        name: payload.entry.name,
-        filePath: payload.path,
-        fileEntry: payload.entry,
-        fileType: payload.entry.type,
-        tabType: 'file',
-        viewTab: payload.defaultTab || 'data'
-      })
-    }
-  })
+    alwaysOpenNewTab.value ? 'pinned' : payload.mode
+  )
+
+  // Route is auto-updated by watcher based on state changes
 }
 
 function handleShowDiagram(payload: { connectionId: string; database: string }) {
@@ -289,7 +212,9 @@ function handleSelectConnection(payload: { connectionId: string }) {
   explorerState.clearPanelStates()
   explorerState.clearDatabaseSelection()
 
-  splitViewStore.clearSplit()
+  // Clear both panes when selecting a connection
+  paneTabsStore.clearPane('left')
+  paneTabsStore.clearPane('right')
   fileExplorerStore.clearSelection(payload.connectionId)
 
   if (fileExplorerStore.isFilesConnectionType(payload.connectionId)) {
@@ -303,7 +228,6 @@ function handleSelectDatabase(payload: { connectionId: string; database: string 
 
   explorerState.clearPanelStates()
   explorerState.setDatabaseSelection({ database: payload.database })
-  splitViewStore.clearSplit()
   explorerState.activePane.value = 'left'
 
   schemaStore.setConnectionId(payload.connectionId)
@@ -339,143 +263,83 @@ function handleRequestFileEntries(payload: { connectionId: string }) {
   void fileExplorerStore.loadEntries(payload.connectionId, true)
 }
 
-function settingAlwaysOpenNewTab(): boolean {
-  return alwaysOpenNewTab.value
-}
-
-// Unified tab creation/activation logic for both database and file tabs
-function createOrActivateTab(payload: {
-  mode: 'preview' | 'pinned'
-  defaultTab?: 'structure' | 'data'
-  tabData: Omit<
-    {
-      id: string
-      connectionId: string
-      name: string
-      tabType: 'database' | 'file'
-      pinned: boolean
-      viewTab?: 'structure' | 'data'
-      [key: string]: unknown
-    },
-    'viewTab'
-  > // EditorTab-like data without viewTab (will be set dynamically)
-  addTabFn: () => void // Function to add pinned tab
-}) {
-  const desiredPinned = payload.mode === 'pinned' || settingAlwaysOpenNewTab()
-  const initialView = (payload.defaultTab || 'data') as 'structure' | 'data'
-
-  if (desiredPinned) {
-    // Add as pinned tab (includes viewTab setting)
-    payload.addTabFn()
-
-    // Activate the newly added tab
-    const activeTab =
-      tabsStore.activePinnedIndex !== null
-        ? tabsStore.pinnedTabs[tabsStore.activePinnedIndex]
-        : null
-    if (activeTab) {
-      activateTabFromState(activeTab)
-    }
-  } else {
-    // Set as preview tab with viewTab
-    const tabDataWithView = { ...payload.tabData, viewTab: initialView } as ExplorerTab
-    tabsStore.setPreviewTab(tabDataWithView)
-    tabsStore.activePinnedIndex = null
-    activateTabFromState(tabDataWithView)
+// Breadcrumb handlers
+async function handlePickFromBreadcrumb(
+  paneId: PaneId,
+  o: {
+    name: string
+    type: 'table' | 'view'
+    schema?: string
   }
-}
+) {
+  const activeTab = paneTabsStore.getActiveTab(paneId)
+  if (!activeTab || activeTab.tabType !== 'database' || !activeTab.database) return
 
-function activateTabFromState(tab: ExplorerTab) {
-  if (!tab) return
+  const targetConnId = activeTab.connectionId
+  const targetDb = activeTab.database
 
-  // Set active connection ID FIRST (synchronous store update)
-  navigationStore.setActiveConnectionId(tab.connectionId)
-
-  if (tab.tabType === 'file') {
-    explorerState.clearDatabaseSelection()
-    explorerState.clearPanelStates()
-
-    // Update file selection state
-    if (tab.fileEntry && tab.filePath) {
-      fileExplorerStore.setSelectedPath(tab.connectionId, tab.filePath)
-      explorerState.setFileSelection(tab.fileEntry)
+  try {
+    const meta = await connections.getMetadata(targetConnId, targetDb)
+    let obj: SQLTableMeta | SQLViewMeta | undefined
+    if (o.type === 'table') {
+      obj = Object.values(meta.tables || {}).find(
+        (t) => t.name === o.name && (o.schema ? t.schema === o.schema : true)
+      )
+    } else {
+      obj = Object.values(meta.views || {}).find(
+        (v) => v.name === o.name && (o.schema ? v.schema === o.schema : true)
+      )
     }
+    if (!obj) return
 
-    if (explorerState.selectedFileEntry.value) {
-      void refreshSelectedFileMetadata()
-    }
-
-    // Route is auto-updated by watcher based on state changes
-  } else {
-    explorerState.clearFileSelection()
-    explorerState.clearPanelStates()
-
-    explorerState.setDatabaseSelection({
-      database: tab.database || '',
-      schema: tab.schema,
-      type: tab.type as 'table' | 'view',
-      name: tab.name,
-      meta: tab.meta
+    handleOpenFromTree({
+      connectionId: targetConnId,
+      database: targetDb,
+      schema: o.schema,
+      type: o.type,
+      name: o.name,
+      meta: obj,
+      mode: 'preview',
+      defaultTab: 'data',
+      openInRightSplit: paneId === 'right'
     })
-
-    if (tab.database) {
-      schemaStore.setConnectionId(tab.connectionId)
-      schemaStore.setDatabaseName(tab.database)
-      schemaStore.fetchSchema(false)
-    }
-
-    // Route is auto-updated by watcher based on state changes
+  } catch {
+    // ignore open errors
   }
 }
 
-function closePinned(index: number) {
-  const wasActive = tabsStore.activePinnedIndex === index
-  tabsStore.closeTab(index)
+function handleBreadcrumbNavigate(
+  paneId: PaneId,
+  payload: { level: 'database' | 'schema' | 'type' | 'name' }
+) {
+  // For breadcrumb navigation, close the current tab in the pane
+  const paneState = paneTabsStore.getPaneState(paneId)
 
-  if (!tabsStore.pinnedTabs.length) {
-    if (tabsStore.previewTab) {
-      activateTabFromState(tabsStore.previewTab)
+  if (payload.level === 'database') {
+    // Close all tabs in this pane
+    paneTabsStore.closeAllTabs(paneId)
+    if (paneState.previewTab) {
+      paneTabsStore.closePreviewTab(paneId)
     }
-    return
+  } else if (payload.level === 'schema' || payload.level === 'type') {
+    // Close current tab (user wants to navigate back)
+    if (paneState.activePinnedIndex !== null) {
+      paneTabsStore.closeTab(paneId, paneState.activePinnedIndex)
+    } else if (paneState.previewTab) {
+      paneTabsStore.closePreviewTab(paneId)
+    }
   }
 
-  if (wasActive) {
-    const activeTab =
-      tabsStore.activePinnedIndex !== null
-        ? tabsStore.pinnedTabs[tabsStore.activePinnedIndex]
-        : null
-    if (activeTab) {
-      activateTabFromState(activeTab)
-    }
-  }
+  // Route is auto-updated by watcher based on state changes
 }
 
-function activatePinned(index: number) {
-  if (index < 0 || index >= tabsStore.pinnedTabs.length) return
-  explorerState.clearPanelStates()
-  explorerState.activePane.value = 'left'
-
-  // Update tab store state
-  tabsStore.activateTab(index)
-
-  // Get the activated tab and update all related state
-  const tab = tabsStore.pinnedTabs[index]
-  if (tab) {
-    activateTabFromState(tab)
-  }
+// Tab change handlers - no-op for now (tabs handle their own state)
+function onLeftTabChange(_tab: 'data' | 'structure') {
+  // Tab state is managed by ObjectContainer internally
 }
 
-function activatePreview() {
-  if (tabsStore.previewTab) {
-    explorerState.clearPanelStates()
-    explorerState.activePane.value = 'left'
-
-    // Update tab store state
-    tabsStore.activePinnedIndex = null
-
-    // Update all related state for the preview tab
-    activateTabFromState(tabsStore.previewTab)
-  }
+function onRightTabChange(_tab: 'data' | 'structure') {
+  // Tab state is managed by ObjectContainer internally
 }
 
 // Header event handlers
@@ -526,151 +390,15 @@ async function onCloneConnection() {
   }
 }
 
-// Breadcrumb handlers
-async function handlePickFromBreadcrumb(o: {
-  name: string
-  type: 'table' | 'view'
-  schema?: string
-}) {
-  const targetConnId = explorerState.currentConnectionId.value
-  const targetDb = explorerState.selectedDatabaseName.value
-  if (!targetConnId || !targetDb) return
-  try {
-    const meta = await connections.getMetadata(targetConnId, targetDb)
-    let obj: SQLTableMeta | SQLViewMeta | undefined
-    if (o.type === 'table') {
-      obj = Object.values(meta.tables || {}).find(
-        (t) => t.name === o.name && (o.schema ? t.schema === o.schema : true)
-      )
-    } else {
-      obj = Object.values(meta.views || {}).find(
-        (v) => v.name === o.name && (o.schema ? v.schema === o.schema : true)
-      )
-    }
-    if (!obj) return
-    handleOpenFromTree({
-      connectionId: targetConnId,
-      database: targetDb,
-      schema: o.schema,
-      type: o.type,
-      name: o.name,
-      meta: obj,
-      mode: 'preview',
-      defaultTab: 'data',
-      openInRightSplit: false
-    })
-  } catch {
-    // ignore open errors
-  }
-}
-
-function handleBreadcrumbNavigate(payload: { level: 'database' | 'schema' | 'type' | 'name' }) {
-  if (explorerState.activePane.value === 'right' && splitViewStore.splitContent) {
-    // For right pane navigation, clear split content based on level
-    if (payload.level === 'database') {
-      splitViewStore.clearSplit()
-    } else if (splitViewStore.splitContent.type === 'database') {
-      const content = splitViewStore.splitContent
-      if (payload.level === 'schema') {
-        // Keep database and schema, clear object
-        if (content.schema) {
-          splitViewStore.clearSplit()
-        }
-      } else if (payload.level === 'type') {
-        // Clear object selection
-        splitViewStore.clearSplit()
-      }
-    }
-    return
-  }
-
-  if (payload.level === 'database') {
-    explorerState.showDiagram.value = false
-    explorerState.selectedSchemaName.value = null
-    explorerState.selectedObjectType.value = null
-    explorerState.selectedObjectName.value = null
-    explorerState.selectedMeta.value = null
-  } else if (payload.level === 'schema') {
-    explorerState.selectedObjectType.value = null
-    explorerState.selectedObjectName.value = null
-    explorerState.selectedMeta.value = null
-  } else if (payload.level === 'type') {
-    explorerState.selectedObjectName.value = null
-    explorerState.selectedMeta.value = null
-  }
-
-  // Route is auto-updated by watcher based on state changes
-}
-
-// Tab change handlers - update tab state so ExplorerTabs reflects current view
-function onLeftTabChange(tab: 'data' | 'structure') {
-  tabsStore.updateActiveTabView(tab)
-}
-
-function onRightTabChange(_tab: 'data' | 'structure') {
-  // no-op — split pane doesn’t map to the tab strip
-}
-
-// Helper functions
-async function refreshSelectedFileMetadata() {
-  if (!explorerState.selectedFileEntry.value) return
-
-  try {
-    const fileFormat = getFileFormat(explorerState.selectedFileEntry.value.name)
-    if (!fileFormat) {
-      console.warn(
-        'Unable to determine file format for:',
-        explorerState.selectedFileEntry.value.name
-      )
-      return
-    }
-
-    const metadata = await getFileMetadata(explorerState.selectedFileEntry.value.path, fileFormat)
-    explorerState.selectedFileMetadata.value = metadata
-  } catch (error) {
-    console.error('Failed to load file metadata:', error)
-    explorerState.selectedFileMetadata.value = null
-  }
-}
-
-function initializeCurrentConnection() {
-  if (
-    explorerState.currentConnection.value &&
-    !recentConnectionsManager.recentConnections.value.find(
-      (c) => c.id === explorerState.currentConnectionId.value
-    )
-  ) {
-    recentConnectionsManager.addToRecent({
-      id: explorerState.currentConnection.value.id,
-      name: explorerState.currentConnection.value.name,
-      type: explorerState.currentConnection.value.type,
-      host: explorerState.currentConnection.value.host,
-      port: explorerState.currentConnection.value.port?.toString(),
-      database: explorerState.currentConnection.value.database,
-      cloud_provider: explorerState.currentConnection.value.cloud_provider || ''
-    })
-  }
-}
-
 function showDiagramForActiveDatabase() {
-  const isRight = explorerState.activePane.value === 'right'
-  const connId = isRight
-    ? splitViewStore.splitContent?.connectionId || explorerState.currentConnectionId.value
-    : explorerState.currentConnectionId.value
-  const db = isRight
-    ? (splitViewStore.splitContent?.type === 'database'
-        ? splitViewStore.splitContent.database
-        : null) || explorerState.selectedDatabaseName.value
-    : explorerState.selectedDatabaseName.value
-  if (!connId || !db) return
-  handleShowDiagram({ connectionId: connId, database: db })
+  const activeTab = paneTabsStore.getActiveTab(paneTabsStore.activePane)
+  if (!activeTab || activeTab.tabType !== 'database' || !activeTab.database) return
+
+  handleShowDiagram({ connectionId: activeTab.connectionId, database: activeTab.database })
 }
 
 // Watchers
-// Route watching is now handled by useExplorerRouter
-
 // Watch store's activeConnectionId and sync route automatically
-// This is the ONLY place that updates the route - handlers only update store state
 watch(
   () =>
     [
@@ -740,7 +468,23 @@ watch(explorerState.currentConnectionId, async (newId) => {
 onMounted(() => {
   commonStore.setCurrentPage('Data Explorer')
   sidebar.initializeSidebar()
-  initializeCurrentConnection()
+
+  if (
+    explorerState.currentConnection.value &&
+    !recentConnectionsManager.recentConnections.value.find(
+      (c) => c.id === explorerState.currentConnectionId.value
+    )
+  ) {
+    recentConnectionsManager.addToRecent({
+      id: explorerState.currentConnection.value.id,
+      name: explorerState.currentConnection.value.name,
+      type: explorerState.currentConnection.value.type,
+      host: explorerState.currentConnection.value.host,
+      port: explorerState.currentConnection.value.port?.toString(),
+      database: explorerState.currentConnection.value.database,
+      cloud_provider: explorerState.currentConnection.value.cloud_provider || ''
+    })
+  }
 
   // Seed selection from query if present
   const { db, schema, type, name, file } = route.query as Record<string, string | undefined>
@@ -886,31 +630,6 @@ onMounted(() => {
                   <span v-if="explorerState.activeDisplayHostPort.value" class="text-gray-400"
                     >•</span
                   >
-                  <!-- Database breadcrumb -->
-                  <ExplorerBreadcrumb
-                    v-if="explorerState.activeDatabaseName.value"
-                    :database="explorerState.activeDatabaseName.value"
-                    :schema="explorerState.activeSchemaName.value"
-                    :type="explorerState.activeObjectType.value"
-                    :name="explorerState.activeObjectName.value"
-                    :objects="explorerState.breadcrumbObjects.value"
-                    @navigate="handleBreadcrumbNavigate"
-                    @pick-name="handlePickFromBreadcrumb"
-                  />
-                  <!-- File breadcrumb -->
-                  <div
-                    v-else-if="explorerState.selectedFileEntry.value"
-                    class="flex items-center gap-1 text-sm"
-                  >
-                    <span class="text-gray-600">File:</span>
-                    <span class="font-medium text-gray-900">{{
-                      explorerState.selectedFileEntry.value.name
-                    }}</span>
-                    <span class="text-gray-400">•</span>
-                    <span class="text-gray-500 text-xs">{{
-                      explorerState.selectedFileEntry.value.path
-                    }}</span>
-                  </div>
                 </div>
                 <div class="flex items-center gap-2">
                   <button
@@ -933,13 +652,13 @@ onMounted(() => {
                     {{ sidebar.sidebarVisible.value ? 'Hide Sidebar' : 'Show Sidebar' }}
                   </button>
                   <button
-                    v-if="splitViewStore.hasContent"
+                    v-if="paneTabsStore.hasRightPaneContent"
                     type="button"
                     class="px-2 py-1 text-xs rounded border border-gray-300 bg-white hover:bg-gray-50 text-gray-700"
-                    title="Center split"
+                    title="Reset pane sizes to 50/50"
                     @click="splitPaneResize.resetSplitSize"
                   >
-                    Center split
+                    Balance Panes
                   </button>
                   <CloudProviderBadge
                     v-if="explorerState.activeDisplayType.value"
@@ -950,14 +669,7 @@ onMounted(() => {
               </div>
             </div>
 
-            <!-- Tabs -->
-            <ExplorerTabs
-              @activate-preview="activatePreview"
-              @activate-pinned="activatePinned"
-              @close-pinned="closePinned"
-            />
-
-            <!-- Content area -->
+            <!-- Content area with dual pane tabs -->
             <ExplorerContentArea
               v-if="navigationStore.activeConnectionId"
               :connection-id="navigationStore.activeConnectionId"
@@ -965,19 +677,18 @@ onMounted(() => {
               :tables="schemaStore.tables as any[]"
               :views="schemaStore.views as any[]"
               :relationships="schemaStore.relationships"
-              :selected-meta="explorerState.selectedMeta.value"
-              :selected-file-entry="explorerState.selectedFileEntry.value"
-              :selected-file-metadata="explorerState.selectedFileMetadata.value"
               :file-entries="currentFileEntries"
+              :active-pane="paneTabsStore.activePane"
               @edit-connection="onEditConnection"
               @clone-connection="onCloneConnection"
               @delete-connection="onDeleteConnection"
               @show-diagram="handleShowDiagram"
-              @set-active-pane="(pane) => (explorerState.activePane.value = pane)"
-              @promote-right-split="onPromoteRightSplit"
+              @set-active-pane="(pane) => paneTabsStore.setActivePane(pane)"
               @left-tab-change="onLeftTabChange"
               @right-tab-change="onRightTabChange"
               @refresh-metadata="handleRefreshMetadata"
+              @breadcrumb-navigate="handleBreadcrumbNavigate"
+              @breadcrumb-pick-name="handlePickFromBreadcrumb"
             />
 
             <!-- Show loading or empty state when no connection is selected -->

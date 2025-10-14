@@ -1,16 +1,29 @@
 <template>
-  <div v-if="hasSplitContent" ref="splitContainerRef" class="flex flex-row items-stretch min-w-0">
-    <!-- Left (primary) -->
+  <div v-if="hasRightPane" ref="splitContainerRef" class="flex flex-row items-stretch min-w-0">
+    <!-- Left pane (always visible) -->
     <div
       ref="leftPaneRef"
       :style="{ flexBasis: `${splitGrow}%`, flexGrow: 0, flexShrink: 0 }"
-      class="min-w-[300px] pr-2 min-h-[480px]"
+      :class="[
+        'min-w-[300px] pr-2 min-h-[480px] rounded-lg transition-all',
+        'border-2',
+        isLeftActive ? 'border-slate-500' : 'border-gray-200'
+      ]"
       @mousedown="$emit('set-active-pane', 'left')"
     >
-      <slot name="left" />
+      <!-- Left pane tabs -->
+      <div class="px-2 pt-2">
+        <slot name="left-tabs" />
+      </div>
+
+      <!-- Left pane breadcrumb -->
+      <slot name="left-breadcrumb" />
+
+      <!-- Left pane content -->
+      <slot name="left-content" />
     </div>
 
-    <!-- Divider between primary and right split -->
+    <!-- Divider between panes -->
     <div
       role="separator"
       aria-orientation="vertical"
@@ -23,74 +36,89 @@
       />
     </div>
 
-    <!-- Right split -->
+    <!-- Right pane (conditional) -->
     <div
       :style="{ flexBasis: '0px' }"
-      class="grow pl-2 min-h-[480px] min-w-[300px] relative"
+      :class="[
+        'grow pl-2 min-h-[480px] min-w-[300px] relative rounded-lg transition-all',
+        'border-2',
+        isRightActive ? 'border-slate-500' : 'border-gray-200'
+      ]"
       @mousedown="$emit('set-active-pane', 'right')"
-      @contextmenu.prevent="showRightSplitContextMenu"
     >
-      <slot name="right" />
+      <!-- Close right pane button -->
+      <button
+        type="button"
+        class="absolute top-2 right-2 z-10 p-1 hover:bg-gray-100 rounded transition"
+        title="Close right pane"
+        @click="$emit('close-right-pane')"
+      >
+        <XMarkIcon class="h-4 w-4 text-gray-500" />
+      </button>
+
+      <!-- Right pane tabs -->
+      <div class="px-2 pt-2">
+        <slot name="right-tabs" />
+      </div>
+
+      <!-- Right pane breadcrumb -->
+      <slot name="right-breadcrumb" />
+
+      <!-- Right pane content -->
+      <slot name="right-content" />
     </div>
   </div>
 
+  <!-- Single pane view (left only) -->
   <div v-else>
-    <slot name="single" />
+    <div
+      :class="[
+        'rounded-lg transition-all',
+        'border-2',
+        isLeftActive ? 'border-slate-500' : 'border-gray-200'
+      ]"
+      @mousedown="$emit('set-active-pane', 'left')"
+    >
+      <!-- Left pane tabs -->
+      <div class="px-2 pt-2">
+        <slot name="left-tabs" />
+      </div>
+
+      <!-- Left pane breadcrumb -->
+      <slot name="left-breadcrumb" />
+
+      <!-- Left pane content -->
+      <slot name="single-content" />
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { XMarkIcon } from '@heroicons/vue/20/solid'
 import { useSplitPaneResize } from '@/composables/useSplitPaneResize'
-import { useSplitViewStore } from '@/stores/splitView'
+import { usePaneTabsStore } from '@/stores/paneTabs'
+
+// Define props
+const props = defineProps<{
+  activePane: 'left' | 'right'
+}>()
 
 // Define emits
 const emit = defineEmits<{
   'set-active-pane': [pane: 'left' | 'right']
-  'promote-right-split': []
+  'close-right-pane': []
 }>()
 
-// Use the new composables and store
+// Use composables and store
 const { splitGrow, splitContainerRef, leftPaneRef, onDividerMouseDown, onDividerDoubleClick } =
   useSplitPaneResize()
-const splitViewStore = useSplitViewStore()
+const paneTabsStore = usePaneTabsStore()
 
-// Check if we have split content from store
-const hasSplitContent = computed(() => splitViewStore.hasContent)
+// Check if we have right pane content
+const hasRightPane = computed(() => paneTabsStore.isRightPaneVisible)
 
-function showRightSplitContextMenu(event: MouseEvent) {
-  // Simple context menu for right split - just "Make Primary" option
-  event.preventDefault()
-
-  // Create a simple context menu
-  const menu = document.createElement('div')
-  menu.className =
-    'fixed z-50 bg-white shadow-lg border border-gray-200 rounded-md py-1 min-w-[120px]'
-  menu.style.left = `${event.clientX}px`
-  menu.style.top = `${event.clientY}px`
-
-  const menuItem = document.createElement('button')
-  menuItem.className =
-    'w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2'
-  menuItem.innerHTML = '<span>Make Primary</span>'
-  menuItem.onclick = () => {
-    emit('promote-right-split')
-    document.body.removeChild(menu)
-  }
-
-  menu.appendChild(menuItem)
-  document.body.appendChild(menu)
-
-  // Remove menu when clicking elsewhere
-  const removeMenu = () => {
-    if (document.body.contains(menu)) {
-      document.body.removeChild(menu)
-    }
-    document.removeEventListener('click', removeMenu)
-  }
-
-  setTimeout(() => {
-    document.addEventListener('click', removeMenu)
-  }, 0)
-}
+// Computed properties for pane active state
+const isLeftActive = computed(() => props.activePane === 'left')
+const isRightActive = computed(() => props.activePane === 'right')
 </script>
