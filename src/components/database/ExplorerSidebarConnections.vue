@@ -522,7 +522,7 @@ defineExpose({
 
 <template>
   <div
-    class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg divide-y divide-gray-200 overflow-hidden"
+    class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg divide-y divide-gray-200 overflow-hidden min-h-[400px] flex flex-col"
   >
     <ExplorerTreeControls
       ref="treeControlsRef"
@@ -530,7 +530,7 @@ defineExpose({
       @update:connection-search="$emit('update:search-query', $event)"
       @add-connection="$emit('add-connection')"
     />
-    <div class="p-2">
+    <div class="p-2 flex-1 overflow-auto">
       <div v-if="isLoadingConnections" class="text-center py-6 text-gray-500">
         <ArrowPathIcon class="h-6 w-6 animate-spin inline-block" />
       </div>

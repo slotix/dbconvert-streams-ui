@@ -4,9 +4,11 @@
       <Listbox v-if="selectedDbType" v-model="selectedDbType" as="div" class="relative">
         <ListboxButton
           class="inline-flex items-center gap-2 px-2 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-slate-400 whitespace-nowrap min-w-[100px]"
+          :title="selectedDbType.type === 'All' ? 'Connections: Show all database and file sources' : `Filter by ${selectedDbType.type}`"
         >
-          <img :src="selectedDbType.logo" :alt="selectedDbType.type" class="h-4 w-4" />
-          <span class="truncate">{{ selectedDbType.type }}</span>
+          <RectangleStackIcon v-if="selectedDbType.type === 'All'" class="h-4 w-4 text-gray-500" />
+          <img v-else :src="selectedDbType.logo" :alt="selectedDbType.type" class="h-4 w-4" />
+          <span class="truncate">{{ selectedDbType.type === 'All' ? 'Connections' : selectedDbType.type }}</span>
           <ChevronDownIcon class="h-4 w-4 text-gray-400" />
         </ListboxButton>
         <transition
@@ -29,7 +31,8 @@
                   'relative cursor-default select-none py-2 px-3 flex items-center gap-2'
                 ]"
               >
-                <img :src="option.logo" :alt="option.type" class="h-4 w-4" />
+                <RectangleStackIcon v-if="option.type === 'All'" class="h-4 w-4 text-gray-500" />
+                <img v-else :src="option.logo" :alt="option.type" class="h-4 w-4" />
                 <span :class="[selected ? 'font-semibold' : 'font-normal', 'truncate']">
                   {{ option.type }}
                 </span>
@@ -51,7 +54,7 @@
         class="inline-flex items-center gap-2 px-2 py-1.5 text-xs font-medium text-white bg-gray-600 border border-gray-600 rounded hover:bg-gray-500"
         @click="$emit('add-connection')"
       >
-        <span>New</span>
+        <span>New Connection</span>
       </button>
     </div>
   </div>
@@ -62,7 +65,7 @@ import { ref, computed, watch } from 'vue'
 import { useConnectionsStore } from '@/stores/connections'
 import { usePersistedState } from '@/composables/usePersistedState'
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/vue'
-import { ChevronDownIcon, CheckIcon } from '@heroicons/vue/24/outline'
+import { ChevronDownIcon, CheckIcon, RectangleStackIcon } from '@heroicons/vue/24/outline'
 import SearchInput from '@/components/common/SearchInput.vue'
 import type { DbType } from '@/types/connections'
 
