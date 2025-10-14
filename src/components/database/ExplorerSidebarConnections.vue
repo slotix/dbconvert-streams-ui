@@ -12,6 +12,7 @@ import type { SQLTableMeta, SQLViewMeta } from '@/types/metadata'
 import type { FileSystemEntry } from '@/api/fileSystem'
 import ExplorerContextMenu from './ExplorerContextMenu.vue'
 import ConnectionTreeItem from './tree/ConnectionTreeItem.vue'
+import ExplorerTreeControls from '@/components/explorer/ExplorerTreeControls.vue'
 
 type ObjectType = 'table' | 'view'
 
@@ -62,6 +63,8 @@ const emit = defineEmits<{
   (e: 'select-database', payload: { connectionId: string; database: string }): void
   (e: 'select-file', payload: { connectionId: string; path: string }): void
   (e: 'request-file-entries', payload: { connectionId: string }): void
+  (e: 'add-connection'): void
+  (e: 'update:search-query', value: string): void
 }>()
 
 const connectionsStore = useConnectionsStore()
@@ -79,6 +82,7 @@ const actions = useConnectionActions({
 const isLoadingConnections = ref(false)
 const loadError = ref<string | null>(null)
 const searchQuery = computed(() => props.searchQuery || '')
+const treeControlsRef = ref<InstanceType<typeof ExplorerTreeControls> | null>(null)
 
 // Provide search query, caret class, and selection info to child components (avoid prop drilling)
 provide('treeSearchQuery', searchQuery)
@@ -509,12 +513,23 @@ watch(
     })
   }
 )
+
+// Expose the selected type for parent component
+defineExpose({
+  selectedDbTypeLabel: computed(() => treeControlsRef.value?.selectedDbTypeLabel || 'All')
+})
 </script>
 
 <template>
   <div
     class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg divide-y divide-gray-200 overflow-hidden"
   >
+    <ExplorerTreeControls
+      ref="treeControlsRef"
+      :connection-search="searchQuery"
+      @update:connection-search="$emit('update:search-query', $event)"
+      @add-connection="$emit('add-connection')"
+    />
     <div class="p-2">
       <div v-if="isLoadingConnections" class="text-center py-6 text-gray-500">
         <ArrowPathIcon class="h-6 w-6 animate-spin inline-block" />

@@ -43,6 +43,7 @@ const focusConnectionId = ref<string | null>(null)
 const showConnectionDetails = ref(route.query.details === 'true')
 
 const explorerHeaderRef = ref<InstanceType<typeof ExplorerHeader> | null>(null)
+const sidebarConnectionsRef = ref<InstanceType<typeof ExplorerSidebarConnections> | null>(null)
 
 // Recent connections management
 const recentConnectionsManager = useRecentConnections(explorerState.currentConnectionId)
@@ -53,7 +54,7 @@ const alwaysOpenNewTab = usePersistedState<boolean>('explorer.alwaysOpenNewTab',
 
 // Computed properties
 const selectedDbTypeFilter = computed(() => {
-  return explorerHeaderRef.value?.selectedDbTypeLabel || 'All'
+  return sidebarConnectionsRef.value?.selectedDbTypeLabel || 'All'
 })
 
 const currentFileEntries = computed<FileSystemEntry[]>(() => {
@@ -361,15 +362,6 @@ function onRightTabChange(_tab: 'data' | 'structure') {
 }
 
 // Header event handlers
-async function onRefreshConnections() {
-  try {
-    await connectionsStore.refreshConnections()
-  } catch (e) {
-    const message = e instanceof Error ? e.message : 'Failed to refresh connections'
-    commonStore.showNotification(message, 'error')
-  }
-}
-
 function onAddConnection() {
   router.push('/explorer/add')
 }
@@ -568,12 +560,7 @@ onMounted(() => {
 
 <template>
   <div class="min-h-full overflow-x-hidden">
-    <ExplorerHeader
-      ref="explorerHeaderRef"
-      v-model:connection-search="connectionSearch"
-      @refresh="onRefreshConnections"
-      @add-connection="onAddConnection"
-    />
+    <ExplorerHeader ref="explorerHeaderRef" />
 
     <main class="mx-auto py-4 overflow-x-hidden">
       <!-- No recent connections -->
@@ -608,6 +595,7 @@ onMounted(() => {
             class="min-w-[220px] pr-2"
           >
             <ExplorerSidebarConnections
+              ref="sidebarConnectionsRef"
               :initial-expanded-connection-id="explorerState.currentConnectionId.value || undefined"
               :search-query="connectionSearch"
               :type-filter="selectedDbTypeFilter"
@@ -625,6 +613,8 @@ onMounted(() => {
               @select-file="handleFileSelect"
               @open-file="handleOpenFile"
               @request-file-entries="handleRequestFileEntries"
+              @update:search-query="connectionSearch = $event"
+              @add-connection="onAddConnection"
             />
           </div>
 
