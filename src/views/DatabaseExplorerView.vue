@@ -105,9 +105,7 @@ const treeSelection = computed(() => {
 })
 
 // Common computed helpers for watcher dependencies
-const activeConnectionId = computed(
-  () => navigationStore.activeConnectionId || explorerState.currentConnectionId.value || null
-)
+const activeConnectionId = computed(() => navigationStore.activeConnectionId)
 const selectedDatabase = computed(() => explorerState.selectedDatabaseName.value)
 const selectedSchema = computed(() => explorerState.selectedSchemaName.value)
 const selectedObjectType = computed(() => explorerState.selectedObjectType.value)
@@ -574,6 +572,8 @@ watch(
 )
 
 watch(explorerState.currentConnectionId, async (newId) => {
+  navigationStore.setActiveConnectionId(newId)
+
   if (newId && explorerState.currentConnection.value) {
     recentConnectionsManager.addToRecent({
       id: explorerState.currentConnection.value.id,
