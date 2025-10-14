@@ -409,6 +409,7 @@ function showDiagramForActiveDatabase() {
 
 // Watchers
 // Watch store's activeConnectionId and sync route automatically
+// Also watch pane tabs to include table/view selections for both panes
 watch(
   () =>
     [
@@ -420,7 +421,14 @@ watch(
       explorerState.selectedFileEntry.value?.path,
       explorerState.showDiagram.value,
       route.query.details, // This comes from handlers setting it
-      showConnectionDetails.value
+      showConnectionDetails.value,
+      paneTabsStore.leftPaneState.previewTab,
+      paneTabsStore.leftPaneState.activePinnedIndex,
+      paneTabsStore.leftPaneState.pinnedTabs,
+      paneTabsStore.rightPaneState.previewTab,
+      paneTabsStore.rightPaneState.activePinnedIndex,
+      paneTabsStore.rightPaneState.pinnedTabs,
+      paneTabsStore.activePane
     ] as const,
   ([connId, db, schema, type, name, file, diagram, details]) => {
     if (!connId) return
@@ -446,6 +454,43 @@ watch(
       if (hasDiagram) query.diagram = 'true'
     } else if (shouldShowDetails) {
       query.details = 'true'
+    }
+
+    // Add left pane table/view info
+    const leftTab = paneTabsStore.getActiveTab('left')
+    if (
+      leftTab &&
+      leftTab.tabType === 'database' &&
+      leftTab.type &&
+      leftTab.name &&
+      leftTab.database
+    ) {
+      query.db = leftTab.database
+      query.type = leftTab.type
+      query.name = leftTab.name
+      if (leftTab.schema) query.schema = leftTab.schema
+    }
+
+    // Add right pane table/view info
+    const rightTab = paneTabsStore.getActiveTab('right')
+    if (
+      rightTab &&
+      rightTab.tabType === 'database' &&
+      rightTab.type &&
+      rightTab.name &&
+      rightTab.database
+    ) {
+      query.rightDb = rightTab.database
+      query.rightType = rightTab.type
+      query.rightName = rightTab.name
+      if (rightTab.schema) query.rightSchema = rightTab.schema
+    }
+
+    // Add active pane indicator
+    if (paneTabsStore.activePane === 'right' && rightTab) {
+      query.pane = 'right'
+    } else if (paneTabsStore.activePane === 'left' && leftTab) {
+      query.pane = 'left'
     }
 
     // Only update if something changed
@@ -489,6 +534,63 @@ watch(explorerState.currentConnectionId, async (newId) => {
     }
   }
 })
+
+// Watch for URL query parameter changes to restore pane state from URL
+watch(
+  () =>
+    [route.query.rightDb, route.query.rightType, route.query.rightName, route.query.pane] as const,
+  async ([rightDb, rightType, rightName, activePane]) => {
+    // Restore right pane tab from URL if present
+    if (
+      rightDb &&
+      rightType &&
+      rightName &&
+      explorerState.currentConnectionId.value &&
+      (rightType === 'table' || rightType === 'view')
+    ) {
+      try {
+        const meta = await connections.getMetadata(
+          explorerState.currentConnectionId.value,
+          rightDb as string
+        )
+        const rightSchema = route.query.rightSchema as string | undefined
+
+        let obj: SQLTableMeta | SQLViewMeta | undefined
+        if (rightType === 'table') {
+          obj = Object.values(meta.tables || {}).find(
+            (t) => t.name === rightName && (!rightSchema || t.schema === rightSchema)
+          )
+        } else {
+          obj = Object.values(meta.views || {}).find(
+            (v) => v.name === rightName && (!rightSchema || v.schema === rightSchema)
+          )
+        }
+
+        if (obj) {
+          // Open in right pane
+          handleOpenFromTree({
+            connectionId: explorerState.currentConnectionId.value,
+            database: rightDb as string,
+            schema: rightSchema,
+            type: rightType as 'table' | 'view',
+            name: rightName as string,
+            meta: obj,
+            mode: 'preview',
+            openInRightSplit: true
+          })
+        }
+      } catch (error) {
+        console.warn('Failed to restore right pane tab from URL:', error)
+      }
+    }
+
+    // Restore active pane from URL
+    if (activePane === 'right' || activePane === 'left') {
+      paneTabsStore.setActivePane(activePane)
+    }
+  },
+  { immediate: false }
+)
 
 // Lifecycle
 onMounted(() => {

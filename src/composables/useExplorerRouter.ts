@@ -84,16 +84,31 @@ export function useExplorerRouter(options: {
     database: string,
     schema?: string,
     type?: string,
-    name?: string
+    name?: string,
+    paneId?: 'left' | 'right'
   ) {
+    const query: Record<string, string | undefined> = {
+      db: database,
+      schema: schema || undefined,
+      type: type || undefined,
+      name: name || undefined
+    }
+
+    // Add pane-specific parameters if specified
+    if (paneId === 'right' && type && name) {
+      query.rightType = type
+      query.rightName = name
+      if (schema) query.rightSchema = schema
+    } else if (paneId === 'left' && type && name) {
+      // Left pane uses the default parameters (for backwards compatibility)
+      query.type = type
+      query.name = name
+      if (schema) query.schema = schema
+    }
+
     router.replace({
       path: `/explorer/${connectionId}`,
-      query: {
-        db: database,
-        schema: schema || undefined,
-        type: type || undefined,
-        name: name || undefined
-      }
+      query
     })
   }
 
