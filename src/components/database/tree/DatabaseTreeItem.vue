@@ -106,7 +106,7 @@ const highlightParts = (text: string) => splitHighlight(text, searchQuery.value)
 
 // Get table sizes from store (reactive)
 const tableSizes = computed(() => {
-  return overviewStore.getAllTableSizes(props.connectionId, props.database.name)
+  return overviewStore.getAllTableSizes()
 })
 
 // Fetch overview data when database is expanded

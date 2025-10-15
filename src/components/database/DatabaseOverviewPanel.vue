@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch, computed } from 'vue'
+import { onMounted, watch, computed } from 'vue'
 import { useDatabaseOverviewStore } from '@/stores/databaseOverview'
 import { formatDataSize } from '@/utils/formats'
 
@@ -14,29 +14,33 @@ const emit = defineEmits<{
 }>()
 
 const overviewStore = useDatabaseOverviewStore()
-const error = ref<string | null>(null)
 
-// Get overview data from store (reactive)
-const overview = computed(() => overviewStore.getOverview(props.connectionId, props.database))
-const isLoading = computed(() => overviewStore.isLoading(props.connectionId, props.database))
+// Get overview and loading state directly from store
+const overview = computed(() => overviewStore.currentOverview)
+const isLoading = computed(() => overviewStore.isLoading)
+const error = computed(() => overviewStore.error)
 
-async function load(refresh = false) {
-  error.value = null
+async function load() {
   try {
-    await overviewStore.fetchOverview(props.connectionId, props.database, refresh)
-  } catch (e: unknown) {
-    error.value = e instanceof Error ? e.message : 'Failed to load database overview'
+    await overviewStore.fetchOverview(props.connectionId, props.database)
+  } catch (e) {
+    // Error is handled by the store
+    console.error('Failed to load overview:', e)
   }
 }
 
 onMounted(load)
+
 watch(
   () => [props.connectionId, props.database],
-  () => load()
+  () => load(),
+  { deep: true }
 )
 
 const topSize = computed(() => (overview.value?.allTablesBySize || []).slice(0, 10))
 const topRows = computed(() => (overview.value?.allTablesByRows || []).slice(0, 10))
+const counts = computed(() => overview.value?.counts)
+const activity = computed(() => overview.value?.activity)
 
 // Safe display for total database size
 const sizeBytes = computed(() => overview.value?.sizeBytes)
@@ -54,7 +58,7 @@ const sizeDisplay = computed(() => {
         <button
           type="button"
           class="px-2 py-1 text-xs rounded border border-gray-300 bg-white hover:bg-gray-50 text-gray-700"
-          @click="load(true)"
+          @click="load()"
         >
           Refresh
         </button>
@@ -103,13 +107,13 @@ const sizeDisplay = computed(() => {
             >
           </div>
           <div>
-            Tables: <span class="font-medium">{{ overview.counts.tables }}</span>
+            Tables: <span class="font-medium">{{ counts?.tables ?? '—' }}</span>
           </div>
           <div>
-            Views: <span class="font-medium">{{ overview.counts.views }}</span>
+            Views: <span class="font-medium">{{ counts?.views ?? '—' }}</span>
           </div>
-          <div v-if="overview.counts.schemas">
-            Schemas: <span class="font-medium">{{ overview.counts.schemas }}</span>
+          <div v-if="typeof counts?.schemas === 'number'">
+            Schemas: <span class="font-medium">{{ counts.schemas }}</span>
           </div>
         </div>
       </div>
@@ -193,21 +197,21 @@ const sizeDisplay = computed(() => {
         <div class="mt-2 text-sm text-gray-700 space-y-1">
           <div>
             Connections:
-            <span class="font-medium">{{ overview.activity.connections.used }}</span>
-            <span v-if="overview.activity.connections.max" class="text-gray-500">
-              / {{ overview.activity.connections.max }}
+            <span class="font-medium">{{ activity?.connections?.used ?? '—' }}</span>
+            <span v-if="activity?.connections?.max" class="text-gray-500">
+              / {{ activity.connections.max }}
             </span>
           </div>
           <div>
             Active sessions:
-            <span class="font-medium">{{ overview.activity.activeSessions }}</span>
+            <span class="font-medium">{{ activity?.activeSessions ?? '—' }}</span>
           </div>
         </div>
-        <div v-if="overview.activity.longRunning?.length" class="mt-3">
+        <div v-if="activity?.longRunning?.length" class="mt-3">
           <div class="text-xs uppercase tracking-wide text-gray-500">Long-running queries</div>
           <ul class="mt-1 text-sm text-gray-700 space-y-1">
             <li
-              v-for="(q, idx) in overview.activity.longRunning.slice(0, 5)"
+              v-for="(q, idx) in activity.longRunning.slice(0, 5)"
               :key="q.pid || q.threadId || idx"
               class="flex items-start justify-between gap-3"
             >

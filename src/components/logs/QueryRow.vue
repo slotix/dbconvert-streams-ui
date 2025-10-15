@@ -49,7 +49,6 @@ async function copyQuery() {
     console.error('Failed to copy query:', error)
   }
 }
-
 </script>
 
 <template>

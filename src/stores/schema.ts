@@ -90,8 +90,13 @@ export const useSchemaStore = defineStore('schema', {
           throw new Error('Invalid metadata response format')
         }
 
+        const metadataTables = ((metadata as { tables?: Record<string, SQLTableMeta> }).tables ||
+          {}) as Record<string, SQLTableMeta>
+        const metadataViews = ((metadata as { views?: Record<string, SQLViewMeta> }).views ||
+          {}) as Record<string, SQLViewMeta>
+
         // Convert metadata tables to tables array
-        const tables: Table[] = Object.entries(metadata.tables)
+        const tables: Table[] = Object.entries(metadataTables)
           .filter(([_, value]) => value && typeof value === 'object')
           .map(([_, tableMeta]: [string, unknown]) => {
             const tm = tableMeta as SQLTableMeta
@@ -140,7 +145,7 @@ export const useSchemaStore = defineStore('schema', {
           })
 
         // Convert metadata views to views array
-        const views: Table[] = Object.entries(metadata.views || {})
+        const views: Table[] = Object.entries(metadataViews)
           .filter(([_, value]) => value && typeof value === 'object')
           .map(([_, viewMeta]: [string, unknown]) => {
             const vm = viewMeta as SQLViewMeta
