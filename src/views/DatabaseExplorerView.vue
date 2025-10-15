@@ -868,6 +868,7 @@ onMounted(() => {
               v-if="navigationStore.activeConnectionId"
               :connection-id="navigationStore.activeConnectionId"
               :show-diagram="explorerState.showDiagram.value"
+              :selected-database="selectedDatabase || undefined"
               :tables="schemaStore.tables as any[]"
               :views="schemaStore.views as any[]"
               :relationships="schemaStore.relationships"

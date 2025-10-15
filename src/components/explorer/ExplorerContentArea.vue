@@ -12,12 +12,12 @@
     />
   </div>
   <div
-    v-else-if="showDatabaseOverview && databaseFromQuery"
+    v-else-if="showDatabaseOverview && activeDatabase"
     class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg"
   >
     <DatabaseOverviewPanel
       :connection-id="connectionId"
-      :database="databaseFromQuery"
+      :database="activeDatabase"
       @show-diagram="$emit('show-diagram', $event)"
     />
   </div>
@@ -210,6 +210,7 @@ interface Props {
   fileEntries?: FileSystemEntry[]
   activePane: 'left' | 'right'
   splitPaneResize?: SplitPaneResizeController
+  selectedDatabase?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -247,7 +248,9 @@ const navigationStore = useExplorerNavigationStore()
 const paneTabsStore = usePaneTabsStore()
 
 // Computed properties - derive view mode from route
-const databaseFromQuery = computed(() => route.query.db as string | undefined)
+const selectedDatabase = computed(() => props.selectedDatabase)
+const databaseFromRoute = computed(() => route.query.db as string | undefined)
+const activeDatabase = computed(() => selectedDatabase.value ?? databaseFromRoute.value)
 const showConnectionDetails = computed(
   () => route.query.details === 'true' && currentConnection.value !== null
 )
@@ -256,7 +259,7 @@ const showDatabaseOverview = computed(
     !showConnectionDetails.value &&
     !props.showDiagram &&
     !leftActiveTab.value &&
-    !!databaseFromQuery.value
+    !!activeDatabase.value
 )
 
 const currentConnection = computed(
