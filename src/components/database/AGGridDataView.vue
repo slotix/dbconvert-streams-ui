@@ -548,9 +548,12 @@ function createDatasource(): IDatasource {
         } = {
           limit,
           offset,
-          // When filters are active, we need accurate count for first page
-          // Skip count only if: no filters AND we already have count AND not first page
-          skip_count: !combinedWhereClause && offset > 0 && totalRowCount.value > 0
+          // Skip count if we already have one (either approximate or exact)
+          // Always skip on subsequent pages (offset > 0)
+          // Also skip if we have an exact count (exactRowCount.value !== null)
+          skip_count:
+            (offset > 0 && totalRowCount.value > 0) || // Skip on non-first pages
+            (exactRowCount.value !== null && !combinedWhereClause) // Skip if we have exact count (without filters)
         }
 
         // Add optional parameters only if they have values
@@ -859,10 +862,23 @@ async function calculateExactCount() {
       exactCountCache.value.set(cacheKey, result.count)
     }
 
-    // Force AG Grid to refresh with the new exact count
+    // Update AG Grid's pagination display with the exact count
+    // We've updated totalRowCount.value which will be used in the next data fetch
+    // Unfortunately AG Grid's Infinite Row Model doesn't have a direct API to update
+    // the row count without triggering a data refresh. We have two options:
+    //
+    // Option 1: Don't refresh - pagination updates on next user interaction (scroll/page)
+    //   Pros: Zero additional queries
+    //   Cons: User doesn't see updated page count until they interact with the grid
+    //
+    // Option 2: Trigger cache purge to immediately update pagination
+    //   Pros: User immediately sees updated page count (e.g., "Page 1 of 1,154,000")
+    //   Cons: Triggers one data fetch + metadata queries (if not cached)
+    //
+    // We choose Option 2 for better UX. The backend fix to share metadata cache
+    // should minimize additional queries on subsequent operations.
     if (gridApi.value) {
-      // Trigger a datasource refresh to update pagination with exact count
-      gridApi.value.refreshInfiniteCache()
+      gridApi.value.purgeInfiniteCache()
     }
   } catch (err) {
     console.error('Error calculating exact count:', err)
