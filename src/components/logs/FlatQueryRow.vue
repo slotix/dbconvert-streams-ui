@@ -266,4 +266,10 @@ function toggleExpanded() {
 :deep(.hljs-built_in) {
   @apply text-[#005cc5];
 }
+
+/* Override SqlCodeBlock line number padding for better alignment */
+:deep(.absolute.inset-y-0.left-0 > div) {
+  padding-top: 1rem !important;
+  padding-bottom: 1rem !important;
+}
 </style>
