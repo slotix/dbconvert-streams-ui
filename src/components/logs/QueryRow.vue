@@ -129,9 +129,6 @@ async function copyQuery() {
       <div class="grid grid-cols-2 gap-2 text-xs">
         <div><span class="font-semibold">Connection:</span> {{ log.connectionId }}</div>
         <div v-if="log.tabId"><span class="font-semibold">Tab:</span> {{ log.tabId }}</div>
-        <div v-if="log.triggerSource">
-          <span class="font-semibold">Trigger:</span> {{ log.triggerSource }}
-        </div>
         <div v-if="log.repeatCount">
           <span class="font-semibold">Repeated:</span> {{ log.repeatCount }}×
         </div>
