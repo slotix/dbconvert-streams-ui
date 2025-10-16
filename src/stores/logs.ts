@@ -48,12 +48,13 @@ export interface SystemLog {
 // Phase 2: Enhanced SQL Logging Types
 export type LoggingLevel = 'minimal' | 'normal'
 export type QueryPurpose =
-  | 'METADATA'
-  | 'DATA_FETCH'
-  | 'COUNT_ESTIMATE'
+  | 'SCHEMA_INTROSPECTION'
+  | 'DATA_QUERY'
+  | 'COUNT_QUERY'
   | 'PLAN_ANALYSIS'
-  | 'DDL_MANAGEMENT'
-  | 'BACKGROUND_TASK'
+  | 'SCHEMA_CHANGE'
+  | 'DML_OPERATION'
+  | 'SYSTEM_TASK'
   | 'UTILITY'
 
 export type TimeWindow = '5m' | '1h' | 'session' | 'all'
@@ -92,12 +93,13 @@ export interface SQLQueryLog {
 export interface QueryGroup {
   groupId: string
   type:
-    | 'metadata'
-    | 'data-fetch'
-    | 'count-estimate'
+    | 'schema-introspection'
+    | 'data-query'
+    | 'count-query'
     | 'plan-analysis'
-    | 'ddl-management'
-    | 'background-task'
+    | 'schema-change'
+    | 'dml-operation'
+    | 'system-task'
     | 'utility'
     | 'repeated'
     | 'unknown'
@@ -174,8 +176,8 @@ function logMatchesFilters(
   // Level-based filtering
   switch (filters.level) {
     case 'minimal':
-      // Only show user-focused activity (data fetches and quick counts)
-      if (log.purpose !== 'DATA_FETCH' && log.purpose !== 'COUNT_ESTIMATE') {
+      // Only show user-focused activity (data queries and quick counts)
+      if (log.purpose !== 'DATA_QUERY' && log.purpose !== 'COUNT_QUERY') {
         return false
       }
       break
@@ -231,12 +233,13 @@ export const useLogsStore = defineStore('logs', {
       filters: {
         level: loadFromStorage<LoggingLevel>(STORAGE_KEYS.level, 'normal'),
         purposes: new Set<QueryPurpose>([
-          'METADATA',
-          'DATA_FETCH',
-          'COUNT_ESTIMATE',
+          'SCHEMA_INTROSPECTION',
+          'DATA_QUERY',
+          'COUNT_QUERY',
           'PLAN_ANALYSIS',
-          'DDL_MANAGEMENT',
-          'BACKGROUND_TASK',
+          'SCHEMA_CHANGE',
+          'DML_OPERATION',
+          'SYSTEM_TASK',
           'UTILITY'
         ]),
         timeWindow: loadFromStorage<TimeWindow>(STORAGE_KEYS.timeWindow, 'session'),
@@ -399,8 +402,8 @@ export const useLogsStore = defineStore('logs', {
 
       // Auto-collapse based on type
       if (
-        group.type === 'metadata' ||
-        group.type === 'background-task' ||
+        group.type === 'schema-introspection' ||
+        group.type === 'system-task' ||
         group.type === 'utility'
       ) {
         group.collapsed = true
@@ -459,18 +462,20 @@ export const useLogsStore = defineStore('logs', {
       if (log.repeatCount && log.repeatCount > 1) return 'repeated'
 
       switch (log.purpose) {
-        case 'METADATA':
-          return 'metadata'
-        case 'DATA_FETCH':
-          return 'data-fetch'
-        case 'COUNT_ESTIMATE':
-          return 'count-estimate'
+        case 'SCHEMA_INTROSPECTION':
+          return 'schema-introspection'
+        case 'DATA_QUERY':
+          return 'data-query'
+        case 'COUNT_QUERY':
+          return 'count-query'
         case 'PLAN_ANALYSIS':
           return 'plan-analysis'
-        case 'DDL_MANAGEMENT':
-          return 'ddl-management'
-        case 'BACKGROUND_TASK':
-          return 'background-task'
+        case 'SCHEMA_CHANGE':
+          return 'schema-change'
+        case 'DML_OPERATION':
+          return 'dml-operation'
+        case 'SYSTEM_TASK':
+          return 'system-task'
         case 'UTILITY':
           return 'utility'
         default:
@@ -482,20 +487,22 @@ export const useLogsStore = defineStore('logs', {
       if (log.repeatCount && log.repeatCount > 1) return `Repeated query ×${log.repeatCount}`
 
       switch (log.purpose) {
-        case 'METADATA':
+        case 'SCHEMA_INTROSPECTION':
           return 'Schema introspection'
-        case 'DATA_FETCH': {
+        case 'DATA_QUERY': {
           const table = log.tableName || 'data'
-          return `Data fetch for ${log.database}.${table}`
+          return `Data query for ${log.database}.${table}`
         }
-        case 'COUNT_ESTIMATE':
-          return 'Row count estimate'
+        case 'COUNT_QUERY':
+          return 'Row count query'
         case 'PLAN_ANALYSIS':
           return 'Execution plan analysis'
-        case 'DDL_MANAGEMENT':
-          return 'Schema management operation'
-        case 'BACKGROUND_TASK':
-          return 'Background task'
+        case 'SCHEMA_CHANGE':
+          return 'Schema change operation'
+        case 'DML_OPERATION':
+          return 'Data manipulation operation'
+        case 'SYSTEM_TASK':
+          return 'System task'
         case 'UTILITY':
           return 'Utility query'
         default: {

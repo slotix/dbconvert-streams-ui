@@ -3,12 +3,13 @@
  */
 
 const PURPOSE_PRESENTATION: Record<string, { label: string; classes: string }> = {
-  METADATA: { label: 'Metadata', classes: 'bg-gray-500 text-white' },
-  DATA_FETCH: { label: 'Data Fetch', classes: 'bg-green-600 text-white' },
-  COUNT_ESTIMATE: { label: 'Count Estimate', classes: 'bg-orange-500 text-white' },
+  SCHEMA_INTROSPECTION: { label: 'Schema', classes: 'bg-gray-500 text-white' },
+  DATA_QUERY: { label: 'Data Query', classes: 'bg-green-600 text-white' },
+  COUNT_QUERY: { label: 'Count', classes: 'bg-orange-500 text-white' },
   PLAN_ANALYSIS: { label: 'Plan Analysis', classes: 'bg-purple-600 text-white' },
-  DDL_MANAGEMENT: { label: 'DDL Management', classes: 'bg-blue-600 text-white' },
-  BACKGROUND_TASK: { label: 'Background Task', classes: 'bg-yellow-400 text-gray-900' },
+  SCHEMA_CHANGE: { label: 'Schema Change', classes: 'bg-blue-600 text-white' },
+  DML_OPERATION: { label: 'DML', classes: 'bg-indigo-600 text-white' },
+  SYSTEM_TASK: { label: 'System', classes: 'bg-yellow-400 text-gray-900' },
   UTILITY: { label: 'Utility', classes: 'bg-gray-400 text-white' }
 }
 
