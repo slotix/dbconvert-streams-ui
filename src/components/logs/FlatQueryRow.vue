@@ -8,12 +8,17 @@ import {
   formatTime,
   getPurposeLabel
 } from '@/utils/sqlLogHelpers'
+import { useConnectionsStore } from '@/stores/connections'
+import SqlCodeBlock from '@/components/database/SqlCodeBlock.vue'
 
 const props = defineProps<{
   log: SQLQueryLog
 }>()
 
+const connectionsStore = useConnectionsStore()
 const copied = ref(false)
+const isExpanded = ref(false)
+
 const purposeLabel = computed(() => getPurposeLabel(props.log.purpose))
 const locationLabel = computed(() => {
   const parts = [props.log.database, props.log.schema, props.log.tableName].filter(
@@ -38,7 +43,12 @@ const oneLineQuery = computed(() => {
   const trailing = flattened.slice(-suffixLength).trimStart()
   return `${leading} … ${trailing}`
 })
-const showFullQuery = ref(false)
+
+// Get dialect from connection type
+const dialect = computed(() => {
+  const connection = connectionsStore.connectionByID(props.log.connectionId)
+  return connection?.type?.toLowerCase() || 'sql'
+})
 
 async function copyQuery() {
   try {
@@ -52,33 +62,18 @@ async function copyQuery() {
   }
 }
 
-function toggleFullQuery() {
-  showFullQuery.value = !showFullQuery.value
-}
-
-function closeFullQuery() {
-  showFullQuery.value = false
+function toggleExpanded() {
+  isExpanded.value = !isExpanded.value
 }
 </script>
 
 <template>
   <div
-    class="relative border-b border-gray-200 py-2 pl-2 pr-[50px] hover:bg-gray-50 transition-colors"
+    class="border-b border-gray-200 hover:bg-gray-50 transition-colors"
     :class="{ 'bg-red-50': log.error }"
-    @click="closeFullQuery"
   >
-    <!-- Copy button - positioned absolutely on the right -->
-    <button
-      class="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-blue-600 transition-colors rounded z-10"
-      title="Copy query"
-      @click.stop="copyQuery"
-    >
-      <CheckIcon v-if="copied" class="w-4 h-4 text-green-600" />
-      <ClipboardIcon v-else class="w-4 h-4" />
-    </button>
-
-    <!-- Single row with all metadata and query -->
-    <div class="flat-row-header">
+    <!-- Header row with all metadata -->
+    <div class="flat-row-header" @click="toggleExpanded">
       <span class="text-[0.65rem] font-mono text-gray-500">{{ formatTime(log.startedAt) }}</span>
       <span class="flex-shrink-0">
         <span
@@ -107,17 +102,16 @@ function closeFullQuery() {
         <template v-if="shouldShowRowCount">{{ formattedRowCount }} rows</template>
       </span>
       <span
-        class="text-right min-w-[60px] text-[0.7rem]"
+        class="text-right text-[0.7rem]"
         :class="{ 'flat-meta--status-empty': !log.error, 'text-red-600 font-semibold': log.error }"
       >
         <template v-if="log.error">ERROR</template>
       </span>
 
-      <!-- Query text inline -->
+      <!-- Query text inline - clickable -->
       <span
         class="cursor-pointer overflow-hidden text-ellipsis whitespace-nowrap"
         :title="fullQuery"
-        @click.stop="toggleFullQuery"
       >
         <code
           v-highlightjs
@@ -125,48 +119,64 @@ function closeFullQuery() {
           >{{ oneLineQuery }}</code
         >
       </span>
-    </div>
 
-    <!-- Metadata row -->
-    <div v-if="log.tabId" class="flat-metadata mt-2 grid gap-2 text-xs text-gray-500">
-      <span><strong class="text-gray-600 font-semibold">Tab:</strong> {{ log.tabId }}</span>
-    </div>
-
-    <!-- Error message if present -->
-    <div v-if="log.error" class="mt-3 p-3 bg-red-100 border border-red-300 rounded text-xs">
-      <div class="font-semibold text-red-700 mb-1">Error:</div>
-      <div class="text-red-600 font-mono">{{ log.error }}</div>
-    </div>
-
-    <div v-if="showFullQuery" class="query-popover" @click.stop>
-      <div
-        class="flex items-center justify-between bg-gray-100 border-b border-gray-300 px-3 py-2 text-xs"
+      <!-- Copy button -->
+      <button
+        class="ml-2 p-1 text-gray-400 hover:text-blue-600 transition-colors rounded"
+        title="Copy query"
+        @click.stop="copyQuery"
       >
-        <span class="font-semibold text-gray-700">Full Query</span>
-        <button
-          class="text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors"
-          @click="closeFullQuery"
-        >
-          Close
-        </button>
+        <CheckIcon v-if="copied" class="w-4 h-4 text-green-600" />
+        <ClipboardIcon v-else class="w-4 h-4" />
+      </button>
+    </div>
+
+    <!-- Expanded Details (using SqlCodeBlock component) -->
+    <div v-if="isExpanded" class="px-12 py-3 bg-gray-50 border-t border-gray-200">
+      <!-- Full Query using SqlCodeBlock -->
+      <div class="mb-3">
+        <SqlCodeBlock :code="fullQuery" title="Query" :dialect="dialect" />
+        <div v-if="log.redacted" class="text-xs text-orange-600 mt-1">
+          ⚠️ Query contains redacted sensitive values
+        </div>
       </div>
-      <pre
-        v-highlightjs
-        class="max-h-72 overflow-auto text-xs p-3"
-      ><code class="language-sql">{{ fullQuery }}</code></pre>
+
+      <!-- Error -->
+      <div v-if="log.error" class="mb-3">
+        <div class="text-xs font-semibold text-red-700 mb-1">Error:</div>
+        <div class="text-xs bg-red-100 text-red-800 p-3 rounded border border-red-300">
+          {{ log.error }}
+        </div>
+      </div>
+
+      <!-- Metadata -->
+      <div v-if="log.tabId || log.repeatCount" class="grid grid-cols-2 gap-2 text-xs">
+        <div v-if="log.tabId"><span class="font-semibold">Tab:</span> {{ log.tabId }}</div>
+        <div v-if="log.repeatCount">
+          <span class="font-semibold">Repeated:</span> {{ log.repeatCount }}×
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <style scoped>
+/* Smooth transitions */
+.transition-colors {
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
 .flat-row-header {
   --col-time: minmax(4.5rem, auto);
   --col-purpose: minmax(5rem, auto);
-  --col-location: minmax(10rem, auto);
+  --col-location: minmax(6rem, 0.25fr);
   --col-duration: minmax(3rem, auto);
   --col-rows: minmax(4rem, auto);
   --col-status: minmax(3rem, auto);
   --col-query: minmax(0, 2fr);
+  --col-copy: minmax(2rem, auto);
   --gap: 0.4rem;
 
   display: grid;
@@ -177,9 +187,12 @@ function closeFullQuery() {
     var(--col-duration)
     var(--col-rows)
     var(--col-status)
-    var(--col-query);
+    var(--col-query)
+    var(--col-copy);
   align-items: center;
   gap: var(--gap);
+  padding: 0.5rem;
+  cursor: pointer;
 }
 
 @media (max-width: 1400px) {
@@ -211,19 +224,15 @@ function closeFullQuery() {
   @apply w-0 min-w-0 overflow-hidden p-0 m-0;
 }
 
-.query-popover {
-  @apply absolute z-10 mt-2 rounded border border-gray-300 bg-white shadow-xl;
-  left: 0;
-  top: 100%;
-  width: min(48rem, 100%);
-}
-
-.flat-metadata {
-  grid-template-columns: repeat(auto-fit, minmax(min(11.25rem, 100%), 1fr));
-}
-
+/* SQL syntax highlighting - matching grouped mode style */
 :deep(.hljs) {
-  @apply bg-white font-mono whitespace-nowrap overflow-hidden text-ellipsis p-0 text-[#24292e];
+  @apply bg-white font-mono;
+  color: #24292e;
+  padding: 0;
+}
+
+.flat-row-header :deep(.hljs) {
+  @apply whitespace-nowrap overflow-hidden text-ellipsis;
 }
 
 :deep(.hljs-keyword) {
@@ -256,10 +265,5 @@ function closeFullQuery() {
 
 :deep(.hljs-built_in) {
   @apply text-[#005cc5];
-}
-
-.query-popover__body :deep(.hljs) {
-  @apply whitespace-pre overflow-auto;
-  text-overflow: unset;
 }
 </style>
