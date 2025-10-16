@@ -11,9 +11,14 @@ const props = defineProps<{
   connectionType: string
 }>()
 
-const dialect = computed(() =>
-  props.connectionType.toLowerCase().includes('mysql') ? 'mysql' : 'postgresql'
-)
+// Use the proper dialect mapping instead of hardcoding postgresql as fallback
+const dialect = computed(() => {
+  const normalized = props.connectionType.toLowerCase()
+  if (normalized.includes('mysql')) return 'mysql'
+  if (normalized.includes('postgre')) return 'postgresql'
+  if (normalized.includes('snowflake')) return 'snowflake'
+  return 'sql' // Generic SQL fallback instead of postgresql
+})
 
 const formattedDefinition = computed(() => {
   try {
