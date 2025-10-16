@@ -78,58 +78,44 @@ function closeFullQuery() {
     </button>
 
     <!-- Single row with all metadata and query -->
-    <div
-      class="grid items-center gap-3"
-      style="
-        grid-template-columns:
-          max-content max-content minmax(140px, max-content)
-          4rem 5.5rem max-content 1fr;
-      "
-    >
-      <span class="text-[0.65rem] font-mono text-gray-500 whitespace-nowrap">
-        {{ formatTime(log.startedAt) }}
-      </span>
-
-      <span>
+    <div class="flat-row-header">
+      <span class="text-[0.65rem] font-mono text-gray-500">{{ formatTime(log.startedAt) }}</span>
+      <span class="flex-shrink-0">
         <span
-          class="px-2 py-0.5 rounded font-semibold uppercase tracking-wide text-[0.65rem] whitespace-nowrap inline-block"
+          class="px-1.5 py-0.5 rounded font-semibold uppercase tracking-wide text-[0.65rem]"
           :class="getPurposePillClass(log.purpose)"
         >
           {{ purposeLabel }}
         </span>
       </span>
-
       <span
-        class="text-[0.7rem] text-gray-700 overflow-hidden text-ellipsis whitespace-nowrap min-w-0"
+        class="text-[0.7rem] text-gray-700 overflow-hidden text-ellipsis whitespace-nowrap"
         :title="locationLabel"
       >
         {{ locationLabel }}
       </span>
-
       <span
-        class="text-[0.65rem] font-semibold text-right whitespace-nowrap"
+        class="text-[0.65rem] font-semibold text-right"
         :class="getDurationClass(log.durationMs)"
       >
         {{ log.durationMs }}ms
       </span>
-
       <span
-        class="text-[0.65rem] text-gray-500 text-right whitespace-nowrap"
-        :class="{ 'w-0 min-w-0 overflow-hidden p-0 m-0': !shouldShowRowCount }"
+        class="text-[0.65rem] text-gray-500 text-right"
+        :class="{ 'flat-meta--rows-empty': !shouldShowRowCount }"
       >
         <template v-if="shouldShowRowCount">{{ formattedRowCount }} rows</template>
       </span>
-
       <span
-        class="text-right text-[0.7rem] whitespace-nowrap min-w-[3rem]"
-        :class="{ 'opacity-0': !log.error, 'text-red-600 font-semibold': log.error }"
+        class="text-right min-w-[60px] text-[0.7rem]"
+        :class="{ 'flat-meta--status-empty': !log.error, 'text-red-600 font-semibold': log.error }"
       >
         <template v-if="log.error">ERROR</template>
       </span>
 
       <!-- Query text inline -->
       <span
-        class="cursor-pointer overflow-hidden text-ellipsis whitespace-nowrap min-w-0"
+        class="cursor-pointer overflow-hidden text-ellipsis whitespace-nowrap"
         :title="fullQuery"
         @click.stop="toggleFullQuery"
       >
@@ -173,9 +159,38 @@ function closeFullQuery() {
 </template>
 
 <style scoped>
+.flat-row-header {
+  display: grid;
+  grid-template-columns: 85px 95px minmax(100px, 0.3fr) 55px 70px 50px 1fr;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+@media (max-width: 1400px) {
+  .flat-row-header {
+    grid-template-columns: 80px 90px minmax(90px, 0.25fr) 50px 65px 45px 1fr;
+  }
+}
+
+@media (max-width: 1024px) {
+  .flat-row-header {
+    grid-template-columns: 75px 85px minmax(80px, 0.2fr) 45px 60px 40px 1fr;
+  }
+}
+
+.flat-meta--rows-empty,
+.flat-meta--status-empty {
+  @apply w-0 min-w-0 overflow-hidden p-0 m-0;
+}
+
 .query-popover {
+  @apply absolute z-10 mt-2 w-full lg:w-[48rem] rounded border border-gray-300 bg-white shadow-xl;
   left: 0;
   top: 100%;
+}
+
+.flat-metadata {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 }
 
 :deep(.hljs) {

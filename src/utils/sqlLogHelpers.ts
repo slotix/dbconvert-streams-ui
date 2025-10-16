@@ -4,7 +4,7 @@
 
 const PURPOSE_PRESENTATION: Record<string, { label: string; classes: string }> = {
   SCHEMA_INTROSPECTION: { label: 'Schema', classes: 'bg-gray-500 text-white' },
-  DATA_QUERY: { label: 'Data Query', classes: 'bg-green-600 text-white' },
+  DATA_QUERY: { label: 'Data', classes: 'bg-green-600 text-white' },
   COUNT_QUERY: { label: 'Count', classes: 'bg-orange-500 text-white' },
   PLAN_ANALYSIS: { label: 'Plan Analysis', classes: 'bg-purple-600 text-white' },
   SCHEMA_CHANGE: { label: 'Schema Change', classes: 'bg-blue-600 text-white' },
