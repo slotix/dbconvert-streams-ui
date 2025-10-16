@@ -97,8 +97,6 @@ function closeFullQuery() {
 
     <!-- Metadata row -->
     <div class="flat-metadata">
-      <span v-if="log.schema"><strong>Schema:</strong> {{ log.schema }}</span>
-      <span v-if="log.tableName"><strong>Table:</strong> {{ log.tableName }}</span>
       <span><strong>Connection:</strong> {{ log.connectionId }}</span>
       <span v-if="log.tabId"><strong>Tab:</strong> {{ log.tabId }}</span>
     </div>
