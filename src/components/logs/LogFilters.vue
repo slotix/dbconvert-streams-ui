@@ -72,10 +72,9 @@ const errorsOnly = computed({
 })
 
 const sortOrder = computed(() => logsStore.sortOrder)
-const groupCount = computed(() => Array.from(logsStore.groups.keys()).length)
-const expandedGroupCount = computed(() => Array.from(logsStore.expandedGroups.values()).length)
-const hasGroups = computed(() => groupCount.value > 0)
-const canCollapseGroups = computed(() => expandedGroupCount.value > 0)
+const expandedLocationCount = computed(() => logsStore.expandedLocations.size)
+const hasLocations = computed(() => logsStore.flatLogs.size > 0)
+const canCollapseGroups = computed(() => expandedLocationCount.value > 0)
 
 function clearLogs() {
   logsStore.clearSQLLogs()
@@ -94,7 +93,7 @@ function toggleExportMenu() {
 }
 
 function expandAllGroups() {
-  if (!hasGroups.value) return
+  if (!hasLocations.value) return
   logsStore.expandAllGroups()
 }
 
@@ -168,9 +167,9 @@ onBeforeUnmount(() => {
         <button
           :class="[
             'flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors',
-            hasGroups ? 'text-gray-600 hover:bg-gray-100' : 'text-gray-400 cursor-not-allowed'
+            hasLocations ? 'text-gray-600 hover:bg-gray-100' : 'text-gray-400 cursor-not-allowed'
           ]"
-          :disabled="!hasGroups"
+          :disabled="!hasLocations"
           title="Expand all groups"
           @click="expandAllGroups"
         >

@@ -1,50 +1,36 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useLogsStore, type QueryGroup } from '@/stores/logs'
+import { useLogsStore, type LocationGroup } from '@/stores/logs'
 import { ChevronDownIcon, ChevronRightIcon } from '@heroicons/vue/24/outline'
 import QueryRow from './QueryRow.vue'
 
 const props = defineProps<{
-  group: QueryGroup
+  group: LocationGroup
 }>()
 
 const logsStore = useLogsStore()
 
-const isExpanded = computed(() => logsStore.expandedGroups.has(props.group.groupId))
-
-const groupQueries = computed(() =>
-  props.group.queryIds.map((id) => logsStore.flatLogs.get(id)).filter(Boolean)
-)
+const isExpanded = computed(() => logsStore.expandedLocations.has(props.group.location))
 
 function toggle() {
-  logsStore.toggleGroup(props.group.groupId)
+  logsStore.toggleLocation(props.group.location)
 }
 
-function getGroupTypeClass(type: string): string {
-  const classes: Record<string, string> = {
-    metadata: 'bg-gray-100 border-gray-300',
-    'data-fetch': 'bg-green-50 border-green-300',
-    'count-estimate': 'bg-orange-50 border-orange-300',
-    'plan-analysis': 'bg-purple-50 border-purple-300',
-    'ddl-management': 'bg-blue-50 border-blue-300',
-    'background-task': 'bg-yellow-50 border-yellow-300',
-    utility: 'bg-slate-100 border-slate-300',
-    repeated: 'bg-amber-50 border-amber-300',
-    unknown: 'bg-gray-100 border-gray-300'
+function getGroupClass(): string {
+  // Color-code based on whether there are errors
+  if (props.group.hasErrors) {
+    return 'bg-red-50 border-red-300'
   }
-  return classes[type] || 'bg-gray-100 border-gray-300'
+  return 'bg-blue-50 border-blue-300'
 }
 </script>
 
 <template>
-  <div
-    class="border-l-4 mb-2"
-    :class="[getGroupTypeClass(group.type), { 'border-red-500': group.hasErrors }]"
-  >
+  <div class="border-l-4 mb-2" :class="getGroupClass()">
     <!-- Group Header -->
     <div
       class="flex items-center gap-3 px-4 py-2 cursor-pointer hover:bg-opacity-80"
-      :class="getGroupTypeClass(group.type)"
+      :class="getGroupClass()"
       @click="toggle"
     >
       <!-- Expand Icon -->
@@ -53,9 +39,9 @@ function getGroupTypeClass(type: string): string {
         class="w-4 h-4 text-gray-600 flex-shrink-0"
       />
 
-      <!-- Group Summary -->
+      <!-- Location Summary -->
       <span class="text-sm font-semibold text-gray-800">
-        {{ group.summary }}
+        {{ group.location }}
       </span>
 
       <!-- Stats -->
@@ -71,7 +57,7 @@ function getGroupTypeClass(type: string): string {
 
     <!-- Expanded Queries -->
     <div v-if="isExpanded" class="ml-4">
-      <QueryRow v-for="query in groupQueries" :key="query!.id" :log="query!" />
+      <QueryRow v-for="query in group.queries" :key="query.id" :log="query" />
     </div>
   </div>
 </template>

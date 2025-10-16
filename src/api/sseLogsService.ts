@@ -345,22 +345,7 @@ export class SSELogsService {
         // Check if this is an enhanced SQL log (has connectionId, query, and purpose)
         const isSQL = data.connectionId && data.query && data.purpose
 
-        // Check if this is a query group (has groupId, queryIds, and summary)
-        const isGroup = data.groupId && data.queryIds && data.summary
-
-        if (isGroup) {
-          // This is a query group - route to addGroup
-          logsStore.addGroup({
-            groupId: data.groupId,
-            type: data.type,
-            summary: data.summary,
-            queryCount: data.queryCount,
-            totalDurationMs: data.totalDurationMs,
-            queryIds: data.queryIds,
-            collapsed: data.collapsed,
-            hasErrors: data.hasErrors
-          })
-        } else if (isSQL) {
+        if (isSQL) {
           // This is an enhanced SQL log - route to addSQLLog
           logsStore.addSQLLog({
             id: data.id,
@@ -372,14 +357,10 @@ export class SSELogsService {
             query: data.query,
             params: data.params,
             purpose: data.purpose,
-            triggerSource: data.triggerSource,
             startedAt: data.startedAt,
             durationMs: data.durationMs,
             rowCount: data.rowCount,
             error: data.error,
-            groupId: data.groupId,
-            parentGroupId: data.parentGroupId,
-            repeatCount: data.repeatCount,
             redacted: data.redacted
           })
         } else {

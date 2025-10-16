@@ -79,35 +79,19 @@ export interface SQLQueryLog {
   query: string
   params?: unknown[]
   purpose: QueryPurpose
-  triggerSource?: string
   startedAt: string
   durationMs: number
   rowCount: number
   error?: string
-  groupId?: string
-  parentGroupId?: string
-  repeatCount?: number
   redacted?: boolean
 }
 
-export interface QueryGroup {
-  groupId: string
-  type:
-    | 'schema-introspection'
-    | 'data-query'
-    | 'count-query'
-    | 'plan-analysis'
-    | 'schema-change'
-    | 'dml-operation'
-    | 'system-task'
-    | 'utility'
-    | 'repeated'
-    | 'unknown'
-  summary: string
+// Frontend-only group structure (built from location)
+export interface LocationGroup {
+  location: string // e.g., "sakila.customer", "postgres.private.products"
+  queries: SQLQueryLog[]
   queryCount: number
   totalDurationMs: number
-  queryIds: string[]
-  collapsed: boolean
   hasErrors: boolean
 }
 
@@ -226,7 +210,6 @@ export const useLogsStore = defineStore('logs', {
 
       // Phase 2: SQL Logs
       flatLogs: new Map<string, SQLQueryLog>(), // id -> log
-      groups: new Map<string, QueryGroup>(), // groupId -> group
       displayOrder: [] as string[], // IDs in chronological order
 
       // Filters (with persisted preferences)
@@ -254,11 +237,10 @@ export const useLogsStore = defineStore('logs', {
 
       // UI state (with persisted preferences)
       currentTabId: null as string | null,
-      expandedGroups: new Set<string>(),
+      expandedLocations: new Set<string>(), // Locations (e.g., "sakila.customer") that are expanded
       expandedQueries: new Set<string>(),
       viewMode: loadFromStorage<'grouped' | 'flat'>(STORAGE_KEYS.viewMode, 'grouped'),
-      sortOrder: loadFromStorage<'newest' | 'oldest'>(STORAGE_KEYS.sortOrder, 'newest'),
-      lastAutoExpandedGroupId: null as string | null
+      sortOrder: loadFromStorage<'newest' | 'oldest'>(STORAGE_KEYS.sortOrder, 'newest')
     }
   },
 
@@ -273,7 +255,7 @@ export const useLogsStore = defineStore('logs', {
     },
 
     // Phase 2: SQL Logs Getters
-    visibleLogs(): (SQLQueryLog | QueryGroup)[] {
+    visibleLogs(): (SQLQueryLog | LocationGroup)[] {
       const filtered: SQLQueryLog[] = []
       const now = Date.now()
 
@@ -290,25 +272,67 @@ export const useLogsStore = defineStore('logs', {
         return this.sortOrder === 'newest' ? timeB - timeA : timeA - timeB
       })
 
-      // Build display tree
-      const result: (SQLQueryLog | QueryGroup)[] = []
-      const processedGroups = new Set<string>()
+      // If in flat mode, just return the queries
+      if (this.viewMode === 'flat') {
+        return filtered
+      }
+
+      // Build location-based groups
+      const locationMap = new Map<string, SQLQueryLog[]>()
 
       for (const log of filtered) {
-        if (log.groupId && !processedGroups.has(log.groupId)) {
-          const group = this.groups.get(log.groupId)
-          if (group) {
-            result.push(group)
-            processedGroups.add(log.groupId)
-          } else {
+        const location = this.getLocationKey(log)
+        if (!locationMap.has(location)) {
+          locationMap.set(location, [])
+        }
+        locationMap.get(location)!.push(log)
+      }
+
+      // Build result with groups
+      const result: (SQLQueryLog | LocationGroup)[] = []
+      const processedLocations = new Set<string>()
+
+      for (const log of filtered) {
+        const location = this.getLocationKey(log)
+        if (!processedLocations.has(location)) {
+          processedLocations.add(location)
+          const queries = locationMap.get(location)!
+
+          // If only one query for this location, don't group it
+          if (queries.length === 1) {
             result.push(log)
+          } else {
+            // Create group
+            const totalDurationMs = queries.reduce((sum, q) => sum + q.durationMs, 0)
+            const hasErrors = queries.some((q) => !!q.error)
+
+            result.push({
+              location,
+              queries,
+              queryCount: queries.length,
+              totalDurationMs,
+              hasErrors
+            })
           }
-        } else if (!log.groupId) {
-          result.push(log)
         }
       }
 
       return result
+    },
+
+    // Helper to get location key from a log
+    getLocationKey(): (log: SQLQueryLog) => string {
+      return (log: SQLQueryLog) => {
+        // Build location string: database.schema.table or database.table
+        if (log.tableName) {
+          if (log.schema) {
+            return `${log.database}.${log.schema}.${log.tableName}`
+          }
+          return `${log.database}.${log.tableName}`
+        }
+        // Fallback to purpose if no table
+        return `${log.database} (${log.purpose})`
+      }
     },
 
     hasSQLErrors(): boolean {
@@ -390,126 +414,6 @@ export const useLogsStore = defineStore('logs', {
 
       // Trim if needed
       this.trimSQLLogs()
-
-      // Handle grouping
-      if (log.groupId) {
-        this.updateGroup(log)
-      }
-    },
-
-    addGroup(group: QueryGroup) {
-      this.groups.set(group.groupId, group)
-
-      // Auto-collapse based on type
-      if (
-        group.type === 'schema-introspection' ||
-        group.type === 'system-task' ||
-        group.type === 'utility'
-      ) {
-        group.collapsed = true
-      } else {
-        group.collapsed = false
-      }
-
-      if (group.hasErrors) {
-        this.expandedGroups.add(group.groupId)
-        this.ensureFirstQueryExpanded(group.groupId)
-        this.lastAutoExpandedGroupId = null
-        return
-      }
-
-      if (!group.collapsed) {
-        this.autoExpandGroup(group.groupId)
-      }
-    },
-
-    updateGroup(log: SQLQueryLog) {
-      if (!log.groupId) return
-
-      let group = this.groups.get(log.groupId)
-      if (!group) {
-        // Create new group
-        group = {
-          groupId: log.groupId,
-          type: this.inferGroupType(log),
-          summary: this.buildGroupSummary(log),
-          queryCount: 0,
-          totalDurationMs: 0,
-          queryIds: [],
-          collapsed: false,
-          hasErrors: false
-        }
-        this.groups.set(log.groupId, group)
-      }
-
-      group.queryCount++
-      group.totalDurationMs += log.durationMs
-      group.queryIds.push(log.id)
-
-      if (log.error) {
-        group.hasErrors = true
-        group.collapsed = false
-        this.expandedGroups.add(group.groupId)
-        this.ensureFirstQueryExpanded(group.groupId)
-        this.lastAutoExpandedGroupId = null
-      } else if (group.queryCount === 1) {
-        // First log in the group - auto expand
-        this.autoExpandGroup(group.groupId)
-      }
-    },
-
-    inferGroupType(log: SQLQueryLog): QueryGroup['type'] {
-      if (log.repeatCount && log.repeatCount > 1) return 'repeated'
-
-      switch (log.purpose) {
-        case 'SCHEMA_INTROSPECTION':
-          return 'schema-introspection'
-        case 'DATA_QUERY':
-          return 'data-query'
-        case 'COUNT_QUERY':
-          return 'count-query'
-        case 'PLAN_ANALYSIS':
-          return 'plan-analysis'
-        case 'SCHEMA_CHANGE':
-          return 'schema-change'
-        case 'DML_OPERATION':
-          return 'dml-operation'
-        case 'SYSTEM_TASK':
-          return 'system-task'
-        case 'UTILITY':
-          return 'utility'
-        default:
-          return 'unknown'
-      }
-    },
-
-    buildGroupSummary(log: SQLQueryLog): string {
-      if (log.repeatCount && log.repeatCount > 1) return `Repeated query ×${log.repeatCount}`
-
-      switch (log.purpose) {
-        case 'SCHEMA_INTROSPECTION':
-          return 'Schema introspection'
-        case 'DATA_QUERY': {
-          const table = log.tableName || 'data'
-          return `Data query for ${log.database}.${table}`
-        }
-        case 'COUNT_QUERY':
-          return 'Row count query'
-        case 'PLAN_ANALYSIS':
-          return 'Execution plan analysis'
-        case 'SCHEMA_CHANGE':
-          return 'Schema change operation'
-        case 'DML_OPERATION':
-          return 'Data manipulation operation'
-        case 'SYSTEM_TASK':
-          return 'System task'
-        case 'UTILITY':
-          return 'Utility query'
-        default: {
-          const table = log.tableName || 'table'
-          return `Query activity on ${log.database}.${table}`
-        }
-      }
     },
 
     trimSQLLogs() {
@@ -549,19 +453,11 @@ export const useLogsStore = defineStore('logs', {
       }
     },
 
-    toggleGroup(groupId: string) {
-      if (this.expandedGroups.has(groupId)) {
-        this.expandedGroups.delete(groupId)
-        this.collapseQueriesForGroup(groupId)
-        if (this.lastAutoExpandedGroupId === groupId) {
-          this.lastAutoExpandedGroupId = null
-        }
+    toggleLocation(location: string) {
+      if (this.expandedLocations.has(location)) {
+        this.expandedLocations.delete(location)
       } else {
-        this.expandedGroups.add(groupId)
-        this.ensureFirstQueryExpanded(groupId)
-        if (this.lastAutoExpandedGroupId === groupId) {
-          this.lastAutoExpandedGroupId = null
-        }
+        this.expandedLocations.add(location)
       }
     },
 
@@ -573,60 +469,25 @@ export const useLogsStore = defineStore('logs', {
       }
     },
 
-    autoExpandGroup(groupId: string) {
-      const group = this.groups.get(groupId)
-      if (!group) return
-
-      if (this.lastAutoExpandedGroupId && this.lastAutoExpandedGroupId !== groupId) {
-        this.collapseQueriesForGroup(this.lastAutoExpandedGroupId)
-        this.expandedGroups.delete(this.lastAutoExpandedGroupId)
-      }
-
-      this.expandedGroups.add(groupId)
-      this.ensureFirstQueryExpanded(groupId)
-      this.lastAutoExpandedGroupId = groupId
-    },
-
-    ensureFirstQueryExpanded(groupId: string) {
-      const group = this.groups.get(groupId)
-      if (!group || group.queryIds.length === 0) return
-      const firstQueryId = group.queryIds[0]
-      if (!this.expandedQueries.has(firstQueryId)) {
-        this.expandedQueries.add(firstQueryId)
-      }
-    },
-
-    collapseQueriesForGroup(groupId: string) {
-      const group = this.groups.get(groupId)
-      if (!group) return
-      for (const queryId of group.queryIds) {
-        this.expandedQueries.delete(queryId)
-      }
-    },
-
     expandAllGroups() {
-      for (const [groupId, group] of this.groups.entries()) {
-        this.expandedGroups.add(groupId)
-        if (group.queryIds.length > 0) {
-          this.ensureFirstQueryExpanded(groupId)
-        }
+      // Expand all locations
+      const logs = Array.from(this.flatLogs.values())
+      const locations = new Set(logs.map((log) => this.getLocationKey(log)))
+      for (const location of locations) {
+        this.expandedLocations.add(location)
       }
-      this.lastAutoExpandedGroupId = null
     },
 
     collapseAllGroups() {
-      this.expandedGroups.clear()
+      this.expandedLocations.clear()
       this.expandedQueries.clear()
-      this.lastAutoExpandedGroupId = null
     },
 
     clearSQLLogs() {
       this.flatLogs.clear()
-      this.groups.clear()
       this.displayOrder = []
-      this.expandedGroups.clear()
+      this.expandedLocations.clear()
       this.expandedQueries.clear()
-      this.lastAutoExpandedGroupId = null
     },
 
     setViewMode(mode: 'grouped' | 'flat') {

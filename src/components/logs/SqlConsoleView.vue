@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import type { ExportFormat, SQLQueryLog, QueryGroup } from '@/stores/logs'
+import type { ExportFormat, SQLQueryLog, LocationGroup } from '@/stores/logs'
 import { useLogsStore } from '@/stores/logs'
 import LogFilters from './LogFilters.vue'
 import QueryRow from './QueryRow.vue'
@@ -13,25 +13,8 @@ const searchInputRef = ref<HTMLInputElement | null>(null)
 const visibleLogs = computed(() => logsStore.visibleLogs)
 const viewMode = computed(() => logsStore.viewMode)
 
-// For flat view, we need to flatten all logs (ungrouped)
-const flattenedLogs = computed(() => {
-  const result: SQLQueryLog[] = []
-  for (const item of visibleLogs.value) {
-    if (isGroup(item)) {
-      // Extract all queries from the group
-      for (const queryId of item.queryIds) {
-        const log = logsStore.flatLogs.get(queryId)
-        if (log) result.push(log)
-      }
-    } else {
-      result.push(item)
-    }
-  }
-  return result
-})
-
-function isGroup(item: SQLQueryLog | QueryGroup): item is QueryGroup {
-  return 'queryIds' in item
+function isGroup(item: SQLQueryLog | LocationGroup): item is LocationGroup {
+  return 'location' in item && 'queries' in item
 }
 
 function handleExport(format: ExportFormat) {
@@ -97,29 +80,23 @@ onUnmounted(() => {
 
     <!-- Empty State -->
     <div
-      v-if="viewMode === 'grouped' && visibleLogs.length === 0"
-      class="flex items-center justify-center h-full text-gray-500"
-    >
-      <p>No queries match current filters.</p>
-    </div>
-    <div
-      v-else-if="viewMode === 'flat' && flattenedLogs.length === 0"
+      v-if="visibleLogs.length === 0"
       class="flex items-center justify-center h-full text-gray-500"
     >
       <p>No queries match current filters.</p>
     </div>
 
-    <!-- Grouped View (Original) -->
+    <!-- Grouped View -->
     <div v-else-if="viewMode === 'grouped'" class="overflow-auto flex-1">
-      <div v-for="item in visibleLogs" :key="'groupId' in item ? item.groupId : item.id">
+      <div v-for="item in visibleLogs" :key="'location' in item ? item.location : item.id">
         <QueryGroupComponent v-if="isGroup(item)" :group="item" />
         <QueryRow v-else :log="item" />
       </div>
     </div>
 
-    <!-- Flat View (New) -->
+    <!-- Flat View -->
     <div v-else class="overflow-auto flex-1">
-      <FlatQueryRow v-for="log in flattenedLogs" :key="log.id" :log="log" />
+      <FlatQueryRow v-for="log in visibleLogs" :key="log.id" :log="log as SQLQueryLog" />
     </div>
   </div>
 </template>
