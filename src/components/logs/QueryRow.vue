@@ -28,6 +28,11 @@ const locationLabel = computed(() => {
   )
   return parts.join('.')
 })
+const shouldShowRowCount = computed(() => {
+  // Only show row count for query types where it's meaningful
+  const relevantPurposes = ['DATA_QUERY', 'COUNT_QUERY', 'DML_OPERATION']
+  return relevantPurposes.includes(props.log.purpose)
+})
 const oneLinePreview = computed(() => {
   const normalized = props.log.query.replace(/\s+/g, ' ').trim()
   if (normalized.length <= 160) return normalized
@@ -87,7 +92,9 @@ async function copyQuery() {
       </span>
 
       <!-- Row Count -->
-      <span class="query-meta query-meta--rows"> {{ log.rowCount.toLocaleString() }} rows </span>
+      <span v-if="shouldShowRowCount" class="query-meta query-meta--rows">
+        {{ log.rowCount.toLocaleString() }} rows
+      </span>
 
       <!-- Copy Button -->
       <button title="Copy query" class="query-copy-button" @click.stop="copyQuery">

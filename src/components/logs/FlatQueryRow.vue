@@ -22,6 +22,11 @@ const locationLabel = computed(() => {
   return parts.join('.')
 })
 const formattedRowCount = computed(() => props.log.rowCount.toLocaleString())
+const shouldShowRowCount = computed(() => {
+  // Only show row count for query types where it's meaningful
+  const relevantPurposes = ['DATA_QUERY', 'COUNT_QUERY', 'DML_OPERATION']
+  return relevantPurposes.includes(props.log.purpose)
+})
 const fullQuery = computed(() => props.log.query.trim())
 const oneLineQuery = computed(() => {
   const flattened = fullQuery.value.replace(/\s+/g, ' ').trim()
@@ -75,7 +80,9 @@ function closeFullQuery() {
       <span class="flat-meta flat-meta--duration" :class="getDurationClass(log.durationMs)">
         {{ log.durationMs }}ms
       </span>
-      <span class="flat-meta flat-meta--rows"> {{ formattedRowCount }} rows </span>
+      <span v-if="shouldShowRowCount" class="flat-meta flat-meta--rows">
+        {{ formattedRowCount }} rows
+      </span>
       <span v-if="log.error" class="flat-meta flat-meta--status text-red-600 font-semibold">
         ERROR
       </span>
