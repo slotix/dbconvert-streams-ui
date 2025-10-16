@@ -21,11 +21,27 @@ const isLoading = computed(() => overviewStore.isLoading)
 const error = computed(() => overviewStore.error)
 
 async function load() {
+  // Guard: Don't load if either connectionId or database is missing
+  if (!props.connectionId || !props.database) {
+    return
+  }
+
   try {
     await overviewStore.fetchOverview(props.connectionId, props.database)
   } catch (e) {
-    // Error is handled by the store
+    // Silently ignore "not found" errors which can occur during connection switching
+    // when props are temporarily mismatched (e.g., new connectionId with old database name)
+    if (e instanceof Error && e.message.includes('not found')) {
+      console.warn(
+        `Skipping overview load for ${props.database} on connection ${props.connectionId}: database not found (likely during connection switch)`
+      )
+      // Clear the error from store since this is an expected transient error
+      overviewStore.clearOverview()
+      return
+    }
+    // Re-throw other errors
     console.error('Failed to load overview:', e)
+    throw e
   }
 }
 
@@ -33,7 +49,13 @@ onMounted(load)
 
 watch(
   () => [props.connectionId, props.database],
-  () => load(),
+  () => {
+    // Only load if both props are present
+    // This prevents attempting to load during prop transition when switching connections
+    if (props.connectionId && props.database) {
+      load()
+    }
+  },
   { deep: true }
 )
 

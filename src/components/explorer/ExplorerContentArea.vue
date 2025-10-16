@@ -12,12 +12,13 @@
     />
   </div>
   <div
-    v-else-if="showDatabaseOverview && activeDatabase"
+    v-else-if="showDatabaseOverview && selectedDatabase"
     class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg"
   >
     <DatabaseOverviewPanel
+      :key="`overview-${connectionId}-${selectedDatabase}`"
       :connection-id="connectionId"
-      :database="activeDatabase"
+      :database="selectedDatabase"
       @show-diagram="$emit('show-diagram', $event)"
     />
   </div>
@@ -249,17 +250,11 @@ const paneTabsStore = usePaneTabsStore()
 
 // Computed properties - derive view mode from route
 const selectedDatabase = computed(() => props.selectedDatabase)
-const databaseFromRoute = computed(() => route.query.db as string | undefined)
-const activeDatabase = computed(() => selectedDatabase.value ?? databaseFromRoute.value)
 const showConnectionDetails = computed(
   () => route.query.details === 'true' && currentConnection.value !== null
 )
 const showDatabaseOverview = computed(
-  () =>
-    !showConnectionDetails.value &&
-    !props.showDiagram &&
-    !leftActiveTab.value &&
-    !!activeDatabase.value
+  () => !showConnectionDetails.value && !props.showDiagram && !!selectedDatabase.value
 )
 
 const currentConnection = computed(

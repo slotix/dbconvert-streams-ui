@@ -150,6 +150,7 @@ function handleOpenFromTree(payload: {
 
   // Clear old state
   explorerState.clearPanelStates()
+  explorerState.clearDatabaseSelection()
   explorerState.clearFileSelection()
 
   // Clear file explorer selection when switching connections
@@ -293,7 +294,6 @@ function handleSelectDatabase(payload: { connectionId: string; database: string 
 
   explorerState.clearPanelStates()
   explorerState.setDatabaseSelection({ database: payload.database })
-  paneTabsStore.closePreviewTab('left')
   explorerState.activePane.value = 'left'
 
   explorerState.showDiagram.value = false
