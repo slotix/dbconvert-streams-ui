@@ -96,7 +96,11 @@ onUnmounted(() => {
 
     <!-- Flat View -->
     <div v-else class="overflow-auto flex-1">
-      <FlatQueryRow v-for="log in visibleLogs" :key="log.id" :log="log as SQLQueryLog" />
+      <FlatQueryRow
+        v-for="log in visibleLogs"
+        :key="'id' in log ? log.id : log.location"
+        :log="log as SQLQueryLog"
+      />
     </div>
   </div>
 </template>
