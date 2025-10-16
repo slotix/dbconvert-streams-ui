@@ -103,9 +103,8 @@ function closeFullQuery() {
     </div>
 
     <!-- Metadata row -->
-    <div class="flat-metadata">
-      <span><strong>Connection:</strong> {{ log.connectionId }}</span>
-      <span v-if="log.tabId"><strong>Tab:</strong> {{ log.tabId }}</span>
+    <div v-if="log.tabId" class="flat-metadata">
+      <span><strong>Tab:</strong> {{ log.tabId }}</span>
     </div>
 
     <!-- Error message if present -->
