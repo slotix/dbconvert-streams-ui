@@ -23,17 +23,30 @@
       <slot name="left-content" />
     </div>
 
-    <!-- Divider between panes -->
+    <!-- Divider between panes with visual handle -->
     <div
       role="separator"
       aria-orientation="vertical"
-      class="relative z-20 mx-1.5 w-3 shrink-0 cursor-col-resize select-none pointer-events-auto"
+      class="relative z-20 mx-1.5 w-3 shrink-0 cursor-col-resize select-none pointer-events-auto group"
+      title="Drag to resize • Double-click to reset"
       @mousedown.prevent="onDividerMouseDown"
       @dblclick="onDividerDoubleClick"
     >
+      <!-- Vertical divider line -->
       <div
-        class="absolute inset-y-0 left-1/2 -translate-x-1/2 w-[3px] rounded bg-gray-200 hover:bg-gray-300"
+        class="absolute inset-y-0 left-1/2 -translate-x-1/2 w-[3px] rounded bg-gray-200 group-hover:bg-gray-300 transition-colors"
       />
+
+      <!-- Centered handle with grip indicator -->
+      <div
+        class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-5 h-12 bg-gray-200 group-hover:bg-gray-300 rounded flex flex-col items-center justify-center gap-0.5 transition-all"
+        @click.stop="onDividerDoubleClick"
+      >
+        <!-- Three horizontal grip dots -->
+        <div class="w-2 h-0.5 bg-gray-400 rounded-full"></div>
+        <div class="w-2 h-0.5 bg-gray-400 rounded-full"></div>
+        <div class="w-2 h-0.5 bg-gray-400 rounded-full"></div>
+      </div>
     </div>
 
     <!-- Right pane (conditional) -->

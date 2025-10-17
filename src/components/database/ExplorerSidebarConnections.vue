@@ -66,6 +66,7 @@ const emit = defineEmits<{
   (e: 'request-file-entries', payload: { connectionId: string }): void
   (e: 'add-connection'): void
   (e: 'update:search-query', value: string): void
+  (e: 'toggle-sidebar'): void
 }>()
 
 const connectionsStore = useConnectionsStore()
@@ -521,25 +522,70 @@ defineExpose({
 </script>
 
 <template>
+  <!-- Responsive sidebar with viewport-relative height and modern styling -->
   <div
-    class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg divide-y divide-gray-200 overflow-hidden min-h-[400px] flex flex-col"
+    class="bg-white shadow-lg rounded-xl overflow-hidden h-[calc(100vh-140px)] flex flex-col transition-shadow duration-200 hover:shadow-xl"
   >
-    <ExplorerTreeControls
-      ref="treeControlsRef"
-      :connection-search="searchQuery"
-      @update:connection-search="$emit('update:search-query', $event)"
-      @add-connection="$emit('add-connection')"
-    />
-    <div class="p-2 flex-1 overflow-auto">
-      <div v-if="isLoadingConnections" class="text-center py-6 text-gray-500">
-        <ArrowPathIcon class="h-6 w-6 animate-spin inline-block" />
+    <!-- Fixed header section with sticky positioning -->
+    <div class="sticky top-0 z-10 bg-white border-b border-gray-200">
+      <ExplorerTreeControls
+        ref="treeControlsRef"
+        :connection-search="searchQuery"
+        @update:connection-search="$emit('update:search-query', $event)"
+        @add-connection="$emit('add-connection')"
+        @toggle-sidebar="$emit('toggle-sidebar')"
+      />
+    </div>
+
+    <!-- Scrollable tree content area with smooth scrolling and custom scrollbar -->
+    <div class="flex-1 overflow-y-auto overscroll-contain p-2 scrollbar-thin">
+      <!-- Loading state with centered spinner -->
+      <div
+        v-if="isLoadingConnections"
+        class="flex flex-col items-center justify-center py-12 text-gray-500"
+      >
+        <ArrowPathIcon class="h-8 w-8 animate-spin mb-3 text-sky-500" />
+        <p class="text-sm font-medium">Loading connections...</p>
       </div>
-      <div v-else-if="loadError" class="text-center py-6 text-red-600">{{ loadError }}</div>
-      <div v-else>
-        <div v-if="!filteredConnections.length" class="text-center py-6 text-gray-500">
-          <CubeIcon class="h-6 w-6 inline-block mr-2" /> No connections
+
+      <!-- Error state with improved styling -->
+      <div v-else-if="loadError" class="flex flex-col items-center justify-center py-12 px-4">
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4 text-center max-w-md">
+          <svg
+            class="h-6 w-6 text-red-500 mx-auto mb-2"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          <p class="text-sm text-red-700 font-medium">{{ loadError }}</p>
         </div>
-        <div v-else class="space-y-1">
+      </div>
+
+      <!-- Main content area -->
+      <div v-else>
+        <!-- Empty state with better visual design -->
+        <div
+          v-if="!filteredConnections.length"
+          class="flex flex-col items-center justify-center py-16 px-4"
+        >
+          <div class="bg-gray-50 rounded-full p-4 mb-4">
+            <CubeIcon class="h-8 w-8 text-gray-400" />
+          </div>
+          <p class="text-sm font-medium text-gray-600 mb-1">No connections found</p>
+          <p class="text-xs text-gray-500">
+            {{ searchQuery ? 'Try adjusting your search' : 'Add a connection to get started' }}
+          </p>
+        </div>
+
+        <!-- Connection tree with improved spacing -->
+        <div v-else class="space-y-0.5">
           <ConnectionTreeItem
             v-for="conn in filteredConnections"
             :key="conn.id"
@@ -569,6 +615,8 @@ defineExpose({
           />
         </div>
       </div>
+
+      <!-- Context menu overlay -->
       <ExplorerContextMenu
         :visible="contextMenu.hasContextMenu.value"
         :x="contextMenu.contextMenuX.value"
@@ -581,3 +629,30 @@ defineExpose({
     </div>
   </div>
 </template>
+
+<style scoped>
+/* Custom scrollbar styling for webkit browsers */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 8px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: rgb(209, 213, 219);
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(156, 163, 175);
+}
+
+/* For Firefox */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(209, 213, 219) transparent;
+}
+</style>

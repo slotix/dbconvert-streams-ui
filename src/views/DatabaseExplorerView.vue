@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useCommonStore } from '@/stores/common'
 import { useConnectionsStore } from '@/stores/connections'
@@ -675,10 +675,22 @@ watch(
   { immediate: false }
 )
 
+// Keyboard shortcut for sidebar toggle (Ctrl+B / Cmd+B)
+function handleKeyboardShortcut(e: KeyboardEvent) {
+  // Ctrl+B or Cmd+B to toggle sidebar
+  if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+    e.preventDefault()
+    sidebar.toggleSidebar()
+  }
+}
+
 // Lifecycle
 onMounted(() => {
   commonStore.setCurrentPage('Data Explorer')
   sidebar.initializeSidebar()
+
+  // Add keyboard shortcut listener
+  window.addEventListener('keydown', handleKeyboardShortcut)
 
   if (
     explorerState.currentConnection.value &&
@@ -741,6 +753,11 @@ onMounted(() => {
       })
   }
 })
+
+onUnmounted(() => {
+  // Remove keyboard shortcut listener
+  window.removeEventListener('keydown', handleKeyboardShortcut)
+})
 </script>
 
 <template>
@@ -795,21 +812,70 @@ onMounted(() => {
               @request-file-entries="handleRequestFileEntries"
               @update:search-query="connectionSearch = $event"
               @add-connection="onAddConnection"
+              @toggle-sidebar="sidebar.toggleSidebar"
             />
           </div>
 
-          <!-- Sidebar divider -->
+          <!-- Sidebar divider with handle -->
           <div
             v-if="sidebar.sidebarVisible.value"
             role="separator"
             aria-orientation="vertical"
-            class="relative z-20 mx-1.5 w-3 shrink-0 cursor-col-resize select-none pointer-events-auto"
+            class="relative z-20 mx-1.5 w-3 shrink-0 cursor-col-resize select-none pointer-events-auto group"
+            title="Drag to resize • Double-click to hide"
             @mousedown.prevent="sidebar.onSidebarDividerMouseDown"
             @dblclick="sidebar.onSidebarDividerDoubleClick"
           >
+            <!-- Vertical divider line -->
             <div
-              class="absolute inset-y-0 left-1/2 -translate-x-1/2 w-[3px] rounded bg-gray-200 hover:bg-gray-300"
+              class="absolute inset-y-0 left-1/2 -translate-x-1/2 w-[3px] rounded bg-gray-200 group-hover:bg-gray-300 transition-colors"
             />
+
+            <!-- Centered handle with chevron indicator -->
+            <div
+              class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-5 h-12 bg-gray-200 group-hover:bg-gray-300 rounded flex items-center justify-center transition-all cursor-pointer"
+              @click.stop="sidebar.toggleSidebar"
+            >
+              <!-- Double chevron left icon -->
+              <svg
+                class="w-3 h-3 text-gray-500"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
+                />
+              </svg>
+            </div>
+          </div>
+
+          <!-- Show sidebar button (when hidden) - positioned at vertical center -->
+          <div v-if="!sidebar.sidebarVisible.value" class="relative shrink-0 w-5 mr-2">
+            <button
+              type="button"
+              class="absolute top-1/2 -translate-y-1/2 w-5 h-12 bg-gray-200 hover:bg-gray-300 rounded flex items-center justify-center transition-all shadow-sm"
+              title="Show Sidebar (Ctrl+B)"
+              @click="sidebar.toggleSidebar"
+            >
+              <!-- Double chevron right icon -->
+              <svg
+                class="w-3 h-3 text-gray-500"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M13 5l7 7-7 7M5 5l7 7-7 7"
+                />
+              </svg>
+            </button>
           </div>
 
           <!-- Right panel -->
@@ -836,23 +902,6 @@ onMounted(() => {
                     @click="showDiagramForActiveDatabase"
                   >
                     Show diagram
-                  </button>
-                  <button
-                    type="button"
-                    class="px-2 py-1 text-xs rounded border border-gray-300 bg-white hover:bg-gray-50 text-gray-700"
-                    :title="sidebar.sidebarVisible.value ? 'Hide Sidebar' : 'Show Sidebar'"
-                    @click="sidebar.toggleSidebar"
-                  >
-                    {{ sidebar.sidebarVisible.value ? 'Hide Sidebar' : 'Show Sidebar' }}
-                  </button>
-                  <button
-                    v-if="paneTabsStore.hasRightPaneContent"
-                    type="button"
-                    class="px-2 py-1 text-xs rounded border border-gray-300 bg-white hover:bg-gray-50 text-gray-700"
-                    title="Reset pane sizes to 50/50"
-                    @click="splitPaneResize.resetSplitSize"
-                  >
-                    Even Split
                   </button>
                   <CloudProviderBadge
                     v-if="explorerState.activeDisplayType.value"
