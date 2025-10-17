@@ -6,7 +6,6 @@ import { useConnectionsStore } from '@/stores/connections'
 import { useSchemaStore } from '@/stores/schema'
 import { usePaneTabsStore, type PaneId, type PaneTab } from '@/stores/paneTabs'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
-import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
 import ExplorerSidebarConnections from '@/components/database/ExplorerSidebarConnections.vue'
 import ExplorerHeader from '@/components/explorer/ExplorerHeader.vue'
 import ExplorerContentArea from '@/components/explorer/ExplorerContentArea.vue'
@@ -451,13 +450,6 @@ async function onCloneConnection() {
   }
 }
 
-function showDiagramForActiveDatabase() {
-  const activeTab = paneTabsStore.getActiveTab(paneTabsStore.activePane)
-  if (!activeTab || activeTab.tabType !== 'database' || !activeTab.database) return
-
-  handleShowDiagram({ connectionId: activeTab.connectionId, database: activeTab.database })
-}
-
 // Watchers
 // Watch store's activeConnectionId and sync route automatically
 // Also watch pane tabs to include table/view selections for both panes
@@ -887,30 +879,6 @@ onUnmounted(() => {
               sidebar.sidebarVisible.value ? 'pl-2' : 'pl-0'
             ]"
           >
-            <div class="mb-4">
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-2 text-sm text-gray-500"></div>
-                <div class="flex items-center gap-2">
-                  <button
-                    v-if="
-                      explorerState.activeDatabaseName.value && !explorerState.showDiagram.value
-                    "
-                    type="button"
-                    class="px-2 py-1 text-xs rounded border border-gray-300 bg-white hover:bg-gray-50 text-gray-700"
-                    title="Show database diagram"
-                    @click="showDiagramForActiveDatabase"
-                  >
-                    Show diagram
-                  </button>
-                  <CloudProviderBadge
-                    v-if="explorerState.activeDisplayType.value"
-                    :cloud-provider="explorerState.activeDisplayCloudProvider.value"
-                    :db-type="explorerState.activeDisplayType.value"
-                  />
-                </div>
-              </div>
-            </div>
-
             <!-- Content area with dual pane tabs -->
             <ExplorerContentArea
               v-if="navigationStore.activeConnectionId"
