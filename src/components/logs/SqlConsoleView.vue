@@ -1,21 +1,14 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import type { ExportFormat, SQLQueryLog, LocationGroup } from '@/stores/logs'
+import type { ExportFormat } from '@/stores/logs'
 import { useLogsStore } from '@/stores/logs'
 import LogFilters from './LogFilters.vue'
-import QueryRow from './QueryRow.vue'
-import QueryGroupComponent from './QueryGroup.vue'
 import FlatQueryRow from './FlatQueryRow.vue'
 
 const logsStore = useLogsStore()
 const searchInputRef = ref<HTMLInputElement | null>(null)
 
-const visibleLogs = computed(() => logsStore.visibleLogs)
-const viewMode = computed(() => logsStore.viewMode)
-
-function isGroup(item: SQLQueryLog | LocationGroup): item is LocationGroup {
-  return 'location' in item && 'queries' in item
-}
+const logsWithHeaders = computed(() => logsStore.logsWithHeaders)
 
 function handleExport(format: ExportFormat) {
   logsStore.exportLogs(format)
@@ -80,26 +73,21 @@ onUnmounted(() => {
 
     <!-- Empty State -->
     <div
-      v-if="visibleLogs.length === 0"
+      v-if="logsWithHeaders.length === 0"
       class="flex items-center justify-center h-full text-gray-500"
     >
       <p>No queries match current filters.</p>
     </div>
 
-    <!-- Grouped View -->
-    <div v-else-if="viewMode === 'grouped'" class="overflow-auto flex-1">
-      <div v-for="item in visibleLogs" :key="'location' in item ? item.location : item.id">
-        <QueryGroupComponent v-if="isGroup(item)" :group="item" />
-        <QueryRow v-else :log="item" />
-      </div>
-    </div>
-
-    <!-- Flat View -->
+    <!-- Flat View with Optional Visual Grouping -->
     <div v-else class="overflow-auto flex-1">
       <FlatQueryRow
-        v-for="log in visibleLogs"
-        :key="'id' in log ? log.id : log.location"
-        :log="log as SQLQueryLog"
+        v-for="item in logsWithHeaders"
+        :key="item.log.id"
+        :log="item.log"
+        :show-location-header="item.showHeader"
+        :location="item.location"
+        :queries-in-group="item.queriesInGroup"
       />
     </div>
   </div>

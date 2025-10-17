@@ -86,13 +86,12 @@ export interface SQLQueryLog {
   redacted?: boolean
 }
 
-// Frontend-only group structure (built from location)
-export interface LocationGroup {
-  location: string // e.g., "sakila.customer", "postgres.private.products"
-  queries: SQLQueryLog[]
-  queryCount: number
-  totalDurationMs: number
-  hasErrors: boolean
+// Helper interface for display with location headers
+export interface LogWithHeader {
+  log: SQLQueryLog
+  showHeader: boolean
+  location: string
+  queriesInGroup?: number
 }
 
 type ExportFieldKey =
@@ -237,9 +236,8 @@ export const useLogsStore = defineStore('logs', {
 
       // UI state (with persisted preferences)
       currentTabId: null as string | null,
-      expandedLocations: new Set<string>(), // Locations (e.g., "sakila.customer") that are expanded
-      expandedQueries: new Set<string>(),
-      viewMode: loadFromStorage<'grouped' | 'flat'>(STORAGE_KEYS.viewMode, 'grouped'),
+      collapsedLocations: new Set<string>(), // Locations that are collapsed when visuallyGrouped is true
+      visuallyGrouped: loadFromStorage<boolean>('sqlLogVisuallyGrouped', true), // Show location headers
       sortOrder: loadFromStorage<'newest' | 'oldest'>(STORAGE_KEYS.sortOrder, 'newest')
     }
   },
@@ -255,7 +253,7 @@ export const useLogsStore = defineStore('logs', {
     },
 
     // Phase 2: SQL Logs Getters
-    visibleLogs(): (SQLQueryLog | LocationGroup)[] {
+    visibleLogs(): SQLQueryLog[] {
       const filtered: SQLQueryLog[] = []
       const now = Date.now()
 
@@ -272,52 +270,43 @@ export const useLogsStore = defineStore('logs', {
         return this.sortOrder === 'newest' ? timeB - timeA : timeA - timeB
       })
 
-      // If in flat mode, just return the queries
-      if (this.viewMode === 'flat') {
-        return filtered
+      return filtered
+    },
+
+    // Get logs with location headers for visual grouping
+    logsWithHeaders(): LogWithHeader[] {
+      const logs = this.visibleLogs
+
+      if (!this.visuallyGrouped) {
+        // No headers when not visually grouped
+        return logs.map((log) => ({
+          log,
+          showHeader: false,
+          location: this.getLocationKey(log)
+        }))
       }
 
-      // Build location-based groups
-      const locationMap = new Map<string, SQLQueryLog[]>()
-
-      for (const log of filtered) {
+      // Build location counts
+      const locationCounts = new Map<string, number>()
+      for (const log of logs) {
         const location = this.getLocationKey(log)
-        if (!locationMap.has(location)) {
-          locationMap.set(location, [])
-        }
-        locationMap.get(location)!.push(log)
+        locationCounts.set(location, (locationCounts.get(location) || 0) + 1)
       }
 
-      // Build result with groups
-      const result: (SQLQueryLog | LocationGroup)[] = []
-      const processedLocations = new Set<string>()
-
-      for (const log of filtered) {
+      // Add headers when location changes
+      let lastLocation = ''
+      return logs.map((log) => {
         const location = this.getLocationKey(log)
-        if (!processedLocations.has(location)) {
-          processedLocations.add(location)
-          const queries = locationMap.get(location)!
+        const showHeader = location !== lastLocation
+        lastLocation = location
 
-          // If only one query for this location, don't group it
-          if (queries.length === 1) {
-            result.push(log)
-          } else {
-            // Create group
-            const totalDurationMs = queries.reduce((sum, q) => sum + q.durationMs, 0)
-            const hasErrors = queries.some((q) => !!q.error)
-
-            result.push({
-              location,
-              queries,
-              queryCount: queries.length,
-              totalDurationMs,
-              hasErrors
-            })
-          }
+        return {
+          log,
+          showHeader,
+          location,
+          queriesInGroup: locationCounts.get(location)
         }
-      }
-
-      return result
+      })
     },
 
     // Helper to get location key from a log
@@ -454,45 +443,35 @@ export const useLogsStore = defineStore('logs', {
     },
 
     toggleLocation(location: string) {
-      if (this.expandedLocations.has(location)) {
-        this.expandedLocations.delete(location)
+      if (this.collapsedLocations.has(location)) {
+        this.collapsedLocations.delete(location)
       } else {
-        this.expandedLocations.add(location)
+        this.collapsedLocations.add(location)
       }
     },
 
-    toggleQuery(queryId: string) {
-      if (this.expandedQueries.has(queryId)) {
-        this.expandedQueries.delete(queryId)
-      } else {
-        this.expandedQueries.add(queryId)
-      }
+    expandAllLocations() {
+      this.collapsedLocations.clear()
     },
 
-    expandAllGroups() {
-      // Expand all locations
+    collapseAllLocations() {
+      // Collapse all locations
       const logs = Array.from(this.flatLogs.values())
       const locations = new Set(logs.map((log) => this.getLocationKey(log)))
       for (const location of locations) {
-        this.expandedLocations.add(location)
+        this.collapsedLocations.add(location)
       }
-    },
-
-    collapseAllGroups() {
-      this.expandedLocations.clear()
-      this.expandedQueries.clear()
     },
 
     clearSQLLogs() {
       this.flatLogs.clear()
       this.displayOrder = []
-      this.expandedLocations.clear()
-      this.expandedQueries.clear()
+      this.collapsedLocations.clear()
     },
 
-    setViewMode(mode: 'grouped' | 'flat') {
-      this.viewMode = mode
-      saveToStorage(STORAGE_KEYS.viewMode, mode)
+    toggleVisualGrouping() {
+      this.visuallyGrouped = !this.visuallyGrouped
+      saveToStorage('sqlLogVisuallyGrouped', this.visuallyGrouped)
     },
 
     toggleSortOrder() {

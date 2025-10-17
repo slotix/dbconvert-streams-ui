@@ -38,12 +38,7 @@ const timeWindowOptions = [
   { value: 'all' as TimeWindow, label: 'All' }
 ]
 
-const viewMode = computed({
-  get: () => logsStore.viewMode,
-  set: (val: 'grouped' | 'flat') => {
-    logsStore.setViewMode(val)
-  }
-})
+const visuallyGrouped = computed(() => logsStore.visuallyGrouped)
 
 // Logging density toggle state
 const isNormalLevel = computed(() => logsStore.filters.level === 'normal')
@@ -72,9 +67,9 @@ const errorsOnly = computed({
 })
 
 const sortOrder = computed(() => logsStore.sortOrder)
-const expandedLocationCount = computed(() => logsStore.expandedLocations.size)
+const collapsedLocationCount = computed(() => logsStore.collapsedLocations.size)
 const hasLocations = computed(() => logsStore.flatLogs.size > 0)
-const canCollapseGroups = computed(() => expandedLocationCount.value > 0)
+const canExpandLocations = computed(() => collapsedLocationCount.value > 0 && visuallyGrouped.value)
 
 function clearLogs() {
   logsStore.clearSQLLogs()
@@ -92,14 +87,18 @@ function toggleExportMenu() {
   showExportMenu.value = !showExportMenu.value
 }
 
-function expandAllGroups() {
-  if (!hasLocations.value) return
-  logsStore.expandAllGroups()
+function toggleVisualGrouping() {
+  logsStore.toggleVisualGrouping()
 }
 
-function collapseAllGroups() {
-  if (!canCollapseGroups.value) return
-  logsStore.collapseAllGroups()
+function expandAllLocations() {
+  if (!hasLocations.value) return
+  logsStore.expandAllLocations()
+}
+
+function collapseAllLocations() {
+  if (!hasLocations.value) return
+  logsStore.collapseAllLocations()
 }
 
 function selectExportFormat(format: ExportFormat) {
@@ -129,49 +128,36 @@ onBeforeUnmount(() => {
     class="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200 shadow-sm"
   >
     <div class="flex items-center gap-2">
-      <!-- View Mode Switcher -->
-      <div class="flex items-center gap-1 bg-white border border-gray-300 rounded p-0.5">
-        <button
-          :class="[
-            'flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors',
-            viewMode === 'grouped'
-              ? 'bg-blue-500 text-white shadow-sm'
-              : 'text-gray-600 hover:bg-gray-100'
-          ]"
-          title="Grouped view - Related queries grouped together"
-          @click="viewMode = 'grouped'"
-        >
-          <Squares2X2Icon class="w-4 h-4" />
-          <span>Grouped</span>
-        </button>
-        <button
-          :class="[
-            'flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors',
-            viewMode === 'flat'
-              ? 'bg-blue-500 text-white shadow-sm'
-              : 'text-gray-600 hover:bg-gray-100'
-          ]"
-          title="Flat view - All queries in chronological order"
-          @click="viewMode = 'flat'"
-        >
-          <ListBulletIcon class="w-4 h-4" />
-          <span>Flat</span>
-        </button>
-      </div>
+      <!-- Visual Grouping Toggle -->
+      <button
+        :class="[
+          'flex items-center gap-1.5 px-3 py-1.5 text-xs border border-gray-300 rounded transition-colors shadow-sm',
+          visuallyGrouped
+            ? 'bg-blue-50 text-blue-700 border-blue-200'
+            : 'bg-white text-gray-600 hover:bg-gray-50'
+        ]"
+        :title="visuallyGrouped ? 'Hide location headers' : 'Show location headers'"
+        @click="toggleVisualGrouping"
+      >
+        <component :is="visuallyGrouped ? Squares2X2Icon : ListBulletIcon" class="w-4 h-4" />
+        <span class="font-medium">{{ visuallyGrouped ? 'Grouped' : 'Ungrouped' }}</span>
+      </button>
 
-      <!-- Expand/Collapse Controls -->
+      <!-- Expand/Collapse Controls (only visible when visually grouped) -->
       <div
-        v-if="viewMode === 'grouped'"
+        v-if="visuallyGrouped"
         class="flex items-center gap-1 bg-white border border-gray-300 rounded p-0.5"
       >
         <button
           :class="[
             'flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors',
-            hasLocations ? 'text-gray-600 hover:bg-gray-100' : 'text-gray-400 cursor-not-allowed'
+            canExpandLocations
+              ? 'text-gray-600 hover:bg-gray-100'
+              : 'text-gray-400 cursor-not-allowed'
           ]"
-          :disabled="!hasLocations"
-          title="Expand all groups"
-          @click="expandAllGroups"
+          :disabled="!canExpandLocations"
+          title="Expand all location groups"
+          @click="expandAllLocations"
         >
           <ArrowsPointingOutIcon class="w-4 h-4" />
           <span>Expand</span>
@@ -179,13 +165,13 @@ onBeforeUnmount(() => {
         <button
           :class="[
             'flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors',
-            canCollapseGroups
+            hasLocations && visuallyGrouped
               ? 'text-gray-600 hover:bg-gray-100'
               : 'text-gray-400 cursor-not-allowed'
           ]"
-          :disabled="!canCollapseGroups"
-          title="Collapse all groups"
-          @click="collapseAllGroups"
+          :disabled="!hasLocations || !visuallyGrouped"
+          title="Collapse all location groups"
+          @click="collapseAllLocations"
         >
           <ArrowsPointingInIcon class="w-4 h-4" />
           <span>Collapse</span>
