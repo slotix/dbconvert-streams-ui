@@ -66,7 +66,6 @@ const emit = defineEmits<{
   (e: 'request-file-entries', payload: { connectionId: string }): void
   (e: 'add-connection'): void
   (e: 'update:search-query', value: string): void
-  (e: 'toggle-sidebar'): void
 }>()
 
 const connectionsStore = useConnectionsStore()
@@ -533,7 +532,6 @@ defineExpose({
         :connection-search="searchQuery"
         @update:connection-search="$emit('update:search-query', $event)"
         @add-connection="$emit('add-connection')"
-        @toggle-sidebar="$emit('toggle-sidebar')"
       />
     </div>
 

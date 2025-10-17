@@ -812,7 +812,6 @@ onUnmounted(() => {
               @request-file-entries="handleRequestFileEntries"
               @update:search-query="connectionSearch = $event"
               @add-connection="onAddConnection"
-              @toggle-sidebar="sidebar.toggleSidebar"
             />
           </div>
 

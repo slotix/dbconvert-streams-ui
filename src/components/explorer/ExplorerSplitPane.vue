@@ -39,7 +39,7 @@
 
       <!-- Centered handle with grip indicator -->
       <div
-        class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-5 h-12 bg-gray-200 group-hover:bg-gray-300 rounded flex flex-col items-center justify-center gap-0.5 transition-all"
+        class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-5 h-12 bg-gray-200 group-hover:bg-gray-300 rounded flex flex-col items-center justify-center gap-0.5 transition-all cursor-pointer"
         @click.stop="onDividerDoubleClick"
       >
         <!-- Three horizontal grip dots -->
