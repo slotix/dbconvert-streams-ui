@@ -6,8 +6,8 @@
       :style="{ flexBasis: `${splitGrow}%`, flexGrow: 0, flexShrink: 0 }"
       :class="[
         'min-w-[300px] pr-2 min-h-[480px] rounded-lg transition-all',
-        'border-2',
-        isLeftActive ? 'border-slate-500' : 'border-gray-200'
+        hasRightPane ? 'border-2' : 'border border-gray-200',
+        hasRightPane ? (isLeftActive ? 'border-slate-500' : 'border-gray-200') : ''
       ]"
       @mousedown="$emit('set-active-pane', 'left')"
     >
@@ -85,11 +85,7 @@
   <!-- Single pane view (left only) -->
   <div v-else>
     <div
-      :class="[
-        'rounded-lg transition-all',
-        'border-2',
-        isLeftActive ? 'border-slate-500' : 'border-gray-200'
-      ]"
+      :class="['rounded-lg transition-all border border-gray-200']"
       @mousedown="$emit('set-active-pane', 'left')"
     >
       <!-- Left pane tabs -->
