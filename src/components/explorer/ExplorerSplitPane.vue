@@ -5,12 +5,17 @@
       ref="leftPaneRef"
       :style="{ flexBasis: `${splitGrow}%`, flexGrow: 0, flexShrink: 0 }"
       :class="[
-        'min-w-[300px] pr-2 min-h-[480px] rounded-lg transition-all',
-        hasRightPane ? 'border-2' : 'border border-gray-200',
-        hasRightPane ? (isLeftActive ? 'border-slate-500' : 'border-gray-200') : ''
+        'relative min-w-[300px] pr-2 min-h-[480px] rounded-lg transition-all bg-white shadow-sm',
+        hasRightPane && isLeftActive ? 'shadow-md shadow-slate-300/70' : '',
+        hasRightPane && !isLeftActive ? 'shadow-sm' : ''
       ]"
       @mousedown="$emit('set-active-pane', 'left')"
     >
+      <div
+        v-if="hasRightPane"
+        class="pointer-events-none absolute inset-x-4 top-0 h-1 rounded-b-full bg-slate-400 transition-opacity duration-200"
+        :class="isLeftActive ? 'opacity-100' : 'opacity-0'"
+      />
       <!-- Left pane tabs -->
       <div class="px-2 pt-2">
         <slot name="left-tabs" />
@@ -53,12 +58,15 @@
     <div
       :style="{ flexBasis: '0px' }"
       :class="[
-        'grow pl-2 min-h-[480px] min-w-[300px] relative rounded-lg transition-all',
-        'border-2',
-        isRightActive ? 'border-slate-500' : 'border-gray-200'
+        'relative grow pl-2 min-h-[480px] min-w-[300px] rounded-lg transition-all bg-white shadow-sm',
+        isRightActive ? 'shadow-md shadow-slate-300/70' : 'shadow-sm'
       ]"
       @mousedown="$emit('set-active-pane', 'right')"
     >
+      <div
+        class="pointer-events-none absolute inset-x-4 top-0 h-1 rounded-b-full bg-slate-400 transition-opacity duration-200"
+        :class="isRightActive ? 'opacity-100' : 'opacity-0'"
+      />
       <!-- Close right pane button -->
       <button
         type="button"
@@ -85,7 +93,7 @@
   <!-- Single pane view (left only) -->
   <div v-else>
     <div
-      :class="['rounded-lg transition-all border border-gray-200']"
+      :class="['relative rounded-lg transition-all bg-white shadow-sm']"
       @mousedown="$emit('set-active-pane', 'left')"
     >
       <!-- Left pane tabs -->
