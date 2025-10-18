@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useCommonStore } from '@/stores/common'
 import { useConnectionsStore } from '@/stores/connections'
 import { useSchemaStore } from '@/stores/schema'
-import { usePaneTabsStore, type PaneId, type PaneTab } from '@/stores/paneTabs'
+import { usePaneTabsStore, type PaneId, type PaneTab, type PaneState } from '@/stores/paneTabs'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import ExplorerSidebarConnections from '@/components/database/ExplorerSidebarConnections.vue'
 import ExplorerHeader from '@/components/explorer/ExplorerHeader.vue'
@@ -113,6 +113,29 @@ const selectedFilePath = computed(() => explorerState.selectedFileEntry.value?.p
 const leftActiveTab = computed<PaneTab | null>(() => paneTabsStore.getActiveTab('left'))
 const rightActiveTab = computed<PaneTab | null>(() => paneTabsStore.getActiveTab('right'))
 
+// Determine if any pane currently has content (pinned or preview tabs)
+const emptyPaneState: PaneState = { pinnedTabs: [], previewTab: null, activePinnedIndex: null }
+
+const hasPaneContent = computed(() => {
+  const leftState = paneTabsStore.leftPaneState ?? emptyPaneState
+  const rightState = paneTabsStore.rightPaneState ?? emptyPaneState
+  return (
+    leftState.pinnedTabs.length > 0 ||
+    leftState.previewTab !== null ||
+    rightState.pinnedTabs.length > 0 ||
+    rightState.previewTab !== null
+  )
+})
+
+// Flag when the explorer has no active content (no tabs, no diagram/details selections)
+const lacksExplorerContent = computed(() => {
+  if (showConnectionDetails.value) return false
+  if (explorerState.showDiagram.value) return false
+  if (explorerState.selectedDatabaseName.value) return false
+  if (explorerState.selectedFileEntry.value) return false
+  return !hasPaneContent.value
+})
+
 function clearRightPaneQueryParams() {
   const nextQuery = { ...route.query }
   delete nextQuery.rightDb
@@ -186,7 +209,7 @@ function handleOpenFromTree(payload: {
   // Route is auto-updated by watcher based on state changes
 }
 
-function handleOpenFile(payload: {
+async function handleOpenFile(payload: {
   connectionId: string
   path: string
   entry: FileSystemEntry
@@ -213,6 +236,9 @@ function handleOpenFile(payload: {
     fileExplorerStore.setSelectedPath(payload.connectionId, payload.path)
   }
 
+  // Load file metadata
+  const metadata = await fileExplorerStore.loadFileMetadata(payload.entry)
+
   // Add tab to the appropriate pane
   paneTabsStore.addTab(
     targetPane,
@@ -222,6 +248,7 @@ function handleOpenFile(payload: {
       name: payload.entry.name,
       filePath: payload.path,
       fileEntry: payload.entry,
+      fileMetadata: metadata,
       fileType: payload.entry.type,
       tabType: 'file'
     },
@@ -451,6 +478,17 @@ async function onCloneConnection() {
 }
 
 // Watchers
+// Ensure the sidebar is visible when there is no content in the main panes
+watch(
+  lacksExplorerContent,
+  (isEmpty) => {
+    if (isEmpty && !sidebar.sidebarVisible.value) {
+      sidebar.sidebarVisible.value = true
+    }
+  },
+  { immediate: true }
+)
+
 // Watch store's activeConnectionId and sync route automatically
 // Also watch pane tabs to include table/view selections for both panes
 watch(

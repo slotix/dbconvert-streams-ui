@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { SQLTableMeta, SQLViewMeta } from '@/types/metadata'
 import type { FileSystemEntry } from '@/api/fileSystem'
+import type { FileMetadata } from '@/types/files'
 
 /**
  * Pane identifier type - extensible to support multiple panes
@@ -28,6 +29,7 @@ export type PaneTab = {
   // File-specific properties
   filePath?: string
   fileEntry?: FileSystemEntry
+  fileMetadata?: FileMetadata | null
   fileType?: string
 }
 
