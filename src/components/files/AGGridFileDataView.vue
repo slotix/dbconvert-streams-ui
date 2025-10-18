@@ -220,7 +220,7 @@ onBeforeUnmount(() => {
           />
         </svg>
         <div class="flex-1">
-          <div class="font-semibold mb-1">File Corruption Warning</div>
+          <div class="font-semibold mb-1">File Corrupted</div>
           <ul class="list-disc list-inside space-y-1">
             <li v-for="(warning, index) in warnings" :key="index">{{ warning }}</li>
           </ul>
