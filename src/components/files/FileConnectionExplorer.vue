@@ -388,7 +388,7 @@ async function loadPreview(entry: FileSystemEntry) {
 
   try {
     const [meta, data] = await Promise.all([
-      filesApi.getFileMetadata(entry.path, format),
+      filesApi.getFileMetadata(entry.path, format, true), // stats=true for detail view
       filesApi.getFileData(entry.path, format, { limit: 50, skipCount: false })
     ])
     metadata.value = meta

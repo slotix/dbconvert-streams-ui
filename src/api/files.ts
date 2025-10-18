@@ -17,10 +17,14 @@ const withAuthHeaders = () => {
   return { headers: { 'X-API-Key': commonStore.apiKey } }
 }
 
-export async function getFileMetadata(path: string, format: FileFormat): Promise<FileMetadata> {
+export async function getFileMetadata(
+  path: string,
+  format: FileFormat,
+  stats: boolean = false
+): Promise<FileMetadata> {
   try {
     const response = await apiClient.get<FileMetadata>('/files/meta', {
-      params: { path, format },
+      params: { path, format, stats: stats.toString() },
       ...withAuthHeaders()
     })
     return response.data

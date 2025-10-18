@@ -1,9 +1,7 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, inject } from 'vue'
+import { computed, inject } from 'vue'
 import type { ComputedRef } from 'vue'
 import type { FileSystemEntry } from '@/api/fileSystem'
-import type { FileMetadata } from '@/types/files'
-import filesApi from '@/api/files'
 import { getFileFormat, getFileFormatColor, getFileFormatIconPath } from '@/utils/fileFormat'
 import { highlightParts } from '@/utils/highlight'
 
@@ -25,10 +23,6 @@ const emit = defineEmits<{
   (e: 'context-menu', payload: { event: MouseEvent; entry: FileSystemEntry }): void
 }>()
 
-const metadata = ref<FileMetadata | null>(null)
-const isLoadingMetadata = ref(false)
-const metadataError = ref<string | null>(null)
-
 const fileFormat = computed(() => getFileFormat(props.entry.name))
 const fileFormatColor = computed(() => getFileFormatColor(fileFormat.value))
 const fileFormatIconPath = computed(() => getFileFormatIconPath(fileFormat.value))
@@ -40,31 +34,9 @@ const formatFileSize = (bytes?: number): string => {
   return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${sizes[i]}`
 }
 
-const hasWarnings = computed(() => {
-  return metadata.value?.warnings && metadata.value.warnings.length > 0
-})
-
-async function loadMetadata() {
-  if (!fileFormat.value || isLoadingMetadata.value || metadata.value) return
-
-  isLoadingMetadata.value = true
-  metadataError.value = null
-  try {
-    metadata.value = await filesApi.getFileMetadata(props.entry.path, fileFormat.value)
-  } catch (error) {
-    console.warn('Failed to load file metadata:', error)
-    metadataError.value = error instanceof Error ? error.message : 'Failed to load metadata'
-  } finally {
-    isLoadingMetadata.value = false
-  }
-}
-
-// Load metadata when component mounts if file format is supported
-onMounted(() => {
-  if (fileFormat.value) {
-    loadMetadata()
-  }
-})
+// Metadata loading removed - no longer eager loaded on mount
+// Metadata will be loaded lazily when the file is selected/opened
+// This significantly improves performance when expanding file connections
 </script>
 
 <template>
@@ -82,17 +54,11 @@ onMounted(() => {
         : emit('context-menu', { event: $event, entry })
     "
   >
-    <!-- File format icon with warning indicator -->
+    <!-- File format icon -->
     <div class="relative mr-2 shrink-0">
       <svg class="w-4 h-4" :class="fileFormatColor" fill="currentColor" viewBox="0 0 24 24">
         <path :d="fileFormatIconPath" />
       </svg>
-      <!-- Warning indicator dot -->
-      <div
-        v-if="hasWarnings"
-        class="absolute -top-1 -right-1 w-2 h-2 bg-amber-500 rounded-full ring-1 ring-white"
-        :title="metadata?.warnings?.join('; ')"
-      />
     </div>
 
     <!-- File name -->
