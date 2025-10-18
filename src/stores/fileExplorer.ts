@@ -131,7 +131,10 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
     }
   }
 
-  async function loadFileMetadata(fileEntry: FileSystemEntry): Promise<FileMetadata | null> {
+  async function loadFileMetadata(
+    fileEntry: FileSystemEntry,
+    computeStats: boolean = true
+  ): Promise<FileMetadata | null> {
     try {
       const fileFormat = getFileFormat(fileEntry.name)
       if (!fileFormat) {
@@ -139,7 +142,7 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
         return null
       }
 
-      const metadata = await getFileMetadata(fileEntry.path, fileFormat)
+      const metadata = await getFileMetadata(fileEntry.path, fileFormat, computeStats)
       return metadata
     } catch (error) {
       console.error('Failed to load file metadata:', error)
