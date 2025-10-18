@@ -66,4 +66,5 @@ export interface FileMetadata {
   samplingInfo?: FileSamplingInfo
   csvDialect?: CSVFormatDetails
   jsonStructure?: JSONStructureInfo
+  warnings?: string[]
 }

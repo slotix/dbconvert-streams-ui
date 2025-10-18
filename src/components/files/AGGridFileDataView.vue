@@ -25,6 +25,7 @@ const error = ref<string>()
 const totalRowCount = computed(() => props.metadata?.rowCount || 0)
 const isLoading = ref(false)
 const rowData = ref<Array<Record<string, unknown>>>([])
+const warnings = ref<string[]>([])
 
 const fileFormat = computed(() => getFileFormat(props.entry.name))
 
@@ -83,10 +84,12 @@ async function loadData() {
     })
 
     rowData.value = response.data
+    warnings.value = response.warnings || []
   } catch (err) {
     console.error('Error loading file data:', err)
     error.value = err instanceof Error ? err.message : 'Failed to load file data'
     rowData.value = []
+    warnings.value = []
   } finally {
     isLoading.value = false
   }
@@ -195,6 +198,37 @@ onBeforeUnmount(() => {
       class="mb-3 p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-700"
     >
       {{ error }}
+    </div>
+
+    <!-- Warning messages for corrupted files -->
+    <div
+      v-if="warnings.length > 0"
+      class="mb-3 p-3 bg-amber-50 border border-amber-200 rounded-md text-sm text-amber-800"
+    >
+      <div class="flex items-start gap-2">
+        <svg
+          class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+          />
+        </svg>
+        <div class="flex-1">
+          <div class="font-semibold mb-1">File Corruption Warning</div>
+          <ul class="list-disc list-inside space-y-1">
+            <li v-for="(warning, index) in warnings" :key="index">{{ warning }}</li>
+          </ul>
+          <div class="mt-2 text-xs text-amber-700">
+            The displayed data may be incomplete. Check the System Logs for more details.
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- AG Grid -->
