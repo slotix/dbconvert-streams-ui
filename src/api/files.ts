@@ -53,7 +53,23 @@ export async function getFileData(
   }
 }
 
+export async function getFileExactCount(
+  path: string,
+  format: FileFormat
+): Promise<{ count: number }> {
+  try {
+    const response = await apiClient.get<{ count: number }>('/files/count', {
+      params: { path, format },
+      ...withAuthHeaders()
+    })
+    return response.data
+  } catch (error) {
+    throw handleApiError(error)
+  }
+}
+
 export default {
   getFileMetadata,
-  getFileData
+  getFileData,
+  getFileExactCount
 }

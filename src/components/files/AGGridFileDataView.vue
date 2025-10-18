@@ -2,7 +2,14 @@
 import { ref, watch, computed, onBeforeUnmount } from 'vue'
 import { AgGridVue } from 'ag-grid-vue3'
 import { ModuleRegistry, AllCommunityModule } from 'ag-grid-community'
-import type { GridApi, GridReadyEvent, ColDef, GridOptions } from 'ag-grid-community'
+import type {
+  GridApi,
+  GridReadyEvent,
+  ColDef,
+  GridOptions,
+  IDatasource,
+  IGetRowsParams
+} from 'ag-grid-community'
 import { type FileSystemEntry } from '@/api/fileSystem'
 import { type FileMetadata } from '@/types/files'
 import { getFileFormat } from '@/utils/fileFormat'
@@ -22,12 +29,31 @@ const props = defineProps<{
 
 const gridApi = ref<GridApi | null>(null)
 const error = ref<string>()
-const totalRowCount = computed(() => props.metadata?.rowCount || 0)
+const totalRowCount = ref<number>(0)
 const isLoading = ref(false)
-const rowData = ref<Array<Record<string, unknown>>>([])
+const currentFirstRow = ref<number>(1)
+const currentLastRow = ref<number>(200)
 const warnings = ref<string[]>([])
 
+// Exact row count state
+const isCountingRows = ref(false)
+const exactRowCount = ref<number | null>(null)
+const countError = ref<string | null>(null)
+
 const fileFormat = computed(() => getFileFormat(props.entry.name))
+
+// Watch for metadata changes and update totalRowCount
+watch(
+  () => props.metadata,
+  (newMetadata) => {
+    if (newMetadata && newMetadata.rowCount && newMetadata.rowCount > 0) {
+      totalRowCount.value = newMetadata.rowCount
+    } else if (newMetadata && newMetadata.rowCount === -1) {
+      totalRowCount.value = -1
+    }
+  },
+  { immediate: true }
+)
 
 // Generate column definitions from file metadata
 const columnDefs = computed<ColDef[]>(() => {
@@ -48,10 +74,10 @@ const columnDefs = computed<ColDef[]>(() => {
   }))
 })
 
-// AG Grid options
+// AG Grid options with infinite row model
 const gridOptions = computed<GridOptions>(() => ({
   theme: 'legacy',
-  rowModelType: 'clientSide', // Changed to client-side for better UX
+  rowModelType: 'infinite',
   rowHeight: 32,
   headerHeight: 40,
   suppressCellFocus: true,
@@ -59,46 +85,87 @@ const gridOptions = computed<GridOptions>(() => ({
   enableCellTextSelection: true,
   ensureDomOrder: true,
   domLayout: 'normal',
-  pagination: true,
-  paginationPageSize: 100,
-  paginationPageSizeSelector: [50, 100, 200, 500]
+  cacheBlockSize: 200, // Fetch 200 rows per request (matches database approach)
+  cacheOverflowSize: 2,
+  maxConcurrentDatasourceRequests: 1,
+  infiniteInitialRowCount: 1,
+  maxBlocksInCache: 10
 }))
 
-// Load data function for client-side model
-async function loadData() {
-  if (!fileFormat.value) {
-    error.value = 'Unknown file format'
-    return
-  }
+// Create datasource for infinite row model
+function createDatasource(): IDatasource {
+  return {
+    getRows: async (params: IGetRowsParams) => {
+      if (!fileFormat.value) {
+        params.failCallback()
+        return
+      }
 
-  isLoading.value = true
-  error.value = undefined
+      isLoading.value = true
+      error.value = undefined
 
-  try {
-    // Load a reasonable amount of data for client-side model
-    const limit = Math.min(totalRowCount.value || 1000, 5000) // Cap at 5000 rows
-    const response = await filesApi.getFileData(props.entry.path, fileFormat.value, {
-      limit,
-      offset: 0,
-      skipCount: false
-    })
+      try {
+        const startRow = params.startRow || 0
+        const endRow = params.endRow || 200
+        const limit = endRow - startRow
 
-    rowData.value = response.data
-    warnings.value = response.warnings || []
-  } catch (err) {
-    console.error('Error loading file data:', err)
-    error.value = err instanceof Error ? err.message : 'Failed to load file data'
-    rowData.value = []
-    warnings.value = []
-  } finally {
-    isLoading.value = false
+        console.log(`Fetching rows ${startRow} to ${endRow} (limit: ${limit})`)
+
+        const response = await filesApi.getFileData(props.entry.path, fileFormat.value, {
+          limit,
+          offset: startRow,
+          skipCount: true // Always skip count for performance
+        })
+
+        // Update current row range display
+        currentFirstRow.value = startRow + 1
+        currentLastRow.value = startRow + response.data.length
+
+        // Handle row count
+        let rowCount: number | undefined
+
+        if (response.total === -1) {
+          // Unknown count - use metadata estimate if available
+          if (totalRowCount.value > 0) {
+            rowCount = totalRowCount.value
+          } else {
+            rowCount = undefined // Infinite scroll
+          }
+        } else if (response.total !== undefined && response.total >= 0) {
+          // Exact or partial count from response
+          totalRowCount.value = response.total
+          rowCount = response.total
+        }
+
+        // Convert data to row format expected by AG Grid
+        const rows = response.data.map((row) => {
+          const gridRow: Record<string, unknown> = {}
+          Object.entries(row).forEach(([key, value]) => {
+            gridRow[key] = value
+          })
+          return gridRow
+        })
+
+        warnings.value = response.warnings || []
+
+        params.successCallback(rows, rowCount)
+      } catch (err) {
+        console.error('Error loading file data:', err)
+        error.value = err instanceof Error ? err.message : 'Failed to load file data'
+        params.failCallback()
+      } finally {
+        isLoading.value = false
+      }
+    }
   }
 }
 
 // Grid ready handler
 function onGridReady(params: GridReadyEvent) {
   gridApi.value = params.api
-  loadData()
+
+  // Set the datasource
+  params.api.setGridOption('datasource', createDatasource())
 }
 
 // Reload data when entry changes
@@ -106,32 +173,75 @@ watch(
   () => props.entry,
   () => {
     if (gridApi.value) {
-      loadData()
+      // Reset grid and reload
+      exactRowCount.value = null
+      gridApi.value.setGridOption('datasource', createDatasource())
     }
   },
   { deep: true }
 )
 
-// Reload when metadata changes (column info)
+// Reload when metadata changes
 watch(
   () => props.metadata,
   () => {
-    if (gridApi.value) {
-      loadData()
+    if (gridApi.value && columnDefs.value.length > 0) {
+      // Refresh the grid with new datasource
+      gridApi.value.setGridOption('datasource', createDatasource())
     }
   },
   { deep: true }
 )
 
-// Export to CSV functionality
-function exportToCsv() {
-  if (gridApi.value) {
-    gridApi.value.exportDataAsCsv({
-      fileName: `${props.entry.name}.csv`,
-      allColumns: true
-    })
+// Calculate exact row count for files (on-demand, similar to database COUNT(*))
+async function calculateExactCount() {
+  if (!fileFormat.value) {
+    countError.value = 'Unknown file format'
+    return
+  }
+
+  isCountingRows.value = true
+  countError.value = null
+
+  try {
+    const result = await filesApi.getFileExactCount(props.entry.path, fileFormat.value)
+
+    if (result.count === -1) {
+      // File is too large, count capped at 100k
+      countError.value = 'File too large - count capped at 100,000 rows'
+      exactRowCount.value = null
+    } else {
+      exactRowCount.value = result.count
+      totalRowCount.value = result.count
+
+      // Update AG Grid's row count
+      if (gridApi.value) {
+        gridApi.value.setGridOption('datasource', createDatasource())
+      }
+    }
+  } catch (err) {
+    console.error('Error calculating exact count:', err)
+    countError.value = err instanceof Error ? err.message : 'Failed to calculate count'
+  } finally {
+    isCountingRows.value = false
   }
 }
+
+// Display text for row count
+const rowCountDisplay = computed(() => {
+  if (exactRowCount.value !== null) {
+    return exactRowCount.value.toLocaleString()
+  }
+  if (totalRowCount.value > 0) {
+    return `~${totalRowCount.value.toLocaleString()}`
+  }
+  return 'Unknown'
+})
+
+// Check if count is approximate
+const isApproximateCount = computed(() => {
+  return exactRowCount.value === null && totalRowCount.value > 0
+})
 
 // Cleanup
 onBeforeUnmount(() => {
@@ -143,9 +253,39 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="flex flex-col h-full">
-    <!-- Header with stats and actions -->
-    <div class="mb-3 flex items-center justify-between">
-      <div class="flex items-center gap-4 text-sm text-gray-600">
+    <!-- Error message -->
+    <div
+      v-if="error"
+      class="mb-3 p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-700"
+    >
+      {{ error }}
+    </div>
+
+    <!-- Warnings -->
+    <div
+      v-if="warnings.length > 0"
+      class="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded-md text-sm text-yellow-700"
+    >
+      <div class="font-medium mb-1">Warnings:</div>
+      <ul class="list-disc list-inside">
+        <li v-for="(warning, index) in warnings" :key="index">{{ warning }}</li>
+      </ul>
+    </div>
+
+    <!-- AG Grid -->
+    <div class="ag-theme-alpine" style="height: 600px; width: 100%">
+      <ag-grid-vue
+        :columnDefs="columnDefs"
+        :gridOptions="gridOptions"
+        @grid-ready="onGridReady"
+        class="h-full w-full"
+      ></ag-grid-vue>
+    </div>
+
+    <!-- Bottom status bar (matches database approach) -->
+    <div class="mt-3 flex items-center justify-between text-sm text-gray-600">
+      <div class="flex items-center gap-4">
+        <!-- Loading indicator -->
         <span v-if="isLoading" class="flex items-center gap-2">
           <svg
             class="animate-spin h-4 w-4"
@@ -169,102 +309,71 @@ onBeforeUnmount(() => {
           </svg>
           Loading...
         </span>
-        <span v-if="rowData.length > 0" class="font-medium">
-          {{ rowData.length.toLocaleString() }} rows
-          <span v-if="rowData.length < totalRowCount" class="text-gray-500">
-            (of {{ totalRowCount.toLocaleString() }} total)
-          </span>
+
+        <!-- Row range display -->
+        <span v-if="!isLoading && currentLastRow > 0" class="font-medium">
+          {{ currentFirstRow.toLocaleString() }} to {{ currentLastRow.toLocaleString() }}
         </span>
-        <span v-if="metadata?.size" class="text-gray-500">
-          {{ (metadata.size / 1024 / 1024).toFixed(2) }} MB
+
+        <!-- Approximate count indicator -->
+        <span v-if="isApproximateCount" class="flex items-center gap-1.5 text-amber-600">
+          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              fill-rule="evenodd"
+              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+              clip-rule="evenodd"
+            />
+          </svg>
+          <span>Count ({{ rowCountDisplay }}) is approximate</span>
+        </span>
+
+        <!-- Count error display -->
+        <span v-if="countError" class="flex items-center gap-1.5 text-red-600">
+          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              fill-rule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+              clip-rule="evenodd"
+            />
+          </svg>
+          {{ countError }}
         </span>
       </div>
 
-      <div class="flex items-center gap-2">
-        <button
-          type="button"
-          class="px-3 py-1 text-xs rounded border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 transition-colors"
-          :disabled="!gridApi"
-          @click="exportToCsv"
-        >
-          Export CSV
-        </button>
-      </div>
-    </div>
-
-    <!-- Error message -->
-    <div
-      v-if="error"
-      class="mb-3 p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-700"
-    >
-      {{ error }}
-    </div>
-
-    <!-- Warning messages for corrupted files -->
-    <div
-      v-if="warnings.length > 0"
-      class="mb-3 p-3 bg-amber-50 border border-amber-200 rounded-md text-sm text-amber-800"
-    >
-      <div class="flex items-start gap-2">
-        <svg
-          class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
+      <!-- Calculate Exact Count button (matches database approach) -->
+      <button
+        v-if="exactRowCount === null && totalRowCount > 0"
+        type="button"
+        :disabled="isCountingRows"
+        @click="calculateExactCount"
+        class="px-3 py-1.5 text-sm bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+        title="Count all rows in file to get exact total"
+      >
+        <svg v-if="isCountingRows" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+          <circle
+            class="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            stroke-width="4"
+          ></circle>
+          <path
+            class="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+          ></path>
+        </svg>
+        <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             stroke-linecap="round"
             stroke-linejoin="round"
             stroke-width="2"
-            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+            d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"
           />
         </svg>
-        <div class="flex-1">
-          <div class="font-semibold mb-1">File Corrupted</div>
-          <ul class="list-disc list-inside space-y-1">
-            <li v-for="(warning, index) in warnings" :key="index">{{ warning }}</li>
-          </ul>
-          <div class="mt-2 text-xs text-amber-700">
-            The displayed data may be incomplete. Check the System Logs for more details.
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- AG Grid -->
-    <div
-      class="ag-theme-alpine"
-      :style="{
-        width: '100%',
-        height: '500px'
-      }"
-    >
-      <AgGridVue
-        :rowData="rowData"
-        :columnDefs="columnDefs"
-        :gridOptions="gridOptions"
-        style="width: 100%; height: 100%"
-        @grid-ready="onGridReady"
-      />
+        <span>{{ isCountingRows ? 'Counting...' : 'Calculate Exact Count' }}</span>
+      </button>
     </div>
   </div>
 </template>
-
-<style scoped>
-.ag-theme-alpine {
-  --ag-font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --ag-font-size: 14px;
-  --ag-header-height: 40px;
-  --ag-row-height: 32px;
-  --ag-border-color: #e5e7eb;
-  --ag-header-background-color: #f9fafb;
-  --ag-odd-row-background-color: #ffffff;
-  --ag-even-row-background-color: #f9fafb;
-}
-
-:deep(.ag-cell-wrap-text) {
-  white-space: normal;
-  line-height: 1.5;
-  padding: 8px;
-}
-</style>
