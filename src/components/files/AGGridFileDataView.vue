@@ -74,7 +74,7 @@ const columnDefs = computed<ColDef[]>(() => {
   }))
 })
 
-// AG Grid options with infinite row model
+// AG Grid options with infinite row model (matches database grid)
 const gridOptions = computed<GridOptions>(() => ({
   theme: 'legacy',
   rowModelType: 'infinite',
@@ -85,10 +85,12 @@ const gridOptions = computed<GridOptions>(() => ({
   enableCellTextSelection: true,
   ensureDomOrder: true,
   domLayout: 'normal',
-  cacheBlockSize: 200, // Fetch 200 rows per request (matches database approach)
+  pagination: true,
+  paginationAutoPageSize: true,
+  cacheBlockSize: 200, // Must match paginationPageSize for infinite row model
   cacheOverflowSize: 2,
-  maxConcurrentDatasourceRequests: 1,
-  infiniteInitialRowCount: 1,
+  maxConcurrentDatasourceRequests: 2,
+  infiniteInitialRowCount: 100,
   maxBlocksInCache: 10
 }))
 
@@ -227,17 +229,6 @@ async function calculateExactCount() {
   }
 }
 
-// Display text for row count
-const rowCountDisplay = computed(() => {
-  if (exactRowCount.value !== null) {
-    return exactRowCount.value.toLocaleString()
-  }
-  if (totalRowCount.value > 0) {
-    return `~${totalRowCount.value.toLocaleString()}`
-  }
-  return 'Unknown'
-})
-
 // Check if count is approximate
 const isApproximateCount = computed(() => {
   return exactRowCount.value === null && totalRowCount.value > 0
@@ -285,36 +276,6 @@ onBeforeUnmount(() => {
     <!-- Bottom status bar (matches database approach) -->
     <div class="mt-3 flex items-center justify-between text-sm text-gray-600">
       <div class="flex items-center gap-4">
-        <!-- Loading indicator -->
-        <span v-if="isLoading" class="flex items-center gap-2">
-          <svg
-            class="animate-spin h-4 w-4"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <circle
-              class="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              stroke-width="4"
-            ></circle>
-            <path
-              class="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-            ></path>
-          </svg>
-          Loading...
-        </span>
-
-        <!-- Row range display -->
-        <span v-if="!isLoading && currentLastRow > 0" class="font-medium">
-          {{ currentFirstRow.toLocaleString() }} to {{ currentLastRow.toLocaleString() }}
-        </span>
-
         <!-- Approximate count indicator -->
         <span v-if="isApproximateCount" class="flex items-center gap-1.5 text-amber-600">
           <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -324,7 +285,7 @@ onBeforeUnmount(() => {
               clip-rule="evenodd"
             />
           </svg>
-          <span>Count ({{ rowCountDisplay }}) is approximate</span>
+          <span>Count (~{{ totalRowCount.toLocaleString() }}) is approximate</span>
         </span>
 
         <!-- Count error display -->
