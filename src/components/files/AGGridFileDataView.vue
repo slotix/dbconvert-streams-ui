@@ -41,7 +41,7 @@ const countError = ref<string | null>(null)
 
 const fileFormat = computed(() => getFileFormat(props.entry.name))
 
-// Watch for metadata changes and update totalRowCount
+// Watch for metadata changes and update totalRowCount and warnings
 watch(
   () => props.metadata,
   (newMetadata) => {
@@ -49,6 +49,11 @@ watch(
       totalRowCount.value = newMetadata.rowCount
     } else if (newMetadata && newMetadata.rowCount === -1) {
       totalRowCount.value = -1
+    }
+
+    // Update warnings from metadata
+    if (newMetadata?.warnings && newMetadata.warnings.length > 0) {
+      warnings.value = [...newMetadata.warnings]
     }
   },
   { immediate: true }
@@ -152,7 +157,11 @@ function createDatasource(): IDatasource {
           return gridRow
         })
 
-        warnings.value = response.warnings || []
+        // Merge warnings from data response with existing metadata warnings
+        const dataWarnings = response.warnings || []
+        const metadataWarnings = props.metadata?.warnings || []
+        const allWarnings = new Set([...metadataWarnings, ...dataWarnings])
+        warnings.value = Array.from(allWarnings)
 
         params.successCallback(rows, rowCount)
       } catch (err) {
