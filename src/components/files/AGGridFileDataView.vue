@@ -62,19 +62,14 @@ const columnDefs = computed<ColDef[]>(() => {
   return props.metadata.columns.map((col) => ({
     field: col.name,
     headerName: col.name,
-    sortable: false,
-    filter: false,
-    resizable: true,
     flex: 1,
     minWidth: 120,
     valueFormatter: (params) => formatTableValue(params.value),
-    headerTooltip: col.type,
-    wrapText: false,
-    autoHeight: false
+    headerTooltip: col.type
   }))
 })
 
-// AG Grid options with infinite row model (matches database grid)
+// AG Grid options with infinite row model (matches database grid exactly)
 const gridOptions = computed<GridOptions>(() => ({
   theme: 'legacy',
   rowModelType: 'infinite',
@@ -91,7 +86,16 @@ const gridOptions = computed<GridOptions>(() => ({
   cacheOverflowSize: 2,
   maxConcurrentDatasourceRequests: 2,
   infiniteInitialRowCount: 100,
-  maxBlocksInCache: 10
+  maxBlocksInCache: 20,
+  suppressMenuHide: true,
+  defaultColDef: {
+    sortable: false,
+    filter: false,
+    resizable: true,
+    suppressHeaderFilterButton: false,
+    wrapText: false,
+    autoHeight: false
+  }
 }))
 
 // Create datasource for infinite row model
@@ -264,7 +268,7 @@ onBeforeUnmount(() => {
     </div>
 
     <!-- AG Grid -->
-    <div class="ag-theme-alpine" style="height: 600px; width: 100%">
+    <div class="ag-theme-alpine" style="height: 750px; width: 100%">
       <ag-grid-vue
         :columnDefs="columnDefs"
         :gridOptions="gridOptions"
@@ -275,10 +279,10 @@ onBeforeUnmount(() => {
 
     <!-- Bottom status bar (matches database approach) -->
     <div class="mt-3 flex items-center justify-between text-sm text-gray-600">
-      <div class="flex items-center gap-4">
+      <div class="flex items-center gap-3">
         <!-- Approximate count indicator -->
-        <span v-if="isApproximateCount" class="flex items-center gap-1.5 text-amber-600">
-          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+        <span v-if="isApproximateCount" class="text-xs text-gray-500 flex items-center gap-1">
+          <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
             <path
               fill-rule="evenodd"
               d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
@@ -338,3 +342,16 @@ onBeforeUnmount(() => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.ag-theme-alpine {
+  --ag-font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --ag-font-size: 14px;
+  --ag-header-height: 40px;
+  --ag-row-height: 32px;
+  --ag-border-color: #e5e7eb;
+  --ag-header-background-color: #f9fafb;
+  --ag-odd-row-background-color: #ffffff;
+  --ag-even-row-background-color: #f9fafb;
+}
+</style>
