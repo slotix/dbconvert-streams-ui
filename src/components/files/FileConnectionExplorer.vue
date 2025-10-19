@@ -383,15 +383,12 @@ async function loadPreview(entry: FileSystemEntry) {
 
   isLoadingPreview.value = true
   previewError.value = ''
-  metadata.value = null
   preview.value = null
 
   try {
-    const [meta, data] = await Promise.all([
-      filesApi.getFileMetadata(entry.path, format, true), // stats=true for detail view
-      filesApi.getFileData(entry.path, format, { limit: 50, skipCount: false })
-    ])
-    metadata.value = meta
+    // Only fetch file data preview here
+    // Metadata is fetched by parent component (DatabaseExplorerView) to avoid double-fetching
+    const data = await filesApi.getFileData(entry.path, format, { limit: 200, skipCount: false })
     preview.value = data
   } catch (error: unknown) {
     previewError.value = (error as Error).message || 'Failed to load file preview'

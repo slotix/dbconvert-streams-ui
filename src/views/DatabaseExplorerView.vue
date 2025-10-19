@@ -356,7 +356,7 @@ function handleFileSelect(payload: { connectionId: string; path: string }) {
 }
 
 function handleRequestFileEntries(payload: { connectionId: string }) {
-  void fileExplorerStore.loadEntries(payload.connectionId, true)
+  void fileExplorerStore.loadEntries(payload.connectionId, false)
 }
 
 // Breadcrumb handlers

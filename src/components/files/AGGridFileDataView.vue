@@ -114,7 +114,7 @@ function createDatasource(): IDatasource {
         const endRow = params.endRow || 200
         const limit = endRow - startRow
 
-        console.log(`Fetching rows ${startRow} to ${endRow} (limit: ${limit})`)
+        // console.log(`Fetching rows ${startRow} to ${endRow} (limit: ${limit})`)
 
         const response = await filesApi.getFileData(props.entry.path, fileFormat.value, {
           limit,
@@ -213,18 +213,13 @@ async function calculateExactCount() {
   try {
     const result = await filesApi.getFileExactCount(props.entry.path, fileFormat.value)
 
-    if (result.count === -1) {
-      // File is too large, count capped at 100k
-      countError.value = 'File too large - count capped at 100,000 rows'
-      exactRowCount.value = null
-    } else {
-      exactRowCount.value = result.count
-      totalRowCount.value = result.count
+    // Set the exact count
+    exactRowCount.value = result.count
+    totalRowCount.value = result.count
 
-      // Update AG Grid's row count
-      if (gridApi.value) {
-        gridApi.value.setGridOption('datasource', createDatasource())
-      }
+    // Update AG Grid's row count
+    if (gridApi.value) {
+      gridApi.value.setGridOption('datasource', createDatasource())
     }
   } catch (err) {
     console.error('Error calculating exact count:', err)
