@@ -31,8 +31,7 @@ const gridApi = ref<GridApi | null>(null)
 const error = ref<string>()
 const totalRowCount = ref<number>(0)
 const isLoading = ref(false)
-const currentFirstRow = ref<number>(1)
-const currentLastRow = ref<number>(200)
+const isInitialLoading = ref(true) // Track initial load (metadata + first data)
 const warnings = ref<string[]>([])
 
 // Exact row count state
@@ -123,9 +122,10 @@ function createDatasource(): IDatasource {
           skipCount: true // Always skip count for performance
         })
 
-        // Update current row range display
-        currentFirstRow.value = startRow + 1
-        currentLastRow.value = startRow + response.data.length
+        // Mark initial loading as complete after first successful fetch
+        if (isInitialLoading.value) {
+          isInitialLoading.value = false
+        }
 
         // Handle row count
         let rowCount: number | undefined
@@ -179,7 +179,8 @@ watch(
   () => props.entry,
   () => {
     if (gridApi.value) {
-      // Reset grid and reload
+      // Reset state and reload
+      isInitialLoading.value = true
       exactRowCount.value = null
       gridApi.value.setGridOption('datasource', createDatasource())
     }
@@ -268,13 +269,43 @@ onBeforeUnmount(() => {
     </div>
 
     <!-- AG Grid -->
-    <div class="ag-theme-alpine" style="height: 750px; width: 100%">
+    <div class="relative ag-theme-alpine" style="height: 750px; width: 100%">
       <ag-grid-vue
         :columnDefs="columnDefs"
         :gridOptions="gridOptions"
         @grid-ready="onGridReady"
         class="h-full w-full"
       ></ag-grid-vue>
+
+      <!-- Loading overlay -->
+      <div
+        v-if="isInitialLoading"
+        class="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10"
+      >
+        <div class="flex flex-col items-center gap-3">
+          <svg
+            class="animate-spin h-8 w-8 text-blue-600"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              class="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              stroke-width="4"
+            ></circle>
+            <path
+              class="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            ></path>
+          </svg>
+          <span class="text-sm text-gray-600">Loading file data...</span>
+        </div>
+      </div>
     </div>
 
     <!-- Bottom status bar (matches database approach) -->
