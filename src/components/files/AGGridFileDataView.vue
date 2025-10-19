@@ -188,11 +188,13 @@ watch(
   { deep: true }
 )
 
-// Reload when metadata changes
+// Reload when metadata SCHEMA changes (but not when only rowCount changes)
 watch(
-  () => props.metadata,
-  () => {
-    if (gridApi.value && columnDefs.value.length > 0) {
+  () => props.metadata?.columns,
+  (newCols, oldCols) => {
+    // Only refresh if schema actually changed (not just row count update)
+    const schemaChanged = JSON.stringify(newCols) !== JSON.stringify(oldCols)
+    if (schemaChanged && gridApi.value && columnDefs.value.length > 0) {
       // Refresh the grid with new datasource
       gridApi.value.setGridOption('datasource', createDatasource())
     }
