@@ -238,12 +238,6 @@
                           <span class="font-medium">Size:</span>
                           {{ formatFileSize(selectedEntry.size || 0) }}
                         </p>
-                        <p v-if="metadata.samplingInfo">
-                          <span class="font-medium">Sample size:</span>
-                          {{ formatNumber(metadata.samplingInfo.rowsProcessed) }} rows ({{
-                            metadata.samplingInfo.isComplete ? 'complete' : 'sampled'
-                          }})
-                        </p>
                       </div>
                     </div>
                   </section>
@@ -420,16 +414,14 @@ async function loadPreview(entry: FileSystemEntry) {
   metadata.value = null
 
   try {
-    // Fetch both file data and metadata in parallel
-    // Metadata is needed for:
-    // 1. Structure tab - shows nullable info and sampling details
-    // 2. Warnings - metadata may have different warnings than data preview
-    const [data, meta] = await Promise.all([
-      filesApi.getFileData(entry.path, format, { limit: 200, skipCount: false }),
-      filesApi.getFileMetadata(entry.path, format, true)
-    ])
-    preview.value = data
-    metadata.value = meta
+    // Load preview data first (most important for users)
+    preview.value = await filesApi.getFileData(entry.path, format, { limit: 200, skipCount: false })
+
+    // Load metadata for Structure tab features not available in preview:
+    // - nullable info (metadata.columns[].nullable)
+    // - CSV dialect details (delimiter, quote char) - for future use
+    // - JSON structure analysis - for future use
+    metadata.value = await filesApi.getFileMetadata(entry.path, format, true)
   } catch (error: unknown) {
     previewError.value = (error as Error).message || 'Failed to load file preview'
   } finally {
