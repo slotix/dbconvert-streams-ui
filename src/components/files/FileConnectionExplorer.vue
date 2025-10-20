@@ -106,6 +106,31 @@
           </svg>
           Loading preview...
         </div>
+        <!-- Display warnings if present -->
+        <div
+          v-else-if="hasWarnings"
+          class="rounded-md border border-amber-200 bg-amber-50 p-4 mb-4"
+        >
+          <div class="flex items-start">
+            <svg
+              class="h-5 w-5 text-amber-600 mt-0.5 mr-3 flex-shrink-0"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                clip-rule="evenodd"
+              />
+            </svg>
+            <div class="flex-1">
+              <h4 class="text-sm font-semibold text-amber-800 mb-2">File Processing Warnings</h4>
+              <ul class="list-disc list-inside space-y-1 text-sm text-amber-700">
+                <li v-for="(warning, index) in allWarnings" :key="index">{{ warning }}</li>
+              </ul>
+            </div>
+          </div>
+        </div>
         <div v-else-if="metadata && preview">
           <TabGroup>
             <div class="border-b border-gray-200">
@@ -347,6 +372,25 @@ const stats = computed(() => {
   }
 })
 
+const allWarnings = computed(() => {
+  const warnings: string[] = []
+
+  // Collect warnings from preview data
+  if (preview.value?.warnings && preview.value.warnings.length > 0) {
+    warnings.push(...preview.value.warnings)
+  }
+
+  // Collect warnings from metadata
+  if (metadata.value?.warnings && metadata.value.warnings.length > 0) {
+    warnings.push(...metadata.value.warnings)
+  }
+
+  // Remove duplicates
+  return Array.from(new Set(warnings))
+})
+
+const hasWarnings = computed(() => allWarnings.value.length > 0)
+
 watch(
   () => props.selectedPath,
   async (path) => {
@@ -373,12 +417,19 @@ async function loadPreview(entry: FileSystemEntry) {
   isLoadingPreview.value = true
   previewError.value = ''
   preview.value = null
+  metadata.value = null
 
   try {
-    // Only fetch file data preview here
-    // Metadata is fetched by parent component (DatabaseExplorerView) to avoid double-fetching
-    const data = await filesApi.getFileData(entry.path, format, { limit: 200, skipCount: false })
+    // Fetch both file data and metadata in parallel
+    // Metadata is needed for:
+    // 1. Structure tab - shows nullable info and sampling details
+    // 2. Warnings - metadata may have different warnings than data preview
+    const [data, meta] = await Promise.all([
+      filesApi.getFileData(entry.path, format, { limit: 200, skipCount: false }),
+      filesApi.getFileMetadata(entry.path, format, true)
+    ])
     preview.value = data
+    metadata.value = meta
   } catch (error: unknown) {
     previewError.value = (error as Error).message || 'Failed to load file preview'
   } finally {
