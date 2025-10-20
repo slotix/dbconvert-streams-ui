@@ -91,7 +91,7 @@ function getTableSize(tableName: string): string | null {
     :key="item"
     :class="[
       'flex items-center justify-between px-2 py-1.5 text-sm rounded-md hover:bg-gray-100 cursor-pointer select-none group',
-      isItemSelected(item) ? 'bg-sky-50 ring-1 ring-sky-200' : ''
+      isItemSelected(item) ? 'bg-gray-100 ring-1 ring-gray-300' : ''
     ]"
     :data-explorer-obj="`${explorerObjPrefix}:${objectType}:${item}`"
     @click.stop="handleClick(item)"

@@ -43,7 +43,7 @@ const formatFileSize = (bytes?: number): string => {
   <div
     class="flex items-center px-2 py-1.5 text-sm rounded-md hover:bg-gray-100 cursor-pointer select-none"
     :class="{
-      'bg-sky-50 ring-1 ring-sky-200': selected
+      'bg-gray-100 ring-1 ring-gray-300': selected
     }"
     @click="emit('select')"
     @dblclick.stop="emit('open', { entry, mode: 'pinned' })"

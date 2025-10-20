@@ -93,24 +93,24 @@ function toggleExpanded() {
     <!-- Location Header (when visual grouping is enabled) -->
     <div
       v-if="showLocationHeader && location"
-      class="bg-gradient-to-r from-blue-50 to-blue-100 border-b border-blue-200 px-4 py-2 flex items-center gap-3 cursor-pointer hover:from-blue-100 hover:to-blue-150 transition-colors sticky top-0 z-10"
+      class="bg-gray-100 border-b border-gray-300 px-4 py-2 flex items-center gap-3 cursor-pointer hover:bg-gray-200 transition-colors sticky top-0 z-10"
       @click="toggleLocation"
     >
       <!-- Expand/Collapse Icon -->
       <component
         :is="isLocationCollapsed ? ChevronRightIcon : ChevronDownIcon"
-        class="w-4 h-4 text-blue-700 flex-shrink-0"
+        class="w-4 h-4 text-gray-700 flex-shrink-0"
       />
 
       <!-- Location Label -->
-      <span class="text-sm font-semibold text-blue-900">
+      <span class="text-sm font-semibold text-gray-900">
         {{ location }}
       </span>
 
       <!-- Query Count Badge -->
       <span
         v-if="queriesInGroup && queriesInGroup > 1"
-        class="text-xs bg-blue-600 text-white px-2 py-0.5 rounded"
+        class="text-xs bg-gray-600 text-white px-2 py-0.5 rounded"
       >
         {{ queriesInGroup }} queries
       </span>

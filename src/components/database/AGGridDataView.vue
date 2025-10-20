@@ -1169,7 +1169,7 @@ onBeforeUnmount(() => {
 
 /* Add a subtle indicator for sortable columns */
 :deep(.ag-header-cell.ag-header-cell-sortable:not(.ag-header-cell-sorted):hover) {
-  background-color: #e8f0fe;
+  background-color: #f3f4f6;
 }
 
 /* Show sort icons for sortable columns on hover */
@@ -1207,12 +1207,21 @@ onBeforeUnmount(() => {
 
 /* Highlight columns that have active filters */
 :deep(.ag-header-cell-filtered) {
-  background-color: #dbeafe !important;
+  background-color: #f3f4f6 !important;
 }
 
 :deep(.ag-header-cell-filtered .ag-header-cell-menu-button) {
   opacity: 1;
-  color: #2563eb;
+  color: #374151;
+}
+
+/* Override row hover color from light blue to gray */
+:deep(.ag-row:hover) {
+  background-color: #f9fafb !important;
+}
+
+:deep(.ag-row-even:hover) {
+  background-color: #f3f4f6 !important;
 }
 
 /* SQL Syntax highlighting for inline code */

@@ -218,19 +218,17 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div
-    class="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200 shadow-sm"
-  >
+  <div class="flex items-center gap-2 px-4 py-2 bg-white border-b border-gray-200 shadow-sm">
     <div class="flex items-center gap-2">
       <!-- Visual Grouping Toggle -->
       <button
         :class="[
-          'flex items-center gap-1.5 px-3 py-1.5 text-xs border border-gray-300 rounded transition-colors shadow-sm',
+          'flex items-center gap-1.5 px-3 py-1.5 text-xs border rounded transition-colors',
           visuallyGrouped
-            ? 'bg-blue-50 text-blue-700 border-blue-200'
-            : 'bg-white text-gray-600 hover:bg-gray-50'
+            ? 'border-gray-400 bg-gray-100 text-gray-700 hover:bg-gray-200'
+            : 'border-gray-300 bg-white text-gray-600 hover:bg-gray-50'
         ]"
-        :title="visuallyGrouped ? 'Hide location headers' : 'Show location headers'"
+        :title="visuallyGrouped ? 'Hide location headers (G)' : 'Show location headers (G)'"
         @click="toggleVisualGrouping"
       >
         <component :is="visuallyGrouped ? Squares2X2Icon : ListBulletIcon" class="w-4 h-4" />
@@ -259,11 +257,11 @@ onBeforeUnmount(() => {
       <!-- Query Type Filter Dropdown -->
       <div ref="queryTypeMenuRef" class="relative">
         <button
-          class="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-white border border-gray-300 rounded hover:border-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors text-left"
+          class="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-white border border-gray-300 rounded hover:bg-gray-100 focus:border-gray-400 focus:ring-1 focus:ring-gray-300 transition-colors text-left"
           :title="`Filter by query type (${selectedPurposes.size}/${queryPurposeOptions.length})`"
           @click="showQueryTypeMenu = !showQueryTypeMenu"
         >
-          <FunnelIcon class="w-4 h-4 text-gray-500" />
+          <FunnelIcon class="w-4 h-4 text-gray-600" />
           <span class="text-gray-700 font-medium">{{ queryTypeLabel }}</span>
           <ChevronDownIcon class="w-3.5 h-3.5 text-gray-400" />
         </button>
@@ -290,14 +288,14 @@ onBeforeUnmount(() => {
             <button
               v-for="option in queryPurposeOptions"
               :key="option.value"
-              class="w-full text-left px-3 py-2 text-xs hover:bg-blue-50 flex items-center gap-2 transition-colors group"
+              class="w-full text-left px-3 py-2 text-xs hover:bg-gray-50 flex items-center gap-2 transition-colors group"
               @click="toggleQueryPurpose(option.value)"
             >
               <div
                 :class="[
                   'w-4 h-4 rounded border transition-colors',
                   selectedPurposes.has(option.value)
-                    ? 'bg-blue-600 border-blue-600'
+                    ? 'bg-gray-700 border-gray-700'
                     : 'border-gray-300 group-hover:border-gray-400'
                 ]"
               >
@@ -320,8 +318,8 @@ onBeforeUnmount(() => {
     <div class="flex items-center gap-2">
       <!-- Sort Order Toggle -->
       <button
-        class="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors"
-        :title="`Sort: ${sortOrder === 'newest' ? 'Newest on top' : 'Oldest on top'} (click to toggle)`"
+        class="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-white border border-gray-300 rounded hover:bg-gray-100 transition-colors"
+        :title="`Sort: ${sortOrder === 'newest' ? 'Newest on top' : 'Oldest on top'} (S)`"
         @click="toggleSortOrder"
       >
         <component
@@ -407,6 +405,7 @@ onBeforeUnmount(() => {
       <!-- Errors Toggle -->
       <label
         class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 px-2 py-1 rounded transition-colors"
+        :title="'Show only errors (E)'"
       >
         <input v-model="errorsOnly" type="checkbox" class="rounded text-red-600" />
         <ExclamationTriangleIcon class="w-4 h-4 text-red-600" />
@@ -420,7 +419,8 @@ onBeforeUnmount(() => {
       <!-- Export Button -->
       <div ref="exportMenuRef" class="relative">
         <button
-          class="flex items-center gap-1 px-3 py-1.5 text-xs text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors shadow-sm"
+          title="Export logs"
+          class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-white bg-gray-600 rounded hover:bg-gray-500 transition-colors shadow-sm"
           @click.stop="toggleExportMenu"
         >
           <ArrowDownTrayIcon class="w-3.5 h-3.5" />
@@ -432,19 +432,19 @@ onBeforeUnmount(() => {
           class="absolute right-0 mt-2 w-36 bg-white border border-gray-200 rounded shadow-lg z-50"
         >
           <button
-            class="w-full text-left px-3 py-2 text-xs hover:bg-blue-50 transition-colors"
+            class="w-full text-left px-3 py-2 text-xs hover:bg-gray-100 transition-colors"
             @click="selectExportFormat('text')"
           >
             Export as Text
           </button>
           <button
-            class="w-full text-left px-3 py-2 text-xs hover:bg-blue-50 transition-colors"
+            class="w-full text-left px-3 py-2 text-xs hover:bg-gray-100 transition-colors"
             @click="selectExportFormat('csv')"
           >
             Export as CSV
           </button>
           <button
-            class="w-full text-left px-3 py-2 text-xs hover:bg-blue-50 transition-colors"
+            class="w-full text-left px-3 py-2 text-xs hover:bg-gray-100 transition-colors"
             @click="selectExportFormat('json')"
           >
             Export as JSON
@@ -454,7 +454,8 @@ onBeforeUnmount(() => {
 
       <!-- Clear Button -->
       <button
-        class="flex items-center gap-1 px-3 py-1.5 text-xs text-white bg-red-600 rounded hover:bg-red-700 transition-colors shadow-sm"
+        title="Clear logs (K)"
+        class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-white bg-orange-600 rounded hover:bg-orange-700 transition-colors shadow-sm"
         @click="clearLogs"
       >
         <TrashIcon class="w-3.5 h-3.5" />
