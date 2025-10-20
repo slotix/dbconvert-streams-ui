@@ -314,13 +314,17 @@ export const useLogsStore = defineStore('logs', {
       return (log: SQLQueryLog) => {
         // Build location string: database.schema.table or database.table
         if (log.tableName) {
+          // For files (empty database), just show the table name (filename)
+          if (!log.database) {
+            return log.tableName
+          }
           if (log.schema) {
             return `${log.database}.${log.schema}.${log.tableName}`
           }
           return `${log.database}.${log.tableName}`
         }
         // Fallback to purpose if no table
-        return `${log.database} (${log.purpose})`
+        return log.database ? `${log.database} (${log.purpose})` : log.purpose
       }
     },
 
