@@ -27,7 +27,6 @@ const formatNumber = (num: number): string => {
   return num.toLocaleString()
 }
 
-
 // Expose refresh method for parent container
 defineExpose({
   refresh: () => emit('refresh-metadata')
@@ -53,12 +52,6 @@ defineExpose({
         >
           <p><span class="font-medium">Rows:</span> {{ formatNumber(metadata.rowCount) }}</p>
           <p><span class="font-medium">Columns:</span> {{ metadata.columnCount }}</p>
-          <p v-if="metadata.samplingInfo">
-            <span class="font-medium">Sample size:</span>
-            {{ formatNumber(metadata.samplingInfo.rowsProcessed) }} rows ({{
-              metadata.samplingInfo.isComplete ? 'complete' : 'sampled'
-            }})
-          </p>
         </div>
       </div>
     </section>

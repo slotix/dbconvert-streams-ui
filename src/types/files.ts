@@ -12,13 +12,6 @@ export interface FileDataResponse {
   warnings?: string[]
 }
 
-export interface FileSamplingInfo {
-  bytesProcessed: number
-  rowsProcessed: number
-  isComplete: boolean
-  confidence: number
-}
-
 export interface CSVFormatDetails {
   delimiter: string
   quote: string
@@ -62,7 +55,6 @@ export interface FileMetadata {
   columnCount: number
   columns: FileColumnMetadata[]
   formatInfo?: Record<string, unknown>
-  samplingInfo?: FileSamplingInfo
   csvDialect?: CSVFormatDetails
   jsonStructure?: JSONStructureInfo
   warnings?: string[]
