@@ -21,6 +21,19 @@
   --ag-header-background-color: var(--tw-gray-50);
   --ag-odd-row-background-color: var(--tw-white);
   --ag-even-row-background-color: var(--tw-gray-50);
+
+  /* Override accent color from blue (#2196f3) to gray */
+  --ag-alpine-active-color: #4b5563; /* gray-600 */
+
+  /* Override selection colors from blue to gray */
+  --ag-selected-row-background-color: rgba(107, 114, 128, 0.3); /* gray-600 with transparency */
+  --ag-row-hover-color: rgba(107, 114, 128, 0.1); /* gray-600 with transparency */
+  --ag-column-hover-color: rgba(107, 114, 128, 0.1); /* gray-600 with transparency */
+  --ag-input-focus-border-color: rgba(107, 114, 128, 0.4); /* gray-600 with transparency */
+  --ag-range-selection-background-color: rgba(107, 114, 128, 0.2); /* gray-600 with transparency */
+  --ag-range-selection-background-color-2: rgba(107, 114, 128, 0.36); /* gray-600 with transparency */
+  --ag-range-selection-background-color-3: rgba(107, 114, 128, 0.49); /* gray-600 with transparency */
+  --ag-range-selection-background-color-4: rgba(107, 114, 128, 0.59); /* gray-600 with transparency */
 }
 
 /* Always show menu icon for all columns */
@@ -43,7 +56,8 @@
 }
 
 /* Show sort icons for sortable columns on hover */
-.ag-theme-alpine :deep(.ag-header-cell.ag-header-cell-sortable:not(.ag-header-cell-sorted):hover::after) {
+.ag-theme-alpine
+  :deep(.ag-header-cell.ag-header-cell-sortable:not(.ag-header-cell-sorted):hover::after) {
   content: '⇅';
   margin-left: 4px;
   color: var(--tw-gray-400);

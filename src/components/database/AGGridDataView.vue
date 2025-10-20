@@ -3,14 +3,11 @@ import { ref, watch, computed, onBeforeUnmount, onMounted } from 'vue'
 import { AgGridVue } from 'ag-grid-vue3'
 import { ModuleRegistry, AllCommunityModule } from 'ag-grid-community'
 import type {
-  GridApi,
   GridReadyEvent,
   ColDef,
   GridOptions,
   IDatasource,
-  IGetRowsParams,
-  SortModelItem,
-  Column
+  IGetRowsParams
 } from 'ag-grid-community'
 import { type SQLTableMeta, type SQLViewMeta } from '@/types/metadata'
 import connections from '@/api/connections'
@@ -19,6 +16,8 @@ import { vHighlightjs } from '@/directives/highlightjs'
 import { useObjectTabStateStore } from '@/stores/objectTabState'
 import ColumnContextMenu from './ColumnContextMenu.vue'
 import AdvancedFilterModal from './AdvancedFilterModal.vue'
+import { useAGGridFiltering } from '@/composables/useAGGridFiltering'
+import { convertFilterModelToSQL, determineFilterType } from '@/utils/agGridFilterUtils'
 import 'ag-grid-community/styles/ag-grid.css'
 import 'ag-grid-community/styles/ag-theme-alpine.css'
 import '@/styles/agGridTheme.css'
@@ -38,18 +37,39 @@ const props = defineProps<{
 // Store for persisting tab state including AG Grid data state
 const tabStateStore = useObjectTabStateStore()
 
-const gridApi = ref<GridApi | null>(null)
+// Use shared AG Grid filtering composable
+const {
+  gridApi,
+  currentSortModel,
+  whereClause,
+  whereInput,
+  whereError,
+  agGridFilters,
+  agGridWhereSQL,
+  showContextMenu,
+  contextMenuX,
+  contextMenuY,
+  contextMenuColumn,
+  showAdvancedFilterModal,
+  isSqlBannerExpanded,
+  combinedWhereClause,
+  orderByClause,
+  fullSqlQuery,
+  needsTruncation,
+  displayedSql,
+  toggleSqlBanner,
+  closeContextMenu,
+  openAdvancedFilterModal,
+  updateAgGridWhereSQL,
+  clearAllFilters: clearAgGridFilters
+} = useAGGridFiltering()
+
+// Component-specific state
 const error = ref<string>()
 const totalRowCount = ref<number>(0)
 const isLoading = ref(false)
 const currentFirstRow = ref<number>(1)
 const currentLastRow = ref<number>(100)
-const currentSortModel = ref<SortModelItem[]>([])
-const whereClause = ref<string>('')
-const whereInput = ref<string>('')
-const whereError = ref<string>()
-const agGridFilters = ref<Record<string, any>>({})
-const agGridWhereSQL = ref<string>('')
 
 // Exact row count state for views
 const isCountingRows = ref(false)
@@ -66,19 +86,6 @@ const getCacheKey = () => {
   const objectSchema = getObjectSchema(props.tableMeta)
   return `${props.connectionId}:${props.database}:${objectSchema || ''}:${objectName}`
 }
-
-// Context menu state
-const showContextMenu = ref(false)
-const contextMenuX = ref(0)
-const contextMenuY = ref(0)
-const contextMenuColumn = ref<Column | null>(null)
-
-// Advanced filter modal state
-const showAdvancedFilterModal = ref(false)
-
-// SQL banner expansion state
-const isSqlBannerExpanded = ref(false)
-const SQL_BANNER_MAX_LENGTH = 150
 
 // Watch for approxRows prop changes and update totalRowCount
 // Only update if we don't have an exact count saved
@@ -225,21 +232,7 @@ const columnDefs = computed<ColDef[]>(() => {
     }
 
     // Determine filter type based on column data type
-    let filterType: string | boolean = 'agTextColumnFilter'
-    if (col.dataType) {
-      const dataType = col.dataType.toLowerCase()
-      if (
-        dataType.includes('int') ||
-        dataType.includes('float') ||
-        dataType.includes('double') ||
-        dataType.includes('decimal') ||
-        dataType.includes('numeric')
-      ) {
-        filterType = 'agNumberColumnFilter'
-      } else if (dataType.includes('date') || dataType.includes('time')) {
-        filterType = 'agDateColumnFilter'
-      }
-    }
+    const filterType = determineFilterType(col.dataType)
 
     return {
       field: col.name,
@@ -262,77 +255,10 @@ const columnDefs = computed<ColDef[]>(() => {
   })
 })
 
-// Computed property to generate SQL WHERE clause for display
-const combinedWhereClause = computed(() => {
-  const agGridWhereClause = agGridWhereSQL.value
-  const manualWhere = whereClause.value
-
-  if (agGridWhereClause && manualWhere) {
-    return `(${agGridWhereClause}) AND (${manualWhere})`
-  } else if (agGridWhereClause) {
-    return agGridWhereClause
-  } else if (manualWhere) {
-    return manualWhere
-  }
-  return ''
-})
-
-// Computed property to generate ORDER BY clause for display
-const orderByClause = computed(() => {
-  if (currentSortModel.value.length === 0) return ''
-
-  const sortParts = currentSortModel.value.map((sort) => {
-    const direction = sort.sort?.toUpperCase() || 'ASC'
-    return `${sort.colId} ${direction}`
-  })
-
-  return sortParts.join(', ')
-})
-
-// Computed property for full SQL query display
-const fullSqlQuery = computed(() => {
-  const parts: string[] = []
-
-  if (combinedWhereClause.value) {
-    parts.push(`WHERE ${combinedWhereClause.value}`)
-  }
-
-  if (orderByClause.value) {
-    parts.push(`ORDER BY ${orderByClause.value}`)
-  }
-
-  return parts.join(' ')
-})
-
-// Check if SQL query needs truncation
-const needsTruncation = computed(() => {
-  return fullSqlQuery.value.length > SQL_BANNER_MAX_LENGTH
-})
-
-// Displayed SQL (truncated or full based on expansion state)
-const displayedSql = computed(() => {
-  if (!needsTruncation.value || isSqlBannerExpanded.value) {
-    return fullSqlQuery.value
-  }
-  return fullSqlQuery.value.substring(0, SQL_BANNER_MAX_LENGTH) + '...'
-})
-
-// Toggle SQL banner expansion
-function toggleSqlBanner() {
-  isSqlBannerExpanded.value = !isSqlBannerExpanded.value
-}
-
-// Clear all filters
+// Database-specific clear all filters wrapper
 function clearAllFilters() {
-  // Clear manual WHERE clause
-  whereInput.value = ''
-  whereClause.value = ''
-  whereError.value = undefined
-
-  // Clear AG Grid filters
-  if (gridApi.value) {
-    gridApi.value.setFilterModel(null)
-  }
+  // Use the base clearing from composable
+  clearAgGridFilters()
 
   // Clear sorting
   if (gridApi.value) {
@@ -366,97 +292,6 @@ function clearAllFilters() {
 }
 
 // Convert AG Grid filter model to SQL WHERE clause
-function convertFilterModelToSQL(filterModel: Record<string, any>): string {
-  const whereClauses: string[] = []
-
-  for (const [column, filter] of Object.entries(filterModel)) {
-    if (!filter) continue
-
-    const clause = buildFilterClause(column, filter)
-    if (clause) {
-      whereClauses.push(clause)
-    }
-  }
-
-  return whereClauses.join(' AND ')
-}
-
-function buildFilterClause(column: string, filter: any): string | null {
-  // Handle combined conditions (AND/OR)
-  if (filter.operator) {
-    console.log(`Building compound filter for ${column}:`, filter)
-
-    // AG Grid uses 'conditions' array (newer versions) or 'condition1'/'condition2' (older versions)
-    let condition1: string | null = null
-    let condition2: string | null = null
-
-    if (filter.conditions && Array.isArray(filter.conditions)) {
-      // New format: conditions array
-      condition1 = filter.conditions[0] ? buildFilterClause(column, filter.conditions[0]) : null
-      condition2 = filter.conditions[1] ? buildFilterClause(column, filter.conditions[1]) : null
-    } else {
-      // Old format: condition1 and condition2 properties
-      condition1 = filter.condition1 ? buildFilterClause(column, filter.condition1) : null
-      condition2 = filter.condition2 ? buildFilterClause(column, filter.condition2) : null
-    }
-
-    console.log(`  Condition1: ${condition1}, Condition2: ${condition2}`)
-
-    if (condition1 && condition2) {
-      return `(${condition1} ${filter.operator} ${condition2})`
-    }
-    return condition1 || condition2
-  }
-
-  const filterValue = filter.filter
-
-  // Skip if filter value is missing
-  if (filterValue === undefined || filterValue === null || filterValue === '') {
-    console.log(`Skipping filter for ${column}: no value`)
-    return null
-  }
-
-  // Escape single quotes in string values to prevent SQL injection
-  const escapeValue = (val: any): string => {
-    if (typeof val === 'string') {
-      return val.replace(/'/g, "''")
-    }
-    return String(val)
-  }
-
-  // Build SQL based on filter type
-  switch (filter.type) {
-    case 'equals':
-      return `${column} = '${escapeValue(filterValue)}'`
-    case 'notEqual':
-      return `${column} != '${escapeValue(filterValue)}'`
-    case 'contains':
-      return `${column} LIKE '%${escapeValue(filterValue)}%'`
-    case 'notContains':
-      return `${column} NOT LIKE '%${escapeValue(filterValue)}%'`
-    case 'startsWith':
-      return `${column} LIKE '${escapeValue(filterValue)}%'`
-    case 'endsWith':
-      return `${column} LIKE '%${escapeValue(filterValue)}'`
-    case 'lessThan':
-      return `${column} < ${filterValue}`
-    case 'lessThanOrEqual':
-      return `${column} <= ${filterValue}`
-    case 'greaterThan':
-      return `${column} > ${filterValue}`
-    case 'greaterThanOrEqual':
-      return `${column} >= ${filterValue}`
-    case 'inRange':
-      return `${column} BETWEEN ${filter.filter} AND ${filter.filterTo}`
-    case 'blank':
-      return `(${column} IS NULL OR ${column} = '')`
-    case 'notBlank':
-      return `(${column} IS NOT NULL AND ${column} != '')`
-    default:
-      return null
-  }
-}
-
 // AG Grid options for Infinite Row Model
 const gridOptions = computed<GridOptions>(() => ({
   theme: 'legacy',
@@ -726,17 +561,6 @@ function handleContextMenu(event: MouseEvent) {
       }
     }
   }
-}
-
-// Close context menu
-function closeContextMenu() {
-  showContextMenu.value = false
-  contextMenuColumn.value = null
-}
-
-// Open advanced filter modal
-function openAdvancedFilterModal() {
-  showAdvancedFilterModal.value = true
 }
 
 // Apply WHERE filter from modal
