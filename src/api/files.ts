@@ -9,6 +9,9 @@ interface FileDataParams {
   limit?: number
   offset?: number
   skipCount?: boolean
+  order_by?: string
+  order_dir?: string
+  where?: string
 }
 
 const withAuthHeaders = () => {
@@ -43,6 +46,9 @@ export async function getFileData(
     if (params.limit !== undefined) query.set('limit', String(params.limit))
     if (params.offset !== undefined) query.set('offset', String(params.offset))
     if (params.skipCount !== undefined) query.set('skipCount', params.skipCount ? 'true' : 'false')
+    if (params.order_by) query.set('order_by', params.order_by)
+    if (params.order_dir) query.set('order_dir', params.order_dir)
+    if (params.where) query.set('where', params.where)
 
     const response = await apiClient.get<FileDataResponse>(`/files/data?${query.toString()}`, {
       ...withAuthHeaders()
