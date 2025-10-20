@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useLogsStore } from '@/stores/logs'
-import type { ExportFormat, TimeWindow } from '@/stores/logs'
+import type { ExportFormat, QueryPurpose } from '@/stores/logs'
 import {
-  ClockIcon,
   MagnifyingGlassIcon,
   ExclamationTriangleIcon,
   TrashIcon,
@@ -13,43 +12,72 @@ import {
   ArrowDownTrayIcon,
   ArrowUpIcon,
   ArrowDownIcon,
-  CheckIcon,
   ChevronDownIcon,
-  DocumentTextIcon,
-  Bars3BottomLeftIcon,
   ArrowsPointingInIcon,
-  ArrowsPointingOutIcon
+  ArrowsPointingOutIcon,
+  FunnelIcon
 } from '@heroicons/vue/24/outline'
-import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/vue'
 
 const logsStore = useLogsStore()
 const showShortcuts = ref(false)
 const showExportMenu = ref(false)
 const exportMenuRef = ref<HTMLDivElement | null>(null)
+const showQueryTypeMenu = ref(false)
+const queryTypeMenuRef = ref<HTMLDivElement | null>(null)
 const emit = defineEmits<{
   (e: 'export', format: ExportFormat): void
 }>()
 
-// Time window options
-const timeWindowOptions = [
-  { value: '5m' as TimeWindow, label: '5 min' },
-  { value: '1h' as TimeWindow, label: '1 hour' },
-  { value: 'session' as TimeWindow, label: 'Session' },
-  { value: 'all' as TimeWindow, label: 'All' }
-]
-
 const visuallyGrouped = computed(() => logsStore.visuallyGrouped)
 
-// Logging density toggle state
-const isNormalLevel = computed(() => logsStore.filters.level === 'normal')
-const levelLabel = computed(() => (isNormalLevel.value ? 'Normal' : 'Minimal'))
-const levelIcon = computed(() => (isNormalLevel.value ? DocumentTextIcon : Bars3BottomLeftIcon))
-
-const timeWindow = computed({
-  get: () => logsStore.filters.timeWindow,
-  set: (val: TimeWindow) => {
-    logsStore.setTimeWindow(val)
+// Query purpose filter state
+const selectedPurposes = computed({
+  get: () => logsStore.filters.purposes,
+  set: (val: Set<QueryPurpose>) => {
+    logsStore.setQueryPurposes(val)
   }
+})
+
+const queryPurposeOptions: Array<{ value: QueryPurpose; label: string }> = [
+  { value: 'SCHEMA_INTROSPECTION', label: 'Schema' },
+  { value: 'DATA_QUERY', label: 'Data' },
+  { value: 'COUNT_QUERY', label: 'Count' },
+  { value: 'SCHEMA_CHANGE', label: 'DDL' },
+  { value: 'DML_OPERATION', label: 'DML' }
+]
+
+function toggleQueryPurpose(purpose: QueryPurpose) {
+  const newPurposes = new Set(selectedPurposes.value)
+  if (newPurposes.has(purpose)) {
+    newPurposes.delete(purpose)
+    // Keep at least one selected
+    if (newPurposes.size === 0) {
+      newPurposes.add(purpose)
+      return
+    }
+  } else {
+    newPurposes.add(purpose)
+  }
+  selectedPurposes.value = newPurposes
+}
+
+const allPurposesSelected = computed(
+  () => selectedPurposes.value.size === queryPurposeOptions.length
+)
+
+function selectAllPurposes() {
+  if (allPurposesSelected.value) {
+    // Deselect all except one
+    selectedPurposes.value = new Set([queryPurposeOptions[0].value])
+  } else {
+    // Select all
+    selectedPurposes.value = new Set(queryPurposeOptions.map((o) => o.value))
+  }
+}
+
+const queryTypeLabel = computed(() => {
+  if (allPurposesSelected.value) return 'All Types'
+  return `${selectedPurposes.value.size} Selected`
 })
 
 const searchText = computed({
@@ -79,10 +107,6 @@ function toggleSortOrder() {
   logsStore.toggleSortOrder()
 }
 
-function toggleLevel() {
-  logsStore.setLevel(isNormalLevel.value ? 'minimal' : 'normal')
-}
-
 function toggleExportMenu() {
   showExportMenu.value = !showExportMenu.value
 }
@@ -107,10 +131,24 @@ function selectExportFormat(format: ExportFormat) {
 }
 
 function handleDocumentClick(event: MouseEvent) {
-  if (!showExportMenu.value) return
   const target = event.target as Node | null
-  if (exportMenuRef.value && target && !exportMenuRef.value.contains(target)) {
+
+  if (
+    showExportMenu.value &&
+    exportMenuRef.value &&
+    target &&
+    !exportMenuRef.value.contains(target)
+  ) {
     showExportMenu.value = false
+  }
+
+  if (
+    showQueryTypeMenu.value &&
+    queryTypeMenuRef.value &&
+    target &&
+    !queryTypeMenuRef.value.contains(target)
+  ) {
+    showQueryTypeMenu.value = false
   }
 }
 
@@ -178,20 +216,63 @@ onBeforeUnmount(() => {
         </button>
       </div>
 
-      <!-- Level Toggle -->
-      <button
-        class="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-gray-300 rounded transition-colors shadow-sm"
-        :class="
-          isNormalLevel
-            ? 'bg-blue-50 text-blue-700 border-blue-200'
-            : 'bg-white text-gray-600 hover:bg-gray-50'
-        "
-        title="Toggle log density"
-        @click="toggleLevel"
-      >
-        <component :is="levelIcon" class="w-4 h-4" />
-        <span class="font-medium">{{ levelLabel }}</span>
-      </button>
+      <!-- Query Type Filter Dropdown -->
+      <div ref="queryTypeMenuRef" class="relative">
+        <button
+          class="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-white border border-gray-300 rounded hover:border-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors text-left"
+          :title="`Filter by query type (${selectedPurposes.size}/${queryPurposeOptions.length})`"
+          @click="showQueryTypeMenu = !showQueryTypeMenu"
+        >
+          <FunnelIcon class="w-4 h-4 text-gray-500" />
+          <span class="text-gray-700 font-medium">{{ queryTypeLabel }}</span>
+          <ChevronDownIcon class="w-3.5 h-3.5 text-gray-400" />
+        </button>
+
+        <transition
+          leave-active-class="transition ease-in duration-100"
+          leave-from-class="opacity-100"
+          leave-to-class="opacity-0"
+        >
+          <div
+            v-if="showQueryTypeMenu"
+            class="absolute left-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50"
+            @click.stop
+          >
+            <!-- Select All / Clear All -->
+            <button
+              class="w-full text-left px-3 py-2 text-xs hover:bg-gray-50 border-b border-gray-100 font-semibold text-gray-700 transition-colors"
+              @click="selectAllPurposes"
+            >
+              {{ allPurposesSelected ? '✓ All Selected' : 'Select All' }}
+            </button>
+
+            <!-- Query Type Options -->
+            <button
+              v-for="option in queryPurposeOptions"
+              :key="option.value"
+              class="w-full text-left px-3 py-2 text-xs hover:bg-blue-50 flex items-center gap-2 transition-colors group"
+              @click="toggleQueryPurpose(option.value)"
+            >
+              <div
+                :class="[
+                  'w-4 h-4 rounded border transition-colors',
+                  selectedPurposes.has(option.value)
+                    ? 'bg-blue-600 border-blue-600'
+                    : 'border-gray-300 group-hover:border-gray-400'
+                ]"
+              >
+                <span
+                  v-if="selectedPurposes.has(option.value)"
+                  class="flex items-center justify-center w-full h-full text-white text-xs"
+                >
+                  ✓
+                </span>
+              </div>
+              <span class="text-gray-700 group-hover:text-gray-900">{{ option.label }}</span>
+            </button>
+          </div>
+        </transition>
+      </div>
     </div>
 
     <div class="hidden sm:block h-6 border-l border-gray-200" />
@@ -212,8 +293,8 @@ onBeforeUnmount(() => {
         }}</span>
       </button>
 
-      <!-- Time Window -->
-      <Listbox v-model="timeWindow" as="div" class="relative">
+      <!-- Time Window - HIDDEN -->
+      <!-- <Listbox v-model="timeWindow" as="div" class="relative">
         <ListboxButton
           class="relative flex items-center gap-1.5 text-xs border border-gray-300 rounded pl-2 pr-6 py-1 bg-white hover:border-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors text-left min-w-[88px]"
           title="Time Window"
@@ -263,7 +344,7 @@ onBeforeUnmount(() => {
             </ListboxOption>
           </ListboxOptions>
         </transition>
-      </Listbox>
+      </Listbox> -->
     </div>
 
     <div class="hidden sm:block h-6 border-l border-gray-200" />
@@ -361,12 +442,8 @@ onBeforeUnmount(() => {
               <kbd class="px-2 py-0.5 bg-gray-100 border border-gray-300 rounded">/ </kbd>
             </div>
             <div class="flex justify-between">
-              <span class="text-gray-600">Minimal level</span>
-              <kbd class="px-2 py-0.5 bg-gray-100 border border-gray-300 rounded">1</kbd>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-gray-600">Normal level</span>
-              <kbd class="px-2 py-0.5 bg-gray-100 border border-gray-300 rounded">2</kbd>
+              <span class="text-gray-600">Toggle log type filters</span>
+              <kbd class="px-2 py-0.5 bg-gray-100 border border-gray-300 rounded">Click</kbd>
             </div>
             <div class="flex justify-between">
               <span class="text-gray-600">Toggle errors only</span>

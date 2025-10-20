@@ -4,7 +4,6 @@ import { defineStore } from 'pinia'
 const STORAGE_KEYS = {
   viewMode: 'sqlLogViewMode',
   sortOrder: 'sqlLogSortOrder',
-  level: 'sqlLogLevel',
   timeWindow: 'sqlLogTimeWindow',
   errorsOnly: 'sqlLogErrorsOnly'
 } as const
@@ -46,7 +45,6 @@ export interface SystemLog {
 }
 
 // Phase 2: Enhanced SQL Logging Types
-export type LoggingLevel = 'minimal' | 'normal'
 export type QueryPurpose =
   | 'SCHEMA_INTROSPECTION'
   | 'DATA_QUERY'
@@ -61,7 +59,6 @@ export type TimeWindow = '5m' | '1h' | 'session' | 'all'
 export type ExportFormat = 'text' | 'csv' | 'json'
 
 export interface LogFilters {
-  level: LoggingLevel
   purposes: Set<QueryPurpose>
   timeWindow: TimeWindow
   searchText: string
@@ -156,20 +153,9 @@ function logMatchesFilters(
     return false
   }
 
-  // Level-based filtering
-  switch (filters.level) {
-    case 'minimal':
-      // Only show user-focused activity (data queries and quick counts)
-      if (log.purpose !== 'DATA_QUERY' && log.purpose !== 'COUNT_QUERY') {
-        return false
-      }
-      break
-    case 'normal':
-      // Check purposes filter
-      if (!filters.purposes.has(log.purpose)) {
-        return false
-      }
-      break
+  // Purpose-based filtering
+  if (!filters.purposes.has(log.purpose)) {
+    return false
   }
 
   if (filters.errorsOnly && !log.error) return false
@@ -213,16 +199,12 @@ export const useLogsStore = defineStore('logs', {
 
       // Filters (with persisted preferences)
       filters: {
-        level: loadFromStorage<LoggingLevel>(STORAGE_KEYS.level, 'normal'),
         purposes: new Set<QueryPurpose>([
           'SCHEMA_INTROSPECTION',
           'DATA_QUERY',
           'COUNT_QUERY',
-          'PLAN_ANALYSIS',
           'SCHEMA_CHANGE',
-          'DML_OPERATION',
-          'SYSTEM_TASK',
-          'UTILITY'
+          'DML_OPERATION'
         ]),
         timeWindow: loadFromStorage<TimeWindow>(STORAGE_KEYS.timeWindow, 'session'),
         searchText: '', // Not persisted - session specific
@@ -489,11 +471,6 @@ export const useLogsStore = defineStore('logs', {
     },
 
     // Filter preference persistence
-    setLevel(level: LoggingLevel) {
-      this.filters.level = level
-      saveToStorage(STORAGE_KEYS.level, level)
-    },
-
     setTimeWindow(timeWindow: TimeWindow) {
       this.filters.timeWindow = timeWindow
       saveToStorage(STORAGE_KEYS.timeWindow, timeWindow)
@@ -502,6 +479,11 @@ export const useLogsStore = defineStore('logs', {
     setErrorsOnly(errorsOnly: boolean) {
       this.filters.errorsOnly = errorsOnly
       saveToStorage(STORAGE_KEYS.errorsOnly, errorsOnly)
+    },
+
+    setQueryPurposes(purposes: Set<QueryPurpose>) {
+      this.filters.purposes = purposes
+      // Note: Query purposes are not persisted as users may want different filters per session
     },
 
     getOrderedLogs(): SQLQueryLog[] {
