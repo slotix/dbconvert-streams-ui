@@ -21,6 +21,7 @@ import ColumnContextMenu from './ColumnContextMenu.vue'
 import AdvancedFilterModal from './AdvancedFilterModal.vue'
 import 'ag-grid-community/styles/ag-grid.css'
 import 'ag-grid-community/styles/ag-theme-alpine.css'
+import '@/styles/agGridTheme.css'
 
 // Register AG Grid modules
 ModuleRegistry.registerModules([AllCommunityModule])
@@ -1140,17 +1141,6 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-.ag-theme-alpine {
-  --ag-font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --ag-font-size: 14px;
-  --ag-header-height: 40px;
-  --ag-row-height: 32px;
-  --ag-border-color: #e5e7eb;
-  --ag-header-background-color: #f9fafb;
-  --ag-odd-row-background-color: #ffffff;
-  --ag-even-row-background-color: #f9fafb;
-}
-
 :deep(.ag-cell-wrap-text) {
   white-space: normal;
   line-height: 1.5;
@@ -1165,63 +1155,6 @@ onBeforeUnmount(() => {
 
 :deep(.ag-header-cell-not-sortable .ag-header-cell-label) {
   cursor: not-allowed !important;
-}
-
-/* Add a subtle indicator for sortable columns */
-:deep(.ag-header-cell.ag-header-cell-sortable:not(.ag-header-cell-sorted):hover) {
-  background-color: #f3f4f6;
-}
-
-/* Show sort icons for sortable columns on hover */
-:deep(.ag-header-cell.ag-header-cell-sortable:not(.ag-header-cell-sorted):hover::after) {
-  content: '⇅';
-  margin-left: 4px;
-  color: #9ca3af;
-  font-size: 12px;
-}
-
-/* Always show menu icon for all columns */
-:deep(.ag-header-cell-menu-button) {
-  opacity: 1 !important;
-  display: inline-flex !important;
-  visibility: visible !important;
-  width: auto !important;
-  height: auto !important;
-}
-
-:deep(.ag-header-cell:hover .ag-header-cell-menu-button) {
-  opacity: 1 !important;
-  background-color: rgba(0, 0, 0, 0.05);
-}
-
-/* Make sure the menu button is visible in the header */
-:deep(.ag-header-cell-comp-wrapper) {
-  display: flex !important;
-  align-items: center !important;
-}
-
-:deep(.ag-header-cell) {
-  display: flex !important;
-  align-items: center !important;
-}
-
-/* Highlight columns that have active filters */
-:deep(.ag-header-cell-filtered) {
-  background-color: #f3f4f6 !important;
-}
-
-:deep(.ag-header-cell-filtered .ag-header-cell-menu-button) {
-  opacity: 1;
-  color: #374151;
-}
-
-/* Override row hover color from light blue to gray */
-:deep(.ag-row:hover) {
-  background-color: #f9fafb !important;
-}
-
-:deep(.ag-row-even:hover) {
-  background-color: #f3f4f6 !important;
 }
 
 /* SQL Syntax highlighting for inline code */

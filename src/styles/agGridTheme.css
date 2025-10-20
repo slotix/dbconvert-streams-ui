@@ -1,0 +1,81 @@
+/* Shared AG Grid theme styling with Tailwind colors */
+
+.ag-theme-alpine {
+  /* Tailwind color variables */
+  --tw-gray-50: rgb(249 250 251 / 1);
+  --tw-gray-100: rgb(243 244 246 / 1);
+  --tw-gray-300: rgb(209 213 219 / 1);
+  --tw-gray-400: rgb(156 163 175 / 1);
+  --tw-gray-500: rgb(107 114 128 / 1);
+  --tw-gray-600: rgb(75 85 99 / 1);
+  --tw-gray-700: rgb(55 65 81 / 1);
+  --tw-gray-900: rgb(17 24 39 / 1);
+  --tw-white: rgb(255 255 255 / 1);
+
+  /* AG Grid theme variables using Tailwind colors */
+  --ag-font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --ag-font-size: 14px;
+  --ag-header-height: 40px;
+  --ag-row-height: 32px;
+  --ag-border-color: var(--tw-gray-300);
+  --ag-header-background-color: var(--tw-gray-50);
+  --ag-odd-row-background-color: var(--tw-white);
+  --ag-even-row-background-color: var(--tw-gray-50);
+}
+
+/* Always show menu icon for all columns */
+.ag-theme-alpine :deep(.ag-header-cell-menu-button) {
+  opacity: 1 !important;
+  display: inline-flex !important;
+  visibility: visible !important;
+  width: auto !important;
+  height: auto !important;
+}
+
+.ag-theme-alpine :deep(.ag-header-cell:hover .ag-header-cell-menu-button) {
+  opacity: 1 !important;
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Add a subtle indicator for sortable columns */
+.ag-theme-alpine :deep(.ag-header-cell.ag-header-cell-sortable:not(.ag-header-cell-sorted):hover) {
+  background-color: var(--tw-gray-100);
+}
+
+/* Show sort icons for sortable columns on hover */
+.ag-theme-alpine :deep(.ag-header-cell.ag-header-cell-sortable:not(.ag-header-cell-sorted):hover::after) {
+  content: '⇅';
+  margin-left: 4px;
+  color: var(--tw-gray-400);
+  font-size: 12px;
+}
+
+/* Make sure the menu button is visible in the header */
+.ag-theme-alpine :deep(.ag-header-cell-comp-wrapper) {
+  display: flex !important;
+  align-items: center !important;
+}
+
+.ag-theme-alpine :deep(.ag-header-cell) {
+  display: flex !important;
+  align-items: center !important;
+}
+
+/* Highlight columns that have active filters */
+.ag-theme-alpine :deep(.ag-header-cell-filtered) {
+  background-color: var(--tw-gray-100) !important;
+}
+
+.ag-theme-alpine :deep(.ag-header-cell-filtered .ag-header-cell-menu-button) {
+  opacity: 1;
+  color: var(--tw-gray-700);
+}
+
+/* Override row hover color from light blue to gray */
+.ag-theme-alpine :deep(.ag-row:hover) {
+  background-color: var(--tw-gray-50) !important;
+}
+
+.ag-theme-alpine :deep(.ag-row-even:hover) {
+  background-color: var(--tw-gray-100) !important;
+}
