@@ -247,11 +247,6 @@
                                 >
                                   Nullable
                                 </th>
-                                <th
-                                  class="px-3 py-2 text-left text-sm font-semibold text-gray-900 whitespace-nowrap"
-                                >
-                                  Sample Values
-                                </th>
                               </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
@@ -272,12 +267,6 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                   {{ col.nullable ? 'Yes' : 'No' }}
-                                </td>
-                                <td
-                                  class="px-3 py-2 text-sm text-gray-500 truncate max-w-[200px]"
-                                  :title="renderSample(col.sampleValues)"
-                                >
-                                  {{ renderSample(col.sampleValues) || '—' }}
                                 </td>
                               </tr>
                             </tbody>
@@ -411,11 +400,6 @@ function formatCell(value: unknown): string {
   if (value === null || value === undefined) return 'NULL'
   if (typeof value === 'object') return JSON.stringify(value)
   return String(value)
-}
-
-function renderSample(values: unknown[] | undefined): string {
-  if (!values || !values.length) return ''
-  return values.map((value) => formatCell(value)).join(', ')
 }
 
 function formatFileSize(bytes: number): string {

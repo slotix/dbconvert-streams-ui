@@ -27,13 +27,6 @@ const formatNumber = (num: number): string => {
   return num.toLocaleString()
 }
 
-const renderSample = (values?: unknown[]): string => {
-  if (!values || values.length === 0) return ''
-  return values
-    .slice(0, 3)
-    .map((v) => String(v))
-    .join(', ')
-}
 
 // Expose refresh method for parent container
 defineExpose({
@@ -94,11 +87,6 @@ defineExpose({
                   >
                     Nullable
                   </th>
-                  <th
-                    class="px-3 py-2 text-left text-sm font-semibold text-gray-900 whitespace-nowrap"
-                  >
-                    Sample Values
-                  </th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-200 bg-white">
@@ -111,12 +99,6 @@ defineExpose({
                   </td>
                   <td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
                     {{ col.nullable ? 'Yes' : 'No' }}
-                  </td>
-                  <td
-                    class="px-3 py-2 text-sm text-gray-500 truncate max-w-[200px]"
-                    :title="renderSample(col.sampleValues)"
-                  >
-                    {{ renderSample(col.sampleValues) || '—' }}
                   </td>
                 </tr>
               </tbody>

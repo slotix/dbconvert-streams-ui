@@ -52,7 +52,6 @@ export interface FileColumnMetadata {
   type: string
   nullable: boolean
   confidence?: number
-  sampleValues?: unknown[]
 }
 
 export interface FileMetadata {
