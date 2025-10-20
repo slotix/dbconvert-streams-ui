@@ -24,6 +24,7 @@ const showExportMenu = ref(false)
 const exportMenuRef = ref<HTMLDivElement | null>(null)
 const showQueryTypeMenu = ref(false)
 const queryTypeMenuRef = ref<HTMLDivElement | null>(null)
+const searchInputRef = ref<HTMLInputElement | null>(null)
 const emit = defineEmits<{
   (e: 'export', format: ExportFormat): void
 }>()
@@ -97,7 +98,18 @@ const errorsOnly = computed({
 const sortOrder = computed(() => logsStore.sortOrder)
 const collapsedLocationCount = computed(() => logsStore.collapsedLocations.size)
 const hasLocations = computed(() => logsStore.flatLogs.size > 0)
-const canExpandLocations = computed(() => collapsedLocationCount.value > 0 && visuallyGrouped.value)
+
+// Determine expand/collapse state
+const isAllExpanded = computed(() => collapsedLocationCount.value === 0 && hasLocations.value)
+const expandCollapseLabel = computed(() => (isAllExpanded.value ? 'Collapse' : 'Expand'))
+
+function toggleExpandCollapse() {
+  if (isAllExpanded.value) {
+    logsStore.collapseAllLocations()
+  } else {
+    logsStore.expandAllLocations()
+  }
+}
 
 function clearLogs() {
   logsStore.clearSQLLogs()
@@ -113,16 +125,6 @@ function toggleExportMenu() {
 
 function toggleVisualGrouping() {
   logsStore.toggleVisualGrouping()
-}
-
-function expandAllLocations() {
-  if (!hasLocations.value) return
-  logsStore.expandAllLocations()
-}
-
-function collapseAllLocations() {
-  if (!hasLocations.value) return
-  logsStore.collapseAllLocations()
 }
 
 function selectExportFormat(format: ExportFormat) {
@@ -152,12 +154,66 @@ function handleDocumentClick(event: MouseEvent) {
   }
 }
 
+function handleKeyboardShortcut(event: KeyboardEvent) {
+  // Don't trigger shortcuts if typing in an input field (except for specific keys)
+  const target = event.target as HTMLElement
+  const isInputField = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA'
+
+  // F: Focus search box
+  if (event.key.toLowerCase() === 'f' && !isInputField) {
+    event.preventDefault()
+    searchInputRef.value?.focus()
+    return
+  }
+
+  // G: Toggle grouped/ungrouped
+  if (event.key.toLowerCase() === 'g' && !isInputField) {
+    event.preventDefault()
+    logsStore.toggleVisualGrouping()
+    return
+  }
+
+  // X: Toggle expand/collapse all
+  if (event.key.toLowerCase() === 'x' && !isInputField) {
+    event.preventDefault()
+    if (logsStore.collapsedLocations.size === 0) {
+      logsStore.collapseAllLocations()
+    } else {
+      logsStore.expandAllLocations()
+    }
+    return
+  }
+
+  // E: Toggle errors only
+  if (event.key.toLowerCase() === 'e' && !isInputField) {
+    event.preventDefault()
+    errorsOnly.value = !errorsOnly.value
+    return
+  }
+
+  // S: Toggle sort order
+  if (event.key.toLowerCase() === 's' && !isInputField) {
+    event.preventDefault()
+    logsStore.toggleSortOrder()
+    return
+  }
+
+  // K: Clear logs
+  if (event.key.toLowerCase() === 'k' && !isInputField) {
+    event.preventDefault()
+    logsStore.clearSQLLogs()
+    return
+  }
+}
+
 onMounted(() => {
   document.addEventListener('click', handleDocumentClick)
+  document.addEventListener('keydown', handleKeyboardShortcut)
 })
 
 onBeforeUnmount(() => {
   document.removeEventListener('click', handleDocumentClick)
+  document.removeEventListener('keydown', handleKeyboardShortcut)
 })
 </script>
 
@@ -181,40 +237,24 @@ onBeforeUnmount(() => {
         <span class="font-medium">{{ visuallyGrouped ? 'Grouped' : 'Ungrouped' }}</span>
       </button>
 
-      <!-- Expand/Collapse Controls (only visible when visually grouped) -->
-      <div
-        v-if="visuallyGrouped"
-        class="flex items-center gap-1 bg-white border border-gray-300 rounded p-0.5"
+      <!-- Expand/Collapse Toggle (only visible when visually grouped) -->
+      <button
+        v-if="visuallyGrouped && hasLocations"
+        :class="[
+          'flex items-center gap-1.5 px-3 py-1.5 text-xs border border-gray-300 rounded transition-colors shadow-sm',
+          isAllExpanded
+            ? 'bg-white text-gray-600 hover:bg-gray-50'
+            : 'bg-white text-gray-600 hover:bg-gray-50'
+        ]"
+        :title="`${expandCollapseLabel} all location groups (X)`"
+        @click="toggleExpandCollapse"
       >
-        <button
-          :class="[
-            'flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors',
-            canExpandLocations
-              ? 'text-gray-600 hover:bg-gray-100'
-              : 'text-gray-400 cursor-not-allowed'
-          ]"
-          :disabled="!canExpandLocations"
-          title="Expand all location groups"
-          @click="expandAllLocations"
-        >
-          <ArrowsPointingOutIcon class="w-4 h-4" />
-          <span>Expand</span>
-        </button>
-        <button
-          :class="[
-            'flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors',
-            hasLocations && visuallyGrouped
-              ? 'text-gray-600 hover:bg-gray-100'
-              : 'text-gray-400 cursor-not-allowed'
-          ]"
-          :disabled="!hasLocations || !visuallyGrouped"
-          title="Collapse all location groups"
-          @click="collapseAllLocations"
-        >
-          <ArrowsPointingInIcon class="w-4 h-4" />
-          <span>Collapse</span>
-        </button>
-      </div>
+        <component
+          :is="isAllExpanded ? ArrowsPointingInIcon : ArrowsPointingOutIcon"
+          class="w-4 h-4"
+        />
+        <span class="font-medium">{{ expandCollapseLabel }}</span>
+      </button>
 
       <!-- Query Type Filter Dropdown -->
       <div ref="queryTypeMenuRef" class="relative">
@@ -356,6 +396,7 @@ onBeforeUnmount(() => {
           class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2"
         />
         <input
+          ref="searchInputRef"
           v-model="searchText"
           type="text"
           placeholder="Search queries, tables, errors..."
@@ -439,11 +480,15 @@ onBeforeUnmount(() => {
           <div class="space-y-1.5">
             <div class="flex justify-between">
               <span class="text-gray-600">Focus search</span>
-              <kbd class="px-2 py-0.5 bg-gray-100 border border-gray-300 rounded">/ </kbd>
+              <kbd class="px-2 py-0.5 bg-gray-100 border border-gray-300 rounded">F</kbd>
             </div>
             <div class="flex justify-between">
-              <span class="text-gray-600">Toggle log type filters</span>
-              <kbd class="px-2 py-0.5 bg-gray-100 border border-gray-300 rounded">Click</kbd>
+              <span class="text-gray-600">Toggle grouped/ungrouped</span>
+              <kbd class="px-2 py-0.5 bg-gray-100 border border-gray-300 rounded">G</kbd>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-600">Toggle expand/collapse</span>
+              <kbd class="px-2 py-0.5 bg-gray-100 border border-gray-300 rounded">X</kbd>
             </div>
             <div class="flex justify-between">
               <span class="text-gray-600">Toggle errors only</span>
