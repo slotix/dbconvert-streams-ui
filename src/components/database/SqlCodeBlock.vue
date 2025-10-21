@@ -20,7 +20,7 @@ const formattedCode = computed(() => {
       return props.code
     }
 
-    // For normal mode, use full formatting
+    // For normal mode, use sql-formatter with configured options
     const options = getFormattingOptions(props.dialect)
     return format(props.code, options)
   } catch (error) {

@@ -33,11 +33,13 @@ const formattedIndexes = computed(() => {
 
   try {
     const options = getFormattingOptions(dialect.value)
-    // Format each index separately and then join with semicolons and newlines
-    return props.ddl.createIndexes.map((sql) => format(sql, options).trim()).join(';\n') + ';'
+    // Format each index, remove trailing semicolons, then join with semicolons and newlines
+    return props.ddl.createIndexes
+      .map((sql) => format(sql, options).trim().replace(/;+$/, ''))
+      .join(';\n')
   } catch (error) {
     console.error('Error formatting indexes:', error)
-    return props.ddl.createIndexes.join(';\n') + ';'
+    return props.ddl.createIndexes.map((sql) => sql.trim().replace(/;+$/, '')).join(';\n')
   }
 })
 </script>

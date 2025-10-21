@@ -23,16 +23,16 @@ type SqlFormatterOptions = FormatOptions & {
 export function getFormattingOptions(dialect: string): SqlFormatterOptions {
   const baseOptions: SqlFormatterOptions = {
     keywordCase: 'upper',
-    indentStyle: 'standard',
+    indentStyle: 'tabularRight',
     linesBetweenQueries: 0,
     tabWidth: 2,
     useTabs: false,
     identifierCase: 'preserve',
     dataTypeCase: 'preserve',
     functionCase: 'preserve',
-    denseOperators: true,
+    denseOperators: false,
     logicalOperatorNewline: 'before',
-    expressionWidth: 50,
+    expressionWidth: 120,
     newlineBeforeSemicolon: false,
     paramTypes: {
       numbered: ['?'],
