@@ -41,7 +41,7 @@
           <ul class="text-sm text-gray-600 space-y-1 list-disc list-inside">
             <li>Source and target must be different connections</li>
             <li>You can select databases within each connection for more precise control</li>
-            <li>For file connections, you can specify a custom output path</li>
+            <li>File connections use the folder path defined in their connection settings</li>
             <li>Make sure both connections are accessible and tested before creating a stream</li>
           </ul>
         </div>

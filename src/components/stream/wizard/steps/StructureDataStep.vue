@@ -2,7 +2,8 @@
   <div class="space-y-6">
     <!-- Dataset Section -->
     <div class="bg-white border border-gray-200 rounded-lg p-6">
-      <TableList />
+      <FilePreviewList v-if="isFileSourceConnection" :connection-id="sourceConnectionId" />
+      <TableList v-else />
     </div>
 
     <!-- Structure Options Section -->
@@ -42,6 +43,7 @@
               v-model="createStructure"
               type="checkbox"
               class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              :disabled="isFileSourceConnection"
               @change="handleStructureToggle"
             />
           </div>
@@ -53,7 +55,7 @@
         </div>
 
         <!-- Advanced Structure Options (Expandable) -->
-        <div v-if="createStructure" class="ml-7 mt-3">
+        <div v-if="createStructure && !isFileSourceConnection" class="ml-7 mt-3">
           <button
             type="button"
             class="flex items-center text-sm text-gray-700 hover:text-gray-900 focus:outline-none"
@@ -86,6 +88,7 @@
                   v-model="createTables"
                   type="checkbox"
                   class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  :disabled="isFileSourceConnection"
                   @change="handleOptionsChange"
                 />
               </div>
@@ -104,6 +107,7 @@
                   v-model="createIndexes"
                   type="checkbox"
                   class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  :disabled="isFileSourceConnection"
                   @change="handleOptionsChange"
                 />
               </div>
@@ -122,6 +126,7 @@
                   v-model="createForeignKeys"
                   type="checkbox"
                   class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  :disabled="isFileSourceConnection"
                   @change="handleOptionsChange"
                 />
               </div>
@@ -157,8 +162,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import TableList from '@/components/settings/TableList.vue'
+import FilePreviewList from '@/components/stream/wizard/FilePreviewList.vue'
+import { useStreamsStore } from '@/stores/streamConfig'
+import { useConnectionsStore } from '@/stores/connections'
 
 interface Props {
   createTables?: boolean
@@ -187,6 +195,39 @@ const createIndexes = ref(props.createIndexes)
 const createForeignKeys = ref(props.createForeignKeys)
 const copyData = ref(props.copyData)
 const showAdvanced = ref(false)
+
+const streamsStore = useStreamsStore()
+const connectionsStore = useConnectionsStore()
+
+const sourceConnectionId = computed(() => {
+  const source = streamsStore.currentStreamConfig?.source
+  return source || null
+})
+
+const sourceConnection = computed(() => {
+  if (!sourceConnectionId.value) {
+    return null
+  }
+  return connectionsStore.connectionByID(sourceConnectionId.value)
+})
+
+const isFileSourceConnection = computed(() => {
+  const type = sourceConnection.value?.type?.toLowerCase() || ''
+  return type.includes('file')
+})
+
+watch(
+  isFileSourceConnection,
+  (isFile) => {
+    if (isFile) {
+      createTables.value = false
+      createIndexes.value = false
+      createForeignKeys.value = false
+      showAdvanced.value = false
+    }
+  },
+  { immediate: true }
+)
 
 // Master "Create structure" checkbox - checked if any structure option is enabled
 const createStructure = computed({

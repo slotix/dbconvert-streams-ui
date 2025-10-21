@@ -1,171 +1,130 @@
 <template>
-  <div class="space-y-2">
-    <div v-if="!connections.length" class="text-center py-8 text-gray-500 text-sm">
+  <div class="space-y-3">
+    <div v-if="!connections.length" class="py-8 text-center text-sm text-gray-500">
       No connections available
     </div>
 
-    <div v-for="connection in connections" :key="connection.id" class="space-y-1">
-      <!-- Connection Item -->
-      <div
-        class="flex items-center px-3 py-2 rounded-md cursor-pointer transition-colors"
-        :class="[
-          selectedConnectionId === connection.id
-            ? 'bg-blue-100 text-blue-900 font-medium'
-            : 'hover:bg-gray-100 text-gray-700'
-        ]"
-        @click="selectConnection(connection)"
+    <div v-for="connection in connections" :key="connection.id" class="rounded-lg">
+      <button
+        type="button"
+        class="flex w-full items-start gap-3 px-3 py-2 text-left transition-colors"
+        :class="connectionHeaderClass(connection.id)"
+        @click="toggleConnectionExpansion(connection)"
       >
-        <svg
-          v-if="isFileConnection(connection)"
-          class="w-4 h-4 mr-2 flex-shrink-0"
-          :class="selectedConnectionId === connection.id ? 'text-blue-600' : 'text-gray-400'"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
-          />
-        </svg>
-        <svg
-          v-else
-          class="w-4 h-4 mr-2 flex-shrink-0"
-          :class="selectedConnectionId === connection.id ? 'text-blue-600' : 'text-gray-400'"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"
-          />
-        </svg>
-        <span class="text-sm flex-1">{{ connection.name }}</span>
-        <span class="text-xs text-gray-500 ml-2">{{ connection.type }}</span>
-      </div>
-
-      <!-- Loading databases indicator -->
-      <div
-        v-if="
-          selectedConnectionId === connection.id &&
-          !isFileConnection(connection) &&
-          isLoadingDatabases
-        "
-        class="ml-6 mt-2 flex items-center px-3 py-2 text-sm text-gray-600"
-      >
-        <svg
-          class="animate-spin h-4 w-4 mr-2 text-blue-600"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-        >
-          <circle
-            class="opacity-25"
-            cx="12"
-            cy="12"
-            r="10"
-            stroke="currentColor"
-            stroke-width="4"
-          ></circle>
-          <path
-            class="opacity-75"
-            fill="currentColor"
-            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-          ></path>
-        </svg>
-        Loading databases...
-      </div>
-
-      <!-- Database List (if connection is expanded and selected) -->
-      <div
-        v-if="
-          selectedConnectionId === connection.id &&
-          !isFileConnection(connection) &&
-          !isLoadingDatabases &&
-          databases.length > 0
-        "
-        class="ml-6 space-y-1 mt-2"
-      >
-        <div
-          v-for="db in databases"
-          :key="db.name"
-          class="flex items-center justify-between px-3 py-1.5 rounded-md cursor-pointer transition-colors text-sm group"
-          :class="[
-            selectedDatabase === db.name
-              ? 'bg-blue-100 text-blue-900 font-medium ring-1 ring-blue-300'
-              : 'hover:bg-gray-50 text-gray-600'
-          ]"
-          @click.stop="selectDatabase(connection.id, db.name)"
-        >
-          <div class="flex items-center">
-            <svg
-              class="w-3.5 h-3.5 mr-2 transition-colors"
-              :class="selectedDatabase === db.name ? 'text-blue-600' : 'text-gray-400'"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path
-                d="M3 12v3c0 1.657 3.134 3 7 3s7-1.343 7-3v-3c0 1.657-3.134 3-7 3s-7-1.343-7-3z"
-              />
-              <path d="M3 7v3c0 1.657 3.134 3 7 3s7-1.343 7-3V7c0 1.657-3.134 3-7 3S3 8.657 3 7z" />
-              <path d="M17 5c0 1.657-3.134 3-7 3S3 6.657 3 5s3.134-3 7-3 7 1.343 7 3z" />
-            </svg>
-            {{ db.name }}
-          </div>
-          <!-- Checkmark for selected database -->
-          <svg
-            v-if="selectedDatabase === db.name"
-            class="w-4 h-4 text-blue-600"
-            fill="currentColor"
-            viewBox="0 0 20 20"
-          >
-            <path
-              fill-rule="evenodd"
-              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-              clip-rule="evenodd"
-            />
-          </svg>
-        </div>
-      </div>
-
-      <!-- File Path (if connection is file-based) -->
-      <div
-        v-if="
-          selectedConnectionId === connection.id &&
-          isFileConnection(connection) &&
-          mode === 'target'
-        "
-        class="ml-6 mt-2"
-      >
-        <div class="text-xs text-gray-600 mb-1 font-medium">Target Path:</div>
-        <input
-          v-model="filePathInput"
-          type="text"
-          placeholder="Enter file path or pattern (e.g., /output/data.parquet)"
-          class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
-          @input="handleFilePathChange"
+        <component
+          :is="isConnectionExpanded(connection.id) ? ChevronDownIcon : ChevronRightIcon"
+          class="mt-0.5 h-4 w-4 flex-shrink-0 text-gray-400"
         />
-        <p class="text-xs text-gray-500 mt-1">
-          Specify the target file path or use patterns like /output/*.parquet
-        </p>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2">
+            <span class="truncate text-sm font-medium text-gray-900">{{ connection.name }}</span>
+            <span class="text-xs uppercase tracking-wide text-gray-400">{{ connection.type }}</span>
+          </div>
+          <div v-if="connectionSubtitle(connection)" class="truncate text-xs text-gray-500">
+            {{ connectionSubtitle(connection) }}
+          </div>
+          <div
+            v-if="connectionSelectionLabel(connection.id)"
+            class="truncate text-xs text-blue-600"
+          >
+            {{ connectionSelectionLabel(connection.id) }}
+          </div>
+        </div>
+      </button>
+
+      <div v-if="isConnectionExpanded(connection.id)" class="border-t border-gray-100">
+        <div
+          v-if="isFileConnection(connection)"
+          class="space-y-2 px-4 py-3 bg-gray-50 text-sm text-gray-700"
+        >
+          <div class="flex items-start justify-between gap-4">
+            <div class="min-w-0">
+              <div class="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                Folder Path
+              </div>
+              <div class="mt-1 truncate text-sm font-medium text-gray-900">
+                {{ getFileDirectory(connection.id) || connection.path || 'No folder configured' }}
+              </div>
+            </div>
+            <button
+              type="button"
+              class="rounded-md border border-gray-300 px-2 py-1 text-xs font-medium text-gray-600 hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+              :disabled="getFileLoadingState(connection.id)"
+              @click.stop="refreshFileEntries(connection.id)"
+            >
+              Refresh
+            </button>
+          </div>
+          <div class="text-xs text-gray-500">
+            <template v-if="getFileError(connection.id)">
+              <span class="text-red-600">{{ getFileError(connection.id) }}</span>
+            </template>
+            <template v-else-if="getFileLoadingState(connection.id)"> Loading files… </template>
+            <template v-else> {{ getFileCount(connection.id) }} files detected </template>
+          </div>
+        </div>
+
+        <template v-else>
+          <div
+            v-if="isDatabasesLoading(connection.id)"
+            class="flex items-center gap-2 px-4 py-3 text-sm text-gray-500"
+          >
+            <svg class="h-4 w-4 animate-spin text-blue-500" viewBox="0 0 24 24" fill="none">
+              <circle
+                class="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="4"
+              />
+              <path
+                class="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              />
+            </svg>
+            Loading databases…
+          </div>
+
+          <div
+            v-else-if="getDatabases(connection.id).length === 0"
+            class="px-4 py-3 text-sm text-gray-500"
+          >
+            No databases found
+          </div>
+
+          <div v-else class="space-y-1 py-2">
+            <div v-for="database in getDatabases(connection.id)" :key="database.name" class="px-2">
+              <button
+                type="button"
+                class="flex w-full items-center gap-3 rounded-md px-2 py-2 text-sm transition-colors"
+                :class="databaseRowClass(connection.id, database.name)"
+                @click="handleDatabaseSelect(connection, database.name)"
+              >
+                <span class="h-4 w-4 flex-shrink-0" />
+                <span class="truncate">{{ database.name }}</span>
+                <span
+                  v-if="getTableCount(connection.id, database.name) !== null"
+                  class="ml-auto text-xs text-gray-400"
+                >
+                  {{ getTableCount(connection.id, database.name) }} tables
+                </span>
+              </button>
+            </div>
+          </div>
+        </template>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, computed, watch, type Ref } from 'vue'
+import { ChevronRightIcon, ChevronDownIcon } from '@heroicons/vue/24/outline'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
+import { useFileExplorerStore } from '@/stores/fileExplorer'
 import type { Connection } from '@/types/connections'
-
-interface DatabaseInfo {
-  name: string
-}
 
 interface Props {
   connections: Connection[]
@@ -190,83 +149,203 @@ const emit = defineEmits<{
 }>()
 
 const navigationStore = useExplorerNavigationStore()
-const databases = ref<DatabaseInfo[]>([])
-const filePathInput = ref('')
-const isLoadingDatabases = ref(false)
+const fileExplorerStore = useFileExplorerStore()
+
+const expandedConnections = ref<Set<string>>(new Set())
+
+const connectionsMap = computed(() => {
+  const map = new Map<string, Connection>()
+  props.connections.forEach((connection) => {
+    map.set(connection.id, connection)
+  })
+  return map
+})
+
+function addToSet(target: Ref<Set<string>>, value: string) {
+  if (target.value.has(value)) {
+    return
+  }
+  const next = new Set(target.value)
+  next.add(value)
+  target.value = next
+}
+
+function removeFromSet(target: Ref<Set<string>>, value: string) {
+  if (!target.value.has(value)) {
+    return
+  }
+  const next = new Set(target.value)
+  next.delete(value)
+  target.value = next
+}
+
+function getConnectionById(connectionId?: string | null) {
+  if (!connectionId) {
+    return undefined
+  }
+  return connectionsMap.value.get(connectionId)
+}
 
 function isFileConnection(connection: Connection): boolean {
-  return ['files', 'csv', 'parquet', 'jsonl'].includes(connection.type.toLowerCase())
+  return ['files', 'csv', 'parquet', 'jsonl'].includes((connection.type || '').toLowerCase())
 }
 
-async function selectConnection(connection: Connection) {
-  // Load databases if it's a database connection
-  if (!isFileConnection(connection)) {
-    isLoadingDatabases.value = true
-    try {
-      await navigationStore.ensureDatabases(connection.id)
-      databases.value = navigationStore.databasesState[connection.id] || []
+function getFileDirectory(connectionId: string): string {
+  return fileExplorerStore.getDirectoryPath(connectionId) || ''
+}
 
-      // Auto-select the first database or the connection's default database
-      let defaultDb =
-        connection.database || (databases.value.length > 0 ? databases.value[0].name : undefined)
+function getFileCount(connectionId: string): number {
+  return fileExplorerStore.getEntries(connectionId)?.length || 0
+}
 
-      emit('select-connection', { connectionId: connection.id, database: defaultDb })
+function getFileLoadingState(connectionId: string): boolean {
+  return fileExplorerStore.isLoading(connectionId)
+}
 
-      // Also emit select-database to ensure it's properly set
-      if (defaultDb) {
-        emit('select-database', { connectionId: connection.id, database: defaultDb })
-      }
-    } catch (error) {
-      console.error('Failed to load databases:', error)
-      databases.value = []
-      emit('select-connection', { connectionId: connection.id })
-    } finally {
-      isLoadingDatabases.value = false
+function getFileError(connectionId: string): string {
+  return fileExplorerStore.getError(connectionId) || ''
+}
+
+function refreshFileEntries(connectionId: string) {
+  void fileExplorerStore.loadEntries(connectionId, true)
+}
+
+function connectionSubtitle(connection: Connection): string | null {
+  const parts: string[] = []
+  if (connection.host) {
+    const hostPort = connection.port ? `${connection.host}:${connection.port}` : connection.host
+    parts.push(hostPort)
+  }
+  return parts.length ? parts.join(' · ') : null
+}
+
+function connectionSelectionLabel(connectionId: string): string | null {
+  if (props.selectedConnectionId !== connectionId) {
+    return null
+  }
+  if (props.mode === 'target' && props.selectedPath) {
+    return props.selectedPath
+  }
+  const parts: string[] = []
+  if (props.selectedDatabase) {
+    parts.push(props.selectedDatabase)
+  }
+
+  const connection = getConnectionById(connectionId)
+  if (connection && isFileConnection(connection)) {
+    const folder = fileExplorerStore.getDirectoryPath(connectionId) || connection.path || ''
+    if (folder) {
+      parts.push(folder)
     }
-  } else {
-    databases.value = []
+  }
+
+  return parts.length ? parts.join(' / ') : null
+}
+
+function connectionHeaderClass(connectionId: string): string {
+  if (props.selectedConnectionId !== connectionId) {
+    return 'hover:bg-gray-50 text-gray-800'
+  }
+
+  const connection = getConnectionById(connectionId)
+  const shouldHighlight =
+    !props.selectedDatabase || (connection ? isFileConnection(connection) : false)
+
+  return shouldHighlight ? 'bg-gray-100 text-gray-900' : 'text-gray-800'
+}
+
+function databaseRowClass(connectionId: string, database: string): string {
+  const isSelected =
+    props.selectedConnectionId === connectionId && props.selectedDatabase === database
+  return isSelected ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-gray-50'
+}
+
+function isConnectionExpanded(connectionId: string): boolean {
+  return expandedConnections.value.has(connectionId)
+}
+
+async function toggleConnectionExpansion(connection: Connection) {
+  if (isConnectionExpanded(connection.id)) {
+    removeFromSet(expandedConnections, connection.id)
+    return
+  }
+
+  addToSet(expandedConnections, connection.id)
+
+  if (isFileConnection(connection)) {
+    await fileExplorerStore.loadEntries(connection.id)
     emit('select-connection', { connectionId: connection.id })
+    return
   }
+
+  await loadDatabases(connection.id)
 }
 
-function selectDatabase(connectionId: string, database: string) {
-  emit('select-database', { connectionId, database })
+function isDatabasesLoading(connectionId: string): boolean {
+  return navigationStore.isDatabasesLoading(connectionId)
 }
 
-function handleFilePathChange() {
-  if (props.selectedConnectionId && filePathInput.value) {
-    emit('select-file', { connectionId: props.selectedConnectionId, path: filePathInput.value })
+async function loadDatabases(connectionId: string) {
+  const connection = getConnectionById(connectionId)
+  if (!connection || isFileConnection(connection)) {
+    return
   }
+
+  await navigationStore.ensureDatabases(connectionId)
 }
 
-// Watch for changes to selected connection to load databases
+function getDatabases(connectionId: string) {
+  return navigationStore.databasesState[connectionId] || []
+}
+
+async function ensureMetadata(connectionId: string, database: string) {
+  await navigationStore.ensureMetadata(connectionId, database)
+}
+
+function getTableCount(connectionId: string, database: string): number | null {
+  const meta = navigationStore.metadataState[connectionId]?.[database]
+  if (!meta) {
+    return null
+  }
+  return Object.keys(meta.tables || {}).length
+}
+
+function handleDatabaseSelect(connection: Connection, database: string) {
+  addToSet(expandedConnections, connection.id)
+  emit('select-connection', { connectionId: connection.id, database })
+  emit('select-database', { connectionId: connection.id, database })
+  void ensureMetadata(connection.id, database)
+}
+
 watch(
   () => props.selectedConnectionId,
-  async (newConnectionId) => {
-    if (newConnectionId) {
-      const connection = props.connections.find((c) => c.id === newConnectionId)
-      if (connection && !isFileConnection(connection)) {
-        try {
-          await navigationStore.ensureDatabases(newConnectionId)
-          databases.value = navigationStore.databasesState[newConnectionId] || []
-        } catch (error) {
-          console.error('Failed to load databases:', error)
-          databases.value = []
-        }
-      }
-    } else {
-      databases.value = []
+  (connectionId) => {
+    if (!connectionId) {
+      return
     }
-  }
+    addToSet(expandedConnections, connectionId)
+    const connection = getConnectionById(connectionId)
+    if (!connection) {
+      return
+    }
+    if (isFileConnection(connection)) {
+      void fileExplorerStore.loadEntries(connectionId)
+      return
+    }
+    void loadDatabases(connectionId)
+  },
+  { immediate: true }
 )
 
-// Initialize file path from props
 watch(
-  () => props.selectedPath,
-  (newPath) => {
-    if (newPath) {
-      filePathInput.value = newPath
+  () => props.selectedDatabase,
+  (database) => {
+    const connectionId = props.selectedConnectionId
+    if (!connectionId || !database) {
+      return
     }
+    addToSet(expandedConnections, connectionId)
+    void ensureMetadata(connectionId, database)
   },
   { immediate: true }
 )
