@@ -59,7 +59,7 @@ export function useConnectionActions(emits?: {
   async function refreshDatabases(id: string) {
     navigationStore.invalidateDatabases(id)
     await navigationStore.ensureDatabases(id, true)
-    toast.success('Databases refreshed')
+    toast.success('Connections refreshed')
   }
 
   function editConnection(id: string) {
