@@ -224,6 +224,11 @@ watch(
       createIndexes.value = false
       createForeignKeys.value = false
       showAdvanced.value = false
+      if (streamsStore.currentStreamConfig) {
+        streamsStore.currentStreamConfig.files = streamsStore.currentStreamConfig.files || []
+      }
+    } else if (streamsStore.currentStreamConfig) {
+      streamsStore.currentStreamConfig.files = []
     }
   },
   { immediate: true }

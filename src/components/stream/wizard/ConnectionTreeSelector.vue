@@ -35,14 +35,19 @@
       <div v-if="isConnectionExpanded(connection.id)" class="border-t border-gray-100">
         <div v-if="isFileConnection(connection)" class="space-y-1 py-2">
           <div class="px-2">
-            <div class="flex w-full items-center gap-3 rounded-md px-2 py-2 text-sm text-gray-700">
+            <div class="flex w-full items-start gap-3 rounded-md px-2 py-2 text-sm text-gray-700">
               <span class="h-4 w-4 flex-shrink-0" />
-              <span class="truncate flex-1">
-                <template v-if="getFileError(connection.id)">
-                  <span class="text-red-600">{{ getFileError(connection.id) }}</span>
-                </template>
-                <template v-else-if="getFileLoadingState(connection.id)"> Loading files… </template>
-                <template v-else> {{ getFileCount(connection.id) }} files detected </template>
+              <span class="flex-1 min-w-0">
+                <div class="truncate text-xs uppercase tracking-wide text-gray-500">
+                  {{ getFileDirectory(connection.id) || connection.path || 'No folder configured' }}
+                </div>
+                <div class="mt-1">
+                  <template v-if="getFileError(connection.id)">
+                    <span class="text-red-600">{{ getFileError(connection.id) }}</span>
+                  </template>
+                  <template v-else-if="getFileLoadingState(connection.id)"> Loading files… </template>
+                  <template v-else> {{ getFileCount(connection.id) }} files detected </template>
+                </div>
               </span>
               <button
                 type="button"
@@ -184,6 +189,15 @@ function isFileConnection(connection: Connection): boolean {
 
 function getFileCount(connectionId: string): number {
   return fileExplorerStore.getEntries(connectionId)?.length || 0
+}
+
+function getFileDirectory(connectionId: string): string {
+  const directory = fileExplorerStore.getDirectoryPath(connectionId)
+  if (directory) {
+    return directory
+  }
+  const connection = getConnectionById(connectionId)
+  return connection?.path || ''
 }
 
 function getFileLoadingState(connectionId: string): boolean {

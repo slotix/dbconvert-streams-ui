@@ -1,11 +1,5 @@
 <template>
   <div class="space-y-6">
-    <!-- Header -->
-    <div class="text-center">
-      <h2 class="text-lg font-medium text-gray-900">Configure Stream Settings</h2>
-      <p class="mt-2 text-sm text-gray-600">Set stream name, mode, and performance options</p>
-    </div>
-
     <!-- Stream Settings -->
     <div class="bg-white border border-gray-200 rounded-lg p-6">
       <StreamSettings />
@@ -159,6 +153,12 @@ const targetDisplay = computed(() => {
   if (!conn) return props.targetConnectionId
   let display = conn.name
   if (props.targetDatabase) display += ` / ${props.targetDatabase}`
+  if (conn.type?.toLowerCase().includes('file')) {
+    const format = currentStreamConfig.value?.targetFileFormat
+    if (format) {
+      display += ` • ${format.toUpperCase()}`
+    }
+  }
   return display
 })
 

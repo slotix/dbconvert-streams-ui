@@ -21,13 +21,15 @@ export const defaultStreamConfigOptions: StreamConfig = {
   dataBundleSize: 500,
   reportingIntervals: { source: 3, target: 3 },
   operations: ['insert', 'update', 'delete'],
+  targetFileFormat: undefined,
   structureOptions: {
-    tables: 'create_if_not_exists',
-    indexes: 'create_if_not_exists',
-    foreignKeys: 'create_if_not_exists'
+    tables: true,
+    indexes: true,
+    foreignKeys: true
   },
   limits: { numberOfEvents: 0, elapsedTime: 0 },
-  tables: []
+  tables: [],
+  files: []
 }
 
 const defaultTableOptions: Partial<Table> = {
@@ -153,6 +155,15 @@ export const useStreamsStore = defineStore('streams', {
     updateTarget(targetId: string) {
       if (this.currentStreamConfig) {
         this.currentStreamConfig.target = targetId
+        const connectionsStore = useConnectionsStore()
+        const connection = connectionsStore.connectionByID(targetId)
+        if (connection && connection.type?.toLowerCase().includes('file')) {
+          if (!this.currentStreamConfig.targetFileFormat) {
+            this.currentStreamConfig.targetFileFormat = 'csv'
+          }
+        } else {
+          delete this.currentStreamConfig.targetFileFormat
+        }
       }
     },
     setFilter(filter: string) {

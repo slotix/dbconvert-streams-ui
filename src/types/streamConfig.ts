@@ -20,6 +20,7 @@ export interface StreamConfig {
     target: number
   }
   operations?: string[]
+  targetFileFormat?: 'csv' | 'json' | 'jsonl' | 'parquet'
 
   // Granular structure creation options
   structureOptions?: {

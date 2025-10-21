@@ -112,12 +112,7 @@ const rawFiles = computed<FileSystemEntry[]>(() => {
 })
 
 const files = computed<FileEntry[]>(() => {
-  return rawFiles.value.map((file) => ({
-    name: file.name,
-    path: file.path,
-    size: file.size,
-    selected: true
-  }))
+  return streamsStore.currentStreamConfig?.files || []
 })
 
 const filteredFiles = computed(() => {
@@ -128,12 +123,8 @@ const filteredFiles = computed(() => {
   return files.value.filter((file) => file.name.toLowerCase().includes(query))
 })
 
-const selectedFiles = computed(() => {
-  return files.value.filter((file) => file.selected)
-})
-
 const selectedFilesCount = computed(() => {
-  return selectedFiles.value.length
+  return files.value.filter((file) => file.selected).length
 })
 
 const indeterminate = computed(() => {
@@ -183,13 +174,24 @@ watch(
 )
 
 watch(
-  selectedFiles,
-  (newFiles) => {
-    if (streamsStore.currentStreamConfig) {
-      streamsStore.currentStreamConfig.files = newFiles.filter((file) => file.selected)
+  rawFiles,
+  (entries) => {
+    if (!streamsStore.currentStreamConfig || !props.connectionId) {
+      return
     }
+    const existing = streamsStore.currentStreamConfig.files || []
+    const updated: FileEntry[] = entries.map((entry) => {
+      const previous = existing.find((item) => item.path === entry.path)
+      return {
+        name: entry.name,
+        path: entry.path,
+        size: entry.size,
+        selected: previous ? previous.selected : true
+      }
+    })
+    streamsStore.currentStreamConfig.files = updated
   },
-  { deep: true }
+  { immediate: true }
 )
 
 function refresh() {
