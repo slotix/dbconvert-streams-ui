@@ -1,53 +1,96 @@
 <template>
   <div class="space-y-4">
-    <div class="flex items-start justify-between gap-4">
-      <div class="min-w-0">
-        <div class="text-sm font-medium text-gray-900">Files</div>
-        <div class="mt-1 truncate text-xs text-gray-500" v-if="directoryPath">
-          {{ directoryPath }}
-        </div>
-        <div class="mt-1 text-xs text-gray-400" v-else>No folder path configured</div>
+    <!-- Header with file count, filter, select all, and refresh -->
+    <div class="flex items-center gap-4">
+      <!-- File count -->
+      <div class="text-sm font-medium text-gray-900 whitespace-nowrap">
+        {{ selectedFilesCount }} / {{ files.length }}
       </div>
+
+      <!-- Filter input -->
+      <div class="flex-1">
+        <input
+          v-model="searchQuery"
+          type="text"
+          placeholder="Filter files..."
+          class="block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500 sm:text-sm"
+        />
+      </div>
+
+      <!-- Select All checkbox -->
+      <div class="flex items-center whitespace-nowrap">
+        <input
+          id="select-all-files"
+          :checked="selectAllCheckboxState"
+          :indeterminate="indeterminate"
+          type="checkbox"
+          class="h-4 w-4 text-gray-600 focus:ring-gray-500 border-gray-300 rounded"
+          @change="toggleSelectAll"
+        />
+        <label for="select-all-files" class="ml-2 text-sm text-gray-700"> Select All </label>
+      </div>
+
+      <!-- Refresh button -->
       <button
         type="button"
-        class="rounded-md border border-gray-300 px-3 py-1 text-xs font-medium text-gray-600 hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+        class="inline-flex items-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 whitespace-nowrap"
         :disabled="isLoading"
         @click="refresh"
       >
-        Refresh
+        Refresh files
       </button>
     </div>
 
-    <div class="rounded-lg border border-gray-200 bg-white">
+    <!-- File List -->
+    <div class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg divide-y divide-gray-200">
       <div v-if="isLoading" class="py-10 text-center text-sm text-gray-500">Loading files…</div>
       <div v-else-if="error" class="py-10 text-center text-sm text-red-600">{{ error }}</div>
-      <div v-else-if="!files.length" class="py-10 text-center text-sm text-gray-500">
+      <div v-else-if="!filteredFiles.length" class="py-10 text-center text-sm text-gray-500">
         No files found
       </div>
-      <ul v-else class="divide-y divide-gray-100">
-        <li
-          v-for="file in files"
-          :key="file.path"
-          class="flex items-center justify-between gap-4 px-4 py-2 text-sm text-gray-700"
-        >
-          <div class="flex min-w-0 items-center gap-2">
-            <svg class="h-4 w-4 flex-shrink-0" :class="fileFormatColor(file)" viewBox="0 0 24 24">
-              <path :d="fileFormatIcon(file)" fill="currentColor" />
-            </svg>
-            <span class="truncate">{{ file.name }}</span>
+      <div v-else class="p-4">
+        <div class="space-y-1">
+          <div
+            v-for="file in filteredFiles"
+            :key="file.path"
+            class="flex items-center justify-between px-3 py-2 text-sm rounded-md hover:bg-gray-50"
+          >
+            <div class="flex items-center flex-1">
+              <input
+                :id="`file-${file.path}`"
+                v-model="file.selected"
+                type="checkbox"
+                class="h-4 w-4 text-gray-600 focus:ring-gray-500 border-gray-300 rounded mr-3"
+                @change="
+                  handleCheckboxChange(file, ($event.target as HTMLInputElement)?.checked || false)
+                "
+              />
+              <svg
+                class="h-4 w-4 flex-shrink-0 mr-2"
+                :class="fileFormatColor(file)"
+                viewBox="0 0 24 24"
+              >
+                <path :d="fileFormatIcon(file)" fill="currentColor" />
+              </svg>
+              <label :for="`file-${file.path}`" class="cursor-pointer flex-1 truncate">
+                {{ file.name }}
+              </label>
+            </div>
+            <span class="text-xs text-gray-500 ml-4">{{ formatFileSize(file.size) }}</span>
           </div>
-          <span class="text-xs text-gray-500">{{ formatFileSize(file.size) }}</span>
-        </li>
-      </ul>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { computed, watch, ref } from 'vue'
 import { useFileExplorerStore } from '@/stores/fileExplorer'
+import { useStreamsStore } from '@/stores/streamConfig'
 import { getFileFormat, getFileFormatColor, getFileFormatIconPath } from '@/utils/fileFormat'
 import type { FileSystemEntry } from '@/api/fileSystem'
+import type { FileEntry } from '@/types/streamConfig'
 
 interface Props {
   connectionId?: string | null
@@ -58,19 +101,50 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const fileExplorerStore = useFileExplorerStore()
+const streamsStore = useStreamsStore()
+const searchQuery = ref('')
 
-const files = computed<FileSystemEntry[]>(() => {
+const rawFiles = computed<FileSystemEntry[]>(() => {
   if (!props.connectionId) {
     return []
   }
   return fileExplorerStore.getEntries(props.connectionId)
 })
 
-const directoryPath = computed(() => {
-  if (!props.connectionId) {
-    return ''
+const files = computed<FileEntry[]>(() => {
+  return rawFiles.value.map((file) => ({
+    name: file.name,
+    path: file.path,
+    size: file.size,
+    selected: true
+  }))
+})
+
+const filteredFiles = computed(() => {
+  if (!searchQuery.value) {
+    return files.value
   }
-  return fileExplorerStore.getDirectoryPath(props.connectionId)
+  const query = searchQuery.value.toLowerCase()
+  return files.value.filter((file) => file.name.toLowerCase().includes(query))
+})
+
+const selectedFiles = computed(() => {
+  return files.value.filter((file) => file.selected)
+})
+
+const selectedFilesCount = computed(() => {
+  return selectedFiles.value.length
+})
+
+const indeterminate = computed(() => {
+  const selectedCount = selectedFilesCount.value
+  return selectedCount > 0 && selectedCount < files.value.length
+})
+
+const selectAllCheckboxState = computed(() => {
+  const allSelected = files.value.every((file) => file.selected)
+  const noneSelected = files.value.every((file) => !file.selected)
+  return allSelected || noneSelected ? allSelected : false
 })
 
 const error = computed(() => {
@@ -87,6 +161,17 @@ const isLoading = computed(() => {
   return fileExplorerStore.isLoading(props.connectionId)
 })
 
+function handleCheckboxChange(file: FileEntry, checked: boolean) {
+  file.selected = checked
+}
+
+function toggleSelectAll(event: Event) {
+  const selectAll = (event.target as HTMLInputElement).checked
+  filteredFiles.value.forEach((file) => {
+    file.selected = selectAll
+  })
+}
+
 watch(
   () => props.connectionId,
   async (connectionId) => {
@@ -97,21 +182,31 @@ watch(
   { immediate: true }
 )
 
+watch(
+  selectedFiles,
+  (newFiles) => {
+    if (streamsStore.currentStreamConfig) {
+      streamsStore.currentStreamConfig.files = newFiles.filter((file) => file.selected)
+    }
+  },
+  { deep: true }
+)
+
 function refresh() {
   if (props.connectionId) {
     void fileExplorerStore.loadEntries(props.connectionId, true)
   }
 }
 
-function fileFormat(file: FileSystemEntry) {
+function fileFormat(file: FileEntry | FileSystemEntry) {
   return getFileFormat(file.name)
 }
 
-function fileFormatColor(file: FileSystemEntry) {
+function fileFormatColor(file: FileEntry | FileSystemEntry) {
   return getFileFormatColor(fileFormat(file))
 }
 
-function fileFormatIcon(file: FileSystemEntry) {
+function fileFormatIcon(file: FileEntry | FileSystemEntry) {
   return getFileFormatIconPath(fileFormat(file))
 }
 

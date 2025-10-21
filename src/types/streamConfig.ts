@@ -36,7 +36,15 @@ export interface StreamConfig {
     elapsedTime: number
   }
   tables?: Table[]
+  files?: FileEntry[]
   [key: string]: any
+}
+
+export interface FileEntry {
+  name: string
+  path: string
+  size?: number
+  selected: boolean
 }
 
 export interface ReportingIntervals {
