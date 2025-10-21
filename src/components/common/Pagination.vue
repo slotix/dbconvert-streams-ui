@@ -23,36 +23,35 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/vue/20/solid'
 
 interface Props {
-  totalPages: number
+  totalItems: number
   itemsPerPage: number
+  currentPage: number
 }
 
 const props = defineProps<Props>()
 const emits = defineEmits(['update:currentPage'])
-const currentPage = ref(1)
-// const itemsPerPage = 20 // Set the number of items to display per page
 
-const maxPage = computed(() => Math.ceil(props.totalPages / props.itemsPerPage))
-const isPaginatorVisible = computed(() => maxPage.value > 1)
+const maxPage = computed(() =>
+  props.itemsPerPage > 0 ? Math.max(1, Math.ceil(props.totalItems / props.itemsPerPage)) : 1
+)
+const isPaginatorVisible = computed(() => props.totalItems > props.itemsPerPage)
 
-const previousPageDisabled = computed(() => currentPage.value <= 1)
-const nextPageDisabled = computed(() => currentPage.value >= maxPage.value)
+const previousPageDisabled = computed(() => props.currentPage <= 1)
+const nextPageDisabled = computed(() => props.currentPage >= maxPage.value)
 
 const previousPage = () => {
-  if (currentPage.value > 1) {
-    currentPage.value--
-    emits('update:currentPage', currentPage.value)
+  if (!previousPageDisabled.value) {
+    emits('update:currentPage', Math.max(1, props.currentPage - 1))
   }
 }
 
 const nextPage = () => {
-  if (currentPage.value < maxPage.value) {
-    currentPage.value++
-    emits('update:currentPage', currentPage.value)
+  if (!nextPageDisabled.value) {
+    emits('update:currentPage', Math.min(maxPage.value, props.currentPage + 1))
   }
 }
 </script>

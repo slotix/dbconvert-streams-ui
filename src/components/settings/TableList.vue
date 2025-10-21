@@ -42,10 +42,12 @@
 
     <!-- Schema-grouped Table List -->
     <div class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg divide-y divide-gray-200">
-      <div v-if="!groupedTables.length" class="text-center text-gray-500 py-8">No tables found</div>
+      <div v-if="filteredTablesCount === 0" class="text-center text-gray-500 py-8">
+        No tables found
+      </div>
       <div v-else class="p-4">
         <div class="space-y-1">
-          <template v-for="schemaGroup in groupedTables" :key="schemaGroup.schema">
+          <template v-for="schemaGroup in paginatedGroupedTables" :key="schemaGroup.schema">
             <!-- Schema Header - only show for PostgreSQL -->
             <div
               v-if="sourceConnectionType === 'postgresql' && schemaGroup.schema"
@@ -153,8 +155,9 @@
     <!-- Pagination -->
     <div v-if="totalPages > 1" class="mt-4">
       <Pagination
-        :totalPages="totalPages"
+        :total-items="filteredTablesCount"
         :itemsPerPage="itemsPerPage"
+        :current-page="currentPage"
         @update:currentPage="updateCurrentPage"
       />
     </div>
@@ -204,12 +207,10 @@ interface SchemaGroup {
   tables: Table[]
 }
 
-const groupedTables = computed<SchemaGroup[]>(() => {
-  const filtered = filteredTables.value
+function buildGroupedTables(tablesToGroup: Table[], initializeSchemas = false): SchemaGroup[] {
   const schemaMap = new Map<string, Table[]>()
 
-  // Group tables by schema
-  filtered.forEach((table) => {
+  tablesToGroup.forEach((table) => {
     const schema = getTableSchema(table.name)
     if (!schemaMap.has(schema)) {
       schemaMap.set(schema, [])
@@ -217,43 +218,35 @@ const groupedTables = computed<SchemaGroup[]>(() => {
     schemaMap.get(schema)!.push(table)
   })
 
-  // Convert to array and sort
-  const groups = Array.from(schemaMap.entries()).map(([schema, tables]) => ({
+  let groups = Array.from(schemaMap.entries()).map(([schema, tables]) => ({
     schema,
-    tables: tables.sort((a, b) =>
-      getTableDisplayName(a.name).localeCompare(getTableDisplayName(b.name))
-    )
+    tables: tables
+      .slice()
+      .sort((a, b) => getTableDisplayName(a.name).localeCompare(getTableDisplayName(b.name)))
   }))
 
-  // For non-PostgreSQL databases (like MySQL), don't show schema grouping
-  // Return tables directly without schema headers
   if (sourceConnectionType.value !== 'postgresql') {
-    // Return a single group with empty schema name to avoid showing schema headers
     const allTables = groups.flatMap((group) => group.tables)
     return [
       {
         schema: '',
-        tables: allTables.sort((a, b) =>
-          getTableDisplayName(a.name).localeCompare(getTableDisplayName(b.name))
-        )
+        tables: allTables
+          .slice()
+          .sort((a, b) => getTableDisplayName(a.name).localeCompare(getTableDisplayName(b.name)))
       }
     ]
   }
 
-  // Sort schemas (public first, then alphabetically) - only for PostgreSQL
   groups.sort((a, b) => {
     if (a.schema === 'public') return -1
     if (b.schema === 'public') return 1
     return a.schema.localeCompare(b.schema)
   })
 
-  // Initialize schema expansion only once
-  if (!schemasInitialized.value && groups.length > 0) {
+  if (initializeSchemas && !schemasInitialized.value && groups.length > 0) {
     if (groups.length === 1) {
-      // Single schema: auto-expand it
       expandedSchemas.value.add(groups[0].schema)
     } else {
-      // Multiple schemas: expand public schema by default if it exists, otherwise expand the first one
       const publicSchema = groups.find((g) => g.schema === 'public')
       if (publicSchema) {
         expandedSchemas.value.add('public')
@@ -265,7 +258,7 @@ const groupedTables = computed<SchemaGroup[]>(() => {
   }
 
   return groups
-})
+}
 
 const filteredTables = computed(() => {
   if (!searchQuery.value) {
@@ -280,7 +273,7 @@ const filteredTables = computed(() => {
 })
 
 const checkedTables = computed(() => {
-  return filteredTables.value.filter((table) => table.selected)
+  return tables.value.filter((table) => table.selected)
 })
 
 const checkedTablesCount = computed(() => {
@@ -303,10 +296,35 @@ const isCDCMode = computed(() => {
   return currentStreamConfig.mode === 'cdc'
 })
 
-// Pagination
+const groupedTables = computed<SchemaGroup[]>(() => buildGroupedTables(filteredTables.value, true))
+const filteredTablesCount = computed(() => filteredTables.value.length)
 const currentPage = ref(1)
-const itemsPerPage = 50 // Increase since we're grouping
-const totalPages = computed(() => Math.ceil(filteredTables.value.length / itemsPerPage))
+const itemsPerPage = 20
+
+const totalPages = computed(() =>
+  itemsPerPage > 0 ? Math.max(1, Math.ceil(filteredTablesCount.value / itemsPerPage)) : 1
+)
+
+const paginatedTables = computed(() => {
+  if (itemsPerPage <= 0) {
+    return filteredTables.value
+  }
+  const start = (currentPage.value - 1) * itemsPerPage
+  return filteredTables.value.slice(start, start + itemsPerPage)
+})
+
+const paginatedGroupedTables = computed(() => {
+  const pageSet = new Set(paginatedTables.value.map((table) => table.name))
+  if (pageSet.size === 0) {
+    return []
+  }
+  return groupedTables.value
+    .map((group) => ({
+      schema: group.schema,
+      tables: group.tables.filter((table) => pageSet.has(table.name))
+    }))
+    .filter((group) => group.tables.length > 0)
+})
 
 // Helper functions
 function getTableSchema(tableName: string): string {
@@ -385,7 +403,8 @@ function toggleSelectAll(event: Event) {
 }
 
 function updateCurrentPage(newPage: number) {
-  currentPage.value = newPage
+  const boundedPage = Math.min(Math.max(1, newPage), totalPages.value)
+  currentPage.value = boundedPage
 }
 
 // Helper function to create table objects based on the current stream mode
@@ -418,6 +437,7 @@ const refreshTables = async () => {
       createTableObject(entry, currentStreamConfig.mode)
     )
     // Reset schema initialization so expansion logic runs again
+    currentPage.value = 1
     schemasInitialized.value = false
     expandedSchemas.value.clear()
   } catch (err) {
@@ -442,6 +462,20 @@ watch(
 )
 
 const debouncedRefreshTables = debounce(refreshTables, 500)
+
+watch(searchQuery, () => {
+  currentPage.value = 1
+})
+
+watch(filteredTablesCount, () => {
+  const maxPage = totalPages.value
+  if (currentPage.value > maxPage) {
+    currentPage.value = maxPage
+  }
+  if (currentPage.value < 1) {
+    currentPage.value = 1
+  }
+})
 
 watch(
   checkedTables,
