@@ -33,34 +33,26 @@
       </button>
 
       <div v-if="isConnectionExpanded(connection.id)" class="border-t border-gray-100">
-        <div
-          v-if="isFileConnection(connection)"
-          class="space-y-2 px-4 py-3 bg-gray-50 text-sm text-gray-700"
-        >
-          <div class="flex items-start justify-between gap-4">
-            <div class="min-w-0">
-              <div class="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                Folder Path
-              </div>
-              <div class="mt-1 truncate text-sm font-medium text-gray-900">
-                {{ getFileDirectory(connection.id) || connection.path || 'No folder configured' }}
-              </div>
+        <div v-if="isFileConnection(connection)" class="space-y-1 py-2">
+          <div class="px-2">
+            <div class="flex w-full items-center gap-3 rounded-md px-2 py-2 text-sm text-gray-700">
+              <span class="h-4 w-4 flex-shrink-0" />
+              <span class="truncate flex-1">
+                <template v-if="getFileError(connection.id)">
+                  <span class="text-red-600">{{ getFileError(connection.id) }}</span>
+                </template>
+                <template v-else-if="getFileLoadingState(connection.id)"> Loading files… </template>
+                <template v-else> {{ getFileCount(connection.id) }} files detected </template>
+              </span>
+              <button
+                type="button"
+                class="ml-auto rounded-md border border-gray-300 px-2 py-1 text-xs font-medium text-gray-600 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+                :disabled="getFileLoadingState(connection.id)"
+                @click.stop="refreshFileEntries(connection.id)"
+              >
+                Refresh
+              </button>
             </div>
-            <button
-              type="button"
-              class="rounded-md border border-gray-300 px-2 py-1 text-xs font-medium text-gray-600 hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
-              :disabled="getFileLoadingState(connection.id)"
-              @click.stop="refreshFileEntries(connection.id)"
-            >
-              Refresh
-            </button>
-          </div>
-          <div class="text-xs text-gray-500">
-            <template v-if="getFileError(connection.id)">
-              <span class="text-red-600">{{ getFileError(connection.id) }}</span>
-            </template>
-            <template v-else-if="getFileLoadingState(connection.id)"> Loading files… </template>
-            <template v-else> {{ getFileCount(connection.id) }} files detected </template>
           </div>
         </div>
 
@@ -94,11 +86,11 @@
             No databases found
           </div>
 
-          <div v-else class="space-y-1 py-2">
+          <div v-else class="py-1">
             <div v-for="database in getDatabases(connection.id)" :key="database.name" class="px-2">
               <button
                 type="button"
-                class="flex w-full items-center gap-3 rounded-md px-2 py-2 text-sm transition-colors"
+                class="flex w-full items-center gap-3 rounded-md px-2 py-1.5 text-sm transition-colors"
                 :class="databaseRowClass(connection.id, database.name)"
                 @click="handleDatabaseSelect(connection, database.name)"
               >
@@ -188,10 +180,6 @@ function getConnectionById(connectionId?: string | null) {
 
 function isFileConnection(connection: Connection): boolean {
   return ['files', 'csv', 'parquet', 'jsonl'].includes((connection.type || '').toLowerCase())
-}
-
-function getFileDirectory(connectionId: string): string {
-  return fileExplorerStore.getDirectoryPath(connectionId) || ''
 }
 
 function getFileCount(connectionId: string): number {
