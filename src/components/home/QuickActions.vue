@@ -390,7 +390,7 @@ function exploreConnection(connectionId: string) {
 
 function createStream() {
   streamsStore.addStream()
-  router.push({ name: 'ManageStream', params: { mode: 'add' } })
+  router.push({ name: 'CreateStream' })
 }
 
 function createConnection() {

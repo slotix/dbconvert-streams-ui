@@ -17,7 +17,7 @@
       <div class="flex flex-wrap gap-x-3 space-y-0 max-w-7xl mx-auto py-6 px-8 justify-between">
         <ToggleView class="py-2 px-8" />
         <div class="flex-grow"></div>
-        <router-link :to="{ name: 'ManageStream', params: { mode: 'add' } }">
+        <router-link :to="{ name: 'CreateStream' }">
           <button
             type="button"
             class="py-2 px-4 mt-2 flex items-center justify-center rounded-md bg-gray-600 text-center text-sm font-semibold text-white shadow-sm hover:bg-gray-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-600"

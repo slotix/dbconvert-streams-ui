@@ -237,9 +237,21 @@ export const useConnectionsStore = defineStore('connections', {
         throw error
       }
     },
-    async getTables(connectionId: string) {
+    async getTables(connectionId: string, database?: string) {
       try {
-        const tables = await api.getTables(connectionId)
+        // If database is not provided, try to get it from the connection
+        let dbName = database
+        if (!dbName) {
+          const connection = this.connectionByID(connectionId)
+          if (!connection) {
+            throw new Error(`Connection with ID: ${connectionId} not found`)
+          }
+          dbName = connection.database
+          if (!dbName) {
+            throw new Error(`database with ID: ${connection.database} not found`)
+          }
+        }
+        const tables = await api.getTables(connectionId, dbName)
         return tables
       } catch (error) {
         console.error('Failed to get tables:', error)

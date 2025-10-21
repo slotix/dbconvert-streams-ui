@@ -28,7 +28,7 @@ export default defineComponent({
     const addStream = () => {
       streamsStore.resetCurrentStream()
       connectionsStore.resetCurrentConnection()
-      router.push({ name: 'ManageStream', params: { mode: 'add' } })
+      router.push({ name: 'CreateStream' })
     }
 
     return {

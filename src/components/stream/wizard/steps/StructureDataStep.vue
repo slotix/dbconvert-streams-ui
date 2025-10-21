@@ -1,0 +1,255 @@
+<template>
+  <div class="space-y-6">
+    <!-- Header -->
+    <div class="text-center">
+      <h2 class="text-lg font-medium text-gray-900">Configure Structure and Data Transfer</h2>
+      <p class="mt-2 text-sm text-gray-600">
+        Select tables to transfer and choose how to handle the target structure
+      </p>
+    </div>
+
+    <!-- Dataset Section -->
+    <div class="bg-white border border-gray-200 rounded-lg p-6">
+      <TableList />
+    </div>
+
+    <!-- Structure Options Section -->
+    <div class="bg-white border border-gray-200 rounded-lg p-6">
+      <div class="border-b border-gray-200 pb-4 mb-6">
+        <h3 class="text-base font-semibold text-gray-900">Transfer Options</h3>
+        <p class="text-sm text-gray-600 mt-1">Choose what to transfer to the target database</p>
+      </div>
+
+      <!-- Warning when nothing is selected -->
+      <div
+        v-if="!anyStructureEnabled && !copyData"
+        class="mb-4 rounded-md bg-yellow-50 border border-yellow-200 p-4"
+      >
+        <div class="flex">
+          <div class="flex-shrink-0">
+            <svg
+              class="h-5 w-5 text-yellow-400"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z"
+                clip-rule="evenodd"
+              />
+            </svg>
+          </div>
+          <div class="ml-3">
+            <h3 class="text-sm font-medium text-yellow-800">No options selected</h3>
+            <div class="mt-2 text-sm text-yellow-700">
+              <p>Please select at least one option: create structure or copy data.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="space-y-4">
+        <!-- Create Structure Checkbox (Master) -->
+        <div class="relative flex items-start">
+          <div class="flex items-center h-5">
+            <input
+              id="create-structure"
+              v-model="createStructure"
+              type="checkbox"
+              class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              @change="handleStructureToggle"
+            />
+          </div>
+          <div class="ml-3 text-sm">
+            <label for="create-structure" class="font-medium text-gray-900 cursor-pointer">
+              Create structure
+            </label>
+            <p class="text-gray-500 text-xs mt-1">
+              Create database objects (tables, indexes, foreign keys) on target
+            </p>
+          </div>
+        </div>
+
+        <!-- Advanced Structure Options (Expandable) -->
+        <div v-if="createStructure" class="ml-7 mt-3">
+          <button
+            type="button"
+            class="flex items-center text-sm text-gray-700 hover:text-gray-900 focus:outline-none"
+            @click="showAdvanced = !showAdvanced"
+          >
+            <svg
+              class="h-4 w-4 mr-1 transition-transform"
+              :class="{ 'rotate-90': showAdvanced }"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
+            <span class="font-medium">Advanced structure options</span>
+          </button>
+
+          <!-- Granular Structure Options -->
+          <div v-if="showAdvanced" class="mt-3 pl-5 space-y-3 border-l-2 border-gray-200">
+            <!-- Create Tables -->
+            <div class="relative flex items-start">
+              <div class="flex items-center h-5">
+                <input
+                  id="create-tables"
+                  v-model="createTables"
+                  type="checkbox"
+                  class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  @change="handleOptionsChange"
+                />
+              </div>
+              <div class="ml-3 text-sm">
+                <label for="create-tables" class="font-medium text-gray-700 cursor-pointer">
+                  Create tables
+                </label>
+                <p class="text-gray-500 text-xs mt-1">
+                  Create table structures on the target database
+                </p>
+              </div>
+            </div>
+
+            <!-- Create Indexes -->
+            <div class="relative flex items-start">
+              <div class="flex items-center h-5">
+                <input
+                  id="create-indexes"
+                  v-model="createIndexes"
+                  type="checkbox"
+                  class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  @change="handleOptionsChange"
+                />
+              </div>
+              <div class="ml-3 text-sm">
+                <label for="create-indexes" class="font-medium text-gray-700 cursor-pointer">
+                  Create indexes
+                </label>
+                <p class="text-gray-500 text-xs mt-1">Create indexes for performance optimization</p>
+              </div>
+            </div>
+
+            <!-- Create Foreign Keys -->
+            <div class="relative flex items-start">
+              <div class="flex items-center h-5">
+                <input
+                  id="create-foreign-keys"
+                  v-model="createForeignKeys"
+                  type="checkbox"
+                  class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  @change="handleOptionsChange"
+                />
+              </div>
+              <div class="ml-3 text-sm">
+                <label for="create-foreign-keys" class="font-medium text-gray-700 cursor-pointer">
+                  Create foreign keys
+                </label>
+                <p class="text-gray-500 text-xs mt-1">
+                  Create foreign key constraints for referential integrity
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Copy Data Checkbox -->
+        <div class="relative flex items-start">
+          <div class="flex items-center h-5">
+            <input
+              id="copy-data"
+              v-model="copyData"
+              type="checkbox"
+              class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              @change="handleOptionsChange"
+            />
+          </div>
+          <div class="ml-3 text-sm">
+            <label for="copy-data" class="font-medium text-gray-900 cursor-pointer">
+              Copy data
+            </label>
+            <p class="text-gray-500 text-xs mt-1">
+              Transfer all data from source tables to target tables
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, computed } from 'vue'
+import TableList from '@/components/settings/TableList.vue'
+
+interface Props {
+  createTables?: boolean
+  createIndexes?: boolean
+  createForeignKeys?: boolean
+  copyData?: boolean
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  createTables: true,
+  createIndexes: true,
+  createForeignKeys: true,
+  copyData: true
+})
+
+const emit = defineEmits<{
+  'update:create-tables': [value: boolean]
+  'update:create-indexes': [value: boolean]
+  'update:create-foreign-keys': [value: boolean]
+  'update:copy-data': [value: boolean]
+  'update:can-proceed': [value: boolean]
+}>()
+
+const createTables = ref(props.createTables)
+const createIndexes = ref(props.createIndexes)
+const createForeignKeys = ref(props.createForeignKeys)
+const copyData = ref(props.copyData)
+const showAdvanced = ref(false)
+
+// Master "Create structure" checkbox - checked if any structure option is enabled
+const createStructure = computed({
+  get: () => createTables.value || createIndexes.value || createForeignKeys.value,
+  set: (value: boolean) => {
+    // When toggled, enable/disable all structure options
+    createTables.value = value
+    createIndexes.value = value
+    createForeignKeys.value = value
+    handleOptionsChange()
+  }
+})
+
+// Helper to check if any structure option is enabled
+const anyStructureEnabled = computed(
+  () => createTables.value || createIndexes.value || createForeignKeys.value
+)
+
+function handleStructureToggle() {
+  // Already handled by computed setter
+  // This just ensures the change event is properly emitted
+}
+
+function handleOptionsChange() {
+  emit('update:create-tables', createTables.value)
+  emit('update:create-indexes', createIndexes.value)
+  emit('update:create-foreign-keys', createForeignKeys.value)
+  emit('update:copy-data', copyData.value)
+
+  // Can proceed as long as at least one option is selected
+  const canProceed = anyStructureEnabled.value || copyData.value
+  emit('update:can-proceed', canProceed)
+}
+
+// Initialize can-proceed state
+emit('update:can-proceed', true)
+</script>

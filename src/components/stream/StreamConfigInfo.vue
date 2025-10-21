@@ -88,14 +88,6 @@
                 >
                   {{ config.tables.length }} tables
                 </span>
-                <!-- Auto-discovery indicator -->
-                <span
-                  v-if="isAutoDiscoveryMode"
-                  class="px-2 py-0.5 text-xs font-medium rounded-full bg-gray-100 text-gray-700"
-                  title="Tables were automatically discovered from all schemas"
-                >
-                  Auto-discovered
-                </span>
               </div>
               <div class="flex items-center gap-2">
                 <!-- Search input -->
@@ -368,33 +360,6 @@ const remainingTablesCount = computed(() => {
   if (!props.config?.tables) return 0
   return Math.max(0, props.config.tables.length - maxDisplayedTables)
 })
-
-const isAutoDiscoveryMode = ref(false)
-
-// Detect auto-discovery mode based on table patterns
-const isAutoDiscoveryModeComputed = computed(() => {
-  if (!props.config?.tables?.length) return false
-
-  // Check if all tables are selected (typical of auto-discovery)
-  const allSelected = props.config.tables.every((table) => table.selected !== false)
-
-  // Check if we have tables from multiple schemas (typical of auto-discovery)
-  const schemas = new Set(props.config.tables.map((table) => getTableSchema(table.name)))
-  const hasMultipleSchemas = schemas.size > 1
-
-  // Auto-discovery is likely if all tables are selected and we have multiple schemas
-  // or if we have a large number of tables (suggesting full database discovery)
-  return allSelected && (hasMultipleSchemas || props.config.tables.length > 10)
-})
-
-// Use the computed property for the template
-watch(
-  isAutoDiscoveryModeComputed,
-  (newValue) => {
-    isAutoDiscoveryMode.value = newValue
-  },
-  { immediate: true }
-)
 </script>
 
 <style scoped>

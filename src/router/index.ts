@@ -51,6 +51,11 @@ const routes = [
     component: StreamsView
   },
   {
+    path: '/streams/create',
+    name: 'CreateStream',
+    component: () => import('@/views/CreateStreamView.vue')
+  },
+  {
     path: '/streams/:mode',
     name: 'ManageStream',
     component: ManageStreamView,

@@ -9,16 +9,6 @@ export interface StreamID {
   id: string
 }
 
-// Structure strategy options matching the backend - updated with clearer naming
-export type StructureStrategy = 'create_if_not_exists' | 'fail_if_exists' | 'disabled'
-
-// New simplified structure options from swagger.yaml
-export interface StructureOptions {
-  tables?: StructureStrategy
-  indexes?: StructureStrategy
-  foreignKeys?: StructureStrategy
-}
-
 export interface StreamConfig {
   id: string
   name: string
@@ -31,8 +21,15 @@ export interface StreamConfig {
   }
   operations?: string[]
 
-  // Structure options
-  structureOptions?: StructureOptions
+  // Granular structure creation options
+  structureOptions?: {
+    tables?: boolean
+    indexes?: boolean
+    foreignKeys?: boolean
+  }
+
+  // Skip data transfer - only create structure
+  skipData?: boolean
 
   limits: {
     numberOfEvents: number
