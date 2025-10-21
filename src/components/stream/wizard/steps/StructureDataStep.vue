@@ -1,13 +1,5 @@
 <template>
   <div class="space-y-6">
-    <!-- Header -->
-    <div class="text-center">
-      <h2 class="text-lg font-medium text-gray-900">Configure Structure and Data Transfer</h2>
-      <p class="mt-2 text-sm text-gray-600">
-        Select tables to transfer and choose how to handle the target structure
-      </p>
-    </div>
-
     <!-- Dataset Section -->
     <div class="bg-white border border-gray-200 rounded-lg p-6">
       <TableList />
@@ -15,11 +7,6 @@
 
     <!-- Structure Options Section -->
     <div class="bg-white border border-gray-200 rounded-lg p-6">
-      <div class="border-b border-gray-200 pb-4 mb-6">
-        <h3 class="text-base font-semibold text-gray-900">Transfer Options</h3>
-        <p class="text-sm text-gray-600 mt-1">Choose what to transfer to the target database</p>
-      </div>
-
       <!-- Warning when nothing is selected -->
       <div
         v-if="!anyStructureEnabled && !copyData"
@@ -41,10 +28,7 @@
             </svg>
           </div>
           <div class="ml-3">
-            <h3 class="text-sm font-medium text-yellow-800">No options selected</h3>
-            <div class="mt-2 text-sm text-yellow-700">
-              <p>Please select at least one option: create structure or copy data.</p>
-            </div>
+            <p class="text-sm text-yellow-800">Select at least one option</p>
           </div>
         </div>
       </div>
@@ -65,9 +49,6 @@
             <label for="create-structure" class="font-medium text-gray-900 cursor-pointer">
               Create structure
             </label>
-            <p class="text-gray-500 text-xs mt-1">
-              Create database objects (tables, indexes, foreign keys) on target
-            </p>
           </div>
         </div>
 
@@ -110,11 +91,8 @@
               </div>
               <div class="ml-3 text-sm">
                 <label for="create-tables" class="font-medium text-gray-700 cursor-pointer">
-                  Create tables
+                  Tables
                 </label>
-                <p class="text-gray-500 text-xs mt-1">
-                  Create table structures on the target database
-                </p>
               </div>
             </div>
 
@@ -131,9 +109,8 @@
               </div>
               <div class="ml-3 text-sm">
                 <label for="create-indexes" class="font-medium text-gray-700 cursor-pointer">
-                  Create indexes
+                  Indexes
                 </label>
-                <p class="text-gray-500 text-xs mt-1">Create indexes for performance optimization</p>
               </div>
             </div>
 
@@ -150,11 +127,8 @@
               </div>
               <div class="ml-3 text-sm">
                 <label for="create-foreign-keys" class="font-medium text-gray-700 cursor-pointer">
-                  Create foreign keys
+                  Foreign keys
                 </label>
-                <p class="text-gray-500 text-xs mt-1">
-                  Create foreign key constraints for referential integrity
-                </p>
               </div>
             </div>
           </div>
@@ -175,9 +149,6 @@
             <label for="copy-data" class="font-medium text-gray-900 cursor-pointer">
               Copy data
             </label>
-            <p class="text-gray-500 text-xs mt-1">
-              Transfer all data from source tables to target tables
-            </p>
           </div>
         </div>
       </div>

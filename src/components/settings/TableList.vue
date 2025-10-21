@@ -1,47 +1,43 @@
 <template>
   <div>
-    <div class="flex-auto border-b border-gray-400 pb-5">
-      <h2 class="text-base font-semibold leading-6 text-gray-900">Dataset</h2>
-    </div>
-    <div class="flex items-center justify-between mt-4">
-      <div class="mb-4 inline-flex font-medium text-gray-900">
-        Selected {{ checkedTablesCount }} of {{ tables.length }} tables
-        <!-- Auto-discovery indicator -->
+    <!-- Single row with all controls -->
+    <div class="mb-4 flex items-center gap-4">
+      <!-- Table count -->
+      <div class="text-sm font-medium text-gray-900 whitespace-nowrap">
+        {{ checkedTablesCount }} / {{ tables.length }}
       </div>
+
+      <!-- Filter input -->
+      <div class="flex-1">
+        <input
+          v-model="searchQuery"
+          type="text"
+          placeholder="Filter tables..."
+          class="block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500 sm:text-sm"
+        />
+      </div>
+
+      <!-- Select All checkbox -->
+      <div class="flex items-center whitespace-nowrap">
+        <input
+          :id="'select-all-checkbox'"
+          :checked="selectAllCheckboxState"
+          :indeterminate="indeterminate"
+          type="checkbox"
+          class="h-4 w-4 text-gray-600 focus:ring-gray-500 border-gray-300 rounded"
+          @change="toggleSelectAll"
+        />
+        <label :for="'select-all-checkbox'" class="ml-2 text-sm text-gray-700"> Select All </label>
+      </div>
+
+      <!-- Refresh button -->
       <button
         type="button"
-        class="mb-4 w-full inline-flex rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:mt-0 sm:ml-3 sm:w-auto"
+        class="inline-flex items-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 whitespace-nowrap"
         @click="debouncedRefreshTables"
       >
         Refresh tables
       </button>
-    </div>
-
-    <!-- Search and Select All Controls -->
-    <div class="mb-4 space-y-3">
-      <div class="flex items-center gap-4">
-        <div class="flex-1">
-          <input
-            v-model="searchQuery"
-            type="text"
-            placeholder="Filter tables..."
-            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500 sm:text-sm"
-          />
-        </div>
-        <div class="flex items-center">
-          <input
-            :id="'select-all-checkbox'"
-            :checked="selectAllCheckboxState"
-            :indeterminate="indeterminate"
-            type="checkbox"
-            class="h-4 w-4 text-gray-600 focus:ring-gray-500 border-gray-300 rounded"
-            @change="toggleSelectAll"
-          />
-          <label :for="'select-all-checkbox'" class="ml-2 text-sm text-gray-700">
-            Select All
-          </label>
-        </div>
-      </div>
     </div>
 
     <!-- Schema-grouped Table List -->
