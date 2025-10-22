@@ -5,23 +5,10 @@
       <!-- Source Tree (Left) -->
       <div
         class="relative border border-gray-200 rounded-lg bg-white shadow-sm overflow-hidden flex flex-col"
-        :class="{ 'ring-2 ring-blue-500': activePane === 'source' }"
       >
         <div class="sticky top-0 z-10 bg-gray-50 border-b border-gray-200 px-4 py-3">
           <h3 class="text-sm font-semibold text-gray-900 flex items-center">
-            <svg
-              class="w-4 h-4 mr-2 text-blue-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M4 7v10c0 2 1 3 3 3h10c2 0 3-1 3-3V7M4 7l2-2h12l2 2M4 7h16"
-              />
-            </svg>
+            <img src="/images/steps/source-step.svg" alt="Source" class="w-8 h-8 mr-2" />
             Source Connection
           </h3>
           <p class="text-xs text-gray-500 mt-1">Select where to read data from</p>
@@ -43,23 +30,10 @@
       <!-- Target Tree (Right) -->
       <div
         class="relative border border-gray-200 rounded-lg bg-white shadow-sm overflow-hidden flex flex-col"
-        :class="{ 'ring-2 ring-green-500': activePane === 'target' }"
       >
         <div class="sticky top-0 z-10 bg-gray-50 border-b border-gray-200 px-4 py-3">
           <h3 class="text-sm font-semibold text-gray-900 flex items-center">
-            <svg
-              class="w-4 h-4 mr-2 text-green-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-              />
-            </svg>
+            <img src="/images/steps/target-step.svg" alt="Target" class="w-8 h-8 mr-2" />
             Target Connection
           </h3>
           <p class="text-xs text-gray-500 mt-1">Select where to write data to</p>
