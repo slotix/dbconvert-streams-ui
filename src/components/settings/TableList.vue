@@ -413,6 +413,10 @@ const refreshTables = async () => {
   const commonStore = useCommonStore()
   const connectionStore = useConnectionsStore()
   try {
+    if (!currentStreamConfig.source) {
+      tables.value = []
+      return
+    }
     const tablesResponse = await connectionStore.getTables(currentStreamConfig.source)
 
     // Create a map of existing selections to preserve state
@@ -477,12 +481,8 @@ const refreshTables = async () => {
 watch(
   () => currentStreamConfig.source,
   async (newSource, oldSource) => {
-    // Only refresh if source actually changed (not on initial mount if tables already exist)
+    // Refresh tables if source changed
     if (newSource && newSource !== oldSource) {
-      // On first mount (oldSource is undefined), only refresh if we don't have tables yet
-      if (oldSource === undefined && tables.value.length > 0) {
-        return // Skip refresh, we already have tables from the stream config
-      }
       await refreshTables()
     }
   },

@@ -14,7 +14,6 @@ import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
 import { useCommonStore } from '@/stores/common'
 import { useMonitoringStore } from '@/stores/monitoring'
-import ActionsMenu from '@/components/common/ActionsMenu.vue'
 import { defineComponent, computed, ref, type PropType } from 'vue'
 import { type StreamConfig } from '@/types/streamConfig'
 import { type DbType } from '@/types/connections'
@@ -24,6 +23,8 @@ import ConnectionStringDisplay from '@/components/common/ConnectionStringDisplay
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
 import { normalizeConnectionType } from '@/utils/connectionUtils'
 import { getDocumentationUrl } from '@/utils/documentationUtils'
+import ActionsMenu from '@/components/common/ActionsMenu.vue'
+import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 export default defineComponent({
   props: {
     streamConfig: {
@@ -51,13 +52,15 @@ export default defineComponent({
     ConnectionStringDisplay,
     ExclamationCircleIcon,
     CloudProviderBadge,
-    QuestionMarkCircleIcon
+    QuestionMarkCircleIcon,
+    ConfirmDialog
   },
   setup(props) {
     const dbTypes = useConnectionsStore().dbTypes
     const steps = useCommonStore().steps
     const commonStore = useCommonStore()
     const isJsonView = ref(false)
+    const showDeleteConfirm = ref(false)
 
     const isIdExpanded = ref(false)
     const isExpanded = ref(false)
@@ -102,7 +105,8 @@ export default defineComponent({
         if (url) {
           window.open(url, '_blank', 'noopener,noreferrer')
         }
-      }
+      },
+      showDeleteConfirm
     }
   },
   methods: {
@@ -111,13 +115,14 @@ export default defineComponent({
       this.selectStream()
       this.$router.push({ name: 'EditStream', params: { id: this.streamConfig.id } })
     },
+    async requestDelete() {
+      this.showDeleteConfirm = true
+    },
     async deleteStreamConfig() {
-      if (!confirm('Are you sure you want to delete this stream?')) {
-        return
-      }
       try {
         await useStreamsStore().deleteStreamConfig(this.streamConfig.id)
         useCommonStore().showNotification('Stream deleted', 'success')
+        this.showDeleteConfirm = false
       } catch (e: unknown) {
         if (e instanceof Error) {
           useCommonStore().showNotification(e.message, 'error')
@@ -125,6 +130,7 @@ export default defineComponent({
           useCommonStore().showNotification('An unknown error occurred', 'error')
         }
         console.log(e)
+        this.showDeleteConfirm = false
       }
     },
     async cloneStreamConfig() {

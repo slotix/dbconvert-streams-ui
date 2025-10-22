@@ -86,13 +86,23 @@
       @selectRow="selectStream"
       @editRow="editStream"
       @cloneRow="cloneStreamConfig"
-      @deleteRow="deleteStreamConfig"
+      @deleteRow="requestDelete"
     />
   </td>
 
   <td class="px-5 py-5">
     <PlayIcon class="h-6 w-6 text-green-700" @selectRow="selectStream" @click="startStream" />
   </td>
+
+  <ConfirmDialog
+    v-model:is-open="showDeleteConfirm"
+    title="Delete stream?"
+    description="This action cannot be undone. The stream configuration will be permanently removed."
+    confirm-label="Delete"
+    cancel-label="Cancel"
+    :danger="true"
+    @confirm="deleteStreamConfig"
+  />
 </template>
 
 <script>

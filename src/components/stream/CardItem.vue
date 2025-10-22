@@ -190,7 +190,7 @@
           @selectRow="selectStream"
           @editRow="editStream"
           @cloneRow="cloneStreamConfig"
-          @deleteRow="deleteStreamConfig"
+          @deleteRow="requestDelete"
         />
         <button
           v-tooltip="'Start the stream'"
@@ -203,6 +203,16 @@
         </button>
       </div>
     </div>
+
+    <ConfirmDialog
+      v-model:is-open="showDeleteConfirm"
+      title="Delete stream?"
+      description="This action cannot be undone. The stream configuration will be permanently removed."
+      confirm-label="Delete"
+      cancel-label="Cancel"
+      :danger="true"
+      @confirm="deleteStreamConfig"
+    />
   </div>
 </template>
 

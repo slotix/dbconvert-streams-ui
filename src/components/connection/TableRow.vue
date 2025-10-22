@@ -58,6 +58,18 @@
       @deleteRow="deleteConn"
     />
   </td>
+  <teleport to="body">
+    <ConfirmDialog
+      v-model:is-open="showDeleteConfirm"
+      title="Delete connection?"
+      :description="deleteDialogDescription"
+      confirm-label="Delete"
+      cancel-label="Cancel"
+      :danger="true"
+      @confirm="confirmDelete"
+      @cancel="showDeleteConfirm = false"
+    />
+  </teleport>
 </template>
 
 <script>
@@ -65,6 +77,7 @@ import ActionsMenu from '@/components/common/ActionsMenu.vue'
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
 import shared from './shared'
 import { PencilIcon, TableCellsIcon } from '@heroicons/vue/24/outline'
+import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 export default Object.assign({}, shared, {
   props: {
     connection: {
@@ -76,7 +89,8 @@ export default Object.assign({}, shared, {
     ActionsMenu,
     CloudProviderBadge,
     PencilIcon,
-    TableCellsIcon
+    TableCellsIcon,
+    ConfirmDialog
   }
 })
 </script>

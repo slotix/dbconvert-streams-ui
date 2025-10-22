@@ -1,3 +1,4 @@
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
 import { useConnectionsStore } from '@/stores/connections'
@@ -44,6 +45,9 @@ export function useConnectionActions(emits?: {
   const connectionsStore = useConnectionsStore()
   const fileExplorerStore = useFileExplorerStore()
   const navigationStore = useExplorerNavigationStore()
+  const showDeleteConfirm = ref(false)
+  const pendingDeleteId = ref<string | null>(null)
+  const pendingDeleteName = ref<string>('')
 
   async function testConnection(id: string) {
     try {
@@ -68,8 +72,20 @@ export function useConnectionActions(emits?: {
 
   async function deleteConnection(id: string) {
     const conn = connectionsStore.connections.find((c) => c.id === id)
-    const name = conn?.name || conn?.host || 'connection'
-    if (!window.confirm(`Delete ${name}? This cannot be undone.`)) return
+    pendingDeleteId.value = id
+    pendingDeleteName.value = conn?.name || conn?.host || 'this connection'
+    showDeleteConfirm.value = true
+  }
+
+  function cancelDeleteConnection() {
+    showDeleteConfirm.value = false
+    pendingDeleteId.value = null
+    pendingDeleteName.value = ''
+  }
+
+  async function confirmDeleteConnection() {
+    if (!pendingDeleteId.value) return
+    const id = pendingDeleteId.value
     try {
       await connectionsStore.deleteConnection(id)
       navigationStore.invalidateConnection(id)
@@ -77,6 +93,8 @@ export function useConnectionActions(emits?: {
     } catch (e) {
       toast.error('Failed to delete connection')
       console.error(e)
+    } finally {
+      cancelDeleteConnection()
     }
   }
 
@@ -211,6 +229,10 @@ export function useConnectionActions(emits?: {
     refreshDatabases,
     editConnection,
     deleteConnection,
+    cancelDeleteConnection,
+    confirmDeleteConnection,
+    showDeleteConfirm,
+    pendingDeleteName,
     cloneConnection,
 
     // Database/object actions

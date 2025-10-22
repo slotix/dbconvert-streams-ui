@@ -13,6 +13,7 @@ import type { FileSystemEntry } from '@/api/fileSystem'
 import ExplorerContextMenu from './ExplorerContextMenu.vue'
 import ConnectionTreeItem from './tree/ConnectionTreeItem.vue'
 import ExplorerTreeControls from '@/components/explorer/ExplorerTreeControls.vue'
+import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
 type ObjectType = 'table' | 'view'
 
@@ -78,6 +79,21 @@ const actions = useConnectionActions({
   open: (payload) => emit('open', payload),
   openFile: (payload) => emit('open-file', payload),
   showDiagram: (payload) => emit('show-diagram', payload)
+})
+
+const showConnectionDeleteDialog = computed({
+  get: () => actions.showDeleteConfirm.value,
+  set: (value: boolean) => {
+    actions.showDeleteConfirm.value = value
+  }
+})
+const pendingDeleteConnectionName = actions.pendingDeleteName
+const confirmConnectionDelete = actions.confirmDeleteConnection
+const cancelConnectionDelete = actions.cancelDeleteConnection
+
+const deleteConfirmMessage = computed(() => {
+  const name = pendingDeleteConnectionName.value || 'this connection'
+  return `Delete ${name}? This cannot be undone.`
 })
 
 const isLoadingConnections = ref(false)
@@ -198,6 +214,7 @@ function onMenuAction(payload: {
   openInRightSplit?: boolean
 }) {
   const t = payload.target
+  contextMenu.close()
   switch (payload.action) {
     case 'test-connection':
       if (t.kind === 'connection') actions.testConnection(t.connectionId)
@@ -625,6 +642,16 @@ defineExpose({
         @close="contextMenu.close"
       />
     </div>
+    <ConfirmDialog
+      v-model:is-open="showConnectionDeleteDialog"
+      title="Delete connection?"
+      :description="deleteConfirmMessage"
+      confirm-label="Delete"
+      cancel-label="Cancel"
+      :danger="true"
+      @confirm="confirmConnectionDelete"
+      @cancel="cancelConnectionDelete"
+    />
   </div>
 </template>
 

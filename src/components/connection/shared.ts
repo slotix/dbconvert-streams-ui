@@ -12,6 +12,7 @@ import { useConnectionsStore } from '@/stores/connections'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useCommonStore } from '@/stores/common'
 import ActionsMenu from '@/components/common/ActionsMenu.vue'
+import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import { defineComponent, computed, ref, type PropType } from 'vue'
 import { type Connection, type DbType } from '@/types/connections'
 import { generateConnectionString } from '@/utils/connectionStringGenerator'
@@ -28,7 +29,8 @@ export default defineComponent({
     ChevronRightIcon,
     PlayIcon,
     ActionsMenu,
-    ConnectionStringDisplay
+    ConnectionStringDisplay,
+    ConfirmDialog
   },
   props: {
     connection: {
@@ -41,6 +43,7 @@ export default defineComponent({
     const commonStore = useCommonStore()
     const dbTypes = ref<DbType[]>(connectionsStore.dbTypes)
     const steps = ref(commonStore.steps)
+    const showDeleteConfirm = ref(false)
 
     const isStreamsPage = computed(() => commonStore.isStreamsPage)
 
@@ -51,7 +54,8 @@ export default defineComponent({
       streamsStore,
       commonStore,
       isStreamsPage,
-      connection: props.connection
+      connection: props.connection,
+      showDeleteConfirm
     }
   },
   computed: {
@@ -135,6 +139,14 @@ export default defineComponent({
     connectionString(): string {
       if (!this.connection) return ''
       return generateConnectionString(this.connection)
+    },
+    deleteDialogDescription(): string {
+      if (!this.connection) {
+        return 'This action cannot be undone.'
+      }
+      const { name, host } = this.connection
+      const label = name || host || 'this connection'
+      return `Delete ${label}? This action cannot be undone.`
     }
   },
   methods: {
@@ -168,13 +180,12 @@ export default defineComponent({
         console.error(e)
       }
     },
-    async deleteConn(): Promise<void> {
+    deleteConn(): void {
       if (!this.connection) return
-
-      if (!confirm('Are you sure you want to delete this connection?')) {
-        return
-      }
-
+      this.showDeleteConfirm = true
+    },
+    async confirmDelete(): Promise<void> {
+      if (!this.connection) return
       try {
         await this.connectionsStore.deleteConnection(this.connection.id)
         await this.connectionsStore.refreshConnections()
@@ -186,6 +197,8 @@ export default defineComponent({
           this.commonStore.showNotification('An unknown error occurred', 'error')
         }
         console.error(e)
+      } finally {
+        this.showDeleteConfirm = false
       }
     },
 

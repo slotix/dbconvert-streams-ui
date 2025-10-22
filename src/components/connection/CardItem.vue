@@ -175,13 +175,23 @@
           v-tooltip="'Delete the connection'"
           type="button"
           class="flex-1 px-4 py-3 text-sm font-medium text-red-600 bg-gray-50 hover:bg-gray-100 flex items-center justify-center gap-2"
-          @click.stop="deleteConn(connection.id)"
+          @click.stop="deleteConn"
         >
           <TrashIcon class="h-4 w-4" />
           Delete
         </button>
       </div>
     </div>
+    <ConfirmDialog
+      v-model:is-open="showDeleteConfirm"
+      title="Delete connection?"
+      :description="deleteDialogDescription"
+      confirm-label="Delete"
+      cancel-label="Cancel"
+      :danger="true"
+      @confirm="confirmDelete"
+      @cancel="showDeleteConfirm = false"
+    />
   </div>
 </template>
 
@@ -207,6 +217,7 @@ import {
   CheckIcon
 } from '@heroicons/vue/24/outline'
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
+import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
 const props = defineProps<{
   connection: Connection
@@ -222,6 +233,7 @@ const isCopied = ref(false)
 const isPathCopied = ref(false)
 const loadingFiles = ref(false)
 const folderFiles = ref<FileSystemEntry[]>([])
+const showDeleteConfirm = ref(false)
 
 const isStreamsPage = computed(() => commonStore.isStreamsPage)
 const currentStep = computed(() => streamsStore.currentStep)
@@ -411,6 +423,14 @@ const selected = computed(() => {
   return isSourceStreamSelected || isTargetStreamSelected
 })
 
+const deleteDialogDescription = computed(() => {
+  if (!props.connection) {
+    return 'This action cannot be undone.'
+  }
+  const label = props.connection.name || props.connection.host || 'this connection'
+  return `Delete ${label}? This action cannot be undone.`
+})
+
 const connectionString = computed(() => {
   if (!props.connection) return ''
   return generateConnectionString(props.connection, showPassword.value)
@@ -491,8 +511,27 @@ async function cloneConnection(): Promise<void> {
   }
 }
 
-function deleteConn(id: string): void {
-  connectionsStore.deleteConnection(id)
+function deleteConn(): void {
+  if (!props.connection) return
+  showDeleteConfirm.value = true
+}
+
+async function confirmDelete(): Promise<void> {
+  if (!props.connection) return
+  try {
+    await connectionsStore.deleteConnection(props.connection.id)
+    await connectionsStore.refreshConnections()
+    commonStore.showNotification('Connection deleted', 'success')
+  } catch (e: unknown) {
+    if (e instanceof Error) {
+      commonStore.showNotification(e.message, 'error')
+    } else {
+      commonStore.showNotification('An unknown error occurred', 'error')
+    }
+    console.error(e)
+  } finally {
+    showDeleteConfirm.value = false
+  }
 }
 
 function selectConnection(): void {

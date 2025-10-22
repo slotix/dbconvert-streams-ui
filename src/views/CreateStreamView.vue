@@ -11,9 +11,15 @@
             <ArrowLeftIcon class="h-5 w-5" />
           </button>
           <div>
-            <h1 class="text-2xl font-bold text-gray-900">{{ isEditMode ? 'Edit Stream' : 'New Stream' }}</h1>
+            <h1 class="text-2xl font-bold text-gray-900">
+              {{ isEditMode ? 'Edit Stream' : 'New Stream' }}
+            </h1>
             <p class="text-sm text-gray-600">
-              {{ isEditMode ? 'Update your stream configuration' : 'Configure a new data stream from source to target' }}
+              {{
+                isEditMode
+                  ? 'Update your stream configuration'
+                  : 'Configure a new data stream from source to target'
+              }}
             </p>
           </div>
         </div>
@@ -80,6 +86,16 @@
         </template>
       </WizardLayout>
     </div>
+
+    <ConfirmDialog
+      v-model:is-open="showExitConfirm"
+      title="Leave stream setup?"
+      description="Your current configuration will be discarded if you go back."
+      confirm-label="Leave"
+      cancel-label="Stay"
+      :danger="true"
+      @confirm="confirmExit"
+    />
   </div>
 </template>
 
@@ -95,6 +111,7 @@ import WizardLayout from '@/components/connection/wizard/WizardLayout.vue'
 import SourceTargetSelectionStep from '@/components/stream/wizard/steps/SourceTargetSelectionStep.vue'
 import StructureDataStep from '@/components/stream/wizard/steps/StructureDataStep.vue'
 import StreamConfigurationStep from '@/components/stream/wizard/steps/StreamConfigurationStep.vue'
+import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
 // Props for stream ID (when in edit mode)
 interface Props {
@@ -112,6 +129,7 @@ const commonStore = useCommonStore()
 
 const isProcessing = ref(false)
 const canProceedOverride = ref(true)
+const showExitConfirm = ref(false)
 
 // Get stream ID from props or route params
 const streamId = computed(() => props.id || (route.params.id as string))
@@ -312,14 +330,16 @@ async function handleFinish() {
 }
 
 function goBack() {
-  if (confirm('Are you sure you want to go back? All configuration will be lost.')) {
-    wizard.reset()
-    streamsStore.resetCurrentStream()
-    router.push({ name: 'Streams' })
-  }
+  showExitConfirm.value = true
 }
 
 function cancelWizard() {
   goBack()
+}
+
+function confirmExit() {
+  wizard.reset()
+  streamsStore.resetCurrentStream()
+  router.push({ name: 'Streams' })
 }
 </script>

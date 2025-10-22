@@ -21,6 +21,7 @@ import { useSidebar } from '@/composables/useSidebar'
 import { usePersistedState } from '@/composables/usePersistedState'
 import { useRecentConnections } from '@/composables/useRecentConnections'
 import { useExplorerRouter } from '@/composables/useExplorerRouter'
+import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -38,6 +39,9 @@ const sidebar = useSidebar()
 
 // Connection search and filtering
 const connectionSearch = ref('')
+const showDeleteConfirm = ref(false)
+const pendingDeleteConnectionId = ref<string | null>(null)
+const pendingDeleteName = ref('')
 const focusConnectionId = ref<string | null>(null)
 const showConnectionDetails = ref(route.query.details === 'true')
 
@@ -112,6 +116,10 @@ const selectedObjectName = computed(() => explorerState.selectedObjectName.value
 const selectedFilePath = computed(() => explorerState.selectedFileEntry.value?.path || null)
 const leftActiveTab = computed<PaneTab | null>(() => paneTabsStore.getActiveTab('left'))
 const rightActiveTab = computed<PaneTab | null>(() => paneTabsStore.getActiveTab('right'))
+const deleteConnectionMessage = computed(() => {
+  const label = pendingDeleteName.value || 'this connection'
+  return `Delete ${label}? This cannot be undone.`
+})
 
 // Determine if any pane currently has content (pinned or preview tabs)
 const emptyPaneState: PaneState = { pinnedTabs: [], previewTab: null, activePinnedIndex: null }
@@ -448,19 +456,34 @@ function onEditConnection() {
   router.push(`/explorer/edit/${explorerState.activeConnectionId.value}`)
 }
 
-async function onDeleteConnection() {
+function onDeleteConnection() {
   const id = explorerState.activeConnectionId.value
   if (!id) return
   const conn = connectionsStore.connections.find((c) => c.id === id)
-  const name = conn?.name || conn?.host || 'connection'
-  if (!window.confirm(`Delete ${name}? This cannot be undone.`)) return
+  pendingDeleteConnectionId.value = id
+  pendingDeleteName.value = conn?.name || conn?.host || 'this connection'
+  showDeleteConfirm.value = true
+}
+
+async function confirmDeleteConnection() {
+  if (!pendingDeleteConnectionId.value) return
   try {
-    await connectionsStore.deleteConnection(id)
-    recentConnectionsManager.removeFromRecent(id)
+    await connectionsStore.deleteConnection(pendingDeleteConnectionId.value)
+    recentConnectionsManager.removeFromRecent(pendingDeleteConnectionId.value)
     router.push('/explorer')
   } catch (e) {
     console.error('Failed to delete connection from Explorer:', e)
+  } finally {
+    pendingDeleteConnectionId.value = null
+    pendingDeleteName.value = ''
+    showDeleteConfirm.value = false
   }
+}
+
+function cancelDeleteConnection() {
+  pendingDeleteConnectionId.value = null
+  pendingDeleteName.value = ''
+  showDeleteConfirm.value = false
 }
 
 async function onCloneConnection() {
@@ -954,5 +977,15 @@ onUnmounted(() => {
         </div>
       </div>
     </main>
+    <ConfirmDialog
+      v-model:is-open="showDeleteConfirm"
+      title="Delete connection?"
+      :description="deleteConnectionMessage"
+      confirm-label="Delete"
+      cancel-label="Cancel"
+      :danger="true"
+      @confirm="confirmDeleteConnection"
+      @cancel="cancelDeleteConnection"
+    />
   </div>
 </template>
