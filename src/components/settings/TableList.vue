@@ -194,7 +194,9 @@ const tables = ref<Table[]>(
   (currentStreamConfig._allTablesWithState || currentStreamConfig.tables)?.map((table: Table) => ({
     name: table.name,
     query: table.query,
-    selected: table.selected
+    // If using _allTablesWithState, use the explicit selected property
+    // If using currentStreamConfig.tables, mark as selected because backend only stores selected tables
+    selected: currentStreamConfig._allTablesWithState ? table.selected : true
   })) || []
 )
 
@@ -417,7 +419,9 @@ const refreshTables = async () => {
       tables.value = []
       return
     }
-    const tablesResponse = await connectionStore.getTables(currentStreamConfig.source)
+    // When editing a stream, use the sourceDatabase from the config if available
+    const database = currentStreamConfig.sourceDatabase || undefined
+    const tablesResponse = await connectionStore.getTables(currentStreamConfig.source, database)
 
     // Create a map of existing selections to preserve state
     // Check both the component's tables ref AND the stream config
@@ -433,9 +437,10 @@ const refreshTables = async () => {
     })
 
     // Then overlay with stream config (only selected tables, but has authoritative state)
+    // Backend only stores selected tables, so mark them as selected
     if (currentStreamConfig.tables) {
       currentStreamConfig.tables.forEach((table) => {
-        existingSelections.set(table.name, table.selected)
+        existingSelections.set(table.name, table.selected ?? true)
         if (table.query) {
           existingQueries.set(table.name, table.query)
         }
@@ -446,7 +451,9 @@ const refreshTables = async () => {
     tables.value = tablesResponse.map((entry: any) => {
       const name = typeof entry === 'string' ? entry : 'Unknown'
       const hasExistingSelection = existingSelections.has(name)
-      const selected = hasExistingSelection ? existingSelections.get(name)! : true
+      // Tables that were previously selected should remain selected
+      // Tables that were not in the original selection should be unselected (default: false)
+      const selected = hasExistingSelection ? existingSelections.get(name)! : false
       const query = existingQueries.get(name) || ''
 
       if (currentStreamConfig.mode === 'cdc') {
