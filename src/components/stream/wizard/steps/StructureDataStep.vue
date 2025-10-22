@@ -53,7 +53,7 @@
               id="create-structure"
               v-model="createStructure"
               type="checkbox"
-              class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              class="h-4 w-4 text-gray-600 focus:ring-gray-500 border-gray-300 rounded"
               :disabled="isFileSourceConnection"
               @change="handleStructureToggle"
             />
@@ -98,7 +98,7 @@
                   id="create-tables"
                   v-model="createTables"
                   type="checkbox"
-                  class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  class="h-4 w-4 text-gray-600 focus:ring-gray-500 border-gray-300 rounded"
                   :disabled="isFileSourceConnection"
                   @change="handleOptionsChange"
                 />
@@ -117,7 +117,7 @@
                   id="create-indexes"
                   v-model="createIndexes"
                   type="checkbox"
-                  class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  class="h-4 w-4 text-gray-600 focus:ring-gray-500 border-gray-300 rounded"
                   :disabled="isFileSourceConnection"
                   @change="handleOptionsChange"
                 />
@@ -136,7 +136,7 @@
                   id="create-foreign-keys"
                   v-model="createForeignKeys"
                   type="checkbox"
-                  class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  class="h-4 w-4 text-gray-600 focus:ring-gray-500 border-gray-300 rounded"
                   :disabled="isFileSourceConnection"
                   @change="handleOptionsChange"
                 />
@@ -157,7 +157,7 @@
               id="copy-data"
               v-model="copyData"
               type="checkbox"
-              class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              class="h-4 w-4 text-gray-600 focus:ring-gray-500 border-gray-300 rounded"
               @change="handleOptionsChange"
             />
           </div>

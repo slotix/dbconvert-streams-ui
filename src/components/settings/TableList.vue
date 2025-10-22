@@ -117,8 +117,8 @@
                     class="text-xs font-medium transition-colors"
                     :class="
                       selectedTableNames.includes(table.name)
-                        ? 'text-red-600 hover:text-red-800'
-                        : 'text-blue-600 hover:text-blue-800'
+                        ? 'text-gray-600 hover:text-gray-800'
+                        : 'text-gray-600 hover:text-gray-800'
                     "
                     @click="toggleTableSettings(table.name)"
                   >

@@ -84,16 +84,16 @@
     <!-- Selection Summary -->
     <div
       v-if="sourceConnectionId || targetConnectionId"
-      class="bg-blue-50 border border-blue-200 rounded-lg p-4"
+      class="bg-gray-50 border border-gray-200 rounded-lg p-4"
     >
       <div class="flex items-center justify-between">
         <div class="flex items-center space-x-4 flex-1">
           <!-- Source -->
           <div class="flex-1">
-            <p class="text-xs font-medium text-blue-900 mb-1">Source</p>
-            <p v-if="sourceConnectionId" class="text-sm text-blue-700 font-medium">
+            <p class="text-xs font-medium text-gray-900 mb-1">Source</p>
+            <p v-if="sourceConnectionId" class="text-sm text-gray-700 font-medium">
               {{ getConnectionName(sourceConnectionId) }}
-              <span v-if="sourceDatabase" class="text-blue-600">
+              <span v-if="sourceDatabase" class="text-gray-600">
                 / {{ sourceDatabase }}
                 <span v-if="sourceSchema"> / {{ sourceSchema }}</span>
               </span>
@@ -104,7 +104,7 @@
           <!-- Arrow -->
           <div class="flex-shrink-0">
             <svg
-              class="w-8 h-8 text-blue-600"
+              class="w-8 h-8 text-gray-600"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -120,14 +120,14 @@
 
           <!-- Target -->
           <div class="flex-1">
-            <p class="text-xs font-medium text-green-900 mb-1">Target</p>
-            <p v-if="targetConnectionId" class="text-sm text-green-700 font-medium">
+            <p class="text-xs font-medium text-gray-900 mb-1">Target</p>
+            <p v-if="targetConnectionId" class="text-sm text-gray-700 font-medium">
               {{ getConnectionName(targetConnectionId) }}
-              <span v-if="targetDatabase" class="text-green-600">
+              <span v-if="targetDatabase" class="text-gray-600">
                 / {{ targetDatabase }}
                 <span v-if="targetSchema"> / {{ targetSchema }}</span>
               </span>
-              <span v-if="targetPath" class="text-green-600"> / {{ targetPath }}</span>
+              <span v-if="targetPath" class="text-gray-600"> / {{ targetPath }}</span>
             </p>
             <p v-else class="text-sm text-gray-500 italic">Not selected</p>
           </div>
@@ -137,7 +137,7 @@
         <button
           v-if="sourceConnectionId || targetConnectionId"
           type="button"
-          class="ml-4 text-xs text-blue-600 hover:text-blue-800 font-medium"
+          class="ml-4 text-xs text-gray-600 hover:text-gray-800 font-medium"
           @click="clearAll"
         >
           Clear All
