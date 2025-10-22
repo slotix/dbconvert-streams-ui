@@ -1,33 +1,22 @@
 <template>
   <div class="min-h-screen bg-gray-50">
     <!-- Header -->
-    <div class="bg-white border-b border-gray-200">
-      <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        <div class="flex items-center justify-between">
-          <div>
-            <h1 class="text-2xl font-bold text-gray-900">Create Stream</h1>
-            <p class="mt-1 text-sm text-gray-600">
-              Configure a new data stream from source to target
-            </p>
-          </div>
+    <header class="bg-white shadow-sm">
+      <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center">
           <button
-            type="button"
-            class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
-            @click="cancelWizard"
+            class="mr-4 p-2 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+            @click="goBack"
           >
-            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-            Cancel
+            <ArrowLeftIcon class="h-5 w-5" />
           </button>
+          <div>
+            <h1 class="text-2xl font-bold text-gray-900">New Stream</h1>
+            <p class="text-sm text-gray-600">Configure a new data stream from source to target</p>
+          </div>
         </div>
       </div>
-    </div>
+    </header>
 
     <!-- Main Content -->
     <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
@@ -93,6 +82,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
+import { ArrowLeftIcon } from '@heroicons/vue/24/outline'
 import { useStreamWizard } from '@/composables/useStreamWizard'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
@@ -230,6 +220,14 @@ async function handleFinish() {
       throw new Error('Stream configuration not initialized')
     }
 
+    // Set database/schema information for name generation
+    if (wizard.selection.value.sourceDatabase) {
+      streamsStore.currentStreamConfig.sourceDatabase = wizard.selection.value.sourceDatabase
+    }
+    if (wizard.selection.value.targetDatabase) {
+      streamsStore.currentStreamConfig.targetDatabase = wizard.selection.value.targetDatabase
+    }
+
     // Set skipData based on the "Copy data" checkbox
     streamsStore.currentStreamConfig.skipData = !wizard.copyData.value
 
@@ -255,11 +253,15 @@ async function handleFinish() {
   }
 }
 
-function cancelWizard() {
-  if (confirm('Are you sure you want to cancel? All configuration will be lost.')) {
+function goBack() {
+  if (confirm('Are you sure you want to go back? All configuration will be lost.')) {
     wizard.reset()
     streamsStore.resetCurrentStream()
     router.push({ name: 'Streams' })
   }
+}
+
+function cancelWizard() {
+  goBack()
 }
 </script>

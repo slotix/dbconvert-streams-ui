@@ -45,7 +45,9 @@
                   <template v-if="getFileError(connection.id)">
                     <span class="text-red-600">{{ getFileError(connection.id) }}</span>
                   </template>
-                  <template v-else-if="getFileLoadingState(connection.id)"> Loading files… </template>
+                  <template v-else-if="getFileLoadingState(connection.id)">
+                    Loading files…
+                  </template>
                   <template v-else> {{ getFileCount(connection.id) }} files detected </template>
                 </div>
               </span>
@@ -59,26 +61,35 @@
               </button>
             </div>
           </div>
-          <div
-            v-if="mode === 'target' && selectedConnectionId === connection.id"
-            class="px-2"
-          >
-            <div class="text-xs font-medium uppercase tracking-wide text-gray-500">Output Format</div>
-            <div class="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <div v-if="mode === 'target' && selectedConnectionId === connection.id" class="px-2">
+            <div class="text-xs font-medium uppercase tracking-wide text-gray-500">
+              Output Format
+            </div>
+            <div class="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
               <button
                 v-for="option in fileFormatOptions"
                 :key="option.value"
                 type="button"
-                class="rounded-lg border px-3 py-2 text-xs font-medium transition-colors"
-                :class="
+                :class="[
                   targetFileFormat === option.value
-                    ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-sm'
-                    : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
-                "
+                    ? 'ring-2 ring-gray-600 border-gray-600'
+                    : 'border-gray-300 hover:border-gray-400',
+                  'relative rounded-lg border px-3 py-2 text-xs font-medium transition-all duration-200 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500'
+                ]"
                 @click.stop="targetFileFormat = option.value"
               >
-                <div class="text-sm font-semibold uppercase">{{ option.label }}</div>
-                <div class="mt-1 text-[11px] text-gray-500">{{ option.description }}</div>
+                <div class="text-sm font-semibold uppercase text-gray-900">{{ option.label }}</div>
+                <div v-if="option.description" class="mt-1 text-[11px] text-gray-500">
+                  {{ option.description }}
+                </div>
+
+                <!-- Selection indicator -->
+                <div
+                  v-if="targetFileFormat === option.value"
+                  class="absolute top-2 right-2 w-4 h-4 bg-gray-600 rounded-full flex items-center justify-center"
+                >
+                  <CheckIcon class="w-2.5 h-2.5 text-white" />
+                </div>
               </button>
             </div>
           </div>
@@ -141,7 +152,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, type Ref } from 'vue'
-import { ChevronRightIcon, ChevronDownIcon } from '@heroicons/vue/24/outline'
+import { ChevronRightIcon, ChevronDownIcon, CheckIcon } from '@heroicons/vue/24/outline'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { useFileExplorerStore } from '@/stores/fileExplorer'
 import { useStreamsStore } from '@/stores/streamConfig'
@@ -190,10 +201,9 @@ const fileFormatOptions: Array<{
   label: string
   description: string
 }> = [
-  { value: 'csv', label: 'CSV', description: 'Comma-separated text' },
-  { value: 'json', label: 'JSON', description: 'Standard JSON documents' },
-  { value: 'jsonl', label: 'JSONL', description: 'One JSON object per line' },
-  { value: 'parquet', label: 'Parquet', description: 'Columnar binary format' }
+  { value: 'csv', label: 'CSV', description: '' },
+  { value: 'jsonl', label: 'JSONL (NDJSON)', description: '' },
+  { value: 'parquet', label: 'Parquet', description: '' }
 ]
 
 const targetFileFormat = computed<TargetFileFormat>({

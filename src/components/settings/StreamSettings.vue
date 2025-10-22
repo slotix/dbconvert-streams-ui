@@ -11,25 +11,6 @@
       <div class="bg-white">
         <h4 class="text-base font-medium text-gray-900 mb-4">Basic Configuration</h4>
         <div class="space-y-6">
-          <!-- Stream Name -->
-          <div>
-            <label for="streamName" class="block text-sm font-medium text-gray-700"
-              >Stream Name</label
-            >
-            <div class="mt-1">
-              <input
-                id="streamName"
-                v-model="streamName"
-                type="text"
-                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500 sm:text-sm"
-                placeholder="Enter custom name or leave blank for auto-generation"
-              />
-            </div>
-            <p class="mt-2 text-sm text-gray-500">
-              You can leave this field blank for an auto-generated name or enter a custom name.
-            </p>
-          </div>
-
           <!-- Mode Selection -->
           <div>
             <ModeButtons />
@@ -217,13 +198,6 @@ const limitsElapsedTime = computed<number>({
     if (currentStreamConfig.limits) {
       currentStreamConfig.limits.elapsedTime = value
     }
-  }
-})
-
-const streamName = computed({
-  get: () => currentStreamConfig.name,
-  set: (value) => {
-    currentStreamConfig.name = value
   }
 })
 </script>

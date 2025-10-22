@@ -7,7 +7,14 @@ import { useConnectionsStore } from '@/stores/connections'
 import { statusEnum, useMonitoringStore } from '@/stores/monitoring'
 
 interface State {
-  generateDefaultStreamConfigName(source: string, target: string, tables: Table[]): string
+  generateDefaultStreamConfigName(
+    source: string,
+    target: string,
+    tables: Table[],
+    sourceDatabase?: string,
+    targetDatabase?: string,
+    targetFileFormat?: string
+  ): string
   streamConfigs: StreamConfig[]
   currentStreamConfig: StreamConfig | null
   currentStep: Step | null
@@ -103,9 +110,12 @@ export const useStreamsStore = defineStore('streams', {
     currentStep: null,
     currentFilter: '',
     generateDefaultStreamConfigName: function (
-      source: string,
-      target: string,
-      tables: Table[]
+      _source: string,
+      _target: string,
+      _tables: Table[],
+      _sourceDatabase?: string,
+      _targetDatabase?: string,
+      _targetFileFormat?: string
     ): string {
       throw new Error('Function not implemented.')
     }
@@ -180,7 +190,10 @@ export const useStreamsStore = defineStore('streams', {
           this.currentStreamConfig!.name = this.generateDefaultStreamConfigName(
             this.currentStreamConfig?.source || '',
             this.currentStreamConfig?.target || '',
-            this.currentStreamConfig?.tables || []
+            this.currentStreamConfig?.tables || [],
+            this.currentStreamConfig?.sourceDatabase,
+            this.currentStreamConfig?.targetDatabase,
+            this.currentStreamConfig?.targetFileFormat
           )
         }
 
@@ -298,16 +311,36 @@ export const useStreamsStore = defineStore('streams', {
     async clearStreams() {
       this.streamConfigs = []
     },
-    generateDefaultStreamConfigName(source: string, target: string, tables: Table[]): string {
+    generateDefaultStreamConfigName(
+      source: string,
+      target: string,
+      _tables: Table[],
+      sourceDatabase?: string,
+      targetDatabase?: string,
+      targetFileFormat?: string
+    ): string {
       const connectionsStore = useConnectionsStore()
       const sourceConnection = connectionsStore.connectionByID(source)
       const targetConnection = connectionsStore.connectionByID(target)
 
-      const sourceType = sourceConnection?.type || 'unknown'
-      const targetType = targetConnection?.type || 'unknown'
-      const tableCount = tables.length || 'all'
+      // Determine source identifier (database name or connection type)
+      let sourcePart =
+        sourceDatabase || sourceConnection?.database || sourceConnection?.type || 'unknown'
 
-      return `${sourceType}_to_${targetType}_${tableCount}_tables`
+      // Determine target identifier
+      let targetPart: string
+      const isFileTarget = targetConnection?.type?.toLowerCase().includes('file')
+
+      if (isFileTarget) {
+        // For file targets, use the format (e.g., 'parquet', 'csv')
+        targetPart = targetFileFormat || 'files'
+      } else {
+        // For database targets, use database name or connection type
+        targetPart =
+          targetDatabase || targetConnection?.database || targetConnection?.type || 'unknown'
+      }
+
+      return `${sourcePart}_to_${targetPart}`
     },
     async getStreamConfigById(configId: string): Promise<StreamConfig | null> {
       try {

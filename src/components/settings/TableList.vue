@@ -299,7 +299,7 @@ const isCDCMode = computed(() => {
 const groupedTables = computed<SchemaGroup[]>(() => buildGroupedTables(filteredTables.value, true))
 const filteredTablesCount = computed(() => filteredTables.value.length)
 const currentPage = ref(1)
-const itemsPerPage = 20
+const itemsPerPage = 15
 
 const totalPages = computed(() =>
   itemsPerPage > 0 ? Math.max(1, Math.ceil(filteredTablesCount.value / itemsPerPage)) : 1

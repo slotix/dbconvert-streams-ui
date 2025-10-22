@@ -1,12 +1,12 @@
 <template>
   <div class="space-y-6">
-    <!-- Header -->
-    <div class="text-center">
-      <h2 class="text-lg font-medium text-gray-900">Select Source and Target Connections</h2>
-      <p class="mt-2 text-sm text-gray-600">
-        Choose where to read data from (source) and where to write data to (target)
-      </p>
-    </div>
+    <!-- Stream Name Field -->
+    <StreamNameField
+      :source-connection-id="sourceConnectionId"
+      :target-connection-id="targetConnectionId"
+      :source-database="sourceDatabase"
+      :target-database="targetDatabase"
+    />
 
     <!-- Dual Tree Selector -->
     <DualTreeSelector
@@ -52,6 +52,7 @@
 
 <script setup lang="ts">
 import DualTreeSelector from '../DualTreeSelector.vue'
+import StreamNameField from '../StreamNameField.vue'
 
 interface Props {
   sourceConnectionId?: string | null
