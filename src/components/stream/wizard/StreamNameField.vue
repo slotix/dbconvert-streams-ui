@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-white border border-gray-200 rounded-lg p-6">
+  <div class="bg-white rounded-lg p-6">
     <div>
       <label for="streamName" class="block text-sm font-medium text-gray-700">Stream Name</label>
       <div class="mt-1">

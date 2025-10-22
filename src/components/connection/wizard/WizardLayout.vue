@@ -3,53 +3,74 @@
     <!-- Wizard Header -->
     <div class="mb-8">
       <nav aria-label="Progress">
-        <ol class="flex items-center">
-          <li v-for="(step, stepIdx) in steps" :key="step.name" class="relative">
-            <!-- Step Icon -->
-            <div class="flex items-center">
-              <div
-                :class="[
-                  stepIdx <= currentStepIndex
-                    ? 'bg-gray-600 text-white'
-                    : 'bg-white text-gray-400 border-2 border-gray-300',
-                  'relative w-8 h-8 flex items-center justify-center rounded-full text-sm font-medium'
-                ]"
-              >
-                <CheckIcon v-if="stepIdx < currentStepIndex" class="w-5 h-5" />
-                <span v-else>{{ stepIdx + 1 }}</span>
-              </div>
+        <ol
+          role="list"
+          class="divide-y divide-gray-200 rounded-md border border-gray-200 bg-white md:flex md:divide-y-0"
+        >
+          <li v-for="(step, stepIdx) in steps" :key="step.name" class="relative md:flex md:flex-1">
+            <!-- Completed Step -->
+            <div v-if="stepIdx < currentStepIndex" class="group flex w-full items-center">
+              <span class="flex items-center px-6 py-4 text-sm font-medium">
+                <span
+                  class="flex size-10 shrink-0 items-center justify-center rounded-full bg-gray-600"
+                >
+                  <CheckIcon class="size-6 text-white" aria-hidden="true" />
+                </span>
+                <span class="ml-4 text-sm font-medium text-gray-900">{{ step.title }}</span>
+              </span>
+            </div>
+
+            <!-- Current Step -->
+            <div
+              v-else-if="stepIdx === currentStepIndex"
+              class="flex items-center px-6 py-4 text-sm font-medium"
+              aria-current="step"
+            >
               <span
-                v-if="stepIdx < steps.length - 1"
-                :class="[
-                  stepIdx < currentStepIndex ? 'bg-gray-600' : 'bg-gray-300',
-                  'absolute top-4 left-4 -ml-px h-0.5 w-20'
-                ]"
-              />
-            </div>
-            <!-- Step Label -->
-            <div class="ml-4">
-              <div
-                :class="[
-                  stepIdx <= currentStepIndex ? 'text-gray-900 font-medium' : 'text-gray-500',
-                  'text-sm'
-                ]"
+                class="flex size-10 shrink-0 items-center justify-center rounded-full border-2 border-gray-600"
               >
-                {{ step.title }}
-              </div>
-              <div class="text-xs text-gray-500">{{ step.description }}</div>
+                <span class="text-gray-600">{{ stepIdx + 1 }}</span>
+              </span>
+              <span class="ml-4 text-sm font-medium text-gray-600">{{ step.title }}</span>
             </div>
+
+            <!-- Upcoming Step -->
+            <div v-else class="group flex items-center">
+              <span class="flex items-center px-6 py-4 text-sm font-medium">
+                <span
+                  class="flex size-10 shrink-0 items-center justify-center rounded-full border-2 border-gray-300"
+                >
+                  <span class="text-gray-400">{{ stepIdx + 1 }}</span>
+                </span>
+                <span class="ml-4 text-sm font-medium text-gray-400">{{ step.title }}</span>
+              </span>
+            </div>
+
+            <!-- Arrow separator for md screens and up -->
+            <template v-if="stepIdx !== steps.length - 1">
+              <div class="absolute top-0 right-0 hidden h-full w-5 md:block" aria-hidden="true">
+                <svg
+                  class="size-full text-gray-300"
+                  viewBox="0 0 22 80"
+                  fill="none"
+                  preserveAspectRatio="none"
+                >
+                  <path
+                    d="M0 -2L20 40L0 82"
+                    vector-effect="non-scaling-stroke"
+                    stroke="currentcolor"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </div>
+            </template>
           </li>
         </ol>
       </nav>
     </div>
 
     <!-- Wizard Content -->
-    <div class="bg-white rounded-lg shadow-sm border p-6">
-      <div class="mb-6">
-        <h2 class="text-xl font-semibold text-gray-900">{{ currentStep?.title }}</h2>
-        <p class="text-sm text-gray-600 mt-1">{{ currentStep?.description }}</p>
-      </div>
-
+    <div class="bg-white rounded-lg p-6">
       <!-- Step Content Slot -->
       <div class="mb-8">
         <slot :currentStep="currentStep" :currentStepIndex="currentStepIndex"></slot>

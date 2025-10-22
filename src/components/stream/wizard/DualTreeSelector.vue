@@ -3,18 +3,16 @@
     <!-- Split Pane Container -->
     <div class="grid grid-cols-2 gap-4 h-[600px]">
       <!-- Source Tree (Left) -->
-      <div
-        class="relative border border-gray-200 rounded-lg bg-white shadow-sm overflow-hidden flex flex-col"
-      >
-        <div class="sticky top-0 z-10 bg-gray-50 border-b border-gray-200 px-4 py-3">
+      <div class="relative rounded-lg bg-gray-50 overflow-hidden flex flex-col">
+        <div class="px-4 py-3 border-b border-gray-200">
           <h3 class="text-sm font-semibold text-gray-900 flex items-center">
-            <img src="/images/steps/source-step.svg" alt="Source" class="w-8 h-8 mr-2" />
+            <img src="/images/steps/source-step.svg" alt="Source" class="w-6 h-6 mr-2" />
             Source Connection
           </h3>
           <p class="text-xs text-gray-500 mt-1">Select where to read data from</p>
         </div>
 
-        <div class="flex-1 overflow-y-auto p-4">
+        <div class="flex-1 overflow-y-auto p-4 bg-white">
           <ConnectionTreeSelector
             :connections="connections"
             :selected-connection-id="sourceConnectionId"
@@ -28,18 +26,16 @@
       </div>
 
       <!-- Target Tree (Right) -->
-      <div
-        class="relative border border-gray-200 rounded-lg bg-white shadow-sm overflow-hidden flex flex-col"
-      >
-        <div class="sticky top-0 z-10 bg-gray-50 border-b border-gray-200 px-4 py-3">
+      <div class="relative rounded-lg bg-gray-50 overflow-hidden flex flex-col">
+        <div class="px-4 py-3 border-b border-gray-200">
           <h3 class="text-sm font-semibold text-gray-900 flex items-center">
-            <img src="/images/steps/target-step.svg" alt="Target" class="w-8 h-8 mr-2" />
+            <img src="/images/steps/target-step.svg" alt="Target" class="w-6 h-6 mr-2" />
             Target Connection
           </h3>
           <p class="text-xs text-gray-500 mt-1">Select where to write data to</p>
         </div>
 
-        <div class="flex-1 overflow-y-auto p-4">
+        <div class="flex-1 overflow-y-auto p-4 bg-white">
           <ConnectionTreeSelector
             :connections="connections"
             :selected-connection-id="targetConnectionId"
@@ -58,7 +54,7 @@
     <!-- Selection Summary -->
     <div
       v-if="sourceConnectionId || targetConnectionId"
-      class="bg-gray-50 border border-gray-200 rounded-lg p-4"
+      class="bg-gray-50 rounded-lg p-4"
     >
       <div class="flex items-center justify-between">
         <div class="flex items-center space-x-4 flex-1">
