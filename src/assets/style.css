@@ -3,9 +3,54 @@
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap');
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+@plugin '@tailwindcss/forms';
+
+@theme {
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-heading: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-mono:
+    'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
+    'Courier New', monospace;
+  --font-ui: 'DM Sans', system-ui, sans-serif;
+
+  /* Preserve legacy color aliases */
+  --color-gray-50: oklch(98.5% 0 0);
+  --color-gray-100: oklch(97% 0 0);
+  --color-gray-200: oklch(92.2% 0 0);
+  --color-gray-300: oklch(87% 0 0);
+  --color-gray-400: oklch(70.8% 0 0);
+  --color-gray-500: oklch(55.6% 0 0);
+  --color-gray-600: oklch(43.9% 0 0);
+  --color-gray-700: oklch(37.1% 0 0);
+  --color-gray-800: oklch(26.9% 0 0);
+  --color-gray-900: oklch(20.5% 0 0);
+  --color-gray-950: oklch(14.5% 0 0);
+
+  --color-yellow-50: oklch(98% 0.016 73.684);
+  --color-yellow-100: oklch(95.4% 0.038 75.164);
+  --color-yellow-200: oklch(90.1% 0.076 70.697);
+  --color-yellow-300: oklch(83.7% 0.128 66.29);
+  --color-yellow-400: oklch(75% 0.183 55.934);
+  --color-yellow-500: oklch(70.5% 0.213 47.604);
+  --color-yellow-600: oklch(64.6% 0.222 41.116);
+  --color-yellow-700: oklch(55.3% 0.195 38.402);
+  --color-yellow-800: oklch(47% 0.157 37.304);
+  --color-yellow-900: oklch(40.8% 0.123 38.172);
+  --color-yellow-950: oklch(26.6% 0.079 36.259);
+
+  --color-green-50: oklch(98.4% 0.019 200.873);
+  --color-green-100: oklch(95.6% 0.045 203.388);
+  --color-green-200: oklch(91.7% 0.08 205.041);
+  --color-green-300: oklch(86.5% 0.127 207.078);
+  --color-green-400: oklch(78.9% 0.154 211.53);
+  --color-green-500: oklch(71.5% 0.143 215.221);
+  --color-green-600: oklch(60.9% 0.126 221.723);
+  --color-green-700: oklch(52% 0.105 223.128);
+  --color-green-800: oklch(45% 0.085 224.283);
+  --color-green-900: oklch(39.8% 0.07 227.392);
+  --color-green-950: oklch(30.2% 0.056 229.695);
+}
 
 @layer base {
   html {

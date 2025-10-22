@@ -212,6 +212,8 @@ function getColumnType(column: SQLColumnMeta) {
 </template>
 
 <style>
+@reference '../../assets/style.css';
+
 .hljs {
   @apply bg-white;
   color: #24292e;

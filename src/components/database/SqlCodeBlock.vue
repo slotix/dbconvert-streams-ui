@@ -61,6 +61,8 @@ const formattedCode = computed(() => {
 </template>
 
 <style>
+@reference '../../assets/style.css';
+
 /* Base styles */
 .custom-scrollbar {
   scrollbar-width: thin;

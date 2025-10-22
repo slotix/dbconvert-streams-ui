@@ -212,6 +212,8 @@ function toggleExpanded() {
 </template>
 
 <style scoped>
+@reference '../../assets/style.css';
+
 /* Smooth transitions */
 .transition-colors {
   transition:
