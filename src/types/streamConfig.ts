@@ -12,6 +12,10 @@ export interface StreamID {
 export interface StreamConfig {
   id: string
   name: string
+  source?: string
+  target?: string
+  sourceDatabase?: string
+  targetDatabase?: string
   created?: number
   mode: 'cdc' | 'convert'
   dataBundleSize: number
