@@ -52,10 +52,7 @@
     </div>
 
     <!-- Selection Summary -->
-    <div
-      v-if="sourceConnectionId || targetConnectionId"
-      class="bg-gray-50 rounded-lg p-4"
-    >
+    <div v-if="sourceConnectionId || targetConnectionId" class="bg-gray-50 rounded-lg p-4">
       <div class="flex items-center justify-between">
         <div class="flex items-center space-x-4 flex-1">
           <!-- Source -->
