@@ -25,6 +25,7 @@
         :current-step-index="wizard.currentStepIndex.value"
         :can-proceed="wizard.canProceed.value"
         :is-processing="isProcessing"
+        wizard-type="stream"
         @next-step="handleNextStep"
         @previous-step="wizard.previousStep"
         @finish="handleFinish"

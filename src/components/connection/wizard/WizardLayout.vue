@@ -97,7 +97,17 @@
               {{ isLastStep ? 'Saving...' : 'Processing...' }}
             </span>
             <span v-else class="flex items-center">
-              {{ isLastStep ? (isEditMode ? 'Update Connection' : 'Create Connection') : 'Next' }}
+              {{
+                isLastStep
+                  ? isEditMode
+                    ? wizardType === 'stream'
+                      ? 'Update Stream'
+                      : 'Update Connection'
+                    : wizardType === 'stream'
+                      ? 'Create Stream'
+                      : 'Create Connection'
+                  : 'Next'
+              }}
               <ArrowRightIcon v-if="!isLastStep" class="w-4 h-4 ml-2" />
             </span>
           </button>
@@ -134,12 +144,14 @@ interface Props {
   isTestingConnection?: boolean
   isEditMode?: boolean
   showTestButton?: boolean
+  wizardType?: 'connection' | 'stream'
 }
 
 const props = withDefaults(defineProps<Props>(), {
   canProceed: true,
   isProcessing: false,
   isTestingConnection: false,
+  wizardType: 'connection',
   isEditMode: false,
   showTestButton: false
 })

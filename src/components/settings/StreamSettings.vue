@@ -1,10 +1,5 @@
 <template>
   <div>
-    <!-- Header -->
-    <div class="border-b border-gray-200 pb-5">
-      <h3 class="text-lg font-medium leading-6 text-gray-900">Global Stream Settings</h3>
-    </div>
-
     <!-- Form with improved organization -->
     <div class="mt-6 space-y-8">
       <!-- Performance & Monitoring Section -->
