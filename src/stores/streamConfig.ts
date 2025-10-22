@@ -314,33 +314,37 @@ export const useStreamsStore = defineStore('streams', {
     generateDefaultStreamConfigName(
       source: string,
       target: string,
-      _tables: Table[],
-      sourceDatabase?: string,
-      targetDatabase?: string,
+      tables: Table[],
+      _sourceDatabase?: string,
+      _targetDatabase?: string,
       targetFileFormat?: string
     ): string {
       const connectionsStore = useConnectionsStore()
       const sourceConnection = connectionsStore.connectionByID(source)
       const targetConnection = connectionsStore.connectionByID(target)
 
-      // Determine source identifier (database name or connection type)
-      let sourcePart =
-        sourceDatabase || sourceConnection?.database || sourceConnection?.type || 'unknown'
+      // Get connection types (e.g., 'mysql', 'postgresql')
+      const sourceType = sourceConnection?.type?.toLowerCase() || 'unknown'
+      const targetType = targetConnection?.type?.toLowerCase() || 'unknown'
 
-      // Determine target identifier
+      // Determine target format/type
       let targetPart: string
-      const isFileTarget = targetConnection?.type?.toLowerCase().includes('file')
+      const isFileTarget = targetType.includes('file')
 
       if (isFileTarget) {
         // For file targets, use the format (e.g., 'parquet', 'csv')
         targetPart = targetFileFormat || 'files'
       } else {
-        // For database targets, use database name or connection type
-        targetPart =
-          targetDatabase || targetConnection?.database || targetConnection?.type || 'unknown'
+        // For database targets, use the target connection type
+        targetPart = targetType
       }
 
-      return `${sourcePart}_to_${targetPart}`
+      // Calculate table count
+      const tableCount = tables.length > 0 ? tables.length : 'all'
+
+      // Format: {sourceType}_to_{targetType}_{count}_tables
+      // Examples: postgresql_to_csv_14_tables, mysql_to_snowflake_5_tables
+      return `${sourceType}_to_${targetPart}_${tableCount}_tables`
     },
     async getStreamConfigById(configId: string): Promise<StreamConfig | null> {
       try {

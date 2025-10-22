@@ -192,7 +192,7 @@ const tables = ref<Table[]>(
   currentStreamConfig.tables?.map((table) => ({
     name: table.name,
     query: table.query,
-    selected: true
+    selected: table.selected
   })) || []
 )
 
@@ -407,35 +407,47 @@ function updateCurrentPage(newPage: number) {
   currentPage.value = boundedPage
 }
 
-// Helper function to create table objects based on the current stream mode
-function createTableObject(entry: any, mode: 'cdc' | 'convert'): Table {
-  const name = typeof entry === 'string' ? entry : 'Unknown'
-  const query = entry?.query ?? ''
-  const selected = entry?.selected !== undefined ? entry.selected : true
-
-  if (mode === 'cdc') {
-    return {
-      name,
-      query: '',
-      selected: selected
-    }
-  } else {
-    return {
-      name,
-      query,
-      selected: selected
-    }
-  }
-}
-
 const refreshTables = async () => {
   const commonStore = useCommonStore()
   const connectionStore = useConnectionsStore()
   try {
     const tablesResponse = await connectionStore.getTables(currentStreamConfig.source)
-    tables.value = tablesResponse.map((entry: any) =>
-      createTableObject(entry, currentStreamConfig.mode)
-    )
+
+    // Create a map of existing selections to preserve state
+    const existingSelections = new Map<string, boolean>()
+    const existingQueries = new Map<string, string>()
+
+    if (currentStreamConfig.tables) {
+      currentStreamConfig.tables.forEach((table) => {
+        existingSelections.set(table.name, table.selected)
+        if (table.query) {
+          existingQueries.set(table.name, table.query)
+        }
+      })
+    }
+
+    // Map the response and preserve existing selections
+    tables.value = tablesResponse.map((entry: any) => {
+      const name = typeof entry === 'string' ? entry : 'Unknown'
+      const hasExistingSelection = existingSelections.has(name)
+      const selected = hasExistingSelection ? existingSelections.get(name)! : true
+      const query = existingQueries.get(name) || ''
+
+      if (currentStreamConfig.mode === 'cdc') {
+        return {
+          name,
+          query: '',
+          selected: selected
+        }
+      } else {
+        return {
+          name,
+          query,
+          selected: selected
+        }
+      }
+    })
+
     // Reset schema initialization so expansion logic runs again
     currentPage.value = 1
     schemasInitialized.value = false
@@ -453,8 +465,12 @@ const refreshTables = async () => {
 watch(
   () => currentStreamConfig.source,
   async (newSource, oldSource) => {
-    // Load tables when source is set (including initial mount)
+    // Only refresh if source actually changed (not on initial mount if tables already exist)
     if (newSource && newSource !== oldSource) {
+      // On first mount (oldSource is undefined), only refresh if we don't have tables yet
+      if (oldSource === undefined && tables.value.length > 0) {
+        return // Skip refresh, we already have tables from the stream config
+      }
       await refreshTables()
     }
   },

@@ -7,22 +7,6 @@
 
     <!-- Form with improved organization -->
     <div class="mt-6 space-y-8">
-      <!-- Basic Configuration Section -->
-      <div class="bg-white">
-        <h4 class="text-base font-medium text-gray-900 mb-4">Basic Configuration</h4>
-        <div class="space-y-6">
-          <!-- Mode Selection -->
-          <div>
-            <ModeButtons />
-          </div>
-
-          <!-- CDC Operations -->
-          <div v-if="currentStreamConfig.mode === 'cdc'">
-            <Operations v-model="operations" />
-          </div>
-        </div>
-      </div>
-
       <!-- Performance & Monitoring Section -->
       <div class="bg-white">
         <h4 class="text-base font-medium text-gray-900 mb-4">Performance & Monitoring</h4>
@@ -138,8 +122,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useStreamsStore, defaultStreamConfigOptions } from '@/stores/streamConfig'
-import ModeButtons from './ModeButtons.vue'
-import Operations from './Operations.vue'
 import { type StreamConfig } from '@/types/streamConfig'
 
 const streamsStore = useStreamsStore()
@@ -150,13 +132,6 @@ const dataBundleSize = computed<number>({
   set: (newValue) => {
     const clampedValue = Math.min(Math.max(newValue, 10), 1000)
     currentStreamConfig.dataBundleSize = clampedValue
-  }
-})
-
-const operations = computed<string[]>({
-  get: () => currentStreamConfig.operations ?? defaultStreamConfigOptions.operations ?? [],
-  set: (value) => {
-    currentStreamConfig.operations = value
   }
 })
 

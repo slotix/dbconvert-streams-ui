@@ -1,5 +1,16 @@
 <template>
   <div class="space-y-6">
+    <!-- Data Transfer Mode Section -->
+    <div class="bg-white border border-gray-200 rounded-lg p-6">
+      <h3 class="text-base font-medium text-gray-900 mb-4">Data Transfer Mode</h3>
+      <ModeButtons />
+
+      <!-- CDC Operations - Only show when CDC mode is selected -->
+      <div v-if="currentMode === 'cdc'" class="mt-6">
+        <Operations v-model="cdcOperations" prefix="wizard-cdc" />
+      </div>
+    </div>
+
     <!-- Dataset Section -->
     <div class="bg-white border border-gray-200 rounded-lg p-6">
       <FilePreviewList v-if="isFileSourceConnection" :connection-id="sourceConnectionId" />
@@ -165,6 +176,8 @@
 import { ref, computed, watch } from 'vue'
 import TableList from '@/components/settings/TableList.vue'
 import FilePreviewList from '@/components/stream/wizard/FilePreviewList.vue'
+import ModeButtons from '@/components/settings/ModeButtons.vue'
+import Operations from '@/components/settings/Operations.vue'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
 
@@ -198,6 +211,19 @@ const showAdvanced = ref(false)
 
 const streamsStore = useStreamsStore()
 const connectionsStore = useConnectionsStore()
+
+// Current mode from stream config
+const currentMode = computed(() => streamsStore.currentStreamConfig?.mode || 'convert')
+
+// CDC Operations
+const cdcOperations = computed({
+  get: () => streamsStore.currentStreamConfig?.operations || [],
+  set: (value: string[]) => {
+    if (streamsStore.currentStreamConfig) {
+      streamsStore.currentStreamConfig.operations = value
+    }
+  }
+})
 
 const sourceConnectionId = computed(() => {
   const source = streamsStore.currentStreamConfig?.source
