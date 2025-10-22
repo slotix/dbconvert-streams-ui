@@ -225,6 +225,9 @@ export const useStreamsStore = defineStore('streams', {
           delete newStream.operations
         }
 
+        // Remove temporary UI-only state property before saving
+        delete newStream._allTablesWithState
+
         this.currentStreamConfig = newStream
       }
     },

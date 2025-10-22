@@ -188,8 +188,10 @@ const sourceConnectionType = computed(() => {
   return sourceConnection.value?.type?.toLowerCase() || ''
 })
 
+// Initialize tables from _allTablesWithState if available (preserves unselected tables during navigation)
+// Otherwise, fall back to currentStreamConfig.tables (only selected tables from saved config)
 const tables = ref<Table[]>(
-  currentStreamConfig.tables?.map((table) => ({
+  (currentStreamConfig._allTablesWithState || currentStreamConfig.tables)?.map((table: Table) => ({
     name: table.name,
     query: table.query,
     selected: table.selected
@@ -414,9 +416,19 @@ const refreshTables = async () => {
     const tablesResponse = await connectionStore.getTables(currentStreamConfig.source)
 
     // Create a map of existing selections to preserve state
+    // Check both the component's tables ref AND the stream config
     const existingSelections = new Map<string, boolean>()
     const existingQueries = new Map<string, string>()
 
+    // First, get selections from component state (includes unselected tables)
+    tables.value.forEach((table) => {
+      existingSelections.set(table.name, table.selected)
+      if (table.query) {
+        existingQueries.set(table.name, table.query)
+      }
+    })
+
+    // Then overlay with stream config (only selected tables, but has authoritative state)
     if (currentStreamConfig.tables) {
       currentStreamConfig.tables.forEach((table) => {
         existingSelections.set(table.name, table.selected)
@@ -494,8 +506,12 @@ watch(filteredTablesCount, () => {
 })
 
 watch(
-  checkedTables,
+  tables,
   (newTables) => {
+    // Store the full table list (including unselected) in _allTablesWithState for UI navigation
+    currentStreamConfig._allTablesWithState = newTables
+
+    // Only store selected tables in stream config (for saving/execution)
     currentStreamConfig.tables = newTables.filter((table) => table.selected)
   },
   { deep: true }
