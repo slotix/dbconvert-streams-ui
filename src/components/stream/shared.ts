@@ -109,7 +109,7 @@ export default defineComponent({
     ...mapActions(useCommonStore, ['getViewType']),
     editStream() {
       this.selectStream()
-      this.$router.push({ name: 'ManageStream', params: { mode: 'edit' } })
+      this.$router.push({ name: 'EditStream', params: { id: this.streamConfig.id } })
     },
     async deleteStreamConfig() {
       if (!confirm('Are you sure you want to delete this stream?')) {

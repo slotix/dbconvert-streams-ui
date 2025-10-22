@@ -11,8 +11,10 @@
             <ArrowLeftIcon class="h-5 w-5" />
           </button>
           <div>
-            <h1 class="text-2xl font-bold text-gray-900">New Stream</h1>
-            <p class="text-sm text-gray-600">Configure a new data stream from source to target</p>
+            <h1 class="text-2xl font-bold text-gray-900">{{ isEditMode ? 'Edit Stream' : 'New Stream' }}</h1>
+            <p class="text-sm text-gray-600">
+              {{ isEditMode ? 'Update your stream configuration' : 'Configure a new data stream from source to target' }}
+            </p>
           </div>
         </div>
       </div>
@@ -25,6 +27,7 @@
         :current-step-index="wizard.currentStepIndex.value"
         :can-proceed="wizard.canProceed.value"
         :is-processing="isProcessing"
+        :is-edit-mode="isEditMode"
         wizard-type="stream"
         @next-step="handleNextStep"
         @previous-step="wizard.previousStep"
@@ -81,8 +84,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, nextTick } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { ArrowLeftIcon } from '@heroicons/vue/24/outline'
 import { useStreamWizard } from '@/composables/useStreamWizard'
 import { useStreamsStore } from '@/stores/streamConfig'
@@ -93,7 +96,15 @@ import SourceTargetSelectionStep from '@/components/stream/wizard/steps/SourceTa
 import StructureDataStep from '@/components/stream/wizard/steps/StructureDataStep.vue'
 import StreamConfigurationStep from '@/components/stream/wizard/steps/StreamConfigurationStep.vue'
 
+// Props for stream ID (when in edit mode)
+interface Props {
+  id?: string
+}
+
+const props = defineProps<Props>()
+
 const router = useRouter()
+const route = useRoute()
 const wizard = useStreamWizard()
 const streamsStore = useStreamsStore()
 const connectionsStore = useConnectionsStore()
@@ -102,6 +113,10 @@ const commonStore = useCommonStore()
 const isProcessing = ref(false)
 const canProceedOverride = ref(true)
 
+// Get stream ID from props or route params
+const streamId = computed(() => props.id || (route.params.id as string))
+const isEditMode = computed(() => Boolean(streamId.value))
+
 // Initialize
 onMounted(async () => {
   // Load connections if not already loaded
@@ -109,9 +124,48 @@ onMounted(async () => {
     await connectionsStore.refreshConnections()
   }
 
-  // Initialize a new stream config
-  streamsStore.resetCurrentStream()
+  if (isEditMode.value) {
+    // Edit mode: Load existing stream config
+    await loadStreamForEdit()
+  } else {
+    // Create mode: Initialize a new stream config
+    streamsStore.resetCurrentStream()
+  }
 })
+
+// Load existing stream config for editing
+async function loadStreamForEdit() {
+  const id = streamId.value
+  if (!id) {
+    commonStore.showNotification('No stream ID provided', 'error')
+    router.push({ name: 'Streams' })
+    return
+  }
+
+  try {
+    // Try to find stream in existing list first
+    let existingStream = streamsStore.streamConfigs.find((s) => s.id === id)
+
+    if (!existingStream) {
+      // If not found, refresh streams and try again
+      await streamsStore.refreshStreams()
+      existingStream = streamsStore.streamConfigs.find((s) => s.id === id)
+    }
+
+    if (!existingStream) {
+      throw new Error('Stream not found')
+    }
+
+    // Set the current stream for editing
+    streamsStore.setCurrentStream(id)
+
+    // Populate wizard state from the loaded stream config
+    wizard.loadFromStreamConfig(existingStream)
+  } catch (error: any) {
+    commonStore.showNotification(`Failed to load stream: ${error.message}`, 'error')
+    router.push({ name: 'Streams' })
+  }
+}
 
 // Watch for source/target changes and auto-discover tables
 watch(
@@ -242,7 +296,10 @@ async function handleFinish() {
     // Save the stream
     await streamsStore.saveStream()
 
-    commonStore.showNotification('Stream created successfully!', 'success')
+    commonStore.showNotification(
+      isEditMode.value ? 'Stream updated successfully!' : 'Stream created successfully!',
+      'success'
+    )
 
     // Navigate to streams list
     router.push({ name: 'Streams' })

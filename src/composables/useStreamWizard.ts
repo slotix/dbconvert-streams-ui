@@ -177,6 +177,28 @@ export function useStreamWizard() {
     copyData.value = true
   }
 
+  // Load wizard state from existing stream config (for edit mode)
+  function loadFromStreamConfig(config: any) {
+    // Populate source and target selection
+    selection.value.sourceConnectionId = config.source || null
+    selection.value.targetConnectionId = config.target || null
+    selection.value.sourceDatabase = config.sourceDatabase || null
+    selection.value.targetDatabase = config.targetDatabase || null
+    selection.value.sourceSchema = config.sourceSchema || null
+    selection.value.targetSchema = config.targetSchema || null
+    selection.value.targetPath = config.targetPath || null
+
+    // Populate structure options
+    if (config.structureOptions) {
+      createTables.value = config.structureOptions.tables ?? true
+      createIndexes.value = config.structureOptions.indexes ?? true
+      createForeignKeys.value = config.structureOptions.foreignKeys ?? true
+    }
+
+    // Populate data copy option (inverse of skipData)
+    copyData.value = !config.skipData
+  }
+
   return {
     // State
     currentStepIndex,
@@ -208,6 +230,7 @@ export function useStreamWizard() {
     setCreateIndexes,
     setCreateForeignKeys,
     setCopyData,
-    reset
+    reset,
+    loadFromStreamConfig
   }
 }

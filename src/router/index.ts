@@ -56,6 +56,12 @@ const routes = [
     component: () => import('@/views/CreateStreamView.vue')
   },
   {
+    path: '/streams/edit/:id',
+    name: 'EditStream',
+    component: () => import('@/views/CreateStreamView.vue'),
+    props: true
+  },
+  {
     path: '/streams/:mode',
     name: 'ManageStream',
     component: ManageStreamView,
