@@ -42,46 +42,6 @@
         </div>
       </div>
 
-      <!-- File Target Options -->
-      <div v-if="isFileTarget" class="bg-white">
-        <h4 class="text-base font-medium text-gray-900 mb-4">File Output Options</h4>
-        <div class="space-y-6">
-          <div>
-            <h5 class="text-sm font-medium text-gray-900 mb-2">Output Format</h5>
-            <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <label
-                v-for="option in fileFormatOptions"
-                :key="option.value"
-                class="flex cursor-pointer flex-col items-center rounded-lg border px-3 py-3 text-center transition-all"
-                :class="
-                  targetFileFormat === option.value
-                    ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-sm'
-                    : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
-                "
-              >
-                <input
-                  class="sr-only"
-                  type="radio"
-                  name="file-format"
-                  :value="option.value"
-                  v-model="targetFileFormat"
-                />
-                <span class="text-sm font-semibold uppercase">{{ option.label }}</span>
-                <span class="mt-1 text-xs text-gray-500">{{ option.description }}</span>
-              </label>
-            </div>
-            <p class="mt-3 text-xs text-gray-500">
-              All exported files will be written using the selected format.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Database Structure Section -->
-      <div class="bg-gray-50 p-6 rounded-lg">
-        <StructureOptions />
-      </div>
-
       <!-- Performance & Monitoring Section -->
       <div class="bg-white">
         <h4 class="text-base font-medium text-gray-900 mb-4">Performance & Monitoring</h4>
@@ -195,57 +155,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { computed } from 'vue'
 import { useStreamsStore, defaultStreamConfigOptions } from '@/stores/streamConfig'
-import { useConnectionsStore } from '@/stores/connections'
 import ModeButtons from './ModeButtons.vue'
 import Operations from './Operations.vue'
-import StructureOptions from './StructureOptions.vue'
 import { type StreamConfig } from '@/types/streamConfig'
 
 const streamsStore = useStreamsStore()
-const connectionsStore = useConnectionsStore()
 const currentStreamConfig = streamsStore.currentStreamConfig as StreamConfig
-
-const fileFormatOptions = [
-  { value: 'csv', label: 'CSV', description: 'Comma-separated text' },
-  { value: 'json', label: 'JSON', description: 'Standard JSON documents' },
-  { value: 'jsonl', label: 'JSONL', description: 'One JSON object per line' },
-  { value: 'parquet', label: 'Parquet', description: 'Columnar binary format' }
-] as const
-
-const targetConnection = computed(() => {
-  if (!currentStreamConfig.target) {
-    return null
-  }
-  return connectionsStore.connectionByID(currentStreamConfig.target)
-})
-
-const isFileTarget = computed(() => {
-  const type = targetConnection.value?.type?.toLowerCase() || ''
-  return type.includes('file')
-})
-
-const targetFileFormat = computed<StreamConfig['targetFileFormat']>({
-  get: () => currentStreamConfig.targetFileFormat ?? 'csv',
-  set: (value) => {
-    currentStreamConfig.targetFileFormat = value
-  }
-})
-
-watch(
-  isFileTarget,
-  (isFile) => {
-    if (isFile) {
-      if (!currentStreamConfig.targetFileFormat) {
-        currentStreamConfig.targetFileFormat = 'csv'
-      }
-    } else {
-      delete currentStreamConfig.targetFileFormat
-    }
-  },
-  { immediate: true }
-)
 
 const dataBundleSize = computed<number>({
   get: () => currentStreamConfig.dataBundleSize ?? defaultStreamConfigOptions.dataBundleSize,

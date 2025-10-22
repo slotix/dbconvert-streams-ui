@@ -33,7 +33,7 @@
       </button>
 
       <div v-if="isConnectionExpanded(connection.id)" class="border-t border-gray-100">
-        <div v-if="isFileConnection(connection)" class="space-y-1 py-2">
+        <div v-if="isFileConnection(connection)" class="space-y-2 py-2">
           <div class="px-2">
             <div class="flex w-full items-start gap-3 rounded-md px-2 py-2 text-sm text-gray-700">
               <span class="h-4 w-4 flex-shrink-0" />
@@ -56,6 +56,29 @@
                 @click.stop="refreshFileEntries(connection.id)"
               >
                 Refresh
+              </button>
+            </div>
+          </div>
+          <div
+            v-if="mode === 'target' && selectedConnectionId === connection.id"
+            class="px-2"
+          >
+            <div class="text-xs font-medium uppercase tracking-wide text-gray-500">Output Format</div>
+            <div class="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <button
+                v-for="option in fileFormatOptions"
+                :key="option.value"
+                type="button"
+                class="rounded-lg border px-3 py-2 text-xs font-medium transition-colors"
+                :class="
+                  targetFileFormat === option.value
+                    ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-sm'
+                    : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                "
+                @click.stop="targetFileFormat = option.value"
+              >
+                <div class="text-sm font-semibold uppercase">{{ option.label }}</div>
+                <div class="mt-1 text-[11px] text-gray-500">{{ option.description }}</div>
               </button>
             </div>
           </div>
@@ -121,6 +144,7 @@ import { ref, computed, watch, type Ref } from 'vue'
 import { ChevronRightIcon, ChevronDownIcon } from '@heroicons/vue/24/outline'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { useFileExplorerStore } from '@/stores/fileExplorer'
+import { useStreamsStore } from '@/stores/streamConfig'
 import type { Connection } from '@/types/connections'
 
 interface Props {
@@ -147,6 +171,7 @@ const emit = defineEmits<{
 
 const navigationStore = useExplorerNavigationStore()
 const fileExplorerStore = useFileExplorerStore()
+const streamsStore = useStreamsStore()
 
 const expandedConnections = ref<Set<string>>(new Set())
 
@@ -156,6 +181,28 @@ const connectionsMap = computed(() => {
     map.set(connection.id, connection)
   })
   return map
+})
+
+type TargetFileFormat = 'csv' | 'json' | 'jsonl' | 'parquet'
+
+const fileFormatOptions: Array<{
+  value: TargetFileFormat
+  label: string
+  description: string
+}> = [
+  { value: 'csv', label: 'CSV', description: 'Comma-separated text' },
+  { value: 'json', label: 'JSON', description: 'Standard JSON documents' },
+  { value: 'jsonl', label: 'JSONL', description: 'One JSON object per line' },
+  { value: 'parquet', label: 'Parquet', description: 'Columnar binary format' }
+]
+
+const targetFileFormat = computed<TargetFileFormat>({
+  get: () => (streamsStore.currentStreamConfig?.targetFileFormat ?? 'csv') as TargetFileFormat,
+  set: (value) => {
+    if (streamsStore.currentStreamConfig) {
+      streamsStore.currentStreamConfig.targetFileFormat = value
+    }
+  }
 })
 
 function addToSet(target: Ref<Set<string>>, value: string) {
