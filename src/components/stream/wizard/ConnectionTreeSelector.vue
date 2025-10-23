@@ -323,13 +323,9 @@ function connectionCardClass(connectionId: string): string {
     return 'hover:bg-gray-50'
   }
 
-  // Always highlight selected connection with thick colored border around entire block
-  // Color-code based on mode: orange for source, cyan for target
-  if (props.mode === 'source') {
-    return 'border-2 border-orange-500 rounded-lg'
-  } else {
-    return 'border-2 border-cyan-500 rounded-lg'
-  }
+  // Selected connection: subtle neutral styling
+  // Accent bar is now on the selected database row instead
+  return 'border border-gray-200 bg-white'
 }
 
 function connectionHeaderClass(connectionId: string): string {
@@ -343,7 +339,17 @@ function connectionHeaderClass(connectionId: string): string {
 function databaseRowClass(connectionId: string, database: string): string {
   const isSelected =
     props.selectedConnectionId === connectionId && props.selectedDatabase === database
-  return isSelected ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-gray-50'
+
+  if (!isSelected) {
+    return 'text-gray-700 hover:bg-gray-50'
+  }
+
+  // Selected database: soft glow ring + light background based on mode (source = amber, target = blue)
+  if (props.mode === 'source') {
+    return 'bg-yellow-50 border border-yellow-200 text-gray-900 '
+  } else {
+    return 'bg-green-50 border border-green-200 text-gray-900 '
+  }
 }
 
 function isConnectionExpanded(connectionId: string): boolean {

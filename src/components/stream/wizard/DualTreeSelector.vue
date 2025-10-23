@@ -1,12 +1,12 @@
 <template>
-  <div class="space-y-4">
+  <div class="space-y-6">
     <!-- Split Pane Container -->
     <div class="grid grid-cols-2 gap-4 h-[600px]">
       <!-- Source Tree (Left) -->
       <div class="relative rounded-lg bg-gray-50 overflow-hidden flex flex-col">
         <div class="px-4 py-3 border-b border-gray-200">
           <h3 class="text-sm font-semibold text-gray-900 flex items-center">
-            <img src="/images/steps/source-step.svg" alt="Source" class="w-6 h-6 mr-2" />
+            <img src="/images/steps/source-step.svg" alt="Source" class="w-8 h-8 mr-2" />
             Source Connection
           </h3>
           <p class="text-xs text-gray-500 mt-1">Select where to read data from</p>
@@ -29,7 +29,7 @@
       <div class="relative rounded-lg bg-gray-50 overflow-hidden flex flex-col">
         <div class="px-4 py-3 border-b border-gray-200">
           <h3 class="text-sm font-semibold text-gray-900 flex items-center">
-            <img src="/images/steps/target-step.svg" alt="Target" class="w-6 h-6 mr-2" />
+            <img src="/images/steps/target-step.svg" alt="Target" class="w-8 h-8 mr-2" />
             Target Connection
           </h3>
           <p class="text-xs text-gray-500 mt-1">Select where to write data to</p>
@@ -51,60 +51,51 @@
       </div>
     </div>
 
-    <!-- Selection Summary -->
-    <div v-if="sourceConnectionId || targetConnectionId" class="bg-gray-50 rounded-lg p-4">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center space-x-4 flex-1">
-          <!-- Source -->
-          <div class="flex-1">
-            <p class="text-xs font-medium text-gray-900 mb-1">Source</p>
-            <p v-if="sourceConnectionId" class="text-sm text-gray-700 font-medium">
+    <!-- Selection Summary - Neutral Chips -->
+    <div v-if="sourceConnectionId || targetConnectionId" class="space-y-3">
+      <!-- Source and Target Chips -->
+      <div class="flex items-center justify-between gap-3">
+        <div class="flex items-center gap-2 flex-1">
+          <!-- Source Chip -->
+          <div class="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm">
+            <span class="font-medium text-gray-900">Source:</span>
+            <span v-if="sourceConnectionId" class="text-slate-600 ml-1">
               {{ getConnectionName(sourceConnectionId) }}
-              <span v-if="sourceDatabase" class="text-gray-600">
-                / {{ sourceDatabase }}
-                <span v-if="sourceSchema"> / {{ sourceSchema }}</span>
-              </span>
-            </p>
-            <p v-else class="text-sm text-gray-500 italic">Not selected</p>
+              <span v-if="sourceDatabase"> / {{ sourceDatabase }}</span>
+            </span>
+            <span v-else class="text-gray-500 ml-1 italic">Not selected</span>
           </div>
 
           <!-- Arrow -->
-          <div class="flex-shrink-0">
-            <svg
-              class="w-8 h-8 text-gray-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M13 7l5 5m0 0l-5 5m5-5H6"
-              />
-            </svg>
-          </div>
+          <svg
+            class="w-4 h-4 text-gray-400 shrink-0"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M13 7l5 5m0 0l-5 5m5-5H6"
+            />
+          </svg>
 
-          <!-- Target -->
-          <div class="flex-1">
-            <p class="text-xs font-medium text-gray-900 mb-1">Target</p>
-            <p v-if="targetConnectionId" class="text-sm text-gray-700 font-medium">
+          <!-- Target Chip -->
+          <div class="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm">
+            <span class="font-medium text-gray-900">Target:</span>
+            <span v-if="targetConnectionId" class="text-slate-600 ml-1">
               {{ getConnectionName(targetConnectionId) }}
-              <span v-if="targetDatabase" class="text-gray-600">
-                / {{ targetDatabase }}
-                <span v-if="targetSchema"> / {{ targetSchema }}</span>
-              </span>
-              <span v-if="targetPath" class="text-gray-600"> / {{ targetPath }}</span>
-            </p>
-            <p v-else class="text-sm text-gray-500 italic">Not selected</p>
+              <span v-if="targetDatabase"> / {{ targetDatabase }}</span>
+            </span>
+            <span v-else class="text-gray-500 ml-1 italic">Not selected</span>
           </div>
         </div>
 
         <!-- Clear All Button -->
         <button
-          v-if="sourceConnectionId || targetConnectionId"
           type="button"
-          class="ml-4 text-xs text-gray-600 hover:text-gray-800 font-medium"
+          class="text-xs text-gray-600 hover:text-gray-800 font-medium whitespace-nowrap"
           @click="clearAll"
         >
           Clear All
