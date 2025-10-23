@@ -33,7 +33,6 @@
         <div class="flex-1 min-w-0">
           <div class="flex items-center gap-2">
             <span class="truncate text-sm font-medium text-gray-900">{{ connection.name }}</span>
-            <span class="text-xs uppercase tracking-wide text-gray-400">{{ connection.type }}</span>
           </div>
           <div v-if="connectionSubtitle(connection)" class="truncate text-xs text-gray-500">
             {{ connectionSubtitle(connection) }}
