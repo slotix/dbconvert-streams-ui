@@ -149,7 +149,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { PlusIcon } from '@heroicons/vue/24/solid'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
@@ -199,18 +199,12 @@ function handleStreamDeletedFromPanel() {
   selectedStreamId.value = ''
 }
 
-// Fetch streams on mount
-watch(
-  () => streamsStore.streamConfigs,
-  async () => {
-    if (!streamsStore.streamConfigs || streamsStore.streamConfigs.length === 0) {
-      try {
-        await streamsStore.refreshStreams()
-      } catch (error) {
-        console.error('Failed to fetch streams:', error)
-      }
-    }
-  },
-  { immediate: true }
-)
+// Fetch streams on mount - only runs once
+onMounted(async () => {
+  try {
+    await streamsStore.refreshStreams()
+  } catch (error) {
+    console.error('Failed to fetch streams:', error)
+  }
+})
 </script>
