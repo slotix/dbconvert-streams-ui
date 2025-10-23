@@ -113,10 +113,7 @@
     </div>
 
     <!-- Validation Error -->
-    <div
-      v-if="sourceConnectionId && targetConnectionId && sourceConnectionId === targetConnectionId"
-      class="bg-red-50 border border-red-200 rounded-lg p-3"
-    >
+    <div v-if="isSameConnectionAndDatabase" class="bg-red-50 border border-red-200 rounded-lg p-3">
       <div class="flex items-center">
         <svg class="w-5 h-5 text-red-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
           <path
@@ -126,7 +123,7 @@
           />
         </svg>
         <p class="text-sm text-red-700 font-medium">
-          Source and target cannot be the same connection
+          Source and target cannot be the same connection and database
         </p>
       </div>
     </div>
@@ -137,7 +134,6 @@
 import { ref, computed } from 'vue'
 import { useConnectionsStore } from '@/stores/connections'
 import ConnectionTreeSelector from './ConnectionTreeSelector.vue'
-import type { Connection } from '@/types/connections'
 
 interface Props {
   sourceConnectionId?: string | null
@@ -174,6 +170,16 @@ const connectionsStore = useConnectionsStore()
 const activePane = ref<'source' | 'target' | null>(null)
 
 const connections = computed(() => connectionsStore.connections)
+
+const isSameConnectionAndDatabase = computed(() => {
+  return (
+    props.sourceConnectionId &&
+    props.targetConnectionId &&
+    props.sourceConnectionId === props.targetConnectionId &&
+    props.sourceDatabase === props.targetDatabase &&
+    props.sourceDatabase
+  )
+})
 
 function getConnectionName(connectionId: string): string {
   const conn = connections.value.find((c) => c.id === connectionId)

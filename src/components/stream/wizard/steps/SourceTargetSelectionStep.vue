@@ -39,8 +39,8 @@
         <div class="flex-1">
           <h4 class="text-sm font-medium text-gray-900 mb-1">Tips</h4>
           <ul class="text-sm text-gray-600 space-y-1 list-disc list-inside">
-            <li>Source and target must be different connections</li>
-            <li>You can select databases within each connection for more precise control</li>
+            <li>Source and target cannot be the same connection and database</li>
+            <li>You can use the same connection if selecting different databases</li>
             <li>File connections use the folder path defined in their connection settings</li>
             <li>Make sure both connections are accessible and tested before creating a stream</li>
           </ul>
@@ -108,10 +108,16 @@ function handleClearAll() {
 
 function updateCanProceed() {
   // Emit can-proceed status based on validation
-  const canProceed = Boolean(
+  // Source and target cannot be the same connection AND database combination
+  const isSameConnectionAndDatabase =
     props.sourceConnectionId &&
-      props.targetConnectionId &&
-      props.sourceConnectionId !== props.targetConnectionId
+    props.targetConnectionId &&
+    props.sourceConnectionId === props.targetConnectionId &&
+    props.sourceDatabase === props.targetDatabase &&
+    props.sourceDatabase
+
+  const canProceed = Boolean(
+    props.sourceConnectionId && props.targetConnectionId && !isSameConnectionAndDatabase
   )
   emit('update:can-proceed', canProceed)
 }
