@@ -40,13 +40,14 @@
     <!-- Action Buttons -->
     <div
       class="flex items-center gap-1 ml-2 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+      @click.stop
     >
       <!-- Edit Button -->
       <router-link :to="{ name: 'EditStream', params: { id: stream.id } }">
         <button
           v-tooltip="'Edit stream'"
+          type="button"
           class="p-1.5 rounded-md hover:bg-gray-200 text-gray-500 hover:text-gray-700 transition-colors"
-          @click.stop
         >
           <PencilIcon class="h-4 w-4" />
         </button>
@@ -55,6 +56,7 @@
       <!-- Delete Button -->
       <button
         v-tooltip="'Delete stream'"
+        type="button"
         class="p-1.5 rounded-md hover:bg-red-100 text-gray-500 hover:text-red-600 transition-colors"
         @click.stop="deleteStream"
       >

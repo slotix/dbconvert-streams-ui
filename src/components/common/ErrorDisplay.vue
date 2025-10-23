@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { useCommonStore } from '@/stores/common'
 import { storeToRefs } from 'pinia'
+import { TransitionRoot } from '@headlessui/vue'
+import { XCircleIcon, ArrowPathIcon } from '@heroicons/vue/24/solid'
 
 const commonStore = useCommonStore()
 const { error } = storeToRefs(commonStore)

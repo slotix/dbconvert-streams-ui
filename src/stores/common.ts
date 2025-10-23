@@ -489,17 +489,33 @@ export const useCommonStore = defineStore('common', {
 
       try {
         switch (route) {
-          case 'connections':
+          case 'Connections':
             // Load connections data
             await api.getConnections()
             break
-          case 'streams':
+          case 'Streams':
             // Load streams data
             await api.getStreams()
             break
-          case 'dashboard':
+          case 'Dashboard':
             // Load dashboard data
             await this.fetchServiceStatus()
+            break
+          case 'CreateStream':
+          case 'EditStream':
+          case 'AddConnection':
+          case 'EditConnection':
+            // These routes handle their own data loading
+            break
+          case 'Home':
+          case 'DatabaseExplorer':
+          case 'DatabaseMetadata':
+          case 'ManageStream':
+          case 'MonitorStream':
+            // These routes don't need special data loading
+            break
+          default:
+            // Unknown routes don't need special data loading
             break
         }
         return true

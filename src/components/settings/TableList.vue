@@ -448,12 +448,16 @@ const refreshTables = async () => {
     }
 
     // Map the response and preserve existing selections
+    // In create mode (no stream ID), select all tables by default
+    // In edit mode (has stream ID), only keep previously selected tables, new ones default to false
+    const isEditMode = Boolean(currentStreamConfig.id)
+
     tables.value = tablesResponse.map((entry: any) => {
       const name = typeof entry === 'string' ? entry : 'Unknown'
       const hasExistingSelection = existingSelections.has(name)
       // Tables that were previously selected should remain selected
-      // Tables that were not in the original selection should be unselected (default: false)
-      const selected = hasExistingSelection ? existingSelections.get(name)! : false
+      // In edit mode: new tables default to false; in create mode: new tables default to true
+      const selected = hasExistingSelection ? existingSelections.get(name)! : !isEditMode
       const query = existingQueries.get(name) || ''
 
       if (currentStreamConfig.mode === 'cdc') {
