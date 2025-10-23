@@ -12,36 +12,25 @@
     >
       <button
         type="button"
-        class="flex w-full items-start gap-3 px-3 py-2.5 text-left transition-colors rounded-lg"
+        class="flex w-full items-center gap-2.5 px-3 py-2 text-left transition-colors rounded-lg"
         :class="connectionHeaderClass(connection.id)"
         @click="toggleConnectionExpansion(connection)"
       >
         <component
           :is="isConnectionExpanded(connection.id) ? ChevronDownIcon : ChevronRightIcon"
-          class="mt-0.5 h-4 w-4 flex-shrink-0 text-gray-400"
+          class="h-4 w-4 flex-shrink-0 text-gray-400"
         />
-        <div
-          :class="getDatabaseIconStyle(connection.type)"
-          class="rounded-lg p-2 transition-all duration-200 flex-shrink-0"
-        >
-          <img
-            class="h-5 w-5 object-contain"
-            :src="getLogoSrc(connection)"
-            :alt="connection.type + ' logo'"
-          />
-        </div>
+        <img
+          class="h-5 w-5 flex-shrink-0 object-contain"
+          :src="getLogoSrc(connection)"
+          :alt="connection.type + ' logo'"
+        />
         <div class="flex-1 min-w-0">
-          <div class="flex items-center gap-2">
+          <div class="flex items-baseline gap-1">
             <span class="truncate text-sm font-medium text-gray-900">{{ connection.name }}</span>
           </div>
           <div v-if="connectionSubtitle(connection)" class="truncate text-xs text-gray-500">
             {{ connectionSubtitle(connection) }}
-          </div>
-          <div
-            v-if="connectionSelectionLabel(connection.id)"
-            class="truncate text-xs text-gray-600"
-          >
-            {{ connectionSelectionLabel(connection.id) }}
           </div>
         </div>
       </button>
@@ -49,7 +38,10 @@
       <div v-if="isConnectionExpanded(connection.id)" class="pt-1">
         <div v-if="isFileConnection(connection)" class="space-y-2 py-2">
           <div class="px-2">
-            <div class="flex w-full items-start gap-3 rounded-md px-2 py-2 text-sm text-gray-700">
+            <div
+              class="flex w-full items-start gap-3 rounded-md px-2 py-2 text-sm transition-all duration-200"
+              :class="filePathClass(connection.id)"
+            >
               <span class="h-4 w-4 flex-shrink-0" />
               <span class="flex-1 min-w-0">
                 <div class="truncate text-xs uppercase tracking-wide text-gray-500">
@@ -86,9 +78,9 @@
                 type="button"
                 :class="[
                   targetFileFormat === option.value
-                    ? 'ring-2 ring-gray-600 border-gray-600'
-                    : 'border-gray-300 hover:border-gray-400',
-                  'relative rounded-lg border px-3 py-2 text-xs font-medium transition-all duration-200 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500'
+                    ? 'bg-green-50 border border-green-200 shadow-[0_0_0_2px_rgba(37,99,235,0.1)]'
+                    : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50',
+                  'relative rounded-lg border px-3 py-2 text-xs font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500'
                 ]"
                 @click.stop="targetFileFormat = option.value"
               >
@@ -295,29 +287,6 @@ function connectionSubtitle(connection: Connection): string | null {
   return parts.length ? parts.join(' · ') : null
 }
 
-function connectionSelectionLabel(connectionId: string): string | null {
-  if (props.selectedConnectionId !== connectionId) {
-    return null
-  }
-  if (props.mode === 'target' && props.selectedPath) {
-    return props.selectedPath
-  }
-  const parts: string[] = []
-  if (props.selectedDatabase) {
-    parts.push(props.selectedDatabase)
-  }
-
-  const connection = getConnectionById(connectionId)
-  if (connection && isFileConnection(connection)) {
-    const folder = fileExplorerStore.getDirectoryPath(connectionId) || connection.path || ''
-    if (folder) {
-      parts.push(folder)
-    }
-  }
-
-  return parts.length ? parts.join(' / ') : null
-}
-
 function connectionCardClass(connectionId: string): string {
   if (props.selectedConnectionId !== connectionId) {
     return 'hover:bg-gray-50'
@@ -336,6 +305,21 @@ function connectionHeaderClass(connectionId: string): string {
   return 'bg-transparent text-gray-900'
 }
 
+function filePathClass(connectionId: string): string {
+  const isSelected = props.selectedConnectionId === connectionId
+
+  if (!isSelected) {
+    return 'text-gray-700 hover:bg-gray-50'
+  }
+
+  // Selected file path: unified soft glow + light background based on mode
+  if (props.mode === 'source') {
+    return 'bg-yellow-50 border border-yellow-200 text-gray-900'
+  } else {
+    return 'bg-green-50 border border-green-200 text-gray-900'
+  }
+}
+
 function databaseRowClass(connectionId: string, database: string): string {
   const isSelected =
     props.selectedConnectionId === connectionId && props.selectedDatabase === database
@@ -346,9 +330,9 @@ function databaseRowClass(connectionId: string, database: string): string {
 
   // Selected database: soft glow ring + light background based on mode (source = amber, target = blue)
   if (props.mode === 'source') {
-    return 'bg-yellow-50 border border-yellow-200 text-gray-900 '
+    return 'bg-yellow-50 border border-yellow-200 text-gray-900'
   } else {
-    return 'bg-green-50 border border-green-200 text-gray-900 '
+    return 'bg-green-50 border border-green-200 text-gray-900'
   }
 }
 
@@ -415,32 +399,6 @@ function getLogoSrc(connection: Connection): string {
     (f) => normalizeConnectionType(f.type) === normalizedType
   )
   return dbType ? dbType.logo : ''
-}
-
-function getDatabaseIconStyle(dbType: string): string {
-  const normalizedType = normalizeConnectionType(dbType?.toLowerCase() || '')
-
-  // Database-specific brand colors with subtle backgrounds
-  const styles: Record<string, string> = {
-    postgresql: 'bg-blue-100 ring-2 ring-blue-200/50',
-    postgres: 'bg-blue-100 ring-2 ring-blue-200/50',
-    mysql: 'bg-orange-100 ring-2 ring-orange-200/50',
-    mongodb: 'bg-green-100 ring-2 ring-green-200/50',
-    mongo: 'bg-green-100 ring-2 ring-green-200/50',
-    redis: 'bg-red-100 ring-2 ring-red-200/50',
-    sqlite: 'bg-gray-100 ring-2 ring-gray-200/50',
-    mariadb: 'bg-orange-100 ring-2 ring-orange-200/50',
-    mssql: 'bg-blue-100 ring-2 ring-blue-200/50',
-    sqlserver: 'bg-blue-100 ring-2 ring-blue-200/50',
-    oracle: 'bg-red-100 ring-2 ring-red-200/50',
-    cassandra: 'bg-purple-100 ring-2 ring-purple-200/50',
-    elasticsearch: 'bg-yellow-100 ring-2 ring-yellow-200/50',
-    clickhouse: 'bg-yellow-100 ring-2 ring-yellow-200/50',
-    files: 'bg-gray-100 ring-2 ring-gray-200/50',
-    snowflake: 'bg-cyan-100 ring-2 ring-cyan-200/50'
-  }
-
-  return styles[normalizedType] || 'bg-gray-100 ring-2 ring-gray-200/50'
 }
 
 watch(
