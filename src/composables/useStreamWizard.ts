@@ -62,10 +62,18 @@ export function useStreamWizard() {
 
   // Validation for each step
   const canProceedStep1 = computed(() => {
+    // Source and target cannot be the same connection AND database combination
+    const isSameConnectionAndDatabase =
+      selection.value.sourceConnectionId &&
+      selection.value.targetConnectionId &&
+      selection.value.sourceConnectionId === selection.value.targetConnectionId &&
+      selection.value.sourceDatabase === selection.value.targetDatabase &&
+      selection.value.sourceDatabase
+
     return Boolean(
       selection.value.sourceConnectionId &&
         selection.value.targetConnectionId &&
-        selection.value.sourceConnectionId !== selection.value.targetConnectionId
+        !isSameConnectionAndDatabase
     )
   })
 

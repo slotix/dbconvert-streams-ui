@@ -51,6 +51,7 @@
 </template>
 
 <script setup lang="ts">
+import { watch } from 'vue'
 import DualTreeSelector from '../DualTreeSelector.vue'
 import StreamNameField from '../StreamNameField.vue'
 
@@ -73,6 +74,19 @@ const props = withDefaults(defineProps<Props>(), {
   targetSchema: null,
   targetPath: null
 })
+
+// Watch for prop changes to update can-proceed state
+watch(
+  [
+    () => props.sourceConnectionId,
+    () => props.targetConnectionId,
+    () => props.sourceDatabase,
+    () => props.targetDatabase
+  ],
+  () => {
+    updateCanProceed()
+  }
+)
 
 const emit = defineEmits<{
   'update:source-connection': [connectionId: string, database?: string, schema?: string]
