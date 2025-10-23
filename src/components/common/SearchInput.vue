@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, onMounted } from 'vue'
+import { FunnelIcon } from '@heroicons/vue/24/outline'
 
 const props = defineProps<{
   modelValue: string
@@ -30,15 +31,25 @@ const sizes = {
   sm: 'px-2 py-1.5 text-xs',
   md: 'px-3 py-2 text-sm'
 }
+
+const iconSizes = {
+  sm: 'h-3.5 w-3.5',
+  md: 'h-4 w-4'
+}
 </script>
 
 <template>
-  <input
-    ref="inputRef"
-    v-model="local"
-    type="text"
-    :placeholder="props.placeholder || 'Filter...'"
-    class="border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-slate-400 w-full"
-    :class="sizes[props.size || 'sm']"
-  />
+  <div class="relative w-full">
+    <div class="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
+      <FunnelIcon :class="[iconSizes[props.size || 'sm'], 'text-gray-400']" />
+    </div>
+    <input
+      ref="inputRef"
+      v-model="local"
+      type="text"
+      :placeholder="props.placeholder || 'Filter...'"
+      class="border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-slate-400 w-full pl-8"
+      :class="sizes[props.size || 'sm']"
+    />
+  </div>
 </template>

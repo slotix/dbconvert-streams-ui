@@ -27,7 +27,12 @@
         />
         <div class="flex-1 min-w-0">
           <div class="flex items-baseline gap-1">
-            <span class="truncate text-sm font-medium text-gray-900">{{ connection.name }}</span>
+            <span class="truncate text-sm font-medium text-gray-900">
+              <template v-for="(part, i) in getHighlightedText(connection.name)" :key="i">
+                <mark v-if="part.match" class="bg-yellow-200 font-semibold">{{ part.text }}</mark>
+                <span v-else>{{ part.text }}</span>
+              </template>
+            </span>
           </div>
           <div v-if="connectionSubtitle(connection)" class="truncate text-xs text-gray-500">
             {{ connectionSubtitle(connection) }}
@@ -140,7 +145,14 @@
                 @click="handleDatabaseSelect(connection, database.name)"
               >
                 <span class="h-4 w-4 flex-shrink-0" />
-                <span class="truncate">{{ database.name }}</span>
+                <span class="truncate">
+                  <template v-for="(part, i) in getHighlightedText(database.name)" :key="i">
+                    <mark v-if="part.match" class="bg-yellow-200 font-semibold">
+                      {{ part.text }}
+                    </mark>
+                    <span v-else>{{ part.text }}</span>
+                  </template>
+                </span>
                 <span
                   v-if="getTableCount(connection.id, database.name) !== null"
                   class="ml-auto text-xs text-gray-400"
@@ -164,6 +176,7 @@ import { useFileExplorerStore } from '@/stores/fileExplorer'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
 import { normalizeConnectionType } from '@/utils/connectionUtils'
+import { highlightParts, type HighlightPart } from '@/utils/highlight'
 import type { Connection } from '@/types/connections'
 
 interface Props {
@@ -173,13 +186,15 @@ interface Props {
   selectedSchema?: string | null
   selectedPath?: string | null
   mode: 'source' | 'target'
+  searchQuery?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
   selectedConnectionId: null,
   selectedDatabase: null,
   selectedSchema: null,
-  selectedPath: null
+  selectedPath: null,
+  searchQuery: ''
 })
 
 const emit = defineEmits<{
@@ -272,6 +287,10 @@ function getFileLoadingState(connectionId: string): boolean {
 
 function getFileError(connectionId: string): string {
   return fileExplorerStore.getError(connectionId) || ''
+}
+
+function getHighlightedText(text: string): HighlightPart[] {
+  return highlightParts(text, props.searchQuery || '')
 }
 
 function refreshFileEntries(connectionId: string) {
@@ -432,5 +451,57 @@ watch(
     void ensureMetadata(connectionId, database)
   },
   { immediate: true }
+)
+
+// Auto-load databases and metadata when search query changes (like data explorer does)
+watch(
+  () => props.searchQuery,
+  async (query) => {
+    if (!query.trim()) {
+      return
+    }
+
+    // Get the filtered connections list
+    const filteredConns = props.connections
+    const normalizedQuery = query.toLowerCase()
+
+    // Expand all filtered connections and ensure their databases are loaded
+    for (const conn of filteredConns) {
+      if (isFileConnection(conn)) {
+        continue
+      }
+
+      addToSet(expandedConnections, conn.id)
+
+      // Load databases if not already loading or loaded
+      if (
+        !navigationStore.isDatabasesLoading(conn.id) &&
+        !navigationStore.databasesState[conn.id]
+      ) {
+        await navigationStore.ensureDatabases(conn.id)
+      }
+
+      // Load metadata for ALL databases so we can search through tables and views
+      // (The search query might match a table or view inside a database, not just the database name)
+      const databases = navigationStore.databasesState[conn.id] || []
+      for (const db of databases) {
+        const key = `${conn.id}:${db.name}`
+
+        // Expand database even if query doesn't match database name
+        // (might match a table inside it)
+        if (db.name.toLowerCase().includes(normalizedQuery)) {
+          addToSet(expandedConnections, key)
+        }
+
+        // Load metadata if not already loading or loaded
+        if (
+          !navigationStore.isMetadataLoading(conn.id, db.name) &&
+          !navigationStore.getMetadata(conn.id, db.name)
+        ) {
+          await navigationStore.ensureMetadata(conn.id, db.name).catch(() => {})
+        }
+      }
+    }
+  }
 )
 </script>

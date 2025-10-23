@@ -12,12 +12,20 @@
           <p class="text-xs text-gray-500 mt-1">Select where to read data from</p>
         </div>
 
+        <!-- Source Filters -->
+        <StreamConnectionFilter
+          :connection-search="sourceConnectionSearch"
+          @update:connection-search="sourceConnectionSearch = $event"
+          @update:selected-type="sourceConnectionType = $event"
+        />
+
         <div class="flex-1 overflow-y-auto p-4 bg-white">
           <ConnectionTreeSelector
-            :connections="connections"
+            :connections="filteredSourceConnections"
             :selected-connection-id="sourceConnectionId"
             :selected-database="sourceDatabase"
             :selected-schema="sourceSchema"
+            :search-query="sourceConnectionSearch"
             mode="source"
             @select-connection="handleSourceConnectionSelect"
             @select-database="handleSourceDatabaseSelect"
@@ -35,13 +43,21 @@
           <p class="text-xs text-gray-500 mt-1">Select where to write data to</p>
         </div>
 
+        <!-- Target Filters -->
+        <StreamConnectionFilter
+          :connection-search="targetConnectionSearch"
+          @update:connection-search="targetConnectionSearch = $event"
+          @update:selected-type="targetConnectionType = $event"
+        />
+
         <div class="flex-1 overflow-y-auto p-4 bg-white">
           <ConnectionTreeSelector
-            :connections="connections"
+            :connections="filteredTargetConnections"
             :selected-connection-id="targetConnectionId"
             :selected-database="targetDatabase"
             :selected-schema="targetSchema"
             :selected-path="targetPath"
+            :search-query="targetConnectionSearch"
             mode="target"
             @select-connection="handleTargetConnectionSelect"
             @select-database="handleTargetDatabaseSelect"
@@ -124,7 +140,9 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useConnectionsStore } from '@/stores/connections'
+import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import ConnectionTreeSelector from './ConnectionTreeSelector.vue'
+import StreamConnectionFilter from './StreamConnectionFilter.vue'
 
 interface Props {
   sourceConnectionId?: string | null
@@ -158,9 +176,92 @@ const emit = defineEmits<{
 }>()
 
 const connectionsStore = useConnectionsStore()
-const activePane = ref<'source' | 'target' | null>(null)
+const navigationStore = useExplorerNavigationStore()
+const sourceConnectionSearch = ref('')
+const targetConnectionSearch = ref('')
+const sourceConnectionType = ref<string | null>(null)
+const targetConnectionType = ref<string | null>(null)
 
 const connections = computed(() => connectionsStore.connections)
+
+// Helper function to match type filter
+function matchesTypeFilter(conn: { type?: string }, typeFilter: string | null): boolean {
+  const filterLabel = typeFilter || 'All'
+  const filter = filterLabel.toLowerCase()
+  if (!filter || filter === 'all') return true
+  const connType = (conn.type || '').toLowerCase()
+  if (!connType) return false
+  if (filter === 'postgresql') return connType.includes('postgres')
+  if (filter === 'files') return connType.includes('file')
+  return connType.includes(filter)
+}
+
+// Helper function to normalize text for case-insensitive search
+function normalize(text: string): string {
+  return text.toLowerCase()
+}
+
+// Deep search function - searches through connection, databases, tables, views
+function connectionMatchesDeepSearch(
+  connection: { id: string; name?: string; host?: string; type?: string },
+  query: string
+): boolean {
+  if (!query.trim()) return true
+
+  const normalizedQuery = normalize(query)
+
+  // Search in connection basic info
+  const connectionLabel = `${connection.name || ''} ${connection.host || ''} ${connection.type || ''}`
+  if (normalize(connectionLabel).includes(normalizedQuery)) return true
+
+  // Search in database names
+  const databases = navigationStore.databasesState[connection.id] || []
+  if (databases.some((db) => normalize(db.name).includes(normalizedQuery))) return true
+
+  // Search in metadata (tables and views)
+  const metadataByDatabase = navigationStore.metadataState[connection.id] || {}
+  for (const databaseName in metadataByDatabase) {
+    const metadata = metadataByDatabase[databaseName]
+
+    // Search in tables
+    const hasTableMatch = Object.values(metadata.tables || {}).some(
+      (table: { name?: string; schema?: string }) =>
+        normalize(table.name || '').includes(normalizedQuery) ||
+        (table.schema && normalize(table.schema).includes(normalizedQuery))
+    )
+    if (hasTableMatch) return true
+
+    // Search in views
+    const hasViewMatch = Object.values(metadata.views || {}).some(
+      (view: { name?: string; schema?: string }) =>
+        normalize(view.name || '').includes(normalizedQuery) ||
+        (view.schema && normalize(view.schema).includes(normalizedQuery))
+    )
+    if (hasViewMatch) return true
+  }
+
+  return false
+}
+
+const filteredSourceConnections = computed(() => {
+  let filtered = connections.value.filter((conn) =>
+    matchesTypeFilter(conn, sourceConnectionType.value)
+  )
+
+  const query = sourceConnectionSearch.value
+
+  return filtered.filter((conn) => connectionMatchesDeepSearch(conn, query))
+})
+
+const filteredTargetConnections = computed(() => {
+  let filtered = connections.value.filter((conn) =>
+    matchesTypeFilter(conn, targetConnectionType.value)
+  )
+
+  const query = targetConnectionSearch.value
+
+  return filtered.filter((conn) => connectionMatchesDeepSearch(conn, query))
+})
 
 const isSameConnectionAndDatabase = computed(() => {
   return (
@@ -182,7 +283,6 @@ function handleSourceConnectionSelect(payload: {
   database?: string
   schema?: string
 }) {
-  activePane.value = 'source'
   emit('update:source-connection', payload.connectionId, payload.database, payload.schema)
 }
 
@@ -191,7 +291,6 @@ function handleSourceDatabaseSelect(payload: {
   database: string
   schema?: string
 }) {
-  activePane.value = 'source'
   emit('update:source-connection', payload.connectionId, payload.database, payload.schema)
 }
 
@@ -200,7 +299,6 @@ function handleTargetConnectionSelect(payload: {
   database?: string
   schema?: string
 }) {
-  activePane.value = 'target'
   emit('update:target-connection', payload.connectionId, payload.database, payload.schema)
 }
 
@@ -209,12 +307,10 @@ function handleTargetDatabaseSelect(payload: {
   database: string
   schema?: string
 }) {
-  activePane.value = 'target'
   emit('update:target-connection', payload.connectionId, payload.database, payload.schema)
 }
 
 function handleTargetFileSelect(payload: { connectionId: string; path: string }) {
-  activePane.value = 'target'
   emit('update:target-connection', payload.connectionId, undefined, undefined, payload.path)
 }
 
