@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, inject } from 'vue'
 import type { ComputedRef } from 'vue'
-import { ChevronRightIcon, ChevronDownIcon, FolderIcon } from '@heroicons/vue/24/outline'
+import { ChevronRightIcon, ChevronDownIcon } from '@heroicons/vue/24/outline'
 import DatabaseTreeItem from './DatabaseTreeItem.vue'
 import FileEntry from '../FileEntry.vue'
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
@@ -195,9 +195,7 @@ const connectionTooltip = computed(() => {
         class="mt-0.5"
         @click.stop="$emit('toggle-connection')"
       />
-      <FolderIcon v-if="isFileConnection" class="h-5 w-5 shrink-0 text-yellow-600 mt-0.5" />
       <img
-        v-else
         :src="treeLogic.getDbLogoForType(connection.type)"
         :alt="connection.type || 'db'"
         class="h-5 w-5 shrink-0 object-contain mt-0.5"
