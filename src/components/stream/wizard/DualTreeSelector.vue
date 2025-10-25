@@ -253,28 +253,31 @@ const filteredSourceConnections = computed(() => {
     matchesTypeFilter(conn, sourceConnectionType.value)
   )
 
+  // Sort by creation date (newest first) then by name
+  filtered = filtered.sort((a, b) => {
+    const ac = Number(a.created || 0)
+    const bc = Number(b.created || 0)
+    if (bc !== ac) return bc - ac
+    return (a.name || '').localeCompare(b.name || '')
+  })
+
   const query = sourceConnectionSearch.value
 
   return filtered.filter((conn) => connectionMatchesDeepSearch(conn, query))
-})
-
-// Check if any file connections exist in source pane
-const hasFileConnectionsInSource = computed(() => {
-  return filteredSourceConnections.value.some((conn) => {
-    const connType = (conn.type || '').toLowerCase()
-    return (
-      connType.includes('file') ||
-      connType.includes('csv') ||
-      connType.includes('parquet') ||
-      connType.includes('jsonl')
-    )
-  })
 })
 
 const filteredTargetConnections = computed(() => {
   let filtered = connections.value.filter((conn) =>
     matchesTypeFilter(conn, targetConnectionType.value)
   )
+
+  // Sort by creation date (newest first) then by name
+  filtered = filtered.sort((a, b) => {
+    const ac = Number(a.created || 0)
+    const bc = Number(b.created || 0)
+    if (bc !== ac) return bc - ac
+    return (a.name || '').localeCompare(b.name || '')
+  })
 
   const query = targetConnectionSearch.value
 
