@@ -13,8 +13,16 @@
       <button
         type="button"
         class="flex w-full items-start gap-2.5 px-3 py-2 text-left transition-colors rounded-lg"
-        :class="connectionHeaderClass(connection.id)"
-        :title="connectionTooltip(connection)"
+        :class="[
+          connectionHeaderClass(connection.id),
+          isFileConnection(connection) && mode === 'source' ? 'opacity-50 cursor-not-allowed' : ''
+        ]"
+        :title="
+          isFileConnection(connection) && mode === 'source'
+            ? 'File connections cannot be used as source. Only database connections are supported.'
+            : connectionTooltip(connection)
+        "
+        :disabled="isFileConnection(connection) && mode === 'source'"
         @click="toggleConnectionExpansion(connection)"
       >
         <component
@@ -41,6 +49,12 @@
               size="sm"
               class="shrink-0"
             />
+            <span
+              v-if="isFileConnection(connection) && mode === 'source'"
+              class="inline-flex items-center px-2 py-0.5 text-[10px] font-medium text-gray-600 bg-gray-100 rounded-full shrink-0"
+            >
+              Not supported as source
+            </span>
           </div>
           <div
             v-if="connectionSubtitle(connection)"
@@ -377,6 +391,12 @@ function isConnectionExpanded(connectionId: string): boolean {
 async function toggleConnectionExpansion(connection: Connection) {
   if (isConnectionExpanded(connection.id)) {
     removeFromSet(expandedConnections, connection.id)
+    return
+  }
+
+  // Prevent file connections from being selected as source
+  if (isFileConnection(connection) && props.mode === 'source') {
+    // Don't expand, but show a visual indicator (handled in template)
     return
   }
 
