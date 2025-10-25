@@ -20,6 +20,7 @@ import { formatTableValue } from '@/utils/dataUtils'
 import { vHighlightjs } from '@/directives/highlightjs'
 import ColumnContextMenu from '../database/ColumnContextMenu.vue'
 import AdvancedFilterModal from '../database/AdvancedFilterModal.vue'
+import UnsupportedFileMessage from './UnsupportedFileMessage.vue'
 import { useAGGridFiltering } from '@/composables/useAGGridFiltering'
 import { convertFilterModelToSQL, determineFilterType } from '@/utils/agGridFilterUtils'
 import 'ag-grid-community/styles/ag-grid.css'
@@ -69,6 +70,9 @@ const isInitialLoading = ref(true) // Track initial load (metadata + first data)
 const warnings = ref<string[]>([])
 
 const fileFormat = computed(() => getFileFormat(props.entry.name))
+
+// Check if file format is supported
+const isUnsupportedFile = computed(() => fileFormat.value === null)
 
 // Get row count directly from metadata (DuckDB provides accurate counts)
 const totalRowCount = ref<number>(props.metadata?.rowCount ?? 0)
@@ -286,6 +290,12 @@ function createDatasource(): IDatasource {
 function onGridReady(params: GridReadyEvent) {
   gridApi.value = params.api
 
+  // Don't set up grid for unsupported files
+  if (isUnsupportedFile.value) {
+    isInitialLoading.value = false
+    return
+  }
+
   // Add filter changed listener
   params.api.addEventListener('filterChanged', () => {
     // Reset total count so we get fresh count with filters
@@ -387,9 +397,17 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="flex flex-col h-full">
+    <!-- Unsupported file type message -->
+    <UnsupportedFileMessage
+      v-if="isUnsupportedFile"
+      :file-name="entry.name"
+      variant="data"
+      class="h-full"
+    />
+
     <!-- WHERE error message -->
     <div
-      v-if="whereError"
+      v-if="!isUnsupportedFile && whereError"
       class="mb-3 p-2 bg-red-50 border border-red-200 rounded-md text-sm text-red-700"
     >
       {{ whereError }}
@@ -397,7 +415,7 @@ onBeforeUnmount(() => {
 
     <!-- SQL Query Banner (like DataGrip) -->
     <div
-      v-if="fullSqlQuery"
+      v-if="!isUnsupportedFile && fullSqlQuery"
       class="mb-3 bg-amber-50 border border-amber-200 rounded-md overflow-hidden"
     >
       <div class="flex items-start gap-2 px-3 py-2">
@@ -449,7 +467,7 @@ onBeforeUnmount(() => {
 
     <!-- Error message -->
     <div
-      v-if="error"
+      v-if="!isUnsupportedFile && error"
       class="mb-3 p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-700"
     >
       {{ error }}
@@ -457,7 +475,7 @@ onBeforeUnmount(() => {
 
     <!-- Warnings -->
     <div
-      v-if="warnings.length > 0"
+      v-if="!isUnsupportedFile && warnings.length > 0"
       class="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded-md text-sm text-yellow-700"
     >
       <div class="font-medium mb-1">Warnings:</div>
@@ -467,7 +485,11 @@ onBeforeUnmount(() => {
     </div>
 
     <!-- AG Grid -->
-    <div class="relative ag-theme-alpine" style="height: 750px; width: 100%">
+    <div
+      v-if="!isUnsupportedFile"
+      class="relative ag-theme-alpine"
+      style="height: 750px; width: 100%"
+    >
       <ag-grid-vue
         class="h-full w-full"
         :columnDefs="columnDefs"
@@ -508,7 +530,7 @@ onBeforeUnmount(() => {
 
     <!-- Custom Context Menu -->
     <ColumnContextMenu
-      v-if="showContextMenu"
+      v-if="!isUnsupportedFile && showContextMenu"
       :x="contextMenuX"
       :y="contextMenuY"
       :column="contextMenuColumn"
@@ -519,6 +541,7 @@ onBeforeUnmount(() => {
 
     <!-- Advanced Filter Modal -->
     <AdvancedFilterModal
+      v-if="!isUnsupportedFile"
       :is-open="showAdvancedFilterModal"
       :current-where-clause="whereClause"
       @close="showAdvancedFilterModal = false"

@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { type FileSystemEntry } from '@/api/fileSystem'
 import { type FileMetadata } from '@/types/files'
 import { getFileFormat } from '@/utils/fileFormat'
+import UnsupportedFileMessage from './UnsupportedFileMessage.vue'
 
 const props = defineProps<{
   entry: FileSystemEntry
@@ -15,6 +16,7 @@ const emit = defineEmits<{
 }>()
 
 const fileFormat = computed(() => getFileFormat(props.entry.name))
+const isUnsupportedFile = computed(() => fileFormat.value === null)
 
 const formatFileSize = (bytes?: number): string => {
   if (!bytes) return '0 B'
@@ -35,8 +37,11 @@ defineExpose({
 
 <template>
   <div class="p-4 space-y-6">
+    <!-- Unsupported File Type Message -->
+    <UnsupportedFileMessage v-if="isUnsupportedFile" :file-name="entry.name" variant="structure" />
+
     <!-- File Information -->
-    <section>
+    <section v-if="!isUnsupportedFile">
       <h3 class="text-sm font-semibold text-gray-900 mb-3">File Information</h3>
       <div class="grid gap-4 md:grid-cols-2">
         <div class="rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-700">
@@ -57,7 +62,7 @@ defineExpose({
     </section>
 
     <!-- Columns Structure -->
-    <section v-if="metadata?.columns">
+    <section v-if="!isUnsupportedFile && metadata?.columns">
       <h3 class="text-sm font-semibold text-gray-900 mb-3">Columns</h3>
       <div class="overflow-x-auto">
         <div class="min-w-[640px]">
@@ -102,7 +107,7 @@ defineExpose({
     </section>
 
     <!-- Format-specific Information -->
-    <section v-if="metadata?.csvDialect || metadata?.jsonStructure">
+    <section v-if="!isUnsupportedFile && (metadata?.csvDialect || metadata?.jsonStructure)">
       <h3 class="text-sm font-semibold text-gray-900 mb-3">Format Details</h3>
 
       <!-- CSV Dialect -->
@@ -144,7 +149,7 @@ defineExpose({
     </section>
 
     <!-- Empty State -->
-    <div v-if="!metadata" class="text-center py-8">
+    <div v-if="!isUnsupportedFile && !metadata" class="text-center py-8">
       <p class="text-sm text-gray-500">No metadata available</p>
       <p class="text-xs text-gray-400 mt-1">File metadata could not be loaded</p>
     </div>
