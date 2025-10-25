@@ -80,11 +80,11 @@ const sizeClasses = computed(() => {
 const logoSizeClasses = computed(() => {
   switch (props.size) {
     case 'sm':
-      return 'h-3 w-3'
-    case 'lg':
-      return 'h-5 w-5'
-    default: // md
       return 'h-4 w-4'
+    case 'lg':
+      return 'h-6 w-6'
+    default: // md
+      return 'h-6 w-6'
   }
 })
 
