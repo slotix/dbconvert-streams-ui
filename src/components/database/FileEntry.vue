@@ -2,7 +2,7 @@
 import { computed, inject } from 'vue'
 import type { ComputedRef } from 'vue'
 import type { FileSystemEntry } from '@/api/fileSystem'
-import { getFileFormat, getFileFormatColor, getFileFormatIconPath } from '@/utils/fileFormat'
+import { getFileFormat, getFileFormatLogoPath } from '@/utils/fileFormat'
 import { highlightParts } from '@/utils/highlight'
 
 const props = defineProps<{
@@ -24,8 +24,7 @@ const emit = defineEmits<{
 }>()
 
 const fileFormat = computed(() => getFileFormat(props.entry.name))
-const fileFormatColor = computed(() => getFileFormatColor(fileFormat.value))
-const fileFormatIconPath = computed(() => getFileFormatIconPath(fileFormat.value))
+const fileFormatLogoPath = computed(() => getFileFormatLogoPath(fileFormat.value))
 
 const formatFileSize = (bytes?: number): string => {
   if (!bytes) return '0 B'
@@ -55,11 +54,11 @@ const formatFileSize = (bytes?: number): string => {
     "
   >
     <!-- File format icon -->
-    <div class="relative mr-2 shrink-0">
-      <svg class="w-4 h-4" :class="fileFormatColor" fill="currentColor" viewBox="0 0 24 24">
-        <path :d="fileFormatIconPath" />
-      </svg>
-    </div>
+    <img
+      :src="fileFormatLogoPath"
+      :alt="fileFormat || 'file'"
+      class="w-6 h-6 mr-2 shrink-0 object-contain"
+    />
 
     <!-- File name -->
     <div class="flex-1 min-w-0 truncate">
@@ -70,7 +69,7 @@ const formatFileSize = (bytes?: number): string => {
     </div>
 
     <!-- File size -->
-    <span v-if="entry.size" class="text-xs text-gray-500 ml-2 flex-shrink-0">
+    <span v-if="entry.size" class="text-xs text-gray-500 ml-2 shrink-0">
       {{ formatFileSize(entry.size) }}
     </span>
   </div>
