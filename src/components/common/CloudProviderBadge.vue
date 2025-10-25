@@ -69,7 +69,7 @@ const documentationUrl = computed(() => {
 const sizeClasses = computed(() => {
   switch (props.size) {
     case 'sm':
-      return 'px-2 py-1 text-xs'
+      return 'px-1.5 py-0.5 text-xs'
     case 'lg':
       return 'px-4 py-2 text-base'
     default: // md
@@ -91,7 +91,7 @@ const logoSizeClasses = computed(() => {
 const helpIconSizeClasses = computed(() => {
   switch (props.size) {
     case 'sm':
-      return 'h-4 w-4'
+      return 'h-3 w-3'
     case 'lg':
       return 'h-6 w-6'
     default: // md

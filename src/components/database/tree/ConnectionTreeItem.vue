@@ -4,7 +4,9 @@ import type { ComputedRef } from 'vue'
 import { ChevronRightIcon, ChevronDownIcon, FolderIcon } from '@heroicons/vue/24/outline'
 import DatabaseTreeItem from './DatabaseTreeItem.vue'
 import FileEntry from '../FileEntry.vue'
+import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
 import { highlightParts as splitHighlight } from '@/utils/highlight'
+import { getConnectionTooltip } from '@/utils/connectionUtils'
 import { useConnectionTreeLogic } from '@/composables/useConnectionTreeLogic'
 import { useFileExplorerStore } from '@/stores/fileExplorer'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
@@ -186,6 +188,11 @@ function handleSelectFile(path: string) {
 const visibleFileEntries = computed(() => {
   return treeSearch.value.filterFileEntries(fileEntries.value)
 })
+
+// Generate tooltip with full connection details
+const connectionTooltip = computed(() => {
+  return getConnectionTooltip(props.connection)
+})
 </script>
 
 <template>
@@ -193,36 +200,52 @@ const visibleFileEntries = computed(() => {
     <div
       :data-explorer-connection="connection.id"
       :class="[
-        'flex items-center px-2 py-1.5 text-sm text-gray-700 rounded-md hover:bg-gray-100 cursor-pointer transition-colors select-none',
+        'group flex items-start gap-1.5 px-2 py-1.5 text-sm text-gray-700 rounded-md hover:bg-gray-100 cursor-pointer transition-colors select-none',
         isFocused ? 'bg-gray-100 ring-1 ring-gray-300' : isAncestorOfActive ? 'bg-gray-50' : ''
       ]"
+      :title="connectionTooltip"
       @click="$emit('select-connection', { connectionId: connection.id })"
       @contextmenu.stop.prevent="handleConnectionContextMenu"
     >
       <component
         :is="isExpanded ? ChevronDownIcon : ChevronRightIcon"
         :class="caretClass"
+        class="mt-0.5"
         @click.stop="$emit('toggle-connection')"
       />
-      <FolderIcon v-if="isFileConnection" class="h-5 w-5 mr-1.5 text-yellow-600" />
+      <FolderIcon v-if="isFileConnection" class="h-5 w-5 shrink-0 text-yellow-600 mt-0.5" />
       <img
         v-else
         :src="treeLogic.getDbLogoForType(connection.type)"
         :alt="connection.type || 'db'"
-        class="h-5 w-5 mr-1.5 object-contain"
+        class="h-5 w-5 shrink-0 object-contain mt-0.5"
       />
-      <span class="font-medium">
-        <template
-          v-for="(p, i) in highlightParts(connection.name || connection.host || 'Connection')"
-          :key="i"
+      <div class="flex-1 min-w-0 flex flex-col gap-0.5">
+        <div class="flex items-center gap-1.5">
+          <span class="font-medium truncate">
+            <template
+              v-for="(p, i) in highlightParts(connection.name || connection.host || 'Connection')"
+              :key="i"
+            >
+              <span v-if="p.match" class="bg-yellow-200/60 rounded px-0.5" v-text="p.text"></span>
+              <span v-else v-text="p.text"></span>
+            </template>
+          </span>
+          <CloudProviderBadge
+            v-if="connection.cloud_provider"
+            :cloud-provider="connection.cloud_provider"
+            :db-type="connection.type"
+            size="sm"
+            class="shrink-0"
+          />
+        </div>
+        <div
+          v-if="connection.host && connection.port"
+          class="text-xs text-gray-500 truncate leading-tight"
         >
-          <span v-if="p.match" class="bg-yellow-200/60 rounded px-0.5" v-text="p.text"></span>
-          <span v-else v-text="p.text"></span>
-        </template>
-      </span>
-      <span v-if="connection.host && connection.port" class="ml-2 text-xs text-gray-500">
-        {{ connection.host }}:{{ connection.port }}
-      </span>
+          {{ connection.host }}:{{ connection.port }}
+        </div>
+      </div>
     </div>
 
     <!-- Databases or Files under connection -->

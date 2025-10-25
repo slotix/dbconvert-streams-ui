@@ -12,29 +12,40 @@
     >
       <button
         type="button"
-        class="flex w-full items-center gap-2.5 px-3 py-2 text-left transition-colors rounded-lg"
+        class="flex w-full items-start gap-2.5 px-3 py-2 text-left transition-colors rounded-lg"
         :class="connectionHeaderClass(connection.id)"
+        :title="connectionTooltip(connection)"
         @click="toggleConnectionExpansion(connection)"
       >
         <component
           :is="isConnectionExpanded(connection.id) ? ChevronDownIcon : ChevronRightIcon"
-          class="h-4 w-4 flex-shrink-0 text-gray-400"
+          class="h-4 w-4 flex-shrink-0 text-gray-400 mt-0.5"
         />
         <img
-          class="h-5 w-5 flex-shrink-0 object-contain"
+          class="h-5 w-5 flex-shrink-0 object-contain mt-0.5"
           :src="getLogoSrc(connection)"
           :alt="connection.type + ' logo'"
         />
-        <div class="flex-1 min-w-0">
-          <div class="flex items-baseline gap-1">
+        <div class="flex-1 min-w-0 flex flex-col gap-0.5">
+          <div class="flex items-center gap-1.5">
             <span class="truncate text-sm font-medium text-gray-900">
               <template v-for="(part, i) in getHighlightedText(connection.name)" :key="i">
                 <mark v-if="part.match" class="bg-yellow-200 font-semibold">{{ part.text }}</mark>
                 <span v-else>{{ part.text }}</span>
               </template>
             </span>
+            <CloudProviderBadge
+              v-if="connection.cloud_provider"
+              :cloud-provider="connection.cloud_provider"
+              :db-type="connection.type"
+              size="sm"
+              class="shrink-0"
+            />
           </div>
-          <div v-if="connectionSubtitle(connection)" class="truncate text-xs text-gray-500">
+          <div
+            v-if="connectionSubtitle(connection)"
+            class="truncate text-xs text-gray-500 leading-tight"
+          >
             {{ connectionSubtitle(connection) }}
           </div>
         </div>
@@ -171,11 +182,12 @@
 <script setup lang="ts">
 import { ref, computed, watch, type Ref } from 'vue'
 import { ChevronRightIcon, ChevronDownIcon, CheckIcon } from '@heroicons/vue/24/outline'
+import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { useFileExplorerStore } from '@/stores/fileExplorer'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
-import { normalizeConnectionType } from '@/utils/connectionUtils'
+import { normalizeConnectionType, getConnectionTooltip } from '@/utils/connectionUtils'
 import { highlightParts, type HighlightPart } from '@/utils/highlight'
 import type { Connection } from '@/types/connections'
 
@@ -305,6 +317,9 @@ function connectionSubtitle(connection: Connection): string | null {
   }
   return parts.length ? parts.join(' · ') : null
 }
+
+// Use imported getConnectionTooltip from utils/connectionUtils.ts
+const connectionTooltip = getConnectionTooltip
 
 function connectionCardClass(connectionId: string): string {
   if (props.selectedConnectionId !== connectionId) {
