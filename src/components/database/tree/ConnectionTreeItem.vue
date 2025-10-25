@@ -31,30 +31,12 @@ const props = defineProps<{
 // Inject search query and caret class from parent
 const searchQuery = inject<ComputedRef<string>>('treeSearchQuery')!
 const caretClass = inject<string>('treeCaretClass')!
-const treeSelection = inject<
-  ComputedRef<{
-    connectionId?: string
-    database?: string
-    schema?: string
-    type?: 'table' | 'view' | null
-    name?: string | null
-  }>
->('treeSelection')!
 
 // Use composable and stores directly
 const treeLogic = useConnectionTreeLogic()
 const fileExplorerStore = useFileExplorerStore()
 const navigationStore = useExplorerNavigationStore()
 const treeSearch = computed(() => useTreeSearch(searchQuery.value))
-
-// Check if this connection is an ancestor of the active selection
-const isAncestorOfActive = computed(() => {
-  // Connection is ancestor if there's a database/table/view selected
-  return (
-    treeSelection.value.connectionId === props.connection.id &&
-    Boolean(treeSelection.value.database || treeSelection.value.name)
-  )
-})
 
 // Get file entries and selected path from store
 const fileEntries = computed(() => fileExplorerStore.getEntries(props.connection.id))
@@ -201,7 +183,7 @@ const connectionTooltip = computed(() => {
       :data-explorer-connection="connection.id"
       :class="[
         'group flex items-start gap-1.5 px-2 py-1.5 text-sm text-gray-700 rounded-md hover:bg-gray-100 cursor-pointer transition-colors select-none',
-        isFocused ? 'bg-gray-100 ring-1 ring-gray-300' : isAncestorOfActive ? 'bg-gray-50' : ''
+        isFocused ? 'bg-gray-100 ring-1 ring-gray-300' : ''
       ]"
       :title="connectionTooltip"
       @click="$emit('select-connection', { connectionId: connection.id })"

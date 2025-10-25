@@ -44,18 +44,6 @@ const isSelected = computed(() => {
   )
 })
 
-// Check if this schema is an ancestor of the active selection
-const isAncestorOfActive = computed(() => {
-  // Schema is ancestor if a table/view is selected in this schema
-  return (
-    treeSelection.value.connectionId === props.connectionId &&
-    treeSelection.value.database === props.database &&
-    treeSelection.value.schema === props.schema.name &&
-    treeSelection.value.name &&
-    !isSelected.value
-  )
-})
-
 const emit = defineEmits<{
   (e: 'toggle'): void
   (
@@ -126,7 +114,7 @@ function handleObjectContextMenu(payload: {
     <div
       :class="[
         'flex items-center px-2 py-1 text-sm text-gray-700 rounded-md hover:bg-gray-100 cursor-pointer select-none',
-        isSelected ? 'bg-gray-100 ring-1 ring-gray-300' : isAncestorOfActive ? 'bg-gray-50' : ''
+        isSelected ? 'bg-gray-100 ring-1 ring-gray-300' : ''
       ]"
       :data-explorer-schema="`${connectionId}:${database}:${schema.name}`"
       @click="$emit('toggle')"

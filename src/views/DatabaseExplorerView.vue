@@ -178,6 +178,9 @@ function handleOpenFromTree(payload: {
 
   showConnectionDetails.value = false
 
+  // Clear connection focus when table/view is opened (only the object should be highlighted)
+  focusConnectionId.value = null
+
   // Clear old state
   explorerState.clearPanelStates()
   explorerState.clearDatabaseSelection()
@@ -331,6 +334,9 @@ function handleSelectDatabase(payload: { connectionId: string; database: string 
   explorerState.activePane.value = 'left'
 
   explorerState.showDiagram.value = false
+
+  // Clear connection focus when database is selected (only database should be highlighted)
+  focusConnectionId.value = null
 
   schemaStore.setConnectionId(payload.connectionId)
   schemaStore.setDatabaseName(payload.database)

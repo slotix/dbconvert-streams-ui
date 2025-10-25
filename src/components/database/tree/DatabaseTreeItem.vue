@@ -57,17 +57,6 @@ const isSelected = computed(() => {
   )
 })
 
-// Check if this database is an ancestor of the active selection
-const isAncestorOfActive = computed(() => {
-  // Database is ancestor if a table/view is selected in this database
-  return (
-    treeSelection.value.connectionId === props.connectionId &&
-    treeSelection.value.database === props.database.name &&
-    (treeSelection.value.schema || treeSelection.value.name) &&
-    !isSelected.value
-  )
-})
-
 const emit = defineEmits<{
   (e: 'toggle-database'): void
   (e: 'toggle-schema', schemaName: string): void
@@ -187,7 +176,7 @@ function handleFlatObjectContextMenu(payload: {
     <div
       :class="[
         'flex items-center px-2 py-1.5 text-sm text-gray-700 rounded-md hover:bg-gray-100 cursor-pointer select-none',
-        isSelected ? 'bg-gray-100 ring-1 ring-gray-300' : isAncestorOfActive ? 'bg-gray-50' : ''
+        isSelected ? 'bg-gray-100 ring-1 ring-gray-300' : ''
       ]"
       :data-explorer-db="`${connectionId}:${database.name}`"
       @click="$emit('select-database', { connectionId, database: database.name })"
