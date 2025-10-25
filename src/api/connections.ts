@@ -7,14 +7,15 @@ import { validateApiKey } from './apiClient'
 import { handleApiError } from '@/utils/errorHandler'
 import { type DatabaseMetadata, type DatabaseSummary } from '@/types/metadata'
 import { type DatabaseOverview } from '@/types/overview'
+import { API_HEADERS, OPERATION_TIMEOUTS } from '@/constants'
 
 const getConnections = async (): Promise<Connection[]> => {
   const commonStore = useCommonStore()
   validateApiKey(commonStore.apiKey)
   try {
     const response: AxiosResponse<Connection[]> = await apiClient.get('/connections', {
-      headers: { 'X-API-Key': commonStore.apiKey },
-      timeout: 30000 // 30 second timeout
+      headers: { [API_HEADERS.API_KEY]: commonStore.apiKey },
+      timeout: OPERATION_TIMEOUTS.getConnections
     })
     return response.data
   } catch (error) {
@@ -32,8 +33,8 @@ const createConnection = async (
       '/connections',
       json,
       {
-        headers: { 'X-API-Key': commonStore.apiKey },
-        timeout: 45000 // 45 second timeout to account for metadata loading
+        headers: { [API_HEADERS.API_KEY]: commonStore.apiKey },
+        timeout: OPERATION_TIMEOUTS.createConnection
       }
     )
     return response.data
@@ -63,7 +64,8 @@ const updateConnection = async (): Promise<void> => {
 
   try {
     await apiClient.put(`/connections/${id}`, json, {
-      headers: { 'X-API-Key': commonStore.apiKey }
+      headers: { [API_HEADERS.API_KEY]: commonStore.apiKey },
+      timeout: OPERATION_TIMEOUTS.updateConnection
     })
   } catch (error) {
     throw handleApiError(error)
@@ -75,7 +77,8 @@ const deleteConnection = async (id: string): Promise<void> => {
   validateApiKey(commonStore.apiKey)
   try {
     await apiClient.delete(`/connections/${id}`, {
-      headers: { 'X-API-Key': commonStore.apiKey }
+      headers: { [API_HEADERS.API_KEY]: commonStore.apiKey },
+      timeout: OPERATION_TIMEOUTS.deleteConnection
     })
   } catch (error) {
     throw handleApiError(error)
@@ -90,7 +93,8 @@ const cloneConnection = async (id: string): Promise<Connection> => {
       `/connections/${id}/clone`,
       null,
       {
-        headers: { 'X-API-Key': commonStore.apiKey }
+        headers: { [API_HEADERS.API_KEY]: commonStore.apiKey },
+        timeout: OPERATION_TIMEOUTS.createConnection
       }
     )
     return response.data
@@ -114,7 +118,7 @@ const testConnection = async (): Promise<string> => {
         `/connections/${json.id}/ping`,
         null,
         {
-          headers: { 'X-API-Key': commonStore.apiKey }
+          headers: { [API_HEADERS.API_KEY]: commonStore.apiKey }
         }
       )
       if (response.data.ping === 'ok') {
@@ -127,7 +131,7 @@ const testConnection = async (): Promise<string> => {
         '/connections/test',
         json,
         {
-          headers: { 'X-API-Key': commonStore.apiKey }
+          headers: { [API_HEADERS.API_KEY]: commonStore.apiKey }
         }
       )
       if (response.data.ping === 'ok') {
@@ -148,7 +152,7 @@ const pingConnectionById = async (id: string): Promise<string> => {
       `/connections/${id}/ping`,
       null,
       {
-        headers: { 'X-API-Key': commonStore.apiKey }
+        headers: { [API_HEADERS.API_KEY]: commonStore.apiKey }
       }
     )
     return response.data.ping === 'ok' ? 'Connection Test Passed' : 'Connection Test Failed'
@@ -164,8 +168,8 @@ const getDatabases = async (id: string): Promise<DatabaseInfo[]> => {
     const response: AxiosResponse<DatabaseInfo[]> = await apiClient.get(
       `/connections/${id}/databases`,
       {
-        headers: { 'X-API-Key': commonStore.apiKey },
-        timeout: 15000 // 15 second timeout for faster feedback
+        headers: { [API_HEADERS.API_KEY]: commonStore.apiKey },
+        timeout: OPERATION_TIMEOUTS.getDatabases // 15 second timeout for faster feedback
       }
     )
     return response.data
@@ -184,7 +188,7 @@ const createDatabase = async (newDatabase: string, id: string): Promise<{ status
       {
         headers: {
           'Content-Type': 'text/plain',
-          'X-API-Key': commonStore.apiKey
+          [API_HEADERS.API_KEY]: commonStore.apiKey
         }
       }
     )
@@ -208,7 +212,7 @@ const createSchema = async (
       {
         headers: {
           'Content-Type': 'text/plain',
-          'X-API-Key': commonStore.apiKey
+          [API_HEADERS.API_KEY]: commonStore.apiKey
         }
       }
     )
@@ -230,7 +234,7 @@ const getTables = async (
     options?.schemas?.forEach((s) => qp.append('schemas', s))
     const url = `/connections/${id}/databases/${encodeURIComponent(database)}/tables${qp.toString() ? `?${qp.toString()}` : ''}`
     const response: AxiosResponse<string[]> = await apiClient.get(url, {
-      headers: { 'X-API-Key': commonStore.apiKey }
+      headers: { [API_HEADERS.API_KEY]: commonStore.apiKey }
     })
     return response.data
   } catch (error) {
@@ -255,7 +259,7 @@ const getMetadata = async (
     options?.schemas?.forEach((s) => qp.append('schemas', s))
     const url = `/connections/${id}/databases/${encodeURIComponent(database)}/meta${qp.toString() ? `?${qp.toString()}` : ''}`
     const response: AxiosResponse<DatabaseMetadata> = await apiClient.get(url, {
-      headers: { 'X-API-Key': commonStore.apiKey }
+      headers: { [API_HEADERS.API_KEY]: commonStore.apiKey }
     })
 
     // Backend cache status available in response.headers['x-cache'] (HIT/MISS)
@@ -278,7 +282,7 @@ const getDatabaseSummary = async (
     options?.schemas?.forEach((s) => qp.append('schemas', s))
     const url = `/connections/${id}/databases/${encodeURIComponent(database)}/meta?${qp.toString()}`
     const response: AxiosResponse<DatabaseSummary> = await apiClient.get(url, {
-      headers: { 'X-API-Key': commonStore.apiKey }
+      headers: { [API_HEADERS.API_KEY]: commonStore.apiKey }
     })
     return response.data
   } catch (error) {
@@ -302,8 +306,8 @@ const getDatabaseOverview = async (
   const url = `/connections/${id}/databases/${encodeURIComponent(database)}/overview${qp.toString() ? `?${qp.toString()}` : ''}`
   try {
     const response = await apiClient.get<DatabaseOverview>(url, {
-      headers: { 'X-API-Key': commonStore.apiKey },
-      timeout: 15000
+      headers: { [API_HEADERS.API_KEY]: commonStore.apiKey },
+      timeout: OPERATION_TIMEOUTS.getDatabases
     })
     // Backend cache status available in response.headers['x-cache'] (HIT/MISS)
     return response.data
@@ -364,7 +368,7 @@ const getTableData = async (
     const url = `/connections/${connectionId}/databases/${encodeURIComponent(database)}/tables/${encodeURIComponent(tableName)}/data?${queryParams.toString()}`
 
     const response: AxiosResponse<TableData> = await apiClient.get(url, {
-      headers: { 'X-API-Key': commonStore.apiKey }
+      headers: { [API_HEADERS.API_KEY]: commonStore.apiKey }
     })
     return response.data
   } catch (error) {
@@ -384,7 +388,7 @@ const getViews = async (
     options?.schemas?.forEach((s) => qp.append('schemas', s))
     const url = `/connections/${id}/databases/${encodeURIComponent(database)}/views${qp.toString() ? `?${qp.toString()}` : ''}`
     const response: AxiosResponse<string[]> = await apiClient.get(url, {
-      headers: { 'X-API-Key': commonStore.apiKey }
+      headers: { [API_HEADERS.API_KEY]: commonStore.apiKey }
     })
     return response.data
   } catch (error) {
@@ -433,7 +437,7 @@ const getViewData = async (
     const url = `/connections/${connectionId}/databases/${encodeURIComponent(database)}/views/${encodeURIComponent(viewName)}/data?${queryParams.toString()}`
 
     const response: AxiosResponse<TableData> = await apiClient.get(url, {
-      headers: { 'X-API-Key': commonStore.apiKey }
+      headers: { [API_HEADERS.API_KEY]: commonStore.apiKey }
     })
     return response.data
   } catch (error) {
@@ -457,8 +461,8 @@ const getTableExactCount = async (
 
     const url = `/connections/${connectionId}/databases/${encodeURIComponent(database)}/tables/${encodeURIComponent(tableName)}/count${qp.toString() ? `?${qp.toString()}` : ''}`
     const response: AxiosResponse<{ count: number; status: string }> = await apiClient.get(url, {
-      headers: { 'X-API-Key': commonStore.apiKey },
-      timeout: 120000 // 2 minute timeout for potentially expensive COUNT(*) queries
+      headers: { [API_HEADERS.API_KEY]: commonStore.apiKey },
+      timeout: OPERATION_TIMEOUTS.getTableExactCount // 2 minute timeout for potentially expensive COUNT(*) queries
     })
     return response.data
   } catch (error) {
@@ -482,8 +486,8 @@ const getViewExactCount = async (
 
     const url = `/connections/${connectionId}/databases/${encodeURIComponent(database)}/views/${encodeURIComponent(viewName)}/count${qp.toString() ? `?${qp.toString()}` : ''}`
     const response: AxiosResponse<{ count: number; status: string }> = await apiClient.get(url, {
-      headers: { 'X-API-Key': commonStore.apiKey },
-      timeout: 120000 // 2 minute timeout for potentially expensive COUNT(*) queries
+      headers: { [API_HEADERS.API_KEY]: commonStore.apiKey },
+      timeout: OPERATION_TIMEOUTS.getTableExactCount // 2 minute timeout for potentially expensive COUNT(*) queries
     })
     return response.data
   } catch (error) {

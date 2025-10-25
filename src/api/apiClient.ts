@@ -4,6 +4,7 @@ import { type UserData } from '@/types/user'
 import { type ServiceStatusResponse } from '@/types/common'
 import { useCommonStore } from '@/stores/common'
 import { getBackendUrl, getSentryDsn, logEnvironment } from '@/utils/environment'
+import { DEFAULT_API_TIMEOUT, API_RETRY, API_HEADERS, CONTENT_TYPES } from '@/constants'
 
 interface ApiResponse<T> {
   data: T
@@ -24,15 +25,15 @@ logEnvironment()
 export const apiClient: AxiosInstance = axios.create({
   baseURL: getBackendUrl(),
   headers: {
-    'Content-Type': 'application/json'
+    'Content-Type': CONTENT_TYPES.JSON
   },
-  timeout: 300000 // 5 minutes for cloud database operations
+  timeout: DEFAULT_API_TIMEOUT // 5 minutes for cloud database operations
 })
 
 const sentryClient: AxiosInstance = axios.create({
   baseURL: getSentryDsn(),
   headers: {
-    'Content-Type': 'application/json'
+    'Content-Type': CONTENT_TYPES.JSON
   }
 })
 
@@ -46,8 +47,8 @@ apiClient.interceptors.request.use(
 )
 
 const defaultRetryConfig: RetryConfig = {
-  maxRetries: 3,
-  delayMs: 1000
+  maxRetries: API_RETRY.MAX_RETRIES,
+  delayMs: API_RETRY.DEFAULT_DELAY
 }
 
 apiClient.interceptors.response.use(
@@ -119,7 +120,7 @@ export async function validateApiKey(apiKey: string | null): Promise<void> {
   try {
     // Validate the API key by making a request to a protected endpoint
     await apiClient.get('/user', {
-      headers: { 'X-API-Key': apiKey }
+      headers: { [API_HEADERS.API_KEY]: apiKey }
     })
   } catch (error: any) {
     if (error.response?.status === 401) {
@@ -133,7 +134,7 @@ const getUserDataFromSentry = async (apiKey: string): Promise<UserData> => {
   try {
     await validateApiKey(apiKey)
     const response: ApiResponse<UserData> = await apiClient.get('/user', {
-      headers: { 'X-API-Key': apiKey }
+      headers: { [API_HEADERS.API_KEY]: apiKey }
     })
     return response.data
   } catch (error: any) {
@@ -149,7 +150,7 @@ const loadUserConfigs = async (apiKey: string): Promise<void> => {
   validateApiKey(apiKey)
   try {
     await apiClient.get('/user/configs', {
-      headers: { 'X-API-Key': apiKey }
+      headers: { [API_HEADERS.API_KEY]: apiKey }
     })
   } catch (error) {
     throw handleApiError(error)
@@ -212,7 +213,7 @@ export async function initializeApiClient() {
 }
 
 export function configureApiClient(apiKey: string): void {
-  apiClient.defaults.headers.common['X-API-Key'] = apiKey
+  apiClient.defaults.headers.common[API_HEADERS.API_KEY] = apiKey
 }
 
 export default {

@@ -6,6 +6,7 @@ import type { StreamStats } from '@/types/streamStats'
 import streamsApi from '@/api/streams'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { formatDataSize, formatDuration, formatNumber } from '@/utils/formats'
+import { STREAM_STATUS } from '@/constants'
 
 // Define types for the state
 interface Node {
@@ -53,17 +54,9 @@ interface State {
   statsError: Error | null
   lastStreamId: string | null
 }
-export const statusEnum = {
-  UNDEFINED: 0,
-  READY: 1,
-  RUNNING: 2,
-  PAUSED: 3,
-  FAILED: 4,
-  TIME_LIMIT_REACHED: 5,
-  EVENT_LIMIT_REACHED: 6,
-  STOPPED: 7,
-  FINISHED: 8
-} as const
+
+// Use centralized stream status constants
+export const statusEnum = STREAM_STATUS
 
 export const useMonitoringStore = defineStore('monitoring', {
   state: (): State => ({
