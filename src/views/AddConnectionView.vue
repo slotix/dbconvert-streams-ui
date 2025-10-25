@@ -33,6 +33,20 @@ import AddConnectionWizard from '@/components/connection/wizard/AddConnectionWiz
 const router = useRouter()
 
 function goBack() {
-  router.push('/explorer')
+  // Check if we came from stream wizard
+  const streamId = sessionStorage.getItem('streamWizardId')
+  if (streamId !== null) {
+    // Return to stream wizard
+    sessionStorage.removeItem('streamWizardReturnPane')
+    sessionStorage.removeItem('streamWizardId')
+    if (streamId) {
+      router.push(`/streams/edit/${streamId}`)
+    } else {
+      router.push('/streams/create')
+    }
+  } else {
+    // Return to explorer
+    router.push('/explorer')
+  }
 }
 </script>

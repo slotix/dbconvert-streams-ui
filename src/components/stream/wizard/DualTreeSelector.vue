@@ -15,8 +15,10 @@
         <!-- Source Filters -->
         <StreamConnectionFilter
           :connection-search="sourceConnectionSearch"
+          pane-type="source"
           @update:connection-search="sourceConnectionSearch = $event"
           @update:selected-type="sourceConnectionType = $event"
+          @add-connection="emit('add-connection', $event)"
         />
 
         <div class="flex-1 overflow-y-auto p-4 bg-white">
@@ -46,8 +48,10 @@
         <!-- Target Filters -->
         <StreamConnectionFilter
           :connection-search="targetConnectionSearch"
+          pane-type="target"
           @update:connection-search="targetConnectionSearch = $event"
           @update:selected-type="targetConnectionType = $event"
+          @add-connection="emit('add-connection', $event)"
         />
 
         <div class="flex-1 overflow-y-auto p-4 bg-white">
@@ -172,6 +176,7 @@ const emit = defineEmits<{
     schema?: string,
     path?: string
   ]
+  'add-connection': [paneType: 'source' | 'target']
   'clear-all': []
 }>()
 

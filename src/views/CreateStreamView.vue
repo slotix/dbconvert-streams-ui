@@ -54,6 +54,7 @@
               @update:source-connection="handleSourceUpdate"
               @update:target-connection="handleTargetUpdate"
               @clear-all="handleClearAll"
+              @add-connection="(paneType) => goToAddConnection(paneType)"
               @update:can-proceed="updateCanProceed"
             />
           </div>
@@ -140,6 +141,9 @@ onMounted(async () => {
   // Load connections if not already loaded
   if (!connectionsStore.connections.length) {
     await connectionsStore.refreshConnections()
+  } else {
+    // Refresh connections in case new ones were added
+    await connectionsStore.refreshConnections()
   }
 
   if (isEditMode.value) {
@@ -149,7 +153,46 @@ onMounted(async () => {
     // Create mode: Initialize a new stream config
     streamsStore.resetCurrentStream()
   }
+
+  // Check if returning from Add Connection wizard
+  await handleReturnFromAddConnection()
 })
+
+// Handle auto-selection when returning from Add Connection wizard
+async function handleReturnFromAddConnection() {
+  const returnPane = sessionStorage.getItem('streamWizardReturnPane')
+
+  if (!returnPane || (returnPane !== 'source' && returnPane !== 'target')) {
+    return
+  }
+
+  // Clear the return context from sessionStorage
+  sessionStorage.removeItem('streamWizardReturnPane')
+  sessionStorage.removeItem('streamWizardId')
+
+  // Wait a tick to ensure connections list is updated
+  await nextTick()
+
+  // Get the most recently created connection
+  const allConnections = connectionsStore.connections
+  if (!allConnections.length) return
+
+  // Find the newest connection by creation timestamp
+  const newestConnection = allConnections.reduce((newest, conn) => {
+    const newestTime = (newest.created as number) || 0
+    const connTime = (conn.created as number) || 0
+    return connTime > newestTime ? conn : newest
+  })
+
+  if (!newestConnection) return
+
+  // Auto-select the new connection in the appropriate pane
+  if (returnPane === 'source') {
+    handleSourceUpdate(newestConnection.id)
+  } else {
+    handleTargetUpdate(newestConnection.id)
+  }
+}
 
 // Load existing stream config for editing
 async function loadStreamForEdit() {
@@ -270,6 +313,14 @@ function handleClearAll() {
 
 function updateCanProceed(value: boolean) {
   canProceedOverride.value = value
+}
+
+function goToAddConnection(paneType: 'source' | 'target') {
+  // Store the paneType in session storage so we can return to the correct pane
+  sessionStorage.setItem('streamWizardReturnPane', paneType)
+  // Store the stream ID if we're in edit mode, or null for create mode
+  sessionStorage.setItem('streamWizardId', streamId.value || '')
+  router.push('/explorer/add')
 }
 
 async function handleNextStep() {

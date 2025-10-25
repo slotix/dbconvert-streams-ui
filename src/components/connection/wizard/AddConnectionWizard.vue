@@ -231,11 +231,25 @@ async function createConnection() {
     await connectionsStore.refreshConnections()
 
     commonStore.showNotification('Connection created successfully!', 'success')
-    // Navigate back to explorer and focus the new connection
-    if (newId) {
-      router.push({ path: `/explorer/${newId}`, query: { focus: '1' } })
+
+    // Check if we came from stream wizard
+    const streamId = sessionStorage.getItem('streamWizardId')
+    if (streamId !== null) {
+      // Return to stream wizard
+      sessionStorage.removeItem('streamWizardReturnPane')
+      sessionStorage.removeItem('streamWizardId')
+      if (streamId) {
+        router.push(`/streams/edit/${streamId}`)
+      } else {
+        router.push('/streams/create')
+      }
     } else {
-      router.push('/explorer')
+      // Navigate back to explorer and focus the new connection
+      if (newId) {
+        router.push({ path: `/explorer/${newId}`, query: { focus: '1' } })
+      } else {
+        router.push('/explorer')
+      }
     }
   } catch (error: any) {
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred'

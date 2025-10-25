@@ -20,6 +20,7 @@
       @update:source-connection="handleSourceUpdate"
       @update:target-connection="handleTargetUpdate"
       @clear-all="handleClearAll"
+      @add-connection="(paneType) => $emit('add-connection', paneType)"
     />
   </div>
 </template>
@@ -71,6 +72,7 @@ const emit = defineEmits<{
     path?: string
   ]
   'clear-all': []
+  'add-connection': [paneType: 'source' | 'target']
   'update:can-proceed': [value: boolean]
 }>()
 

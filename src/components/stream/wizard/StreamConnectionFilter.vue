@@ -10,6 +10,13 @@
       <div class="flex-1 min-w-[120px]">
         <SearchInput v-model="connectionSearch" placeholder="Filter..." size="sm" />
       </div>
+      <button
+        type="button"
+        class="inline-flex items-center gap-2 px-2 py-1.5 text-xs font-medium text-white bg-gray-600 border border-gray-600 rounded hover:bg-gray-500"
+        @click="$emit('add-connection', props.paneType || 'source')"
+      >
+        <span>New Connection</span>
+      </button>
     </div>
   </div>
 </template>
@@ -21,11 +28,13 @@ import SearchInput from '@/components/common/SearchInput.vue'
 
 interface Props {
   connectionSearch: string
+  paneType?: 'source' | 'target'
 }
 
 const emit = defineEmits<{
   'update:connectionSearch': [value: string]
   'update:selectedType': [value: string | null]
+  'add-connection': [paneType: 'source' | 'target']
 }>()
 
 const props = defineProps<Props>()
