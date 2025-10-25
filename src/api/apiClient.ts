@@ -1,4 +1,4 @@
-import axios, { type AxiosInstance, type AxiosError } from 'axios'
+import axios, { type AxiosInstance, type AxiosError, type AxiosRequestConfig } from 'axios'
 import { handleApiError } from '@/utils/errorHandler'
 import { type UserData } from '@/types/user'
 import { type ServiceStatusResponse } from '@/types/common'
@@ -17,6 +17,10 @@ interface HealthCheckResponse {
 interface RetryConfig {
   maxRetries: number
   delayMs: number
+}
+
+interface ConfigWithRetry extends AxiosRequestConfig {
+  retryCount?: number
 }
 
 // Log environment configuration
@@ -59,7 +63,7 @@ apiClient.interceptors.response.use(
   },
   async (error: AxiosError) => {
     const commonStore = useCommonStore()
-    const config = error.config as any
+    const config = error.config as ConfigWithRetry
 
     // Handle 401 Unauthorized errors - invalid or expired API key
     if (error.response?.status === 401) {
@@ -122,9 +126,12 @@ export async function validateApiKey(apiKey: string | null): Promise<void> {
     await apiClient.get('/user', {
       headers: { [API_HEADERS.API_KEY]: apiKey }
     })
-  } catch (error: any) {
-    if (error.response?.status === 401) {
-      throw new Error('Invalid API key')
+  } catch (error: unknown) {
+    if (error && typeof error === 'object' && 'response' in error) {
+      const axiosError = error as AxiosError
+      if (axiosError.response?.status === 401) {
+        throw new Error('Invalid API key')
+      }
     }
     throw error
   }
@@ -137,12 +144,18 @@ const getUserDataFromSentry = async (apiKey: string): Promise<UserData> => {
       headers: { [API_HEADERS.API_KEY]: apiKey }
     })
     return response.data
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[API] Failed to get user data from Sentry:', error)
-    if (error.response?.status === 401) {
-      throw new Error('Invalid API key')
+    if (error && typeof error === 'object' && 'response' in error) {
+      const axiosError = error as AxiosError
+      if (axiosError.response?.status === 401) {
+        throw new Error('Invalid API key')
+      }
+      throw new Error(
+        (axiosError.response?.data as { message?: string })?.message || 'Failed to fetch user data'
+      )
     }
-    throw new Error(error.response?.data?.message || 'Failed to fetch user data')
+    throw new Error('Failed to fetch user data')
   }
 }
 
@@ -185,7 +198,7 @@ const getServiceStatus = async (): Promise<ServiceStatusResponse> => {
   }
 }
 
-export async function getConnections(): Promise<any> {
+export async function getConnections(): Promise<unknown> {
   try {
     const response = await apiClient.get('/connections')
     return response.data
@@ -194,7 +207,7 @@ export async function getConnections(): Promise<any> {
   }
 }
 
-export async function getStreams(): Promise<any> {
+export async function getStreams(): Promise<unknown> {
   try {
     const response = await apiClient.get('/streams')
     return response.data

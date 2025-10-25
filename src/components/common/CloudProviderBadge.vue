@@ -10,14 +10,14 @@
       :src="providerLogo"
       :alt="`${displayName} logo`"
       :class="logoSizeClasses"
-      class="object-contain flex-shrink-0"
+      class="object-contain shrink-0"
     />
-    <CloudIcon v-else :class="logoSizeClasses" class="flex-shrink-0" />
+    <CloudIcon v-else :class="logoSizeClasses" class="shrink-0" />
     <span class="whitespace-nowrap">{{ displayName }}</span>
     <button
       v-if="documentationUrl"
       v-tooltip="'View setup documentation'"
-      class="flex-shrink-0 hover:opacity-70 transition-opacity"
+      class="shrink-0 hover:opacity-70 transition-opacity"
       @click.stop="openDocumentation"
     >
       <QuestionMarkCircleIcon :class="helpIconSizeClasses" />

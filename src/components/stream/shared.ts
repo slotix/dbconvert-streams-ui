@@ -18,6 +18,7 @@ import { defineComponent, computed, ref, type PropType } from 'vue'
 import { type StreamConfig } from '@/types/streamConfig'
 import { type DbType } from '@/types/connections'
 import { Switch } from '@headlessui/vue'
+import { getDatabaseColors, VIEW_TYPES } from '@/constants'
 import { generateConnectionString } from '@/utils/connectionStringGenerator'
 import ConnectionStringDisplay from '@/components/common/ConnectionStringDisplay.vue'
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
@@ -205,26 +206,8 @@ export default defineComponent({
     getDatabaseIconStyle(): (dbType: string) => string {
       return (dbType: string) => {
         const normalizedType = normalizeConnectionType(dbType?.toLowerCase() || '')
-
-        // Database-specific brand colors with subtle backgrounds
-        const styles: Record<string, string> = {
-          postgresql: 'bg-blue-100 ring-2 ring-blue-200/50',
-          postgres: 'bg-blue-100 ring-2 ring-blue-200/50',
-          mysql: 'bg-orange-100 ring-2 ring-orange-200/50',
-          mongodb: 'bg-green-100 ring-2 ring-green-200/50',
-          mongo: 'bg-green-100 ring-2 ring-green-200/50',
-          redis: 'bg-red-100 ring-2 ring-red-200/50',
-          sqlite: 'bg-gray-100 ring-2 ring-gray-200/50',
-          mariadb: 'bg-orange-100 ring-2 ring-orange-200/50',
-          mssql: 'bg-blue-100 ring-2 ring-blue-200/50',
-          sqlserver: 'bg-blue-100 ring-2 ring-blue-200/50',
-          oracle: 'bg-red-100 ring-2 ring-red-200/50',
-          cassandra: 'bg-purple-100 ring-2 ring-purple-200/50',
-          elasticsearch: 'bg-yellow-100 ring-2 ring-yellow-200/50',
-          clickhouse: 'bg-yellow-100 ring-2 ring-yellow-200/50'
-        }
-
-        return styles[normalizedType] || 'bg-gray-100 ring-2 ring-gray-200/50'
+        const colors = getDatabaseColors(normalizedType)
+        return `${colors.bg} ring-2 ${colors.ring}`
       }
     },
     index(): number {
@@ -234,7 +217,7 @@ export default defineComponent({
       return useStreamsStore().countStreams
     },
     actionsMenuPosition(): string {
-      if (useCommonStore().currentViewType === 'cards') {
+      if (useCommonStore().currentViewType === VIEW_TYPES.CARDS) {
         return 'card'
       }
       const index = this.index

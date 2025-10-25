@@ -5,6 +5,7 @@ import { handleApiError } from '@/utils/errorHandler'
 import { type StreamStats } from '@/types/streamStats'
 import { apiClient } from './apiClient'
 import { type AxiosResponse } from 'axios'
+import { API_HEADERS } from '@/constants'
 
 const getStreams = async (): Promise<StreamConfig[]> => {
   const commonStore = useCommonStore()
@@ -12,7 +13,7 @@ const getStreams = async (): Promise<StreamConfig[]> => {
 
   try {
     const response: AxiosResponse<StreamConfig[]> = await apiClient.get('/stream-configs', {
-      headers: { 'X-API-Key': commonStore.apiKey }
+      headers: { [API_HEADERS.API_KEY]: commonStore.apiKey }
     })
     return response.data
   } catch (error) {
@@ -26,7 +27,7 @@ const createStream = async (json: Record<string, unknown>): Promise<StreamConfig
 
   try {
     const response: AxiosResponse<StreamConfig> = await apiClient.post('/stream-configs', json, {
-      headers: { 'X-API-Key': commonStore.apiKey }
+      headers: { [API_HEADERS.API_KEY]: commonStore.apiKey }
     })
     return response.data
   } catch (error) {
@@ -40,7 +41,7 @@ const deleteStreamConfig = async (id: string): Promise<void> => {
 
   try {
     await apiClient.delete(`/stream-configs/${id}`, {
-      headers: { 'X-API-Key': commonStore.apiKey }
+      headers: { [API_HEADERS.API_KEY]: commonStore.apiKey }
     })
   } catch (error) {
     throw handleApiError(error)
@@ -56,7 +57,7 @@ const cloneStreamConfig = async (id: string): Promise<StreamConfig> => {
       `/stream-configs/${id}/clone`,
       null,
       {
-        headers: { 'X-API-Key': commonStore.apiKey }
+        headers: { [API_HEADERS.API_KEY]: commonStore.apiKey }
       }
     )
     return response.data
@@ -70,7 +71,7 @@ const startStream = async (id: string): Promise<string> => {
   validateApiKey(commonStore.apiKey)
   try {
     const response: AxiosResponse<StreamID> = await apiClient.post(`/streams/${id}/start`, null, {
-      headers: { 'X-API-Key': commonStore.apiKey }
+      headers: { [API_HEADERS.API_KEY]: commonStore.apiKey }
     })
     return response.data.id
   } catch (error) {
@@ -83,7 +84,7 @@ const pauseStream = async (id: string): Promise<void> => {
   validateApiKey(commonStore.apiKey)
   try {
     await apiClient.post(`/streams/${id}/pause`, null, {
-      headers: { 'X-API-Key': commonStore.apiKey }
+      headers: { [API_HEADERS.API_KEY]: commonStore.apiKey }
     })
   } catch (error) {
     throw handleApiError(error)
@@ -95,7 +96,7 @@ const resumeStream = async (id: string): Promise<void> => {
   validateApiKey(commonStore.apiKey)
   try {
     await apiClient.post(`/streams/${id}/resume`, null, {
-      headers: { 'X-API-Key': commonStore.apiKey }
+      headers: { [API_HEADERS.API_KEY]: commonStore.apiKey }
     })
   } catch (error) {
     throw handleApiError(error)
@@ -107,7 +108,7 @@ const stopStream = async (id: string): Promise<void> => {
   validateApiKey(commonStore.apiKey)
   try {
     await apiClient.post(`/streams/${id}/stop`, null, {
-      headers: { 'X-API-Key': commonStore.apiKey }
+      headers: { [API_HEADERS.API_KEY]: commonStore.apiKey }
     })
   } catch (error) {
     throw handleApiError(error)
@@ -120,7 +121,7 @@ const getCurrentStreamStats = async (): Promise<StreamStats> => {
 
   try {
     const response: AxiosResponse<StreamStats> = await apiClient.get(`/streams/current/stats`, {
-      headers: { 'X-API-Key': commonStore.apiKey }
+      headers: { [API_HEADERS.API_KEY]: commonStore.apiKey }
     })
     return response.data
   } catch (error) {

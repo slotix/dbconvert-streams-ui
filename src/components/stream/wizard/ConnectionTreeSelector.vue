@@ -19,10 +19,10 @@
       >
         <component
           :is="isConnectionExpanded(connection.id) ? ChevronDownIcon : ChevronRightIcon"
-          class="h-4 w-4 flex-shrink-0 text-gray-400 mt-0.5"
+          class="h-4 w-4 shrink-0 text-gray-400 mt-0.5"
         />
         <img
-          class="h-5 w-5 flex-shrink-0 object-contain mt-0.5"
+          class="h-5 w-5 shrink-0 object-contain mt-0.5"
           :src="getLogoSrc(connection)"
           :alt="connection.type + ' logo'"
         />
@@ -58,7 +58,7 @@
               class="flex w-full items-start gap-3 rounded-md px-2 py-2 text-sm transition-all duration-200"
               :class="filePathClass(connection.id)"
             >
-              <span class="h-4 w-4 flex-shrink-0" />
+              <span class="h-4 w-4 shrink-0" />
               <span class="flex-1 min-w-0">
                 <div class="truncate text-xs uppercase tracking-wide text-gray-500">
                   {{ getFileDirectory(connection.id) || connection.path || 'No folder configured' }}
@@ -155,7 +155,7 @@
                 :class="databaseRowClass(connection.id, database.name)"
                 @click="handleDatabaseSelect(connection, database.name)"
               >
-                <span class="h-4 w-4 flex-shrink-0" />
+                <span class="h-4 w-4 shrink-0" />
                 <span class="truncate">
                   <template v-for="(part, i) in getHighlightedText(database.name)" :key="i">
                     <mark v-if="part.match" class="bg-yellow-200 font-semibold">

@@ -4,6 +4,7 @@ import { validateApiKey } from './apiClient'
 import { handleApiError } from '@/utils/errorHandler'
 import type { FileMetadata, FileDataResponse } from '@/types/files'
 import type { FileFormat } from '@/utils/fileFormat'
+import { API_HEADERS } from '@/constants'
 
 interface FileDataParams {
   limit?: number
@@ -17,7 +18,7 @@ interface FileDataParams {
 const withAuthHeaders = () => {
   const commonStore = useCommonStore()
   validateApiKey(commonStore.apiKey)
-  return { headers: { 'X-API-Key': commonStore.apiKey } }
+  return { headers: { [API_HEADERS.API_KEY]: commonStore.apiKey } }
 }
 
 export async function getFileMetadata(

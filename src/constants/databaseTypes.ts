@@ -89,7 +89,7 @@ export const FILE_BASED_CONNECTIONS = [DATABASE_TYPES.FILES, DATABASE_TYPES.LOCA
  */
 export function isSQLDatabase(type: string): boolean {
   const normalized = normalizeDatabaseType(type)
-  return SQL_DATABASES.includes(normalized as any)
+  return SQL_DATABASES.includes(normalized as (typeof SQL_DATABASES)[number])
 }
 
 /**
@@ -97,7 +97,7 @@ export function isSQLDatabase(type: string): boolean {
  */
 export function isNoSQLDatabase(type: string): boolean {
   const normalized = normalizeDatabaseType(type)
-  return NOSQL_DATABASES.includes(normalized as any)
+  return NOSQL_DATABASES.includes(normalized as (typeof NOSQL_DATABASES)[number])
 }
 
 /**
@@ -105,7 +105,7 @@ export function isNoSQLDatabase(type: string): boolean {
  */
 export function isFileBasedConnection(type: string): boolean {
   const normalized = normalizeDatabaseType(type)
-  return FILE_BASED_CONNECTIONS.includes(normalized as any)
+  return FILE_BASED_CONNECTIONS.includes(normalized as (typeof FILE_BASED_CONNECTIONS)[number])
 }
 
 /**

@@ -222,8 +222,9 @@ async function loadStreamForEdit() {
 
     // Populate wizard state from the loaded stream config
     wizard.loadFromStreamConfig(existingStream)
-  } catch (error: any) {
-    commonStore.showNotification(`Failed to load stream: ${error.message}`, 'error')
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    commonStore.showNotification(`Failed to load stream: ${errorMessage}`, 'error')
     router.push({ name: 'Streams' })
   }
 }
@@ -372,7 +373,7 @@ async function handleFinish() {
 
     // Navigate to streams list
     router.push({ name: 'Streams' })
-  } catch (error: any) {
+  } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred'
     commonStore.showNotification(`Failed to create stream: ${errorMessage}`, 'error')
   } finally {

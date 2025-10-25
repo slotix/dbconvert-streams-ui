@@ -8,6 +8,7 @@ import { useMonitoringStore } from './monitoring'
 import { sseLogsService } from '@/api/sseLogsService'
 import { useLocalStorage } from '@vueuse/core'
 import { ref } from 'vue'
+import { SERVICE_STATUS, STORAGE_KEYS } from '@/constants'
 
 export interface Step {
   id: number
@@ -213,7 +214,7 @@ export const useCommonStore = defineStore('common', {
         }
 
         // Check localStorage for stored API key
-        const storedApiKey = localStorage.getItem('apiKey')
+        const storedApiKey = localStorage.getItem(STORAGE_KEYS.API_KEY)
         if (storedApiKey) {
           this.apiKey = storedApiKey
           // Don't validate immediately - let the first API call handle validation
@@ -238,7 +239,7 @@ export const useCommonStore = defineStore('common', {
         await api.validateApiKey(apiKey)
         this.apiKey = apiKey
         this.apiKeyInvalidated = false
-        localStorage.setItem('apiKey', apiKey)
+        localStorage.setItem(STORAGE_KEYS.API_KEY, apiKey)
         // Configure the API client with the new API key
         configureApiClient(apiKey)
       } catch (error) {
@@ -457,7 +458,7 @@ export const useCommonStore = defineStore('common', {
       try {
         const response = await api.getServiceStatus()
         this.serviceStatuses = response.services
-        if (response.services.every((service) => service.status === 'passing')) {
+        if (response.services.every((service) => service.status === SERVICE_STATUS.PASSING)) {
           this.clearError()
         }
         return response

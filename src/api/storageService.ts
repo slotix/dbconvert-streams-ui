@@ -1,6 +1,4 @@
-const STORAGE_KEYS = {
-  VIEW_TYPE: 'viewType'
-} as const
+import { STORAGE_KEYS, VIEW_TYPES } from '@/constants'
 
 function setCurrentViewType(type: string): void {
   try {
@@ -12,10 +10,10 @@ function setCurrentViewType(type: string): void {
 
 function getCurrentViewType(): string {
   try {
-    return localStorage.getItem(STORAGE_KEYS.VIEW_TYPE) || 'cards'
+    return localStorage.getItem(STORAGE_KEYS.VIEW_TYPE) || VIEW_TYPES.CARDS
   } catch (error) {
     console.error('Error getting view type:', error)
-    return 'cards'
+    return VIEW_TYPES.CARDS
   }
 }
 

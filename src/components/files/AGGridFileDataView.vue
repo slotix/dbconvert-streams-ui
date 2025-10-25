@@ -3,14 +3,11 @@ import { ref, watch, computed, onBeforeUnmount } from 'vue'
 import { AgGridVue } from 'ag-grid-vue3'
 import { ModuleRegistry, AllCommunityModule } from 'ag-grid-community'
 import type {
-  GridApi,
   GridReadyEvent,
   ColDef,
   GridOptions,
   IDatasource,
-  IGetRowsParams,
-  SortModelItem,
-  Column
+  IGetRowsParams
 } from 'ag-grid-community'
 import { type FileSystemEntry } from '@/api/fileSystem'
 import { type FileMetadata } from '@/types/files'
@@ -51,16 +48,12 @@ const {
   contextMenuColumn,
   showAdvancedFilterModal,
   isSqlBannerExpanded,
-  combinedWhereClause,
-  orderByClause,
   fullSqlQuery,
   needsTruncation,
   displayedSql,
   toggleSqlBanner,
   closeContextMenu,
-  openAdvancedFilterModal,
-  updateAgGridWhereSQL,
-  clearAllFilters: clearAgGridFilters
+  openAdvancedFilterModal
 } = useAGGridFiltering()
 
 // Component-specific state
@@ -432,7 +425,7 @@ onBeforeUnmount(() => {
         </div>
 
         <!-- Action Buttons -->
-        <div class="flex items-center gap-1 flex-shrink-0">
+        <div class="flex items-center gap-1 shrink-0">
           <!-- Expand/Collapse button (only show if truncation is needed) -->
           <button
             v-if="needsTruncation"
