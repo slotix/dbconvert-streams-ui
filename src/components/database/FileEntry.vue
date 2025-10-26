@@ -2,9 +2,10 @@
 import { computed, inject } from 'vue'
 import type { ComputedRef } from 'vue'
 import type { FileSystemEntry } from '@/api/fileSystem'
-import { getFileFormat } from '@/utils/fileFormat'
+import { getFileFormat, isSupportedFile } from '@/utils/fileFormat'
 import { highlightParts } from '@/utils/highlight'
 import FileIcon from '@/components/common/FileIcon.vue'
+import { SUPPORTED_FILE_FORMATS } from '@/constants/fileFormats'
 
 const props = defineProps<{
   entry: FileSystemEntry
@@ -25,6 +26,14 @@ const emit = defineEmits<{
 }>()
 
 const fileFormat = computed(() => getFileFormat(props.entry.name))
+const isSupported = computed(() => props.entry.type === 'dir' || isSupportedFile(props.entry.name))
+
+// Generate tooltip for unsupported files
+const unsupportedTooltip = computed(() => {
+  if (isSupported.value || props.entry.type === 'dir') return ''
+  const formats = SUPPORTED_FILE_FORMATS.map((f) => f.extensions.join(', ')).join(', ')
+  return `Unsupported file format. Supported: ${formats}`
+})
 
 const formatFileSize = (bytes?: number): string => {
   if (!bytes) return '0 B'
@@ -42,8 +51,10 @@ const formatFileSize = (bytes?: number): string => {
   <div
     class="flex items-center px-2 py-1.5 text-sm rounded-md hover:bg-gray-100 cursor-pointer select-none"
     :class="{
-      'bg-gray-100 ring-1 ring-gray-300': selected
+      'bg-gray-100 ring-1 ring-gray-300': selected,
+      'opacity-60': !isSupported && entry.type !== 'dir'
     }"
+    :title="unsupportedTooltip"
     @click="emit('select')"
     @dblclick.stop="emit('open', { entry, mode: 'pinned' })"
     @click.middle.stop="emit('open', { entry, mode: 'pinned' })"

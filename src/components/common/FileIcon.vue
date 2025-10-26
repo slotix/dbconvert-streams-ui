@@ -59,7 +59,7 @@ const iconColor = computed(() => {
     case 'parquet':
       return 'text-blue-500' // Parquet - blue
     default:
-      return 'text-gray-400' // Unknown - gray
+      return 'text-gray-400' // Unsupported/Unknown - gray (subdued)
   }
 })
 </script>
