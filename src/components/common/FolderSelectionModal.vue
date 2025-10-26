@@ -277,6 +277,8 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue'
 import { listDirectory, checkWritable, getRoots, type FileSystemEntry } from '@/api/fileSystem'
 import Spinner from './Spinner.vue'
+import FileIcon from './FileIcon.vue'
+import { useContextualIconSizes } from '@/composables/useIconSizes'
 
 interface Props {
   isOpen: boolean
@@ -293,6 +295,9 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<Emits>()
+
+// Icon sizes
+const iconSizes = useContextualIconSizes()
 
 // Reactive state
 const loading = ref(false)

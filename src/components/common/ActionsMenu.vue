@@ -6,7 +6,7 @@
     >
       <span class="sr-only">Open actions</span>
       <div class="flex items-center gap-1">
-        <EllipsisHorizontalIcon class="h-6 w-6" aria-hidden="true" />
+        <EllipsisHorizontalIcon :class="iconSizes.sidebarMenu" aria-hidden="true" />
         <span v-show="viewType === 'cards'" class="ml-1">More</span>
       </div>
     </MenuButton>
@@ -37,7 +37,7 @@
               @click="$emit('deleteRow')"
             >
               <TrashIcon
-                class="mr-3 h-5 w-5 text-red-600 group-hover:text-red-500"
+                :class="[iconSizes.navigationHeader, 'mr-3 text-red-600 group-hover:text-red-500']"
                 aria-hidden="true"
               />
               Delete
@@ -73,7 +73,10 @@
               @click="$emit('cloneRow')"
             >
               <Square2StackIcon
-                class="mr-3 h-5 w-5 text-gray-400 group-hover:text-gray-500"
+                :class="[
+                  iconSizes.navigationHeader,
+                  'mr-3 text-gray-400 group-hover:text-gray-500'
+                ]"
                 aria-hidden="true"
               />
               Clone
@@ -91,6 +94,7 @@ import { Square2StackIcon, TrashIcon, EllipsisHorizontalIcon } from '@heroicons/
 import { useCommonStore } from '@/stores/common'
 import { computed } from 'vue'
 import { vTooltip } from '@/directives/tooltip'
+import { useContextualIconSizes } from '@/composables/useIconSizes'
 
 interface Props {
   position?: 'bottom' | 'card'
@@ -100,4 +104,6 @@ const props = defineProps<Props>()
 const viewType = computed(() => {
   return useCommonStore().currentViewType
 })
+
+const iconSizes = useContextualIconSizes()
 </script>

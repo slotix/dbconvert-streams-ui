@@ -2,8 +2,9 @@
 import { computed, inject } from 'vue'
 import type { ComputedRef } from 'vue'
 import type { FileSystemEntry } from '@/api/fileSystem'
-import { getFileFormat, getFileFormatLogoPath } from '@/utils/fileFormat'
+import { getFileFormat } from '@/utils/fileFormat'
 import { highlightParts } from '@/utils/highlight'
+import FileIcon from '@/components/common/FileIcon.vue'
 
 const props = defineProps<{
   entry: FileSystemEntry
@@ -24,7 +25,6 @@ const emit = defineEmits<{
 }>()
 
 const fileFormat = computed(() => getFileFormat(props.entry.name))
-const fileFormatLogoPath = computed(() => getFileFormatLogoPath(fileFormat.value))
 
 const formatFileSize = (bytes?: number): string => {
   if (!bytes) return '0 B'
@@ -53,12 +53,8 @@ const formatFileSize = (bytes?: number): string => {
         : emit('context-menu', { event: $event, entry })
     "
   >
-    <!-- File format icon -->
-    <img
-      :src="fileFormatLogoPath"
-      :alt="fileFormat || 'file'"
-      class="h-6 w-6 mr-2 shrink-0 object-contain"
-    />
+    <!-- File/Folder icon -->
+    <FileIcon :file-format="fileFormat" :is-directory="entry.type === 'dir'" class="mr-2" />
 
     <!-- File name -->
     <div class="flex-1 min-w-0 truncate">

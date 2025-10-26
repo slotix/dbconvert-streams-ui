@@ -24,6 +24,7 @@ export * from './serviceStatus'
 // UI-related
 export * from './viewTypes'
 export * from './notificationTypes'
+export * from './iconSizes'
 
 // Storage
 export * from './storageKeys'

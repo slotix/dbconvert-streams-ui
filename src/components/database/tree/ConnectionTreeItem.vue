@@ -11,6 +11,7 @@ import { useConnectionTreeLogic } from '@/composables/useConnectionTreeLogic'
 import { useFileExplorerStore } from '@/stores/fileExplorer'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { useTreeSearch } from '@/composables/useTreeSearch'
+import { useContextualIconSizes } from '@/composables/useIconSizes'
 import type { Connection } from '@/types/connections'
 import type { FileSystemEntry } from '@/api/fileSystem'
 
@@ -37,6 +38,9 @@ const treeLogic = useConnectionTreeLogic()
 const fileExplorerStore = useFileExplorerStore()
 const navigationStore = useExplorerNavigationStore()
 const treeSearch = computed(() => useTreeSearch(searchQuery.value))
+
+// Icon sizes
+const iconSizes = useContextualIconSizes()
 
 // Get file entries and selected path from store
 const fileEntries = computed(() => fileExplorerStore.getEntries(props.connection.id))
@@ -199,11 +203,13 @@ const connectionTooltip = computed(() => {
         class="mt-0.5"
         @click.stop="$emit('toggle-connection')"
       />
-      <img
-        :src="treeLogic.getDbLogoForType(connection.type)"
-        :alt="connection.type || 'db'"
-        class="h-5 w-5 shrink-0 object-contain mt-0.5"
-      />
+      <div class="flex items-center shrink-0">
+        <img
+          :src="treeLogic.getDbLogoForType(connection.type)"
+          :alt="connection.type || 'db'"
+          :class="[iconSizes.sidebarMenu, 'object-contain']"
+        />
+      </div>
       <div class="flex-1 min-w-0 flex flex-col gap-0.5">
         <div class="flex items-center gap-1.5">
           <span class="font-medium truncate">
@@ -233,7 +239,7 @@ const connectionTooltip = computed(() => {
     </div>
 
     <!-- Databases or Files under connection -->
-    <div v-if="isExpanded" class="ml-4 border-l border-gray-200 pl-2 space-y-1">
+    <div v-if="isExpanded" class="ml-4 border-l border-gray-200 pl-3 space-y-1">
       <div v-if="isFileConnection">
         <div v-if="!visibleFileEntries.length" class="text-xs text-gray-500 px-2 py-1">
           No files

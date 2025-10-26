@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import type { GridApi, Column } from 'ag-grid-community'
+import { useContextualIconSizes } from '@/composables/useIconSizes'
 import {
   ArrowUpIcon,
   ArrowDownIcon,
@@ -26,6 +27,9 @@ const emit = defineEmits<{
 }>()
 
 const menuRef = ref<HTMLElement | null>(null)
+
+// Icon sizes
+const iconSizes = useContextualIconSizes()
 
 // Adjust menu position if it goes off-screen
 const menuStyle = computed(() => {
@@ -161,21 +165,21 @@ const openAdvancedFilter = () => {
         class="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
         @click="sortAscending"
       >
-        <ArrowUpIcon class="h-4 w-4 text-gray-500" />
+        <ArrowUpIcon :class="[iconSizes.contextMenu, 'text-gray-500']" />
         <span>Sort Ascending</span>
       </button>
       <button
         class="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
         @click="sortDescending"
       >
-        <ArrowDownIcon class="h-4 w-4 text-gray-500" />
+        <ArrowDownIcon :class="[iconSizes.contextMenu, 'text-gray-500']" />
         <span>Sort Descending</span>
       </button>
       <button
         class="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
         @click="clearSort"
       >
-        <XCircleIcon class="h-4 w-4 text-gray-500" />
+        <XCircleIcon :class="[iconSizes.contextMenu, 'text-gray-500']" />
         <span>Clear Sort</span>
       </button>
     </div>
@@ -188,21 +192,21 @@ const openAdvancedFilter = () => {
         class="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
         @click="pinLeft"
       >
-        <MapPinIcon class="h-4 w-4 text-gray-500 -rotate-45" />
+        <MapPinIcon :class="[iconSizes.contextMenu, 'text-gray-500 -rotate-45']" />
         <span>Pin Left</span>
       </button>
       <button
         class="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
         @click="pinRight"
       >
-        <MapPinIcon class="h-4 w-4 text-gray-500 rotate-45" />
+        <MapPinIcon :class="[iconSizes.contextMenu, 'text-gray-500 rotate-45']" />
         <span>Pin Right</span>
       </button>
       <button
         class="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
         @click="unpinColumn"
       >
-        <NoSymbolIcon class="h-4 w-4 text-gray-500" />
+        <NoSymbolIcon :class="[iconSizes.contextMenu, 'text-gray-500']" />
         <span>Unpin</span>
       </button>
     </div>
@@ -215,14 +219,14 @@ const openAdvancedFilter = () => {
         class="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
         @click="openFilter"
       >
-        <FunnelIcon class="h-4 w-4 text-gray-500" />
+        <FunnelIcon :class="[iconSizes.contextMenu, 'text-gray-500']" />
         <span>Filter...</span>
       </button>
       <button
         class="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
         @click="openAdvancedFilter"
       >
-        <AdjustmentsHorizontalIcon class="h-4 w-4 text-gray-500" />
+        <AdjustmentsHorizontalIcon :class="[iconSizes.contextMenu, 'text-gray-500']" />
         <span>Advanced Filter...</span>
       </button>
     </div>
@@ -235,14 +239,14 @@ const openAdvancedFilter = () => {
         class="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
         @click="autoSizeColumn"
       >
-        <ArrowsPointingOutIcon class="h-4 w-4 text-gray-500" />
+        <ArrowsPointingOutIcon :class="[iconSizes.contextMenu, 'text-gray-500']" />
         <span>Autosize This Column</span>
       </button>
       <button
         class="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
         @click="autoSizeAllColumns"
       >
-        <ArrowsPointingOutIcon class="h-4 w-4 text-gray-500" />
+        <ArrowsPointingOutIcon :class="[iconSizes.contextMenu, 'text-gray-500']" />
         <span>Autosize All Columns</span>
       </button>
     </div>
@@ -255,7 +259,7 @@ const openAdvancedFilter = () => {
         class="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
         @click="resetColumns"
       >
-        <ArrowPathIcon class="h-4 w-4 text-gray-500" />
+        <ArrowPathIcon :class="[iconSizes.contextMenu, 'text-gray-500']" />
         <span>Reset Columns</span>
       </button>
     </div>

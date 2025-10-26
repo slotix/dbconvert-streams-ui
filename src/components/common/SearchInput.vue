@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, computed } from 'vue'
 import { FunnelIcon } from '@heroicons/vue/24/outline'
+import { ICON_SIZES } from '@/constants'
 
 const props = defineProps<{
   modelValue: string
@@ -32,16 +33,20 @@ const sizes = {
   md: 'px-3 py-2 text-sm'
 }
 
+// Use standardized icon sizes from constants
 const iconSizes = {
-  sm: 'h-3.5 w-3.5',
-  md: 'h-4 w-4'
+  sm: ICON_SIZES.SM, // h-3.5 w-3.5
+  md: ICON_SIZES.BASE // h-4 w-4
 }
+
+// Computed icon size based on props
+const iconClass = computed(() => iconSizes[props.size || 'sm'])
 </script>
 
 <template>
   <div class="relative w-full">
     <div class="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
-      <FunnelIcon :class="[iconSizes[props.size || 'sm'], 'text-gray-400']" />
+      <FunnelIcon :class="[iconClass, 'text-gray-400']" />
     </div>
     <input
       ref="inputRef"

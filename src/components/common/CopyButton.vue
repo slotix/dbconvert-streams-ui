@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ClipboardIcon } from '@heroicons/vue/24/outline'
 import { useCommonStore } from '@/stores/common'
+import { useContextualIconSizes } from '@/composables/useIconSizes'
 
 const props = defineProps<{
   text: string
@@ -9,6 +10,7 @@ const props = defineProps<{
 }>()
 
 const commonStore = useCommonStore()
+const iconSizes = useContextualIconSizes()
 
 async function handleCopy() {
   try {
@@ -29,7 +31,7 @@ async function handleCopy() {
     ]"
     @click.stop="handleCopy"
   >
-    <ClipboardIcon :class="['h-4 w-4', iconClass || 'text-gray-500']" />
+    <ClipboardIcon :class="[iconSizes.tableAction, iconClass || 'text-gray-500']" />
     <slot>Copy</slot>
   </button>
 </template>

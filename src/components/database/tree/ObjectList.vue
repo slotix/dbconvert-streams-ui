@@ -100,7 +100,7 @@ function getTableSize(tableName: string): string | null {
     @contextmenu.stop.prevent="handleContextMenu($event, item)"
   >
     <div class="flex items-center min-w-0 flex-1">
-      <ObjectIcon :object-type="objectType" class="mr-1.5 flex-shrink-0" />
+      <ObjectIcon :object-type="objectType" class="mr-2 flex-shrink-0" />
       <span class="truncate">
         <template v-for="(p, i) in highlightParts(item)" :key="i">
           <span v-if="p.match" class="bg-yellow-200/60 rounded px-0.5" v-text="p.text"></span>
