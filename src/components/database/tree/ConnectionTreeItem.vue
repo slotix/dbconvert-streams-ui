@@ -186,7 +186,7 @@ const connectionTooltip = computed(() => {
     <div
       :data-explorer-connection="connection.id"
       :class="[
-        'group flex items-start gap-1.5 px-2 py-1.5 text-sm text-gray-700 rounded-md hover:bg-gray-100 cursor-pointer transition-colors select-none',
+        'group flex items-center gap-1.5 px-2 py-1.5 text-sm text-gray-700 rounded-md hover:bg-gray-100 cursor-pointer transition-colors select-none',
         // For file connections, don't highlight the parent connection when a file is selected
         // Only highlight when explicitly focused and no file is selected (same behavior as databases)
         isFocused && !(isFileConnection && selectedFilePath)
@@ -200,7 +200,6 @@ const connectionTooltip = computed(() => {
       <component
         :is="isExpanded ? ChevronDownIcon : ChevronRightIcon"
         :class="caretClass"
-        class="mt-0.5"
         @click.stop="$emit('toggle-connection')"
       />
       <div class="flex items-center shrink-0">
