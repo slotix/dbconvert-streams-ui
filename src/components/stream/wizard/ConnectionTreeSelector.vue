@@ -340,6 +340,13 @@ function connectionCardClass(connectionId: string): string {
     return 'hover:bg-gray-50'
   }
 
+  // For file connections, don't highlight the parent connection card
+  // Only the file path inside should be highlighted (like database connections)
+  const connection = getConnectionById(connectionId)
+  if (connection && isFileConnection(connection)) {
+    return 'hover:bg-gray-50'
+  }
+
   // Selected connection: subtle neutral styling
   // Accent bar is now on the selected database row instead
   return 'border border-gray-200 bg-white'
@@ -347,6 +354,13 @@ function connectionCardClass(connectionId: string): string {
 
 function connectionHeaderClass(connectionId: string): string {
   if (props.selectedConnectionId !== connectionId) {
+    return 'hover:bg-gray-50 text-gray-800'
+  }
+
+  // For file connections, don't apply selected styling to the header
+  // Only the file path inside should be highlighted (like database connections)
+  const connection = getConnectionById(connectionId)
+  if (connection && isFileConnection(connection)) {
     return 'hover:bg-gray-50 text-gray-800'
   }
 
