@@ -1,0 +1,7 @@
+<svg width="96" height="96" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M56 16H24C21.7909 16 20 17.7909 20 20V76C20 78.2091 21.7909 80 24 80H72C74.2091 80 76 78.2091 76 76V36L56 16Z" fill="white" stroke="#4D4D4D" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M56 16V36H76" stroke="#4D4D4D" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M32 44H64" stroke="#4D4D4D" stroke-width="2" stroke-linecap="round"/>
+<path d="M32 54H64" stroke="#4D4D4D" stroke-width="2" stroke-linecap="round"/>
+<path d="M32 64H50" stroke="#4D4D4D" stroke-width="2" stroke-linecap="round"/>
+</svg>

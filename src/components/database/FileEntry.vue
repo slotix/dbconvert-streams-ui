@@ -57,7 +57,7 @@ const formatFileSize = (bytes?: number): string => {
     <img
       :src="fileFormatLogoPath"
       :alt="fileFormat || 'file'"
-      class="w-6 h-6 mr-2 shrink-0 object-contain"
+      class="h-6 w-6 mr-2 shrink-0 object-contain"
     />
 
     <!-- File name -->

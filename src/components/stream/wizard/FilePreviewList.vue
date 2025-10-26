@@ -65,13 +65,11 @@
                   handleCheckboxChange(file, ($event.target as HTMLInputElement)?.checked || false)
                 "
               />
-              <svg
-                class="h-4 w-4 flex-shrink-0 mr-2"
-                :class="fileFormatColor(file)"
-                viewBox="0 0 24 24"
-              >
-                <path :d="fileFormatIcon(file)" fill="currentColor" />
-              </svg>
+              <img
+                :src="fileFormatLogoPath(file)"
+                :alt="fileFormat(file) || 'file'"
+                class="h-6 w-6 flex-shrink-0 mr-2 object-contain"
+              />
               <label :for="`file-${file.path}`" class="cursor-pointer flex-1 truncate">
                 {{ file.name }}
               </label>
@@ -88,7 +86,7 @@
 import { computed, watch, ref } from 'vue'
 import { useFileExplorerStore } from '@/stores/fileExplorer'
 import { useStreamsStore } from '@/stores/streamConfig'
-import { getFileFormat, getFileFormatColor, getFileFormatIconPath } from '@/utils/fileFormat'
+import { getFileFormat, getFileFormatLogoPath } from '@/utils/fileFormat'
 import type { FileSystemEntry } from '@/api/fileSystem'
 import type { FileEntry } from '@/types/streamConfig'
 
@@ -204,12 +202,8 @@ function fileFormat(file: FileEntry | FileSystemEntry) {
   return getFileFormat(file.name)
 }
 
-function fileFormatColor(file: FileEntry | FileSystemEntry) {
-  return getFileFormatColor(fileFormat(file))
-}
-
-function fileFormatIcon(file: FileEntry | FileSystemEntry) {
-  return getFileFormatIconPath(fileFormat(file))
+function fileFormatLogoPath(file: FileEntry | FileSystemEntry) {
+  return getFileFormatLogoPath(fileFormat(file))
 }
 
 function formatFileSize(bytes?: number): string {

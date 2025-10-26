@@ -43,6 +43,6 @@ export function getFileFormatLogoPath(format: FileFormat | null): string {
     case 'parquet':
       return '/images/db-logos/parquet.svg'
     default:
-      return '/images/db-logos/local-files.svg'
+      return '/images/db-logos/file.svg'
   }
 }
