@@ -15,11 +15,11 @@
         <span
           v-if="isRunning"
           :class="[
-            'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset flex-shrink-0',
+            'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset shrink-0',
             statusBadgeClass
           ]"
         >
-          <span class="mr-1">{{ statusIcon }}</span>
+          <component :is="statusIcon" class="h-3 w-3" />
           {{ statusText }}
         </span>
 
@@ -106,7 +106,11 @@ import {
   PencilIcon,
   TrashIcon,
   ArrowRightIcon,
-  DocumentDuplicateIcon
+  DocumentDuplicateIcon,
+  ArrowPathIcon,
+  PauseCircleIcon,
+  CheckCircleIcon,
+  XCircleIcon
 } from '@heroicons/vue/24/outline'
 import { useMonitoringStore, statusEnum } from '@/stores/monitoring'
 import type { StreamConfig } from '@/types/streamConfig'
@@ -187,14 +191,14 @@ const statusBadgeClass = computed(() => {
 })
 
 const statusIcon = computed(() => {
-  if (!isRunning.value) return ''
+  if (!isRunning.value) return null
   if (isFinished.value) {
     const hasFailed = monitoringStore.stats.some((stat) => stat.status === 'FAILED')
-    if (hasFailed) return '❌'
-    return '✅'
+    if (hasFailed) return XCircleIcon
+    return CheckCircleIcon
   }
-  if (isPaused.value) return '⏸'
-  return '🔄'
+  if (isPaused.value) return PauseCircleIcon
+  return ArrowPathIcon
 })
 
 const tableCount = computed(() => {
