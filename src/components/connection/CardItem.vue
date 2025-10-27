@@ -218,6 +218,7 @@ import {
 } from '@heroicons/vue/24/outline'
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
+import { formatDateTime } from '@/utils/formats'
 
 const props = defineProps<{
   connection: Connection
@@ -387,19 +388,7 @@ function formatFileSize(bytes: number): string {
 }
 
 const connectionCreated = computed(() => {
-  if (!props.connection || typeof props.connection.created !== 'number') return ''
-  const milliseconds = props.connection.created * 1000
-  const date = new Date(milliseconds)
-  return date
-    .toLocaleString('en-GB', {
-      month: 'short',
-      day: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
-    })
-    .replace(',', ' -')
+  return formatDateTime(props.connection?.created || 0)
 })
 
 const concatenateValues = computed(() => {

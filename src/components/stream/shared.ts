@@ -24,6 +24,7 @@ import ConnectionStringDisplay from '@/components/common/ConnectionStringDisplay
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
 import { normalizeConnectionType } from '@/utils/connectionUtils'
 import { getDocumentationUrl } from '@/utils/documentationUtils'
+import { formatDateTime } from '@/utils/formats'
 import ActionsMenu from '@/components/common/ActionsMenu.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 export default defineComponent({
@@ -181,18 +182,7 @@ export default defineComponent({
   computed: {
     ...mapState(useStreamsStore, ['currentStreamConfig']),
     streamCreated(): string {
-      if (!this.streamConfig || typeof this.streamConfig.created !== 'number') return ''
-      const date = new Date(this.streamConfig.created * 1000)
-      return date
-        .toLocaleString('en-GB', {
-          month: 'short',
-          day: '2-digit',
-          year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: false
-        })
-        .replace(',', ' -')
+      return formatDateTime(this.streamConfig?.created || 0)
     },
     logoSrc(): (tp: string) => string {
       return (tp: string) => {

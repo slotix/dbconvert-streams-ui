@@ -8,7 +8,10 @@
     </div>
 
     <!-- Empty state -->
-    <div v-if="runs.length === 0" class="text-center py-8 bg-gray-50 rounded-lg border border-gray-200">
+    <div
+      v-if="runs.length === 0"
+      class="text-center py-8 bg-gray-50 rounded-lg border border-gray-200"
+    >
       <svg
         class="mx-auto h-12 w-12 text-gray-400"
         fill="none"
@@ -60,7 +63,7 @@
         <tbody class="bg-white divide-y divide-gray-200">
           <tr v-for="(run, index) in runs" :key="index" class="hover:bg-gray-50">
             <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-              {{ formatDate(run.timestamp) }}
+              {{ formatDateTime(run.timestamp) }}
             </td>
             <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
               {{ run.duration }}
@@ -94,6 +97,7 @@ import {
   StopCircleIcon,
   ArrowPathIcon
 } from '@heroicons/vue/24/outline'
+import { formatDateTime } from '@/utils/formats'
 
 interface StreamRun {
   timestamp: number
@@ -105,18 +109,6 @@ interface StreamRun {
 const props = defineProps<{
   runs: StreamRun[]
 }>()
-
-function formatDate(timestamp: number): string {
-  const date = new Date(timestamp)
-  return date.toLocaleString('en-GB', {
-    month: 'short',
-    day: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false
-  })
-}
 
 function getStatusClass(status: string): string {
   const statusLower = status.toLowerCase()

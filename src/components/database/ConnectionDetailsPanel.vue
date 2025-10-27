@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import type { Connection } from '@/types/connections'
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
 import { generateConnectionString } from '@/utils/connectionStringGenerator'
+import { formatDateTime } from '@/utils/formats'
 import {
   CalendarIcon,
   ClipboardIcon,
@@ -116,19 +117,7 @@ async function copyFolderPath() {
 }
 
 const createdDisplay = computed(() => {
-  const created = props.connection?.created
-  if (!created) return ''
-  const d = new Date(created * 1000)
-  return d
-    .toLocaleString('en-GB', {
-      month: 'short',
-      day: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
-    })
-    .replace(',', ' -')
+  return formatDateTime(props.connection?.created || 0)
 })
 </script>
 

@@ -1,3 +1,28 @@
+/**
+ * Format Unix timestamp (seconds) to date with time in standard format
+ * Format: "26 Oct 2025 - 01:17"
+ * @param timestamp Unix timestamp in seconds
+ * @returns Formatted date string
+ */
+export function formatDateTime(timestamp: number): string {
+  if (!timestamp || typeof timestamp !== 'number') return ''
+  const date = new Date(timestamp * 1000)
+  return date
+    .toLocaleString('en-GB', {
+      month: 'short',
+      day: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    })
+    .replace(',', ' -')
+}
+
+/**
+ * Legacy formatDate - kept for backward compatibility
+ * @deprecated Use formatDateTime instead for consistent formatting
+ */
 export function formatDate(date: number): string {
   return new Date(date * 1000).toLocaleDateString('en-US', {
     month: 'short',
@@ -12,6 +37,7 @@ export function formatDataSize(bytes: number): string {
   const i = Math.floor(Math.log(bytes) / Math.log(1024))
   return `${(bytes / Math.pow(1024, i)).toFixed(2)} ${sizes[i]}`
 }
+
 export function formatDateShort(date: string): string {
   const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' }
   return new Date(date).toLocaleDateString(undefined, options)

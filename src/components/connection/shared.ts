@@ -18,6 +18,7 @@ import { type Connection, type DbType } from '@/types/connections'
 import { generateConnectionString } from '@/utils/connectionStringGenerator'
 import ConnectionStringDisplay from '@/components/common/ConnectionStringDisplay.vue'
 import { normalizeConnectionType } from '@/utils/connectionUtils'
+import { formatDateTime } from '@/utils/formats'
 
 export default defineComponent({
   components: {
@@ -76,19 +77,7 @@ export default defineComponent({
       return dbType ? dbType.logo : ''
     },
     connectionCreated(): string {
-      if (!this.connection || typeof this.connection.created !== 'number') return ''
-      const milliseconds = this.connection.created * 1000
-      const date = new Date(milliseconds)
-      return date
-        .toLocaleString('en-GB', {
-          month: 'short',
-          day: '2-digit',
-          year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: false
-        })
-        .replace(',', ' -')
+      return formatDateTime(this.connection?.created || 0)
     },
     concatenateValues(): string {
       if (!this.connection) return ''

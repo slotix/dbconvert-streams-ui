@@ -411,7 +411,8 @@ import StatContainer from '@/components/monitoring/StatContainer.vue'
 import StreamHistoryTable from './StreamHistoryTable.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import { normalizeConnectionType } from '@/utils/connectionUtils'
-import type { StreamConfig, StreamRunHistory } from '@/types/streamConfig'
+import { formatDateTime } from '@/utils/formats'
+import type { StreamConfig } from '@/types/streamConfig'
 import type { Connection, DbType } from '@/types/connections'
 
 const props = defineProps<{
@@ -434,45 +435,6 @@ const showDeleteConfirm = ref(false)
 const activeTab = ref<'monitor' | 'configuration' | 'history'>('configuration')
 
 const dbTypes = connectionsStore.dbTypes
-
-// LocalStorage key for history
-const HISTORY_STORAGE_KEY = 'stream_run_history'
-
-// Helper functions for history persistence
-function getStoredHistory(streamConfigId: string): StreamRunHistory[] {
-  try {
-    const stored = localStorage.getItem(HISTORY_STORAGE_KEY)
-    if (!stored) return []
-    const allHistory = JSON.parse(stored) as Record<string, StreamRunHistory[]>
-    return allHistory[streamConfigId] || []
-  } catch (error) {
-    console.error('Error loading history from localStorage:', error)
-    return []
-  }
-}
-
-function saveHistoryEntry(streamConfigId: string, entry: StreamRunHistory) {
-  try {
-    const stored = localStorage.getItem(HISTORY_STORAGE_KEY)
-    const allHistory: Record<string, StreamRunHistory[]> = stored ? JSON.parse(stored) : {}
-
-    if (!allHistory[streamConfigId]) {
-      allHistory[streamConfigId] = []
-    }
-
-    // Add new entry at the beginning
-    allHistory[streamConfigId].unshift(entry)
-
-    // Keep only last 50 runs per stream config
-    if (allHistory[streamConfigId].length > 50) {
-      allHistory[streamConfigId] = allHistory[streamConfigId].slice(0, 50)
-    }
-
-    localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(allHistory))
-  } catch (error) {
-    console.error('Error saving history to localStorage:', error)
-  }
-}
 
 const isStreamRunning = computed(() => {
   // Check if this stream config is the one currently running
@@ -525,18 +487,7 @@ const streamStatus = computed(() => {
 })
 
 const streamCreated = computed(() => {
-  if (!props.stream || typeof props.stream.created !== 'number') return ''
-  const date = new Date(props.stream.created * 1000)
-  return date
-    .toLocaleString('en-GB', {
-      month: 'short',
-      day: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
-    })
-    .replace(',', ' -')
+  return formatDateTime(props.stream?.created || 0)
 })
 
 const prettyConfig = computed(() => {
@@ -559,47 +510,18 @@ const remainingTablesCount = computed(() => {
 })
 
 const historyRuns = computed(() => {
-  // Load persisted history from localStorage
-  return getStoredHistory(props.stream.id)
+  // Return history from backend (stored in stream config)
+  return props.stream.history || []
 })
 
-// Watch for stream finish to save history entry
-watch(isStreamFinished, (finished, wasFinished) => {
+// Watch for stream finish to refresh config and get updated history
+watch(isStreamFinished, async (finished, wasFinished) => {
   // Only trigger when transitioning from not-finished to finished
-  if (finished && !wasFinished && monitoringStore.stats.length > 0) {
-    const stats = monitoringStore.stats
-
-    // Calculate total data size from all nodes
-    let totalSizeStr = '—'
-    const statWithSize = stats.find((s: any) => s.size)
-    if (statWithSize) {
-      totalSizeStr = (statWithSize as any).size
-    }
-
-    // Get duration from first node's elapsed time
-    let duration = '—'
-    const statWithElapsed = stats.find((s: any) => s.elapsed)
-    if (statWithElapsed) {
-      duration = (statWithElapsed as any).elapsed
-    }
-
-    // Determine status
-    const hasFailed = stats.some((s: any) => s.status === 'FAILED')
-    const isStopped = stats.some((s: any) => s.status === 'STOPPED')
-    let status = 'Finished'
-    if (hasFailed) status = 'Failed'
-    else if (isStopped) status = 'Stopped'
-
-    // Save history entry
-    const historyEntry: StreamRunHistory = {
-      timestamp: Date.now(),
-      duration,
-      status,
-      dataSize: totalSizeStr,
-      streamID: monitoringStore.streamID
-    }
-
-    saveHistoryEntry(props.stream.id, historyEntry)
+  if (finished && !wasFinished) {
+    // Wait a bit for backend to save history
+    setTimeout(async () => {
+      await streamsStore.refreshStreams()
+    }, 2000)
   }
 })
 
