@@ -2,13 +2,7 @@
   <div class="min-h-full overflow-x-hidden">
     <!-- Header -->
     <header class="bg-white border-b border-gray-200 px-8 py-6">
-      <h1 class="text-3xl font-bold text-gray-900">
-        <span v-if="isBackendConnected">
-          <span v-if="streamsCount() > 0">{{ streamsCount() }} Stream configurations</span>
-          <span v-else>No Stream configurations</span>
-        </span>
-        <span v-else>Stream Configurations Unavailable</span>
-      </h1>
+      <h1 class="text-3xl font-bold text-gray-900">Streams</h1>
     </header>
 
     <!-- Main Content -->
@@ -24,13 +18,15 @@
       </div>
 
       <div v-else-if="streamsCount() === 0" class="text-center py-12">
-        <p class="text-gray-500">No streams yet. Create your first stream to get started.</p>
+        <p class="text-gray-500">
+          No stream configurations yet. Create your first configuration to get started.
+        </p>
         <router-link
           :to="{ name: 'CreateStream' }"
           class="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
         >
           <PlusIcon class="mr-2 h-5 w-5" />
-          Create a Stream
+          Create Stream Configuration
         </router-link>
       </div>
 
@@ -154,6 +150,7 @@ import { PlusIcon } from '@heroicons/vue/24/solid'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
 import { useCommonStore } from '@/stores/common'
+import { useMonitoringStore } from '@/stores/monitoring'
 import { useSidebar } from '@/composables/useSidebar'
 import StreamsSidebar from '@/components/stream/StreamsSidebar.vue'
 import StreamDetailsPanel from '@/components/stream/StreamDetailsPanel.vue'
@@ -163,6 +160,7 @@ import type { Connection } from '@/types/connections'
 const streamsStore = useStreamsStore()
 const connectionsStore = useConnectionsStore()
 const commonStore = useCommonStore()
+const monitoringStore = useMonitoringStore()
 
 // Use sidebar composable for resize and toggle functionality
 const sidebar = useSidebar()
@@ -203,6 +201,14 @@ function handleStreamDeletedFromPanel() {
 onMounted(async () => {
   try {
     await streamsStore.refreshStreams()
+
+    // Check if there's a running stream and auto-select it
+    await monitoringStore.fetchCurrentStreamStats()
+
+    if (monitoringStore.streamID) {
+      // Auto-select the running stream
+      selectedStreamId.value = monitoringStore.streamID
+    }
   } catch (error) {
     console.error('Failed to fetch streams:', error)
   }

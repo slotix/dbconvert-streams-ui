@@ -3,11 +3,23 @@
     <!-- Header -->
     <div class="p-4 border-b border-gray-200 flex-shrink-0">
       <div class="flex items-center justify-between mb-4">
-        <h2 class="text-sm font-semibold text-gray-900">Streams</h2>
+        <div class="flex flex-col gap-1">
+          <h2 class="text-sm font-semibold text-gray-900">Stream Configurations</h2>
+          <!-- Running Streams Indicator -->
+          <span
+            v-if="runningStreamsCount > 0"
+            class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20 self-start"
+          >
+            <span
+              class="inline-block w-1.5 h-1.5 rounded-full bg-current mr-1 animate-pulse"
+            ></span>
+            {{ runningStreamsCount }} active
+          </span>
+        </div>
         <router-link :to="{ name: 'CreateStream' }">
           <button
             type="button"
-            v-tooltip="'Create new stream'"
+            v-tooltip="'Create new stream configuration'"
             class="p-1.5 rounded-md hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors"
           >
             <PlusIcon class="h-5 w-5" />
@@ -36,8 +48,8 @@
       </div>
 
       <div v-else-if="filteredStreams.length === 0" class="p-4 text-center text-sm text-gray-500">
-        <div v-if="searchQuery">No streams match your search</div>
-        <div v-else>No streams yet. Create one to get started.</div>
+        <div v-if="searchQuery">No stream configurations match your search</div>
+        <div v-else>No configurations yet. Create one to get started.</div>
       </div>
 
       <div v-else class="divide-y divide-gray-100">
@@ -51,6 +63,7 @@
           @select="handleSelectStream"
           @delete="handleDeleteStream"
           @edit="handleEditStream"
+          @clone="handleCloneStream"
         />
       </div>
     </div>
@@ -83,6 +96,7 @@ import { ref, computed, watch } from 'vue'
 import { PlusIcon, MagnifyingGlassIcon, ArrowPathIcon } from '@heroicons/vue/24/outline'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
+import { useMonitoringStore } from '@/stores/monitoring'
 import StreamListItem from './StreamListItem.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import type { StreamConfig } from '@/types/streamConfig'
@@ -99,6 +113,7 @@ const emit = defineEmits<{
 
 const streamsStore = useStreamsStore()
 const connectionsStore = useConnectionsStore()
+const monitoringStore = useMonitoringStore()
 
 const searchQuery = ref('')
 const isLoading = ref(false)
@@ -106,6 +121,11 @@ const showDeleteConfirm = ref(false)
 const pendingDeleteStream = ref<StreamConfig | null>(null)
 
 const selectedStreamId = computed(() => props.selectedStreamId || '')
+
+const runningStreamsCount = computed(() => {
+  // Count streams that are currently running
+  return monitoringStore.streamID ? 1 : 0
+})
 
 const filteredStreams = computed<StreamConfig[]>(() => {
   const query = searchQuery.value.toLowerCase()
@@ -137,6 +157,11 @@ function handleDeleteStream(payload: { streamId: string }) {
 
 function handleEditStream(payload: { streamId: string }) {
   // Navigation is handled by the router-link in StreamListItem
+}
+
+function handleCloneStream(payload: { streamId: string }) {
+  // Navigate to create stream page with clone parameter
+  window.location.href = `#/streams/create?clone=${payload.streamId}`
 }
 
 async function confirmDelete() {

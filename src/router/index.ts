@@ -6,7 +6,6 @@ import HomeView from '@/views/HomeView.vue'
 import StreamsView from '@/views/StreamsView.vue'
 import ConnectionsView from '@/views/ConnectionsView.vue'
 import ManageStreamView from '@/views/ManageStreamView.vue'
-import MonitorStreamView from '@/views/MonitorStreamView.vue'
 import DatabaseExplorerView from '@/views/DatabaseExplorerView.vue'
 import NotFound from '@/views/NotFound.vue'
 
@@ -70,8 +69,7 @@ const routes = [
   {
     path: '/monitor',
     name: 'MonitorStream',
-    component: MonitorStreamView,
-    props: true
+    redirect: '/streams'
   },
   {
     path: '/:catchAll(.*)',

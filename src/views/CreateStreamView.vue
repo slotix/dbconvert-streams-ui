@@ -12,7 +12,7 @@
           </button>
           <div>
             <h1 class="text-2xl font-bold text-gray-900">
-              {{ isEditMode ? 'Edit Stream' : 'New Stream' }}
+              {{ isEditMode ? 'Edit Stream Configuration' : 'New Stream Configuration' }}
             </h1>
             <p class="text-sm text-gray-600">
               {{
