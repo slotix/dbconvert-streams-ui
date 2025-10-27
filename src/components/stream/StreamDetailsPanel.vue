@@ -606,8 +606,8 @@ async function startStream() {
     monitoringStore.setStream(streamID, props.stream)
     // Fetch initial stream stats to populate monitoring data
     await monitoringStore.fetchCurrentStreamStats()
-    // Stay on the same page - no navigation needed
-    // The panel will automatically show monitoring components via isStreamRunning computed
+    // Request to show monitor tab
+    monitoringStore.requestShowMonitorTab()
   } catch (err: unknown) {
     if (err instanceof Error) {
       commonStore.showNotification(err.message, 'error')
@@ -621,6 +621,8 @@ async function pauseStream() {
   try {
     await streamsStore.pauseStream(monitoringStore.streamID)
     commonStore.showNotification('Stream paused', 'success')
+    // Request to show monitor tab
+    monitoringStore.requestShowMonitorTab()
   } catch (error) {
     if (error instanceof Error) {
       commonStore.showNotification(error.message, 'error')
@@ -632,6 +634,8 @@ async function resumeStream() {
   try {
     await streamsStore.resumeStream(monitoringStore.streamID)
     commonStore.showNotification('Stream resumed', 'success')
+    // Request to show monitor tab
+    monitoringStore.requestShowMonitorTab()
   } catch (error) {
     if (error instanceof Error) {
       commonStore.showNotification(error.message, 'error')
@@ -643,6 +647,8 @@ async function stopStream() {
   try {
     await streamsStore.stopStream(monitoringStore.streamID)
     commonStore.showNotification('Stream stopped', 'success')
+    // Request to show monitor tab
+    monitoringStore.requestShowMonitorTab()
   } catch (error) {
     if (error instanceof Error) {
       commonStore.showNotification(error.message, 'error')
@@ -650,12 +656,17 @@ async function stopStream() {
   }
 }
 
-// Auto-switch to monitor tab when stream starts
-watch(isStreamRunning, (newValue) => {
-  if (newValue) {
-    activeTab.value = 'monitor'
+// Auto-switch to monitor tab when requested
+watch(
+  () => monitoringStore.shouldShowMonitorTab,
+  (shouldShow) => {
+    if (shouldShow && monitoringStore.streamConfig?.id === props.stream.id) {
+      activeTab.value = 'monitor'
+      // Reset the flag after switching
+      monitoringStore.resetShowMonitorTab()
+    }
   }
-})
+)
 </script>
 
 <style scoped>

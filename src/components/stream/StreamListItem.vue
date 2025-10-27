@@ -56,9 +56,20 @@
       class="flex items-center gap-1 ml-2 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
       @click.stop
     >
-      <!-- Start/Run Again/Pause Button -->
+      <!-- Start/Run Again/Pause/Resume Button -->
+      <!-- Show Resume button when paused (and not finished) -->
       <button
-        v-if="isRunning && !isFinished"
+        v-if="isPaused && !isFinished"
+        v-tooltip="'Resume the stream'"
+        type="button"
+        class="p-1.5 rounded-md hover:bg-green-100 text-green-600 hover:text-green-700 transition-colors"
+        @click.stop="resumeStream"
+      >
+        <PlayIcon class="h-4 w-4" />
+      </button>
+      <!-- Show Pause button when running (not paused, not finished) -->
+      <button
+        v-else-if="isRunning && !isPaused && !isFinished"
         v-tooltip="'Pause the stream'"
         type="button"
         class="p-1.5 rounded-md hover:bg-yellow-100 text-yellow-600 hover:text-yellow-700 transition-colors"
@@ -66,6 +77,7 @@
       >
         <PauseIcon class="h-4 w-4" />
       </button>
+      <!-- Show Play button when not running or finished -->
       <button
         v-else
         v-tooltip="hasHistory ? 'Run the stream again' : 'Start the stream'"
@@ -152,6 +164,7 @@ const emit = defineEmits<{
   (e: 'clone', payload: { streamId: string }): void
   (e: 'start', payload: { streamId: string }): void
   (e: 'pause', payload: { streamId: string }): void
+  (e: 'resume', payload: { streamId: string }): void
 }>()
 
 const monitoringStore = useMonitoringStore()
@@ -243,6 +256,10 @@ function startStream() {
 
 function pauseStream() {
   emit('pause', { streamId: props.stream.id })
+}
+
+function resumeStream() {
+  emit('resume', { streamId: props.stream.id })
 }
 
 function cloneStream() {

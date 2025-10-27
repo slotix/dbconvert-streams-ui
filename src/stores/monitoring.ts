@@ -53,6 +53,7 @@ interface State {
   isLoadingStats: boolean
   statsError: Error | null
   lastStreamId: string | null
+  shouldShowMonitorTab: boolean
 }
 
 // Use centralized stream status constants
@@ -100,7 +101,8 @@ export const useMonitoringStore = defineStore('monitoring', {
     streamStats: null,
     isLoadingStats: false,
     statsError: null,
-    lastStreamId: null as string | null
+    lastStreamId: null as string | null,
+    shouldShowMonitorTab: false
   }),
   getters: {
     currentStage(state: State): Stage | null {
@@ -194,6 +196,12 @@ export const useMonitoringStore = defineStore('monitoring', {
     },
     updateStreamStatus(status: typeof statusEnum) {
       this.status = status
+    },
+    requestShowMonitorTab() {
+      this.shouldShowMonitorTab = true
+    },
+    resetShowMonitorTab() {
+      this.shouldShowMonitorTab = false
     },
     addLog(log: Log) {
       if (this.logs.length >= this.maxLogs) {
@@ -318,6 +326,8 @@ export const useMonitoringStore = defineStore('monitoring', {
 
             switch (status) {
               case 'FINISHED':
+              case 'STOPPED':
+              case 'FAILED':
                 this.currentStageID = 4 // Finished stage
                 break
               case 'RUNNING':

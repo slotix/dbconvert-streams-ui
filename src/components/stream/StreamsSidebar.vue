@@ -51,6 +51,7 @@
           @select="handleSelectStream"
           @start="handleStartStream"
           @pause="handlePauseStream"
+          @resume="handleResumeStream"
           @delete="handleDeleteStream"
           @edit="handleEditStream"
           @clone="handleCloneStream"
@@ -155,6 +156,9 @@ async function handleStartStream(payload: { streamId: string }) {
     // Fetch initial stream stats to populate monitoring data
     await monitoringStore.fetchCurrentStreamStats()
 
+    // Request to show monitor tab
+    monitoringStore.requestShowMonitorTab()
+
     // Select the stream that was started
     emit('select-stream', { streamId: payload.streamId })
   } catch (error) {
@@ -165,8 +169,20 @@ async function handleStartStream(payload: { streamId: string }) {
 async function handlePauseStream() {
   try {
     await streamsStore.pauseStream(monitoringStore.streamID)
+    // Request to show monitor tab
+    monitoringStore.requestShowMonitorTab()
   } catch (error) {
     console.error('Failed to pause stream:', error)
+  }
+}
+
+async function handleResumeStream() {
+  try {
+    await streamsStore.resumeStream(monitoringStore.streamID)
+    // Request to show monitor tab
+    monitoringStore.requestShowMonitorTab()
+  } catch (error) {
+    console.error('Failed to resume stream:', error)
   }
 }
 

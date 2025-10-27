@@ -292,7 +292,13 @@ export const useStreamsStore = defineStore('streams', {
     async stopStream(id: string) {
       try {
         await api.stopStream(id)
-        // Stream status will be updated via monitoring events
+        // Update monitoring store status immediately
+        const monitoringStore = useMonitoringStore()
+        monitoringStore.updateStreamStatus(statusEnum.STOPPED)
+        // Also refresh stats after a short delay to get the final state
+        setTimeout(() => {
+          monitoringStore.fetchCurrentStreamStats()
+        }, 1000)
       } catch (err) {
         console.error('Failed to stop stream:', err)
         throw err
