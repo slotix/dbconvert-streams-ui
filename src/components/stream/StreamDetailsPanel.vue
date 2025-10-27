@@ -27,12 +27,12 @@
           </button>
           <button
             v-if="!isStreamRunning || isStreamFinished"
-            v-tooltip="'Start the stream again'"
+            v-tooltip="historyRuns.length > 0 ? 'Run the stream again' : 'Start the stream'"
             type="button"
             class="px-3 py-1.5 text-sm font-medium text-white bg-cyan-600 rounded-md hover:bg-cyan-700 transition-colors"
             @click="startStream"
           >
-            {{ isStreamFinished ? 'Restart' : 'Start' }}
+            {{ historyRuns.length > 0 ? 'Run again' : 'Start' }}
           </button>
           <button
             v-if="!isStreamRunning || isStreamFinished"
