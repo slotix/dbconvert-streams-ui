@@ -18,8 +18,8 @@
         </div>
         <router-link :to="{ name: 'CreateStream' }">
           <button
-            type="button"
             v-tooltip="'Create new stream configuration'"
+            type="button"
             class="p-1.5 rounded-md hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors"
           >
             <PlusIcon class="h-5 w-5" />

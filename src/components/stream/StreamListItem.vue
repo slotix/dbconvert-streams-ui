@@ -19,10 +19,7 @@
             statusBadgeClass
           ]"
         >
-          <span
-            v-if="isRunning && !isPaused && !isFinished"
-            class="inline-block w-1.5 h-1.5 rounded-full bg-current mr-1 animate-pulse"
-          ></span>
+          <span class="mr-1">{{ statusIcon }}</span>
           {{ statusText }}
         </span>
 
@@ -187,6 +184,17 @@ const statusBadgeClass = computed(() => {
   }
   if (isPaused.value) return 'bg-yellow-50 text-yellow-700 ring-yellow-600/20'
   return 'bg-blue-50 text-blue-700 ring-blue-600/20'
+})
+
+const statusIcon = computed(() => {
+  if (!isRunning.value) return ''
+  if (isFinished.value) {
+    const hasFailed = monitoringStore.stats.some((stat) => stat.status === 'FAILED')
+    if (hasFailed) return '❌'
+    return '✅'
+  }
+  if (isPaused.value) return '⏸'
+  return '🔄'
 })
 
 const tableCount = computed(() => {

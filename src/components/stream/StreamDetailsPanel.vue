@@ -5,36 +5,10 @@
       <div class="flex items-center justify-between mb-3">
         <div class="flex items-center min-w-0 flex-1 gap-3">
           <h2 class="text-xl font-semibold text-gray-900 truncate">{{ stream.name }}</h2>
-          <span
-            :class="[
-              'inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset',
-              stream.mode === 'cdc'
-                ? 'bg-orange-50 text-orange-700 ring-orange-600/20'
-                : 'bg-green-50 text-green-700 ring-green-600/20'
-            ]"
-          >
-            {{ stream.mode }}
-          </span>
-          <Switch
-            v-model="isJsonView"
-            class="relative inline-flex h-5 w-10 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-gray-600 focus:ring-offset-2"
-            :class="[isJsonView ? 'bg-gray-600' : 'bg-gray-400']"
-          >
-            <span class="sr-only">Toggle JSON view</span>
-            <span
-              aria-hidden="true"
-              class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out"
-              :class="[
-                isJsonView ? 'translate-x-5' : 'translate-x-0',
-                'shadow-[0_1px_4px_rgba(0,0,0,0.15)]'
-              ]"
-            />
-          </Switch>
-          <span class="text-xs text-gray-600">JSON</span>
         </div>
         <div class="flex items-center gap-2 ml-4">
           <button
-            v-if="!isStreamRunning"
+            v-if="!isStreamRunning || isStreamFinished"
             v-tooltip="'Edit stream configuration'"
             type="button"
             class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
@@ -43,7 +17,7 @@
             Edit
           </button>
           <button
-            v-if="!isStreamRunning"
+            v-if="!isStreamRunning || isStreamFinished"
             v-tooltip="'Clone stream configuration'"
             type="button"
             class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
@@ -52,16 +26,16 @@
             Clone
           </button>
           <button
-            v-if="!isStreamRunning"
-            v-tooltip="'Start the stream'"
+            v-if="!isStreamRunning || isStreamFinished"
+            v-tooltip="'Start the stream again'"
             type="button"
             class="px-3 py-1.5 text-sm font-medium text-white bg-cyan-600 rounded-md hover:bg-cyan-700 transition-colors"
             @click="startStream"
           >
-            Start
+            {{ isStreamFinished ? 'Restart' : 'Start' }}
           </button>
           <button
-            v-if="!isStreamRunning"
+            v-if="!isStreamRunning || isStreamFinished"
             v-tooltip="'Delete stream configuration'"
             type="button"
             class="px-3 py-1.5 text-sm font-medium text-red-600 bg-white border border-gray-300 rounded-md hover:bg-red-50 transition-colors"
@@ -69,41 +43,33 @@
           >
             Delete
           </button>
-          <button
-            v-if="isJsonView"
-            v-tooltip="'Copy configuration'"
-            class="p-1.5 text-gray-500 hover:text-gray-700 rounded-md hover:bg-gray-100"
-            @click="copyConfig"
-          >
-            <ClipboardIcon class="h-4 w-4" />
-          </button>
         </div>
       </div>
 
-      <!-- Tabs (only show when stream is running) -->
-      <div v-if="isStreamRunning" class="border-b border-gray-200">
+      <!-- Tabs (always visible) -->
+      <div class="border-b border-gray-200 mt-3">
         <nav class="-mb-px flex gap-4" aria-label="Tabs">
           <button
-            @click="activeTab = 'monitor'"
-            :class="[
-              activeTab === 'monitor'
-                ? 'border-cyan-600 text-cyan-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
-              'whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors'
-            ]"
-          >
-            Monitor
-          </button>
-          <button
-            @click="activeTab = 'configuration'"
             :class="[
               activeTab === 'configuration'
                 ? 'border-cyan-600 text-cyan-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
               'whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors'
             ]"
+            @click="activeTab = 'configuration'"
           >
             Configuration
+          </button>
+          <button
+            :class="[
+              activeTab === 'monitor'
+                ? 'border-cyan-600 text-cyan-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
+              'whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors'
+            ]"
+            @click="activeTab = 'monitor'"
+          >
+            Monitor
           </button>
         </nav>
       </div>
@@ -111,173 +77,69 @@
 
     <!-- Content -->
     <div class="flex-1 overflow-y-auto">
-      <!-- JSON View -->
-      <div v-if="isJsonView" class="p-6">
-        <div
-          class="rounded-md bg-gray-50 p-4 border border-gray-200 overflow-auto custom-scrollbar"
-        >
-          <pre
-            v-highlightjs
-            class="text-sm"
-          ><code class="language-json block text-sm leading-6 select-text">{{ prettyConfig }}</code></pre>
-        </div>
-      </div>
-
-      <!-- Monitor Tab (when stream is running) -->
-      <div v-else-if="isStreamRunning && activeTab === 'monitor'" class="p-6 space-y-6">
-        <!-- Stream Controls -->
-        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h3 class="text-sm font-semibold text-blue-900 mb-3">Stream Controls</h3>
-          <div class="flex gap-2">
-            <button
-              v-if="!isPaused"
-              :disabled="isStreamFinished"
-              class="px-3 py-2 bg-white text-cyan-600 font-semibold rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 transition-colors duration-200 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-              @click="pauseStream"
-            >
-              <PauseIcon class="h-4 w-4" />
-              Pause
-            </button>
-            <button
-              v-else
-              :disabled="isStreamFinished"
-              class="px-3 py-2 bg-white text-cyan-600 font-semibold rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 transition-colors duration-200 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-              @click="resumeStream"
-            >
-              <PlayIcon class="h-4 w-4" />
-              Resume
-            </button>
-            <button
-              :disabled="isStreamFinished"
-              class="px-3 py-2 bg-white text-red-600 font-semibold rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors duration-200 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-              @click="stopStream"
-            >
-              <StopIcon class="h-4 w-4" />
-              Stop
-            </button>
-          </div>
-        </div>
-
-        <!-- Progress and Stats -->
-        <ProgressContainer />
-        <StatContainer />
-      </div>
-
-      <!-- Configuration Tab (when stream is running) -->
-      <div v-else-if="isStreamRunning && activeTab === 'configuration'" class="p-6 space-y-6">
-        <!-- Connection Details -->
-        <div class="space-y-4">
-          <!-- Source Connection -->
-          <div>
-            <label class="block text-xs font-medium uppercase text-gray-500 mb-2">
-              Source Connection
-            </label>
-            <div class="bg-gray-50 rounded-md p-4 border border-gray-200">
-              <div class="flex items-center gap-2 mb-2">
-                <div
-                  v-if="source && source.type"
-                  :class="getDatabaseIconStyle(source.type)"
-                  class="flex-shrink-0 rounded-lg p-1.5 transition-all duration-200 hover:shadow-md"
-                >
-                  <img
-                    class="h-5 w-5 object-contain"
-                    :src="logoSrc(source.type)"
-                    :alt="source.type + ' logo'"
-                  />
-                </div>
-                <span
-                  class="font-medium text-gray-900 truncate"
-                  :class="{ 'text-red-500': !source || !source.name }"
-                >
-                  {{ source?.name || 'N/A' }}
-                </span>
-                <CloudProviderBadge
-                  v-if="source"
-                  :cloud-provider="source.cloud_provider"
-                  :db-type="source.type"
-                />
-                <ExclamationCircleIcon
-                  v-if="!source || !source.name"
-                  class="h-4 w-4 text-red-500 flex-shrink-0"
-                  aria-hidden="true"
-                />
-              </div>
-              <div class="text-sm text-gray-600">
-                <ConnectionStringDisplay v-if="source" :connection="source" />
-                <span v-else class="text-red-500 text-xs">Connection not found</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Target Connection -->
-          <div>
-            <label class="block text-xs font-medium uppercase text-gray-500 mb-2">
-              Target Connection
-            </label>
-            <div class="bg-gray-50 rounded-md p-4 border border-gray-200">
-              <div class="flex items-center gap-2 mb-2">
-                <div
-                  v-if="target && target.type"
-                  :class="getDatabaseIconStyle(target.type)"
-                  class="flex-shrink-0 rounded-lg p-1.5 transition-all duration-200 hover:shadow-md"
-                >
-                  <img
-                    class="h-5 w-5 object-contain"
-                    :src="logoSrc(target.type)"
-                    :alt="target.type + ' logo'"
-                  />
-                </div>
-                <span
-                  class="font-medium text-gray-900 truncate"
-                  :class="{ 'text-red-500': !target || !target.name }"
-                >
-                  {{ target?.name || 'N/A' }}
-                </span>
-                <CloudProviderBadge
-                  v-if="target"
-                  :cloud-provider="target.cloud_provider"
-                  :db-type="target.type"
-                />
-                <ExclamationCircleIcon
-                  v-if="!target || !target.name"
-                  class="h-4 w-4 text-red-500 flex-shrink-0"
-                  aria-hidden="true"
-                />
-              </div>
-              <div class="text-sm text-gray-600">
-                <ConnectionStringDisplay v-if="target" :connection="target" />
-                <span v-else class="text-red-500 text-xs">Connection not found</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Tables Section -->
-          <div>
-            <label class="block text-xs font-medium uppercase text-gray-500 mb-2">Tables</label>
-            <div class="bg-gray-50 rounded-md p-3 border border-gray-200">
-              <p class="text-sm text-gray-900">
-                {{ displayedTables.join(', ') }}{{ remainingTablesCount > 0 ? ', ...' : '' }}
-                <span v-if="remainingTablesCount > 0" class="text-xs text-gray-500 italic ml-1">
-                  ({{ remainingTablesCount }} more)
-                </span>
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Creation Date -->
-        <div class="pt-4 border-t border-gray-100">
+      <!-- Configuration Tab -->
+      <div v-if="activeTab === 'configuration'" class="p-6 space-y-6">
+        <!-- JSON Toggle (Always visible) -->
+        <div class="flex items-center justify-end pb-4 border-b border-gray-100">
           <div class="flex items-center gap-2">
-            <CalendarIcon class="h-4 w-4 text-gray-500" />
-            <span class="text-sm text-gray-500">Created: {{ streamCreated }}</span>
+            <span class="text-xs text-gray-600">JSON</span>
+            <Switch
+              v-model="isJsonView"
+              class="relative inline-flex h-5 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-gray-600 focus:ring-offset-2"
+              :class="[isJsonView ? 'bg-gray-600' : 'bg-gray-400']"
+            >
+              <span class="sr-only">Toggle JSON view</span>
+              <span
+                aria-hidden="true"
+                class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out"
+                :class="[
+                  isJsonView ? 'translate-x-5' : 'translate-x-0',
+                  'shadow-[0_1px_4px_rgba(0,0,0,0.15)]'
+                ]"
+              />
+            </Switch>
+            <button
+              v-if="isJsonView"
+              v-tooltip="'Copy configuration'"
+              class="p-1.5 text-gray-500 hover:text-gray-700 rounded-md hover:bg-gray-100"
+              @click="copyConfig"
+            >
+              <ClipboardIcon class="h-4 w-4" />
+            </button>
           </div>
         </div>
-      </div>
 
-      <!-- Idle Stream View (not running) -->
-      <div v-else class="p-6 space-y-6">
-        <!-- Connection Details -->
-        <div class="space-y-4">
+        <!-- JSON View -->
+        <div v-if="isJsonView">
+          <div
+            class="rounded-md bg-gray-50 p-4 border border-gray-200 overflow-auto custom-scrollbar"
+          >
+            <pre
+              v-highlightjs
+              class="text-sm"
+            ><code class="language-json block text-sm leading-6 select-text">{{ prettyConfig }}</code></pre>
+          </div>
+        </div>
+
+        <!-- Connection Details (Normal View) -->
+        <div v-else class="space-y-4">
+          <!-- Mode -->
+          <div class="bg-gray-50 rounded-md px-4 py-3 border border-gray-200">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-medium uppercase text-gray-500">Mode:</span>
+              <span
+                :class="[
+                  'inline-flex items-center rounded-md px-2.5 py-1 text-xs font-medium ring-1 ring-inset',
+                  stream.mode === 'cdc'
+                    ? 'bg-orange-50 text-orange-700 ring-orange-600/20'
+                    : 'bg-green-50 text-green-700 ring-green-600/20'
+                ]"
+              >
+                {{ stream.mode.toUpperCase() }}
+              </span>
+            </div>
+          </div>
+
           <!-- Source Connection -->
           <div>
             <label class="block text-xs font-medium uppercase text-gray-500 mb-2">
@@ -374,14 +236,115 @@
               </p>
             </div>
           </div>
+
+          <!-- Creation Date -->
+          <div class="pt-4 border-t border-gray-100">
+            <div class="flex items-center gap-2">
+              <CalendarIcon class="h-4 w-4 text-gray-500" />
+              <span class="text-sm text-gray-500">Created: {{ streamCreated }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Monitor Tab -->
+      <div v-else-if="activeTab === 'monitor'" class="p-6 space-y-6">
+        <!-- Stream Not Running State -->
+        <div v-if="!isStreamRunning" class="text-center py-12">
+          <div
+            class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4"
+          >
+            <PlayIcon class="h-8 w-8 text-gray-400" />
+          </div>
+          <p class="text-gray-500 text-sm mb-4">Stream is not currently running</p>
+          <p class="text-gray-400 text-xs">Start the stream to view monitoring data</p>
         </div>
 
-        <!-- Creation Date -->
-        <div class="pt-4 border-t border-gray-100">
-          <div class="flex items-center gap-2">
-            <CalendarIcon class="h-4 w-4 text-gray-500" />
-            <span class="text-sm text-gray-500">Created: {{ streamCreated }}</span>
+        <!-- Stream Running State -->
+        <div v-else>
+          <!-- Status Summary Bar -->
+          <div
+            class="bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-lg p-4 mb-6"
+          >
+            <div class="flex items-center justify-between flex-wrap gap-4">
+              <!-- Status -->
+              <div class="flex items-center gap-3">
+                <div
+                  :class="[
+                    'flex items-center justify-center w-10 h-10 rounded-full',
+                    isStreamFinished ? 'bg-green-100' : isPaused ? 'bg-yellow-100' : 'bg-blue-100'
+                  ]"
+                >
+                  <span
+                    v-if="!isStreamFinished && !isPaused"
+                    class="inline-block w-3 h-3 rounded-full bg-blue-600 animate-pulse"
+                  ></span>
+                  <svg
+                    v-else-if="isStreamFinished"
+                    class="h-6 w-6 text-green-600"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                  <PauseIcon v-else class="h-6 w-6 text-yellow-600" />
+                </div>
+                <div>
+                  <p class="text-xs font-medium uppercase text-gray-500">Status</p>
+                  <p
+                    :class="[
+                      'text-lg font-semibold',
+                      isStreamFinished
+                        ? 'text-green-700'
+                        : isPaused
+                          ? 'text-yellow-700'
+                          : 'text-blue-700'
+                    ]"
+                  >
+                    {{ streamStatus }}
+                  </p>
+                </div>
+              </div>
+
+              <!-- Stream Controls -->
+              <div class="flex gap-2">
+                <button
+                  v-if="!isPaused && !isStreamFinished"
+                  class="px-4 py-2 bg-white text-cyan-600 font-medium rounded-md hover:bg-gray-50 border border-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-colors flex items-center gap-2 text-sm"
+                  @click="pauseStream"
+                >
+                  <PauseIcon class="h-4 w-4" />
+                  Pause
+                </button>
+                <button
+                  v-else-if="isPaused"
+                  class="px-4 py-2 bg-white text-cyan-600 font-medium rounded-md hover:bg-gray-50 border border-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-colors flex items-center gap-2 text-sm"
+                  @click="resumeStream"
+                >
+                  <PlayIcon class="h-4 w-4" />
+                  Resume
+                </button>
+                <button
+                  v-if="!isStreamFinished"
+                  class="px-4 py-2 bg-white text-red-600 font-medium rounded-md hover:bg-red-50 border border-red-300 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors flex items-center gap-2 text-sm"
+                  @click="stopStream"
+                >
+                  <StopIcon class="h-4 w-4" />
+                  Stop
+                </button>
+              </div>
+            </div>
           </div>
+
+          <!-- Progress and Stats -->
+          <ProgressContainer />
+          <StatContainer />
         </div>
       </div>
     </div>
@@ -451,7 +414,7 @@ const monitoringStore = useMonitoringStore()
 
 const isJsonView = ref(false)
 const showDeleteConfirm = ref(false)
-const activeTab = ref<'monitor' | 'configuration'>('monitor')
+const activeTab = ref<'monitor' | 'configuration'>('configuration')
 
 const dbTypes = connectionsStore.dbTypes
 
@@ -490,6 +453,19 @@ const isStreamFinished = computed(() => {
   )
 
   return areAllNodesFinished || isStreamStatusFinished
+})
+
+const streamStatus = computed(() => {
+  if (!isStreamRunning.value) return 'Not Running'
+  if (isStreamFinished.value) {
+    const hasFailed = monitoringStore.stats.some((stat) => stat.status === 'FAILED')
+    const isStopped = monitoringStore.stats.some((stat) => stat.status === 'STOPPED')
+    if (hasFailed) return 'Failed'
+    if (isStopped) return 'Stopped'
+    return 'Finished'
+  }
+  if (isPaused.value) return 'Paused'
+  return monitoringStore.currentStage?.description || 'Running'
 })
 
 const streamCreated = computed(() => {
