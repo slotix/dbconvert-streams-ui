@@ -71,6 +71,17 @@
           >
             Monitor
           </button>
+          <button
+            :class="[
+              activeTab === 'history'
+                ? 'border-cyan-600 text-cyan-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
+              'whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors'
+            ]"
+            @click="activeTab = 'history'"
+          >
+            History
+          </button>
         </nav>
       </div>
     </div>
@@ -347,6 +358,11 @@
           <StatContainer />
         </div>
       </div>
+
+      <!-- History Tab -->
+      <div v-else-if="activeTab === 'history'" class="p-6">
+        <StreamHistoryTable :runs="historyRuns" />
+      </div>
     </div>
 
     <!-- Delete Confirmation Dialog -->
@@ -392,9 +408,10 @@ import ConnectionStringDisplay from '@/components/common/ConnectionStringDisplay
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
 import ProgressContainer from '@/components/monitoring/ProgressContainer.vue'
 import StatContainer from '@/components/monitoring/StatContainer.vue'
+import StreamHistoryTable from './StreamHistoryTable.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import { normalizeConnectionType } from '@/utils/connectionUtils'
-import type { StreamConfig } from '@/types/streamConfig'
+import type { StreamConfig, StreamRunHistory } from '@/types/streamConfig'
 import type { Connection, DbType } from '@/types/connections'
 
 const props = defineProps<{
@@ -414,9 +431,48 @@ const monitoringStore = useMonitoringStore()
 
 const isJsonView = ref(false)
 const showDeleteConfirm = ref(false)
-const activeTab = ref<'monitor' | 'configuration'>('configuration')
+const activeTab = ref<'monitor' | 'configuration' | 'history'>('configuration')
 
 const dbTypes = connectionsStore.dbTypes
+
+// LocalStorage key for history
+const HISTORY_STORAGE_KEY = 'stream_run_history'
+
+// Helper functions for history persistence
+function getStoredHistory(streamConfigId: string): StreamRunHistory[] {
+  try {
+    const stored = localStorage.getItem(HISTORY_STORAGE_KEY)
+    if (!stored) return []
+    const allHistory = JSON.parse(stored) as Record<string, StreamRunHistory[]>
+    return allHistory[streamConfigId] || []
+  } catch (error) {
+    console.error('Error loading history from localStorage:', error)
+    return []
+  }
+}
+
+function saveHistoryEntry(streamConfigId: string, entry: StreamRunHistory) {
+  try {
+    const stored = localStorage.getItem(HISTORY_STORAGE_KEY)
+    const allHistory: Record<string, StreamRunHistory[]> = stored ? JSON.parse(stored) : {}
+
+    if (!allHistory[streamConfigId]) {
+      allHistory[streamConfigId] = []
+    }
+
+    // Add new entry at the beginning
+    allHistory[streamConfigId].unshift(entry)
+
+    // Keep only last 50 runs per stream config
+    if (allHistory[streamConfigId].length > 50) {
+      allHistory[streamConfigId] = allHistory[streamConfigId].slice(0, 50)
+    }
+
+    localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(allHistory))
+  } catch (error) {
+    console.error('Error saving history to localStorage:', error)
+  }
+}
 
 const isStreamRunning = computed(() => {
   // Check if this stream config is the one currently running
@@ -500,6 +556,51 @@ const remainingTablesCount = computed(() => {
     return Math.max(0, props.stream.tables.length - displayedTables.value.length)
   }
   return 0
+})
+
+const historyRuns = computed(() => {
+  // Load persisted history from localStorage
+  return getStoredHistory(props.stream.id)
+})
+
+// Watch for stream finish to save history entry
+watch(isStreamFinished, (finished, wasFinished) => {
+  // Only trigger when transitioning from not-finished to finished
+  if (finished && !wasFinished && monitoringStore.stats.length > 0) {
+    const stats = monitoringStore.stats
+
+    // Calculate total data size from all nodes
+    let totalSizeStr = '—'
+    const statWithSize = stats.find((s: any) => s.size)
+    if (statWithSize) {
+      totalSizeStr = (statWithSize as any).size
+    }
+
+    // Get duration from first node's elapsed time
+    let duration = '—'
+    const statWithElapsed = stats.find((s: any) => s.elapsed)
+    if (statWithElapsed) {
+      duration = (statWithElapsed as any).elapsed
+    }
+
+    // Determine status
+    const hasFailed = stats.some((s: any) => s.status === 'FAILED')
+    const isStopped = stats.some((s: any) => s.status === 'STOPPED')
+    let status = 'Finished'
+    if (hasFailed) status = 'Failed'
+    else if (isStopped) status = 'Stopped'
+
+    // Save history entry
+    const historyEntry: StreamRunHistory = {
+      timestamp: Date.now(),
+      duration,
+      status,
+      dataSize: totalSizeStr,
+      streamID: monitoringStore.streamID
+    }
+
+    saveHistoryEntry(props.stream.id, historyEntry)
+  }
 })
 
 const logoSrc = (dbType: string) => {

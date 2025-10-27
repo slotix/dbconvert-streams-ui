@@ -9,6 +9,14 @@ export interface StreamID {
   id: string
 }
 
+export interface StreamRunHistory {
+  timestamp: number
+  duration: string
+  status: string
+  dataSize: string
+  streamID?: string
+}
+
 export interface StreamConfig {
   id: string
   name: string
@@ -42,6 +50,7 @@ export interface StreamConfig {
   }
   tables?: Table[]
   files?: FileEntry[]
+  history?: StreamRunHistory[]
   [key: string]: any
 }
 

@@ -129,12 +129,20 @@ const runningStreamsCount = computed(() => {
 
 const filteredStreams = computed<StreamConfig[]>(() => {
   const query = searchQuery.value.toLowerCase()
-  if (!query) {
-    return streamsStore.streamConfigs || []
+  let streams = streamsStore.streamConfigs || []
+
+  // Filter by search query if present
+  if (query) {
+    streams = streams.filter((stream) => {
+      return stream.name.toLowerCase().includes(query) || stream.mode.toLowerCase().includes(query)
+    })
   }
 
-  return (streamsStore.streamConfigs || []).filter((stream) => {
-    return stream.name.toLowerCase().includes(query) || stream.mode.toLowerCase().includes(query)
+  // Sort by creation date (newest first)
+  return [...streams].sort((a, b) => {
+    const timeA = a.created || 0
+    const timeB = b.created || 0
+    return timeB - timeA // Descending order (newest first)
   })
 })
 
