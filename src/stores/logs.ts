@@ -41,6 +41,7 @@ export interface SystemLog {
   timestamp: number
   source?: string
   nodeId?: string
+  streamId?: string
   details?: Record<string, unknown>
 }
 
@@ -190,6 +191,7 @@ export const useLogsStore = defineStore('logs', {
       maxLogs: 1000,
       isLogsPanelOpen: false,
       panelHeight: '50vh',
+      selectedStreamId: '', // For filtering logs by stream
       // Keep track of recent messages to prevent duplicates
       recentMessages: new Map<string, { count: number; timestamp: number }>(),
 
@@ -379,6 +381,14 @@ export const useLogsStore = defineStore('logs', {
 
     updatePanelHeight(height: string) {
       this.panelHeight = height
+    },
+
+    setStreamFilter(streamId: string) {
+      this.selectedStreamId = streamId
+      // Open the panel if not already open
+      if (!this.isLogsPanelOpen) {
+        this.isLogsPanelOpen = true
+      }
     },
 
     // Phase 2: SQL Logs Actions

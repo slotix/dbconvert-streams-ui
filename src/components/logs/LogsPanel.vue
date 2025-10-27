@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch, nextTick } from 'vue'
+import { computed, ref } from 'vue'
 import { useLogsStore, type SystemLog } from '@/stores/logs'
 import { TransitionRoot, TransitionChild } from '@headlessui/vue'
 import {
@@ -13,12 +13,6 @@ import {
 } from '@heroicons/vue/24/outline'
 import SqlConsoleView from './SqlConsoleView.vue'
 
-interface LogColumn {
-  type: string
-  nodeId?: string
-  nodes: Record<string, SystemLog[]>
-}
-
 const store = useLogsStore()
 const isOpen = computed(() => store.isLogsPanelOpen)
 const panelHeight = computed({
@@ -26,8 +20,65 @@ const panelHeight = computed({
   set: (value: string) => store.updatePanelHeight(value)
 })
 
+// Stream filter (using store state)
+const selectedStreamId = computed({
+  get: () => store.selectedStreamId,
+  set: (value: string) => store.setStreamFilter(value)
+})
+const selectedView = ref<'system' | 'sql'>('system')
+
+// Available streams from logs
+const availableStreams = computed(() => {
+  const streams = new Set<string>()
+  store.logs.forEach((log) => {
+    if (log.streamId) {
+      streams.add(log.streamId)
+    }
+  })
+  return Array.from(streams).sort()
+})
+
+// Message type filter
+const messageTypes = ['all', 'error & warning', 'progress & stats', 'info']
+const selectedMessageType = ref('all')
+
+// Filtered logs based on stream and message type
+const filteredLogs = computed(() => {
+  let filtered = store.logs
+
+  // Filter by stream if selected
+  if (selectedStreamId.value) {
+    filtered = filtered.filter((log) => log.streamId === selectedStreamId.value)
+  }
+
+  // Filter by message type
+  if (selectedMessageType.value !== 'all') {
+    filtered = filtered.filter((log) => {
+      const msg = log.message?.toLowerCase() || ''
+      switch (selectedMessageType.value) {
+        case 'error & warning':
+          return log.level === 'error' || log.level === 'warn'
+        case 'progress & stats':
+          return msg.startsWith('[progress]') || msg.startsWith('[stat]')
+        case 'info':
+          return log.level === 'info' && !msg.startsWith('[progress]') && !msg.startsWith('[stat]')
+        default:
+          return true
+      }
+    })
+  }
+
+  // Sort by timestamp (newest first)
+  return [...filtered].sort((a, b) => a.timestamp - b.timestamp)
+})
+
+const totalLogs = computed(() => {
+  return selectedStreamId.value ? filteredLogs.value.length : store.logs.length
+})
+
+const hasSQLLogs = computed(() => store.flatLogs.size > 0)
+
 function formatTimestamp(timestamp: number): string {
-  // Convert milliseconds to seconds if needed
   const timestampInMs = timestamp < 1e12 ? timestamp * 1000 : timestamp
   const date = new Date(timestampInMs)
   return date.toLocaleTimeString('en-US', {
@@ -38,73 +89,13 @@ function formatTimestamp(timestamp: number): string {
   })
 }
 
-function getNodeType(source: string | undefined): string {
-  if (!source) return 'system'
-
-  // If source contains a colon, extract the type part
-  if (source.includes(':')) {
-    const [type] = source.split(':')
-    return type || 'system'
-  }
-
-  // Otherwise, use the source directly as the type
-  // Common types: 'api', 'source', 'target'
-  if (['api', 'source', 'target'].includes(source.toLowerCase())) {
-    return source.toLowerCase()
-  }
-
-  // For other sources, map them to appropriate categories
-  if (source === 'database') return 'source'
-  if (source === 'sse-client') return 'api'
-
-  return 'system'
-}
-
-function getNodeId(source: string | undefined, log?: SystemLog): string {
-  // If log has a nodeId field, use that
-  if (log && log.nodeId) {
-    return log.nodeId
-  }
-
-  // Otherwise, fall back to extracting from source
-  if (!source) return 'system'
-
-  // If source contains a colon, extract the id part
-  if (source.includes(':')) {
-    const [, id] = source.split(':')
-    return id || 'system'
-  }
-
-  // Otherwise, use the source as both type and id
-  return source
-}
-
-function getNodeColor(type: string): string {
-  switch (type) {
-    case 'sql':
-      return 'text-purple-600'
-    case 'api':
-      return 'text-blue-600'
-    case 'source':
-      return 'text-orange-600'
-    case 'target':
-      return 'text-cyan-600'
-    case 'system':
-      return 'text-gray-600'
-    default:
-      return 'text-gray-600'
-  }
-}
-
 function getMessageTypeColor(log: SystemLog): string {
   const msg = log?.message?.toLowerCase() || ''
 
-  // Connection status messages
   if (msg.includes('connecting') || msg.includes('connected to')) {
     return 'bg-blue-50/80 border-l-4 border-blue-300'
   }
 
-  // Stats and progress
   if (msg.startsWith('[stat]')) {
     return 'bg-indigo-50/80 border-l-4 border-indigo-300'
   }
@@ -112,26 +103,23 @@ function getMessageTypeColor(log: SystemLog): string {
     return 'bg-emerald-50/80 border-l-4 border-emerald-300'
   }
 
-  // Stack traces and detailed errors (indented messages)
   if (msg.startsWith('    at ') || msg.startsWith('  at ')) {
     return 'bg-red-50/40 border-l-4 border-red-200 pl-8 font-mono text-xs'
   }
 
   switch (log?.level) {
     case 'error':
-      return 'bg-red-50/80 border-l-4 border-red-400 shadow-sm'
+      return 'bg-red-50/80 border-l-4 border-red-400'
     case 'warn':
-      return 'bg-yellow-50/80 border-l-4 border-yellow-400 shadow-sm'
+      return 'bg-yellow-50/80 border-l-4 border-yellow-400'
     case 'debug':
-      return 'hover:bg-gray-50 border-l-4 border-gray-400'
-    case 'info':
-      return 'hover:bg-gray-50 border-l-4 border-gray-300'
+      return 'bg-gray-50/80 border-l-4 border-gray-400'
     default:
-      return 'hover:bg-gray-50 border-l-4 border-gray-300'
+      return 'bg-white border-l-4 border-gray-300'
   }
 }
 
-function formatDuplicateInfo(log: SystemLog): string {
+function getDuplicateCount(log: SystemLog): string {
   if (!log.details?.duplicateCount) return ''
   const count = log.details.duplicateCount as number
   if (count <= 1) return ''
@@ -174,200 +162,27 @@ function getMessageIconColor(log: SystemLog): string {
   }
 }
 
-const messageTypes = ['all', 'error & warning', 'progress & stats', 'info']
-const selectedMessageType = ref('all')
-
-const groupedLogs = computed(() => {
-  const groups: Record<string, Record<string, SystemLog[]>> = {
-    sql: {},
-    api: {},
-    source: {},
-    target: {},
-    system: {}
-  }
-
-  // Add a placeholder for SQL logs if there are any in flatLogs
-  if (store.flatLogs.size > 0) {
-    groups.sql['sql'] = [] // Placeholder - actual SQL logs come from store.flatLogs
-  }
-
-  // Group logs and sort them by timestamp (newest first)
-  store.logs.forEach((log) => {
-    const source = log.source || ''
-    const nodeType = getNodeType(source)
-    const nodeId = getNodeId(source, log)
-
-    if (!groups[nodeType]) {
-      groups[nodeType] = {}
-    }
-
-    if (!groups[nodeType][nodeId]) {
-      groups[nodeType][nodeId] = []
-    }
-
-    groups[nodeType][nodeId].push(log)
-  })
-
-  // Sort each group's logs by timestamp (newest first)
-  Object.values(groups).forEach((nodeGroups) => {
-    Object.values(nodeGroups).forEach((logs) => {
-      logs.sort((a, b) => a.timestamp - b.timestamp) // Newest first
-    })
-  })
-
-  return groups
-})
-
-const nodeColumns = computed(() => {
-  const columns: LogColumn[] = []
-
-  // Add SQL column first (most important)
-  if (Object.keys(groupedLogs.value['sql']).length > 0) {
-    columns.push({ type: 'sql', nodes: groupedLogs.value['sql'] })
-  }
-
-  // Add API column
-  if (Object.keys(groupedLogs.value['api']).length > 0) {
-    columns.push({ type: 'api', nodes: groupedLogs.value['api'] })
-  }
-
-  // Add Source column
-  if (Object.keys(groupedLogs.value['source']).length > 0) {
-    columns.push({ type: 'source', nodes: groupedLogs.value['source'] })
-  }
-
-  // Add Target columns (can be multiple)
-  const targetNodes = Object.keys(groupedLogs.value['target'])
-  if (targetNodes.length > 0) {
-    // Create separate columns for each target node with a unique ID
-    targetNodes.forEach((nodeId) => {
-      columns.push({
-        type: 'target',
-        nodeId,
-        nodes: { [nodeId]: groupedLogs.value['target'][nodeId] }
-      })
-    })
-  }
-
-  // Add System column if it exists
-  if (Object.keys(groupedLogs.value['system'] || {}).length > 0) {
-    if (!groupedLogs.value['system']) {
-      groupedLogs.value['system'] = {}
-    }
-    columns.push({ type: 'system', nodes: groupedLogs.value['system'] })
-  }
-
-  return columns
-})
-
-const totalLogs = computed(() => {
-  return store.logs.length
-})
-
-function getShortNodeId(id: string): string {
-  if (!id || id === 'undefined') return 'default'
-
-  // For standard service types, use the type directly
-  if (['api', 'source', 'target', 'system', 'database', 'client'].includes(id)) {
-    return id
-  }
-
-  // For IDs with underscores, extract the last part
-  if (id.includes('_')) {
-    const parts = id.split('_')
-    const lastPart = parts[parts.length - 1]
-    return lastPart.slice(0, 8)
-  }
-
-  // For other IDs, just use the first 8 characters
-  return id.slice(0, 8)
-}
-
-const selectedTab = ref<string>('sql')
-
-const tabs = computed(() => {
-  return nodeColumns.value.map((col) => ({
-    id: col.type + (col.nodeId || ''),
-    label: col.type + (col.nodeId ? ` (${getShortNodeId(col.nodeId)})` : ''),
-    type: col.type,
-    nodeId: col.nodeId,
-    count: col.type === 'sql' ? store.flatLogs.size : Object.values(col.nodes).flat().length
-  }))
-})
-
-const selectedColumn = computed(() =>
-  nodeColumns.value.find((col) => col.type + (col.nodeId || '') === selectedTab.value)
-)
-
-const filteredLogs = computed(() => {
-  const filtered: Record<string, SystemLog[]> = {}
-  if (!selectedColumn.value) return filtered
-
-  Object.entries(selectedColumn.value.nodes).forEach(([nodeId, logs]) => {
-    if (selectedMessageType.value === 'all') {
-      filtered[nodeId] = [...logs] // Create a copy to avoid modifying the original
-    } else {
-      filtered[nodeId] = logs.filter((log) => {
-        const msg = log.message?.toLowerCase() || ''
-        switch (selectedMessageType.value) {
-          case 'error & warning':
-            return log.level === 'error' || log.level === 'warn'
-          case 'progress & stats':
-            return msg.startsWith('[progress]') || msg.startsWith('[stat]')
-          case 'info':
-            return (
-              log.level === 'info' && !msg.startsWith('[progress]') && !msg.startsWith('[stat]')
-            )
-          default:
-            return true
-        }
-      })
-    }
-  })
-
-  return filtered
-})
-
 const logsContainer = ref<HTMLElement | null>(null)
 
-// Add watch effect to scroll to bottom when logs change
-watch(
-  () => store.logs.length,
-  () => {
-    nextTick(() => {
-      if (logsContainer.value) {
-        logsContainer.value.scrollTop = logsContainer.value.scrollHeight
-      }
-    })
-  }
-)
-
-function startResize(event: MouseEvent) {
-  event.preventDefault()
-
-  // Disable text selection during resize
+function startResize(e: MouseEvent) {
+  e.preventDefault()
   document.body.style.userSelect = 'none'
   document.body.style.cursor = 'ns-resize'
 
-  const startY = event.clientY
-  let startHeight: number
+  const startY = e.clientY
+  let startHeight = parseInt(store.panelHeight)
 
-  // Handle vh units
-  if (store.panelHeight.endsWith('vh')) {
-    const vh = parseInt(store.panelHeight)
-    startHeight = (window.innerHeight * vh) / 100
-  } else {
+  if (isNaN(startHeight)) {
     startHeight = parseInt(store.panelHeight)
   }
 
-  // Convert initial vh height to pixels to ensure smooth transition
   if (store.panelHeight.endsWith('vh')) {
     const pixelHeight = startHeight
     store.updatePanelHeight(`${pixelHeight}px`)
   }
 
   let lastUpdate = Date.now()
-  const THROTTLE_MS = 16 // Approximately 60fps
+  const THROTTLE_MS = 16
 
   function onMouseMove(e: MouseEvent) {
     e.preventDefault()
@@ -392,17 +207,15 @@ function startResize(event: MouseEvent) {
   document.addEventListener('mouseup', onMouseUp)
 }
 
-// Set the selected tab to the first available tab when tabs change
-watch(
-  () => tabs.value,
-  (newTabs) => {
-    // If the current tab doesn't exist anymore, select the first available tab
-    if (newTabs.length > 0 && !newTabs.some((tab) => tab.id === selectedTab.value)) {
-      selectedTab.value = newTabs[0].id
-    }
-  },
-  { immediate: true }
-)
+function getShortStreamId(streamId: string): string {
+  if (!streamId) return ''
+  // Extract the last part after underscore
+  if (streamId.includes('_')) {
+    const parts = streamId.split('_')
+    return parts[parts.length - 1].slice(0, 8)
+  }
+  return streamId.slice(0, 12)
+}
 </script>
 
 <template>
@@ -460,134 +273,135 @@ watch(
               </div>
             </div>
 
-            <!-- Tab Navigation -->
-            <div class="bg-white px-4 overflow-x-auto border-b border-gray-200">
-              <nav class="flex space-x-4 min-w-max py-2" aria-label="Tabs">
+            <!-- View Tabs: System Logs vs SQL Logs -->
+            <div class="bg-white px-4 border-b border-gray-200">
+              <nav class="flex space-x-4 py-2" aria-label="Tabs">
                 <button
-                  v-for="tab in tabs"
-                  :key="tab.id"
-                  class="group relative px-4 py-2 text-sm font-medium rounded-md focus:outline-none transition-all duration-200"
+                  class="px-4 py-2 text-sm font-medium rounded-md transition-all duration-200"
                   :class="[
-                    selectedTab === tab.id
+                    selectedView === 'system'
                       ? 'text-gray-900 bg-gray-100 shadow-sm'
                       : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                   ]"
-                  @click="selectedTab = tab.id"
+                  @click="selectedView = 'system'"
                 >
-                  <div class="flex items-center space-x-2">
-                    <span :class="[getNodeColor(tab.type), 'font-semibold uppercase']">
-                      {{ tab.type }}
-                    </span>
-                    <template v-if="tab.nodeId">
-                      <span
-                        class="text-xs px-1.5 py-0.5 rounded"
-                        :class="[
-                          selectedTab === tab.id
-                            ? 'bg-white text-gray-600'
-                            : 'bg-gray-100 text-gray-600'
-                        ]"
-                      >
-                        #{{ getShortNodeId(tab.nodeId) }}
-                      </span>
-                    </template>
-                    <span
-                      class="text-xs px-1.5 py-0.5 rounded-full"
-                      :class="[
-                        selectedTab === tab.id
-                          ? 'bg-white text-gray-600'
-                          : 'bg-gray-100 text-gray-600'
-                      ]"
-                    >
-                      {{ tab.count }}
-                    </span>
-                  </div>
-                  <div
-                    class="absolute bottom-0 left-0 w-full h-0.5 transition-colors duration-200"
-                    :class="[selectedTab === tab.id ? getNodeColor(tab.type) : 'bg-transparent']"
-                  />
+                  System Logs
+                </button>
+                <button
+                  v-if="hasSQLLogs"
+                  class="px-4 py-2 text-sm font-medium rounded-md transition-all duration-200"
+                  :class="[
+                    selectedView === 'sql'
+                      ? 'text-gray-900 bg-gray-100 shadow-sm'
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                  ]"
+                  @click="selectedView = 'sql'"
+                >
+                  <span class="text-purple-600 font-semibold">SQL</span>
+                  <span class="ml-2 text-xs px-1.5 py-0.5 rounded-full bg-gray-200 text-gray-600">
+                    {{ store.flatLogs.size }}
+                  </span>
                 </button>
               </nav>
             </div>
 
-            <!-- Message Type Filter (hidden for SQL tab) -->
+            <!-- Filters (only for system logs) -->
             <div
-              v-if="selectedTab !== 'sql'"
+              v-if="selectedView === 'system'"
               class="bg-white px-4 py-2 flex items-center space-x-3 border-b border-gray-200"
             >
-              <FunnelIcon class="h-4 w-4 text-gray-400" />
-              <div class="flex flex-wrap gap-1">
-                <button
-                  v-for="type in messageTypes"
-                  :key="type"
-                  class="px-2.5 py-1 text-xs rounded-full transition-colors duration-200"
-                  :class="[
-                    selectedMessageType === type
-                      ? 'bg-gray-700 text-white'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                  ]"
-                  @click="selectedMessageType = type"
+              <!-- Stream Filter Dropdown -->
+              <div class="flex items-center space-x-2">
+                <label class="text-sm text-gray-600">Stream:</label>
+                <select
+                  v-model="selectedStreamId"
+                  class="px-3 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  {{ type }}
-                </button>
+                  <option value="">All Streams</option>
+                  <option v-for="streamId in availableStreams" :key="streamId" :value="streamId">
+                    {{ getShortStreamId(streamId) }}
+                  </option>
+                </select>
+              </div>
+
+              <!-- Message Type Filter -->
+              <div class="flex items-center space-x-2 ml-4">
+                <FunnelIcon class="h-4 w-4 text-gray-400" />
+                <div class="flex flex-wrap gap-1">
+                  <button
+                    v-for="type in messageTypes"
+                    :key="type"
+                    class="px-2.5 py-1 text-xs rounded-full transition-colors duration-200"
+                    :class="[
+                      selectedMessageType === type
+                        ? 'bg-gray-700 text-white'
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                    ]"
+                    @click="selectedMessageType = type"
+                  >
+                    {{ type }}
+                  </button>
+                </div>
               </div>
             </div>
 
-            <!-- SQL Console View (for SQL tab) -->
+            <!-- SQL Console View -->
             <div
-              v-if="selectedColumn && selectedTab === 'sql'"
+              v-if="selectedView === 'sql'"
               class="h-full bg-white"
               :style="{ height: `calc(${panelHeight} - 132px)` }"
             >
               <SqlConsoleView />
             </div>
 
-            <!-- Regular Table View (for other tabs) -->
+            <!-- System Logs View -->
             <div
-              v-else-if="selectedColumn"
+              v-else
               ref="logsContainer"
               class="overflow-y-auto h-full px-4 bg-white"
-              :style="{ height: `calc(${panelHeight} - 132px)` }"
+              :style="{ height: `calc(${panelHeight} - 180px)` }"
             >
               <table class="w-full">
                 <tbody class="divide-y divide-gray-100">
-                  <template v-for="(logs, nodeId) in filteredLogs" :key="nodeId">
-                    <tr
-                      v-for="log in logs"
-                      :key="log.id"
-                      class="group transition-all duration-200"
-                      :class="[getMessageTypeColor(log)]"
-                    >
-                      <td class="w-24 py-2 px-4">
-                        <span
-                          class="font-mono text-xs text-gray-500 tabular-nums whitespace-nowrap"
-                        >
-                          {{ formatTimestamp(log.timestamp) }}
+                  <tr
+                    v-for="log in filteredLogs"
+                    :key="log.id"
+                    class="group transition-all duration-200"
+                    :class="[getMessageTypeColor(log)]"
+                  >
+                    <td class="py-1.5 px-2 w-20 text-xs text-gray-500 font-mono whitespace-nowrap">
+                      {{ formatTimestamp(log.timestamp) }}
+                    </td>
+                    <td class="py-1.5 px-2 w-6">
+                      <component
+                        :is="getMessageIcon(log)"
+                        class="h-4 w-4 shrink-0"
+                        :class="getMessageIconColor(log)"
+                      />
+                    </td>
+                    <td class="py-1.5 px-2 text-sm text-gray-800 break-words">
+                      <div class="flex items-start">
+                        <span class="flex-1">{{ log.message }}</span>
+                        <span v-if="getDuplicateCount(log)" class="ml-2 text-xs text-gray-500">
+                          {{ getDuplicateCount(log) }}
                         </span>
-                      </td>
-                      <td class="py-2 px-4">
-                        <div class="flex items-center space-x-3">
-                          <span
-                            class="flex-shrink-0 transition-transform group-hover:scale-110"
-                            :class="[getMessageIconColor(log)]"
-                          >
-                            <component :is="getMessageIcon(log)" class="h-4 w-4" />
-                          </span>
-                          <span class="text-sm text-gray-900 break-words font-mono leading-relaxed">
-                            {{ log.message }}
-                          </span>
-                          <span
-                            v-if="log.details?.duplicateCount"
-                            class="text-xs text-gray-500 ml-2"
-                          >
-                            {{ formatDuplicateInfo(log) }}
-                          </span>
-                        </div>
-                      </td>
-                    </tr>
-                  </template>
+                      </div>
+                    </td>
+                  </tr>
                 </tbody>
               </table>
-              <div class="h-6"></div>
+
+              <!-- Empty State -->
+              <div
+                v-if="filteredLogs.length === 0"
+                class="flex flex-col items-center justify-center h-full text-gray-500"
+              >
+                <InformationCircleIcon class="h-12 w-12 mb-2" />
+                <p class="text-sm">No logs to display</p>
+                <p v-if="selectedStreamId" class="text-xs mt-1">
+                  Try selecting a different stream or clearing filters
+                </p>
+              </div>
             </div>
           </div>
         </TransitionChild>

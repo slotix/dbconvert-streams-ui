@@ -58,6 +58,12 @@
             >
               Data Size
             </th>
+            <th
+              scope="col"
+              class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Actions
+            </th>
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
@@ -82,6 +88,23 @@
             <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
               {{ run.dataSize || '—' }}
             </td>
+            <td class="px-4 py-3 whitespace-nowrap text-sm">
+              <button
+                type="button"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors duration-200"
+                @click="handleViewLogs(run.id)"
+              >
+                <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
+                </svg>
+                View Logs
+              </button>
+            </td>
           </tr>
         </tbody>
       </table>
@@ -90,7 +113,6 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
 import {
   CheckCircleIcon,
   XCircleIcon,
@@ -98,17 +120,26 @@ import {
   ArrowPathIcon
 } from '@heroicons/vue/24/outline'
 import { formatDateTime } from '@/utils/formats'
+import { useLogsStore } from '@/stores/logs'
 
 interface StreamRun {
+  id: string
   timestamp: number
   duration: string
   status: string
   dataSize?: string
 }
 
-const props = defineProps<{
+defineProps<{
   runs: StreamRun[]
 }>()
+
+const logsStore = useLogsStore()
+
+function handleViewLogs(streamId: string) {
+  // Set the stream filter (this will also open the panel)
+  logsStore.setStreamFilter(streamId)
+}
 
 function getStatusClass(status: string): string {
   const statusLower = status.toLowerCase()

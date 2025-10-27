@@ -339,8 +339,9 @@ export class SSELogsService {
             `Log source mapping: logger=${data.logger}, source=${source}, nodeId=${data.nodeId || 'none'}`
           )
 
-        // Extract nodeId directly from the data
+        // Extract nodeId and streamId directly from the data
         const nodeId = data.nodeId || null
+        const streamId = data.streamId || null
 
         // Check if this is an enhanced SQL log (has connectionId, query, and purpose)
         const isSQL = data.connectionId && data.query && data.purpose
@@ -371,6 +372,7 @@ export class SSELogsService {
             timestamp: timestamp,
             source: source,
             nodeId: nodeId,
+            streamId: streamId,
             details: data
           })
         }

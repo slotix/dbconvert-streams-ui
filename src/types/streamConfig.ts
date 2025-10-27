@@ -10,11 +10,11 @@ export interface StreamID {
 }
 
 export interface StreamRunHistory {
+  id: string // Stream execution ID
   timestamp: number
   duration: string
   status: string
   dataSize: string
-  streamID?: string
 }
 
 export interface StreamConfig {
