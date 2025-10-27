@@ -197,9 +197,13 @@ function handleStreamDeletedFromPanel() {
   selectedStreamId.value = ''
 }
 
-// Fetch streams on mount - only runs once
+// Fetch connections and streams on mount
 onMounted(async () => {
   try {
+    // Fetch connections first so they're available when streams are displayed
+    await connectionsStore.refreshConnections()
+
+    // Then fetch streams
     await streamsStore.refreshStreams()
 
     // Check if there's a running stream and auto-select it
@@ -210,7 +214,7 @@ onMounted(async () => {
       selectedStreamId.value = monitoringStore.streamID
     }
   } catch (error) {
-    console.error('Failed to fetch streams:', error)
+    console.error('Failed to fetch data:', error)
   }
 })
 </script>
