@@ -1,7 +1,7 @@
 <template>
   <div class="h-full flex flex-col bg-white">
     <!-- Header -->
-    <div class="border-b border-gray-200 px-6 py-4 bg-white flex-shrink-0">
+    <div class="px-6 py-4 bg-white flex-shrink-0">
       <div class="flex items-center justify-between mb-3">
         <div class="flex items-center min-w-0 flex-1 gap-3">
           <h2 class="text-xl font-semibold text-gray-900 truncate">{{ stream.name }}</h2>
@@ -47,7 +47,7 @@
       </div>
 
       <!-- Tabs (always visible) -->
-      <div class="border-b border-gray-200 mt-3">
+      <div class="mt-3">
         <nav class="-mb-px flex gap-4" aria-label="Tabs">
           <button
             :class="[
@@ -91,7 +91,7 @@
       <!-- Configuration Tab -->
       <div v-if="activeTab === 'configuration'" class="p-6 space-y-6">
         <!-- JSON Toggle (Always visible) -->
-        <div class="flex items-center justify-end pb-4 border-b border-gray-100">
+        <div class="flex items-center justify-end">
           <div class="flex items-center gap-2">
             <span class="text-xs text-gray-600">JSON</span>
             <Switch
@@ -135,9 +135,9 @@
         <!-- Connection Details (Normal View) -->
         <div v-else class="space-y-4">
           <!-- Mode -->
-          <div class="bg-gray-50 rounded-md px-4 py-3 border border-gray-200">
+          <div class="pb-4 border-b border-gray-100">
             <div class="flex items-center gap-2">
-              <span class="text-xs font-medium uppercase text-gray-500">Mode:</span>
+              <span class="text-sm text-gray-500">Mode:</span>
               <span
                 :class="[
                   'inline-flex items-center rounded-md px-2.5 py-1 text-xs font-medium ring-1 ring-inset',
