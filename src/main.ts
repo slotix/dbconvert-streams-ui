@@ -4,11 +4,13 @@ import Toast, { type PluginOptions, POSITION } from 'vue-toastification'
 import 'vue-toastification/dist/index.css'
 import hljs from 'highlight.js/lib/core'
 import sql from 'highlight.js/lib/languages/sql'
+import json from 'highlight.js/lib/languages/json'
 import 'highlight.js/styles/atom-one-dark.css'
 import { vHighlightjs } from '@/directives/highlightjs'
 
-// Register SQL language
+// Register languages
 hljs.registerLanguage('sql', sql)
+hljs.registerLanguage('json', json)
 
 // Configure hljs to use the modern API
 hljs.configure({

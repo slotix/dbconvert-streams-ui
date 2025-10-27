@@ -52,10 +52,11 @@
       <!-- Content -->
       <div class="flex-1 p-6">
         <div v-if="isJsonView" class="h-full">
-          <div class="rounded-md bg-gray-50 p-4 h-full overflow-auto">
-            <pre class="text-gray-900 whitespace-pre-wrap text-sm font-mono">{{
-              prettyConfig
-            }}</pre>
+          <div class="rounded-md bg-gray-50 p-4 h-full overflow-auto custom-scrollbar">
+            <pre
+              v-highlightjs
+              class="text-sm"
+            ><code class="language-json block text-sm leading-6 select-text">{{ prettyConfig }}</code></pre>
           </div>
         </div>
         <div v-else class="space-y-6 h-full flex flex-col">
@@ -228,3 +229,66 @@ export default defineComponent({
   }
 })
 </script>
+
+<style scoped>
+@reference '../../assets/style.css';
+
+/* Scrollbar styles */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #e5e7eb transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  @apply h-2 w-2;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  @apply bg-gray-50;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 rounded-full hover:bg-gray-400 transition-colors;
+}
+
+/* Code block styles */
+pre {
+  tab-size: 2;
+  user-select: text;
+}
+
+::selection {
+  @apply bg-blue-100;
+}
+
+/* JSON syntax highlighting */
+.hljs {
+  @apply bg-gray-50 font-mono;
+  color: #24292e;
+  padding: 0;
+}
+
+.hljs-attr {
+  @apply text-[#d73a49] font-semibold;
+}
+
+.hljs-string {
+  @apply text-[#032f62];
+}
+
+.hljs-number {
+  @apply text-[#005cc5];
+}
+
+.hljs-literal {
+  @apply text-[#005cc5];
+}
+
+.hljs-punctuation {
+  @apply text-[#24292e];
+}
+
+.hljs-comment {
+  @apply text-[#6a737d] italic;
+}
+</style>
