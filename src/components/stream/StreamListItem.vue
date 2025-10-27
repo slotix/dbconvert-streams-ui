@@ -56,6 +56,26 @@
       class="flex items-center gap-1 ml-2 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
       @click.stop
     >
+      <!-- Start/Run Again/Pause Button -->
+      <button
+        v-if="isRunning && !isFinished"
+        v-tooltip="'Pause the stream'"
+        type="button"
+        class="p-1.5 rounded-md hover:bg-yellow-100 text-yellow-600 hover:text-yellow-700 transition-colors"
+        @click.stop="pauseStream"
+      >
+        <PauseIcon class="h-4 w-4" />
+      </button>
+      <button
+        v-else
+        v-tooltip="hasHistory ? 'Run the stream again' : 'Start the stream'"
+        type="button"
+        class="p-1.5 rounded-md hover:bg-cyan-100 text-cyan-600 hover:text-cyan-700 transition-colors"
+        @click.stop="startStream"
+      >
+        <PlayIcon class="h-4 w-4" />
+      </button>
+
       <!-- Edit Button -->
       <router-link :to="{ name: 'EditStream', params: { id: stream.id } }">
         <button
@@ -110,7 +130,9 @@ import {
   ArrowPathIcon,
   PauseCircleIcon,
   CheckCircleIcon,
-  XCircleIcon
+  XCircleIcon,
+  PlayIcon,
+  PauseIcon
 } from '@heroicons/vue/24/outline'
 import { useMonitoringStore, statusEnum } from '@/stores/monitoring'
 import type { StreamConfig } from '@/types/streamConfig'
@@ -128,6 +150,8 @@ const emit = defineEmits<{
   (e: 'delete', payload: { streamId: string }): void
   (e: 'edit', payload: { streamId: string }): void
   (e: 'clone', payload: { streamId: string }): void
+  (e: 'start', payload: { streamId: string }): void
+  (e: 'pause', payload: { streamId: string }): void
 }>()
 
 const monitoringStore = useMonitoringStore()
@@ -205,8 +229,20 @@ const tableCount = computed(() => {
   return props.stream.tables?.length || 0
 })
 
+const hasHistory = computed(() => {
+  return props.stream.history && props.stream.history.length > 0
+})
+
 function selectStream() {
   emit('select', { streamId: props.stream.id })
+}
+
+function startStream() {
+  emit('start', { streamId: props.stream.id })
+}
+
+function pauseStream() {
+  emit('pause', { streamId: props.stream.id })
 }
 
 function cloneStream() {

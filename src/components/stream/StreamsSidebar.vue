@@ -3,19 +3,7 @@
     <!-- Header -->
     <div class="p-4 border-b border-gray-200 flex-shrink-0">
       <div class="flex items-center justify-between mb-4">
-        <div class="flex flex-col gap-1">
-          <h2 class="text-sm font-semibold text-gray-900">Stream Configurations</h2>
-          <!-- Running Streams Indicator -->
-          <span
-            v-if="runningStreamsCount > 0"
-            class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20 self-start"
-          >
-            <span
-              class="inline-block w-1.5 h-1.5 rounded-full bg-current mr-1 animate-pulse"
-            ></span>
-            {{ runningStreamsCount }} active
-          </span>
-        </div>
+        <h2 class="text-sm font-semibold text-gray-900">Stream Configurations</h2>
         <router-link :to="{ name: 'CreateStream' }">
           <button
             v-tooltip="'Create new stream configuration'"
@@ -61,6 +49,8 @@
           :source="connectionByID(stream.source)"
           :target="connectionByID(stream.target)"
           @select="handleSelectStream"
+          @start="handleStartStream"
+          @pause="handlePauseStream"
           @delete="handleDeleteStream"
           @edit="handleEditStream"
           @clone="handleCloneStream"
@@ -153,6 +143,31 @@ function connectionByID(id?: string): Connection | undefined {
 
 function handleSelectStream(payload: { streamId: string }) {
   emit('select-stream', payload)
+}
+
+async function handleStartStream(payload: { streamId: string }) {
+  try {
+    const stream = streamsStore.streamConfigs.find((s) => s.id === payload.streamId)
+    if (!stream) return
+
+    const streamID = await streamsStore.startStream(payload.streamId)
+    monitoringStore.setStream(streamID, stream)
+    // Fetch initial stream stats to populate monitoring data
+    await monitoringStore.fetchCurrentStreamStats()
+
+    // Select the stream that was started
+    emit('select-stream', { streamId: payload.streamId })
+  } catch (error) {
+    console.error('Failed to start stream:', error)
+  }
+}
+
+async function handlePauseStream() {
+  try {
+    await streamsStore.pauseStream(monitoringStore.streamID)
+  } catch (error) {
+    console.error('Failed to pause stream:', error)
+  }
 }
 
 function handleDeleteStream(payload: { streamId: string }) {
