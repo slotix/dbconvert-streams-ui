@@ -540,8 +540,17 @@ function navigateToEdit() {
   window.location.href = `#/streams/edit/${props.stream.id}`
 }
 
-function cloneStream() {
-  window.location.href = `#/streams/create?clone=${props.stream.id}`
+async function cloneStream() {
+  try {
+    await streamsStore.cloneStreamConfig(props.stream.id)
+    commonStore.showNotification('Stream cloned successfully', 'success')
+  } catch (err: unknown) {
+    if (err instanceof Error) {
+      commonStore.showNotification(err.message, 'error')
+    } else {
+      commonStore.showNotification('Failed to clone stream', 'error')
+    }
+  }
 }
 
 function requestDelete() {

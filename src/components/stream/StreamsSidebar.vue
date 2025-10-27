@@ -159,9 +159,13 @@ function handleEditStream(payload: { streamId: string }) {
   // Navigation is handled by the router-link in StreamListItem
 }
 
-function handleCloneStream(payload: { streamId: string }) {
-  // Navigate to create stream page with clone parameter
-  window.location.href = `#/streams/create?clone=${payload.streamId}`
+async function handleCloneStream(payload: { streamId: string }) {
+  try {
+    await streamsStore.cloneStreamConfig(payload.streamId)
+    // Notification will be shown by the API call
+  } catch (error) {
+    console.error('Failed to clone stream:', error)
+  }
 }
 
 async function confirmDelete() {
