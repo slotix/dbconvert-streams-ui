@@ -43,16 +43,16 @@ export const STREAM_STATUS_LABELS: Record<StreamStatus, string> = {
  * Stream status categories for styling and logic
  */
 export const STREAM_STATUS_CATEGORIES = {
-  ACTIVE: [STREAM_STATUS.RUNNING],
-  SUCCESS: [STREAM_STATUS.FINISHED],
-  ERROR: [STREAM_STATUS.FAILED],
-  STOPPED: [STREAM_STATUS.STOPPED, STREAM_STATUS.PAUSED],
+  ACTIVE: [STREAM_STATUS.RUNNING] as StreamStatus[],
+  SUCCESS: [STREAM_STATUS.FINISHED] as StreamStatus[],
+  ERROR: [STREAM_STATUS.FAILED] as StreamStatus[],
+  STOPPED: [STREAM_STATUS.STOPPED, STREAM_STATUS.PAUSED] as StreamStatus[],
   COMPLETED: [
     STREAM_STATUS.FINISHED,
     STREAM_STATUS.TIME_LIMIT_REACHED,
     STREAM_STATUS.EVENT_LIMIT_REACHED
-  ],
-  PENDING: [STREAM_STATUS.UNDEFINED, STREAM_STATUS.READY]
+  ] as StreamStatus[],
+  PENDING: [STREAM_STATUS.UNDEFINED, STREAM_STATUS.READY] as StreamStatus[]
 } as const
 
 /**
@@ -117,4 +117,47 @@ export function getStreamStatusBadgeColor(status: StreamStatus): string {
   if (isStreamFailed(status)) return 'bg-red-100 text-red-800'
   if (isStreamStopped(status)) return 'bg-gray-100 text-gray-800'
   return 'bg-gray-100 text-gray-600'
+}
+
+/**
+ * Status names as they appear in log messages (uppercase strings)
+ */
+export const STREAM_STATUS_NAMES = {
+  UNDEFINED: 'UNDEFINED',
+  READY: 'READY',
+  RUNNING: 'RUNNING',
+  PAUSED: 'PAUSED',
+  FAILED: 'FAILED',
+  TIME_LIMIT_REACHED: 'TIME_LIMIT_REACHED',
+  EVENT_LIMIT_REACHED: 'EVENT_LIMIT_REACHED',
+  STOPPED: 'STOPPED',
+  FINISHED: 'FINISHED'
+} as const
+
+/**
+ * Terminal statuses that indicate stream has finished processing
+ * (these logs contain final elapsed time and results)
+ */
+export const TERMINAL_STATUSES = [
+  STREAM_STATUS_NAMES.FINISHED,
+  STREAM_STATUS_NAMES.FAILED,
+  STREAM_STATUS_NAMES.STOPPED,
+  STREAM_STATUS_NAMES.TIME_LIMIT_REACHED,
+  STREAM_STATUS_NAMES.EVENT_LIMIT_REACHED
+] as const
+
+/**
+ * Priority map for determining which status to display when multiple nodes have different statuses
+ * Higher numeric value = higher priority to show (more important state)
+ */
+export const STREAM_STATUS_PRIORITY: Record<string, number> = {
+  [STREAM_STATUS_NAMES.FAILED]: STREAM_STATUS.FAILED, // 4
+  [STREAM_STATUS_NAMES.TIME_LIMIT_REACHED]: STREAM_STATUS.TIME_LIMIT_REACHED, // 5
+  [STREAM_STATUS_NAMES.EVENT_LIMIT_REACHED]: STREAM_STATUS.EVENT_LIMIT_REACHED, // 6
+  [STREAM_STATUS_NAMES.STOPPED]: STREAM_STATUS.STOPPED, // 7
+  [STREAM_STATUS_NAMES.FINISHED]: STREAM_STATUS.FINISHED, // 8
+  [STREAM_STATUS_NAMES.PAUSED]: STREAM_STATUS.PAUSED, // 3
+  [STREAM_STATUS_NAMES.RUNNING]: STREAM_STATUS.RUNNING, // 2
+  [STREAM_STATUS_NAMES.READY]: STREAM_STATUS.READY, // 1
+  [STREAM_STATUS_NAMES.UNDEFINED]: STREAM_STATUS.UNDEFINED // 0
 }

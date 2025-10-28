@@ -5,7 +5,7 @@ import { NodeTypes, type NodeType } from '@/types/common'
 import type { StreamStats, AggregatedStatResponse, AggregatedNodeStats } from '@/types/streamStats'
 import streamsApi from '@/api/streams'
 import { useStreamsStore } from '@/stores/streamConfig'
-import { STREAM_STATUS } from '@/constants'
+import { STREAM_STATUS, TERMINAL_STATUSES, STREAM_STATUS_PRIORITY } from '@/constants'
 import {
   parseDataSize,
   parseDuration,
@@ -311,10 +311,14 @@ export const useMonitoringStore = defineStore('monitoring', {
       // Get all latest stats
       const allLatest = Array.from(latestByNode.values())
 
-      // Filter to only those with actual stat values
+      // Filter to stats that have meaningful data OR are in terminal state
       const nodeStats = allLatest.filter((stat) => {
-        const hasValues =
-          stat.events && stat.elapsed && stat.events !== '0' && stat.elapsed !== '0ms'
+        // Always include terminal status stats (they have the final elapsed time)
+        if (stat.status && (TERMINAL_STATUSES as readonly string[]).includes(stat.status)) {
+          return true
+        }
+        // Otherwise require events data
+        const hasValues = stat.events && stat.events !== '0'
         return hasValues
       })
 
@@ -334,8 +338,14 @@ export const useMonitoringStore = defineStore('monitoring', {
 
       // Backend now logs aggregated SummaryStat directly (not per-instance stats)
       // So all target writers log the SAME aggregated values
-      // We just need to pick the most recent one and count active nodes
-      const latestStat = nodeStats[nodeStats.length - 1] // Most recent stat
+      // We just need to pick the most recent one (preferably FINISHED status)
+      // Sort by: FINISHED first, then by timestamp
+      const sortedStats = [...nodeStats].sort((a, b) => {
+        if (a.status === 'FINISHED' && b.status !== 'FINISHED') return -1
+        if (a.status !== 'FINISHED' && b.status === 'FINISHED') return 1
+        return (b.ts || 0) - (a.ts || 0)
+      })
+      const latestStat = sortedStats[0]
 
       const aggregated = {
         type,
@@ -344,28 +354,20 @@ export const useMonitoringStore = defineStore('monitoring', {
         failedEvents: parseNumber(latestStat.failed),
         dataSize: parseDataSize(latestStat.size),
         avgRate: parseDataSize(latestStat['avg.rate']),
-        elapsed: parseDuration(latestStat.elapsed),
+        // parseDuration returns milliseconds, but formatDuration expects nanoseconds
+        elapsed: parseDuration(latestStat.elapsed || '0s') * 1e6, // Convert ms to ns
         activeNodes: nodeStats.length // Count of unique nodes that reported stats
       }
 
       return aggregated
     },
     getWorstStatus(stats: Log[]): string {
-      const statusPriority: Record<string, number> = {
-        FAILED: 5,
-        STOPPED: 4,
-        PAUSED: 3,
-        RUNNING: 2,
-        READY: 1,
-        FINISHED: 0
-      }
-
       let worst = 'READY'
       let worstPriority = 0
 
       stats.forEach((stat) => {
         const status = stat.status || stat.msg?.split('|')[0]?.split(' ')[1] || ''
-        const priority = statusPriority[status] || 0
+        const priority = STREAM_STATUS_PRIORITY[status] || 0
         if (priority > worstPriority) {
           worst = status
           worstPriority = priority
