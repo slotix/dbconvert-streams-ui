@@ -5,7 +5,12 @@ import { NodeTypes, type NodeType } from '@/types/common'
 import type { StreamStats, AggregatedStatResponse, AggregatedNodeStats } from '@/types/streamStats'
 import streamsApi from '@/api/streams'
 import { useStreamsStore } from '@/stores/streamConfig'
-import { STREAM_STATUS, TERMINAL_STATUSES, STREAM_STATUS_PRIORITY } from '@/constants'
+import {
+  STREAM_STATUS,
+  TERMINAL_STATUSES,
+  STREAM_STATUS_PRIORITY,
+  type StreamStatus
+} from '@/constants'
 import {
   parseDataSize,
   parseDuration,
@@ -53,7 +58,7 @@ interface State {
   logs: Log[]
   currentStageID: number
   stages: Stage[]
-  status: typeof statusEnum
+  status: StreamStatus
   streamConfig: StreamConfig
   maxLogs: number
   streamStats: StreamStats | null
@@ -103,7 +108,7 @@ export const useMonitoringStore = defineStore('monitoring', {
         timestamp: null
       }
     ],
-    status: statusEnum,
+    status: STREAM_STATUS.UNDEFINED,
     streamConfig: {} as StreamConfig,
     maxLogs: 1000,
     streamStats: null,
@@ -130,8 +135,8 @@ export const useMonitoringStore = defineStore('monitoring', {
 
       // Check current status of nodes
       const runningNodesNumber = this.stats.filter((stat: Log) => {
-        const statusID = state.status[stat.status as keyof typeof statusEnum]
-        return statusID < state.status.FAILED
+        const statusID = STREAM_STATUS[stat.status as keyof typeof STREAM_STATUS]
+        return statusID < STREAM_STATUS.FAILED
       }).length
 
       // Determine stage based on node status and current stats
@@ -214,7 +219,7 @@ export const useMonitoringStore = defineStore('monitoring', {
         stage.timestamp = Date.now()
       }
     },
-    updateStreamStatus(status: typeof statusEnum) {
+    updateStreamStatus(status: StreamStatus) {
       this.status = status
     },
     requestShowMonitorTab() {

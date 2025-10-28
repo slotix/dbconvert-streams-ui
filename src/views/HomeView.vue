@@ -21,8 +21,7 @@
             </div>
             <div class="ml-3">
               <p class="text-sm font-medium text-yellow-800">
-                <strong>Offline Mode:</strong> Backend services are currently unavailable. Showing
-                recent connections with limited functionality.
+                Connection to backend lost. Click "Retry Connection" to reconnect.
               </p>
             </div>
           </div>
@@ -70,7 +69,7 @@
             <h1 class="text-2xl font-bold text-gray-900 sm:text-3xl">
               DBConvert Streams Dashboard
               <span v-if="!isBackendConnected" class="text-sm font-normal text-yellow-600 ml-2"
-                >(Offline Mode)</span
+                >(Disconnected)</span
               >
             </h1>
           </div>

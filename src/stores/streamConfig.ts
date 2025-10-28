@@ -4,7 +4,8 @@ import type { StreamConfig } from '@/types/streamConfig'
 import type { Table } from '@/types/streamConfig'
 import type { Step } from '@/stores/common'
 import { useConnectionsStore } from '@/stores/connections'
-import { statusEnum, useMonitoringStore } from '@/stores/monitoring'
+import { useMonitoringStore } from '@/stores/monitoring'
+import { STREAM_STATUS, type StreamStatus } from '@/constants/streamStatus'
 
 interface State {
   generateDefaultStreamConfigName(
@@ -90,8 +91,12 @@ const omitDefaults = (stream: StreamConfig): Partial<StreamConfig> => {
         }
       }
 
+      // Only delete query if it's empty/default for convert mode
+      // For CDC mode, queries are not supported so always delete
       if (stream.mode === 'convert') {
-        delete filteredTable.query
+        if (!filteredTable.query || filteredTable.query === '') {
+          delete filteredTable.query
+        }
       } else if (stream.mode === 'cdc') {
         delete filteredTable.query
       }
@@ -294,7 +299,7 @@ export const useStreamsStore = defineStore('streams', {
         await api.stopStream(id)
         // Update monitoring store status immediately
         const monitoringStore = useMonitoringStore()
-        monitoringStore.updateStreamStatus(statusEnum.STOPPED)
+        monitoringStore.updateStreamStatus(STREAM_STATUS.STOPPED)
         // Also refresh stats after a short delay to get the final state
         setTimeout(() => {
           monitoringStore.fetchCurrentStreamStats()
@@ -304,8 +309,9 @@ export const useStreamsStore = defineStore('streams', {
         throw err
       }
     },
-    updateStreamStatus(status: typeof statusEnum) {
+    updateStreamStatus(status: StreamStatus) {
       // This can be used to update the stream status based on monitoring events
+      // Note: This is currently unused but kept for future use
     },
     resetCurrentStream() {
       this.currentStreamConfig = {
