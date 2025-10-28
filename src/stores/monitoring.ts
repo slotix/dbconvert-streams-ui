@@ -262,7 +262,7 @@ export const useMonitoringStore = defineStore('monitoring', {
       this.aggregatedStats = newAggregatedStats
     },
     aggregateStats(stats: Log[], type: string): AggregatedNodeStats {
-      // Get latest stat per node ID
+      // Get latest stat per node ID to count active nodes
       const latestByNode = new Map<string, Log>()
       stats.forEach((stat) => {
         // Normalize timestamp: if it looks like seconds (< year 3000 in ms), convert to milliseconds
@@ -308,9 +308,10 @@ export const useMonitoringStore = defineStore('monitoring', {
         }
       })
 
-      // Filter to only those with actual stat values for aggregation
+      // Get all latest stats
       const allLatest = Array.from(latestByNode.values())
 
+      // Filter to only those with actual stat values
       const nodeStats = allLatest.filter((stat) => {
         const hasValues =
           stat.events && stat.elapsed && stat.events !== '0' && stat.elapsed !== '0ms'
@@ -319,51 +320,32 @@ export const useMonitoringStore = defineStore('monitoring', {
 
       // If no stats with values yet, use the latest status but zero values
       if (nodeStats.length === 0) {
-        const allNodes = Array.from(latestByNode.values())
         return {
           type,
-          status: this.getWorstStatus(allNodes),
+          status: this.getWorstStatus(allLatest),
           counter: 0,
           failedEvents: 0,
           dataSize: 0,
           avgRate: 0,
           elapsed: 0,
-          activeNodes: allNodes.length
+          activeNodes: allLatest.length
         }
       }
 
-      const counter = nodeStats.reduce((sum, s) => {
-        const val = parseNumber(s.events)
-        return sum + val
-      }, 0)
-
-      const dataSize = nodeStats.reduce((sum, s) => {
-        const val = parseDataSize(s.size)
-        return sum + val
-      }, 0)
-
-      const totalRate = nodeStats.reduce((sum, s) => {
-        const val = parseDataSize(s['avg.rate'])
-        return sum + val
-      }, 0)
-
-      const elapsed = Math.max(
-        ...nodeStats.map((s) => {
-          const val = parseDuration(s.elapsed)
-          return val
-        }),
-        0
-      )
+      // Backend now logs aggregated SummaryStat directly (not per-instance stats)
+      // So all target writers log the SAME aggregated values
+      // We just need to pick the most recent one and count active nodes
+      const latestStat = nodeStats[nodeStats.length - 1] // Most recent stat
 
       const aggregated = {
         type,
         status: this.getWorstStatus(nodeStats),
-        counter,
-        failedEvents: nodeStats.reduce((sum, s) => sum + parseNumber(s.failed), 0),
-        dataSize,
-        avgRate: totalRate / (nodeStats.length || 1),
-        elapsed,
-        activeNodes: nodeStats.length
+        counter: parseNumber(latestStat.events),
+        failedEvents: parseNumber(latestStat.failed),
+        dataSize: parseDataSize(latestStat.size),
+        avgRate: parseDataSize(latestStat['avg.rate']),
+        elapsed: parseDuration(latestStat.elapsed),
+        activeNodes: nodeStats.length // Count of unique nodes that reported stats
       }
 
       return aggregated
