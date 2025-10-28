@@ -153,8 +153,6 @@ async function handleStartStream(payload: { streamId: string }) {
 
     const streamID = await streamsStore.startStream(payload.streamId)
     monitoringStore.setStream(streamID, stream)
-    // Fetch initial stream stats to populate monitoring data
-    await monitoringStore.fetchCurrentStreamStats()
 
     // Request to show monitor tab
     monitoringStore.requestShowMonitorTab()

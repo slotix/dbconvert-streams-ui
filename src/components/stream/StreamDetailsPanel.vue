@@ -448,10 +448,7 @@ const isStreamRunning = computed(() => {
 
 const isPaused = computed(() => {
   if (!isStreamRunning.value) return false
-  const isStatsPaused = monitoringStore.stats.some((stat) => stat.status === 'PAUSED')
-  const isStreamStatsPaused =
-    monitoringStore.streamStats?.nodes.some((node) => node.stat?.status === 'PAUSED') ?? false
-  return isStatsPaused || isStreamStatsPaused
+  return monitoringStore.stats.some((stat) => stat.status === 'PAUSED')
 })
 
 const isStreamFinished = computed(() => {
@@ -606,8 +603,7 @@ async function startStream() {
     const streamID = await streamsStore.startStream(props.stream.id)
     commonStore.showNotification('Stream started', 'success')
     monitoringStore.setStream(streamID, props.stream)
-    // Fetch initial stream stats to populate monitoring data
-    await monitoringStore.fetchCurrentStreamStats()
+
     // Request to show monitor tab
     monitoringStore.requestShowMonitorTab()
   } catch (err: unknown) {

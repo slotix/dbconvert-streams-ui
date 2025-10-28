@@ -1,4 +1,6 @@
 import { defineStore } from 'pinia'
+import type { StandardLogEntry } from '@/types/logs'
+import { useMonitoringStore } from '@/stores/monitoring'
 
 // localStorage keys for user preferences
 const STORAGE_KEYS = {
@@ -182,7 +184,7 @@ export const useLogsStore = defineStore('logs', {
     // Clean up old unused localStorage keys
     try {
       localStorage.removeItem('sqlLogPurposes')
-    } catch (e) {
+    } catch {
       // Ignore errors
     }
 
@@ -600,6 +602,80 @@ export const useLogsStore = defineStore('logs', {
       }
 
       downloadFile(payload, extension, mime)
+    },
+
+    // Structured logging methods for new SSE service
+    addSystemLog(log: StandardLogEntry) {
+      // Convert StandardLogEntry to SystemLog format
+      this.addLog({
+        message: log.message,
+        level: log.level as keyof LogLevel,
+        timestamp: new Date(log.timestamp).getTime(),
+        source: log.nodeType,
+        nodeId: log.nodeId,
+        streamId: log.streamId,
+        details: {
+          category: log.category,
+          caller: log.caller,
+          ...log.extra
+        }
+      })
+    },
+
+    addStreamLog(log: StandardLogEntry) {
+      // Handle progress and stat logs
+      if (log.category === 'progress') {
+        this.addLog({
+          message: log.message,
+          level: 'info',
+          timestamp: new Date(log.timestamp).getTime(),
+          source: log.nodeType,
+          nodeId: log.nodeId,
+          streamId: log.streamId,
+          details: {
+            category: 'progress',
+            stage: log.stage,
+            percentage: log.percentage,
+            ...log.extra
+          }
+        })
+      } else if (log.category === 'stat') {
+        this.addLog({
+          message: log.message,
+          level: 'info',
+          timestamp: new Date(log.timestamp).getTime(),
+          source: log.nodeType,
+          nodeId: log.nodeId,
+          streamId: log.streamId,
+          details: {
+            category: 'stat',
+            table: log.table,
+            events: log.events,
+            size: log.size,
+            rate: log.rate,
+            elapsed: log.elapsed,
+            status: log.status,
+            ...log.extra
+          }
+        })
+
+        // Also send to monitoring store for Stream Performance panel
+        const monitoringStore = useMonitoringStore()
+        monitoringStore.addStructuredStatLog({
+          id: Date.now(),
+          type: log.nodeType,
+          nodeID: log.nodeId || '',
+          msg: log.message,
+          status: log.status,
+          level: 'info',
+          ts: new Date(log.timestamp).getTime(),
+          table: log.table,
+          events: log.events,
+          size: log.size,
+          rate: log.rate,
+          elapsed: log.elapsed
+        })
+      }
     }
   }
 })

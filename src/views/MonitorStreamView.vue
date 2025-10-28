@@ -98,13 +98,7 @@ type StatusType = (typeof statusEnum)[keyof typeof statusEnum]
 
 const isPaused = computed(() => {
   // Check if any node (source or target) is in PAUSED state from stats
-  const isStatsPaused = monitoringStore.stats.some((stat) => stat.status === 'PAUSED')
-
-  // Check if any node is paused in streamStats
-  const isStreamStatsPaused =
-    monitoringStore.streamStats?.nodes.some((node) => node.stat?.status === 'PAUSED') ?? false
-
-  return isStatsPaused || isStreamStatsPaused
+  return monitoringStore.stats.some((stat) => stat.status === 'PAUSED')
 })
 
 const isStreamFinished = computed(() => {
@@ -162,8 +156,9 @@ const handleStreamError = (error: unknown, defaultMessage: string) => {
   commonStore.showNotification(errorMessage, 'error')
 }
 
-// Restore stream stats on page load
-onMounted(async () => {
-  await monitoringStore.fetchCurrentStreamStats()
+// Monitor stream is populated via SSE structured logs
+// No need to fetch stats on mount
+onMounted(() => {
+  // Stream data comes from SSE logs
 })
 </script>

@@ -2,23 +2,14 @@ import { defineStore } from 'pinia'
 import type { StreamConfig } from '@/types/streamConfig'
 import { sseLogsService } from '@/api/sseLogsService'
 import { NodeTypes, type NodeType } from '@/types/common'
-import type { StreamStats, AggregatedStatResponse, AggregatedNodeStats } from '@/types/streamStats'
-import streamsApi from '@/api/streams'
-import { useStreamsStore } from '@/stores/streamConfig'
+import type { AggregatedStatResponse, AggregatedNodeStats } from '@/types/streamStats'
 import {
   STREAM_STATUS,
   TERMINAL_STATUSES,
   STREAM_STATUS_PRIORITY,
   type StreamStatus
 } from '@/constants'
-import {
-  parseDataSize,
-  parseDuration,
-  parseNumber,
-  formatDuration,
-  formatDataSize,
-  formatNumber
-} from '@/utils/formats'
+import { parseDataSize, parseDuration, parseNumber } from '@/utils/formats'
 
 // Define types for the state
 interface Node {
@@ -61,7 +52,6 @@ interface State {
   status: StreamStatus
   streamConfig: StreamConfig
   maxLogs: number
-  streamStats: StreamStats | null
   isLoadingStats: boolean
   statsError: Error | null
   lastStreamId: string | null
@@ -111,7 +101,6 @@ export const useMonitoringStore = defineStore('monitoring', {
     status: STREAM_STATUS.UNDEFINED,
     streamConfig: {} as StreamConfig,
     maxLogs: 1000,
-    streamStats: null,
     isLoadingStats: false,
     statsError: null,
     lastStreamId: null as string | null,
@@ -234,18 +223,39 @@ export const useMonitoringStore = defineStore('monitoring', {
       }
       this.logs.push(log)
 
-      // Aggregate stats in real-time if this is a [stat] log
-      if (log.msg && log.msg.startsWith('[stat]') && log.type && log.nodeID) {
+      // Aggregate stats in real-time if this is a [stat] log (old format) or has category field (new format)
+      if (log.type && log.nodeID) {
+        if ((log.msg && log.msg.startsWith('[stat]')) || log.category === 'stat') {
+          this.aggregateNodeStatsByType()
+        }
+      }
+    },
+    // New method to handle structured stat logs directly (no parsing needed)
+    addStructuredStatLog(log: Log) {
+      if (this.logs.length >= this.maxLogs) {
+        this.logs = this.logs.slice(-Math.floor(this.maxLogs / 2))
+      }
+
+      // Mark log as structured (add category field)
+      log.category = 'stat'
+      this.logs.push(log)
+
+      // Trigger aggregation immediately
+      if (log.type && log.nodeID) {
         this.aggregateNodeStatsByType()
       }
     },
     aggregateNodeStatsByType() {
-      // Group stats by source/target
+      // Group stats by source/target (support both old format and structured logs)
       const sourceStats = this.logs.filter(
-        (log) => log.type === 'source' && log.msg && log.msg.startsWith('[stat]')
+        (log) =>
+          log.type === 'source' &&
+          ((log.msg && log.msg.startsWith('[stat]')) || log.category === 'stat')
       )
       const targetStats = this.logs.filter(
-        (log) => log.type === 'target' && log.msg && log.msg.startsWith('[stat]')
+        (log) =>
+          log.type === 'target' &&
+          ((log.msg && log.msg.startsWith('[stat]')) || log.category === 'stat')
       )
 
       // Update aggregated stats
@@ -265,6 +275,29 @@ export const useMonitoringStore = defineStore('monitoring', {
       }
 
       this.aggregatedStats = newAggregatedStats
+
+      // Update stream status based on aggregated node statuses
+      if (newAggregatedStats.source && newAggregatedStats.target) {
+        const sourceStatus = newAggregatedStats.source.status
+        const targetStatus = newAggregatedStats.target.status
+
+        // Determine overall stream status (use worst status from both nodes)
+        const statusPriority = Math.max(
+          STREAM_STATUS_PRIORITY[sourceStatus] || 0,
+          STREAM_STATUS_PRIORITY[targetStatus] || 0
+        )
+
+        // Map status string back to StreamStatus enum
+        const statusName = Object.keys(STREAM_STATUS_PRIORITY).find(
+          (key) => STREAM_STATUS_PRIORITY[key] === statusPriority
+        )
+        if (statusName) {
+          const statusEnum = STREAM_STATUS[statusName as keyof typeof STREAM_STATUS]
+          if (statusEnum !== undefined && this.status !== statusEnum) {
+            this.status = statusEnum
+          }
+        }
+      }
     },
     aggregateStats(stats: Log[], type: string): AggregatedNodeStats {
       // Get latest stat per node ID to count active nodes
@@ -275,8 +308,9 @@ export const useMonitoringStore = defineStore('monitoring', {
           stat.ts = stat.ts * 1000
         }
 
-        // Parse the stat message and add fields to the log object
-        if (stat.msg) {
+        // Parse the stat message ONLY if it's old format (starts with [stat])
+        // For structured logs (category === 'stat'), fields are already present
+        if (stat.msg && stat.msg.startsWith('[stat]') && stat.category !== 'stat') {
           const parts = stat.msg.split('|').map((part) => part.trim())
 
           parts.forEach((part) => {
@@ -298,6 +332,8 @@ export const useMonitoringStore = defineStore('monitoring', {
             }
           }
         }
+        // For structured logs, fields are already present (events, size, rate, elapsed, status)
+        // No parsing needed!
 
         const existing = latestByNode.get(stat.nodeID)
 
@@ -357,15 +393,26 @@ export const useMonitoringStore = defineStore('monitoring', {
       })
       const latestStat = sortedStats[0]
 
+      // For structured logs, fields are already correct types (numbers, not strings)
+      // For old format logs, fields are strings that need parsing
+      const isStructured = latestStat.category === 'stat'
+
       const aggregated = {
         type,
         status: this.getWorstStatus(nodeStats),
-        counter: parseNumber(latestStat.events),
-        failedEvents: parseNumber(latestStat.failed),
-        dataSize: parseDataSize(latestStat.size),
-        avgRate: parseDataSize(latestStat['avg.rate']),
-        // parseDuration returns milliseconds, but formatDuration expects nanoseconds
-        elapsed: parseDuration(latestStat.elapsed || '0s') * 1e6, // Convert ms to ns
+        counter: isStructured
+          ? (latestStat.events as number)
+          : parseNumber(latestStat.events as string),
+        failedEvents: isStructured
+          ? (latestStat.failed as number) || 0
+          : parseNumber(latestStat.failed as string),
+        dataSize: parseDataSize(latestStat.size as string),
+        avgRate: parseDataSize((latestStat['avg.rate'] || latestStat.rate) as string),
+        // For structured logs, elapsed is already a number in seconds
+        // For old format, elapsed is a string like "0.909s" that needs parsing to ms, then convert to ns
+        elapsed: isStructured
+          ? (latestStat.elapsed as number) * 1e9 // Convert seconds to nanoseconds
+          : parseDuration((latestStat.elapsed as string) || '0s') * 1e6, // Convert ms to ns
         activeNodes: nodeStats.length // Count of unique nodes that reported stats
       }
 
@@ -448,114 +495,6 @@ export const useMonitoringStore = defineStore('monitoring', {
           ts: Date.now()
         })
       }
-    },
-    async fetchCurrentStreamStats() {
-      this.isLoadingStats = true
-      this.statsError = null
-
-      try {
-        this.streamStats = await streamsApi.getCurrentStreamStats()
-
-        // Update stream ID and related data
-        if (this.streamStats) {
-          this.streamID = this.streamStats.streamID
-          this.lastStreamId = this.streamStats.streamID
-          const streamStore = useStreamsStore()
-          const config = await streamStore.getStreamConfigById(this.streamStats.configID)
-          if (config) {
-            this.streamConfig = config
-          }
-          this.setStream(this.streamStats.streamID, this.streamConfig)
-
-          // Reset and update nodes based on stream stats
-          this.nodes = []
-          // Map StreamStats nodes to store nodes
-          this.streamStats.nodes.forEach((node) => {
-            this.nodes.push({
-              id: node.id,
-              type: node.type as NodeType
-            })
-
-            // Create a stat log entry from streamStats for each node
-            if (node.stat) {
-              const statMessage = [
-                `[stat] ${node.stat.status}`,
-                `Events: ${formatNumber(node.stat.counter || 0)}`,
-                `Size: ${formatDataSize(node.stat.sumDataSize || 0)}`,
-                `Avg.Rate: ${formatDataSize(node.stat.avgRate || 0)}/s`,
-                node.stat.duration !== undefined
-                  ? `Elapsed: ${formatDuration(node.stat.duration)}`
-                  : ''
-              ]
-                .filter(Boolean)
-                .join(' | ')
-
-              this.addLog({
-                id: Date.now(),
-                type: node.type.toLowerCase(),
-                nodeID: node.id,
-                msg: statMessage,
-                status: node.stat.status,
-                events: formatNumber(node.stat.counter || 0),
-                size: formatDataSize(node.stat.sumDataSize || 0),
-                avgRate: `${formatDataSize(node.stat.avgRate || 0)}/s`,
-                elapsed: node.stat.duration ? formatDuration(node.stat.duration) : '0s',
-                level: 'info',
-                ts: Date.now()
-              })
-            }
-          })
-
-          // Aggregate stats after loading
-          this.aggregateNodeStatsByType()
-
-          // Find source and target nodes from stats
-          const sourceNode = this.streamStats.nodes.find((node) => node.type === NodeTypes.SOURCE)
-          const targetNodes = this.streamStats.nodes.find((node) => node.type === NodeTypes.TARGET)
-
-          // Update current stage based on node stats
-          if (sourceNode?.stat.status || targetNodes?.stat.status) {
-            const status = sourceNode?.stat.status || targetNodes?.stat.status
-
-            switch (status) {
-              case 'FINISHED':
-              case 'STOPPED':
-              case 'FAILED':
-                this.currentStageID = 4 // Finished stage
-                break
-              case 'RUNNING':
-                this.currentStageID = 3 // Data transfer stage
-                break
-              case 'INITIALIZING':
-                this.currentStageID = 1 // Init stage
-                break
-              default:
-                this.currentStageID = 1
-            }
-
-            // Update timestamps for completed stages
-            this.stages.forEach((stage) => {
-              if (stage.id < this.currentStageID) {
-                stage.timestamp = Date.now()
-              }
-            })
-          }
-        }
-      } catch (error) {
-        this.statsError = error as Error
-        this.streamStats = null
-        this.lastStreamId = null
-        this.streamID = ''
-        this.nodes = []
-        this.currentStageID = 0
-      } finally {
-        this.isLoadingStats = false
-      }
-    },
-    clearStreamStats() {
-      this.streamStats = null
-      this.statsError = null
-      this.lastStreamId = null
     }
   }
 })

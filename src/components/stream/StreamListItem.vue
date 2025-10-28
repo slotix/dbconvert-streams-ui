@@ -177,10 +177,7 @@ const isRunning = computed(() => {
 
 const isPaused = computed(() => {
   if (!isRunning.value) return false
-  const isStatsPaused = monitoringStore.stats.some((stat) => stat.status === 'PAUSED')
-  const isStreamStatsPaused =
-    monitoringStore.streamStats?.nodes.some((node) => node.stat?.status === 'PAUSED') ?? false
-  return isStatsPaused || isStreamStatsPaused
+  return monitoringStore.stats.some((stat) => stat.status === 'PAUSED')
 })
 
 const isFinished = computed(() => {

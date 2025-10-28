@@ -5,9 +5,8 @@ import type { UserData } from '@/types/user'
 import type { ServiceStatus } from '@/types/common'
 import { useToast } from 'vue-toastification'
 import { useMonitoringStore } from './monitoring'
-import { sseLogsService } from '@/api/sseLogsService'
+import { sseLogsService } from '@/api/sseLogsServiceStructured'
 import { useLocalStorage } from '@vueuse/core'
-import { ref } from 'vue'
 import { SERVICE_STATUS, STORAGE_KEYS } from '@/constants'
 
 export interface Step {

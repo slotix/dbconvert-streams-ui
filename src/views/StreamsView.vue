@@ -206,9 +206,7 @@ onMounted(async () => {
     // Then fetch streams
     await streamsStore.refreshStreams()
 
-    // Check if there's a running stream and auto-select it
-    await monitoringStore.fetchCurrentStreamStats()
-
+    // Check if there's a running stream and auto-select it (from SSE structured logs)
     if (monitoringStore.streamID) {
       // Auto-select the running stream
       selectedStreamId.value = monitoringStore.streamID

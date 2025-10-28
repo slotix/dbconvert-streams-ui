@@ -2,7 +2,6 @@ import { useCommonStore } from '@/stores/common'
 import { type StreamConfig, type StreamID } from '@/types/streamConfig'
 import { validateApiKey } from './apiClient'
 import { handleApiError } from '@/utils/errorHandler'
-import { type StreamStats } from '@/types/streamStats'
 import { apiClient } from './apiClient'
 import { type AxiosResponse } from 'axios'
 import { API_HEADERS } from '@/constants'
@@ -115,20 +114,6 @@ const stopStream = async (id: string): Promise<void> => {
   }
 }
 
-const getCurrentStreamStats = async (): Promise<StreamStats> => {
-  const commonStore = useCommonStore()
-  validateApiKey(commonStore.apiKey)
-
-  try {
-    const response: AxiosResponse<StreamStats> = await apiClient.get(`/streams/current/stats`, {
-      headers: { [API_HEADERS.API_KEY]: commonStore.apiKey }
-    })
-    return response.data
-  } catch (error) {
-    throw handleApiError(error)
-  }
-}
-
 export default {
   getStreams,
   createStream,
@@ -137,6 +122,5 @@ export default {
   startStream,
   pauseStream,
   resumeStream,
-  stopStream,
-  getCurrentStreamStats
+  stopStream
 }
