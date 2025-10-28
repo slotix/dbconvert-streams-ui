@@ -391,6 +391,7 @@ export default {
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import {
   ClipboardIcon,
   CalendarIcon,
@@ -425,6 +426,7 @@ const emit = defineEmits<{
   (e: 'stream-deleted'): void
 }>()
 
+const router = useRouter()
 const streamsStore = useStreamsStore()
 const connectionsStore = useConnectionsStore()
 const commonStore = useCommonStore()
@@ -560,7 +562,7 @@ function copyConfig() {
 }
 
 function navigateToEdit() {
-  window.location.href = `#/streams/edit/${props.stream.id}`
+  router.push({ name: 'EditStream', params: { id: props.stream.id } })
 }
 
 async function cloneStream() {
