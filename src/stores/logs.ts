@@ -181,13 +181,6 @@ function logMatchesFilters(
 
 export const useLogsStore = defineStore('logs', {
   state: () => {
-    // Clean up old unused localStorage keys
-    try {
-      localStorage.removeItem('sqlLogPurposes')
-    } catch {
-      // Ignore errors
-    }
-
     return {
       logs: [] as SystemLog[],
       maxLogs: 1000,
