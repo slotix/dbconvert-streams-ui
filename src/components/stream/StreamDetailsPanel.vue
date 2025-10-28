@@ -27,12 +27,12 @@
           </button>
           <button
             v-if="!isStreamRunning || isStreamFinished"
-            v-tooltip="historyRuns.length > 0 ? 'Run the stream again' : 'Start the stream'"
+            v-tooltip="paginationData?.total > 0 ? 'Run the stream again' : 'Start the stream'"
             type="button"
             class="px-3 py-1.5 text-sm font-medium text-white bg-cyan-600 rounded-md hover:bg-cyan-700 transition-colors"
             @click="startStream"
           >
-            {{ historyRuns.length > 0 ? 'Run again' : 'Start' }}
+            {{ paginationData?.total > 0 ? 'Run again' : 'Start' }}
           </button>
           <button
             v-if="!isStreamRunning || isStreamFinished"
@@ -361,7 +361,13 @@
 
       <!-- History Tab -->
       <div v-else-if="activeTab === 'history'" class="p-6">
-        <StreamHistoryTable :runs="historyRuns" />
+        <StreamHistoryTable
+          :config-id="stream.id"
+          :pagination-data="paginationData"
+          @page-change="handlePageChange"
+          @delete-run="handleDeleteRun"
+          @clear-all="handleClearAll"
+        />
       </div>
     </div>
 
@@ -405,6 +411,7 @@ import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
 import { useCommonStore } from '@/stores/common'
 import { useMonitoringStore, statusEnum } from '@/stores/monitoring'
+import { apiClient } from '@/api/apiClient'
 import ConnectionStringDisplay from '@/components/common/ConnectionStringDisplay.vue'
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
 import ProgressContainer from '@/components/monitoring/ProgressContainer.vue'
@@ -435,6 +442,9 @@ const monitoringStore = useMonitoringStore()
 const isJsonView = ref(false)
 const showDeleteConfirm = ref(false)
 const activeTab = ref<'monitor' | 'configuration' | 'history'>('configuration')
+const currentPage = ref(1)
+const paginationData = ref<any>(null)
+const isLoadingHistory = ref(false)
 
 const dbTypes = connectionsStore.dbTypes
 
@@ -508,18 +518,90 @@ const remainingTablesCount = computed(() => {
   return 0
 })
 
-const historyRuns = computed(() => {
-  // Return history from backend (stored in stream config)
-  return props.stream.history || []
-})
+// Fetch stream history from API using apiClient
+async function loadStreamHistory(page: number = 1) {
+  try {
+    isLoadingHistory.value = true
+    const response = await apiClient.get(`/stream-configs/${props.stream.id}/history`, {
+      params: {
+        page,
+        pageSize: 50
+      }
+    })
 
-// Watch for stream finish to refresh config and get updated history
+    paginationData.value = response.data
+    currentPage.value = page
+  } catch (error: unknown) {
+    let errorMsg = 'Failed to load history'
+    if (error instanceof Error) {
+      errorMsg = error.message
+    }
+    commonStore.showNotification(errorMsg, 'error')
+    console.error('Failed to load stream history:', error)
+  } finally {
+    isLoadingHistory.value = false
+  }
+}
+
+async function handlePageChange(newPage: number) {
+  await loadStreamHistory(newPage)
+}
+
+async function handleDeleteRun(runId: string) {
+  try {
+    await apiClient.delete(`/stream-configs/${props.stream.id}/runs/${runId}`)
+
+    commonStore.showNotification('Run deleted successfully', 'success')
+    // Reload current page to reflect deletion
+    await loadStreamHistory(currentPage.value)
+  } catch (error: unknown) {
+    let errorMsg = 'Failed to delete stream run'
+    if (error instanceof Error) {
+      errorMsg = error.message
+    }
+    commonStore.showNotification(errorMsg, 'error')
+    console.error('Failed to delete run:', error)
+  }
+}
+
+async function handleClearAll() {
+  try {
+    // Call the backend endpoint to delete all runs at once
+    await apiClient.delete(`/stream-configs/${props.stream.id}/runs`)
+
+    commonStore.showNotification('All runs deleted successfully', 'success')
+    // Reload history to refresh the UI
+    await loadStreamHistory(1)
+  } catch (error: unknown) {
+    let errorMsg = 'Failed to delete all runs'
+    if (error instanceof Error) {
+      errorMsg = error.message
+    }
+    commonStore.showNotification(errorMsg, 'error')
+    console.error('Failed to delete all runs:', error)
+  }
+}
+
+// Load history when history tab is opened
+watch(
+  () => activeTab.value,
+  async (newTab) => {
+    if (newTab === 'history' && !paginationData.value) {
+      await loadStreamHistory(1)
+    }
+  }
+)
+
+// Watch for stream finish to refresh history
 watch(isStreamFinished, async (finished, wasFinished) => {
   // Only trigger when transitioning from not-finished to finished
   if (finished && !wasFinished) {
     // Wait a bit for backend to save history
     setTimeout(async () => {
-      await streamsStore.refreshStreams()
+      // Reload history if already loaded
+      if (paginationData.value) {
+        await loadStreamHistory(1)
+      }
     }, 2000)
   }
 })

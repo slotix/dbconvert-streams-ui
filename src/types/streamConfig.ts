@@ -50,7 +50,7 @@ export interface StreamConfig {
   }
   tables?: Table[]
   files?: FileEntry[]
-  history?: StreamRunHistory[]
+  // Note: history is now fetched separately from /api/v1/stream-configs/{id}/history endpoint
   [key: string]: any
 }
 

@@ -239,8 +239,10 @@ const tableCount = computed(() => {
   return props.stream.tables?.length || 0
 })
 
+// History is now stored separately in the API, so we can't check it here
+// Always allow starting the stream (users can run it multiple times)
 const hasHistory = computed(() => {
-  return props.stream.history && props.stream.history.length > 0
+  return true // Always show "Run the stream again" option
 })
 
 function selectStream() {
