@@ -301,12 +301,17 @@ export const useMonitoringStore = defineStore('monitoring', {
 
         const existing = latestByNode.get(stat.nodeID)
 
-        // Prioritize FINISHED status messages for stats aggregation
-        // Keep the most recent message, but always prefer FINISHED over other statuses
+        // Prioritize terminal status messages for stats aggregation
+        // Keep the most recent message, but always prefer terminal statuses (FINISHED, STOPPED, FAILED)
+        // STOPPED should override PAUSED to handle pause->stop transitions correctly
+        const isTerminalStatus = (status: string | undefined) =>
+          status === 'FINISHED' || status === 'STOPPED' || status === 'FAILED'
+
         const shouldUpdate =
           !existing ||
-          stat.status === 'FINISHED' ||
-          (existing.status !== 'FINISHED' && stat.ts >= existing.ts)
+          (isTerminalStatus(stat.status) && !isTerminalStatus(existing.status)) ||
+          (isTerminalStatus(stat.status) === isTerminalStatus(existing.status) &&
+            stat.ts >= existing.ts)
 
         if (shouldUpdate) {
           latestByNode.set(stat.nodeID, stat)
