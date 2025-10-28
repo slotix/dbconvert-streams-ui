@@ -171,16 +171,15 @@ function startResize(e: MouseEvent) {
   document.body.style.cursor = 'ns-resize'
 
   const startY = e.clientY
-  let startHeight = parseInt(store.panelHeight)
+  const container = logsContainer.value?.parentElement
+  if (!container) return
 
-  if (isNaN(startHeight)) {
-    startHeight = parseInt(store.panelHeight)
-  }
+  // Get the actual current height in pixels at start of drag
+  const startHeight = container.getBoundingClientRect().height
 
-  if (store.panelHeight.endsWith('vh')) {
-    const pixelHeight = startHeight
-    store.updatePanelHeight(`${pixelHeight}px`)
-  }
+  // Define min and max heights
+  const MIN_HEIGHT = 200
+  const MAX_HEIGHT = window.innerHeight * 0.8
 
   let lastUpdate = Date.now()
   const THROTTLE_MS = 16
@@ -191,9 +190,14 @@ function startResize(e: MouseEvent) {
     const now = Date.now()
     if (now - lastUpdate < THROTTLE_MS) return
 
+    // Calculate delta from the original start position
     const delta = startY - e.clientY
-    const newHeight = Math.min(Math.max(startHeight + delta, 200), window.innerHeight * 0.9)
-    store.updatePanelHeight(`${newHeight}px`)
+
+    // Calculate new height with constraints
+    const newHeight = Math.max(MIN_HEIGHT, Math.min(startHeight + delta, MAX_HEIGHT))
+
+    // Update the panel height
+    store.updatePanelHeight(`${Math.round(newHeight)}px`)
     lastUpdate = now
   }
 
