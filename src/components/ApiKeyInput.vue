@@ -1,8 +1,5 @@
 <template>
-  <div
-    v-if="shouldShowApiKeyPrompt"
-    class="fixed inset-0 bg-gray-500 bg-opacity-85 transition-opacity z-40"
-  >
+  <div v-if="shouldShowApiKeyPrompt" class="fixed inset-0 bg-gray-500/40 transition-opacity z-40">
     <div class="fixed inset-0 z-50 overflow-y-auto">
       <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
         <div

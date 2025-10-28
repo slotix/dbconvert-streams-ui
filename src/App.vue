@@ -32,7 +32,7 @@
 
     <div
       v-if="isInitializing"
-      class="fixed inset-0 bg-gray-900/80 flex items-center justify-center z-50"
+      class="fixed inset-0 bg-gray-900/50 flex items-center justify-center z-50"
     >
       <div class="bg-white p-6 rounded-lg shadow-xl">
         <div class="flex items-center space-x-3">
@@ -71,7 +71,7 @@
           leave-from="opacity-100"
           leave-to="opacity-0"
         >
-          <div class="fixed inset-0 bg-gray-900/80" />
+          <div class="fixed inset-0 bg-gray-900/50" />
         </TransitionChild>
 
         <div class="fixed inset-0 flex">

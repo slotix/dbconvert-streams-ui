@@ -10,7 +10,7 @@
         leave-from="opacity-100"
         leave-to="opacity-0"
       >
-        <div class="fixed inset-0 bg-black bg-opacity-25" />
+        <div class="fixed inset-0 bg-black/40" />
       </TransitionChild>
 
       <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
