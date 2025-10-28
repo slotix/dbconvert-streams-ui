@@ -2,11 +2,18 @@ import { defineStore } from 'pinia'
 import type { StreamConfig } from '@/types/streamConfig'
 import { sseLogsService } from '@/api/sseLogsService'
 import { NodeTypes, type NodeType } from '@/types/common'
-import type { StreamStats } from '@/types/streamStats'
+import type { StreamStats, AggregatedStatResponse, AggregatedNodeStats } from '@/types/streamStats'
 import streamsApi from '@/api/streams'
 import { useStreamsStore } from '@/stores/streamConfig'
-import { formatDataSize, formatDuration, formatNumber } from '@/utils/formats'
 import { STREAM_STATUS } from '@/constants'
+import {
+  parseDataSize,
+  parseDuration,
+  parseNumber,
+  formatDuration,
+  formatDataSize,
+  formatNumber
+} from '@/utils/formats'
 
 // Define types for the state
 interface Node {
@@ -54,6 +61,7 @@ interface State {
   statsError: Error | null
   lastStreamId: string | null
   shouldShowMonitorTab: boolean
+  aggregatedStats: AggregatedStatResponse | null
 }
 
 // Use centralized stream status constants
@@ -102,7 +110,8 @@ export const useMonitoringStore = defineStore('monitoring', {
     isLoadingStats: false,
     statsError: null,
     lastStreamId: null as string | null,
-    shouldShowMonitorTab: false
+    shouldShowMonitorTab: false,
+    aggregatedStats: null
   }),
   getters: {
     currentStage(state: State): Stage | null {
@@ -181,10 +190,21 @@ export const useMonitoringStore = defineStore('monitoring', {
         return lastLogEntry
       })
       return filteredLogs.filter((log) => log !== null) as Log[]
+    },
+    aggregatedSourceStats(state: State): AggregatedNodeStats | null {
+      return state.aggregatedStats?.source || null
+    },
+    aggregatedTargetStats(state: State): AggregatedNodeStats | null {
+      return state.aggregatedStats?.target || null
     }
   },
   actions: {
     setStream(id: string, streamConfig: StreamConfig) {
+      // Clear logs and stats when starting a new stream
+      this.logs = []
+      this.nodes = []
+      this.aggregatedStats = null
+
       this.streamID = id
       this.streamConfig = streamConfig
     },
@@ -208,14 +228,177 @@ export const useMonitoringStore = defineStore('monitoring', {
         this.logs = this.logs.slice(-Math.floor(this.maxLogs / 2))
       }
       this.logs.push(log)
+
+      // Aggregate stats in real-time if this is a [stat] log
+      if (log.msg && log.msg.startsWith('[stat]') && log.type && log.nodeID) {
+        this.aggregateNodeStatsByType()
+      }
+    },
+    aggregateNodeStatsByType() {
+      // Group stats by source/target
+      const sourceStats = this.logs.filter(
+        (log) => log.type === 'source' && log.msg && log.msg.startsWith('[stat]')
+      )
+      const targetStats = this.logs.filter(
+        (log) => log.type === 'target' && log.msg && log.msg.startsWith('[stat]')
+      )
+
+      // Update aggregated stats
+      const newAggregatedStats: AggregatedStatResponse = {
+        configID: this.streamConfig?.id || '',
+        streamID: this.streamID,
+        source: null,
+        target: null
+      }
+
+      if (sourceStats.length > 0) {
+        newAggregatedStats.source = this.aggregateStats(sourceStats, 'source')
+      }
+
+      if (targetStats.length > 0) {
+        newAggregatedStats.target = this.aggregateStats(targetStats, 'target')
+      }
+
+      this.aggregatedStats = newAggregatedStats
+    },
+    aggregateStats(stats: Log[], type: string): AggregatedNodeStats {
+      // Get latest stat per node ID
+      const latestByNode = new Map<string, Log>()
+      stats.forEach((stat) => {
+        // Normalize timestamp: if it looks like seconds (< year 3000 in ms), convert to milliseconds
+        if (stat.ts && stat.ts < 100000000000) {
+          stat.ts = stat.ts * 1000
+        }
+
+        // Parse the stat message and add fields to the log object
+        if (stat.msg) {
+          const parts = stat.msg.split('|').map((part) => part.trim())
+
+          parts.forEach((part) => {
+            const colonIndex = part.indexOf(':')
+            if (colonIndex > 0) {
+              const key = part.substring(0, colonIndex).trim().toLowerCase()
+              const value = part.substring(colonIndex + 1).trim()
+
+              // Normalize 'rows' to 'events' for consistency
+              const normalizedKey = key === 'rows' ? 'events' : key
+              stat[normalizedKey] = value
+            }
+          })
+          // Extract status from first part like "[stat] RUNNING" or "[stat] FINISHED"
+          if (parts[0]) {
+            const statusMatch = parts[0].match(/\[stat\](?:\s+Table:\s+\w+\s*\|)?\s*(\w+)/)
+            if (statusMatch) {
+              stat.status = statusMatch[1]
+            }
+          }
+        }
+
+        const existing = latestByNode.get(stat.nodeID)
+
+        // Prioritize FINISHED status messages for stats aggregation
+        // Keep the most recent message, but always prefer FINISHED over other statuses
+        const shouldUpdate =
+          !existing ||
+          stat.status === 'FINISHED' ||
+          (existing.status !== 'FINISHED' && stat.ts >= existing.ts)
+
+        if (shouldUpdate) {
+          latestByNode.set(stat.nodeID, stat)
+        }
+      })
+
+      // Filter to only those with actual stat values for aggregation
+      const allLatest = Array.from(latestByNode.values())
+
+      const nodeStats = allLatest.filter((stat) => {
+        const hasValues =
+          stat.events && stat.elapsed && stat.events !== '0' && stat.elapsed !== '0ms'
+        return hasValues
+      })
+
+      // If no stats with values yet, use the latest status but zero values
+      if (nodeStats.length === 0) {
+        const allNodes = Array.from(latestByNode.values())
+        return {
+          type,
+          status: this.getWorstStatus(allNodes),
+          counter: 0,
+          failedEvents: 0,
+          dataSize: 0,
+          avgRate: 0,
+          elapsed: 0,
+          activeNodes: allNodes.length
+        }
+      }
+
+      const counter = nodeStats.reduce((sum, s) => {
+        const val = parseNumber(s.events)
+        return sum + val
+      }, 0)
+
+      const dataSize = nodeStats.reduce((sum, s) => {
+        const val = parseDataSize(s.size)
+        return sum + val
+      }, 0)
+
+      const totalRate = nodeStats.reduce((sum, s) => {
+        const val = parseDataSize(s['avg.rate'])
+        return sum + val
+      }, 0)
+
+      const elapsed = Math.max(
+        ...nodeStats.map((s) => {
+          const val = parseDuration(s.elapsed)
+          return val
+        }),
+        0
+      )
+
+      const aggregated = {
+        type,
+        status: this.getWorstStatus(nodeStats),
+        counter,
+        failedEvents: nodeStats.reduce((sum, s) => sum + parseNumber(s.failed), 0),
+        dataSize,
+        avgRate: totalRate / (nodeStats.length || 1),
+        elapsed,
+        activeNodes: nodeStats.length
+      }
+
+      return aggregated
+    },
+    getWorstStatus(stats: Log[]): string {
+      const statusPriority: Record<string, number> = {
+        FAILED: 5,
+        STOPPED: 4,
+        PAUSED: 3,
+        RUNNING: 2,
+        READY: 1,
+        FINISHED: 0
+      }
+
+      let worst = 'READY'
+      let worstPriority = 0
+
+      stats.forEach((stat) => {
+        const status = stat.status || stat.msg?.split('|')[0]?.split(' ')[1] || ''
+        const priority = statusPriority[status] || 0
+        if (priority > worstPriority) {
+          worst = status
+          worstPriority = priority
+        }
+      })
+
+      return worst
     },
     initSSEHandling() {
-      sseLogsService.addMessageHandler((message: any) => {
+      sseLogsService.addMessageHandler((message: Log) => {
         // Process the message
         this.processMessage(message)
       })
     },
-    processMessage(message: any) {
+    processMessage(message: Log) {
       try {
         // Handle progress messages
         if (message.msg && message.msg.startsWith('[progress]')) {
@@ -244,9 +427,19 @@ export const useMonitoringStore = defineStore('monitoring', {
           }
         }
 
-        // Add log with safe defaults
+        // For messages with nodeID, look up the node type if not provided or unknown
+        let messageType = message.type
+        if (message.nodeID && (!messageType || messageType === 'unknown')) {
+          const node = this.nodes.find((n) => n.id === message.nodeID)
+          if (node) {
+            messageType = node.type
+          }
+        }
+
+        // Add log with safe defaults and resolved type
         this.addLog({
           ...message,
+          type: messageType,
           level: (message.level as keyof LogLevel) || 'info'
         })
       } catch (error) {
@@ -293,9 +486,12 @@ export const useMonitoringStore = defineStore('monitoring', {
             if (node.stat) {
               const statMessage = [
                 `[stat] ${node.stat.status}`,
-                formatNumber(node.stat.counter || 0),
-                formatDataSize(node.stat.sumDataSize || 0),
-                node.stat.duration !== undefined ? formatDuration(node.stat.duration) : ''
+                `Events: ${formatNumber(node.stat.counter || 0)}`,
+                `Size: ${formatDataSize(node.stat.sumDataSize || 0)}`,
+                `Avg.Rate: ${formatDataSize(node.stat.avgRate || 0)}/s`,
+                node.stat.duration !== undefined
+                  ? `Elapsed: ${formatDuration(node.stat.duration)}`
+                  : ''
               ]
                 .filter(Boolean)
                 .join(' | ')
@@ -308,13 +504,16 @@ export const useMonitoringStore = defineStore('monitoring', {
                 status: node.stat.status,
                 events: formatNumber(node.stat.counter || 0),
                 size: formatDataSize(node.stat.sumDataSize || 0),
-                avgRate: node.stat.avgRate ? `${formatDataSize(node.stat.avgRate)}/s` : '0 B/s',
+                avgRate: `${formatDataSize(node.stat.avgRate || 0)}/s`,
                 elapsed: node.stat.duration ? formatDuration(node.stat.duration) : '0s',
                 level: 'info',
                 ts: Date.now()
               })
             }
           })
+
+          // Aggregate stats after loading
+          this.aggregateNodeStatsByType()
 
           // Find source and target nodes from stats
           const sourceNode = this.streamStats.nodes.find((node) => node.type === NodeTypes.SOURCE)

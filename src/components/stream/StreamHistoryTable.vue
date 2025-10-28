@@ -136,9 +136,9 @@ defineProps<{
 
 const logsStore = useLogsStore()
 
-function handleViewLogs(streamId: string) {
-  // Set the stream filter (this will also open the panel)
-  logsStore.setStreamFilter(streamId)
+async function handleViewLogs(streamId: string) {
+  // Option 1: Always use API for complete and consistent logs
+  await logsStore.loadHistoricalLogs(streamId)
 }
 
 function getStatusClass(status: string): string {

@@ -192,6 +192,9 @@ export const useLogsStore = defineStore('logs', {
       isLogsPanelOpen: false,
       panelHeight: '50vh',
       selectedStreamId: '', // For filtering logs by stream
+      historicalLogs: [] as SystemLog[], // Logs loaded from API
+      isHistoricalView: false, // Flag to indicate if showing historical logs
+      isLoadingHistoricalLogs: false, // Loading state for API fetch
       // Keep track of recent messages to prevent duplicates
       recentMessages: new Map<string, { count: number; timestamp: number }>(),
 
@@ -389,6 +392,57 @@ export const useLogsStore = defineStore('logs', {
       if (!this.isLogsPanelOpen) {
         this.isLogsPanelOpen = true
       }
+    },
+
+    async loadHistoricalLogs(streamId: string) {
+      this.isLoadingHistoricalLogs = true
+      this.isHistoricalView = false
+      this.historicalLogs = []
+
+      try {
+        // Import the API client function
+        const { getStreamLogs } = await import('@/api/apiClient')
+
+        // Fetch logs from the API
+        const rawLogs = await getStreamLogs(streamId)
+
+        // Convert raw logs to SystemLog format
+        this.historicalLogs = rawLogs.map((log, index) => ({
+          id: Date.now() + index,
+          message: (log.msg as string) || (log.message as string) || '',
+          level: (log.level as keyof LogLevel) || 'info',
+          timestamp: log.ts
+            ? typeof log.ts === 'number'
+              ? log.ts * 1000
+              : new Date(log.ts as string).getTime()
+            : log.time
+              ? new Date(log.time as string).getTime()
+              : Date.now(),
+          source: (log.caller as string) || undefined,
+          streamId: (log.streamId as string) || streamId,
+          details: log
+        }))
+
+        // Set the view to historical
+        this.isHistoricalView = true
+        this.selectedStreamId = streamId
+
+        // Open the panel
+        if (!this.isLogsPanelOpen) {
+          this.isLogsPanelOpen = true
+        }
+      } catch (error) {
+        console.error('Failed to load historical logs:', error)
+        // Fall back to in-memory logs
+        this.isHistoricalView = false
+      } finally {
+        this.isLoadingHistoricalLogs = false
+      }
+    },
+
+    clearHistoricalLogs() {
+      this.historicalLogs = []
+      this.isHistoricalView = false
     },
 
     // Phase 2: SQL Logs Actions

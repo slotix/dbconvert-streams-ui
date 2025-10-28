@@ -216,6 +216,23 @@ export async function getStreams(): Promise<unknown> {
   }
 }
 
+export async function getStreamLogs(
+  streamId: string,
+  options?: { level?: string; limit?: number }
+): Promise<Array<Record<string, unknown>>> {
+  try {
+    const params = new URLSearchParams()
+    if (options?.level) params.append('level', options.level)
+    if (options?.limit) params.append('limit', options.limit.toString())
+
+    const url = `/streams/${streamId}/logs${params.toString() ? `?${params.toString()}` : ''}`
+    const response = await apiClient.get(url)
+    return response.data
+  } catch (error) {
+    throw handleApiError(error)
+  }
+}
+
 export async function initializeApiClient() {
   const commonStore = useCommonStore()
   const savedApiKey = await commonStore.getApiKey()
@@ -237,5 +254,6 @@ export default {
   sentryHealthCheck,
   getServiceStatus,
   getConnections,
-  getStreams
+  getStreams,
+  getStreamLogs
 }

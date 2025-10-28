@@ -76,3 +76,55 @@ export function formatDuration(nanoseconds: number): string {
 export function formatNumber(num: number): string {
   return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
 }
+
+/**
+ * Parse a data size string (e.g., "11.7 KB", "1.5 MB") to bytes
+ * @param sizeStr Size string with unit
+ * @returns Size in bytes
+ */
+export function parseDataSize(sizeStr: string | undefined): number {
+  if (!sizeStr) return 0
+  const numStr = sizeStr.replace(/[^0-9.]/g, '')
+  const num = parseFloat(numStr) || 0
+  const upper = sizeStr.toUpperCase()
+  if (upper.includes('TB')) return num * Math.pow(1024, 4)
+  if (upper.includes('GB')) return num * Math.pow(1024, 3)
+  if (upper.includes('MB')) return num * Math.pow(1024, 2)
+  if (upper.includes('KB')) return num * 1024
+  if (upper.includes('B')) return num
+  return num
+}
+
+/**
+ * Parse a duration string (e.g., "8ms", "2s", "1m", "1.5h") to milliseconds
+ * @param durationStr Duration string with unit
+ * @returns Duration in milliseconds
+ */
+export function parseDuration(durationStr: string | undefined): number {
+  if (!durationStr) return 0
+  const match = durationStr.match(/^([\d.]+)(\w+)$/)
+  if (!match) return 0
+  const num = parseFloat(match[1])
+  const unit = match[2].toLowerCase()
+  if (unit === 'ms') return num
+  if (unit === 's') return num * 1000
+  if (unit === 'm') return num * 60000
+  if (unit === 'h') return num * 3600000
+  return num
+}
+
+/**
+ * Parse a numeric string (plain number or with K/M/B suffix) to number
+ * @param numStr Numeric string (e.g., "200", "1.5K", "2M")
+ * @returns Parsed number
+ */
+export function parseNumber(numStr: string | undefined): number {
+  if (!numStr) return 0
+  const cleaned = numStr.replace(/[^0-9.KMB]/gi, '')
+  const num = parseFloat(cleaned.replace(/[KMB]/gi, '')) || 0
+  const upper = cleaned.toUpperCase()
+  if (upper.includes('B')) return num * 1000000000
+  if (upper.includes('M')) return num * 1000000
+  if (upper.includes('K')) return num * 1000
+  return num
+}
