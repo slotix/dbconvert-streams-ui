@@ -655,6 +655,20 @@ export const useLogsStore = defineStore('logs', {
           ...(log.percentage !== undefined && { percentage: log.percentage }),
           ...(log.description !== undefined && { description: log.description })
         })
+
+        // Send progress to monitoring store to update stage
+        const monitoringStore = useMonitoringStore()
+        monitoringStore.addLog({
+          id: Date.now(),
+          type: log.nodeType,
+          nodeID: log.nodeId || '',
+          msg: log.message,
+          level: 'info',
+          ts: new Date(log.timestamp).getTime(),
+          category: 'progress',
+          stage: log.stage,
+          description: log.description
+        })
       } else if (log.category === 'stat') {
         this.addLog({
           ...baseLog,

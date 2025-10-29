@@ -109,48 +109,33 @@ export const useMonitoringStore = defineStore('monitoring', {
   }),
   getters: {
     currentStage(state: State): Stage | null {
-      // Check for finished status in logs even if no stats yet
-      const lastLogWithStat = state.logs.filter((log) => log.category === 'stat').pop()
-
-      if (lastLogWithStat?.status === 'FINISHED') {
-        state.currentStageID = 4 // Set to finished stage
-        return state.stages.find((stage) => stage.id === state.currentStageID) || null
+      // Initialize stage to 1 if not set
+      if (state.currentStageID === 0) {
+        state.currentStageID = 1
       }
 
-      // If no stats yet, return current stage based on stageID
-      if (this.stats.length === 0) {
-        return state.stages.find((stage) => stage.id === state.currentStageID) || null
-      }
+      // When stream finishes, update the final stage title based on status
+      if (this.stats.length > 0) {
+        const runningNodesNumber = this.stats.filter((stat: Log) => {
+          const statusID = STREAM_STATUS[stat.status as keyof typeof STREAM_STATUS]
+          return statusID < STREAM_STATUS.FAILED
+        }).length
 
-      // Check current status of nodes
-      const runningNodesNumber = this.stats.filter((stat: Log) => {
-        const statusID = STREAM_STATUS[stat.status as keyof typeof STREAM_STATUS]
-        return statusID < STREAM_STATUS.FAILED
-      }).length
-
-      // Determine stage based on node status and current stats
-      if (
-        runningNodesNumber === 0 &&
-        this.stats.every((stat) => ['FINISHED', 'STOPPED', 'FAILED'].includes(stat.status || ''))
-      ) {
-        // All nodes finished
-        if (state.currentStageID !== 4) {
-          // Only update if not already in finished stage
-          state.currentStageID = 4 // Finished stage
-          const stage = this.stages.find((s) => s.id === state.currentStageID)
-          const isStopped = this.stats.some((stat) => stat.status === 'STOPPED')
-          if (isStopped) {
-            stage!.title = 'Stopped'
-          } else if (this.stats.every((stat) => stat.status === 'FINISHED')) {
-            stage!.title = 'Finished'
+        // All nodes finished - update stage 4 title
+        if (
+          runningNodesNumber === 0 &&
+          this.stats.every((stat) => ['FINISHED', 'STOPPED', 'FAILED'].includes(stat.status || ''))
+        ) {
+          const stage = this.stages.find((s) => s.id === 4)
+          if (stage) {
+            const isStopped = this.stats.some((stat) => stat.status === 'STOPPED')
+            if (isStopped) {
+              stage.title = 'Stopped'
+            } else if (this.stats.every((stat) => stat.status === 'FINISHED')) {
+              stage.title = 'Finished'
+            }
           }
         }
-      } else if (this.stats.some((stat) => stat.events && parseInt(stat.events) > 0)) {
-        // If we have events being processed, we're in data transfer stage
-        state.currentStageID = 3
-      } else if (state.currentStageID < 2) {
-        // Initial stages
-        state.currentStageID = 2
       }
 
       return state.stages.find((stage) => stage.id === state.currentStageID) || null
@@ -210,6 +195,11 @@ export const useMonitoringStore = defineStore('monitoring', {
         this.logs = this.logs.slice(-Math.floor(this.maxLogs / 2))
       }
       this.logs.push(log)
+
+      // Handle progress messages
+      if (log.category === 'progress' && log.stage !== undefined) {
+        this.currentStageID = log.stage
+      }
 
       if (log.type && log.nodeID && log.category === 'stat') {
         this.aggregateNodeStatsByType()
@@ -379,14 +369,9 @@ export const useMonitoringStore = defineStore('monitoring', {
     },
     processMessage(message: Log) {
       try {
-        // Handle progress messages
-        if (message.msg && message.msg.startsWith('[progress]')) {
-          const parts = message.msg.split('|')
-          const stagePart = parts.find((part: string) => part.includes('STAGE:'))
-          if (stagePart) {
-            const stage = stagePart.split('STAGE:')[1]
-            this.currentStageID = parseInt(stage) || 0
-          }
+        // Handle progress messages (structured logs with category: 'progress')
+        if (message.category === 'progress' && message.stage !== undefined) {
+          this.currentStageID = message.stage
         }
 
         // Handle node registration
