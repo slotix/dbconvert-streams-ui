@@ -226,6 +226,27 @@ function getShortStreamId(streamId: string): string {
 }
 
 function getStatLogDisplay(log: SystemLog): string {
+  // For progress logs with structured data, build a polished display string
+  if (log.category === 'progress') {
+    const parts: string[] = []
+
+    // Stage number and description
+    if (log.stage !== undefined) {
+      parts.push(`STAGE ${log.stage}:`)
+    }
+
+    if (log.description) {
+      parts.push(log.description)
+    }
+
+    // Optional percentage
+    if (log.percentage !== undefined && log.percentage > 0 && log.percentage < 100) {
+      parts.push(`(${log.percentage}%)`)
+    }
+
+    return parts.join(' ')
+  }
+
   // For stat logs with structured data, build a polished display string
   if (log.category === 'stat') {
     const parts: string[] = []

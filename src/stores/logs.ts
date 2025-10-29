@@ -41,6 +41,10 @@ export interface SystemLog {
   details?: Record<string, unknown>
   // Structured log fields
   category?: LogCategory
+  // Progress fields
+  stage?: number
+  description?: string
+  percentage?: number
   // Stat fields
   table?: string
   status?: StatStatus
@@ -648,7 +652,8 @@ export const useLogsStore = defineStore('logs', {
           category: 'progress' as const,
           // Progress-specific fields
           ...(log.stage !== undefined && { stage: log.stage }),
-          ...(log.percentage !== undefined && { percentage: log.percentage })
+          ...(log.percentage !== undefined && { percentage: log.percentage }),
+          ...(log.description !== undefined && { description: log.description })
         })
       } else if (log.category === 'stat') {
         this.addLog({
