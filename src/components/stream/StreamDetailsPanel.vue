@@ -26,10 +26,21 @@
             Clone
           </button>
           <button
-            v-if="!isStreamRunning || isStreamFinished"
-            v-tooltip="paginationData?.total > 0 ? 'Run the stream again' : 'Start the stream'"
+            v-tooltip="
+              isStreamRunning && !isStreamFinished
+                ? 'Stream is currently running'
+                : paginationData?.total > 0
+                  ? 'Run the stream again'
+                  : 'Start the stream'
+            "
+            :disabled="isStreamRunning && !isStreamFinished"
             type="button"
-            class="px-3 py-1.5 text-sm font-medium text-white bg-cyan-600 rounded-md hover:bg-cyan-700 transition-colors"
+            :class="[
+              'px-3 py-1.5 text-sm font-medium rounded-md transition-colors',
+              isStreamRunning && !isStreamFinished
+                ? 'text-gray-500 bg-gray-300 cursor-not-allowed'
+                : 'text-white bg-cyan-600 hover:bg-cyan-700'
+            ]"
             @click="startStream"
           >
             {{ paginationData?.total > 0 ? 'Run again' : 'Start' }}
