@@ -510,8 +510,6 @@ export const useCommonStore = defineStore('common', {
           case 'Home':
           case 'DatabaseExplorer':
           case 'DatabaseMetadata':
-          case 'ManageStream':
-          case 'MonitorStream':
             // These routes don't need special data loading
             break
           default:
@@ -606,7 +604,7 @@ export const useCommonStore = defineStore('common', {
     }
   },
   getters: {
-    isStreamsPage: (state) => state.currentPage === 'ManageStream',
+    isStreamsPage: (state) => state.currentPage === 'Streams',
     userApiKey: (state) => state.userData?.apiKey || null,
     userID: (state) => state.userData?.userID || null,
     stripeCustomerId: (state) => state.userData?.stripeCustomerId || null,

@@ -5,7 +5,6 @@ import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '@/views/HomeView.vue'
 import StreamsView from '@/views/StreamsView.vue'
 import ConnectionsView from '@/views/ConnectionsView.vue'
-import ManageStreamView from '@/views/ManageStreamView.vue'
 import DatabaseExplorerView from '@/views/DatabaseExplorerView.vue'
 import NotFound from '@/views/NotFound.vue'
 
@@ -58,12 +57,6 @@ const routes = [
     path: '/streams/edit/:id',
     name: 'EditStream',
     component: () => import('@/views/CreateStreamView.vue'),
-    props: true
-  },
-  {
-    path: '/streams/:mode',
-    name: 'ManageStream',
-    component: ManageStreamView,
     props: true
   },
   {

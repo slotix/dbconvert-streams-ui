@@ -5,16 +5,6 @@
         <h1 class="text-base font-semibold leading-6 text-gray-900">List of streams</h1>
         <!-- <p class="mt-2 text-sm text-gray-700">List of streams.</p> -->
       </div>
-      <router-link :to="{ name: 'ManageStream', params: { mode: 'add' } }">
-        <!-- <div class="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
-          <button type="button"
-            class="flex items-center justify-center rounded-md bg-gray-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-gray-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-600"
-            @click="addStream">
-            <PlusIcon class="mr-2 h-5 w-5 text-white" aria-hidden="true" />
-            Add stream
-          </button>
-        </div> -->
-      </router-link>
     </div>
     <div class="container mx-auto">
       <div class="px-4 py-4">
