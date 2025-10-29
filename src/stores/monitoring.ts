@@ -110,9 +110,9 @@ export const useMonitoringStore = defineStore('monitoring', {
   getters: {
     currentStage(state: State): Stage | null {
       // Check for finished status in logs even if no stats yet
-      const lastLogWithStat = state.logs.filter((log) => log.msg.startsWith('[stat]')).pop()
+      const lastLogWithStat = state.logs.filter((log) => log.category === 'stat').pop()
 
-      if (lastLogWithStat?.msg.includes('FINISHED')) {
+      if (lastLogWithStat?.status === 'FINISHED') {
         state.currentStageID = 4 // Set to finished stage
         return state.stages.find((stage) => stage.id === state.currentStageID) || null
       }
@@ -167,21 +167,9 @@ export const useMonitoringStore = defineStore('monitoring', {
     stats(state: State): Log[] {
       const filteredLogs = this.statNodes.map((node: Node) => {
         const logsForNode = state.logs.filter(
-          (log) => log.nodeID === node.id && log.msg.startsWith('[stat]')
+          (log) => log.nodeID === node.id && log.category === 'stat'
         )
-
-        const lastLogEntry = logsForNode.length > 0 ? logsForNode[logsForNode.length - 1] : null
-        if (lastLogEntry) {
-          const parts = lastLogEntry.msg.split('|').map((part) => part.trim())
-          lastLogEntry['status'] = parts[0].split(' ')[1]
-          parts.forEach((part) => {
-            const [key, value] = part.split(':')
-            if (key && value) {
-              lastLogEntry[key.toLowerCase()] = value.trim()
-            }
-          })
-        }
-        return lastLogEntry
+        return logsForNode.length > 0 ? logsForNode[logsForNode.length - 1] : null
       })
       return filteredLogs.filter((log) => log !== null) as Log[]
     },
@@ -223,39 +211,16 @@ export const useMonitoringStore = defineStore('monitoring', {
       }
       this.logs.push(log)
 
-      // Aggregate stats in real-time if this is a [stat] log (old format) or has category field (new format)
-      if (log.type && log.nodeID) {
-        if ((log.msg && log.msg.startsWith('[stat]')) || log.category === 'stat') {
-          this.aggregateNodeStatsByType()
-        }
-      }
-    },
-    // New method to handle structured stat logs directly (no parsing needed)
-    addStructuredStatLog(log: Log) {
-      if (this.logs.length >= this.maxLogs) {
-        this.logs = this.logs.slice(-Math.floor(this.maxLogs / 2))
-      }
-
-      // Mark log as structured (add category field)
-      log.category = 'stat'
-      this.logs.push(log)
-
-      // Trigger aggregation immediately
-      if (log.type && log.nodeID) {
+      if (log.type && log.nodeID && log.category === 'stat') {
         this.aggregateNodeStatsByType()
       }
     },
     aggregateNodeStatsByType() {
-      // Group stats by source/target (support both old format and structured logs)
       const sourceStats = this.logs.filter(
-        (log) =>
-          log.type === 'source' &&
-          ((log.msg && log.msg.startsWith('[stat]')) || log.category === 'stat')
+        (log) => log.type === 'source' && log.category === 'stat'
       )
       const targetStats = this.logs.filter(
-        (log) =>
-          log.type === 'target' &&
-          ((log.msg && log.msg.startsWith('[stat]')) || log.category === 'stat')
+        (log) => log.type === 'target' && log.category === 'stat'
       )
 
       // Update aggregated stats
@@ -307,33 +272,6 @@ export const useMonitoringStore = defineStore('monitoring', {
         if (stat.ts && stat.ts < 100000000000) {
           stat.ts = stat.ts * 1000
         }
-
-        // Parse the stat message ONLY if it's old format (starts with [stat])
-        // For structured logs (category === 'stat'), fields are already present
-        if (stat.msg && stat.msg.startsWith('[stat]') && stat.category !== 'stat') {
-          const parts = stat.msg.split('|').map((part) => part.trim())
-
-          parts.forEach((part) => {
-            const colonIndex = part.indexOf(':')
-            if (colonIndex > 0) {
-              const key = part.substring(0, colonIndex).trim().toLowerCase()
-              const value = part.substring(colonIndex + 1).trim()
-
-              // Normalize 'rows' to 'events' for consistency
-              const normalizedKey = key === 'rows' ? 'events' : key
-              stat[normalizedKey] = value
-            }
-          })
-          // Extract status from first part like "[stat] RUNNING" or "[stat] FINISHED"
-          if (parts[0]) {
-            const statusMatch = parts[0].match(/\[stat\](?:\s+Table:\s+\w+\s*\|)?\s*(\w+)/)
-            if (statusMatch) {
-              stat.status = statusMatch[1]
-            }
-          }
-        }
-        // For structured logs, fields are already present (events, size, rate, elapsed, status)
-        // No parsing needed!
 
         const existing = latestByNode.get(stat.nodeID)
 

@@ -670,7 +670,7 @@ export const useLogsStore = defineStore('logs', {
 
         // Also send to monitoring store for Stream Performance panel
         const monitoringStore = useMonitoringStore()
-        monitoringStore.addStructuredStatLog({
+        monitoringStore.addLog({
           id: Date.now(),
           type: log.nodeType,
           nodeID: log.nodeId || '',
@@ -682,7 +682,8 @@ export const useLogsStore = defineStore('logs', {
           events: log.events,
           size: log.size,
           rate: log.rate,
-          elapsed: log.elapsed
+          elapsed: log.elapsed,
+          category: 'stat'
         })
       }
     }

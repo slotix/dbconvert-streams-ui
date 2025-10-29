@@ -251,7 +251,7 @@ function getStatLogDisplay(log: SystemLog): string {
   if (log.category === 'stat') {
     const parts: string[] = []
 
-    // Header: [stat] source/target
+    // Header: source/target
     if (log.nodeType) {
       parts.push(`${log.nodeType.toUpperCase()}`)
     }
