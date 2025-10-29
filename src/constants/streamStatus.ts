@@ -149,15 +149,16 @@ export const TERMINAL_STATUSES = [
 /**
  * Priority map for determining which status to display when multiple nodes have different statuses
  * Higher numeric value = higher priority to show (more important state)
+ * User actions (STOPPED, FAILED) take priority over natural completion (FINISHED)
  */
 export const STREAM_STATUS_PRIORITY: Record<string, number> = {
-  [STREAM_STATUS_NAMES.FAILED]: STREAM_STATUS.FAILED, // 4
-  [STREAM_STATUS_NAMES.TIME_LIMIT_REACHED]: STREAM_STATUS.TIME_LIMIT_REACHED, // 5
-  [STREAM_STATUS_NAMES.EVENT_LIMIT_REACHED]: STREAM_STATUS.EVENT_LIMIT_REACHED, // 6
-  [STREAM_STATUS_NAMES.STOPPED]: STREAM_STATUS.STOPPED, // 7
-  [STREAM_STATUS_NAMES.FINISHED]: STREAM_STATUS.FINISHED, // 8
-  [STREAM_STATUS_NAMES.PAUSED]: STREAM_STATUS.PAUSED, // 3
-  [STREAM_STATUS_NAMES.RUNNING]: STREAM_STATUS.RUNNING, // 2
-  [STREAM_STATUS_NAMES.READY]: STREAM_STATUS.READY, // 1
-  [STREAM_STATUS_NAMES.UNDEFINED]: STREAM_STATUS.UNDEFINED // 0
+  [STREAM_STATUS_NAMES.FAILED]: 9, // 9 - High priority: explicit failure
+  [STREAM_STATUS_NAMES.STOPPED]: 8, // 8 - High priority: user stopped it
+  [STREAM_STATUS_NAMES.FINISHED]: 7, // 7 - Natural completion
+  [STREAM_STATUS_NAMES.TIME_LIMIT_REACHED]: 6, // 6 - Limit reached
+  [STREAM_STATUS_NAMES.EVENT_LIMIT_REACHED]: 5, // 5 - Limit reached
+  [STREAM_STATUS_NAMES.PAUSED]: 4, // 4 - Paused state
+  [STREAM_STATUS_NAMES.RUNNING]: 3, // 3 - Active transfer
+  [STREAM_STATUS_NAMES.READY]: 2, // 2 - Ready to start
+  [STREAM_STATUS_NAMES.UNDEFINED]: 1 // 1 - Undefined state
 }

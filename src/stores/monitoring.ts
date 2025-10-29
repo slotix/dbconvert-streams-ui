@@ -406,8 +406,8 @@ export const useMonitoringStore = defineStore('monitoring', {
         failedEvents: isStructured
           ? (latestStat.failed as number) || 0
           : parseNumber(latestStat.failed as string),
-        dataSize: parseDataSize(latestStat.size as string),
-        avgRate: parseDataSize((latestStat['avg.rate'] || latestStat.rate) as string),
+        dataSize: parseDataSize(latestStat.size),
+        avgRate: parseDataSize(latestStat.rate),
         // For structured logs, elapsed is already a number in seconds
         // For old format, elapsed is a string like "0.909s" that needs parsing to ms, then convert to ns
         elapsed: isStructured

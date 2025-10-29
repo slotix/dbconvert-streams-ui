@@ -78,21 +78,35 @@ export function formatNumber(num: number): string {
 }
 
 /**
- * Parse a data size string (e.g., "11.7 KB", "1.5 MB") to bytes
- * @param sizeStr Size string with unit
+ * Parse a data size to bytes
+ * Accepts either:
+ * - Raw number (already in bytes) from backend payload
+ * - Formatted string (e.g., "11.7 KB", "1.5 MB") for backwards compatibility
+ * @param size Size as number (bytes) or string with unit
  * @returns Size in bytes
  */
-export function parseDataSize(sizeStr: string | undefined): number {
-  if (!sizeStr) return 0
-  const numStr = sizeStr.replace(/[^0-9.]/g, '')
-  const num = parseFloat(numStr) || 0
-  const upper = sizeStr.toUpperCase()
-  if (upper.includes('TB')) return num * Math.pow(1024, 4)
-  if (upper.includes('GB')) return num * Math.pow(1024, 3)
-  if (upper.includes('MB')) return num * Math.pow(1024, 2)
-  if (upper.includes('KB')) return num * 1024
-  if (upper.includes('B')) return num
-  return num
+export function parseDataSize(size: string | number | undefined): number {
+  if (size === undefined || size === null) return 0
+
+  // If already a number, it's raw bytes from the backend
+  if (typeof size === 'number') {
+    return Math.floor(size)
+  }
+
+  // Handle string format (backwards compatibility)
+  if (typeof size === 'string') {
+    const numStr = size.replace(/[^0-9.]/g, '')
+    const num = parseFloat(numStr) || 0
+    const upper = size.toUpperCase()
+    if (upper.includes('TB')) return num * Math.pow(1024, 4)
+    if (upper.includes('GB')) return num * Math.pow(1024, 3)
+    if (upper.includes('MB')) return num * Math.pow(1024, 2)
+    if (upper.includes('KB')) return num * 1024
+    if (upper.includes('B')) return num
+    return num
+  }
+
+  return 0
 }
 
 /**
