@@ -18,6 +18,9 @@ export * from './fileFormats'
 // Stream-related
 export * from './streamStatus'
 
+// Logging-related
+export * from './logTypes'
+
 // Service-related
 export * from './serviceStatus'
 

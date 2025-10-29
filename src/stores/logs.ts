@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import type { StandardLogEntry } from '@/types/logs'
 import { useMonitoringStore } from '@/stores/monitoring'
+import type { LogLevel, LogCategory, NodeType, StatStatus } from '@/constants'
 
 // localStorage keys for user preferences
 const STORAGE_KEYS = {
@@ -28,23 +29,25 @@ function saveToStorage(key: string, value: unknown): void {
   }
 }
 
-interface LogLevel {
-  info: 'info'
-  debug: 'debug'
-  warn: 'warn'
-  error: 'error'
-  sql: 'sql'
-}
-
 export interface SystemLog {
   id: number
   message: string
-  level: keyof LogLevel
+  level: LogLevel
   timestamp: number
   source?: string
   nodeId?: string
+  nodeType?: NodeType
   streamId?: string
   details?: Record<string, unknown>
+  // Structured log fields
+  category?: LogCategory
+  // Stat fields
+  table?: string
+  status?: StatStatus
+  events?: number
+  size?: string
+  rate?: string
+  elapsed?: number
 }
 
 // Phase 2: Enhanced SQL Logging Types
@@ -225,7 +228,7 @@ export const useLogsStore = defineStore('logs', {
   },
 
   getters: {
-    filteredLogs: (state) => (level?: keyof LogLevel) => {
+    filteredLogs: (state) => (level?: LogLevel) => {
       if (!level) return state.logs
       return state.logs.filter((log) => log.level === level)
     },
@@ -405,7 +408,7 @@ export const useLogsStore = defineStore('logs', {
         this.historicalLogs = rawLogs.map((log, index) => ({
           id: Date.now() + index,
           message: (log.msg as string) || (log.message as string) || '',
-          level: (log.level as keyof LogLevel) || 'info',
+          level: ((log.level as string) || 'info') as LogLevel,
           timestamp: log.ts
             ? typeof log.ts === 'number'
               ? log.ts * 1000
@@ -414,7 +417,16 @@ export const useLogsStore = defineStore('logs', {
               ? new Date(log.time as string).getTime()
               : Date.now(),
           source: (log.caller as string) || undefined,
-          streamId: (log.streamId as string) || streamId,
+          nodeType: log.nodeType as NodeType | undefined,
+          nodeId: log.nodeId as string | undefined,
+          streamId: ((log.streamId as string) || streamId) as string,
+          category: log.category as LogCategory | undefined,
+          table: log.table as string | undefined,
+          status: log.status as StatStatus | undefined,
+          events: log.events as number | undefined,
+          size: log.size as string | undefined,
+          rate: log.rate as string | undefined,
+          elapsed: log.elapsed as number | undefined,
           details: log
         }))
 
@@ -602,11 +614,13 @@ export const useLogsStore = defineStore('logs', {
       // Convert StandardLogEntry to SystemLog format
       this.addLog({
         message: log.message,
-        level: log.level as keyof LogLevel,
+        level: log.level,
         timestamp: new Date(log.timestamp).getTime(),
         source: log.nodeType,
+        nodeType: log.nodeType,
         nodeId: log.nodeId,
         streamId: log.streamId,
+        category: log.category,
         details: {
           category: log.category,
           caller: log.caller,
@@ -616,40 +630,37 @@ export const useLogsStore = defineStore('logs', {
     },
 
     addStreamLog(log: StandardLogEntry) {
-      // Handle progress and stat logs
+      const baseLog = {
+        message: log.message,
+        level: 'info' as LogLevel,
+        timestamp: new Date(log.timestamp).getTime(),
+        source: log.nodeType,
+        nodeType: log.nodeType,
+        nodeId: log.nodeId,
+        streamId: log.streamId,
+        category: log.category,
+        details: log.extra
+      }
+
       if (log.category === 'progress') {
         this.addLog({
-          message: log.message,
-          level: 'info',
-          timestamp: new Date(log.timestamp).getTime(),
-          source: log.nodeType,
-          nodeId: log.nodeId,
-          streamId: log.streamId,
-          details: {
-            category: 'progress',
-            stage: log.stage,
-            percentage: log.percentage,
-            ...log.extra
-          }
+          ...baseLog,
+          category: 'progress' as const,
+          // Progress-specific fields
+          ...(log.stage !== undefined && { stage: log.stage }),
+          ...(log.percentage !== undefined && { percentage: log.percentage })
         })
       } else if (log.category === 'stat') {
         this.addLog({
-          message: log.message,
-          level: 'info',
-          timestamp: new Date(log.timestamp).getTime(),
-          source: log.nodeType,
-          nodeId: log.nodeId,
-          streamId: log.streamId,
-          details: {
-            category: 'stat',
-            table: log.table,
-            events: log.events,
-            size: log.size,
-            rate: log.rate,
-            elapsed: log.elapsed,
-            status: log.status,
-            ...log.extra
-          }
+          ...baseLog,
+          category: 'stat' as const,
+          // Stat-specific fields
+          table: log.table,
+          events: log.events,
+          size: log.size,
+          rate: log.rate,
+          elapsed: log.elapsed,
+          status: log.status
         })
 
         // Also send to monitoring store for Stream Performance panel

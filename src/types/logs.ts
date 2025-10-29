@@ -1,13 +1,15 @@
+import type { LogLevel, LogCategory, NodeType, StatStatus } from '@/constants'
+
 // Standard structured log entry from backend
 export interface StandardLogEntry {
-  level: 'debug' | 'info' | 'warn' | 'error'
+  level: LogLevel
   timestamp: string
   message: string
-  nodeType: 'api' | 'source' | 'target'
+  nodeType: NodeType
   nodeId?: string
   streamId?: string
   caller?: string
-  category?: 'general' | 'progress' | 'stat' | 'sql' | 'error' | 'debug'
+  category?: LogCategory
   extra?: Record<string, unknown>
 
   // Category-specific fields (flattened from extra)
@@ -22,7 +24,7 @@ export interface StandardLogEntry {
   size?: string
   rate?: string
   elapsed?: number
-  status?: 'RUNNING' | 'FINISHED' | 'FAILED'
+  status?: StatStatus
 
   // SQL
   query?: string
@@ -34,9 +36,9 @@ export interface StandardLogEntry {
 }
 
 export interface LogFilter {
-  levels?: Array<'debug' | 'info' | 'warn' | 'error'>
-  nodeTypes?: Array<'api' | 'source' | 'target'>
-  categories?: Array<string>
+  levels?: LogLevel[]
+  nodeTypes?: NodeType[]
+  categories?: LogCategory[]
   streamId?: string
   search?: string
 }

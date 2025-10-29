@@ -11,6 +11,7 @@ import {
   MinusIcon,
   InformationCircleIcon
 } from '@heroicons/vue/24/outline'
+import { LOG_LEVELS, STREAM_PROGRESS_CATEGORIES } from '@/constants'
 import SqlConsoleView from './SqlConsoleView.vue'
 
 const store = useLogsStore()
@@ -55,14 +56,16 @@ const filteredLogs = computed(() => {
   // Filter by message type
   if (selectedMessageType.value !== 'all') {
     filtered = filtered.filter((log) => {
-      const msg = log.message?.toLowerCase() || ''
       switch (selectedMessageType.value) {
         case 'error & warning':
-          return log.level === 'error' || log.level === 'warn'
+          return log.level === LOG_LEVELS.ERROR || log.level === LOG_LEVELS.WARN
         case 'progress & stats':
-          return msg.startsWith('[progress]') || msg.startsWith('[stat]')
+          return log.category ? STREAM_PROGRESS_CATEGORIES.includes(log.category) : false
         case 'info':
-          return log.level === 'info' && !msg.startsWith('[progress]') && !msg.startsWith('[stat]')
+          return (
+            log.level === LOG_LEVELS.INFO &&
+            !(log.category && STREAM_PROGRESS_CATEGORIES.includes(log.category))
+          )
         default:
           return true
       }
@@ -97,10 +100,10 @@ function getMessageTypeColor(log: SystemLog): string {
     return 'bg-blue-50/80 border-l-4 border-blue-300'
   }
 
-  if (msg.startsWith('[stat]')) {
+  if (log.category === 'stat') {
     return 'bg-indigo-50/80 border-l-4 border-indigo-300'
   }
-  if (msg.startsWith('[progress]')) {
+  if (log.category === 'progress') {
     return 'bg-emerald-50/80 border-l-4 border-emerald-300'
   }
 
@@ -134,8 +137,8 @@ function getMessageIcon(log: SystemLog): typeof InformationCircleIcon {
   const msg = log?.message?.toLowerCase() || ''
   if (msg.includes('connecting')) return ArrowPathIcon
   if (msg.includes('connected to')) return ArrowPathIcon
-  if (msg.startsWith('[stat]')) return ChartBarIcon
-  if (msg.startsWith('[progress]')) return ArrowTrendingUpIcon
+  if (log.category === 'stat') return ChartBarIcon
+  if (log.category === 'progress') return ArrowTrendingUpIcon
   if (msg.startsWith('    at ') || msg.startsWith('  at ')) return MinusIcon
   return InformationCircleIcon
 }
@@ -145,8 +148,8 @@ function getMessageIconColor(log: SystemLog): string {
 
   if (msg.includes('connecting')) return 'text-blue-500'
   if (msg.includes('connected to')) return 'text-blue-600'
-  if (msg.startsWith('[stat]')) return 'text-indigo-500'
-  if (msg.startsWith('[progress]')) return 'text-emerald-500'
+  if (log.category === 'stat') return 'text-indigo-500'
+  if (log.category === 'progress') return 'text-emerald-500'
   if (msg.startsWith('    at ') || msg.startsWith('  at ')) return 'text-red-300'
 
   switch (log?.level) {
@@ -220,6 +223,58 @@ function getShortStreamId(streamId: string): string {
     return parts[parts.length - 1].slice(0, 8)
   }
   return streamId.slice(0, 12)
+}
+
+function getStatLogDisplay(log: SystemLog): string {
+  // For stat logs with structured data, build a polished display string
+  if (log.category === 'stat') {
+    const parts: string[] = []
+
+    // Header: [stat] source/target
+    if (log.nodeType) {
+      parts.push(`${log.nodeType.toUpperCase()}`)
+    }
+
+    // Table name
+    if (log.table && log.table !== '') {
+      parts.push(`"${log.table}"`)
+    } else if (log.table === '') {
+      // Show Total for aggregate stats
+      parts.push(`TOTAL`)
+    }
+
+    // Status indicator
+    if (log.status) {
+      const statusEmoji = log.status === 'FINISHED' ? '✓' : log.status === 'FAILED' ? '✗' : '→'
+      parts.push(`${statusEmoji} ${log.status}`)
+    }
+
+    // Statistics
+    const stats: string[] = []
+    if (log.events !== undefined) {
+      stats.push(`${log.events.toLocaleString()} rows`)
+    }
+    if (log.size) {
+      stats.push(`${log.size}`)
+    }
+    if (log.status === 'FINISHED') {
+      if (log.rate) {
+        stats.push(`${log.rate}/s`)
+      }
+      if (log.elapsed !== undefined) {
+        stats.push(`${log.elapsed.toFixed(3)}s`)
+      }
+    }
+
+    if (stats.length > 0) {
+      parts.push(`[${stats.join(' • ')}]`)
+    }
+
+    return parts.join(' ')
+  }
+
+  // For other log types, use the message field
+  return log.message || ''
 }
 
 function backToLiveLogs() {
@@ -430,7 +485,7 @@ function backToLiveLogs() {
                     </td>
                     <td class="py-1.5 px-2 text-sm text-gray-800 break-words">
                       <div class="flex items-start">
-                        <span class="flex-1">{{ log.message }}</span>
+                        <span class="flex-1">{{ getStatLogDisplay(log) }}</span>
                         <span v-if="getDuplicateCount(log)" class="ml-2 text-xs text-gray-500">
                           {{ getDuplicateCount(log) }}
                         </span>
