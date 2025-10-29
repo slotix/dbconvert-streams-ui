@@ -428,7 +428,6 @@ import {
   ArrowPathIcon,
   CircleStackIcon,
   XMarkIcon,
-  ComputerDesktopIcon,
   DocumentTextIcon,
   UserCircleIcon,
   TableCellsIcon
@@ -453,8 +452,7 @@ const navigation = computed(() => {
       icon: TableCellsIcon,
       show: true
     },
-    { name: 'Streams', href: '/streams', icon: ArrowPathIcon, show: true },
-    { name: 'Monitor Stream', href: '/monitor', icon: ComputerDesktopIcon, show: true }
+    { name: 'Streams', href: '/streams', icon: ArrowPathIcon, show: true }
   ].filter((item) => item.show)
 })
 

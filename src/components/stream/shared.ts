@@ -157,7 +157,8 @@ export default defineComponent({
         const streamID = await useStreamsStore().startStream(this.streamConfig.id)
         useCommonStore().showNotification('Stream started', 'success')
         useMonitoringStore().setStream(streamID, this.streamConfig)
-        this.$router.push({ name: 'MonitorStream' })
+        useMonitoringStore().requestShowMonitorTab()
+        this.$router.push({ name: 'Streams' })
       } catch (err: unknown) {
         if (err instanceof Error) {
           useCommonStore().showNotification(err.message, 'error')

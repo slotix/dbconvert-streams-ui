@@ -67,11 +67,6 @@ const routes = [
     props: true
   },
   {
-    path: '/monitor',
-    name: 'MonitorStream',
-    redirect: '/streams'
-  },
-  {
     path: '/:catchAll(.*)',
     component: NotFound
   }
