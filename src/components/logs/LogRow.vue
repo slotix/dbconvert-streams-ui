@@ -91,7 +91,7 @@ function toggleExpand() {
       </button>
 
       <!-- Timestamp -->
-      <span class="w-20 text-xs text-gray-500 font-mono whitespace-nowrap flex-shrink-0">
+      <span class="w-28 text-xs text-gray-500 font-mono whitespace-nowrap flex-shrink-0">
         {{ timestamp }}
       </span>
 

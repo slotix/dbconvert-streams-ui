@@ -103,16 +103,19 @@ export function getCategoryLabel(type: 'category' | 'level', value: string): str
 
 /**
  * Format log timestamp from Unix timestamp (seconds or milliseconds)
+ * Returns format: HH:MM:SS.mmm for millisecond precision
  */
 export function formatLogTimestamp(timestamp: number): string {
   const timestampInMs = timestamp < 1e12 ? timestamp * 1000 : timestamp
   const date = new Date(timestampInMs)
-  return date.toLocaleTimeString('en-US', {
+  const timeString = date.toLocaleTimeString('en-US', {
     hour12: false,
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit'
   })
+  const milliseconds = date.getMilliseconds().toString().padStart(3, '0')
+  return `${timeString}.${milliseconds}`
 }
 
 /**

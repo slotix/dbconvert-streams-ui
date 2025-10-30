@@ -463,9 +463,9 @@ const monitoringStore = useMonitoringStore()
 const isJsonView = ref(false)
 const showDeleteConfirm = ref(false)
 const activeTab = ref<'monitor' | 'configuration' | 'history'>('configuration')
-const currentPage = ref(1)
 const paginationData = ref<any>(null)
 const isLoadingHistory = ref(false)
+const historyAbortController = ref<AbortController | null>(null)
 
 const dbTypes = connectionsStore.dbTypes
 
@@ -542,17 +542,29 @@ const remainingTablesCount = computed(() => {
 // Fetch stream history from API using apiClient
 async function loadStreamHistory(page: number = 1) {
   try {
+    // Cancel any previous in-flight request to prevent race conditions
+    if (historyAbortController.value) {
+      historyAbortController.value.abort()
+    }
+    historyAbortController.value = new AbortController()
+
     isLoadingHistory.value = true
     const response = await apiClient.get(`/stream-configs/${props.stream.id}/history`, {
       params: {
         page,
         pageSize: 50
-      }
+      },
+      signal: historyAbortController.value.signal
     })
 
     paginationData.value = response.data
-    currentPage.value = page
   } catch (error: unknown) {
+    // Ignore abort errors - they're expected when switching streams
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.debug('History request was cancelled due to stream switch')
+      return
+    }
+
     let errorMsg = 'Failed to load history'
     if (error instanceof Error) {
       errorMsg = error.message
@@ -573,8 +585,8 @@ async function handleDeleteRun(runId: string) {
     await apiClient.delete(`/stream-configs/${props.stream.id}/runs/${runId}`)
 
     commonStore.showNotification('Run deleted successfully', 'success')
-    // Reload current page to reflect deletion
-    await loadStreamHistory(currentPage.value)
+    // Reload history to reflect deletion
+    await loadStreamHistory(1)
   } catch (error: unknown) {
     let errorMsg = 'Failed to delete stream run'
     if (error instanceof Error) {
@@ -603,11 +615,31 @@ async function handleClearAll() {
   }
 }
 
+// Abort any pending requests and reload history when switching streams
+watch(
+  () => props.stream.id,
+  async () => {
+    // Cancel any in-flight requests for the previous stream
+    if (historyAbortController.value) {
+      historyAbortController.value.abort()
+    }
+    // Clear history data when switching streams
+    paginationData.value = null
+
+    // If currently viewing History tab, reload data for the new stream
+    if (activeTab.value === 'history') {
+      await loadStreamHistory(1)
+    }
+  }
+)
+
 // Load history when history tab is opened
 watch(
   () => activeTab.value,
   async (newTab) => {
-    if (newTab === 'history' && !paginationData.value) {
+    if (newTab === 'history') {
+      // Always load fresh data when switching to history tab
+      // No frontend caching - data comes from backend on demand
       await loadStreamHistory(1)
     }
   }
@@ -619,8 +651,8 @@ watch(isStreamFinished, async (finished, wasFinished) => {
   if (finished && !wasFinished) {
     // Wait a bit for backend to save history
     setTimeout(async () => {
-      // Reload history if already loaded
-      if (paginationData.value) {
+      // Reload history if currently viewing the history tab
+      if (activeTab.value === 'history') {
         await loadStreamHistory(1)
       }
     }, 2000)
