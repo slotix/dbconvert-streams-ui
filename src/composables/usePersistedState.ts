@@ -55,7 +55,7 @@ export function usePersistedState<T>(
     serializer = JSON.stringify,
     deserializer = JSON.parse,
     deep = typeof defaultValue === 'object' && defaultValue !== null,
-    onError = (error, operation) => {
+    onError = (error: Error, operation: 'load' | 'save') => {
       console.error(`[usePersistedState] ${operation} error for key "${key}":`, error)
     }
   } = options || {}
