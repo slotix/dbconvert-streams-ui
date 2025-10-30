@@ -608,31 +608,6 @@ export const useLogsStore = defineStore('logs', {
     },
 
     addStreamLog(log: StandardLogEntry) {
-      // Debug: Log what's being received for progress/stat logs
-      if (log.category === 'progress' || log.category === 'stat') {
-        console.debug('📥 SSE Log received:', {
-          category: log.category,
-          message: log.message,
-          messageLength: log.message?.length || 0,
-          messageIsWhitespace: log.message?.trim().length === 0,
-          ...(log.category === 'progress' && {
-            stage: log.stage,
-            description: log.description,
-            percentage: log.percentage
-          }),
-          ...(log.category === 'stat' && {
-            table: log.table,
-            status: log.status,
-            events: log.events,
-            size: log.size,
-            rate: log.rate
-          }),
-          nodeId: log.nodeId,
-          type: log.type,
-          timestamp: log.timestamp
-        })
-      }
-
       const baseLog = {
         message: log.message,
         level: 'info' as LogLevel,
@@ -654,13 +629,7 @@ export const useLogsStore = defineStore('logs', {
           ...(log.percentage !== undefined && { percentage: log.percentage }),
           ...(log.description !== undefined && { description: log.description })
         }
-        console.debug('➕ Adding progress log to store:', {
-          message: progressLog.message,
-          stage: progressLog.stage,
-          logsCountBefore: this.logs.length
-        })
         this.addLog(progressLog)
-        console.debug('✅ Progress log added. New count:', this.logs.length)
 
         // Send progress to monitoring store to update stage
         const monitoringStore = useMonitoringStore()
@@ -687,14 +656,7 @@ export const useLogsStore = defineStore('logs', {
           elapsed: log.elapsed,
           status: log.status
         }
-        console.debug('➕ Adding stat log to store:', {
-          message: statLog.message,
-          table: statLog.table,
-          status: statLog.status,
-          logsCountBefore: this.logs.length
-        })
         this.addLog(statLog)
-        console.debug('✅ Stat log added. New count:', this.logs.length)
 
         // Also send to monitoring store for Stream Performance panel
         const monitoringStore = useMonitoringStore()
