@@ -398,10 +398,6 @@ export const useLogsStore = defineStore('logs', {
         })
         this.systemLogTabRunTimestamps.set(streamId, runTimestamp)
         this.selectedSystemLogTabId = tabId // Switch to new tab
-        // Open the panel if not already open
-        if (!this.isLogsPanelOpen) {
-          this.isLogsPanelOpen = true
-        }
       }
     },
 

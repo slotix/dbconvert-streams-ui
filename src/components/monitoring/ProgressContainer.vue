@@ -5,11 +5,17 @@
   <div class="mb-5 overflow-hidden rounded-lg bg-white shadow">
     <div class="px-4 py-5 sm:p-6">
       <h4 class="sr-only">Status</h4>
-      <p class="text-lg font-medium text-gray-900">{{ store.currentStage?.description }}</p>
+      <p class="text-lg font-medium text-gray-900">
+        {{ isRunning ? store.currentStage?.description : 'Ready to start' }}
+      </p>
 
       <div class="mt-3" aria-hidden="true">
         <div class="overflow-hidden rounded-full bg-gray-200">
-          <div class="rounded-full bg-green-500 h-3" :style="{ width: store.stagesBarWidth }"></div>
+          <div
+            class="rounded-full h-3 transition-all duration-500"
+            :class="isRunning ? 'bg-green-500' : 'bg-gray-400'"
+            :style="{ width: isRunning ? store.stagesBarWidth : '0%' }"
+          ></div>
         </div>
       </div>
 
@@ -29,11 +35,11 @@
             :class="[
               'text-sm mt-1',
               textClass(index),
-              index === store.currentStageID - 1 ? 'font-bold' : ''
+              isRunning && index === store.currentStageID - 1 ? 'font-bold' : ''
             ]"
             >{{ stage.title }}</span
           >
-          <span v-if="stage.timestamp" class="text-xs mt-1 text-gray-500">{{
+          <span v-if="isRunning && stage.timestamp" class="text-xs mt-1 text-gray-500">{{
             formatTimestamp(stage.timestamp)
           }}</span>
         </div>
@@ -46,9 +52,14 @@
 import { useMonitoringStore } from '@/stores/monitoring'
 import { watch } from 'vue'
 
+const props = defineProps<{
+  isRunning: boolean
+}>()
+
 const store = useMonitoringStore()
 
 function stageClass(index: number): string {
+  if (!props.isRunning) return 'bg-gray-200 text-gray-400'
   if (!store.currentStage) return 'bg-gray-200 text-gray-400'
   if (index < store.currentStageID - 1) {
     return 'bg-green-500 text-white' // Completed stages
@@ -60,6 +71,7 @@ function stageClass(index: number): string {
 }
 
 function textClass(index: number): string {
+  if (!props.isRunning) return 'text-gray-400'
   if (!store.currentStage) return 'text-gray-400'
   if (index < store.currentStageID - 1) {
     return 'text-green-500' // Completed stages
