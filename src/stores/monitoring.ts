@@ -167,8 +167,8 @@ export const useMonitoringStore = defineStore('monitoring', {
   },
   actions: {
     setStream(id: string, streamConfig: StreamConfig) {
-      // Clear logs and stats when starting a new stream
-      this.logs = []
+      // NOTE: Don't clear logs here! Logs may have already arrived via SSE
+      // Just set the streamID and let aggregation filter properly
       this.nodes = []
       this.aggregatedStats = null
 
@@ -206,10 +206,29 @@ export const useMonitoringStore = defineStore('monitoring', {
       }
     },
     aggregateNodeStatsByType() {
-      const sourceStats = this.logs.filter(
+      // If streamID not set, infer it from the logs themselves
+      let currentStreamID = this.streamID
+      if (!currentStreamID && this.logs.length > 0) {
+        // Get the most recent log's streamId to use as the current stream
+        const recentLog = this.logs[this.logs.length - 1]
+        if (recentLog.streamId) {
+          currentStreamID = recentLog.streamId
+        }
+      }
+
+      // Filter logs by current streamID to avoid mixing logs from multiple streams
+      // IMPORTANT: Include logs that don't have a streamId field (early logs before streamId was set)
+      let logsForCurrentStream = this.logs
+      if (currentStreamID) {
+        logsForCurrentStream = this.logs.filter((log) =>
+          log.streamId === currentStreamID || !log.streamId  // Include logs without streamId
+        )
+      }
+
+      const sourceStats = logsForCurrentStream.filter(
         (log) => log.type === 'source' && log.category === 'stat'
       )
-      const targetStats = this.logs.filter(
+      const targetStats = logsForCurrentStream.filter(
         (log) => log.type === 'target' && log.category === 'stat'
       )
 
@@ -369,6 +388,12 @@ export const useMonitoringStore = defineStore('monitoring', {
     },
     processMessage(message: Log) {
       try {
+        // Note: SSE service now maps nodeType → type, so this is mostly a fallback
+        // Map nodeType from backend to type for consistent handling (fallback)
+        if (!message.type && message.nodeType) {
+          message.type = message.nodeType
+        }
+
         // Handle progress messages (structured logs with category: 'progress')
         if (message.category === 'progress' && message.stage !== undefined) {
           this.currentStageID = message.stage
