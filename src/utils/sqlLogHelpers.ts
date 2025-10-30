@@ -14,7 +14,7 @@ const PURPOSE_PRESENTATION: Record<string, { label: string; classes: string }> =
   DATA_QUERY: { label: 'Data', classes: 'bg-blue-600 text-white' },
   COUNT_QUERY: { label: 'Count', classes: 'bg-amber-600 text-white' },
   PLAN_ANALYSIS: { label: 'Plan Analysis', classes: 'bg-slate-500 text-white' },
-  SCHEMA_CHANGE: { label: 'Schema Change', classes: 'bg-red-600 text-white' },
+  SCHEMA_CHANGE: { label: 'DDL', classes: 'bg-red-600 text-white' },
   DML_OPERATION: { label: 'DML', classes: 'bg-emerald-600 text-white' },
   SYSTEM_TASK: { label: 'System', classes: 'bg-gray-500 text-white' },
   UTILITY: { label: 'Utility', classes: 'bg-gray-400 text-white' }
