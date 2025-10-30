@@ -111,9 +111,9 @@ function toggleExpanded() {
       <!-- Query Count Badge -->
       <span
         v-if="queriesInGroup && queriesInGroup > 1"
-        class="text-xs bg-gray-600 text-white px-2 py-0.5 rounded"
+        class="text-xs bg-gray-300 text-gray-700 px-2 py-0.5 rounded"
       >
-        {{ queriesInGroup }} queries
+        {{ queriesInGroup }}
       </span>
     </div>
 

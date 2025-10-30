@@ -11,7 +11,9 @@ import {
   ChevronRightIcon,
   TrashIcon,
   ArrowDownIcon,
-  ArrowUpIcon
+  ArrowUpIcon,
+  ArrowsPointingInIcon,
+  ArrowsPointingOutIcon
 } from '@heroicons/vue/24/outline'
 import { LOG_LEVELS, STREAM_PROGRESS_CATEGORIES } from '@/constants'
 import SqlConsoleView from './SqlConsoleView.vue'
@@ -48,8 +50,8 @@ const availableStreams = computed(() => {
 })
 
 // Message type filter
-const messageTypes = ['all', 'error & warning', 'progress & stats', 'info']
-const selectedMessageType = ref('all')
+const messageTypeOptions = ['error & warning', 'progress & stats', 'info']
+const selectedMessageTypes = ref(new Set(messageTypeOptions))
 const showMessageTypeMenu = ref(false)
 const messageTypeMenuRef = ref<HTMLDivElement | null>(null)
 const searchText = ref('')
@@ -68,24 +70,29 @@ const filteredLogs = computed(() => {
     filtered = filtered.filter((log) => log.streamId === selectedStreamId.value)
   }
 
-  // Filter by message type
-  if (selectedMessageType.value !== 'all') {
-    filtered = filtered.filter((log) => {
-      switch (selectedMessageType.value) {
+  // Filter by message type (multiple selections)
+  filtered = filtered.filter((log) => {
+    if (selectedMessageTypes.value.size === 0) return true // If nothing selected, show all
+
+    for (const type of selectedMessageTypes.value) {
+      switch (type) {
         case 'error & warning':
-          return log.level === LOG_LEVELS.ERROR || log.level === LOG_LEVELS.WARN
+          if (log.level === LOG_LEVELS.ERROR || log.level === LOG_LEVELS.WARN) return true
+          break
         case 'progress & stats':
-          return log.category ? STREAM_PROGRESS_CATEGORIES.includes(log.category) : false
+          if (log.category && STREAM_PROGRESS_CATEGORIES.includes(log.category)) return true
+          break
         case 'info':
-          return (
+          if (
             log.level === LOG_LEVELS.INFO &&
             !(log.category && STREAM_PROGRESS_CATEGORIES.includes(log.category))
           )
-        default:
-          return true
+            return true
+          break
       }
-    })
-  }
+    }
+    return false
+  })
 
   // Filter by search text (searches message, source, type, streamId)
   if (searchText.value.trim()) {
@@ -155,6 +162,31 @@ function toggleStream(streamId: string) {
     collapsedStreams.value.delete(streamId)
   } else {
     collapsedStreams.value.add(streamId)
+  }
+}
+
+// Computed property to check if all streams are expanded
+const areAllStreamsExpanded = computed(() => {
+  return (
+    visuallyGrouped.value &&
+    groupedLogs.value &&
+    collapsedStreams.value.size === 0 &&
+    groupedLogs.value.size > 0
+  )
+})
+
+// Expand/collapse all streams
+function toggleExpandCollapseAll() {
+  if (areAllStreamsExpanded.value) {
+    // Collapse all
+    if (groupedLogs.value) {
+      groupedLogs.value.forEach((_, streamId) => {
+        collapsedStreams.value.add(streamId)
+      })
+    }
+  } else {
+    // Expand all
+    collapsedStreams.value.clear()
   }
 }
 
@@ -353,9 +385,15 @@ onMounted(() => {
     visuallyGrouped.value = true
   }
 
-  const savedMessageType = localStorage.getItem('systemLogMessageType')
-  if (savedMessageType) {
-    selectedMessageType.value = savedMessageType
+  const savedMessageTypes = localStorage.getItem('systemLogMessageTypes')
+  if (savedMessageTypes) {
+    try {
+      const parsed = JSON.parse(savedMessageTypes)
+      selectedMessageTypes.value = new Set(parsed)
+    } catch {
+      // If parsing fails, use defaults
+      selectedMessageTypes.value = new Set(messageTypeOptions)
+    }
   }
 
   // Note: Do NOT persist selectedStreamId - start with clean state each session
@@ -368,9 +406,13 @@ onMounted(() => {
     localStorage.setItem('systemLogVisuallyGrouped', String(newValue))
   })
 
-  watch(selectedMessageType, (newValue) => {
-    localStorage.setItem('systemLogMessageType', newValue)
-  })
+  watch(
+    selectedMessageTypes,
+    (newValue) => {
+      localStorage.setItem('systemLogMessageTypes', JSON.stringify(Array.from(newValue)))
+    },
+    { deep: true }
+  )
 
   // Note: Do NOT persist selectedStreamId - it should reset each session
 
@@ -484,6 +526,24 @@ onBeforeUnmount(() => {
                 <span class="font-medium">{{ visuallyGrouped ? 'Grouped' : 'Ungrouped' }}</span>
               </button>
 
+              <!-- Expand/Collapse Toggle (only visible when visually grouped) -->
+              <button
+                v-if="visuallyGrouped && groupedLogs && groupedLogs.size > 0"
+                class="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-gray-300 rounded transition-colors bg-white text-gray-600 hover:bg-gray-50"
+                :title="
+                  areAllStreamsExpanded
+                    ? 'Collapse all stream groups (X)'
+                    : 'Expand all stream groups (X)'
+                "
+                @click="toggleExpandCollapseAll"
+              >
+                <component
+                  :is="areAllStreamsExpanded ? ArrowsPointingInIcon : ArrowsPointingOutIcon"
+                  class="w-4 h-4"
+                />
+                <span class="font-medium">{{ areAllStreamsExpanded ? 'Collapse' : 'Expand' }}</span>
+              </button>
+
               <div class="hidden sm:block h-6 border-l border-gray-200" />
 
               <!-- Stream Filter Dropdown (matching SQL Logs query type dropdown style) -->
@@ -509,7 +569,15 @@ onBeforeUnmount(() => {
                   @click="showMessageTypeMenu = !showMessageTypeMenu"
                 >
                   <FunnelIcon class="w-4 h-4 text-gray-600" />
-                  <span class="text-gray-700 font-medium">{{ selectedMessageType }}</span>
+                  <span class="text-gray-700 font-medium">
+                    {{
+                      selectedMessageTypes.size === messageTypeOptions.length
+                        ? 'All Types'
+                        : selectedMessageTypes.size === 0
+                          ? 'No Selection'
+                          : `${selectedMessageTypes.size} Selected`
+                    }}
+                  </span>
                   <ChevronDownIcon class="w-3.5 h-3.5 text-gray-400" />
                 </button>
 
@@ -520,29 +588,63 @@ onBeforeUnmount(() => {
                 >
                   <div
                     v-if="showMessageTypeMenu"
-                    class="absolute left-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50"
+                    class="absolute left-0 mt-2 w-56 bg-white border border-gray-200 rounded-md shadow-lg z-50"
                     @click.stop
                   >
-                    <!-- Message Type Options -->
+                    <!-- Select All / Clear All -->
                     <button
-                      v-for="type in messageTypes"
-                      :key="type"
-                      class="w-full text-left px-3 py-2 text-xs hover:bg-gray-50 flex items-center gap-2 transition-colors group"
+                      class="w-full text-left px-3 py-2 text-xs hover:bg-gray-50 flex items-center gap-2 transition-colors group border-b border-gray-100"
                       @click="
-                        selectedMessageType = type
-                        showMessageTypeMenu = false
+                        selectedMessageTypes.size === messageTypeOptions.length
+                          ? selectedMessageTypes.clear()
+                          : (selectedMessageTypes = new Set(messageTypeOptions))
                       "
                     >
                       <div
                         :class="[
                           'w-4 h-4 rounded border transition-colors',
-                          selectedMessageType === type
+                          selectedMessageTypes.size === messageTypeOptions.length
                             ? 'bg-gray-700 border-gray-700'
                             : 'border-gray-300 group-hover:border-gray-400'
                         ]"
                       >
                         <span
-                          v-if="selectedMessageType === type"
+                          v-if="selectedMessageTypes.size === messageTypeOptions.length"
+                          class="flex items-center justify-center w-full h-full text-white text-xs"
+                        >
+                          ✓
+                        </span>
+                      </div>
+                      <span class="text-gray-700 group-hover:text-gray-900 font-semibold">
+                        {{
+                          selectedMessageTypes.size === messageTypeOptions.length
+                            ? 'Clear All'
+                            : 'Select All'
+                        }}
+                      </span>
+                    </button>
+
+                    <!-- Message Type Options -->
+                    <button
+                      v-for="type in messageTypeOptions"
+                      :key="type"
+                      class="w-full text-left px-3 py-2 text-xs hover:bg-gray-50 flex items-center gap-2 transition-colors group"
+                      @click="
+                        selectedMessageTypes.has(type)
+                          ? selectedMessageTypes.delete(type)
+                          : selectedMessageTypes.add(type)
+                      "
+                    >
+                      <div
+                        :class="[
+                          'w-4 h-4 rounded border transition-colors',
+                          selectedMessageTypes.has(type)
+                            ? 'bg-gray-700 border-gray-700'
+                            : 'border-gray-300 group-hover:border-gray-400'
+                        ]"
+                      >
+                        <span
+                          v-if="selectedMessageTypes.has(type)"
                           class="flex items-center justify-center w-full h-full text-white text-xs"
                         >
                           ✓
@@ -650,10 +752,10 @@ onBeforeUnmount(() => {
                       class="w-4 h-4 text-gray-700 flex-shrink-0"
                     />
                     <span class="text-sm font-semibold text-gray-900">
-                      {{ streamId === 'ungrouped' ? 'Ungrouped' : getShortStreamId(streamId) }}
+                      {{ streamId === 'ungrouped' ? 'General' : getShortStreamId(streamId) }}
                     </span>
-                    <span class="text-xs bg-gray-600 text-white px-2 py-0.5 rounded">
-                      {{ logs.length }} logs
+                    <span class="text-xs bg-gray-300 text-gray-700 px-2 py-0.5 rounded">
+                      {{ logs.length }}
                     </span>
                   </div>
 
