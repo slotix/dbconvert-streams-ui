@@ -4,7 +4,6 @@ import { createRouter, createWebHistory } from 'vue-router'
 // Static imports for stability during development
 import HomeView from '@/views/HomeView.vue'
 import StreamsView from '@/views/StreamsView.vue'
-import ConnectionsView from '@/views/ConnectionsView.vue'
 import DatabaseExplorerView from '@/views/DatabaseExplorerView.vue'
 import NotFound from '@/views/NotFound.vue'
 
@@ -15,14 +14,8 @@ const routes = [
     component: HomeView
   },
   {
-    path: '/connections',
-    name: 'Connections',
-    component: ConnectionsView
-  },
-  {
     path: '/explorer/add',
     name: 'AddConnection',
-    alias: ['/connections/add'],
     component: () => import('@/views/AddConnectionView.vue')
   },
   {

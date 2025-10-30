@@ -426,7 +426,6 @@ import { Dialog, DialogPanel, TransitionChild, TransitionRoot } from '@headlessu
 import {
   Bars3Icon,
   ArrowPathIcon,
-  CircleStackIcon,
   XMarkIcon,
   DocumentTextIcon,
   UserCircleIcon,
@@ -445,7 +444,6 @@ const iconSizes = useContextualIconSizes()
 // All navigation items
 const navigation = computed(() => {
   return [
-    { name: 'Connections', href: '/connections', icon: CircleStackIcon, show: true },
     {
       name: 'Data Explorer',
       href: '/explorer',
