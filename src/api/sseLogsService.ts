@@ -384,17 +384,16 @@ export class SSELogsService {
         this.forceRefreshLogsPanel()
 
         // Convert to monitoring store format
-        // Spread data first, then override with our mappings to ensure correct field names
         const logEntry = {
-          ...data,  // Include all backend fields first
+          ...data,
           id: Date.now(),
-          type: data.nodeType || source.split('.')[0] || 'unknown',  // Use nodeType from backend if available
+          type: data.type || 'unknown',
           nodeID: nodeId || 'unknown',
           msg: message,
           level: level,
           ts: timestamp,
-          category: data.category,  // Include category for stat filtering
-          streamId: streamId  // Include streamId for filtering
+          category: data.category,
+          streamId: streamId
         }
 
         this.processMessage(logEntry)

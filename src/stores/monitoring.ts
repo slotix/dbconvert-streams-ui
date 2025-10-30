@@ -220,8 +220,8 @@ export const useMonitoringStore = defineStore('monitoring', {
       // IMPORTANT: Include logs that don't have a streamId field (early logs before streamId was set)
       let logsForCurrentStream = this.logs
       if (currentStreamID) {
-        logsForCurrentStream = this.logs.filter((log) =>
-          log.streamId === currentStreamID || !log.streamId  // Include logs without streamId
+        logsForCurrentStream = this.logs.filter(
+          (log) => log.streamId === currentStreamID || !log.streamId // Include logs without streamId
         )
       }
 
@@ -388,12 +388,6 @@ export const useMonitoringStore = defineStore('monitoring', {
     },
     processMessage(message: Log) {
       try {
-        // Note: SSE service now maps nodeType → type, so this is mostly a fallback
-        // Map nodeType from backend to type for consistent handling (fallback)
-        if (!message.type && message.nodeType) {
-          message.type = message.nodeType
-        }
-
         // Handle progress messages (structured logs with category: 'progress')
         if (message.category === 'progress' && message.stage !== undefined) {
           this.currentStageID = message.stage

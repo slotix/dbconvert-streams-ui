@@ -5,7 +5,7 @@ export interface StandardLogEntry {
   level: LogLevel
   timestamp: string
   message: string
-  nodeType: NodeType
+  type: NodeType
   nodeId?: string
   streamId?: string
   caller?: string

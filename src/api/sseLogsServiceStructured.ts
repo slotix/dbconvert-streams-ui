@@ -52,7 +52,7 @@ class SSELogsService {
         const log: StandardLogEntry = data
 
         // Validate required fields for structured logs
-        if (!log.level || !log.message || !log.nodeType) {
+        if (!log.level || !log.message || !log.type) {
           console.warn('Incomplete log entry received:', log)
           return
         }
@@ -97,7 +97,7 @@ class SSELogsService {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ;(logsStore as any).addSystemLog(log)
         // Also log errors to console for visibility
-        console.error(`[${log.nodeType}] ${log.message}`, log)
+        console.error(`[${log.type}] ${log.message}`, log)
         break
 
       default:

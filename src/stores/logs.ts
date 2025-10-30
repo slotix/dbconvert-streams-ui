@@ -36,7 +36,7 @@ export interface SystemLog {
   timestamp: number
   source?: string
   nodeId?: string
-  nodeType?: NodeType
+  type?: NodeType
   streamId?: string
   details?: Record<string, unknown>
   // Structured log fields
@@ -421,7 +421,7 @@ export const useLogsStore = defineStore('logs', {
               ? new Date(log.time as string).getTime()
               : Date.now(),
           source: (log.caller as string) || undefined,
-          nodeType: log.nodeType as NodeType | undefined,
+          type: log.type as NodeType | undefined,
           nodeId: log.nodeId as string | undefined,
           streamId: ((log.streamId as string) || streamId) as string,
           category: log.category as LogCategory | undefined,
@@ -620,8 +620,8 @@ export const useLogsStore = defineStore('logs', {
         message: log.message,
         level: log.level,
         timestamp: new Date(log.timestamp).getTime(),
-        source: log.nodeType,
-        nodeType: log.nodeType,
+        source: log.type,
+        type: log.type,
         nodeId: log.nodeId,
         streamId: log.streamId,
         category: log.category,
@@ -638,8 +638,8 @@ export const useLogsStore = defineStore('logs', {
         message: log.message,
         level: 'info' as LogLevel,
         timestamp: new Date(log.timestamp).getTime(),
-        source: log.nodeType,
-        nodeType: log.nodeType,
+        source: log.type,
+        type: log.type,
         nodeId: log.nodeId,
         streamId: log.streamId,
         category: log.category,
@@ -660,7 +660,7 @@ export const useLogsStore = defineStore('logs', {
         const monitoringStore = useMonitoringStore()
         monitoringStore.addLog({
           id: Date.now(),
-          type: log.nodeType,
+          type: log.type,
           nodeID: log.nodeId || '',
           msg: log.message,
           level: 'info',
@@ -686,7 +686,7 @@ export const useLogsStore = defineStore('logs', {
         const monitoringStore = useMonitoringStore()
         monitoringStore.addLog({
           id: Date.now(),
-          type: log.nodeType,
+          type: log.type,
           nodeID: log.nodeId || '',
           msg: log.message,
           status: log.status,
