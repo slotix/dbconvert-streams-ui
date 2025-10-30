@@ -5,12 +5,12 @@ import { TransitionRoot, TransitionChild } from '@headlessui/vue'
 import {
   XMarkIcon,
   FunnelIcon,
-  ArrowPathIcon,
   InformationCircleIcon,
   Squares2X2Icon,
   ListBulletIcon,
   ChevronDownIcon,
-  ChevronRightIcon
+  ChevronRightIcon,
+  TrashIcon
 } from '@heroicons/vue/24/outline'
 import { LOG_LEVELS, STREAM_PROGRESS_CATEGORIES } from '@/constants'
 import SqlConsoleView from './SqlConsoleView.vue'
@@ -161,6 +161,15 @@ function computeLogBadge(log: SystemLog) {
 }
 
 const logsContainer = ref<HTMLElement | null>(null)
+const panelContainer = ref<HTMLElement | null>(null)
+
+// Height calculation breakdown:
+// - Resize handle: 16px (h-4 and -top-2)
+// - Tabs navigation: ~40px (py-4 + px-6 for spacing)
+// - Filters bar (System Logs only): ~42px (py-2 + px-4 + button heights)
+// - Total fixed space: ~56px (without filters), ~98px (with filters)
+// Account for margins/borders and extra padding: use 165px for both views
+const CONTENT_HEIGHT_OFFSET = 165
 
 function startResize(e: MouseEvent) {
   e.preventDefault()
@@ -168,7 +177,7 @@ function startResize(e: MouseEvent) {
   document.body.style.cursor = 'ns-resize'
 
   const startY = e.clientY
-  const container = logsContainer.value?.parentElement
+  const container = panelContainer.value
   if (!container) return
 
   // Get the actual current height in pixels at start of drag
@@ -292,11 +301,6 @@ function getStatLogDisplay(log: SystemLog): string {
   return log.message || ''
 }
 
-function backToLiveLogs() {
-  store.clearHistoricalLogs()
-  selectedStreamId.value = ''
-}
-
 // Keyboard shortcuts handler
 function handleKeyboardShortcut(event: KeyboardEvent) {
   // Don't trigger shortcuts if typing in an input field (except for specific keys)
@@ -374,7 +378,7 @@ onBeforeUnmount(() => {
 <template>
   <TransitionRoot as="template" :show="isOpen">
     <div class="relative z-30">
-      <div class="fixed inset-x-0 bottom-0" :style="{ height: panelHeight }">
+      <div ref="panelContainer" class="fixed inset-x-0 bottom-0" :style="{ height: panelHeight }">
         <TransitionChild
           as="template"
           enter="transform transition ease-in-out duration-300"
@@ -388,7 +392,9 @@ onBeforeUnmount(() => {
             class="w-full h-full bg-white shadow-xl rounded-t-lg overflow-hidden border border-gray-200 lg:pl-20"
           >
             <!-- Resize Handle -->
-            <div class="absolute top-0 left-0 right-0 flex items-center justify-center select-none">
+            <div
+              class="absolute top-0 left-0 right-0 flex items-center justify-center select-none z-50 pointer-events-auto"
+            >
               <div
                 class="w-full h-1 bg-gray-200 hover:bg-gray-300 cursor-ns-resize transition-colors"
                 @mousedown.prevent="startResize"
@@ -401,75 +407,13 @@ onBeforeUnmount(() => {
               </div>
             </div>
 
-            <div
-              class="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200"
-            >
-              <div class="flex items-center space-x-3">
-                <h2 class="text-lg font-medium text-gray-900">System Logs</h2>
-                <span class="ml-2 text-sm text-gray-500">{{ totalLogs }} entries</span>
-
-                <!-- Historical Logs Indicator -->
-                <span
-                  v-if="store.isHistoricalView"
-                  class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-full ring-1 ring-inset ring-gray-300"
-                >
-                  <svg
-                    class="h-3.5 w-3.5 text-gray-500"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                    />
-                  </svg>
-                  Historical Logs
-                </span>
-
-                <!-- Loading Indicator -->
-                <span
-                  v-if="store.isLoadingHistoricalLogs"
-                  class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium bg-blue-50 text-blue-700 rounded-full"
-                >
-                  <ArrowPathIcon class="h-3.5 w-3.5 animate-spin" />
-                  Loading...
-                </span>
-              </div>
-              <div class="flex items-center space-x-2">
-                <!-- Back to Live Logs Button (only show in historical view) -->
-                <button
-                  v-if="store.isHistoricalView"
-                  type="button"
-                  class="px-3 py-1 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors font-medium"
-                  @click="backToLiveLogs"
-                >
-                  Back to Live
-                </button>
-                <button
-                  type="button"
-                  class="px-3 py-1 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
-                  @click="store.isHistoricalView ? store.clearHistoricalLogs() : store.clearLogs()"
-                >
-                  Clear
-                </button>
-                <button
-                  type="button"
-                  class="text-gray-400 hover:text-gray-600 transition-colors"
-                  @click="store.toggleLogsPanel"
-                >
-                  <XMarkIcon class="h-6 w-6" />
-                </button>
-              </div>
-            </div>
-
             <!-- View Tabs: System Logs vs SQL Logs -->
-            <div class="bg-white px-4 border-b border-gray-200">
-              <nav class="flex space-x-4 py-2" aria-label="Tabs">
+            <div
+              class="bg-white px-6 py-4 border-b border-gray-200 flex items-center justify-between"
+            >
+              <nav class="flex space-x-6" aria-label="Tabs">
                 <button
-                  class="px-4 py-2 text-sm font-medium rounded-md transition-all duration-200"
+                  class="px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 flex items-center gap-2"
                   :class="[
                     selectedView === 'system'
                       ? 'text-gray-900 bg-gray-100 shadow-sm'
@@ -478,6 +422,9 @@ onBeforeUnmount(() => {
                   @click="selectedView = 'system'"
                 >
                   System Logs
+                  <span class="ml-2 text-xs px-1.5 py-0.5 rounded-full bg-gray-200 text-gray-600">
+                    {{ totalLogs }}
+                  </span>
                 </button>
                 <button
                   v-if="hasSQLLogs"
@@ -495,6 +442,14 @@ onBeforeUnmount(() => {
                   </span>
                 </button>
               </nav>
+              <!-- Close Button -->
+              <button
+                type="button"
+                class="text-gray-400 hover:text-gray-600 transition-colors"
+                @click="store.toggleLogsPanel"
+              >
+                <XMarkIcon class="h-6 w-6" />
+              </button>
             </div>
 
             <!-- Filters (only for system logs) - Unified with SQL Logs style -->
@@ -590,13 +545,24 @@ onBeforeUnmount(() => {
                   {{ getShortStreamId(streamId) }}
                 </option>
               </select>
+
+              <!-- Clear Button -->
+              <button
+                type="button"
+                title="Clear logs (K)"
+                class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-white bg-orange-600 rounded hover:bg-orange-700 transition-colors shadow-sm"
+                @click="store.clearLogs()"
+              >
+                <TrashIcon class="w-3.5 h-3.5" />
+                <span>Clear</span>
+              </button>
             </div>
 
             <!-- SQL Console View -->
             <div
               v-if="selectedView === 'sql'"
               class="h-full bg-white"
-              :style="{ height: `calc(${panelHeight} - 132px)` }"
+              :style="{ height: `calc(${panelHeight} - ${CONTENT_HEIGHT_OFFSET}px)` }"
             >
               <SqlConsoleView />
             </div>
@@ -606,7 +572,7 @@ onBeforeUnmount(() => {
               v-else
               ref="logsContainer"
               class="overflow-y-auto h-full bg-white"
-              :style="{ height: `calc(${panelHeight} - 180px)` }"
+              :style="{ height: `calc(${panelHeight} - ${CONTENT_HEIGHT_OFFSET}px)` }"
             >
               <!-- Log Rows using reusable LogRow component -->
               <!-- Grouped View -->
