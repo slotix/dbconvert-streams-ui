@@ -731,7 +731,8 @@ export const useLogsStore = defineStore('logs', {
           ts: new Date(log.timestamp).getTime(),
           category: 'progress',
           stage: log.stage,
-          description: log.description
+          description: log.description,
+          streamId: log.streamId // Include streamId to properly filter logs by stream
         })
       } else if (log.category === 'stat') {
         const statLog = {
@@ -762,7 +763,8 @@ export const useLogsStore = defineStore('logs', {
           size: log.size,
           rate: log.rate,
           elapsed: log.elapsed,
-          category: 'stat'
+          category: 'stat',
+          streamId: log.streamId // Include streamId to properly filter logs by stream
         })
       }
     }

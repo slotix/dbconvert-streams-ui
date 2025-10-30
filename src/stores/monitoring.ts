@@ -166,10 +166,18 @@ export const useMonitoringStore = defineStore('monitoring', {
   },
   actions: {
     setStream(id: string, streamConfig: StreamConfig) {
-      // NOTE: Don't clear logs here! Logs may have already arrived via SSE
-      // Just set the streamID and let aggregation filter properly
-      this.nodes = []
-      this.aggregatedStats = null
+      // If switching to a different stream, clear old data
+      // This prevents mixing old stream's logs with the new stream
+      if (this.streamID !== id) {
+        this.logs = []
+        this.nodes = []
+        this.aggregatedStats = null
+        this.currentStageID = 0
+        // Reset all stage timestamps when switching streams
+        this.stages.forEach((stage) => {
+          stage.timestamp = null
+        })
+      }
 
       this.streamID = id
       this.streamConfig = streamConfig
@@ -216,12 +224,10 @@ export const useMonitoringStore = defineStore('monitoring', {
       }
 
       // Filter logs by current streamID to avoid mixing logs from multiple streams
-      // IMPORTANT: Include logs that don't have a streamId field (early logs before streamId was set)
+      // Only include logs that match the current stream ID
       let logsForCurrentStream = this.logs
       if (currentStreamID) {
-        logsForCurrentStream = this.logs.filter(
-          (log) => log.streamId === currentStreamID || !log.streamId // Include logs without streamId
-        )
+        logsForCurrentStream = this.logs.filter((log) => log.streamId === currentStreamID)
       }
 
       const sourceStats = logsForCurrentStream.filter(
