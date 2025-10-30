@@ -5,15 +5,10 @@ import { TransitionRoot, TransitionChild } from '@headlessui/vue'
 import {
   XMarkIcon,
   FunnelIcon,
-  Squares2X2Icon,
-  ListBulletIcon,
   ChevronDownIcon,
-  ChevronRightIcon,
   TrashIcon,
   ArrowDownIcon,
-  ArrowUpIcon,
-  ArrowsPointingInIcon,
-  ArrowsPointingOutIcon
+  ArrowUpIcon
 } from '@heroicons/vue/24/outline'
 import { LOG_LEVELS, STREAM_PROGRESS_CATEGORIES } from '@/constants'
 import SqlConsoleView from './SqlConsoleView.vue'
@@ -31,23 +26,13 @@ const panelHeight = computed({
   set: (value: string) => store.updatePanelHeight(value)
 })
 
-// Stream filter (using store state)
-const selectedStreamId = computed({
-  get: () => store.selectedStreamId,
-  set: (value: string) => store.setStreamFilter(value)
+// Tab management (using store state)
+const systemLogTabs = computed(() => store.systemLogTabs)
+const selectedSystemLogTabId = computed({
+  get: () => store.selectedSystemLogTabId,
+  set: (value: string) => store.selectSystemLogTab(value)
 })
 const selectedView = ref<'system' | 'sql'>('system')
-
-// Available streams from logs
-const availableStreams = computed(() => {
-  const streams = new Set<string>()
-  store.logs.forEach((log) => {
-    if (log.streamId) {
-      streams.add(log.streamId)
-    }
-  })
-  return Array.from(streams).sort()
-})
 
 // Message type filter
 const messageTypeOptions = ['error & warning', 'progress & stats', 'info']
@@ -56,18 +41,25 @@ const showMessageTypeMenu = ref(false)
 const messageTypeMenuRef = ref<HTMLDivElement | null>(null)
 const searchText = ref('')
 const searchInputRef = ref<HTMLInputElement | null>(null)
-const visuallyGrouped = ref(false)
-const collapsedStreams = ref(new Set<string>())
 const systemLogsSortOrder = ref<'newest' | 'oldest'>('newest')
 
-// Filtered logs based on stream, message type, and search
+// Filtered logs based on selected tab, message type, and search
 const filteredLogs = computed(() => {
   // Use historical logs if in historical view, otherwise use SSE logs
   let filtered = store.isHistoricalView ? store.historicalLogs : store.logs
 
-  // Filter by stream if selected (only for SSE logs, historical logs are already filtered)
-  if (selectedStreamId.value && !store.isHistoricalView) {
-    filtered = filtered.filter((log) => log.streamId === selectedStreamId.value)
+  // Filter by selected tab
+  if (!store.isHistoricalView) {
+    const selectedTab = store.systemLogTabs.get(store.selectedSystemLogTabId)
+    if (selectedTab) {
+      if (selectedTab.streamId === null) {
+        // General tab: show only logs without streamId
+        filtered = filtered.filter((log) => !log.streamId)
+      } else {
+        // Stream tab: show logs for this streamId only
+        filtered = filtered.filter((log) => log.streamId === selectedTab.streamId)
+      }
+    }
   }
 
   // Filter by message type (multiple selections)
@@ -121,7 +113,7 @@ const filteredLogs = computed(() => {
 })
 
 const totalLogs = computed(() => {
-  return selectedStreamId.value ? filteredLogs.value.length : store.logs.length
+  return filteredLogs.value.length
 })
 
 // Logs with meaningful messages (filter out empty ones)
@@ -132,62 +124,8 @@ const logsWithContent = computed(() => {
   })
 })
 
-// Grouped logs by streamId (for visual grouping)
-const groupedLogs = computed(() => {
-  if (!visuallyGrouped.value) {
-    return null
-  }
-
-  const groups = new Map<string, typeof logsWithContent.value>()
-  logsWithContent.value.forEach((log) => {
-    const streamId = log.streamId || 'ungrouped'
-    if (!groups.has(streamId)) {
-      groups.set(streamId, [])
-    }
-    groups.get(streamId)!.push(log)
-  })
-  return groups
-})
-
-function toggleGrouping() {
-  visuallyGrouped.value = !visuallyGrouped.value
-}
-
 function toggleSystemLogsSortOrder() {
   systemLogsSortOrder.value = systemLogsSortOrder.value === 'newest' ? 'oldest' : 'newest'
-}
-
-function toggleStream(streamId: string) {
-  if (collapsedStreams.value.has(streamId)) {
-    collapsedStreams.value.delete(streamId)
-  } else {
-    collapsedStreams.value.add(streamId)
-  }
-}
-
-// Computed property to check if all streams are expanded
-const areAllStreamsExpanded = computed(() => {
-  return (
-    visuallyGrouped.value &&
-    groupedLogs.value &&
-    collapsedStreams.value.size === 0 &&
-    groupedLogs.value.size > 0
-  )
-})
-
-// Expand/collapse all streams
-function toggleExpandCollapseAll() {
-  if (areAllStreamsExpanded.value) {
-    // Collapse all
-    if (groupedLogs.value) {
-      groupedLogs.value.forEach((_, streamId) => {
-        collapsedStreams.value.add(streamId)
-      })
-    }
-  } else {
-    // Expand all
-    collapsedStreams.value.clear()
-  }
 }
 
 function computeLogBadge(log: SystemLog) {
@@ -380,11 +318,6 @@ function handleDocumentClick(event: MouseEvent) {
 
 onMounted(() => {
   // Load preferences from localStorage
-  const savedGrouped = localStorage.getItem('systemLogVisuallyGrouped')
-  if (savedGrouped === 'true') {
-    visuallyGrouped.value = true
-  }
-
   const savedMessageTypes = localStorage.getItem('systemLogMessageTypes')
   if (savedMessageTypes) {
     try {
@@ -402,10 +335,6 @@ onMounted(() => {
   localStorage.removeItem('systemLogStreamFilter')
 
   // Setup watchers for persistence
-  watch(visuallyGrouped, (newValue) => {
-    localStorage.setItem('systemLogVisuallyGrouped', String(newValue))
-  })
-
   watch(
     selectedMessageTypes,
     (newValue) => {
@@ -508,59 +437,6 @@ onBeforeUnmount(() => {
               v-if="selectedView === 'system'"
               class="flex items-center gap-2 px-4 py-2 bg-white border-b border-gray-200 shadow-sm flex-wrap"
             >
-              <!-- Grouping Toggle (matching SQL Logs pattern) -->
-              <button
-                class="flex items-center gap-1.5 px-3 py-1.5 text-xs border rounded transition-colors"
-                :class="[
-                  visuallyGrouped
-                    ? 'border-gray-400 bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    : 'border-gray-300 bg-white text-gray-600 hover:bg-gray-50'
-                ]"
-                title="Toggle grouping by stream"
-                @click="toggleGrouping"
-              >
-                <component
-                  :is="visuallyGrouped ? Squares2X2Icon : ListBulletIcon"
-                  class="w-4 h-4"
-                />
-                <span class="font-medium">{{ visuallyGrouped ? 'Grouped' : 'Ungrouped' }}</span>
-              </button>
-
-              <!-- Expand/Collapse Toggle (only visible when visually grouped) -->
-              <button
-                v-if="visuallyGrouped && groupedLogs && groupedLogs.size > 0"
-                class="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-gray-300 rounded transition-colors bg-white text-gray-600 hover:bg-gray-50"
-                :title="
-                  areAllStreamsExpanded
-                    ? 'Collapse all stream groups (X)'
-                    : 'Expand all stream groups (X)'
-                "
-                @click="toggleExpandCollapseAll"
-              >
-                <component
-                  :is="areAllStreamsExpanded ? ArrowsPointingInIcon : ArrowsPointingOutIcon"
-                  class="w-4 h-4"
-                />
-                <span class="font-medium">{{ areAllStreamsExpanded ? 'Collapse' : 'Expand' }}</span>
-              </button>
-
-              <div class="hidden sm:block h-6 border-l border-gray-200" />
-
-              <!-- Stream Filter Dropdown (matching SQL Logs query type dropdown style) -->
-              <div class="relative">
-                <button
-                  class="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-white border border-gray-300 rounded hover:bg-gray-100 focus:border-gray-400 focus:ring-1 focus:ring-gray-300 transition-colors text-left"
-                  title="Filter by stream"
-                >
-                  <FunnelIcon class="w-4 h-4 text-gray-600" />
-                  <span class="text-gray-700 font-medium">
-                    {{ selectedStreamId ? getShortStreamId(selectedStreamId) : 'All Streams' }}
-                  </span>
-                </button>
-              </div>
-
-              <div class="hidden sm:block h-6 border-l border-gray-200" />
-
               <!-- Message Type Filter Dropdown (matching SQL Logs pattern) -->
               <div ref="messageTypeMenuRef" class="relative">
                 <button
@@ -699,17 +575,6 @@ onBeforeUnmount(() => {
                 />
               </div>
 
-              <!-- Stream selector dropdown (hidden native select for accessibility) -->
-              <select
-                v-model="selectedStreamId"
-                class="hidden px-3 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">All Streams</option>
-                <option v-for="streamId in availableStreams" :key="streamId" :value="streamId">
-                  {{ getShortStreamId(streamId) }}
-                </option>
-              </select>
-
               <!-- Clear Button -->
               <button
                 type="button"
@@ -734,78 +599,89 @@ onBeforeUnmount(() => {
             <!-- System Logs View -->
             <div
               v-else
-              ref="logsContainer"
-              class="overflow-y-auto h-full bg-white"
+              class="flex flex-col h-full bg-white"
               :style="{ height: `calc(${panelHeight} - ${CONTENT_HEIGHT_OFFSET}px)` }"
             >
-              <!-- Log Rows using reusable LogRow component -->
-              <!-- Grouped View -->
-              <div v-if="visuallyGrouped && groupedLogs && groupedLogs.size > 0">
-                <div v-for="[streamId, logs] of groupedLogs.entries()" :key="streamId">
-                  <!-- Stream Group Header -->
-                  <div
-                    class="bg-gray-100 border-b border-gray-300 px-4 py-2 flex items-center gap-3 cursor-pointer hover:bg-gray-200 transition-colors sticky top-0 z-10"
-                    @click="toggleStream(streamId)"
-                  >
-                    <component
-                      :is="collapsedStreams.has(streamId) ? ChevronRightIcon : ChevronDownIcon"
-                      class="w-4 h-4 text-gray-700 flex-shrink-0"
-                    />
-                    <span class="text-sm font-semibold text-gray-900">
-                      {{ streamId === 'ungrouped' ? 'General' : getShortStreamId(streamId) }}
-                    </span>
-                    <span class="text-xs bg-gray-300 text-gray-700 px-2 py-0.5 rounded">
-                      {{ logs.length }}
-                    </span>
-                  </div>
-
-                  <!-- Logs in group (hidden if collapsed) -->
-                  <div v-if="!collapsedStreams.has(streamId)">
-                    <LogRow
-                      v-for="log in logs"
-                      :key="log.id"
-                      :timestamp="formatLogTimestamp(log.timestamp)"
-                      :badge="computeLogBadge(log)"
-                      :message="getStatLogDisplay(log)"
-                      :is-error="log.level === 'error'"
-                      :expandable="false"
+              <!-- Stream Tabs Bar -->
+              <div
+                class="bg-white border-b border-gray-200 px-4 py-2 shadow-sm overflow-x-auto shrink-0"
+              >
+                <div class="flex items-center gap-2">
+                  <!-- Tabs Container -->
+                  <div class="flex items-center gap-1 flex-nowrap">
+                    <button
+                      v-for="[tabId, tab] of systemLogTabs"
+                      :key="tabId"
+                      class="flex items-center gap-2 px-3 py-1.5 text-xs rounded transition-colors whitespace-nowrap"
+                      :class="[
+                        selectedSystemLogTabId === tabId
+                          ? 'bg-blue-50 text-blue-700 border border-blue-300'
+                          : 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-50'
+                      ]"
+                      :title="tab.fullLabel || tab.label"
+                      @click="selectedSystemLogTabId = tabId"
                     >
-                    </LogRow>
+                      <span class="font-medium">{{ tab.label }}</span>
+                      <!-- Log count badge -->
+                      <span class="text-xs bg-gray-300 text-gray-700 px-1.5 py-0.5 rounded">
+                        {{
+                          tab.streamId === null
+                            ? filteredLogs.filter((log) => !log.streamId).length
+                            : filteredLogs.filter((log) => log.streamId === tab.streamId).length
+                        }}
+                      </span>
+                      <!-- Close button (X) - not for General tab -->
+                      <button
+                        v-if="tabId !== 'general'"
+                        class="flex items-center justify-center w-4 h-4 rounded hover:bg-gray-300 transition-colors ml-1"
+                        :class="[
+                          selectedSystemLogTabId === tabId
+                            ? 'hover:bg-blue-200'
+                            : 'hover:bg-gray-200'
+                        ]"
+                        :title="`Close tab`"
+                        @click.stop="store.removeSystemLogTab(tabId)"
+                      >
+                        ✕
+                      </button>
+                    </button>
                   </div>
                 </div>
               </div>
 
-              <!-- Ungrouped View -->
-              <div v-else-if="!visuallyGrouped && logsWithContent.length > 0">
-                <LogRow
-                  v-for="log in logsWithContent"
-                  :key="log.id"
-                  :timestamp="formatLogTimestamp(log.timestamp)"
-                  :badge="computeLogBadge(log)"
-                  :message="getStatLogDisplay(log)"
-                  :is-error="log.level === 'error'"
-                  :expandable="false"
-                >
-                </LogRow>
-              </div>
+              <!-- Logs Container (scrollable) -->
+              <div ref="logsContainer" class="overflow-y-auto flex-1">
+                <!-- Log Rows (flat view - no grouping since tabs provide that) -->
+                <div v-if="logsWithContent.length > 0">
+                  <LogRow
+                    v-for="log in logsWithContent"
+                    :key="log.id"
+                    :timestamp="formatLogTimestamp(log.timestamp)"
+                    :badge="computeLogBadge(log)"
+                    :message="getStatLogDisplay(log)"
+                    :is-error="log.level === 'error'"
+                    :expandable="false"
+                  />
+                </div>
 
-              <!-- Empty State -->
-              <div v-else class="flex items-center justify-center h-full text-gray-500">
-                <div class="text-center">
-                  <svg
-                    class="w-12 h-12 mx-auto mb-4 text-gray-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                  <p class="font-medium">No logs to display</p>
+                <!-- Empty State -->
+                <div v-else class="flex items-center justify-center h-full text-gray-500">
+                  <div class="text-center">
+                    <svg
+                      class="w-12 h-12 mx-auto mb-4 text-gray-400"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                    <p class="font-medium">No logs to display</p>
+                  </div>
                 </div>
               </div>
             </div>

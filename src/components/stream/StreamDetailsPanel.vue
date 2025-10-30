@@ -334,6 +334,14 @@
                 </div>
               </div>
 
+              <!-- Stream ID Display -->
+              <div class="flex items-center gap-2">
+                <p class="text-xs font-medium uppercase text-gray-500">Stream ID</p>
+                <code class="text-sm font-mono bg-white border border-gray-300 px-2 py-1 rounded text-gray-700">
+                  {{ monitoringStore.streamID }}
+                </code>
+              </div>
+
               <!-- Stream Controls -->
               <div class="flex gap-2">
                 <button

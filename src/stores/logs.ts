@@ -54,6 +54,14 @@ export interface SystemLog {
   elapsed?: number
 }
 
+export interface SystemLogTab {
+  id: string // Format: "{streamId}:{timestamp}" or "general"
+  streamId: string | null // null for General tab
+  timestamp: number | null // null for General tab
+  label: string // e.g., "General" or "34nuw...qnuic - 21:48" (shortened for display)
+  fullLabel?: string // Full label for tooltip, e.g., "34nuw6KMR7XFQARG5W5xtRqnuic - 21:48"
+}
+
 // Phase 2: Enhanced SQL Logging Types
 export type QueryPurpose =
   | 'SCHEMA_INTROSPECTION'
@@ -193,10 +201,17 @@ export const useLogsStore = defineStore('logs', {
       maxLogs: 1000,
       isLogsPanelOpen: false,
       panelHeight: '50vh',
-      selectedStreamId: '', // For filtering logs by stream
+      selectedStreamId: '', // For filtering logs by stream (legacy, for historical view)
       historicalLogs: [] as SystemLog[], // Logs loaded from API
       isHistoricalView: false, // Flag to indicate if showing historical logs
       isLoadingHistoricalLogs: false, // Loading state for API fetch
+
+      // System Logs Tabs
+      systemLogTabs: new Map<string, SystemLogTab>([
+        ['general', { id: 'general', streamId: null, timestamp: null, label: 'General' }]
+      ]),
+      selectedSystemLogTabId: 'general' as string,
+      systemLogTabRunTimestamps: new Map<string, number>(), // streamId -> run start timestamp
 
       // Phase 2: SQL Logs
       flatLogs: new Map<string, SQLQueryLog>(), // id -> log
@@ -335,10 +350,88 @@ export const useLogsStore = defineStore('logs', {
         ...log,
         id: Date.now() + Math.random()
       })
+
+      // Auto-create tab for new streamIds
+      if (log.streamId && !this.systemLogTabRunTimestamps.has(log.streamId)) {
+        const streamRunTimestamp = log.timestamp
+
+        // Remove "stream_" prefix if present
+        const cleanStreamId = log.streamId.startsWith('stream_')
+          ? log.streamId.slice(7)
+          : log.streamId
+
+        // Create shortened ID: first 5 chars + ... + last 6 chars
+        const shortStreamId =
+          cleanStreamId.length > 15
+            ? `${cleanStreamId.slice(0, 5)}...${cleanStreamId.slice(-6)}`
+            : cleanStreamId
+
+        // Format timestamp as HH:MM:SS
+        const date = new Date(streamRunTimestamp)
+        const timeLabel = date.toLocaleTimeString('en-US', {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: false
+        })
+        const label = `${shortStreamId} - ${timeLabel}`
+        const fullLabel = `${cleanStreamId} - ${timeLabel}` // Full ID for tooltip
+
+        this.addSystemLogTab(log.streamId, streamRunTimestamp, label, fullLabel)
+      }
     },
 
     clearLogs() {
       this.logs = []
+    },
+
+    // System Logs Tab Management
+    addSystemLogTab(streamId: string, runTimestamp: number, label: string, fullLabel?: string) {
+      const tabId = `${streamId}:${runTimestamp}`
+      if (!this.systemLogTabs.has(tabId)) {
+        this.systemLogTabs.set(tabId, {
+          id: tabId,
+          streamId,
+          timestamp: runTimestamp,
+          label,
+          fullLabel
+        })
+        this.systemLogTabRunTimestamps.set(streamId, runTimestamp)
+        this.selectedSystemLogTabId = tabId // Switch to new tab
+        // Open the panel if not already open
+        if (!this.isLogsPanelOpen) {
+          this.isLogsPanelOpen = true
+        }
+      }
+    },
+
+    removeSystemLogTab(tabId: string) {
+      if (tabId === 'general') return // Cannot remove general tab
+      this.systemLogTabs.delete(tabId)
+
+      // If we removed the selected tab, select General
+      if (this.selectedSystemLogTabId === tabId) {
+        this.selectedSystemLogTabId = 'general'
+      }
+    },
+
+    selectSystemLogTab(tabId: string) {
+      if (this.systemLogTabs.has(tabId)) {
+        this.selectedSystemLogTabId = tabId
+      }
+    },
+
+    clearSystemLogTabs() {
+      // Keep only General tab
+      this.systemLogTabs.clear()
+      this.systemLogTabs.set('general', {
+        id: 'general',
+        streamId: null,
+        timestamp: null,
+        label: 'General'
+      })
+      this.selectedSystemLogTabId = 'general'
+      this.systemLogTabRunTimestamps.clear()
     },
 
     cleanupEmptyLogs() {
