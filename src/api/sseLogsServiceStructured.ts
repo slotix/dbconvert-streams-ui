@@ -52,8 +52,12 @@ class SSELogsService {
         const log: StandardLogEntry = data
 
         // Validate required fields for structured logs
-        if (!log.level || !log.message || !log.type) {
-          console.warn('Incomplete log entry received:', log)
+        if (!log.level || !log.type || !log.message) {
+          console.warn('Incomplete log entry received:', {
+            hasLevel: !!log.level,
+            hasType: !!log.type,
+            hasMessage: !!log.message
+          })
           return
         }
 

@@ -197,8 +197,6 @@ export const useLogsStore = defineStore('logs', {
       historicalLogs: [] as SystemLog[], // Logs loaded from API
       isHistoricalView: false, // Flag to indicate if showing historical logs
       isLoadingHistoricalLogs: false, // Loading state for API fetch
-      // Keep track of recent messages to prevent duplicates
-      recentMessages: new Map<string, { count: number; timestamp: number }>(),
 
       // Phase 2: SQL Logs
       flatLogs: new Map<string, SQLQueryLog>(), // id -> log
@@ -326,43 +324,7 @@ export const useLogsStore = defineStore('logs', {
   },
 
   actions: {
-    getDedupKey(log: SystemLog | Omit<SystemLog, 'id'>): string {
-      const sourceType = log.source?.split(':')[0] || 'unknown'
-      return `${sourceType}:${log.level}:${log.message}`
-    },
-
     addLog(log: Omit<SystemLog, 'id'>) {
-      const now = Date.now()
-      const dedupKey = this.getDedupKey(log)
-      const recentMessage = this.recentMessages.get(dedupKey)
-
-      // Check if we've seen this message recently (within 2 seconds)
-      if (recentMessage && now - recentMessage.timestamp < 2000) {
-        // Update the existing log instead of adding a new one
-        const existingLog = this.logs.find((l) => this.getDedupKey(l) === dedupKey)
-        if (existingLog) {
-          recentMessage.count++
-          if (recentMessage.count > 1) {
-            existingLog.details = {
-              ...existingLog.details,
-              duplicateCount: recentMessage.count,
-              lastTimestamp: log.timestamp
-            }
-          }
-          return
-        }
-      }
-
-      // Clean up old messages from the dedup cache (older than 5 seconds)
-      for (const [key, value] of this.recentMessages.entries()) {
-        if (now - value.timestamp > 5000) {
-          this.recentMessages.delete(key)
-        }
-      }
-
-      // Add new message to dedup cache
-      this.recentMessages.set(dedupKey, { count: 1, timestamp: now })
-
       // Trim logs if we exceed maxLogs
       if (this.logs.length >= this.maxLogs) {
         this.logs = this.logs.slice(-Math.floor(this.maxLogs / 2))
@@ -377,7 +339,19 @@ export const useLogsStore = defineStore('logs', {
 
     clearLogs() {
       this.logs = []
-      this.recentMessages.clear()
+    },
+
+    cleanupEmptyLogs() {
+      // Remove ALL logs with empty messages - they have no value
+      const beforeCount = this.logs.length
+      this.logs = this.logs.filter((log) => {
+        const message = (log.message || '').trim()
+        return message.length > 0
+      })
+
+      if (this.logs.length < beforeCount) {
+        console.info(`🧹 Cleaned up ${beforeCount - this.logs.length} empty-message logs`)
+      }
     },
 
     toggleLogsPanel() {
@@ -634,6 +608,31 @@ export const useLogsStore = defineStore('logs', {
     },
 
     addStreamLog(log: StandardLogEntry) {
+      // Debug: Log what's being received for progress/stat logs
+      if (log.category === 'progress' || log.category === 'stat') {
+        console.debug('📥 SSE Log received:', {
+          category: log.category,
+          message: log.message,
+          messageLength: log.message?.length || 0,
+          messageIsWhitespace: log.message?.trim().length === 0,
+          ...(log.category === 'progress' && {
+            stage: log.stage,
+            description: log.description,
+            percentage: log.percentage
+          }),
+          ...(log.category === 'stat' && {
+            table: log.table,
+            status: log.status,
+            events: log.events,
+            size: log.size,
+            rate: log.rate
+          }),
+          nodeId: log.nodeId,
+          type: log.type,
+          timestamp: log.timestamp
+        })
+      }
+
       const baseLog = {
         message: log.message,
         level: 'info' as LogLevel,
@@ -647,14 +646,21 @@ export const useLogsStore = defineStore('logs', {
       }
 
       if (log.category === 'progress') {
-        this.addLog({
+        const progressLog = {
           ...baseLog,
           category: 'progress' as const,
           // Progress-specific fields
           ...(log.stage !== undefined && { stage: log.stage }),
           ...(log.percentage !== undefined && { percentage: log.percentage }),
           ...(log.description !== undefined && { description: log.description })
+        }
+        console.debug('➕ Adding progress log to store:', {
+          message: progressLog.message,
+          stage: progressLog.stage,
+          logsCountBefore: this.logs.length
         })
+        this.addLog(progressLog)
+        console.debug('✅ Progress log added. New count:', this.logs.length)
 
         // Send progress to monitoring store to update stage
         const monitoringStore = useMonitoringStore()
@@ -670,7 +676,7 @@ export const useLogsStore = defineStore('logs', {
           description: log.description
         })
       } else if (log.category === 'stat') {
-        this.addLog({
+        const statLog = {
           ...baseLog,
           category: 'stat' as const,
           // Stat-specific fields
@@ -680,7 +686,15 @@ export const useLogsStore = defineStore('logs', {
           rate: log.rate,
           elapsed: log.elapsed,
           status: log.status
+        }
+        console.debug('➕ Adding stat log to store:', {
+          message: statLog.message,
+          table: statLog.table,
+          status: statLog.status,
+          logsCountBefore: this.logs.length
         })
+        this.addLog(statLog)
+        console.debug('✅ Stat log added. New count:', this.logs.length)
 
         // Also send to monitoring store for Stream Performance panel
         const monitoringStore = useMonitoringStore()

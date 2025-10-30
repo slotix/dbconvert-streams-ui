@@ -335,9 +335,11 @@ export const useCommonStore = defineStore('common', {
     },
     async consumeLogsFromSSE() {
       // Start the SSE logs connection in the background
+      // Uses sseLogsServiceStructured (imported as sseLogsService) which handles:
+      // - Category-aware deduplication (progress, stat, sql, error logs)
+      // - Structured fields (stage, description, table, status, etc.)
+      // - Validation that allows empty messages for structured logs
       setTimeout(async () => {
-        const monitoringStore = useMonitoringStore()
-        monitoringStore.initSSEHandling()
         await sseLogsService.connect()
       }, 0)
     },

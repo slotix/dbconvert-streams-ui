@@ -1,18 +1,25 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useLogsStore, type SystemLog } from '@/stores/logs'
 import { TransitionRoot, TransitionChild } from '@headlessui/vue'
 import {
   XMarkIcon,
   FunnelIcon,
   ArrowPathIcon,
-  ChartBarIcon,
-  ArrowTrendingUpIcon,
-  MinusIcon,
-  InformationCircleIcon
+  InformationCircleIcon,
+  Squares2X2Icon,
+  ListBulletIcon,
+  ChevronDownIcon,
+  ChevronRightIcon
 } from '@heroicons/vue/24/outline'
 import { LOG_LEVELS, STREAM_PROGRESS_CATEGORIES } from '@/constants'
 import SqlConsoleView from './SqlConsoleView.vue'
+import LogRow from './LogRow.vue'
+import {
+  getCategoryBadgeClasses,
+  getCategoryLabel,
+  formatLogTimestamp
+} from '@/utils/sqlLogHelpers'
 
 const store = useLogsStore()
 const isOpen = computed(() => store.isLogsPanelOpen)
@@ -42,8 +49,13 @@ const availableStreams = computed(() => {
 // Message type filter
 const messageTypes = ['all', 'error & warning', 'progress & stats', 'info']
 const selectedMessageType = ref('all')
+const showMessageTypeMenu = ref(false)
+const searchText = ref('')
+const searchInputRef = ref<HTMLInputElement | null>(null)
+const visuallyGrouped = ref(false)
+const collapsedStreams = ref(new Set<string>())
 
-// Filtered logs based on stream and message type
+// Filtered logs based on stream, message type, and search
 const filteredLogs = computed(() => {
   // Use historical logs if in historical view, otherwise use SSE logs
   let filtered = store.isHistoricalView ? store.historicalLogs : store.logs
@@ -72,6 +84,26 @@ const filteredLogs = computed(() => {
     })
   }
 
+  // Filter by search text (searches message, source, type, streamId)
+  if (searchText.value.trim()) {
+    const query = searchText.value.toLowerCase()
+    filtered = filtered.filter((log) => {
+      const message = (log.message || '').toLowerCase()
+      const source = (log.source || '').toLowerCase()
+      const type = (log.type || '').toLowerCase()
+      const streamId = (log.streamId || '').toLowerCase()
+      const category = (log.category || '').toLowerCase()
+
+      return (
+        message.includes(query) ||
+        source.includes(query) ||
+        type.includes(query) ||
+        streamId.includes(query) ||
+        category.includes(query)
+      )
+    })
+  }
+
   // Sort by timestamp (newest first)
   return [...filtered].sort((a, b) => a.timestamp - b.timestamp)
 })
@@ -80,89 +112,51 @@ const totalLogs = computed(() => {
   return selectedStreamId.value ? filteredLogs.value.length : store.logs.length
 })
 
+// Logs with meaningful messages (filter out empty ones)
+const logsWithContent = computed(() => {
+  return filteredLogs.value.filter((log) => {
+    const message = getStatLogDisplay(log)
+    return message && message.trim()
+  })
+})
+
+// Grouped logs by streamId (for visual grouping)
+const groupedLogs = computed(() => {
+  if (!visuallyGrouped.value) {
+    return null
+  }
+
+  const groups = new Map<string, typeof logsWithContent.value>()
+  logsWithContent.value.forEach((log) => {
+    const streamId = log.streamId || 'ungrouped'
+    if (!groups.has(streamId)) {
+      groups.set(streamId, [])
+    }
+    groups.get(streamId)!.push(log)
+  })
+  return groups
+})
+
+function toggleGrouping() {
+  visuallyGrouped.value = !visuallyGrouped.value
+}
+
+function toggleStream(streamId: string) {
+  if (collapsedStreams.value.has(streamId)) {
+    collapsedStreams.value.delete(streamId)
+  } else {
+    collapsedStreams.value.add(streamId)
+  }
+}
+
 const hasSQLLogs = computed(() => store.flatLogs.size > 0)
 
-function formatTimestamp(timestamp: number): string {
-  const timestampInMs = timestamp < 1e12 ? timestamp * 1000 : timestamp
-  const date = new Date(timestampInMs)
-  return date.toLocaleTimeString('en-US', {
-    hour12: false,
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit'
-  })
-}
-
-function getMessageTypeColor(log: SystemLog): string {
-  const msg = log?.message?.toLowerCase() || ''
-
-  if (msg.includes('connecting') || msg.includes('connected to')) {
-    return 'bg-blue-50/80 border-l-4 border-blue-300'
-  }
-
-  if (log.category === 'stat') {
-    return 'bg-indigo-50/80 border-l-4 border-indigo-300'
-  }
-  if (log.category === 'progress') {
-    return 'bg-emerald-50/80 border-l-4 border-emerald-300'
-  }
-
-  if (msg.startsWith('    at ') || msg.startsWith('  at ')) {
-    return 'bg-red-50/40 border-l-4 border-red-200 pl-8 font-mono text-xs'
-  }
-
-  switch (log?.level) {
-    case 'error':
-      return 'bg-red-50/80 border-l-4 border-red-400'
-    case 'warn':
-      return 'bg-yellow-50/80 border-l-4 border-yellow-400'
-    case 'debug':
-      return 'bg-gray-50/80 border-l-4 border-gray-400'
-    default:
-      return 'bg-white border-l-4 border-gray-300'
-  }
-}
-
-function getDuplicateCount(log: SystemLog): string {
-  if (!log.details?.duplicateCount) return ''
-  const count = log.details.duplicateCount as number
-  if (count <= 1) return ''
-
-  const lastTimestamp = log.details.lastTimestamp as number
-  const duration = Math.round((lastTimestamp - log.timestamp) / 1000)
-  return `(${count}x in ${duration}s)`
-}
-
-function getMessageIcon(log: SystemLog): typeof InformationCircleIcon {
-  const msg = log?.message?.toLowerCase() || ''
-  if (msg.includes('connecting')) return ArrowPathIcon
-  if (msg.includes('connected to')) return ArrowPathIcon
-  if (log.category === 'stat') return ChartBarIcon
-  if (log.category === 'progress') return ArrowTrendingUpIcon
-  if (msg.startsWith('    at ') || msg.startsWith('  at ')) return MinusIcon
-  return InformationCircleIcon
-}
-
-function getMessageIconColor(log: SystemLog): string {
-  const msg = log?.message?.toLowerCase() || ''
-
-  if (msg.includes('connecting')) return 'text-blue-500'
-  if (msg.includes('connected to')) return 'text-blue-600'
-  if (log.category === 'stat') return 'text-indigo-500'
-  if (log.category === 'progress') return 'text-emerald-500'
-  if (msg.startsWith('    at ') || msg.startsWith('  at ')) return 'text-red-300'
-
-  switch (log?.level) {
-    case 'error':
-      return 'text-red-500'
-    case 'warn':
-      return 'text-yellow-500'
-    case 'debug':
-      return 'text-blue-500'
-    case 'info':
-      return 'text-gray-400'
-    default:
-      return 'text-gray-400'
+function computeLogBadge(log: SystemLog) {
+  const type = log.category ? 'category' : 'level'
+  const value = log.category || log.level || 'info'
+  return {
+    label: getCategoryLabel(type, value),
+    class: getCategoryBadgeClasses(type, value)
   }
 }
 
@@ -251,9 +245,9 @@ function getStatLogDisplay(log: SystemLog): string {
   if (log.category === 'stat') {
     const parts: string[] = []
 
-    // Header: source/target
-    if (log.nodeType) {
-      parts.push(`${log.nodeType.toUpperCase()}`)
+    // Header: source/target (use type field instead of nodeType)
+    if ((log as any).type) {
+      parts.push(`${(log as any).type.toUpperCase()}`)
     }
 
     // Table name
@@ -302,6 +296,79 @@ function backToLiveLogs() {
   store.clearHistoricalLogs()
   selectedStreamId.value = ''
 }
+
+// Keyboard shortcuts handler
+function handleKeyboardShortcut(event: KeyboardEvent) {
+  // Don't trigger shortcuts if typing in an input field (except for specific keys)
+  const target = event.target as HTMLElement
+  const isInputField = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA'
+
+  // Only apply shortcuts for system logs view
+  if (selectedView.value !== 'system') return
+
+  // K: Clear logs
+  if (event.key.toLowerCase() === 'k' && !isInputField) {
+    event.preventDefault()
+    store.clearLogs()
+    return
+  }
+
+  // Forward slash or F: Focus search input
+  if ((event.key === '/' || event.key.toLowerCase() === 'f') && !isInputField) {
+    event.preventDefault()
+    searchInputRef.value?.focus()
+    return
+  }
+}
+
+function handleDocumentClick(event: MouseEvent) {
+  const target = event.target as Node | null
+
+  // Close stream dropdown when clicking outside
+  if (target) {
+    // This can be expanded if we implement a custom dropdown
+  }
+}
+
+onMounted(() => {
+  // Load preferences from localStorage
+  const savedGrouped = localStorage.getItem('systemLogVisuallyGrouped')
+  if (savedGrouped === 'true') {
+    visuallyGrouped.value = true
+  }
+
+  const savedMessageType = localStorage.getItem('systemLogMessageType')
+  if (savedMessageType) {
+    selectedMessageType.value = savedMessageType
+  }
+
+  const savedStreamId = localStorage.getItem('systemLogStreamFilter')
+  if (savedStreamId) {
+    selectedStreamId.value = savedStreamId
+  }
+
+  // Setup watchers for persistence
+  watch(visuallyGrouped, (newValue) => {
+    localStorage.setItem('systemLogVisuallyGrouped', String(newValue))
+  })
+
+  watch(selectedMessageType, (newValue) => {
+    localStorage.setItem('systemLogMessageType', newValue)
+  })
+
+  watch(selectedStreamId, (newValue) => {
+    localStorage.setItem('systemLogStreamFilter', newValue)
+  })
+
+  // Setup event listeners
+  document.addEventListener('keydown', handleKeyboardShortcut)
+  document.addEventListener('click', handleDocumentClick)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('keydown', handleKeyboardShortcut)
+  document.removeEventListener('click', handleDocumentClick)
+})
 </script>
 
 <template>
@@ -430,44 +497,99 @@ function backToLiveLogs() {
               </nav>
             </div>
 
-            <!-- Filters (only for system logs) -->
+            <!-- Filters (only for system logs) - Unified with SQL Logs style -->
             <div
               v-if="selectedView === 'system'"
-              class="bg-white px-4 py-2 flex items-center space-x-3 border-b border-gray-200"
+              class="flex items-center gap-2 px-4 py-2 bg-white border-b border-gray-200 shadow-sm flex-wrap"
             >
-              <!-- Stream Filter Dropdown -->
-              <div class="flex items-center space-x-2">
-                <label class="text-sm text-gray-600">Stream:</label>
-                <select
-                  v-model="selectedStreamId"
-                  class="px-3 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              <!-- Grouping Toggle (matching SQL Logs pattern) -->
+              <button
+                class="flex items-center gap-1.5 px-3 py-1.5 text-xs border rounded transition-colors"
+                :class="[
+                  visuallyGrouped
+                    ? 'border-gray-400 bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    : 'border-gray-300 bg-white text-gray-600 hover:bg-gray-50'
+                ]"
+                title="Toggle grouping by stream"
+                @click="toggleGrouping"
+              >
+                <component
+                  :is="visuallyGrouped ? Squares2X2Icon : ListBulletIcon"
+                  class="w-4 h-4"
+                />
+                <span class="font-medium">{{ visuallyGrouped ? 'Grouped' : 'Ungrouped' }}</span>
+              </button>
+
+              <div class="hidden sm:block h-6 border-l border-gray-200" />
+
+              <!-- Stream Filter Dropdown (matching SQL Logs query type dropdown style) -->
+              <div class="relative">
+                <button
+                  class="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-white border border-gray-300 rounded hover:bg-gray-100 focus:border-gray-400 focus:ring-1 focus:ring-gray-300 transition-colors text-left"
+                  title="Filter by stream"
                 >
-                  <option value="">All Streams</option>
-                  <option v-for="streamId in availableStreams" :key="streamId" :value="streamId">
-                    {{ getShortStreamId(streamId) }}
-                  </option>
-                </select>
+                  <FunnelIcon class="w-4 h-4 text-gray-600" />
+                  <span class="text-gray-700 font-medium">
+                    {{ selectedStreamId ? getShortStreamId(selectedStreamId) : 'All Streams' }}
+                  </span>
+                </button>
               </div>
 
-              <!-- Message Type Filter -->
-              <div class="flex items-center space-x-2 ml-4">
-                <FunnelIcon class="h-4 w-4 text-gray-400" />
-                <div class="flex flex-wrap gap-1">
-                  <button
-                    v-for="type in messageTypes"
-                    :key="type"
-                    class="px-2.5 py-1 text-xs rounded-full transition-colors duration-200"
-                    :class="[
-                      selectedMessageType === type
-                        ? 'bg-gray-700 text-white'
-                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                    ]"
-                    @click="selectedMessageType = type"
-                  >
-                    {{ type }}
-                  </button>
-                </div>
+              <div class="hidden sm:block h-6 border-l border-gray-200" />
+
+              <!-- Message Type Filter (matching SQL Logs button group style) -->
+              <div class="flex items-center gap-2">
+                <button
+                  v-for="type in messageTypes"
+                  :key="type"
+                  class="px-3 py-1.5 text-xs border rounded transition-colors"
+                  :class="[
+                    selectedMessageType === type
+                      ? 'border-gray-400 bg-gray-700 text-white'
+                      : 'border-gray-300 bg-white text-gray-600 hover:bg-gray-50'
+                  ]"
+                  @click="selectedMessageType = type"
+                >
+                  {{ type }}
+                </button>
               </div>
+
+              <div class="hidden sm:block h-6 border-l border-gray-200" />
+
+              <!-- Search Input (matching SQL Logs search style) -->
+              <div class="flex-1 relative min-w-0 sm:min-w-48">
+                <svg
+                  class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+                <input
+                  ref="searchInputRef"
+                  v-model="searchText"
+                  type="text"
+                  placeholder="Search logs..."
+                  class="w-full text-xs border border-gray-300 rounded pl-9 pr-3 py-1.5 bg-white hover:border-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                />
+              </div>
+
+              <!-- Stream selector dropdown (hidden native select for accessibility) -->
+              <select
+                v-model="selectedStreamId"
+                class="hidden px-3 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">All Streams</option>
+                <option v-for="streamId in availableStreams" :key="streamId" :value="streamId">
+                  {{ getShortStreamId(streamId) }}
+                </option>
+              </select>
             </div>
 
             <!-- SQL Console View -->
@@ -483,44 +605,62 @@ function backToLiveLogs() {
             <div
               v-else
               ref="logsContainer"
-              class="overflow-y-auto h-full px-4 bg-white"
+              class="overflow-y-auto h-full bg-white"
               :style="{ height: `calc(${panelHeight} - 180px)` }"
             >
-              <table class="w-full">
-                <tbody class="divide-y divide-gray-100">
-                  <tr
-                    v-for="log in filteredLogs"
-                    :key="log.id"
-                    class="group transition-all duration-200"
-                    :class="[getMessageTypeColor(log)]"
+              <!-- Log Rows using reusable LogRow component -->
+              <!-- Grouped View -->
+              <div v-if="visuallyGrouped && groupedLogs && groupedLogs.size > 0">
+                <div v-for="[streamId, logs] of groupedLogs.entries()" :key="streamId">
+                  <!-- Stream Group Header -->
+                  <div
+                    class="bg-gray-100 border-b border-gray-300 px-4 py-2 flex items-center gap-3 cursor-pointer hover:bg-gray-200 transition-colors sticky top-0 z-10"
+                    @click="toggleStream(streamId)"
                   >
-                    <td class="py-1.5 px-2 w-20 text-xs text-gray-500 font-mono whitespace-nowrap">
-                      {{ formatTimestamp(log.timestamp) }}
-                    </td>
-                    <td class="py-1.5 px-2 w-6">
-                      <component
-                        :is="getMessageIcon(log)"
-                        class="h-4 w-4 shrink-0"
-                        :class="getMessageIconColor(log)"
-                      />
-                    </td>
-                    <td class="py-1.5 px-2 text-sm text-gray-800 break-words">
-                      <div class="flex items-start">
-                        <span class="flex-1">{{ getStatLogDisplay(log) }}</span>
-                        <span v-if="getDuplicateCount(log)" class="ml-2 text-xs text-gray-500">
-                          {{ getDuplicateCount(log) }}
-                        </span>
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+                    <component
+                      :is="collapsedStreams.has(streamId) ? ChevronRightIcon : ChevronDownIcon"
+                      class="w-4 h-4 text-gray-700 flex-shrink-0"
+                    />
+                    <span class="text-sm font-semibold text-gray-900">
+                      {{ streamId === 'ungrouped' ? 'Ungrouped' : getShortStreamId(streamId) }}
+                    </span>
+                    <span class="text-xs bg-gray-600 text-white px-2 py-0.5 rounded">
+                      {{ logs.length }} logs
+                    </span>
+                  </div>
+
+                  <!-- Logs in group (hidden if collapsed) -->
+                  <div v-if="!collapsedStreams.has(streamId)">
+                    <LogRow
+                      v-for="log in logs"
+                      :key="log.id"
+                      :timestamp="formatLogTimestamp(log.timestamp)"
+                      :badge="computeLogBadge(log)"
+                      :message="getStatLogDisplay(log)"
+                      :is-error="log.level === 'error'"
+                      :expandable="false"
+                    >
+                    </LogRow>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Ungrouped View -->
+              <div v-else-if="!visuallyGrouped && logsWithContent.length > 0">
+                <LogRow
+                  v-for="log in logsWithContent"
+                  :key="log.id"
+                  :timestamp="formatLogTimestamp(log.timestamp)"
+                  :badge="computeLogBadge(log)"
+                  :message="getStatLogDisplay(log)"
+                  :is-error="log.level === 'error'"
+                  :expandable="false"
+                >
+                </LogRow>
+              </div>
 
               <!-- Empty State -->
-              <div
-                v-if="filteredLogs.length === 0"
-                class="flex flex-col items-center justify-center h-full text-gray-500"
-              >
+              <div v-else class="flex flex-col items-center justify-center h-full text-gray-500">
                 <InformationCircleIcon class="h-12 w-12 mb-2" />
                 <p class="text-sm">No logs to display</p>
                 <p v-if="selectedStreamId" class="text-xs mt-1">

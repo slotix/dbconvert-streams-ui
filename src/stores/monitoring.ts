@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
 import type { StreamConfig } from '@/types/streamConfig'
-import { sseLogsService } from '@/api/sseLogsService'
 import { NodeTypes, type NodeType } from '@/types/common'
 import type { AggregatedStatResponse, AggregatedNodeStats } from '@/types/streamStats'
 import {
@@ -379,12 +378,6 @@ export const useMonitoringStore = defineStore('monitoring', {
       })
 
       return worst
-    },
-    initSSEHandling() {
-      sseLogsService.addMessageHandler((message: Log) => {
-        // Process the message
-        this.processMessage(message)
-      })
     },
     processMessage(message: Log) {
       try {

@@ -16,6 +16,7 @@ import {
 } from '@/utils/sqlLogHelpers'
 import { useConnectionsStore } from '@/stores/connections'
 import SqlCodeBlock from '@/components/database/SqlCodeBlock.vue'
+import ExpandableSection from './ExpandableSection.vue'
 
 const props = defineProps<{
   log: SQLQueryLog
@@ -184,8 +185,14 @@ function toggleExpanded() {
         </button>
       </div>
 
-      <!-- Expanded Details (using SqlCodeBlock component) -->
-      <div v-if="isExpanded" class="px-12 py-3 bg-gray-50 border-t border-gray-200">
+      <!-- Expanded Details (using reusable ExpandableSection component) -->
+      <ExpandableSection
+        v-if="isExpanded"
+        title="Query Details"
+        :is-open="isExpanded"
+        :has-error="!!log.error"
+        class="ml-12"
+      >
         <!-- Full Query using SqlCodeBlock -->
         <div class="mb-3">
           <SqlCodeBlock :code="fullQuery" title="Query" :dialect="dialect" />
@@ -206,7 +213,7 @@ function toggleExpanded() {
         <div v-if="log.tabId" class="grid grid-cols-2 gap-2 text-xs">
           <div><span class="font-semibold">Tab:</span> {{ log.tabId }}</div>
         </div>
-      </div>
+      </ExpandableSection>
     </div>
   </div>
 </template>
