@@ -5,12 +5,13 @@ import { TransitionRoot, TransitionChild } from '@headlessui/vue'
 import {
   XMarkIcon,
   FunnelIcon,
-  InformationCircleIcon,
   Squares2X2Icon,
   ListBulletIcon,
   ChevronDownIcon,
   ChevronRightIcon,
-  TrashIcon
+  TrashIcon,
+  ArrowDownIcon,
+  ArrowUpIcon
 } from '@heroicons/vue/24/outline'
 import { LOG_LEVELS, STREAM_PROGRESS_CATEGORIES } from '@/constants'
 import SqlConsoleView from './SqlConsoleView.vue'
@@ -50,10 +51,12 @@ const availableStreams = computed(() => {
 const messageTypes = ['all', 'error & warning', 'progress & stats', 'info']
 const selectedMessageType = ref('all')
 const showMessageTypeMenu = ref(false)
+const messageTypeMenuRef = ref<HTMLDivElement | null>(null)
 const searchText = ref('')
 const searchInputRef = ref<HTMLInputElement | null>(null)
 const visuallyGrouped = ref(false)
 const collapsedStreams = ref(new Set<string>())
+const systemLogsSortOrder = ref<'newest' | 'oldest'>('newest')
 
 // Filtered logs based on stream, message type, and search
 const filteredLogs = computed(() => {
@@ -104,8 +107,10 @@ const filteredLogs = computed(() => {
     })
   }
 
-  // Sort by timestamp (newest first)
-  return [...filtered].sort((a, b) => a.timestamp - b.timestamp)
+  // Sort by timestamp based on sort order preference
+  return [...filtered].sort((a, b) =>
+    systemLogsSortOrder.value === 'newest' ? b.timestamp - a.timestamp : a.timestamp - b.timestamp
+  )
 })
 
 const totalLogs = computed(() => {
@@ -141,6 +146,10 @@ function toggleGrouping() {
   visuallyGrouped.value = !visuallyGrouped.value
 }
 
+function toggleSystemLogsSortOrder() {
+  systemLogsSortOrder.value = systemLogsSortOrder.value === 'newest' ? 'oldest' : 'newest'
+}
+
 function toggleStream(streamId: string) {
   if (collapsedStreams.value.has(streamId)) {
     collapsedStreams.value.delete(streamId)
@@ -148,8 +157,6 @@ function toggleStream(streamId: string) {
     collapsedStreams.value.add(streamId)
   }
 }
-
-const hasSQLLogs = computed(() => store.flatLogs.size > 0)
 
 function computeLogBadge(log: SystemLog) {
   const type = log.category ? 'category' : 'level'
@@ -328,9 +335,14 @@ function handleKeyboardShortcut(event: KeyboardEvent) {
 function handleDocumentClick(event: MouseEvent) {
   const target = event.target as Node | null
 
-  // Close stream dropdown when clicking outside
-  if (target) {
-    // This can be expanded if we implement a custom dropdown
+  // Close message type dropdown when clicking outside
+  if (
+    showMessageTypeMenu.value &&
+    messageTypeMenuRef.value &&
+    target &&
+    !messageTypeMenuRef.value.contains(target)
+  ) {
+    showMessageTypeMenu.value = false
   }
 }
 
@@ -346,10 +358,10 @@ onMounted(() => {
     selectedMessageType.value = savedMessageType
   }
 
-  const savedStreamId = localStorage.getItem('systemLogStreamFilter')
-  if (savedStreamId) {
-    selectedStreamId.value = savedStreamId
-  }
+  // Note: Do NOT persist selectedStreamId - start with clean state each session
+  // This ensures users don't see stale stream filters after restart
+  // Clear any stale stream filter from localStorage
+  localStorage.removeItem('systemLogStreamFilter')
 
   // Setup watchers for persistence
   watch(visuallyGrouped, (newValue) => {
@@ -360,9 +372,7 @@ onMounted(() => {
     localStorage.setItem('systemLogMessageType', newValue)
   })
 
-  watch(selectedStreamId, (newValue) => {
-    localStorage.setItem('systemLogStreamFilter', newValue)
-  })
+  // Note: Do NOT persist selectedStreamId - it should reset each session
 
   // Setup event listeners
   document.addEventListener('keydown', handleKeyboardShortcut)
@@ -427,7 +437,6 @@ onBeforeUnmount(() => {
                   </span>
                 </button>
                 <button
-                  v-if="hasSQLLogs"
                   class="px-4 py-2 text-sm font-medium rounded-md transition-all duration-200"
                   :class="[
                     selectedView === 'sql'
@@ -436,7 +445,7 @@ onBeforeUnmount(() => {
                   ]"
                   @click="selectedView = 'sql'"
                 >
-                  <span class="text-purple-600 font-semibold">SQL</span>
+                  <span class="text-green-600 font-semibold">SQL Logs</span>
                   <span class="ml-2 text-xs px-1.5 py-0.5 rounded-full bg-gray-200 text-gray-600">
                     {{ store.flatLogs.size }}
                   </span>
@@ -492,22 +501,75 @@ onBeforeUnmount(() => {
 
               <div class="hidden sm:block h-6 border-l border-gray-200" />
 
-              <!-- Message Type Filter (matching SQL Logs button group style) -->
-              <div class="flex items-center gap-2">
+              <!-- Message Type Filter Dropdown (matching SQL Logs pattern) -->
+              <div ref="messageTypeMenuRef" class="relative">
                 <button
-                  v-for="type in messageTypes"
-                  :key="type"
-                  class="px-3 py-1.5 text-xs border rounded transition-colors"
-                  :class="[
-                    selectedMessageType === type
-                      ? 'border-gray-400 bg-gray-700 text-white'
-                      : 'border-gray-300 bg-white text-gray-600 hover:bg-gray-50'
-                  ]"
-                  @click="selectedMessageType = type"
+                  class="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-white border border-gray-300 rounded hover:bg-gray-100 focus:border-gray-400 focus:ring-1 focus:ring-gray-300 transition-colors text-left"
+                  :title="`Filter by message type`"
+                  @click="showMessageTypeMenu = !showMessageTypeMenu"
                 >
-                  {{ type }}
+                  <FunnelIcon class="w-4 h-4 text-gray-600" />
+                  <span class="text-gray-700 font-medium">{{ selectedMessageType }}</span>
+                  <ChevronDownIcon class="w-3.5 h-3.5 text-gray-400" />
                 </button>
+
+                <transition
+                  leave-active-class="transition ease-in duration-100"
+                  leave-from-class="opacity-100"
+                  leave-to-class="opacity-0"
+                >
+                  <div
+                    v-if="showMessageTypeMenu"
+                    class="absolute left-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50"
+                    @click.stop
+                  >
+                    <!-- Message Type Options -->
+                    <button
+                      v-for="type in messageTypes"
+                      :key="type"
+                      class="w-full text-left px-3 py-2 text-xs hover:bg-gray-50 flex items-center gap-2 transition-colors group"
+                      @click="
+                        selectedMessageType = type
+                        showMessageTypeMenu = false
+                      "
+                    >
+                      <div
+                        :class="[
+                          'w-4 h-4 rounded border transition-colors',
+                          selectedMessageType === type
+                            ? 'bg-gray-700 border-gray-700'
+                            : 'border-gray-300 group-hover:border-gray-400'
+                        ]"
+                      >
+                        <span
+                          v-if="selectedMessageType === type"
+                          class="flex items-center justify-center w-full h-full text-white text-xs"
+                        >
+                          ✓
+                        </span>
+                      </div>
+                      <span class="text-gray-700 group-hover:text-gray-900">{{ type }}</span>
+                    </button>
+                  </div>
+                </transition>
               </div>
+
+              <div class="hidden sm:block h-6 border-l border-gray-200" />
+
+              <!-- Sort Order Toggle (matching SQL Logs pattern) -->
+              <button
+                class="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-white border border-gray-300 rounded hover:bg-gray-100 transition-colors"
+                :title="`Sort: ${systemLogsSortOrder === 'newest' ? 'Newest on top' : 'Oldest on top'} (S)`"
+                @click="toggleSystemLogsSortOrder"
+              >
+                <component
+                  :is="systemLogsSortOrder === 'newest' ? ArrowDownIcon : ArrowUpIcon"
+                  class="w-3.5 h-3.5 text-gray-600"
+                />
+                <span class="text-gray-700 font-medium">{{
+                  systemLogsSortOrder === 'newest' ? 'Newest' : 'Oldest'
+                }}</span>
+              </button>
 
               <div class="hidden sm:block h-6 border-l border-gray-200" />
 
@@ -626,12 +688,23 @@ onBeforeUnmount(() => {
               </div>
 
               <!-- Empty State -->
-              <div v-else class="flex flex-col items-center justify-center h-full text-gray-500">
-                <InformationCircleIcon class="h-12 w-12 mb-2" />
-                <p class="text-sm">No logs to display</p>
-                <p v-if="selectedStreamId" class="text-xs mt-1">
-                  Try selecting a different stream or clearing filters
-                </p>
+              <div v-else class="flex items-center justify-center h-full text-gray-500">
+                <div class="text-center">
+                  <svg
+                    class="w-12 h-12 mx-auto mb-4 text-gray-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                  <p class="font-medium">No logs to display</p>
+                </div>
               </div>
             </div>
           </div>

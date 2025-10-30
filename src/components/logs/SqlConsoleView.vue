@@ -29,15 +29,6 @@ function handleKeyDown(event: KeyboardEvent) {
     return
   }
 
-  // Level shortcuts: 1=minimal, 2=normal
-  if (event.key === '1' && !event.ctrlKey && !event.metaKey) {
-    event.preventDefault()
-    logsStore.setLevel('minimal')
-  } else if (event.key === '2' && !event.ctrlKey && !event.metaKey) {
-    event.preventDefault()
-    logsStore.setLevel('normal')
-  }
-
   // 'E' for errors-only toggle
   if (event.key === 'e' && !event.ctrlKey && !event.metaKey) {
     event.preventDefault()
@@ -76,7 +67,22 @@ onUnmounted(() => {
       v-if="logsWithHeaders.length === 0"
       class="flex items-center justify-center h-full text-gray-500"
     >
-      <p>No queries match current filters.</p>
+      <div class="text-center">
+        <svg
+          class="w-12 h-12 mx-auto mb-4 text-gray-400"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+        <p class="font-medium">No queries to display</p>
+      </div>
     </div>
 
     <!-- Flat View with Optional Visual Grouping -->
