@@ -22,6 +22,7 @@
           v-model="searchQuery"
           type="text"
           placeholder="Search streams..."
+          autocomplete="off"
           class="w-full pl-9 pr-3 py-2 rounded-md border border-gray-300 text-sm focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-transparent"
         />
       </div>
