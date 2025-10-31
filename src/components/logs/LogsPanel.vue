@@ -583,7 +583,7 @@ onBeforeUnmount(() => {
                 @click="store.clearLogs()"
               >
                 <TrashIcon class="w-3.5 h-3.5" />
-                <span>Clear</span>
+                <span>Clear Logs</span>
               </button>
             </div>
 
