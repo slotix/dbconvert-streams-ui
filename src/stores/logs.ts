@@ -482,13 +482,10 @@ export const useLogsStore = defineStore('logs', {
         let runTimestamp = Date.now()
         if (rawLogs.length > 0) {
           const firstLog = rawLogs[0]
-          runTimestamp = firstLog.ts
-            ? typeof firstLog.ts === 'number'
-              ? firstLog.ts * 1000
-              : new Date(firstLog.ts as string).getTime()
-            : firstLog.time
-              ? new Date(firstLog.time as string).getTime()
-              : Date.now()
+          // timestamp field is in ISO8601 format from backend
+          if (firstLog.timestamp) {
+            runTimestamp = new Date(firstLog.timestamp as string).getTime()
+          }
         }
 
         // Convert raw logs to SystemLog format
@@ -496,13 +493,7 @@ export const useLogsStore = defineStore('logs', {
           id: Date.now() + index,
           message: (log.msg as string) || (log.message as string) || '',
           level: ((log.level as string) || 'info') as LogLevel,
-          timestamp: log.ts
-            ? typeof log.ts === 'number'
-              ? log.ts * 1000
-              : new Date(log.ts as string).getTime()
-            : log.time
-              ? new Date(log.time as string).getTime()
-              : Date.now(),
+          timestamp: log.timestamp ? new Date(log.timestamp as string).getTime() : Date.now(),
           source: (log.caller as string) || undefined,
           type: log.type as NodeType | undefined,
           nodeId: log.nodeId as string | undefined,
