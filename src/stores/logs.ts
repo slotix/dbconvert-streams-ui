@@ -340,6 +340,13 @@ export const useLogsStore = defineStore('logs', {
 
   actions: {
     addLog(log: Omit<SystemLog, 'id'>) {
+      // If we're in historical view and new logs arrive from a DIFFERENT stream, exit historical view
+      // This allows us to switch back to real-time monitoring when a new stream starts
+      if (this.isHistoricalView && log.streamId && log.streamId !== this.selectedStreamId) {
+        this.isHistoricalView = false
+        this.historicalLogs = []
+      }
+
       // Trim logs if we exceed maxLogs
       if (this.logs.length >= this.maxLogs) {
         this.logs = this.logs.slice(-Math.floor(this.maxLogs / 2))
@@ -471,6 +478,19 @@ export const useLogsStore = defineStore('logs', {
         // Fetch logs from the API
         const rawLogs = await getStreamLogs(streamId)
 
+        // Get the run timestamp from the first log
+        let runTimestamp = Date.now()
+        if (rawLogs.length > 0) {
+          const firstLog = rawLogs[0]
+          runTimestamp = firstLog.ts
+            ? typeof firstLog.ts === 'number'
+              ? firstLog.ts * 1000
+              : new Date(firstLog.ts as string).getTime()
+            : firstLog.time
+              ? new Date(firstLog.time as string).getTime()
+              : Date.now()
+        }
+
         // Convert raw logs to SystemLog format
         this.historicalLogs = rawLogs.map((log, index) => ({
           id: Date.now() + index,
@@ -496,6 +516,26 @@ export const useLogsStore = defineStore('logs', {
           elapsed: log.elapsed as number | undefined,
           details: log
         }))
+
+        // Create a system log tab for this run
+        const cleanStreamId = streamId.startsWith('stream_') ? streamId.slice(7) : streamId
+        const shortStreamId =
+          cleanStreamId.length > 15
+            ? `${cleanStreamId.slice(0, 5)}...${cleanStreamId.slice(-6)}`
+            : cleanStreamId
+
+        const date = new Date(runTimestamp)
+        const timeLabel = date.toLocaleTimeString('en-US', {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: false
+        })
+        const label = `${shortStreamId} - ${timeLabel}`
+        const fullLabel = `${cleanStreamId} - ${timeLabel}`
+
+        // Add the tab and select it
+        this.addSystemLogTab(streamId, runTimestamp, label, fullLabel)
 
         // Set the view to historical
         this.isHistoricalView = true
