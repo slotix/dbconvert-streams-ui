@@ -70,34 +70,49 @@ yarn version:major  # Major version bump
 ```
 src/
 ├── api/           # API client and service layer
-├── components/    # Reusable Vue components organized by feature
-│   ├── common/    # Shared UI components
-│   ├── connection/# Database connection components
-│   ├── stream/    # Stream management components
-│   └── ...
-├── composables/   # Vue composable functions
+├── components/    # Vue components organized by feature
+│   ├── common/    # Shared UI components (buttons, modals, etc.)
+│   ├── connection/# Database connection management components
+│   ├── stream/    # Stream creation and configuration components
+│   ├── monitoring/# Real-time monitoring components
+│   ├── logs/      # Log viewer and streaming components
+│   ├── database/  # Database viewing components
+│   ├── explorer/  # Database explorer components
+│   ├── files/     # File handling components
+│   └── settings/  # Application settings components
+├── composables/   # Vue composable functions (reusable logic)
 ├── stores/        # Pinia stores for state management
-├── views/         # Route-level components (pages)
-├── router/        # Vue Router configuration
-├── types/         # TypeScript type definitions
-├── utils/         # Utility functions
-└── assets/        # Static assets
+├── views/         # Full-page route components
+│   └── connections/ # Connection management pages
+├── router/        # Vue Router configuration and routes
+├── types/         # TypeScript interfaces and type definitions
+├── utils/         # Utility functions and helpers
+├── constants/     # Application constants
+├── directives/    # Custom Vue directives
+├── config/        # Configuration files
+├── styles/        # Global styles
+└── assets/        # Static assets (icons, images, etc.)
 ```
 
-### Key Components
-- **ConnectionsView**: Database connection management interface
-- **StreamsView**: Stream configuration and monitoring
-- **MonitorStreamView**: Real-time stream monitoring with metrics
-- **DatabaseExplorerView**: Database schema exploration
-- **HomeView**: Dashboard with quick actions and system status
+### Key Views (Pages)
+- **HomeView.vue**: Dashboard with streams overview and quick actions
+- **StreamsView.vue**: List and manage all streams with status indicators
+- **CreateStreamView.vue**: Stream creation wizard with source/target configuration
+- **DatabaseExplorerView.vue**: Interactive database schema browser with table inspection
+- **connections/**: Database connection management (add, edit, list)
 
 ### State Management (Pinia Stores)
-- **common.ts**: Global app state, API key management, notifications
-- **connections.ts**: Database connection management
-- **monitoring.ts**: Stream monitoring and metrics
-- **streamConfig.ts**: Stream configuration state
-- **logs.ts**: Real-time logging via Server-Sent Events
-- **schema.ts**: Database schema and metadata
+- **common.ts**: Global app state, API key management, notifications, user preferences
+- **connections.ts**: Database connection CRUD operations and state
+- **monitoring.ts**: Real-time stream metrics, progress, and status updates
+- **streamConfig.ts**: Stream configuration and wizard state
+- **logs.ts**: Real-time log streaming via Server-Sent Events (SSE)
+- **schema.ts**: Database schema, metadata, and table information
+- **paneTabs.ts**: Dual-pane tab state management for explorer
+- **fileExplorer.ts**: File system and exported file browsing
+- **explorerNavigation.ts**: Database explorer navigation state
+- **databaseOverview.ts**: Database-level statistics and summaries
+- **objectTabState.ts**: Object inspection tab state
 
 ## Code Patterns and Conventions
 
@@ -150,22 +165,48 @@ const localValue = ref('')
 
 ## API Integration
 
-### Base Configuration
-The application communicates with the DBConvert Streams API server running on port 8020. API key authentication is required for all requests.
+### Backend Connection
+- **API Server**: DBConvert Streams API running on port 8020 (`http://localhost:8020`)
+- **Authentication**: API key required for all requests (stored in browser localStorage and Pinia state)
+- **Development Proxy**: Configured in `vite.config.js` for local development
 
 ### Key API Endpoints
-- `/api/v1/connections` - Connection management
-- `/api/v1/streams` - Stream operations
-- `/api/v1/monitoring` - System monitoring
-- `/logs/stream` - Server-Sent Events for real-time logs
+**Connections**
+- `GET /api/v1/connections` - List all connections
+- `POST /api/v1/connections` - Create new connection
+- `GET /api/v1/connections/{id}` - Get connection details
+- `PUT /api/v1/connections/{id}` - Update connection
+- `DELETE /api/v1/connections/{id}` - Delete connection
+- `GET /api/v1/connections/{id}/databases` - List databases in connection
+
+**Streams**
+- `GET /api/v1/streams` - List all streams
+- `POST /api/v1/streams` - Create new stream
+- `GET /api/v1/streams/{id}` - Get stream details
+- `PUT /api/v1/streams/{id}` - Update stream
+- `DELETE /api/v1/streams/{id}` - Delete stream
+- `POST /api/v1/streams/{id}/start` - Start stream
+- `POST /api/v1/streams/{id}/stop` - Stop stream
+
+**Monitoring & Logs**
+- `GET /logs/stream` - Real-time log streaming via Server-Sent Events (SSE)
+- `GET /api/v1/streams/{id}/status` - Stream status and metrics
+- `GET /api/v1/files/data` - Query exported file data (Parquet, CSV, etc.)
+
+**Database Schema**
+- `GET /api/v1/connections/{id}/databases/{db}/tables` - List tables
+- `GET /api/v1/connections/{id}/databases/{db}/tables/{table}/columns` - List columns
 
 ### Authentication Pattern
-API key is stored in Pinia state and included in request headers:
+API key is stored in Pinia state and included in all request headers:
 ```typescript
 headers: {
-  'X-API-Key': apiKey
+  'X-API-Key': apiKey,
+  'Content-Type': 'application/json'
 }
 ```
+
+API key is persisted to browser localStorage for session persistence.
 
 ## Testing Strategy
 
@@ -246,6 +287,34 @@ The application uses SSE for real-time updates:
 - Test responsive design across different screen sizes
 - Monitor bundle size with Vite's analyzer tools
 
+## Related Backend Repository
+
+The UI is part of the larger **DBConvert Streams** system. The backend services are located in a separate repository:
+
+**Backend Repository Path**: `/home/dm3/dbconvert/dbconvert-stream`
+
+### Backend Structure
+- `cmd/stream-api/` - REST API server (port 8020)
+- `cmd/stream-reader/` - Source database reader
+- `cmd/stream-writer/` - Target database writer
+- `internal/` - Core libraries (eventhub, dbengine, stream management)
+- `source/` - Database-specific readers (MySQL, PostgreSQL)
+- `target/` - Database-specific writers (MySQL, PostgreSQL, Snowflake, Parquet, CSV, JSONL)
+
+### Backend Technologies
+- Go 1.24
+- NATS JetStream for distributed messaging
+- Consul for service discovery
+- Vault for secrets management
+
+### When Debugging Issues
+- **Frontend state/UI issues** → check this repository (`dbconvert-streams-ui`)
+- **API communication/backend logic** → check backend repository (`dbconvert-stream`)
+- **Stream creation, monitoring, data flow** → check backend
+- **Connection configuration UI** → check this repository
+- **Database connectivity/drivers** → check backend in `internal/dbengine/`
+- **Real-time log streaming** → check backend `cmd/stream-api/` and this UI's `logs.ts` store
+
 ## Cursor Rules Integration
 The project includes specific guidance for development:
 - Use Vue 3 Composition API with `<script setup>`
@@ -254,3 +323,42 @@ The project includes specific guidance for development:
 - Implement mobile-first responsive design
 - Optimize for Web Vitals (LCP, CLS, FID)
 - Leverage VueUse functions for enhanced reactivity
+- Keep components focused and maintainable
+
+## Important Development Notes
+
+### Before Making Changes
+1. Understand the data flow between UI and backend API
+2. Check if related backend changes are needed
+3. Run tests before submitting: `yarn test && yarn test:unit`
+4. Follow ESLint and Prettier formatting: `yarn lint && yarn format`
+
+### Common Development Tasks
+```bash
+# Start dev environment
+yarn install
+yarn dev
+
+# Test changes
+yarn test:headed     # See tests run in browser
+yarn test:unit       # Run unit tests
+
+# Check code quality
+yarn lint            # ESLint
+yarn format          # Prettier
+
+# Build for production
+yarn build
+yarn preview         # Test production build locally
+```
+
+### UI Component Libraries
+- **Headless UI Vue** - Unstyled, accessible components
+- **ag-Grid** - Advanced data tables (imported but check if actively used)
+- **D3.js** - Data visualization for monitoring charts
+- **Tailwind CSS** - Utility-first styling with responsive design
+
+### Real-time Features
+- **Server-Sent Events (SSE)**: Used for live log streaming via `logs.ts` store
+- **Polling**: Some components may use polling for periodic updates (check specific stores)
+- **WebSocket**: Not currently used (SSE is preferred for this architecture)
