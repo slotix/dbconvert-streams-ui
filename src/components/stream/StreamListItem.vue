@@ -8,9 +8,13 @@
   >
     <!-- Stream Info -->
     <div class="flex-1 min-w-0">
-      <div class="flex items-center gap-2 mb-1">
-        <h3 class="text-sm font-medium text-gray-900 truncate">{{ stream.name }}</h3>
+      <!-- Stream Name - Full Width -->
+      <div class="mb-1">
+        <h3 class="text-sm font-medium text-gray-900">{{ stream.name }}</h3>
+      </div>
 
+      <!-- Badges and Connection Info Row -->
+      <div class="flex items-center gap-2 mb-1 flex-wrap">
         <!-- Running Status Badge -->
         <span
           v-if="isRunning"
@@ -34,19 +38,19 @@
         >
           {{ stream.mode }}
         </span>
-      </div>
 
-      <!-- Connection Info -->
-      <div class="flex items-center gap-1 text-xs text-gray-500">
-        <span v-if="source" class="truncate" :title="source.name">{{ source.name }}</span>
-        <span v-else class="text-gray-400">Unknown source</span>
-        <ArrowRightIcon class="h-3 w-3 flex-shrink-0 text-gray-400" />
-        <span v-if="target" class="truncate" :title="target.name">{{ target.name }}</span>
-        <span v-else class="text-gray-400">Unknown target</span>
+        <!-- Connection Info (inline with badges) -->
+        <div class="flex items-center gap-1 text-xs text-gray-500">
+          <span v-if="source" class="truncate" :title="source.name">{{ source.name }}</span>
+          <span v-else class="text-gray-400">Unknown source</span>
+          <ArrowRightIcon class="h-3 w-3 flex-shrink-0 text-gray-400" />
+          <span v-if="target" class="truncate" :title="target.name">{{ target.name }}</span>
+          <span v-else class="text-gray-400">Unknown target</span>
+        </div>
       </div>
 
       <!-- Table count -->
-      <div v-if="stream.tables && stream.tables.length > 0" class="mt-1 text-xs text-gray-400">
+      <div v-if="stream.tables && stream.tables.length > 0" class="text-xs text-gray-400">
         {{ stream.tables.length }} table{{ stream.tables.length !== 1 ? 's' : '' }}
       </div>
     </div>
@@ -177,7 +181,10 @@ const isRunning = computed(() => {
 
 const isPaused = computed(() => {
   if (!isRunning.value) return false
-  return monitoringStore.stats.some((stat) => stat.status === 'PAUSED')
+  // Check both: stats (when nodes exist and report) and overall stream status
+  const statsHasPaused = monitoringStore.stats.some((stat) => stat.status === 'PAUSED')
+  const streamStatusIsPaused = monitoringStore.status === statusEnum.PAUSED
+  return statsHasPaused || streamStatusIsPaused
 })
 
 const isFinished = computed(() => {

@@ -271,112 +271,20 @@
 
       <!-- Monitor Tab -->
       <div v-else-if="activeTab === 'monitor'" class="p-6 space-y-6">
-        <!-- Status Summary Bar -->
-        <div
-          :class="[
-            'border rounded-lg p-4 mb-6',
-            isStreamRunning
-              ? 'bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-200'
-              : 'bg-gray-50 border-gray-200'
-          ]"
-        >
-          <div class="flex items-center justify-between flex-wrap gap-4">
-            <!-- Status -->
-            <div class="flex items-center gap-3">
-              <div
-                :class="[
-                  'flex items-center justify-center w-10 h-10 rounded-full',
-                  isStreamRunning
-                    ? isStreamFinished
-                      ? 'bg-green-100'
-                      : isPaused
-                        ? 'bg-yellow-100'
-                        : 'bg-blue-100'
-                    : 'bg-gray-100'
-                ]"
-              >
-                <span
-                  v-if="isStreamRunning && !isStreamFinished && !isPaused"
-                  class="inline-block w-3 h-3 rounded-full bg-blue-600 animate-pulse"
-                ></span>
-                <svg
-                  v-else-if="isStreamFinished"
-                  class="h-6 w-6 text-green-600"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-                <PauseIcon v-else-if="isPaused" class="h-6 w-6 text-yellow-600" />
-                <PlayIcon v-else class="h-6 w-6 text-gray-400" />
-              </div>
-              <div>
-                <p class="text-xs font-medium uppercase text-gray-500">Status</p>
-                <p
-                  :class="[
-                    'text-lg font-semibold',
-                    isStreamRunning
-                      ? isStreamFinished
-                        ? 'text-green-700'
-                        : isPaused
-                          ? 'text-yellow-700'
-                          : 'text-blue-700'
-                      : 'text-gray-600'
-                  ]"
-                >
-                  {{ streamStatus }}
-                </p>
-              </div>
-            </div>
+        <!-- Unified Monitor Header (Status + Progress) -->
+        <MonitorHeader
+          :stream-config="stream"
+          :is-running="isStreamRunning"
+          :is-stream-finished="isStreamFinished"
+          :is-paused="isPaused"
+          :stream-status="streamStatus"
+          :stream-i-d="monitoringStore.streamID"
+          @pause="pauseStream"
+          @resume="resumeStream"
+          @stop="stopStream"
+        />
 
-            <!-- Stream ID Display -->
-            <div v-if="isStreamRunning" class="flex items-center gap-2">
-              <p class="text-xs font-medium uppercase text-gray-500">Stream ID</p>
-              <code
-                class="text-sm font-mono bg-white border border-gray-300 px-2 py-1 rounded text-gray-700"
-              >
-                {{ monitoringStore.streamID }}
-              </code>
-            </div>
-
-            <!-- Stream Controls -->
-            <div class="flex gap-2">
-              <button
-                v-if="isStreamRunning && !isPaused && !isStreamFinished"
-                class="px-4 py-2 bg-white text-cyan-600 font-medium rounded-md hover:bg-gray-50 border border-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-colors flex items-center gap-2 text-sm"
-                @click="pauseStream"
-              >
-                <PauseIcon class="h-4 w-4" />
-                Pause
-              </button>
-              <button
-                v-else-if="isStreamRunning && isPaused"
-                class="px-4 py-2 bg-white text-cyan-600 font-medium rounded-md hover:bg-gray-50 border border-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-colors flex items-center gap-2 text-sm"
-                @click="resumeStream"
-              >
-                <PlayIcon class="h-4 w-4" />
-                Resume
-              </button>
-              <button
-                v-if="isStreamRunning && !isStreamFinished"
-                class="px-4 py-2 bg-white text-red-600 font-medium rounded-md hover:bg-red-50 border border-red-300 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors flex items-center gap-2 text-sm"
-                @click="stopStream"
-              >
-                <StopIcon class="h-4 w-4" />
-                Stop
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Progress and Stats (Always visible) -->
-        <ProgressContainer :is-running="isStreamRunning" />
+        <!-- Performance Stats -->
         <StatContainer :is-running="isStreamRunning" />
       </div>
 
@@ -419,14 +327,7 @@ export default {
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import {
-  ClipboardIcon,
-  CalendarIcon,
-  ExclamationCircleIcon,
-  PauseIcon,
-  PlayIcon,
-  StopIcon
-} from '@heroicons/vue/24/outline'
+import { ClipboardIcon, CalendarIcon, ExclamationCircleIcon } from '@heroicons/vue/24/outline'
 import { Switch } from '@headlessui/vue'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
@@ -435,7 +336,7 @@ import { useMonitoringStore, statusEnum } from '@/stores/monitoring'
 import { apiClient } from '@/api/apiClient'
 import ConnectionStringDisplay from '@/components/common/ConnectionStringDisplay.vue'
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
-import ProgressContainer from '@/components/monitoring/ProgressContainer.vue'
+import MonitorHeader from '@/components/monitoring/MonitorHeader.vue'
 import StatContainer from '@/components/monitoring/StatContainer.vue'
 import StreamHistoryTable from './StreamHistoryTable.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
@@ -479,7 +380,10 @@ const isStreamRunning = computed(() => {
 
 const isPaused = computed(() => {
   if (!isStreamRunning.value) return false
-  return monitoringStore.stats.some((stat) => stat.status === 'PAUSED')
+  // Check both: stats (when nodes exist and report) and overall stream status
+  const statsHasPaused = monitoringStore.stats.some((stat) => stat.status === 'PAUSED')
+  const streamStatusIsPaused = monitoringStore.status === statusEnum.PAUSED
+  return statsHasPaused || streamStatusIsPaused
 })
 
 const isStreamFinished = computed(() => {
@@ -757,9 +661,9 @@ async function pauseStream() {
     // Request to show monitor tab
     monitoringStore.requestShowMonitorTab()
   } catch (error) {
-    if (error instanceof Error) {
-      commonStore.showNotification(error.message, 'error')
-    }
+    console.error('Pause stream failed:', error)
+    const errorMsg = error instanceof Error ? error.message : String(error)
+    commonStore.showNotification(`Failed to pause: ${errorMsg}`, 'error')
   }
 }
 
@@ -770,9 +674,9 @@ async function resumeStream() {
     // Request to show monitor tab
     monitoringStore.requestShowMonitorTab()
   } catch (error) {
-    if (error instanceof Error) {
-      commonStore.showNotification(error.message, 'error')
-    }
+    console.error('Resume stream failed:', error)
+    const errorMsg = error instanceof Error ? error.message : String(error)
+    commonStore.showNotification(`Failed to resume: ${errorMsg}`, 'error')
   }
 }
 
@@ -783,9 +687,9 @@ async function stopStream() {
     // Request to show monitor tab
     monitoringStore.requestShowMonitorTab()
   } catch (error) {
-    if (error instanceof Error) {
-      commonStore.showNotification(error.message, 'error')
-    }
+    console.error('Stop stream failed:', error)
+    const errorMsg = error instanceof Error ? error.message : String(error)
+    commonStore.showNotification(`Failed to stop: ${errorMsg}`, 'error')
   }
 }
 
