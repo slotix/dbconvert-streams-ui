@@ -14,6 +14,7 @@ import { LOG_LEVELS, STREAM_PROGRESS_CATEGORIES } from '@/constants'
 import SqlConsoleView from './SqlConsoleView.vue'
 import LogRow from './LogRow.vue'
 import { getCategoryIcon, getCategoryLabel, formatLogTimestamp } from '@/utils/sqlLogHelpers'
+import { formatDataSize, parseDataSize } from '@/utils/formats'
 
 const store = useLogsStore()
 const isOpen = computed(() => store.isLogsPanelOpen)
@@ -249,11 +250,11 @@ function getStatLogDisplay(log: SystemLog): string {
       stats.push(`${log.events.toLocaleString()} rows`)
     }
     if (log.size) {
-      stats.push(`${log.size}`)
+      stats.push(`${formatDataSize(parseDataSize(log.size))}`)
     }
     if (log.status === 'FINISHED') {
       if (log.rate) {
-        stats.push(`${log.rate}/s`)
+        stats.push(`${formatDataSize(parseDataSize(log.rate))}/s`)
       }
       if (log.elapsed !== undefined) {
         stats.push(`${log.elapsed.toFixed(3)}s`)
