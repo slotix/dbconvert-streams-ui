@@ -156,33 +156,6 @@
       </dl>
     </div>
   </div>
-
-  <!-- Pipeline Health Indicator -->
-  <div
-    :class="[
-      'mt-6 p-5 bg-white rounded-lg shadow-md border',
-      isRunning ? 'border-gray-200' : 'border-gray-200 opacity-50'
-    ]"
-  >
-    <div class="flex items-center justify-between text-sm mb-3">
-      <span class="text-gray-700 font-semibold">Pipeline Health</span>
-      <span :class="isRunning ? pipelineHealthColor : 'text-gray-600'" class="font-bold text-base">
-        {{ isRunning ? pipelineHealthText : 'Awaiting data' }}
-      </span>
-    </div>
-    <div class="w-full bg-gray-200 rounded-full h-3 shadow-inner">
-      <div
-        :class="isRunning ? pipelineHealthBarColor : 'bg-gray-400'"
-        class="h-3 rounded-full transition-all duration-500 shadow-sm"
-        :style="{ width: isRunning ? pipelineHealthPercentage + '%' : '0%' }"
-      ></div>
-    </div>
-    <div class="mt-2 text-xs text-gray-500 text-center">
-      {{
-        isRunning ? pipelineHealthPercentage + '% synced' : 'Start stream to track sync progress'
-      }}
-    </div>
-  </div>
 </template>
 
 <script setup lang="ts">
@@ -205,39 +178,4 @@ const modeLabel = computed(() => (store.streamConfig?.mode === 'convert' ? 'rows
 
 const sourceIcon = '/images/steps/source-step.svg'
 const targetIcon = '/images/steps/target-step.svg'
-
-// Pipeline health calculation
-const pipelineHealthPercentage = computed(() => {
-  if (!sourceStats.value || !targetStats.value) return 0
-
-  const produced = sourceStats.value.counter
-  const consumed = targetStats.value.counter
-
-  if (produced === 0) return 0
-  return Math.min(100, Math.round((consumed / produced) * 100))
-})
-
-const pipelineHealthText = computed(() => {
-  const pct = pipelineHealthPercentage.value
-  if (pct >= 95) return 'Excellent'
-  if (pct >= 80) return 'Good'
-  if (pct >= 60) return 'Fair'
-  return 'Lagging'
-})
-
-const pipelineHealthColor = computed(() => {
-  const pct = pipelineHealthPercentage.value
-  if (pct >= 95) return 'text-green-600'
-  if (pct >= 80) return 'text-blue-600'
-  if (pct >= 60) return 'text-yellow-600'
-  return 'text-red-600'
-})
-
-const pipelineHealthBarColor = computed(() => {
-  const pct = pipelineHealthPercentage.value
-  if (pct >= 95) return 'bg-green-500'
-  if (pct >= 80) return 'bg-blue-500'
-  if (pct >= 60) return 'bg-yellow-500'
-  return 'bg-red-500'
-})
 </script>
