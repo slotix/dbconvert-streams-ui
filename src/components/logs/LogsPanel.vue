@@ -13,11 +13,7 @@ import {
 import { LOG_LEVELS, STREAM_PROGRESS_CATEGORIES } from '@/constants'
 import SqlConsoleView from './SqlConsoleView.vue'
 import LogRow from './LogRow.vue'
-import {
-  getCategoryBadgeClasses,
-  getCategoryLabel,
-  formatLogTimestamp
-} from '@/utils/sqlLogHelpers'
+import { getCategoryIcon, getCategoryLabel, formatLogTimestamp } from '@/utils/sqlLogHelpers'
 
 const store = useLogsStore()
 const isOpen = computed(() => store.isLogsPanelOpen)
@@ -131,10 +127,7 @@ function toggleSystemLogsSortOrder() {
 function computeLogBadge(log: SystemLog) {
   const type = log.category ? 'category' : 'level'
   const value = log.category || log.level || 'info'
-  return {
-    label: getCategoryLabel(type, value),
-    class: getCategoryBadgeClasses(type, value)
-  }
+  return getCategoryIcon(type, value)
 }
 
 const logsContainer = ref<HTMLElement | null>(null)

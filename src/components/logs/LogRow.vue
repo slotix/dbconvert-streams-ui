@@ -25,14 +25,13 @@ import {
 interface Props {
   timestamp: string
   badge?: {
-    label: string
-    class: string
+    icon: any
+    colorClass: string
   }
   message: string
   isError?: boolean
   expandable?: boolean
   copyText?: string
-  icon?: any
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -95,17 +94,13 @@ function toggleExpand() {
         {{ timestamp }}
       </span>
 
-      <!-- Badge -->
-      <span
+      <!-- Badge Icon -->
+      <component
         v-if="badge"
-        class="px-2 py-0.5 rounded text-xs font-semibold inline-block flex-shrink-0"
-        :class="[badge.class]"
-      >
-        {{ badge.label }}
-      </span>
-
-      <!-- Custom Icon (slot alternative) -->
-      <component v-if="icon" :is="icon" class="w-4 h-4 text-gray-400 flex-shrink-0" />
+        :is="badge.icon"
+        class="w-4 h-4 flex-shrink-0 transition-colors"
+        :class="[badge.colorClass]"
+      />
 
       <!-- Message / Content -->
       <span class="flex-1 text-sm text-gray-800 overflow-hidden text-ellipsis">

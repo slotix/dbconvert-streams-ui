@@ -6,6 +6,19 @@
  */
 
 // ============================================================================
+// Icon Imports
+// ============================================================================
+
+import {
+  CheckCircleIcon,
+  ExclamationTriangleIcon,
+  ExclamationCircleIcon,
+  InformationCircleIcon,
+  Cog6ToothIcon,
+  EyeIcon
+} from '@heroicons/vue/24/outline'
+
+// ============================================================================
 // SQL Query Purpose Presentation
 // ============================================================================
 
@@ -21,16 +34,21 @@ const PURPOSE_PRESENTATION: Record<string, { label: string; classes: string }> =
 }
 
 // ============================================================================
-// System Log Category Presentation (unified with SQL badges)
+// System Log Category Presentation (icons instead of badges)
 // ============================================================================
 
-const CATEGORY_PRESENTATION: Record<string, { label: string; badgeClasses: string }> = {
-  progress: { label: 'Progress', badgeClasses: 'bg-blue-100 text-blue-700' },
-  stat: { label: 'Statistics', badgeClasses: 'bg-indigo-100 text-indigo-700' },
-  error: { label: 'Error', badgeClasses: 'bg-red-100 text-red-700' },
-  warn: { label: 'Warning', badgeClasses: 'bg-yellow-100 text-yellow-700' },
-  debug: { label: 'Debug', badgeClasses: 'bg-purple-100 text-purple-700' },
-  info: { label: 'Info', badgeClasses: 'bg-gray-100 text-gray-700' }
+type IconComponent = typeof CheckCircleIcon
+
+const CATEGORY_PRESENTATION: Record<
+  string,
+  { label: string; icon: IconComponent; iconColorClass: string }
+> = {
+  progress: { label: 'Progress', icon: CheckCircleIcon, iconColorClass: 'text-blue-600' },
+  stat: { label: 'Statistics', icon: EyeIcon, iconColorClass: 'text-indigo-600' },
+  error: { label: 'Error', icon: ExclamationCircleIcon, iconColorClass: 'text-red-600' },
+  warn: { label: 'Warning', icon: ExclamationTriangleIcon, iconColorClass: 'text-yellow-600' },
+  debug: { label: 'Debug', icon: Cog6ToothIcon, iconColorClass: 'text-purple-600' },
+  info: { label: 'Info', icon: InformationCircleIcon, iconColorClass: 'text-gray-600' }
 }
 
 /**
@@ -86,15 +104,30 @@ export function formatTime(timestamp: string): string {
 // ============================================================================
 
 /**
- * Get badge classes for system log categories and severity levels
- * Provides unified styling across both System and SQL logs
+ * Get icon and color for system log categories and severity levels
+ * Returns icon component and color class for rendering as icons instead of badges
  */
-export function getCategoryBadgeClasses(type: 'category' | 'level', value: string): string {
-  if (type === 'category') {
-    return CATEGORY_PRESENTATION[value]?.badgeClasses ?? 'bg-gray-100 text-gray-700'
+export function getCategoryIcon(
+  type: 'category' | 'level',
+  value: string
+): {
+  icon: IconComponent
+  colorClass: string
+} {
+  const key = type === 'category' ? value : value.toLowerCase()
+  const presentation = CATEGORY_PRESENTATION[key]
+
+  if (presentation) {
+    return {
+      icon: presentation.icon,
+      colorClass: presentation.iconColorClass
+    }
   }
-  // For log levels (used as fallback when category is not available)
-  return CATEGORY_PRESENTATION[value.toLowerCase()]?.badgeClasses ?? 'bg-gray-100 text-gray-700'
+
+  return {
+    icon: InformationCircleIcon,
+    colorClass: 'text-gray-600'
+  }
 }
 
 /**
