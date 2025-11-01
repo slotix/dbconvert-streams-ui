@@ -59,20 +59,26 @@ export function getDurationClass(ms: number): string {
 }
 
 /**
- * Format a timestamp string to HH:MM:SS.mmm format
+ * Format a timestamp string to HH:MM:SS.mmm format (in local timezone)
  */
 export function formatTime(timestamp: string): string {
   const date = new Date(timestamp)
-  return (
-    date.toLocaleTimeString('en-US', {
-      hour12: false,
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
-    }) +
-    '.' +
-    date.getMilliseconds().toString().padStart(3, '0')
-  )
+
+  // Get hours, minutes, seconds in local timezone using toLocaleTimeString
+  const parts = new Intl.DateTimeFormat('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+  }).formatToParts(date)
+
+  const hours = parts.find((p) => p.type === 'hour')?.value || '00'
+  const minutes = parts.find((p) => p.type === 'minute')?.value || '00'
+  const seconds = parts.find((p) => p.type === 'second')?.value || '00'
+  const milliseconds = date.getMilliseconds().toString().padStart(3, '0')
+
+  return `${hours}:${minutes}:${seconds}.${milliseconds}`
 }
 
 // ============================================================================
