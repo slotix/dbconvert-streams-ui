@@ -24,7 +24,11 @@ const formattedCode = computed(() => {
     const options = getFormattingOptions(props.dialect)
     return format(props.code, options)
   } catch (error) {
-    console.warn('SQL formatting failed, falling back to original code:', error)
+    // Silently fall back for abbreviated queries (contain " -- [" comment syntax)
+    const isAbbreviatedQuery = props.code.includes(' -- [')
+    if (!isAbbreviatedQuery) {
+      console.warn('SQL formatting failed, falling back to original code:', error)
+    }
     return props.code
   }
 })
