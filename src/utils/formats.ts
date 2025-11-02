@@ -38,6 +38,52 @@ export function formatDataSize(bytes: number): string {
   return `${(bytes / Math.pow(1024, i)).toFixed(2)} ${sizes[i]}`
 }
 
+/**
+ * Format data transfer rate (bytes per second) to human-readable format with /s suffix
+ * Example: 1048576 bytes/s → "1.00 MB/s"
+ * @param bytesPerSecond Transfer rate in bytes per second
+ * @returns Formatted rate string with /s suffix
+ */
+export function formatDataRate(bytesPerSecond: number): string {
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
+  if (bytesPerSecond === 0) return '0 B/s'
+  const i = Math.floor(Math.log(bytesPerSecond) / Math.log(1024))
+  return `${(bytesPerSecond / Math.pow(1024, i)).toFixed(2)} ${sizes[i]}/s`
+}
+
+/**
+ * Format data size to numeric value only (without unit)
+ * Example: 1048576 bytes → "1.00"
+ * Returns object with value and unit for flexible display
+ * @param bytes Size in bytes
+ * @returns Object with numeric value and unit
+ */
+export function formatDataSizeWithUnit(bytes: number): { value: string; unit: string } {
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
+  if (bytes === 0) return { value: '0', unit: 'B' }
+  const i = Math.floor(Math.log(bytes) / Math.log(1024))
+  return {
+    value: (bytes / Math.pow(1024, i)).toFixed(2),
+    unit: sizes[i]
+  }
+}
+
+/**
+ * Format data transfer rate with separate value and unit
+ * Example: 1048576 bytes/s → { value: "1.00", unit: "MB/s" }
+ * @param bytesPerSecond Transfer rate in bytes per second
+ * @returns Object with numeric value and unit with /s
+ */
+export function formatDataRateWithUnit(bytesPerSecond: number): { value: string; unit: string } {
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
+  if (bytesPerSecond === 0) return { value: '0', unit: 'B/s' }
+  const i = Math.floor(Math.log(bytesPerSecond) / Math.log(1024))
+  return {
+    value: (bytesPerSecond / Math.pow(1024, i)).toFixed(2),
+    unit: `${sizes[i]}/s`
+  }
+}
+
 export function formatDateShort(date: string): string {
   const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' }
   return new Date(date).toLocaleDateString(undefined, options)
@@ -71,6 +117,39 @@ export function formatDuration(nanoseconds: number): string {
   result += `${s}.${ms.toString().padStart(2, '0')}s`
 
   return result
+}
+
+/**
+ * Format elapsed time (nanoseconds) with separated value and unit
+ * Returns compact or detailed format based on duration
+ * Examples: { value: "0.11", unit: "s" } or { value: "1.5", unit: "m" }
+ * @param nanoseconds Elapsed time in nanoseconds
+ * @returns Object with numeric value and unit
+ */
+export function formatElapsedTimeWithUnit(nanoseconds: number): { value: string; unit: string } {
+  const totalSeconds = nanoseconds / 1e9
+
+  if (totalSeconds === 0) return { value: '0', unit: 's' }
+
+  // For times > 1 hour, show hours and minutes
+  if (totalSeconds >= 3600) {
+    const h = Math.floor(totalSeconds / 3600)
+    const m = Math.floor((totalSeconds % 3600) / 60)
+    if (m > 0) {
+      return { value: `${h}.${m.toString().padStart(2, '0')}`, unit: 'h' }
+    }
+    return { value: h.toFixed(2), unit: 'h' }
+  }
+
+  // For times > 1 minute, show minutes and seconds
+  if (totalSeconds >= 60) {
+    const m = Math.floor(totalSeconds / 60)
+    const s = totalSeconds % 60
+    return { value: `${m}.${Math.floor(s).toString().padStart(2, '0')}`, unit: 'm' }
+  }
+
+  // For times < 1 minute, show seconds with 2 decimal places
+  return { value: totalSeconds.toFixed(2), unit: 's' }
 }
 
 export function formatNumber(num: number): string {

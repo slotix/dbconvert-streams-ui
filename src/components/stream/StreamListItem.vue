@@ -8,13 +8,13 @@
   >
     <!-- Stream Info -->
     <div class="flex-1 min-w-0">
-      <!-- Stream Name - Full Width -->
-      <div class="mb-1">
-        <h3 class="text-sm font-medium text-gray-900">{{ stream.name }}</h3>
+      <!-- Stream Name - Full Width with Truncation -->
+      <div class="mb-1 min-w-0">
+        <h3 class="text-sm font-medium text-gray-900 truncate" :title="stream.name">{{ stream.name }}</h3>
       </div>
 
       <!-- Badges and Connection Info Row -->
-      <div class="flex items-center gap-2 mb-1 flex-wrap">
+      <div class="flex items-center gap-2 mb-1 flex-wrap min-w-0">
         <!-- Running Status Badge -->
         <span
           v-if="isRunning"
@@ -39,13 +39,13 @@
           {{ stream.mode }}
         </span>
 
-        <!-- Connection Info (inline with badges) -->
-        <div class="flex items-center gap-1 text-xs text-gray-500">
+        <!-- Connection Info (inline with badges) - Truncate with min-w-0 -->
+        <div class="flex items-center gap-1 text-xs text-gray-500 min-w-0 truncate">
           <span v-if="source" class="truncate" :title="source.name">{{ source.name }}</span>
-          <span v-else class="text-gray-400">Unknown source</span>
+          <span v-else class="text-gray-400 flex-shrink-0">Unknown source</span>
           <ArrowRightIcon class="h-3 w-3 flex-shrink-0 text-gray-400" />
           <span v-if="target" class="truncate" :title="target.name">{{ target.name }}</span>
-          <span v-else class="text-gray-400">Unknown target</span>
+          <span v-else class="text-gray-400 flex-shrink-0">Unknown target</span>
         </div>
       </div>
 

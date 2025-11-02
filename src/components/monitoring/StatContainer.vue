@@ -1,47 +1,49 @@
 <template>
-  <div class="relative mt-20 pb-5">
-    <h3 class="text-xl font-semibold leading-6 text-gray-900">Stream Performance</h3>
+  <div class="relative mt-6 mb-6">
+    <h2 class="text-2xl font-bold tracking-tight text-gray-900">Stream Performance</h2>
   </div>
 
   <div
-    class="grid grid-cols-1 divide-y divide-gray-200 overflow-hidden rounded-lg bg-white shadow-md md:grid-cols-2 md:divide-x md:divide-y-0"
+    class="grid grid-cols-1 divide-y divide-gray-200 overflow-hidden rounded-xl bg-white shadow-lg md:grid-cols-2 md:divide-x md:divide-y-0"
   >
     <!-- Source Stats -->
     <div class="flex flex-col">
       <div
         :class="[
-          'px-6 py-4 bg-gradient-to-br',
+          'px-6 py-5 bg-gradient-to-br border-b border-gray-100',
           isRunning
             ? 'from-blue-50 via-blue-100 to-indigo-50'
             : 'from-gray-50 via-gray-100 to-gray-50'
         ]"
       >
-        <div class="flex items-center justify-between">
-          <div class="flex items-center space-x-3">
+        <div class="flex items-center justify-between gap-3 sm:gap-4">
+          <div class="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
             <div class="flex-shrink-0">
               <img
                 :src="sourceIcon"
                 alt="Source Reader"
-                class="h-10 w-10 object-contain drop-shadow-sm"
+                class="h-10 sm:h-12 w-10 sm:w-12 object-contain drop-shadow-sm"
                 :class="{ 'opacity-50': !isRunning }"
               />
             </div>
-            <div>
-              <div class="text-lg font-bold text-gray-900">Source Reader</div>
-              <div class="text-sm text-gray-600 font-medium">Data Producer</div>
+            <div class="min-w-0">
+              <div class="text-sm sm:text-base font-bold text-gray-900 leading-tight">Source Reader</div>
+              <div class="text-xs text-gray-600 font-medium">Data Producer</div>
             </div>
           </div>
-          <StatusBadge v-if="isRunning && sourceStats" :status="sourceStats.status" />
-          <div
-            v-else
-            class="px-3 py-1 bg-white text-gray-600 text-xs font-medium rounded-md border border-gray-300"
-          >
-            Ready
+          <div class="flex-shrink-0">
+            <StatusBadge v-if="isRunning && sourceStats" :status="sourceStats.status" />
+            <div
+              v-else
+              class="px-3 py-1.5 bg-white text-gray-600 text-xs font-medium rounded-full border border-gray-300"
+            >
+              Ready
+            </div>
           </div>
         </div>
       </div>
 
-      <dl class="flex-1 px-6 py-5 space-y-4 bg-gradient-to-b from-white to-gray-50">
+      <dl class="flex-1 px-6 py-6 space-y-5 bg-gradient-to-b from-white to-gray-50">
         <StatRow
           label="Produced"
           :value="isRunning && sourceStats ? formatNumber(sourceStats.counter) : '—'"
@@ -57,18 +59,30 @@
         />
         <StatRow
           label="Data Size"
-          :value="isRunning && sourceStats ? formatDataSize(sourceStats.dataSize) : '—'"
+          :value="
+            isRunning && sourceStats ? formatDataSizeWithUnit(sourceStats.dataSize).value : '—'
+          "
+          :suffix="
+            isRunning && sourceStats ? formatDataSizeWithUnit(sourceStats.dataSize).unit : ''
+          "
           :class="{ 'opacity-50': !isRunning }"
         />
         <StatRow
           label="Rate"
-          :value="isRunning && sourceStats ? formatDataSize(sourceStats.avgRate) : '—'"
-          :suffix="isRunning && sourceStats ? '/s' : ''"
+          :value="
+            isRunning && sourceStats ? formatDataRateWithUnit(sourceStats.avgRate).value : '—'
+          "
+          :suffix="isRunning && sourceStats ? formatDataRateWithUnit(sourceStats.avgRate).unit : ''"
           :class="{ 'opacity-50': !isRunning }"
         />
         <StatRow
           label="Elapsed"
-          :value="isRunning && sourceStats ? formatDuration(sourceStats.elapsed) : '—'"
+          :value="
+            isRunning && sourceStats ? formatElapsedTimeWithUnit(sourceStats.elapsed).value : '—'
+          "
+          :suffix="
+            isRunning && sourceStats ? formatElapsedTimeWithUnit(sourceStats.elapsed).unit : ''
+          "
           :class="{ 'opacity-50': !isRunning }"
         />
       </dl>
@@ -78,52 +92,56 @@
     <div class="flex flex-col">
       <div
         :class="[
-          'px-6 py-4 bg-gradient-to-br',
+          'px-6 py-5 bg-gradient-to-br border-b border-gray-100',
           isRunning
             ? 'from-green-50 via-emerald-100 to-teal-50'
             : 'from-gray-50 via-gray-100 to-gray-50'
         ]"
       >
-        <div class="flex items-center justify-between">
-          <div class="flex items-center space-x-3">
+        <div class="flex items-center justify-between gap-3 sm:gap-4">
+          <div class="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
             <div class="flex-shrink-0">
               <img
                 :src="targetIcon"
                 alt="Target Writer"
-                class="h-10 w-10 object-contain drop-shadow-sm"
+                class="h-10 sm:h-12 w-10 sm:w-12 object-contain drop-shadow-sm"
                 :class="{ 'opacity-50': !isRunning }"
               />
             </div>
             <div class="flex-1 min-w-0">
-              <div class="text-lg font-bold text-gray-900 flex items-center gap-2">
-                Target Writer{{
-                  isRunning && targetStats && targetStats.activeNodes > 1 ? 's' : ''
-                }}
+              <div class="text-sm sm:text-base font-bold text-gray-900 leading-tight flex items-center justify-between gap-2">
+                <span>
+                  Target Writer{{
+                    isRunning && targetStats && targetStats.activeNodes > 1 ? 's' : ''
+                  }}
+                </span>
                 <span
                   v-if="isRunning && targetStats && targetStats.activeNodes > 1"
-                  class="inline-flex items-center rounded-full bg-green-600 px-2.5 py-0.5 text-xs font-semibold text-white shadow-sm"
+                  class="inline-flex items-center rounded-full bg-green-600 px-1.5 py-0.5 text-xs font-semibold text-white shadow-sm flex-shrink-0"
                 >
                   {{ targetStats.activeNodes }}×
                 </span>
               </div>
-              <div class="text-sm text-gray-600 font-medium">
+              <div class="text-xs text-gray-600 font-medium">
                 Data Consumer{{
                   isRunning && targetStats && targetStats.activeNodes > 1 ? 's' : ''
                 }}
               </div>
             </div>
           </div>
-          <StatusBadge v-if="isRunning && targetStats" :status="targetStats.status" />
-          <div
-            v-else
-            class="px-3 py-1 bg-white text-gray-600 text-xs font-medium rounded-md border border-gray-300"
-          >
-            Ready
+          <div class="flex-shrink-0">
+            <StatusBadge v-if="isRunning && targetStats" :status="targetStats.status" />
+            <div
+              v-else
+              class="px-3 py-1.5 bg-white text-gray-600 text-xs font-medium rounded-full border border-gray-300"
+            >
+              Ready
+            </div>
           </div>
         </div>
       </div>
 
-      <dl class="flex-1 px-6 py-5 space-y-4 bg-gradient-to-b from-white to-gray-50">
+      <dl class="flex-1 px-6 py-6 space-y-5 bg-gradient-to-b from-white to-gray-50">
         <StatRow
           label="Consumed"
           :value="isRunning && targetStats ? formatNumber(targetStats.counter) : '—'"
@@ -139,18 +157,30 @@
         />
         <StatRow
           label="Data Size"
-          :value="isRunning && targetStats ? formatDataSize(targetStats.dataSize) : '—'"
+          :value="
+            isRunning && targetStats ? formatDataSizeWithUnit(targetStats.dataSize).value : '—'
+          "
+          :suffix="
+            isRunning && targetStats ? formatDataSizeWithUnit(targetStats.dataSize).unit : ''
+          "
           :class="{ 'opacity-50': !isRunning }"
         />
         <StatRow
           label="Avg Rate"
-          :value="isRunning && targetStats ? formatDataSize(targetStats.avgRate) : '—'"
-          :suffix="isRunning && targetStats ? '/s' : ''"
+          :value="
+            isRunning && targetStats ? formatDataRateWithUnit(targetStats.avgRate).value : '—'
+          "
+          :suffix="isRunning && targetStats ? formatDataRateWithUnit(targetStats.avgRate).unit : ''"
           :class="{ 'opacity-50': !isRunning }"
         />
         <StatRow
           label="Elapsed"
-          :value="isRunning && targetStats ? formatDuration(targetStats.elapsed) : '—'"
+          :value="
+            isRunning && targetStats ? formatElapsedTimeWithUnit(targetStats.elapsed).value : '—'
+          "
+          :suffix="
+            isRunning && targetStats ? formatElapsedTimeWithUnit(targetStats.elapsed).unit : ''
+          "
           :class="{ 'opacity-50': !isRunning }"
         />
       </dl>
@@ -161,7 +191,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useMonitoringStore } from '@/stores/monitoring'
-import { formatDataSize, formatDuration, formatNumber } from '@/utils/formats'
+import {
+  formatDataSizeWithUnit,
+  formatDataRateWithUnit,
+  formatElapsedTimeWithUnit,
+  formatNumber
+} from '@/utils/formats'
 import StatusBadge from './StatusBadge.vue'
 import StatRow from './StatRow.vue'
 
