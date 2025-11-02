@@ -263,48 +263,6 @@
             </div>
           </div>
 
-          <!-- Target Files (for completed file-based streams) -->
-          <div v-if="isFileTarget && isStreamFinished && target">
-            <label class="block text-xs font-medium uppercase text-gray-500 mb-2">
-              Output Files
-            </label>
-            <div class="bg-gray-50 rounded-md p-4 border border-gray-200 space-y-3">
-              <p class="text-sm text-gray-700">
-                <span class="font-medium">Location:</span>
-                <br />
-                <code class="text-xs bg-white px-2 py-1 rounded border border-gray-200 break-all">
-                  {{ target.path }}
-                </code>
-              </p>
-              <p class="text-sm text-gray-700">
-                <span class="font-medium">Format:</span>
-                <span
-                  :class="[
-                    'ml-2 inline-flex items-center rounded-md px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset',
-                    'bg-blue-50 text-blue-700 ring-blue-600/20'
-                  ]"
-                >
-                  {{ stream.targetFileFormat?.toUpperCase() }}
-                </span>
-              </p>
-              <button
-                type="button"
-                class="inline-flex items-center px-3 py-2 text-sm font-medium text-cyan-600 bg-white border border-cyan-200 rounded-md hover:bg-cyan-50 transition-colors w-full justify-center"
-                @click="navigateToExplorer"
-              >
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
-                  />
-                </svg>
-                Browse Output Files
-              </button>
-            </div>
-          </div>
-
           <!-- Tables Section -->
           <div>
             <label class="block text-xs font-medium uppercase text-gray-500 mb-2">Tables</label>
@@ -342,6 +300,46 @@
           @resume="resumeStream"
           @stop="stopStream"
         />
+
+        <!-- Output Files (for completed file-based streams) -->
+        <div
+          v-if="isFileTarget && isStreamFinished && target"
+          class="rounded-md p-3 border border-gray-200 bg-gray-50"
+        >
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex-1 min-w-0">
+              <p class="text-xs text-gray-500 uppercase font-medium mb-1">Output Files</p>
+              <div class="flex items-center gap-3">
+                <code class="text-xs bg-white px-2 py-1 rounded border border-gray-200 truncate">
+                  {{ target.path }}
+                </code>
+                <span
+                  :class="[
+                    'shrink-0 inline-flex items-center rounded-md px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset',
+                    'bg-blue-50 text-blue-700 ring-blue-600/20'
+                  ]"
+                >
+                  {{ stream.targetFileFormat?.toUpperCase() }}
+                </span>
+              </div>
+            </div>
+            <button
+              type="button"
+              class="shrink-0 inline-flex items-center px-3 py-2 text-xs font-medium text-cyan-600 bg-white border border-cyan-200 rounded-md hover:bg-cyan-50 transition-colors whitespace-nowrap"
+              @click="navigateToExplorer"
+            >
+              <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
+                />
+              </svg>
+              Browse
+            </button>
+          </div>
+        </div>
 
         <!-- Performance Stats -->
         <StatContainer :is-running="isStreamRunning" />
@@ -393,6 +391,7 @@ import { useConnectionsStore } from '@/stores/connections'
 import { useCommonStore } from '@/stores/common'
 import { useMonitoringStore, statusEnum } from '@/stores/monitoring'
 import { useFileExplorerStore } from '@/stores/fileExplorer'
+import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { apiClient } from '@/api/apiClient'
 import ConnectionStringDisplay from '@/components/common/ConnectionStringDisplay.vue'
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
@@ -421,6 +420,7 @@ const connectionsStore = useConnectionsStore()
 const commonStore = useCommonStore()
 const monitoringStore = useMonitoringStore()
 const fileExplorerStore = useFileExplorerStore()
+const explorerNavigationStore = useExplorerNavigationStore()
 
 const isJsonView = ref(false)
 const showDeleteConfirm = ref(false)
@@ -672,7 +672,27 @@ async function navigateToExplorer() {
   if (props.target?.id) {
     // Force refresh the file list when navigating to explorer
     await fileExplorerStore.loadEntries(props.target.id, true)
-    router.push({ name: 'DatabaseMetadata', params: { id: props.target.id } })
+
+    // Set active connection in explorer navigation store
+    explorerNavigationStore.setActiveConnectionId(props.target.id)
+
+    // Also set in connections store to match handleSelectConnection behavior
+    connectionsStore.setCurrentConnection(props.target.id)
+
+    // Select the connection itself to show folder metadata (path, file count, etc.)
+    explorerNavigationStore.selectConnection(props.target.id)
+
+    // Navigate to explorer with query params to show connection details
+    // Use sessionStorage to pass focus connection ID since Vue Router state doesn't persist reliably
+    window.sessionStorage.setItem('explorerFocusConnectionId', props.target.id)
+
+    router.push({
+      name: 'DatabaseMetadata',
+      params: { id: props.target.id },
+      query: {
+        details: 'true'
+      }
+    })
   }
 }
 

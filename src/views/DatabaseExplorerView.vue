@@ -748,6 +748,13 @@ onMounted(() => {
   commonStore.setCurrentPage('Data Explorer')
   sidebar.initializeSidebar()
 
+  // Check if focus connection ID was passed from stream navigator
+  const focusConnIdFromStream = window.sessionStorage.getItem('explorerFocusConnectionId')
+  if (focusConnIdFromStream) {
+    focusConnectionId.value = focusConnIdFromStream
+    window.sessionStorage.removeItem('explorerFocusConnectionId')
+  }
+
   // Add keyboard shortcut listener
   window.addEventListener('keydown', handleKeyboardShortcut)
 
