@@ -1,34 +1,15 @@
 <template>
   <div>
-    <!-- Offline Mode Banner -->
-    <div v-if="!isBackendConnected" class="bg-yellow-50 border-b border-yellow-200">
-      <div class="max-w-7xl mx-auto py-3 px-4 sm:px-6 lg:px-8">
+    <!-- White background header -->
+    <div class="bg-white border-b border-gray-200">
+      <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between">
-          <div class="flex items-center">
-            <div class="flex-shrink-0">
-              <svg
-                class="h-5 w-5 text-yellow-400"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fill-rule="evenodd"
-                  d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z"
-                  clip-rule="evenodd"
-                />
-              </svg>
-            </div>
-            <div class="ml-3">
-              <p class="text-sm font-medium text-yellow-800">
-                Connection to backend lost. Click "Retry Connection" to reconnect.
-              </p>
-            </div>
-          </div>
-          <div class="flex-shrink-0">
+          <h1 class="text-2xl font-bold text-gray-900">Dashboard</h1>
+          <div v-if="!isBackendConnected" class="flex items-center gap-2">
+            <span class="text-sm text-yellow-600 font-medium">Disconnected</span>
             <button
               :disabled="isRetrying"
-              class="bg-yellow-100 hover:bg-yellow-200 text-yellow-800 text-xs font-medium px-3 py-1 rounded-md border border-yellow-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              class="bg-yellow-100 hover:bg-yellow-200 text-yellow-800 text-xs font-medium px-3 py-1.5 rounded-md border border-yellow-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               @click="retryConnection"
             >
               <span v-if="isRetrying" class="flex items-center">
@@ -56,22 +37,6 @@
               </span>
               <span v-else>Retry Connection</span>
             </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- White background header -->
-    <div class="bg-white border-b border-gray-200">
-      <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        <div class="flex items-center justify-between">
-          <div>
-            <h1 class="text-2xl font-bold text-gray-900 sm:text-3xl">
-              DBConvert Streams Dashboard
-              <span v-if="!isBackendConnected" class="text-sm font-normal text-yellow-600 ml-2"
-                >(Disconnected)</span
-              >
-            </h1>
           </div>
         </div>
       </div>

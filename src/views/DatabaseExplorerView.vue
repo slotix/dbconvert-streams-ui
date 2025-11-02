@@ -1,14 +1,16 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { PlusIcon } from '@heroicons/vue/24/outline'
 import { useCommonStore } from '@/stores/common'
 import { useConnectionsStore } from '@/stores/connections'
 import { useSchemaStore } from '@/stores/schema'
 import { usePaneTabsStore, type PaneId, type PaneTab, type PaneState } from '@/stores/paneTabs'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import ExplorerSidebarConnections from '@/components/database/ExplorerSidebarConnections.vue'
-import ExplorerHeader from '@/components/explorer/ExplorerHeader.vue'
 import ExplorerContentArea from '@/components/explorer/ExplorerContentArea.vue'
+import ConnectionTypeFilter from '@/components/common/ConnectionTypeFilter.vue'
+import SearchInput from '@/components/common/SearchInput.vue'
 import connections from '@/api/connections'
 import type { SQLTableMeta, SQLViewMeta } from '@/types/metadata'
 import type { FileSystemEntry } from '@/api/fileSystem'
@@ -21,6 +23,7 @@ import { useSidebar } from '@/composables/useSidebar'
 import { usePersistedState } from '@/composables/usePersistedState'
 import { useRecentConnections } from '@/composables/useRecentConnections'
 import { useExplorerRouter } from '@/composables/useExplorerRouter'
+import { useTreeSearch } from '@/composables/useTreeSearch'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
 const route = useRoute()
@@ -39,14 +42,19 @@ const sidebar = useSidebar()
 
 // Connection search and filtering
 const connectionSearch = ref('')
+const selectedConnectionType = usePersistedState<string | null>('explorer.connectionType', null, {
+  serializer: (value) => value || '',
+  deserializer: (value) => value || null
+})
+
 const showDeleteConfirm = ref(false)
 const pendingDeleteConnectionId = ref<string | null>(null)
 const pendingDeleteName = ref('')
 const focusConnectionId = ref<string | null>(null)
 const showConnectionDetails = ref(route.query.details === 'true')
 
-const explorerHeaderRef = ref<InstanceType<typeof ExplorerHeader> | null>(null)
 const sidebarConnectionsRef = ref<InstanceType<typeof ExplorerSidebarConnections> | null>(null)
+const searchInputRef = ref<InstanceType<typeof SearchInput> | null>(null)
 
 // Recent connections management
 const recentConnectionsManager = useRecentConnections(explorerState.currentConnectionId)
@@ -56,8 +64,27 @@ const alwaysOpenNewTab = usePersistedState<boolean>('explorer.alwaysOpenNewTab',
 })
 
 // Computed properties
-const selectedDbTypeFilter = computed(() => {
-  return sidebarConnectionsRef.value?.selectedDbTypeLabel || 'All'
+const connectionsCount = computed(() => connectionsStore.connections.length || 0)
+
+// Use the same filtering logic as the sidebar tree
+const treeSearch = computed(() =>
+  useTreeSearch(connectionSearch.value, {
+    typeFilter: selectedConnectionType.value as 'database' | 'file' | null
+  })
+)
+
+const filteredConnectionsCount = computed(() => {
+  const filtered = treeSearch.value.filterConnections(connectionsStore.connections)
+  return filtered.length
+})
+
+const connectionCountLabel = computed(() => {
+  const filtered = filteredConnectionsCount.value
+  const total = connectionsCount.value
+  if ((connectionSearch.value || selectedConnectionType.value) && filtered !== total) {
+    return `${filtered} of ${total} connections`
+  }
+  return `${total} connection${total === 1 ? '' : 's'}`
 })
 
 const currentFileEntries = computed<FileSystemEntry[]>(() => {
@@ -734,12 +761,17 @@ watch(
   { immediate: false }
 )
 
-// Keyboard shortcut for sidebar toggle (Ctrl+B / Cmd+B)
+// Keyboard shortcut for sidebar toggle (Ctrl+B / Cmd+B) and search focus (/)
 function handleKeyboardShortcut(e: KeyboardEvent) {
   // Ctrl+B or Cmd+B to toggle sidebar
   if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
     e.preventDefault()
     sidebar.toggleSidebar()
+  }
+  // Focus search on '/' key (only if not already in an input)
+  if (e.key === '/' && document.activeElement?.tagName !== 'INPUT') {
+    e.preventDefault()
+    searchInputRef.value?.focus()
   }
 }
 
@@ -828,7 +860,40 @@ onUnmounted(() => {
 
 <template>
   <div class="min-h-full overflow-x-hidden">
-    <ExplorerHeader ref="explorerHeaderRef" />
+    <!-- Functional Toolbar -->
+    <header class="sticky top-0 z-10 bg-white border-b border-gray-200">
+      <div class="px-4 py-2 flex items-center gap-3">
+        <!-- Connection Type Filter -->
+        <ConnectionTypeFilter
+          :selected-type="selectedConnectionType"
+          :persistent="true"
+          @update:selected-type="selectedConnectionType = $event"
+        />
+
+        <!-- Search Input -->
+        <div class="flex-1 max-w-md">
+          <SearchInput
+            ref="searchInputRef"
+            v-model="connectionSearch"
+            placeholder="Filter connections... (Press / to focus)"
+            size="sm"
+          />
+        </div>
+
+        <!-- Badge showing count -->
+        <div class="text-sm text-gray-500 font-medium">{{ connectionCountLabel }}</div>
+
+        <!-- New Connection Button -->
+        <button
+          type="button"
+          class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-gray-600 hover:bg-gray-700 rounded-md transition-colors shadow-sm"
+          @click="onAddConnection"
+        >
+          <PlusIcon class="h-4 w-4" />
+          <span>New Connection</span>
+        </button>
+      </div>
+    </header>
 
     <main class="mx-auto py-4 overflow-x-hidden">
       <!-- No recent connections -->
@@ -866,7 +931,7 @@ onUnmounted(() => {
               ref="sidebarConnectionsRef"
               :initial-expanded-connection-id="explorerState.currentConnectionId.value || undefined"
               :search-query="connectionSearch"
-              :type-filter="selectedDbTypeFilter"
+              :type-filter="selectedConnectionType || 'All'"
               :focus-connection-id="focusConnectionId || undefined"
               :selected="treeSelection"
               @open="handleOpenFromTree"
@@ -876,8 +941,6 @@ onUnmounted(() => {
               @select-file="handleFileSelect"
               @open-file="handleOpenFile"
               @request-file-entries="handleRequestFileEntries"
-              @update:search-query="connectionSearch = $event"
-              @add-connection="onAddConnection"
             />
           </div>
 

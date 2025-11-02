@@ -1,8 +1,32 @@
 <template>
   <div class="min-h-full overflow-x-hidden">
-    <!-- Header -->
-    <header class="bg-white border-b border-gray-200 px-8 py-6">
-      <h1 class="text-3xl font-bold text-gray-900">Streams</h1>
+    <!-- Functional Toolbar -->
+    <header class="sticky top-0 z-10 bg-white border-b border-gray-200">
+      <div class="px-4 py-2 flex items-center gap-3">
+        <!-- Search Input -->
+        <div class="flex-1 max-w-md">
+          <SearchInput
+            ref="searchInputRef"
+            v-model="searchQuery"
+            placeholder="Search stream configs... (Press / to focus)"
+            size="sm"
+          />
+        </div>
+
+        <!-- Badge showing count -->
+        <div class="text-sm text-gray-500 font-medium">{{ streamCountLabel }}</div>
+
+        <!-- New Config Button -->
+        <router-link :to="{ name: 'CreateStream' }">
+          <button
+            type="button"
+            class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-gray-600 hover:bg-gray-700 rounded-md transition-colors shadow-sm"
+          >
+            <PlusIcon class="h-4 w-4" />
+            <span>New Stream Config</span>
+          </button>
+        </router-link>
+      </div>
     </header>
 
     <!-- Main Content -->
@@ -49,6 +73,7 @@
           >
             <StreamsSidebar
               :selected-stream-id="selectedStreamId"
+              :search-query="searchQuery"
               @select-stream="handleSelectStream"
               @delete-stream="handleDeleteStream"
             />
@@ -145,7 +170,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { PlusIcon } from '@heroicons/vue/24/solid'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
@@ -154,6 +179,7 @@ import { useMonitoringStore } from '@/stores/monitoring'
 import { useSidebar } from '@/composables/useSidebar'
 import StreamsSidebar from '@/components/stream/StreamsSidebar.vue'
 import StreamDetailsPanel from '@/components/stream/StreamDetailsPanel.vue'
+import SearchInput from '@/components/common/SearchInput.vue'
 import type { StreamConfig } from '@/types/streamConfig'
 import type { Connection } from '@/types/connections'
 
@@ -166,9 +192,40 @@ const monitoringStore = useMonitoringStore()
 const sidebar = useSidebar()
 
 const selectedStreamId = ref<string>('')
+const searchQuery = ref('')
+const searchInputRef = ref<InstanceType<typeof SearchInput> | null>(null)
+
+// Computed for filtered stream count
+const filteredStreamsCount = computed(() => {
+  if (!searchQuery.value) return streamsStore.countStreams
+
+  const query = searchQuery.value.toLowerCase()
+  return streamsStore.streamConfigs.filter(
+    (stream) =>
+      stream.name.toLowerCase().includes(query) || stream.mode.toLowerCase().includes(query)
+  ).length
+})
+
+const streamCountLabel = computed(() => {
+  const filtered = filteredStreamsCount.value
+  const total = streamsStore.countStreams
+  if (searchQuery.value && filtered !== total) {
+    return `${filtered} of ${total} configs`
+  }
+  return `${total} config${total === 1 ? '' : 's'}`
+})
 
 function streamsCount() {
   return streamsStore.countStreams
+}
+
+// Keyboard shortcut handler for search focus
+function handleKeyboardShortcut(e: KeyboardEvent) {
+  // Focus search on '/' key (only if not already in an input)
+  if (e.key === '/' && document.activeElement?.tagName !== 'INPUT') {
+    e.preventDefault()
+    searchInputRef.value?.focus()
+  }
 }
 
 const isBackendConnected = computed(() => commonStore.isBackendConnected)
@@ -214,5 +271,13 @@ onMounted(async () => {
   } catch (error) {
     console.error('Failed to fetch data:', error)
   }
+
+  // Add keyboard shortcut listener
+  window.addEventListener('keydown', handleKeyboardShortcut)
+})
+
+onUnmounted(() => {
+  // Remove keyboard shortcut listener
+  window.removeEventListener('keydown', handleKeyboardShortcut)
 })
 </script>

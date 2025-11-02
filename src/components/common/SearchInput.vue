@@ -41,6 +41,11 @@ const iconSizes = {
 
 // Computed icon size based on props
 const iconClass = computed(() => iconSizes[props.size || 'sm'])
+
+// Expose focus method
+defineExpose({
+  focus: () => inputRef.value?.focus()
+})
 </script>
 
 <template>

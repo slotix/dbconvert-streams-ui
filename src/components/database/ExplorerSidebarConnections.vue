@@ -12,7 +12,6 @@ import type { SQLTableMeta, SQLViewMeta } from '@/types/metadata'
 import type { FileSystemEntry } from '@/api/fileSystem'
 import ExplorerContextMenu from './ExplorerContextMenu.vue'
 import ConnectionTreeItem from './tree/ConnectionTreeItem.vue'
-import ExplorerTreeControls from '@/components/explorer/ExplorerTreeControls.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
 type ObjectType = 'table' | 'view'
@@ -65,8 +64,6 @@ const emit = defineEmits<{
   (e: 'select-database', payload: { connectionId: string; database: string }): void
   (e: 'select-file', payload: { connectionId: string; path: string }): void
   (e: 'request-file-entries', payload: { connectionId: string }): void
-  (e: 'add-connection'): void
-  (e: 'update:search-query', value: string): void
 }>()
 
 const connectionsStore = useConnectionsStore()
@@ -99,7 +96,6 @@ const deleteConfirmMessage = computed(() => {
 const isLoadingConnections = ref(false)
 const loadError = ref<string | null>(null)
 const searchQuery = computed(() => props.searchQuery || '')
-const treeControlsRef = ref<InstanceType<typeof ExplorerTreeControls> | null>(null)
 
 // Provide search query, caret class, and selection info to child components (avoid prop drilling)
 provide('treeSearchQuery', searchQuery)
@@ -530,11 +526,6 @@ watch(
     })
   }
 )
-
-// Expose the selected type for parent component
-defineExpose({
-  selectedDbTypeLabel: computed(() => treeControlsRef.value?.selectedDbTypeLabel || 'All')
-})
 </script>
 
 <template>
@@ -542,16 +533,6 @@ defineExpose({
   <div
     class="bg-white shadow-lg rounded-xl overflow-hidden h-[calc(100vh-140px)] flex flex-col transition-shadow duration-200 hover:shadow-xl"
   >
-    <!-- Fixed header section with sticky positioning -->
-    <div class="sticky top-0 z-10 bg-white border-b border-gray-200">
-      <ExplorerTreeControls
-        ref="treeControlsRef"
-        :connection-search="searchQuery"
-        @update:connection-search="$emit('update:search-query', $event)"
-        @add-connection="$emit('add-connection')"
-      />
-    </div>
-
     <!-- Scrollable tree content area with smooth scrolling and custom scrollbar -->
     <div class="flex-1 overflow-y-auto overscroll-contain p-2 scrollbar-thin">
       <!-- Loading state with centered spinner -->

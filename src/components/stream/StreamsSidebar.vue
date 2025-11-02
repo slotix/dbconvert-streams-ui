@@ -1,33 +1,5 @@
 <template>
   <div class="flex flex-col h-full bg-white border-r border-gray-200">
-    <!-- Header -->
-    <div class="p-4 border-b border-gray-200 flex-shrink-0">
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="text-sm font-semibold text-gray-900">Stream Configurations</h2>
-        <router-link :to="{ name: 'CreateStream' }">
-          <button
-            type="button"
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-cyan-600 hover:bg-cyan-700 rounded-md transition-colors shadow-sm"
-          >
-            <PlusIcon class="h-4 w-4" />
-            <span>New Config</span>
-          </button>
-        </router-link>
-      </div>
-
-      <!-- Search Input -->
-      <div class="relative">
-        <MagnifyingGlassIcon class="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-        <input
-          v-model="searchQuery"
-          type="text"
-          placeholder="Search stream configs..."
-          autocomplete="off"
-          class="w-full pl-9 pr-3 py-2 rounded-md border border-gray-300 text-sm focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-transparent"
-        />
-      </div>
-    </div>
-
     <!-- Streams List -->
     <div class="flex-1 overflow-y-auto">
       <div v-if="isLoading" class="p-4 text-center">
@@ -85,7 +57,7 @@ export default {
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { PlusIcon, MagnifyingGlassIcon, ArrowPathIcon } from '@heroicons/vue/24/outline'
+import { ArrowPathIcon } from '@heroicons/vue/24/outline'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
 import { useMonitoringStore } from '@/stores/monitoring'
@@ -96,6 +68,7 @@ import type { Connection } from '@/types/connections'
 
 const props = defineProps<{
   selectedStreamId?: string
+  searchQuery?: string
 }>()
 
 const emit = defineEmits<{
@@ -107,17 +80,12 @@ const streamsStore = useStreamsStore()
 const connectionsStore = useConnectionsStore()
 const monitoringStore = useMonitoringStore()
 
-const searchQuery = ref('')
 const isLoading = ref(false)
 const showDeleteConfirm = ref(false)
 const pendingDeleteStream = ref<StreamConfig | null>(null)
 
 const selectedStreamId = computed(() => props.selectedStreamId || '')
-
-const runningStreamsCount = computed(() => {
-  // Count streams that are currently running
-  return monitoringStore.streamID ? 1 : 0
-})
+const searchQuery = computed(() => props.searchQuery || '')
 
 const filteredStreams = computed<StreamConfig[]>(() => {
   const query = searchQuery.value.toLowerCase()
