@@ -1,17 +1,21 @@
 <template>
   <div>
     <!-- Header -->
-    <header class="bg-white shadow-sm">
+    <header class="bg-white shadow-sm border-b border-gray-100">
       <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
         <div class="flex items-center">
           <button
-            class="mr-4 p-2 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+            class="mr-4 p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50 transition-all duration-200"
             @click="goBack"
           >
             <ArrowLeftIcon class="h-5 w-5" />
           </button>
           <div>
-            <h1 class="text-2xl font-bold text-gray-900">New Connection</h1>
+            <h1
+              class="text-2xl font-bold bg-linear-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent"
+            >
+              New Connection
+            </h1>
             <p class="text-sm text-gray-600">Create a new data connection</p>
           </div>
         </div>
@@ -19,7 +23,7 @@
     </header>
 
     <!-- Main Content -->
-    <main class="bg-gray-50 min-h-screen">
+    <main class="bg-linear-to-br from-slate-50 via-white to-slate-50 min-h-screen">
       <AddConnectionWizard />
     </main>
   </div>

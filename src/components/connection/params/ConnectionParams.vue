@@ -11,9 +11,11 @@
         v-for="tab in tabs"
         :key="tab"
         :class="{
-          'border-b-2 font-medium border-gray-500': currentTab === tab
+          'border-b-2 font-semibold border-teal-600 text-teal-600': currentTab === tab,
+          'border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300':
+            currentTab !== tab
         }"
-        class="text-gray-500 py-4 px-6 flex-1 hover:text-gray-700 focus:outline-none"
+        class="py-4 px-6 flex-1 focus:outline-none transition-all duration-200"
         @click="changeTab(tab)"
       >
         {{ tab }}

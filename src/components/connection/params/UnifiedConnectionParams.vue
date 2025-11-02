@@ -25,12 +25,10 @@
     <ConnectionName v-if="connection" v-model:name="connection.name" />
 
     <!-- Connection Parameters -->
-    <div v-if="connection && ((isEdit && connection.id) || !isEdit)">
-      <hr />
-
+    <div v-if="connection && ((isEdit && connection.id) || !isEdit)" class="mt-6">
       <!-- Connection Authentication Group -->
-      <div class="bg-white rounded-lg border border-gray-200 p-6 mb-6 shadow-sm">
-        <h3 class="text-sm font-medium text-gray-900 mb-6 flex items-center">
+      <div class="bg-white rounded-xl border border-gray-100 p-6 mb-6 shadow-sm">
+        <h3 class="text-sm font-semibold text-gray-900 mb-6 flex items-center">
           <svg
             class="h-4 w-4 mr-2 text-gray-600"
             fill="none"

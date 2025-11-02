@@ -3,7 +3,7 @@
     <!-- Connection Type Display -->
     <div
       v-if="connectionType && !hideTypeDisplay"
-      class="flex items-center p-3 bg-gray-50 rounded-lg"
+      class="flex items-center p-3 bg-linear-to-r from-slate-50 to-gray-50 rounded-xl border border-gray-100 shadow-sm"
     >
       <img
         :src="getDBTypeLogo(connectionType)"
@@ -11,7 +11,7 @@
         class="h-8 w-8 object-contain mr-3"
       />
       <div>
-        <span class="text-sm font-medium text-gray-900">{{ connectionType }} Connection</span>
+        <span class="text-sm font-semibold text-gray-900">{{ connectionType }} Connection</span>
         <p class="text-xs text-gray-500">Configure your connection parameters</p>
       </div>
     </div>
