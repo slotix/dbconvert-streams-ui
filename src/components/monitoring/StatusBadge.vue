@@ -1,7 +1,7 @@
 <template>
   <span
     :class="statusClass"
-    class="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium"
+    class="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium shadow-sm"
   >
     <span class="mr-1.5 h-2 w-2 rounded-full" :class="dotClass"></span>
     {{ status }}
@@ -18,9 +18,9 @@ const props = defineProps<{
 const statusClass = computed(() => {
   switch (props.status) {
     case 'FINISHED':
-      return 'bg-green-100 text-green-800'
+      return 'bg-linear-to-r from-teal-100 to-green-100 text-teal-800'
     case 'RUNNING':
-      return 'bg-blue-100 text-blue-800'
+      return 'bg-linear-to-r from-blue-100 to-teal-100 text-blue-800'
     case 'PAUSED':
       return 'bg-yellow-100 text-yellow-800'
     case 'FAILED':
@@ -35,7 +35,7 @@ const statusClass = computed(() => {
 const dotClass = computed(() => {
   switch (props.status) {
     case 'FINISHED':
-      return 'bg-green-500'
+      return 'bg-teal-500'
     case 'RUNNING':
       return 'bg-blue-500 animate-pulse'
     case 'PAUSED':

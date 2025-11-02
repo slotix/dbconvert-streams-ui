@@ -140,21 +140,21 @@ const createdDisplay = computed(() => {
       <div class="hidden sm:flex items-center gap-2">
         <button
           type="button"
-          class="inline-flex items-center rounded-lg px-4 py-2 text-sm font-semibold shadow-sm border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:shadow-md transition-all duration-200"
+          class="inline-flex items-center rounded-lg px-4 py-2 text-sm font-semibold shadow-sm border border-gray-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50 hover:shadow-md transition-all duration-200"
           @click="emit('edit')"
         >
           Edit
         </button>
         <button
           type="button"
-          class="inline-flex items-center rounded-lg px-4 py-2 text-sm font-semibold shadow-sm border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:shadow-md transition-all duration-200"
+          class="inline-flex items-center rounded-lg px-4 py-2 text-sm font-semibold shadow-sm border border-gray-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50 hover:shadow-md transition-all duration-200"
           @click="emit('clone')"
         >
           Clone
         </button>
         <button
           type="button"
-          class="inline-flex items-center rounded-lg px-4 py-2 text-sm font-semibold shadow-sm border border-red-300 bg-white text-red-600 hover:bg-red-50 hover:shadow-md transition-all duration-200"
+          class="inline-flex items-center rounded-lg px-4 py-2 text-sm font-semibold shadow-sm border border-red-200 bg-white text-red-600 hover:border-red-300 hover:bg-red-50 hover:shadow-md transition-all duration-200"
           @click="emit('delete')"
         >
           Delete
@@ -167,7 +167,9 @@ const createdDisplay = computed(() => {
       <div v-if="isFileConnection" class="space-y-6">
         <div class="min-w-0">
           <label class="text-xs font-medium uppercase text-gray-500">Folder Path</label>
-          <div class="mt-1 flex items-start gap-2 rounded-md bg-gray-50 p-3 font-mono text-sm">
+          <div
+            class="mt-1 flex items-start gap-2 rounded-lg bg-linear-to-r from-slate-50 to-gray-50 p-3 font-mono text-sm border border-gray-100"
+          >
             <span class="flex-1 break-all text-gray-800 overflow-x-auto">
               {{ connection.path || 'No path configured' }}
             </span>
@@ -213,7 +215,9 @@ const createdDisplay = computed(() => {
 
         <div>
           <label class="text-xs font-medium uppercase text-gray-500">Connection String</label>
-          <div class="mt-1 flex items-start gap-2 rounded-md bg-gray-50 p-3 font-mono text-sm">
+          <div
+            class="mt-1 flex items-start gap-2 rounded-lg bg-linear-to-r from-slate-50 to-gray-50 p-3 font-mono text-sm border border-gray-100"
+          >
             <span class="flex-1 break-all text-gray-800 overflow-x-auto">
               {{
                 showPassword

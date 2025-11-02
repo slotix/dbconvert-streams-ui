@@ -11,7 +11,7 @@
             v-if="!isStreamRunning || isStreamFinished"
             v-tooltip="'Edit stream configuration'"
             type="button"
-            class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+            class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50 transition-all duration-200"
             @click="navigateToEdit"
           >
             Edit
@@ -20,7 +20,7 @@
             v-if="!isStreamRunning || isStreamFinished"
             v-tooltip="'Clone stream configuration'"
             type="button"
-            class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+            class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50 transition-all duration-200"
             @click="cloneStream"
           >
             Clone
@@ -39,7 +39,7 @@
               'px-3 py-1.5 text-sm font-medium rounded-md transition-colors',
               isStreamRunning && !isStreamFinished
                 ? 'text-gray-500 bg-gray-300 cursor-not-allowed'
-                : 'text-white bg-cyan-600 hover:bg-cyan-700'
+                : 'text-white bg-linear-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700'
             ]"
             @click="startStream"
           >
@@ -49,7 +49,7 @@
             v-if="!isStreamRunning || isStreamFinished"
             v-tooltip="'Delete stream configuration'"
             type="button"
-            class="px-3 py-1.5 text-sm font-medium text-red-600 bg-white border border-gray-300 rounded-md hover:bg-red-50 transition-colors"
+            class="px-3 py-1.5 text-sm font-medium text-red-600 bg-white border border-red-200 rounded-lg hover:border-red-300 hover:bg-red-50 transition-all duration-200"
             @click="requestDelete"
           >
             Delete
@@ -63,7 +63,7 @@
           <button
             :class="[
               activeTab === 'configuration'
-                ? 'border-cyan-600 text-cyan-600'
+                ? 'border-teal-600 text-teal-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
               'whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors'
             ]"
@@ -74,7 +74,7 @@
           <button
             :class="[
               activeTab === 'monitor'
-                ? 'border-cyan-600 text-cyan-600'
+                ? 'border-teal-600 text-teal-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
               'whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors'
             ]"
@@ -85,7 +85,7 @@
           <button
             :class="[
               activeTab === 'history'
-                ? 'border-cyan-600 text-cyan-600'
+                ? 'border-teal-600 text-teal-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
               'whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors'
             ]"
@@ -325,7 +325,7 @@
             </div>
             <button
               type="button"
-              class="shrink-0 inline-flex items-center px-3 py-2 text-xs font-medium text-cyan-600 bg-white border border-cyan-200 rounded-md hover:bg-cyan-50 transition-colors whitespace-nowrap"
+              class="shrink-0 inline-flex items-center px-3 py-2 text-xs font-medium text-teal-600 bg-white border border-teal-200 rounded-md hover:bg-teal-50 transition-colors whitespace-nowrap"
               @click="navigateToExplorer"
             >
               <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -365,7 +365,7 @@
             </div>
             <button
               type="button"
-              class="shrink-0 inline-flex items-center px-3 py-2 text-xs font-medium text-cyan-600 bg-white border border-cyan-200 rounded-md hover:bg-cyan-50 transition-colors whitespace-nowrap"
+              class="shrink-0 inline-flex items-center px-3 py-2 text-xs font-medium text-teal-600 bg-white border border-teal-200 rounded-md hover:bg-teal-50 transition-colors whitespace-nowrap"
               @click="navigateToExplorer"
             >
               <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">

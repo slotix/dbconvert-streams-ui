@@ -24,9 +24,9 @@
           leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
         >
           <DialogPanel
-            class="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all"
+            class="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-2xl transition-all border border-gray-100"
           >
-            <DialogTitle as="h3" class="text-lg font-medium leading-6 text-gray-900">
+            <DialogTitle as="h3" class="text-lg font-semibold text-gray-900">
               {{ title }}
             </DialogTitle>
             <p v-if="description" class="mt-2 text-sm text-gray-600">
@@ -36,18 +36,18 @@
             <div class="mt-6 flex justify-end space-x-3">
               <button
                 type="button"
-                class="inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                class="inline-flex justify-center rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:border-gray-300 hover:bg-gray-50 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200"
                 @click="handleCancel"
               >
                 {{ cancelLabel }}
               </button>
               <button
                 type="button"
-                class="inline-flex justify-center rounded-md border border-transparent px-4 py-2 text-sm font-medium text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2"
+                class="inline-flex justify-center rounded-lg border border-transparent px-4 py-2 text-sm font-medium text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200"
                 :class="
                   danger
-                    ? 'bg-red-600 hover:bg-red-700 focus:ring-red-500'
-                    : 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'
+                    ? 'bg-red-600 hover:bg-red-700 focus:ring-red-500 hover:shadow-md'
+                    : 'bg-linear-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 focus:ring-blue-500 hover:shadow-md'
                 "
                 @click="handleConfirm"
               >
