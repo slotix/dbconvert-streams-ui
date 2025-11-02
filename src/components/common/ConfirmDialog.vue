@@ -47,7 +47,7 @@
                 :class="
                   danger
                     ? 'bg-red-600 hover:bg-red-700 focus:ring-red-500 hover:shadow-md'
-                    : 'bg-teal-600 hover:bg-teal-700 focus:ring-blue-500 hover:shadow-md'
+                    : 'bg-linear-to-b from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 focus:ring-blue-500 hover:shadow-md'
                 "
                 @click="handleConfirm"
               >

@@ -5,7 +5,7 @@
       <nav aria-label="Progress">
         <ol
           role="list"
-          class="divide-y divide-gray-200 rounded-md border border-gray-200 bg-white md:flex md:divide-y-0"
+          class="divide-y divide-gray-200 rounded-md border border-gray-300 bg-white md:flex md:divide-y-0"
         >
           <li v-for="(step, stepIdx) in steps" :key="step.name" class="relative md:flex md:flex-1">
             <!-- Completed Step -->
@@ -81,7 +81,7 @@
         <button
           v-if="canGoBack"
           type="button"
-          class="inline-flex items-center px-4 py-2 border border-gray-200 text-sm font-medium rounded-lg text-gray-700 bg-white hover:border-gray-300 hover:bg-gray-50 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition-all duration-200"
+          class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-warm-50 hover:border-gray-400 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition-all duration-200"
           @click="goToPreviousStep"
         >
           <ArrowLeftIcon class="w-4 h-4 mr-2" />
@@ -94,7 +94,7 @@
             v-if="showTestButton"
             type="button"
             :disabled="isTestingConnection"
-            class="inline-flex items-center px-4 py-2 border border-gray-200 text-sm font-medium rounded-lg text-gray-700 bg-white hover:border-orange-300 hover:bg-linear-to-r hover:from-orange-50 hover:to-teal-50 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+            class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-warm-50 hover:border-gray-400 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
             @click="$emit('test')"
           >
             <span v-if="isTestingConnection" class="flex items-center">
@@ -135,7 +135,7 @@
 
           <button
             type="button"
-            class="inline-flex items-center px-4 py-2 border border-gray-200 text-sm font-medium rounded-lg text-gray-700 bg-white hover:border-gray-300 hover:bg-gray-50 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition-all duration-200"
+            class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-warm-50 hover:border-gray-400 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition-all duration-200"
             @click="$emit('cancel')"
           >
             Cancel

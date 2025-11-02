@@ -3,7 +3,9 @@
     :class="[
       'px-4 py-3 cursor-pointer transition-all duration-200 ease-out flex items-center justify-between group',
       'rounded-lg hover:shadow-sm hover:scale-[1.01]',
-      isSelected ? 'bg-teal-50 shadow-md ring-2 ring-teal-200' : 'hover:bg-teal-50/50'
+      isSelected
+        ? 'bg-teal-50 shadow-md ring-2 ring-teal-400 border border-teal-100'
+        : 'hover:bg-teal-50/50 border border-transparent'
     ]"
     @click="selectStream"
   >

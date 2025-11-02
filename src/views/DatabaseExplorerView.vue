@@ -902,7 +902,7 @@ onUnmounted(() => {
         <!-- Primary CTA Button with vibrant blue-green gradient -->
         <button
           type="button"
-          class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105"
+          class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-linear-to-b from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105"
           @click="onAddConnection"
         >
           <PlusIcon class="h-5 w-5" />

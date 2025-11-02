@@ -11,7 +11,7 @@
             v-if="!isStreamRunning || isStreamFinished"
             v-tooltip="'Edit stream configuration'"
             type="button"
-            class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:border-orange-300 hover:bg-linear-to-r hover:from-orange-50 hover:to-teal-50 transition-all duration-200"
+            class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-warm-50 hover:border-gray-400 transition-all duration-200"
             @click="navigateToEdit"
           >
             Edit
@@ -20,7 +20,7 @@
             v-if="!isStreamRunning || isStreamFinished"
             v-tooltip="'Clone stream configuration'"
             type="button"
-            class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:border-teal-300 hover:bg-linear-to-r hover:from-orange-50 hover:to-teal-50 transition-all duration-200"
+            class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-warm-50 hover:border-gray-400 transition-all duration-200"
             @click="cloneStream"
           >
             Clone
@@ -39,7 +39,7 @@
               'px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200',
               isStreamRunning && !isStreamFinished
                 ? 'text-gray-500 bg-gray-300 cursor-not-allowed'
-                : 'text-white bg-teal-600 hover:bg-teal-700 hover:shadow-md'
+                : 'text-white bg-linear-to-b from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 hover:shadow-md'
             ]"
             @click="startStream"
           >
@@ -134,7 +134,7 @@
         <!-- JSON View -->
         <div v-if="isJsonView">
           <div
-            class="rounded-md bg-gray-50 p-4 border border-gray-200 overflow-auto custom-scrollbar"
+            class="rounded-md bg-gray-50 p-4 border border-gray-300 overflow-auto custom-scrollbar"
           >
             <pre
               v-highlightjs
@@ -167,7 +167,7 @@
             <label class="block text-xs font-medium uppercase text-gray-500 mb-2">
               Source Connection
             </label>
-            <div class="bg-gray-50 rounded-md p-4 border border-gray-200">
+            <div class="bg-gray-50 rounded-md p-4 border border-gray-300">
               <div class="flex items-center gap-2 mb-2">
                 <div
                   v-if="source && source.type"
@@ -209,7 +209,7 @@
             <label class="block text-xs font-medium uppercase text-gray-500 mb-2">
               Target Connection
             </label>
-            <div class="bg-gray-50 rounded-md p-4 border border-gray-200">
+            <div class="bg-gray-50 rounded-md p-4 border border-gray-300">
               <div class="flex items-center gap-2 mb-2">
                 <div
                   v-if="target && target.type"
@@ -251,7 +251,7 @@
             <label class="block text-xs font-medium uppercase text-gray-500 mb-2">
               Output Format
             </label>
-            <div class="bg-gray-50 rounded-md p-4 border border-gray-200">
+            <div class="bg-gray-50 rounded-md p-4 border border-gray-300">
               <span
                 :class="[
                   'inline-flex items-center rounded-md px-2.5 py-1 text-xs font-medium ring-1 ring-inset',
@@ -266,7 +266,7 @@
           <!-- Tables Section -->
           <div>
             <label class="block text-xs font-medium uppercase text-gray-500 mb-2">Tables</label>
-            <div class="bg-gray-50 rounded-md p-3 border border-gray-200">
+            <div class="bg-gray-50 rounded-md p-3 border border-gray-300">
               <p class="text-sm text-gray-900">
                 {{ displayedTables.join(', ') }}{{ remainingTablesCount > 0 ? ', ...' : '' }}
                 <span v-if="remainingTablesCount > 0" class="text-xs text-gray-500 italic ml-1">
@@ -304,13 +304,13 @@
         <!-- Output Files (for completed file-based streams) -->
         <div
           v-if="isFileTarget && isStreamFinished && target"
-          class="rounded-md p-3 border border-gray-200 bg-gray-50"
+          class="rounded-md p-3 border border-gray-300 bg-gray-50"
         >
           <div class="flex items-center justify-between gap-3">
             <div class="flex-1 min-w-0">
               <p class="text-xs text-gray-500 uppercase font-medium mb-1">Output Files</p>
               <div class="flex items-center gap-3">
-                <code class="text-xs bg-white px-2 py-1 rounded border border-gray-200 truncate">
+                <code class="text-xs bg-white px-2 py-1 rounded border border-gray-300 truncate">
                   {{ target.path }}
                 </code>
                 <span
@@ -344,7 +344,7 @@
         <!-- Target Tables (for completed database-based streams) -->
         <div
           v-else-if="!isFileTarget && isStreamFinished && target"
-          class="rounded-md p-3 border border-gray-200 bg-gray-50"
+          class="rounded-md p-3 border border-gray-300 bg-gray-50"
         >
           <div class="flex items-center justify-between gap-3">
             <div class="flex-1 min-w-0">

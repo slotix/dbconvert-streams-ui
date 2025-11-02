@@ -7,10 +7,8 @@
       <StreamSettings />
     </div>
 
-    <!-- Summary Card -->
-    <div
-      class="bg-linear-to-br from-slate-50 via-white to-slate-50 rounded-xl p-6 border border-gray-100 shadow-sm"
-    >
+    <!-- Summary Card with warm background -->
+    <div class="bg-warm-50 rounded-xl p-6 border border-gray-100 shadow-sm">
       <h4 class="text-base font-semibold text-gray-900 mb-4">Stream Configuration Summary</h4>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
