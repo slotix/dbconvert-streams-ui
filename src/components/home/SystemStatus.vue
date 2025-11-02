@@ -1,7 +1,11 @@
 <template>
   <div class="p-6 space-y-6">
     <div class="flex items-center justify-between">
-      <h2 class="text-xl font-semibold text-gray-900">System Status</h2>
+      <h2
+        class="text-xl font-semibold bg-linear-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent"
+      >
+        System Status
+      </h2>
       <!-- Show initialization notice during grace period -->
       <div
         v-if="isWithinGracePeriod() && !isInitialLoading"
@@ -33,20 +37,20 @@
 
     <!-- Loading state -->
     <div v-if="isInitialLoading" class="animate-pulse space-y-4">
-      <div v-for="i in 6" :key="i" class="h-16 bg-gray-100 rounded-lg"></div>
+      <div
+        v-for="i in 6"
+        :key="i"
+        class="h-16 bg-linear-to-r from-slate-100 to-slate-50 rounded-xl"
+      ></div>
     </div>
 
     <!-- Initialization Help Text -->
     <div
       v-else-if="isWithinGracePeriod() && hasInitializingServices()"
-      class="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg"
+      class="mb-4 p-4 bg-linear-to-br from-blue-50 to-teal-50 border border-blue-200 rounded-xl shadow-sm"
     >
       <div class="flex items-start">
-        <svg
-          class="flex-shrink-0 h-5 w-5 text-blue-400 mt-0.5"
-          fill="currentColor"
-          viewBox="0 0 20 20"
-        >
+        <svg class="shrink-0 h-5 w-5 text-blue-400 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
           <path
             fill-rule="evenodd"
             d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
@@ -72,21 +76,21 @@
 
     <!-- Service Status Cards -->
     <div v-else>
-      <div class="grid gap-3">
+      <div class="grid gap-4">
         <div
           v-for="service in services"
           :key="service.id"
-          class="flex items-center justify-between p-3 rounded-lg bg-white transition-colors"
+          class="flex items-center justify-between p-4 rounded-xl border bg-white transition-all duration-200"
           :class="[
             getServiceStatus(service.id) === 'passing'
-              ? 'border-emerald-100 hover:bg-emerald-50/50'
+              ? 'border-teal-100 bg-linear-to-r from-teal-50/30 to-green-50/30'
               : getServiceStatus(service.id) === 'initializing'
-                ? 'border-blue-100 hover:bg-blue-50/50'
-                : 'border-orange-100 hover:bg-orange-50/50'
+                ? 'border-blue-100 bg-linear-to-r from-blue-50/30 to-teal-50/30'
+                : 'border-orange-100 bg-linear-to-r from-orange-50/30 to-red-50/30'
           ]"
         >
           <div class="flex items-center space-x-3">
-            <div class="rounded-lg p-2" :class="[service.bgColor]">
+            <div class="rounded-lg p-2 transition-all duration-200" :class="[service.bgColor]">
               <component :is="service.icon" class="h-5 w-5" :class="[service.iconColor]" />
             </div>
             <div>
@@ -95,7 +99,7 @@
             </div>
           </div>
           <span
-            class="px-2 py-1 rounded-full text-xs font-medium flex items-center"
+            class="px-3 py-1.5 rounded-full text-xs font-medium flex items-center shadow-sm"
             :class="getStatusClasses(getServiceStatus(service.id))"
           >
             <!-- Show spinner for initializing status -->
@@ -155,7 +159,7 @@ const services: Service[] = [
     name: 'stream-api',
     description: 'API Service',
     icon: CloudIcon,
-    bgColor: 'bg-blue-50',
+    bgColor: 'bg-blue-50 hover:bg-linear-to-br hover:from-blue-100 hover:to-teal-100',
     iconColor: 'text-blue-600'
   },
   {
@@ -163,40 +167,40 @@ const services: Service[] = [
     name: 'stream-reader',
     description: 'Source Reader',
     icon: ArrowDownTrayIcon,
-    bgColor: 'bg-emerald-50',
-    iconColor: 'text-emerald-600'
+    bgColor: 'bg-teal-50 hover:bg-linear-to-br hover:from-teal-100 hover:to-green-100',
+    iconColor: 'text-teal-600'
   },
   {
     id: 'writer',
     name: 'stream-writer',
     description: 'Target Writer',
     icon: ArrowUpTrayIcon,
-    bgColor: 'bg-amber-50',
-    iconColor: 'text-amber-600'
+    bgColor: 'bg-teal-50 hover:bg-linear-to-br hover:from-teal-100 hover:to-blue-100',
+    iconColor: 'text-teal-600'
   },
   {
     id: 'nats',
     name: 'nats',
     description: 'Message Queue',
     icon: QueueListIcon,
-    bgColor: 'bg-violet-50',
-    iconColor: 'text-violet-600'
+    bgColor: 'bg-blue-50 hover:bg-linear-to-br hover:from-blue-100 hover:to-teal-100',
+    iconColor: 'text-blue-600'
   },
   {
     id: 'vault',
     name: 'vault',
     description: 'Secrets Management',
     icon: KeyIcon,
-    bgColor: 'bg-rose-50',
-    iconColor: 'text-rose-600'
+    bgColor: 'bg-slate-50 hover:bg-linear-to-br hover:from-slate-100 hover:to-blue-100',
+    iconColor: 'text-slate-600'
   },
   {
     id: 'sentry',
     name: 'sentry',
     description: 'Usage Tracking & Limits',
     icon: ChartBarIcon,
-    bgColor: 'bg-indigo-50',
-    iconColor: 'text-indigo-600'
+    bgColor: 'bg-blue-50 hover:bg-linear-to-br hover:from-blue-100 hover:to-teal-100',
+    iconColor: 'text-blue-600'
   }
 ]
 
@@ -233,9 +237,9 @@ const hasInitializingServices = (): boolean => {
 }
 
 const getStatusClasses = (status: string) => ({
-  'bg-emerald-100 text-emerald-700': status === 'passing',
-  'bg-blue-100 text-blue-700': status === 'initializing',
-  'bg-orange-100 text-orange-700':
+  'bg-linear-to-r from-teal-100 to-green-100 text-teal-700': status === 'passing',
+  'bg-linear-to-r from-blue-100 to-teal-100 text-blue-700': status === 'initializing',
+  'bg-linear-to-r from-orange-100 to-red-100 text-orange-700':
     status === 'unavailable' || status === 'critical' || status === 'unknown'
 })
 

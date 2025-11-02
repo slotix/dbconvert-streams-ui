@@ -122,10 +122,14 @@ const createdDisplay = computed(() => {
 </script>
 
 <template>
-  <div class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg">
-    <div class="px-4 py-3 border-b flex items-center justify-between">
-      <div class="flex items-center gap-2 min-w-0">
-        <h3 class="text-base font-semibold text-gray-900 truncate" :title="connection.name">
+  <div
+    class="bg-white shadow-lg ring-1 ring-slate-200 rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300"
+  >
+    <div
+      class="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-linear-to-r from-slate-50 to-white"
+    >
+      <div class="flex items-center gap-3 min-w-0">
+        <h3 class="text-lg font-bold text-slate-900 truncate bg-clip-text" :title="connection.name">
           {{ connection.name || hostWithPort || 'Connection' }}
         </h3>
         <CloudProviderBadge
@@ -136,21 +140,21 @@ const createdDisplay = computed(() => {
       <div class="hidden sm:flex items-center gap-2">
         <button
           type="button"
-          class="inline-flex items-center rounded-md px-3 py-1.5 text-xs font-semibold shadow-sm border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+          class="inline-flex items-center rounded-lg px-4 py-2 text-sm font-semibold shadow-sm border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:shadow-md transition-all duration-200"
           @click="emit('edit')"
         >
           Edit
         </button>
         <button
           type="button"
-          class="inline-flex items-center rounded-md px-3 py-1.5 text-xs font-semibold shadow-sm border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+          class="inline-flex items-center rounded-lg px-4 py-2 text-sm font-semibold shadow-sm border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:shadow-md transition-all duration-200"
           @click="emit('clone')"
         >
           Clone
         </button>
         <button
           type="button"
-          class="inline-flex items-center rounded-md px-3 py-1.5 text-xs font-semibold shadow-sm border border-red-300 bg-white text-red-600 hover:bg-red-50"
+          class="inline-flex items-center rounded-lg px-4 py-2 text-sm font-semibold shadow-sm border border-red-300 bg-white text-red-600 hover:bg-red-50 hover:shadow-md transition-all duration-200"
           @click="emit('delete')"
         >
           Delete
@@ -169,7 +173,7 @@ const createdDisplay = computed(() => {
             </span>
             <button
               v-if="connection.path"
-              class="flex-shrink-0 transition-colors"
+              class="shrink-0 transition-colors"
               :class="isPathCopied ? 'text-green-500' : 'text-gray-400 hover:text-gray-600'"
               :title="isPathCopied ? 'Copied!' : 'Copy folder path to clipboard'"
               @click.stop="copyFolderPath"
@@ -219,7 +223,7 @@ const createdDisplay = computed(() => {
             </span>
             <div class="flex flex-col gap-1">
               <button
-                class="flex-shrink-0 text-gray-400 hover:text-gray-600"
+                class="shrink-0 text-gray-400 hover:text-gray-600"
                 :title="
                   showPassword ? 'Hide password and truncate' : 'Show password and full details'
                 "
@@ -229,7 +233,7 @@ const createdDisplay = computed(() => {
                 <EyeSlashIcon v-else class="h-4 w-4" />
               </button>
               <button
-                class="flex-shrink-0 transition-colors"
+                class="shrink-0 transition-colors"
                 :class="isCopied ? 'text-green-500' : 'text-gray-400 hover:text-gray-600'"
                 :title="isCopied ? 'Copied!' : 'Copy connection string to clipboard'"
                 @click="copyConnectionString"

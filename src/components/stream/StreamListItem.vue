@@ -1,16 +1,22 @@
 <template>
   <div
     :class="[
-      'px-3 py-3 cursor-pointer hover:bg-gray-50 transition-colors flex items-center justify-between group',
-      isSelected ? 'bg-blue-50 border-l-2 border-l-blue-600' : 'border-l-2 border-l-transparent'
+      'px-4 py-3 cursor-pointer transition-all duration-200 ease-out flex items-center justify-between group',
+      'rounded-lg hover:shadow-sm hover:scale-[1.01]',
+      isSelected
+        ? 'bg-linear-to-r from-blue-100 to-teal-100 shadow-md ring-2 ring-blue-200/50'
+        : 'hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50'
     ]"
     @click="selectStream"
   >
     <!-- Stream Info -->
     <div class="flex-1 min-w-0">
       <!-- Stream Name - Full Width with Truncation -->
-      <div class="mb-1 min-w-0">
-        <h3 class="text-sm font-medium text-gray-900 truncate" :title="stream.name">
+      <div class="mb-1.5 min-w-0">
+        <h3
+          class="text-sm font-semibold text-slate-800 group-hover:text-teal-900 truncate"
+          :title="stream.name"
+        >
           {{ stream.name }}
         </h3>
       </div>
@@ -32,7 +38,7 @@
         <!-- Mode Badge -->
         <span
           :class="[
-            'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset flex-shrink-0',
+            'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset shrink-0',
             stream.mode === 'cdc'
               ? 'bg-orange-50 text-orange-700 ring-orange-600/20'
               : 'bg-green-50 text-green-700 ring-green-600/20'
@@ -44,10 +50,10 @@
         <!-- Connection Info (inline with badges) - Truncate with min-w-0 -->
         <div class="flex items-center gap-1 text-xs text-gray-500 min-w-0 truncate">
           <span v-if="source" class="truncate" :title="source.name">{{ source.name }}</span>
-          <span v-else class="text-gray-400 flex-shrink-0">Unknown source</span>
-          <ArrowRightIcon class="h-3 w-3 flex-shrink-0 text-gray-400" />
+          <span v-else class="text-gray-400 shrink-0">Unknown source</span>
+          <ArrowRightIcon class="h-3 w-3 shrink-0 text-gray-400" />
           <span v-if="target" class="truncate" :title="target.name">{{ target.name }}</span>
-          <span v-else class="text-gray-400 flex-shrink-0">Unknown target</span>
+          <span v-else class="text-gray-400 shrink-0">Unknown target</span>
         </div>
       </div>
 
@@ -59,7 +65,7 @@
 
     <!-- Action Buttons -->
     <div
-      class="flex items-center gap-1 ml-2 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+      class="flex items-center gap-1 ml-2 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
       @click.stop
     >
       <!-- Start/Run Again/Pause/Resume Button -->
@@ -68,7 +74,7 @@
         v-if="isPaused && !isFinished"
         v-tooltip="'Resume the stream'"
         type="button"
-        class="p-1.5 rounded-md hover:bg-green-100 text-green-600 hover:text-green-700 transition-colors"
+        class="p-1.5 rounded-md hover:bg-teal-100 text-teal-600 hover:text-teal-700 transition-colors"
         @click.stop="resumeStream"
       >
         <PlayIcon class="h-4 w-4" />
@@ -88,7 +94,7 @@
         v-else
         v-tooltip="hasHistory ? 'Run the stream again' : 'Start the stream'"
         type="button"
-        class="p-1.5 rounded-md hover:bg-cyan-100 text-cyan-600 hover:text-cyan-700 transition-colors"
+        class="p-1.5 rounded-md hover:bg-teal-100 text-teal-600 hover:text-teal-700 transition-colors"
         @click.stop="startStream"
       >
         <PlayIcon class="h-4 w-4" />
@@ -227,7 +233,7 @@ const statusBadgeClass = computed(() => {
   if (isFinished.value) {
     const hasFailed = monitoringStore.stats.some((stat) => stat.status === 'FAILED')
     if (hasFailed) return 'bg-red-50 text-red-700 ring-red-600/20'
-    return 'bg-green-50 text-green-700 ring-green-600/20'
+    return 'bg-teal-50 text-teal-700 ring-teal-600/20'
   }
   if (isPaused.value) return 'bg-yellow-50 text-yellow-700 ring-yellow-600/20'
   return 'bg-blue-50 text-blue-700 ring-blue-600/20'

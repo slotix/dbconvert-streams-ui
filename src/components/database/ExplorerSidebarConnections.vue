@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, nextTick, provide } from 'vue'
-import { ArrowPathIcon, CubeIcon } from '@heroicons/vue/24/outline'
+import { CubeIcon } from '@heroicons/vue/24/outline'
 import { useConnectionsStore } from '@/stores/connections'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { useConnectionTreeLogic } from '@/composables/useConnectionTreeLogic'
@@ -529,59 +529,73 @@ watch(
 </script>
 
 <template>
-  <!-- Responsive sidebar with viewport-relative height and modern styling -->
+  <!-- Enhanced sidebar with gradient background and floating effect -->
   <div
-    class="bg-white shadow-lg rounded-xl overflow-hidden h-[calc(100vh-140px)] flex flex-col transition-shadow duration-200 hover:shadow-xl"
+    class="bg-linear-to-br from-white via-slate-50/50 to-white shadow-xl rounded-2xl overflow-hidden h-[calc(100vh-140px)] flex flex-col transition-all duration-300 hover:shadow-2xl border border-slate-200/50"
   >
     <!-- Scrollable tree content area with smooth scrolling and custom scrollbar -->
-    <div class="flex-1 overflow-y-auto overscroll-contain p-2 scrollbar-thin">
-      <!-- Loading state with centered spinner -->
+    <div class="flex-1 overflow-y-auto overscroll-contain p-3 scrollbar-thin">
+      <!-- Loading state with centered spinner and blue-green gradient -->
       <div
         v-if="isLoadingConnections"
-        class="flex flex-col items-center justify-center py-12 text-gray-500"
+        class="flex flex-col items-center justify-center py-16 text-gray-500"
       >
-        <ArrowPathIcon class="h-8 w-8 animate-spin mb-3 text-sky-500" />
-        <p class="text-sm font-medium">Loading connections...</p>
+        <div
+          class="relative w-16 h-16 mb-4 animate-spin rounded-full bg-linear-to-tr from-blue-500 to-teal-500 p-1"
+        >
+          <div class="bg-white rounded-full w-full h-full"></div>
+        </div>
+        <p class="text-sm font-medium text-slate-700">Loading connections...</p>
+        <p class="text-xs text-slate-500 mt-1">Please wait</p>
       </div>
 
-      <!-- Error state with improved styling -->
-      <div v-else-if="loadError" class="flex flex-col items-center justify-center py-12 px-4">
-        <div class="bg-red-50 border border-red-200 rounded-lg p-4 text-center max-w-md">
-          <svg
-            class="h-6 w-6 text-red-500 mx-auto mb-2"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+      <!-- Error state with improved styling and icon -->
+      <div v-else-if="loadError" class="flex flex-col items-center justify-center py-16 px-4">
+        <div
+          class="bg-linear-to-br from-red-50 to-red-100 border border-red-300 rounded-2xl p-6 text-center max-w-md shadow-lg"
+        >
+          <div
+            class="inline-flex items-center justify-center w-12 h-12 bg-red-500 rounded-full mb-3"
           >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
+            <svg
+              class="h-6 w-6 text-white"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
               stroke-width="2"
-              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          <p class="text-sm text-red-700 font-medium">{{ loadError }}</p>
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+          </div>
+          <p class="text-sm text-red-800 font-semibold mb-1">Connection Error</p>
+          <p class="text-xs text-red-700">{{ loadError }}</p>
         </div>
       </div>
 
       <!-- Main content area -->
       <div v-else>
-        <!-- Empty state with better visual design -->
+        <!-- Enhanced empty state with modern design -->
         <div
           v-if="!filteredConnections.length"
-          class="flex flex-col items-center justify-center py-16 px-4"
+          class="flex flex-col items-center justify-center py-20 px-6"
         >
-          <div class="bg-gray-50 rounded-full p-4 mb-4">
-            <CubeIcon class="h-8 w-8 text-gray-400" />
+          <div
+            class="bg-linear-to-br from-slate-100 to-slate-50 rounded-full p-6 mb-5 shadow-inner border border-slate-200"
+          >
+            <CubeIcon class="h-10 w-10 text-slate-400" />
           </div>
-          <p class="text-sm font-medium text-gray-600 mb-1">No connections found</p>
-          <p class="text-xs text-gray-500">
+          <p class="text-base font-semibold text-slate-700 mb-2">No connections found</p>
+          <p class="text-sm text-slate-500 text-center">
             {{ searchQuery ? 'Try adjusting your search' : 'Add a connection to get started' }}
           </p>
         </div>
 
-        <!-- Connection tree with improved spacing -->
-        <div v-else class="space-y-0.5">
+        <!-- Connection tree with improved spacing and animations -->
+        <div v-else class="space-y-1">
           <ConnectionTreeItem
             v-for="conn in filteredConnections"
             :key="conn.id"

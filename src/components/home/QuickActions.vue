@@ -1,7 +1,11 @@
 <!-- src/components/home/QuickActions.vue -->
 <template>
   <div class="p-6">
-    <h2 class="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">Quick Actions</h2>
+    <h2
+      class="text-xl font-semibold bg-linear-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent mb-6 flex items-center gap-2"
+    >
+      Quick Actions
+    </h2>
 
     <!-- Explore Databases -->
     <div v-if="recentConnections.length > 0" class="mb-8">
@@ -24,13 +28,13 @@
           @click="exploreConnection(connection.id)"
         >
           <div
-            class="flex items-center justify-between p-4 rounded-xl border border-gray-100 bg-white hover:border-blue-200 hover:bg-blue-50/50 transition-all duration-200"
+            class="flex items-center justify-between p-4 rounded-xl border border-gray-100 bg-white hover:border-blue-300 hover:bg-linear-to-r hover:from-blue-50/50 hover:to-teal-50/50 transition-all duration-200 hover:shadow-md hover:scale-[1.01]"
           >
             <div class="flex items-center min-w-0 flex-1 pr-3">
-              <div class="flex-shrink-0">
+              <div class="shrink-0">
                 <div
                   :class="getDatabaseIconStyle(getConnectionType(connection.id))"
-                  class="rounded-lg p-2 transition-all duration-200 hover:shadow-md"
+                  class="rounded-lg p-2 transition-all duration-200 hover:shadow-md hover:scale-105"
                 >
                   <img
                     :src="getConnectionLogo(connection.id) || '/images/db-logos/all.svg'"
@@ -56,7 +60,7 @@
                     :cloud-provider="getCloudProvider(connection.id)"
                     :db-type="getConnectionType(connection.id)"
                     size="sm"
-                    class="flex-shrink-0"
+                    class="shrink-0"
                   />
                 </div>
                 <p class="text-sm text-gray-500 truncate" :title="getConnectionHost(connection.id)">
@@ -70,9 +74,9 @@
                 </p>
               </div>
             </div>
-            <div class="flex-shrink-0 ml-2">
+            <div class="shrink-0 ml-2">
               <ArrowRightIcon
-                class="h-5 w-5 text-gray-400 group-hover:text-blue-600 transition-colors"
+                class="h-5 w-5 text-gray-400 group-hover:text-teal-600 transition-all duration-200 group-hover:translate-x-1"
               />
             </div>
           </div>
@@ -87,14 +91,14 @@
         <!-- Create Connection -->
         <div class="group cursor-pointer" @click="createConnection">
           <div
-            class="flex items-center justify-between p-4 rounded-xl border border-gray-100 bg-white hover:border-violet-200 hover:bg-violet-50/50 transition-all duration-200"
+            class="flex items-center justify-between p-4 rounded-xl border border-gray-100 bg-white hover:border-blue-300 hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50 transition-all duration-200 hover:shadow-md hover:scale-[1.01]"
           >
             <div class="flex items-center">
-              <div class="flex-shrink-0">
+              <div class="shrink-0">
                 <div
-                  class="bg-violet-50 rounded-lg p-3 group-hover:bg-violet-100 transition-colors"
+                  class="bg-blue-50 rounded-lg p-3 group-hover:bg-linear-to-br group-hover:from-blue-100 group-hover:to-teal-100 transition-all duration-200"
                 >
-                  <CircleStackIcon class="h-6 w-6 text-violet-600" />
+                  <CircleStackIcon class="h-6 w-6 text-blue-600" />
                 </div>
               </div>
               <div class="ml-4">
@@ -103,7 +107,7 @@
               </div>
             </div>
             <ArrowRightIcon
-              class="h-5 w-5 text-gray-400 group-hover:text-violet-600 transition-colors"
+              class="h-5 w-5 text-gray-400 group-hover:text-teal-600 transition-all duration-200 group-hover:translate-x-1"
             />
           </div>
         </div>
@@ -111,14 +115,14 @@
         <!-- Create Stream -->
         <div class="group cursor-pointer" @click="createStream">
           <div
-            class="flex items-center justify-between p-4 rounded-xl border border-gray-100 bg-white hover:border-indigo-200 hover:bg-indigo-50/50 transition-all duration-200"
+            class="flex items-center justify-between p-4 rounded-xl border border-gray-100 bg-white hover:border-teal-300 hover:bg-linear-to-r hover:from-teal-50 hover:to-green-50 transition-all duration-200 hover:shadow-md hover:scale-[1.01]"
           >
             <div class="flex items-center">
-              <div class="flex-shrink-0">
+              <div class="shrink-0">
                 <div
-                  class="bg-indigo-50 rounded-lg p-3 group-hover:bg-indigo-100 transition-colors"
+                  class="bg-teal-50 rounded-lg p-3 group-hover:bg-linear-to-br group-hover:from-teal-100 group-hover:to-green-100 transition-all duration-200"
                 >
-                  <ArrowPathIcon class="h-6 w-6 text-indigo-600" />
+                  <ArrowPathIcon class="h-6 w-6 text-teal-600" />
                 </div>
               </div>
               <div class="ml-4">
@@ -127,7 +131,7 @@
               </div>
             </div>
             <ArrowRightIcon
-              class="h-5 w-5 text-gray-400 group-hover:text-indigo-600 transition-colors"
+              class="h-5 w-5 text-gray-400 group-hover:text-teal-600 transition-all duration-200 group-hover:translate-x-1"
             />
           </div>
         </div>

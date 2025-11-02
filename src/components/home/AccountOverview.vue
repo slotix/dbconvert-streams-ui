@@ -3,10 +3,14 @@
     <h2 class="text-xl font-semibold text-gray-900 mb-6">Account Overview</h2>
     <div class="space-y-6">
       <!-- User Info -->
-      <div class="flex items-start group hover:bg-gray-50 p-3 rounded-lg transition-colors">
-        <div class="flex-shrink-0">
-          <div class="bg-indigo-50 rounded-lg p-3 group-hover:bg-indigo-100 transition-colors">
-            <UserIcon class="h-6 w-6 text-indigo-600" />
+      <div
+        class="flex items-start group hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50 p-3 rounded-lg transition-all duration-200"
+      >
+        <div class="shrink-0">
+          <div
+            class="bg-blue-50 rounded-lg p-3 group-hover:bg-linear-to-br group-hover:from-blue-100 group-hover:to-teal-100 transition-all duration-200 group-hover:shadow-sm"
+          >
+            <UserIcon class="h-6 w-6 text-blue-600" />
           </div>
         </div>
         <div class="ml-4 flex-1">
@@ -17,17 +21,21 @@
       </div>
 
       <!-- Current Plan -->
-      <div class="flex items-start group hover:bg-gray-50 p-3 rounded-lg transition-colors">
-        <div class="flex-shrink-0">
-          <div class="bg-violet-50 rounded-lg p-3 group-hover:bg-violet-100 transition-colors">
+      <div
+        class="flex items-start group hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50 p-3 rounded-lg transition-all duration-200"
+      >
+        <div class="shrink-0">
+          <div
+            class="bg-teal-50 rounded-lg p-3 group-hover:bg-linear-to-br group-hover:from-blue-100 group-hover:to-teal-100 transition-all duration-200 group-hover:shadow-sm"
+          >
             <CreditCardIcon
               class="h-6 w-6"
               :class="{
-                'text-violet-600':
+                'text-teal-600':
                   subscriptionStatus !== 'canceled' && subscriptionStatus !== 'paused',
                 'text-gray-400': subscriptionStatus === 'canceled',
                 'text-yellow-600': subscriptionStatus === 'paused',
-                'text-indigo-600': subscriptionStatus === 'trialing'
+                'text-blue-600': subscriptionStatus === 'trialing'
               }"
             />
           </div>
@@ -85,7 +93,7 @@
             </a>
           </div>
           <div v-if="subscriptionStatus === 'paused'" class="mt-2 flex items-start space-x-2">
-            <div class="flex-shrink-0 mt-0.5">
+            <div class="shrink-0 mt-0.5">
               <svg
                 class="h-4 w-4 text-orange-500"
                 xmlns="http://www.w3.org/2000/svg"
@@ -125,7 +133,7 @@
             </div>
           </div>
           <div v-if="subscriptionStatus === 'canceled'" class="mt-2 flex items-start space-x-2">
-            <div class="flex-shrink-0 mt-0.5">
+            <div class="shrink-0 mt-0.5">
               <svg
                 class="h-4 w-4 text-red-500"
                 xmlns="http://www.w3.org/2000/svg"
@@ -166,10 +174,14 @@
       </div>
 
       <!-- Usage Summary -->
-      <div class="flex items-start group hover:bg-gray-50 p-3 rounded-lg transition-colors">
-        <div class="flex-shrink-0">
-          <div class="bg-emerald-50 rounded-lg p-3 group-hover:bg-emerald-100 transition-colors">
-            <ChartBarIcon class="h-6 w-6 text-emerald-600" />
+      <div
+        class="flex items-start group hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50 p-3 rounded-lg transition-all duration-200"
+      >
+        <div class="shrink-0">
+          <div
+            class="bg-teal-50 rounded-lg p-3 group-hover:bg-linear-to-br group-hover:from-blue-100 group-hover:to-teal-100 transition-all duration-200 group-hover:shadow-sm"
+          >
+            <ChartBarIcon class="h-6 w-6 text-teal-600" />
           </div>
         </div>
         <div class="ml-4 flex-1">
@@ -195,7 +207,7 @@
                 :class="{
                   'bg-red-500': usagePercentage > 90,
                   'bg-yellow-500': usagePercentage > 75 && usagePercentage <= 90,
-                  'bg-emerald-500': usagePercentage <= 75
+                  'bg-teal-500': usagePercentage <= 75
                 }"
               ></div>
             </div>
@@ -213,9 +225,13 @@
       </div>
 
       <!-- API Key Management -->
-      <div class="flex items-start group hover:bg-gray-50 p-3 rounded-lg transition-colors">
-        <div class="flex-shrink-0">
-          <div class="bg-blue-50 rounded-lg p-3 group-hover:bg-blue-100 transition-colors">
+      <div
+        class="flex items-start group hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50 p-3 rounded-lg transition-all duration-200"
+      >
+        <div class="shrink-0">
+          <div
+            class="bg-blue-50 rounded-lg p-3 group-hover:bg-linear-to-br group-hover:from-blue-100 group-hover:to-teal-100 transition-all duration-200 group-hover:shadow-sm"
+          >
             <KeyIcon class="h-6 w-6 text-blue-600" />
           </div>
         </div>

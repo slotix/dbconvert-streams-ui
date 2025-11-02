@@ -182,15 +182,19 @@ const connectionTooltip = computed(() => {
 </script>
 
 <template>
-  <div>
+  <div class="transition-all duration-200">
     <div
       :data-explorer-connection="connection.id"
       :class="[
-        'group flex items-center gap-1.5 px-2 py-1.5 text-sm text-gray-700 rounded-md hover:bg-gray-100 cursor-pointer transition-colors select-none',
+        'group flex items-center gap-2 px-3 py-2 text-sm text-gray-700 rounded-lg cursor-pointer select-none',
+        'transition-all duration-200 ease-out',
+        'hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50',
+        'hover:shadow-sm hover:scale-[1.02] hover:-translate-y-0.5',
+        'active:scale-[0.98]',
         // For file connections, don't highlight the parent connection when a file is selected
         // Only highlight when explicitly focused and no file is selected (same behavior as databases)
         isFocused && !(isFileConnection && selectedFilePath)
-          ? 'bg-gray-100 ring-1 ring-gray-300'
+          ? 'bg-linear-to-r from-blue-100 to-teal-100 shadow-md ring-2 ring-blue-200/50'
           : ''
       ]"
       :title="connectionTooltip"
@@ -199,10 +203,12 @@ const connectionTooltip = computed(() => {
     >
       <component
         :is="isExpanded ? ChevronDownIcon : ChevronRightIcon"
-        :class="caretClass"
+        :class="[caretClass, 'transition-transform duration-200 group-hover:text-teal-600']"
         @click.stop="$emit('toggle-connection')"
       />
-      <div class="flex items-center shrink-0">
+      <div
+        class="flex items-center shrink-0 p-1.5 rounded-lg bg-white group-hover:bg-linear-to-br group-hover:from-blue-50 group-hover:to-teal-50 transition-all duration-200 group-hover:shadow-sm"
+      >
         <img
           :src="treeLogic.getDbLogoForType(connection.type)"
           :alt="connection.type || 'db'"
@@ -211,7 +217,7 @@ const connectionTooltip = computed(() => {
       </div>
       <div class="flex-1 min-w-0 flex flex-col gap-0.5">
         <div class="flex items-center gap-1.5">
-          <span class="font-medium truncate">
+          <span class="font-semibold truncate text-slate-800 group-hover:text-teal-900">
             <template
               v-for="(p, i) in highlightParts(connection.name || connection.host || 'Connection')"
               :key="i"
@@ -230,7 +236,7 @@ const connectionTooltip = computed(() => {
         </div>
         <div
           v-if="connection.host && connection.port"
-          class="text-xs text-gray-500 truncate leading-tight"
+          class="text-xs text-slate-500 truncate leading-tight group-hover:text-slate-600"
         >
           {{ connection.host }}:{{ connection.port }}
         </div>
@@ -238,9 +244,9 @@ const connectionTooltip = computed(() => {
     </div>
 
     <!-- Databases or Files under connection -->
-    <div v-if="isExpanded" class="ml-4 border-l border-gray-200 pl-3 space-y-1">
+    <div v-if="isExpanded" class="ml-5 border-l-2 border-slate-200 pl-3 space-y-1 mt-1">
       <div v-if="isFileConnection">
-        <div v-if="!visibleFileEntries.length" class="text-xs text-gray-500 px-2 py-1">
+        <div v-if="!visibleFileEntries.length" class="text-xs text-slate-500 px-3 py-1.5">
           No files
         </div>
         <FileEntry
@@ -255,7 +261,7 @@ const connectionTooltip = computed(() => {
         />
       </div>
       <div v-else>
-        <div v-if="!databases.length" class="text-xs text-gray-500 px-2 py-1">No databases</div>
+        <div v-if="!databases.length" class="text-xs text-slate-500 px-3 py-1.5">No databases</div>
         <DatabaseTreeItem
           v-for="db in databases"
           :key="db.name"

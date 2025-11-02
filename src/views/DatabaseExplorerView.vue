@@ -860,18 +860,22 @@ onUnmounted(() => {
 
 <template>
   <div class="min-h-full overflow-x-hidden">
-    <!-- Functional Toolbar -->
-    <header class="sticky top-0 z-10 bg-white border-b border-gray-200">
-      <div class="px-4 py-2 flex items-center gap-3">
+    <!-- Enhanced Functional Toolbar with gradient background -->
+    <header
+      class="sticky top-0 z-10 bg-linear-to-r from-slate-50 via-white to-slate-50 border-b border-slate-200 shadow-sm"
+    >
+      <div class="px-6 py-4 flex items-center gap-4">
         <!-- Connection Type Filter -->
-        <ConnectionTypeFilter
-          :selected-type="selectedConnectionType"
-          :persistent="true"
-          @update:selected-type="selectedConnectionType = $event"
-        />
+        <div class="shrink-0">
+          <ConnectionTypeFilter
+            :selected-type="selectedConnectionType"
+            :persistent="true"
+            @update:selected-type="selectedConnectionType = $event"
+          />
+        </div>
 
-        <!-- Search Input -->
-        <div class="flex-1 max-w-md">
+        <!-- Search Input with enhanced styling -->
+        <div class="flex-1 max-w-xl">
           <SearchInput
             ref="searchInputRef"
             v-model="connectionSearch"
@@ -880,16 +884,28 @@ onUnmounted(() => {
           />
         </div>
 
-        <!-- Badge showing count -->
-        <div class="text-sm text-gray-500 font-medium">{{ connectionCountLabel }}</div>
+        <!-- Elevated Badge showing count with icon -->
+        <div
+          class="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-slate-200 shadow-sm"
+        >
+          <svg class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M5 12h14M12 5l7 7-7 7"
+            />
+          </svg>
+          <span class="text-sm font-semibold text-slate-700">{{ connectionCountLabel }}</span>
+        </div>
 
-        <!-- New Connection Button -->
+        <!-- Primary CTA Button with vibrant blue-green gradient -->
         <button
           type="button"
-          class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-gray-600 hover:bg-gray-700 rounded-md transition-colors shadow-sm"
+          class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-linear-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105"
           @click="onAddConnection"
         >
-          <PlusIcon class="h-4 w-4" />
+          <PlusIcon class="h-5 w-5" />
           <span>New Connection</span>
         </button>
       </div>

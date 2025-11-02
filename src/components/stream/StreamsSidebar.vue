@@ -1,19 +1,52 @@
 <template>
-  <div class="flex flex-col h-full bg-white border-r border-gray-200">
+  <div
+    class="flex flex-col h-full bg-linear-to-br from-white via-slate-50/50 to-white shadow-xl rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-2xl border border-slate-200/50"
+  >
     <!-- Streams List -->
-    <div class="flex-1 overflow-y-auto">
-      <div v-if="isLoading" class="p-4 text-center">
-        <div class="inline-block animate-spin">
-          <ArrowPathIcon class="h-5 w-5 text-gray-400" />
+    <div class="flex-1 overflow-y-auto p-3 scrollbar-thin">
+      <!-- Enhanced loading state with gradient spinner -->
+      <div v-if="isLoading" class="flex flex-col items-center justify-center py-16">
+        <div
+          class="relative w-16 h-16 mb-4 animate-spin rounded-full bg-linear-to-tr from-blue-500 to-teal-500 p-1"
+        >
+          <div class="bg-white rounded-full w-full h-full"></div>
         </div>
+        <p class="text-sm font-medium text-slate-700">Loading streams...</p>
+        <p class="text-xs text-slate-500 mt-1">Please wait</p>
       </div>
 
-      <div v-else-if="filteredStreams.length === 0" class="p-4 text-center text-sm text-gray-500">
-        <div v-if="searchQuery">No stream configurations match your search</div>
-        <div v-else>No configurations yet. Create one to get started.</div>
+      <!-- Enhanced empty state -->
+      <div
+        v-else-if="filteredStreams.length === 0"
+        class="flex flex-col items-center justify-center py-20 px-6"
+      >
+        <div
+          class="bg-linear-to-br from-slate-100 to-slate-50 rounded-full p-6 mb-5 shadow-inner border border-slate-200"
+        >
+          <svg
+            class="h-10 w-10 text-slate-400"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M13 10V3L4 14h7v7l9-11h-7z"
+            />
+          </svg>
+        </div>
+        <p class="text-base font-semibold text-slate-700 mb-2">
+          {{ searchQuery ? 'No streams found' : 'No stream configurations yet' }}
+        </p>
+        <p class="text-sm text-slate-500 text-center">
+          {{ searchQuery ? 'Try adjusting your search' : 'Create one to get started' }}
+        </p>
       </div>
 
-      <div v-else class="divide-y divide-gray-100">
+      <!-- Stream list with improved spacing -->
+      <div v-else class="space-y-1">
         <StreamListItem
           v-for="stream in filteredStreams"
           :key="stream.id"
@@ -57,7 +90,6 @@ export default {
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { ArrowPathIcon } from '@heroicons/vue/24/outline'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
 import { useMonitoringStore } from '@/stores/monitoring'
@@ -216,3 +248,30 @@ watch(
   { immediate: true }
 )
 </script>
+
+<style scoped>
+/* Custom scrollbar styling for webkit browsers */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 8px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: rgb(209, 213, 219);
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(156, 163, 175);
+}
+
+/* For Firefox */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(209, 213, 219) transparent;
+}
+</style>
