@@ -3,8 +3,10 @@
     <!-- Split Pane Container -->
     <div class="grid grid-cols-2 gap-4 h-[600px]">
       <!-- Source Tree (Left) -->
-      <div class="relative rounded-lg bg-gray-50 overflow-hidden flex flex-col">
-        <div class="px-4 py-3 border-b border-gray-200">
+      <div
+        class="relative rounded-xl bg-linear-to-br from-slate-50 to-white overflow-hidden flex flex-col border border-gray-100 shadow-sm"
+      >
+        <div class="px-4 py-3 border-b border-gray-100 bg-white">
           <h3 class="text-sm font-semibold text-gray-900 flex items-center">
             <img src="/images/steps/source-step.svg" alt="Source" class="w-8 h-8 mr-2" />
             Source Connection
@@ -36,8 +38,10 @@
       </div>
 
       <!-- Target Tree (Right) -->
-      <div class="relative rounded-lg bg-gray-50 overflow-hidden flex flex-col">
-        <div class="px-4 py-3 border-b border-gray-200">
+      <div
+        class="relative rounded-xl bg-linear-to-br from-slate-50 to-white overflow-hidden flex flex-col border border-gray-100 shadow-sm"
+      >
+        <div class="px-4 py-3 border-b border-gray-100 bg-white">
           <h3 class="text-sm font-semibold text-gray-900 flex items-center">
             <img src="/images/steps/target-step.svg" alt="Target" class="w-8 h-8 mr-2" />
             Target Connection
@@ -71,24 +75,29 @@
       </div>
     </div>
 
-    <!-- Selection Summary - Neutral Chips -->
+    <!-- Selection Summary - Enhanced Chips -->
     <div v-if="sourceConnectionId || targetConnectionId" class="space-y-3">
       <!-- Source and Target Chips -->
       <div class="flex items-center justify-between gap-3">
         <div class="flex items-center gap-2 flex-1">
           <!-- Source Chip -->
-          <div class="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm">
-            <span class="font-medium text-gray-900">Source:</span>
-            <span v-if="sourceConnectionId" class="text-slate-600 ml-1">
+          <div
+            class="bg-linear-to-r from-blue-50 to-teal-50 border border-blue-200 rounded-lg px-4 py-2.5 text-sm shadow-sm"
+          >
+            <span
+              class="font-semibold bg-linear-to-r from-blue-600 to-teal-600 bg-clip-text text-transparent"
+              >Source:</span
+            >
+            <span v-if="sourceConnectionId" class="text-slate-700 ml-1 font-medium">
               {{ getConnectionName(sourceConnectionId) }}
-              <span v-if="sourceDatabase"> / {{ sourceDatabase }}</span>
+              <span v-if="sourceDatabase" class="text-slate-600"> / {{ sourceDatabase }}</span>
             </span>
             <span v-else class="text-gray-500 ml-1 italic">Not selected</span>
           </div>
 
           <!-- Arrow -->
           <svg
-            class="w-4 h-4 text-gray-400 shrink-0"
+            class="w-5 h-5 text-teal-600 shrink-0"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -102,11 +111,16 @@
           </svg>
 
           <!-- Target Chip -->
-          <div class="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm">
-            <span class="font-medium text-gray-900">Target:</span>
-            <span v-if="targetConnectionId" class="text-slate-600 ml-1">
+          <div
+            class="bg-linear-to-r from-blue-50 to-teal-50 border border-blue-200 rounded-lg px-4 py-2.5 text-sm shadow-sm"
+          >
+            <span
+              class="font-semibold bg-linear-to-r from-blue-600 to-teal-600 bg-clip-text text-transparent"
+              >Target:</span
+            >
+            <span v-if="targetConnectionId" class="text-slate-700 ml-1 font-medium">
               {{ getConnectionName(targetConnectionId) }}
-              <span v-if="targetDatabase"> / {{ targetDatabase }}</span>
+              <span v-if="targetDatabase" class="text-slate-600"> / {{ targetDatabase }}</span>
             </span>
             <span v-else class="text-gray-500 ml-1 italic">Not selected</span>
           </div>
@@ -115,7 +129,7 @@
         <!-- Clear All Button -->
         <button
           type="button"
-          class="text-xs text-gray-600 hover:text-gray-800 font-medium whitespace-nowrap"
+          class="text-sm text-gray-600 hover:text-teal-600 font-medium whitespace-nowrap transition-colors duration-200"
           @click="clearAll"
         >
           Clear All

@@ -1,18 +1,24 @@
 <template>
   <div class="space-y-6">
     <!-- Stream Settings -->
-    <div class="bg-white rounded-lg p-6">
+    <div
+      class="bg-linear-to-br from-slate-50 to-white rounded-xl p-6 border border-gray-100 shadow-sm"
+    >
       <StreamSettings />
     </div>
 
     <!-- Summary Card -->
-    <div class="bg-gray-50 rounded-lg p-6">
+    <div
+      class="bg-linear-to-br from-slate-50 via-white to-slate-50 rounded-xl p-6 border border-gray-100 shadow-sm"
+    >
       <h4 class="text-base font-semibold text-gray-900 mb-4">Stream Configuration Summary</h4>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <!-- Data Flow -->
-        <div class="bg-white rounded-lg p-4">
-          <h5 class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">Data Flow</h5>
+        <div class="bg-white rounded-lg p-4 border border-gray-100 shadow-sm">
+          <h5 class="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-3">
+            Data Flow
+          </h5>
           <div class="space-y-3">
             <div class="flex items-start text-sm">
               <img
@@ -55,8 +61,8 @@
         </div>
 
         <!-- Stream Details -->
-        <div class="bg-white rounded-lg p-4">
-          <h5 class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">
+        <div class="bg-white rounded-lg p-4 border border-gray-100 shadow-sm">
+          <h5 class="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-3">
             Stream Details
           </h5>
           <div class="space-y-2 text-sm">
@@ -88,10 +94,12 @@
     </div>
 
     <!-- Ready to Create -->
-    <div class="bg-cyan-50 rounded-lg p-4">
+    <div
+      class="bg-linear-to-r from-blue-50 to-teal-50 rounded-xl p-4 border border-blue-200 shadow-sm"
+    >
       <div class="flex items-center">
         <svg
-          class="w-5 h-5 text-cyan-600 mr-3 flex-shrink-0"
+          class="w-5 h-5 text-teal-600 mr-3 flex-shrink-0"
           fill="currentColor"
           viewBox="0 0 20 20"
         >

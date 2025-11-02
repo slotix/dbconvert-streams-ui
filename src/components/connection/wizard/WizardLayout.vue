@@ -12,7 +12,7 @@
             <div v-if="stepIdx < currentStepIndex" class="group flex w-full items-center">
               <span class="flex items-center px-6 py-4 text-sm font-medium">
                 <span
-                  class="flex size-10 shrink-0 items-center justify-center rounded-full bg-gray-600"
+                  class="flex size-10 shrink-0 items-center justify-center rounded-full bg-linear-to-r from-blue-600 to-teal-600 shadow-sm"
                 >
                   <CheckIcon class="size-6 text-white" aria-hidden="true" />
                 </span>
@@ -27,11 +27,11 @@
               aria-current="step"
             >
               <span
-                class="flex size-10 shrink-0 items-center justify-center rounded-full border-2 border-gray-600"
+                class="flex size-10 shrink-0 items-center justify-center rounded-full border-2 border-teal-600 bg-linear-to-br from-blue-50 to-teal-50"
               >
-                <span class="text-gray-600">{{ stepIdx + 1 }}</span>
+                <span class="text-teal-600 font-semibold">{{ stepIdx + 1 }}</span>
               </span>
-              <span class="ml-4 text-sm font-medium text-gray-600">{{ step.title }}</span>
+              <span class="ml-4 text-sm font-semibold text-teal-600">{{ step.title }}</span>
             </div>
 
             <!-- Upcoming Step -->
@@ -70,7 +70,7 @@
     </div>
 
     <!-- Wizard Content -->
-    <div class="bg-white rounded-lg p-6">
+    <div class="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
       <!-- Step Content Slot -->
       <div class="mb-8">
         <slot :currentStep="currentStep" :currentStepIndex="currentStepIndex"></slot>
@@ -81,7 +81,7 @@
         <button
           v-if="canGoBack"
           type="button"
-          class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+          class="inline-flex items-center px-4 py-2 border border-gray-200 text-sm font-medium rounded-lg text-gray-700 bg-white hover:border-gray-300 hover:bg-gray-50 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
           @click="goToPreviousStep"
         >
           <ArrowLeftIcon class="w-4 h-4 mr-2" />
@@ -94,7 +94,7 @@
             v-if="showTestButton"
             type="button"
             :disabled="isTestingConnection"
-            class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            class="inline-flex items-center px-4 py-2 border border-gray-200 text-sm font-medium rounded-lg text-gray-700 bg-white hover:border-blue-300 hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
             @click="$emit('test')"
           >
             <span v-if="isTestingConnection" class="flex items-center">
@@ -110,7 +110,7 @@
           <button
             type="button"
             :disabled="!canProceed || isProcessing"
-            class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent text-sm font-medium rounded-md text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            class="inline-flex items-center px-4 py-2 bg-linear-to-r from-blue-600 to-teal-600 border border-transparent text-sm font-medium rounded-lg text-white hover:from-blue-700 hover:to-teal-700 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
             @click="handleNextOrFinish"
           >
             <span v-if="isProcessing" class="flex items-center">
@@ -135,7 +135,7 @@
 
           <button
             type="button"
-            class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+            class="inline-flex items-center px-4 py-2 border border-gray-200 text-sm font-medium rounded-lg text-gray-700 bg-white hover:border-gray-300 hover:bg-gray-50 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
             @click="$emit('cancel')"
           >
             Cancel

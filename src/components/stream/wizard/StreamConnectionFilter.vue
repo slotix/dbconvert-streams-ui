@@ -12,7 +12,7 @@
       </div>
       <button
         type="button"
-        class="inline-flex items-center gap-2 px-2 py-1.5 text-xs font-medium text-white bg-gray-600 border border-gray-600 rounded hover:bg-gray-500"
+        class="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-white bg-linear-to-r from-blue-600 to-teal-600 border border-transparent rounded-lg hover:shadow-md hover:scale-105 transition-all duration-200"
         @click="$emit('add-connection', props.paneType || 'source')"
       >
         <span>New Connection</span>

@@ -1,8 +1,10 @@
 <template>
   <div class="space-y-6">
     <!-- Data Transfer Mode Section -->
-    <div class="bg-white border border-gray-200 rounded-lg p-6">
-      <h3 class="text-base font-medium text-gray-900 mb-4">Data Transfer Mode</h3>
+    <div
+      class="bg-linear-to-br from-slate-50 to-white border border-gray-100 rounded-xl p-6 shadow-sm"
+    >
+      <h3 class="text-base font-semibold text-gray-900 mb-4">Data Transfer Mode</h3>
       <ModeButtons />
 
       <!-- CDC Operations - Only show when CDC mode is selected -->
@@ -12,13 +14,17 @@
     </div>
 
     <!-- Dataset Section -->
-    <div class="bg-white border border-gray-200 rounded-lg p-6">
+    <div
+      class="bg-linear-to-br from-slate-50 to-white border border-gray-100 rounded-xl p-6 shadow-sm"
+    >
       <FilePreviewList v-if="isFileSourceConnection" :connection-id="sourceConnectionId" />
       <TableList v-else />
     </div>
 
     <!-- Structure Options Section -->
-    <div class="bg-white border border-gray-200 rounded-lg p-6">
+    <div
+      class="bg-linear-to-br from-slate-50 to-white border border-gray-100 rounded-xl p-6 shadow-sm"
+    >
       <!-- Warning when nothing is selected -->
       <div
         v-if="!anyStructureEnabled && !copyData"
@@ -53,7 +59,7 @@
               id="create-structure"
               v-model="createStructure"
               type="checkbox"
-              class="h-4 w-4 text-gray-600 focus:ring-gray-500 border-gray-300 rounded"
+              class="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 rounded"
               :disabled="isFileSourceConnection"
               @change="handleStructureToggle"
             />
@@ -98,7 +104,7 @@
                   id="create-tables"
                   v-model="createTables"
                   type="checkbox"
-                  class="h-4 w-4 text-gray-600 focus:ring-gray-500 border-gray-300 rounded"
+                  class="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 rounded"
                   :disabled="isFileSourceConnection"
                   @change="handleOptionsChange"
                 />
@@ -117,7 +123,7 @@
                   id="create-indexes"
                   v-model="createIndexes"
                   type="checkbox"
-                  class="h-4 w-4 text-gray-600 focus:ring-gray-500 border-gray-300 rounded"
+                  class="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 rounded"
                   :disabled="isFileSourceConnection"
                   @change="handleOptionsChange"
                 />
@@ -136,7 +142,7 @@
                   id="create-foreign-keys"
                   v-model="createForeignKeys"
                   type="checkbox"
-                  class="h-4 w-4 text-gray-600 focus:ring-gray-500 border-gray-300 rounded"
+                  class="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 rounded"
                   :disabled="isFileSourceConnection"
                   @change="handleOptionsChange"
                 />
@@ -157,7 +163,7 @@
               id="copy-data"
               v-model="copyData"
               type="checkbox"
-              class="h-4 w-4 text-gray-600 focus:ring-gray-500 border-gray-300 rounded"
+              class="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 rounded"
               @change="handleOptionsChange"
             />
           </div>
