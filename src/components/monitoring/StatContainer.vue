@@ -6,14 +6,14 @@
   <div
     class="grid grid-cols-1 divide-y divide-gray-200 overflow-hidden rounded-xl bg-white shadow-lg md:grid-cols-2 md:divide-x md:divide-y-0"
   >
-    <!-- Source Stats -->
+    <!-- Source Stats - Orange Theme -->
     <div class="flex flex-col">
       <div
         :class="[
-          'px-6 py-5 bg-gradient-to-br border-b border-gray-100',
+          'px-6 py-5 bg-gradient-to-br border-b',
           isRunning
-            ? 'from-blue-50 via-blue-100 to-indigo-50'
-            : 'from-gray-50 via-gray-100 to-gray-50'
+            ? 'from-orange-50 via-orange-100 to-orange-50 border-orange-200'
+            : 'from-gray-50 via-gray-100 to-gray-50 border-gray-100'
         ]"
       >
         <div class="flex items-center justify-between gap-3 sm:gap-4">
@@ -27,7 +27,10 @@
               />
             </div>
             <div class="min-w-0">
-              <div class="text-sm sm:text-base font-bold text-gray-900 leading-tight">
+              <div
+                class="text-sm sm:text-base font-bold leading-tight"
+                :class="isRunning ? 'text-orange-700' : 'text-gray-900'"
+              >
                 Source Reader
               </div>
               <div class="text-xs text-gray-600 font-medium">Data Producer</div>
@@ -90,14 +93,14 @@
       </dl>
     </div>
 
-    <!-- Target Stats -->
+    <!-- Target Stats - Teal Theme -->
     <div class="flex flex-col">
       <div
         :class="[
-          'px-6 py-5 bg-gradient-to-br border-b border-gray-100',
+          'px-6 py-5 bg-gradient-to-br border-b',
           isRunning
-            ? 'from-green-50 via-emerald-100 to-teal-50'
-            : 'from-gray-50 via-gray-100 to-gray-50'
+            ? 'from-teal-50 via-teal-100 to-teal-50 border-teal-200'
+            : 'from-gray-50 via-gray-100 to-gray-50 border-gray-100'
         ]"
       >
         <div class="flex items-center justify-between gap-3 sm:gap-4">
@@ -112,7 +115,8 @@
             </div>
             <div class="flex-1 min-w-0">
               <div
-                class="text-sm sm:text-base font-bold text-gray-900 leading-tight flex items-center justify-between gap-2"
+                class="text-sm sm:text-base font-bold leading-tight flex items-center justify-between gap-2"
+                :class="isRunning ? 'text-teal-700' : 'text-gray-900'"
               >
                 <span>
                   Target Writer{{
@@ -121,7 +125,7 @@
                 </span>
                 <span
                   v-if="isRunning && targetStats && targetStats.activeNodes > 1"
-                  class="inline-flex items-center rounded-full bg-green-600 px-1.5 py-0.5 text-xs font-semibold text-white shadow-sm flex-shrink-0"
+                  class="inline-flex items-center rounded-full bg-teal-600 px-1.5 py-0.5 text-xs font-semibold text-white shadow-sm flex-shrink-0"
                 >
                   {{ targetStats.activeNodes }}×
                 </span>

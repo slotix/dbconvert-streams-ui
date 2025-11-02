@@ -19,7 +19,7 @@
         <button
           :disabled="!canProceed"
           type="button"
-          class="inline-flex items-center px-4 py-2 bg-linear-to-r from-blue-600 to-teal-600 border border-transparent text-sm font-medium rounded-lg text-white hover:from-blue-700 hover:to-teal-700 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+          class="inline-flex items-center px-4 py-2 bg-teal-600 border border-transparent text-sm font-medium rounded-lg text-white hover:bg-teal-700 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
           @click="goToDetails"
         >
           Next →
@@ -85,7 +85,7 @@
           <button
             :disabled="!canProceed || isCreatingConnection"
             type="button"
-            class="inline-flex items-center px-4 py-2 bg-linear-to-r from-blue-600 to-teal-600 border border-transparent text-sm font-medium rounded-lg text-white hover:from-blue-700 hover:to-teal-700 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+            class="inline-flex items-center px-4 py-2 bg-teal-600 border border-transparent text-sm font-medium rounded-lg text-white hover:bg-teal-700 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
             @click="createConnection"
           >
             <span v-if="isCreatingConnection" class="flex items-center">

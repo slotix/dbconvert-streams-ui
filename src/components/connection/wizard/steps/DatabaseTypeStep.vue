@@ -25,7 +25,7 @@
           <!-- Selection indicator -->
           <div
             v-if="selectedDBType?.id === dbType.id"
-            class="absolute top-2 right-2 w-5 h-5 bg-linear-to-r from-blue-600 to-teal-600 rounded-full flex items-center justify-center shadow-sm"
+            class="absolute top-2 right-2 w-5 h-5 bg-teal-600 rounded-full flex items-center justify-center shadow-sm"
           >
             <CheckIcon class="w-3 h-3 text-white" />
           </div>
@@ -73,7 +73,7 @@
             <!-- Selection indicator -->
             <div
               v-if="selectedDBType?.id === dbType.id"
-              class="absolute top-3 right-3 w-5 h-5 bg-linear-to-r from-blue-600 to-teal-600 rounded-full flex items-center justify-center shadow-sm"
+              class="absolute top-3 right-3 w-5 h-5 bg-teal-600 rounded-full flex items-center justify-center shadow-sm"
             >
               <CheckIcon class="w-3 h-3 text-white" />
             </div>

@@ -18,9 +18,9 @@ const props = defineProps<{
 const statusClass = computed(() => {
   switch (props.status) {
     case 'FINISHED':
-      return 'bg-linear-to-r from-teal-100 to-green-100 text-teal-800'
+      return 'bg-teal-100 text-teal-800'
     case 'RUNNING':
-      return 'bg-linear-to-r from-blue-100 to-teal-100 text-blue-800'
+      return 'bg-orange-100 text-orange-800'
     case 'PAUSED':
       return 'bg-yellow-100 text-yellow-800'
     case 'FAILED':
@@ -37,7 +37,7 @@ const dotClass = computed(() => {
     case 'FINISHED':
       return 'bg-teal-500'
     case 'RUNNING':
-      return 'bg-blue-500 animate-pulse'
+      return 'bg-orange-500 animate-pulse'
     case 'PAUSED':
       return 'bg-yellow-500'
     case 'FAILED':

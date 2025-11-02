@@ -11,7 +11,7 @@
             v-if="!isStreamRunning || isStreamFinished"
             v-tooltip="'Edit stream configuration'"
             type="button"
-            class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50 transition-all duration-200"
+            class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:border-orange-300 hover:bg-linear-to-r hover:from-orange-50 hover:to-teal-50 transition-all duration-200"
             @click="navigateToEdit"
           >
             Edit
@@ -20,7 +20,7 @@
             v-if="!isStreamRunning || isStreamFinished"
             v-tooltip="'Clone stream configuration'"
             type="button"
-            class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50 transition-all duration-200"
+            class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:border-teal-300 hover:bg-linear-to-r hover:from-orange-50 hover:to-teal-50 transition-all duration-200"
             @click="cloneStream"
           >
             Clone
@@ -36,10 +36,10 @@
             :disabled="isStreamRunning && !isStreamFinished"
             type="button"
             :class="[
-              'px-3 py-1.5 text-sm font-medium rounded-md transition-colors',
+              'px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200',
               isStreamRunning && !isStreamFinished
                 ? 'text-gray-500 bg-gray-300 cursor-not-allowed'
-                : 'text-white bg-linear-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700'
+                : 'text-white bg-teal-600 hover:bg-teal-700 hover:shadow-md'
             ]"
             @click="startStream"
           >

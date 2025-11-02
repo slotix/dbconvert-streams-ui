@@ -2,16 +2,20 @@
   <div class="space-y-6">
     <!-- Split Pane Container -->
     <div class="grid grid-cols-2 gap-4 h-[600px]">
-      <!-- Source Tree (Left) -->
+      <!-- Source Tree (Left) - Orange Theme -->
       <div
-        class="relative rounded-xl bg-linear-to-br from-slate-50 to-white overflow-hidden flex flex-col border border-gray-100 shadow-sm"
+        class="relative rounded-xl bg-linear-to-br from-orange-50 to-white overflow-hidden flex flex-col border border-orange-200 shadow-sm"
       >
-        <div class="px-4 py-3 border-b border-gray-100 bg-white">
+        <div class="px-4 py-3 border-b border-orange-100 bg-linear-to-r from-orange-50 to-white">
           <h3 class="text-sm font-semibold text-gray-900 flex items-center">
             <img src="/images/steps/source-step.svg" alt="Source" class="w-8 h-8 mr-2" />
-            Source Connection
+            <span
+              class="bg-linear-to-r from-orange-600 to-orange-500 bg-clip-text text-transparent"
+            >
+              Source Connection
+            </span>
           </h3>
-          <p class="text-xs text-gray-500 mt-1">Select where to read data from</p>
+          <p class="text-xs text-gray-600 mt-1">Select where to read data from</p>
         </div>
 
         <!-- Source Filters -->
@@ -37,16 +41,18 @@
         </div>
       </div>
 
-      <!-- Target Tree (Right) -->
+      <!-- Target Tree (Right) - Teal Theme -->
       <div
-        class="relative rounded-xl bg-linear-to-br from-slate-50 to-white overflow-hidden flex flex-col border border-gray-100 shadow-sm"
+        class="relative rounded-xl bg-linear-to-br from-teal-50 to-white overflow-hidden flex flex-col border border-teal-200 shadow-sm"
       >
-        <div class="px-4 py-3 border-b border-gray-100 bg-white">
+        <div class="px-4 py-3 border-b border-teal-100 bg-linear-to-r from-teal-50 to-white">
           <h3 class="text-sm font-semibold text-gray-900 flex items-center">
             <img src="/images/steps/target-step.svg" alt="Target" class="w-8 h-8 mr-2" />
-            Target Connection
+            <span class="bg-linear-to-r from-teal-600 to-teal-500 bg-clip-text text-transparent">
+              Target Connection
+            </span>
           </h3>
-          <p class="text-xs text-gray-500 mt-1">Select where to write data to</p>
+          <p class="text-xs text-gray-600 mt-1">Select where to write data to</p>
         </div>
 
         <!-- Target Filters -->
@@ -80,14 +86,11 @@
       <!-- Source and Target Chips -->
       <div class="flex items-center justify-between gap-3">
         <div class="flex items-center gap-2 flex-1">
-          <!-- Source Chip -->
+          <!-- Source Chip - Orange -->
           <div
-            class="bg-linear-to-r from-blue-50 to-teal-50 border border-blue-200 rounded-lg px-4 py-2.5 text-sm shadow-sm"
+            class="bg-orange-50 border border-orange-200 rounded-lg px-4 py-2.5 text-sm shadow-sm"
           >
-            <span
-              class="font-semibold bg-linear-to-r from-blue-600 to-teal-600 bg-clip-text text-transparent"
-              >Source:</span
-            >
+            <span class="font-semibold text-orange-600">Source:</span>
             <span v-if="sourceConnectionId" class="text-slate-700 ml-1 font-medium">
               {{ getConnectionName(sourceConnectionId) }}
               <span v-if="sourceDatabase" class="text-slate-600"> / {{ sourceDatabase }}</span>
@@ -95,13 +98,14 @@
             <span v-else class="text-gray-500 ml-1 italic">Not selected</span>
           </div>
 
-          <!-- Arrow -->
-          <svg
-            class="w-5 h-5 text-teal-600 shrink-0"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
+          <!-- Arrow - Orange to Teal Gradient -->
+          <svg class="w-5 h-5 shrink-0" fill="none" stroke="url(#orangeToTeal)" viewBox="0 0 24 24">
+            <defs>
+              <linearGradient id="orangeToTeal" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" style="stop-color: rgb(234, 88, 12); stop-opacity: 1" />
+                <stop offset="100%" style="stop-color: rgb(20, 184, 166); stop-opacity: 1" />
+              </linearGradient>
+            </defs>
             <path
               stroke-linecap="round"
               stroke-linejoin="round"
@@ -110,13 +114,9 @@
             />
           </svg>
 
-          <!-- Target Chip -->
-          <div
-            class="bg-linear-to-r from-blue-50 to-teal-50 border border-blue-200 rounded-lg px-4 py-2.5 text-sm shadow-sm"
-          >
-            <span
-              class="font-semibold bg-linear-to-r from-blue-600 to-teal-600 bg-clip-text text-transparent"
-              >Target:</span
+          <!-- Target Chip - Teal -->
+          <div class="bg-teal-50 border border-teal-200 rounded-lg px-4 py-2.5 text-sm shadow-sm">
+            <span class="font-semibold text-teal-600">Target:</span>
             >
             <span v-if="targetConnectionId" class="text-slate-700 ml-1 font-medium">
               {{ getConnectionName(targetConnectionId) }}
