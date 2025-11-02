@@ -341,6 +341,46 @@
           </div>
         </div>
 
+        <!-- Target Tables (for completed database-based streams) -->
+        <div
+          v-else-if="!isFileTarget && isStreamFinished && target"
+          class="rounded-md p-3 border border-gray-200 bg-gray-50"
+        >
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex-1 min-w-0">
+              <p class="text-xs text-gray-500 uppercase font-medium mb-1">Target Tables</p>
+              <div class="flex items-center gap-3">
+                <span class="text-xs text-gray-600 font-medium">
+                  {{ stream.tables?.length || 0 }} table{{ stream.tables?.length !== 1 ? 's' : '' }}
+                </span>
+                <span
+                  :class="[
+                    'shrink-0 inline-flex items-center rounded-md px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset',
+                    'bg-purple-50 text-purple-700 ring-purple-600/20'
+                  ]"
+                >
+                  {{ target.type?.toUpperCase() }}
+                </span>
+              </div>
+            </div>
+            <button
+              type="button"
+              class="shrink-0 inline-flex items-center px-3 py-2 text-xs font-medium text-cyan-600 bg-white border border-cyan-200 rounded-md hover:bg-cyan-50 transition-colors whitespace-nowrap"
+              @click="navigateToExplorer"
+            >
+              <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
+                />
+              </svg>
+              View in Explorer
+            </button>
+          </div>
+        </div>
+
         <!-- Performance Stats -->
         <StatContainer :is-running="isStreamRunning" />
       </div>
@@ -669,28 +709,31 @@ function navigateToEdit() {
 }
 
 async function navigateToExplorer() {
-  if (props.target?.id) {
-    // Force refresh the file list when navigating to explorer
-    await fileExplorerStore.loadEntries(props.target.id, true)
-
+  if (props.target?.id && props.stream?.targetDatabase) {
     // Set active connection in explorer navigation store
     explorerNavigationStore.setActiveConnectionId(props.target.id)
 
     // Also set in connections store to match handleSelectConnection behavior
     connectionsStore.setCurrentConnection(props.target.id)
 
-    // Select the connection itself to show folder metadata (path, file count, etc.)
-    explorerNavigationStore.selectConnection(props.target.id)
+    if (isFileTarget.value) {
+      // For file-based targets, load file entries and select the connection
+      await fileExplorerStore.loadEntries(props.target.id, true)
+      explorerNavigationStore.selectConnection(props.target.id)
 
-    // Navigate to explorer with query params to show connection details
-    // Use sessionStorage to pass focus connection ID since Vue Router state doesn't persist reliably
-    window.sessionStorage.setItem('explorerFocusConnectionId', props.target.id)
+      // Use sessionStorage to pass focus connection ID
+      window.sessionStorage.setItem('explorerFocusConnectionId', props.target.id)
+    } else {
+      // For database-based targets, select the database
+      explorerNavigationStore.selectDatabase(props.target.id, props.stream.targetDatabase)
+    }
 
     router.push({
       name: 'DatabaseMetadata',
       params: { id: props.target.id },
       query: {
-        details: 'true'
+        details: 'true',
+        db: isFileTarget.value ? undefined : props.stream.targetDatabase
       }
     })
   }

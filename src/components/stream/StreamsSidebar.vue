@@ -6,11 +6,11 @@
         <h2 class="text-sm font-semibold text-gray-900">Stream Configurations</h2>
         <router-link :to="{ name: 'CreateStream' }">
           <button
-            v-tooltip="'Create new stream configuration'"
             type="button"
-            class="p-1.5 rounded-md hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-cyan-600 hover:bg-cyan-700 rounded-md transition-colors shadow-sm"
           >
-            <PlusIcon class="h-5 w-5" />
+            <PlusIcon class="h-4 w-4" />
+            <span>New Config</span>
           </button>
         </router-link>
       </div>
@@ -21,7 +21,7 @@
         <input
           v-model="searchQuery"
           type="text"
-          placeholder="Search streams..."
+          placeholder="Search stream configs..."
           autocomplete="off"
           class="w-full pl-9 pr-3 py-2 rounded-md border border-gray-300 text-sm focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-transparent"
         />

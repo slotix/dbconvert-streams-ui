@@ -66,7 +66,8 @@ const filteredLogs = computed(() => {
 
   // Filter by message type (multiple selections)
   filtered = filtered.filter((log) => {
-    if (selectedMessageTypes.value.size === 0) return true // If nothing selected, show all
+    // If no message types selected, show no logs (hide all)
+    if (selectedMessageTypes.value.size === 0) return false
 
     for (const type of selectedMessageTypes.value) {
       switch (type) {
