@@ -246,6 +246,65 @@
             </div>
           </div>
 
+          <!-- Output Format (for file-based targets) -->
+          <div v-if="isFileTarget && stream.targetFileFormat">
+            <label class="block text-xs font-medium uppercase text-gray-500 mb-2">
+              Output Format
+            </label>
+            <div class="bg-gray-50 rounded-md p-4 border border-gray-200">
+              <span
+                :class="[
+                  'inline-flex items-center rounded-md px-2.5 py-1 text-xs font-medium ring-1 ring-inset',
+                  'bg-blue-50 text-blue-700 ring-blue-600/20'
+                ]"
+              >
+                {{ stream.targetFileFormat.toUpperCase() }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Target Files (for completed file-based streams) -->
+          <div v-if="isFileTarget && isStreamFinished && target">
+            <label class="block text-xs font-medium uppercase text-gray-500 mb-2">
+              Output Files
+            </label>
+            <div class="bg-gray-50 rounded-md p-4 border border-gray-200 space-y-3">
+              <p class="text-sm text-gray-700">
+                <span class="font-medium">Location:</span>
+                <br />
+                <code class="text-xs bg-white px-2 py-1 rounded border border-gray-200 break-all">
+                  {{ target.path }}
+                </code>
+              </p>
+              <p class="text-sm text-gray-700">
+                <span class="font-medium">Format:</span>
+                <span
+                  :class="[
+                    'ml-2 inline-flex items-center rounded-md px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset',
+                    'bg-blue-50 text-blue-700 ring-blue-600/20'
+                  ]"
+                >
+                  {{ stream.targetFileFormat?.toUpperCase() }}
+                </span>
+              </p>
+              <button
+                type="button"
+                class="inline-flex items-center px-3 py-2 text-sm font-medium text-cyan-600 bg-white border border-cyan-200 rounded-md hover:bg-cyan-50 transition-colors w-full justify-center"
+                @click="navigateToExplorer"
+              >
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
+                  />
+                </svg>
+                Browse Output Files
+              </button>
+            </div>
+          </div>
+
           <!-- Tables Section -->
           <div>
             <label class="block text-xs font-medium uppercase text-gray-500 mb-2">Tables</label>
@@ -333,6 +392,7 @@ import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
 import { useCommonStore } from '@/stores/common'
 import { useMonitoringStore, statusEnum } from '@/stores/monitoring'
+import { useFileExplorerStore } from '@/stores/fileExplorer'
 import { apiClient } from '@/api/apiClient'
 import ConnectionStringDisplay from '@/components/common/ConnectionStringDisplay.vue'
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
@@ -360,6 +420,7 @@ const streamsStore = useStreamsStore()
 const connectionsStore = useConnectionsStore()
 const commonStore = useCommonStore()
 const monitoringStore = useMonitoringStore()
+const fileExplorerStore = useFileExplorerStore()
 
 const isJsonView = ref(false)
 const showDeleteConfirm = ref(false)
@@ -441,6 +502,12 @@ const remainingTablesCount = computed(() => {
     return Math.max(0, props.stream.tables.length - displayedTables.value.length)
   }
   return 0
+})
+
+const isFileTarget = computed(() => {
+  if (!props.target) return false
+  const targetType = props.target.type?.toLowerCase() || ''
+  return targetType.includes('file')
 })
 
 // Fetch stream history from API using apiClient
@@ -599,6 +666,14 @@ function copyConfig() {
 
 function navigateToEdit() {
   router.push({ name: 'EditStream', params: { id: props.stream.id } })
+}
+
+async function navigateToExplorer() {
+  if (props.target?.id) {
+    // Force refresh the file list when navigating to explorer
+    await fileExplorerStore.loadEntries(props.target.id, true)
+    router.push({ name: 'DatabaseMetadata', params: { id: props.target.id } })
+  }
 }
 
 async function cloneStream() {

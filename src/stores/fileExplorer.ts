@@ -91,7 +91,8 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
     }
 
     try {
-      const response = await listDirectory(connection.path)
+      // Pass connection type to backend for filtering supported file formats
+      const response = await listDirectory(connection.path, connection.type)
       const files = response.entries.filter((entry) => entry.type === 'file')
 
       entriesByConnection.value = {

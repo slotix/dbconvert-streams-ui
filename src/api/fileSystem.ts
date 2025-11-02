@@ -24,8 +24,13 @@ export interface WritableCheckResponse {
 /**
  * List directory contents
  */
-export async function listDirectory(path?: string): Promise<DirectoryListResponse> {
-  const params = path ? { path } : {}
+export async function listDirectory(
+  path?: string,
+  connectionType?: string
+): Promise<DirectoryListResponse> {
+  const params: Record<string, string> = {}
+  if (path) params.path = path
+  if (connectionType) params.connectionType = connectionType
   const response = await apiClient.get('/fs/list', { params })
   return response.data
 }

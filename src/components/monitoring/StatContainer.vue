@@ -27,7 +27,9 @@
               />
             </div>
             <div class="min-w-0">
-              <div class="text-sm sm:text-base font-bold text-gray-900 leading-tight">Source Reader</div>
+              <div class="text-sm sm:text-base font-bold text-gray-900 leading-tight">
+                Source Reader
+              </div>
               <div class="text-xs text-gray-600 font-medium">Data Producer</div>
             </div>
           </div>
@@ -109,7 +111,9 @@
               />
             </div>
             <div class="flex-1 min-w-0">
-              <div class="text-sm sm:text-base font-bold text-gray-900 leading-tight flex items-center justify-between gap-2">
+              <div
+                class="text-sm sm:text-base font-bold text-gray-900 leading-tight flex items-center justify-between gap-2"
+              >
                 <span>
                   Target Writer{{
                     isRunning && targetStats && targetStats.activeNodes > 1 ? 's' : ''

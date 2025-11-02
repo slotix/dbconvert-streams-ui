@@ -10,7 +10,9 @@
     <div class="flex-1 min-w-0">
       <!-- Stream Name - Full Width with Truncation -->
       <div class="mb-1 min-w-0">
-        <h3 class="text-sm font-medium text-gray-900 truncate" :title="stream.name">{{ stream.name }}</h3>
+        <h3 class="text-sm font-medium text-gray-900 truncate" :title="stream.name">
+          {{ stream.name }}
+        </h3>
       </div>
 
       <!-- Badges and Connection Info Row -->
