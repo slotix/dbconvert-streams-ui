@@ -12,6 +12,7 @@ import { useFileExplorerStore } from '@/stores/fileExplorer'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { useTreeSearch } from '@/composables/useTreeSearch'
 import { useContextualIconSizes } from '@/composables/useIconSizes'
+import { getDatabaseIconBgColor, getDatabaseIconTint } from '@/constants/databaseColors'
 import type { Connection } from '@/types/connections'
 import type { FileSystemEntry } from '@/api/fileSystem'
 
@@ -179,6 +180,10 @@ const visibleFileEntries = computed(() => {
 const connectionTooltip = computed(() => {
   return getConnectionTooltip(props.connection)
 })
+
+// Get muted icon colors for root connection (cognitive grouping by source type)
+const iconBgColor = computed(() => getDatabaseIconBgColor(props.connection.type || ''))
+const iconTint = computed(() => getDatabaseIconTint(props.connection.type || ''))
 </script>
 
 <template>
@@ -207,7 +212,12 @@ const connectionTooltip = computed(() => {
         @click.stop="$emit('toggle-connection')"
       />
       <div
-        class="flex items-center shrink-0 p-1.5 rounded-lg bg-white group-hover:bg-linear-to-br group-hover:from-blue-50 group-hover:to-teal-50 transition-all duration-200 group-hover:shadow-sm"
+        :class="[
+          'flex items-center shrink-0 p-1.5 rounded-lg transition-all duration-200',
+          iconBgColor,
+          'group-hover:shadow-sm',
+          iconTint
+        ]"
       >
         <img
           :src="treeLogic.getDbLogoForType(connection.type)"

@@ -45,21 +45,21 @@ const iconComponent = computed(() => {
 
 // Color coding for different file types
 const iconColor = computed(() => {
-  // Folders are blue
+  // Folders are neutral gray (don't compete with connection colors)
   if (props.isDirectory) {
-    return 'text-blue-500'
+    return 'text-slate-400'
   }
 
   switch (props.fileFormat) {
     case 'csv':
-      return 'text-green-500' // CSV - green
+      return 'text-slate-500' // CSV - neutral gray
     case 'json':
     case 'jsonl':
-      return 'text-yellow-600' // JSON - yellow/amber
+      return 'text-slate-500' // JSON - neutral gray
     case 'parquet':
-      return 'text-blue-500' // Parquet - blue
+      return 'text-slate-500' // Parquet - neutral gray
     default:
-      return 'text-gray-400' // Unsupported/Unknown - gray (subdued)
+      return 'text-gray-400' // Unsupported/Unknown - lighter gray
   }
 })
 </script>

@@ -219,3 +219,214 @@ export function getDatabaseRingColor(type: string): string {
 export function getDatabaseTextColor(type: string): string {
   return getDatabaseColors(type).text || DEFAULT_DATABASE_COLOR.text!
 }
+
+/**
+ * Muted Icon Color Scheme for Connection Tree Root Icons
+ * Desaturated, subtle colors for cognitive grouping without visual overload
+ * Applied only to root connection icons, not nested elements
+ */
+export interface IconColorScheme {
+  /** Background color for icon container */
+  iconBg: string
+  /** Icon filter/tint color (optional) */
+  iconTint?: string
+}
+
+/**
+ * Muted icon-specific color mappings
+ * Subtle, desaturated colors for visual grouping by source type
+ * Used only on root connection icons in tree views
+ */
+export const DATABASE_ICON_COLORS: Record<string, IconColorScheme> = {
+  // PostgreSQL - Muted Violet (more visible)
+  [DATABASE_TYPES.POSTGRESQL]: {
+    iconBg: 'bg-violet-100',
+    iconTint: 'brightness-100 saturate-90'
+  },
+  postgresql: {
+    iconBg: 'bg-violet-100',
+    iconTint: 'brightness-100 saturate-90'
+  },
+  postgres: {
+    iconBg: 'bg-violet-100',
+    iconTint: 'brightness-100 saturate-90'
+  },
+  pg: {
+    iconBg: 'bg-violet-100',
+    iconTint: 'brightness-100 saturate-90'
+  },
+
+  // MySQL - Muted Blue-Gray (balanced with PostgreSQL)
+  [DATABASE_TYPES.MYSQL]: {
+    iconBg: 'bg-blue-100',
+    iconTint: 'brightness-100 saturate-90'
+  },
+  mysql: {
+    iconBg: 'bg-blue-100',
+    iconTint: 'brightness-100 saturate-90'
+  },
+
+  // MariaDB - Muted Blue-Gray (similar to MySQL)
+  [DATABASE_TYPES.MARIADB]: {
+    iconBg: 'bg-blue-100',
+    iconTint: 'brightness-100 saturate-90'
+  },
+  mariadb: {
+    iconBg: 'bg-blue-100',
+    iconTint: 'brightness-100 saturate-90'
+  },
+
+  // MongoDB - Muted Green (more visible)
+  [DATABASE_TYPES.MONGODB]: {
+    iconBg: 'bg-emerald-100',
+    iconTint: 'brightness-100 saturate-90'
+  },
+  mongo: {
+    iconBg: 'bg-emerald-100',
+    iconTint: 'brightness-100 saturate-90'
+  },
+  mongodb: {
+    iconBg: 'bg-emerald-100',
+    iconTint: 'brightness-100 saturate-90'
+  },
+
+  // Redis - Muted Rose (more visible)
+  [DATABASE_TYPES.REDIS]: {
+    iconBg: 'bg-rose-100',
+    iconTint: 'brightness-100 saturate-90'
+  },
+  redis: {
+    iconBg: 'bg-rose-100',
+    iconTint: 'brightness-100 saturate-90'
+  },
+
+  // SQLite - Muted Gray
+  [DATABASE_TYPES.SQLITE]: {
+    iconBg: 'bg-slate-100',
+    iconTint: 'brightness-100 saturate-75'
+  },
+  sqlite: {
+    iconBg: 'bg-slate-100',
+    iconTint: 'brightness-100 saturate-75'
+  },
+
+  // SQL Server / MSSQL - Muted Blue (more visible)
+  [DATABASE_TYPES.SQL_SERVER]: {
+    iconBg: 'bg-sky-100',
+    iconTint: 'brightness-100 saturate-90'
+  },
+  [DATABASE_TYPES.MSSQL]: {
+    iconBg: 'bg-sky-100',
+    iconTint: 'brightness-100 saturate-90'
+  },
+  sqlserver: {
+    iconBg: 'bg-sky-100',
+    iconTint: 'brightness-100 saturate-90'
+  },
+  mssql: {
+    iconBg: 'bg-sky-100',
+    iconTint: 'brightness-100 saturate-90'
+  },
+
+  // Oracle - Muted Amber (more visible)
+  [DATABASE_TYPES.ORACLE]: {
+    iconBg: 'bg-amber-100',
+    iconTint: 'brightness-100 saturate-90'
+  },
+  oracle: {
+    iconBg: 'bg-amber-100',
+    iconTint: 'brightness-100 saturate-90'
+  },
+
+  // Cassandra - Muted Purple (more visible)
+  [DATABASE_TYPES.CASSANDRA]: {
+    iconBg: 'bg-purple-100',
+    iconTint: 'brightness-100 saturate-90'
+  },
+  cassandra: {
+    iconBg: 'bg-purple-100',
+    iconTint: 'brightness-100 saturate-90'
+  },
+
+  // Elasticsearch - Muted Yellow (more visible)
+  [DATABASE_TYPES.ELASTICSEARCH]: {
+    iconBg: 'bg-yellow-100',
+    iconTint: 'brightness-100 saturate-90'
+  },
+  elasticsearch: {
+    iconBg: 'bg-yellow-100',
+    iconTint: 'brightness-100 saturate-90'
+  },
+
+  // ClickHouse - Muted Yellow
+  [DATABASE_TYPES.CLICKHOUSE]: {
+    iconBg: 'bg-yellow-100',
+    iconTint: 'brightness-100 saturate-90'
+  },
+  clickhouse: {
+    iconBg: 'bg-yellow-100',
+    iconTint: 'brightness-100 saturate-90'
+  },
+
+  // Snowflake - Muted Cyan (more visible)
+  [DATABASE_TYPES.SNOWFLAKE]: {
+    iconBg: 'bg-blue-100',
+    iconTint: 'brightness-100 saturate-90'
+  },
+  snowflake: {
+    iconBg: 'bg-blue-100',
+    iconTint: 'brightness-100 saturate-90'
+  },
+
+  // File Types - Neutral Gray
+  [DATABASE_TYPES.FILES]: {
+    iconBg: 'bg-gray-50',
+    iconTint: 'brightness-95 saturate-50'
+  },
+  [DATABASE_TYPES.LOCAL_FILES]: {
+    iconBg: 'bg-gray-50',
+    iconTint: 'brightness-95 saturate-50'
+  },
+  file: {
+    iconBg: 'bg-gray-50',
+    iconTint: 'brightness-95 saturate-50'
+  },
+  files: {
+    iconBg: 'bg-gray-50',
+    iconTint: 'brightness-95 saturate-50'
+  },
+  localfiles: {
+    iconBg: 'bg-gray-50',
+    iconTint: 'brightness-95 saturate-50'
+  }
+}
+
+/**
+ * Default icon color scheme for unknown types
+ */
+export const DEFAULT_ICON_COLOR: IconColorScheme = {
+  iconBg: 'bg-gray-50',
+  iconTint: 'brightness-95 saturate-50'
+}
+
+/**
+ * Get muted icon color scheme for a database type (for root connection icons)
+ */
+export function getDatabaseIconColors(type: string): IconColorScheme {
+  const normalized = type.toLowerCase()
+  return DATABASE_ICON_COLORS[normalized] || DEFAULT_ICON_COLOR
+}
+
+/**
+ * Get icon background color class for a database type
+ */
+export function getDatabaseIconBgColor(type: string): string {
+  return getDatabaseIconColors(type).iconBg
+}
+
+/**
+ * Get icon tint/filter class for a database type
+ */
+export function getDatabaseIconTint(type: string): string | undefined {
+  return getDatabaseIconColors(type).iconTint
+}

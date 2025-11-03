@@ -21,9 +21,9 @@ const { iconClass } = useIconSizes(props.size)
 const iconColor = computed(() => {
   switch (props.objectType) {
     case 'table':
-      return 'text-indigo-500' // Tables - indigo
+      return 'text-slate-500' // Tables - neutral gray (don't compete with connection colors)
     case 'view':
-      return 'text-purple-500' // Views - purple
+      return 'text-slate-400' // Views - lighter gray
     default:
       return 'text-gray-400'
   }
