@@ -441,6 +441,7 @@ import StreamHistoryTable from './StreamHistoryTable.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import { normalizeConnectionType } from '@/utils/connectionUtils'
 import { formatDateTime } from '@/utils/formats'
+import { getDatabaseIconBgColor, getDatabaseIconTint } from '@/constants/databaseColors'
 import type { StreamConfig } from '@/types/streamConfig'
 import type { Connection, DbType } from '@/types/connections'
 
@@ -679,24 +680,10 @@ const logoSrc = (dbType: string) => {
 }
 
 const getDatabaseIconStyle = (dbType: string) => {
-  const normalizedType = normalizeConnectionType(dbType?.toLowerCase() || '')
-  const styles: Record<string, string> = {
-    postgresql: 'bg-blue-100 ring-2 ring-blue-200/50',
-    postgres: 'bg-blue-100 ring-2 ring-blue-200/50',
-    mysql: 'bg-orange-100 ring-2 ring-orange-200/50',
-    mongodb: 'bg-green-100 ring-2 ring-green-200/50',
-    mongo: 'bg-green-100 ring-2 ring-green-200/50',
-    redis: 'bg-red-100 ring-2 ring-red-200/50',
-    sqlite: 'bg-gray-100 ring-2 ring-gray-200/50',
-    mariadb: 'bg-orange-100 ring-2 ring-orange-200/50',
-    mssql: 'bg-blue-100 ring-2 ring-blue-200/50',
-    sqlserver: 'bg-blue-100 ring-2 ring-blue-200/50',
-    oracle: 'bg-red-100 ring-2 ring-red-200/50',
-    cassandra: 'bg-purple-100 ring-2 ring-purple-200/50',
-    elasticsearch: 'bg-yellow-100 ring-2 ring-yellow-200/50',
-    clickhouse: 'bg-yellow-100 ring-2 ring-yellow-200/50'
-  }
-  return styles[normalizedType] || 'bg-gray-100 ring-2 ring-gray-200/50'
+  // Use the same muted icon color system as ConnectionTreeItem
+  const bgColor = getDatabaseIconBgColor(dbType || '')
+  const tint = getDatabaseIconTint(dbType || '')
+  return `${bgColor} ${tint || ''}`
 }
 
 function copyConfig() {
