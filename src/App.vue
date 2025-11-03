@@ -225,7 +225,7 @@
     <div
       class="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-100 lg:block lg:w-20 lg:bg-gray-900 lg:pb-10"
     >
-      <div class="flex h-20 shrink-0 items-center justify-center">
+      <div class="flex h-20 shrink-0 items-center justify-center pt-6">
         <RouterLink to="/">
           <img class="h-8 w-auto" src="/images/logo.svg" alt="DBConvert Streams" />
         </RouterLink>
