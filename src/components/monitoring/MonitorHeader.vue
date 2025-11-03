@@ -5,7 +5,7 @@
       :class="[
         'border rounded-lg p-6',
         isRunning
-          ? 'bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-200'
+          ? 'bg-linear-to-r from-blue-50 to-cyan-50 border-blue-200'
           : 'bg-gray-50 border-gray-200'
       ]"
     >
@@ -16,7 +16,7 @@
           <div class="flex items-start gap-4 flex-1 min-w-0">
             <div
               :class="[
-                'flex items-center justify-center w-12 h-12 rounded-full flex-shrink-0 mt-0.5',
+                'flex items-center justify-center w-12 h-12 rounded-full shrink-0 mt-0.5',
                 isRunning
                   ? isStreamFinished
                     ? 'bg-green-100'
@@ -51,7 +51,7 @@
               <p class="text-xs font-medium uppercase text-gray-500 mb-1">Status</p>
               <p
                 :class="[
-                  'text-base font-semibold break-words',
+                  'text-base font-semibold wrap-break-word',
                   isRunning
                     ? isStreamFinished
                       ? 'text-green-700'
@@ -67,7 +67,7 @@
           </div>
 
           <!-- Stream Controls - Right side, always visible and compact -->
-          <div class="flex gap-2 flex-shrink-0">
+          <div class="flex gap-2 shrink-0">
             <!-- Pause/Resume Button -->
             <button
               :disabled="!isRunning || isStreamFinished"
@@ -103,11 +103,11 @@
           </div>
         </div>
 
-        <!-- Stream ID Display - Below status, full width -->
-        <div v-if="isRunning" class="flex items-center gap-2 px-1">
+        <!-- Stream ID Display - Full width below status -->
+        <div v-if="isRunning" class="flex items-center gap-2">
           <p class="text-xs font-medium uppercase text-gray-500 whitespace-nowrap">Stream ID:</p>
           <code
-            class="text-sm font-mono bg-white border border-gray-300 px-3 py-1.5 rounded text-gray-700 break-all"
+            class="text-sm font-mono bg-white border border-gray-300 px-3 py-1.5 rounded text-gray-700 flex-1 min-w-0 truncate"
           >
             {{ streamID }}
           </code>
@@ -120,7 +120,7 @@
             <div class="overflow-hidden rounded-full bg-gray-200 shadow-inner">
               <div
                 class="rounded-full h-2 transition-all duration-500"
-                :class="isRunning ? 'bg-gradient-to-r from-blue-500 to-cyan-500' : 'bg-gray-400'"
+                :class="isRunning ? 'bg-linear-to-r from-blue-500 to-cyan-500' : 'bg-gray-400'"
                 :style="{ width: isRunning ? store.stagesBarWidth : '0%' }"
               ></div>
             </div>
@@ -135,7 +135,7 @@
             >
               <div
                 :class="[
-                  'w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0',
+                  'w-7 h-7 rounded-full flex items-center justify-center shrink-0',
                   stageClass(index)
                 ]"
               >
@@ -166,9 +166,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
 import { PauseIcon, PlayIcon, StopIcon } from '@heroicons/vue/24/outline'
-import { useMonitoringStore, statusEnum } from '@/stores/monitoring'
+import { useMonitoringStore } from '@/stores/monitoring'
 import type { StreamConfig } from '@/types/streamConfig'
 
 interface Props {

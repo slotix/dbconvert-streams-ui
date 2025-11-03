@@ -25,31 +25,11 @@
     <ConnectionName v-if="connection" v-model:name="connection.name" />
 
     <!-- Local Files Parameters -->
-    <div v-if="connection && ((isEdit && connection.id) || !isEdit)">
-      <hr />
-
+    <div v-if="connection && ((isEdit && connection.id) || !isEdit)" class="mt-6">
       <!-- Local Files Configuration Group -->
       <div class="bg-white rounded-lg border border-gray-200 p-6 mb-6 shadow-sm">
         <h3 class="text-sm font-medium text-gray-900 mb-6 flex items-center">
-          <svg
-            class="h-4 w-4 mr-2 text-gray-600"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2 2z"
-            />
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M8 5a2 2 0 012-2h2a2 2 0 012 2v2H8V5z"
-            />
-          </svg>
+          <FolderOpenIcon class="h-5 w-5 mr-2 text-teal-600" />
           Files Configuration
         </h3>
 
@@ -61,7 +41,7 @@
               <FolderSelector
                 v-model="connection.path"
                 placeholder="/home/user/Documents/my-data-folder"
-                help-text="📁 Select the folder containing your data files"
+                help-text="Select the folder containing your data files"
               />
             </div>
           </div>
@@ -70,11 +50,16 @@
 
       <!-- File Formats Info -->
       <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-        <h4 class="text-sm font-medium text-blue-900 mb-2">Supported File Formats</h4>
-        <p class="text-xs text-blue-700">
-          📊 CSV, JSON, JSONL, Parquet files (.gz compressed versions also supported). Mixed formats
-          in the same folder are allowed.
-        </p>
+        <div class="flex items-start">
+          <DocumentTextIcon class="h-5 w-5 text-blue-600 mr-2 mt-0.5 shrink-0" />
+          <div>
+            <h4 class="text-sm font-medium text-blue-900 mb-1">Supported File Formats</h4>
+            <p class="text-xs text-blue-700">
+              CSV, JSON, JSONL, Parquet files (.gz compressed versions also supported). Mixed
+              formats in the same folder are allowed.
+            </p>
+          </div>
+        </div>
       </div>
 
       <!-- Note about local files -->
@@ -86,8 +71,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
-import { type Connection } from '@/types/connections'
+import { computed, watch } from 'vue'
+import { FolderOpenIcon, DocumentTextIcon } from '@heroicons/vue/24/outline'
 import ConnectionName from './ConnectionName.vue'
 import Spinner from '@/components/common/Spinner.vue'
 import FolderSelector from '@/components/common/FolderSelector.vue'

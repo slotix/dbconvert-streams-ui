@@ -36,13 +36,14 @@
             :disabled="isStreamRunning && !isStreamFinished"
             type="button"
             :class="[
-              'px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200',
+              'inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200',
               isStreamRunning && !isStreamFinished
                 ? 'text-gray-500 bg-gray-300 cursor-not-allowed'
                 : 'text-white bg-linear-to-b from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 hover:shadow-md'
             ]"
             @click="startStream"
           >
+            <PlayIcon class="h-4 w-4" />
             {{ paginationData?.total > 0 ? 'Run again' : 'Start' }}
           </button>
           <button
@@ -424,7 +425,12 @@ export default {
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { ClipboardIcon, CalendarIcon, ExclamationCircleIcon } from '@heroicons/vue/24/outline'
+import {
+  ClipboardIcon,
+  CalendarIcon,
+  ExclamationCircleIcon,
+  PlayIcon
+} from '@heroicons/vue/24/outline'
 import { Switch } from '@headlessui/vue'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'

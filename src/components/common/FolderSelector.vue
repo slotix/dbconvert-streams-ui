@@ -15,29 +15,17 @@
       <!-- Browse button -->
       <button
         type="button"
-        class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+        class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
         @click="openModal"
       >
-        <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2 2z"
-          />
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M8 5a2 2 0 012-2h2a2 2 0 012 2v2H8V5z"
-          />
-        </svg>
+        <FolderOpenIcon class="h-4 w-4 mr-2" />
         Browse
       </button>
     </div>
 
     <!-- Help text -->
-    <p v-if="helpText" class="text-xs text-gray-500">
+    <p v-if="helpText" class="text-xs text-gray-500 flex items-center">
+      <InformationCircleIcon class="h-4 w-4 mr-1 text-gray-400" />
       {{ helpText }}
     </p>
 
@@ -52,6 +40,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { FolderOpenIcon, InformationCircleIcon } from '@heroicons/vue/24/outline'
 import FolderSelectionModal from './FolderSelectionModal.vue'
 
 interface Props {
@@ -69,7 +58,7 @@ interface Emits {
 const props = withDefaults(defineProps<Props>(), {
   modelValue: '',
   placeholder: 'Select a folder...',
-  helpText: '📁 Click Browse to select a folder for your data files',
+  helpText: 'Click Browse to select a folder for your data files',
   disabled: false,
   error: false
 })

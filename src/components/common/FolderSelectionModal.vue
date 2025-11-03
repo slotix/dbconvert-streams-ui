@@ -30,19 +30,15 @@
               <!-- Header -->
               <DialogTitle as="h3" class="text-lg font-medium leading-6 text-gray-900 mb-6">
                 <div class="flex items-center justify-between">
-                  <span>Select Folder</span>
+                  <div class="flex items-center">
+                    <FolderOpenIcon class="h-6 w-6 text-teal-600 mr-2" />
+                    <span>Select Folder</span>
+                  </div>
                   <button
-                    class="text-gray-400 hover:text-gray-600 focus:outline-none"
+                    class="text-gray-400 hover:text-gray-600 focus:outline-none transition-colors"
                     @click="closeModal"
                   >
-                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
+                    <XMarkIcon class="h-6 w-6" />
                   </button>
                 </div>
               </DialogTitle>
@@ -84,20 +80,10 @@
                         {{ segment.name }}
                       </button>
                       <span v-else class="text-gray-700 font-medium">{{ segment.name }}</span>
-                      <svg
+                      <ChevronRightIcon
                         v-if="index < pathSegments.length - 1"
                         class="h-4 w-4 text-gray-400 mx-2"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M9 5l7 7-7 7"
-                        />
-                      </svg>
+                      />
                     </li>
                   </ol>
                 </nav>
@@ -121,45 +107,13 @@
                     @dblclick="entry.type === 'dir' ? navigateToPath(entry.path) : null"
                   >
                     <!-- Icon -->
-                    <div class="flex-shrink-0 mr-3">
-                      <svg
-                        v-if="entry.type === 'dir'"
-                        class="h-5 w-5 text-blue-500"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2 2z"
-                        />
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M8 5a2 2 0 012-2h2a2 2 0 012 2v2H8V5z"
-                        />
-                      </svg>
-                      <svg
-                        v-else
-                        class="h-5 w-5 text-gray-400"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                        />
-                      </svg>
+                    <div class="shrink-0 mr-3">
+                      <FolderIcon v-if="entry.type === 'dir'" class="h-5 w-5 text-teal-500" />
+                      <DocumentIcon v-else class="h-5 w-5 text-gray-400" />
                     </div>
 
                     <!-- Name and Size -->
-                    <div class="flex-grow min-w-0">
+                    <div class="grow min-w-0">
                       <p class="text-sm font-medium text-gray-900 truncate">{{ entry.name }}</p>
                       <p v-if="entry.type === 'file' && entry.size" class="text-xs text-gray-500">
                         {{ formatFileSize(entry.size) }}
@@ -167,14 +121,8 @@
                     </div>
 
                     <!-- Selection indicator -->
-                    <div v-if="selectedPath === entry.path" class="flex-shrink-0 ml-2">
-                      <svg class="h-5 w-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path
-                          fill-rule="evenodd"
-                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                          clip-rule="evenodd"
-                        />
-                      </svg>
+                    <div v-if="selectedPath === entry.path" class="shrink-0 ml-2">
+                      <CheckCircleIcon class="h-5 w-5 text-blue-500" />
                     </div>
                   </div>
                 </div>
@@ -196,34 +144,8 @@
                     class="absolute right-2 top-2 text-gray-400 hover:text-gray-600 focus:outline-none"
                     @click="toggleManualPathEdit"
                   >
-                    <svg
-                      v-if="manualPathEdit"
-                      class="h-4 w-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
-                    <svg
-                      v-else
-                      class="h-4 w-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                      />
-                    </svg>
+                    <CheckIcon v-if="manualPathEdit" class="h-4 w-4" />
+                    <PencilIcon v-else class="h-4 w-4" />
                   </button>
                 </div>
               </div>
@@ -232,17 +154,10 @@
               <div class="flex justify-between items-center">
                 <button
                   v-if="currentPath !== initialPath"
-                  class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
                   @click="goUp"
                 >
-                  <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M10 19l-7-7m0 0l7-7m-7 7h18"
-                    />
-                  </svg>
+                  <ArrowLeftIcon class="h-4 w-4 mr-1" />
                   Go Up
                 </button>
                 <div v-else></div>
@@ -275,10 +190,19 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue'
+import {
+  FolderOpenIcon,
+  XMarkIcon,
+  FolderIcon,
+  DocumentIcon,
+  CheckCircleIcon,
+  ChevronRightIcon,
+  CheckIcon,
+  PencilIcon,
+  ArrowLeftIcon
+} from '@heroicons/vue/24/outline'
 import { listDirectory, checkWritable, getRoots, type FileSystemEntry } from '@/api/fileSystem'
 import Spinner from './Spinner.vue'
-import FileIcon from './FileIcon.vue'
-import { useContextualIconSizes } from '@/composables/useIconSizes'
 
 interface Props {
   isOpen: boolean
@@ -295,9 +219,6 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<Emits>()
-
-// Icon sizes
-const iconSizes = useContextualIconSizes()
 
 // Reactive state
 const loading = ref(false)
@@ -387,8 +308,12 @@ const loadDirectory = async (path: string) => {
     if (!selectedPath.value) {
       selectedPath.value = currentPath.value
     }
-  } catch (err: any) {
-    error.value = err.response?.data?.message || 'Failed to load directory'
+  } catch (err: unknown) {
+    const errorMessage =
+      err && typeof err === 'object' && 'response' in err
+        ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
+        : undefined
+    error.value = errorMessage || 'Failed to load directory'
     entries.value = []
   } finally {
     loading.value = false
@@ -479,7 +404,7 @@ const validatePath = async (path: string): Promise<boolean> => {
   try {
     const response = await checkWritable(path)
     return response.ok
-  } catch (err) {
+  } catch {
     return false
   } finally {
     validating.value = false
