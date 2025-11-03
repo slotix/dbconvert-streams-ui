@@ -19,14 +19,7 @@
         <div
           class="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-slate-200 shadow-sm"
         >
-          <svg class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M13 10V3L4 14h7v7l9-11h-7z"
-            />
-          </svg>
+          <ArrowPathIcon class="h-4 w-4 text-slate-400" />
           <span class="text-sm font-semibold text-slate-700">{{ streamCountLabel }}</span>
         </div>
 
@@ -185,7 +178,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { PlusIcon } from '@heroicons/vue/24/solid'
+import { PlusIcon, ArrowPathIcon } from '@heroicons/vue/24/solid'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
 import { useCommonStore } from '@/stores/common'
