@@ -49,9 +49,20 @@
           @delete="handleDeleteStream"
           @edit="handleEditStream"
           @clone="handleCloneStream"
+          @contextmenu="handleContextMenu"
         />
       </div>
     </div>
+
+    <!-- Context Menu -->
+    <StreamContextMenu
+      :visible="contextMenu.contextMenuVisible.value"
+      :x="contextMenu.contextMenuX.value"
+      :y="contextMenu.contextMenuY.value"
+      :target="contextMenu.contextTarget.value"
+      @menu-action="onContextMenuAction"
+      @close="contextMenu.closeContextMenu"
+    />
 
     <!-- Delete Confirmation Dialog -->
     <ConfirmDialog
@@ -78,11 +89,14 @@ export default {
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { ArrowPathIcon } from '@heroicons/vue/24/outline'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
 import { useMonitoringStore } from '@/stores/monitoring'
+import { useStreamContextMenu } from '@/composables/useStreamContextMenu'
 import StreamListItem from './StreamListItem.vue'
+import StreamContextMenu from './StreamContextMenu.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import type { StreamConfig } from '@/types/streamConfig'
 import type { Connection } from '@/types/connections'
@@ -97,9 +111,11 @@ const emit = defineEmits<{
   (e: 'delete-stream', payload: { streamId: string }): void
 }>()
 
+const router = useRouter()
 const streamsStore = useStreamsStore()
 const connectionsStore = useConnectionsStore()
 const monitoringStore = useMonitoringStore()
+const contextMenu = useStreamContextMenu()
 
 const isLoading = ref(false)
 const showDeleteConfirm = ref(false)
@@ -220,6 +236,52 @@ const deleteConfirmMessage = computed(() => {
   if (!pendingDeleteStream.value) return ''
   return `Are you sure you want to delete "${pendingDeleteStream.value.name}"? This action cannot be undone.`
 })
+
+function handleContextMenu(payload: {
+  event: MouseEvent
+  streamId: string
+  streamName: string
+  isRunning: boolean
+  isPaused: boolean
+  isFinished: boolean
+}) {
+  contextMenu.showContextMenu(
+    payload.event,
+    payload.streamId,
+    payload.streamName,
+    payload.isRunning,
+    payload.isPaused,
+    payload.isFinished
+  )
+}
+
+async function onContextMenuAction(payload: {
+  action: string
+  target: { streamId: string; streamName: string }
+}) {
+  contextMenu.closeContextMenu()
+
+  switch (payload.action) {
+    case 'start-stream':
+      await handleStartStream({ streamId: payload.target.streamId })
+      break
+    case 'pause-stream':
+      await handlePauseStream()
+      break
+    case 'resume-stream':
+      await handleResumeStream()
+      break
+    case 'edit-stream':
+      router.push({ name: 'EditStream', params: { id: payload.target.streamId } })
+      break
+    case 'clone-stream':
+      await handleCloneStream({ streamId: payload.target.streamId })
+      break
+    case 'delete-stream':
+      handleDeleteStream({ streamId: payload.target.streamId })
+      break
+  }
+}
 
 // Fetch streams on mount
 watch(

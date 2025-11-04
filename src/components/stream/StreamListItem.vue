@@ -8,6 +8,7 @@
         : 'hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50 hover:shadow-sm hover:scale-[1.01] active:scale-[0.98]'
     ]"
     @click="selectStream"
+    @contextmenu="handleContextMenu"
   >
     <!-- Stream Info - Full Width -->
     <div class="w-full min-w-0 pr-8">
@@ -181,6 +182,17 @@ const emit = defineEmits<{
   (e: 'start', payload: { streamId: string }): void
   (e: 'pause', payload: { streamId: string }): void
   (e: 'resume', payload: { streamId: string }): void
+  (
+    e: 'contextmenu',
+    payload: {
+      event: MouseEvent
+      streamId: string
+      streamName: string
+      isRunning: boolean
+      isPaused: boolean
+      isFinished: boolean
+    }
+  ): void
 }>()
 
 const monitoringStore = useMonitoringStore()
@@ -282,5 +294,16 @@ function cloneStream() {
 
 function deleteStream() {
   emit('delete', { streamId: props.stream.id })
+}
+
+function handleContextMenu(event: MouseEvent) {
+  emit('contextmenu', {
+    event,
+    streamId: props.stream.id,
+    streamName: props.stream.name,
+    isRunning: isRunning.value,
+    isPaused: isPaused.value,
+    isFinished: isFinished.value
+  })
 }
 </script>
