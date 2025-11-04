@@ -39,7 +39,7 @@ if (!window.ENV) {
 logEnvironment()
 
 const toastOptions: PluginOptions = {
-  position: POSITION.TOP_RIGHT,
+  position: POSITION.BOTTOM_RIGHT,
   timeout: 5000,
   closeOnClick: true,
   pauseOnFocusLoss: true,
