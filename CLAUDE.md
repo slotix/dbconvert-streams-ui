@@ -20,6 +20,7 @@ DBConvert Streams UI is a Vue.js 3 frontend application for managing database st
 - **Headless UI Vue** for accessible, unstyled UI components
 - **Heroicons** for consistent iconography
 - **Vue Toastification** for notification management
+- don't invent custom svg icons use heroicons
 
 ### Data & Visualization
 - **Axios** for HTTP client with API integration
