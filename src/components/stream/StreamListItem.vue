@@ -1,7 +1,7 @@
 <template>
   <div
     :class="[
-      'px-4 py-3 cursor-pointer transition-all duration-200 ease-out flex items-center justify-between group',
+      'px-3 py-2.5 cursor-pointer transition-all duration-200 ease-out group relative',
       'rounded-lg',
       isSelected
         ? 'bg-linear-to-r from-blue-100 to-teal-100 shadow-md ring-2 ring-blue-200/50'
@@ -9,36 +9,36 @@
     ]"
     @click="selectStream"
   >
-    <!-- Stream Info -->
-    <div class="flex-1 min-w-0">
+    <!-- Stream Info - Full Width -->
+    <div class="w-full min-w-0 pr-8">
       <!-- Stream Name - Full Width with Truncation -->
       <div class="mb-1.5 min-w-0">
         <h3
-          class="text-sm font-semibold text-slate-800 group-hover:text-teal-900 truncate"
+          class="text-sm font-semibold text-slate-800 group-hover:text-teal-900 truncate leading-tight"
           :title="stream.name"
         >
           {{ stream.name }}
         </h3>
       </div>
 
-      <!-- Badges and Connection Info Row -->
-      <div class="flex items-center gap-2 mb-1 flex-wrap min-w-0">
+      <!-- Badges Row - Wrap freely -->
+      <div class="flex items-center gap-1.5 mb-1.5 flex-wrap">
         <!-- Running Status Badge -->
         <span
           v-if="isRunning"
           :class="[
-            'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset shrink-0',
+            'inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-xs font-medium ring-1 ring-inset shrink-0',
             statusBadgeClass
           ]"
         >
           <component :is="statusIcon" class="h-3 w-3" />
-          {{ statusText }}
+          <span class="hidden sm:inline">{{ statusText }}</span>
         </span>
 
         <!-- Mode Badge -->
         <span
           :class="[
-            'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset shrink-0',
+            'inline-flex items-center rounded-full px-1.5 py-0.5 text-xs font-medium ring-1 ring-inset shrink-0',
             stream.mode === 'cdc'
               ? 'bg-orange-50 text-orange-700 ring-orange-600/20'
               : 'bg-green-50 text-green-700 ring-green-600/20'
@@ -46,15 +46,19 @@
         >
           {{ stream.mode }}
         </span>
+      </div>
 
-        <!-- Connection Info (inline with badges) - Truncate with min-w-0 -->
-        <div class="flex items-center gap-1 text-xs text-gray-500 min-w-0 truncate">
-          <span v-if="source" class="truncate" :title="source.name">{{ source.name }}</span>
-          <span v-else class="text-gray-400 shrink-0">Unknown source</span>
-          <ArrowRightIcon class="h-3 w-3 shrink-0 text-gray-400" />
-          <span v-if="target" class="truncate" :title="target.name">{{ target.name }}</span>
-          <span v-else class="text-gray-400 shrink-0">Unknown target</span>
-        </div>
+      <!-- Connection Info - Separate Row with Better Truncation -->
+      <div class="flex items-center gap-1 text-xs text-gray-600 min-w-0 mb-1">
+        <span v-if="source" class="truncate font-medium" :title="source.name">{{
+          source.name
+        }}</span>
+        <span v-else class="text-gray-400 shrink-0 text-xs">Unknown</span>
+        <ArrowRightIcon class="h-3 w-3 shrink-0 text-gray-400" />
+        <span v-if="target" class="truncate font-medium" :title="target.name">{{
+          target.name
+        }}</span>
+        <span v-else class="text-gray-400 shrink-0 text-xs">Unknown</span>
       </div>
 
       <!-- Table count -->
@@ -63,9 +67,9 @@
       </div>
     </div>
 
-    <!-- Action Buttons -->
+    <!-- Action Buttons - Positioned Absolutely on Right -->
     <div
-      class="flex items-center gap-1 ml-2 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+      class="absolute right-2 top-2 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity bg-white/95 backdrop-blur-sm rounded-md shadow-sm border border-gray-200 p-0.5"
       @click.stop
     >
       <!-- Start/Run Again/Pause/Resume Button -->
@@ -248,10 +252,6 @@ const statusIcon = computed(() => {
   }
   if (isPaused.value) return PauseCircleIcon
   return ArrowPathIcon
-})
-
-const tableCount = computed(() => {
-  return props.stream.tables?.length || 0
 })
 
 // History is now stored separately in the API, so we can't check it here

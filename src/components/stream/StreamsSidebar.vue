@@ -3,7 +3,7 @@
     class="flex flex-col h-full bg-linear-to-br from-white via-slate-50/50 to-white shadow-xl rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-2xl border border-slate-200/50"
   >
     <!-- Streams List -->
-    <div class="flex-1 overflow-y-auto p-3 scrollbar-thin">
+    <div class="flex-1 overflow-y-auto p-2 scrollbar-thin">
       <!-- Enhanced loading state with gradient spinner -->
       <div v-if="isLoading" class="flex flex-col items-center justify-center py-16">
         <div
