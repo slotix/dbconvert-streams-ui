@@ -94,6 +94,18 @@
           >
             History
           </button>
+          <button
+            v-if="isStreamFinished"
+            :class="[
+              activeTab === 'compare'
+                ? 'border-teal-600 text-teal-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
+              'whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors'
+            ]"
+            @click="activeTab = 'compare'"
+          >
+            Compare
+          </button>
         </nav>
       </div>
     </div>
@@ -419,6 +431,21 @@
           @clear-all="handleClearAll"
         />
       </div>
+
+      <!-- Compare Tab -->
+      <div v-else-if="activeTab === 'compare'" class="h-full">
+        <StreamCompareView
+          v-if="source && target"
+          :stream="stream"
+          :source="source"
+          :target="target"
+        />
+        <div v-else class="p-6">
+          <div class="text-center text-gray-500 py-8">
+            <p>Source or target connection not available</p>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Delete Confirmation Dialog -->
@@ -468,6 +495,7 @@ import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
 import MonitorHeader from '@/components/monitoring/MonitorHeader.vue'
 import StatContainer from '@/components/monitoring/StatContainer.vue'
 import StreamHistoryTableAGGrid from './StreamHistoryTableAGGrid.vue'
+import StreamCompareView from './StreamCompareView.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import { normalizeConnectionType } from '@/utils/connectionUtils'
 import { formatDateTime } from '@/utils/formats'
@@ -508,7 +536,7 @@ const explorerNavigationStore = useExplorerNavigationStore()
 
 const isJsonView = ref(false)
 const showDeleteConfirm = ref(false)
-const activeTab = ref<'monitor' | 'configuration' | 'history'>('configuration')
+const activeTab = ref<'monitor' | 'configuration' | 'history' | 'compare'>('configuration')
 const historyRuns = ref<StreamRun[]>([])
 const isLoadingHistory = ref(false)
 const historyAbortController = ref<AbortController | null>(null)
