@@ -157,6 +157,21 @@ export function formatNumber(num: number): string {
 }
 
 /**
+ * Format number with K/M suffix for large numbers
+ * Example: 1500 → "1.5K", 2500000 → "2.5M"
+ * @param num Number to format
+ * @returns Formatted string with K/M suffix
+ */
+export function formatNumberCompact(num: number): string {
+  if (num >= 1_000_000) {
+    return (num / 1_000_000).toFixed(1) + 'M'
+  } else if (num >= 1_000) {
+    return (num / 1_000).toFixed(1) + 'K'
+  }
+  return num.toString()
+}
+
+/**
  * Parse a data size to bytes
  * Accepts either:
  * - Raw number (already in bytes) from backend payload

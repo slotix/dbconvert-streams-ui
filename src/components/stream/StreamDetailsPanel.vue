@@ -29,7 +29,7 @@
             v-tooltip="
               isStreamRunning && !isStreamFinished
                 ? 'Stream is currently running'
-                : paginationData && paginationData.total > 0
+                : historyRuns.length > 0
                   ? 'Run the stream again'
                   : 'Start the stream'
             "
@@ -44,7 +44,7 @@
             @click="startStream"
           >
             <PlayIcon class="h-4 w-4" />
-            {{ paginationData && paginationData.total > 0 ? 'Run again' : 'Start' }}
+            {{ historyRuns.length > 0 ? 'Run again' : 'Start' }}
           </button>
           <button
             v-if="!isStreamRunning || isStreamFinished"
@@ -390,9 +390,7 @@
       <div v-else-if="activeTab === 'history'" class="p-6">
         <StreamHistoryTableAGGrid
           :config-id="stream.id"
-          :pagination-data="paginationData ?? undefined"
-          @page-change="handlePageChange"
-          @sort-change="handleSortChange"
+          :runs="historyRuns"
           @delete-run="handleDeleteRun"
           @clear-all="handleClearAll"
         />
@@ -465,14 +463,6 @@ interface StreamRun {
   errorMessage?: string
 }
 
-interface PaginationData {
-  runs: StreamRun[]
-  total: number
-  page: number
-  pageSize: number
-  totalPages: number
-}
-
 const props = defineProps<{
   stream: StreamConfig
   source?: Connection
@@ -494,11 +484,9 @@ const explorerNavigationStore = useExplorerNavigationStore()
 const isJsonView = ref(false)
 const showDeleteConfirm = ref(false)
 const activeTab = ref<'monitor' | 'configuration' | 'history'>('configuration')
-const paginationData = ref<PaginationData | null>(null)
+const historyRuns = ref<StreamRun[]>([])
 const isLoadingHistory = ref(false)
 const historyAbortController = ref<AbortController | null>(null)
-const historySortBy = ref<string>('timestamp')
-const historySortOrder = ref<'asc' | 'desc'>('desc')
 
 const dbTypes = connectionsStore.dbTypes
 
@@ -582,7 +570,7 @@ const isFileTarget = computed(() => {
 })
 
 // Fetch stream history from API using apiClient
-async function loadStreamHistory(page: number = 1, sortBy?: string, sortOrder?: 'asc' | 'desc') {
+async function loadStreamHistory() {
   try {
     // Cancel any previous in-flight request to prevent race conditions
     if (historyAbortController.value) {
@@ -590,26 +578,13 @@ async function loadStreamHistory(page: number = 1, sortBy?: string, sortOrder?: 
     }
     historyAbortController.value = new AbortController()
 
-    // Update sort state if provided
-    if (sortBy !== undefined) {
-      historySortBy.value = sortBy
-    }
-    if (sortOrder !== undefined) {
-      historySortOrder.value = sortOrder
-    }
-
     isLoadingHistory.value = true
     const response = await apiClient.get(`/stream-configs/${props.stream.id}/history`, {
-      params: {
-        page,
-        pageSize: 20,
-        sortBy: historySortBy.value,
-        sortOrder: historySortOrder.value
-      },
       signal: historyAbortController.value.signal
     })
 
-    paginationData.value = response.data
+    // Backend returns array of runs directly
+    historyRuns.value = response.data
   } catch (error: unknown) {
     // Ignore abort errors - they're expected when switching streams
     if (error instanceof Error && error.name === 'AbortError') {
@@ -628,21 +603,13 @@ async function loadStreamHistory(page: number = 1, sortBy?: string, sortOrder?: 
   }
 }
 
-async function handlePageChange(newPage: number) {
-  await loadStreamHistory(newPage)
-}
-
-async function handleSortChange(sortBy: string, sortOrder: 'asc' | 'desc') {
-  await loadStreamHistory(1, sortBy, sortOrder)
-}
-
 async function handleDeleteRun(runId: string) {
   try {
     await apiClient.delete(`/stream-configs/${props.stream.id}/runs/${runId}`)
 
     commonStore.showNotification('Run deleted successfully', 'success')
     // Reload history to reflect deletion
-    await loadStreamHistory(1)
+    await loadStreamHistory()
   } catch (error: unknown) {
     let errorMsg = 'Failed to delete stream run'
     if (error instanceof Error) {
@@ -660,7 +627,7 @@ async function handleClearAll() {
 
     commonStore.showNotification('All runs deleted successfully', 'success')
     // Reload history to refresh the UI
-    await loadStreamHistory(1)
+    await loadStreamHistory()
   } catch (error: unknown) {
     let errorMsg = 'Failed to delete all runs'
     if (error instanceof Error) {
@@ -680,11 +647,11 @@ watch(
       historyAbortController.value.abort()
     }
     // Clear history data when switching streams
-    paginationData.value = null
+    historyRuns.value = []
 
     // If currently viewing History tab, reload data for the new stream
     if (activeTab.value === 'history') {
-      await loadStreamHistory(1)
+      await loadStreamHistory()
     }
   }
 )
@@ -695,8 +662,7 @@ watch(
   async (newTab) => {
     if (newTab === 'history') {
       // Always load fresh data when switching to history tab
-      // No frontend caching - data comes from backend on demand
-      await loadStreamHistory(1)
+      await loadStreamHistory()
     }
   }
 )
@@ -709,7 +675,7 @@ watch(isStreamFinished, async (finished, wasFinished) => {
     setTimeout(async () => {
       // Reload history if currently viewing the history tab
       if (activeTab.value === 'history') {
-        await loadStreamHistory(1)
+        await loadStreamHistory()
       }
     }, 2000)
   }

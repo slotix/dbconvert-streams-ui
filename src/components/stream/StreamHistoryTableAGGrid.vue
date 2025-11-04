@@ -4,11 +4,11 @@
     <div class="flex items-center justify-between">
       <h3 class="text-base font-semibold text-gray-900">Run History</h3>
       <div class="flex items-center gap-3">
-        <span v-if="pagination.total > 0" class="text-xs text-gray-500">
-          {{ pagination.total }} total run{{ pagination.total !== 1 ? 's' : '' }}
+        <span v-if="runs.length > 0" class="text-xs text-gray-500">
+          {{ runs.length }} total run{{ runs.length !== 1 ? 's' : '' }}
         </span>
         <button
-          v-if="pagination.total > 0"
+          v-if="runs.length > 0"
           type="button"
           title="Delete all runs from history"
           class="p-1.5 text-red-600 hover:text-red-700 rounded-md hover:bg-red-50 transition-colors duration-200"
@@ -28,7 +28,7 @@
 
     <!-- Empty state -->
     <div
-      v-if="pagination.total === 0"
+      v-if="runs.length === 0"
       class="text-center py-8 bg-gray-50 rounded-lg border border-gray-200"
     >
       <svg
@@ -48,80 +48,15 @@
       <p class="text-xs text-gray-400">Start the stream to see execution history</p>
     </div>
 
-    <!-- AG Grid table -->
-    <div v-else class="space-y-3">
-      <div
-        class="ag-theme-alpine"
-        :style="{
-          width: '100%',
-          height: '600px'
-        }"
-      >
-        <AgGridVue
-          :row-data="runs"
-          :column-defs="columnDefs"
-          :grid-options="gridOptions"
-          style="width: 100%; height: 100%"
-          @grid-ready="onGridReady"
-        />
-      </div>
-
-      <!-- Custom Backend Pagination Controls -->
-      <div
-        v-if="pagination.total > 0"
-        class="flex items-center justify-between px-3 py-2 bg-gray-50 border border-gray-200 rounded-md"
-      >
-        <div class="text-xs text-gray-600">
-          Showing {{ (pagination.page - 1) * pagination.pageSize + 1 }} to
-          {{ Math.min(pagination.page * pagination.pageSize, pagination.total) }} of
-          {{ pagination.total }} runs
-        </div>
-        <div class="flex items-center gap-2">
-          <button
-            type="button"
-            :disabled="pagination.page <= 1"
-            :class="[
-              'p-1.5 rounded-md transition-colors',
-              pagination.page <= 1
-                ? 'text-gray-300 cursor-not-allowed'
-                : 'text-gray-600 hover:bg-gray-200'
-            ]"
-            @click="goToPage(pagination.page - 1)"
-          >
-            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-          </button>
-          <span class="text-xs text-gray-600 px-2">
-            Page {{ pagination.page }} of {{ pagination.totalPages }}
-          </span>
-          <button
-            type="button"
-            :disabled="pagination.page >= pagination.totalPages"
-            :class="[
-              'p-1.5 rounded-md transition-colors',
-              pagination.page >= pagination.totalPages
-                ? 'text-gray-300 cursor-not-allowed'
-                : 'text-gray-600 hover:bg-gray-200'
-            ]"
-            @click="goToPage(pagination.page + 1)"
-          >
-            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M9 5l7 7-7 7"
-              />
-            </svg>
-          </button>
-        </div>
-      </div>
+    <!-- AG Grid table with built-in pagination -->
+    <div v-else class="ag-theme-alpine" :style="{ width: '100%', height: '850px' }">
+      <AgGridVue
+        :row-data="runs"
+        :column-defs="columnDefs"
+        :grid-options="gridOptions"
+        style="width: 100%; height: 100%"
+        @grid-ready="onGridReady"
+      />
     </div>
 
     <!-- Delete Single Run Confirmation Dialog -->
@@ -161,7 +96,7 @@ import type {
   GridOptions,
   ICellRendererParams
 } from 'ag-grid-community'
-import { formatDateTime, formatDuration } from '@/utils/formats'
+import { formatDateTime, formatDuration, formatNumberCompact } from '@/utils/formats'
 import { useLogsStore } from '@/stores/logs'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import 'ag-grid-community/styles/ag-grid.css'
@@ -184,23 +119,13 @@ interface StreamRun {
   errorMessage?: string
 }
 
-interface PaginationData {
-  runs: StreamRun[]
-  total: number
-  page: number
-  pageSize: number
-  totalPages: number
-}
-
 const props = defineProps<{
   configId: string
-  paginationData?: PaginationData
+  runs: StreamRun[]
 }>()
 
 const emit = defineEmits<{
   'delete-run': [runId: string]
-  'page-change': [page: number]
-  'sort-change': [sortBy: string, sortOrder: 'asc' | 'desc']
   'clear-all': []
 }>()
 
@@ -209,27 +134,6 @@ const showDeleteConfirm = ref(false)
 const pendingDeleteRunId = ref<string | null>(null)
 const showClearAllConfirm = ref(false)
 const gridApi = ref<GridApi | null>(null)
-
-// Default to empty pagination if not provided
-const defaultPagination: PaginationData = {
-  runs: [],
-  total: 0,
-  page: 1,
-  pageSize: 20,
-  totalPages: 0
-}
-
-const pagination = computed(() => props.paginationData || defaultPagination)
-const runs = computed(() => pagination.value.runs || [])
-
-function formatNumber(num: number): string {
-  if (num >= 1_000_000) {
-    return (num / 1_000_000).toFixed(1) + 'M'
-  } else if (num >= 1_000) {
-    return (num / 1_000).toFixed(1) + 'K'
-  }
-  return num.toString()
-}
 
 // Helper to format duration from milliseconds using the shared formatter
 function formatDurationMs(ms: number): string {
@@ -266,10 +170,10 @@ function rowsCellRenderer(params: ICellRendererParams) {
 
   let html = '<div>'
   if (run.rowsInserted) {
-    html += `<div class="text-green-700 font-medium">+${formatNumber(run.rowsInserted)}</div>`
+    html += `<div class="text-green-700 font-medium">+${formatNumberCompact(run.rowsInserted)}</div>`
   }
   if (run.rowsSkipped) {
-    html += `<div class="text-yellow-600 text-xs">Skipped: ${formatNumber(run.rowsSkipped)}</div>`
+    html += `<div class="text-yellow-600 text-xs">Skipped: ${formatNumberCompact(run.rowsSkipped)}</div>`
   }
   html += '</div>'
 
@@ -370,19 +274,14 @@ const gridOptions = computed<GridOptions>(() => ({
   animateRows: false,
   enableCellTextSelection: true,
   domLayout: 'normal',
-  pagination: false,
+  // Enable client-side pagination
+  pagination: true,
+  paginationPageSize: 20,
+  paginationPageSizeSelector: [20, 50, 100],
   defaultColDef: {
     sortable: true,
     filter: false,
     resizable: true
-  },
-  onSortChanged: (event) => {
-    // Get the current sort model
-    const sortModel = event.api.getColumnState().find((col) => col.sort !== null)
-    if (sortModel && sortModel.colId && sortModel.sort) {
-      // Emit sort change to parent
-      emit('sort-change', sortModel.colId, sortModel.sort as 'asc' | 'desc')
-    }
   },
   onCellClicked: (event) => {
     const target = event.event?.target as HTMLElement
@@ -408,12 +307,6 @@ const gridOptions = computed<GridOptions>(() => ({
 
 function onGridReady(params: GridReadyEvent) {
   gridApi.value = params.api
-}
-
-function goToPage(page: number) {
-  if (page >= 1 && page <= pagination.value.totalPages) {
-    emit('page-change', page)
-  }
 }
 
 async function handleViewLogs(streamId: string) {
