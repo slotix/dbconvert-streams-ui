@@ -88,20 +88,13 @@ apiClient.interceptors.response.use(
       if (config.retryCount < defaultRetryConfig.maxRetries) {
         config.retryCount += 1
 
-        // Set error state
-        commonStore.setError({
-          message: `Connection attempt ${config.retryCount} of ${defaultRetryConfig.maxRetries}...`,
-          isRetrying: true,
-          retryCount: config.retryCount
-        })
-
-        // Delay before retry
+        // Delay before retry (ConnectionStatus component will show disconnected state)
         await new Promise((resolve) => setTimeout(resolve, defaultRetryConfig.delayMs))
 
         return apiClient(config)
       }
 
-      // Max retries reached - clear error (ConnectionStatus component will show disconnected state)
+      // Max retries reached - ConnectionStatus component handles the UI
       commonStore.clearError()
     }
 
