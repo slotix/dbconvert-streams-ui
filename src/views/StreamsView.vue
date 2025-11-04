@@ -1,5 +1,8 @@
 <template>
   <div class="min-h-full overflow-x-hidden">
+    <!-- Disconnected Overlay -->
+    <DisconnectedOverlay />
+
     <!-- Enhanced Functional Toolbar with gradient background -->
     <header
       class="sticky top-0 z-10 bg-linear-to-r from-slate-50 via-white to-slate-50 border-b border-slate-200 shadow-sm"
@@ -35,9 +38,6 @@
               <span>New Stream Config</span>
             </button>
           </router-link>
-
-          <!-- Connection Status (if disconnected) -->
-          <ConnectionStatus />
         </div>
       </div>
     </header>
@@ -184,7 +184,7 @@ import { useSidebar } from '@/composables/useSidebar'
 import StreamsSidebar from '@/components/stream/StreamsSidebar.vue'
 import StreamDetailsPanel from '@/components/stream/StreamDetailsPanel.vue'
 import SearchInput from '@/components/common/SearchInput.vue'
-import ConnectionStatus from '@/components/common/ConnectionStatus.vue'
+import DisconnectedOverlay from '@/components/common/DisconnectedOverlay.vue'
 import type { StreamConfig } from '@/types/streamConfig'
 import type { Connection } from '@/types/connections'
 

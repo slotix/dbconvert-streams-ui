@@ -88,13 +88,13 @@ apiClient.interceptors.response.use(
       if (config.retryCount < defaultRetryConfig.maxRetries) {
         config.retryCount += 1
 
-        // Delay before retry (ConnectionStatus component will show disconnected state)
+        // Delay before retry (DisconnectedOverlay will block the UI)
         await new Promise((resolve) => setTimeout(resolve, defaultRetryConfig.delayMs))
 
         return apiClient(config)
       }
 
-      // Max retries reached - ConnectionStatus component handles the UI
+      // Max retries reached - DisconnectedOverlay handles the UI
       commonStore.clearError()
     }
 

@@ -364,8 +364,8 @@ export const useCommonStore = defineStore('common', {
         try {
           await Promise.all([this.checkSentryHealth(), this.checkAPIHealth()])
         } catch (healthError) {
-          console.log('Health check failed, attempting to work with cached data:', healthError)
-          // Continue with offline mode if we have an API key
+          console.log('Health check failed, backend unavailable:', healthError)
+          // Backend is unavailable
         }
 
         if (this.sentryHealthy && this.apiHealthy) {
@@ -394,10 +394,10 @@ export const useCommonStore = defineStore('common', {
             if (error.response?.status === 401 || error.message === 'Invalid API key') {
               throw error
             }
-            // For other errors, try to work with cached data
-            console.log('Failed to fetch user data, working with cached data:', error.message)
-            toast.warning('Working in offline mode. Some features may be limited.')
-            return 'success'
+            // For other errors, backend is unavailable
+            console.log('Failed to fetch user data, backend unavailable:', error.message)
+            toast.error('Backend unavailable. Please check your connection.')
+            return 'failed'
           }
         } else if (this.apiHealthy) {
           // Backend API is healthy but Sentry might not be - still try to initialize
@@ -415,18 +415,18 @@ export const useCommonStore = defineStore('common', {
             return 'success'
           } catch (error: any) {
             console.log('Failed to initialize with API only:', error)
-            // Fall through to offline mode
+            // Backend unavailable
           }
         } else {
-          // Offline mode - work with stored API key and cached data
-          console.log('Backend unavailable, working in offline mode')
-          this.setBackendConnected(false) // Add this line to properly set offline state
-          toast.warning('Unable to connect to server. Working with cached data.')
+          // Backend unavailable - cannot proceed
+          console.log('Backend unavailable')
+          this.setBackendConnected(false)
+          toast.error('Unable to connect to backend server.')
 
           // Start monitoring to detect when backend comes back online
           this.startHealthMonitoring()
 
-          return 'success'
+          return 'failed'
         }
 
         // Fallback return - should not reach here normally
@@ -576,7 +576,7 @@ export const useCommonStore = defineStore('common', {
 
           // Only show toast once when connection is first lost
           const toast = useToast()
-          toast.warning('Backend connection lost. Working in offline mode.')
+          toast.error('Backend connection lost.')
         }
       }
     },

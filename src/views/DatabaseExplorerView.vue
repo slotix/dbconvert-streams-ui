@@ -25,7 +25,7 @@ import { useRecentConnections } from '@/composables/useRecentConnections'
 import { useExplorerRouter } from '@/composables/useExplorerRouter'
 import { useTreeSearch } from '@/composables/useTreeSearch'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
-import ConnectionStatus from '@/components/common/ConnectionStatus.vue'
+import DisconnectedOverlay from '@/components/common/DisconnectedOverlay.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -861,6 +861,9 @@ onUnmounted(() => {
 
 <template>
   <div class="min-h-full overflow-x-hidden">
+    <!-- Disconnected Overlay -->
+    <DisconnectedOverlay />
+
     <!-- Enhanced Functional Toolbar with gradient background -->
     <header
       class="sticky top-0 z-10 bg-linear-to-r from-slate-50 via-white to-slate-50 border-b border-slate-200 shadow-sm"
@@ -916,9 +919,6 @@ onUnmounted(() => {
             <PlusIcon class="h-5 w-5" />
             <span>New Connection</span>
           </button>
-
-          <!-- Connection Status (if disconnected) -->
-          <ConnectionStatus />
         </div>
       </div>
     </header>

@@ -460,9 +460,9 @@ const getConnectionStatusText = () => {
   if (commonStore.isBackendConnected) {
     return 'Connected to backend'
   } else if (commonStore.error) {
-    return 'Connection to backend lost. Please check your backend services.'
+    return 'Connection to backend lost'
   } else {
-    return 'Offline Mode - Backend not available'
+    return 'Backend not available'
   }
 }
 

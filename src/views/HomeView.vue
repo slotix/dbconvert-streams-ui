@@ -1,18 +1,18 @@
 <template>
   <div>
+    <!-- Disconnected Overlay -->
+    <DisconnectedOverlay />
+
     <!-- Enhanced header with gradient background -->
     <div
       class="bg-linear-to-r from-slate-50 via-white to-slate-50 border-b border-slate-200 shadow-sm"
     >
       <div class="max-w-7xl mx-auto py-5 px-4 sm:px-6 lg:px-8">
-        <div class="flex items-center justify-between">
-          <h1
-            class="text-3xl font-bold bg-linear-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent"
-          >
-            Dashboard
-          </h1>
-          <ConnectionStatus />
-        </div>
+        <h1
+          class="text-3xl font-bold bg-linear-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent"
+        >
+          Dashboard
+        </h1>
       </div>
     </div>
 
@@ -87,7 +87,7 @@ import StepDisplay from '@/components/home/StepDisplay.vue'
 import QuickActions from '@/components/home/QuickActions.vue'
 import AccountOverview from '@/components/home/AccountOverview.vue'
 import SystemStatus from '@/components/home/SystemStatus.vue'
-import ConnectionStatus from '@/components/common/ConnectionStatus.vue'
+import DisconnectedOverlay from '@/components/common/DisconnectedOverlay.vue'
 
 const commonStore = useCommonStore()
 const connectionsStore = useConnectionsStore()
