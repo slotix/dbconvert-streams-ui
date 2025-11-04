@@ -549,34 +549,7 @@ watch(
         <p class="text-xs text-slate-500 mt-1">Please wait</p>
       </div>
 
-      <!-- Error state with improved styling and icon -->
-      <div v-else-if="loadError" class="flex flex-col items-center justify-center py-16 px-4">
-        <div
-          class="bg-linear-to-br from-red-50 to-red-100 border border-red-300 rounded-2xl p-6 text-center max-w-md shadow-lg"
-        >
-          <div
-            class="inline-flex items-center justify-center w-12 h-12 bg-red-500 rounded-full mb-3"
-          >
-            <svg
-              class="h-6 w-6 text-white"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-          </div>
-          <p class="text-sm text-red-800 font-semibold mb-1">Connection Error</p>
-          <p class="text-xs text-red-700">{{ loadError }}</p>
-        </div>
-      </div>
-
-      <!-- Main content area -->
+      <!-- Main content area (show connections even if there was a load error) -->
       <div v-else>
         <!-- Enhanced empty state with modern design -->
         <div

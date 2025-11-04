@@ -15,40 +15,37 @@
           />
         </div>
 
-        <!-- Elevated Badge showing count with icon -->
-        <div
-          class="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-slate-200 shadow-sm"
-        >
-          <ArrowPathIcon class="h-4 w-4 text-slate-400" />
-          <span class="text-sm font-semibold text-slate-700">{{ streamCountLabel }}</span>
-        </div>
-
-        <!-- Primary CTA Button with orange-to-teal gradient -->
-        <router-link :to="{ name: 'CreateStream' }">
-          <button
-            type="button"
-            class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-linear-to-b from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105"
+        <!-- Right side group -->
+        <div class="flex items-center gap-4 ml-auto">
+          <!-- Elevated Badge showing count with icon -->
+          <div
+            class="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-slate-200 shadow-sm"
           >
-            <PlusIcon class="h-5 w-5" />
-            <span>New Stream Config</span>
-          </button>
-        </router-link>
+            <ArrowPathIcon class="h-4 w-4 text-slate-400" />
+            <span class="text-sm font-semibold text-slate-700">{{ streamCountLabel }}</span>
+          </div>
+
+          <!-- Primary CTA Button with orange-to-teal gradient -->
+          <router-link :to="{ name: 'CreateStream' }">
+            <button
+              type="button"
+              class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-linear-to-b from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105"
+            >
+              <PlusIcon class="h-5 w-5" />
+              <span>New Stream Config</span>
+            </button>
+          </router-link>
+
+          <!-- Connection Status (if disconnected) -->
+          <ConnectionStatus />
+        </div>
       </div>
     </header>
 
     <!-- Main Content -->
     <main class="mx-auto py-4 overflow-x-hidden">
-      <!-- No streams -->
-      <div v-if="!isBackendConnected" class="px-8">
-        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-          <strong class="font-bold">Connection Error:</strong>
-          <span class="block sm:inline"
-            >Unable to connect to the server. Please check your backend services.</span
-          >
-        </div>
-      </div>
-
-      <div v-else-if="streamsCount() === 0" class="text-center py-12">
+      <!-- No streams (show regardless of backend connection status) -->
+      <div v-if="streamsCount() === 0" class="text-center py-12">
         <p class="text-gray-500">
           No stream configurations yet. Create your first configuration to get started.
         </p>
@@ -177,23 +174,24 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { PlusIcon, ArrowPathIcon } from '@heroicons/vue/24/solid'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
-import { useCommonStore } from '@/stores/common'
 import { useMonitoringStore } from '@/stores/monitoring'
+import { useCommonStore } from '@/stores/common'
 import { useSidebar } from '@/composables/useSidebar'
 import StreamsSidebar from '@/components/stream/StreamsSidebar.vue'
 import StreamDetailsPanel from '@/components/stream/StreamDetailsPanel.vue'
 import SearchInput from '@/components/common/SearchInput.vue'
+import ConnectionStatus from '@/components/common/ConnectionStatus.vue'
 import type { StreamConfig } from '@/types/streamConfig'
 import type { Connection } from '@/types/connections'
 
 const streamsStore = useStreamsStore()
 const connectionsStore = useConnectionsStore()
-const commonStore = useCommonStore()
 const monitoringStore = useMonitoringStore()
+const commonStore = useCommonStore()
 
 // Use sidebar composable for resize and toggle functionality
 const sidebar = useSidebar()
@@ -201,6 +199,9 @@ const sidebar = useSidebar()
 const selectedStreamId = ref<string>('')
 const searchQuery = ref('')
 const searchInputRef = ref<InstanceType<typeof SearchInput> | null>(null)
+
+// Backend connection status
+const isBackendConnected = computed(() => commonStore.isBackendConnected)
 
 // Computed for filtered stream count
 const filteredStreamsCount = computed(() => {
@@ -235,8 +236,6 @@ function handleKeyboardShortcut(e: KeyboardEvent) {
   }
 }
 
-const isBackendConnected = computed(() => commonStore.isBackendConnected)
-
 const selectedStream = computed<StreamConfig | undefined>(() => {
   if (!selectedStreamId.value) return undefined
   return streamsStore.streamConfigs.find((s) => s.id === selectedStreamId.value)
@@ -263,25 +262,44 @@ function handleStreamDeletedFromPanel() {
 
 // Fetch connections and streams on mount
 onMounted(async () => {
-  try {
-    // Fetch connections first so they're available when streams are displayed
-    await connectionsStore.refreshConnections()
+  // Only fetch if backend is connected
+  if (isBackendConnected.value) {
+    try {
+      // Fetch connections first so they're available when streams are displayed
+      await connectionsStore.refreshConnections()
 
-    // Then fetch streams
-    await streamsStore.refreshStreams()
+      // Then fetch streams
+      await streamsStore.refreshStreams()
 
-    // Check if there's a running stream and auto-select it (from SSE structured logs)
-    if (monitoringStore.streamID) {
-      // Auto-select the running stream
-      selectedStreamId.value = monitoringStore.streamID
+      // Check if there's a running stream and auto-select it (from SSE structured logs)
+      if (monitoringStore.streamID) {
+        // Auto-select the running stream
+        selectedStreamId.value = monitoringStore.streamID
+      }
+    } catch (error) {
+      console.error('Failed to fetch data:', error)
     }
-  } catch (error) {
-    console.error('Failed to fetch data:', error)
   }
 
   // Add keyboard shortcut listener
   window.addEventListener('keydown', handleKeyboardShortcut)
 })
+
+// Watch for backend connection status changes and refresh data when reconnected
+watch(
+  () => isBackendConnected.value,
+  async (isConnected) => {
+    if (isConnected) {
+      try {
+        // Backend came online - refresh with fresh API data
+        await connectionsStore.refreshConnections()
+        await streamsStore.refreshStreams()
+      } catch (error) {
+        console.error('Failed to refresh data when backend connected:', error)
+      }
+    }
+  }
+)
 
 onUnmounted(() => {
   // Remove keyboard shortcut listener

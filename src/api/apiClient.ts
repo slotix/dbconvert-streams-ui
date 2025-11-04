@@ -101,11 +101,8 @@ apiClient.interceptors.response.use(
         return apiClient(config)
       }
 
-      // Max retries reached - show final error
-      commonStore.setError({
-        message: 'Unable to connect to the server. Please check your network connection.',
-        isRetrying: false
-      })
+      // Max retries reached - clear error (ConnectionStatus component will show disconnected state)
+      commonStore.clearError()
     }
 
     return Promise.reject(error)

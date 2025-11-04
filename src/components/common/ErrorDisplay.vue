@@ -10,7 +10,7 @@ const { error } = storeToRefs(commonStore)
 
 <template>
   <TransitionRoot
-    v-if="error"
+    :show="!!error"
     appear
     as="template"
     enter="transform ease-out duration-300"
@@ -20,11 +20,10 @@ const { error } = storeToRefs(commonStore)
     leave-from="opacity-100"
     leave-to="opacity-0"
   >
-    <!-- Allow custom error display through slot -->
-    <slot :error="error">
+    <slot v-if="error" :error="error">
       <div class="rounded-md bg-red-50 p-4">
         <div class="flex">
-          <div class="flex-shrink-0">
+          <div class="shrink-0">
             <XCircleIcon v-if="!error.isRetrying" class="h-5 w-5 text-red-400" />
             <ArrowPathIcon v-else class="h-5 w-5 text-yellow-400 animate-spin" />
           </div>

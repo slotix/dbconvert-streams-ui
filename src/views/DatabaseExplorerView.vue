@@ -25,6 +25,7 @@ import { useRecentConnections } from '@/composables/useRecentConnections'
 import { useExplorerRouter } from '@/composables/useExplorerRouter'
 import { useTreeSearch } from '@/composables/useTreeSearch'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
+import ConnectionStatus from '@/components/common/ConnectionStatus.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -884,30 +885,41 @@ onUnmounted(() => {
           />
         </div>
 
-        <!-- Elevated Badge showing count with icon -->
-        <div
-          class="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-slate-200 shadow-sm"
-        >
-          <svg class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M5 12h14M12 5l7 7-7 7"
-            />
-          </svg>
-          <span class="text-sm font-semibold text-slate-700">{{ connectionCountLabel }}</span>
-        </div>
+        <!-- Right side group -->
+        <div class="flex items-center gap-4 ml-auto">
+          <!-- Elevated Badge showing count with icon -->
+          <div
+            class="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-slate-200 shadow-sm"
+          >
+            <svg
+              class="h-4 w-4 text-slate-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M5 12h14M12 5l7 7-7 7"
+              />
+            </svg>
+            <span class="text-sm font-semibold text-slate-700">{{ connectionCountLabel }}</span>
+          </div>
 
-        <!-- Primary CTA Button with vibrant blue-green gradient -->
-        <button
-          type="button"
-          class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-linear-to-b from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105"
-          @click="onAddConnection"
-        >
-          <PlusIcon class="h-5 w-5" />
-          <span>New Connection</span>
-        </button>
+          <!-- Primary CTA Button with vibrant blue-green gradient -->
+          <button
+            type="button"
+            class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-linear-to-b from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105"
+            @click="onAddConnection"
+          >
+            <PlusIcon class="h-5 w-5" />
+            <span>New Connection</span>
+          </button>
+
+          <!-- Connection Status (if disconnected) -->
+          <ConnectionStatus />
+        </div>
       </div>
     </header>
 

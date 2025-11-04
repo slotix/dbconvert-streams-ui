@@ -458,11 +458,11 @@ const sidebarOpen = ref(false)
 
 const getConnectionStatusText = () => {
   if (commonStore.isBackendConnected) {
-    return 'Connected'
+    return 'Connected to backend'
   } else if (commonStore.error) {
-    return 'Connection Error'
+    return 'Connection to backend lost. Please check your backend services.'
   } else {
-    return 'Offline Mode'
+    return 'Offline Mode - Backend not available'
   }
 }
 

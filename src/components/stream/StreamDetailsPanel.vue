@@ -778,7 +778,31 @@ async function startStream() {
     monitoringStore.requestShowMonitorTab()
   } catch (err: unknown) {
     if (err instanceof Error) {
-      commonStore.showNotification(err.message, 'error')
+      // Check if error is about active streams
+      if (err.message.includes('active streams') || err.message.includes('stream_state')) {
+        // Show user-friendly message
+        commonStore.showNotification(
+          'Please wait for the current stream to finish before starting a new one',
+          'warning'
+        )
+
+        // Auto-retry after 2 seconds
+        setTimeout(async () => {
+          try {
+            const streamID = await streamsStore.startStream(props.stream.id)
+            commonStore.showNotification('Stream started', 'success')
+            monitoringStore.setStream(streamID, props.stream)
+            monitoringStore.requestShowMonitorTab()
+          } catch (retryErr) {
+            // Only show error on retry failure, don't retry again
+            if (retryErr instanceof Error) {
+              commonStore.showNotification(retryErr.message, 'error')
+            }
+          }
+        }, 2000)
+      } else {
+        commonStore.showNotification(err.message, 'error')
+      }
     } else {
       commonStore.showNotification('An unknown error occurred', 'error')
     }

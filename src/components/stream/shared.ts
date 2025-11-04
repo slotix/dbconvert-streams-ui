@@ -161,7 +161,32 @@ export default defineComponent({
         this.$router.push({ name: 'Streams' })
       } catch (err: unknown) {
         if (err instanceof Error) {
-          useCommonStore().showNotification(err.message, 'error')
+          // Check if error is about active streams
+          if (err.message.includes('active streams') || err.message.includes('stream_state')) {
+            // Show user-friendly message
+            useCommonStore().showNotification(
+              'Please wait for the current stream to finish before starting a new one',
+              'warning'
+            )
+
+            // Auto-retry after 2 seconds
+            setTimeout(async () => {
+              try {
+                const streamID = await useStreamsStore().startStream(this.streamConfig.id)
+                useCommonStore().showNotification('Stream started', 'success')
+                useMonitoringStore().setStream(streamID, this.streamConfig)
+                useMonitoringStore().requestShowMonitorTab()
+                this.$router.push({ name: 'Streams' })
+              } catch (retryErr) {
+                // Only show error on retry failure, don't retry again
+                if (retryErr instanceof Error) {
+                  useCommonStore().showNotification(retryErr.message, 'error')
+                }
+              }
+            }, 2000)
+          } else {
+            useCommonStore().showNotification(err.message, 'error')
+          }
         } else {
           useCommonStore().showNotification('An unknown error occurred', 'error')
         }
