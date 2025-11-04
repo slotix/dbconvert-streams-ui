@@ -1,7 +1,7 @@
 <template>
   <div class="h-full flex flex-col bg-white">
     <!-- Header -->
-    <div class="px-6 py-4 bg-white flex-shrink-0">
+    <div class="px-6 py-4 bg-white shrink-0">
       <div class="flex items-center justify-between mb-3">
         <div class="flex items-center min-w-0 flex-1 gap-3">
           <h2 class="text-xl font-semibold text-gray-900 truncate">{{ stream.name }}</h2>
@@ -169,34 +169,46 @@
               Source Connection
             </label>
             <div class="bg-gray-50 rounded-md p-4 border border-gray-300">
-              <div class="flex items-center gap-2 mb-2">
-                <div
-                  v-if="source && source.type"
-                  :class="getDatabaseIconStyle(source.type)"
-                  class="shrink-0 rounded-lg p-1.5 transition-all duration-200 hover:shadow-md"
-                >
-                  <img
-                    class="h-5 w-5 object-contain"
-                    :src="logoSrc(source.type)"
-                    :alt="source.type + ' logo'"
+              <div class="flex items-center justify-between gap-3 mb-2">
+                <div class="flex items-center gap-2 min-w-0 flex-1">
+                  <div
+                    v-if="source && source.type"
+                    :class="getDatabaseIconStyle(source.type)"
+                    class="shrink-0 rounded-lg p-1.5 transition-all duration-200 hover:shadow-md"
+                  >
+                    <img
+                      class="h-5 w-5 object-contain"
+                      :src="logoSrc(source.type)"
+                      :alt="source.type + ' logo'"
+                    />
+                  </div>
+                  <span
+                    class="font-medium text-gray-900 truncate"
+                    :class="{ 'text-red-500': !source || !source.name }"
+                  >
+                    {{ source?.name || 'N/A' }}
+                  </span>
+                  <CloudProviderBadge
+                    v-if="source"
+                    :cloud-provider="source.cloud_provider"
+                    :db-type="source.type"
+                  />
+                  <ExclamationCircleIcon
+                    v-if="!source || !source.name"
+                    class="h-4 w-4 text-red-500 shrink-0"
+                    aria-hidden="true"
                   />
                 </div>
-                <span
-                  class="font-medium text-gray-900 truncate"
-                  :class="{ 'text-red-500': !source || !source.name }"
+                <button
+                  v-if="source && source.id"
+                  v-tooltip="'View source connection in Explorer'"
+                  type="button"
+                  class="shrink-0 inline-flex items-center px-2.5 py-1.5 text-xs font-medium text-teal-600 bg-white border border-teal-200 rounded-md hover:bg-teal-50 transition-colors"
+                  @click="navigateToSourceExplorer"
                 >
-                  {{ source?.name || 'N/A' }}
-                </span>
-                <CloudProviderBadge
-                  v-if="source"
-                  :cloud-provider="source.cloud_provider"
-                  :db-type="source.type"
-                />
-                <ExclamationCircleIcon
-                  v-if="!source || !source.name"
-                  class="h-4 w-4 text-red-500 shrink-0"
-                  aria-hidden="true"
-                />
+                  <ArrowTopRightOnSquareIcon class="w-3.5 h-3.5 mr-1" />
+                  Explore
+                </button>
               </div>
               <div class="text-sm text-gray-600">
                 <ConnectionStringDisplay v-if="source" :connection="source" />
@@ -211,34 +223,46 @@
               Target Connection
             </label>
             <div class="bg-gray-50 rounded-md p-4 border border-gray-300">
-              <div class="flex items-center gap-2 mb-2">
-                <div
-                  v-if="target && target.type"
-                  :class="getDatabaseIconStyle(target.type)"
-                  class="shrink-0 rounded-lg p-1.5 transition-all duration-200 hover:shadow-md"
-                >
-                  <img
-                    class="h-5 w-5 object-contain"
-                    :src="logoSrc(target.type)"
-                    :alt="target.type + ' logo'"
+              <div class="flex items-center justify-between gap-3 mb-2">
+                <div class="flex items-center gap-2 min-w-0 flex-1">
+                  <div
+                    v-if="target && target.type"
+                    :class="getDatabaseIconStyle(target.type)"
+                    class="shrink-0 rounded-lg p-1.5 transition-all duration-200 hover:shadow-md"
+                  >
+                    <img
+                      class="h-5 w-5 object-contain"
+                      :src="logoSrc(target.type)"
+                      :alt="target.type + ' logo'"
+                    />
+                  </div>
+                  <span
+                    class="font-medium text-gray-900 truncate"
+                    :class="{ 'text-red-500': !target || !target.name }"
+                  >
+                    {{ target?.name || 'N/A' }}
+                  </span>
+                  <CloudProviderBadge
+                    v-if="target"
+                    :cloud-provider="target.cloud_provider"
+                    :db-type="target.type"
+                  />
+                  <ExclamationCircleIcon
+                    v-if="!target || !target.name"
+                    class="h-4 w-4 text-red-500 shrink-0"
+                    aria-hidden="true"
                   />
                 </div>
-                <span
-                  class="font-medium text-gray-900 truncate"
-                  :class="{ 'text-red-500': !target || !target.name }"
+                <button
+                  v-if="target && target.id"
+                  v-tooltip="'View target connection in Explorer'"
+                  type="button"
+                  class="shrink-0 inline-flex items-center px-2.5 py-1.5 text-xs font-medium text-teal-600 bg-white border border-teal-200 rounded-md hover:bg-teal-50 transition-colors"
+                  @click="navigateToTargetExplorer"
                 >
-                  {{ target?.name || 'N/A' }}
-                </span>
-                <CloudProviderBadge
-                  v-if="target"
-                  :cloud-provider="target.cloud_provider"
-                  :db-type="target.type"
-                />
-                <ExclamationCircleIcon
-                  v-if="!target || !target.name"
-                  class="h-4 w-4 text-red-500 shrink-0"
-                  aria-hidden="true"
-                />
+                  <ArrowTopRightOnSquareIcon class="w-3.5 h-3.5 mr-1" />
+                  Explore
+                </button>
               </div>
               <div class="text-sm text-gray-600">
                 <ConnectionStringDisplay v-if="target" :connection="target" />
@@ -428,7 +452,8 @@ import {
   ClipboardIcon,
   CalendarIcon,
   ExclamationCircleIcon,
-  PlayIcon
+  PlayIcon,
+  ArrowTopRightOnSquareIcon
 } from '@heroicons/vue/24/outline'
 import { Switch } from '@headlessui/vue'
 import { useStreamsStore } from '@/stores/streamConfig'
@@ -721,6 +746,73 @@ async function navigateToExplorer() {
       // Use sessionStorage to pass focus connection ID
       window.sessionStorage.setItem('explorerFocusConnectionId', props.target.id)
     } else {
+      // For database-based targets, select the database
+      explorerNavigationStore.selectDatabase(props.target.id, props.stream.targetDatabase)
+    }
+
+    router.push({
+      name: 'DatabaseMetadata',
+      params: { id: props.target.id },
+      query: {
+        details: 'true',
+        db: isFileTarget.value ? undefined : props.stream.targetDatabase
+      }
+    })
+  }
+}
+
+async function navigateToSourceExplorer() {
+  if (props.source?.id) {
+    // Set active connection in explorer navigation store
+    explorerNavigationStore.setActiveConnectionId(props.source.id)
+
+    // Also set in connections store
+    connectionsStore.setCurrentConnection(props.source.id)
+
+    const isSourceFile =
+      props.source.type === 'csv' ||
+      props.source.type === 'jsonl' ||
+      props.source.type === 'parquet'
+
+    if (isSourceFile) {
+      // For file-based sources, load file entries and select the connection
+      await fileExplorerStore.loadEntries(props.source.id, true)
+      explorerNavigationStore.selectConnection(props.source.id)
+
+      // Use sessionStorage to pass focus connection ID
+      window.sessionStorage.setItem('explorerFocusConnectionId', props.source.id)
+    } else if (props.stream?.sourceDatabase) {
+      // For database-based sources, select the database if available
+      explorerNavigationStore.selectDatabase(props.source.id, props.stream.sourceDatabase)
+    }
+
+    router.push({
+      name: 'DatabaseMetadata',
+      params: { id: props.source.id },
+      query: {
+        details: 'true',
+        db: isSourceFile ? undefined : props.stream.sourceDatabase
+      }
+    })
+  }
+}
+
+async function navigateToTargetExplorer() {
+  if (props.target?.id) {
+    // Set active connection in explorer navigation store
+    explorerNavigationStore.setActiveConnectionId(props.target.id)
+
+    // Also set in connections store
+    connectionsStore.setCurrentConnection(props.target.id)
+
+    if (isFileTarget.value) {
+      // For file-based targets, load file entries and select the connection
+      await fileExplorerStore.loadEntries(props.target.id, true)
+      explorerNavigationStore.selectConnection(props.target.id)
+
+      // Use sessionStorage to pass focus connection ID
+      window.sessionStorage.setItem('explorerFocusConnectionId', props.target.id)
+    } else if (props.stream?.targetDatabase) {
       // For database-based targets, select the database
       explorerNavigationStore.selectDatabase(props.target.id, props.stream.targetDatabase)
     }
