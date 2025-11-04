@@ -29,7 +29,7 @@
             v-tooltip="
               isStreamRunning && !isStreamFinished
                 ? 'Stream is currently running'
-                : paginationData?.total > 0
+                : paginationData && paginationData.total > 0
                   ? 'Run the stream again'
                   : 'Start the stream'
             "
@@ -44,7 +44,7 @@
             @click="startStream"
           >
             <PlayIcon class="h-4 w-4" />
-            {{ paginationData?.total > 0 ? 'Run again' : 'Start' }}
+            {{ paginationData && paginationData.total > 0 ? 'Run again' : 'Start' }}
           </button>
           <button
             v-if="!isStreamRunning || isStreamFinished"
@@ -388,10 +388,11 @@
 
       <!-- History Tab -->
       <div v-else-if="activeTab === 'history'" class="p-6">
-        <StreamHistoryTable
+        <StreamHistoryTableAGGrid
           :config-id="stream.id"
-          :pagination-data="paginationData"
+          :pagination-data="paginationData ?? undefined"
           @page-change="handlePageChange"
+          @sort-change="handleSortChange"
           @delete-run="handleDeleteRun"
           @clear-all="handleClearAll"
         />
@@ -443,13 +444,34 @@ import ConnectionStringDisplay from '@/components/common/ConnectionStringDisplay
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
 import MonitorHeader from '@/components/monitoring/MonitorHeader.vue'
 import StatContainer from '@/components/monitoring/StatContainer.vue'
-import StreamHistoryTable from './StreamHistoryTable.vue'
+import StreamHistoryTableAGGrid from './StreamHistoryTableAGGrid.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import { normalizeConnectionType } from '@/utils/connectionUtils'
 import { formatDateTime } from '@/utils/formats'
 import { getDatabaseIconBgColor, getDatabaseIconTint } from '@/constants/databaseColors'
 import type { StreamConfig } from '@/types/streamConfig'
 import type { Connection, DbType } from '@/types/connections'
+
+interface StreamRun {
+  id: string
+  configId: string
+  streamId: string
+  timestamp: number
+  durationMs: number
+  status: string
+  dataSize?: string
+  rowsInserted?: number
+  rowsSkipped?: number
+  errorMessage?: string
+}
+
+interface PaginationData {
+  runs: StreamRun[]
+  total: number
+  page: number
+  pageSize: number
+  totalPages: number
+}
 
 const props = defineProps<{
   stream: StreamConfig
@@ -472,9 +494,11 @@ const explorerNavigationStore = useExplorerNavigationStore()
 const isJsonView = ref(false)
 const showDeleteConfirm = ref(false)
 const activeTab = ref<'monitor' | 'configuration' | 'history'>('configuration')
-const paginationData = ref<any>(null)
+const paginationData = ref<PaginationData | null>(null)
 const isLoadingHistory = ref(false)
 const historyAbortController = ref<AbortController | null>(null)
+const historySortBy = ref<string>('timestamp')
+const historySortOrder = ref<'asc' | 'desc'>('desc')
 
 const dbTypes = connectionsStore.dbTypes
 
@@ -558,7 +582,7 @@ const isFileTarget = computed(() => {
 })
 
 // Fetch stream history from API using apiClient
-async function loadStreamHistory(page: number = 1) {
+async function loadStreamHistory(page: number = 1, sortBy?: string, sortOrder?: 'asc' | 'desc') {
   try {
     // Cancel any previous in-flight request to prevent race conditions
     if (historyAbortController.value) {
@@ -566,11 +590,21 @@ async function loadStreamHistory(page: number = 1) {
     }
     historyAbortController.value = new AbortController()
 
+    // Update sort state if provided
+    if (sortBy !== undefined) {
+      historySortBy.value = sortBy
+    }
+    if (sortOrder !== undefined) {
+      historySortOrder.value = sortOrder
+    }
+
     isLoadingHistory.value = true
     const response = await apiClient.get(`/stream-configs/${props.stream.id}/history`, {
       params: {
         page,
-        pageSize: 50
+        pageSize: 20,
+        sortBy: historySortBy.value,
+        sortOrder: historySortOrder.value
       },
       signal: historyAbortController.value.signal
     })
@@ -596,6 +630,10 @@ async function loadStreamHistory(page: number = 1) {
 
 async function handlePageChange(newPage: number) {
   await loadStreamHistory(newPage)
+}
+
+async function handleSortChange(sortBy: string, sortOrder: 'asc' | 'desc') {
+  await loadStreamHistory(1, sortBy, sortOrder)
 }
 
 async function handleDeleteRun(runId: string) {
