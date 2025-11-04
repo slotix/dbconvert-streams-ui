@@ -23,19 +23,7 @@
         <div
           class="bg-linear-to-br from-slate-100 to-slate-50 rounded-full p-6 mb-5 shadow-inner border border-slate-200"
         >
-          <svg
-            class="h-10 w-10 text-slate-400"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M13 10V3L4 14h7v7l9-11h-7z"
-            />
-          </svg>
+          <ArrowPathIcon class="h-10 w-10 text-slate-400" />
         </div>
         <p class="text-base font-semibold text-slate-700 mb-2">
           {{ searchQuery ? 'No streams found' : 'No stream configurations yet' }}
@@ -90,6 +78,7 @@ export default {
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import { ArrowPathIcon } from '@heroicons/vue/24/outline'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
 import { useMonitoringStore } from '@/stores/monitoring'
