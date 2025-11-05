@@ -1,5 +1,5 @@
 <template>
-  <div class="divide-y divide-gray-100">
+  <div class="space-y-0">
     <div
       v-for="col in columns"
       :key="col.name"
@@ -56,10 +56,10 @@ function getDiffClass(col: SQLColumnMeta) {
   if (!diff) return ''
 
   return {
-    'bg-green-50 border-l-2 border-green-500': diff.type === 'match',
-    'bg-yellow-50 border-l-2 border-yellow-500': diff.type === 'type-diff',
-    'bg-red-50 border-l-2 border-red-500': diff.type === 'missing',
-    'bg-blue-50 border-l-2 border-blue-500': diff.type === 'new'
+    'border-l-2 border-green-500': diff.type === 'match',
+    'border-l-2 border-yellow-500': diff.type === 'type-diff',
+    'border-l-2 border-red-500': diff.type === 'missing',
+    'border-l-2 border-blue-500': diff.type === 'new'
   }
 }
 

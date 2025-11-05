@@ -153,6 +153,7 @@ function normalizeType(type: string): string {
     TEXT: 'TEXT',
     BLOB: 'BYTEA',
     VARCHAR: 'VARCHAR',
+    'CHARACTER VARYING': 'VARCHAR', // PostgreSQL verbose form
     CHAR: 'CHAR',
     DECIMAL: 'NUMERIC',
     BOOLEAN: 'BOOLEAN',
