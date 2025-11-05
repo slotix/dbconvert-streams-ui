@@ -178,7 +178,38 @@ const connectionsStore = useConnectionsStore()
 const recentConnectionsRaw = usePersistedState<RecentConnection[]>('recentConnections', [])
 
 // Show most recent first (reversed)
-const recentConnections = computed(() => recentConnectionsRaw.value.slice().reverse())
+const recentConnections = computed(() => {
+  const recent = recentConnectionsRaw.value.slice().reverse()
+
+  // If we have recent connections from localStorage, use those
+  if (recent.length > 0) {
+    return recent
+  }
+
+  // Otherwise, fallback to showing most recently created connections from the store
+  // This ensures the dashboard always shows something useful
+  const allConnections = connectionsStore.connections || []
+
+  // Sort by created timestamp (most recent first) and take top 5
+  const sortedConnections = [...allConnections]
+    .sort((a, b) => {
+      const dateA = a.created ? new Date(a.created).getTime() : 0
+      const dateB = b.created ? new Date(b.created).getTime() : 0
+      return dateB - dateA
+    })
+    .slice(0, 5)
+
+  // Map to RecentConnection format
+  return sortedConnections.map((conn) => ({
+    id: conn.id,
+    name: conn.name,
+    type: conn.type,
+    host: conn.host,
+    port: conn.port?.toString(),
+    database: conn.database,
+    cloud_provider: conn.cloud_provider
+  }))
+})
 
 function getConnectionLogo(connectionId: string) {
   const connection = connectionsStore.connections.find((conn) => conn.id === connectionId)
