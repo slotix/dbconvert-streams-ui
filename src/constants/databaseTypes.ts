@@ -124,3 +124,48 @@ export function normalizeDatabaseType(type: string): DatabaseType {
 export function getDatabaseDisplayName(type: string): string {
   return normalizeDatabaseType(type)
 }
+
+/**
+ * Data type mapping between different database systems
+ * Used for schema comparison to normalize equivalent types across databases
+ *
+ * Maps various database-specific types to their standardized equivalents
+ * Primarily focuses on MySQL → PostgreSQL equivalents
+ */
+export const DATABASE_TYPE_MAPPING: Record<string, string> = {
+  INT: 'INTEGER',
+  TINYINT: 'SMALLINT',
+  BIGINT: 'BIGINT',
+  DOUBLE: 'DOUBLE PRECISION',
+  FLOAT: 'REAL',
+  DATETIME: 'TIMESTAMP',
+  TEXT: 'TEXT',
+  BLOB: 'BYTEA',
+  VARCHAR: 'VARCHAR',
+  'CHARACTER VARYING': 'VARCHAR', // PostgreSQL verbose form
+  CHAR: 'CHAR',
+  DECIMAL: 'NUMERIC',
+  BOOLEAN: 'BOOLEAN',
+  BOOL: 'BOOLEAN'
+} as const
+
+/**
+ * Normalize a database data type for comparison
+ * Extracts base type (removes length/precision) and maps to standard equivalent
+ *
+ * @param type - The database type to normalize (e.g., "VARCHAR(255)", "INT", "DATETIME")
+ * @returns Normalized type for comparison (e.g., "VARCHAR", "INTEGER", "TIMESTAMP")
+ *
+ * @example
+ * normalizeDataType('VARCHAR(255)') // Returns 'VARCHAR'
+ * normalizeDataType('INT') // Returns 'INTEGER'
+ * normalizeDataType('DATETIME') // Returns 'TIMESTAMP'
+ */
+export function normalizeDataType(type: string): string {
+  const normalized = type.toUpperCase().trim()
+
+  // Extract base type (e.g., "VARCHAR(255)" → "VARCHAR")
+  const baseType = normalized.split('(')[0].trim()
+
+  return DATABASE_TYPE_MAPPING[baseType] || baseType
+}

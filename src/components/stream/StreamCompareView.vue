@@ -8,6 +8,7 @@ import SchemaComparisonPanel from './SchemaComparisonPanel.vue'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { useFileExplorerStore } from '@/stores/fileExplorer'
 import { useDatabaseOverviewStore } from '@/stores/databaseOverview'
+import { normalizeDataType } from '@/constants/databaseTypes'
 import type { StreamConfig } from '@/types/streamConfig'
 import type { Connection } from '@/types/connections'
 import type { SQLTableMeta } from '@/types/metadata'
@@ -118,7 +119,7 @@ const schemaComparison = computed((): SchemaComparison | null => {
         label: 'Removed',
         type: 'missing'
       }
-    } else if (normalizeType(sourceCol.dataType) !== normalizeType(targetCol.dataType)) {
+    } else if (normalizeDataType(sourceCol.dataType) !== normalizeDataType(targetCol.dataType)) {
       // Column exists but type changed
       comparison.typeDiff++
       comparison.sourceDiffs[sourceCol.name] = {
@@ -162,34 +163,6 @@ const schemaComparison = computed((): SchemaComparison | null => {
 
   return comparison
 })
-
-// Normalize data types for comparison
-function normalizeType(type: string): string {
-  const normalized = type.toUpperCase().trim()
-
-  // MySQL → PostgreSQL equivalents
-  const typeMap: Record<string, string> = {
-    INT: 'INTEGER',
-    TINYINT: 'SMALLINT',
-    BIGINT: 'BIGINT',
-    DOUBLE: 'DOUBLE PRECISION',
-    FLOAT: 'REAL',
-    DATETIME: 'TIMESTAMP',
-    TEXT: 'TEXT',
-    BLOB: 'BYTEA',
-    VARCHAR: 'VARCHAR',
-    'CHARACTER VARYING': 'VARCHAR', // PostgreSQL verbose form
-    CHAR: 'CHAR',
-    DECIMAL: 'NUMERIC',
-    BOOLEAN: 'BOOLEAN',
-    BOOL: 'BOOLEAN'
-  }
-
-  // Extract base type (e.g., "VARCHAR(255)" → "VARCHAR")
-  const baseType = normalized.split('(')[0].trim()
-
-  return typeMap[baseType] || baseType
-}
 
 // Initialize with first table
 onMounted(async () => {
