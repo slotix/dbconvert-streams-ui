@@ -3,7 +3,7 @@
  * Used by both database table views and file data views
  */
 
-import { ref, computed, type Ref, type ComputedRef } from 'vue'
+import { ref, computed } from 'vue'
 import type { GridApi, SortModelItem, Column } from 'ag-grid-community'
 import { convertFilterModelToSQL } from '@/utils/agGridFilterUtils'
 
@@ -23,9 +23,6 @@ export function useAGGridFiltering(options: UseAGGridFilteringOptions = {}) {
   // Reactive state - shared between database and file views
   const gridApi = ref<GridApi | null>(null)
   const currentSortModel = ref<SortModelItem[]>([])
-  const whereClause = ref<string>('')
-  const whereInput = ref<string>('')
-  const whereError = ref<string>()
   const agGridFilters = ref<Record<string, unknown>>({})
   const agGridWhereSQL = ref<string>('')
 
@@ -35,27 +32,14 @@ export function useAGGridFiltering(options: UseAGGridFilteringOptions = {}) {
   const contextMenuY = ref(0)
   const contextMenuColumn = ref<Column | null>(null)
 
-  // Advanced filter modal state
-  const showAdvancedFilterModal = ref(false)
-
   // SQL banner state
   const isSqlBannerExpanded = ref(false)
 
   /**
-   * Combined WHERE clause from both AG Grid filters and manual input
+   * Combined WHERE clause (only AG Grid filters, no manual WHERE input)
    */
   const combinedWhereClause = computed(() => {
-    const agGridWhereClause = agGridWhereSQL.value
-    const manualWhere = whereClause.value
-
-    if (agGridWhereClause && manualWhere) {
-      return `(${agGridWhereClause}) AND (${manualWhere})`
-    } else if (agGridWhereClause) {
-      return agGridWhereClause
-    } else if (manualWhere) {
-      return manualWhere
-    }
-    return ''
+    return agGridWhereSQL.value
   })
 
   /**
@@ -121,13 +105,6 @@ export function useAGGridFiltering(options: UseAGGridFilteringOptions = {}) {
   }
 
   /**
-   * Open advanced filter modal
-   */
-  function openAdvancedFilterModal(): void {
-    showAdvancedFilterModal.value = true
-  }
-
-  /**
    * Convert AG Grid filter model to SQL and update state
    * Should be called when grid filters change
    */
@@ -140,15 +117,10 @@ export function useAGGridFiltering(options: UseAGGridFilteringOptions = {}) {
   }
 
   /**
-   * Clear all filters (both AG Grid and manual)
+   * Clear all AG Grid filters
    * Components can extend this with their own cleanup logic
    */
   function clearAllFilters(): void {
-    // Clear manual WHERE clause
-    whereInput.value = ''
-    whereClause.value = ''
-    whereError.value = undefined
-
     // Clear AG Grid filters
     if (gridApi.value) {
       gridApi.value.setFilterModel(null)
@@ -163,16 +135,12 @@ export function useAGGridFiltering(options: UseAGGridFilteringOptions = {}) {
     // State
     gridApi,
     currentSortModel,
-    whereClause,
-    whereInput,
-    whereError,
     agGridFilters,
     agGridWhereSQL,
     showContextMenu,
     contextMenuX,
     contextMenuY,
     contextMenuColumn,
-    showAdvancedFilterModal,
     isSqlBannerExpanded,
 
     // Computed
@@ -185,7 +153,6 @@ export function useAGGridFiltering(options: UseAGGridFilteringOptions = {}) {
     // Methods
     toggleSqlBanner,
     closeContextMenu,
-    openAdvancedFilterModal,
     updateAgGridWhereSQL,
     clearAllFilters
   }

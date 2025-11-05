@@ -16,7 +16,6 @@ import filesApi from '@/api/files'
 import { formatTableValue } from '@/utils/dataUtils'
 import { vHighlightjs } from '@/directives/highlightjs'
 import ColumnContextMenu from '../database/ColumnContextMenu.vue'
-import AdvancedFilterModal from '../database/AdvancedFilterModal.vue'
 import UnsupportedFileMessage from './UnsupportedFileMessage.vue'
 import { useAGGridFiltering } from '@/composables/useAGGridFiltering'
 import { convertFilterModelToSQL, determineFilterType } from '@/utils/agGridFilterUtils'
@@ -37,23 +36,18 @@ const props = defineProps<{
 const {
   gridApi,
   currentSortModel,
-  whereClause,
-  whereInput,
-  whereError,
   agGridFilters,
   agGridWhereSQL,
   showContextMenu,
   contextMenuX,
   contextMenuY,
   contextMenuColumn,
-  showAdvancedFilterModal,
   isSqlBannerExpanded,
   fullSqlQuery,
   needsTruncation,
   displayedSql,
   toggleSqlBanner,
-  closeContextMenu,
-  openAdvancedFilterModal
+  closeContextMenu
 } = useAGGridFiltering()
 
 // Component-specific state
@@ -112,11 +106,6 @@ const columnDefs = computed<ColDef[]>(() => {
 
 // Clear all filters
 function clearAllFilters() {
-  // Clear manual WHERE clause
-  whereInput.value = ''
-  whereClause.value = ''
-  whereError.value = undefined
-
   // Clear AG Grid filters
   if (gridApi.value) {
     gridApi.value.setFilterModel(null)
@@ -208,15 +197,8 @@ function createDatasource(): IDatasource {
         const agGridWhereClause = convertFilterModelToSQL(filterModel)
         agGridWhereSQL.value = agGridWhereClause
 
-        // Combine AG Grid filters with manual WHERE clause
-        let combinedWhere = ''
-        if (agGridWhereClause && whereClause.value) {
-          combinedWhere = `(${agGridWhereClause}) AND (${whereClause.value})`
-        } else if (agGridWhereClause) {
-          combinedWhere = agGridWhereClause
-        } else if (whereClause.value) {
-          combinedWhere = whereClause.value
-        }
+        // Use AG Grid filters only (no manual WHERE clause)
+        const combinedWhere = agGridWhereClause
 
         const response = await filesApi.getFileData(props.entry.path, fileFormat.value, {
           limit,
@@ -257,19 +239,9 @@ function createDatasource(): IDatasource {
 
         params.successCallback(rows, rowCount)
         error.value = undefined
-        whereError.value = undefined
       } catch (err) {
         console.error('Error loading file data:', err)
         const errorMessage = err instanceof Error ? err.message : 'Failed to load file data'
-
-        // Check if it's a WHERE clause error
-        if (
-          errorMessage.toLowerCase().includes('where') ||
-          errorMessage.toLowerCase().includes('syntax')
-        ) {
-          whereError.value = errorMessage
-        }
-
         error.value = errorMessage
         params.failCallback()
       } finally {
@@ -333,22 +305,6 @@ function handleContextMenu(event: MouseEvent) {
   }
 }
 
-// Close context menu
-// Apply WHERE filter from modal
-function applyWhereFilterFromModal(newWhereClause: string) {
-  whereError.value = undefined
-  whereClause.value = newWhereClause
-  whereInput.value = newWhereClause
-
-  // Reset to first page when applying filter
-  totalRowCount.value = 0
-
-  if (gridApi.value) {
-    // Purge and refresh
-    gridApi.value.purgeInfiniteCache()
-  }
-}
-
 // Reload data when entry changes
 watch(
   () => props.entry,
@@ -397,14 +353,6 @@ onBeforeUnmount(() => {
       variant="data"
       class="h-full"
     />
-
-    <!-- WHERE error message -->
-    <div
-      v-if="!isUnsupportedFile && whereError"
-      class="mb-3 p-2 bg-red-50 border border-red-200 rounded-md text-sm text-red-700"
-    >
-      {{ whereError }}
-    </div>
 
     <!-- SQL Query Banner (like DataGrip) -->
     <div
@@ -529,16 +477,6 @@ onBeforeUnmount(() => {
       :column="contextMenuColumn"
       :grid-api="gridApi"
       @close="closeContextMenu"
-      @open-advanced-filter="openAdvancedFilterModal"
-    />
-
-    <!-- Advanced Filter Modal -->
-    <AdvancedFilterModal
-      v-if="!isUnsupportedFile"
-      :is-open="showAdvancedFilterModal"
-      :current-where-clause="whereClause"
-      @close="showAdvancedFilterModal = false"
-      @apply="applyWhereFilterFromModal"
     />
   </div>
 </template>

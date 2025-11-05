@@ -17,7 +17,6 @@ import { vHighlightjs } from '@/directives/highlightjs'
 import { useObjectTabStateStore } from '@/stores/objectTabState'
 import { useConnectionsStore } from '@/stores/connections'
 import ColumnContextMenu from './ColumnContextMenu.vue'
-import AdvancedFilterModal from './AdvancedFilterModal.vue'
 import { useAGGridFiltering } from '@/composables/useAGGridFiltering'
 import { convertFilterModelToSQL, determineFilterType } from '@/utils/agGridFilterUtils'
 import 'ag-grid-community/styles/ag-grid.css'
@@ -52,12 +51,8 @@ const connectionType = computed(() => {
 const {
   gridApi,
   currentSortModel,
-  whereClause,
-  whereInput,
-  whereError,
   agGridFilters,
   agGridWhereSQL,
-  showAdvancedFilterModal,
   isSqlBannerExpanded,
   combinedWhereClause,
   orderByClause,
@@ -65,7 +60,6 @@ const {
   needsTruncation,
   displayedSql,
   toggleSqlBanner,
-  openAdvancedFilterModal,
   updateAgGridWhereSQL,
   clearAllFilters: clearAgGridFilters
 } = useAGGridFiltering()
@@ -144,8 +138,6 @@ watch(
     if (savedState) {
       // Restore state from store
       currentSortModel.value = savedState.sortModel || []
-      whereClause.value = savedState.whereClause || ''
-      whereInput.value = savedState.whereClause || ''
       totalRowCount.value = savedState.totalRowCount || 0
       exactRowCount.value = savedState.exactRowCount || null
       agGridFilters.value = savedState.filterModel || {}
@@ -174,9 +166,6 @@ watch(
       currentFirstRow.value = 1
       currentLastRow.value = 100
       currentSortModel.value = []
-      whereClause.value = ''
-      whereInput.value = ''
-      whereError.value = undefined
       countError.value = null
       agGridFilters.value = {}
       agGridWhereSQL.value = ''
@@ -300,7 +289,6 @@ function clearAllFilters() {
   tabStateStore.setAGGridDataState(props.objectKey, {
     sortModel: [],
     filterModel: {},
-    whereClause: '',
     totalRowCount: 0,
     exactRowCount: null
   })
@@ -382,15 +370,8 @@ function createDatasource(): IDatasource {
         const agGridWhereClause = convertFilterModelToSQL(filterModel, connectionType.value)
         agGridWhereSQL.value = agGridWhereClause
 
-        // Combine AG Grid filters with manual WHERE clause
-        let combinedWhereClause = ''
-        if (agGridWhereClause && whereClause.value) {
-          combinedWhereClause = `(${agGridWhereClause}) AND (${whereClause.value})`
-        } else if (agGridWhereClause) {
-          combinedWhereClause = agGridWhereClause
-        } else if (whereClause.value) {
-          combinedWhereClause = whereClause.value
-        }
+        // Use AG Grid filters only (no manual WHERE clause)
+        const combinedWhereClause = agGridWhereClause
 
         const queryParams: {
           limit: number
@@ -480,15 +461,6 @@ function createDatasource(): IDatasource {
       } catch (err) {
         console.error('Error loading data:', err)
         const errorMessage = err instanceof Error ? err.message : 'Failed to load data'
-
-        // Check if it's a WHERE clause error
-        if (
-          errorMessage.toLowerCase().includes('where') ||
-          errorMessage.toLowerCase().includes('syntax')
-        ) {
-          whereError.value = errorMessage
-        }
-
         error.value = errorMessage
         params.failCallback()
       } finally {
@@ -587,23 +559,6 @@ function handleContextMenu(event: MouseEvent) {
   }
 }
 
-// Apply WHERE filter from modal
-function applyWhereFilterFromModal(newWhereClause: string) {
-  whereError.value = undefined
-  whereClause.value = newWhereClause
-  whereInput.value = newWhereClause
-
-  // Reset to first page when applying filter
-  totalRowCount.value = 0
-  currentFirstRow.value = 1
-  currentLastRow.value = 100
-
-  if (gridApi.value) {
-    // Purge and refresh - more efficient than recreating datasource
-    gridApi.value.purgeInfiniteCache()
-  }
-}
-
 // Reload data when table metadata changes
 watch(
   () => props.tableMeta,
@@ -646,15 +601,13 @@ watch(
     [
       currentSortModel.value,
       agGridFilters.value,
-      whereClause.value,
       totalRowCount.value,
       exactRowCount.value
     ] as const,
-  ([sortModel, filterModel, where, totalCount, exactCount]) => {
+  ([sortModel, filterModel, totalCount, exactCount]) => {
     tabStateStore.setAGGridDataState(props.objectKey, {
       sortModel,
       filterModel,
-      whereClause: where,
       totalRowCount: totalCount,
       exactRowCount: exactCount
     })
@@ -757,8 +710,6 @@ onMounted(() => {
   if (savedState) {
     // Restore state from store
     currentSortModel.value = savedState.sortModel || []
-    whereClause.value = savedState.whereClause || ''
-    whereInput.value = savedState.whereClause || ''
     totalRowCount.value = savedState.totalRowCount || 0
     exactRowCount.value = savedState.exactRowCount || null
     agGridFilters.value = savedState.filterModel || {}
@@ -778,14 +729,6 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="flex flex-col h-full">
-    <!-- WHERE error message -->
-    <div
-      v-if="whereError"
-      class="mb-3 p-2 bg-red-50 border border-red-200 rounded-md text-sm text-red-700"
-    >
-      {{ whereError }}
-    </div>
-
     <!-- SQL Query Banner (like DataGrip) -->
     <div
       v-if="fullSqlQuery"
@@ -981,15 +924,6 @@ onBeforeUnmount(() => {
       :column="contextMenuColumn"
       :grid-api="gridApi"
       @close="closeContextMenu"
-      @open-advanced-filter="openAdvancedFilterModal"
-    />
-
-    <!-- Advanced Filter Modal -->
-    <AdvancedFilterModal
-      :is-open="showAdvancedFilterModal"
-      :current-where-clause="whereClause"
-      @close="showAdvancedFilterModal = false"
-      @apply="applyWhereFilterFromModal"
     />
   </div>
 </template>

@@ -10,8 +10,7 @@ import {
   ArrowsPointingOutIcon,
   ArrowPathIcon,
   MapPinIcon,
-  NoSymbolIcon,
-  AdjustmentsHorizontalIcon
+  NoSymbolIcon
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps<{
@@ -23,7 +22,6 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   close: []
-  openAdvancedFilter: []
 }>()
 
 const menuRef = ref<HTMLElement | null>(null)
@@ -146,11 +144,6 @@ const openFilter = () => {
   }
   emit('close')
 }
-
-const openAdvancedFilter = () => {
-  emit('openAdvancedFilter')
-  emit('close')
-}
 </script>
 
 <template>
@@ -221,13 +214,6 @@ const openAdvancedFilter = () => {
       >
         <FunnelIcon :class="[iconSizes.contextMenu, 'text-gray-500']" />
         <span>Filter...</span>
-      </button>
-      <button
-        class="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-        @click="openAdvancedFilter"
-      >
-        <AdjustmentsHorizontalIcon :class="[iconSizes.contextMenu, 'text-gray-500']" />
-        <span>Advanced Filter...</span>
       </button>
     </div>
 
