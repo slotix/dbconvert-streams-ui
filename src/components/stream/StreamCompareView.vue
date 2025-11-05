@@ -4,6 +4,7 @@ import { ChevronDownIcon } from '@heroicons/vue/24/outline'
 import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/vue'
 import AGGridDataView from '@/components/database/AGGridDataView.vue'
 import AGGridFileDataView from '@/components/files/AGGridFileDataView.vue'
+import SchemaComparisonPanel from './SchemaComparisonPanel.vue'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { useFileExplorerStore } from '@/stores/fileExplorer'
 import type { StreamConfig } from '@/types/streamConfig'
@@ -12,6 +13,21 @@ import type { SQLTableMeta } from '@/types/metadata'
 import type { FileSystemEntry } from '@/api/fileSystem'
 import type { FileMetadata } from '@/types/files'
 import * as files from '@/api/files'
+
+interface SchemaDifference {
+  icon: string
+  label: string
+  type: 'match' | 'type-diff' | 'missing' | 'new'
+}
+
+interface SchemaComparison {
+  matching: number
+  typeDiff: number
+  missingInTarget: number
+  newInTarget: number
+  sourceDiffs: Record<string, SchemaDifference>
+  targetDiffs: Record<string, SchemaDifference>
+}
 
 const props = defineProps<{
   stream: StreamConfig
@@ -42,6 +58,112 @@ const isFileTarget = computed(() => {
 const tablesList = computed(() => {
   return (props.stream.tables || []).map((t) => t.name)
 })
+
+// Schema comparison (only for database targets, not files)
+const schemaComparison = computed((): SchemaComparison | null => {
+  // Only compare schemas for database-to-database transfers
+  if (isFileTarget.value) return null
+  if (!sourceTableMeta.value?.columns || !targetTableMeta.value?.columns) return null
+
+  const sourceColumns = sourceTableMeta.value.columns
+  const targetColumns = targetTableMeta.value.columns
+
+  const sourceColMap = new Map(sourceColumns.map((c) => [c.name.toLowerCase(), c]))
+  const targetColMap = new Map(targetColumns.map((c) => [c.name.toLowerCase(), c]))
+
+  const comparison: SchemaComparison = {
+    matching: 0,
+    typeDiff: 0,
+    missingInTarget: 0,
+    newInTarget: 0,
+    sourceDiffs: {},
+    targetDiffs: {}
+  }
+
+  // Check source columns
+  for (const sourceCol of sourceColumns) {
+    const name = sourceCol.name.toLowerCase()
+    const targetCol = targetColMap.get(name)
+
+    if (!targetCol) {
+      // Column exists in source but not in target
+      comparison.missingInTarget++
+      comparison.sourceDiffs[sourceCol.name] = {
+        icon: 'minus',
+        label: 'Removed',
+        type: 'missing'
+      }
+    } else if (normalizeType(sourceCol.dataType) !== normalizeType(targetCol.dataType)) {
+      // Column exists but type changed
+      comparison.typeDiff++
+      comparison.sourceDiffs[sourceCol.name] = {
+        icon: 'warning',
+        label: `→ ${targetCol.dataType}`,
+        type: 'type-diff'
+      }
+      comparison.targetDiffs[targetCol.name] = {
+        icon: 'warning',
+        label: `← ${sourceCol.dataType}`,
+        type: 'type-diff'
+      }
+    } else {
+      // Column matches
+      comparison.matching++
+      comparison.sourceDiffs[sourceCol.name] = {
+        icon: 'check',
+        label: 'Match',
+        type: 'match'
+      }
+      comparison.targetDiffs[targetCol.name] = {
+        icon: 'check',
+        label: 'Match',
+        type: 'match'
+      }
+    }
+  }
+
+  // Check for new columns in target
+  for (const targetCol of targetColumns) {
+    const name = targetCol.name.toLowerCase()
+    if (!sourceColMap.has(name)) {
+      comparison.newInTarget++
+      comparison.targetDiffs[targetCol.name] = {
+        icon: 'plus',
+        label: 'New',
+        type: 'new'
+      }
+    }
+  }
+
+  return comparison
+})
+
+// Normalize data types for comparison
+function normalizeType(type: string): string {
+  const normalized = type.toUpperCase().trim()
+
+  // MySQL → PostgreSQL equivalents
+  const typeMap: Record<string, string> = {
+    INT: 'INTEGER',
+    TINYINT: 'SMALLINT',
+    BIGINT: 'BIGINT',
+    DOUBLE: 'DOUBLE PRECISION',
+    FLOAT: 'REAL',
+    DATETIME: 'TIMESTAMP',
+    TEXT: 'TEXT',
+    BLOB: 'BYTEA',
+    VARCHAR: 'VARCHAR',
+    CHAR: 'CHAR',
+    DECIMAL: 'NUMERIC',
+    BOOLEAN: 'BOOLEAN',
+    BOOL: 'BOOLEAN'
+  }
+
+  // Extract base type (e.g., "VARCHAR(255)" → "VARCHAR")
+  const baseType = normalized.split('(')[0].trim()
+
+  return typeMap[baseType] || baseType
+}
 
 // Initialize with first table
 onMounted(async () => {
@@ -227,6 +349,14 @@ async function selectTable(tableName: string) {
         </div>
       </div>
     </div>
+
+    <!-- Schema Comparison Panel -->
+    <SchemaComparisonPanel
+      v-if="!isFileTarget && sourceTableMeta && targetTableMeta"
+      :source-columns="sourceTableMeta.columns"
+      :target-columns="targetTableMeta.columns"
+      :comparison="schemaComparison"
+    />
 
     <!-- Split View -->
     <div class="flex-1 flex overflow-hidden">
