@@ -883,7 +883,7 @@ onBeforeUnmount(() => {
     <!-- Row count controls below table -->
     <div
       v-if="(!isView && approxRows && approxRows > 0) || isView === true"
-      class="mt-3 flex items-center justify-between border-t pt-3"
+      class="mt-3 flex items-center justify-between"
     >
       <div class="flex items-center gap-3">
         <!-- Approximate count hint -->
@@ -931,16 +931,30 @@ onBeforeUnmount(() => {
         </span>
       </div>
 
-      <!-- Calculate Exact Count button -->
+      <!-- Calculate Exact Count link -->
       <button
         v-if="exactRowCount === null"
         type="button"
         :disabled="isCountingRows"
-        class="inline-flex items-center justify-center gap-2 rounded-md border border-transparent shadow-sm px-4 py-2 bg-teal-600 text-sm font-medium text-white hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        class="text-xs text-teal-600 hover:text-teal-800 bg-teal-50 hover:bg-teal-100 rounded-full px-3 py-1 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5 w-fit"
         :title="`Execute COUNT(*) query to get exact ${isView ? 'row' : 'total'} count`"
         @click="calculateExactCount"
       >
-        <svg v-if="isCountingRows" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+        <svg
+          v-if="!isCountingRows"
+          class="w-3.5 h-3.5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+          />
+        </svg>
+        <svg v-else class="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24">
           <circle
             class="opacity-25"
             cx="12"
@@ -955,15 +969,7 @@ onBeforeUnmount(() => {
             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
           ></path>
         </svg>
-        <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-          />
-        </svg>
-        <span>{{ isCountingRows ? 'Counting...' : 'Calculate Exact Count' }}</span>
+        <span>{{ isCountingRows ? 'Counting...' : 'Calculate exact count' }}</span>
       </button>
     </div>
 
