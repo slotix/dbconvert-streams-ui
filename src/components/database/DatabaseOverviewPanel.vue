@@ -2,6 +2,14 @@
 import { onMounted, watch, computed } from 'vue'
 import { useDatabaseOverviewStore } from '@/stores/databaseOverview'
 import { formatDataSize } from '@/utils/formats'
+import {
+  ServerIcon,
+  CircleStackIcon,
+  SignalIcon,
+  ChartBarIcon,
+  TableCellsIcon,
+  InformationCircleIcon
+} from '@heroicons/vue/24/outline'
 
 const props = defineProps<{
   connectionId: string
@@ -74,19 +82,19 @@ const sizeDisplay = computed(() => {
 
 <template>
   <div class="p-4">
-    <div class="flex items-center justify-between mb-3">
+    <div class="flex items-center justify-between mb-4">
       <h3 class="text-base font-semibold text-gray-900">Database Overview</h3>
       <div class="flex items-center gap-2">
         <button
           type="button"
-          class="px-2 py-1 text-xs rounded border border-gray-300 bg-white hover:bg-gray-50 text-gray-700"
+          class="inline-flex items-center rounded-lg px-3 py-1.5 text-xs font-medium shadow-sm border border-gray-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50 hover:shadow-md transition-all duration-200"
           @click="load()"
         >
           Refresh
         </button>
         <button
           type="button"
-          class="px-2 py-1 text-xs rounded border border-gray-300 bg-white hover:bg-gray-50 text-gray-700"
+          class="inline-flex items-center rounded-lg px-3 py-1.5 text-xs font-medium shadow-sm border border-gray-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50 hover:shadow-md transition-all duration-200"
           @click="
             emit('show-diagram', {
               connectionId: props.connectionId,
@@ -102,24 +110,36 @@ const sizeDisplay = computed(() => {
     <div v-else-if="error" class="text-sm text-red-600 py-8 text-center">{{ error }}</div>
     <div v-else-if="overview" class="grid grid-cols-1 md:grid-cols-6 gap-4">
       <!-- Essentials -->
-      <div class="bg-white ring-1 ring-gray-900/5 rounded-lg p-4 md:col-span-2">
-        <div class="flex items-center justify-between">
-          <div class="text-sm text-gray-500">Essentials</div>
-          <span class="text-xs px-1.5 py-0.5 rounded bg-gray-100 text-gray-700"
+      <div
+        class="group bg-white ring-1 ring-slate-200 rounded-xl p-4 md:col-span-2 hover:shadow-lg hover:ring-slate-300 transition-all duration-200"
+      >
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <div
+              class="p-2 bg-blue-50 rounded-lg group-hover:bg-linear-to-br group-hover:from-blue-100 group-hover:to-teal-100 transition-all duration-200"
+            >
+              <CircleStackIcon class="h-4 w-4 text-blue-600" />
+            </div>
+            <span class="text-sm font-semibold text-gray-700">Essentials</span>
+          </div>
+          <span
+            class="inline-flex items-center text-xs px-2 py-1 rounded-md bg-slate-100 text-slate-700 font-medium ring-1 ring-inset ring-slate-200"
             >{{ overview.engine }} {{ overview.version }}</span
           >
         </div>
-        <div class="mt-3 text-sm text-gray-700 space-y-1">
-          <div v-if="overview.encoding">
-            Encoding: <span class="font-medium">{{ overview.encoding }}</span>
+        <div class="mt-3 text-sm text-gray-700 space-y-2">
+          <div v-if="overview.encoding" class="flex justify-between items-center">
+            <span class="text-gray-600">Encoding:</span>
+            <span class="font-semibold text-gray-900">{{ overview.encoding }}</span>
           </div>
-          <div v-if="overview.collation">
-            Collation: <span class="font-medium">{{ overview.collation }}</span>
+          <div v-if="overview.collation" class="flex justify-between items-center">
+            <span class="text-gray-600">Collation:</span>
+            <span class="font-semibold text-gray-900">{{ overview.collation }}</span>
           </div>
-          <div>
-            Size:
+          <div class="flex justify-between items-center">
+            <span class="text-gray-600">Size:</span>
             <span
-              class="font-medium"
+              class="font-semibold text-gray-900"
               :title="
                 typeof sizeBytes === 'number'
                   ? Intl.NumberFormat().format(sizeBytes || 0) + ' bytes'
@@ -128,140 +148,228 @@ const sizeDisplay = computed(() => {
               >{{ sizeDisplay }}</span
             >
           </div>
-          <div>
-            Tables: <span class="font-medium">{{ counts?.tables ?? '—' }}</span>
+          <div class="flex justify-between items-center">
+            <span class="text-gray-600">Tables:</span>
+            <span class="font-semibold text-gray-900">{{ counts?.tables ?? '—' }}</span>
           </div>
-          <div>
-            Views: <span class="font-medium">{{ counts?.views ?? '—' }}</span>
+          <div class="flex justify-between items-center">
+            <span class="text-gray-600">Views:</span>
+            <span class="font-semibold text-gray-900">{{ counts?.views ?? '—' }}</span>
           </div>
-          <div v-if="typeof counts?.schemas === 'number'">
-            Schemas: <span class="font-medium">{{ counts.schemas }}</span>
+          <div v-if="typeof counts?.schemas === 'number'" class="flex justify-between items-center">
+            <span class="text-gray-600">Schemas:</span>
+            <span class="font-semibold text-gray-900">{{ counts.schemas }}</span>
           </div>
         </div>
       </div>
 
       <!-- CDC readiness -->
-      <div class="bg-white ring-1 ring-gray-900/5 rounded-lg p-4 md:col-span-2">
-        <div class="flex items-center justify-between">
-          <div class="text-sm text-gray-500">CDC readiness</div>
+      <div
+        class="group bg-white ring-1 ring-slate-200 rounded-xl p-4 md:col-span-2 hover:shadow-lg hover:ring-slate-300 transition-all duration-200"
+      >
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <div
+              class="p-2 bg-teal-50 rounded-lg group-hover:bg-linear-to-br group-hover:from-teal-100 group-hover:to-blue-100 transition-all duration-200"
+            >
+              <SignalIcon class="h-4 w-4 text-teal-600" />
+            </div>
+            <span class="text-sm font-semibold text-gray-700">CDC readiness</span>
+          </div>
           <span
             v-if="overview.engine === 'mysql'"
-            class="text-xs px-1.5 py-0.5 rounded"
+            class="inline-flex items-center text-xs px-2 py-1 rounded-md font-medium ring-1 ring-inset shadow-sm"
             :class="{
-              'bg-green-100 text-green-700':
+              'bg-green-50 text-green-700 ring-green-600/20':
                 overview.health?.binlog?.enabled &&
                 overview.health?.binlog?.format === 'ROW' &&
                 overview.health?.binlog?.rowImage === 'FULL',
-              'bg-amber-100 text-amber-700':
+              'bg-amber-50 text-amber-700 ring-amber-600/20':
                 overview.health?.binlog?.enabled &&
                 (overview.health?.binlog?.format !== 'ROW' ||
                   overview.health?.binlog?.rowImage !== 'FULL'),
-              'bg-red-100 text-red-700': !overview.health?.binlog?.enabled
+              'bg-red-50 text-red-700 ring-red-600/20': !overview.health?.binlog?.enabled
             }"
           >
+            <span
+              class="mr-1.5 h-1.5 w-1.5 rounded-full"
+              :class="{
+                'bg-green-600':
+                  overview.health?.binlog?.enabled &&
+                  overview.health?.binlog?.format === 'ROW' &&
+                  overview.health?.binlog?.rowImage === 'FULL',
+                'bg-amber-600':
+                  overview.health?.binlog?.enabled &&
+                  (overview.health?.binlog?.format !== 'ROW' ||
+                    overview.health?.binlog?.rowImage !== 'FULL'),
+                'bg-red-600': !overview.health?.binlog?.enabled
+              }"
+            ></span>
             {{ overview.health?.binlog?.enabled ? 'Enabled' : 'Not enabled' }}
           </span>
           <span
             v-else-if="overview.engine === 'postgres'"
-            class="text-xs px-1.5 py-0.5 rounded"
+            class="inline-flex items-center text-xs px-2 py-1 rounded-md font-medium ring-1 ring-inset shadow-sm"
             :class="{
-              'bg-green-100 text-green-700': overview.health?.wal?.level === 'logical',
-              'bg-red-100 text-red-700': overview.health?.wal?.level !== 'logical'
+              'bg-green-50 text-green-700 ring-green-600/20':
+                overview.health?.wal?.level === 'logical',
+              'bg-red-50 text-red-700 ring-red-600/20': overview.health?.wal?.level !== 'logical'
             }"
           >
+            <span
+              class="mr-1.5 h-1.5 w-1.5 rounded-full"
+              :class="{
+                'bg-green-600': overview.health?.wal?.level === 'logical',
+                'bg-red-600': overview.health?.wal?.level !== 'logical'
+              }"
+            ></span>
             {{ overview.health?.wal?.level || 'unknown' }}
           </span>
         </div>
-        <div class="mt-3 text-sm text-gray-700 space-y-1">
+        <div class="mt-3 text-sm text-gray-700 space-y-2">
           <template v-if="overview.engine === 'mysql'">
-            <div>
-              Binary log:
-              <span class="font-medium">{{ overview.health?.binlog?.enabled ? 'ON' : 'OFF' }}</span>
+            <div class="flex justify-between items-center">
+              <span class="text-gray-600">Binary log:</span>
+              <span class="font-semibold text-gray-900">{{
+                overview.health?.binlog?.enabled ? 'ON' : 'OFF'
+              }}</span>
             </div>
-            <div v-if="overview.health?.binlog?.format">
-              Format:
-              <span class="font-medium">{{ overview.health?.binlog?.format }}</span>
+            <div v-if="overview.health?.binlog?.format" class="flex justify-between items-center">
+              <span class="text-gray-600">Format:</span>
+              <span class="font-semibold text-gray-900">{{ overview.health?.binlog?.format }}</span>
             </div>
-            <div v-if="overview.health?.binlog?.rowImage">
-              Row image:
-              <span class="font-medium">{{ overview.health?.binlog?.rowImage }}</span>
+            <div v-if="overview.health?.binlog?.rowImage" class="flex justify-between items-center">
+              <span class="text-gray-600">Row image:</span>
+              <span class="font-semibold text-gray-900">{{
+                overview.health?.binlog?.rowImage
+              }}</span>
             </div>
             <!-- GTID mode intentionally omitted per product scope -->
-            <div v-if="typeof overview.health?.binlog?.serverId === 'number'">
-              Server ID:
-              <span class="font-medium">{{ overview.health?.binlog?.serverId }}</span>
+            <div
+              v-if="typeof overview.health?.binlog?.serverId === 'number'"
+              class="flex justify-between items-center"
+            >
+              <span class="text-gray-600">Server ID:</span>
+              <span class="font-semibold text-gray-900">{{
+                overview.health?.binlog?.serverId
+              }}</span>
             </div>
           </template>
           <template v-else>
-            <div>
-              wal_level:
-              <span class="font-medium">{{ overview.health?.wal?.level || 'unknown' }}</span>
+            <div class="flex justify-between items-center">
+              <span class="text-gray-600">wal_level:</span>
+              <span class="font-semibold text-gray-900">{{
+                overview.health?.wal?.level || 'unknown'
+              }}</span>
             </div>
-            <div v-if="typeof overview.health?.wal?.maxReplicationSlots === 'number'">
-              Replication slots (max):
-              <span class="font-medium">{{ overview.health?.wal?.maxReplicationSlots }}</span>
+            <div
+              v-if="typeof overview.health?.wal?.maxReplicationSlots === 'number'"
+              class="flex justify-between items-center"
+            >
+              <span class="text-gray-600">Replication slots (max):</span>
+              <span class="font-semibold text-gray-900">{{
+                overview.health?.wal?.maxReplicationSlots
+              }}</span>
             </div>
-            <div v-if="typeof overview.health?.wal?.freeReplicationSlots === 'number'">
-              Replication slots (free):
-              <span class="font-medium">{{ overview.health?.wal?.freeReplicationSlots }}</span>
+            <div
+              v-if="typeof overview.health?.wal?.freeReplicationSlots === 'number'"
+              class="flex justify-between items-center"
+            >
+              <span class="text-gray-600">Replication slots (free):</span>
+              <span class="font-semibold text-gray-900">{{
+                overview.health?.wal?.freeReplicationSlots
+              }}</span>
             </div>
-            <div v-if="typeof overview.health?.wal?.maxWalSenders === 'number'">
-              Wal senders (max):
-              <span class="font-medium">{{ overview.health?.wal?.maxWalSenders }}</span>
+            <div
+              v-if="typeof overview.health?.wal?.maxWalSenders === 'number'"
+              class="flex justify-between items-center"
+            >
+              <span class="text-gray-600">Wal senders (max):</span>
+              <span class="font-semibold text-gray-900">{{
+                overview.health?.wal?.maxWalSenders
+              }}</span>
             </div>
           </template>
         </div>
       </div>
 
       <!-- Activity (compact) -->
-      <div class="bg-white ring-1 ring-gray-900/5 rounded-lg p-4 md:col-span-2">
-        <div class="text-sm text-gray-500">Activity</div>
-        <div class="mt-2 text-sm text-gray-700 space-y-1">
-          <div>
-            Connections:
-            <span class="font-medium">{{ activity?.connections?.used ?? '—' }}</span>
-            <span v-if="activity?.connections?.max" class="text-gray-500">
-              / {{ activity.connections.max }}
+      <div
+        class="group bg-white ring-1 ring-slate-200 rounded-xl p-4 md:col-span-2 hover:shadow-lg hover:ring-slate-300 transition-all duration-200"
+      >
+        <div class="flex items-center gap-2 mb-3">
+          <div
+            class="p-2 bg-orange-50 rounded-lg group-hover:bg-linear-to-br group-hover:from-orange-100 group-hover:to-amber-100 transition-all duration-200"
+          >
+            <ChartBarIcon class="h-4 w-4 text-orange-600" />
+          </div>
+          <span class="text-sm font-semibold text-gray-700">Activity</span>
+        </div>
+        <div class="mt-2 text-sm text-gray-700 space-y-2">
+          <div class="flex justify-between items-center">
+            <span class="text-gray-600">Connections:</span>
+            <span class="font-semibold text-gray-900">
+              {{ activity?.connections?.used ?? '—' }}
+              <span v-if="activity?.connections?.max" class="text-gray-500 font-normal">
+                / {{ activity.connections.max }}
+              </span>
             </span>
           </div>
-          <div>
-            Active sessions:
-            <span class="font-medium">{{ activity?.activeSessions ?? '—' }}</span>
+          <div class="flex justify-between items-center">
+            <span class="text-gray-600">Active sessions:</span>
+            <span class="font-semibold text-gray-900">{{ activity?.activeSessions ?? '—' }}</span>
           </div>
         </div>
-        <div v-if="activity?.longRunning?.length" class="mt-3">
-          <div class="text-xs uppercase tracking-wide text-gray-500">Long-running queries</div>
-          <ul class="mt-1 text-sm text-gray-700 space-y-1">
+        <div v-if="activity?.longRunning?.length" class="mt-4 pt-3 border-t border-gray-100">
+          <div class="text-xs uppercase tracking-wide font-semibold text-gray-500 mb-2">
+            Long-running queries
+          </div>
+          <ul class="text-sm text-gray-700 space-y-2">
             <li
               v-for="(q, idx) in activity.longRunning.slice(0, 5)"
               :key="q.pid || q.threadId || idx"
-              class="flex items-start justify-between gap-3"
+              class="flex items-start justify-between gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
             >
-              <div class="truncate">
-                <span class="text-gray-500 mr-2">{{ q.user }}</span>
-                <span class="truncate" :title="q.query">{{ q.query }}</span>
+              <div class="truncate min-w-0 flex-1">
+                <span class="text-xs text-gray-500 font-medium">{{ q.user }}</span>
+                <div class="truncate text-xs text-gray-700 mt-0.5" :title="q.query">
+                  {{ q.query }}
+                </div>
               </div>
-              <span class="ml-2 shrink-0 text-gray-500">{{ q.duration }}</span>
+              <span class="shrink-0 text-xs font-medium text-gray-500">{{ q.duration }}</span>
             </li>
           </ul>
         </div>
       </div>
 
       <!-- Top by size -->
-      <div class="bg-white ring-1 ring-gray-900/5 rounded-lg p-4 md:col-span-3">
-        <div class="text-sm text-gray-500">Top tables by size</div>
+      <div
+        class="group bg-white ring-1 ring-slate-200 rounded-xl p-4 md:col-span-3 hover:shadow-lg hover:ring-slate-300 transition-all duration-200"
+      >
+        <div class="flex items-center gap-2 mb-3">
+          <div
+            class="p-2 bg-purple-50 rounded-lg group-hover:bg-linear-to-br group-hover:from-purple-100 group-hover:to-pink-100 transition-all duration-200"
+          >
+            <ServerIcon class="h-4 w-4 text-purple-600" />
+          </div>
+          <span class="text-sm font-semibold text-gray-700">Top tables by size</span>
+        </div>
         <ul class="mt-2 text-sm text-gray-700 space-y-1">
-          <li v-for="t in topSize" :key="t.name" class="flex items-center justify-between">
+          <li
+            v-for="t in topSize"
+            :key="t.name"
+            class="flex items-center justify-between p-2 rounded-lg hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50 transition-all duration-150"
+          >
             <button
               type="button"
-              class="truncate text-left hover:underline"
+              class="truncate text-left hover:text-blue-600 font-medium transition-colors min-w-0 flex-1"
               :title="t.name"
               @click="$emit('open-table', { name: t.name })"
             >
               {{ t.name }}
             </button>
             <span
-              class="ml-2 shrink-0 text-gray-500"
+              class="ml-2 shrink-0 text-gray-500 text-xs font-medium"
               :title="Intl.NumberFormat().format(t.sizeBytes) + ' bytes'"
               >{{ formatDataSize(t.sizeBytes) }}</span
             >
@@ -270,24 +378,37 @@ const sizeDisplay = computed(() => {
       </div>
 
       <!-- Top by rows -->
-      <div class="bg-white ring-1 ring-gray-900/5 rounded-lg p-4 md:col-span-3">
-        <div class="text-sm text-gray-500">
-          Top tables by rows
-          <span v-if="overview.engine === 'mysql'" class="ml-1 text-xs text-amber-600"
-            >(approx)</span
+      <div
+        class="group bg-white ring-1 ring-slate-200 rounded-xl p-4 md:col-span-3 hover:shadow-lg hover:ring-slate-300 transition-all duration-200"
+      >
+        <div class="flex items-center gap-2 mb-3">
+          <div
+            class="p-2 bg-indigo-50 rounded-lg group-hover:bg-linear-to-br group-hover:from-indigo-100 group-hover:to-purple-100 transition-all duration-200"
           >
+            <TableCellsIcon class="h-4 w-4 text-indigo-600" />
+          </div>
+          <span class="text-sm font-semibold text-gray-700">
+            Top tables by rows
+            <span v-if="overview.engine === 'mysql'" class="ml-1 text-xs text-amber-600 font-normal"
+              >(approx)</span
+            >
+          </span>
         </div>
         <ul class="mt-2 text-sm text-gray-700 space-y-1">
-          <li v-for="t in topRows" :key="t.name" class="flex items-center justify-between">
+          <li
+            v-for="t in topRows"
+            :key="t.name"
+            class="flex items-center justify-between p-2 rounded-lg hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50 transition-all duration-150"
+          >
             <button
               type="button"
-              class="truncate text-left hover:underline"
+              class="truncate text-left hover:text-blue-600 font-medium transition-colors min-w-0 flex-1"
               :title="t.name"
               @click="$emit('open-table', { name: t.name })"
             >
               {{ t.name }}
             </button>
-            <span class="ml-2 shrink-0 text-gray-500">
+            <span class="ml-2 shrink-0 text-gray-500 text-xs font-medium">
               {{ Intl.NumberFormat().format(t.approxRows) }}
             </span>
           </li>
@@ -297,25 +418,54 @@ const sizeDisplay = computed(() => {
       <!-- Notes -->
       <div
         v-if="overview.notes?.length"
-        class="bg-white ring-1 ring-gray-900/5 rounded-lg p-4 md:col-span-6"
+        class="group bg-white ring-1 ring-slate-200 rounded-xl p-4 md:col-span-6 hover:shadow-lg hover:ring-slate-300 transition-all duration-200"
       >
-        <div class="text-sm text-gray-500">Notes</div>
-        <ul class="mt-2 space-y-1 text-sm">
-          <li v-for="(n, i) in overview.notes" :key="i" class="flex items-start gap-2">
+        <div class="flex items-center gap-2 mb-3">
+          <div
+            class="p-2 bg-sky-50 rounded-lg group-hover:bg-linear-to-br group-hover:from-sky-100 group-hover:to-blue-100 transition-all duration-200"
+          >
+            <InformationCircleIcon class="h-4 w-4 text-sky-600" />
+          </div>
+          <span class="text-sm font-semibold text-gray-700">Notes</span>
+        </div>
+        <ul class="mt-2 space-y-2 text-sm">
+          <li
+            v-for="(n, i) in overview.notes"
+            :key="i"
+            class="flex items-start gap-3 p-3 rounded-lg transition-colors"
+            :class="{
+              'bg-sky-50': n.severity === 'info',
+              'bg-amber-50': n.severity === 'warn',
+              'bg-red-50': n.severity === 'error'
+            }"
+          >
             <span
-              class="mt-0.5 inline-block w-2 h-2 rounded-full"
+              class="mt-0.5 inline-block w-2 h-2 rounded-full shrink-0"
               :class="{
                 'bg-sky-500': n.severity === 'info',
                 'bg-amber-500': n.severity === 'warn',
                 'bg-red-500': n.severity === 'error'
               }"
             />
-            <div class="flex-1">
-              <span class="text-gray-700">{{ n.message }}</span>
+            <div class="flex-1 min-w-0">
+              <span
+                class="text-gray-800 font-medium"
+                :class="{
+                  'text-sky-900': n.severity === 'info',
+                  'text-amber-900': n.severity === 'warn',
+                  'text-red-900': n.severity === 'error'
+                }"
+                >{{ n.message }}</span
+              >
               <a
                 v-if="n.doc"
                 :href="n.doc"
-                class="ml-2 text-xs text-blue-600 hover:underline"
+                class="ml-2 text-xs font-medium hover:underline"
+                :class="{
+                  'text-sky-600': n.severity === 'info',
+                  'text-amber-600': n.severity === 'warn',
+                  'text-red-600': n.severity === 'error'
+                }"
                 target="_blank"
                 rel="noopener noreferrer"
                 >docs</a
