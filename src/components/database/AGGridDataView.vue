@@ -7,7 +7,8 @@ import type {
   ColDef,
   GridOptions,
   IDatasource,
-  IGetRowsParams
+  IGetRowsParams,
+  Column
 } from 'ag-grid-community'
 import { type SQLTableMeta, type SQLViewMeta } from '@/types/metadata'
 import connections from '@/api/connections'
@@ -37,7 +38,7 @@ const props = defineProps<{
 // Store for persisting tab state including AG Grid data state
 const tabStateStore = useObjectTabStateStore()
 
-// Use shared AG Grid filtering composable
+// Use shared AG Grid filtering composable (but override context menu state locally)
 const {
   gridApi,
   currentSortModel,
@@ -46,10 +47,6 @@ const {
   whereError,
   agGridFilters,
   agGridWhereSQL,
-  showContextMenu,
-  contextMenuX,
-  contextMenuY,
-  contextMenuColumn,
   showAdvancedFilterModal,
   isSqlBannerExpanded,
   combinedWhereClause,
@@ -58,11 +55,24 @@ const {
   needsTruncation,
   displayedSql,
   toggleSqlBanner,
-  closeContextMenu,
   openAdvancedFilterModal,
   updateAgGridWhereSQL,
   clearAllFilters: clearAgGridFilters
 } = useAGGridFiltering()
+
+// Local context menu state (not shared between instances)
+const showContextMenu = ref(false)
+const contextMenuX = ref(0)
+const contextMenuY = ref(0)
+const contextMenuColumn = ref<Column | null>(null)
+
+// Ref to grid container for scoped event listeners
+const gridContainerRef = ref<HTMLElement | null>(null)
+
+// Local closeContextMenu function
+function closeContextMenu(): void {
+  showContextMenu.value = false
+}
 
 // Component-specific state
 const error = ref<string>()
@@ -503,10 +513,10 @@ function onGridReady(params: GridReadyEvent) {
   })
 
   // Add context menu listener for column headers - wait for next tick to ensure DOM is ready
+  // Use the grid container ref to ensure we attach to the correct grid instance
   setTimeout(() => {
-    const gridElement = document.querySelector('.ag-root') as HTMLElement
-    if (gridElement) {
-      gridElement.addEventListener('contextmenu', handleContextMenu)
+    if (gridContainerRef.value) {
+      gridContainerRef.value.addEventListener('contextmenu', handleContextMenu)
     }
   }, 100)
 
@@ -560,6 +570,10 @@ function handleContextMenu(event: MouseEvent) {
         showContextMenu.value = true
       }
     }
+  } else {
+    // Prevent system context menu on data cells too
+    // (Only show our custom context menu on header cells)
+    event.preventDefault()
   }
 }
 
@@ -743,9 +757,8 @@ onMounted(() => {
 
 // Cleanup
 onBeforeUnmount(() => {
-  const gridElement = document.querySelector('.ag-root') as HTMLElement
-  if (gridElement) {
-    gridElement.removeEventListener('contextmenu', handleContextMenu as EventListener)
+  if (gridContainerRef.value) {
+    gridContainerRef.value.removeEventListener('contextmenu', handleContextMenu)
   }
   if (gridApi.value) {
     gridApi.value.destroy()
@@ -842,6 +855,7 @@ onBeforeUnmount(() => {
 
     <!-- AG Grid -->
     <div
+      ref="gridContainerRef"
       class="ag-theme-alpine"
       :style="{
         width: '100%',
