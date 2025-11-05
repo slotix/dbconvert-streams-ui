@@ -296,10 +296,10 @@ export const useCommonStore = defineStore('common', {
     },
     async loadUserConfigs() {
       try {
-        if (!this.userData?.apiKey) {
+        if (!this.apiKey) {
           throw new Error('API key is not available')
         }
-        await api.loadUserConfigs(this.userData.apiKey)
+        await api.loadUserConfigs(this.apiKey)
       } catch (error) {
         const toast = useToast()
         toast.error('Failed to load user data')

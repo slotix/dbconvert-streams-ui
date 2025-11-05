@@ -9,7 +9,8 @@ const { isBackendConnected } = storeToRefs(commonStore)
 const backendUrl = getBackendUrl()
 
 async function handleRetry() {
-  await commonStore.checkAPIHealth()
+  // Perform full health check and reinitialize if backend is back online
+  await commonStore.performHealthCheck()
 }
 </script>
 
