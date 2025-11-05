@@ -271,8 +271,9 @@ async function loadTargetTable() {
   try {
     if (!props.stream.targetDatabase) return
 
-    // Ensure metadata is loaded
-    await navigationStore.ensureMetadata(props.target.id, props.stream.targetDatabase)
+    // Force refresh metadata to ensure we get latest tables after stream completion
+    // This ensures newly created tables are visible immediately
+    await navigationStore.ensureMetadata(props.target.id, props.stream.targetDatabase, true)
 
     // Fetch database overview to get row counts
     try {
