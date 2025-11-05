@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { ChevronDownIcon } from '@heroicons/vue/24/outline'
-import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/vue'
+import { ref, computed, onMounted, watch } from 'vue'
+import { ChevronDownIcon, LinkIcon, LinkSlashIcon } from '@heroicons/vue/24/outline'
+import { Menu, MenuButton, MenuItems, MenuItem, Switch } from '@headlessui/vue'
 import AGGridDataView from '@/components/database/AGGridDataView.vue'
 import AGGridFileDataView from '@/components/files/AGGridFileDataView.vue'
 import SchemaComparisonPanel from './SchemaComparisonPanel.vue'
@@ -48,6 +48,18 @@ const sourceTableMeta = ref<SQLTableMeta | null>(null)
 const targetTableMeta = ref<SQLTableMeta | null>(null)
 const targetFileEntry = ref<FileSystemEntry | null>(null)
 const targetFileMetadata = ref<FileMetadata | null>(null)
+
+// Refs to grid components for sync functionality
+const sourceGridRef = ref<InstanceType<typeof AGGridDataView> | null>(null)
+const targetGridRef = ref<
+  InstanceType<typeof AGGridDataView> | InstanceType<typeof AGGridFileDataView> | null
+>(null)
+
+// Sync state management
+const syncEnabled = ref(true) // Default: ON (sync enabled by default)
+const isSyncing = ref(false) // Prevent circular updates
+const syncFlashSource = ref(false) // Visual feedback for source grid
+const syncFlashTarget = ref(false) // Visual feedback for target grid
 
 // Get approximate row counts from store for both source and target
 const sourceApproxRows = computed(() => {
@@ -331,6 +343,122 @@ async function loadTargetFile() {
   }
 }
 
+// Visual feedback helper - triggers a brief flash effect
+function triggerSyncFlash(target: 'source' | 'target') {
+  if (target === 'source') {
+    syncFlashSource.value = true
+    setTimeout(() => {
+      syncFlashSource.value = false
+    }, 300)
+  } else {
+    syncFlashTarget.value = true
+    setTimeout(() => {
+      syncFlashTarget.value = false
+    }, 300)
+  }
+}
+
+// Map grid state between source and target (handle column name differences)
+function mapGridState(
+  fromState: any,
+  fromMeta: SQLTableMeta | null,
+  toMeta: SQLTableMeta | FileMetadata | null
+): any {
+  if (!fromMeta || !toMeta) return fromState
+
+  const mappedState: any = {
+    sqlBannerExpanded: fromState.sqlBannerExpanded
+  }
+
+  // Get column names for mapping (case-insensitive)
+  const toColumns = 'columns' in toMeta ? toMeta.columns.map((c) => c.name.toLowerCase()) : []
+
+  // Map sort model - only include columns that exist in target
+  if (fromState.sortModel && Array.isArray(fromState.sortModel)) {
+    mappedState.sortModel = fromState.sortModel.filter((sort: any) => {
+      return toColumns.includes(sort.colId.toLowerCase())
+    })
+  }
+
+  // Map filter model - only include columns that exist in target
+  if (fromState.filterModel && typeof fromState.filterModel === 'object') {
+    mappedState.filterModel = {}
+    Object.entries(fromState.filterModel).forEach(([colId, filter]) => {
+      if (toColumns.includes(colId.toLowerCase())) {
+        mappedState.filterModel[colId] = filter
+      }
+    })
+  }
+
+  return mappedState
+}
+
+// Sync from source to target
+async function syncToTarget(sourceState: any) {
+  if (!syncEnabled.value || isSyncing.value || !targetGridRef.value) return
+
+  isSyncing.value = true
+  try {
+    // Map state based on target type (database or file)
+    const targetMeta = isFileTarget.value ? targetFileMetadata.value : targetTableMeta.value
+    const mappedState = mapGridState(sourceState, sourceTableMeta.value, targetMeta)
+
+    // Apply to target grid
+    await targetGridRef.value.applyGridState(mappedState)
+
+    // Visual feedback
+    triggerSyncFlash('target')
+  } catch (error) {
+    console.error('Error syncing to target:', error)
+  } finally {
+    isSyncing.value = false
+  }
+}
+
+// Sync from target to source
+async function syncToSource(targetState: any) {
+  if (!syncEnabled.value || isSyncing.value || !sourceGridRef.value) return
+
+  isSyncing.value = true
+  try {
+    // Map state
+    const targetMeta = isFileTarget.value ? targetFileMetadata.value : targetTableMeta.value
+    const mappedState = mapGridState(targetState, targetMeta as any, sourceTableMeta.value)
+
+    // Apply to source grid
+    await sourceGridRef.value.applyGridState(mappedState)
+
+    // Visual feedback
+    triggerSyncFlash('source')
+  } catch (error) {
+    console.error('Error syncing to source:', error)
+  } finally {
+    isSyncing.value = false
+  }
+}
+
+// Watch source grid state changes and sync to target
+watch(
+  () => sourceGridRef.value?.getGridState(),
+  (newState) => {
+    if (newState && syncEnabled.value && !isSyncing.value) {
+      syncToTarget(newState)
+    }
+  },
+  { deep: true }
+)
+
+// Watch target grid state changes and sync to source
+watch(
+  () => targetGridRef.value?.getGridState(),
+  (newState) => {
+    if (newState && syncEnabled.value && !isSyncing.value) {
+      syncToSource(newState)
+    }
+  },
+  { deep: true }
+)
+
 // Handle table selection change
 async function selectTable(tableName: string) {
   selectedTable.value = tableName
@@ -375,6 +503,30 @@ async function selectTable(tableName: string) {
               </div>
             </MenuItems>
           </Menu>
+
+          <!-- Sync Views Toggle -->
+          <div class="flex items-center gap-2 ml-4 pl-4 border-l border-gray-300">
+            <Switch
+              v-model="syncEnabled"
+              class="relative inline-flex h-5 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-gray-600 focus:ring-offset-2"
+              :class="[syncEnabled ? 'bg-gray-600' : 'bg-gray-400']"
+            >
+              <span class="sr-only">Sync view options between source and target</span>
+              <span
+                aria-hidden="true"
+                class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out"
+                :class="[syncEnabled ? 'translate-x-5' : 'translate-x-0']"
+              />
+            </Switch>
+            <component
+              :is="syncEnabled ? LinkIcon : LinkSlashIcon"
+              class="h-4 w-4 text-gray-600"
+              :class="{ 'text-gray-600': syncEnabled, 'text-gray-400': !syncEnabled }"
+            />
+            <span class="text-sm text-gray-700" :class="{ 'font-medium': syncEnabled }">
+              Sync Views
+            </span>
+          </div>
         </div>
       </div>
     </div>
@@ -423,8 +575,13 @@ async function selectTable(tableName: string) {
 
         <!-- Source Data View -->
         <div class="flex-1 overflow-auto p-4">
-          <div v-if="sourceTableMeta && stream.sourceDatabase" class="h-full">
+          <div
+            v-if="sourceTableMeta && stream.sourceDatabase"
+            class="h-full transition-all duration-300"
+            :class="{ 'ring-2 ring-blue-400 ring-opacity-50': syncFlashSource }"
+          >
             <AGGridDataView
+              ref="sourceGridRef"
               :table-meta="sourceTableMeta"
               :connection-id="source.id"
               :database="stream.sourceDatabase"
@@ -471,8 +628,13 @@ async function selectTable(tableName: string) {
         <!-- Target Data View -->
         <div class="flex-1 overflow-auto p-4">
           <!-- Database Target -->
-          <div v-if="!isFileTarget && targetTableMeta && stream.targetDatabase" class="h-full">
+          <div
+            v-if="!isFileTarget && targetTableMeta && stream.targetDatabase"
+            class="h-full transition-all duration-300"
+            :class="{ 'ring-2 ring-blue-400 ring-opacity-50': syncFlashTarget }"
+          >
             <AGGridDataView
+              ref="targetGridRef"
               :table-meta="targetTableMeta"
               :connection-id="target.id"
               :database="stream.targetDatabase"
@@ -483,8 +645,13 @@ async function selectTable(tableName: string) {
           </div>
 
           <!-- File Target -->
-          <div v-else-if="isFileTarget && targetFileEntry && targetFileMetadata" class="h-full">
+          <div
+            v-else-if="isFileTarget && targetFileEntry && targetFileMetadata"
+            class="h-full transition-all duration-300"
+            :class="{ 'ring-2 ring-blue-400 ring-opacity-50': syncFlashTarget }"
+          >
             <AGGridFileDataView
+              ref="targetGridRef"
               :entry="targetFileEntry"
               :metadata="targetFileMetadata"
               :connection-id="target.id"

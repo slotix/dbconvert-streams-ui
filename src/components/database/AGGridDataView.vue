@@ -698,9 +698,61 @@ function refresh() {
   }
 }
 
-// Expose refresh to parent
+// Get current grid state for sync purposes
+function getGridState() {
+  return {
+    sortModel: currentSortModel.value,
+    filterModel: agGridFilters.value,
+    sqlBannerExpanded: isSqlBannerExpanded.value
+  }
+}
+
+// Apply grid state from sync (without triggering watchers)
+function applyGridState(state: {
+  sortModel?: any[]
+  filterModel?: Record<string, any>
+  sqlBannerExpanded?: boolean
+}) {
+  if (!gridApi.value) return
+
+  // Apply sort model
+  if (state.sortModel !== undefined) {
+    currentSortModel.value = state.sortModel
+    if (state.sortModel.length > 0) {
+      const columnState = state.sortModel.map((sort: any, index: number) => ({
+        colId: sort.colId,
+        sort: sort.sort,
+        sortIndex: index
+      }))
+      gridApi.value.applyColumnState({
+        state: columnState,
+        defaultState: { sort: null }
+      })
+    } else {
+      // Clear sorting
+      gridApi.value.applyColumnState({
+        defaultState: { sort: null }
+      })
+    }
+  }
+
+  // Apply filter model
+  if (state.filterModel !== undefined) {
+    agGridFilters.value = state.filterModel
+    gridApi.value.setFilterModel(state.filterModel)
+  }
+
+  // Apply SQL banner expansion state
+  if (state.sqlBannerExpanded !== undefined) {
+    isSqlBannerExpanded.value = state.sqlBannerExpanded
+  }
+}
+
+// Expose methods to parent
 defineExpose({
-  refresh
+  refresh,
+  getGridState,
+  applyGridState
 })
 
 // Initialize and restore state on mount
