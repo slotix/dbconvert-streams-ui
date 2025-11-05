@@ -32,7 +32,16 @@
           >
             <div class="flex items-center min-w-0 flex-1 pr-3">
               <div class="shrink-0">
+                <!-- File connections: show folder icon -->
                 <div
+                  v-if="isFileConnection(connection.id)"
+                  class="bg-slate-100 rounded-lg p-2 transition-all duration-200 hover:shadow-md hover:scale-105"
+                >
+                  <FolderIcon class="h-6 w-6 text-slate-500" />
+                </div>
+                <!-- Database connections: show database logo -->
+                <div
+                  v-else
                   :class="getDatabaseIconStyle(getConnectionType(connection.id))"
                   class="rounded-lg p-2 transition-all duration-200 hover:shadow-md hover:scale-105"
                 >
@@ -57,16 +66,32 @@
                     {{ connection.name }}
                   </h3>
                   <CloudProviderBadge
+                    v-if="!isFileConnection(connection.id)"
                     :cloud-provider="getCloudProvider(connection.id)"
                     :db-type="getConnectionType(connection.id)"
                     size="sm"
                     class="shrink-0"
                   />
                 </div>
-                <p class="text-sm text-gray-500 truncate" :title="getConnectionHost(connection.id)">
+                <!-- For file connections, show directory path instead of host:port -->
+                <p
+                  v-if="isFileConnection(connection.id)"
+                  class="text-sm text-gray-500 truncate"
+                  :title="getFileConnectionPath(connection.id)"
+                >
+                  {{ getFileConnectionPath(connection.id) }}
+                </p>
+                <!-- For database connections, show host:port -->
+                <p
+                  v-else
+                  class="text-sm text-gray-500 truncate"
+                  :title="getConnectionHost(connection.id)"
+                >
                   {{ getConnectionHost(connection.id) }}
                 </p>
+                <!-- Database field only for database connections -->
                 <p
+                  v-if="!isFileConnection(connection.id) && getConnectionDatabase(connection.id)"
                   class="text-xs text-gray-400 truncate"
                   :title="getConnectionDatabase(connection.id)"
                 >
@@ -153,7 +178,8 @@ import {
   ClockIcon,
   PlusIcon,
   ArrowRightIcon,
-  TrashIcon
+  TrashIcon,
+  FolderIcon
 } from '@heroicons/vue/24/outline'
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
 import { normalizeConnectionType } from '@/utils/connectionUtils'
@@ -406,6 +432,55 @@ function getDatabaseIconStyle(dbType: string): string {
   const baseClasses = `${bgColor} ring-2 ring-gray-200/50`
 
   return baseClasses
+}
+
+function isFileConnection(connectionId: string): boolean {
+  const connection = connectionsStore.connections.find((conn) => conn.id === connectionId)
+  if (connection) {
+    const type = connection.type?.toLowerCase() || ''
+    return type === 'files' || type === 'localfiles'
+  }
+
+  // Fallback: try to get from recent connections data
+  const recentConn = recentConnectionsRaw.value.find((conn) => conn.id === connectionId)
+  const type = recentConn?.type?.toLowerCase() || ''
+  return type === 'files' || type === 'localfiles'
+}
+
+function getFileConnectionPath(connectionId: string): string {
+  const connection = connectionsStore.connections.find((conn) => conn.id === connectionId)
+  if (connection) {
+    // For file connections, the 'database' field typically contains the directory path
+    let path = connection.database || connection.host || ''
+    // Truncate long paths
+    if (path.length > 40) {
+      // Try to show the end of the path (most relevant part)
+      const parts = path.split('/')
+      if (parts.length > 3) {
+        path = `.../${parts.slice(-2).join('/')}`
+      } else {
+        path = `${path.substring(0, 37)}...`
+      }
+    }
+    return path || 'Local Files'
+  }
+
+  // Fallback: try to get from recent connections data
+  const recentConn = recentConnectionsRaw.value.find((conn) => conn.id === connectionId)
+  if (recentConn) {
+    let path = recentConn.database || recentConn.host || ''
+    if (path.length > 40) {
+      const parts = path.split('/')
+      if (parts.length > 3) {
+        path = `.../${parts.slice(-2).join('/')}`
+      } else {
+        path = `${path.substring(0, 37)}...`
+      }
+    }
+    return path || 'Local Files'
+  }
+
+  return 'Local Files'
 }
 
 function exploreConnection(connectionId: string) {
