@@ -187,19 +187,12 @@ onMounted(async () => {
   }
 })
 
-// Load source and target table/file data
+// Load source and target table/file data in parallel
 async function loadTableData() {
   if (!selectedTable.value) return
 
-  // Load source table metadata
-  await loadSourceTable()
-
-  // Load target (either table or file)
-  if (isFileTarget.value) {
-    await loadTargetFile()
-  } else {
-    await loadTargetTable()
-  }
+  // Load source and target simultaneously for better performance
+  await Promise.all([loadSourceTable(), isFileTarget.value ? loadTargetFile() : loadTargetTable()])
 }
 
 async function loadSourceTable() {
