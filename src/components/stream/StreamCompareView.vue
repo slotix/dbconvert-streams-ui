@@ -356,6 +356,12 @@ async function selectTable(tableName: string) {
       :source-columns="sourceTableMeta.columns"
       :target-columns="targetTableMeta.columns"
       :comparison="schemaComparison"
+      :source-ddl="sourceTableMeta.ddl"
+      :target-ddl="targetTableMeta.ddl"
+      :source-connection-type="source.type"
+      :target-connection-type="target.type"
+      :source-dialect="source.type"
+      :target-dialect="target.type"
     />
 
     <!-- Split View -->

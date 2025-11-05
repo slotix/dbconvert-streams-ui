@@ -5,7 +5,7 @@
       class="w-full px-6 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors border-b border-gray-200"
       @click="expanded = !expanded"
     >
-      <div class="flex items-center gap-3">
+      <div class="flex items-center gap-3 flex-1">
         <Squares2X2Icon class="w-5 h-5 text-gray-500" />
         <span class="text-sm font-medium text-gray-900">Schema Comparison</span>
 
@@ -42,14 +42,41 @@
         </div>
       </div>
 
+      <!-- View Mode Toggle - only visible when expanded -->
+      <div v-if="expanded" class="flex items-center gap-2 mr-3" @click.stop>
+        <button
+          class="px-3 py-1 text-xs font-medium rounded-md transition-colors"
+          :class="
+            viewMode === 'columns'
+              ? 'bg-white text-gray-900 shadow-sm border border-gray-300'
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+          "
+          @click="viewMode = 'columns'"
+        >
+          Columns
+        </button>
+        <button
+          class="px-3 py-1 text-xs font-medium rounded-md transition-colors"
+          :class="
+            viewMode === 'ddl'
+              ? 'bg-white text-gray-900 shadow-sm border border-gray-300'
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+          "
+          @click="viewMode = 'ddl'"
+        >
+          DDL
+        </button>
+      </div>
+
       <ChevronDownIcon
         :class="['w-5 h-5 text-gray-400 transition-transform', { 'rotate-180': expanded }]"
       />
     </button>
 
-    <!-- Expanded State: Side-by-Side Schema View -->
+    <!-- Expanded State: Content -->
     <div v-if="expanded" class="bg-gray-50">
-      <div class="grid grid-cols-2 gap-4 p-4">
+      <!-- Columns View -->
+      <div v-if="viewMode === 'columns'" class="grid grid-cols-2 gap-4 p-4">
         <!-- Source Schema -->
         <div class="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
           <div
@@ -80,6 +107,49 @@
           </div>
         </div>
       </div>
+
+      <!-- DDL View -->
+      <div v-else-if="viewMode === 'ddl'" class="grid grid-cols-2 gap-4 p-4">
+        <!-- Source DDL -->
+        <div class="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+          <div
+            class="px-4 py-2 bg-gray-50 border-b border-gray-200 flex items-center justify-between"
+          >
+            <span class="text-xs font-medium text-gray-700 uppercase tracking-wide">
+              Source DDL
+            </span>
+          </div>
+          <div class="max-h-80 overflow-y-auto custom-scrollbar p-4">
+            <DdlView
+              v-if="sourceDdl"
+              :ddl="sourceDdl"
+              :connection-type="sourceConnectionType"
+              :dialect="sourceDialect"
+            />
+            <div v-else class="text-sm text-gray-500 text-center py-8">DDL not available</div>
+          </div>
+        </div>
+
+        <!-- Target DDL -->
+        <div class="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+          <div
+            class="px-4 py-2 bg-gray-50 border-b border-gray-200 flex items-center justify-between"
+          >
+            <span class="text-xs font-medium text-gray-700 uppercase tracking-wide">
+              Target DDL
+            </span>
+          </div>
+          <div class="max-h-80 overflow-y-auto custom-scrollbar p-4">
+            <DdlView
+              v-if="targetDdl"
+              :ddl="targetDdl"
+              :connection-type="targetConnectionType"
+              :dialect="targetDialect"
+            />
+            <div v-else class="text-sm text-gray-500 text-center py-8">DDL not available</div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -95,6 +165,7 @@ import {
   Squares2X2Icon
 } from '@heroicons/vue/24/outline'
 import SchemaColumnList from './SchemaColumnList.vue'
+import DdlView from '@/components/database/DdlView.vue'
 import type { SQLColumnMeta } from '@/types/metadata'
 
 interface SchemaDifference {
@@ -116,7 +187,20 @@ defineProps<{
   sourceColumns: SQLColumnMeta[]
   targetColumns: SQLColumnMeta[]
   comparison: SchemaComparison | null
+  sourceDdl?: {
+    createTable: string
+    createIndexes?: string[]
+  }
+  targetDdl?: {
+    createTable: string
+    createIndexes?: string[]
+  }
+  sourceConnectionType: string
+  targetConnectionType: string
+  sourceDialect: string
+  targetDialect: string
 }>()
 
 const expanded = ref(false)
+const viewMode = ref<'columns' | 'ddl'>('columns')
 </script>
