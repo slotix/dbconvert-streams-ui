@@ -7,6 +7,7 @@ import AGGridFileDataView from '@/components/files/AGGridFileDataView.vue'
 import SchemaComparisonPanel from './SchemaComparisonPanel.vue'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { useFileExplorerStore } from '@/stores/fileExplorer'
+import { useDatabaseOverviewStore } from '@/stores/databaseOverview'
 import type { StreamConfig } from '@/types/streamConfig'
 import type { Connection } from '@/types/connections'
 import type { SQLTableMeta } from '@/types/metadata'
@@ -37,6 +38,7 @@ const props = defineProps<{
 
 const navigationStore = useExplorerNavigationStore()
 const fileExplorerStore = useFileExplorerStore()
+const overviewStore = useDatabaseOverviewStore()
 
 // Selected table from stream config
 const selectedTable = ref<string>('')
@@ -46,6 +48,17 @@ const sourceTableMeta = ref<SQLTableMeta | null>(null)
 const targetTableMeta = ref<SQLTableMeta | null>(null)
 const targetFileEntry = ref<FileSystemEntry | null>(null)
 const targetFileMetadata = ref<FileMetadata | null>(null)
+
+// Get approximate row counts from store for both source and target
+const sourceApproxRows = computed(() => {
+  if (!selectedTable.value) return 0
+  return overviewStore.getTableRowCount(selectedTable.value)
+})
+
+const targetApproxRows = computed(() => {
+  if (!selectedTable.value || isFileTarget.value) return 0
+  return overviewStore.getTableRowCount(selectedTable.value)
+})
 
 // Check if target is file-based
 const isFileTarget = computed(() => {
@@ -224,6 +237,13 @@ async function loadSourceTable() {
     await navigationStore.ensureMetadata(props.source.id, props.stream.sourceDatabase)
     console.log('ensureMetadata completed for source')
 
+    // Fetch database overview to get row counts
+    try {
+      await overviewStore.fetchOverview(props.source.id, props.stream.sourceDatabase)
+    } catch (e) {
+      console.warn('Failed to fetch source database overview:', e)
+    }
+
     // For MySQL, don't pass schema (database IS the schema)
     // For PostgreSQL, use schema if provided, otherwise default to 'public'
     let schema: string | undefined
@@ -253,6 +273,13 @@ async function loadTargetTable() {
 
     // Ensure metadata is loaded
     await navigationStore.ensureMetadata(props.target.id, props.stream.targetDatabase)
+
+    // Fetch database overview to get row counts
+    try {
+      await overviewStore.fetchOverview(props.target.id, props.stream.targetDatabase)
+    } catch (e) {
+      console.warn('Failed to fetch target database overview:', e)
+    }
 
     // For MySQL, don't pass schema (database IS the schema)
     // For PostgreSQL, use schema if provided, otherwise default to 'public'
@@ -401,6 +428,7 @@ async function selectTable(tableName: string) {
               :connection-id="source.id"
               :database="stream.sourceDatabase"
               :is-view="false"
+              :approx-rows="sourceApproxRows"
               :object-key="`compare-source-${stream.id}-${selectedTable}`"
             />
           </div>
@@ -448,6 +476,7 @@ async function selectTable(tableName: string) {
               :connection-id="target.id"
               :database="stream.targetDatabase"
               :is-view="false"
+              :approx-rows="targetApproxRows"
               :object-key="`compare-target-${stream.id}-${selectedTable}`"
             />
           </div>
