@@ -48,8 +48,8 @@
         </div>
       </div>
 
-      <!-- View Mode Toggle - only visible when expanded -->
-      <div v-if="expanded" class="flex items-center gap-2 mr-3" @click.stop>
+      <!-- View Mode Toggle - always visible -->
+      <div class="flex items-center gap-2 ml-4 pl-4 border-l border-gray-300" @click.stop>
         <button
           class="px-3 py-1 text-xs font-medium rounded-md transition-colors"
           :class="
@@ -57,7 +57,7 @@
               ? 'bg-white text-gray-900 shadow-sm border border-gray-300'
               : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
           "
-          @click="viewMode = 'columns'"
+          @click="selectViewMode('columns')"
         >
           Columns
         </button>
@@ -68,7 +68,7 @@
               ? 'bg-white text-gray-900 shadow-sm border border-gray-300'
               : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
           "
-          @click="viewMode = 'ddl'"
+          @click="selectViewMode('ddl')"
         >
           DDL
         </button>
@@ -263,6 +263,15 @@ const props = defineProps<{
 
 const expanded = ref(false)
 const viewMode = ref<'columns' | 'ddl'>('columns')
+
+// Handle view mode selection with auto-expand
+function selectViewMode(mode: 'columns' | 'ddl') {
+  viewMode.value = mode
+  // Auto-expand panel if collapsed
+  if (!expanded.value) {
+    expanded.value = true
+  }
+}
 
 // Merge source and target columns for side-by-side comparison
 const mergedColumns = computed<MergedColumn[]>(() => {
