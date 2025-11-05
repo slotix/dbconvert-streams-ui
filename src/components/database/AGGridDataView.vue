@@ -15,6 +15,7 @@ import connections from '@/api/connections'
 import { formatTableValue } from '@/utils/dataUtils'
 import { vHighlightjs } from '@/directives/highlightjs'
 import { useObjectTabStateStore } from '@/stores/objectTabState'
+import { useConnectionsStore } from '@/stores/connections'
 import ColumnContextMenu from './ColumnContextMenu.vue'
 import AdvancedFilterModal from './AdvancedFilterModal.vue'
 import { useAGGridFiltering } from '@/composables/useAGGridFiltering'
@@ -37,6 +38,15 @@ const props = defineProps<{
 
 // Store for persisting tab state including AG Grid data state
 const tabStateStore = useObjectTabStateStore()
+
+// Connections store to get database type
+const connectionsStore = useConnectionsStore()
+
+// Get connection type for proper SQL identifier quoting
+const connectionType = computed(() => {
+  const conn = connectionsStore.connectionByID(props.connectionId)
+  return conn?.type || 'mysql' // Default to mysql if not found
+})
 
 // Use shared AG Grid filtering composable (but override context menu state locally)
 const {
@@ -369,7 +379,7 @@ function createDatasource(): IDatasource {
         // Extract filter model from AG Grid and convert to SQL
         const filterModel = params.filterModel || {}
         agGridFilters.value = filterModel
-        const agGridWhereClause = convertFilterModelToSQL(filterModel)
+        const agGridWhereClause = convertFilterModelToSQL(filterModel, connectionType.value)
         agGridWhereSQL.value = agGridWhereClause
 
         // Combine AG Grid filters with manual WHERE clause

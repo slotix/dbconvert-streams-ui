@@ -4,6 +4,21 @@
  */
 
 /**
+ * Quote identifier (column name) based on database type
+ * PostgreSQL and Snowflake use double quotes, MySQL uses backticks
+ */
+function quoteIdentifier(identifier: string, dbType: string): string {
+  const type = dbType.toLowerCase()
+  if (type === 'postgresql' || type === 'snowflake') {
+    return `"${identifier}"`
+  } else if (type === 'mysql') {
+    return `\`${identifier}\``
+  }
+  // Default: no quoting for unknown types
+  return identifier
+}
+
+/**
  * Escape single quotes in string values to prevent SQL injection
  */
 function escapeValue(val: any): string {
@@ -19,9 +34,10 @@ function escapeValue(val: any): string {
  *
  * @param column - Column name
  * @param filter - AG Grid filter object
+ * @param dbType - Database type for proper identifier quoting
  * @returns SQL clause string or null if invalid
  */
-export function buildFilterClause(column: string, filter: any): string | null {
+export function buildFilterClause(column: string, filter: any, dbType: string): string | null {
   // Handle combined conditions (AND/OR)
   if (filter.operator) {
     console.log(`Building compound filter for ${column}:`, filter)
@@ -32,12 +48,16 @@ export function buildFilterClause(column: string, filter: any): string | null {
 
     if (filter.conditions && Array.isArray(filter.conditions)) {
       // New format: conditions array
-      condition1 = filter.conditions[0] ? buildFilterClause(column, filter.conditions[0]) : null
-      condition2 = filter.conditions[1] ? buildFilterClause(column, filter.conditions[1]) : null
+      condition1 = filter.conditions[0]
+        ? buildFilterClause(column, filter.conditions[0], dbType)
+        : null
+      condition2 = filter.conditions[1]
+        ? buildFilterClause(column, filter.conditions[1], dbType)
+        : null
     } else {
       // Old format: condition1 and condition2 properties
-      condition1 = filter.condition1 ? buildFilterClause(column, filter.condition1) : null
-      condition2 = filter.condition2 ? buildFilterClause(column, filter.condition2) : null
+      condition1 = filter.condition1 ? buildFilterClause(column, filter.condition1, dbType) : null
+      condition2 = filter.condition2 ? buildFilterClause(column, filter.condition2, dbType) : null
     }
 
     console.log(`  Condition1: ${condition1}, Condition2: ${condition2}`)
@@ -56,34 +76,42 @@ export function buildFilterClause(column: string, filter: any): string | null {
     return null
   }
 
+  // Quote the column identifier based on database type
+  const quotedColumn = quoteIdentifier(column, dbType)
+
+  // PostgreSQL uses ILIKE for case-insensitive string matching
+  const type = dbType.toLowerCase()
+  const likeOperator = type === 'postgresql' ? 'ILIKE' : 'LIKE'
+  const notLikeOperator = type === 'postgresql' ? 'NOT ILIKE' : 'NOT LIKE'
+
   // Build SQL based on filter type
   switch (filter.type) {
     case 'equals':
-      return `${column} = '${escapeValue(filterValue)}'`
+      return `${quotedColumn} = '${escapeValue(filterValue)}'`
     case 'notEqual':
-      return `${column} != '${escapeValue(filterValue)}'`
+      return `${quotedColumn} != '${escapeValue(filterValue)}'`
     case 'contains':
-      return `${column} LIKE '%${escapeValue(filterValue)}%'`
+      return `${quotedColumn} ${likeOperator} '%${escapeValue(filterValue)}%'`
     case 'notContains':
-      return `${column} NOT LIKE '%${escapeValue(filterValue)}%'`
+      return `${quotedColumn} ${notLikeOperator} '%${escapeValue(filterValue)}%'`
     case 'startsWith':
-      return `${column} LIKE '${escapeValue(filterValue)}%'`
+      return `${quotedColumn} ${likeOperator} '${escapeValue(filterValue)}%'`
     case 'endsWith':
-      return `${column} LIKE '%${escapeValue(filterValue)}'`
+      return `${quotedColumn} ${likeOperator} '%${escapeValue(filterValue)}'`
     case 'lessThan':
-      return `${column} < ${filterValue}`
+      return `${quotedColumn} < ${filterValue}`
     case 'lessThanOrEqual':
-      return `${column} <= ${filterValue}`
+      return `${quotedColumn} <= ${filterValue}`
     case 'greaterThan':
-      return `${column} > ${filterValue}`
+      return `${quotedColumn} > ${filterValue}`
     case 'greaterThanOrEqual':
-      return `${column} >= ${filterValue}`
+      return `${quotedColumn} >= ${filterValue}`
     case 'inRange':
-      return `${column} BETWEEN ${filter.filter} AND ${filter.filterTo}`
+      return `${quotedColumn} BETWEEN ${filter.filter} AND ${filter.filterTo}`
     case 'blank':
-      return `(${column} IS NULL OR ${column} = '')`
+      return `(${quotedColumn} IS NULL OR ${quotedColumn} = '')`
     case 'notBlank':
-      return `(${column} IS NOT NULL AND ${column} != '')`
+      return `(${quotedColumn} IS NOT NULL AND ${quotedColumn} != '')`
     default:
       return null
   }
@@ -93,15 +121,19 @@ export function buildFilterClause(column: string, filter: any): string | null {
  * Convert AG Grid filter model to SQL WHERE clause
  *
  * @param filterModel - AG Grid filter model object
+ * @param dbType - Database type for proper identifier quoting (default: 'mysql')
  * @returns SQL WHERE clause string (without WHERE keyword)
  */
-export function convertFilterModelToSQL(filterModel: Record<string, any>): string {
+export function convertFilterModelToSQL(
+  filterModel: Record<string, any>,
+  dbType: string = 'mysql'
+): string {
   const whereClauses: string[] = []
 
   for (const [column, filter] of Object.entries(filterModel)) {
     if (!filter) continue
 
-    const clause = buildFilterClause(column, filter)
+    const clause = buildFilterClause(column, filter, dbType)
     if (clause) {
       whereClauses.push(clause)
     }
