@@ -1,6 +1,6 @@
 <template>
-  <div class="relative mt-6 mb-6">
-    <h2 class="text-2xl font-bold tracking-tight text-gray-900">Stream Performance</h2>
+  <div class="relative mt-4 mb-3">
+    <h2 class="text-xl font-bold tracking-tight text-gray-900">Stream Performance</h2>
   </div>
 
   <!-- Source and Target Stats -->
@@ -11,7 +11,7 @@
     <div class="flex flex-col">
       <div
         :class="[
-          'px-6 py-5 bg-gradient-to-br border-b',
+          'px-4 py-3 bg-gradient-to-br border-b',
           isRunning
             ? 'from-orange-50 via-orange-100 to-orange-50 border-orange-200'
             : 'from-gray-50 via-gray-100 to-gray-50 border-gray-100'
@@ -23,7 +23,7 @@
               <img
                 :src="sourceIcon"
                 alt="Source Reader"
-                class="h-10 sm:h-12 w-10 sm:w-12 object-contain drop-shadow-sm"
+                class="h-8 sm:h-10 w-8 sm:w-10 object-contain drop-shadow-sm"
                 :class="{ 'opacity-50': !isRunning }"
               />
             </div>
@@ -49,7 +49,7 @@
         </div>
       </div>
 
-      <dl class="flex-1 px-6 py-6 space-y-5 bg-gradient-to-b from-white to-gray-50">
+      <dl class="flex-1 px-4 py-4 space-y-3 bg-gradient-to-b from-white to-gray-50">
         <StatRow
           label="Produced"
           :value="isRunning && sourceStats ? formatNumber(sourceStats.counter) : '—'"
@@ -98,7 +98,7 @@
     <div class="flex flex-col">
       <div
         :class="[
-          'px-6 py-5 bg-gradient-to-br border-b',
+          'px-4 py-3 bg-gradient-to-br border-b',
           isRunning
             ? 'from-teal-50 via-teal-100 to-teal-50 border-teal-200'
             : 'from-gray-50 via-gray-100 to-gray-50 border-gray-100'
@@ -110,7 +110,7 @@
               <img
                 :src="targetIcon"
                 alt="Target Writer"
-                class="h-10 sm:h-12 w-10 sm:w-12 object-contain drop-shadow-sm"
+                class="h-8 sm:h-10 w-8 sm:w-10 object-contain drop-shadow-sm"
                 :class="{ 'opacity-50': !isRunning }"
               />
             </div>
@@ -150,7 +150,7 @@
         </div>
       </div>
 
-      <dl class="flex-1 px-6 py-6 space-y-5 bg-gradient-to-b from-white to-gray-50">
+      <dl class="flex-1 px-4 py-4 space-y-3 bg-gradient-to-b from-white to-gray-50">
         <StatRow
           label="Consumed"
           :value="isRunning && targetStats ? formatNumber(targetStats.counter) : '—'"
@@ -197,7 +197,7 @@
   </div>
 
   <!-- Tables Section - Full Width Below -->
-  <div class="mt-6">
+  <div class="mt-4">
     <TableStatsCard @compare-table="(tableName) => $emit('compare-table', tableName)" />
   </div>
 </template>

@@ -84,14 +84,14 @@ function getStatusLabel(status: string) {
 <template>
   <div class="bg-white rounded-xl shadow-lg overflow-hidden">
     <!-- Header -->
-    <div class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-pink-50">
+    <div class="px-4 py-3 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-pink-50">
       <div class="flex items-center justify-between">
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2">
           <div class="p-2 bg-white rounded-lg shadow-sm">
             <TableCellsIcon class="h-5 w-5 text-purple-600" />
           </div>
           <div>
-            <h3 class="text-lg font-semibold text-gray-900">Tables</h3>
+            <h3 class="text-base font-semibold text-gray-900">Tables</h3>
             <p class="text-sm text-gray-600">
               {{ statusCounts.completed }} completed
               <span v-if="statusCounts.running > 0">
@@ -110,7 +110,7 @@ function getStatusLabel(status: string) {
     </div>
 
     <!-- Tables List -->
-    <div v-if="hasAnyTables" class="p-6">
+    <div v-if="hasAnyTables" class="p-4">
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <div
           v-for="table in visibleTables"
@@ -166,7 +166,7 @@ function getStatusLabel(status: string) {
       </div>
 
       <!-- View All Button -->
-      <div v-if="hasMore" class="mt-6 text-center">
+      <div v-if="hasMore" class="mt-4 text-center">
         <button
           type="button"
           class="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 shadow-sm hover:shadow transition-all duration-200"
