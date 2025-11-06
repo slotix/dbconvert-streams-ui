@@ -11,6 +11,7 @@ import ExplorerSidebarConnections from '@/components/database/ExplorerSidebarCon
 import ExplorerContentArea from '@/components/explorer/ExplorerContentArea.vue'
 import ConnectionTypeFilter from '@/components/common/ConnectionTypeFilter.vue'
 import SearchInput from '@/components/common/SearchInput.vue'
+import BaseButton from '@/components/base/BaseButton.vue'
 import connections from '@/api/connections'
 import type { SQLTableMeta, SQLViewMeta } from '@/types/metadata'
 import type { FileSystemEntry } from '@/api/fileSystem'
@@ -911,14 +912,10 @@ onUnmounted(() => {
           </div>
 
           <!-- Primary CTA Button with vibrant blue-green gradient -->
-          <button
-            type="button"
-            class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-linear-to-b from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105"
-            @click="onAddConnection"
-          >
+          <BaseButton variant="primary" @click="onAddConnection">
             <PlusIcon class="h-5 w-5" />
             <span>New Connection</span>
-          </button>
+          </BaseButton>
         </div>
       </div>
     </header>

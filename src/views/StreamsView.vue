@@ -30,13 +30,10 @@
 
           <!-- Primary CTA Button with orange-to-teal gradient -->
           <router-link :to="{ name: 'CreateStream' }">
-            <button
-              type="button"
-              class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-linear-to-b from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105"
-            >
+            <BaseButton variant="primary">
               <PlusIcon class="h-5 w-5" />
               <span>New Stream Config</span>
-            </button>
+            </BaseButton>
           </router-link>
         </div>
       </div>
@@ -185,6 +182,7 @@ import StreamsSidebar from '@/components/stream/StreamsSidebar.vue'
 import StreamDetailsPanel from '@/components/stream/StreamDetailsPanel.vue'
 import SearchInput from '@/components/common/SearchInput.vue'
 import DisconnectedOverlay from '@/components/common/DisconnectedOverlay.vue'
+import BaseButton from '@/components/base/BaseButton.vue'
 import type { StreamConfig } from '@/types/streamConfig'
 import type { Connection } from '@/types/connections'
 
