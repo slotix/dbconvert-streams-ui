@@ -105,38 +105,6 @@
               </button>
             </div>
           </div>
-          <div v-if="mode === 'target' && selectedConnectionId === connection.id" class="px-2">
-            <div class="text-xs font-medium uppercase tracking-wide text-gray-500">
-              Output Format
-            </div>
-            <div class="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
-              <button
-                v-for="option in fileFormatOptions"
-                :key="option.value"
-                type="button"
-                :class="[
-                  targetFileFormat === option.value
-                    ? 'bg-green-50 border border-green-200 shadow-[0_0_0_2px_rgba(37,99,235,0.1)]'
-                    : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50',
-                  'relative rounded-lg border px-3 py-2 text-xs font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500'
-                ]"
-                @click.stop="targetFileFormat = option.value"
-              >
-                <div class="text-sm font-semibold uppercase text-gray-900">{{ option.label }}</div>
-                <div v-if="option.description" class="mt-1 text-[11px] text-gray-500">
-                  {{ option.description }}
-                </div>
-
-                <!-- Selection indicator -->
-                <div
-                  v-if="targetFileFormat === option.value"
-                  class="absolute top-2 right-2 w-4 h-4 bg-gray-600 rounded-full flex items-center justify-center"
-                >
-                  <CheckIcon class="w-2.5 h-2.5 text-white" />
-                </div>
-              </button>
-            </div>
-          </div>
         </div>
 
         <template v-else>
@@ -203,11 +171,10 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, type Ref } from 'vue'
-import { ChevronRightIcon, ChevronDownIcon, CheckIcon } from '@heroicons/vue/24/outline'
+import { ChevronRightIcon, ChevronDownIcon } from '@heroicons/vue/24/outline'
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { useFileExplorerStore } from '@/stores/fileExplorer'
-import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
 import { normalizeConnectionType, getConnectionTooltip } from '@/utils/connectionUtils'
 import { highlightParts, type HighlightPart } from '@/utils/highlight'
@@ -240,7 +207,6 @@ const emit = defineEmits<{
 
 const navigationStore = useExplorerNavigationStore()
 const fileExplorerStore = useFileExplorerStore()
-const streamsStore = useStreamsStore()
 const connectionsStore = useConnectionsStore()
 
 const expandedConnections = ref<Set<string>>(new Set())
@@ -251,27 +217,6 @@ const connectionsMap = computed(() => {
     map.set(connection.id, connection)
   })
   return map
-})
-
-type TargetFileFormat = 'csv' | 'json' | 'jsonl' | 'parquet'
-
-const fileFormatOptions: Array<{
-  value: TargetFileFormat
-  label: string
-  description: string
-}> = [
-  { value: 'csv', label: 'CSV', description: '' },
-  { value: 'jsonl', label: 'JSONL (NDJSON)', description: '' },
-  { value: 'parquet', label: 'Parquet', description: '' }
-]
-
-const targetFileFormat = computed<TargetFileFormat>({
-  get: () => (streamsStore.currentStreamConfig?.targetFileFormat ?? 'csv') as TargetFileFormat,
-  set: (value) => {
-    if (streamsStore.currentStreamConfig) {
-      streamsStore.currentStreamConfig.targetFileFormat = value
-    }
-  }
 })
 
 function addToSet(target: Ref<Set<string>>, value: string) {

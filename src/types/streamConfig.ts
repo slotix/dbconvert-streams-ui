@@ -33,6 +33,7 @@ export interface StreamConfig {
   }
   operations?: string[]
   targetFileFormat?: 'csv' | 'json' | 'jsonl' | 'parquet'
+  compressionType?: 'uncompressed' | 'gzip' | 'zstd'
 
   // Granular structure creation options
   structureOptions?: {

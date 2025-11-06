@@ -30,6 +30,7 @@ export const defaultStreamConfigOptions: StreamConfig = {
   reportingIntervals: { source: 3, target: 3 },
   operations: ['insert', 'update', 'delete'],
   targetFileFormat: undefined,
+  compressionType: 'zstd',
   structureOptions: {
     tables: true,
     indexes: true,

@@ -22,7 +22,7 @@
               <img
                 src="/images/steps/source-step.svg"
                 alt="Source"
-                class="w-5 h-5 mr-2 mt-0.5 flex-shrink-0"
+                class="w-5 h-5 mr-2 mt-0.5 shrink-0"
               />
               <div class="flex-1 min-w-0">
                 <div class="text-gray-600 text-xs mb-1">Source:</div>
@@ -48,7 +48,7 @@
               <img
                 src="/images/steps/target-step.svg"
                 alt="Target"
-                class="w-5 h-5 mr-2 mt-0.5 flex-shrink-0"
+                class="w-5 h-5 mr-2 mt-0.5 shrink-0"
               />
               <div class="flex-1 min-w-0">
                 <div class="text-gray-600 text-xs mb-1">Target:</div>
@@ -80,6 +80,24 @@
                 currentStreamConfig?.dataBundleSize || 500
               }}</span>
             </div>
+            <!-- Output format info for file targets -->
+            <div
+              v-if="isFileTarget && currentStreamConfig?.targetFileFormat"
+              class="pt-2 border-t border-gray-100"
+            >
+              <div class="flex items-center justify-between">
+                <span class="text-gray-600">Format:</span>
+                <span class="font-medium text-gray-900 uppercase">{{
+                  currentStreamConfig.targetFileFormat
+                }}</span>
+              </div>
+              <div class="flex items-center justify-between mt-1">
+                <span class="text-gray-600">Compression:</span>
+                <span class="font-medium text-gray-900 capitalize">{{
+                  currentStreamConfig.compressionType || 'zstd'
+                }}</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -96,11 +114,7 @@
       class="bg-linear-to-r from-blue-50 to-teal-50 rounded-xl p-4 border border-blue-200 shadow-sm"
     >
       <div class="flex items-center">
-        <svg
-          class="w-5 h-5 text-teal-600 mr-3 flex-shrink-0"
-          fill="currentColor"
-          viewBox="0 0 20 20"
-        >
+        <svg class="w-5 h-5 text-teal-600 mr-3 shrink-0" fill="currentColor" viewBox="0 0 20 20">
           <path
             fill-rule="evenodd"
             d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
@@ -166,6 +180,16 @@ const targetDisplay = computed(() => {
 const tableCount = computed(() => {
   const tables = currentStreamConfig.value?.tables || []
   return tables.filter((t) => t.selected).length
+})
+
+const isFileTarget = computed(() => {
+  const target = currentStreamConfig.value?.target
+  if (!target) return false
+  // Check if it's a file connection (starts with / or file://)
+  if (target.startsWith('/') || target.startsWith('file://')) return true
+  // Or check connection type
+  const conn = connectionsStore.connectionByID(target)
+  return conn?.type?.toLowerCase().includes('file')
 })
 
 // Always allow proceeding to save - validation is handled by StreamSettings

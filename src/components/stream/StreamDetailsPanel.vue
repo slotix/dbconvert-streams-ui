@@ -286,17 +286,35 @@
           <!-- Output Format (for file-based targets) -->
           <div v-if="isFileTarget && stream.targetFileFormat">
             <label class="block text-xs font-medium uppercase text-gray-500 mb-2">
-              Output Format
+              Output Configuration
             </label>
-            <div class="bg-gray-50 rounded-md p-4 border border-gray-300">
-              <span
-                :class="[
-                  'inline-flex items-center rounded-md px-2.5 py-1 text-xs font-medium ring-1 ring-inset',
-                  'bg-blue-50 text-blue-700 ring-blue-600/20'
-                ]"
-              >
-                {{ stream.targetFileFormat.toUpperCase() }}
-              </span>
+            <div class="bg-gray-50 rounded-md p-4 border border-gray-300 space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-gray-600">Format:</span>
+                <span
+                  :class="[
+                    'inline-flex items-center rounded-md px-2.5 py-1 text-xs font-medium ring-1 ring-inset',
+                    'bg-blue-50 text-blue-700 ring-blue-600/20'
+                  ]"
+                >
+                  {{ stream.targetFileFormat.toUpperCase() }}
+                </span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-gray-600">Compression:</span>
+                <span
+                  :class="[
+                    'inline-flex items-center rounded-md px-2.5 py-1 text-xs font-medium ring-1 ring-inset',
+                    stream.compressionType === 'zstd'
+                      ? 'bg-green-50 text-green-700 ring-green-600/20'
+                      : stream.compressionType === 'gzip'
+                        ? 'bg-yellow-50 text-yellow-700 ring-yellow-600/20'
+                        : 'bg-gray-50 text-gray-700 ring-gray-600/20'
+                  ]"
+                >
+                  {{ (stream.compressionType || 'zstd').toUpperCase() }}
+                </span>
+              </div>
             </div>
           </div>
 
