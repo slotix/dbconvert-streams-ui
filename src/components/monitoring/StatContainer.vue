@@ -4,7 +4,7 @@
   </div>
 
   <div
-    class="grid grid-cols-1 divide-y divide-gray-200 overflow-hidden rounded-xl bg-white shadow-lg md:grid-cols-2 md:divide-x md:divide-y-0"
+    class="grid grid-cols-1 divide-y divide-gray-200 overflow-hidden rounded-xl bg-white shadow-lg lg:grid-cols-3 lg:divide-x lg:divide-y-0"
   >
     <!-- Source Stats - Orange Theme -->
     <div class="flex flex-col">
@@ -193,6 +193,11 @@
         />
       </dl>
     </div>
+
+    <!-- Table Stats - Purple Theme -->
+    <div class="flex flex-col p-0">
+      <TableStatsCard @compare-table="(tableName) => $emit('compare-table', tableName)" />
+    </div>
   </div>
 </template>
 
@@ -207,9 +212,14 @@ import {
 } from '@/utils/formats'
 import StatusBadge from './StatusBadge.vue'
 import StatRow from './StatRow.vue'
+import TableStatsCard from './TableStatsCard.vue'
 
 const props = defineProps<{
   isRunning: boolean
+}>()
+
+const emit = defineEmits<{
+  (e: 'compare-table', tableName: string): void
 }>()
 
 const store = useMonitoringStore()

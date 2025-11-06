@@ -379,7 +379,7 @@
         </div>
 
         <!-- Performance Stats -->
-        <StatContainer :is-running="isStreamRunning" />
+        <StatContainer :is-running="isStreamRunning" @compare-table="handleCompareTable" />
       </div>
 
       <!-- History Tab -->
@@ -716,6 +716,14 @@ function copyConfig() {
 
 function navigateToEdit() {
   router.push({ name: 'EditStream', params: { id: props.stream.id } })
+}
+
+function handleCompareTable(tableName: string) {
+  // Switch to Compare tab and pass the table name
+  activeTab.value = 'compare'
+  // Note: The StreamCompareView component will need to handle table selection
+  // This could be done via URL query params or by passing a prop
+  // For now, just switching to the Compare tab
 }
 
 async function navigateToExplorer() {

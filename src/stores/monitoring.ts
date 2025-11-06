@@ -2,13 +2,16 @@ import { defineStore } from 'pinia'
 import type { StreamConfig } from '@/types/streamConfig'
 import { NodeTypes, type NodeType } from '@/types/common'
 import type { AggregatedStatResponse, AggregatedNodeStats } from '@/types/streamStats'
+import type { TableStat, TableStatsGroup } from '@/types/tableStats'
 import {
   STREAM_STATUS,
   TERMINAL_STATUSES,
   STREAM_STATUS_PRIORITY,
-  type StreamStatus
+  STAT_STATUS,
+  type StreamStatus,
+  type StatStatus
 } from '@/constants'
-import { parseDataSize, parseDuration, parseNumber } from '@/utils/formats'
+import { parseDataSize, parseDuration, parseNumber, formatDataSize, formatDataRate } from '@/utils/formats'
 
 // Define types for the state
 interface Node {
@@ -162,6 +165,107 @@ export const useMonitoringStore = defineStore('monitoring', {
     },
     aggregatedTargetStats(state: State): AggregatedNodeStats | null {
       return state.aggregatedStats?.target || null
+    },
+    /**
+     * Extract table-level statistics from logs
+     * Groups by table name and returns latest stat per table
+     */
+    tableStats(state: State): TableStatsGroup {
+      // Get current stream ID
+      let currentStreamID = state.streamID
+      if (!currentStreamID && state.logs.length > 0) {
+        const recentLog = state.logs[state.logs.length - 1]
+        if (recentLog.streamId) {
+          currentStreamID = recentLog.streamId
+        }
+      }
+
+      // Filter to stat logs for current stream with table field
+      // Exclude aggregate entries (table field empty, "Total", or similar aggregate markers)
+      // Use target stats as they reflect actual written data
+      const tableLogs = state.logs.filter(
+        (log) =>
+          log.category === 'stat' &&
+          log.type === 'target' && // Only target node stats (actual written data)
+          log.table &&
+          log.table.toLowerCase() !== 'total' && // Exclude aggregate "Total" entries
+          log.table.toLowerCase() !== 'summary' && // Exclude aggregate "Summary" entries
+          (!currentStreamID || log.streamId === currentStreamID)
+      )
+
+      // Group by table name to get latest stat per table
+      // During streaming: shows per-writer progress
+      // After completion: backend publishes aggregated stats with same timestamp
+      const latestByTable = new Map<string, Log>()
+      tableLogs.forEach((log) => {
+        const existing = latestByTable.get(log.table!)
+        if (!existing) {
+          latestByTable.set(log.table!, log)
+        } else {
+          // Prefer FINISHED status entries (they contain final aggregated counts from backend)
+          const logIsFinished = log.status === STAT_STATUS.FINISHED
+          const existingIsFinished = existing.status === STAT_STATUS.FINISHED
+
+          if (logIsFinished && !existingIsFinished) {
+            // New log is finished, existing is not - take new (aggregated)
+            latestByTable.set(log.table!, log)
+          } else if (!logIsFinished && existingIsFinished) {
+            // Existing is finished, new is not - keep existing (aggregated)
+          } else {
+            // Both same status - take most recent timestamp
+            // When multiple writers finish, they all log the same aggregated values
+            // So we just need the latest one
+            if (log.ts && existing.ts && log.ts > existing.ts) {
+              latestByTable.set(log.table!, log)
+            }
+          }
+        }
+      })
+
+      // Convert to TableStat array
+      const allTableStats: TableStat[] = Array.from(latestByTable.values()).map((log) => {
+        // Backend sends raw numeric bytes in size and rate fields
+        // Handle both number (new format) and string (old cached format)
+        let sizeFormatted: string
+        if (typeof log.size === 'number') {
+          sizeFormatted = formatDataSize(log.size)
+        } else if (typeof log.size === 'string') {
+          sizeFormatted = log.size // Already formatted
+        } else {
+          sizeFormatted = '0 B'
+        }
+
+        let rateFormatted: string
+        if (typeof log.rate === 'number') {
+          rateFormatted = log.rate > 0 ? formatDataRate(log.rate) : '0 B/s'
+        } else if (typeof log.rate === 'string') {
+          rateFormatted = log.rate // Already formatted
+        } else {
+          rateFormatted = '0 B/s'
+        }
+
+        return {
+          table: log.table!,
+          status: (log.status as StatStatus) || STAT_STATUS.RUNNING,
+          events: (log.events as number) || 0,
+          size: sizeFormatted,
+          rate: rateFormatted,
+          elapsed: (log.elapsed as number) || 0,
+          timestamp: log.ts || Date.now()
+        }
+      })
+
+      // Group by status
+      const completed = allTableStats.filter((t) => t.status === STAT_STATUS.FINISHED)
+      const running = allTableStats.filter((t) => t.status === STAT_STATUS.RUNNING)
+      const failed = allTableStats.filter((t) => t.status === STAT_STATUS.FAILED)
+
+      return {
+        completed,
+        running,
+        failed,
+        total: allTableStats.length
+      }
     }
   },
   actions: {
