@@ -95,7 +95,7 @@ function getStatusLabel(status: string) {
             <p class="text-sm text-gray-600">
               {{ statusCounts.completed }} completed
               <span v-if="statusCounts.running > 0">
-                · {{ statusCounts.running}} in progress
+                · {{ statusCounts.running }} in progress
               </span>
               <span v-if="statusCounts.failed > 0"> · {{ statusCounts.failed }} failed </span>
             </p>
@@ -146,9 +146,7 @@ function getStatusLabel(status: string) {
             </div>
             <div>
               <dt class="text-gray-500">Duration</dt>
-              <dd class="font-semibold text-gray-900">
-                {{ (table.elapsed * 1000).toFixed(0) }}ms
-              </dd>
+              <dd class="font-semibold text-gray-900">{{ (table.elapsed * 1000).toFixed(0) }}ms</dd>
             </div>
           </dl>
 

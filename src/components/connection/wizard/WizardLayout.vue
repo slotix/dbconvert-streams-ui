@@ -78,23 +78,17 @@
 
       <!-- Wizard Navigation -->
       <div class="flex justify-between">
-        <button
-          v-if="canGoBack"
-          type="button"
-          class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-warm-50 hover:border-gray-400 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition-all duration-200"
-          @click="goToPreviousStep"
-        >
+        <BaseButton v-if="canGoBack" variant="secondary" @click="goToPreviousStep">
           <ArrowLeftIcon class="w-4 h-4 mr-2" />
           Back
-        </button>
+        </BaseButton>
         <div v-else></div>
 
         <div class="flex space-x-3">
-          <button
+          <BaseButton
             v-if="showTestButton"
-            type="button"
+            variant="secondary"
             :disabled="isTestingConnection"
-            class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-warm-50 hover:border-gray-400 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
             @click="$emit('test')"
           >
             <span v-if="isTestingConnection" class="flex items-center">
@@ -105,12 +99,11 @@
               <BeakerIcon class="w-4 h-4 mr-2" />
               Test Connection
             </span>
-          </button>
+          </BaseButton>
 
-          <button
-            type="button"
+          <BaseButton
+            variant="primary"
             :disabled="!canProceed || isProcessing"
-            class="inline-flex items-center px-4 py-2 bg-teal-600 border border-transparent text-sm font-medium rounded-lg text-white hover:bg-teal-700 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
             @click="handleNextOrFinish"
           >
             <span v-if="isProcessing" class="flex items-center">
@@ -131,15 +124,9 @@
               }}
               <ArrowRightIcon v-if="!isLastStep" class="w-4 h-4 ml-2" />
             </span>
-          </button>
+          </BaseButton>
 
-          <button
-            type="button"
-            class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-warm-50 hover:border-gray-400 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition-all duration-200"
-            @click="$emit('cancel')"
-          >
-            Cancel
-          </button>
+          <BaseButton variant="secondary" @click="$emit('cancel')"> Cancel </BaseButton>
         </div>
       </div>
     </div>
@@ -149,6 +136,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { CheckIcon, ArrowLeftIcon, ArrowRightIcon, BeakerIcon } from '@heroicons/vue/24/outline'
+import BaseButton from '@/components/base/BaseButton.vue'
 import Spinner from '@/components/common/Spinner.vue'
 
 interface WizardStep {

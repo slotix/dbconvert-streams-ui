@@ -17,10 +17,10 @@
                 :key="format.value"
                 type="button"
                 :class="[
-                  'px-4 py-2 rounded-md text-sm font-medium transition-colors border',
+                  'px-4 py-2 rounded-md text-sm font-medium border transition-all duration-150',
                   targetFileFormat === format.value
-                    ? 'bg-teal-600 text-white border-teal-600'
-                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                    ? 'bg-teal-600 text-white border-teal-600 ring-2 ring-teal-500 ring-offset-1'
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400'
                 ]"
                 @click="selectFormat(format.value)"
               >
@@ -37,7 +37,7 @@
             </label>
             <select
               v-model="compressionType"
-              class="block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500 sm:text-sm"
+              class="block w-full rounded-md border-gray-300 shadow-sm text-gray-900 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 sm:text-sm"
             >
               <option value="zstd">ZSTD (.zst) - Recommended</option>
               <option value="gzip">GZIP (.gz) - Legacy Compatibility</option>
@@ -64,7 +64,7 @@
                 type="number"
                 min="10"
                 max="1000"
-                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500 sm:text-sm"
+                class="block w-full rounded-md border-gray-300 shadow-sm text-gray-900 placeholder-gray-400 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 sm:text-sm"
                 placeholder="Enter a value between 10 and 1000"
               />
             </div>
@@ -92,7 +92,7 @@
                     id="sourceReaderReportingInterval"
                     v-model="reportingIntervalsSource"
                     type="number"
-                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500 sm:text-sm"
+                    class="block w-full rounded-md border-gray-300 shadow-sm text-gray-900 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 sm:text-sm"
                   />
                 </div>
               </div>
@@ -107,7 +107,7 @@
                     id="targetReaderReportingInterval"
                     v-model="reportingIntervalsTarget"
                     type="number"
-                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500 sm:text-sm"
+                    class="block w-full rounded-md border-gray-300 shadow-sm text-gray-900 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 sm:text-sm"
                   />
                 </div>
               </div>
@@ -129,7 +129,7 @@
                 id="numberOfEvents"
                 v-model="limitsNumberOfEvents"
                 type="number"
-                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500 sm:text-sm"
+                class="block w-full rounded-md border-gray-300 shadow-sm text-gray-900 placeholder-gray-400 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 sm:text-sm"
                 placeholder="0 = no limit"
               />
             </div>
@@ -146,7 +146,7 @@
                 id="elapsedTime"
                 v-model="limitsElapsedTime"
                 type="number"
-                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500 sm:text-sm"
+                class="block w-full rounded-md border-gray-300 shadow-sm text-gray-900 placeholder-gray-400 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 sm:text-sm"
                 placeholder="0 = no limit"
               />
             </div>

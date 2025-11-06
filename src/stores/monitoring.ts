@@ -11,7 +11,13 @@ import {
   type StreamStatus,
   type StatStatus
 } from '@/constants'
-import { parseDataSize, parseDuration, parseNumber, formatDataSize, formatDataRate } from '@/utils/formats'
+import {
+  parseDataSize,
+  parseDuration,
+  parseNumber,
+  formatDataSize,
+  formatDataRate
+} from '@/utils/formats'
 
 // Define types for the state
 interface Node {

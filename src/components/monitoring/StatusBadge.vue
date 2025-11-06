@@ -20,7 +20,7 @@ const statusClass = computed(() => {
     case 'FINISHED':
       return 'bg-teal-200 text-teal-900'
     case 'RUNNING':
-      return 'bg-orange-100 text-orange-800'
+      return 'bg-blue-100 text-blue-800'
     case 'PAUSED':
       return 'bg-yellow-100 text-yellow-800'
     case 'FAILED':
@@ -37,7 +37,7 @@ const dotClass = computed(() => {
     case 'FINISHED':
       return 'bg-teal-600'
     case 'RUNNING':
-      return 'bg-orange-500 animate-pulse'
+      return 'bg-blue-500 animate-pulse'
     case 'PAUSED':
       return 'bg-yellow-500'
     case 'FAILED':
