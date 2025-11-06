@@ -3,8 +3,9 @@
     <h2 class="text-2xl font-bold tracking-tight text-gray-900">Stream Performance</h2>
   </div>
 
+  <!-- Source and Target Stats -->
   <div
-    class="grid grid-cols-1 divide-y divide-gray-200 overflow-hidden rounded-xl bg-white shadow-lg lg:grid-cols-3 lg:divide-x lg:divide-y-0"
+    class="grid grid-cols-1 divide-y divide-gray-200 overflow-hidden rounded-xl bg-white shadow-lg lg:grid-cols-2 lg:divide-x lg:divide-y-0"
   >
     <!-- Source Stats - Orange Theme -->
     <div class="flex flex-col">
@@ -193,11 +194,11 @@
         />
       </dl>
     </div>
+  </div>
 
-    <!-- Table Stats - Purple Theme -->
-    <div class="flex flex-col p-0">
-      <TableStatsCard @compare-table="(tableName) => $emit('compare-table', tableName)" />
-    </div>
+  <!-- Tables Section - Full Width Below -->
+  <div class="mt-6">
+    <TableStatsCard @compare-table="(tableName) => $emit('compare-table', tableName)" />
   </div>
 </template>
 
