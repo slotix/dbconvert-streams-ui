@@ -52,6 +52,45 @@
    - Customizable size
    - *Note:* Currently NOT in use - monitoring uses old StatusBadge (with RUNNING=blue fix)
 
+7. **[src/components/base/FormInput.vue](./src/components/base/FormInput.vue)** - Text input wrapper
+   - Native HTML input (appropriate for text fields)
+   - Full v-model support with all input events
+   - Label, helper text, and error state support
+   - Consistent gray borders with teal focus rings
+   - All standard input attributes (type, placeholder, disabled, etc.)
+
+8. **[src/components/base/FormSelect.vue](./src/components/base/FormSelect.vue)** - Dropdown selector (**Headless UI**)
+   - **Uses Headless UI Listbox** for superior accessibility
+   - Full v-model support with keyboard navigation
+   - Options array with disabled state support
+   - Teal hover/active states
+   - Checkmark icon for selected items
+   - Placeholder support
+
+9. **[src/components/base/FormCheckbox.vue](./src/components/base/FormCheckbox.vue)** - Checkbox wrapper
+   - Native HTML checkbox (appropriate for simple checkboxes)
+   - Full v-model support (boolean or array for groups)
+   - Teal checked state
+   - Label and helper text support
+   - Indeterminate state support
+
+10. **[src/components/base/SelectionButtonGroup.vue](./src/components/base/SelectionButtonGroup.vue)** - Radio button group (**Headless UI**)
+    - **Uses Headless UI RadioGroup** for superior accessibility
+    - Used for file format picker pattern
+    - Full keyboard navigation support
+    - Teal active state with ring on focus
+    - Configurable grid layout (2-6 columns)
+    - Optional check icon display
+    - Auto-displays active option description
+
+11. **[src/components/base/FormSwitch.vue](./src/components/base/FormSwitch.vue)** - Toggle switch (**Headless UI**)
+    - **Uses Headless UI Switch** for on/off toggles
+    - Better than checkboxes for boolean states
+    - Teal active state
+    - Label position (left/right)
+    - Description support
+    - Full accessibility with screen readers
+
 ### ✨ Updated Components (Phase 1)
 
 7. **[src/components/settings/StreamSettings.vue](./src/components/settings/StreamSettings.vue)** - Implemented design standards
@@ -175,15 +214,55 @@ Teal is used strategically to guide users through critical actions, not as decor
 <StatusBadge status="initializing" /> <!-- Purple -->
 ```
 
-### Form Inputs (Standardized)
+### Form Components (Headless UI + Native)
 
-All inputs now follow this pattern:
-```html
-<input
-  class="block w-full rounded-md border-gray-300 shadow-sm 
-         text-gray-900 placeholder-gray-400 
-         focus:border-teal-500 focus:ring-1 focus:ring-teal-500 
-         sm:text-sm"
+```vue
+<!-- Text Input (Native) -->
+<FormInput
+  v-model="connectionName"
+  label="Connection Name"
+  placeholder="Enter name"
+  type="text"
+  required
+/>
+
+<!-- Select Dropdown (Headless UI Listbox) -->
+<FormSelect
+  v-model="dbType"
+  label="Database Type"
+  placeholder="Choose a database"
+  :options="[
+    { value: 'mysql', label: 'MySQL' },
+    { value: 'postgres', label: 'PostgreSQL' },
+    { value: 'snowflake', label: 'Snowflake', disabled: true }
+  ]"
+/>
+
+<!-- Checkbox (Native) -->
+<FormCheckbox
+  v-model="sslEnabled"
+  label="Enable SSL/TLS"
+  helperText="Secure your connection with encryption"
+/>
+
+<!-- Toggle Switch (Headless UI Switch) -->
+<FormSwitch
+  v-model="autoReconnect"
+  label="Auto Reconnect"
+  description="Automatically reconnect on connection loss"
+/>
+
+<!-- Radio Button Group (Headless UI RadioGroup) -->
+<SelectionButtonGroup
+  v-model="fileFormat"
+  label="File Format"
+  :options="[
+    { value: 'csv', label: 'CSV', description: 'Comma-separated values' },
+    { value: 'jsonl', label: 'JSONL', description: 'JSON Lines format' },
+    { value: 'parquet', label: 'Parquet', description: 'Columnar format' }
+  ]"
+  :columns="3"
+  show-check-icon
 />
 ```
 
@@ -226,28 +305,63 @@ All inputs now follow this pattern:
 
 ## Next Steps
 
-### Phase 1: Immediate (This Week)
-- [ ] Update Connection Creation wizard to use BaseButton
-- [ ] Update Stream Configuration wizard to use BaseButton
-- [ ] Add StatusBadge to stream monitor page
+### ✅ Phase 2: Component Library (COMPLETED - Headless UI)
+- [x] Create FormInput.vue wrapper (native HTML input)
+- [x] Create FormSelect.vue wrapper (**Headless UI Listbox**)
+- [x] Create FormCheckbox.vue wrapper (native HTML checkbox)
+- [x] Create FormSwitch.vue wrapper (**Headless UI Switch**)
+- [x] Create SelectionButtonGroup.vue (**Headless UI RadioGroup**)
 
-### Phase 2: Component Library (Next Week)
-- [ ] Create FormInput.vue wrapper with consistent styling
-- [ ] Create FormSelect.vue wrapper
-- [ ] Create FormCheckbox.vue wrapper
-- [ ] Create SelectionButtonGroup.vue for file format picker pattern
+All form components now available in `src/components/base/` using Headless UI where appropriate for superior accessibility.
 
-### Phase 3: Global Rollout (2 Weeks)
-- [ ] Audit all buttons across the app
-- [ ] Replace inline button classes with BaseButton component
-- [ ] Standardize all form inputs
-- [ ] Update navigation components (tabs, sidebar)
+### Phase 3: Gradual Form Migration (Optional - As Needed)
+- [ ] Migrate StreamSettings.vue file format picker to SelectionButtonGroup
+- [ ] Migrate connection form inputs to FormInput/FormSelect as components are updated
+- [ ] Update table filter inputs to use FormInput
+- [ ] Standardize checkbox usage with FormCheckbox
+
+**Note:** Form components are now available but migration is NOT required. Use them in new components or when updating existing ones. Current inline styling will continue to work.
 
 ### Phase 4: Dark Mode (Future)
 - [ ] Add dark mode toggle
 - [ ] Test all components in dark theme
 - [ ] Update color palette for dark mode
 - [ ] User preference persistence
+
+---
+
+## New Form Components Usage
+
+### Quick Reference
+
+**When to use each component:**
+
+| Component | Technology | Use Case | Example |
+|-----------|-----------|----------|---------|
+| `FormInput` | Native HTML | Text, number, email, password fields | Connection name, port, host |
+| `FormSelect` | **Headless UI** | Dropdown selections | Database type, schema selector |
+| `FormCheckbox` | Native HTML | Simple checkboxes or groups | Accept terms, select tables |
+| `FormSwitch` | **Headless UI** | Toggle switches (on/off states) | Enable SSL, auto-connect |
+| `SelectionButtonGroup` | **Headless UI** | Radio-style button groups | File format picker, mode selection |
+
+### Why Headless UI?
+
+Components marked **Headless UI** provide:
+- ✅ **Superior accessibility** - WCAG compliant out of the box
+- ✅ **Keyboard navigation** - Full keyboard support built-in
+- ✅ **Screen reader support** - Proper ARIA labels and roles
+- ✅ **Focus management** - Automatic focus handling
+- ✅ **Consistent with codebase** - Already used in existing components
+
+### Migration is Optional
+
+These components are **opt-in**:
+- ✅ Use in new features
+- ✅ Use when refactoring existing components
+- ❌ No need to rush migration of working forms
+- ❌ Don't break existing functionality
+
+All components preserve full v-model functionality and emit change events.
 
 ---
 
