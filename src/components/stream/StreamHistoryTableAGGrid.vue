@@ -7,11 +7,11 @@
         <span v-if="runs.length > 0" class="text-xs text-gray-500">
           {{ runs.length }} total run{{ runs.length !== 1 ? 's' : '' }}
         </span>
-        <button
+        <BaseButton
           v-if="runs.length > 0"
-          type="button"
+          variant="danger"
+          size="sm"
           title="Delete all runs from history"
-          class="p-1.5 text-red-600 hover:text-red-700 rounded-md hover:bg-red-50 transition-colors duration-200"
           @click="handleClearAll"
         >
           <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -22,7 +22,7 @@
               d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
             />
           </svg>
-        </button>
+        </BaseButton>
       </div>
     </div>
 
@@ -99,6 +99,7 @@ import type {
 import { formatDateTime, formatDuration, formatNumberCompact } from '@/utils/formats'
 import { useLogsStore } from '@/stores/logs'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
+import BaseButton from '@/components/base/BaseButton.vue'
 import 'ag-grid-community/styles/ag-grid.css'
 import 'ag-grid-community/styles/ag-theme-alpine.css'
 import '@/styles/agGridTheme.css'

@@ -174,15 +174,15 @@
 
       <!-- Actions -->
       <div class="flex divide-x divide-gray-200 border-t">
-        <button
+        <BaseButton
           v-tooltip="'Edit stream configuration'"
-          type="button"
-          class="flex-1 px-4 py-3 text-sm font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 flex items-center justify-center gap-2 transition-colors"
+          variant="secondary"
+          class="flex-1 rounded-none border-0 py-3"
           @click.stop="editStream"
         >
           <PencilIcon class="h-4 w-4" />
           Edit
-        </button>
+        </BaseButton>
         <ActionsMenu
           v-tooltip="'More stream actions'"
           class="flex-1 px-4 py-3 text-sm font-medium text-gray-700 bg-gray-50 hover:bg-gray-100"
@@ -193,15 +193,15 @@
           @cloneRow="cloneStreamConfig"
           @deleteRow="requestDelete"
         />
-        <button
+        <BaseButton
           v-tooltip="'Start the stream'"
-          type="button"
-          class="flex-1 px-4 py-3 text-sm font-medium text-green-700 bg-gray-50 hover:bg-gray-100 flex items-center justify-center gap-2 transition-colors"
+          variant="primary"
+          class="flex-1 rounded-none border-0 py-3"
           @click.stop="startStream"
         >
           <PlayIcon class="h-4 w-4" />
           Start
-        </button>
+        </BaseButton>
       </div>
     </div>
 
@@ -221,9 +221,13 @@
 import { defineComponent } from 'vue'
 import shared from './shared'
 import { vTooltip } from '@/directives/tooltip'
+import BaseButton from '@/components/base/BaseButton.vue'
 
 export default defineComponent({
   ...shared,
+  components: {
+    BaseButton
+  },
   directives: {
     tooltip: vTooltip
   }

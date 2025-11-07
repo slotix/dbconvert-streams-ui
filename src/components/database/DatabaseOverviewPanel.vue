@@ -2,6 +2,7 @@
 import { onMounted, watch, computed } from 'vue'
 import { useDatabaseOverviewStore } from '@/stores/databaseOverview'
 import { formatDataSize } from '@/utils/formats'
+import BaseButton from '@/components/base/BaseButton.vue'
 import {
   ServerIcon,
   CircleStackIcon,
@@ -85,16 +86,10 @@ const sizeDisplay = computed(() => {
     <div class="flex items-center justify-between mb-4">
       <h3 class="text-base font-semibold text-gray-900">Database Overview</h3>
       <div class="flex items-center gap-2">
-        <button
-          type="button"
-          class="inline-flex items-center rounded-lg px-3 py-1.5 text-xs font-medium shadow-sm border border-gray-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50 hover:shadow-md transition-all duration-200"
-          @click="load()"
-        >
-          Refresh
-        </button>
-        <button
-          type="button"
-          class="inline-flex items-center rounded-lg px-3 py-1.5 text-xs font-medium shadow-sm border border-gray-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50 hover:shadow-md transition-all duration-200"
+        <BaseButton variant="secondary" size="sm" @click="load()"> Refresh </BaseButton>
+        <BaseButton
+          variant="secondary"
+          size="sm"
           @click="
             emit('show-diagram', {
               connectionId: props.connectionId,
@@ -103,7 +98,7 @@ const sizeDisplay = computed(() => {
           "
         >
           Show diagram
-        </button>
+        </BaseButton>
       </div>
     </div>
     <div v-if="isLoading" class="text-sm text-gray-500 py-8 text-center">Loading overview…</div>
