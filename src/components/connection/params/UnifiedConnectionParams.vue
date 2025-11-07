@@ -1,13 +1,18 @@
 <template>
   <div class="px-4 md:px-6">
     <!-- Connection ID (for existing connections) -->
-    <div v-if="connection?.id" class="bg-white bg-opacity-5 text-center md:text-left">
-      <div class="items-center w-full p-4 space-y-4 text-gray-500 md:inline-flex md:space-y-0">
+    <div
+      v-if="connection?.id"
+      class="bg-white dark:bg-gray-800 bg-opacity-5 dark:bg-opacity-5 text-center md:text-left"
+    >
+      <div
+        class="items-center w-full p-4 space-y-4 text-gray-500 dark:text-gray-400 md:inline-flex md:space-y-0"
+      >
         <label class="max-w-sm mx-auto md:w-1/3">Connection ID</label>
         <div class="max-w-sm mx-auto md:w-2/3">
           <div class="relative">
             <span
-              class="block rounded-lg bg-white text-gray-700 placeholder-gray-400 shadow-sm text-base py-2 px-4"
+              class="block rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm text-base py-2 px-4"
             >
               {{ connection?.id }}
             </span>
@@ -27,10 +32,12 @@
     <!-- Connection Parameters -->
     <div v-if="connection && ((isEdit && connection.id) || !isEdit)" class="mt-6">
       <!-- Connection Authentication Group -->
-      <div class="bg-white rounded-xl border border-gray-100 p-6 mb-6 shadow-sm">
-        <h3 class="text-sm font-semibold text-gray-900 mb-6 flex items-center">
+      <div
+        class="bg-white dark:bg-gray-850 rounded-xl border border-gray-100 dark:border-gray-700 p-6 mb-6 shadow-sm dark:shadow-gray-900/30"
+      >
+        <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-6 flex items-center">
           <svg
-            class="h-4 w-4 mr-2 text-gray-600"
+            class="h-4 w-4 mr-2 text-gray-600 dark:text-gray-400"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -48,12 +55,12 @@
         <div class="space-y-4">
           <!-- Server -->
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-            <label class="text-sm font-medium text-gray-700">Server</label>
+            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Server</label>
             <div class="md:col-span-2">
               <input
                 v-model="connection.host"
                 type="text"
-                class="w-full rounded-lg border border-gray-300 py-2 px-4 bg-white text-gray-700 placeholder-gray-400 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-gray-600 focus:border-transparent"
+                class="w-full rounded-lg border border-gray-300 dark:border-gray-600 py-2 px-4 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-gray-600 dark:focus:ring-teal-400 focus:border-transparent"
                 placeholder="localhost"
               />
             </div>
@@ -61,12 +68,12 @@
 
           <!-- Port -->
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-            <label class="text-sm font-medium text-gray-700">Port</label>
+            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Port</label>
             <div class="md:col-span-2">
               <input
                 v-model.number.lazy="connection.port"
                 type="number"
-                class="w-full rounded-lg border border-gray-300 py-2 px-4 bg-white text-gray-700 placeholder-gray-400 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-gray-600 focus:border-transparent"
+                class="w-full rounded-lg border border-gray-300 dark:border-gray-600 py-2 px-4 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-gray-600 dark:focus:ring-teal-400 focus:border-transparent"
                 :placeholder="defaultPort.toString()"
               />
             </div>
@@ -74,12 +81,12 @@
 
           <!-- Username -->
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-            <label class="text-sm font-medium text-gray-700">User ID</label>
+            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">User ID</label>
             <div class="md:col-span-2">
               <input
                 v-model="connection.username"
                 type="text"
-                class="w-full rounded-lg border border-gray-300 py-2 px-4 bg-white text-gray-700 placeholder-gray-400 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-gray-600 focus:border-transparent"
+                class="w-full rounded-lg border border-gray-300 dark:border-gray-600 py-2 px-4 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-gray-600 dark:focus:ring-teal-400 focus:border-transparent"
                 :placeholder="getConnectionDefaults().username"
               />
             </div>
@@ -87,13 +94,13 @@
 
           <!-- Password -->
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-            <label class="text-sm font-medium text-gray-700">Password</label>
+            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
             <div class="md:col-span-2">
               <div class="relative">
                 <input
                   v-model="connection.password"
                   :type="passwordFieldType"
-                  class="w-full rounded-lg border border-gray-300 py-2 px-4 bg-white text-gray-700 placeholder-gray-400 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-gray-600 focus:border-transparent pr-10"
+                  class="w-full rounded-lg border border-gray-300 dark:border-gray-600 py-2 px-4 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-gray-600 dark:focus:ring-teal-400 focus:border-transparent pr-10"
                   placeholder="Enter password"
                 />
                 <button
@@ -103,25 +110,31 @@
                 >
                   <EyeIcon
                     v-if="passwordFieldType === 'password'"
-                    class="h-5 w-5 text-gray-400"
+                    class="h-5 w-5 text-gray-400 dark:text-gray-500"
                     aria-hidden="true"
                   />
-                  <EyeSlashIcon v-else class="h-5 w-5 text-gray-400" aria-hidden="true" />
+                  <EyeSlashIcon
+                    v-else
+                    class="h-5 w-5 text-gray-400 dark:text-gray-500"
+                    aria-hidden="true"
+                  />
                 </button>
               </div>
             </div>
           </div>
           <!-- Database Field (Optional) -->
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-            <label class="text-sm font-medium text-gray-700">Database (Optional)</label>
+            <label class="text-sm font-medium text-gray-700 dark:text-gray-300"
+              >Database (Optional)</label
+            >
             <div class="md:col-span-2">
               <input
                 v-model="connection.database"
                 type="text"
-                class="w-full rounded-lg border border-gray-300 py-2 px-4 bg-white text-gray-700 placeholder-gray-400 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-gray-600 focus:border-transparent"
+                class="w-full rounded-lg border border-gray-300 dark:border-gray-600 py-2 px-4 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-gray-600 dark:focus:ring-teal-400 focus:border-transparent"
                 :placeholder="getDatabasePlaceholder()"
               />
-              <p class="text-xs text-gray-500 mt-1">
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
                 💡 Leave blank to browse all databases, or specify one for direct access
               </p>
             </div>
@@ -130,7 +143,7 @@
       </div>
 
       <!-- Note about simplified workflow -->
-      <div class="text-xs text-gray-500 italic mt-2">
+      <div class="text-xs text-gray-500 dark:text-gray-400 italic mt-2">
         Note: Database selection is now optional. You can connect to the server and explore
         databases in the Data Explorer.
       </div>

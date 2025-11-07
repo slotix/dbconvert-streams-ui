@@ -1,11 +1,11 @@
 <template>
-  <div class="certificate-input border-b border-gray-100 pb-6 last:border-b-0">
+  <div class="certificate-input border-b border-gray-100 dark:border-gray-700 pb-6 last:border-b-0">
     <div class="flex items-center mb-2">
-      <label :for="inputId" class="text-sm font-medium text-gray-700">
+      <label :for="inputId" class="text-sm font-medium text-gray-700 dark:text-gray-300">
         {{ label }}
         <span
           v-tooltip="description"
-          class="ml-2 text-gray-400 hover:text-gray-500 cursor-help inline-block"
+          class="ml-2 text-gray-400 dark:text-gray-500 hover:text-gray-500 dark:hover:text-gray-400 cursor-help inline-block"
         >
           <QuestionMarkCircleIcon class="h-4 w-4" />
         </span>
@@ -13,8 +13,11 @@
     </div>
 
     <div class="flex items-center justify-between">
-      <div class="flex items-center text-sm text-gray-600">
-        <CheckCircleIcon v-if="value && !error" class="h-5 w-5 text-green-500 mr-2" />
+      <div class="flex items-center text-sm text-gray-600 dark:text-gray-400">
+        <CheckCircleIcon
+          v-if="value && !error"
+          class="h-5 w-5 text-green-500 dark:text-green-400 mr-2"
+        />
         {{ error || (value ? 'Certificate stored securely' : 'No file uploaded') }}
       </div>
 
@@ -31,7 +34,7 @@
         <button
           type="button"
           :disabled="isLoading"
-          class="px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+          class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
           @click="triggerFileInput"
         >
           <ArrowPathIcon v-if="isLoading" class="animate-spin h-4 w-4 mr-2" />
@@ -41,7 +44,7 @@
         <button
           v-if="value && !isLoading"
           type="button"
-          class="text-red-500 hover:text-red-700"
+          class="text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
           @click="$emit('clear')"
         >
           <TrashIcon class="h-5 w-5" />
@@ -49,7 +52,7 @@
       </div>
     </div>
 
-    <p class="mt-1 text-xs text-gray-500">
+    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
       Accepted formats: {{ accept.replace(/\./g, '').toUpperCase() }} (Max size:
       {{ formatFileSize(maxSize) }})
     </p>

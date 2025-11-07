@@ -11,7 +11,7 @@
       <div class="flex justify-between">
         <button
           type="button"
-          class="inline-flex items-center px-4 py-2 border border-gray-200 text-sm font-medium rounded-lg text-gray-700 bg-white hover:border-gray-300 hover:bg-warm-50 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
+          class="inline-flex items-center px-4 py-2 border border-gray-200 dark:border-gray-700 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-warm-50 dark:hover:bg-gray-700 hover:shadow-md dark:hover:shadow-gray-900/30 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-900 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200"
           @click="cancelWizard"
         >
           Cancel
@@ -19,7 +19,7 @@
         <button
           :disabled="!canProceed"
           type="button"
-          class="inline-flex items-center px-4 py-2 bg-teal-600 border border-transparent text-sm font-medium rounded-lg text-white hover:bg-teal-700 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+          class="inline-flex items-center px-4 py-2 bg-teal-600 dark:bg-teal-500 border border-transparent text-sm font-medium rounded-lg text-white hover:bg-teal-700 dark:hover:bg-teal-400 hover:shadow-md dark:hover:shadow-teal-900/50 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-900 focus:ring-blue-500 dark:focus:ring-blue-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
           @click="goToDetails"
         >
           Next →
@@ -38,7 +38,7 @@
       <div class="flex justify-between">
         <button
           type="button"
-          class="inline-flex items-center px-4 py-2 border border-gray-200 text-sm font-medium rounded-lg text-gray-700 bg-white hover:border-gray-300 hover:bg-warm-50 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
+          class="inline-flex items-center px-4 py-2 border border-gray-200 dark:border-gray-700 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-warm-50 dark:hover:bg-gray-700 hover:shadow-md dark:hover:shadow-gray-900/30 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-900 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200"
           @click="goBackToType"
         >
           Back
@@ -46,7 +46,7 @@
         <div class="flex space-x-3">
           <button
             type="button"
-            class="inline-flex items-center px-4 py-2 border border-gray-200 text-sm font-medium rounded-lg text-gray-700 bg-white hover:border-gray-300 hover:bg-warm-50 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
+            class="inline-flex items-center px-4 py-2 border border-gray-200 dark:border-gray-700 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-warm-50 dark:hover:bg-gray-700 hover:shadow-md dark:hover:shadow-gray-900/30 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-900 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200"
             @click="cancelWizard"
           >
             Cancel
@@ -54,7 +54,7 @@
           <button
             :disabled="!canProceed || isTestingConnection"
             type="button"
-            class="inline-flex items-center px-4 py-2 border border-gray-200 text-sm font-medium rounded-lg text-gray-700 bg-white hover:border-blue-300 hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+            class="inline-flex items-center px-4 py-2 border border-gray-200 dark:border-gray-700 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:border-blue-300 dark:hover:border-blue-600 hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50 dark:hover:from-blue-900/20 dark:hover:to-teal-900/20 hover:shadow-md dark:hover:shadow-gray-900/30 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-900 focus:ring-blue-500 dark:focus:ring-blue-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
             @click="testConnection"
           >
             <span v-if="isTestingConnection" class="flex items-center">
@@ -85,7 +85,7 @@
           <button
             :disabled="!canProceed || isCreatingConnection"
             type="button"
-            class="inline-flex items-center px-4 py-2 bg-teal-600 border border-transparent text-sm font-medium rounded-lg text-white hover:bg-teal-700 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+            class="inline-flex items-center px-4 py-2 bg-teal-600 dark:bg-teal-500 border border-transparent text-sm font-medium rounded-lg text-white hover:bg-teal-700 dark:hover:bg-teal-400 hover:shadow-md dark:hover:shadow-teal-900/50 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-900 focus:ring-blue-500 dark:focus:ring-blue-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
             @click="createConnection"
           >
             <span v-if="isCreatingConnection" class="flex items-center">
@@ -119,10 +119,14 @@
       <!-- Test Result (only show error messages) -->
       <div
         v-if="testResult && !testResult.success"
-        class="border border-red-200 rounded-lg p-4 bg-red-50"
+        class="border border-red-200 dark:border-red-800 rounded-lg p-4 bg-red-50 dark:bg-red-900/20"
       >
         <div class="flex items-center">
-          <svg class="h-5 w-5 text-red-600 mr-3" fill="currentColor" viewBox="0 0 20 20">
+          <svg
+            class="h-5 w-5 text-red-600 dark:text-red-400 mr-3"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
             <path
               fill-rule="evenodd"
               d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
@@ -130,8 +134,8 @@
             />
           </svg>
           <div>
-            <p class="font-medium text-red-800">Connection Failed</p>
-            <p class="text-sm text-red-700">{{ testResult.message }}</p>
+            <p class="font-medium text-red-800 dark:text-red-300">Connection Failed</p>
+            <p class="text-sm text-red-700 dark:text-red-400">{{ testResult.message }}</p>
           </div>
         </div>
       </div>

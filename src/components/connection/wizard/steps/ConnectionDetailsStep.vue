@@ -3,16 +3,18 @@
     <!-- Connection Type Display -->
     <div
       v-if="connectionType && !hideTypeDisplay"
-      class="flex items-center p-3 bg-linear-to-r from-slate-50 to-gray-50 rounded-xl border border-gray-100 shadow-sm"
+      class="flex items-center p-3 bg-linear-to-r from-slate-50 to-gray-50 dark:from-gray-800 dark:to-gray-850 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm dark:shadow-gray-900/30"
     >
       <img
         :src="getDBTypeLogo(connectionType)"
         :alt="connectionType + ' logo'"
-        class="h-8 w-8 object-contain mr-3"
+        class="h-8 w-8 object-contain mr-3 dark:brightness-0 dark:invert dark:opacity-70"
       />
       <div>
-        <span class="text-sm font-semibold text-gray-900">{{ connectionType }} Connection</span>
-        <p class="text-xs text-gray-500">Configure your connection parameters</p>
+        <span class="text-sm font-semibold text-gray-900 dark:text-gray-100"
+          >{{ connectionType }} Connection</span
+        >
+        <p class="text-xs text-gray-500 dark:text-gray-400">Configure your connection parameters</p>
       </div>
     </div>
 

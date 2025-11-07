@@ -11,8 +11,9 @@
         v-for="tab in tabs"
         :key="tab"
         :class="{
-          'border-b-2 font-semibold border-teal-600 text-teal-600': currentTab === tab,
-          'border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300':
+          'border-b-2 font-semibold border-teal-600 dark:border-teal-400 text-teal-600 dark:text-teal-400':
+            currentTab === tab,
+          'border-b-2 border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600':
             currentTab !== tab
         }"
         class="py-4 px-6 flex-1 focus:outline-none transition-all duration-200"

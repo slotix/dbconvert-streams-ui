@@ -1,16 +1,16 @@
 <template>
   <div class="px-6">
     <div class="mt-4">
-      <h3 class="text-xl font-medium text-gray-900 mb-6">SSL Configuration</h3>
+      <h3 class="text-xl font-medium text-gray-900 dark:text-gray-100 mb-6">SSL Configuration</h3>
       <div class="space-y-6">
         <!-- SSL Mode -->
         <div class="mb-6">
           <div class="flex items-center mb-2">
-            <label for="ssl-mode" class="text-sm font-medium text-gray-700">
+            <label for="ssl-mode" class="text-sm font-medium text-gray-700 dark:text-gray-300">
               SSL Mode
               <span
                 v-tooltip="'Choose the SSL verification mode for your connection'"
-                class="ml-2 text-gray-400 hover:text-gray-500 cursor-help inline-block"
+                class="ml-2 text-gray-400 dark:text-gray-500 hover:text-gray-500 dark:hover:text-gray-400 cursor-help inline-block"
               >
                 <QuestionMarkCircleIcon class="h-4 w-4" />
               </span>
@@ -19,7 +19,7 @@
           <select
             id="ssl-mode"
             :value="localSSLConfig.mode"
-            class="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-gray-500 focus:outline-none focus:ring-gray-500 sm:text-sm"
+            class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 py-2 pl-3 pr-10 text-base focus:border-gray-500 dark:focus:border-teal-400 focus:outline-none focus:ring-gray-500 dark:focus:ring-teal-400 sm:text-sm"
             @change="
               handleModeChange(($event.target as HTMLSelectElement).value as SSLConfig['mode'])
             "
@@ -28,7 +28,9 @@
               {{ mode.label }}
             </option>
           </select>
-          <p class="mt-1 text-sm text-gray-500">{{ getSSLModeDescription(localSSLConfig.mode) }}</p>
+          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            {{ getSSLModeDescription(localSSLConfig.mode) }}
+          </p>
         </div>
 
         <div v-if="localSSLConfig.mode !== 'disabled'" class="space-y-6">
