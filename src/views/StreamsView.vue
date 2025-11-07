@@ -164,9 +164,21 @@
             </div>
             <div
               v-else
-              class="h-full flex items-center justify-center text-gray-500 dark:text-gray-400"
+              class="flex flex-col items-center justify-center gap-3 py-16 px-4 text-center text-gray-500 dark:text-gray-400"
             >
-              <p>Select a stream from the list to view details</p>
+              <div
+                class="inline-flex h-20 w-20 items-center justify-center rounded-full bg-linear-to-br from-blue-600 to-teal-500 text-white shadow-xl"
+              >
+                <ArrowPathIcon class="h-10 w-10" />
+              </div>
+              <div class="max-w-md mx-auto space-y-1">
+                <p class="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                  No stream selected
+                </p>
+                <p class="text-sm text-gray-500 dark:text-gray-400">
+                  Select a stream from the sidebar to view details
+                </p>
+              </div>
             </div>
           </div>
         </div>
