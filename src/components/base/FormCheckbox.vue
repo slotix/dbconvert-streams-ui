@@ -98,7 +98,7 @@ const checkboxId = props.id || `form-checkbox-${Math.random().toString(36).subst
 </script>
 
 <template>
-  <div class="w-full">
+  <div>
     <div class="flex items-start">
       <div class="flex items-center h-5">
         <input
