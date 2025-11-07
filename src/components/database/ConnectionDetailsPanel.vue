@@ -124,13 +124,16 @@ const createdDisplay = computed(() => {
 
 <template>
   <div
-    class="bg-white shadow-lg ring-1 ring-slate-200 rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300"
+    class="bg-white dark:bg-gray-900 shadow-lg dark:shadow-gray-900/40 rounded-2xl overflow-hidden hover:shadow-xl dark:hover:shadow-gray-900/70 transition-all duration-300"
   >
     <div
-      class="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-linear-to-r from-slate-50 to-white"
+      class="px-6 py-4 border-b border-slate-200 dark:border-gray-800 flex items-center justify-between bg-linear-to-r from-slate-50 to-white dark:from-gray-850 dark:to-gray-900"
     >
       <div class="flex items-center gap-3 min-w-0">
-        <h3 class="text-lg font-bold text-slate-900 truncate bg-clip-text" :title="connection.name">
+        <h3
+          class="text-lg font-bold text-slate-900 dark:text-gray-100 truncate bg-clip-text"
+          :title="connection.name"
+        >
           {{ connection.name || hostWithPort || 'Connection' }}
         </h3>
         <CloudProviderBadge
@@ -149,17 +152,23 @@ const createdDisplay = computed(() => {
       <!-- File Connection Details -->
       <div v-if="isFileConnection" class="space-y-6">
         <div class="min-w-0">
-          <label class="text-xs font-medium uppercase text-gray-500">Folder Path</label>
-          <div
-            class="mt-1 flex items-start gap-2 rounded-lg bg-linear-to-r from-slate-50 to-gray-50 p-3 font-mono text-sm border border-gray-100"
+          <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+            >Folder Path</label
           >
-            <span class="flex-1 break-all text-gray-800 overflow-x-auto">
+          <div
+            class="mt-1 flex items-start gap-2 rounded-lg bg-linear-to-r from-slate-50 to-gray-50 dark:from-gray-800 dark:to-gray-850 p-3 font-mono text-sm border border-gray-100 dark:border-gray-700"
+          >
+            <span class="flex-1 break-all text-gray-800 dark:text-gray-200 overflow-x-auto">
               {{ connection.path || 'No path configured' }}
             </span>
             <button
               v-if="connection.path"
               class="shrink-0 transition-colors"
-              :class="isPathCopied ? 'text-green-500' : 'text-gray-400 hover:text-gray-600'"
+              :class="
+                isPathCopied
+                  ? 'text-green-400'
+                  : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'
+              "
               :title="isPathCopied ? 'Copied!' : 'Copy folder path to clipboard'"
               @click.stop="copyFolderPath"
             >
@@ -170,13 +179,17 @@ const createdDisplay = computed(() => {
         </div>
 
         <div class="min-w-0">
-          <label class="text-xs font-medium uppercase text-gray-500">Files</label>
-          <div class="mt-1 text-sm text-gray-700">
-            <div v-if="totalFileCount > 0" class="text-gray-900 font-medium">
+          <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+            >Files</label
+          >
+          <div class="mt-1 text-sm text-gray-700 dark:text-gray-300">
+            <div v-if="totalFileCount > 0" class="text-gray-900 dark:text-gray-100 font-medium">
               {{ fileSummary }}
             </div>
-            <div v-else-if="hasPath" class="text-gray-500">No supported files found</div>
-            <div v-else class="text-gray-500">No path configured</div>
+            <div v-else-if="hasPath" class="text-gray-500 dark:text-gray-400">
+              No supported files found
+            </div>
+            <div v-else class="text-gray-500 dark:text-gray-400">No path configured</div>
           </div>
         </div>
       </div>
@@ -185,32 +198,43 @@ const createdDisplay = computed(() => {
       <div v-else>
         <div class="grid gap-4" :class="connection.database ? 'grid-cols-2' : 'grid-cols-1'">
           <div>
-            <label class="text-xs font-medium uppercase text-gray-500">Host</label>
-            <p class="mt-1 font-medium text-gray-900 truncate" :title="hostWithPort">
+            <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+              >Host</label
+            >
+            <p
+              class="mt-1 font-medium text-gray-900 dark:text-gray-100 truncate"
+              :title="hostWithPort"
+            >
               {{ hostWithPort }}
             </p>
           </div>
           <div v-if="connection.database">
-            <label class="text-xs font-medium uppercase text-gray-500">Database</label>
-            <p class="mt-1 font-medium text-gray-900 truncate">{{ connection.database }}</p>
+            <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+              >Database</label
+            >
+            <p class="mt-1 font-medium text-gray-900 dark:text-gray-100 truncate">
+              {{ connection.database }}
+            </p>
           </div>
         </div>
 
         <div>
-          <label class="text-xs font-medium uppercase text-gray-500">Connection String</label>
-          <div
-            class="mt-1 flex items-start gap-2 rounded-lg bg-linear-to-r from-slate-50 to-gray-50 p-3 font-mono text-sm border border-gray-100"
+          <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+            >Connection String</label
           >
-            <span class="flex-1 break-all text-gray-800 overflow-x-auto">
+          <div
+            class="mt-1 flex items-start gap-2 rounded-lg bg-linear-to-r from-slate-50 to-gray-50 dark:from-gray-800 dark:to-gray-850 p-3 font-mono text-sm border border-gray-100 dark:border-gray-700"
+          >
+            <span class="flex-1 break-all text-gray-800 dark:text-gray-100 overflow-x-auto">
               {{
                 showPassword
                   ? connectionString
-                  : maskedConnectionString.replace(/(?<=:)[^@]+(?=@) /g, '****')
+                  : maskedConnectionString.replace(/(?<=:)[^@]+(?=@)/g, '****')
               }}
             </span>
             <div class="flex flex-col gap-1">
               <button
-                class="shrink-0 text-gray-400 hover:text-gray-600"
+                class="shrink-0 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
                 :title="
                   showPassword ? 'Hide password and truncate' : 'Show password and full details'
                 "
@@ -221,7 +245,11 @@ const createdDisplay = computed(() => {
               </button>
               <button
                 class="shrink-0 transition-colors"
-                :class="isCopied ? 'text-green-500' : 'text-gray-400 hover:text-gray-600'"
+                :class="
+                  isCopied
+                    ? 'text-green-400'
+                    : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'
+                "
                 :title="isCopied ? 'Copied!' : 'Copy connection string to clipboard'"
                 @click="copyConnectionString"
               >
@@ -233,9 +261,11 @@ const createdDisplay = computed(() => {
         </div>
       </div>
 
-      <div class="flex items-center gap-2 pt-2 border-t border-gray-100">
-        <CalendarIcon class="h-4 w-4 text-gray-500" />
-        <span class="text-sm text-gray-500 truncate">Created: {{ createdDisplay }}</span>
+      <div class="flex items-center gap-2 pt-2 border-t border-gray-100 dark:border-gray-800">
+        <CalendarIcon class="h-4 w-4 text-gray-500 dark:text-gray-400" />
+        <span class="text-sm text-gray-500 dark:text-gray-400 truncate"
+          >Created: {{ createdDisplay }}</span
+        >
       </div>
     </div>
   </div>

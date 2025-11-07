@@ -191,15 +191,15 @@ const iconTint = computed(() => getDatabaseIconTint(props.connection.type || '')
     <div
       :data-explorer-connection="connection.id"
       :class="[
-        'group flex items-center gap-2 px-3 py-2 text-sm text-gray-700 rounded-lg cursor-pointer select-none',
+        'group flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 rounded-lg cursor-pointer select-none',
         'transition-all duration-200 ease-out',
-        'hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50',
+        'hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50 dark:hover:from-gray-850 dark:hover:to-gray-800',
         'hover:shadow-sm hover:scale-[1.02] hover:-translate-y-0.5',
         'active:scale-[0.98]',
         // For file connections, don't highlight the parent connection when a file is selected
         // Only highlight when explicitly focused and no file is selected (same behavior as databases)
         isFocused && !(isFileConnection && selectedFilePath)
-          ? 'bg-linear-to-r from-blue-100 to-teal-100 shadow-md ring-2 ring-blue-200/50'
+          ? 'bg-linear-to-r from-blue-100 to-teal-100 dark:from-gray-800 dark:to-gray-700 shadow-md ring-2 ring-blue-200/50 dark:ring-teal-800/50'
           : ''
       ]"
       :title="connectionTooltip"
@@ -208,7 +208,10 @@ const iconTint = computed(() => getDatabaseIconTint(props.connection.type || '')
     >
       <component
         :is="isExpanded ? ChevronDownIcon : ChevronRightIcon"
-        :class="[caretClass, 'transition-transform duration-200 group-hover:text-teal-600']"
+        :class="[
+          caretClass,
+          'transition-transform duration-200 group-hover:text-teal-600 dark:group-hover:text-teal-400'
+        ]"
         @click.stop="$emit('toggle-connection')"
       />
       <div
@@ -227,12 +230,18 @@ const iconTint = computed(() => getDatabaseIconTint(props.connection.type || '')
       </div>
       <div class="flex-1 min-w-0 flex flex-col gap-0.5">
         <div class="flex items-center gap-1.5">
-          <span class="font-semibold truncate text-slate-800 group-hover:text-teal-900">
+          <span
+            class="font-semibold truncate text-slate-800 dark:text-gray-100 group-hover:text-teal-900 dark:group-hover:text-teal-300"
+          >
             <template
               v-for="(p, i) in highlightParts(connection.name || connection.host || 'Connection')"
               :key="i"
             >
-              <span v-if="p.match" class="bg-yellow-200/60 rounded px-0.5" v-text="p.text"></span>
+              <span
+                v-if="p.match"
+                class="bg-yellow-200/60 dark:bg-yellow-300/30 rounded px-0.5"
+                v-text="p.text"
+              ></span>
               <span v-else v-text="p.text"></span>
             </template>
           </span>
@@ -246,7 +255,7 @@ const iconTint = computed(() => getDatabaseIconTint(props.connection.type || '')
         </div>
         <div
           v-if="connection.host && connection.port"
-          class="text-xs text-slate-500 truncate leading-tight group-hover:text-slate-600"
+          class="text-xs text-slate-500 dark:text-gray-400 truncate leading-tight group-hover:text-slate-600 dark:group-hover:text-gray-300"
         >
           {{ connection.host }}:{{ connection.port }}
         </div>
@@ -254,9 +263,15 @@ const iconTint = computed(() => getDatabaseIconTint(props.connection.type || '')
     </div>
 
     <!-- Databases or Files under connection -->
-    <div v-if="isExpanded" class="ml-5 border-l-2 border-slate-200 pl-3 space-y-1 mt-1">
+    <div
+      v-if="isExpanded"
+      class="ml-5 border-l-2 border-slate-200 dark:border-gray-800 pl-3 space-y-1 mt-1"
+    >
       <div v-if="isFileConnection">
-        <div v-if="!visibleFileEntries.length" class="text-xs text-slate-500 px-3 py-1.5">
+        <div
+          v-if="!visibleFileEntries.length"
+          class="text-xs text-slate-500 dark:text-gray-400 px-3 py-1.5"
+        >
           No files
         </div>
         <FileEntry
@@ -271,7 +286,9 @@ const iconTint = computed(() => getDatabaseIconTint(props.connection.type || '')
         />
       </div>
       <div v-else>
-        <div v-if="!databases.length" class="text-xs text-slate-500 px-3 py-1.5">No databases</div>
+        <div v-if="!databases.length" class="text-xs text-slate-500 dark:text-gray-400 px-3 py-1.5">
+          No databases
+        </div>
         <DatabaseTreeItem
           v-for="db in databases"
           :key="db.name"

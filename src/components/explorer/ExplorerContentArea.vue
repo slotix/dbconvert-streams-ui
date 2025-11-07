@@ -1,8 +1,5 @@
 <template>
-  <div
-    v-if="showConnectionDetails && currentConnection"
-    class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg"
-  >
+  <div v-if="showConnectionDetails && currentConnection" class="rounded-2xl">
     <ConnectionDetailsPanel
       :connection="currentConnection"
       :file-entries="fileEntries"
