@@ -314,13 +314,20 @@ Teal is used strategically to guide users through critical actions, not as decor
 
 All form components now available in `src/components/base/` using Headless UI where appropriate for superior accessibility.
 
-### Phase 3: Gradual Form Migration (Optional - As Needed)
-- [ ] Migrate StreamSettings.vue file format picker to SelectionButtonGroup
-- [ ] Migrate connection form inputs to FormInput/FormSelect as components are updated
-- [ ] Update table filter inputs to use FormInput
-- [ ] Standardize checkbox usage with FormCheckbox
+### ✅ Phase 3: Form Migration Started
+- [x] **StreamSettings.vue** - Migrated file format picker to SelectionButtonGroup (Headless UI RadioGroup)
+  - File format buttons now use RadioGroup with auto-descriptions
+  - Compression dropdown migrated to FormSelect (Headless UI Listbox)
+- [x] **TableList.vue** - Filter input migrated to FormInput
+- [x] **FilePreviewList.vue** - Filter input migrated to FormInput
 
-**Note:** Form components are now available but migration is NOT required. Use them in new components or when updating existing ones. Current inline styling will continue to work.
+**Files Changed:** 3 components migrated
+
+**Remaining Optional Migrations:**
+- [ ] Connection form inputs (can migrate as components are updated)
+- [ ] Checkbox standardization (use FormCheckbox or FormSwitch as appropriate)
+
+**Note:** Migration is ongoing but NOT required. All existing forms continue to work. New Headless UI components provide better accessibility.
 
 ### Phase 4: Dark Mode (Future)
 - [ ] Add dark mode toggle

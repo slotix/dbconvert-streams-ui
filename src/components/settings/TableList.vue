@@ -9,12 +9,7 @@
 
       <!-- Filter input -->
       <div class="flex-1">
-        <input
-          v-model="searchQuery"
-          type="text"
-          placeholder="Filter tables..."
-          class="block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500 sm:text-sm"
-        />
+        <FormInput v-model="searchQuery" type="text" placeholder="Filter tables..." />
       </div>
 
       <!-- Select All checkbox -->
@@ -171,6 +166,7 @@ import { useCommonStore } from '@/stores/common'
 import { useConnectionsStore } from '@/stores/connections'
 import Pagination from '@/components/common/Pagination.vue'
 import TableSettings from './TableSettings.vue'
+import FormInput from '@/components/base/FormInput.vue'
 import { ChevronRightIcon, ChevronDownIcon, TableCellsIcon } from '@heroicons/vue/24/outline'
 import { debounce } from '@/utils/debounce'
 import { type StreamConfig, type Table } from '@/types/streamConfig'

@@ -9,12 +9,7 @@
 
       <!-- Filter input -->
       <div class="flex-1">
-        <input
-          v-model="searchQuery"
-          type="text"
-          placeholder="Filter files..."
-          class="block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500 sm:text-sm"
-        />
+        <FormInput v-model="searchQuery" type="text" placeholder="Filter files..." />
       </div>
 
       <!-- Select All checkbox -->
@@ -87,6 +82,7 @@ import { computed, watch, ref } from 'vue'
 import { useFileExplorerStore } from '@/stores/fileExplorer'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { getFileFormat, getFileFormatLogoPath } from '@/utils/fileFormat'
+import FormInput from '@/components/base/FormInput.vue'
 import type { FileSystemEntry } from '@/api/fileSystem'
 import type { FileEntry } from '@/types/streamConfig'
 

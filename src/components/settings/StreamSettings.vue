@@ -7,44 +7,22 @@
         <h4 class="text-base font-medium text-gray-900 mb-4">Output Configuration</h4>
         <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
           <!-- File Format Selection -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              File Format <span class="text-red-500">*</span>
-            </label>
-            <div class="grid grid-cols-3 gap-2">
-              <button
-                v-for="format in fileFormats"
-                :key="format.value"
-                type="button"
-                :class="[
-                  'px-4 py-2 rounded-md text-sm font-medium border transition-all duration-150',
-                  targetFileFormat === format.value
-                    ? 'bg-teal-600 text-white border-teal-600 ring-2 ring-teal-500 ring-offset-1'
-                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400'
-                ]"
-                @click="selectFormat(format.value)"
-              >
-                {{ format.label }}
-              </button>
-            </div>
-            <p class="mt-2 text-sm text-gray-500">{{ formatDescription }}</p>
-          </div>
+          <SelectionButtonGroup
+            v-model="targetFileFormat"
+            label="File Format"
+            :options="fileFormats"
+            :columns="3"
+            required
+          />
 
           <!-- Compression Selection -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              Compression <span class="text-red-500">*</span>
-            </label>
-            <select
-              v-model="compressionType"
-              class="block w-full rounded-md border-gray-300 shadow-sm text-gray-900 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 sm:text-sm"
-            >
-              <option value="zstd">ZSTD (.zst) - Recommended</option>
-              <option value="gzip">GZIP (.gz) - Legacy Compatibility</option>
-              <option value="uncompressed">Uncompressed - No Compression</option>
-            </select>
-            <p class="mt-2 text-sm text-gray-500">{{ compressionDescription }}</p>
-          </div>
+          <FormSelect
+            v-model="compressionType"
+            label="Compression"
+            :options="compressionOptions"
+            :helper-text="compressionDescription"
+            required
+          />
         </div>
       </div>
 
@@ -165,15 +143,35 @@ import { computed } from 'vue'
 import { useStreamsStore, defaultStreamConfigOptions } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
 import { type StreamConfig } from '@/types/streamConfig'
+import SelectionButtonGroup from '@/components/base/SelectionButtonGroup.vue'
+import FormSelect from '@/components/base/FormSelect.vue'
 
 const streamsStore = useStreamsStore()
 const connectionsStore = useConnectionsStore()
 const currentStreamConfig = streamsStore.currentStreamConfig as StreamConfig
 
 const fileFormats = [
-  { value: 'csv' as const, label: 'CSV' },
-  { value: 'jsonl' as const, label: 'JSONL' },
-  { value: 'parquet' as const, label: 'Parquet' }
+  {
+    value: 'csv' as const,
+    label: 'CSV',
+    description: 'Comma-separated values - widely compatible, good for spreadsheets'
+  },
+  {
+    value: 'jsonl' as const,
+    label: 'JSONL',
+    description: 'JSON Lines - one JSON object per line, ideal for streaming'
+  },
+  {
+    value: 'parquet' as const,
+    label: 'Parquet',
+    description: 'Columnar format - highly compressed, optimized for analytics'
+  }
+]
+
+const compressionOptions = [
+  { value: 'zstd', label: 'ZSTD (.zst) - Recommended' },
+  { value: 'gzip', label: 'GZIP (.gz) - Legacy Compatibility' },
+  { value: 'uncompressed', label: 'Uncompressed - No Compression' }
 ]
 
 // Check if target is a file connection
@@ -203,20 +201,6 @@ const compressionType = computed({
   }
 })
 
-// Format descriptions
-const formatDescription = computed(() => {
-  switch (targetFileFormat.value) {
-    case 'csv':
-      return 'Comma-separated values - widely compatible, good for spreadsheets'
-    case 'jsonl':
-      return 'JSON Lines - one JSON object per line, ideal for streaming'
-    case 'parquet':
-      return 'Columnar format - highly compressed, optimized for analytics'
-    default:
-      return 'Select output file format'
-  }
-})
-
 // Compression descriptions
 const compressionDescription = computed(() => {
   switch (compressionType.value) {
@@ -230,15 +214,6 @@ const compressionDescription = computed(() => {
       return 'Select compression method'
   }
 })
-
-// Select format handler
-const selectFormat = (format: 'csv' | 'jsonl' | 'parquet') => {
-  targetFileFormat.value = format
-  // Set default compression to zstd if not already set
-  if (!currentStreamConfig.compressionType) {
-    compressionType.value = 'zstd'
-  }
-}
 
 const dataBundleSize = computed<number>({
   get: () => currentStreamConfig.dataBundleSize ?? defaultStreamConfigOptions.dataBundleSize,
