@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useLogsStore } from '@/stores/logs'
 import type { ExportFormat, QueryPurpose } from '@/stores/logs'
+import FormCheckbox from '@/components/base/FormCheckbox.vue'
 import {
   MagnifyingGlassIcon,
   ExclamationTriangleIcon,
@@ -403,14 +404,14 @@ onBeforeUnmount(() => {
       </div>
 
       <!-- Errors Toggle -->
-      <label
-        class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 px-2 py-1 rounded transition-colors"
-        :title="'Show only errors (E)'"
-      >
-        <input v-model="errorsOnly" type="checkbox" class="rounded text-red-600" />
-        <ExclamationTriangleIcon class="w-4 h-4 text-red-600" />
-        <span class="text-xs font-semibold text-red-600">Errors Only</span>
-      </label>
+      <div class="flex items-center gap-1" :title="'Show only errors (E)'">
+        <FormCheckbox v-model="errorsOnly">
+          <span class="flex items-center gap-1.5">
+            <ExclamationTriangleIcon class="w-4 h-4 text-red-600" />
+            <span class="text-xs font-semibold text-red-600">Errors Only</span>
+          </span>
+        </FormCheckbox>
+      </div>
     </div>
 
     <div class="hidden sm:block h-6 border-l border-gray-200" />

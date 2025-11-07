@@ -167,7 +167,7 @@ Teal is used strategically to guide users through critical actions, not as decor
 
 **Files Changed:** 3 components migrated
 
-**Total Progress:** 12 components, ~28 action buttons migrated from 191 cataloged
+**Total Progress:** 18 components migrated (12 buttons + 6 forms)
 
 ### 🎯 Design Exceptions Documented
 - Icon-only buttons (StreamListItem, navigation) - kept custom for compact layouts
@@ -314,18 +314,27 @@ Teal is used strategically to guide users through critical actions, not as decor
 
 All form components now available in `src/components/base/` using Headless UI where appropriate for superior accessibility.
 
-### ✅ Phase 3: Form Migration Started
+### ✅ Phase 3: Form Migration (Extended)
 - [x] **StreamSettings.vue** - Migrated file format picker to SelectionButtonGroup (Headless UI RadioGroup)
   - File format buttons now use RadioGroup with auto-descriptions
   - Compression dropdown migrated to FormSelect (Headless UI Listbox)
 - [x] **TableList.vue** - Filter input migrated to FormInput
 - [x] **FilePreviewList.vue** - Filter input migrated to FormInput
+- [x] **StreamNameField.vue** - Stream name input migrated to FormInput
+  - Auto-generated name now shown in helper text
+  - Consistent styling with teal focus rings
+- [x] **ConnectionName.vue** - Connection name input migrated to FormInput
+  - Simplified component using FormInput wrapper
+  - Maintained v-model compatibility
+- [x] **LogFilters.vue** - "Errors Only" checkbox migrated to FormCheckbox
+  - Custom label with icon preserved
+  - Teal checked state applied
 
-**Files Changed:** 3 components migrated
+**Files Changed:** 6 components migrated
 
 **Remaining Optional Migrations:**
 - [ ] Connection form inputs (can migrate as components are updated)
-- [ ] Checkbox standardization (use FormCheckbox or FormSwitch as appropriate)
+- [ ] Other specialized inputs (maintain custom behavior where needed)
 
 **Note:** Migration is ongoing but NOT required. All existing forms continue to work. New Headless UI components provide better accessibility.
 
