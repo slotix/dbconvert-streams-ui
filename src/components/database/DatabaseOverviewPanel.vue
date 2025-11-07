@@ -110,7 +110,7 @@ const sizeDisplay = computed(() => {
     <div v-else-if="overview" class="grid grid-cols-1 md:grid-cols-6 gap-4">
       <!-- Essentials -->
       <div
-        class="group bg-white dark:bg-gray-850 ring-1 ring-slate-200 dark:ring-gray-700 rounded-xl p-4 md:col-span-2 hover:shadow-lg dark:hover:shadow-gray-900/30 hover:ring-slate-300 dark:hover:ring-gray-600 transition-all duration-200"
+        class="group bg-white dark:bg-gray-900/40 ring-1 ring-slate-200/70 dark:ring-gray-800 rounded-xl p-4 md:col-span-2 hover:shadow-lg dark:hover:shadow-gray-900/40 hover:ring-slate-300 dark:hover:ring-gray-600 transition-all duration-200"
       >
         <div class="flex items-center justify-between mb-3">
           <div class="flex items-center gap-2">
@@ -172,7 +172,7 @@ const sizeDisplay = computed(() => {
 
       <!-- CDC readiness -->
       <div
-        class="group bg-white dark:bg-gray-850 ring-1 ring-slate-200 dark:ring-gray-700 rounded-xl p-4 md:col-span-2 hover:shadow-lg dark:hover:shadow-gray-900/30 hover:ring-slate-300 dark:hover:ring-gray-600 transition-all duration-200"
+        class="group bg-white dark:bg-gray-900/40 ring-1 ring-slate-200/70 dark:ring-gray-800 rounded-xl p-4 md:col-span-2 hover:shadow-lg dark:hover:shadow-gray-900/40 hover:ring-slate-300 dark:hover:ring-gray-600 transition-all duration-200"
       >
         <div class="flex items-center justify-between mb-3">
           <div class="flex items-center gap-2">
@@ -189,29 +189,30 @@ const sizeDisplay = computed(() => {
             v-if="overview.engine === 'mysql'"
             class="inline-flex items-center text-xs px-2 py-1 rounded-md font-medium ring-1 ring-inset shadow-sm"
             :class="{
-              'bg-green-50 text-green-700 ring-green-600/20':
+              'bg-green-50 text-green-700 ring-green-600/20 dark:bg-green-900/40 dark:text-green-200 dark:ring-green-500/40':
                 overview.health?.binlog?.enabled &&
                 overview.health?.binlog?.format === 'ROW' &&
                 overview.health?.binlog?.rowImage === 'FULL',
-              'bg-amber-50 text-amber-700 ring-amber-600/20':
+              'bg-amber-50 text-amber-700 ring-amber-600/20 dark:bg-amber-900/40 dark:text-amber-200 dark:ring-amber-500/40':
                 overview.health?.binlog?.enabled &&
                 (overview.health?.binlog?.format !== 'ROW' ||
                   overview.health?.binlog?.rowImage !== 'FULL'),
-              'bg-red-50 text-red-700 ring-red-600/20': !overview.health?.binlog?.enabled
+              'bg-red-50 text-red-700 ring-red-600/20 dark:bg-red-900/40 dark:text-red-200 dark:ring-red-500/40':
+                !overview.health?.binlog?.enabled
             }"
           >
             <span
               class="mr-1.5 h-1.5 w-1.5 rounded-full"
               :class="{
-                'bg-green-600':
+                'bg-green-600 dark:bg-green-400':
                   overview.health?.binlog?.enabled &&
                   overview.health?.binlog?.format === 'ROW' &&
                   overview.health?.binlog?.rowImage === 'FULL',
-                'bg-amber-600':
+                'bg-amber-600 dark:bg-amber-400':
                   overview.health?.binlog?.enabled &&
                   (overview.health?.binlog?.format !== 'ROW' ||
                     overview.health?.binlog?.rowImage !== 'FULL'),
-                'bg-red-600': !overview.health?.binlog?.enabled
+                'bg-red-600 dark:bg-red-400': !overview.health?.binlog?.enabled
               }"
             ></span>
             {{ overview.health?.binlog?.enabled ? 'Enabled' : 'Not enabled' }}
@@ -220,16 +221,17 @@ const sizeDisplay = computed(() => {
             v-else-if="overview.engine === 'postgres'"
             class="inline-flex items-center text-xs px-2 py-1 rounded-md font-medium ring-1 ring-inset shadow-sm"
             :class="{
-              'bg-green-50 text-green-700 ring-green-600/20':
+              'bg-green-50 text-green-700 ring-green-600/20 dark:bg-green-900/40 dark:text-green-200 dark:ring-green-500/40':
                 overview.health?.wal?.level === 'logical',
-              'bg-red-50 text-red-700 ring-red-600/20': overview.health?.wal?.level !== 'logical'
+              'bg-red-50 text-red-700 ring-red-600/20 dark:bg-red-900/40 dark:text-red-200 dark:ring-red-500/40':
+                overview.health?.wal?.level !== 'logical'
             }"
           >
             <span
               class="mr-1.5 h-1.5 w-1.5 rounded-full"
               :class="{
-                'bg-green-600': overview.health?.wal?.level === 'logical',
-                'bg-red-600': overview.health?.wal?.level !== 'logical'
+                'bg-green-600 dark:bg-green-400': overview.health?.wal?.level === 'logical',
+                'bg-red-600 dark:bg-red-400': overview.health?.wal?.level !== 'logical'
               }"
             ></span>
             {{ overview.health?.wal?.level || 'unknown' }}
@@ -306,7 +308,7 @@ const sizeDisplay = computed(() => {
 
       <!-- Activity (compact) -->
       <div
-        class="group bg-white dark:bg-gray-850 ring-1 ring-slate-200 dark:ring-gray-700 rounded-xl p-4 md:col-span-2 hover:shadow-lg dark:hover:shadow-gray-900/30 hover:ring-slate-300 dark:hover:ring-gray-600 transition-all duration-200"
+        class="group bg-white dark:bg-gray-900/40 ring-1 ring-slate-200/70 dark:ring-gray-800 rounded-xl p-4 md:col-span-2 hover:shadow-lg dark:hover:shadow-gray-900/40 hover:ring-slate-300 dark:hover:ring-gray-600 transition-all duration-200"
       >
         <div class="flex items-center gap-2 mb-3">
           <div
@@ -372,7 +374,7 @@ const sizeDisplay = computed(() => {
 
       <!-- Top by size -->
       <div
-        class="group bg-white dark:bg-gray-850 ring-1 ring-slate-200 dark:ring-gray-700 rounded-xl p-4 md:col-span-3 hover:shadow-lg dark:hover:shadow-gray-900/30 hover:ring-slate-300 dark:hover:ring-gray-600 transition-all duration-200"
+        class="group bg-white dark:bg-gray-900/40 ring-1 ring-slate-200/70 dark:ring-gray-800 rounded-xl p-4 md:col-span-3 hover:shadow-lg dark:hover:shadow-gray-900/40 hover:ring-slate-300 dark:hover:ring-gray-600 transition-all duration-200"
       >
         <div class="flex items-center gap-2 mb-3">
           <div
@@ -409,7 +411,7 @@ const sizeDisplay = computed(() => {
 
       <!-- Top by rows -->
       <div
-        class="group bg-white dark:bg-gray-850 ring-1 ring-slate-200 dark:ring-gray-700 rounded-xl p-4 md:col-span-3 hover:shadow-lg dark:hover:shadow-gray-900/30 hover:ring-slate-300 dark:hover:ring-gray-600 transition-all duration-200"
+        class="group bg-white dark:bg-gray-900/40 ring-1 ring-slate-200/70 dark:ring-gray-800 rounded-xl p-4 md:col-span-3 hover:shadow-lg dark:hover:shadow-gray-900/40 hover:ring-slate-300 dark:hover:ring-gray-600 transition-all duration-200"
       >
         <div class="flex items-center gap-2 mb-3">
           <div
@@ -450,7 +452,7 @@ const sizeDisplay = computed(() => {
       <!-- Notes -->
       <div
         v-if="overview.notes?.length"
-        class="group bg-white dark:bg-gray-850 ring-1 ring-slate-200 dark:ring-gray-700 rounded-xl p-4 md:col-span-6 hover:shadow-lg dark:hover:shadow-gray-900/30 hover:ring-slate-300 dark:hover:ring-gray-600 transition-all duration-200"
+        class="group bg-white dark:bg-gray-900/40 ring-1 ring-slate-200/70 dark:ring-gray-800 rounded-xl p-4 md:col-span-6 hover:shadow-lg dark:hover:shadow-gray-900/40 hover:ring-slate-300 dark:hover:ring-gray-600 transition-all duration-200"
       >
         <div class="flex items-center gap-2 mb-3">
           <div

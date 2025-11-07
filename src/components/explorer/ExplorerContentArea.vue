@@ -10,7 +10,7 @@
   </div>
   <div
     v-else-if="showDatabaseOverview && selectedDatabase"
-    class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg"
+    class="rounded-2xl bg-white dark:bg-gray-900 shadow-lg dark:shadow-gray-900/40"
   >
     <DatabaseOverviewPanel
       :key="`overview-${connectionId}-${selectedDatabase}`"
@@ -19,7 +19,10 @@
       @show-diagram="$emit('show-diagram', $event)"
     />
   </div>
-  <div v-else-if="showDiagram" class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg">
+  <div
+    v-else-if="showDiagram"
+    class="rounded-2xl bg-white dark:bg-gray-900 shadow-lg dark:shadow-gray-900/40"
+  >
     <DiagramView :tables="tables" :views="views" :relationships="relationships" />
   </div>
   <div v-else>
@@ -83,9 +86,34 @@
           </div>
           <div
             v-else
-            class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg p-8 text-center m-2"
+            class="flex flex-col items-center justify-center gap-3 py-16 px-4 text-center text-gray-500 dark:text-gray-400"
           >
-            <p class="text-gray-500">Select an object from the sidebar to view its details.</p>
+            <div
+              class="inline-flex h-20 w-20 items-center justify-center rounded-full bg-linear-to-br from-blue-600 to-teal-500 text-white shadow-xl"
+            >
+              <svg
+                class="h-10 w-10"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.3"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M12 6.75c-3.728 0-6.75 1.007-6.75 2.25v6c0 1.243 3.022 2.25 6.75 2.25s6.75-1.007 6.75-2.25v-6c0-1.243-3.022-2.25-6.75-2.25zM5.25 9.75c0 1.243 3.022 2.25 6.75 2.25s6.75-1.007 6.75-2.25M5.25 13.75c0 1.243 3.022 2.25 6.75 2.25s6.75-1.007 6.75-2.25"
+                />
+              </svg>
+            </div>
+            <div class="max-w-md mx-auto space-y-1">
+              <p class="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                No object selected
+              </p>
+              <p class="text-sm text-gray-500 dark:text-gray-400">
+                Select an object from the sidebar to view its details. You can preview tables,
+                views, or files.
+              </p>
+            </div>
           </div>
         </template>
 
@@ -172,9 +200,34 @@
           </div>
           <div
             v-else
-            class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg p-8 text-center m-2"
+            class="flex flex-col items-center justify-center gap-3 py-16 px-4 text-center text-gray-500 dark:text-gray-400"
           >
-            <p class="text-gray-500">Select an object from the sidebar to view its details.</p>
+            <div
+              class="inline-flex h-20 w-20 items-center justify-center rounded-full bg-linear-to-br from-blue-600 to-teal-500 text-white shadow-xl"
+            >
+              <svg
+                class="h-10 w-10"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.3"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M12 6.75c-3.728 0-6.75 1.007-6.75 2.25v6c0 1.243 3.022 2.25 6.75 2.25s6.75-1.007 6.75-2.25v-6c0-1.243-3.022-2.25-6.75-2.25zM5.25 9.75c0 1.243 3.022 2.25 6.75 2.25s6.75-1.007 6.75-2.25M5.25 13.75c0 1.243 3.022 2.25 6.75 2.25s6.75-1.007 6.75-2.25"
+                />
+              </svg>
+            </div>
+            <div class="max-w-md mx-auto space-y-1">
+              <p class="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                No object selected
+              </p>
+              <p class="text-sm text-gray-500 dark:text-gray-400">
+                Select an object from the sidebar to view its details. You can preview tables,
+                views, or files.
+              </p>
+            </div>
           </div>
         </template>
       </ExplorerSplitPane>
