@@ -163,20 +163,15 @@
                 <div v-else></div>
 
                 <div class="flex space-x-3">
-                  <button
-                    class="inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                    @click="closeModal"
-                  >
-                    Cancel
-                  </button>
-                  <button
+                  <BaseButton variant="secondary" @click="closeModal">Cancel</BaseButton>
+                  <BaseButton
+                    variant="primary"
                     :disabled="!selectedPath || validating"
-                    class="inline-flex justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                    :loading="validating"
                     @click="confirmSelection"
                   >
-                    <Spinner v-if="validating" size="sm" class="mr-2" />
                     {{ validating ? 'Validating...' : 'Select Folder' }}
-                  </button>
+                  </BaseButton>
                 </div>
               </div>
             </DialogPanel>
@@ -202,6 +197,7 @@ import {
   ArrowLeftIcon
 } from '@heroicons/vue/24/outline'
 import { listDirectory, checkWritable, getRoots, type FileSystemEntry } from '@/api/fileSystem'
+import BaseButton from '@/components/base/BaseButton.vue'
 import Spinner from './Spinner.vue'
 
 interface Props {

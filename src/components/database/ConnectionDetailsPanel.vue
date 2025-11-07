@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import type { Connection } from '@/types/connections'
+import BaseButton from '@/components/base/BaseButton.vue'
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
 import { generateConnectionString } from '@/utils/connectionStringGenerator'
 import { formatDateTime } from '@/utils/formats'
@@ -138,27 +139,9 @@ const createdDisplay = computed(() => {
         />
       </div>
       <div class="hidden sm:flex items-center gap-2">
-        <button
-          type="button"
-          class="inline-flex items-center rounded-lg px-4 py-2 text-sm font-semibold shadow-sm border border-gray-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50 hover:shadow-md transition-all duration-200"
-          @click="emit('edit')"
-        >
-          Edit
-        </button>
-        <button
-          type="button"
-          class="inline-flex items-center rounded-lg px-4 py-2 text-sm font-semibold shadow-sm border border-gray-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50 hover:shadow-md transition-all duration-200"
-          @click="emit('clone')"
-        >
-          Clone
-        </button>
-        <button
-          type="button"
-          class="inline-flex items-center rounded-lg px-4 py-2 text-sm font-semibold shadow-sm border border-red-200 bg-white text-red-600 hover:border-red-300 hover:bg-red-50 hover:shadow-md transition-all duration-200"
-          @click="emit('delete')"
-        >
-          Delete
-        </button>
+        <BaseButton variant="secondary" @click="emit('edit')">Edit</BaseButton>
+        <BaseButton variant="secondary" @click="emit('clone')">Clone</BaseButton>
+        <BaseButton variant="danger" @click="emit('delete')">Delete</BaseButton>
       </div>
     </div>
 

@@ -1,7 +1,7 @@
 # Design System Implementation Summary
 
 **Date:** November 7, 2025  
-**Status:** ✅ Complete
+**Status:** 🚧 Phase 1 In Progress
 
 ---
 
@@ -24,28 +24,64 @@
    - Status color reference
    - Common mistakes examples
 
+3. **[DESIGN_MIGRATION_GUIDE.md](./DESIGN_MIGRATION_GUIDE.md)** - Step-by-step migration instructions
+   - Phase-by-phase rollout plan
+   - Component migration checklist
+   - Before/after examples
+   - Testing guidelines
+
+4. **[BUTTON_CATALOG.md](./BUTTON_CATALOG.md)** - Complete button inventory
+   - 191 buttons cataloged across the app
+   - Prioritized migration list
+   - Classification guide (when to use BaseButton vs custom styling)
+   - Progress tracking
+
 ### 🎨 Components
 
-3. **[src/components/base/BaseButton.vue](./src/components/base/BaseButton.vue)** - Standardized button component
+5. **[src/components/base/BaseButton.vue](./src/components/base/BaseButton.vue)** - Standardized button component
    - 4 variants: primary, secondary, danger, ghost
    - 3 sizes: sm, md, lg
    - Loading state with spinner
    - Disabled state handling
    - Full Tailwind integration
 
-4. **[src/components/base/StatusBadge.vue](./src/components/base/StatusBadge.vue)** - Status indicator component
+6. **[src/components/base/StatusBadge.vue](./src/components/base/StatusBadge.vue)** - Status indicator component
    - 6 status types: running, finished, failed, pending, paused, initializing
    - Semantic colors per design system
    - Icons included
    - Customizable size
+   - *Note:* Currently NOT in use - monitoring uses old StatusBadge (with RUNNING=blue fix)
 
-### ✨ Updated Components
+### ✨ Updated Components (Phase 1)
 
-5. **[src/components/settings/StreamSettings.vue](./src/components/settings/StreamSettings.vue)** - Implemented design standards
+7. **[src/components/settings/StreamSettings.vue](./src/components/settings/StreamSettings.vue)** - Implemented design standards
    - File format buttons: teal active state with ring
    - All form inputs: gray borders with teal focus rings
    - Consistent hover states
    - Added text color classes for better visibility
+
+8. **[src/components/connection/wizard/WizardLayout.vue](./src/components/connection/wizard/WizardLayout.vue)** - ✅ Migrated to BaseButton
+   - Back button → `variant="secondary"`
+   - Test Connection button → `variant="secondary"`
+   - Next/Create button → `variant="primary"`
+   - Cancel button → `variant="secondary"`
+
+9. **[src/views/StreamsView.vue](./src/views/StreamsView.vue)** - ✅ Migrated to BaseButton
+   - "New Stream Config" button → `variant="primary"`
+
+10. **[src/views/DatabaseExplorerView.vue](./src/views/DatabaseExplorerView.vue)** - ✅ Migrated to BaseButton
+    - "New Connection" button → `variant="primary"`
+
+11. **[src/components/stream/StreamDetailsPanel.vue](./src/components/stream/StreamDetailsPanel.vue)** - ✅ Migrated to BaseButton
+    - Edit button → `variant="secondary"`
+    - Clone button → `variant="secondary"`
+    - Start button → `variant="primary"` (removed custom gradient)
+    - Delete button → `variant="danger"`
+    - *Note:* Tab navigation and "Explore" buttons kept as-is (intentional)
+
+12. **[src/components/monitoring/StatusBadge.vue](./src/components/monitoring/StatusBadge.vue)** - Updated colors
+    - Changed RUNNING status from orange → blue
+    - Kept old implementation (new StatusBadge broke state transitions)
 
 ---
 
@@ -73,9 +109,44 @@ Teal is used strategically to guide users through critical actions, not as decor
 
 ---
 
-## Implementation Details
+## Implementation Progress
 
-### Button Variants
+### ✅ Phase 1 Complete (High-Visibility Actions)
+- [x] Create BaseButton component with all variants
+- [x] WizardLayout buttons (affects both Connection & Stream wizards)
+- [x] "New Stream Config" button
+- [x] "New Connection" button
+- [x] StreamDetailsPanel action buttons (Edit, Clone, Start, Delete)
+- [x] StatusBadge RUNNING color updated (orange → blue)
+
+**Files Changed:** 5 components migrated
+
+### ✅ Phase 2 Complete (Dialogs & Connection Management)
+- [x] ConnectionDetailsPanel action buttons (Edit, Clone, Delete)
+- [x] ConfirmDialog buttons (Cancel, Confirm/Danger)
+- [x] FolderSelectionModal buttons (Cancel, Select Folder with loading state)
+
+**Files Changed:** 3 components migrated
+
+**Total Progress:** 8 components, ~20 action buttons migrated from 191 cataloged
+
+### 🎯 Design Exceptions Documented
+- Icon-only buttons (StreamListItem, navigation) - kept custom for compact layouts
+- Context menus (ExplorerContextMenu, ColumnContextMenu) - kept dropdown pattern
+- Tab navigation - kept teal accent pattern per design system
+- Breadcrumbs - kept link-style navigation
+
+### 🚧 Phase 3 In Progress (Remaining Action Buttons)
+- [ ] CardItem.vue (3 buttons) - Card view actions
+- [ ] StreamHistoryTableAGGrid.vue (3 buttons)
+- [ ] DatabaseOverviewPanel.vue (4 buttons)
+- [ ] EditConnectionWizard.vue (3 buttons)
+
+### 📋 Phase 4 Planned (Logs & Settings)
+
+---
+
+## Button Variants
 
 ```vue
 <!-- Primary Action -->

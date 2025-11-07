@@ -7,25 +7,23 @@
           <h2 class="text-xl font-semibold text-gray-900 truncate">{{ stream.name }}</h2>
         </div>
         <div class="flex items-center gap-2 ml-4">
-          <button
+          <BaseButton
             v-if="!isStreamRunning || isStreamFinished"
             v-tooltip="'Edit stream configuration'"
-            type="button"
-            class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-warm-50 hover:border-gray-400 transition-all duration-200"
+            variant="secondary"
             @click="navigateToEdit"
           >
             Edit
-          </button>
-          <button
+          </BaseButton>
+          <BaseButton
             v-if="!isStreamRunning || isStreamFinished"
             v-tooltip="'Clone stream configuration'"
-            type="button"
-            class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-warm-50 hover:border-gray-400 transition-all duration-200"
+            variant="secondary"
             @click="cloneStream"
           >
             Clone
-          </button>
-          <button
+          </BaseButton>
+          <BaseButton
             v-tooltip="
               isStreamRunning && !isStreamFinished
                 ? 'Stream is currently running'
@@ -34,27 +32,20 @@
                   : 'Start the stream'
             "
             :disabled="isStreamRunning && !isStreamFinished"
-            type="button"
-            :class="[
-              'inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200',
-              isStreamRunning && !isStreamFinished
-                ? 'text-gray-500 bg-gray-300 cursor-not-allowed'
-                : 'text-white bg-linear-to-b from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 hover:shadow-md'
-            ]"
+            variant="primary"
             @click="startStream"
           >
             <PlayIcon class="h-4 w-4" />
             {{ historyRuns.length > 0 ? 'Run again' : 'Start' }}
-          </button>
-          <button
+          </BaseButton>
+          <BaseButton
             v-if="!isStreamRunning || isStreamFinished"
             v-tooltip="'Delete stream configuration'"
-            type="button"
-            class="px-3 py-1.5 text-sm font-medium text-red-600 bg-white border border-red-200 rounded-lg hover:border-red-300 hover:bg-red-50 transition-all duration-200"
+            variant="danger"
             @click="requestDelete"
           >
             Delete
-          </button>
+          </BaseButton>
         </div>
       </div>
 
@@ -428,6 +419,7 @@ import { useMonitoringStore, statusEnum } from '@/stores/monitoring'
 import { useFileExplorerStore } from '@/stores/fileExplorer'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { apiClient } from '@/api/apiClient'
+import BaseButton from '@/components/base/BaseButton.vue'
 import ConnectionStringDisplay from '@/components/common/ConnectionStringDisplay.vue'
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
 import MonitorHeader from '@/components/monitoring/MonitorHeader.vue'
