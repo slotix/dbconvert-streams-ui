@@ -5,9 +5,7 @@
       ref="leftPaneRef"
       :style="{ flexBasis: `${splitGrow}%`, flexGrow: 0, flexShrink: 0 }"
       :class="[
-        'relative min-w-[300px] pr-2 min-h-[480px] rounded-lg transition-all bg-white shadow-sm dark:bg-gray-900 dark:shadow-gray-950/60',
-        hasRightPane && isLeftActive ? 'shadow-md shadow-slate-300/70 dark:shadow-gray-900' : '',
-        hasRightPane && !isLeftActive ? 'shadow-sm dark:shadow-gray-900/40' : ''
+        'relative min-w-[300px] pr-2 min-h-[480px] transition-all bg-white dark:bg-gray-900'
       ]"
       @mousedown="$emit('set-active-pane', 'left')"
     >
@@ -58,10 +56,7 @@
     <div
       :style="{ flexBasis: '0px' }"
       :class="[
-        'relative grow pl-2 min-h-[480px] min-w-[300px] rounded-lg transition-all bg-white shadow-sm dark:bg-gray-900 dark:shadow-gray-950/60',
-        isRightActive
-          ? 'shadow-md shadow-slate-300/70 dark:shadow-gray-900'
-          : 'shadow-sm dark:shadow-gray-900/40'
+        'relative grow pl-2 min-h-[480px] min-w-[300px] transition-all bg-white dark:bg-gray-900'
       ]"
       @mousedown="$emit('set-active-pane', 'right')"
     >
@@ -92,12 +87,10 @@
     </div>
   </div>
 
-  <!-- Single pane view (left only) -->
+  <!-- Single pane view (left only) - reuse left-content slot -->
   <div v-else>
     <div
-      :class="[
-        'relative rounded-lg transition-all bg-white shadow-sm dark:bg-gray-900 dark:shadow-gray-950/60'
-      ]"
+      :class="['relative transition-all bg-white dark:bg-gray-900']"
       @mousedown="$emit('set-active-pane', 'left')"
     >
       <!-- Left pane tabs -->
@@ -108,8 +101,8 @@
       <!-- Left pane breadcrumb -->
       <slot name="left-breadcrumb" />
 
-      <!-- Left pane content -->
-      <slot name="single-content" />
+      <!-- Left pane content (same slot as split view) -->
+      <slot name="left-content" />
     </div>
   </div>
 </template>

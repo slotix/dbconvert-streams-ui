@@ -27,35 +27,7 @@
       </span>
     </div>
 
-    <!-- Empty state (when no tab is active) - only show for left pane -->
-    <div
-      v-else-if="paneId === 'left'"
-      class="mt-2 flex flex-col items-center justify-center gap-2 rounded-2xl bg-white dark:bg-gray-900 px-4 py-5 text-center text-gray-500 dark:text-gray-400 shadow-sm dark:shadow-gray-950/40"
-    >
-      <div
-        class="inline-flex h-12 w-12 items-center justify-center rounded-full bg-linear-to-br from-blue-600 to-teal-500 text-white shadow-lg"
-      >
-        <svg
-          class="h-6 w-6"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="1.4"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M8 9h8m-8 4h5m7-7v8.5a2.5 2.5 0 01-2.5 2.5H8.75L5 21v-4H4.5A2.5 2.5 0 012 14.5V6a2 2 0 012-2h14a2 2 0 012 2z"
-          />
-        </svg>
-      </div>
-      <div>
-        <p class="text-sm font-semibold text-gray-900 dark:text-gray-100">No object selected</p>
-        <p class="text-xs mt-1 text-gray-500 dark:text-gray-400">
-          Select an object from the sidebar to view its details.
-        </p>
-      </div>
-    </div>
+    <!-- Empty state removed - now handled by PaneContent component -->
   </div>
 </template>
 

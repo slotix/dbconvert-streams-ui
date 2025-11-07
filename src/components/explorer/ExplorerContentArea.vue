@@ -58,63 +58,13 @@
 
         <!-- Left pane content -->
         <template #left-content>
-          <div v-if="leftActiveTab">
-            <ObjectContainer
-              v-if="leftActiveTab.tabType === 'database'"
-              :key="`left-${leftActiveTab.database}.${leftActiveTab.schema || 'default'}.${leftActiveTab.name}`"
-              object-type="database"
-              pane-id="left"
-              :connection-id="leftActiveTab.connectionId"
-              :table-meta="leftActiveTab.meta!"
-              :is-view="leftActiveTab.type === 'view'"
-              :connection-type="currentConnection?.type || 'sql'"
-              :database="leftActiveTab.database!"
-              @tab-change="$emit('left-tab-change', $event)"
-              @refresh-metadata="$emit('refresh-metadata')"
-            />
-            <ObjectContainer
-              v-else-if="leftActiveTab.tabType === 'file'"
-              :key="`left-${leftActiveTab.filePath}`"
-              object-type="file"
-              pane-id="left"
-              :file-entry="leftActiveTab.fileEntry!"
-              :file-metadata="leftActiveTab.fileMetadata || null"
-              :connection-id="leftActiveTab.connectionId"
-              @tab-change="$emit('left-tab-change', $event)"
-              @refresh-metadata="$emit('refresh-metadata')"
-            />
-          </div>
-          <div
-            v-else
-            class="flex flex-col items-center justify-center gap-3 py-16 px-4 text-center text-gray-500 dark:text-gray-400"
-          >
-            <div
-              class="inline-flex h-20 w-20 items-center justify-center rounded-full bg-linear-to-br from-blue-600 to-teal-500 text-white shadow-xl"
-            >
-              <svg
-                class="h-10 w-10"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.3"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M12 6.75c-3.728 0-6.75 1.007-6.75 2.25v6c0 1.243 3.022 2.25 6.75 2.25s6.75-1.007 6.75-2.25v-6c0-1.243-3.022-2.25-6.75-2.25zM5.25 9.75c0 1.243 3.022 2.25 6.75 2.25s6.75-1.007 6.75-2.25M5.25 13.75c0 1.243 3.022 2.25 6.75 2.25s6.75-1.007 6.75-2.25"
-                />
-              </svg>
-            </div>
-            <div class="max-w-md mx-auto space-y-1">
-              <p class="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                No object selected
-              </p>
-              <p class="text-sm text-gray-500 dark:text-gray-400">
-                Select an object from the sidebar to view its details. You can preview tables,
-                views, or files.
-              </p>
-            </div>
-          </div>
+          <PaneContent
+            pane-id="left"
+            :active-tab="leftActiveTab"
+            :connection-type="currentConnection?.type || 'sql'"
+            @tab-change="$emit('left-tab-change', $event)"
+            @refresh-metadata="$emit('refresh-metadata')"
+          />
         </template>
 
         <!-- Right pane tabs -->
@@ -142,93 +92,14 @@
 
         <!-- Right pane content -->
         <template #right-content>
-          <div v-if="rightActiveTab">
-            <ObjectContainer
-              v-if="rightActiveTab.tabType === 'database'"
-              :key="`right-${rightActiveTab.database}.${rightActiveTab.schema || 'default'}.${rightActiveTab.name}`"
-              object-type="database"
-              pane-id="right"
-              :connection-id="rightActiveTab.connectionId"
-              :table-meta="rightActiveTab.meta!"
-              :is-view="rightActiveTab.type === 'view'"
-              :connection-type="currentConnection?.type || 'sql'"
-              :database="rightActiveTab.database!"
-              @tab-change="$emit('right-tab-change', $event)"
-              @refresh-metadata="$emit('refresh-metadata')"
-            />
-            <ObjectContainer
-              v-else-if="rightActiveTab.tabType === 'file'"
-              :key="`right-${rightActiveTab.filePath}`"
-              object-type="file"
-              pane-id="right"
-              :file-entry="rightActiveTab.fileEntry!"
-              :file-metadata="rightActiveTab.fileMetadata || null"
-              :connection-id="rightActiveTab.connectionId"
-              @tab-change="$emit('right-tab-change', $event)"
-              @refresh-metadata="$emit('refresh-metadata')"
-            />
-          </div>
-        </template>
-
-        <!-- Single pane content (same as left content when no right pane) -->
-        <template #single-content>
-          <div v-if="leftActiveTab">
-            <ObjectContainer
-              v-if="leftActiveTab.tabType === 'database'"
-              :key="`single-${leftActiveTab.database}.${leftActiveTab.schema || 'default'}.${leftActiveTab.name}`"
-              object-type="database"
-              pane-id="left"
-              :connection-id="leftActiveTab.connectionId"
-              :table-meta="leftActiveTab.meta!"
-              :is-view="leftActiveTab.type === 'view'"
-              :connection-type="currentConnection?.type || 'sql'"
-              :database="leftActiveTab.database!"
-              @tab-change="$emit('left-tab-change', $event)"
-              @refresh-metadata="$emit('refresh-metadata')"
-            />
-            <ObjectContainer
-              v-else-if="leftActiveTab.tabType === 'file'"
-              :key="`single-${leftActiveTab.filePath}`"
-              object-type="file"
-              pane-id="left"
-              :file-entry="leftActiveTab.fileEntry!"
-              :file-metadata="leftActiveTab.fileMetadata || null"
-              :connection-id="leftActiveTab.connectionId"
-              @tab-change="$emit('left-tab-change', $event)"
-              @refresh-metadata="$emit('refresh-metadata')"
-            />
-          </div>
-          <div
-            v-else
-            class="flex flex-col items-center justify-center gap-3 py-16 px-4 text-center text-gray-500 dark:text-gray-400"
-          >
-            <div
-              class="inline-flex h-20 w-20 items-center justify-center rounded-full bg-linear-to-br from-blue-600 to-teal-500 text-white shadow-xl"
-            >
-              <svg
-                class="h-10 w-10"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.3"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M12 6.75c-3.728 0-6.75 1.007-6.75 2.25v6c0 1.243 3.022 2.25 6.75 2.25s6.75-1.007 6.75-2.25v-6c0-1.243-3.022-2.25-6.75-2.25zM5.25 9.75c0 1.243 3.022 2.25 6.75 2.25s6.75-1.007 6.75-2.25M5.25 13.75c0 1.243 3.022 2.25 6.75 2.25s6.75-1.007 6.75-2.25"
-                />
-              </svg>
-            </div>
-            <div class="max-w-md mx-auto space-y-1">
-              <p class="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                No object selected
-              </p>
-              <p class="text-sm text-gray-500 dark:text-gray-400">
-                Select an object from the sidebar to view its details. You can preview tables,
-                views, or files.
-              </p>
-            </div>
-          </div>
+          <PaneContent
+            pane-id="right"
+            :active-tab="rightActiveTab"
+            :connection-type="currentConnection?.type || 'sql'"
+            :show-empty-state="false"
+            @tab-change="$emit('right-tab-change', $event)"
+            @refresh-metadata="$emit('refresh-metadata')"
+          />
         </template>
       </ExplorerSplitPane>
     </div>
@@ -248,7 +119,7 @@ import ExplorerSplitPane from './ExplorerSplitPane.vue'
 import type { SplitPaneResizeController } from '@/composables/useSplitPaneResize'
 import PaneNavigationTabs from './PaneNavigationTabs.vue'
 import PaneBreadcrumb from './PaneBreadcrumb.vue'
-import ObjectContainer from '@/components/common/ObjectContainer.vue'
+import PaneContent from './PaneContent.vue'
 import type { FileSystemEntry } from '@/api/fileSystem'
 import type { Table, Relationship } from '@/types/schema'
 
