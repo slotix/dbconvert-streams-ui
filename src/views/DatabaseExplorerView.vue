@@ -27,6 +27,7 @@ import { useExplorerRouter } from '@/composables/useExplorerRouter'
 import { useTreeSearch } from '@/composables/useTreeSearch'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import DisconnectedOverlay from '@/components/common/DisconnectedOverlay.vue'
+import EmptyStateMessage from '@/components/explorer/EmptyStateMessage.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -978,7 +979,7 @@ onUnmounted(() => {
         </p>
         <RouterLink
           to="/explorer/add"
-          class="inline-flex items-center gap-2 px-6 py-3 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-linear-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 transition-all duration-200 hover:shadow-md hover:scale-105"
+          class="inline-flex items-center gap-2 px-6 py-3 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-linear-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 dark:from-blue-500 dark:to-teal-500 dark:hover:from-blue-600 dark:hover:to-teal-600 transition-all duration-200 hover:shadow-md hover:scale-105"
         >
           <PlusIcon class="h-5 w-5" />
           Create Your First Connection
@@ -1115,18 +1116,8 @@ onUnmounted(() => {
               @breadcrumb-pick-name="handlePickFromBreadcrumb"
             />
 
-            <!-- Show loading or empty state when no connection is selected -->
-            <div
-              v-else
-              class="flex items-center justify-center h-64 text-gray-500 dark:text-gray-400"
-            >
-              <div class="text-center">
-                <div class="text-lg font-medium mb-2">Select a connection</div>
-                <div class="text-sm">
-                  Choose a connection from the sidebar to start exploring data
-                </div>
-              </div>
-            </div>
+            <!-- Show empty state when no connection is selected -->
+            <EmptyStateMessage v-else variant="no-connection" />
           </div>
         </div>
       </div>
