@@ -763,6 +763,21 @@ watch(
   { immediate: false }
 )
 
+// Watch for backend connection status changes and load connections when connected
+watch(
+  () => commonStore.isBackendConnected,
+  async (isConnected) => {
+    if (isConnected) {
+      try {
+        // Backend came online - refresh with fresh API data
+        await connectionsStore.refreshConnections()
+      } catch (error) {
+        console.error('Failed to load connections when backend connected:', error)
+      }
+    }
+  }
+)
+
 // Keyboard shortcut for sidebar toggle (Ctrl+B / Cmd+B) and search focus (/)
 function handleKeyboardShortcut(e: KeyboardEvent) {
   // Ctrl+B or Cmd+B to toggle sidebar
@@ -778,9 +793,18 @@ function handleKeyboardShortcut(e: KeyboardEvent) {
 }
 
 // Lifecycle
-onMounted(() => {
+onMounted(async () => {
   commonStore.setCurrentPage('Data Explorer')
   sidebar.initializeSidebar()
+
+  // Load connections from API if backend is connected
+  if (commonStore.isBackendConnected) {
+    try {
+      await connectionsStore.refreshConnections()
+    } catch (error) {
+      console.error('Failed to load connections on explorer mount:', error)
+    }
+  }
 
   // Check if focus connection ID was passed from stream navigator
   const focusConnIdFromStream = window.sessionStorage.getItem('explorerFocusConnectionId')
