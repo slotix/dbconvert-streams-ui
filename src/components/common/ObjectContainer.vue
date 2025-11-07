@@ -189,12 +189,12 @@ async function onRefreshClick() {
 <template>
   <div
     :class="[
-      'bg-white',
-      $attrs.class ? $attrs.class : 'shadow-sm ring-1 ring-gray-900/5 rounded-lg'
+      'bg-white dark:bg-gray-850',
+      $attrs.class ? $attrs.class : 'shadow-sm ring-1 ring-gray-900/5 dark:ring-gray-700 rounded-lg'
     ]"
   >
     <!-- Header with tabs and refresh button -->
-    <div class="border-b border-gray-200 px-4">
+    <div class="border-b border-gray-200 dark:border-gray-700 px-4">
       <div class="flex items-center justify-between -mb-px">
         <div class="flex items-center gap-4 flex-wrap">
           <button
@@ -203,8 +203,8 @@ async function onRefreshClick() {
             :class="[
               'border-b-2 py-4 px-1 text-sm font-medium whitespace-nowrap transition-colors duration-150',
               selectedIndex === i
-                ? 'border-slate-500 text-slate-600'
-                : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                ? 'border-slate-500 dark:border-slate-400 text-slate-600 dark:text-slate-100'
+                : 'border-transparent text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-gray-300'
             ]"
             @click="onTabChange(i)"
           >
@@ -214,12 +214,15 @@ async function onRefreshClick() {
         <div class="py-2">
           <button
             type="button"
-            class="inline-flex items-center rounded-md bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm border border-gray-200 hover:bg-gray-50 transition-colors"
+            class="inline-flex items-center rounded-md bg-white dark:bg-gray-800 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 shadow-sm dark:shadow-gray-900/30 border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             :disabled="isRefreshing"
             @click="onRefreshClick"
           >
             <ArrowPathIcon
-              :class="['h-4 w-4 mr-1.5', isRefreshing ? 'animate-spin' : 'text-gray-400']"
+              :class="[
+                'h-4 w-4 mr-1.5',
+                isRefreshing ? 'animate-spin' : 'text-gray-400 dark:text-gray-500'
+              ]"
             />
             {{ selectedIndex === 0 ? 'Refresh Data' : 'Refresh Metadata' }}
           </button>
