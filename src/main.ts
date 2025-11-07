@@ -22,6 +22,7 @@ import App from './App.vue'
 import router from './router'
 import { logEnvironment } from '@/utils/environment'
 import { vTooltip } from '@/directives/tooltip'
+import { useThemeStore } from '@/stores/theme'
 
 // Ensure window.ENV exists
 if (!window.ENV) {
@@ -54,9 +55,16 @@ const toastOptions: PluginOptions = {
 }
 
 const app = createApp(App)
-app.use(createPinia())
+const pinia = createPinia()
+app.use(pinia)
 app.use(router)
 app.use(Toast, toastOptions)
 app.directive('tooltip', vTooltip)
 app.directive('highlightjs', vHighlightjs)
+
+// Initialize theme before mounting
+const themeStore = useThemeStore()
+themeStore.initializeTheme()
+themeStore.setupSystemThemeListener()
+
 app.mount('#app')

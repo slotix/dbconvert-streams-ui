@@ -84,7 +84,7 @@ const sizeDisplay = computed(() => {
 <template>
   <div class="p-4">
     <div class="flex items-center justify-between mb-4">
-      <h3 class="text-base font-semibold text-gray-900">Database Overview</h3>
+      <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">Database Overview</h3>
       <div class="flex items-center gap-2">
         <BaseButton variant="secondary" size="sm" @click="load()"> Refresh </BaseButton>
         <BaseButton
@@ -101,40 +101,48 @@ const sizeDisplay = computed(() => {
         </BaseButton>
       </div>
     </div>
-    <div v-if="isLoading" class="text-sm text-gray-500 py-8 text-center">Loading overview…</div>
-    <div v-else-if="error" class="text-sm text-red-600 py-8 text-center">{{ error }}</div>
+    <div v-if="isLoading" class="text-sm text-gray-500 dark:text-gray-400 py-8 text-center">
+      Loading overview…
+    </div>
+    <div v-else-if="error" class="text-sm text-red-600 dark:text-red-400 py-8 text-center">
+      {{ error }}
+    </div>
     <div v-else-if="overview" class="grid grid-cols-1 md:grid-cols-6 gap-4">
       <!-- Essentials -->
       <div
-        class="group bg-white ring-1 ring-slate-200 rounded-xl p-4 md:col-span-2 hover:shadow-lg hover:ring-slate-300 transition-all duration-200"
+        class="group bg-white dark:bg-gray-850 ring-1 ring-slate-200 dark:ring-gray-700 rounded-xl p-4 md:col-span-2 hover:shadow-lg dark:hover:shadow-gray-900/30 hover:ring-slate-300 dark:hover:ring-gray-600 transition-all duration-200"
       >
         <div class="flex items-center justify-between mb-3">
           <div class="flex items-center gap-2">
             <div
-              class="p-2 bg-blue-50 rounded-lg group-hover:bg-linear-to-br group-hover:from-blue-100 group-hover:to-teal-100 transition-all duration-200"
+              class="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg group-hover:bg-linear-to-br group-hover:from-blue-100 group-hover:to-teal-100 dark:group-hover:from-blue-900/30 dark:group-hover:to-teal-900/30 transition-all duration-200"
             >
-              <CircleStackIcon class="h-4 w-4 text-blue-600" />
+              <CircleStackIcon class="h-4 w-4 text-blue-600 dark:text-blue-400" />
             </div>
-            <span class="text-sm font-semibold text-gray-700">Essentials</span>
+            <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Essentials</span>
           </div>
           <span
-            class="inline-flex items-center text-xs px-2 py-1 rounded-md bg-slate-100 text-slate-700 font-medium ring-1 ring-inset ring-slate-200"
+            class="inline-flex items-center text-xs px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium ring-1 ring-inset ring-slate-200 dark:ring-slate-700"
             >{{ overview.engine }} {{ overview.version }}</span
           >
         </div>
-        <div class="mt-3 text-sm text-gray-700 space-y-2">
+        <div class="mt-3 text-sm text-gray-700 dark:text-gray-300 space-y-2">
           <div v-if="overview.encoding" class="flex justify-between items-center">
-            <span class="text-gray-600">Encoding:</span>
-            <span class="font-semibold text-gray-900">{{ overview.encoding }}</span>
+            <span class="text-gray-600 dark:text-gray-400">Encoding:</span>
+            <span class="font-semibold text-gray-900 dark:text-gray-100">{{
+              overview.encoding
+            }}</span>
           </div>
           <div v-if="overview.collation" class="flex justify-between items-center">
-            <span class="text-gray-600">Collation:</span>
-            <span class="font-semibold text-gray-900">{{ overview.collation }}</span>
+            <span class="text-gray-600 dark:text-gray-400">Collation:</span>
+            <span class="font-semibold text-gray-900 dark:text-gray-100">{{
+              overview.collation
+            }}</span>
           </div>
           <div class="flex justify-between items-center">
-            <span class="text-gray-600">Size:</span>
+            <span class="text-gray-600 dark:text-gray-400">Size:</span>
             <span
-              class="font-semibold text-gray-900"
+              class="font-semibold text-gray-900 dark:text-gray-100"
               :title="
                 typeof sizeBytes === 'number'
                   ? Intl.NumberFormat().format(sizeBytes || 0) + ' bytes'
@@ -144,32 +152,38 @@ const sizeDisplay = computed(() => {
             >
           </div>
           <div class="flex justify-between items-center">
-            <span class="text-gray-600">Tables:</span>
-            <span class="font-semibold text-gray-900">{{ counts?.tables ?? '—' }}</span>
+            <span class="text-gray-600 dark:text-gray-400">Tables:</span>
+            <span class="font-semibold text-gray-900 dark:text-gray-100">{{
+              counts?.tables ?? '—'
+            }}</span>
           </div>
           <div class="flex justify-between items-center">
-            <span class="text-gray-600">Views:</span>
-            <span class="font-semibold text-gray-900">{{ counts?.views ?? '—' }}</span>
+            <span class="text-gray-600 dark:text-gray-400">Views:</span>
+            <span class="font-semibold text-gray-900 dark:text-gray-100">{{
+              counts?.views ?? '—'
+            }}</span>
           </div>
           <div v-if="typeof counts?.schemas === 'number'" class="flex justify-between items-center">
-            <span class="text-gray-600">Schemas:</span>
-            <span class="font-semibold text-gray-900">{{ counts.schemas }}</span>
+            <span class="text-gray-600 dark:text-gray-400">Schemas:</span>
+            <span class="font-semibold text-gray-900 dark:text-gray-100">{{ counts.schemas }}</span>
           </div>
         </div>
       </div>
 
       <!-- CDC readiness -->
       <div
-        class="group bg-white ring-1 ring-slate-200 rounded-xl p-4 md:col-span-2 hover:shadow-lg hover:ring-slate-300 transition-all duration-200"
+        class="group bg-white dark:bg-gray-850 ring-1 ring-slate-200 dark:ring-gray-700 rounded-xl p-4 md:col-span-2 hover:shadow-lg dark:hover:shadow-gray-900/30 hover:ring-slate-300 dark:hover:ring-gray-600 transition-all duration-200"
       >
         <div class="flex items-center justify-between mb-3">
           <div class="flex items-center gap-2">
             <div
-              class="p-2 bg-teal-50 rounded-lg group-hover:bg-linear-to-br group-hover:from-teal-100 group-hover:to-blue-100 transition-all duration-200"
+              class="p-2 bg-teal-50 dark:bg-teal-900/20 rounded-lg group-hover:bg-linear-to-br group-hover:from-teal-100 group-hover:to-blue-100 dark:group-hover:from-teal-900/30 dark:group-hover:to-blue-900/30 transition-all duration-200"
             >
-              <SignalIcon class="h-4 w-4 text-teal-600" />
+              <SignalIcon class="h-4 w-4 text-teal-600 dark:text-teal-400" />
             </div>
-            <span class="text-sm font-semibold text-gray-700">CDC readiness</span>
+            <span class="text-sm font-semibold text-gray-700 dark:text-gray-300"
+              >CDC readiness</span
+            >
           </div>
           <span
             v-if="overview.engine === 'mysql'"
@@ -221,21 +235,23 @@ const sizeDisplay = computed(() => {
             {{ overview.health?.wal?.level || 'unknown' }}
           </span>
         </div>
-        <div class="mt-3 text-sm text-gray-700 space-y-2">
+        <div class="mt-3 text-sm text-gray-700 dark:text-gray-300 space-y-2">
           <template v-if="overview.engine === 'mysql'">
             <div class="flex justify-between items-center">
-              <span class="text-gray-600">Binary log:</span>
-              <span class="font-semibold text-gray-900">{{
+              <span class="text-gray-600 dark:text-gray-400">Binary log:</span>
+              <span class="font-semibold text-gray-900 dark:text-gray-100">{{
                 overview.health?.binlog?.enabled ? 'ON' : 'OFF'
               }}</span>
             </div>
             <div v-if="overview.health?.binlog?.format" class="flex justify-between items-center">
-              <span class="text-gray-600">Format:</span>
-              <span class="font-semibold text-gray-900">{{ overview.health?.binlog?.format }}</span>
+              <span class="text-gray-600 dark:text-gray-400">Format:</span>
+              <span class="font-semibold text-gray-900 dark:text-gray-100">{{
+                overview.health?.binlog?.format
+              }}</span>
             </div>
             <div v-if="overview.health?.binlog?.rowImage" class="flex justify-between items-center">
-              <span class="text-gray-600">Row image:</span>
-              <span class="font-semibold text-gray-900">{{
+              <span class="text-gray-600 dark:text-gray-400">Row image:</span>
+              <span class="font-semibold text-gray-900 dark:text-gray-100">{{
                 overview.health?.binlog?.rowImage
               }}</span>
             </div>
@@ -244,16 +260,16 @@ const sizeDisplay = computed(() => {
               v-if="typeof overview.health?.binlog?.serverId === 'number'"
               class="flex justify-between items-center"
             >
-              <span class="text-gray-600">Server ID:</span>
-              <span class="font-semibold text-gray-900">{{
+              <span class="text-gray-600 dark:text-gray-400">Server ID:</span>
+              <span class="font-semibold text-gray-900 dark:text-gray-100">{{
                 overview.health?.binlog?.serverId
               }}</span>
             </div>
           </template>
           <template v-else>
             <div class="flex justify-between items-center">
-              <span class="text-gray-600">wal_level:</span>
-              <span class="font-semibold text-gray-900">{{
+              <span class="text-gray-600 dark:text-gray-400">wal_level:</span>
+              <span class="font-semibold text-gray-900 dark:text-gray-100">{{
                 overview.health?.wal?.level || 'unknown'
               }}</span>
             </div>
@@ -261,8 +277,8 @@ const sizeDisplay = computed(() => {
               v-if="typeof overview.health?.wal?.maxReplicationSlots === 'number'"
               class="flex justify-between items-center"
             >
-              <span class="text-gray-600">Replication slots (max):</span>
-              <span class="font-semibold text-gray-900">{{
+              <span class="text-gray-600 dark:text-gray-400">Replication slots (max):</span>
+              <span class="font-semibold text-gray-900 dark:text-gray-100">{{
                 overview.health?.wal?.maxReplicationSlots
               }}</span>
             </div>
@@ -270,8 +286,8 @@ const sizeDisplay = computed(() => {
               v-if="typeof overview.health?.wal?.freeReplicationSlots === 'number'"
               class="flex justify-between items-center"
             >
-              <span class="text-gray-600">Replication slots (free):</span>
-              <span class="font-semibold text-gray-900">{{
+              <span class="text-gray-600 dark:text-gray-400">Replication slots (free):</span>
+              <span class="font-semibold text-gray-900 dark:text-gray-100">{{
                 overview.health?.wal?.freeReplicationSlots
               }}</span>
             </div>
@@ -279,8 +295,8 @@ const sizeDisplay = computed(() => {
               v-if="typeof overview.health?.wal?.maxWalSenders === 'number'"
               class="flex justify-between items-center"
             >
-              <span class="text-gray-600">Wal senders (max):</span>
-              <span class="font-semibold text-gray-900">{{
+              <span class="text-gray-600 dark:text-gray-400">Wal senders (max):</span>
+              <span class="font-semibold text-gray-900 dark:text-gray-100">{{
                 overview.health?.wal?.maxWalSenders
               }}</span>
             </div>
@@ -290,48 +306,65 @@ const sizeDisplay = computed(() => {
 
       <!-- Activity (compact) -->
       <div
-        class="group bg-white ring-1 ring-slate-200 rounded-xl p-4 md:col-span-2 hover:shadow-lg hover:ring-slate-300 transition-all duration-200"
+        class="group bg-white dark:bg-gray-850 ring-1 ring-slate-200 dark:ring-gray-700 rounded-xl p-4 md:col-span-2 hover:shadow-lg dark:hover:shadow-gray-900/30 hover:ring-slate-300 dark:hover:ring-gray-600 transition-all duration-200"
       >
         <div class="flex items-center gap-2 mb-3">
           <div
-            class="p-2 bg-orange-50 rounded-lg group-hover:bg-linear-to-br group-hover:from-orange-100 group-hover:to-amber-100 transition-all duration-200"
+            class="p-2 bg-orange-50 dark:bg-orange-900/20 rounded-lg group-hover:bg-linear-to-br group-hover:from-orange-100 group-hover:to-amber-100 dark:group-hover:from-orange-900/30 dark:group-hover:to-amber-900/30 transition-all duration-200"
           >
-            <ChartBarIcon class="h-4 w-4 text-orange-600" />
+            <ChartBarIcon class="h-4 w-4 text-orange-600 dark:text-orange-400" />
           </div>
-          <span class="text-sm font-semibold text-gray-700">Activity</span>
+          <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Activity</span>
         </div>
-        <div class="mt-2 text-sm text-gray-700 space-y-2">
+        <div class="mt-2 text-sm text-gray-700 dark:text-gray-300 space-y-2">
           <div class="flex justify-between items-center">
-            <span class="text-gray-600">Connections:</span>
-            <span class="font-semibold text-gray-900">
+            <span class="text-gray-600 dark:text-gray-400">Connections:</span>
+            <span class="font-semibold text-gray-900 dark:text-gray-100">
               {{ activity?.connections?.used ?? '—' }}
-              <span v-if="activity?.connections?.max" class="text-gray-500 font-normal">
+              <span
+                v-if="activity?.connections?.max"
+                class="text-gray-500 dark:text-gray-400 font-normal"
+              >
                 / {{ activity.connections.max }}
               </span>
             </span>
           </div>
           <div class="flex justify-between items-center">
-            <span class="text-gray-600">Active sessions:</span>
-            <span class="font-semibold text-gray-900">{{ activity?.activeSessions ?? '—' }}</span>
+            <span class="text-gray-600 dark:text-gray-400">Active sessions:</span>
+            <span class="font-semibold text-gray-900 dark:text-gray-100">{{
+              activity?.activeSessions ?? '—'
+            }}</span>
           </div>
         </div>
-        <div v-if="activity?.longRunning?.length" class="mt-4 pt-3 border-t border-gray-100">
-          <div class="text-xs uppercase tracking-wide font-semibold text-gray-500 mb-2">
+        <div
+          v-if="activity?.longRunning?.length"
+          class="mt-4 pt-3 border-t border-gray-100 dark:border-gray-700"
+        >
+          <div
+            class="text-xs uppercase tracking-wide font-semibold text-gray-500 dark:text-gray-400 mb-2"
+          >
             Long-running queries
           </div>
-          <ul class="text-sm text-gray-700 space-y-2">
+          <ul class="text-sm text-gray-700 dark:text-gray-300 space-y-2">
             <li
               v-for="(q, idx) in activity.longRunning.slice(0, 5)"
               :key="q.pid || q.threadId || idx"
-              class="flex items-start justify-between gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
+              class="flex items-start justify-between gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
             >
               <div class="truncate min-w-0 flex-1">
-                <span class="text-xs text-gray-500 font-medium">{{ q.user }}</span>
-                <div class="truncate text-xs text-gray-700 mt-0.5" :title="q.query">
+                <span class="text-xs text-gray-500 dark:text-gray-400 font-medium">{{
+                  q.user
+                }}</span>
+                <div
+                  class="truncate text-xs text-gray-700 dark:text-gray-300 mt-0.5"
+                  :title="q.query"
+                >
                   {{ q.query }}
                 </div>
               </div>
-              <span class="shrink-0 text-xs font-medium text-gray-500">{{ q.duration }}</span>
+              <span class="shrink-0 text-xs font-medium text-gray-500 dark:text-gray-400">{{
+                q.duration
+              }}</span>
             </li>
           </ul>
         </div>
@@ -339,32 +372,34 @@ const sizeDisplay = computed(() => {
 
       <!-- Top by size -->
       <div
-        class="group bg-white ring-1 ring-slate-200 rounded-xl p-4 md:col-span-3 hover:shadow-lg hover:ring-slate-300 transition-all duration-200"
+        class="group bg-white dark:bg-gray-850 ring-1 ring-slate-200 dark:ring-gray-700 rounded-xl p-4 md:col-span-3 hover:shadow-lg dark:hover:shadow-gray-900/30 hover:ring-slate-300 dark:hover:ring-gray-600 transition-all duration-200"
       >
         <div class="flex items-center gap-2 mb-3">
           <div
-            class="p-2 bg-purple-50 rounded-lg group-hover:bg-linear-to-br group-hover:from-purple-100 group-hover:to-pink-100 transition-all duration-200"
+            class="p-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg group-hover:bg-linear-to-br group-hover:from-purple-100 group-hover:to-pink-100 dark:group-hover:from-purple-900/30 dark:group-hover:to-pink-900/30 transition-all duration-200"
           >
-            <ServerIcon class="h-4 w-4 text-purple-600" />
+            <ServerIcon class="h-4 w-4 text-purple-600 dark:text-purple-400" />
           </div>
-          <span class="text-sm font-semibold text-gray-700">Top tables by size</span>
+          <span class="text-sm font-semibold text-gray-700 dark:text-gray-300"
+            >Top tables by size</span
+          >
         </div>
-        <ul class="mt-2 text-sm text-gray-700 space-y-1">
+        <ul class="mt-2 text-sm text-gray-700 dark:text-gray-300 space-y-1">
           <li
             v-for="t in topSize"
             :key="t.name"
-            class="flex items-center justify-between p-2 rounded-lg hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50 transition-all duration-150"
+            class="flex items-center justify-between p-2 rounded-lg hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50 dark:hover:from-blue-900/20 dark:hover:to-teal-900/20 transition-all duration-150"
           >
             <button
               type="button"
-              class="truncate text-left hover:text-blue-600 font-medium transition-colors min-w-0 flex-1"
+              class="truncate text-left hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors min-w-0 flex-1"
               :title="t.name"
               @click="$emit('open-table', { name: t.name })"
             >
               {{ t.name }}
             </button>
             <span
-              class="ml-2 shrink-0 text-gray-500 text-xs font-medium"
+              class="ml-2 shrink-0 text-gray-500 dark:text-gray-400 text-xs font-medium"
               :title="Intl.NumberFormat().format(t.sizeBytes) + ' bytes'"
               >{{ formatDataSize(t.sizeBytes) }}</span
             >
@@ -374,36 +409,38 @@ const sizeDisplay = computed(() => {
 
       <!-- Top by rows -->
       <div
-        class="group bg-white ring-1 ring-slate-200 rounded-xl p-4 md:col-span-3 hover:shadow-lg hover:ring-slate-300 transition-all duration-200"
+        class="group bg-white dark:bg-gray-850 ring-1 ring-slate-200 dark:ring-gray-700 rounded-xl p-4 md:col-span-3 hover:shadow-lg dark:hover:shadow-gray-900/30 hover:ring-slate-300 dark:hover:ring-gray-600 transition-all duration-200"
       >
         <div class="flex items-center gap-2 mb-3">
           <div
-            class="p-2 bg-indigo-50 rounded-lg group-hover:bg-linear-to-br group-hover:from-indigo-100 group-hover:to-purple-100 transition-all duration-200"
+            class="p-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg group-hover:bg-linear-to-br group-hover:from-indigo-100 group-hover:to-purple-100 dark:group-hover:from-indigo-900/30 dark:group-hover:to-purple-900/30 transition-all duration-200"
           >
-            <TableCellsIcon class="h-4 w-4 text-indigo-600" />
+            <TableCellsIcon class="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
           </div>
-          <span class="text-sm font-semibold text-gray-700">
+          <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">
             Top tables by rows
-            <span v-if="overview.engine === 'mysql'" class="ml-1 text-xs text-amber-600 font-normal"
+            <span
+              v-if="overview.engine === 'mysql'"
+              class="ml-1 text-xs text-amber-600 dark:text-amber-400 font-normal"
               >(approx)</span
             >
           </span>
         </div>
-        <ul class="mt-2 text-sm text-gray-700 space-y-1">
+        <ul class="mt-2 text-sm text-gray-700 dark:text-gray-300 space-y-1">
           <li
             v-for="t in topRows"
             :key="t.name"
-            class="flex items-center justify-between p-2 rounded-lg hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50 transition-all duration-150"
+            class="flex items-center justify-between p-2 rounded-lg hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50 dark:hover:from-blue-900/20 dark:hover:to-teal-900/20 transition-all duration-150"
           >
             <button
               type="button"
-              class="truncate text-left hover:text-blue-600 font-medium transition-colors min-w-0 flex-1"
+              class="truncate text-left hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors min-w-0 flex-1"
               :title="t.name"
               @click="$emit('open-table', { name: t.name })"
             >
               {{ t.name }}
             </button>
-            <span class="ml-2 shrink-0 text-gray-500 text-xs font-medium">
+            <span class="ml-2 shrink-0 text-gray-500 dark:text-gray-400 text-xs font-medium">
               {{ Intl.NumberFormat().format(t.approxRows) }}
             </span>
           </li>
@@ -413,15 +450,15 @@ const sizeDisplay = computed(() => {
       <!-- Notes -->
       <div
         v-if="overview.notes?.length"
-        class="group bg-white ring-1 ring-slate-200 rounded-xl p-4 md:col-span-6 hover:shadow-lg hover:ring-slate-300 transition-all duration-200"
+        class="group bg-white dark:bg-gray-850 ring-1 ring-slate-200 dark:ring-gray-700 rounded-xl p-4 md:col-span-6 hover:shadow-lg dark:hover:shadow-gray-900/30 hover:ring-slate-300 dark:hover:ring-gray-600 transition-all duration-200"
       >
         <div class="flex items-center gap-2 mb-3">
           <div
-            class="p-2 bg-sky-50 rounded-lg group-hover:bg-linear-to-br group-hover:from-sky-100 group-hover:to-blue-100 transition-all duration-200"
+            class="p-2 bg-sky-50 dark:bg-sky-900/20 rounded-lg group-hover:bg-linear-to-br group-hover:from-sky-100 group-hover:to-blue-100 dark:group-hover:from-sky-900/30 dark:group-hover:to-blue-900/30 transition-all duration-200"
           >
-            <InformationCircleIcon class="h-4 w-4 text-sky-600" />
+            <InformationCircleIcon class="h-4 w-4 text-sky-600 dark:text-sky-400" />
           </div>
-          <span class="text-sm font-semibold text-gray-700">Notes</span>
+          <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Notes</span>
         </div>
         <ul class="mt-2 space-y-2 text-sm">
           <li
@@ -429,9 +466,9 @@ const sizeDisplay = computed(() => {
             :key="i"
             class="flex items-start gap-3 p-3 rounded-lg transition-colors"
             :class="{
-              'bg-sky-50': n.severity === 'info',
-              'bg-amber-50': n.severity === 'warn',
-              'bg-red-50': n.severity === 'error'
+              'bg-sky-50 dark:bg-sky-900/20': n.severity === 'info',
+              'bg-amber-50 dark:bg-amber-900/20': n.severity === 'warn',
+              'bg-red-50 dark:bg-red-900/20': n.severity === 'error'
             }"
           >
             <span
@@ -444,11 +481,11 @@ const sizeDisplay = computed(() => {
             />
             <div class="flex-1 min-w-0">
               <span
-                class="text-gray-800 font-medium"
+                class="text-gray-800 dark:text-gray-200 font-medium"
                 :class="{
-                  'text-sky-900': n.severity === 'info',
-                  'text-amber-900': n.severity === 'warn',
-                  'text-red-900': n.severity === 'error'
+                  'text-sky-900 dark:text-sky-300': n.severity === 'info',
+                  'text-amber-900 dark:text-amber-300': n.severity === 'warn',
+                  'text-red-900 dark:text-red-300': n.severity === 'error'
                 }"
                 >{{ n.message }}</span
               >
@@ -457,9 +494,9 @@ const sizeDisplay = computed(() => {
                 :href="n.doc"
                 class="ml-2 text-xs font-medium hover:underline"
                 :class="{
-                  'text-sky-600': n.severity === 'info',
-                  'text-amber-600': n.severity === 'warn',
-                  'text-red-600': n.severity === 'error'
+                  'text-sky-600 dark:text-sky-400': n.severity === 'info',
+                  'text-amber-600 dark:text-amber-400': n.severity === 'warn',
+                  'text-red-600 dark:text-red-400': n.severity === 'error'
                 }"
                 target="_blank"
                 rel="noopener noreferrer"

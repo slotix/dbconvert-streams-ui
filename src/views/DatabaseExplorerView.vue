@@ -867,7 +867,7 @@ onUnmounted(() => {
 
     <!-- Enhanced Functional Toolbar with gradient background -->
     <header
-      class="sticky top-0 z-10 bg-linear-to-r from-slate-50 via-white to-slate-50 border-b border-slate-200 shadow-sm"
+      class="sticky top-0 z-10 bg-linear-to-r from-slate-50 via-white to-slate-50 dark:from-gray-900 dark:via-gray-850 dark:to-gray-900 border-b border-slate-200 dark:border-gray-700 shadow-sm dark:shadow-gray-900/30"
     >
       <div class="px-6 py-4 flex items-center gap-4">
         <!-- Connection Type Filter -->
@@ -893,10 +893,10 @@ onUnmounted(() => {
         <div class="flex items-center gap-4 ml-auto">
           <!-- Elevated Badge showing count with icon -->
           <div
-            class="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-slate-200 shadow-sm"
+            class="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-850 rounded-lg border border-slate-200 dark:border-gray-700 shadow-sm dark:shadow-gray-900/30"
           >
             <svg
-              class="h-4 w-4 text-slate-400"
+              class="h-4 w-4 text-slate-400 dark:text-gray-400"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -908,7 +908,9 @@ onUnmounted(() => {
                 d="M5 12h14M12 5l7 7-7 7"
               />
             </svg>
-            <span class="text-sm font-semibold text-slate-700">{{ connectionCountLabel }}</span>
+            <span class="text-sm font-semibold text-slate-700 dark:text-gray-300">{{
+              connectionCountLabel
+            }}</span>
           </div>
 
           <!-- Primary CTA Button with vibrant blue-green gradient -->
@@ -926,9 +928,11 @@ onUnmounted(() => {
         v-if="connectionsStore.connections.length === 0"
         class="flex flex-col items-center justify-center py-16 px-4"
       >
-        <div class="bg-linear-to-br from-blue-50 to-teal-50 rounded-full p-6 mb-6">
+        <div
+          class="bg-linear-to-br from-blue-50 to-teal-50 dark:from-blue-900/20 dark:to-teal-900/20 rounded-full p-6 mb-6"
+        >
           <svg
-            class="h-16 w-16 text-blue-500"
+            class="h-16 w-16 text-blue-500 dark:text-blue-400"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -941,8 +945,10 @@ onUnmounted(() => {
             />
           </svg>
         </div>
-        <h3 class="text-xl font-semibold text-gray-900 mb-2">No Connections Yet</h3>
-        <p class="text-gray-500 mb-6 max-w-md text-center">
+        <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
+          No Connections Yet
+        </h3>
+        <p class="text-gray-500 dark:text-gray-400 mb-6 max-w-md text-center">
           Get started by creating your first database connection. You can connect to MySQL,
           PostgreSQL, and many other databases.
         </p>
@@ -1001,17 +1007,17 @@ onUnmounted(() => {
           >
             <!-- Vertical divider line -->
             <div
-              class="absolute inset-y-0 left-1/2 -translate-x-1/2 w-[3px] rounded bg-gray-200 group-hover:bg-gray-300 transition-colors"
+              class="absolute inset-y-0 left-1/2 -translate-x-1/2 w-[3px] rounded bg-gray-200 dark:bg-gray-700 group-hover:bg-gray-300 dark:group-hover:bg-gray-600 transition-colors"
             />
 
             <!-- Centered handle with chevron indicator -->
             <div
-              class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-5 h-12 bg-gray-200 group-hover:bg-gray-300 rounded flex items-center justify-center transition-all cursor-pointer"
+              class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-5 h-12 bg-gray-200 dark:bg-gray-700 group-hover:bg-gray-300 dark:group-hover:bg-gray-600 rounded flex items-center justify-center transition-all cursor-pointer"
               @click.stop="sidebar.toggleSidebar"
             >
               <!-- Double chevron left icon -->
               <svg
-                class="w-3 h-3 text-gray-500"
+                class="w-3 h-3 text-gray-500 dark:text-gray-400"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -1030,13 +1036,13 @@ onUnmounted(() => {
           <div v-if="!sidebar.sidebarVisible.value" class="relative shrink-0 w-5 mr-2">
             <button
               type="button"
-              class="absolute top-1/2 -translate-y-1/2 w-5 h-12 bg-gray-200 hover:bg-gray-300 rounded flex items-center justify-center transition-all shadow-sm"
+              class="absolute top-1/2 -translate-y-1/2 w-5 h-12 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded flex items-center justify-center transition-all shadow-sm dark:shadow-gray-900/30"
               title="Show Sidebar (Ctrl+B)"
               @click="sidebar.toggleSidebar"
             >
               <!-- Double chevron right icon -->
               <svg
-                class="w-3 h-3 text-gray-500"
+                class="w-3 h-3 text-gray-500 dark:text-gray-400"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -1086,7 +1092,10 @@ onUnmounted(() => {
             />
 
             <!-- Show loading or empty state when no connection is selected -->
-            <div v-else class="flex items-center justify-center h-64 text-gray-500">
+            <div
+              v-else
+              class="flex items-center justify-center h-64 text-gray-500 dark:text-gray-400"
+            >
               <div class="text-center">
                 <div class="text-lg font-medium mb-2">Select a connection</div>
                 <div class="text-sm">

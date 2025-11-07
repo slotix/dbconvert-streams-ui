@@ -1,14 +1,16 @@
 <template>
   <div class="w-full">
     <div
-      class="bg-white rounded-lg border overflow-hidden cursor-pointer transform hover:shadow-lg duration-300 ease-in-out flex flex-col h-full"
+      class="bg-white dark:bg-gray-850 rounded-lg border dark:border-gray-700 overflow-hidden cursor-pointer transform hover:shadow-lg dark:hover:shadow-gray-900/30 duration-300 ease-in-out flex flex-col h-full"
       @click="selectStream"
     >
       <!-- Header -->
-      <div class="border-b px-6 py-4 bg-gray-50">
+      <div class="border-b dark:border-gray-700 px-6 py-4 bg-gray-50 dark:bg-gray-800">
         <div class="flex items-center justify-between">
           <div class="flex items-center min-w-0 flex-1">
-            <h3 class="text-lg font-medium text-gray-900 truncate">{{ streamConfig.name }}</h3>
+            <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 truncate">
+              {{ streamConfig.name }}
+            </h3>
             <span
               :class="[
                 'ml-3 inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset',

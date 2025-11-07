@@ -90,8 +90,10 @@ function getTableSize(tableName: string): string | null {
     v-for="item in filteredItems()"
     :key="item"
     :class="[
-      'flex items-center justify-between px-2 py-1.5 text-sm rounded-md hover:bg-gray-100 cursor-pointer select-none group',
-      isItemSelected(item) ? 'bg-gray-100 ring-1 ring-gray-300' : ''
+      'flex items-center justify-between px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer select-none group',
+      isItemSelected(item)
+        ? 'bg-gray-100 dark:bg-gray-800 ring-1 ring-gray-300 dark:ring-gray-600'
+        : ''
     ]"
     :data-explorer-obj="`${explorerObjPrefix}:${objectType}:${item}`"
     @click.stop="handleClick(item)"
@@ -103,14 +105,18 @@ function getTableSize(tableName: string): string | null {
       <ObjectIcon :object-type="objectType" class="mr-2 flex-shrink-0" />
       <span class="truncate">
         <template v-for="(p, i) in highlightParts(item)" :key="i">
-          <span v-if="p.match" class="bg-yellow-200/60 rounded px-0.5" v-text="p.text"></span>
+          <span
+            v-if="p.match"
+            class="bg-yellow-200/60 dark:bg-yellow-500/40 rounded px-0.5"
+            v-text="p.text"
+          ></span>
           <span v-else v-text="p.text"></span>
         </template>
       </span>
     </div>
     <span
       v-if="getTableSize(item)"
-      class="ml-2 text-xs text-gray-400 group-hover:text-gray-500 flex-shrink-0"
+      class="ml-2 text-xs text-gray-400 dark:text-gray-500 group-hover:text-gray-500 dark:group-hover:text-gray-400 flex-shrink-0"
       >{{ getTableSize(item) }}</span
     >
   </div>

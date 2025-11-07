@@ -24,12 +24,12 @@
           leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
         >
           <DialogPanel
-            class="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-2xl transition-all border border-gray-100"
+            class="w-full max-w-md transform overflow-hidden rounded-2xl bg-white dark:bg-gray-850 p-6 text-left align-middle shadow-2xl dark:shadow-gray-900/50 transition-all border border-gray-100 dark:border-gray-800"
           >
-            <DialogTitle as="h3" class="text-lg font-semibold text-gray-900">
+            <DialogTitle as="h3" class="text-lg font-semibold text-gray-900 dark:text-gray-100">
               {{ title }}
             </DialogTitle>
-            <p v-if="description" class="mt-2 text-sm text-gray-600">
+            <p v-if="description" class="mt-2 text-sm text-gray-600 dark:text-gray-400">
               {{ description }}
             </p>
 

@@ -149,103 +149,111 @@ const openFilter = () => {
 <template>
   <div
     ref="menuRef"
-    class="fixed bg-white border border-gray-300 rounded-md shadow-lg min-w-[200px] py-1 z-[10000]"
+    class="fixed bg-white dark:bg-gray-850 border border-gray-300 dark:border-gray-700 rounded-md shadow-lg dark:shadow-gray-900/50 min-w-[200px] py-1 z-[10000]"
     :style="menuStyle"
   >
     <!-- Sort Section -->
     <div class="py-1">
       <button
-        class="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+        class="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
         @click="sortAscending"
       >
-        <ArrowUpIcon :class="[iconSizes.contextMenu, 'text-gray-500']" />
+        <ArrowUpIcon :class="[iconSizes.contextMenu, 'text-gray-500 dark:text-gray-400']" />
         <span>Sort Ascending</span>
       </button>
       <button
-        class="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+        class="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
         @click="sortDescending"
       >
-        <ArrowDownIcon :class="[iconSizes.contextMenu, 'text-gray-500']" />
+        <ArrowDownIcon :class="[iconSizes.contextMenu, 'text-gray-500 dark:text-gray-400']" />
         <span>Sort Descending</span>
       </button>
       <button
-        class="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+        class="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
         @click="clearSort"
       >
-        <XCircleIcon :class="[iconSizes.contextMenu, 'text-gray-500']" />
+        <XCircleIcon :class="[iconSizes.contextMenu, 'text-gray-500 dark:text-gray-400']" />
         <span>Clear Sort</span>
       </button>
     </div>
 
-    <div class="border-t border-gray-200"></div>
+    <div class="border-t border-gray-200 dark:border-gray-700"></div>
 
     <!-- Pin Section -->
     <div class="py-1">
       <button
-        class="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+        class="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
         @click="pinLeft"
       >
-        <MapPinIcon :class="[iconSizes.contextMenu, 'text-gray-500 -rotate-45']" />
+        <MapPinIcon
+          :class="[iconSizes.contextMenu, 'text-gray-500 dark:text-gray-400 -rotate-45']"
+        />
         <span>Pin Left</span>
       </button>
       <button
-        class="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+        class="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
         @click="pinRight"
       >
-        <MapPinIcon :class="[iconSizes.contextMenu, 'text-gray-500 rotate-45']" />
+        <MapPinIcon
+          :class="[iconSizes.contextMenu, 'text-gray-500 dark:text-gray-400 rotate-45']"
+        />
         <span>Pin Right</span>
       </button>
       <button
-        class="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+        class="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
         @click="unpinColumn"
       >
-        <NoSymbolIcon :class="[iconSizes.contextMenu, 'text-gray-500']" />
+        <NoSymbolIcon :class="[iconSizes.contextMenu, 'text-gray-500 dark:text-gray-400']" />
         <span>Unpin</span>
       </button>
     </div>
 
-    <div class="border-t border-gray-200"></div>
+    <div class="border-t border-gray-200 dark:border-gray-700"></div>
 
     <!-- Filter Section -->
     <div class="py-1">
       <button
-        class="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+        class="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
         @click="openFilter"
       >
-        <FunnelIcon :class="[iconSizes.contextMenu, 'text-gray-500']" />
+        <FunnelIcon :class="[iconSizes.contextMenu, 'text-gray-500 dark:text-gray-400']" />
         <span>Filter...</span>
       </button>
     </div>
 
-    <div class="border-t border-gray-200"></div>
+    <div class="border-t border-gray-200 dark:border-gray-700"></div>
 
     <!-- Resize Section -->
     <div class="py-1">
       <button
-        class="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+        class="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
         @click="autoSizeColumn"
       >
-        <ArrowsPointingOutIcon :class="[iconSizes.contextMenu, 'text-gray-500']" />
+        <ArrowsPointingOutIcon
+          :class="[iconSizes.contextMenu, 'text-gray-500 dark:text-gray-400']"
+        />
         <span>Autosize This Column</span>
       </button>
       <button
-        class="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+        class="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
         @click="autoSizeAllColumns"
       >
-        <ArrowsPointingOutIcon :class="[iconSizes.contextMenu, 'text-gray-500']" />
+        <ArrowsPointingOutIcon
+          :class="[iconSizes.contextMenu, 'text-gray-500 dark:text-gray-400']"
+        />
         <span>Autosize All Columns</span>
       </button>
     </div>
 
-    <div class="border-t border-gray-200"></div>
+    <div class="border-t border-gray-200 dark:border-gray-700"></div>
 
     <!-- Reset Section -->
     <div class="py-1">
       <button
-        class="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+        class="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
         @click="resetColumns"
       >
-        <ArrowPathIcon :class="[iconSizes.contextMenu, 'text-gray-500']" />
+        <ArrowPathIcon :class="[iconSizes.contextMenu, 'text-gray-500 dark:text-gray-400']" />
         <span>Reset Columns</span>
       </button>
     </div>

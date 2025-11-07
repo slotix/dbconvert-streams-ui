@@ -62,7 +62,9 @@ const handleChange = (value: boolean) => {
       :class="[
         'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out',
         'focus:outline-none focus:ring-2 focus:ring-offset-2',
-        modelValue ? 'bg-teal-600 focus:ring-teal-500' : 'bg-gray-200 focus:ring-gray-500',
+        modelValue
+          ? 'bg-teal-600 dark:bg-teal-500 focus:ring-teal-500 dark:focus:ring-teal-400'
+          : 'bg-gray-200 dark:bg-gray-700 focus:ring-gray-500 dark:focus:ring-gray-600',
         disabled ? 'opacity-50 cursor-not-allowed' : ''
       ]"
       @update:model-value="handleChange"
@@ -84,7 +86,7 @@ const handleChange = (value: boolean) => {
         as="span"
         :class="[
           'text-sm font-medium',
-          error ? 'text-red-700' : 'text-gray-900',
+          error ? 'text-red-700 dark:text-red-400' : 'text-gray-900 dark:text-gray-300',
           disabled ? 'opacity-60' : 'cursor-pointer'
         ]"
       >
@@ -92,14 +94,21 @@ const handleChange = (value: boolean) => {
         <span v-if="required" class="text-red-500 ml-0.5">*</span>
       </SwitchLabel>
 
-      <SwitchDescription v-if="description" as="p" class="text-xs text-gray-500 mt-0.5">
+      <SwitchDescription
+        v-if="description"
+        as="p"
+        class="text-xs text-gray-500 dark:text-gray-400 mt-0.5"
+      >
         {{ description }}
       </SwitchDescription>
 
       <!-- Helper Text or Error -->
       <p
         v-if="error || helperText"
-        :class="['mt-1 text-xs', error ? 'text-red-600' : 'text-gray-500']"
+        :class="[
+          'mt-1 text-xs',
+          error ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'
+        ]"
       >
         {{ error || helperText }}
       </p>
@@ -113,7 +122,9 @@ const handleChange = (value: boolean) => {
       :class="[
         'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out',
         'focus:outline-none focus:ring-2 focus:ring-offset-2',
-        modelValue ? 'bg-teal-600 focus:ring-teal-500' : 'bg-gray-200 focus:ring-gray-500',
+        modelValue
+          ? 'bg-teal-600 dark:bg-teal-500 focus:ring-teal-500 dark:focus:ring-teal-400'
+          : 'bg-gray-200 dark:bg-gray-700 focus:ring-gray-500 dark:focus:ring-gray-600',
         disabled ? 'opacity-50 cursor-not-allowed' : ''
       ]"
       @update:model-value="handleChange"

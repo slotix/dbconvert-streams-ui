@@ -113,8 +113,8 @@ function handleObjectContextMenu(payload: {
   <div>
     <div
       :class="[
-        'flex items-center px-2 py-1 text-sm text-gray-700 rounded-md hover:bg-gray-100 cursor-pointer select-none',
-        isSelected ? 'bg-gray-100 ring-1 ring-gray-300' : ''
+        'flex items-center px-2 py-1 text-sm text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer select-none',
+        isSelected ? 'bg-gray-100 dark:bg-gray-800 ring-1 ring-gray-300 dark:ring-gray-600' : ''
       ]"
       :data-explorer-schema="`${connectionId}:${database}:${schema.name}`"
       @click="$emit('toggle')"
@@ -123,17 +123,21 @@ function handleObjectContextMenu(payload: {
       <component :is="isExpanded ? ChevronDownIcon : ChevronRightIcon" :class="caretClass" />
       <span class="font-medium">
         <template v-for="(p, i) in highlightParts(schema.name || 'default')" :key="i">
-          <span v-if="p.match" class="bg-yellow-200/60 rounded px-0.5" v-text="p.text"></span>
+          <span
+            v-if="p.match"
+            class="bg-yellow-200/60 dark:bg-yellow-500/40 rounded px-0.5"
+            v-text="p.text"
+          ></span>
           <span v-else v-text="p.text"></span>
         </template>
       </span>
     </div>
-    <div v-if="isExpanded" class="ml-4 border-l border-gray-200 pl-2">
+    <div v-if="isExpanded" class="ml-4 border-l border-gray-200 dark:border-gray-700 pl-2">
       <div
-        class="text-xs uppercase tracking-wide text-gray-400 px-2 mt-1 flex items-center justify-between"
+        class="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 px-2 mt-1 flex items-center justify-between"
       >
         <span>Tables</span>
-        <span class="text-[11px] font-medium text-gray-500 normal-case">
+        <span class="text-[11px] font-medium text-gray-500 dark:text-gray-400 normal-case">
           {{ schema.tables.length }}
         </span>
       </div>
@@ -151,10 +155,10 @@ function handleObjectContextMenu(payload: {
         @contextmenu="handleObjectContextMenu"
       />
       <div
-        class="text-xs uppercase tracking-wide text-gray-400 px-2 mt-2 flex items-center justify-between"
+        class="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 px-2 mt-2 flex items-center justify-between"
       >
         <span>Views</span>
-        <span class="text-[11px] font-medium text-gray-500 normal-case">
+        <span class="text-[11px] font-medium text-gray-500 dark:text-gray-400 normal-case">
           {{ schema.views.length }}
         </span>
       </div>

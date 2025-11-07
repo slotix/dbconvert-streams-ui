@@ -2,7 +2,7 @@
 <template>
   <div class="p-6">
     <h2
-      class="text-xl font-semibold bg-linear-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent mb-6 flex items-center gap-2"
+      class="text-xl font-semibold bg-linear-to-r from-slate-900 to-slate-700 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent mb-6 flex items-center gap-2"
     >
       Quick Actions
     </h2>
@@ -10,9 +10,9 @@
     <!-- Explore Databases -->
     <div v-if="recentConnections.length > 0" class="mb-8">
       <div class="flex items-center justify-between mb-4">
-        <h3 class="text-sm font-medium text-gray-500">EXPLORE DATABASES</h3>
+        <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">EXPLORE DATABASES</h3>
         <button
-          class="text-xs text-gray-400 hover:text-red-500 flex items-center gap-1 px-2 py-1 rounded hover:bg-red-50 transition-colors"
+          class="text-xs text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 flex items-center gap-1 px-2 py-1 rounded hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
           title="Clear recent connections"
           @click="clearRecentConnections"
         >
@@ -28,16 +28,16 @@
           @click="exploreConnection(connection.id)"
         >
           <div
-            class="flex items-center justify-between p-4 rounded-xl border border-gray-100 bg-white hover:border-blue-300 hover:bg-linear-to-r hover:from-blue-50/50 hover:to-teal-50/50 transition-all duration-200 hover:shadow-md hover:scale-[1.01]"
+            class="flex items-center justify-between p-4 rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-850 hover:border-blue-300 dark:hover:border-blue-600 hover:bg-linear-to-r hover:from-blue-50/50 hover:to-teal-50/50 dark:hover:from-blue-900/30 dark:hover:to-teal-900/30 transition-all duration-200 hover:shadow-md dark:hover:shadow-gray-900/50 hover:scale-[1.01]"
           >
             <div class="flex items-center min-w-0 flex-1 pr-3">
               <div class="shrink-0">
                 <!-- File connections: show folder icon -->
                 <div
                   v-if="isFileConnection(connection.id)"
-                  class="bg-slate-100 rounded-lg p-2 transition-all duration-200 hover:shadow-md hover:scale-105"
+                  class="bg-slate-100 dark:bg-slate-800 rounded-lg p-2 transition-all duration-200 hover:shadow-md hover:scale-105"
                 >
-                  <FolderIcon class="h-6 w-6 text-slate-500" />
+                  <FolderIcon class="h-6 w-6 text-slate-500 dark:text-slate-400" />
                 </div>
                 <!-- Database connections: show database logo -->
                 <div
@@ -60,7 +60,7 @@
               <div class="ml-4 flex-1 min-w-0">
                 <div class="flex items-center gap-2 min-w-0">
                   <h3
-                    class="text-sm font-semibold text-gray-900 truncate flex-1 min-w-0"
+                    class="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate flex-1 min-w-0"
                     :title="connection.name"
                   >
                     {{ connection.name }}
@@ -76,7 +76,7 @@
                 <!-- For file connections, show directory path instead of host:port -->
                 <p
                   v-if="isFileConnection(connection.id)"
-                  class="text-sm text-gray-500 truncate"
+                  class="text-sm text-gray-500 dark:text-gray-400 truncate"
                   :title="getFileConnectionPath(connection.id)"
                 >
                   {{ getFileConnectionPath(connection.id) }}
@@ -84,7 +84,7 @@
                 <!-- For database connections, show host:port -->
                 <p
                   v-else
-                  class="text-sm text-gray-500 truncate"
+                  class="text-sm text-gray-500 dark:text-gray-400 truncate"
                   :title="getConnectionHost(connection.id)"
                 >
                   {{ getConnectionHost(connection.id) }}
@@ -92,7 +92,7 @@
                 <!-- Database field only for database connections -->
                 <p
                   v-if="!isFileConnection(connection.id) && getConnectionDatabase(connection.id)"
-                  class="text-xs text-gray-400 truncate"
+                  class="text-xs text-gray-400 dark:text-gray-500 truncate"
                   :title="getConnectionDatabase(connection.id)"
                 >
                   {{ getConnectionDatabase(connection.id) }}
@@ -101,7 +101,7 @@
             </div>
             <div class="shrink-0 ml-2">
               <ArrowRightIcon
-                class="h-5 w-5 text-gray-400 group-hover:text-teal-600 transition-all duration-200 group-hover:translate-x-1"
+                class="h-5 w-5 text-gray-400 dark:text-gray-500 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-all duration-200 group-hover:translate-x-1"
               />
             </div>
           </div>
@@ -111,28 +111,30 @@
 
     <!-- Creation Actions -->
     <div>
-      <h3 class="text-sm font-medium text-gray-500 mb-4">CREATE NEW</h3>
+      <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-4">CREATE NEW</h3>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <!-- Create Connection -->
         <div class="group cursor-pointer" @click="createConnection">
           <div
-            class="flex items-center justify-between p-4 rounded-xl border border-gray-100 bg-white hover:border-blue-300 hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50 transition-all duration-200 hover:shadow-md hover:scale-[1.01]"
+            class="flex items-center justify-between p-4 rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-850 hover:border-blue-300 dark:hover:border-blue-600 hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50 dark:hover:from-blue-900/30 dark:hover:to-teal-900/30 transition-all duration-200 hover:shadow-md dark:hover:shadow-gray-900/50 hover:scale-[1.01]"
           >
             <div class="flex items-center">
               <div class="shrink-0">
                 <div
-                  class="bg-blue-50 rounded-lg p-3 group-hover:bg-linear-to-br group-hover:from-blue-100 group-hover:to-teal-100 transition-all duration-200"
+                  class="bg-blue-50 dark:bg-blue-900/50 rounded-lg p-3 group-hover:bg-linear-to-br group-hover:from-blue-100 group-hover:to-teal-100 dark:group-hover:from-blue-800/50 dark:group-hover:to-teal-800/50 transition-all duration-200"
                 >
-                  <CircleStackIcon class="h-6 w-6 text-blue-600" />
+                  <CircleStackIcon class="h-6 w-6 text-blue-600 dark:text-blue-400" />
                 </div>
               </div>
               <div class="ml-4">
-                <h3 class="text-sm font-semibold text-gray-900">Create Connection</h3>
-                <p class="text-sm text-gray-500">Connect a new database</p>
+                <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  Create Connection
+                </h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Connect a new database</p>
               </div>
             </div>
             <ArrowRightIcon
-              class="h-5 w-5 text-gray-400 group-hover:text-teal-600 transition-all duration-200 group-hover:translate-x-1"
+              class="h-5 w-5 text-gray-400 dark:text-gray-500 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-all duration-200 group-hover:translate-x-1"
             />
           </div>
         </div>
@@ -140,23 +142,25 @@
         <!-- Create Stream -->
         <div class="group cursor-pointer" @click="createStream">
           <div
-            class="flex items-center justify-between p-4 rounded-xl border border-gray-100 bg-white hover:border-teal-300 hover:bg-linear-to-r hover:from-teal-50 hover:to-green-50 transition-all duration-200 hover:shadow-md hover:scale-[1.01]"
+            class="flex items-center justify-between p-4 rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-850 hover:border-teal-300 dark:hover:border-teal-600 hover:bg-linear-to-r hover:from-teal-50 hover:to-green-50 dark:hover:from-teal-900/30 dark:hover:to-green-900/30 transition-all duration-200 hover:shadow-md dark:hover:shadow-gray-900/50 hover:scale-[1.01]"
           >
             <div class="flex items-center">
               <div class="shrink-0">
                 <div
-                  class="bg-teal-50 rounded-lg p-3 group-hover:bg-linear-to-br group-hover:from-teal-100 group-hover:to-green-100 transition-all duration-200"
+                  class="bg-teal-50 dark:bg-teal-900/50 rounded-lg p-3 group-hover:bg-linear-to-br group-hover:from-teal-100 group-hover:to-green-100 dark:group-hover:from-teal-800/50 dark:group-hover:to-green-800/50 transition-all duration-200"
                 >
-                  <ArrowPathIcon class="h-6 w-6 text-teal-600" />
+                  <ArrowPathIcon class="h-6 w-6 text-teal-600 dark:text-teal-400" />
                 </div>
               </div>
               <div class="ml-4">
-                <h3 class="text-sm font-semibold text-gray-900">Create Stream</h3>
-                <p class="text-sm text-gray-500">Set up a new data stream</p>
+                <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  Create Stream
+                </h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Set up a new data stream</p>
               </div>
             </div>
             <ArrowRightIcon
-              class="h-5 w-5 text-gray-400 group-hover:text-teal-600 transition-all duration-200 group-hover:translate-x-1"
+              class="h-5 w-5 text-gray-400 dark:text-gray-500 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-all duration-200 group-hover:translate-x-1"
             />
           </div>
         </div>
@@ -429,7 +433,7 @@ function getDatabaseIconStyle(dbType: string): string {
   const bgColor = getDatabaseIconBgColor(normalizedType)
 
   // Build the class string with ring for consistency
-  const baseClasses = `${bgColor} ring-2 ring-gray-200/50`
+  const baseClasses = `${bgColor} ring-2 ring-gray-200/50 dark:ring-gray-700/50`
 
   return baseClasses
 }

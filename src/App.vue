@@ -5,7 +5,7 @@
     <!-- API Key Expired Notification Banner -->
     <div
       v-if="showExpiredBanner"
-      class="fixed top-0 left-0 right-0 bg-red-600 text-white px-4 py-3 z-30"
+      class="fixed top-0 left-0 right-0 bg-red-600 dark:bg-red-700 text-white px-4 py-3 z-30"
     >
       <div class="flex items-center justify-between max-w-7xl mx-auto">
         <div class="flex items-center space-x-3">
@@ -32,12 +32,12 @@
 
     <div
       v-if="isInitializing"
-      class="fixed inset-0 bg-gray-900/50 flex items-center justify-center z-50"
+      class="fixed inset-0 bg-gray-900/50 dark:bg-black/70 flex items-center justify-center z-50"
     >
-      <div class="bg-white p-6 rounded-lg shadow-xl">
+      <div class="bg-white dark:bg-gray-850 p-6 rounded-lg shadow-xl">
         <div class="flex items-center space-x-3">
           <svg
-            :class="[iconSizes.spinner, 'animate-spin text-gray-600']"
+            :class="[iconSizes.spinner, 'animate-spin text-gray-600 dark:text-gray-300']"
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
@@ -56,7 +56,7 @@
               d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
             ></path>
           </svg>
-          <span class="text-gray-700">Initializing application...</span>
+          <span class="text-gray-700 dark:text-gray-200">Initializing application...</span>
         </div>
       </div>
     </div>
@@ -103,7 +103,7 @@
               </TransitionChild>
 
               <div
-                class="flex grow flex-col gap-y-5 overflow-y-auto bg-gray-900 px-6 pb-2 ring-1 ring-white/10"
+                class="flex grow flex-col gap-y-5 overflow-y-auto bg-gray-900 dark:bg-gray-950 px-6 pb-2 ring-1 ring-white/10 dark:ring-white/5"
               >
                 <div class="flex h-16 shrink-0 items-center">
                   <RouterLink to="/">
@@ -118,8 +118,8 @@
                         :to="item.href"
                         :class="[
                           $route.path.startsWith(item.href.split('/:')[0])
-                            ? 'bg-gray-800 text-white'
-                            : 'text-gray-400 hover:text-white hover:bg-gray-800',
+                            ? 'bg-gray-800 dark:bg-teal-900 text-white'
+                            : 'text-gray-400 hover:text-white hover:bg-gray-800 dark:hover:bg-gray-700',
                           'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold'
                         ]"
                         @click="sidebarOpen = false"
@@ -135,10 +135,10 @@
                   </ul>
 
                   <!-- System Logs Button -->
-                  <div class="pt-4 border-t border-gray-700">
+                  <div class="pt-4 border-t border-gray-700 dark:border-gray-600">
                     <button
                       type="button"
-                      class="w-full group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold text-gray-400 hover:text-white hover:bg-gray-800"
+                      class="w-full group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold text-gray-400 hover:text-white hover:bg-gray-800 dark:hover:bg-gray-700"
                       @click="handleLogsClick"
                     >
                       <ExclamationCircleIcon
@@ -152,21 +152,30 @@
                         aria-hidden="true"
                       />
                       <span class="flex-1 text-left">System Logs</span>
-                      <span class="ml-auto bg-gray-700 px-1.5 py-0.5 text-xs rounded-full">{{
-                        logsStore.logs.length
-                      }}</span>
+                      <span
+                        class="ml-auto bg-gray-700 dark:bg-gray-600 px-1.5 py-0.5 text-xs rounded-full"
+                        >{{ logsStore.logs.length }}</span
+                      >
                     </button>
                   </div>
 
+                  <!-- Theme Toggle for Mobile -->
+                  <div class="mt-auto pt-4 border-t border-gray-700 dark:border-gray-600">
+                    <div class="flex items-center justify-between px-2 py-2">
+                      <span class="text-sm text-gray-400">Theme</span>
+                      <ThemeToggle />
+                    </div>
+                  </div>
+
                   <!-- External Links for Mobile -->
-                  <div class="mt-auto pt-4 border-t border-gray-700">
+                  <div class="pt-4 border-t border-gray-700 dark:border-gray-600">
                     <ul role="list" class="-mx-2 space-y-1">
                       <li>
                         <a
                           href="https://discord.gg/3CACYYKSAb"
                           target="_blank"
                           rel="noopener noreferrer"
-                          class="group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold text-gray-400 hover:text-white hover:bg-gray-800"
+                          class="group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold text-gray-400 hover:text-white hover:bg-gray-800 dark:hover:bg-gray-700"
                           @click="sidebarOpen = false"
                         >
                           <svg
@@ -186,7 +195,7 @@
                           href="https://docs.dbconvert.com"
                           target="_blank"
                           rel="noopener noreferrer"
-                          class="group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold text-gray-400 hover:text-white hover:bg-gray-800"
+                          class="group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold text-gray-400 hover:text-white hover:bg-gray-800 dark:hover:bg-gray-700"
                           @click="sidebarOpen = false"
                         >
                           <DocumentTextIcon
@@ -201,7 +210,7 @@
                           href="https://streams.dbconvert.com/account"
                           target="_blank"
                           rel="noopener noreferrer"
-                          class="group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold text-gray-400 hover:text-white hover:bg-gray-800"
+                          class="group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold text-gray-400 hover:text-white hover:bg-gray-800 dark:hover:bg-gray-700"
                           @click="sidebarOpen = false"
                         >
                           <UserCircleIcon
@@ -223,7 +232,7 @@
 
     <!-- Static sidebar for desktop -->
     <div
-      class="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-100 lg:block lg:w-20 lg:bg-gray-900 lg:pb-10"
+      class="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-100 lg:block lg:w-20 lg:bg-gray-900 dark:lg:bg-gray-950 lg:pb-10"
     >
       <div class="flex h-20 shrink-0 items-center justify-center pt-6">
         <RouterLink to="/">
@@ -237,8 +246,8 @@
               :to="item.href"
               :class="[
                 $route.path.startsWith(item.href.split('/:')[0])
-                  ? 'bg-gray-800 text-white'
-                  : 'text-gray-400 hover:text-white hover:bg-gray-800',
+                  ? 'bg-gray-800 dark:bg-teal-900 text-white'
+                  : 'text-gray-400 hover:text-white hover:bg-gray-800 dark:hover:bg-gray-700',
                 'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold relative overflow-visible'
               ]"
             >
@@ -251,7 +260,7 @@
 
               <!-- Show tooltip on hover -->
               <div
-                class="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 hidden group-hover:block bg-gray-900 text-white px-2 py-1 rounded text-sm whitespace-nowrap pointer-events-none"
+                class="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 hidden group-hover:block bg-gray-900 dark:bg-gray-800 text-white px-2 py-1 rounded text-sm whitespace-nowrap pointer-events-none"
                 style="z-index: 99999"
               >
                 {{ item.name }}
@@ -261,10 +270,10 @@
 
           <!-- System Logs Button -->
           <!-- System Logs Button -->
-          <li class="mt-4 pt-4 border-t border-gray-700 overflow-visible">
+          <li class="mt-4 pt-4 border-t border-gray-700 dark:border-gray-600 overflow-visible">
             <button
               type="button"
-              class="group flex items-center justify-center p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-md relative w-full overflow-visible"
+              class="group flex items-center justify-center p-2 text-gray-400 hover:text-white hover:bg-gray-800 dark:hover:bg-gray-700 rounded-md relative w-full overflow-visible"
               @click="logsStore.toggleLogsPanel"
             >
               <ExclamationCircleIcon
@@ -282,14 +291,14 @@
               <!-- Log count badge -->
               <span
                 v-if="logsStore.logs.length > 0"
-                class="absolute -top-1 -right-1 bg-gray-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center"
+                class="absolute -top-1 -right-1 bg-gray-600 dark:bg-gray-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center"
               >
                 {{ logsStore.logs.length > 99 ? '99+' : logsStore.logs.length }}
               </span>
 
               <!-- Show tooltip on hover -->
               <div
-                class="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 hidden group-hover:block bg-gray-900 text-white px-2 py-1 rounded text-sm whitespace-nowrap pointer-events-none"
+                class="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 hidden group-hover:block bg-gray-900 dark:bg-gray-800 text-white px-2 py-1 rounded text-sm whitespace-nowrap pointer-events-none"
                 style="z-index: 99999"
               >
                 System Logs ({{ logsStore.logs.length }})
@@ -298,7 +307,7 @@
           </li>
 
           <!-- Connection Status in Navigation -->
-          <li class="mt-4 pt-4 border-t border-gray-700 overflow-visible">
+          <li class="mt-4 pt-4 border-t border-gray-700 dark:border-gray-600 overflow-visible">
             <div
               :class="[
                 'group flex items-center justify-center p-2 rounded-md relative overflow-visible',
@@ -322,7 +331,7 @@
               ></div>
               <!-- Show tooltip on hover -->
               <div
-                class="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 hidden group-hover:block bg-gray-900 text-white px-2 py-1 rounded text-sm whitespace-nowrap pointer-events-none"
+                class="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 hidden group-hover:block bg-gray-900 dark:bg-gray-800 text-white px-2 py-1 rounded text-sm whitespace-nowrap pointer-events-none"
                 style="z-index: 99999"
               >
                 {{ getConnectionStatusText() }}
@@ -333,13 +342,23 @@
       </nav>
 
       <!-- External Links -->
-      <div class="fixed bottom-0 w-20 pb-5 bg-gray-900">
+      <div class="fixed bottom-0 w-20 pb-5 bg-gray-900 dark:bg-gray-950">
         <div class="flex flex-col items-center space-y-1">
+          <!-- Theme Toggle -->
+          <div class="relative group">
+            <ThemeToggle />
+            <!-- Tooltip -->
+            <div
+              class="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 hidden group-hover:block bg-gray-900 dark:bg-gray-800 text-white px-2 py-1 rounded text-sm whitespace-nowrap z-[9999] pointer-events-none"
+            >
+              Theme
+            </div>
+          </div>
           <a
             href="https://discord.gg/3CACYYKSAb"
             target="_blank"
             rel="noopener noreferrer"
-            class="group flex items-center justify-center p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-md relative"
+            class="group flex items-center justify-center p-2 text-gray-400 hover:text-white hover:bg-gray-800 dark:hover:bg-gray-700 rounded-md relative"
           >
             <svg :class="iconSizes.sidebarMenu" viewBox="0 0 24 24" fill="currentColor">
               <path
@@ -349,7 +368,7 @@
             <span class="sr-only">Discord</span>
             <!-- Tooltip -->
             <div
-              class="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 hidden group-hover:block bg-gray-900 text-white px-2 py-1 rounded text-sm whitespace-nowrap z-[9999] pointer-events-none"
+              class="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 hidden group-hover:block bg-gray-900 dark:bg-gray-800 text-white px-2 py-1 rounded text-sm whitespace-nowrap z-[9999] pointer-events-none"
             >
               Discord
             </div>
@@ -358,13 +377,13 @@
             href="https://docs.dbconvert.com"
             target="_blank"
             rel="noopener noreferrer"
-            class="group flex items-center justify-center p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-md relative"
+            class="group flex items-center justify-center p-2 text-gray-400 hover:text-white hover:bg-gray-800 dark:hover:bg-gray-700 rounded-md relative"
           >
             <DocumentTextIcon :class="iconSizes.sidebarMenu" aria-hidden="true" />
             <span class="sr-only">Documentation</span>
             <!-- Tooltip -->
             <div
-              class="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 hidden group-hover:block bg-gray-900 text-white px-2 py-1 rounded text-sm whitespace-nowrap z-[9999] pointer-events-none"
+              class="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 hidden group-hover:block bg-gray-900 dark:bg-gray-800 text-white px-2 py-1 rounded text-sm whitespace-nowrap z-[9999] pointer-events-none"
             >
               Documentation
             </div>
@@ -373,13 +392,13 @@
             href="https://streams.dbconvert.com/account"
             target="_blank"
             rel="noopener noreferrer"
-            class="group flex items-center justify-center p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-md relative"
+            class="group flex items-center justify-center p-2 text-gray-400 hover:text-white hover:bg-gray-800 dark:hover:bg-gray-700 rounded-md relative"
           >
             <UserCircleIcon :class="iconSizes.sidebarMenu" aria-hidden="true" />
             <span class="sr-only">Account</span>
             <!-- Tooltip -->
             <div
-              class="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 hidden group-hover:block bg-gray-900 text-white px-2 py-1 rounded text-sm whitespace-nowrap z-[9999] pointer-events-none"
+              class="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 hidden group-hover:block bg-gray-900 dark:bg-gray-800 text-white px-2 py-1 rounded text-sm whitespace-nowrap z-[9999] pointer-events-none"
             >
               Account
             </div>
@@ -391,7 +410,7 @@
     <div class="lg:pl-20">
       <button
         type="button"
-        class="fixed top-0 left-3 p-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors lg:hidden"
+        class="fixed top-0 left-3 p-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors lg:hidden"
         @click="sidebarOpen = true"
       >
         <span class="sr-only">Open sidebar</span>
@@ -419,6 +438,7 @@ import ApiKeyInput from '@/components/ApiKeyInput.vue'
 import LogsPanel from '@/components/logs/LogsPanel.vue'
 import VersionDisplay from '@/components/common/VersionDisplay.vue'
 import RouteGuard from '@/components/common/RouteGuard.vue'
+import ThemeToggle from '@/components/ThemeToggle.vue'
 import { initializeApiClient } from '@/api/apiClient'
 import { useContextualIconSizes } from '@/composables/useIconSizes'
 

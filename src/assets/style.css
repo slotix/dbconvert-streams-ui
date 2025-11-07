@@ -24,6 +24,7 @@
   --color-gray-600: oklch(43.9% 0 0);
   --color-gray-700: oklch(37.1% 0 0);
   --color-gray-800: oklch(26.9% 0 0);
+  --color-gray-850: oklch(22% 0 0);
   --color-gray-900: oklch(20.5% 0 0);
   --color-gray-950: oklch(14.5% 0 0);
 
@@ -53,6 +54,14 @@
 }
 
 @layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  .dark {
+    color-scheme: dark;
+  }
+
   html {
     font-family: 'Inter', system-ui, sans-serif;
   }
@@ -76,4 +85,74 @@
   .ui-elements {
     font-family: 'DM Sans', system-ui, sans-serif;
   }
+
+  /* Smooth transitions for theme changes */
+  * {
+    transition-property: background-color, border-color, color, fill, stroke;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 200ms;
+  }
+}
+
+/* ===========================
+   Toast Notifications Dark Mode
+   =========================== */
+
+.dark .Vue-Toastification__toast {
+  background-color: rgb(31 41 55 / 1) !important; /* gray-800 */
+  color: rgb(243 244 246 / 1) !important; /* gray-100 */
+  border: 1px solid rgb(55 65 81 / 1) !important; /* gray-700 */
+  box-shadow:
+    0 10px 15px -3px rgb(0 0 0 / 0.3),
+    0 4px 6px -4px rgb(0 0 0 / 0.2) !important;
+}
+
+.dark .Vue-Toastification__toast--success {
+  background-color: rgb(6 78 59 / 1) !important; /* green-900 */
+  border-color: rgb(5 150 105 / 1) !important; /* green-600 */
+}
+
+.dark .Vue-Toastification__toast--success .Vue-Toastification__icon {
+  color: rgb(134 239 172 / 1) !important; /* green-300 */
+}
+
+.dark .Vue-Toastification__toast--error {
+  background-color: rgb(127 29 29 / 1) !important; /* red-900 */
+  border-color: rgb(220 38 38 / 1) !important; /* red-600 */
+}
+
+.dark .Vue-Toastification__toast--error .Vue-Toastification__icon {
+  color: rgb(252 165 165 / 1) !important; /* red-300 */
+}
+
+.dark .Vue-Toastification__toast--warning {
+  background-color: rgb(120 53 15 / 1) !important; /* amber-900 */
+  border-color: rgb(217 119 6 / 1) !important; /* amber-600 */
+}
+
+.dark .Vue-Toastification__toast--warning .Vue-Toastification__icon {
+  color: rgb(252 211 77 / 1) !important; /* amber-300 */
+}
+
+.dark .Vue-Toastification__toast--info {
+  background-color: rgb(30 58 138 / 1) !important; /* blue-900 */
+  border-color: rgb(37 99 235 / 1) !important; /* blue-600 */
+}
+
+.dark .Vue-Toastification__toast--info .Vue-Toastification__icon {
+  color: rgb(147 197 253 / 1) !important; /* blue-300 */
+}
+
+.dark .Vue-Toastification__close-button {
+  color: rgb(156 163 175 / 1) !important; /* gray-400 */
+  opacity: 0.7;
+}
+
+.dark .Vue-Toastification__close-button:hover {
+  color: rgb(243 244 246 / 1) !important; /* gray-100 */
+  opacity: 1;
+}
+
+.dark .Vue-Toastification__progress-bar {
+  background-color: rgba(255, 255, 255, 0.2) !important;
 }

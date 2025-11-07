@@ -44,9 +44,9 @@ const copied = ref(false)
 
 const rowBackgroundClass = computed(() => {
   if (props.isError) {
-    return 'bg-red-50'
+    return 'bg-red-50 dark:bg-red-900/20'
   }
-  return 'hover:bg-gray-50 transition-colors'
+  return 'hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors'
 })
 
 async function copyToClipboard() {
@@ -90,7 +90,9 @@ function toggleExpand() {
       </button>
 
       <!-- Timestamp -->
-      <span class="w-28 text-xs text-gray-500 font-mono whitespace-nowrap flex-shrink-0">
+      <span
+        class="w-28 text-xs text-gray-500 dark:text-gray-400 font-mono whitespace-nowrap flex-shrink-0"
+      >
         {{ timestamp }}
       </span>
 
@@ -103,7 +105,7 @@ function toggleExpand() {
       />
 
       <!-- Message / Content -->
-      <span class="flex-1 text-sm text-gray-800 overflow-hidden text-ellipsis">
+      <span class="flex-1 text-sm text-gray-800 dark:text-gray-200 overflow-hidden text-ellipsis">
         <slot>{{ message }}</slot>
       </span>
 
@@ -120,7 +122,10 @@ function toggleExpand() {
     </div>
 
     <!-- Expanded Content -->
-    <div v-if="expandable && isExpanded" class="px-12 py-3 bg-gray-50 border-t border-gray-200">
+    <div
+      v-if="expandable && isExpanded"
+      class="px-12 py-3 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700"
+    >
       <slot name="expanded-content" />
     </div>
   </div>

@@ -1,51 +1,55 @@
 <template>
   <div class="p-6">
-    <h2 class="text-xl font-semibold text-gray-900 mb-6">Account Overview</h2>
+    <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">Account Overview</h2>
     <div class="space-y-6">
       <!-- User Info -->
       <div
-        class="flex items-start group hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50 p-3 rounded-lg transition-all duration-200"
+        class="flex items-start group hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50 dark:hover:from-blue-900/30 dark:hover:to-teal-900/30 p-3 rounded-lg transition-all duration-200"
       >
         <div class="shrink-0">
           <div
-            class="bg-blue-50 rounded-lg p-3 group-hover:bg-linear-to-br group-hover:from-blue-100 group-hover:to-teal-100 transition-all duration-200 group-hover:shadow-sm"
+            class="bg-blue-50 dark:bg-blue-900/50 rounded-lg p-3 group-hover:bg-linear-to-br group-hover:from-blue-100 group-hover:to-teal-100 dark:group-hover:from-blue-800/50 dark:group-hover:to-teal-800/50 transition-all duration-200 group-hover:shadow-sm"
           >
-            <UserIcon class="h-6 w-6 text-blue-600" />
+            <UserIcon class="h-6 w-6 text-blue-600 dark:text-blue-400" />
           </div>
         </div>
         <div class="ml-4 flex-1">
-          <p class="text-sm font-medium text-gray-500">Account</p>
-          <p class="text-xl font-semibold text-gray-900 mt-1">{{ userData?.name || 'N/A' }}</p>
-          <p class="text-sm text-gray-500 mt-0.5">{{ userData?.email || 'N/A' }}</p>
+          <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Account</p>
+          <p class="text-xl font-semibold text-gray-900 dark:text-gray-100 mt-1">
+            {{ userData?.name || 'N/A' }}
+          </p>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+            {{ userData?.email || 'N/A' }}
+          </p>
         </div>
       </div>
 
       <!-- Current Plan -->
       <div
-        class="flex items-start group hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50 p-3 rounded-lg transition-all duration-200"
+        class="flex items-start group hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50 dark:hover:from-blue-900/30 dark:hover:to-teal-900/30 p-3 rounded-lg transition-all duration-200"
       >
         <div class="shrink-0">
           <div
-            class="bg-teal-50 rounded-lg p-3 group-hover:bg-linear-to-br group-hover:from-blue-100 group-hover:to-teal-100 transition-all duration-200 group-hover:shadow-sm"
+            class="bg-teal-50 dark:bg-teal-900/50 rounded-lg p-3 group-hover:bg-linear-to-br group-hover:from-blue-100 group-hover:to-teal-100 dark:group-hover:from-blue-800/50 dark:group-hover:to-teal-800/50 transition-all duration-200 group-hover:shadow-sm"
           >
             <CreditCardIcon
               class="h-6 w-6"
               :class="{
-                'text-teal-600':
+                'text-teal-600 dark:text-teal-400':
                   subscriptionStatus !== 'canceled' && subscriptionStatus !== 'paused',
-                'text-gray-400': subscriptionStatus === 'canceled',
-                'text-yellow-600': subscriptionStatus === 'paused',
-                'text-blue-600': subscriptionStatus === 'trialing'
+                'text-gray-400 dark:text-gray-500': subscriptionStatus === 'canceled',
+                'text-yellow-600 dark:text-yellow-500': subscriptionStatus === 'paused',
+                'text-blue-600 dark:text-blue-400': subscriptionStatus === 'trialing'
               }"
             />
           </div>
         </div>
         <div class="ml-4 flex-1">
           <div class="flex items-center justify-between">
-            <p class="text-sm font-medium text-gray-500">Current Subscription</p>
+            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Current Subscription</p>
             <span
               v-if="subscriptionStatus === 'paused'"
-              class="inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-medium bg-orange-100 text-orange-800 rounded-full"
+              class="inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-medium bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-300 rounded-full"
             >
               <svg class="w-1 h-1 fill-current" viewBox="0 0 4 4">
                 <circle cx="2" cy="2" r="2" />
@@ -54,7 +58,7 @@
             </span>
             <span
               v-if="subscriptionStatus === 'canceled'"
-              class="inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-medium bg-red-100 text-red-800 rounded-full"
+              class="inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-medium bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-300 rounded-full"
             >
               <svg class="w-1 h-1 fill-current" viewBox="0 0 4 4">
                 <circle cx="2" cy="2" r="2" />
@@ -63,19 +67,19 @@
             </span>
           </div>
           <div class="mt-1">
-            <p class="text-xl font-semibold text-gray-900">
+            <p class="text-xl font-semibold text-gray-900 dark:text-gray-100">
               {{ subscriptionStatus === 'trialing' ? 'Trial' : currentPlanName }}
             </p>
             <p
               v-if="subscriptionStatus === 'trialing' && userData?.trialEnd"
-              class="text-sm text-gray-500 mt-1"
+              class="text-sm text-gray-500 dark:text-gray-400 mt-1"
             >
               Trial ends on {{ formatDate(userData.trialEnd) }}
             </p>
             <a
               href="http://streams.dbconvert.com/pricing"
               target="_blank"
-              class="mt-2 inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-500"
+              class="mt-2 inline-flex items-center text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300"
             >
               Manage Subscription
               <svg
@@ -95,7 +99,7 @@
           <div v-if="subscriptionStatus === 'paused'" class="mt-2 flex items-start space-x-2">
             <div class="shrink-0 mt-0.5">
               <svg
-                class="h-4 w-4 text-orange-500"
+                class="h-4 w-4 text-orange-500 dark:text-orange-400"
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
                 fill="currentColor"
@@ -108,13 +112,13 @@
               </svg>
             </div>
             <div class="flex-1">
-              <p class="text-sm text-orange-800 font-medium">
+              <p class="text-sm text-orange-800 dark:text-orange-300 font-medium">
                 {{ trialEnded ? 'Trial period ended' : 'Usage limit exceeded' }}
               </p>
               <a
                 href="http://streams.dbconvert.com/account"
                 target="_blank"
-                class="mt-1 inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-500"
+                class="mt-1 inline-flex items-center text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300"
               >
                 Update subscription
                 <svg
@@ -135,7 +139,7 @@
           <div v-if="subscriptionStatus === 'canceled'" class="mt-2 flex items-start space-x-2">
             <div class="shrink-0 mt-0.5">
               <svg
-                class="h-4 w-4 text-red-500"
+                class="h-4 w-4 text-red-500 dark:text-red-400"
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
                 fill="currentColor"
@@ -148,11 +152,13 @@
               </svg>
             </div>
             <div class="flex-1">
-              <p class="text-sm text-red-800 font-medium">Your subscription has been canceled</p>
+              <p class="text-sm text-red-800 dark:text-red-300 font-medium">
+                Your subscription has been canceled
+              </p>
               <a
                 href="http://streams.dbconvert.com/account"
                 target="_blank"
-                class="mt-1 inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-500"
+                class="mt-1 inline-flex items-center text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300"
               >
                 Reactivate subscription
                 <svg
@@ -175,32 +181,34 @@
 
       <!-- Usage Summary -->
       <div
-        class="flex items-start group hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50 p-3 rounded-lg transition-all duration-200"
+        class="flex items-start group hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50 dark:hover:from-blue-900/30 dark:hover:to-teal-900/30 p-3 rounded-lg transition-all duration-200"
       >
         <div class="shrink-0">
           <div
-            class="bg-teal-50 rounded-lg p-3 group-hover:bg-linear-to-br group-hover:from-blue-100 group-hover:to-teal-100 transition-all duration-200 group-hover:shadow-sm"
+            class="bg-teal-50 dark:bg-teal-900/50 rounded-lg p-3 group-hover:bg-linear-to-br group-hover:from-blue-100 group-hover:to-teal-100 dark:group-hover:from-blue-800/50 dark:group-hover:to-teal-800/50 transition-all duration-200 group-hover:shadow-sm"
           >
-            <ChartBarIcon class="h-6 w-6 text-teal-600" />
+            <ChartBarIcon class="h-6 w-6 text-teal-600 dark:text-teal-400" />
           </div>
         </div>
         <div class="ml-4 flex-1">
           <div class="flex items-center justify-between">
-            <p class="text-sm font-medium text-gray-500">Current Period Usage</p>
-            <span class="text-sm text-gray-500">
+            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Current Period Usage</p>
+            <span class="text-sm text-gray-500 dark:text-gray-400">
               {{ currentPeriodStart ? currentPeriodStart : 'N/A' }} -
               {{ currentPeriodEnd ? currentPeriodEnd : 'N/A' }}
             </span>
           </div>
           <div class="mt-3">
             <div class="flex items-baseline">
-              <span class="text-xl font-semibold text-gray-900">{{
+              <span class="text-xl font-semibold text-gray-900 dark:text-gray-100">{{
                 formatDataSize(usedData)
               }}</span>
-              <span class="text-sm text-gray-500 ml-1">of {{ formatDataSize(totalData) }}</span>
+              <span class="text-sm text-gray-500 dark:text-gray-400 ml-1"
+                >of {{ formatDataSize(totalData) }}</span
+              >
             </div>
             <!-- Progress bar -->
-            <div class="w-full bg-gray-100 rounded-full h-2.5 mt-2">
+            <div class="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2.5 mt-2">
               <div
                 class="h-2.5 rounded-full transition-all duration-300"
                 :style="{ width: `${usagePercentage}%` }"
@@ -212,11 +220,17 @@
               ></div>
             </div>
             <div class="flex items-center justify-between mt-1">
-              <p class="text-sm text-gray-500">{{ usagePercentage }}% used</p>
-              <p v-if="usagePercentage > 90" class="text-sm text-red-600 font-medium">
+              <p class="text-sm text-gray-500 dark:text-gray-400">{{ usagePercentage }}% used</p>
+              <p
+                v-if="usagePercentage > 90"
+                class="text-sm text-red-600 dark:text-red-400 font-medium"
+              >
                 Critical usage
               </p>
-              <p v-else-if="usagePercentage > 75" class="text-sm text-yellow-600 font-medium">
+              <p
+                v-else-if="usagePercentage > 75"
+                class="text-sm text-yellow-600 dark:text-yellow-500 font-medium"
+              >
                 High usage
               </p>
             </div>
@@ -226,20 +240,20 @@
 
       <!-- API Key Management -->
       <div
-        class="flex items-start group hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50 p-3 rounded-lg transition-all duration-200"
+        class="flex items-start group hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50 dark:hover:from-blue-900/30 dark:hover:to-teal-900/30 p-3 rounded-lg transition-all duration-200"
       >
         <div class="shrink-0">
           <div
-            class="bg-blue-50 rounded-lg p-3 group-hover:bg-linear-to-br group-hover:from-blue-100 group-hover:to-teal-100 transition-all duration-200 group-hover:shadow-sm"
+            class="bg-blue-50 dark:bg-blue-900/50 rounded-lg p-3 group-hover:bg-linear-to-br group-hover:from-blue-100 group-hover:to-teal-100 dark:group-hover:from-blue-800/50 dark:group-hover:to-teal-800/50 transition-all duration-200 group-hover:shadow-sm"
           >
-            <KeyIcon class="h-6 w-6 text-blue-600" />
+            <KeyIcon class="h-6 w-6 text-blue-600 dark:text-blue-400" />
           </div>
         </div>
         <div class="ml-4 flex-1">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm font-medium text-gray-500">API Key</p>
-              <p class="text-xs text-gray-500 mt-0.5">
+              <p class="text-sm font-medium text-gray-500 dark:text-gray-400">API Key</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                 Use this key to authenticate your API requests
               </p>
             </div>
@@ -250,21 +264,23 @@
                 type="text"
                 readonly
                 :value="maskedApiKey"
-                class="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 pr-10 text-sm font-mono text-gray-900 focus:ring-0 focus:outline-none focus:border-blue-300 transition-colors"
+                class="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 pr-10 text-sm font-mono text-gray-900 dark:text-gray-100 focus:ring-0 focus:outline-none focus:border-blue-300 dark:focus:border-blue-600 transition-colors"
               />
               <button
-                class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md hover:bg-gray-200 transition-colors group"
+                class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors group"
                 title="Copy API Key"
                 @click="copyApiKey"
               >
-                <DocumentDuplicateIcon class="h-4 w-4 text-gray-500 group-hover:text-gray-700" />
+                <DocumentDuplicateIcon
+                  class="h-4 w-4 text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300"
+                />
               </button>
             </div>
             <div class="flex justify-end">
               <a
                 href="http://streams.dbconvert.com/account"
                 target="_blank"
-                class="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-500"
+                class="inline-flex items-center text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300"
               >
                 Manage API Key
                 <svg

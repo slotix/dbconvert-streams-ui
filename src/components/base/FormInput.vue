@@ -105,7 +105,11 @@ const inputId = props.id || `form-input-${Math.random().toString(36).substr(2, 9
 <template>
   <div class="w-full">
     <!-- Label -->
-    <label v-if="label" :for="inputId" class="block text-sm font-medium text-gray-700 mb-1">
+    <label
+      v-if="label"
+      :for="inputId"
+      class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+    >
       {{ label }}
       <span v-if="required" class="text-red-500 ml-0.5">*</span>
     </label>
@@ -128,12 +132,12 @@ const inputId = props.id || `form-input-${Math.random().toString(36).substr(2, 9
       :maxlength="maxlength"
       :class="[
         'block w-full rounded-md shadow-sm sm:text-sm',
-        'text-gray-900 placeholder-gray-400',
+        'text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder:text-gray-500',
         'transition-colors duration-150',
         error
-          ? 'border-red-300 focus:border-red-500 focus:ring-1 focus:ring-red-500'
-          : 'border-gray-300 focus:border-teal-500 focus:ring-1 focus:ring-teal-500',
-        disabled ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'
+          ? 'border-red-300 dark:border-red-600 focus:border-red-500 dark:focus:border-red-400 focus:ring-1 focus:ring-red-500 dark:focus:ring-red-400'
+          : 'border-gray-300 dark:border-gray-600 focus:border-teal-500 dark:focus:border-teal-400 focus:ring-1 focus:ring-teal-500 dark:focus:ring-teal-400',
+        disabled ? 'bg-gray-100 dark:bg-gray-700 cursor-not-allowed' : 'bg-white dark:bg-gray-800'
       ]"
       @input="handleInput"
       @change="handleChange"
@@ -147,7 +151,10 @@ const inputId = props.id || `form-input-${Math.random().toString(36).substr(2, 9
     <!-- Helper Text or Error -->
     <p
       v-if="error || helperText"
-      :class="['mt-1 text-xs', error ? 'text-red-600' : 'text-gray-500']"
+      :class="[
+        'mt-1 text-xs',
+        error ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'
+      ]"
     >
       {{ error || helperText }}
     </p>

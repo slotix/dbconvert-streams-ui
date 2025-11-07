@@ -1,10 +1,12 @@
 <template>
-  <div class="h-full flex flex-col bg-white">
+  <div class="h-full flex flex-col bg-white dark:bg-gray-850">
     <!-- Header -->
-    <div class="px-6 py-4 bg-white shrink-0">
+    <div class="px-6 py-4 bg-white dark:bg-gray-850 shrink-0">
       <div class="flex items-center justify-between mb-3">
         <div class="flex items-center min-w-0 flex-1 gap-3">
-          <h2 class="text-xl font-semibold text-gray-900 truncate">{{ stream.name }}</h2>
+          <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 truncate">
+            {{ stream.name }}
+          </h2>
         </div>
         <div class="flex items-center gap-2 ml-4">
           <BaseButton
@@ -55,8 +57,8 @@
           <button
             :class="[
               activeTab === 'configuration'
-                ? 'border-teal-600 text-teal-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
+                ? 'border-teal-600 dark:border-teal-400 text-teal-600 dark:text-teal-400'
+                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-700',
               'whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors'
             ]"
             @click="activeTab = 'configuration'"
@@ -138,7 +140,7 @@
         <!-- JSON View -->
         <div v-if="isJsonView">
           <div
-            class="rounded-md bg-gray-50 p-4 border border-gray-300 overflow-auto custom-scrollbar"
+            class="rounded-md bg-gray-50 dark:bg-black p-4 border border-gray-300 dark:border-gray-700 overflow-auto custom-scrollbar"
           >
             <pre
               v-highlightjs
@@ -150,15 +152,15 @@
         <!-- Connection Details (Normal View) -->
         <div v-else class="space-y-4">
           <!-- Mode -->
-          <div class="pb-4 border-b border-gray-100">
+          <div class="pb-4 border-b border-gray-100 dark:border-gray-800">
             <div class="flex items-center gap-2">
-              <span class="text-sm text-gray-500">Mode:</span>
+              <span class="text-sm text-gray-500 dark:text-gray-400">Mode:</span>
               <span
                 :class="[
                   'inline-flex items-center rounded-md px-2.5 py-1 text-xs font-medium ring-1 ring-inset',
                   stream.mode === 'cdc'
-                    ? 'bg-orange-50 text-orange-700 ring-orange-600/20'
-                    : 'bg-green-50 text-green-700 ring-green-600/20'
+                    ? 'bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 ring-orange-600/20 dark:ring-orange-500/30'
+                    : 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 ring-green-600/20 dark:ring-green-500/30'
                 ]"
               >
                 {{ stream.mode.toUpperCase() }}
@@ -168,10 +170,14 @@
 
           <!-- Source Connection -->
           <div>
-            <label class="block text-xs font-medium uppercase text-gray-500 mb-2">
+            <label
+              class="block text-xs font-medium uppercase text-gray-500 dark:text-gray-400 mb-2"
+            >
               Source Connection
             </label>
-            <div class="bg-gray-50 rounded-md p-4 border border-gray-300">
+            <div
+              class="bg-gray-50 dark:bg-gray-800 rounded-md p-4 border border-gray-300 dark:border-gray-700"
+            >
               <div class="flex items-center justify-between gap-3 mb-2">
                 <div class="flex items-center gap-2 min-w-0 flex-1">
                   <div
@@ -186,8 +192,8 @@
                     />
                   </div>
                   <span
-                    class="font-medium text-gray-900 truncate"
-                    :class="{ 'text-red-500': !source || !source.name }"
+                    class="font-medium text-gray-900 dark:text-gray-100 truncate"
+                    :class="{ 'text-red-500 dark:text-red-400': !source || !source.name }"
                   >
                     {{ source?.name || 'N/A' }}
                   </span>
@@ -213,9 +219,11 @@
                   Explore
                 </button>
               </div>
-              <div class="text-sm text-gray-600">
+              <div class="text-sm text-gray-600 dark:text-gray-400">
                 <ConnectionStringDisplay v-if="source" :connection="source" />
-                <span v-else class="text-red-500 text-xs">Connection not found</span>
+                <span v-else class="text-red-500 dark:text-red-400 text-xs"
+                  >Connection not found</span
+                >
               </div>
             </div>
           </div>
@@ -311,11 +319,18 @@
 
           <!-- Tables Section -->
           <div>
-            <label class="block text-xs font-medium uppercase text-gray-500 mb-2">Tables</label>
-            <div class="bg-gray-50 rounded-md p-3 border border-gray-300">
-              <p class="text-sm text-gray-900">
+            <label class="block text-xs font-medium uppercase text-gray-500 dark:text-gray-400 mb-2"
+              >Tables</label
+            >
+            <div
+              class="bg-gray-50 dark:bg-gray-800 rounded-md p-3 border border-gray-300 dark:border-gray-700"
+            >
+              <p class="text-sm text-gray-900 dark:text-gray-100">
                 {{ displayedTables.join(', ') }}{{ remainingTablesCount > 0 ? ', ...' : '' }}
-                <span v-if="remainingTablesCount > 0" class="text-xs text-gray-500 italic ml-1">
+                <span
+                  v-if="remainingTablesCount > 0"
+                  class="text-xs text-gray-500 dark:text-gray-400 italic ml-1"
+                >
                   ({{ remainingTablesCount }} more)
                 </span>
               </p>
@@ -323,10 +338,12 @@
           </div>
 
           <!-- Creation Date -->
-          <div class="pt-4 border-t border-gray-100">
+          <div class="pt-4 border-t border-gray-100 dark:border-gray-800">
             <div class="flex items-center gap-2">
-              <CalendarIcon class="h-4 w-4 text-gray-500" />
-              <span class="text-sm text-gray-500">Created: {{ streamCreated }}</span>
+              <CalendarIcon class="h-4 w-4 text-gray-500 dark:text-gray-400" />
+              <span class="text-sm text-gray-500 dark:text-gray-400"
+                >Created: {{ streamCreated }}</span
+              >
             </div>
           </div>
         </div>

@@ -4,8 +4,8 @@
       'px-3 py-2.5 cursor-pointer transition-all duration-200 ease-out group relative',
       'rounded-lg',
       isSelected
-        ? 'bg-linear-to-r from-blue-100 to-teal-100 shadow-md ring-2 ring-blue-200/50'
-        : 'hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50 hover:shadow-sm hover:scale-[1.01] active:scale-[0.98]'
+        ? 'bg-linear-to-r from-blue-100 to-teal-100 dark:from-blue-900/30 dark:to-teal-900/30 shadow-md ring-2 ring-blue-200/50 dark:ring-blue-700/50'
+        : 'hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50 dark:hover:from-blue-900/20 dark:hover:to-teal-900/20 hover:shadow-sm hover:scale-[1.01] active:scale-[0.98]'
     ]"
     @click="selectStream"
     @contextmenu="handleContextMenu"
@@ -15,7 +15,7 @@
       <!-- Stream Name - Full Width with Truncation -->
       <div class="mb-1.5 min-w-0">
         <h3
-          class="text-sm font-semibold text-slate-800 group-hover:text-teal-900 truncate leading-tight"
+          class="text-sm font-semibold text-slate-800 dark:text-gray-100 group-hover:text-teal-900 dark:group-hover:text-teal-400 truncate leading-tight"
           :title="stream.name"
         >
           {{ stream.name }}
@@ -41,8 +41,8 @@
           :class="[
             'inline-flex items-center rounded-full px-1.5 py-0.5 text-xs font-medium ring-1 ring-inset shrink-0',
             stream.mode === 'cdc'
-              ? 'bg-orange-50 text-orange-700 ring-orange-600/20'
-              : 'bg-green-50 text-green-700 ring-green-600/20'
+              ? 'bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 ring-orange-600/20 dark:ring-orange-500/30'
+              : 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 ring-green-600/20 dark:ring-green-500/30'
           ]"
         >
           {{ stream.mode }}
@@ -50,27 +50,30 @@
       </div>
 
       <!-- Connection Info - Separate Row with Better Truncation -->
-      <div class="flex items-center gap-1 text-xs text-gray-600 min-w-0 mb-1">
+      <div class="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400 min-w-0 mb-1">
         <span v-if="source" class="truncate font-medium" :title="source.name">{{
           source.name
         }}</span>
-        <span v-else class="text-gray-400 shrink-0 text-xs">Unknown</span>
-        <ArrowRightIcon class="h-3 w-3 shrink-0 text-gray-400" />
+        <span v-else class="text-gray-400 dark:text-gray-600 shrink-0 text-xs">Unknown</span>
+        <ArrowRightIcon class="h-3 w-3 shrink-0 text-gray-400 dark:text-gray-600" />
         <span v-if="target" class="truncate font-medium" :title="target.name">{{
           target.name
         }}</span>
-        <span v-else class="text-gray-400 shrink-0 text-xs">Unknown</span>
+        <span v-else class="text-gray-400 dark:text-gray-600 shrink-0 text-xs">Unknown</span>
       </div>
 
       <!-- Table count -->
-      <div v-if="stream.tables && stream.tables.length > 0" class="text-xs text-gray-400">
+      <div
+        v-if="stream.tables && stream.tables.length > 0"
+        class="text-xs text-gray-400 dark:text-gray-600"
+      >
         {{ stream.tables.length }} table{{ stream.tables.length !== 1 ? 's' : '' }}
       </div>
     </div>
 
     <!-- Action Buttons - Positioned Absolutely on Right -->
     <div
-      class="absolute right-2 top-2 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity bg-white/95 backdrop-blur-sm rounded-md shadow-sm border border-gray-200 p-0.5"
+      class="absolute right-2 top-2 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity bg-white/95 dark:bg-gray-850/95 backdrop-blur-sm rounded-md shadow-sm border border-gray-200 dark:border-gray-700 p-0.5"
       @click.stop
     >
       <!-- Start/Run Again/Pause/Resume Button -->
@@ -79,7 +82,7 @@
         v-if="isPaused && !isFinished"
         v-tooltip="'Resume the stream'"
         type="button"
-        class="p-1.5 rounded-md hover:bg-teal-100 text-teal-600 hover:text-teal-700 transition-colors"
+        class="p-1.5 rounded-md hover:bg-teal-100 dark:hover:bg-teal-900/30 text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 transition-colors"
         @click.stop="resumeStream"
       >
         <PlayIcon class="h-4 w-4" />
@@ -89,7 +92,7 @@
         v-else-if="isRunning && !isPaused && !isFinished"
         v-tooltip="'Pause the stream'"
         type="button"
-        class="p-1.5 rounded-md hover:bg-yellow-100 text-yellow-600 hover:text-yellow-700 transition-colors"
+        class="p-1.5 rounded-md hover:bg-yellow-100 dark:hover:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 hover:text-yellow-700 dark:hover:text-yellow-300 transition-colors"
         @click.stop="pauseStream"
       >
         <PauseIcon class="h-4 w-4" />
@@ -99,7 +102,7 @@
         v-else
         v-tooltip="hasHistory ? 'Run the stream again' : 'Start the stream'"
         type="button"
-        class="p-1.5 rounded-md hover:bg-teal-100 text-teal-600 hover:text-teal-700 transition-colors"
+        class="p-1.5 rounded-md hover:bg-teal-100 dark:hover:bg-teal-900/30 text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 transition-colors"
         @click.stop="startStream"
       >
         <PlayIcon class="h-4 w-4" />
@@ -110,7 +113,7 @@
         <button
           v-tooltip="'Edit stream configuration'"
           type="button"
-          class="p-1.5 rounded-md hover:bg-gray-200 text-gray-500 hover:text-gray-700 transition-colors"
+          class="p-1.5 rounded-md hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
         >
           <PencilIcon class="h-4 w-4" />
         </button>
@@ -120,7 +123,7 @@
       <button
         v-tooltip="'Clone stream configuration'"
         type="button"
-        class="p-1.5 rounded-md hover:bg-gray-200 text-gray-500 hover:text-gray-700 transition-colors"
+        class="p-1.5 rounded-md hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
         @click.stop="cloneStream"
       >
         <DocumentDuplicateIcon class="h-4 w-4" />
@@ -130,7 +133,7 @@
       <button
         v-tooltip="'Delete stream configuration'"
         type="button"
-        class="p-1.5 rounded-md hover:bg-red-100 text-gray-500 hover:text-red-600 transition-colors"
+        class="p-1.5 rounded-md hover:bg-red-100 dark:hover:bg-red-900/30 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
         @click.stop="deleteStream"
       >
         <TrashIcon class="h-4 w-4" />

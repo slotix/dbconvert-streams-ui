@@ -1,11 +1,13 @@
 <template>
   <div class="relative mt-4 mb-3">
-    <h2 class="text-xl font-bold tracking-tight text-gray-900">Stream Performance</h2>
+    <h2 class="text-xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
+      Stream Performance
+    </h2>
   </div>
 
   <!-- Source and Target Stats -->
   <div
-    class="grid grid-cols-1 divide-y divide-gray-200 overflow-hidden rounded-xl bg-white shadow-lg lg:grid-cols-2 lg:divide-x lg:divide-y-0"
+    class="grid grid-cols-1 divide-y divide-gray-200 dark:divide-gray-700 overflow-hidden rounded-xl bg-white dark:bg-gray-850 shadow-lg dark:shadow-gray-900/30 lg:grid-cols-2 lg:divide-x lg:divide-y-0"
   >
     <!-- Source Stats - Orange Theme -->
     <div class="flex flex-col">

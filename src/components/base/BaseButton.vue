@@ -46,13 +46,13 @@ const baseClasses =
 
 const variantClasses: Record<Variant, string> = {
   primary:
-    'bg-teal-600 text-white hover:bg-teal-700 focus:ring-teal-500 disabled:bg-gray-300 disabled:text-gray-500',
+    'bg-teal-600 dark:bg-teal-500 text-white hover:bg-teal-700 dark:hover:bg-teal-400 focus:ring-teal-500 dark:focus:ring-teal-400 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:text-gray-500 dark:disabled:text-gray-400',
   secondary:
-    'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 hover:border-gray-400 focus:ring-gray-500 disabled:bg-gray-100 disabled:text-gray-400',
+    'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 focus:ring-gray-500 dark:focus:ring-gray-400 disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:text-gray-400',
   danger:
-    'bg-white text-red-600 border border-red-300 hover:bg-red-50 hover:border-red-400 focus:ring-red-500 disabled:bg-gray-100 disabled:text-gray-400',
+    'bg-white dark:bg-gray-800 text-red-600 dark:text-red-400 border border-red-300 dark:border-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-400 dark:hover:border-red-600 focus:ring-red-500 dark:focus:ring-red-400 disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:text-gray-400',
   ghost:
-    'bg-transparent text-gray-600 hover:bg-gray-100 hover:text-gray-900 focus:ring-gray-400 disabled:text-gray-400 disabled:hover:bg-transparent'
+    'bg-transparent text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200 focus:ring-gray-400 disabled:text-gray-400 disabled:hover:bg-transparent dark:disabled:hover:bg-transparent'
 }
 
 const sizeClasses: Record<Size, string> = {

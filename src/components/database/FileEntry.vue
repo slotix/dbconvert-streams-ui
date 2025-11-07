@@ -49,9 +49,9 @@ const formatFileSize = (bytes?: number): string => {
 
 <template>
   <div
-    class="flex items-center px-2 py-1.5 text-sm rounded-md hover:bg-gray-100 cursor-pointer select-none"
+    class="flex items-center px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer select-none"
     :class="{
-      'bg-gray-100 ring-1 ring-gray-300': selected,
+      'bg-gray-100 dark:bg-gray-800 ring-1 ring-gray-300 dark:ring-gray-600': selected,
       'opacity-60': !isSupported && entry.type !== 'dir'
     }"
     :title="unsupportedTooltip"
@@ -70,13 +70,17 @@ const formatFileSize = (bytes?: number): string => {
     <!-- File name -->
     <div class="flex-1 min-w-0 truncate">
       <template v-for="(p, i) in highlightParts(entry.name, searchQuery)" :key="i">
-        <span v-if="p.match" class="bg-yellow-200/60 rounded px-0.5" v-text="p.text" />
+        <span
+          v-if="p.match"
+          class="bg-yellow-200/60 dark:bg-yellow-500/40 rounded px-0.5"
+          v-text="p.text"
+        />
         <span v-else v-text="p.text" />
       </template>
     </div>
 
     <!-- File size -->
-    <span v-if="entry.size" class="text-xs text-gray-500 ml-2 shrink-0">
+    <span v-if="entry.size" class="text-xs text-gray-500 dark:text-gray-400 ml-2 shrink-0">
       {{ formatFileSize(entry.size) }}
     </span>
   </div>

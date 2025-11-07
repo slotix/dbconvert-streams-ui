@@ -1,19 +1,21 @@
 <template>
-  <div v-if="comparison" class="bg-white">
+  <div v-if="comparison" class="bg-white dark:bg-gray-850">
     <!-- Collapsed State: Summary with Badges -->
     <button
-      class="w-full px-6 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors border-b border-gray-200"
+      class="w-full px-6 py-3 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border-b border-gray-200 dark:border-gray-700"
       @click="expanded = !expanded"
     >
       <div class="flex items-center gap-3 flex-1">
         <ChevronDownIcon
           :class="[
             'w-6 h-6 transition-transform shrink-0',
-            expanded ? 'rotate-180 text-blue-600' : 'text-gray-500'
+            expanded
+              ? 'rotate-180 text-blue-600 dark:text-blue-400'
+              : 'text-gray-500 dark:text-gray-400'
           ]"
         />
-        <Squares2X2Icon class="w-5 h-5 text-gray-500" />
-        <span class="text-sm font-medium text-gray-900">Schema Comparison</span>
+        <Squares2X2Icon class="w-5 h-5 text-gray-500 dark:text-gray-400" />
+        <span class="text-sm font-medium text-gray-900 dark:text-gray-100">Schema Comparison</span>
 
         <!-- Summary Badges -->
         <div class="flex items-center gap-2">
@@ -76,26 +78,36 @@
     </button>
 
     <!-- Expanded State: Content -->
-    <div v-if="expanded" class="bg-gray-50">
+    <div v-if="expanded" class="bg-gray-50 dark:bg-gray-900">
       <!-- Columns View -->
       <div v-if="viewMode === 'columns'" class="p-4">
-        <div class="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+        <div
+          class="bg-white dark:bg-gray-850 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden shadow-sm"
+        >
           <!-- Headers -->
           <div
-            class="grid grid-cols-[1fr_auto_1fr] gap-4 px-4 py-2 bg-gray-50 border-b border-gray-200"
+            class="grid grid-cols-[1fr_auto_1fr] gap-4 px-4 py-2 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700"
           >
             <div class="flex items-center justify-between">
-              <span class="text-xs font-medium text-gray-700 uppercase tracking-wide">
+              <span
+                class="text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wide"
+              >
                 Source Schema
               </span>
-              <span class="text-xs text-gray-500">{{ sourceColumns.length }} columns</span>
+              <span class="text-xs text-gray-500 dark:text-gray-400"
+                >{{ sourceColumns.length }} columns</span
+              >
             </div>
             <div class="w-16"></div>
             <div class="flex items-center justify-between">
-              <span class="text-xs font-medium text-gray-700 uppercase tracking-wide">
+              <span
+                class="text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wide"
+              >
                 Target Schema
               </span>
-              <span class="text-xs text-gray-500">{{ targetColumns.length }} columns</span>
+              <span class="text-xs text-gray-500 dark:text-gray-400"
+                >{{ targetColumns.length }} columns</span
+              >
             </div>
           </div>
 

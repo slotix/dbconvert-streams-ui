@@ -83,7 +83,10 @@ const handleChange = (option: SelectOption | null) => {
     @update:model-value="handleChange"
   >
     <!-- Label -->
-    <ListboxLabel v-if="label" class="block text-sm font-medium text-gray-700 mb-1">
+    <ListboxLabel
+      v-if="label"
+      class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+    >
       {{ label }}
       <span v-if="required" class="text-red-500 ml-0.5">*</span>
     </ListboxLabel>
@@ -96,21 +99,21 @@ const handleChange = (option: SelectOption | null) => {
           'transition-colors duration-150',
           'focus:outline-none focus:ring-1',
           error
-            ? 'border border-red-300 focus:border-red-500 focus:ring-red-500'
-            : 'border border-gray-300 focus:border-teal-500 focus:ring-teal-500',
+            ? 'border border-red-300 dark:border-red-600 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-500 dark:focus:ring-red-400'
+            : 'border border-gray-300 dark:border-gray-600 focus:border-teal-500 dark:focus:border-teal-400 focus:ring-teal-500 dark:focus:ring-teal-400',
           disabled
-            ? 'bg-gray-100 cursor-not-allowed text-gray-500'
-            : 'bg-white text-gray-900 cursor-pointer'
+            ? 'bg-gray-100 dark:bg-gray-700 cursor-not-allowed text-gray-500 dark:text-gray-400'
+            : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 cursor-pointer'
         ]"
       >
         <span v-if="selectedOption" class="block truncate">
           {{ selectedOption.label }}
         </span>
-        <span v-else class="block truncate text-gray-400">
+        <span v-else class="block truncate text-gray-400 dark:text-gray-500">
           {{ placeholder }}
         </span>
         <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
-          <ChevronDownIcon class="h-5 w-5 text-gray-400" aria-hidden="true" />
+          <ChevronDownIcon class="h-5 w-5 text-gray-400 dark:text-gray-500" aria-hidden="true" />
         </span>
       </ListboxButton>
 
@@ -121,7 +124,7 @@ const handleChange = (option: SelectOption | null) => {
         leave-to-class="opacity-0"
       >
         <ListboxOptions
-          class="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-sm shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+          class="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white dark:bg-gray-800 py-1 text-sm shadow-lg ring-1 ring-black dark:ring-gray-600 ring-opacity-5 dark:ring-opacity-100 focus:outline-none"
         >
           <ListboxOption
             v-for="option in options"
@@ -133,7 +136,9 @@ const handleChange = (option: SelectOption | null) => {
           >
             <li
               :class="[
-                active ? 'bg-teal-50 text-teal-900' : 'text-gray-900',
+                active
+                  ? 'bg-teal-50 dark:bg-teal-900 text-teal-900 dark:text-teal-300'
+                  : 'text-gray-900 dark:text-gray-100',
                 option.disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
                 'relative select-none py-2 pl-3 pr-9'
               ]"
@@ -145,7 +150,7 @@ const handleChange = (option: SelectOption | null) => {
               <span
                 v-if="selected"
                 :class="[
-                  active ? 'text-teal-600' : 'text-teal-600',
+                  active ? 'text-teal-600 dark:text-teal-400' : 'text-teal-600 dark:text-teal-400',
                   'absolute inset-y-0 right-0 flex items-center pr-3'
                 ]"
               >
@@ -160,7 +165,10 @@ const handleChange = (option: SelectOption | null) => {
     <!-- Helper Text or Error -->
     <p
       v-if="error || helperText"
-      :class="['mt-1 text-xs', error ? 'text-red-600' : 'text-gray-500']"
+      :class="[
+        'mt-1 text-xs',
+        error ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'
+      ]"
     >
       {{ error || helperText }}
     </p>

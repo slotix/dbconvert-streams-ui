@@ -82,17 +82,21 @@ function getStatusLabel(status: string) {
 </script>
 
 <template>
-  <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+  <div
+    class="bg-white dark:bg-gray-850 rounded-xl shadow-lg dark:shadow-gray-900/30 overflow-hidden"
+  >
     <!-- Header -->
-    <div class="px-4 py-3 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-pink-50">
+    <div
+      class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20"
+    >
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
           <div class="p-2 bg-white rounded-lg shadow-sm">
             <TableCellsIcon class="h-5 w-5 text-purple-600" />
           </div>
           <div>
-            <h3 class="text-base font-semibold text-gray-900">Tables</h3>
-            <p class="text-sm text-gray-600">
+            <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">Tables</h3>
+            <p class="text-sm text-gray-600 dark:text-gray-400">
               {{ statusCounts.completed }} completed
               <span v-if="statusCounts.running > 0">
                 · {{ statusCounts.running }} in progress

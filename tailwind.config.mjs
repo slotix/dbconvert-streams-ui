@@ -1,6 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 const config = {
   content: ['./index.html', './src/**/*.{vue,js,ts,jsx,tsx}'],
+  darkMode: 'class',
   safelist: [
     // Database icon background colors (muted, for cognitive grouping)
     // Using -100 variants for better visibility while staying subtle

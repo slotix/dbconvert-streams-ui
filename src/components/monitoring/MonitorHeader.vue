@@ -5,8 +5,8 @@
       :class="[
         'border rounded-lg p-6',
         isRunning
-          ? 'bg-linear-to-r from-blue-50 to-cyan-50 border-blue-200'
-          : 'bg-gray-50 border-gray-200'
+          ? 'bg-linear-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 border-blue-200 dark:border-blue-700'
+          : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700'
       ]"
     >
       <div class="space-y-4">
@@ -48,17 +48,19 @@
               <PlayIcon v-else class="h-6 w-6 text-gray-400" />
             </div>
             <div class="min-w-0 flex-1">
-              <p class="text-xs font-medium uppercase text-gray-500 mb-1">Status</p>
+              <p class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400 mb-1">
+                Status
+              </p>
               <p
                 :class="[
                   'text-base font-semibold wrap-break-word',
                   isRunning
                     ? isStreamFinished
-                      ? 'text-green-700'
+                      ? 'text-green-700 dark:text-green-400'
                       : isPaused
-                        ? 'text-yellow-700'
-                        : 'text-blue-700'
-                    : 'text-gray-600'
+                        ? 'text-yellow-700 dark:text-yellow-400'
+                        : 'text-blue-700 dark:text-blue-400'
+                    : 'text-gray-600 dark:text-gray-400'
                 ]"
               >
                 {{ streamStatus }}
@@ -105,9 +107,13 @@
 
         <!-- Stream ID Display - Full width below status -->
         <div v-if="isRunning" class="flex items-center gap-2">
-          <p class="text-xs font-medium uppercase text-gray-500 whitespace-nowrap">Stream ID:</p>
+          <p
+            class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400 whitespace-nowrap"
+          >
+            Stream ID:
+          </p>
           <code
-            class="text-sm font-mono bg-white border border-gray-300 px-3 py-1.5 rounded text-gray-700 flex-1 min-w-0 truncate"
+            class="text-sm font-mono bg-white dark:bg-gray-850 border border-gray-300 dark:border-gray-700 px-3 py-1.5 rounded text-gray-700 dark:text-gray-300 flex-1 min-w-0 truncate"
           >
             {{ streamID }}
           </code>

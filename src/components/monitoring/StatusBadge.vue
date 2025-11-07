@@ -18,17 +18,17 @@ const props = defineProps<{
 const statusClass = computed(() => {
   switch (props.status) {
     case 'FINISHED':
-      return 'bg-teal-200 text-teal-900'
+      return 'bg-teal-200 dark:bg-teal-900/40 text-teal-900 dark:text-teal-300'
     case 'RUNNING':
-      return 'bg-blue-100 text-blue-800'
+      return 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300'
     case 'PAUSED':
-      return 'bg-yellow-100 text-yellow-800'
+      return 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300'
     case 'FAILED':
-      return 'bg-red-100 text-red-800'
+      return 'bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300'
     case 'STOPPED':
-      return 'bg-gray-100 text-gray-800'
+      return 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300'
     default:
-      return 'bg-gray-100 text-gray-800'
+      return 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300'
   }
 })
 

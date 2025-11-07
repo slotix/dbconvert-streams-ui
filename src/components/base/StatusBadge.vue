@@ -32,44 +32,44 @@ interface StatusConfig {
 
 const statusConfig: Record<Status, StatusConfig> = {
   running: {
-    bg: 'bg-blue-50',
-    text: 'text-blue-700',
-    border: 'border-blue-200',
+    bg: 'bg-blue-50 dark:bg-blue-900',
+    text: 'text-blue-700 dark:text-blue-300',
+    border: 'border-blue-200 dark:border-blue-700',
     icon: '▶',
     label: 'Running'
   },
   finished: {
-    bg: 'bg-teal-50',
-    text: 'text-teal-700',
-    border: 'border-teal-200',
+    bg: 'bg-teal-50 dark:bg-teal-900',
+    text: 'text-teal-700 dark:text-teal-300',
+    border: 'border-teal-200 dark:border-teal-700',
     icon: '✓',
     label: 'Finished'
   },
   failed: {
-    bg: 'bg-red-50',
-    text: 'text-red-700',
-    border: 'border-red-200',
+    bg: 'bg-red-50 dark:bg-red-900',
+    text: 'text-red-700 dark:text-red-300',
+    border: 'border-red-200 dark:border-red-700',
     icon: '✕',
     label: 'Failed'
   },
   pending: {
-    bg: 'bg-gray-50',
-    text: 'text-gray-600',
-    border: 'border-gray-200',
+    bg: 'bg-gray-50 dark:bg-gray-800',
+    text: 'text-gray-600 dark:text-gray-300',
+    border: 'border-gray-200 dark:border-gray-600',
     icon: '○',
     label: 'Pending'
   },
   paused: {
-    bg: 'bg-amber-50',
-    text: 'text-amber-700',
-    border: 'border-amber-200',
+    bg: 'bg-amber-50 dark:bg-amber-900',
+    text: 'text-amber-700 dark:text-amber-300',
+    border: 'border-amber-200 dark:border-amber-700',
     icon: '⏸',
     label: 'Paused'
   },
   initializing: {
-    bg: 'bg-purple-50',
-    text: 'text-purple-700',
-    border: 'border-purple-200',
+    bg: 'bg-purple-50 dark:bg-purple-900',
+    text: 'text-purple-700 dark:text-purple-300',
+    border: 'border-purple-200 dark:border-purple-700',
     icon: '⟳',
     label: 'Initializing'
   }

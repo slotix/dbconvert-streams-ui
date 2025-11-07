@@ -53,38 +53,38 @@ function click(action: string, openInRightSplit?: boolean) {
     <div v-if="hasMenu">
       <div class="fixed inset-0 z-40" @click="emit('close')"></div>
       <div
-        class="fixed z-50 bg-white border border-gray-200 rounded-md shadow-lg py-1 text-sm"
+        class="fixed z-50 bg-white dark:bg-gray-850 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg dark:shadow-gray-900/50 py-1 text-sm"
         :style="{ left: x + 'px', top: y + 'px', minWidth: '200px' }"
       >
         <template v-if="target.kind === 'connection'">
           <!-- Connection menu -->
           <button
-            class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
+            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
             @click="click('test-connection')"
           >
             Test connection
           </button>
           <button
-            class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
+            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
             @click="click('refresh-databases')"
           >
             Refresh
           </button>
-          <div class="my-1 border-t border-gray-100"></div>
+          <div class="my-1 border-t border-gray-100 dark:border-gray-700"></div>
           <button
-            class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
+            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
             @click="click('edit-connection')"
           >
             Edit
           </button>
           <button
-            class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
+            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
             @click="click('clone-connection')"
           >
             Clone
           </button>
           <button
-            class="w-full text-left px-3 py-1.5 hover:bg-gray-100 text-red-600"
+            class="w-full text-left px-3 py-1.5 text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-800"
             @click="click('delete-connection')"
           >
             Delete
@@ -94,19 +94,19 @@ function click(action: string, openInRightSplit?: boolean) {
         <template v-else-if="target.kind === 'database'">
           <!-- Database menu -->
           <button
-            class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
+            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
             @click="click('refresh-metadata')"
           >
             Refresh metadata
           </button>
           <button
-            class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
+            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
             @click="click('show-diagram')"
           >
             Show diagram
           </button>
           <button
-            class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
+            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
             @click="click('copy-database-name')"
           >
             Copy name
@@ -116,13 +116,13 @@ function click(action: string, openInRightSplit?: boolean) {
         <template v-else-if="target.kind === 'schema'">
           <!-- Schema menu -->
           <button
-            class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
+            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
             @click="click('refresh-metadata')"
           >
             Refresh metadata
           </button>
           <button
-            class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
+            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
             @click="click('copy-schema-name')"
           >
             Copy name
@@ -132,38 +132,38 @@ function click(action: string, openInRightSplit?: boolean) {
         <template v-else-if="isTableOrView">
           <!-- Table/View menu -->
           <button
-            class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
+            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
             @click="click('open-data', false)"
           >
             Open Data
           </button>
           <button
-            class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
+            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
             @click="click('open-structure', false)"
           >
             Open Structure
           </button>
-          <div class="my-1 border-t border-gray-100"></div>
+          <div class="my-1 border-t border-gray-100 dark:border-gray-700"></div>
           <button
-            class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
+            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
             @click="click('open-data', true)"
           >
             Open Data in Right Pane
           </button>
           <button
-            class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
+            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
             @click="click('open-structure', true)"
           >
             Open Structure in Right Pane
           </button>
           <button
-            class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
+            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
             @click="click('copy-object-name')"
           >
             Copy name
           </button>
           <button
-            class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
+            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50"
             :disabled="!canCopyDDL"
             @click="click('copy-ddl')"
           >
@@ -174,39 +174,39 @@ function click(action: string, openInRightSplit?: boolean) {
         <template v-else-if="isFile">
           <!-- File menu -->
           <button
-            class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
+            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
             @click="click('open-data', false)"
           >
             Open Data
           </button>
           <button
-            class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
+            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
             @click="click('open-structure', false)"
           >
             Open Structure
           </button>
-          <div class="my-1 border-t border-gray-100"></div>
+          <div class="my-1 border-t border-gray-100 dark:border-gray-700"></div>
           <button
-            class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
+            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
             @click="click('open-data', true)"
           >
             Open Data in Right Pane
           </button>
           <button
-            class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
+            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
             @click="click('open-structure', true)"
           >
             Open Structure in Right Pane
           </button>
-          <div class="my-1 border-t border-gray-100"></div>
+          <div class="my-1 border-t border-gray-100 dark:border-gray-700"></div>
           <button
-            class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
+            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
             @click="click('copy-file-name')"
           >
             Copy name
           </button>
           <button
-            class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
+            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
             @click="click('copy-file-path')"
           >
             Copy path

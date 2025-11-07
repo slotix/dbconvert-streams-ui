@@ -1,0 +1,64 @@
+<script setup lang="ts">
+import { useThemeStore } from '@/stores/theme'
+import { SunIcon, MoonIcon, ComputerDesktopIcon } from '@heroicons/vue/24/outline'
+import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/vue'
+
+const themeStore = useThemeStore()
+
+const themes = [
+  { value: 'light', label: 'Light', icon: SunIcon },
+  { value: 'dark', label: 'Dark', icon: MoonIcon },
+  { value: 'system', label: 'System', icon: ComputerDesktopIcon }
+] as const
+</script>
+
+<template>
+  <Menu as="div" class="relative inline-block text-left">
+    <MenuButton
+      class="inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:bg-gray-800 hover:text-white dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-teal-500 dark:focus:ring-teal-400"
+      title="Toggle theme"
+    >
+      <SunIcon v-if="!themeStore.isDark" class="h-5 w-5" />
+      <MoonIcon v-else class="h-5 w-5" />
+    </MenuButton>
+
+    <transition
+      enter-active-class="transition ease-out duration-100"
+      enter-from-class="transform opacity-0 scale-95"
+      enter-to-class="transform opacity-100 scale-100"
+      leave-active-class="transition ease-in duration-75"
+      leave-from-class="transform opacity-100 scale-100"
+      leave-to-class="transform opacity-0 scale-95"
+    >
+      <MenuItems
+        class="absolute left-full ml-2 z-[9999] w-40 origin-top-left rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 dark:ring-gray-700 focus:outline-none"
+      >
+        <div class="py-1">
+          <MenuItem v-for="theme in themes" :key="theme.value" v-slot="{ active }">
+            <button
+              @click="themeStore.setTheme(theme.value)"
+              :class="[
+                active ? 'bg-gray-100 dark:bg-gray-700' : '',
+                themeStore.mode === theme.value
+                  ? 'bg-teal-50 dark:bg-teal-900 text-teal-600 dark:text-teal-400'
+                  : 'text-gray-700 dark:text-gray-300',
+                'group flex w-full items-center px-4 py-2 text-sm'
+              ]"
+            >
+              <component
+                :is="theme.icon"
+                class="mr-3 h-5 w-5"
+                :class="
+                  themeStore.mode === theme.value
+                    ? 'text-teal-500 dark:text-teal-400'
+                    : 'text-gray-400 dark:text-gray-500'
+                "
+              />
+              {{ theme.label }}
+            </button>
+          </MenuItem>
+        </div>
+      </MenuItems>
+    </transition>
+  </Menu>
+</template>

@@ -5,7 +5,7 @@
 
     <!-- Enhanced Functional Toolbar with gradient background -->
     <header
-      class="sticky top-0 z-10 bg-linear-to-r from-slate-50 via-white to-slate-50 border-b border-slate-200 shadow-sm"
+      class="sticky top-0 z-10 bg-linear-to-r from-slate-50 via-white to-slate-50 dark:from-gray-900 dark:via-gray-850 dark:to-gray-900 border-b border-slate-200 dark:border-gray-700 shadow-sm dark:shadow-gray-900/30"
     >
       <div class="px-6 py-4 flex items-center gap-4">
         <!-- Search Input with enhanced styling -->
@@ -22,10 +22,12 @@
         <div class="flex items-center gap-4 ml-auto">
           <!-- Elevated Badge showing count with icon -->
           <div
-            class="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-slate-200 shadow-sm"
+            class="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-850 rounded-lg border border-slate-200 dark:border-gray-700 shadow-sm dark:shadow-gray-900/30"
           >
-            <ArrowPathIcon class="h-4 w-4 text-slate-400" />
-            <span class="text-sm font-semibold text-slate-700">{{ streamCountLabel }}</span>
+            <ArrowPathIcon class="h-4 w-4 text-slate-400 dark:text-gray-400" />
+            <span class="text-sm font-semibold text-slate-700 dark:text-gray-300">{{
+              streamCountLabel
+            }}</span>
           </div>
 
           <!-- Primary CTA Button with orange-to-teal gradient -->
@@ -43,12 +45,12 @@
     <main class="mx-auto py-4 overflow-x-hidden">
       <!-- No streams (show regardless of backend connection status) -->
       <div v-if="streamsCount() === 0" class="text-center py-12">
-        <p class="text-gray-500">
+        <p class="text-gray-500 dark:text-gray-400">
           No stream configurations yet. Create your first configuration to get started.
         </p>
         <router-link
           :to="{ name: 'CreateStream' }"
-          class="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
+          class="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
         >
           <PlusIcon class="mr-2 h-5 w-5" />
           Create Stream Configuration
@@ -92,17 +94,17 @@
           >
             <!-- Vertical divider line -->
             <div
-              class="absolute inset-y-0 left-1/2 -translate-x-1/2 w-[3px] rounded bg-gray-200 group-hover:bg-gray-300 transition-colors"
+              class="absolute inset-y-0 left-1/2 -translate-x-1/2 w-[3px] rounded bg-gray-200 dark:bg-gray-700 group-hover:bg-gray-300 dark:group-hover:bg-gray-600 transition-colors"
             />
 
             <!-- Centered handle with chevron indicator -->
             <div
-              class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-5 h-12 bg-gray-200 group-hover:bg-gray-300 rounded flex items-center justify-center transition-all cursor-pointer"
+              class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-5 h-12 bg-gray-200 dark:bg-gray-700 group-hover:bg-gray-300 dark:group-hover:bg-gray-600 rounded flex items-center justify-center transition-all cursor-pointer"
               @click.stop="sidebar.toggleSidebar"
             >
               <!-- Double chevron left icon -->
               <svg
-                class="w-3 h-3 text-gray-500"
+                class="w-3 h-3 text-gray-500 dark:text-gray-400"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -121,13 +123,13 @@
           <div v-if="!sidebar.sidebarVisible.value" class="relative shrink-0 w-5 mr-2">
             <button
               type="button"
-              class="absolute top-1/2 -translate-y-1/2 w-5 h-12 bg-gray-200 hover:bg-gray-300 rounded flex items-center justify-center transition-all shadow-sm"
+              class="absolute top-1/2 -translate-y-1/2 w-5 h-12 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded flex items-center justify-center transition-all shadow-sm dark:shadow-gray-900/30"
               title="Show Sidebar"
               @click="sidebar.toggleSidebar"
             >
               <!-- Double chevron right icon -->
               <svg
-                class="w-3 h-3 text-gray-500"
+                class="w-3 h-3 text-gray-500 dark:text-gray-400"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -160,7 +162,10 @@
                 @stream-deleted="handleStreamDeletedFromPanel"
               />
             </div>
-            <div v-else class="h-full flex items-center justify-center text-gray-500">
+            <div
+              v-else
+              class="h-full flex items-center justify-center text-gray-500 dark:text-gray-400"
+            >
               <p>Select a stream from the list to view details</p>
             </div>
           </div>

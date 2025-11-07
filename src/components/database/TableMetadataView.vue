@@ -181,30 +181,32 @@ function getColumnCheckConstraints(column: SQLColumnMeta): string {
 <template>
   <div
     :class="[
-      'bg-white',
-      $attrs.class ? $attrs.class : 'shadow-sm ring-1 ring-gray-900/5 rounded-lg'
+      'bg-white dark:bg-gray-850',
+      $attrs.class ? $attrs.class : 'shadow-sm ring-1 ring-gray-900/5 dark:ring-gray-700 rounded-lg'
     ]"
   >
     <!-- Header removed; DatabaseObjectContainer renders tabs, title, and actions -->
 
     <!-- HeadlessUI Tab Implementation with Store Integration -->
     <TabGroup :selectedIndex="activeTabIndex" as="div" @change="onSubTabChange">
-      <TabList class="flex space-x-1 border-b border-gray-200 px-4">
+      <TabList class="flex space-x-1 border-b border-gray-200 dark:border-gray-700 px-4">
         <Tab v-for="tab in tabs" :key="tab.name" v-slot="{ selected }" as="template">
           <button
             :class="[
               'px-3 py-2 text-sm font-medium leading-5 whitespace-nowrap transition-colors duration-150',
-              'focus:outline-none focus:ring-1 ring-offset-1 ring-gray-300',
+              'focus:outline-none focus:ring-1 ring-offset-1 ring-gray-300 dark:ring-gray-600',
               selected
-                ? 'border-b-2 border-slate-500 text-slate-900 -mb-px'
-                : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                ? 'border-b-2 border-slate-500 dark:border-slate-400 text-slate-900 dark:text-slate-100 -mb-px'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
             ]"
           >
             {{ tab.name }}
             <span
               :class="[
                 'ml-2 rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors duration-150',
-                selected ? 'bg-slate-100 text-slate-600' : 'bg-gray-100 text-gray-600'
+                selected
+                  ? 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
               ]"
             >
               {{ tab.count }}
@@ -218,39 +220,45 @@ function getColumnCheckConstraints(column: SQLColumnMeta): string {
         <TabPanel>
           <div class="overflow-x-auto">
             <div class="min-w-[640px]">
-              <div class="ring-1 ring-gray-200 rounded-lg">
-                <table class="min-w-full divide-y divide-gray-300">
+              <div class="ring-1 ring-gray-200 dark:ring-gray-700 rounded-lg">
+                <table class="min-w-full divide-y divide-gray-300 dark:divide-gray-700">
                   <thead>
-                    <tr class="bg-gray-50">
+                    <tr class="bg-gray-50 dark:bg-gray-900">
                       <th
-                        class="px-3 py-2 text-left text-sm font-semibold text-gray-900 whitespace-nowrap"
+                        class="px-3 py-2 text-left text-sm font-semibold text-gray-900 dark:text-gray-100 whitespace-nowrap"
                       >
                         Column
                       </th>
                       <th
-                        class="px-3 py-2 text-left text-sm font-semibold text-gray-900 whitespace-nowrap"
+                        class="px-3 py-2 text-left text-sm font-semibold text-gray-900 dark:text-gray-100 whitespace-nowrap"
                       >
                         Type
                       </th>
                       <th
-                        class="px-3 py-2 text-left text-sm font-semibold text-gray-900 whitespace-nowrap"
+                        class="px-3 py-2 text-left text-sm font-semibold text-gray-900 dark:text-gray-100 whitespace-nowrap"
                       >
                         Null
                       </th>
                       <th
-                        class="px-3 py-2 text-left text-sm font-semibold text-gray-900 whitespace-nowrap"
+                        class="px-3 py-2 text-left text-sm font-semibold text-gray-900 dark:text-gray-100 whitespace-nowrap"
                       >
                         Default
                       </th>
                       <th
-                        class="px-3 py-2 text-left text-sm font-semibold text-gray-900 whitespace-nowrap"
+                        class="px-3 py-2 text-left text-sm font-semibold text-gray-900 dark:text-gray-100 whitespace-nowrap"
                       >
                         Check constraints
                       </th>
                     </tr>
                   </thead>
-                  <tbody class="divide-y divide-gray-200 bg-white">
-                    <tr v-for="column in columns" :key="column.name" class="hover:bg-gray-50">
+                  <tbody
+                    class="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-850"
+                  >
+                    <tr
+                      v-for="column in columns"
+                      :key="column.name"
+                      class="hover:bg-gray-50 dark:hover:bg-gray-800"
+                    >
                       <td class="whitespace-nowrap px-3 py-2 text-sm">
                         <div class="flex items-center">
                           <div class="mr-2 flex items-center space-x-1">
@@ -267,20 +275,28 @@ function getColumnCheckConstraints(column: SQLColumnMeta): string {
                               title="Foreign Key"
                             />
                           </div>
-                          <span class="font-medium text-gray-900">{{ column.name }}</span>
+                          <span class="font-medium text-gray-900 dark:text-gray-100">{{
+                            column.name
+                          }}</span>
                         </div>
                       </td>
-                      <td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
+                      <td
+                        class="whitespace-nowrap px-3 py-2 text-sm text-gray-500 dark:text-gray-400"
+                      >
                         {{ getColumnType(column) }}
                       </td>
-                      <td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
+                      <td
+                        class="whitespace-nowrap px-3 py-2 text-sm text-gray-500 dark:text-gray-400"
+                      >
                         {{ column.isNullable ? 'Yes' : 'No' }}
                       </td>
-                      <td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
+                      <td
+                        class="whitespace-nowrap px-3 py-2 text-sm text-gray-500 dark:text-gray-400"
+                      >
                         {{ getColumnDefault(column) }}
                       </td>
                       <td
-                        class="px-3 py-2 text-sm text-gray-500 max-w-xs truncate"
+                        class="px-3 py-2 text-sm text-gray-500 dark:text-gray-400 max-w-xs truncate"
                         :title="getColumnCheckConstraints(column)"
                       >
                         {{ getColumnCheckConstraints(column) }}
@@ -298,8 +314,10 @@ function getColumnCheckConstraints(column: SQLColumnMeta): string {
           <div class="space-y-8">
             <!-- Primary Keys -->
             <div v-if="primaryKeys.length > 0">
-              <h4 class="text-sm font-medium text-gray-900 mb-4">Primary Keys</h4>
-              <ul role="list" class="divide-y divide-gray-100">
+              <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-4">
+                Primary Keys
+              </h4>
+              <ul role="list" class="divide-y divide-gray-100 dark:divide-gray-700">
                 <li
                   v-for="key in primaryKeys"
                   :key="key"
@@ -308,7 +326,9 @@ function getColumnCheckConstraints(column: SQLColumnMeta): string {
                   <div class="flex min-w-0 gap-x-4">
                     <KeyIcon :style="`color: ${BRAND_COLORS.primary}`" class="h-5 w-5" />
                     <div class="min-w-0 flex-auto">
-                      <p class="text-sm font-semibold leading-6 text-gray-900">{{ key }}</p>
+                      <p class="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">
+                        {{ key }}
+                      </p>
                     </div>
                   </div>
                 </li>
@@ -317,8 +337,10 @@ function getColumnCheckConstraints(column: SQLColumnMeta): string {
 
             <!-- Foreign Keys -->
             <div v-if="foreignKeys.length > 0">
-              <h4 class="text-sm font-medium text-gray-900 mb-4">Foreign Keys</h4>
-              <ul role="list" class="divide-y divide-gray-100">
+              <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-4">
+                Foreign Keys
+              </h4>
+              <ul role="list" class="divide-y divide-gray-100 dark:divide-gray-700">
                 <li
                   v-for="key in foreignKeys"
                   :key="key.name"
@@ -327,13 +349,15 @@ function getColumnCheckConstraints(column: SQLColumnMeta): string {
                   <div class="flex min-w-0 gap-x-4">
                     <LinkIcon :style="`color: ${BRAND_COLORS.secondary}`" class="h-5 w-5" />
                     <div class="min-w-0 flex-auto">
-                      <p class="text-sm font-semibold leading-6 text-gray-900">{{ key.name }}</p>
-                      <p class="mt-1 truncate text-xs leading-5 text-gray-500">
+                      <p class="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">
+                        {{ key.name }}
+                      </p>
+                      <p class="mt-1 truncate text-xs leading-5 text-gray-500 dark:text-gray-400">
                         {{ key.sourceColumn }} → {{ key.referencedTable }}.{{
                           key.referencedColumn
                         }}
                       </p>
-                      <p class="mt-1 truncate text-xs leading-5 text-gray-500">
+                      <p class="mt-1 truncate text-xs leading-5 text-gray-500 dark:text-gray-400">
                         ON UPDATE {{ key.onUpdate }}, ON DELETE {{ key.onDelete }}
                       </p>
                     </div>
@@ -348,26 +372,48 @@ function getColumnCheckConstraints(column: SQLColumnMeta): string {
         <TabPanel>
           <div class="overflow-x-auto">
             <div class="inline-block min-w-full align-middle">
-              <div class="overflow-hidden ring-1 ring-gray-200 rounded-lg">
-                <table class="min-w-full divide-y divide-gray-300">
+              <div class="overflow-hidden ring-1 ring-gray-200 dark:ring-gray-700 rounded-lg">
+                <table class="min-w-full divide-y divide-gray-300 dark:divide-gray-700">
                   <thead>
-                    <tr class="bg-gray-50">
-                      <th class="px-3 py-2 text-left text-sm font-semibold text-gray-900">Name</th>
-                      <th class="px-3 py-2 text-left text-sm font-semibold text-gray-900">
+                    <tr class="bg-gray-50 dark:bg-gray-900">
+                      <th
+                        class="px-3 py-2 text-left text-sm font-semibold text-gray-900 dark:text-gray-100"
+                      >
+                        Name
+                      </th>
+                      <th
+                        class="px-3 py-2 text-left text-sm font-semibold text-gray-900 dark:text-gray-100"
+                      >
                         Columns
                       </th>
-                      <th class="px-3 py-2 text-left text-sm font-semibold text-gray-900">Type</th>
+                      <th
+                        class="px-3 py-2 text-left text-sm font-semibold text-gray-900 dark:text-gray-100"
+                      >
+                        Type
+                      </th>
                     </tr>
                   </thead>
-                  <tbody class="divide-y divide-gray-200 bg-white">
-                    <tr v-for="index in indexes" :key="index.name" class="hover:bg-gray-50">
-                      <td class="whitespace-nowrap px-3 py-2 text-sm font-medium text-gray-900">
+                  <tbody
+                    class="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-850"
+                  >
+                    <tr
+                      v-for="index in indexes"
+                      :key="index.name"
+                      class="hover:bg-gray-50 dark:hover:bg-gray-800"
+                    >
+                      <td
+                        class="whitespace-nowrap px-3 py-2 text-sm font-medium text-gray-900 dark:text-gray-100"
+                      >
                         {{ index.name }}
                       </td>
-                      <td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
+                      <td
+                        class="whitespace-nowrap px-3 py-2 text-sm text-gray-500 dark:text-gray-400"
+                      >
                         {{ index.columns.join(', ') }}
                       </td>
-                      <td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
+                      <td
+                        class="whitespace-nowrap px-3 py-2 text-sm text-gray-500 dark:text-gray-400"
+                      >
                         {{ index.type }}
                       </td>
                     </tr>

@@ -110,30 +110,32 @@ function getColumnType(column: SQLColumnMeta) {
   <div
     v-if="viewMeta"
     :class="[
-      'bg-white',
-      $attrs.class ? $attrs.class : 'shadow-sm ring-1 ring-gray-900/5 rounded-lg'
+      'bg-white dark:bg-gray-850',
+      $attrs.class ? $attrs.class : 'shadow-sm ring-1 ring-gray-900/5 dark:ring-gray-700 rounded-lg'
     ]"
   >
     <!-- Header removed; DatabaseObjectContainer renders tabs, title, and actions -->
 
     <!-- HeadlessUI Tab Implementation with Store Integration -->
     <TabGroup :selectedIndex="activeTabIndex" as="div" @change="onSubTabChange">
-      <TabList class="flex space-x-1 border-b border-gray-200 px-4">
+      <TabList class="flex space-x-1 border-b border-gray-200 dark:border-gray-700 px-4">
         <Tab v-for="tab in tabs" :key="tab.name" v-slot="{ selected }" as="template">
           <button
             :class="[
               'px-3 py-2 text-sm font-medium leading-5 whitespace-nowrap transition-colors duration-150',
-              'focus:outline-none focus:ring-1 ring-offset-1 ring-gray-300',
+              'focus:outline-none focus:ring-1 ring-offset-1 ring-gray-300 dark:ring-gray-600',
               selected
-                ? 'border-b-2 border-slate-500 text-slate-900 -mb-px'
-                : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                ? 'border-b-2 border-slate-500 dark:border-slate-400 text-slate-900 dark:text-slate-100 -mb-px'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
             ]"
           >
             {{ tab.name }}
             <span
               :class="[
                 'ml-2 rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors duration-150',
-                selected ? 'bg-slate-100 text-slate-600' : 'bg-gray-100 text-gray-600'
+                selected
+                  ? 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
               ]"
             >
               {{ tab.count }}
@@ -147,43 +149,62 @@ function getColumnType(column: SQLColumnMeta) {
         <TabPanel>
           <div class="overflow-x-auto">
             <div class="min-w-[640px]">
-              <div class="ring-1 ring-gray-200 rounded-lg">
-                <table class="min-w-full divide-y divide-gray-300">
+              <div class="ring-1 ring-gray-200 dark:ring-gray-700 rounded-lg">
+                <table class="min-w-full divide-y divide-gray-300 dark:divide-gray-700">
                   <thead>
-                    <tr class="bg-gray-50">
+                    <tr class="bg-gray-50 dark:bg-gray-900">
                       <th
                         scope="col"
-                        class="py-2 pl-6 pr-4 text-left text-sm font-medium text-gray-500 sm:pl-6"
+                        class="py-2 pl-6 pr-4 text-left text-sm font-medium text-gray-500 dark:text-gray-400 sm:pl-6"
                       >
                         Name
                       </th>
-                      <th scope="col" class="px-4 py-2 text-left text-sm font-medium text-gray-500">
+                      <th
+                        scope="col"
+                        class="px-4 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-400"
+                      >
                         Type
                       </th>
-                      <th scope="col" class="px-4 py-2 text-left text-sm font-medium text-gray-500">
+                      <th
+                        scope="col"
+                        class="px-4 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-400"
+                      >
                         Nullable
                       </th>
-                      <th scope="col" class="px-4 py-2 text-left text-sm font-medium text-gray-500">
+                      <th
+                        scope="col"
+                        class="px-4 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-400"
+                      >
                         Default
                       </th>
                     </tr>
                   </thead>
-                  <tbody class="divide-y divide-gray-200 bg-white">
+                  <tbody
+                    class="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-850"
+                  >
                     <tr
                       v-for="column in viewMeta.columns"
                       :key="column.name"
-                      class="hover:bg-gray-50"
+                      class="hover:bg-gray-50 dark:hover:bg-gray-800"
                     >
-                      <td class="whitespace-nowrap py-2 pl-6 pr-4 text-sm text-gray-900 sm:pl-6">
+                      <td
+                        class="whitespace-nowrap py-2 pl-6 pr-4 text-sm text-gray-900 dark:text-gray-100 sm:pl-6"
+                      >
                         {{ column.name }}
                       </td>
-                      <td class="whitespace-nowrap px-4 py-2 text-sm text-gray-500">
+                      <td
+                        class="whitespace-nowrap px-4 py-2 text-sm text-gray-500 dark:text-gray-400"
+                      >
                         {{ getColumnType(column) }}
                       </td>
-                      <td class="whitespace-nowrap px-4 py-2 text-sm text-gray-500">
+                      <td
+                        class="whitespace-nowrap px-4 py-2 text-sm text-gray-500 dark:text-gray-400"
+                      >
                         {{ column.isNullable ? 'Yes' : 'No' }}
                       </td>
-                      <td class="whitespace-nowrap px-4 py-2 text-sm text-gray-500">
+                      <td
+                        class="whitespace-nowrap px-4 py-2 text-sm text-gray-500 dark:text-gray-400"
+                      >
                         {{ getColumnDefault(column) }}
                       </td>
                     </tr>
@@ -202,9 +223,9 @@ function getColumnType(column: SQLColumnMeta) {
     </TabGroup>
 
     <!-- Dependencies -->
-    <div v-if="viewMeta.dependsOn?.length" class="mt-4">
-      <h4 class="text-sm font-medium text-gray-900 mb-2">Dependencies</h4>
-      <ul class="list-disc list-inside text-sm text-gray-600">
+    <div v-if="viewMeta.dependsOn?.length" class="mt-4 px-4">
+      <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">Dependencies</h4>
+      <ul class="list-disc list-inside text-sm text-gray-600 dark:text-gray-400">
         <li v-for="dep in viewMeta.dependsOn" :key="dep">{{ dep }}</li>
       </ul>
     </div>
@@ -215,11 +236,15 @@ function getColumnType(column: SQLColumnMeta) {
 @reference '../../assets/style.css';
 
 .hljs {
-  @apply bg-white;
+  @apply bg-white dark:bg-gray-850;
   color: #24292e;
   font-family:
     'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
     'Courier New', monospace;
+}
+
+.dark .hljs {
+  color: #e6edf3;
 }
 
 /* SQL specific syntax highlighting */

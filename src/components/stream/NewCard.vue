@@ -1,13 +1,17 @@
 <template>
   <div class="w-full p-10">
     <div
-      class="bg-white shadow-md rounded-lg overflow-hidden cursor-pointer transform hover:scale-105 duration-300 ease-in-out flex flex-col h-full"
+      class="bg-white dark:bg-gray-850 shadow-md dark:shadow-gray-900/30 rounded-lg overflow-hidden cursor-pointer transform hover:scale-105 duration-300 ease-in-out flex flex-col h-full border border-gray-200 dark:border-gray-700"
       @click="addStream"
     >
       <div class="flex-grow flex flex-col space-y-2 p-10 justify-center items-center">
         <img class="w-20 h-20 mb-12" src="/images/streams/add-stream.svg" alt="Create new stream" />
-        <div class="text-lg font-semibold text-gray-800 text-center">Create New Stream</div>
-        <p class="text-gray-600 text-center mb-4">Click here to create a new data stream</p>
+        <div class="text-lg font-semibold text-gray-800 dark:text-gray-200 text-center">
+          Create New Stream
+        </div>
+        <p class="text-gray-600 dark:text-gray-400 text-center mb-4">
+          Click here to create a new data stream
+        </p>
       </div>
     </div>
   </div>

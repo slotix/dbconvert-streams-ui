@@ -35,20 +35,24 @@ const formattedCode = computed(() => {
 </script>
 
 <template>
-  <div class="rounded-lg overflow-hidden border border-gray-200">
-    <div class="flex items-center justify-between px-4 py-2 bg-gray-100 border-b border-gray-200">
-      <span class="text-sm font-medium text-gray-700">{{
+  <div class="rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+    <div
+      class="flex items-center justify-between px-4 py-2 bg-gray-100 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700"
+    >
+      <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{
         index ? `${title} ${index}` : title
       }}</span>
       <CopyButton :text="code" />
     </div>
-    <div class="relative bg-white">
-      <div class="absolute inset-y-0 left-0 w-12 bg-[#f8f9fa] border-r border-gray-200">
+    <div class="relative bg-white dark:bg-black">
+      <div
+        class="absolute inset-y-0 left-0 w-12 bg-[#f8f9fa] dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700"
+      >
         <div class="py-8">
           <div
             v-for="n in formattedCode.split('\n').length"
             :key="n"
-            class="h-6 flex items-end justify-end px-3 text-xs font-mono text-gray-400 pb-1"
+            class="h-6 flex items-end justify-end px-3 text-xs font-mono text-gray-400 dark:text-gray-500 pb-1"
           >
             {{ n }}
           </div>
@@ -58,7 +62,7 @@ const formattedCode = computed(() => {
         <pre
           v-highlightjs
           class="pl-14 py-4"
-        ><code class="language-sql block text-sm leading-6 select-text">{{ formattedCode }}</code></pre>
+        ><code class="language-sql block text-sm leading-6 select-text dark:text-gray-200">{{ formattedCode }}</code></pre>
       </div>
     </div>
   </div>
@@ -92,14 +96,18 @@ pre {
 }
 
 ::selection {
-  @apply bg-blue-100;
+  @apply bg-blue-100 dark:bg-blue-800;
 }
 
 /* Syntax highlighting */
 .hljs {
-  @apply bg-white font-mono;
+  @apply bg-white dark:bg-black font-mono;
   color: #24292e;
   padding: 0;
+}
+
+.dark .hljs {
+  color: #e6edf3;
 }
 
 .hljs-keyword {

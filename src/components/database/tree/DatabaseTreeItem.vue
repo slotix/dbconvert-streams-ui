@@ -175,8 +175,8 @@ function handleFlatObjectContextMenu(payload: {
   <div>
     <div
       :class="[
-        'flex items-center px-2 py-1.5 text-sm text-gray-700 rounded-md hover:bg-gray-100 cursor-pointer select-none',
-        isSelected ? 'bg-gray-100 ring-1 ring-gray-300' : ''
+        'flex items-center px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer select-none',
+        isSelected ? 'bg-gray-100 dark:bg-gray-800 ring-1 ring-gray-300 dark:ring-gray-600' : ''
       ]"
       :data-explorer-db="`${connectionId}:${database.name}`"
       @click="$emit('select-database', { connectionId, database: database.name })"
@@ -189,13 +189,20 @@ function handleFlatObjectContextMenu(payload: {
       />
       <span class="font-medium">
         <template v-for="(p, i) in highlightParts(database.name)" :key="i">
-          <span v-if="p.match" class="bg-yellow-200/60 rounded px-0.5" v-text="p.text"></span>
+          <span
+            v-if="p.match"
+            class="bg-yellow-200/60 dark:bg-yellow-500/40 rounded px-0.5"
+            v-text="p.text"
+          ></span>
           <span v-else v-text="p.text"></span>
         </template>
       </span>
     </div>
 
-    <div v-if="isExpanded" class="ml-4 border-l border-gray-200 pl-2 space-y-1">
+    <div
+      v-if="isExpanded"
+      class="ml-4 border-l border-gray-200 dark:border-gray-700 pl-2 space-y-1"
+    >
       <div v-if="metadataLoaded">
         <!-- Show schemas only for PostgreSQL & Snowflake -->
         <div v-if="hasSchemas">
@@ -216,10 +223,10 @@ function handleFlatObjectContextMenu(payload: {
         <div v-else>
           <!-- Flat lists for DBs without schemas (e.g., MySQL) -->
           <div
-            class="text-xs uppercase tracking-wide text-gray-400 px-2 mt-1 flex items-center justify-between"
+            class="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 px-2 mt-1 flex items-center justify-between"
           >
             <span>Tables</span>
-            <span class="text-[11px] font-medium text-gray-500 normal-case">
+            <span class="text-[11px] font-medium text-gray-500 dark:text-gray-400 normal-case">
               {{ flatTables.length }}
             </span>
           </div>
@@ -236,10 +243,10 @@ function handleFlatObjectContextMenu(payload: {
             @contextmenu="handleFlatObjectContextMenu"
           />
           <div
-            class="text-xs uppercase tracking-wide text-gray-400 px-2 mt-2 flex items-center justify-between"
+            class="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 px-2 mt-2 flex items-center justify-between"
           >
             <span>Views</span>
-            <span class="text-[11px] font-medium text-gray-500 normal-case">
+            <span class="text-[11px] font-medium text-gray-500 dark:text-gray-400 normal-case">
               {{ flatViews.length }}
             </span>
           </div>
@@ -256,7 +263,7 @@ function handleFlatObjectContextMenu(payload: {
           />
         </div>
       </div>
-      <div v-else class="text-xs text-gray-500 px-2 py-1">Loading metadata…</div>
+      <div v-else class="text-xs text-gray-500 dark:text-gray-400 px-2 py-1">Loading metadata…</div>
     </div>
   </div>
 </template>

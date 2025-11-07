@@ -531,22 +531,22 @@ watch(
 <template>
   <!-- Enhanced sidebar with gradient background and floating effect -->
   <div
-    class="bg-linear-to-br from-white via-slate-50/50 to-white shadow-xl rounded-2xl overflow-hidden h-[calc(100vh-140px)] flex flex-col transition-all duration-300 hover:shadow-2xl border border-slate-200/50"
+    class="bg-linear-to-br from-white via-slate-50/50 to-white dark:from-gray-850 dark:via-gray-850 dark:to-gray-900 shadow-xl dark:shadow-gray-900/50 rounded-2xl overflow-hidden h-[calc(100vh-140px)] flex flex-col transition-all duration-300 hover:shadow-2xl dark:hover:shadow-gray-900/70 border border-slate-200/50 dark:border-gray-700"
   >
     <!-- Scrollable tree content area with smooth scrolling and custom scrollbar -->
     <div class="flex-1 overflow-y-auto overscroll-contain p-3 scrollbar-thin">
       <!-- Loading state with centered spinner and blue-green gradient -->
       <div
         v-if="isLoadingConnections"
-        class="flex flex-col items-center justify-center py-16 text-gray-500"
+        class="flex flex-col items-center justify-center py-16 text-gray-500 dark:text-gray-400"
       >
         <div
           class="relative w-16 h-16 mb-4 animate-spin rounded-full bg-linear-to-tr from-blue-500 to-teal-500 p-1"
         >
-          <div class="bg-white rounded-full w-full h-full"></div>
+          <div class="bg-white dark:bg-gray-850 rounded-full w-full h-full"></div>
         </div>
-        <p class="text-sm font-medium text-slate-700">Loading connections...</p>
-        <p class="text-xs text-slate-500 mt-1">Please wait</p>
+        <p class="text-sm font-medium text-slate-700 dark:text-slate-300">Loading connections...</p>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Please wait</p>
       </div>
 
       <!-- Main content area (show connections even if there was a load error) -->
@@ -557,12 +557,14 @@ watch(
           class="flex flex-col items-center justify-center py-20 px-6"
         >
           <div
-            class="bg-linear-to-br from-slate-100 to-slate-50 rounded-full p-6 mb-5 shadow-inner border border-slate-200"
+            class="bg-linear-to-br from-slate-100 to-slate-50 dark:from-gray-800 dark:to-gray-700 rounded-full p-6 mb-5 shadow-inner border border-slate-200 dark:border-gray-700"
           >
-            <CubeIcon class="h-10 w-10 text-slate-400" />
+            <CubeIcon class="h-10 w-10 text-slate-400 dark:text-gray-500" />
           </div>
-          <p class="text-base font-semibold text-slate-700 mb-2">No connections found</p>
-          <p class="text-sm text-slate-500 text-center">
+          <p class="text-base font-semibold text-slate-700 dark:text-slate-300 mb-2">
+            No connections found
+          </p>
+          <p class="text-sm text-slate-500 dark:text-slate-400 text-center">
             {{ searchQuery ? 'Try adjusting your search' : 'Add a connection to get started' }}
           </p>
         </div>
@@ -639,13 +641,25 @@ watch(
   transition: background-color 0.2s;
 }
 
+.dark .scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: rgb(75, 85, 99);
+}
+
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
   background-color: rgb(156, 163, 175);
+}
+
+.dark .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(107, 114, 128);
 }
 
 /* For Firefox */
 .scrollbar-thin {
   scrollbar-width: thin;
   scrollbar-color: rgb(209, 213, 219) transparent;
+}
+
+.dark .scrollbar-thin {
+  scrollbar-color: rgb(75, 85, 99) transparent;
 }
 </style>

@@ -21,16 +21,23 @@ const { error } = storeToRefs(commonStore)
     leave-to="opacity-0"
   >
     <slot v-if="error" :error="error">
-      <div class="rounded-md bg-red-50 p-4">
+      <div class="rounded-md bg-red-50 dark:bg-red-900/20 p-4">
         <div class="flex">
           <div class="shrink-0">
-            <XCircleIcon v-if="!error.isRetrying" class="h-5 w-5 text-red-400" />
-            <ArrowPathIcon v-else class="h-5 w-5 text-yellow-400 animate-spin" />
+            <XCircleIcon v-if="!error.isRetrying" class="h-5 w-5 text-red-400 dark:text-red-500" />
+            <ArrowPathIcon
+              v-else
+              class="h-5 w-5 text-yellow-400 dark:text-yellow-500 animate-spin"
+            />
           </div>
           <div class="ml-3">
             <h3
               class="text-sm font-medium"
-              :class="error.isRetrying ? 'text-yellow-800' : 'text-red-800'"
+              :class="
+                error.isRetrying
+                  ? 'text-yellow-800 dark:text-yellow-300'
+                  : 'text-red-800 dark:text-red-300'
+              "
             >
               {{ error.message }}
             </h3>

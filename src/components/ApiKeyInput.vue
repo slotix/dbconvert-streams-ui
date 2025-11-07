@@ -1,22 +1,25 @@
 <template>
-  <div v-if="shouldShowApiKeyPrompt" class="fixed inset-0 bg-gray-500/40 transition-opacity z-40">
+  <div
+    v-if="shouldShowApiKeyPrompt"
+    class="fixed inset-0 bg-gray-500/40 dark:bg-black/60 transition-opacity z-40"
+  >
     <div class="fixed inset-0 z-50 overflow-y-auto">
       <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
         <div
-          class="relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6 backdrop-blur-sm"
+          class="relative transform overflow-hidden rounded-lg bg-white dark:bg-gray-850 px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6 backdrop-blur-sm"
         >
           <div>
             <div
-              class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-gray-100"
+              class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-700"
             >
-              <key-icon class="h-6 w-6 text-gray-600" aria-hidden="true" />
+              <key-icon class="h-6 w-6 text-gray-600 dark:text-gray-300" aria-hidden="true" />
             </div>
             <div class="mt-3 text-center sm:mt-5">
-              <h3 class="text-base font-semibold leading-6 text-gray-900">
+              <h3 class="text-base font-semibold leading-6 text-gray-900 dark:text-gray-100">
                 {{ isKeyExpired ? 'API Key Expired' : 'Enter your API Key' }}
               </h3>
               <div class="mt-2">
-                <p class="text-sm text-gray-500">
+                <p class="text-sm text-gray-500 dark:text-gray-400">
                   {{
                     isKeyExpired
                       ? 'Your API key has expired or is no longer valid. Please enter a new API key to continue.'
@@ -27,7 +30,7 @@
                     href="https://streams.dbconvert.com/account"
                     target="_blank"
                     rel="noopener noreferrer"
-                    class="text-blue-600 hover:text-blue-800 font-medium"
+                    class="text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 font-medium"
                   >
                     Create an account
                   </a>

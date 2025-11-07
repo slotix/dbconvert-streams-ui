@@ -35,19 +35,29 @@ function toggleExpand() {
 
 <template>
   <div
-    :class="['border rounded', hasError ? 'border-red-300 bg-red-50' : 'border-gray-200 bg-white']"
+    :class="[
+      'border rounded',
+      hasError
+        ? 'border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/20'
+        : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-850'
+    ]"
   >
     <!-- Header (if title provided) -->
     <button
       v-if="title"
-      class="w-full flex items-center gap-2 px-4 py-2.5 hover:bg-gray-100 transition-colors text-left"
+      class="w-full flex items-center gap-2 px-4 py-2.5 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-left"
       @click="toggleExpand"
     >
       <component
         :is="isExpanded ? ChevronDownIcon : ChevronRightIcon"
-        class="w-4 h-4 text-gray-500 flex-shrink-0"
+        class="w-4 h-4 text-gray-500 dark:text-gray-400 flex-shrink-0"
       />
-      <span :class="['text-sm font-semibold', hasError ? 'text-red-700' : 'text-gray-700']">
+      <span
+        :class="[
+          'text-sm font-semibold',
+          hasError ? 'text-red-700 dark:text-red-400' : 'text-gray-700 dark:text-gray-300'
+        ]"
+      >
         {{ title }}
       </span>
     </button>

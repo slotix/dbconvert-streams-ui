@@ -25,17 +25,20 @@
             leave-to="opacity-0 scale-95"
           >
             <DialogPanel
-              class="w-full max-w-4xl transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all"
+              class="w-full max-w-4xl transform overflow-hidden rounded-2xl bg-white dark:bg-gray-850 p-6 text-left align-middle shadow-xl dark:shadow-gray-900/50 transition-all"
             >
               <!-- Header -->
-              <DialogTitle as="h3" class="text-lg font-medium leading-6 text-gray-900 mb-6">
+              <DialogTitle
+                as="h3"
+                class="text-lg font-medium leading-6 text-gray-900 dark:text-gray-100 mb-6"
+              >
                 <div class="flex items-center justify-between">
                   <div class="flex items-center">
-                    <FolderOpenIcon class="h-6 w-6 text-teal-600 mr-2" />
+                    <FolderOpenIcon class="h-6 w-6 text-teal-600 dark:text-teal-400 mr-2" />
                     <span>Select Folder</span>
                   </div>
                   <button
-                    class="text-gray-400 hover:text-gray-600 focus:outline-none transition-colors"
+                    class="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none transition-colors"
                     @click="closeModal"
                   >
                     <XMarkIcon class="h-6 w-6" />
@@ -44,18 +47,23 @@
               </DialogTitle>
 
               <!-- Error Display -->
-              <div v-if="error" class="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
-                <p class="text-sm text-red-800">{{ error }}</p>
+              <div
+                v-if="error"
+                class="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md"
+              >
+                <p class="text-sm text-red-800 dark:text-red-300">{{ error }}</p>
               </div>
 
               <!-- Quick Access Shortcuts -->
               <div v-if="roots.length > 0" class="mb-6">
-                <h4 class="text-sm font-medium text-gray-700 mb-3">Quick Access</h4>
+                <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                  Quick Access
+                </h4>
                 <div class="flex flex-wrap gap-2">
                   <button
                     v-for="root in roots"
                     :key="root"
-                    class="px-3 py-2 text-sm bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                    class="px-3 py-2 text-sm bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-md hover:bg-blue-100 dark:hover:bg-blue-900/50 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:ring-offset-2 dark:focus:ring-offset-gray-850"
                     @click="navigateToPath(root)"
                   >
                     {{ getFolderDisplayName(root) }}
@@ -74,15 +82,17 @@
                     >
                       <button
                         v-if="index < pathSegments.length - 1"
-                        class="text-blue-600 hover:text-blue-800 focus:outline-none"
+                        class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 focus:outline-none"
                         @click="navigateToSegment(index)"
                       >
                         {{ segment.name }}
                       </button>
-                      <span v-else class="text-gray-700 font-medium">{{ segment.name }}</span>
+                      <span v-else class="text-gray-700 dark:text-gray-300 font-medium">{{
+                        segment.name
+                      }}</span>
                       <ChevronRightIcon
                         v-if="index < pathSegments.length - 1"
-                        class="h-4 w-4 text-gray-400 mx-2"
+                        class="h-4 w-4 text-gray-400 dark:text-gray-500 mx-2"
                       />
                     </li>
                   </ol>
@@ -94,35 +104,49 @@
                 <div v-if="loading" class="flex justify-center py-8">
                   <Spinner size="sm" text="Loading..." />
                 </div>
-                <div v-else-if="entries.length === 0" class="text-center py-8 text-gray-500">
+                <div
+                  v-else-if="entries.length === 0"
+                  class="text-center py-8 text-gray-500 dark:text-gray-400"
+                >
                   This folder is empty
                 </div>
-                <div v-else class="border border-gray-200 rounded-md max-h-96 overflow-y-auto">
+                <div
+                  v-else
+                  class="border border-gray-200 dark:border-gray-700 rounded-md max-h-96 overflow-y-auto bg-white dark:bg-gray-900"
+                >
                   <div
                     v-for="entry in sortedEntries"
                     :key="entry.path"
-                    class="flex items-center px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
-                    :class="{ 'bg-blue-50': selectedPath === entry.path }"
+                    class="flex items-center px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer border-b border-gray-100 dark:border-gray-800 last:border-b-0"
+                    :class="{ 'bg-blue-50 dark:bg-blue-900/30': selectedPath === entry.path }"
                     @click="selectEntry(entry)"
                     @dblclick="entry.type === 'dir' ? navigateToPath(entry.path) : null"
                   >
                     <!-- Icon -->
                     <div class="shrink-0 mr-3">
-                      <FolderIcon v-if="entry.type === 'dir'" class="h-5 w-5 text-teal-500" />
-                      <DocumentIcon v-else class="h-5 w-5 text-gray-400" />
+                      <FolderIcon
+                        v-if="entry.type === 'dir'"
+                        class="h-5 w-5 text-teal-500 dark:text-teal-400"
+                      />
+                      <DocumentIcon v-else class="h-5 w-5 text-gray-400 dark:text-gray-500" />
                     </div>
 
                     <!-- Name and Size -->
                     <div class="grow min-w-0">
-                      <p class="text-sm font-medium text-gray-900 truncate">{{ entry.name }}</p>
-                      <p v-if="entry.type === 'file' && entry.size" class="text-xs text-gray-500">
+                      <p class="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                        {{ entry.name }}
+                      </p>
+                      <p
+                        v-if="entry.type === 'file' && entry.size"
+                        class="text-xs text-gray-500 dark:text-gray-400"
+                      >
                         {{ formatFileSize(entry.size) }}
                       </p>
                     </div>
 
                     <!-- Selection indicator -->
                     <div v-if="selectedPath === entry.path" class="shrink-0 ml-2">
-                      <CheckCircleIcon class="h-5 w-5 text-blue-500" />
+                      <CheckCircleIcon class="h-5 w-5 text-blue-500 dark:text-blue-400" />
                     </div>
                   </div>
                 </div>
@@ -130,18 +154,20 @@
 
               <!-- Selected Path Display -->
               <div class="mb-6">
-                <label class="block text-sm font-medium text-gray-700 mb-2">Selected Path</label>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                  >Selected Path</label
+                >
                 <div class="relative">
                   <input
                     v-model="selectedPath"
                     type="text"
-                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                    :class="{ 'bg-gray-50': !manualPathEdit }"
+                    class="block w-full rounded-md border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-sm dark:shadow-gray-900/30 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500 dark:focus:ring-blue-400 sm:text-sm placeholder-gray-400 dark:placeholder-gray-500"
+                    :class="{ 'bg-gray-50 dark:bg-gray-800': !manualPathEdit }"
                     :readonly="!manualPathEdit"
                     placeholder="No folder selected"
                   />
                   <button
-                    class="absolute right-2 top-2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                    class="absolute right-2 top-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none"
                     @click="toggleManualPathEdit"
                   >
                     <CheckIcon v-if="manualPathEdit" class="h-4 w-4" />
@@ -154,7 +180,7 @@
               <div class="flex justify-between items-center">
                 <button
                   v-if="currentPath !== initialPath"
-                  class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                  class="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-700 shadow-sm dark:shadow-gray-900/30 text-sm leading-4 font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-850 hover:bg-gray-50 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-850 focus:ring-blue-500 dark:focus:ring-blue-400 transition-colors"
                   @click="goUp"
                 >
                   <ArrowLeftIcon class="h-4 w-4 mr-1" />

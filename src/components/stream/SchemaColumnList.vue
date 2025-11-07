@@ -3,12 +3,12 @@
     <div
       v-for="col in columns"
       :key="col.name"
-      class="px-4 py-2.5 text-sm flex items-center justify-between hover:bg-gray-50 transition-colors"
+      class="px-4 py-2.5 text-sm flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
       :class="getDiffClass(col)"
     >
       <div class="flex items-center gap-2 min-w-0 flex-1">
-        <span class="font-mono font-medium text-gray-900">{{ col.name }}</span>
-        <span class="text-gray-600 text-xs">{{ col.dataType }}</span>
+        <span class="font-mono font-medium text-gray-900 dark:text-gray-100">{{ col.name }}</span>
+        <span class="text-gray-600 dark:text-gray-400 text-xs">{{ col.dataType }}</span>
         <span
           v-if="col.isPrimaryKey"
           class="px-1.5 py-0.5 text-xs bg-blue-100 text-blue-700 rounded font-medium"
@@ -25,7 +25,9 @@
 
       <div v-if="differences[col.name]" class="flex items-center gap-1.5 ml-2 shrink-0">
         <component :is="getDiffIcon(col)" class="w-3.5 h-3.5" :class="getDiffIconColor(col)" />
-        <span class="text-xs text-gray-600">{{ differences[col.name].label }}</span>
+        <span class="text-xs text-gray-600 dark:text-gray-400">{{
+          differences[col.name].label
+        }}</span>
       </div>
     </div>
   </div>

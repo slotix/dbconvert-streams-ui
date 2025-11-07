@@ -51,14 +51,14 @@ defineExpose({
 <template>
   <div class="relative w-full">
     <div class="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
-      <FunnelIcon :class="[iconClass, 'text-gray-400']" />
+      <FunnelIcon :class="[iconClass, 'text-gray-400 dark:text-gray-500']" />
     </div>
     <input
       ref="inputRef"
       v-model="local"
       type="text"
       :placeholder="props.placeholder || 'Filter...'"
-      class="border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-slate-400 w-full pl-8"
+      class="border border-gray-300 dark:border-gray-700 rounded focus:outline-none focus:ring-1 focus:ring-slate-400 dark:focus:ring-gray-600 w-full pl-8 bg-white dark:bg-gray-850 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
       :class="sizes[props.size || 'sm']"
     />
   </div>

@@ -2,17 +2,19 @@
   <div v-if="isPaginatorVisible" class="mt-4 mt-4 flex items-center">
     <button
       type="button"
-      class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:mt-0 sm:ml-3 sm:w-auto"
+      class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-700 shadow-sm dark:shadow-gray-900/30 px-4 py-2 bg-white dark:bg-gray-850 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-900 focus:ring-gray-500 dark:focus:ring-gray-600 sm:mt-0 sm:ml-3 sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
       :disabled="previousPageDisabled"
       @click="previousPage"
     >
       <ChevronLeftIcon class="h-6 w-6" aria-hidden="true" />
       Prev
     </button>
-    <span class="mx-3">Page {{ currentPage }} of {{ maxPage }} </span>
+    <span class="mx-3 text-gray-900 dark:text-gray-100"
+      >Page {{ currentPage }} of {{ maxPage }}
+    </span>
     <button
       type="button"
-      class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:mt-0 sm:ml-3 sm:w-auto"
+      class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-700 shadow-sm dark:shadow-gray-900/30 px-4 py-2 bg-white dark:bg-gray-850 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-900 focus:ring-gray-500 dark:focus:ring-gray-600 sm:mt-0 sm:ml-3 sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
       :disabled="nextPageDisabled"
       @click="nextPage"
     >

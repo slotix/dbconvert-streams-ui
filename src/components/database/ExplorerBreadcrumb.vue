@@ -64,40 +64,45 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
 
 <template>
   <nav aria-label="Breadcrumb" class="text-sm relative">
-    <ol class="flex items-center gap-2 text-gray-600">
+    <ol class="flex items-center gap-2 text-gray-600 dark:text-gray-400">
       <li v-if="props.connectionLabel" class="inline-flex items-center gap-2">
-        <span class="text-gray-700 font-medium">{{ props.connectionLabel }}</span>
+        <span class="text-gray-700 dark:text-gray-300 font-medium">{{
+          props.connectionLabel
+        }}</span>
       </li>
       <li v-if="props.database" class="inline-flex items-center gap-2">
-        <span v-if="props.connectionLabel" class="text-gray-400">/</span>
+        <span v-if="props.connectionLabel" class="text-gray-400 dark:text-gray-500">/</span>
         <button
-          class="text-gray-700 font-medium hover:underline"
+          class="text-gray-700 dark:text-gray-300 font-medium hover:underline"
           @click="emit('navigate', { level: 'database' })"
         >
           {{ props.database }}
         </button>
       </li>
       <li v-if="props.schema" class="inline-flex items-center gap-2">
-        <span class="text-gray-400">/</span>
+        <span class="text-gray-400 dark:text-gray-500">/</span>
         <button
-          class="text-gray-700 font-medium hover:underline"
+          class="text-gray-700 dark:text-gray-300 font-medium hover:underline"
           @click="emit('navigate', { level: 'schema' })"
         >
           {{ props.schema }}
         </button>
       </li>
       <li v-if="props.type" class="inline-flex items-center gap-2">
-        <span class="text-gray-400">/</span>
-        <button class="text-gray-700 hover:underline" @click="emit('navigate', { level: 'type' })">
+        <span class="text-gray-400 dark:text-gray-500">/</span>
+        <button
+          class="text-gray-700 dark:text-gray-300 hover:underline"
+          @click="emit('navigate', { level: 'type' })"
+        >
           {{ labelForType(props.type) }}
         </button>
       </li>
       <li v-if="props.name" class="inline-flex items-center gap-2">
-        <span class="text-gray-400">/</span>
+        <span class="text-gray-400 dark:text-gray-500">/</span>
         <button
           ref="anchorRef"
           type="button"
-          class="text-gray-900 font-medium hover:underline"
+          class="text-gray-900 dark:text-gray-100 font-medium hover:underline"
           title="Switch object"
           @click.stop="showPicker = !showPicker"
         >
@@ -110,7 +115,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
     <div
       v-if="showPicker"
       ref="menuRef"
-      class="absolute z-30 mt-2 w-80 bg-white border border-gray-200 rounded-md shadow-lg p-2"
+      class="absolute z-30 mt-2 w-80 bg-white dark:bg-gray-850 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg dark:shadow-gray-900/50 p-2"
       style="left: 0"
     >
       <SearchInput v-model="search" placeholder="Search tables or views…" size="md" />
@@ -119,21 +124,27 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
         <button
           v-for="o in filtered"
           :key="`${o.schema || ''}:${o.type}:${o.name}`"
-          class="w-full text-left px-2 py-1.5 text-sm hover:bg-gray-100 rounded flex items-center gap-2"
+          class="w-full text-left px-2 py-1.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 rounded flex items-center gap-2"
           @click="onPick(o)"
         >
           <ObjectIcon :object-type="o.type" />
-          <span class="text-gray-700">
+          <span class="text-gray-700 dark:text-gray-300">
             <template
               v-for="(p, i) in highlightParts((o.schema ? `${o.schema}.` : '') + o.name, search)"
               :key="i"
             >
-              <span v-if="p.match" class="bg-yellow-200/60 rounded px-0.5" v-text="p.text"></span>
+              <span
+                v-if="p.match"
+                class="bg-yellow-200/60 dark:bg-yellow-500/40 rounded px-0.5"
+                v-text="p.text"
+              ></span>
               <span v-else v-text="p.text"></span>
             </template>
           </span>
         </button>
-        <div v-if="!filtered.length" class="text-xs text-gray-500 px-2 py-3">No matches</div>
+        <div v-if="!filtered.length" class="text-xs text-gray-500 dark:text-gray-400 px-2 py-3">
+          No matches
+        </div>
       </div>
     </div>
   </nav>

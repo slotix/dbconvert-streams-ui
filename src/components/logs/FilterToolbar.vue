@@ -63,7 +63,7 @@ onBeforeUnmount(() => {
 
 <template>
   <div
-    class="flex items-center gap-2 px-4 py-2 bg-white border-b border-gray-200 shadow-sm flex-wrap"
+    class="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-850 border-b border-gray-200 dark:border-gray-700 shadow-sm flex-wrap"
   >
     <!-- Left Filter Group (via slot) -->
     <div class="flex items-center gap-2">

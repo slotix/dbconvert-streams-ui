@@ -784,7 +784,7 @@ onBeforeUnmount(() => {
     <!-- SQL Query Banner (like DataGrip) -->
     <div
       v-if="fullSqlQuery"
-      class="mb-3 bg-amber-50 border border-amber-200 rounded-md overflow-hidden"
+      class="mb-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-md overflow-hidden"
     >
       <div class="flex items-start gap-2 px-3 py-2">
         <!-- SQL Content -->
@@ -805,7 +805,7 @@ onBeforeUnmount(() => {
           <button
             v-if="needsTruncation"
             type="button"
-            class="px-2 py-1 text-xs text-amber-700 hover:bg-amber-100 rounded transition-colors"
+            class="px-2 py-1 text-xs text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-800/30 rounded transition-colors"
             :title="isSqlBannerExpanded ? 'Collapse' : 'Expand'"
             @click="toggleSqlBanner"
           >
@@ -815,7 +815,7 @@ onBeforeUnmount(() => {
           <!-- Clear filters button -->
           <button
             type="button"
-            class="px-2 py-1 text-xs text-amber-700 hover:bg-amber-100 rounded transition-colors flex items-center gap-1"
+            class="px-2 py-1 text-xs text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-800/30 rounded transition-colors flex items-center gap-1"
             title="Clear all filters and sorting"
             @click="clearAllFilters"
           >
@@ -838,7 +838,7 @@ onBeforeUnmount(() => {
       v-if="!isView && approxRows && approxRows > 1000000"
       class="mb-3 flex items-center justify-between"
     >
-      <span class="text-xs text-blue-600 flex items-center gap-1">
+      <span class="text-xs text-blue-600 dark:text-blue-400 flex items-center gap-1">
         <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
           <path
             fill-rule="evenodd"
@@ -853,7 +853,7 @@ onBeforeUnmount(() => {
     <!-- Error message -->
     <div
       v-if="error"
-      class="mb-3 p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-700"
+      class="mb-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-md text-sm text-red-700 dark:text-red-300"
     >
       {{ error }}
     </div>
@@ -884,7 +884,7 @@ onBeforeUnmount(() => {
         <!-- Approximate count hint -->
         <span
           v-if="!isView && totalRowCount > 0 && exactRowCount === null"
-          class="text-xs text-gray-500 flex items-center gap-1"
+          class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1"
         >
           <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
             <path
@@ -897,8 +897,15 @@ onBeforeUnmount(() => {
         </span>
 
         <!-- Exact count result -->
-        <span v-if="exactRowCount !== null" class="text-sm text-gray-600 flex items-center gap-1">
-          <svg class="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+        <span
+          v-if="exactRowCount !== null"
+          class="text-sm text-gray-600 dark:text-gray-300 flex items-center gap-1"
+        >
+          <svg
+            class="w-4 h-4 text-green-600 dark:text-green-400"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
             <path
               fill-rule="evenodd"
               d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
@@ -907,14 +914,17 @@ onBeforeUnmount(() => {
           </svg>
           <span
             >Exact count:
-            <span class="font-semibold text-green-600">{{
+            <span class="font-semibold text-green-600 dark:text-green-400">{{
               exactRowCount.toLocaleString()
             }}</span></span
           >
         </span>
 
         <!-- Error display -->
-        <span v-if="countError" class="text-sm text-red-600 flex items-center gap-1">
+        <span
+          v-if="countError"
+          class="text-sm text-red-600 dark:text-red-400 flex items-center gap-1"
+        >
           <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
             <path
               fill-rule="evenodd"
@@ -931,7 +941,7 @@ onBeforeUnmount(() => {
         v-if="exactRowCount === null"
         type="button"
         :disabled="isCountingRows"
-        class="text-xs text-teal-600 hover:text-teal-800 bg-teal-50 hover:bg-teal-100 rounded-full px-3 py-1 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5 w-fit"
+        class="text-xs text-teal-600 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-300 bg-teal-50 dark:bg-teal-900/20 hover:bg-teal-100 dark:hover:bg-teal-800/30 rounded-full px-3 py-1 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5 w-fit"
         :title="`Execute COUNT(*) query to get exact ${isView ? 'row' : 'total'} count`"
         @click="calculateExactCount"
       >

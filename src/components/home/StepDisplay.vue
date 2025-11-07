@@ -1,6 +1,6 @@
 <!-- src/components/home/StepDisplay.vue -->
 <template>
-  <div class="bg-white p-6">
+  <div class="bg-white dark:bg-gray-850 p-6">
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
       <div v-for="(step, index) in homeSteps" :key="step.id" class="relative">
         <!-- Step Container -->
@@ -8,9 +8,11 @@
           <!-- Step Number -->
           <div class="hidden md:flex flex-shrink-0 mt-4">
             <div
-              class="w-10 h-10 flex items-center justify-center bg-gray-50 rounded-full border border-gray-200"
+              class="w-10 h-10 flex items-center justify-center bg-gray-50 dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700"
             >
-              <span class="text-lg font-bold text-gray-700">{{ index + 1 }}</span>
+              <span class="text-lg font-bold text-gray-700 dark:text-gray-300">{{
+                index + 1
+              }}</span>
             </div>
           </div>
 
@@ -27,13 +29,15 @@
           <!-- Step Content -->
           <div class="flex-auto">
             <!-- Mobile Step Number -->
-            <div class="md:hidden text-sm font-medium text-gray-500 mb-2">Step {{ index + 1 }}</div>
+            <div class="md:hidden text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+              Step {{ index + 1 }}
+            </div>
 
             <!-- Title and Description -->
-            <h3 class="text-lg font-semibold text-gray-800 mb-2">
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
               {{ step.title }}
             </h3>
-            <p class="text-sm text-gray-600">
+            <p class="text-sm text-gray-600 dark:text-gray-400">
               {{ step.description }}
             </p>
 
@@ -56,7 +60,7 @@
         href="https://docs.dbconvert.com"
         target="_blank"
         rel="noopener noreferrer"
-        class="inline-flex items-center text-blue-600 hover:text-blue-800"
+        class="inline-flex items-center text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
       >
         <span class="text-base">View Documentation</span>
         <svg class="w-5 h-5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">

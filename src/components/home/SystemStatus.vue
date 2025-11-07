@@ -2,17 +2,17 @@
   <div class="p-6 space-y-6">
     <div class="flex items-center justify-between">
       <h2
-        class="text-xl font-semibold bg-linear-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent"
+        class="text-xl font-semibold bg-linear-to-r from-slate-900 to-slate-700 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent"
       >
         System Status
       </h2>
       <!-- Show initialization notice during grace period -->
       <div
         v-if="isWithinGracePeriod() && !isInitialLoading"
-        class="flex items-center text-sm text-blue-600"
+        class="flex items-center text-sm text-blue-600 dark:text-blue-400"
       >
         <svg
-          class="animate-spin -ml-1 mr-2 h-4 w-4 text-blue-600"
+          class="animate-spin -ml-1 mr-2 h-4 w-4 text-blue-600 dark:text-blue-400"
           xmlns="http://www.w3.org/2000/svg"
           fill="none"
           viewBox="0 0 24 24"
@@ -40,17 +40,21 @@
       <div
         v-for="i in 6"
         :key="i"
-        class="h-16 bg-linear-to-r from-slate-100 to-slate-50 rounded-xl"
+        class="h-16 bg-linear-to-r from-slate-100 to-slate-50 dark:from-gray-800 dark:to-gray-850 rounded-xl"
       ></div>
     </div>
 
     <!-- Initialization Help Text -->
     <div
       v-else-if="isWithinGracePeriod() && hasInitializingServices()"
-      class="mb-4 p-4 bg-linear-to-br from-blue-50 to-teal-50 border border-blue-200 rounded-xl shadow-sm"
+      class="mb-4 p-4 bg-linear-to-br from-blue-50 to-teal-50 dark:from-blue-900/30 dark:to-teal-900/30 border border-blue-200 dark:border-blue-700 rounded-xl shadow-sm dark:shadow-gray-900/50"
     >
       <div class="flex items-start">
-        <svg class="shrink-0 h-5 w-5 text-blue-400 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+        <svg
+          class="shrink-0 h-5 w-5 text-blue-400 dark:text-blue-500 mt-0.5"
+          fill="currentColor"
+          viewBox="0 0 20 20"
+        >
           <path
             fill-rule="evenodd"
             d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
@@ -58,13 +62,15 @@
           ></path>
         </svg>
         <div class="ml-3">
-          <h3 class="text-sm font-medium text-blue-800">Services are starting up</h3>
-          <p class="mt-1 text-sm text-blue-700">
+          <h3 class="text-sm font-medium text-blue-800 dark:text-blue-300">
+            Services are starting up
+          </h3>
+          <p class="mt-1 text-sm text-blue-700 dark:text-blue-400">
             DBConvert Streams services are initializing. Health checks need time to verify that all
             components are ready. This typically takes 10-30 seconds. Services showing "starting..."
             will automatically change to "healthy" once they're fully operational.
           </p>
-          <div class="mt-2 text-xs text-blue-600">
+          <div class="mt-2 text-xs text-blue-600 dark:text-blue-400">
             <strong>Status meanings:</strong>
             <span class="inline-block mr-3">🔵 starting... = initializing</span>
             <span class="inline-block mr-3">🟢 healthy = working normally</span>
@@ -80,13 +86,13 @@
         <div
           v-for="service in services"
           :key="service.id"
-          class="flex items-center justify-between p-4 rounded-xl border bg-white transition-all duration-200"
+          class="flex items-center justify-between p-4 rounded-xl border bg-white dark:bg-gray-850 transition-all duration-200"
           :class="[
             getServiceStatus(service.id) === 'passing'
-              ? 'border-teal-100 bg-linear-to-r from-teal-50/30 to-green-50/30'
+              ? 'border-teal-100 dark:border-teal-700 bg-linear-to-r from-teal-50/30 to-green-50/30 dark:from-teal-900/20 dark:to-green-900/20'
               : getServiceStatus(service.id) === 'initializing'
-                ? 'border-blue-100 bg-linear-to-r from-blue-50/30 to-teal-50/30'
-                : 'border-orange-100 bg-linear-to-r from-orange-50/30 to-red-50/30'
+                ? 'border-blue-100 dark:border-blue-700 bg-linear-to-r from-blue-50/30 to-teal-50/30 dark:from-blue-900/20 dark:to-teal-900/20'
+                : 'border-orange-100 dark:border-orange-700 bg-linear-to-r from-orange-50/30 to-red-50/30 dark:from-orange-900/20 dark:to-red-900/20'
           ]"
         >
           <div class="flex items-center space-x-3">
@@ -94,8 +100,10 @@
               <component :is="service.icon" class="h-5 w-5" :class="[service.iconColor]" />
             </div>
             <div>
-              <h3 class="text-sm font-medium text-gray-900">{{ service.name }}</h3>
-              <p class="text-xs text-gray-500">{{ service.description }}</p>
+              <h3 class="text-sm font-medium text-gray-900 dark:text-gray-100">
+                {{ service.name }}
+              </h3>
+              <p class="text-xs text-gray-500 dark:text-gray-400">{{ service.description }}</p>
             </div>
           </div>
           <span
@@ -159,48 +167,54 @@ const services: Service[] = [
     name: 'stream-api',
     description: 'API Service',
     icon: CloudIcon,
-    bgColor: 'bg-blue-50 hover:bg-linear-to-br hover:from-blue-100 hover:to-teal-100',
-    iconColor: 'text-blue-600'
+    bgColor:
+      'bg-blue-50 dark:bg-blue-900/50 hover:bg-linear-to-br hover:from-blue-100 hover:to-teal-100 dark:hover:from-blue-800/50 dark:hover:to-teal-800/50',
+    iconColor: 'text-blue-600 dark:text-blue-400'
   },
   {
     id: 'reader',
     name: 'stream-reader',
     description: 'Source Reader',
     icon: ArrowDownTrayIcon,
-    bgColor: 'bg-teal-50 hover:bg-linear-to-br hover:from-teal-100 hover:to-green-100',
-    iconColor: 'text-teal-600'
+    bgColor:
+      'bg-teal-50 dark:bg-teal-900/50 hover:bg-linear-to-br hover:from-teal-100 hover:to-green-100 dark:hover:from-teal-800/50 dark:hover:to-green-800/50',
+    iconColor: 'text-teal-600 dark:text-teal-400'
   },
   {
     id: 'writer',
     name: 'stream-writer',
     description: 'Target Writer',
     icon: ArrowUpTrayIcon,
-    bgColor: 'bg-teal-50 hover:bg-linear-to-br hover:from-teal-100 hover:to-blue-100',
-    iconColor: 'text-teal-600'
+    bgColor:
+      'bg-teal-50 dark:bg-teal-900/50 hover:bg-linear-to-br hover:from-teal-100 hover:to-blue-100 dark:hover:from-teal-800/50 dark:hover:to-blue-800/50',
+    iconColor: 'text-teal-600 dark:text-teal-400'
   },
   {
     id: 'nats',
     name: 'nats',
     description: 'Message Queue',
     icon: QueueListIcon,
-    bgColor: 'bg-blue-50 hover:bg-linear-to-br hover:from-blue-100 hover:to-teal-100',
-    iconColor: 'text-blue-600'
+    bgColor:
+      'bg-blue-50 dark:bg-blue-900/50 hover:bg-linear-to-br hover:from-blue-100 hover:to-teal-100 dark:hover:from-blue-800/50 dark:hover:to-teal-800/50',
+    iconColor: 'text-blue-600 dark:text-blue-400'
   },
   {
     id: 'vault',
     name: 'vault',
     description: 'Secrets Management',
     icon: KeyIcon,
-    bgColor: 'bg-slate-50 hover:bg-linear-to-br hover:from-slate-100 hover:to-blue-100',
-    iconColor: 'text-slate-600'
+    bgColor:
+      'bg-slate-50 dark:bg-slate-800/50 hover:bg-linear-to-br hover:from-slate-100 hover:to-blue-100 dark:hover:from-slate-700/50 dark:hover:to-blue-800/50',
+    iconColor: 'text-slate-600 dark:text-slate-400'
   },
   {
     id: 'sentry',
     name: 'sentry',
     description: 'Usage Tracking & Limits',
     icon: ChartBarIcon,
-    bgColor: 'bg-blue-50 hover:bg-linear-to-br hover:from-blue-100 hover:to-teal-100',
-    iconColor: 'text-blue-600'
+    bgColor:
+      'bg-blue-50 dark:bg-blue-900/50 hover:bg-linear-to-br hover:from-blue-100 hover:to-teal-100 dark:hover:from-blue-800/50 dark:hover:to-teal-800/50',
+    iconColor: 'text-blue-600 dark:text-blue-400'
   }
 ]
 
@@ -237,9 +251,11 @@ const hasInitializingServices = (): boolean => {
 }
 
 const getStatusClasses = (status: string) => ({
-  'bg-linear-to-r from-teal-100 to-green-100 text-teal-700': status === 'passing',
-  'bg-linear-to-r from-blue-100 to-teal-100 text-blue-700': status === 'initializing',
-  'bg-linear-to-r from-orange-100 to-red-100 text-orange-700':
+  'bg-linear-to-r from-teal-100 to-green-100 dark:from-teal-900 dark:to-green-900 text-teal-700 dark:text-teal-300':
+    status === 'passing',
+  'bg-linear-to-r from-blue-100 to-teal-100 dark:from-blue-900 dark:to-teal-900 text-blue-700 dark:text-blue-300':
+    status === 'initializing',
+  'bg-linear-to-r from-orange-100 to-red-100 dark:from-orange-900 dark:to-red-900 text-orange-700 dark:text-orange-300':
     status === 'unavailable' || status === 'critical' || status === 'unknown'
 })
 
