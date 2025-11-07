@@ -82,21 +82,14 @@
 
     <!-- Service Status Cards -->
     <div v-else>
-      <div class="grid gap-4">
+      <div class="grid gap-3">
         <div
           v-for="service in services"
           :key="service.id"
-          class="flex items-center justify-between p-4 rounded-xl border bg-white dark:bg-gray-850 transition-all duration-200"
-          :class="[
-            getServiceStatus(service.id) === 'passing'
-              ? 'border-teal-100 dark:border-teal-700 bg-linear-to-r from-teal-50/30 to-green-50/30 dark:from-teal-900/20 dark:to-green-900/20'
-              : getServiceStatus(service.id) === 'initializing'
-                ? 'border-blue-100 dark:border-blue-700 bg-linear-to-r from-blue-50/30 to-teal-50/30 dark:from-blue-900/20 dark:to-teal-900/20'
-                : 'border-orange-100 dark:border-orange-700 bg-linear-to-r from-orange-50/30 to-red-50/30 dark:from-orange-900/20 dark:to-red-900/20'
-          ]"
+          class="flex items-center justify-between p-4 rounded-lg bg-slate-50 dark:bg-gray-800/50"
         >
           <div class="flex items-center space-x-3">
-            <div class="rounded-lg p-2 transition-all duration-200" :class="[service.bgColor]">
+            <div class="rounded-lg p-2" :class="[service.bgColor]">
               <component :is="service.icon" class="h-5 w-5" :class="[service.iconColor]" />
             </div>
             <div>
@@ -107,31 +100,9 @@
             </div>
           </div>
           <span
-            class="px-3 py-1.5 rounded-full text-xs font-medium flex items-center shadow-sm"
+            class="px-3 py-1 rounded-full text-xs font-medium"
             :class="getStatusClasses(getServiceStatus(service.id))"
           >
-            <!-- Show spinner for initializing status -->
-            <svg
-              v-if="getServiceStatus(service.id) === 'initializing'"
-              class="animate-spin -ml-1 mr-1 h-3 w-3"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                class="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                stroke-width="4"
-              ></circle>
-              <path
-                class="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              ></path>
-            </svg>
             {{ getStatusDisplayText(getServiceStatus(service.id)) }}
           </span>
         </div>
@@ -167,8 +138,7 @@ const services: Service[] = [
     name: 'stream-api',
     description: 'API Service',
     icon: CloudIcon,
-    bgColor:
-      'bg-blue-50 dark:bg-blue-900/50 hover:bg-linear-to-br hover:from-blue-100 hover:to-teal-100 dark:hover:from-blue-800/50 dark:hover:to-teal-800/50',
+    bgColor: 'bg-blue-50 dark:bg-blue-900/30',
     iconColor: 'text-blue-600 dark:text-blue-400'
   },
   {
@@ -176,8 +146,7 @@ const services: Service[] = [
     name: 'stream-reader',
     description: 'Source Reader',
     icon: ArrowDownTrayIcon,
-    bgColor:
-      'bg-teal-50 dark:bg-teal-900/50 hover:bg-linear-to-br hover:from-teal-100 hover:to-green-100 dark:hover:from-teal-800/50 dark:hover:to-green-800/50',
+    bgColor: 'bg-teal-50 dark:bg-teal-900/30',
     iconColor: 'text-teal-600 dark:text-teal-400'
   },
   {
@@ -185,8 +154,7 @@ const services: Service[] = [
     name: 'stream-writer',
     description: 'Target Writer',
     icon: ArrowUpTrayIcon,
-    bgColor:
-      'bg-teal-50 dark:bg-teal-900/50 hover:bg-linear-to-br hover:from-teal-100 hover:to-blue-100 dark:hover:from-teal-800/50 dark:hover:to-blue-800/50',
+    bgColor: 'bg-teal-50 dark:bg-teal-900/30',
     iconColor: 'text-teal-600 dark:text-teal-400'
   },
   {
@@ -194,8 +162,7 @@ const services: Service[] = [
     name: 'nats',
     description: 'Message Queue',
     icon: QueueListIcon,
-    bgColor:
-      'bg-blue-50 dark:bg-blue-900/50 hover:bg-linear-to-br hover:from-blue-100 hover:to-teal-100 dark:hover:from-blue-800/50 dark:hover:to-teal-800/50',
+    bgColor: 'bg-blue-50 dark:bg-blue-900/30',
     iconColor: 'text-blue-600 dark:text-blue-400'
   },
   {
@@ -203,8 +170,7 @@ const services: Service[] = [
     name: 'vault',
     description: 'Secrets Management',
     icon: KeyIcon,
-    bgColor:
-      'bg-slate-50 dark:bg-slate-800/50 hover:bg-linear-to-br hover:from-slate-100 hover:to-blue-100 dark:hover:from-slate-700/50 dark:hover:to-blue-800/50',
+    bgColor: 'bg-slate-50 dark:bg-slate-800/30',
     iconColor: 'text-slate-600 dark:text-slate-400'
   },
   {
@@ -212,8 +178,7 @@ const services: Service[] = [
     name: 'sentry',
     description: 'Usage Tracking & Limits',
     icon: ChartBarIcon,
-    bgColor:
-      'bg-blue-50 dark:bg-blue-900/50 hover:bg-linear-to-br hover:from-blue-100 hover:to-teal-100 dark:hover:from-blue-800/50 dark:hover:to-teal-800/50',
+    bgColor: 'bg-blue-50 dark:bg-blue-900/30',
     iconColor: 'text-blue-600 dark:text-blue-400'
   }
 ]
@@ -251,11 +216,9 @@ const hasInitializingServices = (): boolean => {
 }
 
 const getStatusClasses = (status: string) => ({
-  'bg-linear-to-r from-teal-100 to-green-100 dark:from-teal-900 dark:to-green-900 text-teal-700 dark:text-teal-300':
-    status === 'passing',
-  'bg-linear-to-r from-blue-100 to-teal-100 dark:from-blue-900 dark:to-teal-900 text-blue-700 dark:text-blue-300':
-    status === 'initializing',
-  'bg-linear-to-r from-orange-100 to-red-100 dark:from-orange-900 dark:to-red-900 text-orange-700 dark:text-orange-300':
+  'bg-teal-100 dark:bg-teal-900/50 text-teal-700 dark:text-teal-300': status === 'passing',
+  'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300': status === 'initializing',
+  'bg-orange-100 dark:bg-orange-900/50 text-orange-700 dark:text-orange-300':
     status === 'unavailable' || status === 'critical' || status === 'unknown'
 })
 

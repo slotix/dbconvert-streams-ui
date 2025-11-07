@@ -3,13 +3,9 @@
     <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">Account Overview</h2>
     <div class="space-y-6">
       <!-- User Info -->
-      <div
-        class="flex items-start group hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50 dark:hover:from-blue-900/30 dark:hover:to-teal-900/30 p-3 rounded-lg transition-all duration-200"
-      >
+      <div class="flex items-start p-3 rounded-lg bg-slate-50 dark:bg-gray-800/50">
         <div class="shrink-0">
-          <div
-            class="bg-blue-50 dark:bg-blue-900/50 rounded-lg p-3 group-hover:bg-linear-to-br group-hover:from-blue-100 group-hover:to-teal-100 dark:group-hover:from-blue-800/50 dark:group-hover:to-teal-800/50 transition-all duration-200 group-hover:shadow-sm"
-          >
+          <div class="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-3">
             <UserIcon class="h-6 w-6 text-blue-600 dark:text-blue-400" />
           </div>
         </div>
@@ -25,13 +21,9 @@
       </div>
 
       <!-- Current Plan -->
-      <div
-        class="flex items-start group hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50 dark:hover:from-blue-900/30 dark:hover:to-teal-900/30 p-3 rounded-lg transition-all duration-200"
-      >
+      <div class="flex items-start p-3 rounded-lg bg-slate-50 dark:bg-gray-800/50">
         <div class="shrink-0">
-          <div
-            class="bg-teal-50 dark:bg-teal-900/50 rounded-lg p-3 group-hover:bg-linear-to-br group-hover:from-blue-100 group-hover:to-teal-100 dark:group-hover:from-blue-800/50 dark:group-hover:to-teal-800/50 transition-all duration-200 group-hover:shadow-sm"
-          >
+          <div class="bg-teal-50 dark:bg-teal-900/30 rounded-lg p-3">
             <CreditCardIcon
               class="h-6 w-6"
               :class="{
@@ -180,13 +172,9 @@
       </div>
 
       <!-- Usage Summary -->
-      <div
-        class="flex items-start group hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50 dark:hover:from-blue-900/30 dark:hover:to-teal-900/30 p-3 rounded-lg transition-all duration-200"
-      >
+      <div class="flex items-start p-3 rounded-lg bg-slate-50 dark:bg-gray-800/50">
         <div class="shrink-0">
-          <div
-            class="bg-teal-50 dark:bg-teal-900/50 rounded-lg p-3 group-hover:bg-linear-to-br group-hover:from-blue-100 group-hover:to-teal-100 dark:group-hover:from-blue-800/50 dark:group-hover:to-teal-800/50 transition-all duration-200 group-hover:shadow-sm"
-          >
+          <div class="bg-teal-50 dark:bg-teal-900/30 rounded-lg p-3">
             <ChartBarIcon class="h-6 w-6 text-teal-600 dark:text-teal-400" />
           </div>
         </div>
@@ -239,13 +227,9 @@
       </div>
 
       <!-- API Key Management -->
-      <div
-        class="flex items-start group hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50 dark:hover:from-blue-900/30 dark:hover:to-teal-900/30 p-3 rounded-lg transition-all duration-200"
-      >
+      <div class="flex items-start p-3 rounded-lg bg-slate-50 dark:bg-gray-800/50">
         <div class="shrink-0">
-          <div
-            class="bg-blue-50 dark:bg-blue-900/50 rounded-lg p-3 group-hover:bg-linear-to-br group-hover:from-blue-100 group-hover:to-teal-100 dark:group-hover:from-blue-800/50 dark:group-hover:to-teal-800/50 transition-all duration-200 group-hover:shadow-sm"
-          >
+          <div class="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-3">
             <KeyIcon class="h-6 w-6 text-blue-600 dark:text-blue-400" />
           </div>
         </div>

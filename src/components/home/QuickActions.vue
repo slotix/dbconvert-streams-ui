@@ -28,7 +28,7 @@
           @click="exploreConnection(connection.id)"
         >
           <div
-            class="flex items-center justify-between p-4 rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-850 hover:border-blue-300 dark:hover:border-blue-600 hover:bg-linear-to-r hover:from-blue-50/50 hover:to-teal-50/50 dark:hover:from-blue-900/30 dark:hover:to-teal-900/30 transition-all duration-200 hover:shadow-md dark:hover:shadow-gray-900/50 hover:scale-[1.01]"
+            class="flex items-center justify-between p-4 rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-850 hover:border-blue-300 dark:hover:border-blue-600 hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50 dark:hover:from-gray-850 dark:hover:to-gray-800 transition-all duration-200 hover:shadow-md dark:hover:shadow-gray-900/50 hover:scale-[1.01]"
           >
             <div class="flex items-center min-w-0 flex-1 pr-3">
               <div class="shrink-0">
@@ -116,7 +116,7 @@
         <!-- Create Connection -->
         <div class="group cursor-pointer" @click="createConnection">
           <div
-            class="flex items-center justify-between p-4 rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-850 hover:border-blue-300 dark:hover:border-blue-600 hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50 dark:hover:from-blue-900/30 dark:hover:to-teal-900/30 transition-all duration-200 hover:shadow-md dark:hover:shadow-gray-900/50 hover:scale-[1.01]"
+            class="flex items-center justify-between p-4 rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-850 hover:border-blue-300 dark:hover:border-blue-600 hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50 dark:hover:from-gray-850 dark:hover:to-gray-800 transition-all duration-200 hover:shadow-md dark:hover:shadow-gray-900/50 hover:scale-[1.01]"
           >
             <div class="flex items-center">
               <div class="shrink-0">
@@ -142,7 +142,7 @@
         <!-- Create Stream -->
         <div class="group cursor-pointer" @click="createStream">
           <div
-            class="flex items-center justify-between p-4 rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-850 hover:border-teal-300 dark:hover:border-teal-600 hover:bg-linear-to-r hover:from-teal-50 hover:to-green-50 dark:hover:from-teal-900/30 dark:hover:to-green-900/30 transition-all duration-200 hover:shadow-md dark:hover:shadow-gray-900/50 hover:scale-[1.01]"
+            class="flex items-center justify-between p-4 rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-850 hover:border-teal-300 dark:hover:border-teal-600 hover:bg-linear-to-r hover:from-teal-50 hover:to-green-50 dark:hover:from-gray-850 dark:hover:to-gray-800 transition-all duration-200 hover:shadow-md dark:hover:shadow-gray-900/50 hover:scale-[1.01]"
           >
             <div class="flex items-center">
               <div class="shrink-0">
