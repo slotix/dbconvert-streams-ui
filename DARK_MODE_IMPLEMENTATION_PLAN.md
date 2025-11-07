@@ -18,6 +18,13 @@
 
 ## 📊 Key Findings
 
+### November 2025 Status Check
+
+- `src/stores/theme.ts`, `ThemeToggle`, and the Pinia wiring are already merged and add/remove the `dark` class correctly.
+- Tailwind CSS was upgraded to v4, but `src/assets/style.css` never imports `tailwind.config.mjs`, so Tailwind falls back to its defaults (`darkMode: 'media'`).
+- Result: `document.documentElement.classList.contains('dark')` is `true`, yet light styles remain because the build emits `@media (prefers-color-scheme: dark)` rules rather than `.dark`.
+- **Immediate fix:** add `@config "./tailwind.config.mjs";` at the top of `src/assets/style.css` (before `@import 'tailwindcss';`) so Tailwind picks up the class-based dark-mode setting and custom colors.
+
 ### Teal Primary Color Analysis
 
 **Current teal usage in the codebase:**
@@ -68,10 +75,9 @@ Background accents: teal-900 (#134e4a) ✅ Subtle dark backgrounds
 
 **Current State:**
 - Modern Tailwind CSS v4 setup with PostCSS
-- ~500+ color class instances across 94+ Vue component files
-- No existing dark mode support
-- Well-organized component structure suitable for gradual updates
-- Already using some CSS variable patterns
+- Theme store, toggle component, and dark-mode class toggling shipped ✅
+- ~500+ color class instances across 94+ Vue component files still require `dark:` variants
+- Tailwind config not picked up because CSS entry point lacks `@config`
 
 **Implementation Feasibility:** High (straightforward but requires systematic work)
 
@@ -276,6 +282,8 @@ app.mount('#app')
 
 ### Step 3: Create Theme Toggle Component
 
+(Already implemented, keep for reference)
+
 **File:** `src/components/ThemeToggle.vue`
 
 ```vue
@@ -351,7 +359,7 @@ const themes = [
 
 ### Step 4: Add Toggle to App.vue Sidebar
 
-**File:** `src/App.vue` - Add in sidebar (around line 100-150)
+**File:** `src/App.vue` - Add in sidebar (around line 100-150). Already merged, keep instructions for regressions.
 
 ```vue
 <script setup lang="ts">
@@ -381,6 +389,8 @@ import ThemeToggle from '@/components/ThemeToggle.vue'
 #### 1.1 Enable Dark Mode in Tailwind Config
 
 **File:** `tailwind.config.mjs`
+
+> ✅ Already done. Keep this snippet here so future refactors don’t remove the `darkMode: 'class'` flag or custom colors.
 
 ```javascript
 /** @type {import('tailwindcss').Config} */
@@ -426,15 +436,19 @@ export default {
 
 #### 1.3 Update Global Styles
 
+Tailwind v4 no longer reads the configuration automatically unless the entry CSS file declares it. Without that directive, all the class-based dark theme work becomes a no-op.
+
 **File:** `src/assets/style.css`
 
-Add after line 4 (after `@tailwind utilities;`):
+```diff
+-@import 'tailwindcss';
++@config "./tailwind.config.mjs";
++@import 'tailwindcss';
+```
+
+With the config hooked up, keep the base layer adjustments:
 
 ```css
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
 /* Dark mode base styles */
 @layer base {
   :root {
@@ -447,14 +461,16 @@ Add after line 4 (after `@tailwind utilities;`):
 
   /* Ensure smooth transitions */
   * {
-    @apply transition-colors duration-200;
+    transition-property: background-color, border-color, color, fill, stroke;
+    transition-duration: 200ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   }
 }
 ```
 
 #### 1.4 Implement Theme Store
 
-Create all files from Part 2 above:
+Create all files from Part 2 above (already completed; keep checklist for verification):
 - ✅ `src/stores/theme.ts`
 - ✅ Update `src/main.ts`
 - ✅ Create `src/components/ThemeToggle.vue`
