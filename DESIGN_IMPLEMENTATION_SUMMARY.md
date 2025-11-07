@@ -167,7 +167,7 @@ Teal is used strategically to guide users through critical actions, not as decor
 
 **Files Changed:** 3 components migrated
 
-**Total Progress:** 18 components migrated (12 buttons + 6 forms)
+**Total Progress:** 21 components migrated (12 buttons + 9 forms)
 
 ### 🎯 Design Exceptions Documented
 - Icon-only buttons (StreamListItem, navigation) - kept custom for compact layouts
@@ -329,11 +329,20 @@ All form components now available in `src/components/base/` using Headless UI wh
 - [x] **LogFilters.vue** - "Errors Only" checkbox migrated to FormCheckbox
   - Custom label with icon preserved
   - Teal checked state applied
+- [x] **ApiKeyInput.vue** - API key input and Continue button migrated
+  - Input migrated to FormInput (teal focus rings)
+  - Continue button migrated to BaseButton (primary variant)
+- [x] **ConnectionStringInput.vue** - Connection string input migrated to FormInput
+  - Label and placeholder support maintained
+  - Dynamic placeholder based on connection type preserved
+- [x] **Operations.vue** - Capture Events checkboxes migrated to FormCheckbox
+  - Checkbox group now uses FormCheckbox components
+  - Teal checked state applied to all operation checkboxes
 
-**Files Changed:** 6 components migrated
+**Files Changed:** 9 components migrated
 
 **Remaining Optional Migrations:**
-- [ ] Connection form inputs (can migrate as components are updated)
+- [ ] Connection form inputs in UnifiedConnectionParams (complex component, migrate when refactoring)
 - [ ] Other specialized inputs (maintain custom behavior where needed)
 
 **Note:** Migration is ongoing but NOT required. All existing forms continue to work. New Headless UI components provide better accessibility.

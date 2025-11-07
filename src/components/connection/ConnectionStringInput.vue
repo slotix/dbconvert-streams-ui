@@ -1,10 +1,9 @@
 <template>
   <div class="mb-4 mt-8 mr-4">
-    <label class="block text-sm font-medium text-gray-700 mb-2">Connection String (Optional)</label>
-    <input
+    <FormInput
       v-model="connectionString"
+      label="Connection String (Optional)"
       type="text"
-      class="w-full rounded-md border border-gray-300 py-2 px-4 text-gray-900 shadow-sm focus:ring-2 focus:ring-gray-500 focus:border-transparent"
       :placeholder="connectionStringPlaceholder"
       @input="handleConnectionString"
     />
@@ -14,6 +13,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { parseConnectionString } from '@/utils/connectionStringParser'
+import FormInput from '@/components/base/FormInput.vue'
 
 interface Props {
   connectionType?: string
