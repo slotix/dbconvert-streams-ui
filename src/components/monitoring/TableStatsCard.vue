@@ -57,13 +57,13 @@ function handleCompareTable(tableName: string) {
 function getStatusClass(status: string) {
   switch (status) {
     case STAT_STATUS.FINISHED:
-      return 'bg-green-100 text-green-700'
+      return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
     case STAT_STATUS.RUNNING:
-      return 'bg-blue-100 text-blue-700'
+      return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
     case STAT_STATUS.FAILED:
-      return 'bg-red-100 text-red-700'
+      return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
     default:
-      return 'bg-gray-100 text-gray-700'
+      return 'bg-gray-100 text-gray-700 dark:bg-gray-900/40 dark:text-gray-300'
   }
 }
 
@@ -83,7 +83,7 @@ function getStatusLabel(status: string) {
 
 <template>
   <div
-    class="bg-white dark:bg-gray-850 rounded-xl shadow-lg dark:shadow-gray-900/30 overflow-hidden"
+    class="bg-white dark:bg-gray-850 rounded-xl shadow-lg dark:shadow-gray-900/30 overflow-hidden border border-gray-200 dark:border-gray-700"
   >
     <!-- Header -->
     <div
@@ -91,8 +91,10 @@ function getStatusLabel(status: string) {
     >
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
-          <div class="p-2 bg-white rounded-lg shadow-sm">
-            <TableCellsIcon class="h-5 w-5 text-purple-600" />
+          <div
+            class="p-2 bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700"
+          >
+            <TableCellsIcon class="h-5 w-5 text-purple-600 dark:text-purple-300" />
           </div>
           <div>
             <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">Tables</h3>
@@ -106,7 +108,7 @@ function getStatusLabel(status: string) {
           </div>
         </div>
         <span
-          class="inline-flex items-center rounded-full px-3 py-1.5 text-sm font-semibold bg-purple-600 text-white"
+          class="inline-flex items-center rounded-full px-3 py-1.5 text-sm font-semibold bg-purple-600 text-white dark:bg-purple-500 dark:text-gray-900"
         >
           {{ statusCounts.total }}
         </span>
@@ -119,11 +121,14 @@ function getStatusLabel(status: string) {
         <div
           v-for="table in visibleTables"
           :key="table.table"
-          class="bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-lg p-4 hover:shadow-md hover:border-purple-300 transition-all duration-200"
+          class="bg-gradient-to-br from-gray-50 to-white dark:from-gray-900/40 dark:to-gray-900/20 border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md hover:border-purple-300 dark:hover:border-purple-500/40 dark:hover:bg-gray-900/60 transition-all duration-200"
         >
           <!-- Table Name and Status -->
           <div class="flex items-start justify-between mb-3">
-            <h4 class="font-semibold text-gray-900 truncate flex-1" :title="table.table">
+            <h4
+              class="font-semibold text-gray-900 dark:text-gray-100 truncate flex-1"
+              :title="table.table"
+            >
               {{ table.table }}
             </h4>
             <span
@@ -137,20 +142,24 @@ function getStatusLabel(status: string) {
           <!-- Metrics -->
           <dl class="grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
             <div>
-              <dt class="text-gray-500">Rows</dt>
-              <dd class="font-semibold text-gray-900">{{ table.events.toLocaleString() }}</dd>
+              <dt class="text-gray-500 dark:text-gray-400">Rows</dt>
+              <dd class="font-semibold text-gray-900 dark:text-gray-100">
+                {{ table.events.toLocaleString() }}
+              </dd>
             </div>
             <div>
-              <dt class="text-gray-500">Size</dt>
-              <dd class="font-semibold text-gray-900">{{ table.size }}</dd>
+              <dt class="text-gray-500 dark:text-gray-400">Size</dt>
+              <dd class="font-semibold text-gray-900 dark:text-gray-100">{{ table.size }}</dd>
             </div>
             <div>
-              <dt class="text-gray-500">Rate</dt>
-              <dd class="font-semibold text-gray-900">{{ table.rate }}</dd>
+              <dt class="text-gray-500 dark:text-gray-400">Rate</dt>
+              <dd class="font-semibold text-gray-900 dark:text-gray-100">{{ table.rate }}</dd>
             </div>
             <div>
-              <dt class="text-gray-500">Duration</dt>
-              <dd class="font-semibold text-gray-900">{{ (table.elapsed * 1000).toFixed(0) }}ms</dd>
+              <dt class="text-gray-500 dark:text-gray-400">Duration</dt>
+              <dd class="font-semibold text-gray-900 dark:text-gray-100">
+                {{ (table.elapsed * 1000).toFixed(0) }}ms
+              </dd>
             </div>
           </dl>
 
@@ -158,7 +167,7 @@ function getStatusLabel(status: string) {
           <button
             v-if="table.status === STAT_STATUS.FINISHED"
             type="button"
-            class="mt-3 w-full inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium bg-white border border-purple-200 text-purple-700 hover:bg-purple-50 hover:border-purple-300 transition-colors"
+            class="mt-3 w-full inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium bg-white dark:bg-gray-900 border border-purple-200 dark:border-purple-500/40 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-gray-800 hover:border-purple-300 dark:hover:border-purple-400 transition-colors"
             @click="handleCompareTable(table.table)"
           >
             Compare
@@ -171,7 +180,7 @@ function getStatusLabel(status: string) {
       <div v-if="hasMore" class="mt-4 text-center">
         <button
           type="button"
-          class="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 shadow-sm hover:shadow transition-all duration-200"
+          class="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 dark:from-purple-500 dark:to-pink-500 dark:hover:from-purple-400 dark:hover:to-pink-400 shadow-sm hover:shadow transition-all duration-200"
           @click="toggleShowAll"
         >
           {{ showAll ? 'Show Less' : `View All ${allTables.length} Tables` }}
@@ -181,12 +190,14 @@ function getStatusLabel(status: string) {
     </div>
 
     <!-- Empty State -->
-    <div v-else class="px-6 py-12 text-center">
-      <div class="inline-flex p-4 bg-gray-100 rounded-full mb-4">
-        <TableCellsIcon class="h-8 w-8 text-gray-400" />
+    <div v-else class="px-6 py-12 text-center bg-gray-50 dark:bg-gray-900/30">
+      <div class="inline-flex p-4 bg-gray-100 dark:bg-gray-800 rounded-full mb-4">
+        <TableCellsIcon class="h-8 w-8 text-gray-400 dark:text-gray-500" />
       </div>
-      <h4 class="text-base font-medium text-gray-900 mb-1">No tables yet</h4>
-      <p class="text-sm text-gray-500">Table statistics will appear as data is transferred</p>
+      <h4 class="text-base font-medium text-gray-900 dark:text-gray-100 mb-1">No tables yet</h4>
+      <p class="text-sm text-gray-500 dark:text-gray-400">
+        Table statistics will appear as data is transferred
+      </p>
     </div>
   </div>
 </template>

@@ -2,9 +2,9 @@
   <div class="space-y-4">
     <!-- Header -->
     <div class="flex items-center justify-between">
-      <h3 class="text-base font-semibold text-gray-900">Run History</h3>
+      <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">Run History</h3>
       <div class="flex items-center gap-3">
-        <span v-if="runs.length > 0" class="text-xs text-gray-500">
+        <span v-if="runs.length > 0" class="text-xs text-gray-500 dark:text-gray-400">
           {{ runs.length }} total run{{ runs.length !== 1 ? 's' : '' }}
         </span>
         <BaseButton
@@ -29,10 +29,10 @@
     <!-- Empty state -->
     <div
       v-if="runs.length === 0"
-      class="text-center py-8 bg-gray-50 rounded-lg border border-gray-200"
+      class="text-center py-8 bg-gray-50 dark:bg-gray-900/40 rounded-lg border border-gray-200 dark:border-gray-700"
     >
       <svg
-        class="mx-auto h-12 w-12 text-gray-400"
+        class="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
@@ -44,8 +44,10 @@
           d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
         />
       </svg>
-      <p class="mt-2 text-sm text-gray-500">No run history available</p>
-      <p class="text-xs text-gray-400">Start the stream to see execution history</p>
+      <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">No run history available</p>
+      <p class="text-xs text-gray-400 dark:text-gray-500">
+        Start the stream to see execution history
+      </p>
     </div>
 
     <!-- AG Grid table with built-in pagination -->
@@ -150,13 +152,17 @@ function statusCellRenderer(params: ICellRendererParams) {
   let classes =
     'inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium ring-1 ring-inset'
   if (statusLower === 'finished') {
-    classes += ' bg-green-50 text-green-700 ring-green-600/20'
+    classes +=
+      ' bg-green-50 text-green-700 ring-green-600/20 dark:bg-green-900/30 dark:text-green-300 dark:ring-green-500/30'
   } else if (statusLower === 'failed') {
-    classes += ' bg-red-50 text-red-700 ring-red-600/20'
+    classes +=
+      ' bg-red-50 text-red-700 ring-red-600/20 dark:bg-red-900/30 dark:text-red-300 dark:ring-red-500/30'
   } else if (statusLower === 'stopped') {
-    classes += ' bg-gray-50 text-gray-700 ring-gray-600/20'
+    classes +=
+      ' bg-gray-50 text-gray-700 ring-gray-600/20 dark:bg-gray-900/40 dark:text-gray-300 dark:ring-gray-600/40'
   } else {
-    classes += ' bg-blue-50 text-blue-700 ring-blue-600/20'
+    classes +=
+      ' bg-blue-50 text-blue-700 ring-blue-600/20 dark:bg-blue-900/30 dark:text-blue-300 dark:ring-blue-500/30'
   }
 
   return `<span class="${classes}">${status}</span>`
@@ -166,15 +172,15 @@ function statusCellRenderer(params: ICellRendererParams) {
 function rowsCellRenderer(params: ICellRendererParams) {
   const run = params.data as StreamRun
   if (!run || (!run.rowsInserted && !run.rowsSkipped)) {
-    return '<div class="text-gray-400">—</div>'
+    return '<div class="text-gray-400 dark:text-gray-500">—</div>'
   }
 
   let html = '<div>'
   if (run.rowsInserted) {
-    html += `<div class="text-green-700 font-medium">+${formatNumberCompact(run.rowsInserted)}</div>`
+    html += `<div class="text-green-700 dark:text-green-300 font-medium">+${formatNumberCompact(run.rowsInserted)}</div>`
   }
   if (run.rowsSkipped) {
-    html += `<div class="text-yellow-600 text-xs">Skipped: ${formatNumberCompact(run.rowsSkipped)}</div>`
+    html += `<div class="text-yellow-600 dark:text-yellow-300 text-xs">Skipped: ${formatNumberCompact(run.rowsSkipped)}</div>`
   }
   html += '</div>'
 
@@ -190,7 +196,7 @@ function actionsCellRenderer(params: ICellRendererParams) {
     <div class="flex items-center gap-2">
       <button 
         type="button" 
-        class="p-1.5 text-blue-600 hover:text-blue-700 rounded-md hover:bg-blue-50 transition-colors duration-200 action-view-logs"
+        class="p-1.5 text-blue-600 dark:text-blue-300 hover:text-blue-700 dark:hover:text-blue-200 rounded-md hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors duration-200 action-view-logs"
         data-stream-id="${run.streamId}"
         title="View logs for this run"
       >
@@ -201,7 +207,7 @@ function actionsCellRenderer(params: ICellRendererParams) {
       </button>
       <button 
         type="button" 
-        class="p-1.5 text-red-600 hover:text-red-700 rounded-md hover:bg-red-50 transition-colors duration-200 action-delete-run"
+        class="p-1.5 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-200 action-delete-run"
         data-run-id="${run.id}"
         title="Delete this run from history"
       >

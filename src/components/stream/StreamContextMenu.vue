@@ -54,13 +54,13 @@ function click(action: string) {
       <div class="fixed inset-0 z-40" @click="emit('close')"></div>
       <!-- Menu -->
       <div
-        class="fixed z-50 bg-white border border-gray-200 rounded-md shadow-lg py-1 text-sm"
+        class="fixed z-50 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg dark:shadow-gray-900/40 py-1 text-sm text-gray-900 dark:text-gray-100"
         :style="{ left: x + 'px', top: y + 'px', minWidth: '180px' }"
       >
         <!-- Start/Run Again -->
         <button
           v-if="canStart"
-          class="w-full text-left px-3 py-1.5 hover:bg-gray-100 text-teal-600"
+          class="w-full text-left px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 text-teal-600 dark:text-teal-300"
           @click="click('start-stream')"
         >
           {{ target.isFinished ? 'Run again' : 'Start' }}
@@ -69,7 +69,7 @@ function click(action: string) {
         <!-- Pause -->
         <button
           v-if="canPause"
-          class="w-full text-left px-3 py-1.5 hover:bg-gray-100 text-yellow-600"
+          class="w-full text-left px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 text-yellow-600 dark:text-yellow-300"
           @click="click('pause-stream')"
         >
           Pause
@@ -78,17 +78,20 @@ function click(action: string) {
         <!-- Resume -->
         <button
           v-if="canResume"
-          class="w-full text-left px-3 py-1.5 hover:bg-gray-100 text-teal-600"
+          class="w-full text-left px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 text-teal-600 dark:text-teal-300"
           @click="click('resume-stream')"
         >
           Resume
         </button>
 
-        <div v-if="canStart || canPause || canResume" class="my-1 border-t border-gray-100"></div>
+        <div
+          v-if="canStart || canPause || canResume"
+          class="my-1 border-t border-gray-100 dark:border-gray-800"
+        ></div>
 
         <!-- Edit -->
         <button
-          class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
+          class="w-full text-left px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200"
           @click="click('edit-stream')"
         >
           Edit
@@ -96,17 +99,17 @@ function click(action: string) {
 
         <!-- Clone -->
         <button
-          class="w-full text-left px-3 py-1.5 hover:bg-gray-100"
+          class="w-full text-left px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200"
           @click="click('clone-stream')"
         >
           Clone
         </button>
 
-        <div class="my-1 border-t border-gray-100"></div>
+        <div class="my-1 border-t border-gray-100 dark:border-gray-800"></div>
 
         <!-- Delete -->
         <button
-          class="w-full text-left px-3 py-1.5 hover:bg-gray-100 text-red-600"
+          class="w-full text-left px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 text-red-600 dark:text-red-400"
           @click="click('delete-stream')"
         >
           Delete

@@ -68,8 +68,8 @@
           <button
             :class="[
               activeTab === 'monitor'
-                ? 'border-teal-600 text-teal-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
+                ? 'border-teal-600 dark:border-teal-400 text-teal-600 dark:text-teal-400'
+                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-700',
               'whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors'
             ]"
             @click="activeTab = 'monitor'"
@@ -79,8 +79,8 @@
           <button
             :class="[
               activeTab === 'history'
-                ? 'border-teal-600 text-teal-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
+                ? 'border-teal-600 dark:border-teal-400 text-teal-600 dark:text-teal-400'
+                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-700',
               'whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors'
             ]"
             @click="activeTab = 'history'"
@@ -91,8 +91,8 @@
             v-if="isStreamFinished"
             :class="[
               activeTab === 'compare'
-                ? 'border-teal-600 text-teal-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
+                ? 'border-teal-600 dark:border-teal-400 text-teal-600 dark:text-teal-400'
+                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-700',
               'whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors'
             ]"
             @click="activeTab = 'compare'"
@@ -110,16 +110,18 @@
         <!-- JSON Toggle (Always visible) -->
         <div class="flex items-center justify-end">
           <div class="flex items-center gap-2">
-            <span class="text-xs text-gray-600">JSON</span>
+            <span class="text-xs text-gray-600 dark:text-gray-400">JSON</span>
             <Switch
               v-model="isJsonView"
-              class="relative inline-flex h-5 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-gray-600 focus:ring-offset-2"
-              :class="[isJsonView ? 'bg-gray-600' : 'bg-gray-400']"
+              class="relative inline-flex h-5 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-gray-600 dark:focus:ring-teal-400 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
+              :class="[
+                isJsonView ? 'bg-gray-600 dark:bg-teal-500' : 'bg-gray-400 dark:bg-gray-600'
+              ]"
             >
               <span class="sr-only">Toggle JSON view</span>
               <span
                 aria-hidden="true"
-                class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out"
+                class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white dark:bg-gray-200 shadow-md ring-0 transition duration-200 ease-in-out"
                 :class="[
                   isJsonView ? 'translate-x-5' : 'translate-x-0',
                   'shadow-[0_1px_4px_rgba(0,0,0,0.15)]'
@@ -129,7 +131,7 @@
             <button
               v-if="isJsonView"
               v-tooltip="'Copy configuration'"
-              class="p-1.5 text-gray-500 hover:text-gray-700 rounded-md hover:bg-gray-100"
+              class="p-1.5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
               @click="copyConfig"
             >
               <ClipboardIcon class="h-4 w-4" />
@@ -140,7 +142,7 @@
         <!-- JSON View -->
         <div v-if="isJsonView">
           <div
-            class="rounded-md bg-gray-50 dark:bg-black p-4 border border-gray-300 dark:border-gray-700 overflow-auto custom-scrollbar"
+            class="rounded-md bg-gray-50 dark:bg-gray-900 p-4 border border-gray-300 dark:border-gray-700 overflow-auto custom-scrollbar"
           >
             <pre
               v-highlightjs
@@ -176,7 +178,7 @@
               Source Connection
             </label>
             <div
-              class="bg-gray-50 dark:bg-gray-800 rounded-md p-4 border border-gray-300 dark:border-gray-700"
+              class="bg-gray-50 dark:bg-gray-900/40 rounded-md p-4 border border-gray-300 dark:border-gray-700"
             >
               <div class="flex items-center justify-between gap-3 mb-2">
                 <div class="flex items-center gap-2 min-w-0 flex-1">
@@ -204,7 +206,7 @@
                   />
                   <ExclamationCircleIcon
                     v-if="!source || !source.name"
-                    class="h-4 w-4 text-red-500 shrink-0"
+                    class="h-4 w-4 text-red-500 dark:text-red-400 shrink-0"
                     aria-hidden="true"
                   />
                 </div>
@@ -212,7 +214,7 @@
                   v-if="source && source.id"
                   v-tooltip="'View source connection in Explorer'"
                   type="button"
-                  class="shrink-0 inline-flex items-center px-2.5 py-1.5 text-xs font-medium text-teal-600 bg-white border border-teal-200 rounded-md hover:bg-teal-50 transition-colors"
+                  class="shrink-0 inline-flex items-center px-2.5 py-1.5 text-xs font-medium text-teal-600 dark:text-teal-300 bg-white dark:bg-gray-900 border border-teal-200 dark:border-teal-700 rounded-md hover:bg-teal-50 dark:hover:bg-gray-800 transition-colors"
                   @click="navigateToSourceExplorer"
                 >
                   <ArrowTopRightOnSquareIcon class="w-3.5 h-3.5 mr-1" />
@@ -230,10 +232,14 @@
 
           <!-- Target Connection -->
           <div>
-            <label class="block text-xs font-medium uppercase text-gray-500 mb-2">
+            <label
+              class="block text-xs font-medium uppercase text-gray-500 dark:text-gray-400 mb-2"
+            >
               Target Connection
             </label>
-            <div class="bg-gray-50 rounded-md p-4 border border-gray-300">
+            <div
+              class="bg-gray-50 dark:bg-gray-900/40 rounded-md p-4 border border-gray-300 dark:border-gray-700"
+            >
               <div class="flex items-center justify-between gap-3 mb-2">
                 <div class="flex items-center gap-2 min-w-0 flex-1">
                   <div
@@ -248,8 +254,8 @@
                     />
                   </div>
                   <span
-                    class="font-medium text-gray-900 truncate"
-                    :class="{ 'text-red-500': !target || !target.name }"
+                    class="font-medium text-gray-900 dark:text-gray-100 truncate"
+                    :class="{ 'text-red-500 dark:text-red-400': !target || !target.name }"
                   >
                     {{ target?.name || 'N/A' }}
                   </span>
@@ -260,7 +266,7 @@
                   />
                   <ExclamationCircleIcon
                     v-if="!target || !target.name"
-                    class="h-4 w-4 text-red-500 shrink-0"
+                    class="h-4 w-4 text-red-500 dark:text-red-400 shrink-0"
                     aria-hidden="true"
                   />
                 </div>
@@ -268,47 +274,53 @@
                   v-if="target && target.id"
                   v-tooltip="'View target connection in Explorer'"
                   type="button"
-                  class="shrink-0 inline-flex items-center px-2.5 py-1.5 text-xs font-medium text-teal-600 bg-white border border-teal-200 rounded-md hover:bg-teal-50 transition-colors"
+                  class="shrink-0 inline-flex items-center px-2.5 py-1.5 text-xs font-medium text-teal-600 dark:text-teal-300 bg-white dark:bg-gray-900 border border-teal-200 dark:border-teal-700 rounded-md hover:bg-teal-50 dark:hover:bg-gray-800 transition-colors"
                   @click="navigateToTargetExplorer"
                 >
                   <ArrowTopRightOnSquareIcon class="w-3.5 h-3.5 mr-1" />
                   Explore
                 </button>
               </div>
-              <div class="text-sm text-gray-600">
+              <div class="text-sm text-gray-600 dark:text-gray-400">
                 <ConnectionStringDisplay v-if="target" :connection="target" />
-                <span v-else class="text-red-500 text-xs">Connection not found</span>
+                <span v-else class="text-red-500 dark:text-red-400 text-xs"
+                  >Connection not found</span
+                >
               </div>
             </div>
           </div>
 
           <!-- Output Format (for file-based targets) -->
           <div v-if="isFileTarget && stream.targetFileFormat">
-            <label class="block text-xs font-medium uppercase text-gray-500 mb-2">
+            <label
+              class="block text-xs font-medium uppercase text-gray-500 dark:text-gray-400 mb-2"
+            >
               Output Configuration
             </label>
-            <div class="bg-gray-50 rounded-md p-4 border border-gray-300 space-y-2">
+            <div
+              class="bg-gray-50 dark:bg-gray-900/40 rounded-md p-4 border border-gray-300 dark:border-gray-700 space-y-2"
+            >
               <div class="flex items-center justify-between">
-                <span class="text-xs text-gray-600">Format:</span>
+                <span class="text-xs text-gray-600 dark:text-gray-400">Format:</span>
                 <span
                   :class="[
                     'inline-flex items-center rounded-md px-2.5 py-1 text-xs font-medium ring-1 ring-inset',
-                    'bg-blue-50 text-blue-700 ring-blue-600/20'
+                    'bg-blue-50 text-blue-700 ring-blue-600/20 dark:bg-blue-900/30 dark:text-blue-300 dark:ring-blue-500/30'
                   ]"
                 >
                   {{ stream.targetFileFormat.toUpperCase() }}
                 </span>
               </div>
               <div class="flex items-center justify-between">
-                <span class="text-xs text-gray-600">Compression:</span>
+                <span class="text-xs text-gray-600 dark:text-gray-400">Compression:</span>
                 <span
                   :class="[
                     'inline-flex items-center rounded-md px-2.5 py-1 text-xs font-medium ring-1 ring-inset',
                     stream.compressionType === 'zstd'
-                      ? 'bg-green-50 text-green-700 ring-green-600/20'
+                      ? 'bg-green-50 text-green-700 ring-green-600/20 dark:bg-green-900/30 dark:text-green-300 dark:ring-green-500/30'
                       : stream.compressionType === 'gzip'
-                        ? 'bg-yellow-50 text-yellow-700 ring-yellow-600/20'
-                        : 'bg-gray-50 text-gray-700 ring-gray-600/20'
+                        ? 'bg-yellow-50 text-yellow-700 ring-yellow-600/20 dark:bg-yellow-900/30 dark:text-yellow-300 dark:ring-yellow-500/30'
+                        : 'bg-gray-50 text-gray-700 ring-gray-600/20 dark:bg-gray-900/30 dark:text-gray-300 dark:ring-gray-600/30'
                   ]"
                 >
                   {{ (stream.compressionType || 'zstd').toUpperCase() }}
@@ -387,7 +399,7 @@
           :target="target"
         />
         <div v-else class="p-6">
-          <div class="text-center text-gray-500 py-8">
+          <div class="text-center text-gray-500 dark:text-gray-400 py-8">
             <p>Source or target connection not available</p>
           </div>
         </div>

@@ -15,8 +15,8 @@
         :class="[
           'px-4 py-3 bg-gradient-to-br border-b',
           isRunning
-            ? 'from-orange-50 via-orange-100 to-orange-50 border-orange-200'
-            : 'from-gray-50 via-gray-100 to-gray-50 border-gray-100'
+            ? 'from-orange-50 via-orange-100 to-orange-50 border-orange-200 dark:from-orange-900/20 dark:via-orange-900/10 dark:to-orange-900/5 dark:border-orange-800/60'
+            : 'from-gray-50 via-gray-100 to-gray-50 border-gray-100 dark:from-gray-900/20 dark:via-gray-900/10 dark:to-gray-900/5 dark:border-gray-800/70'
         ]"
       >
         <div class="flex items-center justify-between gap-3 sm:gap-4">
@@ -32,18 +32,22 @@
             <div class="min-w-0">
               <div
                 class="text-sm sm:text-base font-bold leading-tight"
-                :class="isRunning ? 'text-orange-700' : 'text-gray-900'"
+                :class="
+                  isRunning
+                    ? 'text-orange-700 dark:text-orange-300'
+                    : 'text-gray-900 dark:text-gray-100'
+                "
               >
                 Source Reader
               </div>
-              <div class="text-xs text-gray-600 font-medium">Data Producer</div>
+              <div class="text-xs text-gray-600 dark:text-gray-400 font-medium">Data Producer</div>
             </div>
           </div>
           <div class="flex-shrink-0">
             <StatusBadge v-if="isRunning && sourceStats" :status="sourceStats.status" />
             <div
               v-else
-              class="px-3 py-1.5 bg-white text-gray-600 text-xs font-medium rounded-full border border-gray-300"
+              class="px-3 py-1.5 bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 text-xs font-medium rounded-full border border-gray-300 dark:border-gray-700"
             >
               Ready
             </div>
@@ -51,7 +55,9 @@
         </div>
       </div>
 
-      <dl class="flex-1 px-4 py-4 space-y-3 bg-gradient-to-b from-white to-gray-50">
+      <dl
+        class="flex-1 px-4 py-4 space-y-3 bg-gradient-to-b from-white to-gray-50 dark:from-gray-850 dark:to-gray-900"
+      >
         <StatRow
           label="Produced"
           :value="isRunning && sourceStats ? formatNumber(sourceStats.counter) : '—'"
@@ -102,8 +108,8 @@
         :class="[
           'px-4 py-3 bg-gradient-to-br border-b',
           isRunning
-            ? 'from-teal-50 via-teal-100 to-teal-50 border-teal-200'
-            : 'from-gray-50 via-gray-100 to-gray-50 border-gray-100'
+            ? 'from-teal-50 via-teal-100 to-teal-50 border-teal-200 dark:from-teal-900/20 dark:via-teal-900/10 dark:to-teal-900/5 dark:border-teal-800/60'
+            : 'from-gray-50 via-gray-100 to-gray-50 border-gray-100 dark:from-gray-900/20 dark:via-gray-900/10 dark:to-gray-900/5 dark:border-gray-800/70'
         ]"
       >
         <div class="flex items-center justify-between gap-3 sm:gap-4">
@@ -119,7 +125,11 @@
             <div class="flex-1 min-w-0">
               <div
                 class="text-sm sm:text-base font-bold leading-tight flex items-center justify-between gap-2"
-                :class="isRunning ? 'text-teal-700' : 'text-gray-900'"
+                :class="
+                  isRunning
+                    ? 'text-teal-700 dark:text-teal-300'
+                    : 'text-gray-900 dark:text-gray-100'
+                "
               >
                 <span>
                   Target Writer{{
@@ -128,12 +138,12 @@
                 </span>
                 <span
                   v-if="isRunning && targetStats && targetStats.activeNodes > 1"
-                  class="inline-flex items-center rounded-full bg-teal-600 px-1.5 py-0.5 text-xs font-semibold text-white shadow-sm flex-shrink-0"
+                  class="inline-flex items-center rounded-full bg-teal-600 dark:bg-teal-500 px-1.5 py-0.5 text-xs font-semibold text-white dark:text-gray-900 shadow-sm flex-shrink-0"
                 >
                   {{ targetStats.activeNodes }}×
                 </span>
               </div>
-              <div class="text-xs text-gray-600 font-medium">
+              <div class="text-xs text-gray-600 dark:text-gray-400 font-medium">
                 Data Consumer{{
                   isRunning && targetStats && targetStats.activeNodes > 1 ? 's' : ''
                 }}
@@ -144,7 +154,7 @@
             <StatusBadge v-if="isRunning && targetStats" :status="targetStats.status" />
             <div
               v-else
-              class="px-3 py-1.5 bg-white text-gray-600 text-xs font-medium rounded-full border border-gray-300"
+              class="px-3 py-1.5 bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 text-xs font-medium rounded-full border border-gray-300 dark:border-gray-700"
             >
               Ready
             </div>
@@ -152,7 +162,9 @@
         </div>
       </div>
 
-      <dl class="flex-1 px-4 py-4 space-y-3 bg-gradient-to-b from-white to-gray-50">
+      <dl
+        class="flex-1 px-4 py-4 space-y-3 bg-gradient-to-b from-white to-gray-50 dark:from-gray-850 dark:to-gray-900"
+      >
         <StatRow
           label="Consumed"
           :value="isRunning && targetStats ? formatNumber(targetStats.counter) : '—'"

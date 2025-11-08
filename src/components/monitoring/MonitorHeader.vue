@@ -19,11 +19,11 @@
                 'flex items-center justify-center w-12 h-12 rounded-full shrink-0 mt-0.5',
                 isRunning
                   ? isStreamFinished
-                    ? 'bg-green-100'
+                    ? 'bg-green-100 dark:bg-green-900/30'
                     : isPaused
-                      ? 'bg-yellow-100'
-                      : 'bg-blue-100'
-                  : 'bg-gray-100'
+                      ? 'bg-yellow-100 dark:bg-yellow-900/30'
+                      : 'bg-blue-100 dark:bg-blue-900/30'
+                  : 'bg-gray-100 dark:bg-gray-800'
               ]"
             >
               <span
@@ -32,7 +32,7 @@
               ></span>
               <svg
                 v-else-if="isStreamFinished"
-                class="h-6 w-6 text-green-600"
+                class="h-6 w-6 text-green-600 dark:text-green-300"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -44,8 +44,11 @@
                   d="M5 13l4 4L19 7"
                 />
               </svg>
-              <PauseIcon v-else-if="isPaused" class="h-6 w-6 text-yellow-600" />
-              <PlayIcon v-else class="h-6 w-6 text-gray-400" />
+              <PauseIcon
+                v-else-if="isPaused"
+                class="h-6 w-6 text-yellow-600 dark:text-yellow-300"
+              />
+              <PlayIcon v-else class="h-6 w-6 text-gray-400 dark:text-gray-500" />
             </div>
             <div class="min-w-0 flex-1">
               <p class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400 mb-1">
@@ -77,9 +80,9 @@
                 'px-3 py-2 font-medium rounded-md transition-colors flex items-center gap-2 text-sm',
                 isRunning && !isStreamFinished
                   ? isPaused
-                    ? 'bg-white text-cyan-600 border border-cyan-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-cyan-500'
-                    : 'bg-white text-cyan-600 border border-cyan-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-cyan-500'
-                  : 'bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed'
+                    ? 'bg-white dark:bg-gray-900 text-cyan-600 dark:text-cyan-300 border border-cyan-300 dark:border-cyan-700 hover:bg-gray-50 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-cyan-500 dark:focus:ring-cyan-300 focus:ring-offset-2 dark:focus:ring-offset-gray-900'
+                    : 'bg-white dark:bg-gray-900 text-cyan-600 dark:text-cyan-300 border border-cyan-300 dark:border-cyan-700 hover:bg-gray-50 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-cyan-500 dark:focus:ring-cyan-300 focus:ring-offset-2 dark:focus:ring-offset-gray-900'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 border border-gray-200 dark:border-gray-700 cursor-not-allowed'
               ]"
               @click="isPaused ? emit('resume') : emit('pause')"
             >
@@ -94,8 +97,8 @@
               :class="[
                 'px-3 py-2 font-medium rounded-md transition-colors flex items-center gap-2 text-sm',
                 isRunning && !isStreamFinished
-                  ? 'bg-white text-red-600 border border-red-300 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500'
-                  : 'bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed'
+                  ? 'bg-white dark:bg-gray-900 text-red-600 dark:text-red-400 border border-red-300 dark:border-red-700 hover:bg-red-50 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 focus:ring-offset-2 dark:focus:ring-offset-gray-900'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 border border-gray-200 dark:border-gray-700 cursor-not-allowed'
               ]"
               @click="emit('stop')"
             >
@@ -120,13 +123,17 @@
         </div>
 
         <!-- Progress Bar and Stage Indicators -->
-        <div v-if="isRunning" class="pt-4 border-t border-gray-300/50">
+        <div v-if="isRunning" class="pt-4 border-t border-gray-300/50 dark:border-gray-700">
           <!-- Progress Bar -->
           <div class="mb-4">
-            <div class="overflow-hidden rounded-full bg-gray-200 shadow-inner">
+            <div class="overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700 shadow-inner">
               <div
                 class="rounded-full h-2 transition-all duration-500"
-                :class="isRunning ? 'bg-linear-to-r from-blue-500 to-cyan-500' : 'bg-gray-400'"
+                :class="
+                  isRunning
+                    ? 'bg-linear-to-r from-blue-500 to-cyan-500 dark:from-blue-400 dark:to-cyan-400'
+                    : 'bg-gray-400 dark:bg-gray-600'
+                "
                 :style="{ width: isRunning ? store.stagesBarWidth : '0%' }"
               ></div>
             </div>
@@ -159,7 +166,7 @@
               </span>
               <span
                 v-if="isRunning && stage.timestamp"
-                class="text-xs mt-0.5 text-gray-500 whitespace-nowrap"
+                class="text-xs mt-0.5 text-gray-500 dark:text-gray-400 whitespace-nowrap"
               >
                 {{ formatTimestamp(stage.timestamp) }}
               </span>
@@ -199,26 +206,26 @@ const emit = defineEmits<{
 const store = useMonitoringStore()
 
 function stageClass(index: number): string {
-  if (!props.isRunning) return 'bg-gray-200 text-gray-400'
-  if (!store.currentStage) return 'bg-gray-200 text-gray-400'
+  if (!props.isRunning) return 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500'
+  if (!store.currentStage) return 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500'
   if (index < store.currentStageID - 1) {
-    return 'bg-green-500 text-white'
+    return 'bg-green-500 dark:bg-green-400 text-white dark:text-gray-900'
   } else if (index === store.currentStageID - 1) {
-    return 'bg-green-600 text-white'
+    return 'bg-green-600 dark:bg-green-500 text-white dark:text-gray-900'
   } else {
-    return 'bg-gray-200 text-gray-400'
+    return 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500'
   }
 }
 
 function textClass(index: number): string {
-  if (!props.isRunning) return 'text-gray-400'
-  if (!store.currentStage) return 'text-gray-400'
+  if (!props.isRunning) return 'text-gray-400 dark:text-gray-500'
+  if (!store.currentStage) return 'text-gray-400 dark:text-gray-500'
   if (index < store.currentStageID - 1) {
-    return 'text-green-500'
+    return 'text-green-500 dark:text-green-300'
   } else if (index === store.currentStageID - 1) {
-    return 'text-green-600'
+    return 'text-green-600 dark:text-green-300'
   } else {
-    return 'text-gray-400'
+    return 'text-gray-400 dark:text-gray-500'
   }
 }
 
