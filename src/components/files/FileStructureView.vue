@@ -42,9 +42,11 @@ defineExpose({
 
     <!-- File Information -->
     <section v-if="!isUnsupportedFile">
-      <h3 class="text-sm font-semibold text-gray-900 mb-3">File Information</h3>
+      <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">File Information</h3>
       <div class="grid gap-4 md:grid-cols-2">
-        <div class="rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-700">
+        <div
+          class="rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-700 dark:text-gray-300"
+        >
           <p><span class="font-medium">Path:</span> {{ entry.path }}</p>
           <p><span class="font-medium">Size:</span> {{ formatFileSize(entry.size) }}</p>
           <p v-if="fileFormat">
@@ -53,7 +55,7 @@ defineExpose({
         </div>
         <div
           v-if="metadata"
-          class="rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-700"
+          class="rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-700 dark:text-gray-300"
         >
           <p><span class="font-medium">Rows:</span> {{ formatNumber(metadata.rowCount) }}</p>
           <p><span class="font-medium">Columns:</span> {{ metadata.columnCount }}</p>
@@ -63,39 +65,49 @@ defineExpose({
 
     <!-- Columns Structure -->
     <section v-if="!isUnsupportedFile && metadata?.columns">
-      <h3 class="text-sm font-semibold text-gray-900 mb-3">Columns</h3>
+      <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Columns</h3>
       <div class="overflow-x-auto">
         <div class="min-w-[640px]">
-          <div class="ring-1 ring-gray-200 rounded-lg">
-            <table class="min-w-full divide-y divide-gray-300">
+          <div class="ring-1 ring-gray-200 dark:ring-gray-700 rounded-lg overflow-hidden">
+            <table class="min-w-full divide-y divide-gray-300 dark:divide-gray-700">
               <thead>
-                <tr class="bg-gray-50">
+                <tr class="bg-gray-50 dark:bg-gray-900">
                   <th
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
                   >
                     Column
                   </th>
                   <th
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
                   >
                     Type
                   </th>
                   <th
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
                   >
                     Nullable
                   </th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-gray-200 bg-white">
-                <tr v-for="col in metadata.columns" :key="col.name" class="hover:bg-gray-50">
-                  <td class="whitespace-nowrap px-3 py-2 text-sm font-medium text-gray-900">
+              <tbody
+                class="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-850"
+              >
+                <tr
+                  v-for="col in metadata.columns"
+                  :key="col.name"
+                  class="hover:bg-gray-50 dark:hover:bg-gray-800"
+                >
+                  <td
+                    class="whitespace-nowrap px-3 py-2 text-sm font-medium text-gray-900 dark:text-gray-100"
+                  >
                     {{ col.name }}
                   </td>
-                  <td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500 uppercase">
+                  <td
+                    class="whitespace-nowrap px-3 py-2 text-sm text-gray-500 dark:text-gray-400 uppercase"
+                  >
                     {{ col.type }}
                   </td>
-                  <td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
+                  <td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
                     {{ col.nullable ? 'Yes' : 'No' }}
                   </td>
                 </tr>
@@ -108,12 +120,15 @@ defineExpose({
 
     <!-- Format-specific Information -->
     <section v-if="!isUnsupportedFile && (metadata?.csvDialect || metadata?.jsonStructure)">
-      <h3 class="text-sm font-semibold text-gray-900 mb-3">Format Details</h3>
+      <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Format Details</h3>
 
       <!-- CSV Dialect -->
-      <div v-if="metadata.csvDialect" class="rounded-md border border-gray-200 p-4">
-        <h4 class="text-sm font-medium text-gray-900 mb-2">CSV Configuration</h4>
-        <div class="grid gap-2 text-sm text-gray-700">
+      <div
+        v-if="metadata.csvDialect"
+        class="rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4"
+      >
+        <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">CSV Configuration</h4>
+        <div class="grid gap-2 text-sm text-gray-700 dark:text-gray-300">
           <p><span class="font-medium">Delimiter:</span> "{{ metadata.csvDialect.delimiter }}"</p>
           <p><span class="font-medium">Quote:</span> "{{ metadata.csvDialect.quote }}"</p>
           <p>
@@ -132,9 +147,12 @@ defineExpose({
       </div>
 
       <!-- JSON Structure -->
-      <div v-if="metadata.jsonStructure" class="rounded-md border border-gray-200 p-4">
-        <h4 class="text-sm font-medium text-gray-900 mb-2">JSON Structure</h4>
-        <div class="grid gap-2 text-sm text-gray-700">
+      <div
+        v-if="metadata.jsonStructure"
+        class="rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4"
+      >
+        <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">JSON Structure</h4>
+        <div class="grid gap-2 text-sm text-gray-700 dark:text-gray-300">
           <p><span class="font-medium">Root Type:</span> {{ metadata.jsonStructure.rootType }}</p>
           <p>
             <span class="font-medium">Homogeneous:</span>
@@ -150,8 +168,8 @@ defineExpose({
 
     <!-- Empty State -->
     <div v-if="!isUnsupportedFile && !metadata" class="text-center py-8">
-      <p class="text-sm text-gray-500">No metadata available</p>
-      <p class="text-xs text-gray-400 mt-1">File metadata could not be loaded</p>
+      <p class="text-sm text-gray-500 dark:text-gray-400">No metadata available</p>
+      <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">File metadata could not be loaded</p>
     </div>
   </div>
 </template>

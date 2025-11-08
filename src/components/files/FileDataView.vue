@@ -13,8 +13,8 @@ defineProps<{
 <template>
   <div
     :class="[
-      'bg-white',
-      $attrs.class ? $attrs.class : 'shadow-sm ring-1 ring-gray-900/5 rounded-lg'
+      'bg-white dark:bg-gray-850',
+      $attrs.class ? $attrs.class : 'shadow-sm ring-1 ring-gray-900/5 dark:ring-gray-700 rounded-lg'
     ]"
   >
     <div class="p-4">
