@@ -4,6 +4,12 @@ import { type FileSystemEntry } from '@/api/fileSystem'
 import { type FileMetadata } from '@/types/files'
 import { getFileFormat } from '@/utils/fileFormat'
 import UnsupportedFileMessage from './UnsupportedFileMessage.vue'
+import {
+  DocumentTextIcon,
+  CircleStackIcon,
+  InformationCircleIcon,
+  TableCellsIcon
+} from '@heroicons/vue/24/outline'
 
 const props = defineProps<{
   entry: FileSystemEntry
@@ -36,135 +42,223 @@ defineExpose({
 </script>
 
 <template>
-  <div class="p-4 space-y-6">
+  <div class="p-4">
     <!-- Unsupported File Type Message -->
     <UnsupportedFileMessage v-if="isUnsupportedFile" :file-name="entry.name" variant="structure" />
 
-    <!-- File Information -->
-    <section v-if="!isUnsupportedFile">
-      <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">File Information</h3>
-      <div class="grid gap-4 md:grid-cols-2">
-        <div
-          class="rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-700 dark:text-gray-300"
-        >
-          <p><span class="font-medium">Path:</span> {{ entry.path }}</p>
-          <p><span class="font-medium">Size:</span> {{ formatFileSize(entry.size) }}</p>
-          <p v-if="fileFormat">
-            <span class="font-medium">Format:</span> {{ fileFormat.toUpperCase() }}
-          </p>
+    <!-- Grid Layout matching DatabaseOverviewPanel -->
+    <div v-if="!isUnsupportedFile" class="grid grid-cols-1 md:grid-cols-6 gap-4">
+      <!-- File Essentials Card -->
+      <div
+        class="group bg-white dark:bg-gray-900/40 ring-1 ring-slate-200/70 dark:ring-gray-800 rounded-xl p-4 md:col-span-3 hover:shadow-lg dark:hover:shadow-gray-900/40 hover:ring-slate-300 dark:hover:ring-gray-600 transition-all duration-200"
+      >
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <div
+              class="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg group-hover:bg-gradient-to-br group-hover:from-blue-100 group-hover:to-teal-100 dark:group-hover:from-blue-900/30 dark:group-hover:to-teal-900/30 transition-all duration-200"
+            >
+              <DocumentTextIcon class="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            </div>
+            <span class="text-sm font-semibold text-gray-700 dark:text-gray-300"
+              >File Information</span
+            >
+          </div>
+          <span
+            v-if="fileFormat"
+            class="inline-flex items-center text-xs px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium ring-1 ring-inset ring-slate-200 dark:ring-slate-700"
+          >
+            {{ fileFormat.toUpperCase() }}
+          </span>
         </div>
-        <div
-          v-if="metadata"
-          class="rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-700 dark:text-gray-300"
-        >
-          <p><span class="font-medium">Rows:</span> {{ formatNumber(metadata.rowCount) }}</p>
-          <p><span class="font-medium">Columns:</span> {{ metadata.columnCount }}</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- Columns Structure -->
-    <section v-if="!isUnsupportedFile && metadata?.columns">
-      <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Columns</h3>
-      <div class="overflow-x-auto">
-        <div class="min-w-[640px]">
-          <div class="ring-1 ring-gray-200 dark:ring-gray-700 rounded-lg overflow-hidden">
-            <table class="min-w-full divide-y divide-gray-300 dark:divide-gray-700">
-              <thead>
-                <tr class="bg-gray-50 dark:bg-gray-900">
-                  <th
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-                  >
-                    Column
-                  </th>
-                  <th
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-                  >
-                    Type
-                  </th>
-                  <th
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-                  >
-                    Nullable
-                  </th>
-                </tr>
-              </thead>
-              <tbody
-                class="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-850"
-              >
-                <tr
-                  v-for="col in metadata.columns"
-                  :key="col.name"
-                  class="hover:bg-gray-50 dark:hover:bg-gray-800"
-                >
-                  <td
-                    class="whitespace-nowrap px-3 py-2 text-sm font-medium text-gray-900 dark:text-gray-100"
-                  >
-                    {{ col.name }}
-                  </td>
-                  <td
-                    class="whitespace-nowrap px-3 py-2 text-sm text-gray-500 dark:text-gray-400 uppercase"
-                  >
-                    {{ col.type }}
-                  </td>
-                  <td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
-                    {{ col.nullable ? 'Yes' : 'No' }}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+        <div class="mt-3 text-sm space-y-2">
+          <div class="flex justify-between items-center">
+            <span class="text-gray-600 dark:text-gray-400">Path:</span>
+            <span
+              class="font-semibold text-gray-900 dark:text-gray-100 truncate max-w-[200px]"
+              :title="entry.path"
+            >
+              {{ entry.path }}
+            </span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-gray-600 dark:text-gray-400">Size:</span>
+            <span class="font-semibold text-gray-900 dark:text-gray-100">
+              {{ formatFileSize(entry.size) }}
+            </span>
           </div>
         </div>
       </div>
-    </section>
 
-    <!-- Format-specific Information -->
-    <section v-if="!isUnsupportedFile && (metadata?.csvDialect || metadata?.jsonStructure)">
-      <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Format Details</h3>
-
-      <!-- CSV Dialect -->
+      <!-- Data Statistics Card -->
       <div
-        v-if="metadata.csvDialect"
-        class="rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4"
+        v-if="metadata"
+        class="group bg-white dark:bg-gray-900/40 ring-1 ring-slate-200/70 dark:ring-gray-800 rounded-xl p-4 md:col-span-3 hover:shadow-lg dark:hover:shadow-gray-900/40 hover:ring-slate-300 dark:hover:ring-gray-600 transition-all duration-200"
       >
-        <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">CSV Configuration</h4>
-        <div class="grid gap-2 text-sm text-gray-700 dark:text-gray-300">
-          <p><span class="font-medium">Delimiter:</span> "{{ metadata.csvDialect.delimiter }}"</p>
-          <p><span class="font-medium">Quote:</span> "{{ metadata.csvDialect.quote }}"</p>
-          <p>
-            <span class="font-medium">Has Header:</span>
-            {{ metadata.csvDialect.hasHeader ? 'Yes' : 'No' }}
-          </p>
-          <p>
-            <span class="font-medium">Line Terminator:</span>
-            {{
-              metadata.csvDialect.lineTerminator === '\n'
-                ? '\\n'
-                : metadata.csvDialect.lineTerminator
-            }}
-          </p>
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <div
+              class="p-2 bg-teal-50 dark:bg-teal-900/20 rounded-lg group-hover:bg-gradient-to-br group-hover:from-teal-100 group-hover:to-blue-100 dark:group-hover:from-teal-900/30 dark:group-hover:to-blue-900/30 transition-all duration-200"
+            >
+              <CircleStackIcon class="h-4 w-4 text-teal-600 dark:text-teal-400" />
+            </div>
+            <span class="text-sm font-semibold text-gray-700 dark:text-gray-300"
+              >Data Statistics</span
+            >
+          </div>
+        </div>
+        <div class="mt-3 text-sm space-y-2">
+          <div class="flex justify-between items-center">
+            <span class="text-gray-600 dark:text-gray-400">Rows:</span>
+            <span class="font-semibold text-gray-900 dark:text-gray-100">
+              {{ formatNumber(metadata.rowCount) }}
+            </span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-gray-600 dark:text-gray-400">Columns:</span>
+            <span class="font-semibold text-gray-900 dark:text-gray-100">
+              {{ metadata.columnCount }}
+            </span>
+          </div>
         </div>
       </div>
 
-      <!-- JSON Structure -->
+      <!-- Columns Structure Card -->
       <div
-        v-if="metadata.jsonStructure"
-        class="rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4"
+        v-if="metadata?.columns"
+        class="group bg-white dark:bg-gray-900/40 ring-1 ring-slate-200/70 dark:ring-gray-800 rounded-xl p-4 md:col-span-6 hover:shadow-lg dark:hover:shadow-gray-900/40 hover:ring-slate-300 dark:hover:ring-gray-600 transition-all duration-200"
       >
-        <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">JSON Structure</h4>
-        <div class="grid gap-2 text-sm text-gray-700 dark:text-gray-300">
-          <p><span class="font-medium">Root Type:</span> {{ metadata.jsonStructure.rootType }}</p>
-          <p>
-            <span class="font-medium">Homogeneous:</span>
-            {{ metadata.jsonStructure.isHomogeneous ? 'Yes' : 'No' }}
-          </p>
-          <p v-if="metadata.jsonStructure.arrayInfo">
-            <span class="font-medium">Array Elements:</span>
-            {{ formatNumber(metadata.jsonStructure.arrayInfo.elementCount) }}
-          </p>
+        <div class="flex items-center gap-2 mb-3">
+          <div
+            class="p-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg group-hover:bg-gradient-to-br group-hover:from-purple-100 group-hover:to-pink-100 dark:group-hover:from-purple-900/30 dark:group-hover:to-pink-900/30 transition-all duration-200"
+          >
+            <TableCellsIcon class="h-4 w-4 text-purple-600 dark:text-purple-400" />
+          </div>
+          <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Columns</span>
+        </div>
+        <div class="mt-3 overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead>
+              <tr class="bg-gray-50 dark:bg-gray-900/60">
+                <th
+                  class="px-4 py-2.5 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                >
+                  Column
+                </th>
+                <th
+                  class="px-4 py-2.5 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                >
+                  Type
+                </th>
+                <th
+                  class="px-4 py-2.5 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                >
+                  Nullable
+                </th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+              <tr
+                v-for="col in metadata.columns"
+                :key="col.name"
+                class="hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 dark:hover:from-purple-900/20 dark:hover:to-pink-900/20 transition-all duration-150"
+              >
+                <td class="px-4 py-2 text-sm font-medium text-gray-900 dark:text-gray-100">
+                  {{ col.name }}
+                </td>
+                <td class="px-4 py-2 text-sm text-gray-500 dark:text-gray-400 uppercase">
+                  {{ col.type }}
+                </td>
+                <td class="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">
+                  {{ col.nullable ? 'Yes' : 'No' }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
-    </section>
+
+      <!-- Format Details Card (CSV) -->
+      <div
+        v-if="metadata?.csvDialect"
+        class="group bg-white dark:bg-gray-900/40 ring-1 ring-slate-200/70 dark:ring-gray-800 rounded-xl p-4 md:col-span-6 hover:shadow-lg dark:hover:shadow-gray-900/40 hover:ring-slate-300 dark:hover:ring-gray-600 transition-all duration-200"
+      >
+        <div class="flex items-center gap-2 mb-3">
+          <div
+            class="p-2 bg-orange-50 dark:bg-orange-900/20 rounded-lg group-hover:bg-gradient-to-br group-hover:from-orange-100 group-hover:to-amber-100 dark:group-hover:from-orange-900/30 dark:group-hover:to-amber-900/30 transition-all duration-200"
+          >
+            <InformationCircleIcon class="h-4 w-4 text-orange-600 dark:text-orange-400" />
+          </div>
+          <span class="text-sm font-semibold text-gray-700 dark:text-gray-300"
+            >CSV Configuration</span
+          >
+        </div>
+        <div class="mt-3 text-sm space-y-2">
+          <div class="flex justify-between items-center">
+            <span class="text-gray-600 dark:text-gray-400">Delimiter:</span>
+            <span class="font-semibold text-gray-900 dark:text-gray-100">
+              "{{ metadata.csvDialect.delimiter }}"
+            </span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-gray-600 dark:text-gray-400">Quote:</span>
+            <span class="font-semibold text-gray-900 dark:text-gray-100">
+              "{{ metadata.csvDialect.quote }}"
+            </span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-gray-600 dark:text-gray-400">Has Header:</span>
+            <span class="font-semibold text-gray-900 dark:text-gray-100">
+              {{ metadata.csvDialect.hasHeader ? 'Yes' : 'No' }}
+            </span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-gray-600 dark:text-gray-400">Line Terminator:</span>
+            <span class="font-semibold text-gray-900 dark:text-gray-100">
+              {{
+                metadata.csvDialect.lineTerminator === '\n'
+                  ? '\\n'
+                  : metadata.csvDialect.lineTerminator
+              }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Format Details Card (JSON) -->
+      <div
+        v-if="metadata?.jsonStructure"
+        class="group bg-white dark:bg-gray-900/40 ring-1 ring-slate-200/70 dark:ring-gray-800 rounded-xl p-4 md:col-span-6 hover:shadow-lg dark:hover:shadow-gray-900/40 hover:ring-slate-300 dark:hover:ring-gray-600 transition-all duration-200"
+      >
+        <div class="flex items-center gap-2 mb-3">
+          <div
+            class="p-2 bg-sky-50 dark:bg-sky-900/20 rounded-lg group-hover:bg-gradient-to-br group-hover:from-sky-100 group-hover:to-blue-100 dark:group-hover:from-sky-900/30 dark:group-hover:to-blue-900/30 transition-all duration-200"
+          >
+            <InformationCircleIcon class="h-4 w-4 text-sky-600 dark:text-sky-400" />
+          </div>
+          <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">JSON Structure</span>
+        </div>
+        <div class="mt-3 text-sm space-y-2">
+          <div class="flex justify-between items-center">
+            <span class="text-gray-600 dark:text-gray-400">Root Type:</span>
+            <span class="font-semibold text-gray-900 dark:text-gray-100">
+              {{ metadata.jsonStructure.rootType }}
+            </span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-gray-600 dark:text-gray-400">Homogeneous:</span>
+            <span class="font-semibold text-gray-900 dark:text-gray-100">
+              {{ metadata.jsonStructure.isHomogeneous ? 'Yes' : 'No' }}
+            </span>
+          </div>
+          <div v-if="metadata.jsonStructure.arrayInfo" class="flex justify-between items-center">
+            <span class="text-gray-600 dark:text-gray-400">Array Elements:</span>
+            <span class="font-semibold text-gray-900 dark:text-gray-100">
+              {{ formatNumber(metadata.jsonStructure.arrayInfo.elementCount) }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- Empty State -->
     <div v-if="!isUnsupportedFile && !metadata" class="text-center py-8">
