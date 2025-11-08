@@ -137,7 +137,7 @@ function getObjectKey(): string {
 
 const objectKey = computed(() => getObjectKey())
 
-// Start with default state
+// Start with default state (always Data tab - index 0)
 const selectedIndex = ref(0)
 
 // Load saved state when objectKey is available

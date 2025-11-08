@@ -41,6 +41,8 @@ const isTableOrView = computed(
   () => !!props.target && (props.target.kind === 'table' || props.target.kind === 'view')
 )
 const isFile = computed(() => !!props.target && props.target.kind === 'file')
+// Objects that can be opened (tables, views, files)
+const isOpenable = computed(() => isTableOrView.value || isFile.value)
 
 function click(action: string, openInRightSplit?: boolean) {
   if (!props.target) return
@@ -129,88 +131,54 @@ function click(action: string, openInRightSplit?: boolean) {
           </button>
         </template>
 
-        <template v-else-if="isTableOrView">
-          <!-- Table/View menu -->
+        <template v-else-if="isOpenable">
+          <!-- Table/View/File menu - shared actions -->
           <button
             class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-            @click="click('open-data', false)"
+            @click="click('open', false)"
           >
-            Open Data
+            Open
           </button>
           <button
             class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-            @click="click('open-structure', false)"
+            @click="click('open', true)"
           >
-            Open Structure
+            Open in Right Pane
           </button>
           <div class="my-1 border-t border-gray-100 dark:border-gray-700"></div>
-          <button
-            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-            @click="click('open-data', true)"
-          >
-            Open Data in Right Pane
-          </button>
-          <button
-            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-            @click="click('open-structure', true)"
-          >
-            Open Structure in Right Pane
-          </button>
-          <button
-            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-            @click="click('copy-object-name')"
-          >
-            Copy name
-          </button>
-          <button
-            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50"
-            :disabled="!canCopyDDL"
-            @click="click('copy-ddl')"
-          >
-            Copy DDL
-          </button>
-        </template>
 
-        <template v-else-if="isFile">
-          <!-- File menu -->
-          <button
-            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-            @click="click('open-data', false)"
-          >
-            Open Data
-          </button>
-          <button
-            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-            @click="click('open-structure', false)"
-          >
-            Open Structure
-          </button>
-          <div class="my-1 border-t border-gray-100 dark:border-gray-700"></div>
-          <button
-            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-            @click="click('open-data', true)"
-          >
-            Open Data in Right Pane
-          </button>
-          <button
-            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-            @click="click('open-structure', true)"
-          >
-            Open Structure in Right Pane
-          </button>
-          <div class="my-1 border-t border-gray-100 dark:border-gray-700"></div>
-          <button
-            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-            @click="click('copy-file-name')"
-          >
-            Copy name
-          </button>
-          <button
-            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-            @click="click('copy-file-path')"
-          >
-            Copy path
-          </button>
+          <!-- Table/View specific actions -->
+          <template v-if="isTableOrView">
+            <button
+              class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+              @click="click('copy-object-name')"
+            >
+              Copy name
+            </button>
+            <button
+              class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50"
+              :disabled="!canCopyDDL"
+              @click="click('copy-ddl')"
+            >
+              Copy DDL
+            </button>
+          </template>
+
+          <!-- File specific actions -->
+          <template v-else-if="isFile">
+            <button
+              class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+              @click="click('copy-file-name')"
+            >
+              Copy name
+            </button>
+            <button
+              class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+              @click="click('copy-file-path')"
+            >
+              Copy path
+            </button>
+          </template>
         </template>
       </div>
     </div>

@@ -240,7 +240,7 @@ function onMenuAction(payload: {
     case 'copy-schema-name':
       if (t.kind === 'schema') actions.copyToClipboard(t.schema, 'Schema name copied')
       break
-    case 'open-data':
+    case 'open':
       if (t.kind === 'table' || t.kind === 'view')
         actions.openTable(
           t.connectionId,
@@ -249,26 +249,11 @@ function onMenuAction(payload: {
           t.name,
           'preview',
           t.schema,
-          'data',
+          undefined,
           payload.openInRightSplit
         )
       else if (t.kind === 'file')
-        actions.openFile(t.connectionId, t.path, 'preview', 'data', payload.openInRightSplit)
-      break
-    case 'open-structure':
-      if (t.kind === 'table' || t.kind === 'view')
-        actions.openTable(
-          t.connectionId,
-          t.database,
-          t.kind,
-          t.name,
-          'preview',
-          t.schema,
-          'structure',
-          payload.openInRightSplit
-        )
-      else if (t.kind === 'file')
-        actions.openFile(t.connectionId, t.path, 'preview', 'structure', payload.openInRightSplit)
+        actions.openFile(t.connectionId, t.path, 'preview', undefined, payload.openInRightSplit)
       break
     case 'copy-object-name':
       if (t.kind === 'table' || t.kind === 'view')
