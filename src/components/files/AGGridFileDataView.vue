@@ -497,11 +497,11 @@ onBeforeUnmount(() => {
       <!-- Loading overlay -->
       <div
         v-if="isInitialLoading"
-        class="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10"
+        class="absolute inset-0 bg-white dark:bg-gray-850 bg-opacity-75 dark:bg-opacity-90 flex items-center justify-center z-10"
       >
         <div class="flex flex-col items-center gap-3">
           <svg
-            class="animate-spin h-8 w-8 text-blue-600"
+            class="animate-spin h-8 w-8 text-blue-600 dark:text-blue-400"
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
@@ -520,7 +520,7 @@ onBeforeUnmount(() => {
               d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
             ></path>
           </svg>
-          <span class="text-sm text-gray-600">Loading file data...</span>
+          <span class="text-sm text-gray-600 dark:text-gray-300">Loading file data...</span>
         </div>
       </div>
     </div>

@@ -4,11 +4,14 @@ import { type FileSystemEntry } from '@/api/fileSystem'
 import { type FileMetadata } from '@/types/files'
 import { getFileFormat } from '@/utils/fileFormat'
 import UnsupportedFileMessage from './UnsupportedFileMessage.vue'
+import { ref } from 'vue'
 import {
   DocumentTextIcon,
   CircleStackIcon,
   InformationCircleIcon,
-  TableCellsIcon
+  TableCellsIcon,
+  ClipboardDocumentIcon,
+  CheckIcon
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps<{
@@ -33,6 +36,30 @@ const formatFileSize = (bytes?: number): string => {
 
 const formatNumber = (num: number): string => {
   return num.toLocaleString()
+}
+
+// Copy to clipboard functionality
+const isCopied = ref(false)
+const copyTimeout = ref<NodeJS.Timeout | null>(null)
+
+const copyToClipboard = async (text: string) => {
+  try {
+    await navigator.clipboard.writeText(text)
+    isCopied.value = true
+
+    // Clear existing timeout if any
+    if (copyTimeout.value) {
+      clearTimeout(copyTimeout.value)
+    }
+
+    // Reset after 2 seconds
+    copyTimeout.value = setTimeout(() => {
+      isCopied.value = false
+      copyTimeout.value = null
+    }, 2000)
+  } catch (err) {
+    console.error('Failed to copy:', err)
+  }
 }
 
 // Expose refresh method for parent container
@@ -70,16 +97,35 @@ defineExpose({
             {{ fileFormat.toUpperCase() }}
           </span>
         </div>
-        <div class="mt-3 text-sm space-y-2">
-          <div class="flex justify-between items-center">
-            <span class="text-gray-600 dark:text-gray-400">Path:</span>
-            <span
-              class="font-semibold text-gray-900 dark:text-gray-100 truncate max-w-[200px]"
-              :title="entry.path"
+        <div class="mt-3 text-sm space-y-3">
+          <!-- Path with copy button -->
+          <div class="space-y-1">
+            <div class="flex items-center justify-between">
+              <span class="text-gray-600 dark:text-gray-400">Path:</span>
+              <button
+                type="button"
+                class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                :class="
+                  isCopied
+                    ? 'text-green-600 dark:text-green-400'
+                    : 'text-gray-500 dark:text-gray-400'
+                "
+                :title="isCopied ? 'Copied!' : 'Copy path'"
+                @click="copyToClipboard(entry.path)"
+              >
+                <CheckIcon v-if="isCopied" class="h-3.5 w-3.5" />
+                <ClipboardDocumentIcon v-else class="h-3.5 w-3.5" />
+                {{ isCopied ? 'Copied' : 'Copy' }}
+              </button>
+            </div>
+            <div
+              class="px-2 py-1.5 bg-gray-50 dark:bg-gray-800/60 rounded text-xs font-mono text-gray-900 dark:text-gray-100 break-all"
             >
               {{ entry.path }}
-            </span>
+            </div>
           </div>
+
+          <!-- Size -->
           <div class="flex justify-between items-center">
             <span class="text-gray-600 dark:text-gray-400">Size:</span>
             <span class="font-semibold text-gray-900 dark:text-gray-100">
