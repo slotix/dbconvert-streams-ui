@@ -9,10 +9,20 @@
       ]"
       @mousedown="$emit('set-active-pane', 'left')"
     >
+      <!-- Active pane indicator - thicker top border -->
       <div
         v-if="hasRightPane"
-        class="pointer-events-none absolute inset-x-4 top-0 h-1 rounded-b-full bg-slate-400 dark:bg-gray-700 transition-opacity duration-200"
-        :class="isLeftActive ? 'opacity-100' : 'opacity-0'"
+        class="pointer-events-none absolute inset-x-4 top-0 rounded-b-md transition-all duration-200"
+        :class="[
+          isLeftActive
+            ? 'h-1.5 bg-teal-500 dark:bg-teal-500 opacity-100'
+            : 'h-0.5 bg-slate-300 dark:bg-gray-600 opacity-30'
+        ]"
+      />
+      <!-- Dimming overlay for inactive pane -->
+      <div
+        v-if="hasRightPane && !isLeftActive"
+        class="pointer-events-none absolute inset-0 bg-gray-900/5 dark:bg-black/20 transition-opacity duration-200"
       />
       <!-- Left pane tabs -->
       <div class="px-2 pt-2">
@@ -60,9 +70,19 @@
       ]"
       @mousedown="$emit('set-active-pane', 'right')"
     >
+      <!-- Active pane indicator - thicker top border -->
       <div
-        class="pointer-events-none absolute inset-x-4 top-0 h-1 rounded-b-full bg-slate-400 dark:bg-gray-700 transition-opacity duration-200"
-        :class="isRightActive ? 'opacity-100' : 'opacity-0'"
+        class="pointer-events-none absolute inset-x-4 top-0 rounded-b-md transition-all duration-200"
+        :class="[
+          isRightActive
+            ? 'h-1.5 bg-teal-500 dark:bg-teal-500 opacity-100'
+            : 'h-0.5 bg-slate-300 dark:bg-gray-600 opacity-30'
+        ]"
+      />
+      <!-- Dimming overlay for inactive pane -->
+      <div
+        v-if="!isRightActive"
+        class="pointer-events-none absolute inset-0 bg-gray-900/5 dark:bg-black/20 transition-opacity duration-200"
       />
       <!-- Close right pane button -->
       <button
