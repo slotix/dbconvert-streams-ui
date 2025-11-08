@@ -5,7 +5,7 @@
       <button
         v-if="currentPreview"
         type="button"
-        class="px-2 py-1 text-xs rounded border border-dashed border-gray-300 bg-white text-gray-600 italic transition hover:border-gray-400 hover:text-gray-700 focus:outline-none focus:ring-1 focus:ring-slate-400"
+        class="px-2 py-1 text-xs rounded border border-dashed border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-850 text-gray-600 dark:text-gray-400 italic transition hover:border-gray-400 dark:hover:border-gray-500 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none focus:ring-1 focus:ring-slate-400 dark:focus:ring-slate-500"
         @click="$emit('activate-preview')"
       >
         <span class="truncate" :title="currentPreview.name">{{ currentPreview.name }}</span>
@@ -18,11 +18,11 @@
         :key="tab.id"
         type="button"
         :class="[
-          'group flex items-center gap-2 rounded border bg-white px-2 py-1 text-xs transition',
-          'focus:outline-none focus:ring-1 focus:ring-slate-400',
+          'group flex items-center gap-2 rounded border bg-white dark:bg-gray-850 px-2 py-1 text-xs transition',
+          'focus:outline-none focus:ring-1 focus:ring-slate-400 dark:focus:ring-slate-500',
           isActiveTab(i)
-            ? 'border-slate-400 ring-1 ring-slate-400 bg-gray-50'
-            : 'border-gray-300 hover:bg-gray-50'
+            ? 'border-slate-400 dark:border-slate-500 ring-1 ring-slate-400 dark:ring-slate-500 bg-gray-50 dark:bg-gray-800'
+            : 'border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800'
         ]"
         @click="$emit('activate-tab', i)"
         @contextmenu.prevent="showContextMenu($event, i)"
@@ -30,12 +30,15 @@
         <!-- Object type icon only (no data/structure indicator) -->
         <component
           :is="getObjectIcon(tab)"
-          class="h-4 w-4 text-slate-500 flex-shrink-0"
+          class="h-4 w-4 text-slate-500 dark:text-slate-400 shrink-0"
           aria-hidden="true"
         />
 
         <!-- Tab name -->
-        <span class="truncate font-medium text-gray-900 max-w-[150px]" :title="tab.name">
+        <span
+          class="truncate font-medium text-gray-900 dark:text-gray-100 max-w-[150px]"
+          :title="tab.name"
+        >
           {{ tab.name }}
         </span>
 
@@ -43,14 +46,14 @@
         <span
           role="button"
           tabindex="0"
-          class="flex h-4 w-4 items-center justify-center rounded transition hover:bg-slate-100 flex-shrink-0"
+          class="flex h-4 w-4 items-center justify-center rounded transition hover:bg-slate-100 dark:hover:bg-slate-700 shrink-0"
           :aria-label="`Close tab ${tab.name}`"
           @click.stop="$emit('close-tab', i)"
           @keydown.enter.stop.prevent="$emit('close-tab', i)"
           @keydown.space.stop.prevent="$emit('close-tab', i)"
         >
           <XMarkIcon
-            class="h-3.5 w-3.5 text-gray-500 group-hover:text-gray-700"
+            class="h-3.5 w-3.5 text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300"
             aria-hidden="true"
           />
         </span>
@@ -62,28 +65,28 @@
       <div
         v-if="contextMenu.visible"
         ref="contextMenuRef"
-        class="fixed z-50 bg-white shadow-lg border border-gray-200 rounded-md py-1 min-w-[160px]"
+        class="fixed z-50 bg-white dark:bg-gray-850 shadow-lg dark:shadow-gray-900/30 border border-gray-200 dark:border-gray-700 rounded-md py-1 min-w-40"
         :style="{ left: `${contextMenu.x}px`, top: `${contextMenu.y}px` }"
       >
         <button
-          class="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+          class="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
           @click="handleContextMenuAction('close')"
         >
-          <XMarkIcon class="h-4 w-4 text-gray-500" />
+          <XMarkIcon class="h-4 w-4 text-gray-500 dark:text-gray-400" />
           <span>Close</span>
         </button>
         <button
-          class="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+          class="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
           @click="handleContextMenuAction('close-others')"
         >
-          <XMarkIcon class="h-4 w-4 text-gray-500" />
+          <XMarkIcon class="h-4 w-4 text-gray-500 dark:text-gray-400" />
           <span>Close Others</span>
         </button>
         <button
-          class="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+          class="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
           @click="handleContextMenuAction('close-all')"
         >
-          <XMarkIcon class="h-4 w-4 text-gray-500" />
+          <XMarkIcon class="h-4 w-4 text-gray-500 dark:text-gray-400" />
           <span>Close All</span>
         </button>
       </div>

@@ -114,54 +114,54 @@
    =========================== */
 
 .dark .ag-theme-alpine {
-  /* Dark mode Tailwind color variables - matching design guide */
-  --tw-gray-50: rgb(249 250 251 / 1);
-  --tw-gray-100: rgb(243 244 246 / 1);
-  --tw-gray-300: rgb(209 213 219 / 1);
-  --tw-gray-400: rgb(156 163 175 / 1);
-  --tw-gray-500: rgb(107 114 128 / 1);
-  --tw-gray-600: rgb(75 85 99 / 1);
-  --tw-gray-700: rgb(55 65 81 / 1);
-  --tw-gray-800: rgb(31 41 55 / 1);
-  --tw-gray-850: oklch(22% 0 0); /* Custom gray-850 from style.css */
-  --tw-gray-900: rgb(17 24 39 / 1);
-  --tw-teal-400: rgb(45 212 191 / 1);
-  --tw-teal-500: rgb(20 184 166 / 1);
+  /* Pure gray color palette - no blue tint */
+  --tw-gray-50: rgb(250 250 250);
+  --tw-gray-100: rgb(245 245 245);
+  --tw-gray-300: rgb(212 212 212);
+  --tw-gray-400: rgb(163 163 163);
+  --tw-gray-500: rgb(115 115 115);
+  --tw-gray-600: rgb(82 82 82);
+  --tw-gray-700: rgb(64 64 64);
+  --tw-gray-800: rgb(38 38 38);
+  --tw-gray-850: rgb(30 30 30);
+  --tw-gray-900: rgb(23 23 23);
+  --tw-teal-400: rgb(45 212 191);
+  --tw-teal-500: rgb(20 184 166);
 
-  /* AG Grid dark theme variables - aligned with design guide */
-  --ag-background-color: var(--tw-gray-850); /* Primary BG: gray-850 */
-  --ag-header-background-color: var(--tw-gray-900); /* Header BG: gray-900 */
-  --ag-odd-row-background-color: var(--tw-gray-850); /* Primary BG */
-  --ag-even-row-background-color: var(--tw-gray-800); /* Secondary BG */
+  /* AG Grid dark theme variables - pure gray backgrounds */
+  --ag-background-color: rgb(30 30 30); /* Pure gray-850 */
+  --ag-header-background-color: rgb(23 23 23); /* Pure gray-900 */
+  --ag-odd-row-background-color: rgb(30 30 30); /* Pure gray-850 */
+  --ag-even-row-background-color: rgb(38 38 38); /* Pure gray-800 */
 
-  /* Text colors - matching design guide */
-  --ag-foreground-color: var(--tw-gray-100); /* Primary text: gray-100 */
-  --ag-secondary-foreground-color: var(--tw-gray-400); /* Secondary text: gray-400 */
-  --ag-header-foreground-color: var(--tw-gray-100); /* Header text: gray-100 */
+  /* Text colors - neutral grays */
+  --ag-foreground-color: rgb(245 245 245); /* Pure gray-100 */
+  --ag-secondary-foreground-color: rgb(163 163 163); /* Pure gray-400 */
+  --ag-header-foreground-color: rgb(245 245 245); /* Pure gray-100 */
 
-  /* Borders - matching design guide */
-  --ag-border-color: var(--tw-gray-700); /* Default border: gray-700 */
-  --ag-row-border-color: var(--tw-gray-700);
+  /* Borders - pure gray */
+  --ag-border-color: rgb(64 64 64); /* Pure gray-700 */
+  --ag-row-border-color: rgb(64 64 64);
 
-  /* Selection and hover colors with teal accent - design guide compliant */
-  --ag-selected-row-background-color: rgba(20, 184, 166, 0.15); /* Subtle teal-500 */
-  --ag-row-hover-color: var(--tw-gray-700); /* Hover BG: gray-700 */
+  /* Selection and hover colors with teal accent */
+  --ag-selected-row-background-color: rgba(20, 184, 166, 0.15);
+  --ag-row-hover-color: rgb(64 64 64); /* Pure gray-700 */
 
-  /* Input styling - design guide compliant */
-  --ag-input-border-color: var(--tw-gray-700);
-  --ag-input-disabled-background-color: var(--tw-gray-800);
+  /* Input styling */
+  --ag-input-border-color: rgb(64 64 64);
+  --ag-input-disabled-background-color: rgb(38 38 38);
 
   /* Accent colors - teal for dark mode */
-  --ag-checkbox-checked-color: var(--tw-teal-500);
+  --ag-checkbox-checked-color: rgb(20 184 166);
   --ag-range-selection-background-color: rgba(20, 184, 166, 0.15);
 
-  /* Header interactions - design guide compliant */
-  --ag-header-cell-hover-background-color: var(--tw-gray-800);
-  --ag-header-cell-moving-background-color: var(--tw-gray-700);
+  /* Header interactions */
+  --ag-header-cell-hover-background-color: rgb(38 38 38); /* Pure gray-800 */
+  --ag-header-cell-moving-background-color: rgb(64 64 64);
 
-  /* Active/focus colors - teal accent from design guide */
-  --ag-alpine-active-color: var(--tw-teal-500);
-  --ag-input-focus-border-color: var(--tw-teal-400);
+  /* Active/focus colors - teal accent */
+  --ag-alpine-active-color: rgb(20 184 166);
+  --ag-input-focus-border-color: rgb(45 212 191);
 
   /* Range selection colors with teal */
   --ag-range-selection-background-color-2: rgba(20, 184, 166, 0.25);
@@ -183,12 +183,12 @@
   background-color: var(--tw-gray-500);
 }
 
-/* Dark mode header cell styling - matching design guide */
+/* Dark mode header cell styling - pure gray, no blue tint */
 .dark .ag-theme-alpine :deep(.ag-header-cell) {
-  background-color: var(--tw-gray-900);
-  color: var(--tw-gray-100);
+  background-color: rgb(23 23 23) !important; /* Pure gray-900 */
+  color: rgb(245 245 245) !important; /* Pure gray-100 */
   font-weight: 600;
-  border-bottom: 1px solid var(--tw-gray-700);
+  border-bottom: 1px solid rgb(64 64 64); /* Pure gray-700 */
 }
 
 /* Dark mode header cell hover */
