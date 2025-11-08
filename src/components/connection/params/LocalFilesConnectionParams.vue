@@ -1,13 +1,18 @@
 <template>
   <div class="px-4 md:px-6">
     <!-- Connection ID (for existing connections) -->
-    <div v-if="connection?.id" class="bg-white bg-opacity-5 text-center md:text-left">
-      <div class="items-center w-full p-4 space-y-4 text-gray-500 md:inline-flex md:space-y-0">
+    <div
+      v-if="connection?.id"
+      class="bg-white dark:bg-gray-800 bg-opacity-5 dark:bg-opacity-10 text-center md:text-left"
+    >
+      <div
+        class="items-center w-full p-4 space-y-4 text-gray-500 dark:text-gray-400 md:inline-flex md:space-y-0"
+      >
         <label class="max-w-sm mx-auto md:w-1/3">Connection ID</label>
         <div class="max-w-sm mx-auto md:w-2/3">
           <div class="relative">
             <span
-              class="block rounded-lg bg-white text-gray-700 placeholder-gray-400 shadow-sm text-base py-2 px-4"
+              class="block rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm text-base py-2 px-4"
             >
               {{ connection?.id }}
             </span>
@@ -27,16 +32,18 @@
     <!-- Local Files Parameters -->
     <div v-if="connection && ((isEdit && connection.id) || !isEdit)" class="mt-6">
       <!-- Local Files Configuration Group -->
-      <div class="bg-white rounded-lg border border-gray-200 p-6 mb-6 shadow-sm">
-        <h3 class="text-sm font-medium text-gray-900 mb-6 flex items-center">
-          <FolderOpenIcon class="h-5 w-5 mr-2 text-teal-600" />
+      <div
+        class="bg-white dark:bg-gray-900/40 rounded-lg border border-gray-200 dark:border-gray-700 p-6 mb-6 shadow-sm dark:shadow-gray-900/30"
+      >
+        <h3 class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-6 flex items-center">
+          <FolderOpenIcon class="h-5 w-5 mr-2 text-teal-600 dark:text-teal-400" />
           Files Configuration
         </h3>
 
         <div class="space-y-4">
           <!-- Folder Path -->
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-            <label class="text-sm font-medium text-gray-700">Folder Path</label>
+            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Folder Path</label>
             <div class="md:col-span-2">
               <FolderSelector
                 v-model="connection.path"
@@ -49,12 +56,16 @@
       </div>
 
       <!-- File Formats Info -->
-      <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+      <div
+        class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4"
+      >
         <div class="flex items-start">
-          <DocumentTextIcon class="h-5 w-5 text-blue-600 mr-2 mt-0.5 shrink-0" />
+          <DocumentTextIcon class="h-5 w-5 text-blue-600 dark:text-blue-400 mr-2 mt-0.5 shrink-0" />
           <div>
-            <h4 class="text-sm font-medium text-blue-900 mb-1">Supported File Formats</h4>
-            <p class="text-xs text-blue-700">
+            <h4 class="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">
+              Supported File Formats
+            </h4>
+            <p class="text-xs text-blue-700 dark:text-blue-300">
               CSV, JSON, JSONL, Parquet files (.gz compressed versions also supported). Mixed
               formats in the same folder are allowed.
             </p>
@@ -63,7 +74,7 @@
       </div>
 
       <!-- Note about local files -->
-      <div class="text-xs text-gray-500 italic mt-2">
+      <div class="text-xs text-gray-500 dark:text-gray-400 italic mt-2">
         Note: Local files connection will scan the specified folder for supported data files.
       </div>
     </div>
