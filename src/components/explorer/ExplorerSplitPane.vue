@@ -5,24 +5,24 @@
       ref="leftPaneRef"
       :style="{ flexBasis: `${splitGrow}%`, flexGrow: 0, flexShrink: 0 }"
       :class="[
-        'relative min-w-[300px] pr-2 min-h-[480px] transition-all bg-white dark:bg-gray-900'
+        'relative min-w-[300px] pr-2 min-h-[480px] transition-all rounded-lg',
+        hasRightPane && isLeftActive
+          ? 'bg-white dark:bg-gray-900 shadow-[0_0_0_0.5px_rgb(20_184_166),0_0_2px_rgba(20_184_166,0.1)] dark:shadow-[0_0_0_0.5px_rgb(20_184_166),0_0_3px_rgba(20_184_166,0.15)]'
+          : hasRightPane
+            ? 'bg-white dark:bg-gray-900 opacity-60'
+            : 'bg-white dark:bg-gray-900'
       ]"
       @mousedown="$emit('set-active-pane', 'left')"
     >
-      <!-- Active pane indicator - thicker top border -->
+      <!-- Top accent border for active pane -->
       <div
         v-if="hasRightPane"
         class="pointer-events-none absolute inset-x-4 top-0 rounded-b-md transition-all duration-200"
         :class="[
           isLeftActive
-            ? 'h-1.5 bg-teal-500 dark:bg-teal-500 opacity-100'
-            : 'h-0.5 bg-slate-300 dark:bg-gray-600 opacity-30'
+            ? 'h-1 bg-teal-500 dark:bg-teal-500 opacity-100'
+            : 'h-0.5 bg-slate-300 dark:bg-gray-600 opacity-20'
         ]"
-      />
-      <!-- Dimming overlay for inactive pane -->
-      <div
-        v-if="hasRightPane && !isLeftActive"
-        class="pointer-events-none absolute inset-0 bg-gray-900/5 dark:bg-black/20 transition-opacity duration-200"
       />
       <!-- Left pane tabs -->
       <div class="px-2 pt-2">
@@ -66,23 +66,21 @@
     <div
       :style="{ flexBasis: '0px' }"
       :class="[
-        'relative grow pl-2 min-h-[480px] min-w-[300px] transition-all bg-white dark:bg-gray-900'
+        'relative grow pl-2 min-h-[480px] min-w-[300px] transition-all rounded-lg',
+        isRightActive
+          ? 'bg-white dark:bg-gray-900 shadow-[0_0_0_0.5px_rgb(20_184_166),0_0_2px_rgba(20_184_166,0.1)] dark:shadow-[0_0_0_0.5px_rgb(20_184_166),0_0_3px_rgba(20_184_166,0.15)]'
+          : 'bg-white dark:bg-gray-900 opacity-60'
       ]"
       @mousedown="$emit('set-active-pane', 'right')"
     >
-      <!-- Active pane indicator - thicker top border -->
+      <!-- Top accent border for active pane -->
       <div
         class="pointer-events-none absolute inset-x-4 top-0 rounded-b-md transition-all duration-200"
         :class="[
           isRightActive
-            ? 'h-1.5 bg-teal-500 dark:bg-teal-500 opacity-100'
-            : 'h-0.5 bg-slate-300 dark:bg-gray-600 opacity-30'
+            ? 'h-1 bg-teal-500 dark:bg-teal-500 opacity-100'
+            : 'h-0.5 bg-slate-300 dark:bg-gray-600 opacity-20'
         ]"
-      />
-      <!-- Dimming overlay for inactive pane -->
-      <div
-        v-if="!isRightActive"
-        class="pointer-events-none absolute inset-0 bg-gray-900/5 dark:bg-black/20 transition-opacity duration-200"
       />
       <!-- Close right pane button -->
       <button
