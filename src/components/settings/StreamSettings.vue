@@ -3,8 +3,13 @@
     <!-- Form with improved organization -->
     <div class="mt-6 space-y-8">
       <!-- Output Configuration Section (only for file targets) -->
-      <div v-if="isFileTarget" class="bg-white">
-        <h4 class="text-base font-medium text-gray-900 mb-4">Output Configuration</h4>
+      <div
+        v-if="isFileTarget"
+        class="bg-white dark:bg-gray-850 rounded-xl border border-gray-100 dark:border-gray-700 p-6 shadow-sm dark:shadow-gray-900/30"
+      >
+        <h4 class="text-base font-medium text-gray-900 dark:text-gray-100 mb-4">
+          Output Configuration
+        </h4>
         <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
           <!-- File Format Selection -->
           <SelectionButtonGroup
@@ -27,12 +32,18 @@
       </div>
 
       <!-- Performance & Monitoring Section -->
-      <div class="bg-white">
-        <h4 class="text-base font-medium text-gray-900 mb-4">Performance & Monitoring</h4>
+      <div
+        class="bg-white dark:bg-gray-850 rounded-xl border border-gray-100 dark:border-gray-700 p-6 shadow-sm dark:shadow-gray-900/30"
+      >
+        <h4 class="text-base font-medium text-gray-900 dark:text-gray-100 mb-4">
+          Performance & Monitoring
+        </h4>
         <div class="space-y-6">
           <!-- Data Bundle Size -->
           <div>
-            <label for="dataBundleSize" class="block text-sm font-medium text-gray-700"
+            <label
+              for="dataBundleSize"
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300"
               >Data Bundle Size</label
             >
             <div class="mt-1">
@@ -42,14 +53,16 @@
                 type="number"
                 min="10"
                 max="1000"
-                class="block w-full rounded-md border-gray-300 shadow-sm text-gray-900 placeholder-gray-400 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 sm:text-sm"
+                class="block w-full rounded-md border-gray-300 dark:border-gray-700 shadow-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 bg-white dark:bg-gray-900 focus:border-teal-500 dark:focus:border-teal-400 focus:ring-1 focus:ring-teal-500 dark:focus:ring-teal-400 sm:text-sm"
                 placeholder="Enter a value between 10 and 1000"
               />
             </div>
-            <p class="mt-2 text-sm text-gray-500">Please enter a value between 10 and 1000.</p>
+            <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+              Please enter a value between 10 and 1000.
+            </p>
             <p
               v-if="dataBundleSize < 10 || dataBundleSize > 1000"
-              class="mt-1 text-sm text-red-600"
+              class="mt-1 text-sm text-red-600 dark:text-red-400"
             >
               Value must be between 10 and 1000.
             </p>
@@ -57,12 +70,14 @@
 
           <!-- Reporting Intervals -->
           <div>
-            <h5 class="text-sm font-medium text-gray-900 mb-3">Reporting Intervals (seconds)</h5>
+            <h5 class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">
+              Reporting Intervals (seconds)
+            </h5>
             <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
               <div>
                 <label
                   for="sourceReaderReportingInterval"
-                  class="block text-sm font-medium text-gray-700"
+                  class="block text-sm font-medium text-gray-700 dark:text-gray-300"
                   >Source Reader</label
                 >
                 <div class="mt-1">
@@ -70,14 +85,14 @@
                     id="sourceReaderReportingInterval"
                     v-model="reportingIntervalsSource"
                     type="number"
-                    class="block w-full rounded-md border-gray-300 shadow-sm text-gray-900 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 sm:text-sm"
+                    class="block w-full rounded-md border-gray-300 dark:border-gray-700 shadow-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900 focus:border-teal-500 dark:focus:border-teal-400 focus:ring-1 focus:ring-teal-500 dark:focus:ring-teal-400 sm:text-sm"
                   />
                 </div>
               </div>
               <div>
                 <label
                   for="targetReaderReportingInterval"
-                  class="block text-sm font-medium text-gray-700"
+                  class="block text-sm font-medium text-gray-700 dark:text-gray-300"
                   >Target Writers</label
                 >
                 <div class="mt-1">
@@ -85,7 +100,7 @@
                     id="targetReaderReportingInterval"
                     v-model="reportingIntervalsTarget"
                     type="number"
-                    class="block w-full rounded-md border-gray-300 shadow-sm text-gray-900 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 sm:text-sm"
+                    class="block w-full rounded-md border-gray-300 dark:border-gray-700 shadow-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900 focus:border-teal-500 dark:focus:border-teal-400 focus:ring-1 focus:ring-teal-500 dark:focus:ring-teal-400 sm:text-sm"
                   />
                 </div>
               </div>
@@ -95,11 +110,17 @@
       </div>
 
       <!-- Limits Section -->
-      <div class="bg-white">
-        <h4 class="text-base font-medium text-gray-900 mb-4">Execution Limits</h4>
+      <div
+        class="bg-white dark:bg-gray-850 rounded-xl border border-gray-100 dark:border-gray-700 p-6 shadow-sm dark:shadow-gray-900/30"
+      >
+        <h4 class="text-base font-medium text-gray-900 dark:text-gray-100 mb-4">
+          Execution Limits
+        </h4>
         <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
           <div>
-            <label for="numberOfEvents" class="block text-sm font-medium text-gray-700"
+            <label
+              for="numberOfEvents"
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300"
               >Number of Events</label
             >
             <div class="mt-1">
@@ -107,16 +128,18 @@
                 id="numberOfEvents"
                 v-model="limitsNumberOfEvents"
                 type="number"
-                class="block w-full rounded-md border-gray-300 shadow-sm text-gray-900 placeholder-gray-400 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 sm:text-sm"
+                class="block w-full rounded-md border-gray-300 dark:border-gray-700 shadow-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 bg-white dark:bg-gray-900 focus:border-teal-500 dark:focus:border-teal-400 focus:ring-1 focus:ring-teal-500 dark:focus:ring-teal-400 sm:text-sm"
                 placeholder="0 = no limit"
               />
             </div>
-            <p class="mt-1 text-xs text-gray-500">
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
               Maximum number of events to process (0 = no limit)
             </p>
           </div>
           <div>
-            <label for="elapsedTime" class="block text-sm font-medium text-gray-700"
+            <label
+              for="elapsedTime"
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300"
               >Elapsed Time (seconds)</label
             >
             <div class="mt-1">
@@ -124,11 +147,11 @@
                 id="elapsedTime"
                 v-model="limitsElapsedTime"
                 type="number"
-                class="block w-full rounded-md border-gray-300 shadow-sm text-gray-900 placeholder-gray-400 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 sm:text-sm"
+                class="block w-full rounded-md border-gray-300 dark:border-gray-700 shadow-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 bg-white dark:bg-gray-900 focus:border-teal-500 dark:focus:border-teal-400 focus:ring-1 focus:ring-teal-500 dark:focus:ring-teal-400 sm:text-sm"
                 placeholder="0 = no limit"
               />
             </div>
-            <p class="mt-1 text-xs text-gray-500">
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
               Maximum execution time in seconds (0 = no limit)
             </p>
           </div>

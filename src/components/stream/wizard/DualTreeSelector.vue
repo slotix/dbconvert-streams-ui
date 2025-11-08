@@ -4,18 +4,20 @@
     <div class="grid grid-cols-2 gap-4 h-[600px]">
       <!-- Source Tree (Left) - Orange Theme -->
       <div
-        class="relative rounded-xl bg-linear-to-br from-orange-50 to-white overflow-hidden flex flex-col border border-orange-200 shadow-sm"
+        class="relative rounded-xl bg-linear-to-br from-orange-50 to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-850 overflow-hidden flex flex-col border border-orange-200 dark:border-orange-500/40 shadow-sm dark:shadow-gray-900/30"
       >
-        <div class="px-4 py-3 border-b border-orange-100 bg-linear-to-r from-orange-50 to-white">
-          <h3 class="text-sm font-semibold text-gray-900 flex items-center">
+        <div
+          class="px-4 py-3 border-b border-orange-100 dark:border-orange-500/30 bg-linear-to-r from-orange-50 to-white dark:from-gray-900 dark:to-gray-900/60"
+        >
+          <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100 flex items-center">
             <img src="/images/steps/source-step.svg" alt="Source" class="w-8 h-8 mr-2" />
             <span
-              class="bg-linear-to-r from-orange-600 to-orange-500 bg-clip-text text-transparent"
+              class="bg-linear-to-r from-orange-600 to-orange-500 dark:from-orange-400 dark:to-orange-300 bg-clip-text text-transparent"
             >
               Source Connection
             </span>
           </h3>
-          <p class="text-xs text-gray-600 mt-1">Select where to read data from</p>
+          <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">Select where to read data from</p>
         </div>
 
         <!-- Source Filters -->
@@ -27,7 +29,7 @@
           @add-connection="emit('add-connection', $event)"
         />
 
-        <div class="flex-1 overflow-y-auto p-4 bg-white">
+        <div class="flex-1 overflow-y-auto p-4 bg-white dark:bg-gray-900/60">
           <ConnectionTreeSelector
             :connections="filteredSourceConnections"
             :selected-connection-id="sourceConnectionId"
@@ -43,16 +45,20 @@
 
       <!-- Target Tree (Right) - Teal Theme -->
       <div
-        class="relative rounded-xl bg-linear-to-br from-teal-50 to-white overflow-hidden flex flex-col border border-teal-200 shadow-sm"
+        class="relative rounded-xl bg-linear-to-br from-teal-50 to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-850 overflow-hidden flex flex-col border border-teal-200 dark:border-teal-400/40 shadow-sm dark:shadow-gray-900/30"
       >
-        <div class="px-4 py-3 border-b border-teal-100 bg-linear-to-r from-teal-50 to-white">
-          <h3 class="text-sm font-semibold text-gray-900 flex items-center">
+        <div
+          class="px-4 py-3 border-b border-teal-100 dark:border-teal-400/30 bg-linear-to-r from-teal-50 to-white dark:from-gray-900 dark:to-gray-900/60"
+        >
+          <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100 flex items-center">
             <img src="/images/steps/target-step.svg" alt="Target" class="w-8 h-8 mr-2" />
-            <span class="bg-linear-to-r from-teal-600 to-teal-500 bg-clip-text text-transparent">
+            <span
+              class="bg-linear-to-r from-teal-600 to-teal-500 dark:from-teal-400 dark:to-teal-300 bg-clip-text text-transparent"
+            >
               Target Connection
             </span>
           </h3>
-          <p class="text-xs text-gray-600 mt-1">Select where to write data to</p>
+          <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">Select where to write data to</p>
         </div>
 
         <!-- Target Filters -->
@@ -64,7 +70,7 @@
           @add-connection="emit('add-connection', $event)"
         />
 
-        <div class="flex-1 overflow-y-auto p-4 bg-white">
+        <div class="flex-1 overflow-y-auto p-4 bg-white dark:bg-gray-900/60">
           <ConnectionTreeSelector
             :connections="filteredTargetConnections"
             :selected-connection-id="targetConnectionId"
@@ -88,14 +94,16 @@
         <div class="flex items-center gap-2 flex-1">
           <!-- Source Chip - Orange -->
           <div
-            class="bg-orange-50 border border-orange-200 rounded-lg px-4 py-2.5 text-sm shadow-sm"
+            class="bg-orange-50 dark:bg-orange-500/10 border border-orange-200 dark:border-orange-500/40 rounded-lg px-4 py-2.5 text-sm shadow-sm dark:shadow-gray-900/30"
           >
-            <span class="font-semibold text-orange-600">Source:</span>
-            <span v-if="sourceConnectionId" class="text-slate-700 ml-1 font-medium">
+            <span class="font-semibold text-orange-600 dark:text-orange-300">Source:</span>
+            <span v-if="sourceConnectionId" class="text-slate-700 dark:text-gray-200 ml-1 font-medium">
               {{ getConnectionName(sourceConnectionId) }}
-              <span v-if="sourceDatabase" class="text-slate-600"> / {{ sourceDatabase }}</span>
+              <span v-if="sourceDatabase" class="text-slate-600 dark:text-gray-400">
+                / {{ sourceDatabase }}
+              </span>
             </span>
-            <span v-else class="text-gray-500 ml-1 italic">Not selected</span>
+            <span v-else class="text-gray-500 dark:text-gray-400 ml-1 italic">Not selected</span>
           </div>
 
           <!-- Arrow - Orange to Teal Gradient -->
@@ -115,21 +123,24 @@
           </svg>
 
           <!-- Target Chip - Teal -->
-          <div class="bg-teal-50 border border-teal-200 rounded-lg px-4 py-2.5 text-sm shadow-sm">
-            <span class="font-semibold text-teal-600">Target:</span>
-            >
-            <span v-if="targetConnectionId" class="text-slate-700 ml-1 font-medium">
+          <div
+            class="bg-teal-50 dark:bg-teal-500/10 border border-teal-200 dark:border-teal-400/40 rounded-lg px-4 py-2.5 text-sm shadow-sm dark:shadow-gray-900/30"
+          >
+            <span class="font-semibold text-teal-600 dark:text-teal-300">Target:</span>
+            <span v-if="targetConnectionId" class="text-slate-700 dark:text-gray-200 ml-1 font-medium">
               {{ getConnectionName(targetConnectionId) }}
-              <span v-if="targetDatabase" class="text-slate-600"> / {{ targetDatabase }}</span>
+              <span v-if="targetDatabase" class="text-slate-600 dark:text-gray-400">
+                / {{ targetDatabase }}
+              </span>
             </span>
-            <span v-else class="text-gray-500 ml-1 italic">Not selected</span>
+            <span v-else class="text-gray-500 dark:text-gray-400 ml-1 italic">Not selected</span>
           </div>
         </div>
 
         <!-- Clear All Button -->
         <button
           type="button"
-          class="text-sm text-gray-600 hover:text-teal-600 font-medium whitespace-nowrap transition-colors duration-200"
+          class="text-sm text-gray-600 dark:text-gray-300 hover:text-teal-600 dark:hover:text-teal-400 font-medium whitespace-nowrap transition-colors duration-200"
           @click="clearAll"
         >
           Clear All
@@ -138,16 +149,23 @@
     </div>
 
     <!-- Validation Error -->
-    <div v-if="isSameConnectionAndDatabase" class="bg-red-50 border border-red-200 rounded-lg p-3">
+    <div
+      v-if="isSameConnectionAndDatabase"
+      class="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-600 rounded-lg p-3"
+    >
       <div class="flex items-center">
-        <svg class="w-5 h-5 text-red-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+        <svg
+          class="w-5 h-5 text-red-600 dark:text-red-400 mr-2"
+          fill="currentColor"
+          viewBox="0 0 20 20"
+        >
           <path
             fill-rule="evenodd"
             d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
             clip-rule="evenodd"
           />
         </svg>
-        <p class="text-sm text-red-700 font-medium">
+        <p class="text-sm text-red-700 dark:text-red-300 font-medium">
           Source and target cannot be the same connection and database
         </p>
       </div>

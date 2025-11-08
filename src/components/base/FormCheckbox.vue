@@ -113,11 +113,13 @@ const checkboxId = props.id || `form-checkbox-${Math.random().toString(36).subst
           :class="[
             'h-4 w-4 rounded',
             'transition-colors duration-150',
-            'focus:ring-2 focus:ring-offset-2',
+            'focus:ring-2 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-900',
             error
-              ? 'border-red-300 text-red-600 focus:ring-red-500'
-              : 'border-gray-300 text-teal-600 focus:ring-teal-500',
-            disabled ? 'bg-gray-100 cursor-not-allowed' : 'cursor-pointer'
+              ? 'border-red-300 dark:border-red-600 text-red-600 dark:text-red-400 focus:ring-red-500 dark:focus:ring-red-400'
+              : 'border-gray-300 dark:border-gray-600 text-teal-600 dark:text-teal-400 focus:ring-teal-500 dark:focus:ring-teal-400',
+            disabled
+              ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed'
+              : 'cursor-pointer bg-white dark:bg-gray-800'
           ]"
           @change="handleChange"
           @blur="handleBlur"
@@ -130,7 +132,7 @@ const checkboxId = props.id || `form-checkbox-${Math.random().toString(36).subst
           :for="checkboxId"
           :class="[
             'font-medium',
-            error ? 'text-red-700' : 'text-gray-700',
+            error ? 'text-red-700 dark:text-red-300' : 'text-gray-700 dark:text-gray-300',
             disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
           ]"
         >
@@ -145,7 +147,10 @@ const checkboxId = props.id || `form-checkbox-${Math.random().toString(36).subst
         <!-- Helper Text or Error -->
         <p
           v-if="error || helperText"
-          :class="['mt-0.5 text-xs', error ? 'text-red-600' : 'text-gray-500']"
+          :class="[
+            'mt-0.5 text-xs',
+            error ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'
+          ]"
         >
           {{ error || helperText }}
         </p>

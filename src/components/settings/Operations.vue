@@ -1,6 +1,8 @@
 <template>
   <fieldset>
-    <legend class="block text-sm font-medium leading-6 text-gray-900 mt-4">Capture Events:</legend>
+    <legend class="block text-sm font-medium leading-6 text-gray-900 dark:text-gray-100 mt-4">
+      Capture Events:
+    </legend>
     <div class="mt-2 flex flex-wrap items-center gap-x-3">
       <FormCheckbox
         v-for="operation in operationList"

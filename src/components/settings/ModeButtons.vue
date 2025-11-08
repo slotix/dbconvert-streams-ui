@@ -1,6 +1,6 @@
 <template>
   <div>
-    <label for="dataBundleSize" class="block text-sm font-medium text-gray-700"
+    <label for="dataBundleSize" class="block text-sm font-medium text-gray-700 dark:text-gray-300"
       >Data Transfer Mode:</label
     >
     <RadioGroup v-model="mode" class="mt-2">
@@ -14,11 +14,11 @@
         >
           <div
             :class="[
-              active ? 'ring-2 ring-gray-600 ring-offset-2' : '',
+              active ? 'ring-2 ring-gray-600 dark:ring-gray-400 ring-offset-2 dark:ring-offset-gray-900' : '',
               checked
-                ? 'bg-gray-600 text-white hover:bg-gray-500'
-                : 'ring-1 ring-inset ring-gray-300 bg-white text-gray-900 hover:bg-gray-50',
-              'flex items-center justify-center rounded-md py-3 px-3 text-xs '
+                ? 'bg-gray-600 dark:bg-gray-500 text-white hover:bg-gray-500 dark:hover:bg-gray-400'
+                : 'ring-1 ring-inset ring-gray-300 dark:ring-gray-600 bg-white dark:bg-gray-850 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800',
+              'flex items-center justify-center rounded-md py-3 px-3 text-xs transition-colors duration-150'
             ]"
           >
             <RadioGroupLabel>{{ option.title }}</RadioGroupLabel>

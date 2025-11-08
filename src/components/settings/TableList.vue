@@ -3,7 +3,7 @@
     <!-- Single row with all controls -->
     <div class="mb-4 flex items-center gap-4">
       <!-- Table count -->
-      <div class="text-sm font-medium text-gray-900 whitespace-nowrap">
+      <div class="text-sm font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap">
         {{ checkedTablesCount }} / {{ tables.length }}
       </div>
 
@@ -19,16 +19,18 @@
           :checked="selectAllCheckboxState"
           :indeterminate="indeterminate"
           type="checkbox"
-          class="h-4 w-4 text-gray-600 focus:ring-gray-500 border-gray-300 rounded"
+          class="h-4 w-4 text-gray-600 dark:text-gray-300 focus:ring-gray-500 dark:focus:ring-gray-400 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
           @change="toggleSelectAll"
         />
-        <label :for="'select-all-checkbox'" class="ml-2 text-sm text-gray-700"> Select All </label>
+        <label :for="'select-all-checkbox'" class="ml-2 text-sm text-gray-700 dark:text-gray-300">
+          Select All
+        </label>
       </div>
 
       <!-- Refresh button -->
       <button
         type="button"
-        class="inline-flex items-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 whitespace-nowrap"
+        class="inline-flex items-center rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:focus:ring-gray-400 dark:focus:ring-offset-gray-900 whitespace-nowrap"
         @click="debouncedRefreshTables"
       >
         Refresh tables
@@ -36,8 +38,10 @@
     </div>
 
     <!-- Schema-grouped Table List -->
-    <div class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg divide-y divide-gray-200">
-      <div v-if="filteredTablesCount === 0" class="text-center text-gray-500 py-8">
+    <div
+      class="bg-white dark:bg-gray-850 shadow-sm dark:shadow-gray-900/30 ring-1 ring-gray-900/5 dark:ring-gray-700 rounded-lg divide-y divide-gray-200 dark:divide-gray-800"
+    >
+      <div v-if="filteredTablesCount === 0" class="text-center text-gray-500 dark:text-gray-400 py-8">
         No tables found
       </div>
       <div v-else class="p-4">
@@ -46,28 +50,30 @@
             <!-- Schema Header - only show for PostgreSQL -->
             <div
               v-if="sourceConnectionType === 'postgresql' && schemaGroup.schema"
-              class="flex items-center justify-between px-3 py-2 text-sm text-gray-700 rounded-md hover:bg-gray-50 cursor-pointer border-b border-gray-100"
+              class="flex items-center justify-between px-3 py-2 text-sm text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800/70 cursor-pointer border-b border-gray-100 dark:border-gray-800"
               @click="toggleSchema(schemaGroup.schema)"
             >
               <div class="flex items-center">
                 <component
                   :is="isSchemaExpanded(schemaGroup.schema) ? ChevronDownIcon : ChevronRightIcon"
-                  class="h-4 w-4 text-gray-400 mr-2 flex-shrink-0"
+                  class="h-4 w-4 text-gray-400 dark:text-gray-500 mr-2 flex-shrink-0"
                 />
                 <span class="font-medium">{{ schemaGroup.schema }}</span>
-                <span class="ml-2 text-xs text-gray-500 bg-gray-100 rounded-full px-2 py-0.5">
+                <span
+                  class="ml-2 text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded-full px-2 py-0.5"
+                >
                   {{ schemaGroup.tables.length }}
                 </span>
               </div>
               <div class="flex items-center gap-2">
                 <button
-                  class="text-xs text-blue-600 hover:text-blue-800"
+                  class="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
                   @click.stop="selectAllInSchema(schemaGroup.schema)"
                 >
                   Select All
                 </button>
                 <button
-                  class="text-xs text-gray-500 hover:text-gray-700"
+                  class="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
                   @click.stop="clearAllInSchema(schemaGroup.schema)"
                 >
                   Clear All
@@ -80,21 +86,21 @@
               v-if="sourceConnectionType !== 'postgresql' || isSchemaExpanded(schemaGroup.schema)"
               :class="
                 sourceConnectionType === 'postgresql' && schemaGroup.schema
-                  ? 'space-y-1 ml-4 border-l border-gray-200 pl-4'
+                  ? 'space-y-1 ml-4 border-l border-gray-200 dark:border-gray-800 pl-4'
                   : 'space-y-1'
               "
             >
               <template v-for="table in schemaGroup.tables" :key="table.name">
                 <!-- Table Row -->
                 <div
-                  class="flex items-center justify-between px-3 py-2 text-sm rounded-md hover:bg-gray-50"
+                  class="flex items-center justify-between px-3 py-2 text-sm rounded-md hover:bg-gray-50 dark:hover:bg-gray-800/70"
                 >
                   <div class="flex items-center flex-1">
                     <input
                       :id="`table-${table.name}`"
                       v-model="table.selected"
                       type="checkbox"
-                      class="h-4 w-4 text-gray-600 focus:ring-gray-500 border-gray-300 rounded mr-3"
+                      class="h-4 w-4 text-gray-600 dark:text-gray-300 focus:ring-gray-500 dark:focus:ring-gray-400 border-gray-300 dark:border-gray-600 rounded mr-3 bg-white dark:bg-gray-800"
                       @change="
                         handleCheckboxChange(
                           table,
@@ -102,8 +108,13 @@
                         )
                       "
                     />
-                    <TableCellsIcon class="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
-                    <label :for="`table-${table.name}`" class="cursor-pointer flex-1">
+                    <TableCellsIcon
+                      class="h-4 w-4 text-gray-400 dark:text-gray-500 mr-2 flex-shrink-0"
+                    />
+                    <label
+                      :for="`table-${table.name}`"
+                      class="cursor-pointer flex-1 text-gray-900 dark:text-gray-100"
+                    >
                       {{ getTableDisplayName(table.name) }}
                     </label>
                   </div>
@@ -112,8 +123,8 @@
                     class="text-xs font-medium transition-colors"
                     :class="
                       selectedTableNames.includes(table.name)
-                        ? 'text-gray-600 hover:text-gray-800'
-                        : 'text-gray-600 hover:text-gray-800'
+                        ? 'text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100'
+                        : 'text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100'
                     "
                     @click="toggleTableSettings(table.name)"
                   >
@@ -132,10 +143,12 @@
                       : 'ml-4 mt-1 mb-3'
                   "
                 >
-                  <div class="bg-gray-50 border border-gray-200 rounded-md p-4">
-                    <div class="text-xs font-medium text-gray-600 mb-2">
+                  <div class="bg-gray-50 dark:bg-gray-900/40 border border-gray-200 dark:border-gray-700 rounded-md p-4">
+                    <div class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
                       Settings for:
-                      <span class="font-semibold">{{ getTableDisplayName(table.name) }}</span>
+                      <span class="font-semibold text-gray-900 dark:text-gray-100">
+                        {{ getTableDisplayName(table.name) }}
+                      </span>
                     </div>
                     <TableSettings :table="table" />
                   </div>

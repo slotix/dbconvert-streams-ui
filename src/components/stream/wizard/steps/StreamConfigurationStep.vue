@@ -2,19 +2,27 @@
   <div class="space-y-6">
     <!-- Stream Settings -->
     <div
-      class="bg-linear-to-br from-slate-50 to-white rounded-xl p-6 border border-gray-100 shadow-sm"
+      class="bg-linear-to-br from-slate-50 to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-850 rounded-xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm dark:shadow-gray-900/30"
     >
       <StreamSettings />
     </div>
 
     <!-- Summary Card with warm background -->
-    <div class="bg-warm-50 rounded-xl p-6 border border-gray-100 shadow-sm">
-      <h4 class="text-base font-semibold text-gray-900 mb-4">Stream Configuration Summary</h4>
+    <div
+      class="bg-warm-50 dark:bg-gray-900/60 rounded-xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm dark:shadow-gray-900/30"
+    >
+      <h4 class="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4">
+        Stream Configuration Summary
+      </h4>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <!-- Data Flow -->
-        <div class="bg-white rounded-lg p-4 border border-gray-100 shadow-sm">
-          <h5 class="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-3">
+        <div
+          class="bg-white dark:bg-gray-850 rounded-lg p-4 border border-gray-100 dark:border-gray-700 shadow-sm dark:shadow-gray-900/30"
+        >
+          <h5
+            class="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide mb-3"
+          >
             Data Flow
           </h5>
           <div class="space-y-3">
@@ -25,13 +33,15 @@
                 class="w-5 h-5 mr-2 mt-0.5 shrink-0"
               />
               <div class="flex-1 min-w-0">
-                <div class="text-gray-600 text-xs mb-1">Source:</div>
-                <div class="font-medium text-gray-900 truncate">{{ sourceDisplay }}</div>
+                <div class="text-gray-600 dark:text-gray-400 text-xs mb-1">Source:</div>
+                <div class="font-medium text-gray-900 dark:text-gray-100 truncate">
+                  {{ sourceDisplay }}
+                </div>
               </div>
             </div>
             <div class="flex items-center justify-center py-1">
               <svg
-                class="w-5 h-5 text-gray-400"
+                class="w-5 h-5 text-gray-400 dark:text-gray-500"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -51,49 +61,55 @@
                 class="w-5 h-5 mr-2 mt-0.5 shrink-0"
               />
               <div class="flex-1 min-w-0">
-                <div class="text-gray-600 text-xs mb-1">Target:</div>
-                <div class="font-medium text-gray-900 truncate">{{ targetDisplay }}</div>
+                <div class="text-gray-600 dark:text-gray-400 text-xs mb-1">Target:</div>
+                <div class="font-medium text-gray-900 dark:text-gray-100 truncate">
+                  {{ targetDisplay }}
+                </div>
               </div>
             </div>
           </div>
         </div>
 
         <!-- Stream Details -->
-        <div class="bg-white rounded-lg p-4 border border-gray-100 shadow-sm">
-          <h5 class="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-3">
+        <div
+          class="bg-white dark:bg-gray-850 rounded-lg p-4 border border-gray-100 dark:border-gray-700 shadow-sm dark:shadow-gray-900/30"
+        >
+          <h5
+            class="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide mb-3"
+          >
             Stream Details
           </h5>
-          <div class="space-y-2 text-sm">
+          <div class="space-y-2 text-sm text-gray-700 dark:text-gray-300">
             <div class="flex items-center justify-between">
-              <span class="text-gray-600">Mode:</span>
-              <span class="font-medium text-gray-900 capitalize">{{
+              <span>Mode:</span>
+              <span class="font-medium text-gray-900 dark:text-gray-100 capitalize">{{
                 currentStreamConfig?.mode || 'convert'
               }}</span>
             </div>
             <div class="flex items-center justify-between">
-              <span class="text-gray-600">Tables:</span>
-              <span class="font-medium text-gray-900">{{ tableCount }} selected</span>
+              <span>Tables:</span>
+              <span class="font-medium text-gray-900 dark:text-gray-100">{{ tableCount }} selected</span>
             </div>
             <div class="flex items-center justify-between">
-              <span class="text-gray-600">Bundle Size:</span>
-              <span class="font-medium text-gray-900">{{
+              <span>Bundle Size:</span>
+              <span class="font-medium text-gray-900 dark:text-gray-100">{{
                 currentStreamConfig?.dataBundleSize || 500
               }}</span>
             </div>
             <!-- Output format info for file targets -->
             <div
               v-if="isFileTarget && currentStreamConfig?.targetFileFormat"
-              class="pt-2 border-t border-gray-100"
+              class="pt-2 border-t border-gray-100 dark:border-gray-700"
             >
               <div class="flex items-center justify-between">
-                <span class="text-gray-600">Format:</span>
-                <span class="font-medium text-gray-900 uppercase">{{
+                <span>Format:</span>
+                <span class="font-medium text-gray-900 dark:text-gray-100 uppercase">{{
                   currentStreamConfig.targetFileFormat
                 }}</span>
               </div>
               <div class="flex items-center justify-between mt-1">
-                <span class="text-gray-600">Compression:</span>
-                <span class="font-medium text-gray-900 capitalize">{{
+                <span>Compression:</span>
+                <span class="font-medium text-gray-900 dark:text-gray-100 capitalize">{{
                   currentStreamConfig.compressionType || 'zstd'
                 }}</span>
               </div>
@@ -102,8 +118,8 @@
         </div>
       </div>
 
-      <div class="mt-4 pt-4 border-t border-gray-200">
-        <p class="text-sm text-gray-600 text-center">
+      <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+        <p class="text-sm text-gray-600 dark:text-gray-400 text-center">
           Review your settings above. Click "Create Stream" to finalize the configuration.
         </p>
       </div>
@@ -111,17 +127,21 @@
 
     <!-- Ready to Create -->
     <div
-      class="bg-linear-to-r from-blue-50 to-teal-50 rounded-xl p-4 border border-blue-200 shadow-sm"
+      class="bg-linear-to-r from-blue-50 to-teal-50 dark:from-blue-900/30 dark:to-teal-900/20 rounded-xl p-4 border border-blue-200 dark:border-teal-500/40 shadow-sm dark:shadow-gray-900/30"
     >
       <div class="flex items-center">
-        <svg class="w-5 h-5 text-teal-600 mr-3 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+        <svg
+          class="w-5 h-5 text-teal-600 dark:text-teal-300 mr-3 shrink-0"
+          fill="currentColor"
+          viewBox="0 0 20 20"
+        >
           <path
             fill-rule="evenodd"
             d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
             clip-rule="evenodd"
           />
         </svg>
-        <p class="text-sm text-gray-700 font-medium">
+        <p class="text-sm text-gray-700 dark:text-gray-100 font-medium">
           Configuration complete! Click "Create Stream" to save your stream configuration.
         </p>
       </div>

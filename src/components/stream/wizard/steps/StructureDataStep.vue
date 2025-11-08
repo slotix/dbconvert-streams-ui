@@ -2,9 +2,11 @@
   <div class="space-y-6">
     <!-- Data Transfer Mode Section -->
     <div
-      class="bg-linear-to-br from-slate-50 to-white border border-gray-100 rounded-xl p-6 shadow-sm"
+      class="bg-linear-to-br from-slate-50 to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-850 border border-gray-100 dark:border-gray-700 rounded-xl p-6 shadow-sm dark:shadow-gray-900/30"
     >
-      <h3 class="text-base font-semibold text-gray-900 mb-4">Data Transfer Mode</h3>
+      <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4">
+        Data Transfer Mode
+      </h3>
       <ModeButtons />
 
       <!-- CDC Operations - Only show when CDC mode is selected -->
@@ -15,7 +17,7 @@
 
     <!-- Dataset Section -->
     <div
-      class="bg-linear-to-br from-slate-50 to-white border border-gray-100 rounded-xl p-6 shadow-sm"
+      class="bg-linear-to-br from-slate-50 to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-850 border border-gray-100 dark:border-gray-700 rounded-xl p-6 shadow-sm dark:shadow-gray-900/30"
     >
       <FilePreviewList v-if="isFileSourceConnection" :connection-id="sourceConnectionId" />
       <TableList v-else />
@@ -23,17 +25,17 @@
 
     <!-- Structure Options Section -->
     <div
-      class="bg-linear-to-br from-slate-50 to-white border border-gray-100 rounded-xl p-6 shadow-sm"
+      class="bg-linear-to-br from-slate-50 to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-850 border border-gray-100 dark:border-gray-700 rounded-xl p-6 shadow-sm dark:shadow-gray-900/30"
     >
       <!-- Warning when nothing is selected -->
       <div
         v-if="!anyStructureEnabled && !copyData"
-        class="mb-4 rounded-md bg-yellow-50 border border-yellow-200 p-4"
+        class="mb-4 rounded-md bg-yellow-50 dark:bg-amber-900/30 border border-yellow-200 dark:border-amber-500/50 p-4"
       >
         <div class="flex">
           <div class="flex-shrink-0">
             <svg
-              class="h-5 w-5 text-yellow-400"
+              class="h-5 w-5 text-yellow-400 dark:text-amber-300"
               viewBox="0 0 20 20"
               fill="currentColor"
               aria-hidden="true"
@@ -46,7 +48,7 @@
             </svg>
           </div>
           <div class="ml-3">
-            <p class="text-sm text-yellow-800">Select at least one option</p>
+            <p class="text-sm text-yellow-800 dark:text-amber-200">Select at least one option</p>
           </div>
         </div>
       </div>
@@ -59,13 +61,16 @@
               id="create-structure"
               v-model="createStructure"
               type="checkbox"
-              class="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 rounded"
+              class="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
               :disabled="isFileSourceConnection"
               @change="handleStructureToggle"
             />
           </div>
           <div class="ml-3 text-sm">
-            <label for="create-structure" class="font-medium text-gray-900 cursor-pointer">
+            <label
+              for="create-structure"
+              class="font-medium text-gray-900 dark:text-gray-100 cursor-pointer"
+            >
               Create structure
             </label>
           </div>
@@ -75,7 +80,7 @@
         <div v-if="createStructure && !isFileSourceConnection" class="ml-7 mt-3">
           <button
             type="button"
-            class="flex items-center text-sm text-gray-700 hover:text-gray-900 focus:outline-none"
+            class="flex items-center text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 focus:outline-none"
             @click="showAdvanced = !showAdvanced"
           >
             <svg
@@ -96,7 +101,10 @@
           </button>
 
           <!-- Granular Structure Options -->
-          <div v-if="showAdvanced" class="mt-3 pl-5 space-y-3 border-l-2 border-gray-200">
+          <div
+            v-if="showAdvanced"
+            class="mt-3 pl-5 space-y-3 border-l-2 border-gray-200 dark:border-gray-700"
+          >
             <!-- Create Tables -->
             <div class="relative flex items-start">
               <div class="flex items-center h-5">
@@ -104,13 +112,16 @@
                   id="create-tables"
                   v-model="createTables"
                   type="checkbox"
-                  class="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 rounded"
+                  class="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
                   :disabled="isFileSourceConnection"
                   @change="handleOptionsChange"
                 />
               </div>
               <div class="ml-3 text-sm">
-                <label for="create-tables" class="font-medium text-gray-700 cursor-pointer">
+                <label
+                  for="create-tables"
+                  class="font-medium text-gray-700 dark:text-gray-300 cursor-pointer"
+                >
                   Tables
                 </label>
               </div>
@@ -123,13 +134,16 @@
                   id="create-indexes"
                   v-model="createIndexes"
                   type="checkbox"
-                  class="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 rounded"
+                  class="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
                   :disabled="isFileSourceConnection"
                   @change="handleOptionsChange"
                 />
               </div>
               <div class="ml-3 text-sm">
-                <label for="create-indexes" class="font-medium text-gray-700 cursor-pointer">
+                <label
+                  for="create-indexes"
+                  class="font-medium text-gray-700 dark:text-gray-300 cursor-pointer"
+                >
                   Indexes
                 </label>
               </div>
@@ -142,13 +156,16 @@
                   id="create-foreign-keys"
                   v-model="createForeignKeys"
                   type="checkbox"
-                  class="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 rounded"
+                  class="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
                   :disabled="isFileSourceConnection"
                   @change="handleOptionsChange"
                 />
               </div>
               <div class="ml-3 text-sm">
-                <label for="create-foreign-keys" class="font-medium text-gray-700 cursor-pointer">
+                <label
+                  for="create-foreign-keys"
+                  class="font-medium text-gray-700 dark:text-gray-300 cursor-pointer"
+                >
                   Foreign keys
                 </label>
               </div>
@@ -163,12 +180,15 @@
               id="copy-data"
               v-model="copyData"
               type="checkbox"
-              class="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 rounded"
+              class="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
               @change="handleOptionsChange"
             />
           </div>
           <div class="ml-3 text-sm">
-            <label for="copy-data" class="font-medium text-gray-900 cursor-pointer">
+            <label
+              for="copy-data"
+              class="font-medium text-gray-900 dark:text-gray-100 cursor-pointer"
+            >
               Copy data
             </label>
           </div>

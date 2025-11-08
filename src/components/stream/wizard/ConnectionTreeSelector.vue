@@ -1,6 +1,9 @@
 <template>
   <div class="space-y-1">
-    <div v-if="!connections.length" class="py-8 text-center text-sm text-gray-500">
+    <div
+      v-if="!connections.length"
+      class="py-8 text-center text-sm text-gray-500 dark:text-gray-400"
+    >
       No connections available
     </div>
 
@@ -12,7 +15,7 @@
     >
       <button
         type="button"
-        class="flex w-full items-start gap-2.5 px-3 py-2 text-left transition-colors rounded-lg"
+        class="flex w-full items-start gap-2.5 px-3 py-2 text-left transition-colors rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 dark:focus-visible:ring-teal-400"
         :class="[
           connectionHeaderClass(connection.id),
           isFileConnection(connection) && mode === 'source' ? 'opacity-50 cursor-not-allowed' : ''
@@ -27,7 +30,7 @@
       >
         <component
           :is="isConnectionExpanded(connection.id) ? ChevronDownIcon : ChevronRightIcon"
-          class="h-4 w-4 shrink-0 text-gray-400 mt-0.5"
+          class="h-4 w-4 shrink-0 text-gray-400 dark:text-gray-500 mt-0.5"
         />
         <div
           :class="[
@@ -44,7 +47,7 @@
         </div>
         <div class="flex-1 min-w-0 flex flex-col gap-0.5">
           <div class="flex items-center gap-1.5">
-            <span class="truncate text-sm font-medium text-gray-900">
+            <span class="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
               <template v-for="(part, i) in getHighlightedText(connection.name)" :key="i">
                 <mark v-if="part.match" class="bg-yellow-200 font-semibold">{{ part.text }}</mark>
                 <span v-else>{{ part.text }}</span>
@@ -59,14 +62,14 @@
             />
             <span
               v-if="isFileConnection(connection) && mode === 'source'"
-              class="inline-flex items-center px-2 py-0.5 text-[10px] font-medium text-gray-600 bg-gray-100 rounded-full shrink-0"
+              class="inline-flex items-center px-2 py-0.5 text-[10px] font-medium text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded-full shrink-0"
             >
               Not supported as source
             </span>
           </div>
           <div
             v-if="connectionSubtitle(connection)"
-            class="truncate text-xs text-gray-500 leading-tight"
+            class="truncate text-xs text-gray-500 dark:text-gray-400 leading-tight"
           >
             {{ connectionSubtitle(connection) }}
           </div>
@@ -82,22 +85,26 @@
             >
               <span class="h-4 w-4 shrink-0" />
               <span class="flex-1 min-w-0">
-                <div class="truncate text-xs uppercase tracking-wide text-gray-500">
+                <div class="truncate text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
                   {{ getFileDirectory(connection.id) || connection.path || 'No folder configured' }}
                 </div>
                 <div class="mt-1">
                   <template v-if="getFileError(connection.id)">
-                    <span class="text-red-600">{{ getFileError(connection.id) }}</span>
+                    <span class="text-red-600 dark:text-red-400">{{ getFileError(connection.id) }}</span>
                   </template>
                   <template v-else-if="getFileLoadingState(connection.id)">
-                    Loading files…
+                    <span class="text-gray-600 dark:text-gray-300">Loading files…</span>
                   </template>
-                  <template v-else> {{ getFileCount(connection.id) }} files detected </template>
+                  <template v-else>
+                    <span class="text-gray-700 dark:text-gray-200">
+                      {{ getFileCount(connection.id) }} files detected
+                    </span>
+                  </template>
                 </div>
               </span>
               <button
                 type="button"
-                class="ml-auto rounded-md border border-gray-300 px-2 py-1 text-xs font-medium text-gray-600 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+                class="ml-auto rounded-md border border-gray-300 dark:border-gray-600 px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-60"
                 :disabled="getFileLoadingState(connection.id)"
                 @click.stop="refreshFileEntries(connection.id)"
               >
@@ -110,7 +117,7 @@
         <template v-else>
           <div
             v-if="isDatabasesLoading(connection.id)"
-            class="flex items-center gap-2 px-4 py-3 text-sm text-gray-500"
+            class="flex items-center gap-2 px-4 py-3 text-sm text-gray-500 dark:text-gray-400"
           >
             <svg class="h-4 w-4 animate-spin text-blue-500" viewBox="0 0 24 24" fill="none">
               <circle
@@ -132,7 +139,7 @@
 
           <div
             v-else-if="getDatabases(connection.id).length === 0"
-            class="px-4 py-3 text-sm text-gray-500"
+            class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400"
           >
             No databases found
           </div>
@@ -156,7 +163,7 @@
                 </span>
                 <span
                   v-if="getTableCount(connection.id, database.name) !== null"
-                  class="ml-auto text-xs text-gray-400"
+                  class="ml-auto text-xs text-gray-400 dark:text-gray-500"
                 >
                   {{ getTableCount(connection.id, database.name) }} tables
                 </span>
@@ -290,49 +297,51 @@ function connectionSubtitle(connection: Connection): string | null {
 const connectionTooltip = getConnectionTooltip
 
 function connectionCardClass(connectionId: string): string {
+  const base =
+    'border border-transparent bg-white/70 dark:bg-gray-900/30 hover:bg-gray-50 dark:hover:bg-gray-800/70 shadow-sm dark:shadow-gray-900/20'
   if (props.selectedConnectionId !== connectionId) {
-    return 'hover:bg-gray-50'
+    return base
   }
 
   // For file connections, don't highlight the parent connection card
   // Only the file path inside should be highlighted (like database connections)
   const connection = getConnectionById(connectionId)
   if (connection && isFileConnection(connection)) {
-    return 'hover:bg-gray-50'
+    return base
   }
 
   // Selected connection: subtle neutral styling
   // Accent bar is now on the selected database row instead
-  return 'border border-gray-200 bg-white'
+  return 'border border-teal-200 dark:border-teal-500/40 bg-white dark:bg-gray-850 shadow-sm dark:shadow-gray-900/30'
 }
 
 function connectionHeaderClass(connectionId: string): string {
   if (props.selectedConnectionId !== connectionId) {
-    return 'hover:bg-gray-50 text-gray-800'
+    return 'hover:bg-gray-50 dark:hover:bg-gray-800/70 text-gray-800 dark:text-gray-200'
   }
 
   // For file connections, don't apply selected styling to the header
   // Only the file path inside should be highlighted (like database connections)
   const connection = getConnectionById(connectionId)
   if (connection && isFileConnection(connection)) {
-    return 'hover:bg-gray-50 text-gray-800'
+    return 'hover:bg-gray-50 dark:hover:bg-gray-800/70 text-gray-800 dark:text-gray-200'
   }
 
-  return 'bg-transparent text-gray-900'
+  return 'bg-transparent text-gray-900 dark:text-gray-100'
 }
 
 function filePathClass(connectionId: string): string {
   const isSelected = props.selectedConnectionId === connectionId
 
   if (!isSelected) {
-    return 'text-gray-700 hover:bg-gray-50'
+    return 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800/70 border border-transparent dark:border-transparent bg-white/60 dark:bg-gray-900/30'
   }
 
   // Selected file path: unified soft glow + light background based on mode
   if (props.mode === 'source') {
-    return 'bg-yellow-50 border border-yellow-200 text-gray-900'
+    return 'bg-yellow-50 dark:bg-amber-900/40 border border-yellow-200 dark:border-amber-500/50 text-gray-900 dark:text-amber-100'
   } else {
-    return 'bg-green-50 border border-green-200 text-gray-900'
+    return 'bg-green-50 dark:bg-emerald-900/40 border border-green-200 dark:border-emerald-500/50 text-gray-900 dark:text-emerald-100'
   }
 }
 
@@ -341,14 +350,14 @@ function databaseRowClass(connectionId: string, database: string): string {
     props.selectedConnectionId === connectionId && props.selectedDatabase === database
 
   if (!isSelected) {
-    return 'text-gray-700 hover:bg-gray-50'
+    return 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800/70 border border-transparent dark:border-transparent'
   }
 
   // Selected database: soft glow ring + light background based on mode (source = amber, target = blue)
   if (props.mode === 'source') {
-    return 'bg-yellow-50 border border-yellow-200 text-gray-900'
+    return 'bg-yellow-50 dark:bg-amber-900/40 border border-yellow-200 dark:border-amber-500/50 text-gray-900 dark:text-amber-100'
   } else {
-    return 'bg-green-50 border border-green-200 text-gray-900'
+    return 'bg-green-50 dark:bg-emerald-900/40 border border-green-200 dark:border-emerald-500/50 text-gray-900 dark:text-emerald-100'
   }
 }
 

@@ -3,7 +3,7 @@
     <!-- Header with file count, filter, select all, and refresh -->
     <div class="flex items-center gap-4">
       <!-- File count -->
-      <div class="text-sm font-medium text-gray-900 whitespace-nowrap">
+      <div class="text-sm font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap">
         {{ selectedFilesCount }} / {{ files.length }}
       </div>
 
@@ -19,16 +19,18 @@
           :checked="selectAllCheckboxState"
           :indeterminate="indeterminate"
           type="checkbox"
-          class="h-4 w-4 text-gray-600 focus:ring-gray-500 border-gray-300 rounded"
+          class="h-4 w-4 text-gray-600 dark:text-gray-300 focus:ring-gray-500 dark:focus:ring-gray-400 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
           @change="toggleSelectAll"
         />
-        <label for="select-all-files" class="ml-2 text-sm text-gray-700"> Select All </label>
+        <label for="select-all-files" class="ml-2 text-sm text-gray-700 dark:text-gray-300">
+          Select All
+        </label>
       </div>
 
       <!-- Refresh button -->
       <button
         type="button"
-        class="inline-flex items-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 whitespace-nowrap"
+        class="inline-flex items-center rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:focus:ring-gray-400 dark:focus:ring-offset-gray-900 whitespace-nowrap"
         :disabled="isLoading"
         @click="refresh"
       >
@@ -37,10 +39,19 @@
     </div>
 
     <!-- File List -->
-    <div class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg divide-y divide-gray-200">
-      <div v-if="isLoading" class="py-10 text-center text-sm text-gray-500">Loading files…</div>
-      <div v-else-if="error" class="py-10 text-center text-sm text-red-600">{{ error }}</div>
-      <div v-else-if="!filteredFiles.length" class="py-10 text-center text-sm text-gray-500">
+    <div
+      class="bg-white dark:bg-gray-850 shadow-sm dark:shadow-gray-900/30 ring-1 ring-gray-900/5 dark:ring-gray-700 rounded-lg divide-y divide-gray-200 dark:divide-gray-800"
+    >
+      <div v-if="isLoading" class="py-10 text-center text-sm text-gray-500 dark:text-gray-400">
+        Loading files…
+      </div>
+      <div v-else-if="error" class="py-10 text-center text-sm text-red-600 dark:text-red-400">
+        {{ error }}
+      </div>
+      <div
+        v-else-if="!filteredFiles.length"
+        class="py-10 text-center text-sm text-gray-500 dark:text-gray-400"
+      >
         No files found
       </div>
       <div v-else class="p-4">
@@ -48,14 +59,14 @@
           <div
             v-for="file in filteredFiles"
             :key="file.path"
-            class="flex items-center justify-between px-3 py-2 text-sm rounded-md hover:bg-gray-50"
+            class="flex items-center justify-between px-3 py-2 text-sm rounded-md hover:bg-gray-50 dark:hover:bg-gray-800/70"
           >
             <div class="flex items-center flex-1">
               <input
                 :id="`file-${file.path}`"
                 v-model="file.selected"
                 type="checkbox"
-                class="h-4 w-4 text-gray-600 focus:ring-gray-500 border-gray-300 rounded mr-3"
+                class="h-4 w-4 text-gray-600 dark:text-gray-300 focus:ring-gray-500 dark:focus:ring-gray-400 border-gray-300 dark:border-gray-600 rounded mr-3 bg-white dark:bg-gray-800"
                 @change="
                   handleCheckboxChange(file, ($event.target as HTMLInputElement)?.checked || false)
                 "
@@ -66,10 +77,12 @@
                 class="h-6 w-6 flex-shrink-0 mr-2 object-contain"
               />
               <label :for="`file-${file.path}`" class="cursor-pointer flex-1 truncate">
-                {{ file.name }}
+                <span class="text-gray-900 dark:text-gray-100">{{ file.name }}</span>
               </label>
             </div>
-            <span class="text-xs text-gray-500 ml-4">{{ formatFileSize(file.size) }}</span>
+            <span class="text-xs text-gray-500 dark:text-gray-400 ml-4">
+              {{ formatFileSize(file.size) }}
+            </span>
           </div>
         </div>
       </div>

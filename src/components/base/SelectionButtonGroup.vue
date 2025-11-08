@@ -98,7 +98,10 @@ const activeDescription = computed(() => {
 <template>
   <RadioGroup :model-value="modelValue" :disabled="disabled" @update:model-value="handleChange">
     <!-- Label -->
-    <RadioGroupLabel v-if="label" class="block text-sm font-medium text-gray-700 mb-2">
+    <RadioGroupLabel
+      v-if="label"
+      class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+    >
       {{ label }}
       <span v-if="required" class="text-red-500 ml-0.5">*</span>
     </RadioGroupLabel>
@@ -118,10 +121,12 @@ const activeDescription = computed(() => {
             'rounded-md font-medium border transition-all duration-150',
             'focus:outline-none cursor-pointer',
             sizeClasses[size],
-            active ? 'ring-2 ring-teal-500 ring-offset-2' : '',
+            active
+              ? 'ring-2 ring-teal-500 dark:ring-teal-400 ring-offset-2 dark:ring-offset-gray-900'
+              : '',
             checked
-              ? 'bg-teal-600 text-white border-teal-600'
-              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400',
+              ? 'bg-teal-600 dark:bg-teal-500 text-white border-teal-600 dark:border-teal-400'
+              : 'bg-white dark:bg-gray-850 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800 hover:border-gray-400 dark:hover:border-gray-500',
             (disabled || option.disabled) &&
               'opacity-50 cursor-not-allowed hover:bg-white hover:border-gray-300',
             showCheckIcon && checked
@@ -141,13 +146,13 @@ const activeDescription = computed(() => {
     <RadioGroupDescription
       v-if="helperText || activeDescription"
       as="p"
-      class="mt-2 text-sm text-gray-500"
+      class="mt-2 text-sm text-gray-500 dark:text-gray-400"
     >
       {{ helperText || activeDescription }}
     </RadioGroupDescription>
 
     <!-- Error Message -->
-    <p v-if="error" class="mt-2 text-sm text-red-600">
+    <p v-if="error" class="mt-2 text-sm text-red-600 dark:text-red-400">
       {{ error }}
     </p>
   </RadioGroup>

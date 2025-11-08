@@ -1,6 +1,6 @@
 <template>
   <div
-    class="bg-linear-to-br from-slate-50 to-white rounded-xl p-6 border border-gray-100 shadow-sm"
+    class="bg-linear-to-br from-slate-50 to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-850 rounded-xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm dark:shadow-gray-900/30"
   >
     <FormInput
       v-model="streamName"

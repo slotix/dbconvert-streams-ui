@@ -5,7 +5,7 @@
       <nav aria-label="Progress">
         <ol
           role="list"
-          class="divide-y divide-gray-200 rounded-md border border-gray-300 bg-white md:flex md:divide-y-0"
+          class="divide-y divide-gray-200 dark:divide-gray-800 rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm dark:shadow-gray-900/30 md:flex md:divide-y-0"
         >
           <li v-for="(step, stepIdx) in steps" :key="step.name" class="relative md:flex md:flex-1">
             <!-- Completed Step -->
@@ -16,7 +16,9 @@
                 >
                   <CheckIcon class="size-6 text-white" aria-hidden="true" />
                 </span>
-                <span class="ml-4 text-sm font-medium text-gray-900">{{ step.title }}</span>
+                <span class="ml-4 text-sm font-medium text-gray-900 dark:text-gray-100">{{
+                  step.title
+                }}</span>
               </span>
             </div>
 
@@ -27,22 +29,30 @@
               aria-current="step"
             >
               <span
-                class="flex size-10 shrink-0 items-center justify-center rounded-full border-2 border-teal-600 bg-teal-50"
+                class="flex size-10 shrink-0 items-center justify-center rounded-full border-2 border-teal-600 dark:border-teal-400 bg-teal-50 dark:bg-teal-900/40"
               >
-                <span class="text-teal-600 font-semibold">{{ stepIdx + 1 }}</span>
+                <span class="text-teal-600 dark:text-teal-300 font-semibold">
+                  {{ stepIdx + 1 }}
+                </span>
               </span>
-              <span class="ml-4 text-sm font-semibold text-teal-600">{{ step.title }}</span>
+              <span class="ml-4 text-sm font-semibold text-teal-600 dark:text-teal-300">{{
+                step.title
+              }}</span>
             </div>
 
             <!-- Upcoming Step -->
             <div v-else class="group flex items-center">
               <span class="flex items-center px-6 py-4 text-sm font-medium">
                 <span
-                  class="flex size-10 shrink-0 items-center justify-center rounded-full border-2 border-gray-300"
+                  class="flex size-10 shrink-0 items-center justify-center rounded-full border-2 border-gray-300 dark:border-gray-600"
                 >
-                  <span class="text-gray-400">{{ stepIdx + 1 }}</span>
+                  <span class="text-gray-400 dark:text-gray-500">
+                    {{ stepIdx + 1 }}
+                  </span>
                 </span>
-                <span class="ml-4 text-sm font-medium text-gray-400">{{ step.title }}</span>
+                <span class="ml-4 text-sm font-medium text-gray-400 dark:text-gray-500">{{
+                  step.title
+                }}</span>
               </span>
             </div>
 
@@ -50,7 +60,7 @@
             <template v-if="stepIdx !== steps.length - 1">
               <div class="absolute top-0 right-0 hidden h-full w-5 md:block" aria-hidden="true">
                 <svg
-                  class="size-full text-gray-300"
+                  class="size-full text-gray-300 dark:text-gray-700"
                   viewBox="0 0 22 80"
                   fill="none"
                   preserveAspectRatio="none"
@@ -70,7 +80,9 @@
     </div>
 
     <!-- Wizard Content -->
-    <div class="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
+    <div
+      class="bg-white dark:bg-gray-850 rounded-2xl p-6 shadow-lg dark:shadow-gray-900/30 border border-gray-100 dark:border-gray-700"
+    >
       <!-- Step Content Slot -->
       <div class="mb-8">
         <slot :currentStep="currentStep" :currentStepIndex="currentStepIndex"></slot>
