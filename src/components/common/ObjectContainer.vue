@@ -193,25 +193,32 @@ async function onRefreshClick() {
       $attrs.class ? $attrs.class : 'shadow-sm ring-1 ring-gray-900/5 dark:ring-gray-700 rounded-lg'
     ]"
   >
-    <!-- Header with tabs and refresh button -->
-    <div class="border-b border-gray-200 dark:border-gray-700 px-4">
-      <div class="flex items-center justify-between -mb-px">
-        <div class="flex items-center gap-4 flex-wrap">
+    <!-- Header with segmented control tabs and refresh button -->
+    <div class="border-b border-gray-200 dark:border-gray-700 px-4 py-2.5">
+      <div class="flex items-center justify-between">
+        <div class="inline-flex rounded-md shadow-sm" role="group">
           <button
             v-for="(tab, i) in tabs"
             :key="tab.name"
             :class="[
-              'border-b-2 py-4 px-1 text-sm font-medium whitespace-nowrap transition-colors duration-150',
+              'px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-all duration-200',
+              'focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-teal-400 dark:focus:ring-teal-500 focus:z-10',
+              'border border-gray-300 dark:border-gray-600',
+              // Rounded corners only on first and last
+              i === 0 ? 'rounded-l-md' : '',
+              i === tabs.length - 1 ? 'rounded-r-md' : '',
+              // Remove left border from middle buttons to avoid double borders
+              i !== 0 ? '-ml-px' : '',
               selectedIndex === i
-                ? 'border-slate-500 dark:border-slate-400 text-slate-600 dark:text-slate-100'
-                : 'border-transparent text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-gray-300'
+                ? 'bg-teal-500 dark:bg-teal-600 text-white border-teal-500 dark:border-teal-600 z-10'
+                : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100'
             ]"
             @click="onTabChange(i)"
           >
             {{ tab.name }}
           </button>
         </div>
-        <div class="py-2">
+        <div>
           <button
             type="button"
             class="inline-flex items-center rounded-md bg-white dark:bg-gray-800 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 shadow-sm dark:shadow-gray-900/30 border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
