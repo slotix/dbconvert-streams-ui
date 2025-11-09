@@ -71,7 +71,7 @@ function toggleExpand() {
 </script>
 
 <template>
-  <div class="border-b border-gray-200">
+  <div class="border-b border-gray-200 dark:border-gray-700">
     <!-- Main Row -->
     <div
       :class="[rowBackgroundClass, 'flex items-center gap-2 px-4 py-2 cursor-pointer']"
@@ -80,12 +80,12 @@ function toggleExpand() {
       <!-- Expand/Collapse Icon (if expandable) -->
       <button
         v-if="expandable"
-        class="flex-shrink-0 p-0.5 hover:bg-gray-200 rounded transition-colors"
+        class="flex-shrink-0 p-0.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
         @click.stop="toggleExpand"
       >
         <component
           :is="isExpanded ? ChevronDownIcon : ChevronRightIcon"
-          class="w-4 h-4 text-gray-500"
+          class="w-4 h-4 text-gray-500 dark:text-gray-400"
         />
       </button>
 
@@ -112,11 +112,11 @@ function toggleExpand() {
       <!-- Copy Button (if copyable) -->
       <button
         v-if="copyText"
-        class="flex-shrink-0 p-1 text-gray-400 hover:text-blue-600 transition-colors rounded"
+        class="flex-shrink-0 p-1 text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors rounded"
         title="Copy"
         @click.stop="copyToClipboard"
       >
-        <CheckIcon v-if="copied" class="w-4 h-4 text-green-600" />
+        <CheckIcon v-if="copied" class="w-4 h-4 text-green-600 dark:text-green-400" />
         <ClipboardIcon v-else class="w-4 h-4" />
       </button>
     </div>

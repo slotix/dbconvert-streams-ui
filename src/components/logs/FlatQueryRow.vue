@@ -94,24 +94,24 @@ function toggleExpanded() {
     <!-- Location Header (when visual grouping is enabled) -->
     <div
       v-if="showLocationHeader && location"
-      class="bg-gray-100 border-b border-gray-300 px-4 py-2 flex items-center gap-3 cursor-pointer hover:bg-gray-200 transition-colors sticky top-0 z-10"
+      class="bg-gray-100 dark:bg-gray-800 border-b border-gray-300 dark:border-gray-700 px-4 py-2 flex items-center gap-3 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors sticky top-0 z-10"
       @click="toggleLocation"
     >
       <!-- Expand/Collapse Icon -->
       <component
         :is="isLocationCollapsed ? ChevronRightIcon : ChevronDownIcon"
-        class="w-4 h-4 text-gray-700 flex-shrink-0"
+        class="w-4 h-4 text-gray-700 dark:text-gray-300 flex-shrink-0"
       />
 
       <!-- Location Label -->
-      <span class="text-sm font-semibold text-gray-900">
+      <span class="text-sm font-semibold text-gray-900 dark:text-gray-100">
         {{ location }}
       </span>
 
       <!-- Query Count Badge -->
       <span
         v-if="queriesInGroup && queriesInGroup > 1"
-        class="text-xs bg-gray-300 text-gray-700 px-2 py-0.5 rounded"
+        class="text-xs bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 px-2 py-0.5 rounded"
       >
         {{ queriesInGroup }}
       </span>
@@ -120,12 +120,12 @@ function toggleExpanded() {
     <!-- Query Row (hidden if location is collapsed) -->
     <div
       v-if="!isLocationCollapsed"
-      class="border-b border-gray-200 hover:bg-gray-50 transition-colors"
-      :class="{ 'bg-red-50': log.error }"
+      class="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+      :class="{ 'bg-red-50 dark:bg-red-900/20': log.error }"
     >
       <!-- Header row with all metadata -->
       <div class="flat-row-header" @click="toggleExpanded">
-        <span class="text-[0.65rem] font-mono text-gray-500">{{ formatTime(log.startedAt) }}</span>
+        <span class="text-[0.65rem] font-mono text-gray-500 dark:text-gray-400">{{ formatTime(log.startedAt) }}</span>
         <span class="flex-shrink-0">
           <span
             class="px-1.5 py-0.5 rounded font-semibold uppercase tracking-wide text-[0.65rem]"
@@ -135,7 +135,7 @@ function toggleExpanded() {
           </span>
         </span>
         <span
-          class="text-[0.7rem] text-gray-700 overflow-hidden text-ellipsis whitespace-nowrap"
+          class="text-[0.7rem] text-gray-700 dark:text-gray-300 overflow-hidden text-ellipsis whitespace-nowrap"
           :title="locationLabel"
         >
           {{ locationLabel }}
@@ -147,7 +147,7 @@ function toggleExpanded() {
           {{ log.durationMs }}ms
         </span>
         <span
-          class="text-[0.65rem] text-gray-500 text-right"
+          class="text-[0.65rem] text-gray-500 dark:text-gray-400 text-right"
           :class="{ 'flat-meta--rows-empty': !shouldShowRowCount }"
         >
           <template v-if="shouldShowRowCount">{{ formattedRowCount }} rows</template>
@@ -156,7 +156,7 @@ function toggleExpanded() {
           class="text-right text-[0.7rem]"
           :class="{
             'flat-meta--status-empty': !log.error,
-            'text-red-600 font-semibold': log.error
+            'text-red-600 dark:text-red-400 font-semibold': log.error
           }"
         >
           <template v-if="log.error">ERROR</template>
@@ -169,18 +169,18 @@ function toggleExpanded() {
         >
           <code
             v-highlightjs
-            class="language-sql text-xs font-mono bg-gray-50 hover:bg-blue-50 px-2 py-1 rounded whitespace-nowrap overflow-hidden text-ellipsis block"
+            class="language-sql text-xs font-mono bg-gray-50 dark:bg-gray-800 hover:bg-blue-50 dark:hover:bg-blue-900/30 px-2 py-1 rounded whitespace-nowrap overflow-hidden text-ellipsis block"
             >{{ oneLineQuery }}</code
           >
         </span>
 
         <!-- Copy button -->
         <button
-          class="ml-2 p-1 text-gray-400 hover:text-blue-600 transition-colors rounded"
+          class="ml-2 p-1 text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors rounded"
           title="Copy query"
           @click.stop="copyQuery"
         >
-          <CheckIcon v-if="copied" class="w-4 h-4 text-green-600" />
+          <CheckIcon v-if="copied" class="w-4 h-4 text-green-600 dark:text-green-400" />
           <ClipboardIcon v-else class="w-4 h-4" />
         </button>
       </div>
@@ -196,22 +196,22 @@ function toggleExpanded() {
         <!-- Full Query using SqlCodeBlock -->
         <div class="mb-3">
           <SqlCodeBlock :code="fullQuery" title="Query" :dialect="dialect" />
-          <div v-if="log.redacted" class="text-xs text-orange-600 mt-1">
+          <div v-if="log.redacted" class="text-xs text-orange-600 dark:text-orange-400 mt-1">
             ⚠️ Query contains redacted sensitive values
           </div>
         </div>
 
         <!-- Error -->
         <div v-if="log.error" class="mb-3">
-          <div class="text-xs font-semibold text-red-700 mb-1">Error:</div>
-          <div class="text-xs bg-red-100 text-red-800 p-3 rounded border border-red-300">
+          <div class="text-xs font-semibold text-red-700 dark:text-red-400 mb-1">Error:</div>
+          <div class="text-xs bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 p-3 rounded border border-red-300 dark:border-red-800">
             {{ log.error }}
           </div>
         </div>
 
         <!-- Metadata -->
         <div v-if="log.tabId" class="grid grid-cols-2 gap-2 text-xs">
-          <div><span class="font-semibold">Tab:</span> {{ log.tabId }}</div>
+          <div class="dark:text-gray-300"><span class="font-semibold">Tab:</span> {{ log.tabId }}</div>
         </div>
       </ExpandableSection>
     </div>
@@ -286,9 +286,13 @@ function toggleExpanded() {
 
 /* SQL syntax highlighting - matching grouped mode style */
 :deep(.hljs) {
-  @apply bg-white font-mono;
+  @apply bg-white dark:bg-gray-800 font-mono;
   color: #24292e;
   padding: 0;
+}
+
+.dark :deep(.hljs) {
+  color: #c9d1d9;
 }
 
 .flat-row-header :deep(.hljs) {
@@ -296,35 +300,35 @@ function toggleExpanded() {
 }
 
 :deep(.hljs-keyword) {
-  @apply text-[#d73a49] font-semibold;
+  @apply text-[#d73a49] dark:text-[#ff7b72] font-semibold;
 }
 
 :deep(.hljs-string) {
-  @apply text-[#032f62];
+  @apply text-[#032f62] dark:text-[#a5d6ff];
 }
 
 :deep(.hljs-number) {
-  @apply text-[#005cc5];
+  @apply text-[#005cc5] dark:text-[#79c0ff];
 }
 
 :deep(.hljs-operator) {
-  @apply text-[#d73a49];
+  @apply text-[#d73a49] dark:text-[#ff7b72];
 }
 
 :deep(.hljs-punctuation) {
-  @apply text-[#24292e];
+  @apply text-[#24292e] dark:text-[#c9d1d9];
 }
 
 :deep(.hljs-comment) {
-  @apply text-[#6a737d] italic;
+  @apply text-[#6a737d] dark:text-[#8b949e] italic;
 }
 
 :deep(.hljs-function) {
-  @apply text-[#005cc5];
+  @apply text-[#005cc5] dark:text-[#d2a8ff];
 }
 
 :deep(.hljs-built_in) {
-  @apply text-[#005cc5];
+  @apply text-[#005cc5] dark:text-[#79c0ff];
 }
 
 /* Override SqlCodeBlock line number padding for better alignment */

@@ -380,14 +380,14 @@ onBeforeUnmount(() => {
               class="absolute top-0 left-0 right-0 flex items-center justify-center select-none z-50 pointer-events-auto"
             >
               <div
-                class="w-full h-1 bg-gray-200 hover:bg-gray-300 cursor-ns-resize transition-colors"
+                class="w-full h-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 cursor-ns-resize transition-colors"
                 @mousedown.prevent="startResize"
               ></div>
               <div
-                class="absolute h-4 w-16 -top-2 bg-gray-200 hover:bg-gray-300 rounded-t-md cursor-ns-resize transition-colors flex items-center justify-center"
+                class="absolute h-4 w-16 -top-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-t-md cursor-ns-resize transition-colors flex items-center justify-center"
                 @mousedown.prevent="startResize"
               >
-                <div class="w-6 h-0.5 bg-gray-400 rounded-full"></div>
+                <div class="w-6 h-0.5 bg-gray-400 dark:bg-gray-500 rounded-full"></div>
               </div>
             </div>
 
@@ -406,7 +406,7 @@ onBeforeUnmount(() => {
                   @click="selectedView = 'system'"
                 >
                   System Logs
-                  <span class="ml-2 text-xs px-1.5 py-0.5 rounded-full bg-gray-200 text-gray-600">
+                  <span class="ml-2 text-xs px-1.5 py-0.5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
                     {{ totalLogs }}
                   </span>
                 </button>
@@ -414,13 +414,13 @@ onBeforeUnmount(() => {
                   class="px-4 py-2 text-sm font-medium rounded-md transition-all duration-200"
                   :class="[
                     selectedView === 'sql'
-                      ? 'text-gray-900 bg-gray-100 shadow-sm'
-                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                      ? 'text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-gray-800 shadow-sm'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
                   ]"
                   @click="selectedView = 'sql'"
                 >
-                  <span class="text-green-600 font-semibold">SQL Logs</span>
-                  <span class="ml-2 text-xs px-1.5 py-0.5 rounded-full bg-gray-200 text-gray-600">
+                  <span class="text-green-600 dark:text-green-400 font-semibold">SQL Logs</span>
+                  <span class="ml-2 text-xs px-1.5 py-0.5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
                     {{ store.flatLogs.size }}
                   </span>
                 </button>
@@ -428,7 +428,7 @@ onBeforeUnmount(() => {
               <!-- Close Button -->
               <button
                 type="button"
-                class="text-gray-400 hover:text-gray-600 transition-colors"
+                class="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                 @click="store.toggleLogsPanel"
               >
                 <XMarkIcon class="h-6 w-6" />
@@ -438,17 +438,17 @@ onBeforeUnmount(() => {
             <!-- Filters (only for system logs) - Unified with SQL Logs style -->
             <div
               v-if="selectedView === 'system'"
-              class="flex items-center gap-2 px-4 py-2 bg-white border-b border-gray-200 shadow-sm flex-wrap"
+              class="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-850 border-b border-gray-200 dark:border-gray-700 shadow-sm flex-wrap"
             >
               <!-- Message Type Filter Dropdown (matching SQL Logs pattern) -->
               <div ref="messageTypeMenuRef" class="relative">
                 <button
-                  class="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-white border border-gray-300 rounded hover:bg-gray-100 focus:border-gray-400 focus:ring-1 focus:ring-gray-300 transition-colors text-left"
+                  class="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-700 focus:border-gray-400 dark:focus:border-gray-500 focus:ring-1 focus:ring-gray-300 dark:focus:ring-gray-600 transition-colors text-left"
                   :title="`Filter by message type`"
                   @click="showMessageTypeMenu = !showMessageTypeMenu"
                 >
-                  <FunnelIcon class="w-4 h-4 text-gray-600" />
-                  <span class="text-gray-700 font-medium">
+                  <FunnelIcon class="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                  <span class="text-gray-700 dark:text-gray-200 font-medium">
                     {{
                       selectedMessageTypes.size === messageTypeOptions.length
                         ? 'All Types'
@@ -457,7 +457,7 @@ onBeforeUnmount(() => {
                           : `${selectedMessageTypes.size} Selected`
                     }}
                   </span>
-                  <ChevronDownIcon class="w-3.5 h-3.5 text-gray-400" />
+                  <ChevronDownIcon class="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
                 </button>
 
                 <transition
@@ -467,12 +467,12 @@ onBeforeUnmount(() => {
                 >
                   <div
                     v-if="showMessageTypeMenu"
-                    class="absolute left-0 mt-2 w-56 bg-white border border-gray-200 rounded-md shadow-lg z-50"
+                    class="absolute left-0 mt-2 w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md shadow-lg z-50"
                     @click.stop
                   >
                     <!-- Select All / Clear All -->
                     <button
-                      class="w-full text-left px-3 py-2 text-xs hover:bg-gray-50 flex items-center gap-2 transition-colors group border-b border-gray-100"
+                      class="w-full text-left px-3 py-2 text-xs hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2 transition-colors group border-b border-gray-100 dark:border-gray-700"
                       @click="
                         selectedMessageTypes.size === messageTypeOptions.length
                           ? selectedMessageTypes.clear()
@@ -483,8 +483,8 @@ onBeforeUnmount(() => {
                         :class="[
                           'w-4 h-4 rounded border transition-colors',
                           selectedMessageTypes.size === messageTypeOptions.length
-                            ? 'bg-gray-700 border-gray-700'
-                            : 'border-gray-300 group-hover:border-gray-400'
+                            ? 'bg-gray-700 dark:bg-gray-600 border-gray-700 dark:border-gray-600'
+                            : 'border-gray-300 dark:border-gray-600 group-hover:border-gray-400 dark:group-hover:border-gray-500'
                         ]"
                       >
                         <span
@@ -494,7 +494,7 @@ onBeforeUnmount(() => {
                           ✓
                         </span>
                       </div>
-                      <span class="text-gray-700 group-hover:text-gray-900 font-semibold">
+                      <span class="text-gray-700 dark:text-gray-200 group-hover:text-gray-900 dark:group-hover:text-white font-semibold">
                         {{
                           selectedMessageTypes.size === messageTypeOptions.length
                             ? 'Clear All'
@@ -507,7 +507,7 @@ onBeforeUnmount(() => {
                     <button
                       v-for="type in messageTypeOptions"
                       :key="type"
-                      class="w-full text-left px-3 py-2 text-xs hover:bg-gray-50 flex items-center gap-2 transition-colors group"
+                      class="w-full text-left px-3 py-2 text-xs hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2 transition-colors group"
                       @click="
                         selectedMessageTypes.has(type)
                           ? selectedMessageTypes.delete(type)
@@ -518,8 +518,8 @@ onBeforeUnmount(() => {
                         :class="[
                           'w-4 h-4 rounded border transition-colors',
                           selectedMessageTypes.has(type)
-                            ? 'bg-gray-700 border-gray-700'
-                            : 'border-gray-300 group-hover:border-gray-400'
+                            ? 'bg-gray-700 dark:bg-gray-600 border-gray-700 dark:border-gray-600'
+                            : 'border-gray-300 dark:border-gray-600 group-hover:border-gray-400 dark:group-hover:border-gray-500'
                         ]"
                       >
                         <span
@@ -529,35 +529,35 @@ onBeforeUnmount(() => {
                           ✓
                         </span>
                       </div>
-                      <span class="text-gray-700 group-hover:text-gray-900">{{ type }}</span>
+                      <span class="text-gray-700 dark:text-gray-200 group-hover:text-gray-900 dark:group-hover:text-white">{{ type }}</span>
                     </button>
                   </div>
                 </transition>
               </div>
 
-              <div class="hidden sm:block h-6 border-l border-gray-200" />
+              <div class="hidden sm:block h-6 border-l border-gray-200 dark:border-gray-700" />
 
               <!-- Sort Order Toggle (matching SQL Logs pattern) -->
               <button
-                class="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-white border border-gray-300 rounded hover:bg-gray-100 transition-colors"
+                class="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 :title="`Sort: ${systemLogsSortOrder === 'newest' ? 'Newest on top' : 'Oldest on top'} (S)`"
                 @click="toggleSystemLogsSortOrder"
               >
                 <component
                   :is="systemLogsSortOrder === 'newest' ? ArrowDownIcon : ArrowUpIcon"
-                  class="w-3.5 h-3.5 text-gray-600"
+                  class="w-3.5 h-3.5 text-gray-600 dark:text-gray-400"
                 />
-                <span class="text-gray-700 font-medium">{{
+                <span class="text-gray-700 dark:text-gray-200 font-medium">{{
                   systemLogsSortOrder === 'newest' ? 'Newest' : 'Oldest'
                 }}</span>
               </button>
 
-              <div class="hidden sm:block h-6 border-l border-gray-200" />
+              <div class="hidden sm:block h-6 border-l border-gray-200 dark:border-gray-700" />
 
               <!-- Search Input (matching SQL Logs search style) -->
               <div class="flex-1 relative min-w-0 sm:min-w-48">
                 <svg
-                  class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2"
+                  class="w-4 h-4 text-gray-400 dark:text-gray-500 absolute left-3 top-1/2 -translate-y-1/2"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -574,7 +574,7 @@ onBeforeUnmount(() => {
                   v-model="searchText"
                   type="text"
                   placeholder="Search logs..."
-                  class="w-full text-xs border border-gray-300 rounded pl-9 pr-3 py-1.5 bg-white hover:border-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                  class="w-full text-xs border border-gray-300 dark:border-gray-600 rounded pl-9 pr-3 py-1.5 bg-white dark:bg-gray-800 dark:text-gray-200 dark:placeholder-gray-500 hover:border-gray-400 dark:hover:border-gray-500 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-1 focus:ring-blue-500 dark:focus:ring-blue-400 transition-colors"
                 />
               </div>
 
@@ -582,7 +582,7 @@ onBeforeUnmount(() => {
               <button
                 type="button"
                 title="Clear logs (K)"
-                class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-white bg-orange-600 rounded hover:bg-orange-700 transition-colors shadow-sm"
+                class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-white bg-orange-600 dark:bg-orange-500 rounded hover:bg-orange-700 dark:hover:bg-orange-600 transition-colors shadow-sm"
                 @click="store.clearLogs()"
               >
                 <TrashIcon class="w-3.5 h-3.5" />
@@ -593,7 +593,7 @@ onBeforeUnmount(() => {
             <!-- SQL Console View -->
             <div
               v-if="selectedView === 'sql'"
-              class="h-full bg-white"
+              class="h-full bg-white dark:bg-gray-850"
               :style="{ height: `calc(${panelHeight} - ${CONTENT_HEIGHT_OFFSET}px)` }"
             >
               <SqlConsoleView />
@@ -602,12 +602,12 @@ onBeforeUnmount(() => {
             <!-- System Logs View -->
             <div
               v-else
-              class="flex flex-col h-full bg-white"
+              class="flex flex-col h-full bg-white dark:bg-gray-850"
               :style="{ height: `calc(${panelHeight} - ${CONTENT_HEIGHT_OFFSET}px)` }"
             >
               <!-- Stream Tabs Bar -->
               <div
-                class="bg-white border-b border-gray-200 px-4 py-2 shadow-sm overflow-x-auto shrink-0"
+                class="bg-white dark:bg-gray-850 border-b border-gray-200 dark:border-gray-700 px-4 py-2 shadow-sm overflow-x-auto shrink-0"
               >
                 <div class="flex items-center gap-2">
                   <!-- Tabs Container -->
@@ -618,15 +618,15 @@ onBeforeUnmount(() => {
                       class="flex items-center gap-2 px-3 py-1.5 text-xs rounded transition-colors whitespace-nowrap"
                       :class="[
                         selectedSystemLogTabId === tabId
-                          ? 'bg-blue-50 text-blue-700 border border-blue-300'
-                          : 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-50'
+                          ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-700'
+                          : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
                       ]"
                       :title="tab.fullLabel || tab.label"
                       @click="selectedSystemLogTabId = tabId"
                     >
                       <span class="font-medium">{{ tab.label }}</span>
                       <!-- Log count badge -->
-                      <span class="text-xs bg-gray-300 text-gray-700 px-1.5 py-0.5 rounded">
+                      <span class="text-xs bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 px-1.5 py-0.5 rounded">
                         {{
                           tab.streamId === null
                             ? filteredLogs.filter((log) => !log.streamId).length
@@ -636,11 +636,11 @@ onBeforeUnmount(() => {
                       <!-- Close button (X) - not for General tab -->
                       <button
                         v-if="tabId !== 'general'"
-                        class="flex items-center justify-center w-4 h-4 rounded hover:bg-gray-300 transition-colors ml-1"
+                        class="flex items-center justify-center w-4 h-4 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors ml-1"
                         :class="[
                           selectedSystemLogTabId === tabId
-                            ? 'hover:bg-blue-200'
-                            : 'hover:bg-gray-200'
+                            ? 'hover:bg-blue-200 dark:hover:bg-blue-800'
+                            : 'hover:bg-gray-200 dark:hover:bg-gray-600'
                         ]"
                         :title="`Close tab`"
                         @click.stop="store.removeSystemLogTab(tabId)"
@@ -668,10 +668,10 @@ onBeforeUnmount(() => {
                 </div>
 
                 <!-- Empty State -->
-                <div v-else class="flex items-center justify-center h-full text-gray-500">
+                <div v-else class="flex items-center justify-center h-full text-gray-500 dark:text-gray-400">
                   <div class="text-center">
                     <svg
-                      class="w-12 h-12 mx-auto mb-4 text-gray-400"
+                      class="w-12 h-12 mx-auto mb-4 text-gray-400 dark:text-gray-500"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"

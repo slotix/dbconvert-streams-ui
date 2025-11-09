@@ -65,11 +65,11 @@ onUnmounted(() => {
     <!-- Empty State -->
     <div
       v-if="logsWithHeaders.length === 0"
-      class="flex items-center justify-center h-full text-gray-500"
+      class="flex items-center justify-center h-full text-gray-500 dark:text-gray-400"
     >
       <div class="text-center">
         <svg
-          class="w-12 h-12 mx-auto mb-4 text-gray-400"
+          class="w-12 h-12 mx-auto mb-4 text-gray-400 dark:text-gray-500"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
