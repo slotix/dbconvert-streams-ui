@@ -1,8 +1,62 @@
 <template>
   <div class="h-full flex flex-col bg-white dark:bg-gray-850">
-    <!-- Header -->
+    <!-- Top Level Tabs (always visible) -->
+    <div
+      class="px-6 pt-4 pb-0 bg-white dark:bg-gray-850 shrink-0 border-b border-gray-200 dark:border-gray-700"
+    >
+      <nav class="flex gap-4" aria-label="Tabs">
+        <button
+          :class="[
+            activeTab === 'configuration'
+              ? 'border-teal-600 dark:border-teal-400 text-teal-600 dark:text-teal-400'
+              : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-700',
+            'whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors'
+          ]"
+          @click="activeTab = 'configuration'"
+        >
+          Configuration
+        </button>
+        <button
+          :class="[
+            activeTab === 'monitor'
+              ? 'border-teal-600 dark:border-teal-400 text-teal-600 dark:text-teal-400'
+              : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-700',
+            'whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors'
+          ]"
+          @click="activeTab = 'monitor'"
+        >
+          Monitor
+        </button>
+        <button
+          :class="[
+            activeTab === 'history'
+              ? 'border-teal-600 dark:border-teal-400 text-teal-600 dark:text-teal-400'
+              : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-700',
+            'whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors'
+          ]"
+          @click="activeTab = 'history'"
+        >
+          History
+        </button>
+        <button
+          v-if="isStreamFinished"
+          :class="[
+            activeTab === 'compare'
+              ? 'border-teal-600 dark:border-teal-400 text-teal-600 dark:text-teal-400'
+              : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-700',
+            'whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors'
+          ]"
+          @click="activeTab = 'compare'"
+        >
+          Compare
+        </button>
+      </nav>
+    </div>
+
+    <!-- Context-Aware Header Per Tab -->
     <div class="px-6 py-4 bg-white dark:bg-gray-850 shrink-0">
-      <div class="flex items-center justify-between mb-3">
+      <!-- Configuration Tab Header -->
+      <div v-if="activeTab === 'configuration'" class="flex items-center justify-between">
         <div class="flex items-center min-w-0 flex-1 gap-3">
           <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 truncate">
             {{ stream.name }}
@@ -15,7 +69,7 @@
             variant="secondary"
             @click="navigateToEdit"
           >
-            Edit
+            Edit Config
           </BaseButton>
           <BaseButton
             v-if="!isStreamRunning || isStreamFinished"
@@ -23,14 +77,14 @@
             variant="secondary"
             @click="cloneStream"
           >
-            Clone
+            Clone Config
           </BaseButton>
           <BaseButton
             v-tooltip="
               isStreamRunning && !isStreamFinished
                 ? 'Stream is currently running'
                 : historyRuns.length > 0
-                  ? 'Run the stream again'
+                  ? 'Run a new stream'
                   : 'Start the stream'
             "
             :disabled="isStreamRunning && !isStreamFinished"
@@ -38,7 +92,7 @@
             @click="startStream"
           >
             <PlayIcon class="h-4 w-4" />
-            {{ historyRuns.length > 0 ? 'Run again' : 'Start' }}
+            {{ historyRuns.length > 0 ? 'Run New Stream' : 'Start' }}
           </BaseButton>
           <BaseButton
             v-if="!isStreamRunning || isStreamFinished"
@@ -46,60 +100,105 @@
             variant="danger"
             @click="requestDelete"
           >
-            Delete
+            Delete Config
           </BaseButton>
         </div>
       </div>
 
-      <!-- Tabs (always visible) -->
-      <div class="mt-3">
-        <nav class="-mb-px flex gap-4" aria-label="Tabs">
-          <button
-            :class="[
-              activeTab === 'configuration'
-                ? 'border-teal-600 dark:border-teal-400 text-teal-600 dark:text-teal-400'
-                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-700',
-              'whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors'
-            ]"
-            @click="activeTab = 'configuration'"
+      <!-- Monitor Tab Header -->
+      <div v-else-if="activeTab === 'monitor'" class="space-y-2">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center min-w-0 flex-1 gap-3">
+            <div>
+              <div class="text-xs text-gray-500 dark:text-gray-400">Stream Run</div>
+              <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 font-mono truncate">
+                {{ monitoringStore.streamID || 'Not running' }}
+              </h2>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 ml-4">
+            <!-- Run Again button (when finished) -->
+            <BaseButton
+              v-if="isStreamFinished"
+              v-tooltip="'Run this configuration again'"
+              variant="primary"
+              @click="startStream"
+            >
+              <PlayIcon class="h-4 w-4" />
+              Run Again
+            </BaseButton>
+
+            <!-- Pause/Resume button (when running) -->
+            <BaseButton
+              v-if="isStreamRunning && !isStreamFinished"
+              v-tooltip="isPaused ? 'Resume the stream' : 'Pause the stream'"
+              variant="secondary"
+              @click="isPaused ? resumeStream() : pauseStream()"
+            >
+              <PlayIcon v-if="isPaused" class="h-4 w-4" />
+              <PauseIcon v-else class="h-4 w-4" />
+              {{ isPaused ? 'Resume' : 'Pause' }}
+            </BaseButton>
+
+            <!-- Stop button (when running) -->
+            <BaseButton
+              v-if="isStreamRunning && !isStreamFinished"
+              v-tooltip="'Stop the stream'"
+              variant="danger"
+              @click="stopStream"
+            >
+              <StopIcon class="h-4 w-4" />
+              Stop
+            </BaseButton>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-xs text-gray-500 dark:text-gray-400">Config:</span>
+          <span class="text-sm text-gray-700 dark:text-gray-300 font-medium">{{
+            stream.name
+          }}</span>
+        </div>
+      </div>
+
+      <!-- History Tab Header -->
+      <div v-else-if="activeTab === 'history'" class="flex items-center justify-between">
+        <div class="flex items-center min-w-0 flex-1 gap-3">
+          <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 truncate">
+            {{ stream.name }}
+          </h2>
+          <span class="text-sm text-gray-500 dark:text-gray-400">- Run History</span>
+        </div>
+        <div class="flex items-center gap-2 ml-4">
+          <BaseButton
+            v-tooltip="'Run a new stream from this configuration'"
+            variant="primary"
+            :disabled="isStreamRunning && !isStreamFinished"
+            @click="startStream"
           >
-            Configuration
-          </button>
-          <button
-            :class="[
-              activeTab === 'monitor'
-                ? 'border-teal-600 dark:border-teal-400 text-teal-600 dark:text-teal-400'
-                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-700',
-              'whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors'
-            ]"
-            @click="activeTab = 'monitor'"
+            <PlayIcon class="h-4 w-4" />
+            Run New Stream
+          </BaseButton>
+        </div>
+      </div>
+
+      <!-- Compare Tab Header -->
+      <div v-else-if="activeTab === 'compare'" class="flex items-center justify-between">
+        <div class="flex items-center min-w-0 flex-1 gap-3">
+          <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 truncate">
+            Compare: {{ stream.name }}
+          </h2>
+        </div>
+        <div class="flex items-center gap-2 ml-4">
+          <BaseButton
+            v-tooltip="'Run a new stream from this configuration'"
+            variant="primary"
+            :disabled="isStreamRunning && !isStreamFinished"
+            @click="startStream"
           >
-            Monitor
-          </button>
-          <button
-            :class="[
-              activeTab === 'history'
-                ? 'border-teal-600 dark:border-teal-400 text-teal-600 dark:text-teal-400'
-                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-700',
-              'whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors'
-            ]"
-            @click="activeTab = 'history'"
-          >
-            History
-          </button>
-          <button
-            v-if="isStreamFinished"
-            :class="[
-              activeTab === 'compare'
-                ? 'border-teal-600 dark:border-teal-400 text-teal-600 dark:text-teal-400'
-                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-700',
-              'whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors'
-            ]"
-            @click="activeTab = 'compare'"
-          >
-            Compare
-          </button>
-        </nav>
+            <PlayIcon class="h-4 w-4" />
+            Run New Stream
+          </BaseButton>
+        </div>
       </div>
     </div>
 
@@ -370,10 +469,6 @@
           :is-stream-finished="isStreamFinished"
           :is-paused="isPaused"
           :stream-status="streamStatus"
-          :stream-i-d="monitoringStore.streamID"
-          @pause="pauseStream"
-          @resume="resumeStream"
-          @stop="stopStream"
         />
 
         <!-- Performance Stats -->
@@ -438,6 +533,8 @@ import {
   CalendarIcon,
   ExclamationCircleIcon,
   PlayIcon,
+  PauseIcon,
+  StopIcon,
   ArrowTopRightOnSquareIcon
 } from '@heroicons/vue/24/outline'
 import { Switch } from '@headlessui/vue'

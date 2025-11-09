@@ -10,116 +10,63 @@
       ]"
     >
       <div class="space-y-4">
-        <!-- Top Row: Status Info + Controls -->
-        <div class="flex items-start justify-between gap-4">
-          <!-- Status Display - Left side -->
-          <div class="flex items-start gap-4 flex-1 min-w-0">
-            <div
+        <!-- Status Display - Centered -->
+        <div class="flex items-start gap-4">
+          <div
+            :class="[
+              'flex items-center justify-center w-12 h-12 rounded-full shrink-0 mt-0.5',
+              isRunning
+                ? isStreamFinished
+                  ? 'bg-green-100 dark:bg-green-900/30'
+                  : isPaused
+                    ? 'bg-yellow-100 dark:bg-yellow-900/30'
+                    : 'bg-blue-100 dark:bg-blue-900/30'
+                : 'bg-gray-100 dark:bg-gray-800'
+            ]"
+          >
+            <span
+              v-if="isRunning && !isStreamFinished && !isPaused"
+              class="inline-block w-3 h-3 rounded-full bg-blue-600 animate-pulse"
+            ></span>
+            <svg
+              v-else-if="isStreamFinished"
+              class="h-6 w-6 text-green-600 dark:text-green-300"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+            <PauseIcon
+              v-else-if="isPaused"
+              class="h-6 w-6 text-yellow-600 dark:text-yellow-300"
+            />
+            <PlayIcon v-else class="h-6 w-6 text-gray-400 dark:text-gray-500" />
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400 mb-1">
+              Status
+            </p>
+            <p
               :class="[
-                'flex items-center justify-center w-12 h-12 rounded-full shrink-0 mt-0.5',
+                'text-base font-semibold wrap-break-word',
                 isRunning
                   ? isStreamFinished
-                    ? 'bg-green-100 dark:bg-green-900/30'
+                    ? 'text-green-700 dark:text-green-400'
                     : isPaused
-                      ? 'bg-yellow-100 dark:bg-yellow-900/30'
-                      : 'bg-blue-100 dark:bg-blue-900/30'
-                  : 'bg-gray-100 dark:bg-gray-800'
+                      ? 'text-yellow-700 dark:text-yellow-400'
+                      : 'text-blue-700 dark:text-blue-400'
+                  : 'text-gray-600 dark:text-gray-400'
               ]"
             >
-              <span
-                v-if="isRunning && !isStreamFinished && !isPaused"
-                class="inline-block w-3 h-3 rounded-full bg-blue-600 animate-pulse"
-              ></span>
-              <svg
-                v-else-if="isStreamFinished"
-                class="h-6 w-6 text-green-600 dark:text-green-300"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
-              <PauseIcon
-                v-else-if="isPaused"
-                class="h-6 w-6 text-yellow-600 dark:text-yellow-300"
-              />
-              <PlayIcon v-else class="h-6 w-6 text-gray-400 dark:text-gray-500" />
-            </div>
-            <div class="min-w-0 flex-1">
-              <p class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400 mb-1">
-                Status
-              </p>
-              <p
-                :class="[
-                  'text-base font-semibold wrap-break-word',
-                  isRunning
-                    ? isStreamFinished
-                      ? 'text-green-700 dark:text-green-400'
-                      : isPaused
-                        ? 'text-yellow-700 dark:text-yellow-400'
-                        : 'text-blue-700 dark:text-blue-400'
-                    : 'text-gray-600 dark:text-gray-400'
-                ]"
-              >
-                {{ streamStatus }}
-              </p>
-            </div>
+              {{ streamStatus }}
+            </p>
           </div>
-
-          <!-- Stream Controls - Right side, always visible and compact -->
-          <div class="flex gap-2 shrink-0">
-            <!-- Pause/Resume Button -->
-            <button
-              :disabled="!isRunning || isStreamFinished"
-              :class="[
-                'px-3 py-2 font-medium rounded-md transition-colors flex items-center gap-2 text-sm',
-                isRunning && !isStreamFinished
-                  ? isPaused
-                    ? 'bg-white dark:bg-gray-900 text-cyan-600 dark:text-cyan-300 border border-cyan-300 dark:border-cyan-700 hover:bg-gray-50 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-cyan-500 dark:focus:ring-cyan-300 focus:ring-offset-2 dark:focus:ring-offset-gray-900'
-                    : 'bg-white dark:bg-gray-900 text-cyan-600 dark:text-cyan-300 border border-cyan-300 dark:border-cyan-700 hover:bg-gray-50 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-cyan-500 dark:focus:ring-cyan-300 focus:ring-offset-2 dark:focus:ring-offset-gray-900'
-                  : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 border border-gray-200 dark:border-gray-700 cursor-not-allowed'
-              ]"
-              @click="isPaused ? emit('resume') : emit('pause')"
-            >
-              <PauseIcon v-if="!isPaused" class="h-4 w-4" />
-              <PlayIcon v-else class="h-4 w-4" />
-              {{ isPaused ? 'Resume' : 'Pause' }}
-            </button>
-
-            <!-- Stop Button -->
-            <button
-              :disabled="!isRunning || isStreamFinished"
-              :class="[
-                'px-3 py-2 font-medium rounded-md transition-colors flex items-center gap-2 text-sm',
-                isRunning && !isStreamFinished
-                  ? 'bg-white dark:bg-gray-900 text-red-600 dark:text-red-400 border border-red-300 dark:border-red-700 hover:bg-red-50 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 focus:ring-offset-2 dark:focus:ring-offset-gray-900'
-                  : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 border border-gray-200 dark:border-gray-700 cursor-not-allowed'
-              ]"
-              @click="emit('stop')"
-            >
-              <StopIcon class="h-4 w-4" />
-              Stop
-            </button>
-          </div>
-        </div>
-
-        <!-- Stream ID Display - Full width below status -->
-        <div v-if="isRunning" class="flex items-center gap-2">
-          <p
-            class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400 whitespace-nowrap"
-          >
-            Stream ID:
-          </p>
-          <code
-            class="text-sm font-mono bg-white dark:bg-gray-850 border border-gray-300 dark:border-gray-700 px-3 py-1.5 rounded text-gray-700 dark:text-gray-300 flex-1 min-w-0 truncate"
-          >
-            {{ streamID }}
-          </code>
         </div>
 
         <!-- Progress Bar and Stage Indicators -->
@@ -179,7 +126,7 @@
 </template>
 
 <script setup lang="ts">
-import { PauseIcon, PlayIcon, StopIcon } from '@heroicons/vue/24/outline'
+import { PauseIcon, PlayIcon } from '@heroicons/vue/24/outline'
 import { useMonitoringStore } from '@/stores/monitoring'
 import type { StreamConfig } from '@/types/streamConfig'
 
@@ -189,19 +136,11 @@ interface Props {
   isStreamFinished: boolean
   isPaused: boolean
   streamStatus: string
-  streamID: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  streamStatus: 'Not Running',
-  streamID: ''
+  streamStatus: 'Not Running'
 })
-
-const emit = defineEmits<{
-  (e: 'pause'): void
-  (e: 'resume'): void
-  (e: 'stop'): void
-}>()
 
 const store = useMonitoringStore()
 
