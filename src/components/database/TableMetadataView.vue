@@ -4,6 +4,7 @@ import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/vue'
 import { KeyIcon, LinkIcon } from '@heroicons/vue/24/outline'
 import { type SQLTableMeta, type SQLColumnMeta } from '@/types/metadata'
 import { useObjectTabStateStore } from '@/stores/objectTabState'
+import { formatDataSize } from '@/utils/formats'
 import DdlView from './DdlView.vue'
 
 // Define brand colors as constants for consistency (matching DatabaseDiagramD3.vue)
@@ -98,6 +99,18 @@ const foreignKeys = computed(() => {
 const indexes = computed(() => props.tableMeta?.indexes || [])
 const primaryKeys = computed(() => props.tableMeta?.primaryKeys || [])
 const ddl = computed(() => props.tableMeta?.ddl)
+const partitions = computed(() => props.tableMeta?.partitions || [])
+const isPartitioned = computed(() => props.tableMeta?.isPartitioned || false)
+const partitionStrategy = computed(() => props.tableMeta?.partitionStrategy || '')
+
+// Debug logging
+watch(
+  [partitions, isPartitioned],
+  ([p, ip]) => {
+    console.log('TableMetadataView - Partitions:', p, 'IsPartitioned:', ip, 'Count:', p.length)
+  },
+  { immediate: true }
+)
 
 const tabs = computed(() => {
   const baseTabs = [
@@ -105,6 +118,11 @@ const tabs = computed(() => {
     { name: 'Keys', count: primaryKeys.value.length + foreignKeys.value.length },
     { name: 'Indexes', count: indexes.value.length }
   ]
+
+  // Add Partitions tab only if table is partitioned
+  if (isPartitioned.value && partitions.value.length > 0) {
+    baseTabs.push({ name: 'Partitions', count: partitions.value.length })
+  }
 
   if (ddl.value) {
     baseTabs.push({
@@ -415,6 +433,114 @@ function getColumnCheckConstraints(column: SQLColumnMeta): string {
                         class="whitespace-nowrap px-3 py-2 text-sm text-gray-500 dark:text-gray-400"
                       >
                         {{ index.type }}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </TabPanel>
+
+        <!-- Partitions Panel -->
+        <TabPanel v-if="isPartitioned && partitions.length > 0">
+          <div class="mb-4">
+            <div
+              class="rounded-lg bg-blue-50 dark:bg-blue-900/20 p-4 border border-blue-200 dark:border-blue-800"
+            >
+              <div class="flex">
+                <div class="flex-shrink-0">
+                  <svg
+                    class="h-5 w-5 text-blue-400 dark:text-blue-300"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
+                </div>
+                <div class="ml-3">
+                  <h3 class="text-sm font-medium text-blue-800 dark:text-blue-200">
+                    Partitioned Table
+                  </h3>
+                  <div class="mt-2 text-sm text-blue-700 dark:text-blue-300">
+                    <p>
+                      This table uses <strong>{{ partitionStrategy }}</strong> partitioning strategy
+                      with {{ partitions.length }}
+                      {{ partitions.length === 1 ? 'partition' : 'partitions' }}.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto">
+            <div class="inline-block min-w-full align-middle">
+              <div class="overflow-hidden ring-1 ring-gray-200 dark:ring-gray-700 rounded-lg">
+                <table class="min-w-full divide-y divide-gray-300 dark:divide-gray-700">
+                  <thead>
+                    <tr class="bg-gray-50 dark:bg-gray-900">
+                      <th
+                        class="px-3 py-2 text-left text-sm font-semibold text-gray-900 dark:text-gray-100"
+                      >
+                        Partition Name
+                      </th>
+                      <th
+                        class="px-3 py-2 text-left text-sm font-semibold text-gray-900 dark:text-gray-100"
+                      >
+                        Bounds/Values
+                      </th>
+                      <th
+                        class="px-3 py-2 text-right text-sm font-semibold text-gray-900 dark:text-gray-100"
+                      >
+                        Rows
+                      </th>
+                      <th
+                        class="px-3 py-2 text-right text-sm font-semibold text-gray-900 dark:text-gray-100"
+                      >
+                        Size
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody
+                    class="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-850"
+                  >
+                    <tr
+                      v-for="partition in partitions"
+                      :key="partition.name"
+                      class="hover:bg-gray-50 dark:hover:bg-gray-800"
+                    >
+                      <td
+                        class="whitespace-nowrap px-3 py-2 text-sm font-medium text-gray-900 dark:text-gray-100"
+                      >
+                        {{ partition.name }}
+                        <span
+                          v-if="partition.isDefault"
+                          class="ml-2 inline-flex items-center rounded-md bg-gray-100 dark:bg-gray-700 px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-300"
+                        >
+                          DEFAULT
+                        </span>
+                      </td>
+                      <td class="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
+                        <code
+                          class="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded font-mono"
+                        >
+                          {{ partition.values || 'N/A' }}
+                        </code>
+                      </td>
+                      <td
+                        class="whitespace-nowrap px-3 py-2 text-sm text-gray-500 dark:text-gray-400 text-right"
+                      >
+                        {{ partition.approxRows.toLocaleString() }}
+                      </td>
+                      <td
+                        class="whitespace-nowrap px-3 py-2 text-sm text-gray-500 dark:text-gray-400 text-right"
+                      >
+                        {{ formatDataSize(partition.sizeBytes) }}
                       </td>
                     </tr>
                   </tbody>

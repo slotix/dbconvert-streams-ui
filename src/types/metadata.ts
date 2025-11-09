@@ -22,6 +22,17 @@ export interface SQLCheckConstraintMeta {
   clause: string // The CHECK constraint expression/clause
 }
 
+export interface SQLPartitionMeta {
+  name: string // Partition name (e.g., stream_sessions_y2025m01)
+  schema: string // Schema name
+  strategy: string // RANGE, LIST, HASH
+  expression: string // Partition key expression
+  values: string // Partition bounds/values
+  sizeBytes: number // Partition size
+  approxRows: number // Approximate row count
+  isDefault: boolean // Is this the default partition?
+}
+
 export interface SQLColumnMeta {
   name: string
   dataType: string
@@ -62,6 +73,9 @@ export interface SQLTableMeta {
     createTable: string
     createIndexes?: string[]
   }
+  partitions?: SQLPartitionMeta[] // Child partitions (if table is partitioned)
+  isPartitioned?: boolean // Is this a partitioned table?
+  partitionStrategy?: string // RANGE, LIST, HASH (if partitioned)
 }
 
 export interface SQLViewMeta {
