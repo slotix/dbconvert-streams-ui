@@ -14,7 +14,9 @@
         >
           <div
             :class="[
-              active ? 'ring-2 ring-gray-600 dark:ring-gray-400 ring-offset-2 dark:ring-offset-gray-900' : '',
+              active
+                ? 'ring-2 ring-gray-600 dark:ring-gray-400 ring-offset-2 dark:ring-offset-gray-900'
+                : '',
               checked
                 ? 'bg-gray-600 dark:bg-gray-500 text-white hover:bg-gray-500 dark:hover:bg-gray-400'
                 : 'ring-1 ring-inset ring-gray-300 dark:ring-gray-600 bg-white dark:bg-gray-850 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800',

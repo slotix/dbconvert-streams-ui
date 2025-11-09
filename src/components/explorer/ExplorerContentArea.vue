@@ -107,14 +107,15 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, defineAsyncComponent } from 'vue'
 import { useRoute } from 'vue-router'
 import { useConnectionsStore } from '@/stores/connections'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { usePaneTabsStore, type PaneId } from '@/stores/paneTabs'
 import ConnectionDetailsPanel from '@/components/database/ConnectionDetailsPanel.vue'
 import DatabaseOverviewPanel from '@/components/database/DatabaseOverviewPanel.vue'
-import DiagramView from '@/components/database/DiagramView.vue'
+// Lazy load DiagramView since it includes heavy D3.js and export libraries
+const DiagramView = defineAsyncComponent(() => import('@/components/database/DiagramView.vue'))
 import ExplorerSplitPane from './ExplorerSplitPane.vue'
 import type { SplitPaneResizeController } from '@/composables/useSplitPaneResize'
 import PaneNavigationTabs from './PaneNavigationTabs.vue'

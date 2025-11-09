@@ -41,7 +41,10 @@
     <div
       class="bg-white dark:bg-gray-850 shadow-sm dark:shadow-gray-900/30 ring-1 ring-gray-900/5 dark:ring-gray-700 rounded-lg divide-y divide-gray-200 dark:divide-gray-800"
     >
-      <div v-if="filteredTablesCount === 0" class="text-center text-gray-500 dark:text-gray-400 py-8">
+      <div
+        v-if="filteredTablesCount === 0"
+        class="text-center text-gray-500 dark:text-gray-400 py-8"
+      >
         No tables found
       </div>
       <div v-else class="p-4">
@@ -143,7 +146,9 @@
                       : 'ml-4 mt-1 mb-3'
                   "
                 >
-                  <div class="bg-gray-50 dark:bg-gray-900/40 border border-gray-200 dark:border-gray-700 rounded-md p-4">
+                  <div
+                    class="bg-gray-50 dark:bg-gray-900/40 border border-gray-200 dark:border-gray-700 rounded-md p-4"
+                  >
                     <div class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
                       Settings for:
                       <span class="font-semibold text-gray-900 dark:text-gray-100">

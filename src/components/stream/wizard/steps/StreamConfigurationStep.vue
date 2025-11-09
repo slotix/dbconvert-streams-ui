@@ -88,7 +88,9 @@
             </div>
             <div class="flex items-center justify-between">
               <span>Tables:</span>
-              <span class="font-medium text-gray-900 dark:text-gray-100">{{ tableCount }} selected</span>
+              <span class="font-medium text-gray-900 dark:text-gray-100"
+                >{{ tableCount }} selected</span
+              >
             </div>
             <div class="flex items-center justify-between">
               <span>Bundle Size:</span>

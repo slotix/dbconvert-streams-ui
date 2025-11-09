@@ -62,7 +62,7 @@
     "eslint-plugin-vue": "^9.29.0",
     "globals": "^15.11.0",
     "jsdom": ">=25.0.1",
-    "postcss": "^8.5.3",
+    "postcss": "^8.4.31",
     "prettier": ">=3.0.0",
     "tailwindcss": "^4.1.15",
     "typescript": "^5.5.3",

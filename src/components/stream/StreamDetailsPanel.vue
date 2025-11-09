@@ -431,7 +431,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, defineAsyncComponent } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   ClipboardIcon,
@@ -453,14 +453,18 @@ import ConnectionStringDisplay from '@/components/common/ConnectionStringDisplay
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
 import MonitorHeader from '@/components/monitoring/MonitorHeader.vue'
 import StatContainer from '@/components/monitoring/StatContainer.vue'
-import StreamHistoryTableAGGrid from './StreamHistoryTableAGGrid.vue'
-import StreamCompareView from './StreamCompareView.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import { normalizeConnectionType } from '@/utils/connectionUtils'
 import { formatDateTime } from '@/utils/formats'
 import { getDatabaseIconBgColor, getDatabaseIconTint } from '@/constants/databaseColors'
 import type { StreamConfig } from '@/types/streamConfig'
 import type { Connection, DbType } from '@/types/connections'
+
+// Lazy load heavy components that use ag-grid
+const StreamHistoryTableAGGrid = defineAsyncComponent(
+  () => import('./StreamHistoryTableAGGrid.vue')
+)
+const StreamCompareView = defineAsyncComponent(() => import('./StreamCompareView.vue'))
 
 interface StreamRun {
   id: string

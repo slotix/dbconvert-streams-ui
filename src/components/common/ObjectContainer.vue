@@ -1,19 +1,27 @@
 <script setup lang="ts">
-import { computed, ref, watch, type Component } from 'vue'
+import { computed, ref, watch, defineAsyncComponent, type Component } from 'vue'
 import { ArrowPathIcon } from '@heroicons/vue/24/outline'
 import { type SQLTableMeta, type SQLViewMeta } from '@/types/metadata'
 import { type FileSystemEntry } from '@/api/fileSystem'
 import { type FileMetadata } from '@/types/files'
 import { useObjectTabStateStore } from '@/stores/objectTabState'
 
-// Database components
-import TableMetadataView from '@/components/database/TableMetadataView.vue'
-import ViewStructureView from '@/components/database/ViewStructureView.vue'
-import DatabaseObjectDataView from '@/components/database/DatabaseObjectDataView.vue'
+// Lazy load database components that use ag-grid
+const TableMetadataView = defineAsyncComponent(
+  () => import('@/components/database/TableMetadataView.vue')
+)
+const ViewStructureView = defineAsyncComponent(
+  () => import('@/components/database/ViewStructureView.vue')
+)
+const DatabaseObjectDataView = defineAsyncComponent(
+  () => import('@/components/database/DatabaseObjectDataView.vue')
+)
 
-// File components
-import FileDataView from '@/components/files/FileDataView.vue'
-import FileStructureView from '@/components/files/FileStructureView.vue'
+// Lazy load file components that use ag-grid
+const FileDataView = defineAsyncComponent(() => import('@/components/files/FileDataView.vue'))
+const FileStructureView = defineAsyncComponent(
+  () => import('@/components/files/FileStructureView.vue')
+)
 
 defineOptions({
   name: 'ObjectContainer'

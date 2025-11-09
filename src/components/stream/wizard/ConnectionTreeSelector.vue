@@ -85,12 +85,16 @@
             >
               <span class="h-4 w-4 shrink-0" />
               <span class="flex-1 min-w-0">
-                <div class="truncate text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                <div
+                  class="truncate text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400"
+                >
                   {{ getFileDirectory(connection.id) || connection.path || 'No folder configured' }}
                 </div>
                 <div class="mt-1">
                   <template v-if="getFileError(connection.id)">
-                    <span class="text-red-600 dark:text-red-400">{{ getFileError(connection.id) }}</span>
+                    <span class="text-red-600 dark:text-red-400">{{
+                      getFileError(connection.id)
+                    }}</span>
                   </template>
                   <template v-else-if="getFileLoadingState(connection.id)">
                     <span class="text-gray-600 dark:text-gray-300">Loading files…</span>

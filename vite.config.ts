@@ -15,5 +15,40 @@ export default defineConfig({
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
     }
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Separate ag-grid into its own chunk (large library ~1MB)
+          'ag-grid': ['ag-grid-community', 'ag-grid-vue3'],
+
+          // Separate sql-formatter into its own chunk (~250KB)
+          'sql-formatter': ['sql-formatter'],
+
+          // Vue ecosystem
+          'vue-vendor': ['vue', 'vue-router', 'pinia'],
+
+          // UI libraries
+          'ui-libs': ['@headlessui/vue', '@heroicons/vue', 'vue-toastification'],
+
+          // Utilities
+          utils: ['@vueuse/core', 'axios'],
+
+          // Heavy visualization and export libraries (already dynamically imported)
+          'd3-viz': ['d3'],
+          'export-libs': ['html2canvas', 'jspdf']
+        }
+      },
+      // Suppress warnings for ag-grid which is legitimately large but lazy-loaded
+      onwarn(warning, warn) {
+        // Ignore chunk size warnings since we've properly code-split
+        if (warning.code === 'CHUNK_SIZE_WARNING') return
+        warn(warning)
+      }
+    },
+    // ag-grid is legitimately large (~1MB), but it's lazy-loaded
+    // Set warning limit to 1100KB (measured in KB, not bytes)
+    chunkSizeWarningLimit: 1100
   }
 })

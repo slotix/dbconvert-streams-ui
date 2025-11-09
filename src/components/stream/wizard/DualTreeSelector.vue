@@ -17,7 +17,9 @@
               Source Connection
             </span>
           </h3>
-          <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">Select where to read data from</p>
+          <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">
+            Select where to read data from
+          </p>
         </div>
 
         <!-- Source Filters -->
@@ -97,7 +99,10 @@
             class="bg-orange-50 dark:bg-orange-500/10 border border-orange-200 dark:border-orange-500/40 rounded-lg px-4 py-2.5 text-sm shadow-sm dark:shadow-gray-900/30"
           >
             <span class="font-semibold text-orange-600 dark:text-orange-300">Source:</span>
-            <span v-if="sourceConnectionId" class="text-slate-700 dark:text-gray-200 ml-1 font-medium">
+            <span
+              v-if="sourceConnectionId"
+              class="text-slate-700 dark:text-gray-200 ml-1 font-medium"
+            >
               {{ getConnectionName(sourceConnectionId) }}
               <span v-if="sourceDatabase" class="text-slate-600 dark:text-gray-400">
                 / {{ sourceDatabase }}
@@ -127,7 +132,10 @@
             class="bg-teal-50 dark:bg-teal-500/10 border border-teal-200 dark:border-teal-400/40 rounded-lg px-4 py-2.5 text-sm shadow-sm dark:shadow-gray-900/30"
           >
             <span class="font-semibold text-teal-600 dark:text-teal-300">Target:</span>
-            <span v-if="targetConnectionId" class="text-slate-700 dark:text-gray-200 ml-1 font-medium">
+            <span
+              v-if="targetConnectionId"
+              class="text-slate-700 dark:text-gray-200 ml-1 font-medium"
+            >
               {{ getConnectionName(targetConnectionId) }}
               <span v-if="targetDatabase" class="text-slate-600 dark:text-gray-400">
                 / {{ targetDatabase }}
