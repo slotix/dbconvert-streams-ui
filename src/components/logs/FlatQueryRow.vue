@@ -284,51 +284,9 @@ function toggleExpanded() {
   @apply w-0 min-w-0 overflow-hidden p-0 m-0;
 }
 
-/* SQL syntax highlighting - matching grouped mode style */
-:deep(.hljs) {
-  @apply bg-white dark:bg-gray-800 font-mono;
-  color: #24292e;
-  padding: 0;
-}
-
-.dark :deep(.hljs) {
-  color: #c9d1d9;
-}
-
+/* SQL syntax highlighting - only keep inline query specific styles */
 .flat-row-header :deep(.hljs) {
   @apply whitespace-nowrap overflow-hidden text-ellipsis;
-}
-
-:deep(.hljs-keyword) {
-  @apply text-[#d73a49] dark:text-[#ff7b72] font-semibold;
-}
-
-:deep(.hljs-string) {
-  @apply text-[#032f62] dark:text-[#a5d6ff];
-}
-
-:deep(.hljs-number) {
-  @apply text-[#005cc5] dark:text-[#79c0ff];
-}
-
-:deep(.hljs-operator) {
-  @apply text-[#d73a49] dark:text-[#ff7b72];
-}
-
-:deep(.hljs-punctuation) {
-  @apply text-[#24292e] dark:text-[#c9d1d9];
-}
-
-:deep(.hljs-comment) {
-  @apply text-[#6a737d] dark:text-[#8b949e] italic;
-}
-
-:deep(.hljs-function) {
-  @apply text-[#005cc5] dark:text-[#d2a8ff];
-}
-
-:deep(.hljs-built_in) {
-  @apply text-[#005cc5] dark:text-[#79c0ff];
 }
 
 /* Override SqlCodeBlock line number padding for better alignment */

@@ -5,7 +5,9 @@ import 'vue-toastification/dist/index.css'
 import hljs from 'highlight.js/lib/core'
 import sql from 'highlight.js/lib/languages/sql'
 import json from 'highlight.js/lib/languages/json'
-import 'highlight.js/styles/atom-one-dark.css'
+// Note: We don't import a highlight.js theme CSS file here.
+// Custom syntax highlighting styles are defined in SqlCodeBlock.vue and FlatQueryRow.vue
+// with proper dark mode support using Tailwind's dark: variants.
 import { vHighlightjs } from '@/directives/highlightjs'
 
 // Register languages

@@ -44,7 +44,7 @@ const formattedCode = computed(() => {
       }}</span>
       <CopyButton :text="code" />
     </div>
-    <div class="relative bg-white dark:bg-black">
+    <div class="relative bg-white dark:bg-gray-900">
       <div
         class="absolute inset-y-0 left-0 w-12 bg-[#f8f9fa] dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700"
       >
@@ -99,38 +99,41 @@ pre {
   @apply bg-blue-100 dark:bg-blue-800;
 }
 
-/* Syntax highlighting */
+/* Syntax highlighting - with dark mode support */
 .hljs {
-  @apply bg-white dark:bg-black font-mono;
-  color: #24292e;
+  @apply bg-white dark:bg-gray-900 font-mono text-[#24292e] dark:text-[#e6edf3];
   padding: 0;
 }
 
-.dark .hljs {
-  color: #e6edf3;
-}
-
 .hljs-keyword {
-  @apply text-[#d73a49] font-semibold;
+  @apply text-[#d73a49] dark:text-[#ff7b72] font-semibold;
 }
 
 .hljs-string {
-  @apply text-[#032f62];
+  @apply text-[#032f62] dark:text-[#a5d6ff];
 }
 
 .hljs-number {
-  @apply text-[#005cc5];
+  @apply text-[#005cc5] dark:text-[#79c0ff];
 }
 
 .hljs-operator {
-  @apply text-[#d73a49];
+  @apply text-[#d73a49] dark:text-[#ff7b72];
 }
 
 .hljs-punctuation {
-  @apply text-[#24292e];
+  @apply text-[#24292e] dark:text-[#c9d1d9];
 }
 
 .hljs-comment {
-  @apply text-[#6a737d] italic;
+  @apply text-[#6a737d] dark:text-[#8b949e] italic;
+}
+
+.hljs-function {
+  @apply text-[#005cc5] dark:text-[#d2a8ff];
+}
+
+.hljs-built_in {
+  @apply text-[#005cc5] dark:text-[#79c0ff];
 }
 </style>
