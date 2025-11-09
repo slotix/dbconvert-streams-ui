@@ -1,27 +1,31 @@
 <template>
-  <div class="space-y-6">
+  <div class="flex flex-col h-full gap-6">
     <!-- Stream Name Field -->
-    <StreamNameField
-      :source-connection-id="sourceConnectionId"
-      :target-connection-id="targetConnectionId"
-      :source-database="sourceDatabase"
-      :target-database="targetDatabase"
-    />
+    <div class="shrink-0">
+      <StreamNameField
+        :source-connection-id="sourceConnectionId"
+        :target-connection-id="targetConnectionId"
+        :source-database="sourceDatabase"
+        :target-database="targetDatabase"
+      />
+    </div>
 
     <!-- Dual Tree Selector -->
-    <DualTreeSelector
-      :source-connection-id="sourceConnectionId"
-      :target-connection-id="targetConnectionId"
-      :source-database="sourceDatabase"
-      :target-database="targetDatabase"
-      :source-schema="sourceSchema"
-      :target-schema="targetSchema"
-      :target-path="targetPath"
-      @update:source-connection="handleSourceUpdate"
-      @update:target-connection="handleTargetUpdate"
-      @clear-all="handleClearAll"
-      @add-connection="(paneType) => $emit('add-connection', paneType)"
-    />
+    <div class="flex-1 min-h-0">
+      <DualTreeSelector
+        :source-connection-id="sourceConnectionId"
+        :target-connection-id="targetConnectionId"
+        :source-database="sourceDatabase"
+        :target-database="targetDatabase"
+        :source-schema="sourceSchema"
+        :target-schema="targetSchema"
+        :target-path="targetPath"
+        @update:source-connection="handleSourceUpdate"
+        @update:target-connection="handleTargetUpdate"
+        @clear-all="handleClearAll"
+        @add-connection="(paneType) => $emit('add-connection', paneType)"
+      />
+    </div>
   </div>
 </template>
 

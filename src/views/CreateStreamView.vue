@@ -1,10 +1,10 @@
 <template>
   <div
-    class="min-h-screen bg-linear-to-br from-slate-50 via-white to-slate-50 dark:from-gray-900 dark:via-gray-850 dark:to-gray-900"
+    class="h-screen bg-linear-to-br from-slate-50 via-white to-slate-50 dark:from-gray-900 dark:via-gray-850 dark:to-gray-900 flex flex-col"
   >
     <!-- Header -->
     <header
-      class="bg-white dark:bg-gray-850 shadow-sm dark:shadow-gray-900/30 border-b border-gray-100 dark:border-gray-700"
+      class="bg-white dark:bg-gray-850 shadow-sm dark:shadow-gray-900/30 border-b border-gray-100 dark:border-gray-700 shrink-0"
     >
       <div class="max-w-[1600px] mx-auto py-4 px-4 sm:px-6 lg:px-8">
         <div class="flex items-center">
@@ -33,7 +33,7 @@
     </header>
 
     <!-- Main Content -->
-    <div class="max-w-[1600px] mx-auto py-8 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 flex-1 flex flex-col min-h-0 w-full">
       <WizardLayout
         :steps="wizard.steps"
         :current-step-index="wizard.currentStepIndex.value"
@@ -48,7 +48,7 @@
       >
         <template #default="{ currentStepIndex }">
           <!-- Step 1: Source & Target Selection -->
-          <div v-if="currentStepIndex === 0" class="min-h-[400px]">
+          <div v-if="currentStepIndex === 0" class="h-full">
             <SourceTargetSelectionStep
               :source-connection-id="wizard.selection.value.sourceConnectionId"
               :target-connection-id="wizard.selection.value.targetConnectionId"
@@ -66,7 +66,7 @@
           </div>
 
           <!-- Step 2: Structure & Data -->
-          <div v-if="currentStepIndex === 1" class="min-h-[400px]">
+          <div v-if="currentStepIndex === 1" class="h-full">
             <StructureDataStep
               :create-tables="wizard.createTables.value"
               :create-indexes="wizard.createIndexes.value"
@@ -81,7 +81,7 @@
           </div>
 
           <!-- Step 3: Stream Configuration -->
-          <div v-if="currentStepIndex === 2" class="min-h-[400px]">
+          <div v-if="currentStepIndex === 2" class="h-full">
             <StreamConfigurationStep
               :source-connection-id="wizard.selection.value.sourceConnectionId"
               :target-connection-id="wizard.selection.value.targetConnectionId"

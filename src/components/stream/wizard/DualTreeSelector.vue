@@ -1,7 +1,7 @@
 <template>
-  <div class="space-y-6">
+  <div class="flex flex-col h-full gap-6">
     <!-- Split Pane Container -->
-    <div class="grid grid-cols-2 gap-4 h-[600px]">
+    <div class="grid grid-cols-2 gap-4 flex-1 min-h-0">
       <!-- Source Tree (Left) - Sky Blue Theme -->
       <div
         class="relative rounded-xl bg-linear-to-br from-sky-50 to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-850 overflow-hidden flex flex-col border border-sky-200 dark:border-sky-400/40 shadow-sm dark:shadow-gray-900/30"
@@ -90,7 +90,7 @@
     </div>
 
     <!-- Selection Summary - Enhanced Chips -->
-    <div v-if="sourceConnectionId || targetConnectionId" class="space-y-3">
+    <div v-if="sourceConnectionId || targetConnectionId" class="shrink-0 flex flex-col gap-3">
       <!-- Source and Target Chips -->
       <div class="flex items-center justify-between gap-3">
         <div class="flex items-center gap-2 flex-1">

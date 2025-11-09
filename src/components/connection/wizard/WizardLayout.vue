@@ -1,7 +1,7 @@
 <template>
-  <div class="w-full px-4 sm:px-6 lg:px-8 py-8">
+  <div class="flex flex-col h-full py-6">
     <!-- Wizard Header -->
-    <div class="mb-8">
+    <div class="shrink-0 mb-6">
       <nav aria-label="Progress">
         <ol
           role="list"
@@ -81,15 +81,15 @@
 
     <!-- Wizard Content -->
     <div
-      class="bg-white dark:bg-gray-850 rounded-2xl p-6 shadow-lg dark:shadow-gray-900/30 border border-gray-100 dark:border-gray-700"
+      class="bg-white dark:bg-gray-850 rounded-2xl p-6 shadow-lg dark:shadow-gray-900/30 border border-gray-100 dark:border-gray-700 flex flex-col flex-1 min-h-0"
     >
       <!-- Step Content Slot -->
-      <div class="mb-8">
+      <div class="flex-1 mb-6 min-h-0">
         <slot :currentStep="currentStep" :currentStepIndex="currentStepIndex"></slot>
       </div>
 
       <!-- Wizard Navigation -->
-      <div class="flex justify-between">
+      <div class="flex justify-between shrink-0">
         <BaseButton v-if="canGoBack" variant="secondary" @click="goToPreviousStep">
           <ArrowLeftIcon class="w-4 h-4 mr-2" />
           Back
