@@ -15,8 +15,8 @@
               :class="[
                 'ml-3 inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset',
                 streamConfig.mode === 'cdc'
-                  ? 'bg-orange-50 text-orange-700 ring-orange-600/20'
-                  : 'bg-green-50 text-green-700 ring-green-600/20'
+                  ? 'bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 ring-orange-600/20 dark:ring-orange-500/30'
+                  : 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 ring-indigo-600/20 dark:ring-indigo-500/30'
               ]"
             >
               {{ streamConfig.mode }}

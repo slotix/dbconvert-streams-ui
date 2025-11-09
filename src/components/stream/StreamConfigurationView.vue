@@ -48,7 +48,7 @@
               'inline-flex items-center rounded-md px-2.5 py-1 text-xs font-medium ring-1 ring-inset',
               stream.mode === 'cdc'
                 ? 'bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 ring-orange-600/20 dark:ring-orange-500/30'
-                : 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 ring-green-600/20 dark:ring-green-500/30'
+                : 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 ring-indigo-600/20 dark:ring-indigo-500/30'
             ]"
           >
             {{ stream.mode.toUpperCase() }}
@@ -181,6 +181,10 @@ function copyConfig() {
   scrollbar-color: #e5e7eb transparent;
 }
 
+.dark .custom-scrollbar {
+  scrollbar-color: #4b5563 transparent;
+}
+
 .custom-scrollbar::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -195,42 +199,50 @@ function copyConfig() {
   border-radius: 9999px;
 }
 
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(75, 85, 99, 0.5);
+}
+
 pre {
   tab-size: 2;
   user-select: text;
 }
 
 ::selection {
-  @apply bg-blue-100;
+  @apply bg-blue-100 dark:bg-blue-900/50;
 }
 
 .hljs {
-  @apply bg-gray-50 font-mono;
+  @apply bg-gray-50 dark:bg-gray-900 font-mono;
   color: #24292e;
   padding: 0;
 }
 
+.dark .hljs {
+  color: #e1e4e8;
+}
+
 .hljs-attr {
-  @apply text-[#d73a49] font-semibold;
+  @apply text-[#d73a49] dark:text-[#f97583] font-semibold;
 }
 
 .hljs-string {
-  @apply text-[#032f62];
+  @apply text-[#032f62] dark:text-[#79c0ff];
 }
 
 .hljs-number {
-  @apply text-[#005cc5];
+  @apply text-[#005cc5] dark:text-[#79c0ff];
 }
 
 .hljs-literal {
-  @apply text-[#005cc5];
+  @apply text-[#005cc5] dark:text-[#79c0ff];
 }
 
 .hljs-punctuation {
-  @apply text-[#24292e];
+  @apply text-[#24292e] dark:text-[#e1e4e8];
 }
 
 .hljs-comment {
-  @apply text-[#6a737d] italic;
+  @apply text-[#6a737d] dark:text-[#8b949e] italic;
 }
 </style>

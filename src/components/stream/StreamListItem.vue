@@ -42,7 +42,7 @@
             'inline-flex items-center rounded-full px-1.5 py-0.5 text-xs font-medium ring-1 ring-inset shrink-0',
             stream.mode === 'cdc'
               ? 'bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 ring-orange-600/20 dark:ring-orange-500/30'
-              : 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 ring-green-600/20 dark:ring-green-500/30'
+              : 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 ring-indigo-600/20 dark:ring-indigo-500/30'
           ]"
         >
           {{ stream.mode }}
@@ -251,11 +251,13 @@ const statusBadgeClass = computed(() => {
   if (!isRunning.value) return ''
   if (isFinished.value) {
     const hasFailed = monitoringStore.stats.some((stat) => stat.status === 'FAILED')
-    if (hasFailed) return 'bg-red-50 text-red-700 ring-red-600/20'
-    return 'bg-teal-50 text-teal-700 ring-teal-600/20'
+    if (hasFailed)
+      return 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 ring-red-600/20 dark:ring-red-500/30'
+    return 'bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 ring-teal-600/20 dark:ring-teal-500/30'
   }
-  if (isPaused.value) return 'bg-yellow-50 text-yellow-700 ring-yellow-600/20'
-  return 'bg-blue-50 text-blue-700 ring-blue-600/20'
+  if (isPaused.value)
+    return 'bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 ring-yellow-600/20 dark:ring-yellow-500/30'
+  return 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 ring-blue-600/20 dark:ring-blue-500/30'
 })
 
 const statusIcon = computed(() => {
