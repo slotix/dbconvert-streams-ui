@@ -4,9 +4,7 @@
     <div
       :class="[
         'border rounded-lg p-6',
-        isRunning
-          ? 'bg-linear-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 border-blue-200 dark:border-blue-700'
-          : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+        'bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700'
       ]"
     >
       <div class="space-y-4">

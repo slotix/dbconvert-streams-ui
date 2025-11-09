@@ -109,12 +109,10 @@
       <div v-else-if="activeTab === 'monitor'" class="space-y-2">
         <div class="flex items-center justify-between">
           <div class="flex items-center min-w-0 flex-1 gap-3">
-            <div>
-              <div class="text-xs text-gray-500 dark:text-gray-400">Stream Run</div>
-              <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 font-mono truncate">
-                {{ monitoringStore.streamID || 'Not running' }}
-              </h2>
-            </div>
+            <span class="text-xs text-gray-500 dark:text-gray-400 shrink-0">Stream Run:</span>
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 font-mono truncate">
+              {{ monitoringStore.streamID || 'Not running' }}
+            </h2>
           </div>
           <div class="flex items-center gap-2 ml-4">
             <!-- Run Again button (when finished) -->
@@ -166,7 +164,6 @@
           <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 truncate">
             {{ stream.name }}
           </h2>
-          <span class="text-sm text-gray-500 dark:text-gray-400">- Run History</span>
         </div>
         <div class="flex items-center gap-2 ml-4">
           <BaseButton
