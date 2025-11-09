@@ -6,49 +6,17 @@
     >
       <nav class="flex gap-4" aria-label="Tabs">
         <button
+          v-for="tab in visibleTabs"
+          :key="tab.id"
           :class="[
-            activeTab === 'configuration'
+            activeTab === tab.id
               ? 'border-teal-600 dark:border-teal-400 text-teal-600 dark:text-teal-400'
               : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-700',
             'whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors'
           ]"
-          @click="activeTab = 'configuration'"
+          @click="activeTab = tab.id"
         >
-          Configuration
-        </button>
-        <button
-          :class="[
-            activeTab === 'monitor'
-              ? 'border-teal-600 dark:border-teal-400 text-teal-600 dark:text-teal-400'
-              : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-700',
-            'whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors'
-          ]"
-          @click="activeTab = 'monitor'"
-        >
-          Monitor
-        </button>
-        <button
-          :class="[
-            activeTab === 'history'
-              ? 'border-teal-600 dark:border-teal-400 text-teal-600 dark:text-teal-400'
-              : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-700',
-            'whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors'
-          ]"
-          @click="activeTab = 'history'"
-        >
-          History
-        </button>
-        <button
-          v-if="isStreamFinished"
-          :class="[
-            activeTab === 'compare'
-              ? 'border-teal-600 dark:border-teal-400 text-teal-600 dark:text-teal-400'
-              : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-700',
-            'whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors'
-          ]"
-          @click="activeTab = 'compare'"
-        >
-          Compare
+          {{ tab.label }}
         </button>
       </nav>
     </div>
@@ -202,259 +170,17 @@
     <!-- Content -->
     <div class="flex-1 overflow-y-auto">
       <!-- Configuration Tab -->
-      <div v-if="activeTab === 'configuration'" class="p-6 space-y-6">
-        <!-- JSON Toggle (Always visible) -->
-        <div class="flex items-center justify-end">
-          <div class="flex items-center gap-2">
-            <span class="text-xs text-gray-600 dark:text-gray-400">JSON</span>
-            <Switch
-              v-model="isJsonView"
-              class="relative inline-flex h-5 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-gray-600 dark:focus:ring-teal-400 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
-              :class="[
-                isJsonView ? 'bg-gray-600 dark:bg-teal-500' : 'bg-gray-400 dark:bg-gray-600'
-              ]"
-            >
-              <span class="sr-only">Toggle JSON view</span>
-              <span
-                aria-hidden="true"
-                class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white dark:bg-gray-200 shadow-md ring-0 transition duration-200 ease-in-out"
-                :class="[
-                  isJsonView ? 'translate-x-5' : 'translate-x-0',
-                  'shadow-[0_1px_4px_rgba(0,0,0,0.15)]'
-                ]"
-              />
-            </Switch>
-            <button
-              v-if="isJsonView"
-              v-tooltip="'Copy configuration'"
-              class="p-1.5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-              @click="copyConfig"
-            >
-              <ClipboardIcon class="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-
-        <!-- JSON View -->
-        <div v-if="isJsonView">
-          <div
-            class="rounded-md bg-gray-50 dark:bg-gray-900 p-4 border border-gray-300 dark:border-gray-700 overflow-auto custom-scrollbar"
-          >
-            <pre
-              v-highlightjs
-              class="text-sm"
-            ><code class="language-json block text-sm leading-6 select-text">{{ prettyConfig }}</code></pre>
-          </div>
-        </div>
-
-        <!-- Connection Details (Normal View) -->
-        <div v-else class="space-y-4">
-          <!-- Mode -->
-          <div class="pb-4 border-b border-gray-100 dark:border-gray-800">
-            <div class="flex items-center gap-2">
-              <span class="text-sm text-gray-500 dark:text-gray-400">Mode:</span>
-              <span
-                :class="[
-                  'inline-flex items-center rounded-md px-2.5 py-1 text-xs font-medium ring-1 ring-inset',
-                  stream.mode === 'cdc'
-                    ? 'bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 ring-orange-600/20 dark:ring-orange-500/30'
-                    : 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 ring-green-600/20 dark:ring-green-500/30'
-                ]"
-              >
-                {{ stream.mode.toUpperCase() }}
-              </span>
-            </div>
-          </div>
-
-          <!-- Source Connection -->
-          <div>
-            <label
-              class="block text-xs font-medium uppercase text-gray-500 dark:text-gray-400 mb-2"
-            >
-              Source Connection
-            </label>
-            <div
-              class="bg-gray-50 dark:bg-gray-900/40 rounded-md p-4 border border-gray-300 dark:border-gray-700"
-            >
-              <div class="flex items-center justify-between gap-3 mb-2">
-                <div class="flex items-center gap-2 min-w-0 flex-1">
-                  <div
-                    v-if="source && source.type"
-                    :class="getDatabaseIconStyle(source.type)"
-                    class="shrink-0 rounded-lg p-1.5 transition-all duration-200 hover:shadow-md"
-                  >
-                    <img
-                      class="h-5 w-5 object-contain"
-                      :src="logoSrc(source.type)"
-                      :alt="source.type + ' logo'"
-                    />
-                  </div>
-                  <span
-                    class="font-medium text-gray-900 dark:text-gray-100 truncate"
-                    :class="{ 'text-red-500 dark:text-red-400': !source || !source.name }"
-                  >
-                    {{ source?.name || 'N/A' }}
-                  </span>
-                  <CloudProviderBadge
-                    v-if="source"
-                    :cloud-provider="source.cloud_provider"
-                    :db-type="source.type"
-                  />
-                  <ExclamationCircleIcon
-                    v-if="!source || !source.name"
-                    class="h-4 w-4 text-red-500 dark:text-red-400 shrink-0"
-                    aria-hidden="true"
-                  />
-                </div>
-                <button
-                  v-if="source && source.id"
-                  v-tooltip="'View source connection in Explorer'"
-                  type="button"
-                  class="shrink-0 inline-flex items-center px-2.5 py-1.5 text-xs font-medium text-teal-600 dark:text-teal-300 bg-white dark:bg-gray-900 border border-teal-200 dark:border-teal-700 rounded-md hover:bg-teal-50 dark:hover:bg-gray-800 transition-colors"
-                  @click="navigateToSourceExplorer"
-                >
-                  <ArrowTopRightOnSquareIcon class="w-3.5 h-3.5 mr-1" />
-                  Explore
-                </button>
-              </div>
-              <div class="text-sm text-gray-600 dark:text-gray-400">
-                <ConnectionStringDisplay v-if="source" :connection="source" />
-                <span v-else class="text-red-500 dark:text-red-400 text-xs"
-                  >Connection not found</span
-                >
-              </div>
-            </div>
-          </div>
-
-          <!-- Target Connection -->
-          <div>
-            <label
-              class="block text-xs font-medium uppercase text-gray-500 dark:text-gray-400 mb-2"
-            >
-              Target Connection
-            </label>
-            <div
-              class="bg-gray-50 dark:bg-gray-900/40 rounded-md p-4 border border-gray-300 dark:border-gray-700"
-            >
-              <div class="flex items-center justify-between gap-3 mb-2">
-                <div class="flex items-center gap-2 min-w-0 flex-1">
-                  <div
-                    v-if="target && target.type"
-                    :class="getDatabaseIconStyle(target.type)"
-                    class="shrink-0 rounded-lg p-1.5 transition-all duration-200 hover:shadow-md"
-                  >
-                    <img
-                      class="h-5 w-5 object-contain"
-                      :src="logoSrc(target.type)"
-                      :alt="target.type + ' logo'"
-                    />
-                  </div>
-                  <span
-                    class="font-medium text-gray-900 dark:text-gray-100 truncate"
-                    :class="{ 'text-red-500 dark:text-red-400': !target || !target.name }"
-                  >
-                    {{ target?.name || 'N/A' }}
-                  </span>
-                  <CloudProviderBadge
-                    v-if="target"
-                    :cloud-provider="target.cloud_provider"
-                    :db-type="target.type"
-                  />
-                  <ExclamationCircleIcon
-                    v-if="!target || !target.name"
-                    class="h-4 w-4 text-red-500 dark:text-red-400 shrink-0"
-                    aria-hidden="true"
-                  />
-                </div>
-                <button
-                  v-if="target && target.id"
-                  v-tooltip="'View target connection in Explorer'"
-                  type="button"
-                  class="shrink-0 inline-flex items-center px-2.5 py-1.5 text-xs font-medium text-teal-600 dark:text-teal-300 bg-white dark:bg-gray-900 border border-teal-200 dark:border-teal-700 rounded-md hover:bg-teal-50 dark:hover:bg-gray-800 transition-colors"
-                  @click="navigateToTargetExplorer"
-                >
-                  <ArrowTopRightOnSquareIcon class="w-3.5 h-3.5 mr-1" />
-                  Explore
-                </button>
-              </div>
-              <div class="text-sm text-gray-600 dark:text-gray-400">
-                <ConnectionStringDisplay v-if="target" :connection="target" />
-                <span v-else class="text-red-500 dark:text-red-400 text-xs"
-                  >Connection not found</span
-                >
-              </div>
-            </div>
-          </div>
-
-          <!-- Output Format (for file-based targets) -->
-          <div v-if="isFileTarget && stream.targetFileFormat">
-            <label
-              class="block text-xs font-medium uppercase text-gray-500 dark:text-gray-400 mb-2"
-            >
-              Output Configuration
-            </label>
-            <div
-              class="bg-gray-50 dark:bg-gray-900/40 rounded-md p-4 border border-gray-300 dark:border-gray-700 space-y-2"
-            >
-              <div class="flex items-center justify-between">
-                <span class="text-xs text-gray-600 dark:text-gray-400">Format:</span>
-                <span
-                  :class="[
-                    'inline-flex items-center rounded-md px-2.5 py-1 text-xs font-medium ring-1 ring-inset',
-                    'bg-blue-50 text-blue-700 ring-blue-600/20 dark:bg-blue-900/30 dark:text-blue-300 dark:ring-blue-500/30'
-                  ]"
-                >
-                  {{ stream.targetFileFormat.toUpperCase() }}
-                </span>
-              </div>
-              <div class="flex items-center justify-between">
-                <span class="text-xs text-gray-600 dark:text-gray-400">Compression:</span>
-                <span
-                  :class="[
-                    'inline-flex items-center rounded-md px-2.5 py-1 text-xs font-medium ring-1 ring-inset',
-                    stream.compressionType === 'zstd'
-                      ? 'bg-green-50 text-green-700 ring-green-600/20 dark:bg-green-900/30 dark:text-green-300 dark:ring-green-500/30'
-                      : stream.compressionType === 'gzip'
-                        ? 'bg-yellow-50 text-yellow-700 ring-yellow-600/20 dark:bg-yellow-900/30 dark:text-yellow-300 dark:ring-yellow-500/30'
-                        : 'bg-gray-50 text-gray-700 ring-gray-600/20 dark:bg-gray-900/30 dark:text-gray-300 dark:ring-gray-600/30'
-                  ]"
-                >
-                  {{ (stream.compressionType || 'zstd').toUpperCase() }}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Tables Section -->
-          <div>
-            <label class="block text-xs font-medium uppercase text-gray-500 dark:text-gray-400 mb-2"
-              >Tables</label
-            >
-            <div
-              class="bg-gray-50 dark:bg-gray-800 rounded-md p-3 border border-gray-300 dark:border-gray-700"
-            >
-              <p class="text-sm text-gray-900 dark:text-gray-100">
-                {{ displayedTables.join(', ') }}{{ remainingTablesCount > 0 ? ', ...' : '' }}
-                <span
-                  v-if="remainingTablesCount > 0"
-                  class="text-xs text-gray-500 dark:text-gray-400 italic ml-1"
-                >
-                  ({{ remainingTablesCount }} more)
-                </span>
-              </p>
-            </div>
-          </div>
-
-          <!-- Creation Date -->
-          <div class="pt-4 border-t border-gray-100 dark:border-gray-800">
-            <div class="flex items-center gap-2">
-              <CalendarIcon class="h-4 w-4 text-gray-500 dark:text-gray-400" />
-              <span class="text-sm text-gray-500 dark:text-gray-400"
-                >Created: {{ streamCreated }}</span
-              >
-            </div>
-          </div>
-        </div>
+      <div v-if="activeTab === 'configuration'" class="p-6">
+        <StreamConfigurationView
+          v-model:is-json-view="isJsonView"
+          :stream="stream"
+          :source="source"
+          :target="target"
+          :db-types="dbTypes"
+          :is-file-target="isFileTarget"
+          @navigate-source="navigateToSourceExplorer"
+          @navigate-target="navigateToTargetExplorer"
+        />
       </div>
 
       <!-- Monitor Tab -->
@@ -523,55 +249,29 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { ref, computed, watch, defineAsyncComponent } from 'vue'
+import { ref, computed, watch, defineAsyncComponent, toRef } from 'vue'
 import { useRouter } from 'vue-router'
-import {
-  ClipboardIcon,
-  CalendarIcon,
-  ExclamationCircleIcon,
-  PlayIcon,
-  PauseIcon,
-  StopIcon,
-  ArrowTopRightOnSquareIcon
-} from '@heroicons/vue/24/outline'
-import { Switch } from '@headlessui/vue'
+import { PlayIcon, PauseIcon, StopIcon } from '@heroicons/vue/24/outline'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
 import { useCommonStore } from '@/stores/common'
-import { useMonitoringStore, statusEnum } from '@/stores/monitoring'
-import { useFileExplorerStore } from '@/stores/fileExplorer'
-import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
-import { apiClient } from '@/api/apiClient'
+import { useMonitoringStore } from '@/stores/monitoring'
 import BaseButton from '@/components/base/BaseButton.vue'
-import ConnectionStringDisplay from '@/components/common/ConnectionStringDisplay.vue'
-import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
 import MonitorHeader from '@/components/monitoring/MonitorHeader.vue'
 import StatContainer from '@/components/monitoring/StatContainer.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
-import { normalizeConnectionType } from '@/utils/connectionUtils'
-import { formatDateTime } from '@/utils/formats'
-import { getDatabaseIconBgColor, getDatabaseIconTint } from '@/constants/databaseColors'
 import type { StreamConfig } from '@/types/streamConfig'
-import type { Connection, DbType } from '@/types/connections'
+import type { Connection } from '@/types/connections'
+import StreamConfigurationView from '@/components/stream/StreamConfigurationView.vue'
+import { useStreamControls } from '@/composables/useStreamControls'
+import { useStreamHistory, type StreamDetailsTab } from '@/composables/useStreamHistory'
+import { useStreamExplorerNavigation } from '@/composables/useStreamExplorerNavigation'
 
 // Lazy load heavy components that use ag-grid
 const StreamHistoryTableAGGrid = defineAsyncComponent(
   () => import('./StreamHistoryTableAGGrid.vue')
 )
 const StreamCompareView = defineAsyncComponent(() => import('./StreamCompareView.vue'))
-
-interface StreamRun {
-  id: string
-  configId: string
-  streamId: string
-  timestamp: number
-  durationMs: number
-  status: string
-  dataSize?: string
-  rowsInserted?: number
-  rowsSkipped?: number
-  errorMessage?: string
-}
 
 const props = defineProps<{
   stream: StreamConfig
@@ -588,228 +288,57 @@ const streamsStore = useStreamsStore()
 const connectionsStore = useConnectionsStore()
 const commonStore = useCommonStore()
 const monitoringStore = useMonitoringStore()
-const fileExplorerStore = useFileExplorerStore()
-const explorerNavigationStore = useExplorerNavigationStore()
 
 const isJsonView = ref(false)
 const showDeleteConfirm = ref(false)
-const activeTab = ref<'monitor' | 'configuration' | 'history' | 'compare'>('configuration')
-const historyRuns = ref<StreamRun[]>([])
-const isLoadingHistory = ref(false)
-const historyAbortController = ref<AbortController | null>(null)
+const activeTab = ref<StreamDetailsTab>('configuration')
 
-const dbTypes = connectionsStore.dbTypes
+const streamRef = toRef(props, 'stream')
+const sourceRef = toRef(props, 'source')
+const targetRef = toRef(props, 'target')
 
-const isStreamRunning = computed(() => {
-  // Check if this stream config is the one currently running
-  // We need to check the config ID, not the stream ID, since they're different
-  const configIDMatches = monitoringStore.streamConfig?.id === props.stream.id
-  const hasStreamID = monitoringStore.streamID !== ''
-  return configIDMatches && hasStreamID
+const {
+  isStreamRunning,
+  isPaused,
+  isStreamFinished,
+  streamStatus,
+  startStream,
+  pauseStream,
+  resumeStream,
+  stopStream
+} = useStreamControls(streamRef)
+
+const { isFileTarget, navigateToSourceExplorer, navigateToTargetExplorer } =
+  useStreamExplorerNavigation({
+    stream: streamRef,
+    source: sourceRef,
+    target: targetRef
+  })
+
+const streamIdRef = computed(() => streamRef.value.id)
+
+const { historyRuns, handleDeleteRun, handleClearAll } = useStreamHistory({
+  streamId: streamIdRef,
+  activeTab,
+  isStreamFinished
 })
 
-const isPaused = computed(() => {
-  if (!isStreamRunning.value) return false
-  // Check both: stats (when nodes exist and report) and overall stream status
-  const statsHasPaused = monitoringStore.stats.some((stat) => stat.status === 'PAUSED')
-  const streamStatusIsPaused = monitoringStore.status === statusEnum.PAUSED
-  return statsHasPaused || streamStatusIsPaused
-})
+const dbTypes = computed(() => connectionsStore.dbTypes)
 
-const isStreamFinished = computed(() => {
-  if (!isStreamRunning.value) return false
-  const areAllNodesFinished =
-    monitoringStore.stats.length > 0 &&
-    monitoringStore.stats.every((stat) => stat.status === 'FINISHED')
-
-  // Check overall stream status
-  const finishedStates: number[] = [
-    statusEnum.FINISHED,
-    statusEnum.STOPPED,
-    statusEnum.FAILED,
-    statusEnum.TIME_LIMIT_REACHED,
-    statusEnum.EVENT_LIMIT_REACHED
-  ]
-  const isStreamStatusFinished = finishedStates.includes(
-    monitoringStore.status as unknown as number
-  )
-
-  return areAllNodesFinished || isStreamStatusFinished
-})
-
-const streamStatus = computed(() => {
-  if (!isStreamRunning.value) return 'Not Running'
-  if (isStreamFinished.value) {
-    const hasFailed = monitoringStore.stats.some((stat) => stat.status === 'FAILED')
-    const isStopped = monitoringStore.stats.some((stat) => stat.status === 'STOPPED')
-    if (hasFailed) return 'Failed'
-    if (isStopped) return 'Stopped'
-    return 'Finished'
-  }
-  if (isPaused.value) return 'Paused'
-  return monitoringStore.currentStage?.description || 'Running'
-})
-
-const streamCreated = computed(() => {
-  return formatDateTime(props.stream?.created || 0)
-})
-
-const prettyConfig = computed(() => {
-  return JSON.stringify(props.stream, null, 2)
-})
-
-const displayedTables = computed(() => {
-  const maxDisplayedTables = 5
-  if (props.stream && props.stream.tables && props.stream.tables.length) {
-    return props.stream.tables.slice(0, maxDisplayedTables).map((table) => table.name)
-  }
-  return []
-})
-
-const remainingTablesCount = computed(() => {
-  if (props.stream && props.stream.tables) {
-    return Math.max(0, props.stream.tables.length - displayedTables.value.length)
-  }
-  return 0
-})
-
-const isFileTarget = computed(() => {
-  if (!props.target) return false
-  const targetType = props.target.type?.toLowerCase() || ''
-  return targetType.includes('file')
-})
-
-// Fetch stream history from API using apiClient
-async function loadStreamHistory() {
-  try {
-    // Cancel any previous in-flight request to prevent race conditions
-    if (historyAbortController.value) {
-      historyAbortController.value.abort()
-    }
-    historyAbortController.value = new AbortController()
-
-    isLoadingHistory.value = true
-    const response = await apiClient.get(`/stream-configs/${props.stream.id}/history`, {
-      signal: historyAbortController.value.signal
-    })
-
-    // Backend returns array of runs directly
-    historyRuns.value = response.data
-  } catch (error: unknown) {
-    // Ignore abort errors - they're expected when switching streams
-    if (error instanceof Error && error.name === 'AbortError') {
-      console.debug('History request was cancelled due to stream switch')
-      return
-    }
-
-    let errorMsg = 'Failed to load history'
-    if (error instanceof Error) {
-      errorMsg = error.message
-    }
-    commonStore.showNotification(errorMsg, 'error')
-    console.error('Failed to load stream history:', error)
-  } finally {
-    isLoadingHistory.value = false
-  }
+interface StreamTab {
+  id: StreamDetailsTab
+  label: string
+  visible: boolean
 }
 
-async function handleDeleteRun(runId: string) {
-  try {
-    await apiClient.delete(`/stream-configs/${props.stream.id}/runs/${runId}`)
+const tabs = computed<StreamTab[]>(() => [
+  { id: 'configuration', label: 'Configuration', visible: true },
+  { id: 'monitor', label: 'Monitor', visible: true },
+  { id: 'history', label: 'History', visible: true },
+  { id: 'compare', label: 'Compare', visible: isStreamFinished.value }
+])
 
-    commonStore.showNotification('Run deleted successfully', 'success')
-    // Reload history to reflect deletion
-    await loadStreamHistory()
-  } catch (error: unknown) {
-    let errorMsg = 'Failed to delete stream run'
-    if (error instanceof Error) {
-      errorMsg = error.message
-    }
-    commonStore.showNotification(errorMsg, 'error')
-    console.error('Failed to delete run:', error)
-  }
-}
-
-async function handleClearAll() {
-  try {
-    // Call the backend endpoint to delete all runs at once
-    await apiClient.delete(`/stream-configs/${props.stream.id}/runs`)
-
-    commonStore.showNotification('All runs deleted successfully', 'success')
-    // Reload history to refresh the UI
-    await loadStreamHistory()
-  } catch (error: unknown) {
-    let errorMsg = 'Failed to delete all runs'
-    if (error instanceof Error) {
-      errorMsg = error.message
-    }
-    commonStore.showNotification(errorMsg, 'error')
-    console.error('Failed to delete all runs:', error)
-  }
-}
-
-// Abort any pending requests and reload history when switching streams
-watch(
-  () => props.stream.id,
-  async () => {
-    // Cancel any in-flight requests for the previous stream
-    if (historyAbortController.value) {
-      historyAbortController.value.abort()
-    }
-    // Clear history data when switching streams
-    historyRuns.value = []
-
-    // If currently viewing History tab, reload data for the new stream
-    if (activeTab.value === 'history') {
-      await loadStreamHistory()
-    }
-  }
-)
-
-// Load history when history tab is opened
-watch(
-  () => activeTab.value,
-  async (newTab) => {
-    if (newTab === 'history') {
-      // Always load fresh data when switching to history tab
-      await loadStreamHistory()
-    }
-  }
-)
-
-// Watch for stream finish to refresh history
-watch(isStreamFinished, async (finished, wasFinished) => {
-  // Only trigger when transitioning from not-finished to finished
-  if (finished && !wasFinished) {
-    // Wait a bit for backend to save history
-    setTimeout(async () => {
-      // Reload history if currently viewing the history tab
-      if (activeTab.value === 'history') {
-        await loadStreamHistory()
-      }
-    }, 2000)
-  }
-})
-
-const logoSrc = (dbType: string) => {
-  const normalizedInput = normalizeConnectionType(dbType?.toLowerCase() || '')
-  const type = dbTypes.find(
-    (f: DbType) => normalizeConnectionType(f.type.toLowerCase()) === normalizedInput
-  )
-  return type ? type.logo : '/images/db-logos/all.svg'
-}
-
-const getDatabaseIconStyle = (dbType: string) => {
-  // Use the same muted icon color system as ConnectionTreeItem
-  const bgColor = getDatabaseIconBgColor(dbType || '')
-  const tint = getDatabaseIconTint(dbType || '')
-  return `${bgColor} ${tint || ''}`
-}
-
-function copyConfig() {
-  navigator.clipboard.writeText(prettyConfig.value)
-  commonStore.showNotification('Configuration copied to clipboard', 'success')
-}
+const visibleTabs = computed(() => tabs.value.filter((tab) => tab.visible))
 
 function navigateToEdit() {
   router.push({ name: 'EditStream', params: { id: props.stream.id } })
@@ -821,73 +350,6 @@ function handleCompareTable(tableName: string) {
   // Note: The StreamCompareView component will need to handle table selection
   // This could be done via URL query params or by passing a prop
   // For now, just switching to the Compare tab
-}
-
-async function navigateToSourceExplorer() {
-  if (props.source?.id) {
-    // Set active connection in explorer navigation store
-    explorerNavigationStore.setActiveConnectionId(props.source.id)
-
-    // Also set in connections store
-    connectionsStore.setCurrentConnection(props.source.id)
-
-    const isSourceFile =
-      props.source.type === 'csv' ||
-      props.source.type === 'jsonl' ||
-      props.source.type === 'parquet'
-
-    if (isSourceFile) {
-      // For file-based sources, load file entries and select the connection
-      await fileExplorerStore.loadEntries(props.source.id, true)
-      explorerNavigationStore.selectConnection(props.source.id)
-
-      // Use sessionStorage to pass focus connection ID
-      window.sessionStorage.setItem('explorerFocusConnectionId', props.source.id)
-    } else if (props.stream?.sourceDatabase) {
-      // For database-based sources, select the database if available
-      explorerNavigationStore.selectDatabase(props.source.id, props.stream.sourceDatabase)
-    }
-
-    router.push({
-      name: 'DatabaseMetadata',
-      params: { id: props.source.id },
-      query: {
-        details: 'true',
-        db: isSourceFile ? undefined : props.stream.sourceDatabase
-      }
-    })
-  }
-}
-
-async function navigateToTargetExplorer() {
-  if (props.target?.id) {
-    // Set active connection in explorer navigation store
-    explorerNavigationStore.setActiveConnectionId(props.target.id)
-
-    // Also set in connections store
-    connectionsStore.setCurrentConnection(props.target.id)
-
-    if (isFileTarget.value) {
-      // For file-based targets, load file entries and select the connection
-      await fileExplorerStore.loadEntries(props.target.id, true)
-      explorerNavigationStore.selectConnection(props.target.id)
-
-      // Use sessionStorage to pass focus connection ID
-      window.sessionStorage.setItem('explorerFocusConnectionId', props.target.id)
-    } else if (props.stream?.targetDatabase) {
-      // For database-based targets, select the database
-      explorerNavigationStore.selectDatabase(props.target.id, props.stream.targetDatabase)
-    }
-
-    router.push({
-      name: 'DatabaseMetadata',
-      params: { id: props.target.id },
-      query: {
-        details: 'true',
-        db: isFileTarget.value ? undefined : props.stream.targetDatabase
-      }
-    })
-  }
 }
 
 async function cloneStream() {
@@ -926,86 +388,6 @@ async function deleteStream() {
   }
 }
 
-async function startStream() {
-  try {
-    const streamID = await streamsStore.startStream(props.stream.id)
-    commonStore.showNotification('Stream started', 'success')
-    monitoringStore.setStream(streamID, props.stream)
-
-    // Request to show monitor tab
-    monitoringStore.requestShowMonitorTab()
-  } catch (err: unknown) {
-    if (err instanceof Error) {
-      // Check if error is about active streams
-      if (err.message.includes('active streams') || err.message.includes('stream_state')) {
-        // Show user-friendly message
-        commonStore.showNotification(
-          'Please wait for the current stream to finish before starting a new one',
-          'warning'
-        )
-
-        // Auto-retry after 2 seconds
-        setTimeout(async () => {
-          try {
-            const streamID = await streamsStore.startStream(props.stream.id)
-            commonStore.showNotification('Stream started', 'success')
-            monitoringStore.setStream(streamID, props.stream)
-            monitoringStore.requestShowMonitorTab()
-          } catch (retryErr) {
-            // Only show error on retry failure, don't retry again
-            if (retryErr instanceof Error) {
-              commonStore.showNotification(retryErr.message, 'error')
-            }
-          }
-        }, 2000)
-      } else {
-        commonStore.showNotification(err.message, 'error')
-      }
-    } else {
-      commonStore.showNotification('An unknown error occurred', 'error')
-    }
-  }
-}
-
-async function pauseStream() {
-  try {
-    await streamsStore.pauseStream(monitoringStore.streamID)
-    commonStore.showNotification('Stream paused', 'success')
-    // Request to show monitor tab
-    monitoringStore.requestShowMonitorTab()
-  } catch (error) {
-    console.error('Pause stream failed:', error)
-    const errorMsg = error instanceof Error ? error.message : String(error)
-    commonStore.showNotification(`Failed to pause: ${errorMsg}`, 'error')
-  }
-}
-
-async function resumeStream() {
-  try {
-    await streamsStore.resumeStream(monitoringStore.streamID)
-    commonStore.showNotification('Stream resumed', 'success')
-    // Request to show monitor tab
-    monitoringStore.requestShowMonitorTab()
-  } catch (error) {
-    console.error('Resume stream failed:', error)
-    const errorMsg = error instanceof Error ? error.message : String(error)
-    commonStore.showNotification(`Failed to resume: ${errorMsg}`, 'error')
-  }
-}
-
-async function stopStream() {
-  try {
-    await streamsStore.stopStream(monitoringStore.streamID)
-    commonStore.showNotification('Stream stopped', 'success')
-    // Request to show monitor tab
-    monitoringStore.requestShowMonitorTab()
-  } catch (error) {
-    console.error('Stop stream failed:', error)
-    const errorMsg = error instanceof Error ? error.message : String(error)
-    commonStore.showNotification(`Failed to stop: ${errorMsg}`, 'error')
-  }
-}
-
 // Auto-switch to monitor tab when requested
 watch(
   () => monitoringStore.shouldShowMonitorTab,
@@ -1018,66 +400,3 @@ watch(
   }
 )
 </script>
-
-<style scoped>
-@reference '../../assets/style.css';
-
-/* Scrollbar styles */
-.custom-scrollbar {
-  scrollbar-width: thin;
-  scrollbar-color: #e5e7eb transparent;
-}
-
-.custom-scrollbar::-webkit-scrollbar {
-  @apply h-2 w-2;
-}
-
-.custom-scrollbar::-webkit-scrollbar-track {
-  @apply bg-gray-50;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  @apply bg-gray-300 rounded-full hover:bg-gray-400 transition-colors;
-}
-
-/* Code block styles */
-pre {
-  tab-size: 2;
-  user-select: text;
-}
-
-::selection {
-  @apply bg-blue-100;
-}
-
-/* JSON syntax highlighting */
-.hljs {
-  @apply bg-gray-50 font-mono;
-  color: #24292e;
-  padding: 0;
-}
-
-.hljs-attr {
-  @apply text-[#d73a49] font-semibold;
-}
-
-.hljs-string {
-  @apply text-[#032f62];
-}
-
-.hljs-number {
-  @apply text-[#005cc5];
-}
-
-.hljs-literal {
-  @apply text-[#005cc5];
-}
-
-.hljs-punctuation {
-  @apply text-[#24292e];
-}
-
-.hljs-comment {
-  @apply text-[#6a737d] italic;
-}
-</style>

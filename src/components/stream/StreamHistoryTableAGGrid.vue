@@ -105,22 +105,10 @@ import BaseButton from '@/components/base/BaseButton.vue'
 import 'ag-grid-community/styles/ag-grid.css'
 import 'ag-grid-community/styles/ag-theme-alpine.css'
 import '@/styles/agGridTheme.css'
+import type { StreamRun } from '@/types/streamHistory'
 
 // Register AG Grid modules
 ModuleRegistry.registerModules([AllCommunityModule])
-
-interface StreamRun {
-  id: string
-  configId: string
-  streamId: string
-  timestamp: number
-  durationMs: number
-  status: string
-  dataSize?: string
-  rowsInserted?: number
-  rowsSkipped?: number
-  errorMessage?: string
-}
 
 const props = defineProps<{
   configId: string
