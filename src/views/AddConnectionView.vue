@@ -26,7 +26,7 @@
 
     <!-- Main Content -->
     <main
-      class="bg-linear-to-br from-slate-50 via-white to-slate-50 dark:from-gray-900 dark:via-gray-850 dark:to-gray-900 min-h-screen"
+      class="min-h-screen bg-linear-to-br from-slate-50 via-white to-slate-50 dark:from-gray-900 dark:via-gray-850 dark:to-gray-900"
     >
       <AddConnectionWizard />
     </main>

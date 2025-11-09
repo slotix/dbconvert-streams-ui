@@ -417,11 +417,9 @@
         <Bars3Icon :class="iconSizes.navigationHeader" aria-hidden="true" />
       </button>
 
-      <div class="py-4">
-        <RouteGuard v-if="!isInitializing">
-          <RouterView />
-        </RouteGuard>
-      </div>
+      <RouteGuard v-if="!isInitializing">
+        <RouterView />
+      </RouteGuard>
     </div>
 
     <LogsPanel />

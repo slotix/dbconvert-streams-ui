@@ -1,10 +1,8 @@
 <template>
-  <div
-    class="h-screen bg-linear-to-br from-slate-50 via-white to-slate-50 dark:from-gray-900 dark:via-gray-850 dark:to-gray-900 flex flex-col"
-  >
+  <div>
     <!-- Header -->
     <header
-      class="bg-white dark:bg-gray-850 shadow-sm dark:shadow-gray-900/30 border-b border-gray-100 dark:border-gray-700 shrink-0"
+      class="bg-white dark:bg-gray-850 shadow-sm dark:shadow-gray-900/30 border-b border-gray-100 dark:border-gray-700"
     >
       <div class="max-w-[1600px] mx-auto py-4 px-4 sm:px-6 lg:px-8">
         <div class="flex items-center">
@@ -33,76 +31,80 @@
     </header>
 
     <!-- Main Content -->
-    <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 flex-1 flex flex-col min-h-0 w-full">
-      <WizardLayout
-        :steps="wizard.steps"
-        :current-step-index="wizard.currentStepIndex.value"
-        :can-proceed="wizard.canProceed.value"
-        :is-processing="isProcessing"
-        :is-edit-mode="isEditMode"
-        wizard-type="stream"
-        @next-step="handleNextStep"
-        @previous-step="wizard.previousStep"
-        @finish="handleFinish"
-        @cancel="cancelWizard"
-      >
-        <template #default="{ currentStepIndex }">
-          <!-- Step 1: Source & Target Selection -->
-          <div v-if="currentStepIndex === 0" class="h-full">
-            <SourceTargetSelectionStep
-              :source-connection-id="wizard.selection.value.sourceConnectionId"
-              :target-connection-id="wizard.selection.value.targetConnectionId"
-              :source-database="wizard.selection.value.sourceDatabase"
-              :target-database="wizard.selection.value.targetDatabase"
-              :source-schema="wizard.selection.value.sourceSchema"
-              :target-schema="wizard.selection.value.targetSchema"
-              :target-path="wizard.selection.value.targetPath"
-              @update:source-connection="handleSourceUpdate"
-              @update:target-connection="handleTargetUpdate"
-              @clear-all="handleClearAll"
-              @add-connection="(paneType) => goToAddConnection(paneType)"
-              @update:can-proceed="updateCanProceed"
-            />
-          </div>
+    <div
+      class="min-h-screen bg-linear-to-br from-slate-50 via-white to-slate-50 dark:from-gray-900 dark:via-gray-850 dark:to-gray-900 flex flex-col"
+    >
+      <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 flex-1 flex flex-col min-h-0 w-full">
+        <WizardLayout
+          :steps="wizard.steps"
+          :current-step-index="wizard.currentStepIndex.value"
+          :can-proceed="wizard.canProceed.value"
+          :is-processing="isProcessing"
+          :is-edit-mode="isEditMode"
+          wizard-type="stream"
+          @next-step="handleNextStep"
+          @previous-step="wizard.previousStep"
+          @finish="handleFinish"
+          @cancel="cancelWizard"
+        >
+          <template #default="{ currentStepIndex }">
+            <!-- Step 1: Source & Target Selection -->
+            <div v-if="currentStepIndex === 0" class="h-full">
+              <SourceTargetSelectionStep
+                :source-connection-id="wizard.selection.value.sourceConnectionId"
+                :target-connection-id="wizard.selection.value.targetConnectionId"
+                :source-database="wizard.selection.value.sourceDatabase"
+                :target-database="wizard.selection.value.targetDatabase"
+                :source-schema="wizard.selection.value.sourceSchema"
+                :target-schema="wizard.selection.value.targetSchema"
+                :target-path="wizard.selection.value.targetPath"
+                @update:source-connection="handleSourceUpdate"
+                @update:target-connection="handleTargetUpdate"
+                @clear-all="handleClearAll"
+                @add-connection="(paneType) => goToAddConnection(paneType)"
+                @update:can-proceed="updateCanProceed"
+              />
+            </div>
 
-          <!-- Step 2: Structure & Data -->
-          <div v-if="currentStepIndex === 1" class="h-full">
-            <StructureDataStep
-              :create-tables="wizard.createTables.value"
-              :create-indexes="wizard.createIndexes.value"
-              :create-foreign-keys="wizard.createForeignKeys.value"
-              :copy-data="wizard.copyData.value"
-              @update:create-tables="wizard.setCreateTables"
-              @update:create-indexes="wizard.setCreateIndexes"
-              @update:create-foreign-keys="wizard.setCreateForeignKeys"
-              @update:copy-data="wizard.setCopyData"
-              @update:can-proceed="updateCanProceed"
-            />
-          </div>
+            <!-- Step 2: Structure & Data -->
+            <div v-if="currentStepIndex === 1" class="h-full">
+              <StructureDataStep
+                :create-tables="wizard.createTables.value"
+                :create-indexes="wizard.createIndexes.value"
+                :create-foreign-keys="wizard.createForeignKeys.value"
+                :copy-data="wizard.copyData.value"
+                @update:create-tables="wizard.setCreateTables"
+                @update:create-indexes="wizard.setCreateIndexes"
+                @update:create-foreign-keys="wizard.setCreateForeignKeys"
+                @update:copy-data="wizard.setCopyData"
+                @update:can-proceed="updateCanProceed"
+              />
+            </div>
 
-          <!-- Step 3: Stream Configuration -->
-          <div v-if="currentStepIndex === 2" class="h-full">
-            <StreamConfigurationStep
-              :source-connection-id="wizard.selection.value.sourceConnectionId"
-              :target-connection-id="wizard.selection.value.targetConnectionId"
-              :source-database="wizard.selection.value.sourceDatabase"
-              :target-database="wizard.selection.value.targetDatabase"
-              @update:can-proceed="updateCanProceed"
-            />
-          </div>
-        </template>
-      </WizardLayout>
+            <!-- Step 3: Stream Configuration -->
+            <div v-if="currentStepIndex === 2" class="h-full">
+              <StreamConfigurationStep
+                :source-connection-id="wizard.selection.value.sourceConnectionId"
+                :target-connection-id="wizard.selection.value.targetConnectionId"
+                :source-database="wizard.selection.value.sourceDatabase"
+                :target-database="wizard.selection.value.targetDatabase"
+                @update:can-proceed="updateCanProceed"
+              />
+            </div>
+          </template>
+        </WizardLayout>
+      </div>
+
+      <ConfirmDialog
+        v-model:is-open="showExitConfirm"
+        title="Leave stream setup?"
+        description="Your current configuration will be discarded if you go back."
+        confirm-label="Leave"
+        cancel-label="Stay"
+        :danger="true"
+        @confirm="confirmExit"
+      />
     </div>
-
-    <ConfirmDialog
-      v-model:is-open="showExitConfirm"
-      title="Leave stream setup?"
-      description="Your current configuration will be discarded if you go back."
-      confirm-label="Leave"
-      cancel-label="Stay"
-      :danger="true"
-      @confirm="confirmExit"
-    />
   </div>
 </template>
 
