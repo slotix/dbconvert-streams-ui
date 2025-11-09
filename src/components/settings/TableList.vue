@@ -19,7 +19,7 @@
           :checked="selectAllCheckboxState"
           :indeterminate="indeterminate"
           type="checkbox"
-          class="h-4 w-4 text-gray-600 dark:text-gray-300 focus:ring-gray-500 dark:focus:ring-gray-400 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
+          class="h-4 w-4 text-teal-600 dark:text-teal-500 focus:ring-teal-500 dark:focus:ring-teal-400 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
           @change="toggleSelectAll"
         />
         <label :for="'select-all-checkbox'" class="ml-2 text-sm text-gray-700 dark:text-gray-300">
@@ -103,7 +103,7 @@
                       :id="`table-${table.name}`"
                       v-model="table.selected"
                       type="checkbox"
-                      class="h-4 w-4 text-gray-600 dark:text-gray-300 focus:ring-gray-500 dark:focus:ring-gray-400 border-gray-300 dark:border-gray-600 rounded mr-3 bg-white dark:bg-gray-800"
+                      class="h-4 w-4 text-teal-600 dark:text-teal-500 focus:ring-teal-500 dark:focus:ring-teal-400 border-gray-300 dark:border-gray-600 rounded mr-3 bg-white dark:bg-gray-800"
                       @change="
                         handleCheckboxChange(
                           table,

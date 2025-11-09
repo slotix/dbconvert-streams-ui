@@ -88,6 +88,37 @@
     transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
     transition-duration: 200ms;
   }
+
+  /* Checkbox styling - needs !important to override @tailwindcss/forms */
+  input[type='checkbox']:checked {
+    background-color: rgb(75 85 99) !important; /* gray-600 */
+    border-color: rgb(75 85 99) !important;
+  }
+
+  input[type='checkbox']:checked:hover {
+    background-color: rgb(55 65 81) !important; /* gray-700 */
+    border-color: rgb(55 65 81) !important;
+  }
+
+  input[type='checkbox']:indeterminate {
+    background-color: rgb(75 85 99) !important; /* gray-600 */
+    border-color: rgb(75 85 99) !important;
+  }
+
+  .dark input[type='checkbox']:checked {
+    background-color: rgb(107 114 128) !important; /* gray-500 */
+    border-color: rgb(107 114 128) !important;
+  }
+
+  .dark input[type='checkbox']:checked:hover {
+    background-color: rgb(156 163 175) !important; /* gray-400 */
+    border-color: rgb(156 163 175) !important;
+  }
+
+  .dark input[type='checkbox']:indeterminate {
+    background-color: rgb(107 114 128) !important; /* gray-500 */
+    border-color: rgb(107 114 128) !important;
+  }
 }
 
 /* ===========================

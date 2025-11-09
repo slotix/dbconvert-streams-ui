@@ -10,13 +10,13 @@
       <div class="flex-1 min-w-[120px]">
         <SearchInput v-model="connectionSearch" placeholder="Filter..." size="sm" />
       </div>
-      <button
-        type="button"
-        class="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-white bg-teal-600 dark:bg-teal-500 border border-transparent rounded-lg hover:shadow-md dark:hover:shadow-teal-900/40 hover:scale-105 transition-all duration-200"
+      <BaseButton
+        variant="primary"
+        size="sm"
         @click="$emit('add-connection', props.paneType || 'source')"
       >
-        <span>New Connection</span>
-      </button>
+        New Connection
+      </BaseButton>
     </div>
   </div>
 </template>
@@ -25,6 +25,7 @@
 import { computed, ref, onMounted } from 'vue'
 import ConnectionTypeFilter from '@/components/common/ConnectionTypeFilter.vue'
 import SearchInput from '@/components/common/SearchInput.vue'
+import BaseButton from '@/components/base/BaseButton.vue'
 
 interface Props {
   connectionSearch: string

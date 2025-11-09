@@ -2,17 +2,17 @@
   <div class="space-y-6">
     <!-- Split Pane Container -->
     <div class="grid grid-cols-2 gap-4 h-[600px]">
-      <!-- Source Tree (Left) - Orange Theme -->
+      <!-- Source Tree (Left) - Sky Blue Theme -->
       <div
-        class="relative rounded-xl bg-linear-to-br from-orange-50 to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-850 overflow-hidden flex flex-col border border-orange-200 dark:border-orange-500/40 shadow-sm dark:shadow-gray-900/30"
+        class="relative rounded-xl bg-linear-to-br from-sky-50 to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-850 overflow-hidden flex flex-col border border-sky-200 dark:border-sky-400/40 shadow-sm dark:shadow-gray-900/30"
       >
         <div
-          class="px-4 py-3 border-b border-orange-100 dark:border-orange-500/30 bg-linear-to-r from-orange-50 to-white dark:from-gray-900 dark:to-gray-900/60"
+          class="px-4 py-3 border-b border-sky-100 dark:border-sky-400/30 bg-linear-to-r from-sky-50 to-white dark:from-gray-900 dark:to-gray-900/60"
         >
           <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100 flex items-center">
             <img src="/images/steps/source-step.svg" alt="Source" class="w-8 h-8 mr-2" />
             <span
-              class="bg-linear-to-r from-orange-600 to-orange-500 dark:from-orange-400 dark:to-orange-300 bg-clip-text text-transparent"
+              class="bg-linear-to-r from-sky-600 to-sky-500 dark:from-sky-400 dark:to-sky-300 bg-clip-text text-transparent"
             >
               Source Connection
             </span>
@@ -45,17 +45,17 @@
         </div>
       </div>
 
-      <!-- Target Tree (Right) - Teal Theme -->
+      <!-- Target Tree (Right) - Emerald Theme -->
       <div
-        class="relative rounded-xl bg-linear-to-br from-teal-50 to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-850 overflow-hidden flex flex-col border border-teal-200 dark:border-teal-400/40 shadow-sm dark:shadow-gray-900/30"
+        class="relative rounded-xl bg-linear-to-br from-emerald-50 to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-850 overflow-hidden flex flex-col border border-emerald-200 dark:border-emerald-400/40 shadow-sm dark:shadow-gray-900/30"
       >
         <div
-          class="px-4 py-3 border-b border-teal-100 dark:border-teal-400/30 bg-linear-to-r from-teal-50 to-white dark:from-gray-900 dark:to-gray-900/60"
+          class="px-4 py-3 border-b border-emerald-100 dark:border-emerald-400/30 bg-linear-to-r from-emerald-50 to-white dark:from-gray-900 dark:to-gray-900/60"
         >
           <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100 flex items-center">
             <img src="/images/steps/target-step.svg" alt="Target" class="w-8 h-8 mr-2" />
             <span
-              class="bg-linear-to-r from-teal-600 to-teal-500 dark:from-teal-400 dark:to-teal-300 bg-clip-text text-transparent"
+              class="bg-linear-to-r from-emerald-600 to-emerald-500 dark:from-emerald-400 dark:to-emerald-300 bg-clip-text text-transparent"
             >
               Target Connection
             </span>
@@ -94,11 +94,11 @@
       <!-- Source and Target Chips -->
       <div class="flex items-center justify-between gap-3">
         <div class="flex items-center gap-2 flex-1">
-          <!-- Source Chip - Orange -->
+          <!-- Source Chip - Sky Blue -->
           <div
-            class="bg-orange-50 dark:bg-orange-500/10 border border-orange-200 dark:border-orange-500/40 rounded-lg px-4 py-2.5 text-sm shadow-sm dark:shadow-gray-900/30"
+            class="bg-sky-50 dark:bg-sky-500/10 border border-sky-200 dark:border-sky-400/40 rounded-lg px-4 py-2.5 text-sm shadow-sm dark:shadow-gray-900/30"
           >
-            <span class="font-semibold text-orange-600 dark:text-orange-300">Source:</span>
+            <span class="font-semibold text-sky-600 dark:text-sky-300">Source:</span>
             <span
               v-if="sourceConnectionId"
               class="text-slate-700 dark:text-gray-200 ml-1 font-medium"
@@ -111,12 +111,12 @@
             <span v-else class="text-gray-500 dark:text-gray-400 ml-1 italic">Not selected</span>
           </div>
 
-          <!-- Arrow - Orange to Teal Gradient -->
-          <svg class="w-5 h-5 shrink-0" fill="none" stroke="url(#orangeToTeal)" viewBox="0 0 24 24">
+          <!-- Arrow - Sky Blue to Emerald Gradient -->
+          <svg class="w-5 h-5 shrink-0" fill="none" stroke="url(#skyToEmerald)" viewBox="0 0 24 24">
             <defs>
-              <linearGradient id="orangeToTeal" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" style="stop-color: rgb(234, 88, 12); stop-opacity: 1" />
-                <stop offset="100%" style="stop-color: rgb(20, 184, 166); stop-opacity: 1" />
+              <linearGradient id="skyToEmerald" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" style="stop-color: rgb(14, 165, 233); stop-opacity: 1" />
+                <stop offset="100%" style="stop-color: rgb(16, 185, 129); stop-opacity: 1" />
               </linearGradient>
             </defs>
             <path
@@ -127,11 +127,11 @@
             />
           </svg>
 
-          <!-- Target Chip - Teal -->
+          <!-- Target Chip - Emerald -->
           <div
-            class="bg-teal-50 dark:bg-teal-500/10 border border-teal-200 dark:border-teal-400/40 rounded-lg px-4 py-2.5 text-sm shadow-sm dark:shadow-gray-900/30"
+            class="bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-400/40 rounded-lg px-4 py-2.5 text-sm shadow-sm dark:shadow-gray-900/30"
           >
-            <span class="font-semibold text-teal-600 dark:text-teal-300">Target:</span>
+            <span class="font-semibold text-emerald-600 dark:text-emerald-300">Target:</span>
             <span
               v-if="targetConnectionId"
               class="text-slate-700 dark:text-gray-200 ml-1 font-medium"

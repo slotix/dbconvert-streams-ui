@@ -301,8 +301,7 @@ function connectionSubtitle(connection: Connection): string | null {
 const connectionTooltip = getConnectionTooltip
 
 function connectionCardClass(connectionId: string): string {
-  const base =
-    'border border-transparent bg-white/70 dark:bg-gray-900/30 hover:bg-gray-50 dark:hover:bg-gray-800/70 shadow-sm dark:shadow-gray-900/20'
+  const base = 'bg-white/50 dark:bg-gray-900/20 hover:bg-gray-50 dark:hover:bg-gray-800/50'
   if (props.selectedConnectionId !== connectionId) {
     return base
   }
@@ -316,19 +315,19 @@ function connectionCardClass(connectionId: string): string {
 
   // Selected connection: subtle neutral styling
   // Accent bar is now on the selected database row instead
-  return 'border border-teal-200 dark:border-teal-500/40 bg-white dark:bg-gray-850 shadow-sm dark:shadow-gray-900/30'
+  return 'bg-white dark:bg-gray-850/50'
 }
 
 function connectionHeaderClass(connectionId: string): string {
   if (props.selectedConnectionId !== connectionId) {
-    return 'hover:bg-gray-50 dark:hover:bg-gray-800/70 text-gray-800 dark:text-gray-200'
+    return 'hover:bg-gray-50 dark:hover:bg-gray-800/50 text-gray-800 dark:text-gray-200'
   }
 
   // For file connections, don't apply selected styling to the header
   // Only the file path inside should be highlighted (like database connections)
   const connection = getConnectionById(connectionId)
   if (connection && isFileConnection(connection)) {
-    return 'hover:bg-gray-50 dark:hover:bg-gray-800/70 text-gray-800 dark:text-gray-200'
+    return 'hover:bg-gray-50 dark:hover:bg-gray-800/50 text-gray-800 dark:text-gray-200'
   }
 
   return 'bg-transparent text-gray-900 dark:text-gray-100'
@@ -338,14 +337,14 @@ function filePathClass(connectionId: string): string {
   const isSelected = props.selectedConnectionId === connectionId
 
   if (!isSelected) {
-    return 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800/70 border border-transparent dark:border-transparent bg-white/60 dark:bg-gray-900/30'
+    return 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800/50 bg-white/40 dark:bg-gray-900/20'
   }
 
-  // Selected file path: unified soft glow + light background based on mode
+  // Selected file path: sky blue for source, emerald for target - enhanced for color-blind accessibility
   if (props.mode === 'source') {
-    return 'bg-yellow-50 dark:bg-amber-900/40 border border-yellow-200 dark:border-amber-500/50 text-gray-900 dark:text-amber-100'
+    return 'bg-sky-100 dark:bg-sky-400/30 text-sky-900 dark:text-sky-100 font-medium'
   } else {
-    return 'bg-green-50 dark:bg-emerald-900/40 border border-green-200 dark:border-emerald-500/50 text-gray-900 dark:text-emerald-100'
+    return 'bg-emerald-100 dark:bg-emerald-400/30 text-emerald-900 dark:text-emerald-100 font-medium'
   }
 }
 
@@ -354,14 +353,14 @@ function databaseRowClass(connectionId: string, database: string): string {
     props.selectedConnectionId === connectionId && props.selectedDatabase === database
 
   if (!isSelected) {
-    return 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800/70 border border-transparent dark:border-transparent'
+    return 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800/50'
   }
 
-  // Selected database: soft glow ring + light background based on mode (source = amber, target = blue)
+  // Selected database: sky blue for source, emerald for target - enhanced for color-blind accessibility
   if (props.mode === 'source') {
-    return 'bg-yellow-50 dark:bg-amber-900/40 border border-yellow-200 dark:border-amber-500/50 text-gray-900 dark:text-amber-100'
+    return 'bg-sky-100 dark:bg-sky-400/30 text-sky-900 dark:text-sky-100 font-medium'
   } else {
-    return 'bg-green-50 dark:bg-emerald-900/40 border border-green-200 dark:border-emerald-500/50 text-gray-900 dark:text-emerald-100'
+    return 'bg-emerald-100 dark:bg-emerald-400/30 text-emerald-900 dark:text-emerald-100 font-medium'
   }
 }
 

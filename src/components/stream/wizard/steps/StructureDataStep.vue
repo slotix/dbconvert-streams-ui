@@ -4,9 +4,6 @@
     <div
       class="bg-linear-to-br from-slate-50 to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-850 border border-gray-100 dark:border-gray-700 rounded-xl p-6 shadow-sm dark:shadow-gray-900/30"
     >
-      <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4">
-        Data Transfer Mode
-      </h3>
       <ModeButtons />
 
       <!-- CDC Operations - Only show when CDC mode is selected -->
