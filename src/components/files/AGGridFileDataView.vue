@@ -413,7 +413,7 @@ onBeforeUnmount(() => {
     <!-- SQL Query Banner (like DataGrip) -->
     <div
       v-if="!isUnsupportedFile && fullSqlQuery"
-      class="mb-3 bg-amber-50 border border-amber-200 rounded-md overflow-hidden"
+      class="mb-3 bg-gray-50 dark:bg-gray-900/40 border border-gray-200 dark:border-gray-700 rounded-md overflow-hidden"
     >
       <div class="flex items-start gap-2 px-3 py-2">
         <!-- SQL Content -->
@@ -434,7 +434,7 @@ onBeforeUnmount(() => {
           <button
             v-if="needsTruncation"
             type="button"
-            class="px-2 py-1 text-xs text-amber-700 hover:bg-amber-100 rounded transition-colors"
+            class="px-2 py-1 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
             :title="isSqlBannerExpanded ? 'Collapse' : 'Expand'"
             @click="toggleSqlBanner"
           >
@@ -444,7 +444,7 @@ onBeforeUnmount(() => {
           <!-- Clear filters button -->
           <button
             type="button"
-            class="px-2 py-1 text-xs text-amber-700 hover:bg-amber-100 rounded transition-colors flex items-center gap-1"
+            class="px-2 py-1 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors flex items-center gap-1"
             title="Clear all filters and sorting"
             @click="clearAllFilters"
           >
@@ -538,35 +538,82 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-/* SQL Syntax highlighting for inline code */
-:deep(.hljs) {
+/* SQL Syntax highlighting - EXACT copy from SqlCodeBlock.vue (non-scoped) */
+.hljs {
   background: transparent;
   padding: 0;
   color: #24292e;
 }
 
-:deep(.hljs-keyword) {
+.dark .hljs {
+  color: #e6edf3;
+}
+
+.hljs-keyword {
   color: #d73a49;
   font-weight: 600;
 }
 
-:deep(.hljs-string) {
+.dark .hljs-keyword {
+  color: #ff7b72;
+  font-weight: 600;
+}
+
+.hljs-string {
   color: #032f62;
 }
 
-:deep(.hljs-number) {
+.dark .hljs-string {
+  color: #a5d6ff;
+}
+
+.hljs-number {
   color: #005cc5;
 }
 
-:deep(.hljs-operator) {
+.dark .hljs-number {
+  color: #79c0ff;
+}
+
+.hljs-operator {
   color: #d73a49;
 }
 
-:deep(.hljs-built_in) {
-  color: #6f42c1;
+.dark .hljs-operator {
+  color: #ff7b72;
 }
 
-:deep(.hljs-literal) {
+.hljs-punctuation {
+  color: #24292e;
+}
+
+.dark .hljs-punctuation {
+  color: #c9d1d9;
+}
+
+.hljs-comment {
+  color: #6a737d;
+  font-style: italic;
+}
+
+.dark .hljs-comment {
+  color: #8b949e;
+  font-style: italic;
+}
+
+.hljs-function {
   color: #005cc5;
+}
+
+.dark .hljs-function {
+  color: #d2a8ff;
+}
+
+.hljs-built_in {
+  color: #005cc5;
+}
+
+.dark .hljs-built_in {
+  color: #79c0ff;
 }
 </style>

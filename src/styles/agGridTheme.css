@@ -228,3 +228,17 @@
 .dark .ag-theme-alpine :deep(.ag-row-even:hover) {
   background-color: rgba(55, 65, 81, 0.8) !important;
 }
+
+/* Dark mode filter menu/dialog */
+.dark .ag-theme-alpine .ag-menu {
+  background-color: var(--tw-gray-800) !important;
+  border: 1px solid var(--tw-gray-700) !important;
+}
+
+.dark .ag-theme-alpine .ag-input-field-input,
+.dark .ag-theme-alpine .ag-select,
+.dark .ag-theme-alpine .ag-picker-field-wrapper {
+  background-color: var(--tw-gray-850) !important;
+  color: var(--tw-gray-100) !important;
+  border-color: var(--tw-gray-700) !important;
+}
