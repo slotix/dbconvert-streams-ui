@@ -40,10 +40,7 @@
                 d="M5 13l4 4L19 7"
               />
             </svg>
-            <PauseIcon
-              v-else-if="isPaused"
-              class="h-6 w-6 text-yellow-600 dark:text-yellow-300"
-            />
+            <PauseIcon v-else-if="isPaused" class="h-6 w-6 text-yellow-600 dark:text-yellow-300" />
             <PlayIcon v-else class="h-6 w-6 text-gray-400 dark:text-gray-500" />
           </div>
           <div class="min-w-0 flex-1">

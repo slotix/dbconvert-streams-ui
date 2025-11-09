@@ -125,7 +125,9 @@ function toggleExpanded() {
     >
       <!-- Header row with all metadata -->
       <div class="flat-row-header" @click="toggleExpanded">
-        <span class="text-[0.65rem] font-mono text-gray-500 dark:text-gray-400">{{ formatTime(log.startedAt) }}</span>
+        <span class="text-[0.65rem] font-mono text-gray-500 dark:text-gray-400">{{
+          formatTime(log.startedAt)
+        }}</span>
         <span class="flex-shrink-0">
           <span
             class="px-1.5 py-0.5 rounded font-semibold uppercase tracking-wide text-[0.65rem]"
@@ -204,14 +206,18 @@ function toggleExpanded() {
         <!-- Error -->
         <div v-if="log.error" class="mb-3">
           <div class="text-xs font-semibold text-red-700 dark:text-red-400 mb-1">Error:</div>
-          <div class="text-xs bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 p-3 rounded border border-red-300 dark:border-red-800">
+          <div
+            class="text-xs bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 p-3 rounded border border-red-300 dark:border-red-800"
+          >
             {{ log.error }}
           </div>
         </div>
 
         <!-- Metadata -->
         <div v-if="log.tabId" class="grid grid-cols-2 gap-2 text-xs">
-          <div class="dark:text-gray-300"><span class="font-semibold">Tab:</span> {{ log.tabId }}</div>
+          <div class="dark:text-gray-300">
+            <span class="font-semibold">Tab:</span> {{ log.tabId }}
+          </div>
         </div>
       </ExpandableSection>
     </div>

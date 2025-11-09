@@ -406,7 +406,9 @@ onBeforeUnmount(() => {
                   @click="selectedView = 'system'"
                 >
                   System Logs
-                  <span class="ml-2 text-xs px-1.5 py-0.5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
+                  <span
+                    class="ml-2 text-xs px-1.5 py-0.5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
+                  >
                     {{ totalLogs }}
                   </span>
                 </button>
@@ -420,7 +422,9 @@ onBeforeUnmount(() => {
                   @click="selectedView = 'sql'"
                 >
                   <span class="text-green-600 dark:text-green-400 font-semibold">SQL Logs</span>
-                  <span class="ml-2 text-xs px-1.5 py-0.5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
+                  <span
+                    class="ml-2 text-xs px-1.5 py-0.5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
+                  >
                     {{ store.flatLogs.size }}
                   </span>
                 </button>
@@ -494,7 +498,9 @@ onBeforeUnmount(() => {
                           ✓
                         </span>
                       </div>
-                      <span class="text-gray-700 dark:text-gray-200 group-hover:text-gray-900 dark:group-hover:text-white font-semibold">
+                      <span
+                        class="text-gray-700 dark:text-gray-200 group-hover:text-gray-900 dark:group-hover:text-white font-semibold"
+                      >
                         {{
                           selectedMessageTypes.size === messageTypeOptions.length
                             ? 'Clear All'
@@ -529,7 +535,10 @@ onBeforeUnmount(() => {
                           ✓
                         </span>
                       </div>
-                      <span class="text-gray-700 dark:text-gray-200 group-hover:text-gray-900 dark:group-hover:text-white">{{ type }}</span>
+                      <span
+                        class="text-gray-700 dark:text-gray-200 group-hover:text-gray-900 dark:group-hover:text-white"
+                        >{{ type }}</span
+                      >
                     </button>
                   </div>
                 </transition>
@@ -626,7 +635,9 @@ onBeforeUnmount(() => {
                     >
                       <span class="font-medium">{{ tab.label }}</span>
                       <!-- Log count badge -->
-                      <span class="text-xs bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 px-1.5 py-0.5 rounded">
+                      <span
+                        class="text-xs bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 px-1.5 py-0.5 rounded"
+                      >
                         {{
                           tab.streamId === null
                             ? filteredLogs.filter((log) => !log.streamId).length
@@ -668,7 +679,10 @@ onBeforeUnmount(() => {
                 </div>
 
                 <!-- Empty State -->
-                <div v-else class="flex items-center justify-center h-full text-gray-500 dark:text-gray-400">
+                <div
+                  v-else
+                  class="flex items-center justify-center h-full text-gray-500 dark:text-gray-400"
+                >
                   <div class="text-center">
                     <svg
                       class="w-12 h-12 mx-auto mb-4 text-gray-400 dark:text-gray-500"

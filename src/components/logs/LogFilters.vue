@@ -219,7 +219,9 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-850 border-b border-gray-200 dark:border-gray-700 shadow-sm">
+  <div
+    class="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-850 border-b border-gray-200 dark:border-gray-700 shadow-sm"
+  >
     <div class="flex items-center gap-2">
       <!-- Visual Grouping Toggle -->
       <button
@@ -307,7 +309,10 @@ onBeforeUnmount(() => {
                   ✓
                 </span>
               </div>
-              <span class="text-gray-700 dark:text-gray-200 group-hover:text-gray-900 dark:group-hover:text-white">{{ option.label }}</span>
+              <span
+                class="text-gray-700 dark:text-gray-200 group-hover:text-gray-900 dark:group-hover:text-white"
+                >{{ option.label }}</span
+              >
             </button>
           </div>
         </transition>
@@ -482,27 +487,45 @@ onBeforeUnmount(() => {
           <div class="space-y-1.5">
             <div class="flex justify-between">
               <span class="text-gray-600 dark:text-gray-300">Focus search</span>
-              <kbd class="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300">F</kbd>
+              <kbd
+                class="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300"
+                >F</kbd
+              >
             </div>
             <div class="flex justify-between">
               <span class="text-gray-600 dark:text-gray-300">Toggle grouped/ungrouped</span>
-              <kbd class="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300">G</kbd>
+              <kbd
+                class="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300"
+                >G</kbd
+              >
             </div>
             <div class="flex justify-between">
               <span class="text-gray-600 dark:text-gray-300">Toggle expand/collapse</span>
-              <kbd class="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300">X</kbd>
+              <kbd
+                class="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300"
+                >X</kbd
+              >
             </div>
             <div class="flex justify-between">
               <span class="text-gray-600 dark:text-gray-300">Toggle errors only</span>
-              <kbd class="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300">E</kbd>
+              <kbd
+                class="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300"
+                >E</kbd
+              >
             </div>
             <div class="flex justify-between">
               <span class="text-gray-600 dark:text-gray-300">Toggle sort order</span>
-              <kbd class="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300">S</kbd>
+              <kbd
+                class="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300"
+                >S</kbd
+              >
             </div>
             <div class="flex justify-between">
               <span class="text-gray-600 dark:text-gray-300">Clear logs</span>
-              <kbd class="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300">K</kbd>
+              <kbd
+                class="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300"
+                >K</kbd
+              >
             </div>
           </div>
         </div>
