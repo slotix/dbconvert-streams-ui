@@ -47,6 +47,7 @@
           @next-step="handleNextStep"
           @previous-step="wizard.previousStep"
           @finish="handleFinish"
+          @quick-save="handleQuickSave"
           @cancel="cancelWizard"
         >
           <template #default="{ currentStepIndex }">
@@ -386,6 +387,59 @@ async function handleFinish() {
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred'
     commonStore.showNotification(`Failed to create stream: ${errorMessage}`, 'error')
+  } finally {
+    isProcessing.value = false
+  }
+}
+
+async function handleQuickSave() {
+  if (!wizard.selection.value.sourceConnectionId || !wizard.selection.value.targetConnectionId) {
+    commonStore.showNotification('Source and target must be selected', 'error')
+    return
+  }
+
+  isProcessing.value = true
+  try {
+    // Ensure source and target are set in the store
+    streamsStore.updateSource(wizard.selection.value.sourceConnectionId)
+    streamsStore.updateTarget(wizard.selection.value.targetConnectionId)
+
+    // Apply transfer options to the stream config
+    if (!streamsStore.currentStreamConfig) {
+      throw new Error('Stream configuration not initialized')
+    }
+
+    // Set database/schema information
+    if (wizard.selection.value.sourceDatabase) {
+      streamsStore.currentStreamConfig.sourceDatabase = wizard.selection.value.sourceDatabase
+    }
+    if (wizard.selection.value.targetDatabase) {
+      streamsStore.currentStreamConfig.targetDatabase = wizard.selection.value.targetDatabase
+    }
+    if (wizard.selection.value.targetPath) {
+      streamsStore.currentStreamConfig.targetPath = wizard.selection.value.targetPath
+    }
+
+    // Set skipData based on the "Copy data" checkbox
+    streamsStore.currentStreamConfig.skipData = !wizard.copyData.value
+
+    // Set granular structure creation options
+    streamsStore.currentStreamConfig.structureOptions = {
+      tables: wizard.createTables.value,
+      indexes: wizard.createIndexes.value,
+      foreignKeys: wizard.createForeignKeys.value
+    }
+
+    // Save the stream
+    await streamsStore.saveStream()
+
+    commonStore.showNotification('Stream updated successfully!', 'success')
+
+    // Navigate back to streams list
+    router.push({ name: 'Streams' })
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred'
+    commonStore.showNotification(`Failed to update stream: ${errorMessage}`, 'error')
   } finally {
     isProcessing.value = false
   }

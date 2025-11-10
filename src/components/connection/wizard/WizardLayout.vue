@@ -113,6 +113,20 @@
             </span>
           </BaseButton>
 
+          <!-- Quick Save button - only in edit mode on steps 1-2 -->
+          <BaseButton
+            v-if="isEditMode && !isLastStep"
+            variant="primary"
+            :disabled="!canProceed || isProcessing"
+            @click="$emit('quick-save')"
+          >
+            <span v-if="isProcessing" class="flex items-center">
+              <Spinner size="sm" class="mr-2" />
+              Saving...
+            </span>
+            <span v-else class="flex items-center"> Save Changes </span>
+          </BaseButton>
+
           <BaseButton
             variant="primary"
             :disabled="!canProceed || isProcessing"
@@ -181,6 +195,7 @@ const emit = defineEmits<{
   'next-step': []
   'previous-step': []
   finish: []
+  'quick-save': []
   test: []
   cancel: []
 }>()
