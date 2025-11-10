@@ -41,7 +41,21 @@
               />
             </svg>
             <PauseIcon v-else-if="isPaused" class="h-6 w-6 text-yellow-600 dark:text-yellow-300" />
-            <PlayIcon v-else class="h-6 w-6 text-gray-400 dark:text-gray-500" />
+            <svg
+              v-else
+              class="h-6 w-6 text-gray-400 dark:text-gray-500"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <circle cx="12" cy="12" r="9" stroke-width="2" />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 8v4m0 4h.01"
+              />
+            </svg>
           </div>
           <div class="min-w-0 flex-1">
             <p class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400 mb-1">
@@ -121,7 +135,7 @@
 </template>
 
 <script setup lang="ts">
-import { PauseIcon, PlayIcon } from '@heroicons/vue/24/outline'
+import { PauseIcon } from '@heroicons/vue/24/outline'
 import { useMonitoringStore } from '@/stores/monitoring'
 import type { StreamConfig } from '@/types/streamConfig'
 

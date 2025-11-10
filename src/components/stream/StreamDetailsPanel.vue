@@ -83,6 +83,17 @@
             </h2>
           </div>
           <div class="flex items-center gap-2 ml-4">
+            <!-- Run Stream button (when not running) -->
+            <BaseButton
+              v-if="!isStreamRunning"
+              v-tooltip="'Start the stream'"
+              variant="primary"
+              @click="startStream"
+            >
+              <PlayIcon class="h-4 w-4" />
+              Run Stream
+            </BaseButton>
+
             <!-- Run Again button (when finished) -->
             <BaseButton
               v-if="isStreamFinished"

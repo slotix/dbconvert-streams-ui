@@ -43,7 +43,7 @@ export function useStreamControls(stream: Ref<StreamConfig>) {
   })
 
   const streamStatus = computed(() => {
-    if (!isStreamRunning.value) return 'Not Running'
+    if (!isStreamRunning.value) return 'Ready'
     if (isStreamFinished.value) {
       const hasFailed = monitoringStore.stats.some((stat) => stat.status === 'FAILED')
       const isStopped = monitoringStore.stats.some((stat) => stat.status === 'STOPPED')
