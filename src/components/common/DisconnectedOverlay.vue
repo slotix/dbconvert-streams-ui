@@ -22,7 +22,7 @@ async function handleRetry() {
     <div class="text-center max-w-md px-6">
       <!-- Icon -->
       <div class="mx-auto w-24 h-24 mb-6 flex items-center justify-center">
-        <XCircleIcon class="w-20 h-20 text-orange-500 dark:text-orange-400" />
+        <XCircleIcon class="w-20 h-20 text-red-500 dark:text-red-400" />
       </div>
 
       <!-- Title -->
@@ -39,7 +39,7 @@ async function handleRetry() {
       <!-- Retry Button -->
       <button
         type="button"
-        class="inline-flex items-center gap-2 px-6 py-3 text-base font-semibold text-white bg-orange-600 hover:bg-orange-700 dark:bg-orange-500 dark:hover:bg-orange-600 rounded-lg transition-all duration-200 shadow-lg dark:shadow-gray-900/30 hover:shadow-xl transform hover:scale-105"
+        class="inline-flex items-center gap-2 px-6 py-3 text-base font-semibold text-white bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 rounded-lg transition-all duration-200 shadow-lg dark:shadow-gray-900/30 hover:shadow-xl transform hover:scale-105"
         @click="handleRetry"
       >
         <ArrowPathIcon class="h-5 w-5" />

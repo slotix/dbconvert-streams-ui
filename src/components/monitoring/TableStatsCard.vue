@@ -87,14 +87,14 @@ function getStatusLabel(status: string) {
   >
     <!-- Header -->
     <div
-      class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20"
+      class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-teal-900/20 dark:to-cyan-900/20"
     >
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
           <div
             class="p-2 bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700"
           >
-            <TableCellsIcon class="h-5 w-5 text-purple-600 dark:text-purple-300" />
+            <TableCellsIcon class="h-5 w-5 text-teal-600 dark:text-teal-300" />
           </div>
           <div>
             <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">Tables</h3>
@@ -108,7 +108,7 @@ function getStatusLabel(status: string) {
           </div>
         </div>
         <span
-          class="inline-flex items-center rounded-full px-3 py-1.5 text-sm font-semibold bg-purple-600 text-white dark:bg-purple-500 dark:text-gray-900"
+          class="inline-flex items-center rounded-full px-3 py-1.5 text-sm font-semibold bg-teal-600 text-white dark:bg-teal-500 dark:text-gray-900"
         >
           {{ statusCounts.total }}
         </span>
@@ -121,7 +121,7 @@ function getStatusLabel(status: string) {
         <div
           v-for="table in visibleTables"
           :key="table.table"
-          class="bg-gradient-to-br from-gray-50 to-white dark:from-gray-900/40 dark:to-gray-900/20 border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md hover:border-purple-300 dark:hover:border-purple-500/40 dark:hover:bg-gray-900/60 transition-all duration-200"
+          class="bg-gradient-to-br from-gray-50 to-white dark:from-gray-900/40 dark:to-gray-900/20 border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md hover:border-teal-300 dark:hover:border-teal-500/40 dark:hover:bg-gray-900/60 transition-all duration-200"
         >
           <!-- Table Name and Status -->
           <div class="flex items-start justify-between mb-3">
@@ -167,7 +167,7 @@ function getStatusLabel(status: string) {
           <button
             v-if="table.status === STAT_STATUS.FINISHED"
             type="button"
-            class="mt-3 w-full inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium bg-white dark:bg-gray-900 border border-purple-200 dark:border-purple-500/40 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-gray-800 hover:border-purple-300 dark:hover:border-purple-400 transition-colors"
+            class="mt-3 w-full inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium bg-white dark:bg-gray-900 border border-teal-200 dark:border-teal-500/40 text-teal-700 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-gray-800 hover:border-teal-300 dark:hover:border-teal-400 transition-colors"
             @click="handleCompareTable(table.table)"
           >
             Compare
@@ -180,7 +180,7 @@ function getStatusLabel(status: string) {
       <div v-if="hasMore" class="mt-4 text-center">
         <button
           type="button"
-          class="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 dark:from-purple-500 dark:to-pink-500 dark:hover:from-purple-400 dark:hover:to-pink-400 shadow-sm hover:shadow transition-all duration-200"
+          class="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium bg-gradient-to-r from-teal-600 to-cyan-600 text-white hover:from-teal-700 hover:to-cyan-700 dark:from-teal-500 dark:to-cyan-500 dark:hover:from-teal-400 dark:hover:to-cyan-400 shadow-sm hover:shadow transition-all duration-200"
           @click="toggleShowAll"
         >
           {{ showAll ? 'Show Less' : `View All ${allTables.length} Tables` }}

@@ -9,13 +9,13 @@
   <div
     class="grid grid-cols-1 divide-y divide-gray-200 dark:divide-gray-700 overflow-hidden rounded-xl bg-white dark:bg-gray-850 shadow-lg dark:shadow-gray-900/30 lg:grid-cols-2 lg:divide-x lg:divide-y-0"
   >
-    <!-- Source Stats - Orange Theme -->
+    <!-- Source Stats - Blue Theme -->
     <div class="flex flex-col">
       <div
         :class="[
           'px-4 py-3 bg-gradient-to-br border-b',
           isRunning
-            ? 'from-orange-50 via-orange-100 to-orange-50 border-orange-200 dark:from-orange-900/20 dark:via-orange-900/10 dark:to-orange-900/5 dark:border-orange-800/60'
+            ? 'from-blue-50 via-blue-100 to-blue-50 border-blue-200 dark:from-blue-900/20 dark:via-blue-900/10 dark:to-blue-900/5 dark:border-blue-800/60'
             : 'from-gray-50 via-gray-100 to-gray-50 border-gray-100 dark:from-gray-900/20 dark:via-gray-900/10 dark:to-gray-900/5 dark:border-gray-800/70'
         ]"
       >
@@ -34,7 +34,7 @@
                 class="text-sm sm:text-base font-bold leading-tight"
                 :class="
                   isRunning
-                    ? 'text-orange-700 dark:text-orange-300'
+                    ? 'text-blue-700 dark:text-blue-300'
                     : 'text-gray-900 dark:text-gray-100'
                 "
               >

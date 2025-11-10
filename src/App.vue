@@ -315,7 +315,7 @@
                   ? 'text-green-400 bg-green-900/20'
                   : commonStore.error
                     ? 'text-red-400 bg-red-900/20'
-                    : 'text-yellow-400 bg-yellow-900/20'
+                    : 'text-red-400 bg-red-900/20'
               ]"
               :title="getConnectionStatusText()"
             >
@@ -326,7 +326,7 @@
                     ? 'bg-green-400 border-green-400 animate-pulse'
                     : commonStore.error
                       ? 'bg-red-400 border-red-400'
-                      : 'bg-yellow-400 border-yellow-400'
+                      : 'bg-red-400 border-red-400'
                 ]"
               ></div>
               <!-- Show tooltip on hover -->
@@ -545,7 +545,7 @@ const updateBrowserTabTitle = () => {
   } else if (commonStore.error) {
     faviconColor = '#ef4444' // Red
   } else {
-    faviconColor = '#f59e0b' // Yellow/Orange
+    faviconColor = '#ef4444' // Red
   }
 
   // Update tab title (no emoji prefix since we have the favicon)

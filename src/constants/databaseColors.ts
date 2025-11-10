@@ -240,21 +240,21 @@ export interface IconColorScheme {
  * Used only on root connection icons in tree views
  */
 export const DATABASE_ICON_COLORS: Record<string, IconColorScheme> = {
-  // PostgreSQL - Muted Violet (more visible)
+  // PostgreSQL - Sky Blue
   [DATABASE_TYPES.POSTGRESQL]: {
-    iconBg: 'bg-violet-100 dark:bg-violet-500/10',
+    iconBg: 'bg-sky-100 dark:bg-sky-500/10',
     iconTint: 'brightness-100 saturate-90 dark:invert'
   },
   postgresql: {
-    iconBg: 'bg-violet-100 dark:bg-violet-500/10',
+    iconBg: 'bg-sky-100 dark:bg-sky-500/10',
     iconTint: 'brightness-100 saturate-90 dark:invert'
   },
   postgres: {
-    iconBg: 'bg-violet-100 dark:bg-violet-500/10',
+    iconBg: 'bg-sky-100 dark:bg-sky-500/10',
     iconTint: 'brightness-100 saturate-90 dark:invert'
   },
   pg: {
-    iconBg: 'bg-violet-100 dark:bg-violet-500/10',
+    iconBg: 'bg-sky-100 dark:bg-sky-500/10',
     iconTint: 'brightness-100 saturate-90 dark:invert'
   },
 

@@ -3,13 +3,20 @@
     :class="statusClass"
     class="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium shadow-sm"
   >
-    <span class="mr-1.5 h-2 w-2 rounded-full" :class="dotClass"></span>
+    <component :is="statusIcon" v-if="statusIcon" class="mr-1.5 h-3 w-3" />
+    <span v-else class="mr-1.5 h-2 w-2 rounded-full" :class="dotClass"></span>
     {{ status }}
   </span>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import {
+  CheckCircleIcon,
+  XCircleIcon,
+  PauseCircleIcon,
+  StopCircleIcon
+} from '@heroicons/vue/24/solid'
 
 const props = defineProps<{
   status: string
@@ -32,18 +39,25 @@ const statusClass = computed(() => {
   }
 })
 
-const dotClass = computed(() => {
+const statusIcon = computed(() => {
   switch (props.status) {
     case 'FINISHED':
-      return 'bg-teal-600'
+      return CheckCircleIcon
+    case 'FAILED':
+      return XCircleIcon
+    case 'PAUSED':
+      return PauseCircleIcon
+    case 'STOPPED':
+      return StopCircleIcon
+    default:
+      return null
+  }
+})
+
+const dotClass = computed(() => {
+  switch (props.status) {
     case 'RUNNING':
       return 'bg-blue-500 animate-pulse'
-    case 'PAUSED':
-      return 'bg-yellow-500'
-    case 'FAILED':
-      return 'bg-red-500'
-    case 'STOPPED':
-      return 'bg-gray-500'
     default:
       return 'bg-gray-500'
   }
