@@ -103,15 +103,6 @@ const partitions = computed(() => props.tableMeta?.partitions || [])
 const isPartitioned = computed(() => props.tableMeta?.isPartitioned || false)
 const partitionStrategy = computed(() => props.tableMeta?.partitionStrategy || '')
 
-// Debug logging
-watch(
-  [partitions, isPartitioned],
-  ([p, ip]) => {
-    console.log('TableMetadataView - Partitions:', p, 'IsPartitioned:', ip, 'Count:', p.length)
-  },
-  { immediate: true }
-)
-
 const tabs = computed(() => {
   const baseTabs = [
     { name: 'Columns', count: columns.value.length },
