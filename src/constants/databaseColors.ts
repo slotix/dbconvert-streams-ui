@@ -226,8 +226,10 @@ export function getDatabaseTextColor(type: string): string {
  * Applied only to root connection icons, not nested elements
  */
 export interface IconColorScheme {
-  /** Background color for icon container */
+  /** Background color for icon container (light mode) */
   iconBg: string
+  /** Background color for icon container (dark mode) */
+  iconBgDark?: string
   /** Icon filter/tint color (optional) */
   iconTint?: string
 }
@@ -240,164 +242,164 @@ export interface IconColorScheme {
 export const DATABASE_ICON_COLORS: Record<string, IconColorScheme> = {
   // PostgreSQL - Muted Violet (more visible)
   [DATABASE_TYPES.POSTGRESQL]: {
-    iconBg: 'bg-violet-100',
-    iconTint: 'brightness-100 saturate-90'
+    iconBg: 'bg-violet-100 dark:bg-violet-500/10',
+    iconTint: 'brightness-100 saturate-90 dark:invert'
   },
   postgresql: {
-    iconBg: 'bg-violet-100',
-    iconTint: 'brightness-100 saturate-90'
+    iconBg: 'bg-violet-100 dark:bg-violet-500/10',
+    iconTint: 'brightness-100 saturate-90 dark:invert'
   },
   postgres: {
-    iconBg: 'bg-violet-100',
-    iconTint: 'brightness-100 saturate-90'
+    iconBg: 'bg-violet-100 dark:bg-violet-500/10',
+    iconTint: 'brightness-100 saturate-90 dark:invert'
   },
   pg: {
-    iconBg: 'bg-violet-100',
-    iconTint: 'brightness-100 saturate-90'
+    iconBg: 'bg-violet-100 dark:bg-violet-500/10',
+    iconTint: 'brightness-100 saturate-90 dark:invert'
   },
 
   // MySQL - Muted Blue-Gray (balanced with PostgreSQL)
   [DATABASE_TYPES.MYSQL]: {
-    iconBg: 'bg-blue-100',
-    iconTint: 'brightness-100 saturate-90'
+    iconBg: 'bg-blue-100 dark:bg-blue-500/10',
+    iconTint: 'brightness-100 saturate-90 dark:invert'
   },
   mysql: {
-    iconBg: 'bg-blue-100',
-    iconTint: 'brightness-100 saturate-90'
+    iconBg: 'bg-blue-100 dark:bg-blue-500/10',
+    iconTint: 'brightness-100 saturate-90 dark:invert'
   },
 
   // MariaDB - Muted Blue-Gray (similar to MySQL)
   [DATABASE_TYPES.MARIADB]: {
-    iconBg: 'bg-blue-100',
-    iconTint: 'brightness-100 saturate-90'
+    iconBg: 'bg-blue-100 dark:bg-blue-500/10',
+    iconTint: 'brightness-100 saturate-90 dark:invert'
   },
   mariadb: {
-    iconBg: 'bg-blue-100',
-    iconTint: 'brightness-100 saturate-90'
+    iconBg: 'bg-blue-100 dark:bg-blue-500/10',
+    iconTint: 'brightness-100 saturate-90 dark:invert'
   },
 
   // MongoDB - Muted Green (more visible)
   [DATABASE_TYPES.MONGODB]: {
-    iconBg: 'bg-emerald-100',
-    iconTint: 'brightness-100 saturate-90'
+    iconBg: 'bg-emerald-100 dark:bg-emerald-500/10',
+    iconTint: 'brightness-100 saturate-90 dark:invert'
   },
   mongo: {
-    iconBg: 'bg-emerald-100',
-    iconTint: 'brightness-100 saturate-90'
+    iconBg: 'bg-emerald-100 dark:bg-emerald-500/10',
+    iconTint: 'brightness-100 saturate-90 dark:invert'
   },
   mongodb: {
-    iconBg: 'bg-emerald-100',
-    iconTint: 'brightness-100 saturate-90'
+    iconBg: 'bg-emerald-100 dark:bg-emerald-500/10',
+    iconTint: 'brightness-100 saturate-90 dark:invert'
   },
 
   // Redis - Muted Rose (more visible)
   [DATABASE_TYPES.REDIS]: {
-    iconBg: 'bg-rose-100',
-    iconTint: 'brightness-100 saturate-90'
+    iconBg: 'bg-rose-100 dark:bg-rose-500/10',
+    iconTint: 'brightness-100 saturate-90 dark:invert'
   },
   redis: {
-    iconBg: 'bg-rose-100',
-    iconTint: 'brightness-100 saturate-90'
+    iconBg: 'bg-rose-100 dark:bg-rose-500/10',
+    iconTint: 'brightness-100 saturate-90 dark:invert'
   },
 
   // SQLite - Muted Gray
   [DATABASE_TYPES.SQLITE]: {
-    iconBg: 'bg-slate-100',
-    iconTint: 'brightness-100 saturate-75'
+    iconBg: 'bg-slate-100 dark:bg-slate-500/10',
+    iconTint: 'brightness-100 saturate-75 dark:invert'
   },
   sqlite: {
-    iconBg: 'bg-slate-100',
-    iconTint: 'brightness-100 saturate-75'
+    iconBg: 'bg-slate-100 dark:bg-slate-500/10',
+    iconTint: 'brightness-100 saturate-75 dark:invert'
   },
 
   // SQL Server / MSSQL - Muted Blue (more visible)
   [DATABASE_TYPES.SQL_SERVER]: {
-    iconBg: 'bg-sky-100',
-    iconTint: 'brightness-100 saturate-90'
+    iconBg: 'bg-sky-100 dark:bg-sky-500/10',
+    iconTint: 'brightness-100 saturate-90 dark:invert'
   },
   [DATABASE_TYPES.MSSQL]: {
-    iconBg: 'bg-sky-100',
-    iconTint: 'brightness-100 saturate-90'
+    iconBg: 'bg-sky-100 dark:bg-sky-500/10',
+    iconTint: 'brightness-100 saturate-90 dark:invert'
   },
   sqlserver: {
-    iconBg: 'bg-sky-100',
-    iconTint: 'brightness-100 saturate-90'
+    iconBg: 'bg-sky-100 dark:bg-sky-500/10',
+    iconTint: 'brightness-100 saturate-90 dark:invert'
   },
   mssql: {
-    iconBg: 'bg-sky-100',
-    iconTint: 'brightness-100 saturate-90'
+    iconBg: 'bg-sky-100 dark:bg-sky-500/10',
+    iconTint: 'brightness-100 saturate-90 dark:invert'
   },
 
   // Oracle - Muted Amber (more visible)
   [DATABASE_TYPES.ORACLE]: {
-    iconBg: 'bg-amber-100',
-    iconTint: 'brightness-100 saturate-90'
+    iconBg: 'bg-amber-100 dark:bg-amber-500/10',
+    iconTint: 'brightness-100 saturate-90 dark:invert'
   },
   oracle: {
-    iconBg: 'bg-amber-100',
-    iconTint: 'brightness-100 saturate-90'
+    iconBg: 'bg-amber-100 dark:bg-amber-500/10',
+    iconTint: 'brightness-100 saturate-90 dark:invert'
   },
 
   // Cassandra - Muted Purple (more visible)
   [DATABASE_TYPES.CASSANDRA]: {
-    iconBg: 'bg-purple-100',
-    iconTint: 'brightness-100 saturate-90'
+    iconBg: 'bg-purple-100 dark:bg-purple-500/10',
+    iconTint: 'brightness-100 saturate-90 dark:invert'
   },
   cassandra: {
-    iconBg: 'bg-purple-100',
-    iconTint: 'brightness-100 saturate-90'
+    iconBg: 'bg-purple-100 dark:bg-purple-500/10',
+    iconTint: 'brightness-100 saturate-90 dark:invert'
   },
 
   // Elasticsearch - Muted Yellow (more visible)
   [DATABASE_TYPES.ELASTICSEARCH]: {
-    iconBg: 'bg-yellow-100',
-    iconTint: 'brightness-100 saturate-90'
+    iconBg: 'bg-yellow-100 dark:bg-yellow-500/10',
+    iconTint: 'brightness-100 saturate-90 dark:invert'
   },
   elasticsearch: {
-    iconBg: 'bg-yellow-100',
-    iconTint: 'brightness-100 saturate-90'
+    iconBg: 'bg-yellow-100 dark:bg-yellow-500/10',
+    iconTint: 'brightness-100 saturate-90 dark:invert'
   },
 
   // ClickHouse - Muted Yellow
   [DATABASE_TYPES.CLICKHOUSE]: {
-    iconBg: 'bg-yellow-100',
-    iconTint: 'brightness-100 saturate-90'
+    iconBg: 'bg-yellow-100 dark:bg-yellow-500/10',
+    iconTint: 'brightness-100 saturate-90 dark:invert'
   },
   clickhouse: {
-    iconBg: 'bg-yellow-100',
-    iconTint: 'brightness-100 saturate-90'
+    iconBg: 'bg-yellow-100 dark:bg-yellow-500/10',
+    iconTint: 'brightness-100 saturate-90 dark:invert'
   },
 
   // Snowflake - Muted Cyan (more visible)
   [DATABASE_TYPES.SNOWFLAKE]: {
-    iconBg: 'bg-blue-100',
-    iconTint: 'brightness-100 saturate-90'
+    iconBg: 'bg-blue-100 dark:bg-cyan-500/10',
+    iconTint: 'brightness-100 saturate-90 dark:invert'
   },
   snowflake: {
-    iconBg: 'bg-blue-100',
-    iconTint: 'brightness-100 saturate-90'
+    iconBg: 'bg-blue-100 dark:bg-cyan-500/10',
+    iconTint: 'brightness-100 saturate-90 dark:invert'
   },
 
   // File Types - Neutral Gray
   [DATABASE_TYPES.FILES]: {
-    iconBg: 'bg-gray-50',
-    iconTint: 'brightness-95 saturate-50'
+    iconBg: 'bg-gray-50 dark:bg-gray-500/10',
+    iconTint: 'brightness-95 saturate-50 dark:invert'
   },
   [DATABASE_TYPES.LOCAL_FILES]: {
-    iconBg: 'bg-gray-50',
-    iconTint: 'brightness-95 saturate-50'
+    iconBg: 'bg-gray-50 dark:bg-gray-500/10',
+    iconTint: 'brightness-95 saturate-50 dark:invert'
   },
   file: {
-    iconBg: 'bg-gray-50',
-    iconTint: 'brightness-95 saturate-50'
+    iconBg: 'bg-gray-50 dark:bg-gray-500/10',
+    iconTint: 'brightness-95 saturate-50 dark:invert'
   },
   files: {
-    iconBg: 'bg-gray-50',
-    iconTint: 'brightness-95 saturate-50'
+    iconBg: 'bg-gray-50 dark:bg-gray-500/10',
+    iconTint: 'brightness-95 saturate-50 dark:invert'
   },
   localfiles: {
-    iconBg: 'bg-gray-50',
-    iconTint: 'brightness-95 saturate-50'
+    iconBg: 'bg-gray-50 dark:bg-gray-500/10',
+    iconTint: 'brightness-95 saturate-50 dark:invert'
   }
 }
 
@@ -405,8 +407,8 @@ export const DATABASE_ICON_COLORS: Record<string, IconColorScheme> = {
  * Default icon color scheme for unknown types
  */
 export const DEFAULT_ICON_COLOR: IconColorScheme = {
-  iconBg: 'bg-gray-50',
-  iconTint: 'brightness-95 saturate-50'
+  iconBg: 'bg-gray-50 dark:bg-gray-500/10',
+  iconTint: 'brightness-95 saturate-50 dark:invert'
 }
 
 /**

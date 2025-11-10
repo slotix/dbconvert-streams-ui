@@ -8,17 +8,13 @@
     >
       <div class="flex items-center justify-between gap-3 mb-2">
         <div class="flex items-center gap-2 min-w-0 flex-1">
-          <div
-            v-if="connection && connection.type"
-            :class="iconStyle"
-            class="shrink-0 rounded-lg p-1.5 transition-all duration-200 hover:shadow-md"
-          >
-            <img
-              class="h-5 w-5 object-contain"
-              :src="logoSrc"
-              :alt="(connection.type || 'db') + ' logo'"
-            />
-          </div>
+          <DatabaseIcon
+            v-if="connection && connection.type && logoSrc"
+            :db-type="connection.type"
+            :logo-src="logoSrc"
+            size="SM"
+            container-class="hover:shadow-md"
+          />
           <span
             class="font-medium text-gray-900 dark:text-gray-100 truncate"
             :class="{ 'text-red-500 dark:text-red-400': !hasConnection }"
@@ -68,6 +64,7 @@ export default {
 <script setup lang="ts">
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
 import ConnectionStringDisplay from '@/components/common/ConnectionStringDisplay.vue'
+import DatabaseIcon from '@/components/base/DatabaseIcon.vue'
 import { ArrowTopRightOnSquareIcon, ExclamationCircleIcon } from '@heroicons/vue/24/outline'
 import type { Connection } from '@/types/connections'
 
@@ -75,7 +72,6 @@ const props = defineProps<{
   label: string
   connection?: Connection
   logoSrc?: string
-  iconStyle?: string
   hasConnection: boolean
 }>()
 

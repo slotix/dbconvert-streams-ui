@@ -40,22 +40,13 @@
                   <FolderIcon class="h-6 w-6 text-slate-500 dark:text-slate-400" />
                 </div>
                 <!-- Database connections: show database logo -->
-                <div
+                <DatabaseIcon
                   v-else
-                  :class="getDatabaseIconStyle(getConnectionType(connection.id))"
-                  class="rounded-lg p-2 transition-all duration-200 hover:shadow-md hover:scale-105"
-                >
-                  <img
-                    :src="getConnectionLogo(connection.id) || '/images/db-logos/all.svg'"
-                    :alt="getConnectionType(connection.id)"
-                    class="h-6 w-6 object-contain"
-                    @error="
-                      (e) => {
-                        ;(e.target as HTMLImageElement).src = '/images/db-logos/all.svg'
-                      }
-                    "
-                  />
-                </div>
+                  :db-type="getConnectionType(connection.id)"
+                  :logo-src="getConnectionLogo(connection.id) || '/images/db-logos/all.svg'"
+                  size="MD"
+                  container-class="hover:shadow-md hover:scale-105"
+                />
               </div>
               <div class="ml-4 flex-1 min-w-0">
                 <div class="flex items-center gap-2 min-w-0">
@@ -186,8 +177,8 @@ import {
   FolderIcon
 } from '@heroicons/vue/24/outline'
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
+import DatabaseIcon from '@/components/base/DatabaseIcon.vue'
 import { normalizeConnectionType } from '@/utils/connectionUtils'
-import { getDatabaseIconBgColor } from '@/constants/databaseColors'
 
 type RecentConnection = {
   id: string
@@ -424,18 +415,6 @@ function getCloudProvider(connectionId: string) {
   // Fallback: try to get from recent connections data
   const recentConn = recentConnectionsRaw.value.find((conn) => conn.id === connectionId)
   return recentConn?.cloud_provider || ''
-}
-
-function getDatabaseIconStyle(dbType: string): string {
-  const normalizedType = normalizeConnectionType(dbType?.toLowerCase() || '')
-
-  // Use the centralized color constants
-  const bgColor = getDatabaseIconBgColor(normalizedType)
-
-  // Build the class string with ring for consistency
-  const baseClasses = `${bgColor} ring-2 ring-gray-200/50 dark:ring-gray-700/50`
-
-  return baseClasses
 }
 
 function isFileConnection(connectionId: string): boolean {

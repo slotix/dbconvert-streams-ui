@@ -60,7 +60,6 @@
         label="Source Connection"
         :connection="source"
         :logo-src="sourceLogo"
-        :icon-style="sourceIconStyle"
         :has-connection="!!source && !!source.name"
         @navigate="emit('navigate-source')"
       />
@@ -69,7 +68,6 @@
         label="Target Connection"
         :connection="target"
         :logo-src="targetLogo"
-        :icon-style="targetIconStyle"
         :has-connection="!!target && !!target.name"
         @navigate="emit('navigate-target')"
       />
@@ -104,7 +102,6 @@ import { Switch } from '@headlessui/vue'
 import { ClipboardIcon, CalendarIcon } from '@heroicons/vue/24/outline'
 import { normalizeConnectionType } from '@/utils/connectionUtils'
 import { formatDateTime } from '@/utils/formats'
-import { getDatabaseIconBgColor, getDatabaseIconTint } from '@/constants/databaseColors'
 import { useCommonStore } from '@/stores/common'
 import type { StreamConfig } from '@/types/streamConfig'
 import type { Connection, DbType } from '@/types/connections'
@@ -156,16 +153,6 @@ function getLogo(connection?: Connection) {
 
 const sourceLogo = computed(() => getLogo(props.source))
 const targetLogo = computed(() => getLogo(props.target))
-
-function getDatabaseIconStyle(dbType?: string) {
-  if (!dbType) return ''
-  const bgColor = getDatabaseIconBgColor(dbType)
-  const tint = getDatabaseIconTint(dbType)
-  return `${bgColor} ${tint || ''}`
-}
-
-const sourceIconStyle = computed(() => getDatabaseIconStyle(props.source?.type))
-const targetIconStyle = computed(() => getDatabaseIconStyle(props.target?.type))
 
 function copyConfig() {
   navigator.clipboard.writeText(prettyConfig.value)

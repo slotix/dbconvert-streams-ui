@@ -17,15 +17,15 @@ const props = withDefaults(defineProps<Props>(), {
 
 const { iconClass } = useIconSizes(props.size)
 
-// Color coding for different object types
+// Color coding for different object types with dark mode support
 const iconColor = computed(() => {
   switch (props.objectType) {
     case 'table':
-      return 'text-slate-500' // Tables - neutral gray (don't compete with connection colors)
+      return 'text-slate-500 dark:text-slate-400' // Tables - neutral gray (don't compete with connection colors)
     case 'view':
-      return 'text-slate-400' // Views - lighter gray
+      return 'text-slate-400 dark:text-slate-500' // Views - lighter gray
     default:
-      return 'text-gray-400'
+      return 'text-gray-400 dark:text-gray-500'
   }
 })
 </script>

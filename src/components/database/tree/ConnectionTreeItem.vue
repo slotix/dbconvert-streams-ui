@@ -5,6 +5,7 @@ import { ChevronRightIcon, ChevronDownIcon } from '@heroicons/vue/24/outline'
 import DatabaseTreeItem from './DatabaseTreeItem.vue'
 import FileEntry from '../FileEntry.vue'
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
+import DatabaseIcon from '@/components/base/DatabaseIcon.vue'
 import { highlightParts as splitHighlight } from '@/utils/highlight'
 import { getConnectionTooltip } from '@/utils/connectionUtils'
 import { useConnectionTreeLogic } from '@/composables/useConnectionTreeLogic'
@@ -12,7 +13,6 @@ import { useFileExplorerStore } from '@/stores/fileExplorer'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { useTreeSearch } from '@/composables/useTreeSearch'
 import { useContextualIconSizes } from '@/composables/useIconSizes'
-import { getDatabaseIconBgColor, getDatabaseIconTint } from '@/constants/databaseColors'
 import type { Connection } from '@/types/connections'
 import type { FileSystemEntry } from '@/api/fileSystem'
 
@@ -39,9 +39,6 @@ const treeLogic = useConnectionTreeLogic()
 const fileExplorerStore = useFileExplorerStore()
 const navigationStore = useExplorerNavigationStore()
 const treeSearch = computed(() => useTreeSearch(searchQuery.value))
-
-// Icon sizes
-const iconSizes = useContextualIconSizes()
 
 // Get file entries and selected path from store
 const fileEntries = computed(() => fileExplorerStore.getEntries(props.connection.id))
@@ -180,10 +177,6 @@ const visibleFileEntries = computed(() => {
 const connectionTooltip = computed(() => {
   return getConnectionTooltip(props.connection)
 })
-
-// Get muted icon colors for root connection (cognitive grouping by source type)
-const iconBgColor = computed(() => getDatabaseIconBgColor(props.connection.type || ''))
-const iconTint = computed(() => getDatabaseIconTint(props.connection.type || ''))
 </script>
 
 <template>
@@ -214,20 +207,12 @@ const iconTint = computed(() => getDatabaseIconTint(props.connection.type || '')
         ]"
         @click.stop="$emit('toggle-connection')"
       />
-      <div
-        :class="[
-          'flex items-center shrink-0 p-1.5 rounded-lg transition-all duration-200',
-          iconBgColor,
-          'group-hover:shadow-sm',
-          iconTint
-        ]"
-      >
-        <img
-          :src="treeLogic.getDbLogoForType(connection.type)"
-          :alt="connection.type || 'db'"
-          :class="[iconSizes.sidebarMenu, 'object-contain']"
-        />
-      </div>
+      <DatabaseIcon
+        :db-type="connection.type || ''"
+        :logo-src="treeLogic.getDbLogoForType(connection.type)"
+        size="LG"
+        container-class="group-hover:shadow-sm"
+      />
       <div class="flex-1 min-w-0 flex flex-col gap-0.5">
         <div class="flex items-center gap-1.5">
           <span
