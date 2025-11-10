@@ -235,48 +235,7 @@ function getColumnType(column: SQLColumnMeta) {
 <style>
 @reference '../../assets/style.css';
 
-.hljs {
-  @apply bg-white dark:bg-gray-850;
-  color: #24292e;
-  font-family:
-    'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
-    'Courier New', monospace;
-}
-
-.dark .hljs {
-  color: #e6edf3;
-}
-
-/* SQL specific syntax highlighting */
-.hljs-keyword {
-  @apply text-[#d73a49] font-semibold;
-  /* red */
-}
-
-.hljs-string {
-  @apply text-[#032f62];
-  /* blue */
-}
-
-.hljs-number {
-  @apply text-[#005cc5];
-  /* blue */
-}
-
-.hljs-operator {
-  @apply text-[#d73a49];
-  /* red */
-}
-
-.hljs-punctuation {
-  @apply text-[#24292e];
-  /* black */
-}
-
-.hljs-comment {
-  @apply text-[#6a737d] italic;
-  /* gray */
-}
+/* Component-specific styles only - code highlighting styles are centralized in src/styles/codeHighlighting.css */
 
 /* Scrollbar styling */
 .overflow-x-auto {
@@ -296,11 +255,7 @@ function getColumnType(column: SQLColumnMeta) {
   @apply bg-gray-300 rounded-full hover:bg-gray-400 transition-colors;
 }
 
-/* Selection styling */
-::selection {
-  @apply bg-blue-100;
-}
-
+/* Override tab-size for SQL code blocks (different from default tab-size: 2) */
 pre {
   tab-size: 4;
 }

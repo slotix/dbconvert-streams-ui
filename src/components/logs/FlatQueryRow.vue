@@ -227,6 +227,8 @@ function toggleExpanded() {
 <style scoped>
 @reference '../../assets/style.css';
 
+/* Component-specific styles only - code highlighting styles are centralized in src/styles/codeHighlighting.css */
+
 /* Smooth transitions */
 .transition-colors {
   transition:
@@ -290,7 +292,7 @@ function toggleExpanded() {
   @apply w-0 min-w-0 overflow-hidden p-0 m-0;
 }
 
-/* SQL syntax highlighting - only keep inline query specific styles */
+/* Component-specific inline query styles */
 .flat-row-header :deep(.hljs) {
   @apply whitespace-nowrap overflow-hidden text-ellipsis;
 }

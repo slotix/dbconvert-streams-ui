@@ -71,7 +71,9 @@ const formattedCode = computed(() => {
 <style>
 @reference '../../assets/style.css';
 
-/* Base styles */
+/* Component-specific styles only - code highlighting styles are centralized in src/styles/codeHighlighting.css */
+
+/* Custom scrollbar for SqlCodeBlock - specific to this component */
 .custom-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: #e5e7eb transparent;
@@ -89,51 +91,8 @@ const formattedCode = computed(() => {
   @apply bg-gray-300 rounded-full hover:bg-gray-400 transition-colors;
 }
 
-/* Code block styles */
+/* Override tab-size for SQL code blocks (different from default tab-size: 2) */
 pre {
   tab-size: 4;
-  user-select: text;
-}
-
-::selection {
-  @apply bg-blue-100 dark:bg-blue-800;
-}
-
-/* Syntax highlighting - with dark mode support */
-.hljs {
-  @apply bg-white dark:bg-gray-900 font-mono text-[#24292e] dark:text-[#e6edf3];
-  padding: 0;
-}
-
-.hljs-keyword {
-  @apply text-[#d73a49] dark:text-[#ff7b72] font-semibold;
-}
-
-.hljs-string {
-  @apply text-[#032f62] dark:text-[#a5d6ff];
-}
-
-.hljs-number {
-  @apply text-[#005cc5] dark:text-[#79c0ff];
-}
-
-.hljs-operator {
-  @apply text-[#d73a49] dark:text-[#ff7b72];
-}
-
-.hljs-punctuation {
-  @apply text-[#24292e] dark:text-[#c9d1d9];
-}
-
-.hljs-comment {
-  @apply text-[#6a737d] dark:text-[#8b949e] italic;
-}
-
-.hljs-function {
-  @apply text-[#005cc5] dark:text-[#d2a8ff];
-}
-
-.hljs-built_in {
-  @apply text-[#005cc5] dark:text-[#79c0ff];
 }
 </style>

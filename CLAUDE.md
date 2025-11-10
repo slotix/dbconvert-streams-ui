@@ -141,6 +141,12 @@ const props = withDefaults(defineProps<Props>(), { isActive: false })
 - Implement consistent spacing and color schemes
 - Leverage Tailwind's utility classes over custom CSS
 
+### Code Syntax Highlighting
+- **All syntax highlighting styles are centralized** in `src/styles/codeHighlighting.css`
+- **NEVER** define `.hljs` or `.hljs-*` styles in individual components
+- Use the `v-highlightjs` directive with `class="language-sql"` or `class="language-json"`
+- See **`SYNTAX_HIGHLIGHTING.md`** for detailed guidelines
+
 ### Performance Optimization
 - Implement code splitting via Vite's manual chunks configuration
 - Use dynamic imports for non-critical components
