@@ -57,7 +57,7 @@
       <div v-else class="p-4">
         <div class="space-y-1">
           <div
-            v-for="file in filteredFiles"
+            v-for="file in paginatedFiles"
             :key="file.path"
             class="flex items-center justify-between px-3 py-2 text-sm rounded-md hover:bg-gray-50 dark:hover:bg-gray-800/70"
           >
@@ -87,6 +87,16 @@
         </div>
       </div>
     </div>
+
+    <!-- Pagination -->
+    <div v-if="totalPages > 1" class="mt-4">
+      <Pagination
+        :total-items="filteredFiles.length"
+        :itemsPerPage="itemsPerPage"
+        :current-page="currentPage"
+        @update:currentPage="updateCurrentPage"
+      />
+    </div>
   </div>
 </template>
 
@@ -96,6 +106,7 @@ import { useFileExplorerStore } from '@/stores/fileExplorer'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { getFileFormat, getFileFormatLogoPath } from '@/utils/fileFormat'
 import FormInput from '@/components/base/FormInput.vue'
+import Pagination from '@/components/common/Pagination.vue'
 import type { FileSystemEntry } from '@/api/fileSystem'
 import type { FileEntry } from '@/types/streamConfig'
 
@@ -128,6 +139,21 @@ const filteredFiles = computed(() => {
   }
   const query = searchQuery.value.toLowerCase()
   return files.value.filter((file) => file.name.toLowerCase().includes(query))
+})
+
+const currentPage = ref(1)
+const itemsPerPage = 10
+
+const totalPages = computed(() =>
+  itemsPerPage > 0 ? Math.max(1, Math.ceil(filteredFiles.value.length / itemsPerPage)) : 1
+)
+
+const paginatedFiles = computed(() => {
+  if (itemsPerPage <= 0) {
+    return filteredFiles.value
+  }
+  const start = (currentPage.value - 1) * itemsPerPage
+  return filteredFiles.value.slice(start, start + itemsPerPage)
 })
 
 const selectedFilesCount = computed(() => {
@@ -169,6 +195,15 @@ function toggleSelectAll(event: Event) {
     file.selected = selectAll
   })
 }
+
+function updateCurrentPage(page: number) {
+  currentPage.value = page
+}
+
+// Reset to page 1 when search changes
+watch(searchQuery, () => {
+  currentPage.value = 1
+})
 
 watch(
   () => props.connectionId,

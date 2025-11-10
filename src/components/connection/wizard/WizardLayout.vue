@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col h-full py-6">
+  <div class="flex flex-col h-full">
     <!-- Wizard Header -->
     <div class="shrink-0 mb-6">
       <nav aria-label="Progress">
@@ -84,7 +84,7 @@
       class="bg-white dark:bg-gray-850 rounded-2xl p-6 shadow-lg dark:shadow-gray-900/30 border border-gray-100 dark:border-gray-700 flex flex-col flex-1 min-h-0"
     >
       <!-- Step Content Slot -->
-      <div class="flex-1 mb-6 min-h-0">
+      <div class="flex-1 mb-6 overflow-y-auto">
         <slot :currentStep="currentStep" :currentStepIndex="currentStepIndex"></slot>
       </div>
 

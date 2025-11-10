@@ -24,7 +24,7 @@
     </header>
 
     <!-- Main Content -->
-    <main class="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <main class="bg-gray-50 dark:bg-gray-900 pt-8 pb-8">
       <EditConnectionWizard :connectionId="connectionId" />
     </main>
   </div>

@@ -32,9 +32,11 @@
 
     <!-- Main Content -->
     <div
-      class="min-h-screen bg-linear-to-br from-slate-50 via-white to-slate-50 dark:from-gray-900 dark:via-gray-850 dark:to-gray-900 flex flex-col"
+      class="bg-linear-to-br from-slate-50 via-white to-slate-50 dark:from-gray-900 dark:via-gray-850 dark:to-gray-900 flex flex-col pb-6"
     >
-      <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 flex-1 flex flex-col min-h-0 w-full">
+      <div
+        class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-6 flex-1 flex flex-col min-h-0 w-full"
+      >
         <WizardLayout
           :steps="wizard.steps"
           :current-step-index="wizard.currentStepIndex.value"
@@ -49,7 +51,7 @@
         >
           <template #default="{ currentStepIndex }">
             <!-- Step 1: Source & Target Selection -->
-            <div v-if="currentStepIndex === 0" class="h-full">
+            <div v-if="currentStepIndex === 0">
               <SourceTargetSelectionStep
                 :source-connection-id="wizard.selection.value.sourceConnectionId"
                 :target-connection-id="wizard.selection.value.targetConnectionId"
@@ -67,7 +69,7 @@
             </div>
 
             <!-- Step 2: Structure & Data -->
-            <div v-if="currentStepIndex === 1" class="h-full">
+            <div v-if="currentStepIndex === 1">
               <StructureDataStep
                 :create-tables="wizard.createTables.value"
                 :create-indexes="wizard.createIndexes.value"
@@ -82,7 +84,7 @@
             </div>
 
             <!-- Step 3: Stream Configuration -->
-            <div v-if="currentStepIndex === 2" class="h-full">
+            <div v-if="currentStepIndex === 2">
               <StreamConfigurationStep
                 :source-connection-id="wizard.selection.value.sourceConnectionId"
                 :target-connection-id="wizard.selection.value.targetConnectionId"

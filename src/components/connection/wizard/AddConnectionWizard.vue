@@ -1,5 +1,5 @@
 <template>
-  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
     <!-- Database Type Selection -->
     <div v-if="currentStep === 'type'" class="space-y-6">
       <DatabaseTypeStep

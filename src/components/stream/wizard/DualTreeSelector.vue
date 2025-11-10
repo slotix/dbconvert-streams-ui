@@ -1,23 +1,23 @@
 <template>
-  <div class="flex flex-col h-full gap-6">
+  <div class="flex flex-col gap-6">
     <!-- Split Pane Container -->
-    <div class="grid grid-cols-2 gap-4 flex-1 min-h-0">
+    <div class="grid grid-cols-2 gap-4 h-[700px]">
       <!-- Source Tree (Left) - Sky Blue Theme -->
       <div
         class="relative rounded-xl bg-linear-to-br from-sky-50 to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-850 overflow-hidden flex flex-col border border-sky-200 dark:border-sky-400/40 shadow-sm dark:shadow-gray-900/30"
       >
         <div
-          class="px-4 py-3 border-b border-sky-100 dark:border-sky-400/30 bg-linear-to-r from-sky-50 to-white dark:from-gray-900 dark:to-gray-900/60"
+          class="px-4 py-2 border-b border-sky-100 dark:border-sky-400/30 bg-linear-to-r from-sky-50 to-white dark:from-gray-900 dark:to-gray-900/60"
         >
           <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100 flex items-center">
-            <img src="/images/steps/source-step.svg" alt="Source" class="w-8 h-8 mr-2" />
+            <img src="/images/steps/source-step.svg" alt="Source" class="w-6 h-6 mr-2" />
             <span
               class="bg-linear-to-r from-sky-600 to-sky-500 dark:from-sky-400 dark:to-sky-300 bg-clip-text text-transparent"
             >
               Source Connection
             </span>
           </h3>
-          <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">
+          <p class="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
             Select where to read data from
           </p>
         </div>
@@ -31,7 +31,7 @@
           @add-connection="emit('add-connection', $event)"
         />
 
-        <div class="flex-1 overflow-y-auto p-4 bg-white dark:bg-gray-900/60">
+        <div class="flex-1 overflow-y-auto p-3 bg-white dark:bg-gray-900/60">
           <ConnectionTreeSelector
             :connections="filteredSourceConnections"
             :selected-connection-id="sourceConnectionId"
@@ -50,17 +50,19 @@
         class="relative rounded-xl bg-linear-to-br from-emerald-50 to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-850 overflow-hidden flex flex-col border border-emerald-200 dark:border-emerald-400/40 shadow-sm dark:shadow-gray-900/30"
       >
         <div
-          class="px-4 py-3 border-b border-emerald-100 dark:border-emerald-400/30 bg-linear-to-r from-emerald-50 to-white dark:from-gray-900 dark:to-gray-900/60"
+          class="px-4 py-2 border-b border-emerald-100 dark:border-emerald-400/30 bg-linear-to-r from-emerald-50 to-white dark:from-gray-900 dark:to-gray-900/60"
         >
           <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100 flex items-center">
-            <img src="/images/steps/target-step.svg" alt="Target" class="w-8 h-8 mr-2" />
+            <img src="/images/steps/target-step.svg" alt="Target" class="w-6 h-6 mr-2" />
             <span
               class="bg-linear-to-r from-emerald-600 to-emerald-500 dark:from-emerald-400 dark:to-emerald-300 bg-clip-text text-transparent"
             >
               Target Connection
             </span>
           </h3>
-          <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">Select where to write data to</p>
+          <p class="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+            Select where to write data to
+          </p>
         </div>
 
         <!-- Target Filters -->
@@ -72,7 +74,7 @@
           @add-connection="emit('add-connection', $event)"
         />
 
-        <div class="flex-1 overflow-y-auto p-4 bg-white dark:bg-gray-900/60">
+        <div class="flex-1 overflow-y-auto p-3 bg-white dark:bg-gray-900/60">
           <ConnectionTreeSelector
             :connections="filteredTargetConnections"
             :selected-connection-id="targetConnectionId"
@@ -90,13 +92,13 @@
     </div>
 
     <!-- Selection Summary - Enhanced Chips -->
-    <div v-if="sourceConnectionId || targetConnectionId" class="shrink-0 flex flex-col gap-3">
+    <div v-if="sourceConnectionId || targetConnectionId" class="shrink-0 flex flex-col gap-2">
       <!-- Source and Target Chips -->
       <div class="flex items-center justify-between gap-3">
         <div class="flex items-center gap-2 flex-1">
           <!-- Source Chip - Sky Blue -->
           <div
-            class="bg-sky-50 dark:bg-sky-500/10 border border-sky-200 dark:border-sky-400/40 rounded-lg px-4 py-2.5 text-sm shadow-sm dark:shadow-gray-900/30"
+            class="bg-sky-50 dark:bg-sky-500/10 border border-sky-200 dark:border-sky-400/40 rounded-lg px-3 py-1.5 text-sm shadow-sm dark:shadow-gray-900/30"
           >
             <span class="font-semibold text-sky-600 dark:text-sky-300">Source:</span>
             <span
@@ -129,7 +131,7 @@
 
           <!-- Target Chip - Emerald -->
           <div
-            class="bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-400/40 rounded-lg px-4 py-2.5 text-sm shadow-sm dark:shadow-gray-900/30"
+            class="bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-400/40 rounded-lg px-3 py-1.5 text-sm shadow-sm dark:shadow-gray-900/30"
           >
             <span class="font-semibold text-emerald-600 dark:text-emerald-300">Target:</span>
             <span
