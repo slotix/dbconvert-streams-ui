@@ -3,19 +3,15 @@
     <!-- Connection ID (for existing connections) -->
     <div
       v-if="connection?.id"
-      class="bg-white dark:bg-gray-800 bg-opacity-5 dark:bg-opacity-5 text-center md:text-left"
+      class="bg-white dark:bg-gray-850 rounded-xl border border-gray-100 dark:border-gray-700 p-6 mb-6 shadow-sm dark:shadow-gray-900/30"
     >
-      <div
-        class="items-center w-full p-4 space-y-4 text-gray-500 dark:text-gray-400 md:inline-flex md:space-y-0"
-      >
-        <label class="max-w-sm mx-auto md:w-1/3">Connection ID</label>
-        <div class="max-w-sm mx-auto md:w-2/3">
-          <div class="relative">
-            <span
-              class="block rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm text-base py-2 px-4"
-            >
-              {{ connection?.id }}
-            </span>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+        <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Connection ID</label>
+        <div class="md:col-span-2">
+          <div
+            class="w-full rounded-lg border border-gray-300 dark:border-gray-600 py-2.5 px-4 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 shadow-sm text-sm"
+          >
+            {{ connection?.id }}
           </div>
         </div>
       </div>
@@ -27,7 +23,22 @@
     </div>
 
     <!-- Connection Name -->
-    <ConnectionName v-if="connection" v-model:name="connection.name" />
+    <div
+      v-if="connection"
+      class="bg-white dark:bg-gray-850 rounded-xl border border-gray-100 dark:border-gray-700 p-6 mb-6 shadow-sm dark:shadow-gray-900/30"
+    >
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+        <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Name</label>
+        <div class="md:col-span-2">
+          <input
+            v-model="connection.name"
+            type="text"
+            class="w-full rounded-lg border border-gray-300 dark:border-gray-600 py-2.5 px-4 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 dark:focus:ring-teal-400 focus:border-teal-500 dark:focus:border-teal-400 transition-colors"
+            placeholder="Connection Name"
+          />
+        </div>
+      </div>
+    </div>
 
     <!-- Connection Parameters -->
     <div v-if="connection && ((isEdit && connection.id) || !isEdit)" class="mt-6">
@@ -36,8 +47,15 @@
         class="bg-white dark:bg-gray-850 rounded-xl border border-gray-100 dark:border-gray-700 p-6 mb-6 shadow-sm dark:shadow-gray-900/30"
       >
         <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-6 flex items-center">
+          <img
+            v-if="logo"
+            :src="logo"
+            alt="Connection type logo"
+            class="h-6 w-6 mr-2.5 object-contain dark:brightness-0 dark:invert dark:opacity-70"
+          />
           <svg
-            class="h-4 w-4 mr-2 text-gray-600 dark:text-gray-400"
+            v-else
+            class="h-6 w-6 mr-2.5 text-teal-600 dark:text-teal-400"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -49,7 +67,7 @@
               d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
             />
           </svg>
-          Connection Details
+          {{ connectionType }} Connection Details
         </h3>
 
         <div class="space-y-4">
@@ -141,12 +159,6 @@
           </div>
         </div>
       </div>
-
-      <!-- Note about simplified workflow -->
-      <div class="text-xs text-gray-500 dark:text-gray-400 italic mt-2">
-        Note: Database selection is now optional. You can connect to the server and explore
-        databases in the Data Explorer.
-      </div>
     </div>
   </div>
 </template>
@@ -163,6 +175,7 @@ import { EyeIcon, EyeSlashIcon } from '@heroicons/vue/24/outline'
 
 interface Props {
   connectionType: string
+  logo?: string
 }
 
 const props = defineProps<Props>()

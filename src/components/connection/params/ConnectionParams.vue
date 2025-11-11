@@ -1,7 +1,7 @@
 <template>
   <!-- Local Files - No tabs needed -->
   <div v-if="isLocalFiles" class="container mx-auto w-full">
-    <LocalFilesConnectionParams :connectionType="props.connectionType" />
+    <LocalFilesConnectionParams :connectionType="props.connectionType" :logo="props.logo" />
   </div>
 
   <!-- Database connections - Show tabs -->
@@ -24,7 +24,11 @@
     </nav>
     <div class="container mx-auto w-full">
       <keep-alive>
-        <component :is="paramsComponent" :connectionType="props.connectionType" />
+        <component
+          :is="paramsComponent"
+          :connectionType="props.connectionType"
+          :logo="props.logo"
+        />
       </keep-alive>
     </div>
   </div>
@@ -40,6 +44,7 @@ import { useConnectionsStore } from '@/stores/connections'
 
 interface Props {
   connectionType: string
+  logo?: string
 }
 
 const props = defineProps<Props>()

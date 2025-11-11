@@ -1,19 +1,17 @@
 <template>
-  <div class="mb-4">
+  <div>
     <div
-      class="rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4"
+      class="mx-4 md:mx-6 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-5 shadow-sm dark:shadow-gray-900/20"
     >
       <div class="flex items-start">
-        <InformationCircleIcon
-          class="h-5 w-5 text-blue-500 dark:text-blue-400 flex-shrink-0 mt-0.5"
-        />
+        <InformationCircleIcon class="h-5 w-5 text-blue-500 dark:text-blue-400 shrink-0 mt-0.5" />
         <div class="ml-3">
-          <h3 class="text-sm font-medium text-blue-800 dark:text-blue-300">
+          <h3 class="text-sm font-semibold text-blue-900 dark:text-blue-100">
             Database Access Configuration
           </h3>
           <div class="mt-2">
             <div class="flex items-baseline flex-wrap">
-              <span class="text-sm text-blue-700 dark:text-blue-400"
+              <span class="text-sm text-blue-700 dark:text-blue-300"
                 >Configure database access for IP:</span
               >
               <code

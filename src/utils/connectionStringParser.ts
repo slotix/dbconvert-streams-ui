@@ -5,6 +5,7 @@ interface ParsedConnection {
   username: string
   password: string
   database: string
+  path?: string
   params?: Record<string, string>
 }
 
@@ -12,6 +13,23 @@ export function parseConnectionString(connectionString: string): ParsedConnectio
   if (connectionString === '') {
     return null
   }
+
+  // Check if it's a plain path (starts with / or ~)
+  const trimmedString = connectionString.trim()
+  if (trimmedString.startsWith('/') || trimmedString.startsWith('~')) {
+    // Plain path - treat as Files connection
+    return {
+      type: 'Files',
+      host: 'localhost',
+      port: 0,
+      username: 'local',
+      password: '',
+      database: '',
+      path: trimmedString,
+      params: {}
+    }
+  }
+
   try {
     const url = new URL(connectionString)
     const params: Record<string, string> = {}
@@ -29,7 +47,22 @@ export function parseConnectionString(connectionString: string): ParsedConnectio
       mysql: 'MySQL',
       oracle: 'Oracle',
       sqlserver: 'SQLServer',
-      db2: 'DB2'
+      db2: 'DB2',
+      file: 'Files'
+    }
+
+    // Handle file:// protocol specially
+    if (type === 'file') {
+      return {
+        type: 'Files',
+        host: 'localhost',
+        port: 0,
+        username: 'local',
+        password: '',
+        database: '',
+        path: url.pathname,
+        params
+      }
     }
 
     // Parse port correctly - url.port is a string, so check if it exists before parsing

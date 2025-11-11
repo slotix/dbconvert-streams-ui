@@ -1,6 +1,6 @@
 <template>
   <div class="space-y-2">
-    <div class="flex items-center space-x-3">
+    <div class="flex items-stretch space-x-3">
       <!-- Path display -->
       <div class="flex-1">
         <input
@@ -15,7 +15,7 @@
       <!-- Browse button -->
       <button
         type="button"
-        class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+        class="inline-flex items-center px-4 py-2.5 border border-gray-300 dark:border-gray-600 shadow-sm text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-900 focus:ring-teal-500 dark:focus:ring-teal-400 transition-colors"
         @click="openModal"
       >
         <FolderOpenIcon class="h-4 w-4 mr-2" />
@@ -24,8 +24,8 @@
     </div>
 
     <!-- Help text -->
-    <p v-if="helpText" class="text-xs text-gray-500 flex items-center">
-      <InformationCircleIcon class="h-4 w-4 mr-1 text-gray-400" />
+    <p v-if="helpText" class="text-xs text-gray-500 dark:text-gray-400 flex items-center">
+      <InformationCircleIcon class="h-4 w-4 mr-1 text-gray-400 dark:text-gray-500" />
       {{ helpText }}
     </p>
 
@@ -69,17 +69,17 @@ const showModal = ref(false)
 
 const inputClass = computed(() => {
   const baseClass =
-    'block w-full rounded-md border shadow-sm text-sm focus:ring-2 focus:ring-offset-2 focus:outline-none'
+    'block w-full rounded-lg border shadow-sm text-sm py-2.5 px-4 focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-900 focus:outline-none transition-colors'
 
   if (props.error) {
-    return `${baseClass} border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500`
+    return `${baseClass} border-red-300 dark:border-red-700 bg-white dark:bg-gray-800 text-red-900 dark:text-red-300 placeholder-red-300 dark:placeholder-red-600 focus:ring-red-500 dark:focus:ring-red-400 focus:border-red-500 dark:focus:border-red-400`
   }
 
   if (props.disabled) {
-    return `${baseClass} border-gray-300 bg-gray-50 text-gray-500 cursor-not-allowed`
+    return `${baseClass} border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed`
   }
 
-  return `${baseClass} border-gray-300 text-gray-700 placeholder-gray-400 focus:ring-blue-500 focus:border-blue-500`
+  return `${baseClass} border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-teal-500 dark:focus:ring-teal-400 focus:border-teal-500 dark:focus:border-teal-400`
 })
 
 const openModal = () => {
