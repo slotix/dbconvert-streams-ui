@@ -210,16 +210,16 @@ async function onRefreshClick() {
             :key="tab.name"
             :class="[
               'px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-all duration-200',
-              'focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-teal-400 dark:focus:ring-teal-500 focus:z-10',
-              'border border-gray-300 dark:border-gray-600',
+              'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 dark:focus:ring-teal-400 focus:z-10',
+              'border',
               // Rounded corners only on first and last
               i === 0 ? 'rounded-l-md' : '',
               i === tabs.length - 1 ? 'rounded-r-md' : '',
               // Remove left border from middle buttons to avoid double borders
               i !== 0 ? '-ml-px' : '',
               selectedIndex === i
-                ? 'bg-teal-500 dark:bg-teal-600 text-white border-teal-500 dark:border-teal-600 z-10'
-                : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100'
+                ? 'bg-teal-600 dark:bg-teal-900 text-white border-teal-600 dark:border-teal-600 hover:bg-teal-700 dark:hover:bg-teal-800 z-10'
+                : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100'
             ]"
             @click="onTabChange(i)"
           >
