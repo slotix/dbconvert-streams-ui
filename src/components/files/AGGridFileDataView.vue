@@ -209,11 +209,6 @@ function createDatasource(): IDatasource {
           where: combinedWhere || undefined
         })
 
-        // Mark initial loading as complete after first successful fetch
-        if (isInitialLoading.value) {
-          isInitialLoading.value = false
-        }
-
         // Update total count if we have a real count from API
         if (response.total > 0) {
           totalRowCount.value = response.total
@@ -245,6 +240,10 @@ function createDatasource(): IDatasource {
         error.value = errorMessage
         params.failCallback()
       } finally {
+        // Mark initial loading as complete (on both success and error)
+        if (isInitialLoading.value) {
+          isInitialLoading.value = false
+        }
         isLoading.value = false
       }
     }
@@ -462,18 +461,10 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
-    <!-- Error message -->
+    <!-- Warnings (only show when there's no error) -->
     <div
-      v-if="!isUnsupportedFile && error"
-      class="mb-3 p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-700"
-    >
-      {{ error }}
-    </div>
-
-    <!-- Warnings -->
-    <div
-      v-if="!isUnsupportedFile && warnings.length > 0"
-      class="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded-md text-sm text-yellow-700"
+      v-if="!isUnsupportedFile && !error && warnings.length > 0"
+      class="mb-3 p-3 bg-yellow-50 dark:bg-amber-900 border border-yellow-200 dark:border-amber-700 rounded-md text-sm text-yellow-700 dark:text-amber-300"
     >
       <div class="font-medium mb-1">Warnings:</div>
       <ul class="list-disc list-inside">
@@ -481,9 +472,48 @@ onBeforeUnmount(() => {
       </ul>
     </div>
 
-    <!-- AG Grid -->
+    <!-- Error State Placeholder -->
     <div
-      v-if="!isUnsupportedFile"
+      v-if="!isUnsupportedFile && error"
+      class="flex items-center justify-center py-12 bg-gray-50 dark:bg-gray-900/40 rounded-md border border-gray-200 dark:border-gray-700"
+    >
+      <div class="text-center p-8 max-w-md">
+        <svg
+          class="mx-auto h-12 w-12 text-red-400 dark:text-red-500 mb-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+          />
+        </svg>
+        <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+          Failed to Load File
+        </h3>
+        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          {{ error }}
+        </p>
+        <div
+          class="text-xs text-gray-500 dark:text-gray-500 bg-white dark:bg-gray-800 rounded p-3 border border-gray-200 dark:border-gray-700"
+        >
+          <p class="font-semibold mb-1">Common causes:</p>
+          <ul class="list-disc list-inside text-left space-y-1">
+            <li>File was deleted or moved after being listed</li>
+            <li>File permissions changed</li>
+            <li>File is corrupted or inaccessible</li>
+            <li>Network or disk I/O error</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- AG Grid (only show when no error) -->
+    <div
+      v-if="!isUnsupportedFile && !error"
       class="relative ag-theme-alpine"
       style="height: 750px; width: 100%"
     >
