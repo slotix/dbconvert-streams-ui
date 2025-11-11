@@ -158,6 +158,18 @@
                         currentStreamConfig.compressionType || 'zstd'
                       }}</span>
                     </div>
+                    <div class="flex items-center justify-between mt-1">
+                      <span>Writer:</span>
+                      <span
+                        class="font-medium"
+                        :class="
+                          currentStreamConfig.useDuckDBWriter
+                            ? 'text-teal-600 dark:text-teal-400'
+                            : 'text-gray-900 dark:text-gray-100'
+                        "
+                        >{{ currentStreamConfig.useDuckDBWriter ? 'DuckDB' : 'Standard' }}</span
+                      >
+                    </div>
                   </div>
                 </div>
               </div>

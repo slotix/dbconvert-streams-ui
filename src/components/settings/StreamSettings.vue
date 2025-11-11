@@ -27,6 +27,15 @@
           required
         />
       </div>
+
+      <!-- DuckDB Writer Toggle -->
+      <div class="mt-6 pt-6 border-t border-gray-100 dark:border-gray-700">
+        <FormSwitch
+          v-model="useDuckDBWriter"
+          label="Use DuckDB Writer"
+          description="Enable DuckDB Appender API for file writing. DuckDB writer provides optimized performance for CSV, JSONL, and Parquet formats with advanced compression support."
+        />
+      </div>
     </div>
 
     <!-- Performance & Monitoring Section -->
@@ -149,6 +158,7 @@ import { useConnectionsStore } from '@/stores/connections'
 import { type StreamConfig } from '@/types/streamConfig'
 import SelectionButtonGroup from '@/components/base/SelectionButtonGroup.vue'
 import FormSelect from '@/components/base/FormSelect.vue'
+import FormSwitch from '@/components/base/FormSwitch.vue'
 
 const streamsStore = useStreamsStore()
 const connectionsStore = useConnectionsStore()
@@ -216,6 +226,14 @@ const compressionDescription = computed(() => {
       return 'No compression - fastest write speed, largest file size'
     default:
       return 'Select compression method'
+  }
+})
+
+// DuckDB Writer toggle
+const useDuckDBWriter = computed({
+  get: () => currentStreamConfig.useDuckDBWriter ?? false,
+  set: (value) => {
+    currentStreamConfig.useDuckDBWriter = value
   }
 })
 

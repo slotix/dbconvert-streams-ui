@@ -45,6 +45,9 @@ export interface StreamConfig {
   // Skip data transfer - only create structure
   skipData?: boolean
 
+  // File writer implementation selector
+  useDuckDBWriter?: boolean // Use DuckDB Appender API for file writers (csv/jsonl/parquet)
+
   limits: {
     numberOfEvents: number
     elapsedTime: number
