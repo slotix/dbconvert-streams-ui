@@ -9,21 +9,10 @@
 
       <!-- Action Buttons -->
       <div class="flex justify-between">
-        <button
-          type="button"
-          class="inline-flex items-center px-4 py-2 border border-gray-200 dark:border-gray-700 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-warm-50 dark:hover:bg-gray-700 hover:shadow-md dark:hover:shadow-gray-900/30 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-900 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200"
-          @click="cancelWizard"
-        >
-          Cancel
-        </button>
-        <button
-          :disabled="!canProceed"
-          type="button"
-          class="inline-flex items-center px-4 py-2 bg-teal-600 dark:bg-teal-500 border border-transparent text-sm font-medium rounded-lg text-white hover:bg-teal-700 dark:hover:bg-teal-400 hover:shadow-md dark:hover:shadow-teal-900/50 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-900 focus:ring-blue-500 dark:focus:ring-blue-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-          @click="goToDetails"
-        >
+        <BaseButton variant="secondary" @click="cancelWizard"> Cancel </BaseButton>
+        <BaseButton variant="primary" :disabled="!canProceed" @click="goToDetails">
           Next →
-        </button>
+        </BaseButton>
       </div>
     </div>
 
@@ -146,6 +135,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import BaseButton from '@/components/base/BaseButton.vue'
 import DatabaseTypeStep from './steps/DatabaseTypeStep.vue'
 import ConnectionDetailsStep from './steps/ConnectionDetailsStep.vue'
 import { useConnectionsStore } from '@/stores/connections'
