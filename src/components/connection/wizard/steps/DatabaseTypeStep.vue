@@ -116,6 +116,12 @@
             >
               Parquet
             </span>
+
+            <span
+              class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-300 shadow-sm"
+            >
+              .zst
+            </span>
             <span
               class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300 shadow-sm"
             >
@@ -125,7 +131,7 @@
 
           <!-- Additional info -->
           <div class="text-xs text-gray-700 dark:text-gray-300 space-y-1">
-            <div>✓ Compressed files (.gz) supported</div>
+            <div>✓ Compressed files (.zst, .gz) supported</div>
             <div>✓ Mixed formats in same folder allowed</div>
           </div>
         </div>
