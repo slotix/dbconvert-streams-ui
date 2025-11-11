@@ -279,7 +279,9 @@ export const useMonitoringStore = defineStore('monitoring', {
       // If switching to a different stream, clear old data
       // This prevents mixing old stream's logs with the new stream
       if (this.streamID !== id) {
-        this.logs = []
+        // Filter out logs that don't belong to the new stream
+        // This preserves logs that arrived BEFORE setStream was called (fast streams)
+        this.logs = this.logs.filter((log) => log.streamId === id)
         this.nodes = []
         this.aggregatedStats = null
         this.currentStageID = 0
@@ -291,6 +293,11 @@ export const useMonitoringStore = defineStore('monitoring', {
 
       this.streamID = id
       this.streamConfig = streamConfig
+
+      // Trigger aggregation to process any logs that arrived before setStream was called
+      if (this.logs.length > 0) {
+        this.aggregateNodeStatsByType()
+      }
     },
     setStageTimestamp(stageId: number) {
       const stage = this.stages.find((s) => s.id === stageId)
@@ -323,21 +330,21 @@ export const useMonitoringStore = defineStore('monitoring', {
       }
     },
     aggregateNodeStatsByType() {
-      // If streamID not set, infer it from the logs themselves
-      let currentStreamID = this.streamID
-      if (!currentStreamID && this.logs.length > 0) {
-        // Get the most recent log's streamId to use as the current stream
-        const recentLog = this.logs[this.logs.length - 1]
-        if (recentLog.streamId) {
-          currentStreamID = recentLog.streamId
-        }
+      // If streamID not set, don't aggregate anything
+      // This prevents showing stats before a stream is properly initialized
+      if (!this.streamID) {
+        this.aggregatedStats = null
+        return
       }
 
       // Filter logs by current streamID to avoid mixing logs from multiple streams
       // Only include logs that match the current stream ID
-      let logsForCurrentStream = this.logs
-      if (currentStreamID) {
-        logsForCurrentStream = this.logs.filter((log) => log.streamId === currentStreamID)
+      const logsForCurrentStream = this.logs.filter((log) => log.streamId === this.streamID)
+
+      // If no logs match the current stream, clear stats entirely
+      if (logsForCurrentStream.length === 0) {
+        this.aggregatedStats = null
+        return
       }
 
       const sourceStats = logsForCurrentStream.filter(
