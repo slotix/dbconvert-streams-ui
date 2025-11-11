@@ -348,7 +348,7 @@ function handleSelectConnection(payload: { connectionId: string }) {
   fileExplorerStore.clearSelection(payload.connectionId)
 
   if (fileExplorerStore.isFilesConnectionType(payload.connectionId)) {
-    void fileExplorerStore.loadEntries(payload.connectionId, false)
+    void fileExplorerStore.loadEntries(payload.connectionId, true)
   }
 }
 
@@ -400,7 +400,7 @@ function handleFileSelect(payload: { connectionId: string; path: string }) {
 }
 
 function handleRequestFileEntries(payload: { connectionId: string }) {
-  void fileExplorerStore.loadEntries(payload.connectionId, false)
+  void fileExplorerStore.loadEntries(payload.connectionId, true)
 }
 
 // Breadcrumb handlers
@@ -674,7 +674,7 @@ watch(explorerState.currentConnectionId, async (newId) => {
       cloud_provider: explorerState.currentConnection.value.cloud_provider || ''
     })
     if (fileExplorerStore.isFilesConnectionType(newId)) {
-      await fileExplorerStore.loadEntries(newId)
+      await fileExplorerStore.loadEntries(newId, true)
       const fileParam = route.query.file as string
       if (fileParam && currentFileEntries.value.length > 0) {
         handleFileSelect({ connectionId: newId, path: fileParam })
@@ -869,7 +869,7 @@ onMounted(async () => {
 
   if (fileExplorerStore.isFilesConnectionType(explorerState.currentConnectionId.value)) {
     void fileExplorerStore
-      .loadEntries(explorerState.currentConnectionId.value as string)
+      .loadEntries(explorerState.currentConnectionId.value as string, true)
       .then(() => {
         if (file) {
           fileExplorerStore.setSelectedPath(explorerState.currentConnectionId.value || '', file)
