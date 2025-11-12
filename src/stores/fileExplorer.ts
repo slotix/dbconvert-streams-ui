@@ -232,10 +232,8 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
     const entries: FileSystemEntry[] = result.objects.map((obj) => ({
       name: obj.key.split('/').pop() || obj.key,
       path: `s3://${bucket}/${obj.key}`,
-      type: obj.key.endsWith('/') ? 'directory' : 'file',
-      size: obj.size,
-      mod_time: obj.last_modified,
-      is_dir: obj.key.endsWith('/')
+      type: obj.key.endsWith('/') ? 'dir' : 'file',
+      size: obj.size
     }))
 
     return entries
