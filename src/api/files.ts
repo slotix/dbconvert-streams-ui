@@ -5,6 +5,14 @@ import { handleApiError } from '@/utils/errorHandler'
 import type { FileMetadata, FileDataResponse } from '@/types/files'
 import type { FileFormat } from '@/utils/fileFormat'
 import { API_HEADERS } from '@/constants'
+import type {
+  S3ConfigRequest,
+  S3ConfigResponse,
+  S3ListRequest,
+  S3ListResponse,
+  S3ValidationResponse,
+  S3ManifestResponse
+} from '@/types/s3'
 
 interface FileDataParams {
   limit?: number
@@ -75,8 +83,66 @@ export async function getFileExactCount(
   }
 }
 
+// S3 API Functions
+
+export async function configureS3Session(config: S3ConfigRequest): Promise<S3ConfigResponse> {
+  try {
+    const response = await apiClient.post<S3ConfigResponse>('/files/s3/configure', config, {
+      ...withAuthHeaders()
+    })
+    return response.data
+  } catch (error) {
+    throw handleApiError(error)
+  }
+}
+
+export async function listS3Objects(params: S3ListRequest): Promise<S3ListResponse> {
+  try {
+    const query = new URLSearchParams()
+    query.set('bucket', params.bucket)
+    if (params.prefix) query.set('prefix', params.prefix)
+    if (params.maxKeys) query.set('maxKeys', String(params.maxKeys))
+    if (params.continuationToken) query.set('continuationToken', params.continuationToken)
+
+    const response = await apiClient.get<S3ListResponse>(`/files/s3/list?${query.toString()}`, {
+      ...withAuthHeaders()
+    })
+    return response.data
+  } catch (error) {
+    throw handleApiError(error)
+  }
+}
+
+export async function validateS3Path(path: string): Promise<S3ValidationResponse> {
+  try {
+    const response = await apiClient.get<S3ValidationResponse>('/files/s3/validate', {
+      params: { path },
+      ...withAuthHeaders()
+    })
+    return response.data
+  } catch (error) {
+    throw handleApiError(error)
+  }
+}
+
+export async function readS3Manifest(path: string): Promise<S3ManifestResponse> {
+  try {
+    const response = await apiClient.get<S3ManifestResponse>('/files/s3/manifest', {
+      params: { path },
+      ...withAuthHeaders()
+    })
+    return response.data
+  } catch (error) {
+    throw handleApiError(error)
+  }
+}
+
 export default {
   getFileMetadata,
   getFileData,
-  getFileExactCount
+  getFileExactCount,
+  configureS3Session,
+  listS3Objects,
+  validateS3Path,
+  readS3Manifest
 }

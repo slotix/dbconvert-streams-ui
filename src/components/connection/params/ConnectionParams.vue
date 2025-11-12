@@ -1,6 +1,11 @@
 <template>
+  <!-- S3 - No tabs needed -->
+  <div v-if="isS3" class="container mx-auto w-full">
+    <S3ConnectionParams :connectionType="props.connectionType" :logo="props.logo" />
+  </div>
+
   <!-- Local Files - No tabs needed -->
-  <div v-if="isLocalFiles" class="container mx-auto w-full">
+  <div v-else-if="isLocalFiles" class="container mx-auto w-full">
     <LocalFilesConnectionParams :connectionType="props.connectionType" :logo="props.logo" />
   </div>
 
@@ -38,6 +43,7 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import UnifiedConnectionParams from './UnifiedConnectionParams.vue'
 import LocalFilesConnectionParams from './LocalFilesConnectionParams.vue'
+import S3ConnectionParams from './S3ConnectionParams.vue'
 import SSLParams from './SSLParams.vue'
 import { normalizeConnectionType } from '@/utils/connectionUtils'
 import { useConnectionsStore } from '@/stores/connections'
@@ -54,6 +60,11 @@ const tabs = ref(['Direct', 'SSL'])
 const currentTab = ref('')
 
 const currentConnection = computed(() => connectionsStore.currentConnection)
+
+// Check if this is an S3 connection (case-insensitive)
+const isS3 = computed(() => {
+  return props.connectionType?.toLowerCase() === 's3'
+})
 
 // Check if this is a Files connection (case-insensitive)
 const isLocalFiles = computed(() => {

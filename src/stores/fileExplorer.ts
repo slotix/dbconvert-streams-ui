@@ -1,10 +1,12 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { listDirectory, type FileSystemEntry } from '@/api/fileSystem'
-import { getFileMetadata } from '@/api/files'
+import { getFileMetadata, configureS3Session, listS3Objects } from '@/api/files'
 import { getFileFormat } from '@/utils/fileFormat'
 import { useConnectionsStore } from '@/stores/connections'
 import type { FileMetadata } from '@/types/files'
+import type { Connection } from '@/types/connections'
+import type { S3ConfigRequest } from '@/types/s3'
 
 export const useFileExplorerStore = defineStore('fileExplorer', () => {
   // State - organized by connection ID
@@ -13,6 +15,10 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
   const errorsByConnection = ref<Record<string, string>>({})
   const selectedPathsByConnection = ref<Record<string, string | null>>({})
   const loadingByConnection = ref<Record<string, boolean>>({})
+
+  // S3 session configuration
+  const s3SessionConfigured = ref<boolean>(false)
+  const s3CurrentConnection = ref<Connection | null>(null)
 
   // Getters
   const getEntries = computed(() => {
@@ -45,12 +51,19 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
     }
   })
 
-  // Helper function
+  // Helper functions
   function isFilesConnectionType(connId: string | null | undefined): boolean {
     if (!connId) return false
     const connectionsStore = useConnectionsStore()
     const conn = connectionsStore.connections.find((c) => c.id === connId)
     return (conn?.type || '').toLowerCase().includes('file')
+  }
+
+  function isS3ConnectionType(connId: string | null | undefined): boolean {
+    if (!connId) return false
+    const connectionsStore = useConnectionsStore()
+    const conn = connectionsStore.connections.find((c) => c.id === connId)
+    return (conn?.type || '').toLowerCase() === 's3'
   }
 
   // Actions
@@ -185,6 +198,49 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
     loadingByConnection.value = newLoading
   }
 
+  // S3-specific actions
+  async function configureS3SessionForConnection(connection: Connection) {
+    if (connection.type.toLowerCase() !== 's3') {
+      return
+    }
+
+    const config: S3ConfigRequest = {
+      credentialSource: connection.s3Config?.credentialSource || 'static',
+      region: connection.s3Config?.region || 'us-east-1',
+      endpoint: connection.s3Config?.endpoint,
+      urlStyle: connection.s3Config?.urlStyle || 'auto',
+      useSSL: connection.s3Config?.useSSL !== false,
+      credentials:
+        connection.username !== 'aws-default'
+          ? {
+              accessKeyId: connection.username,
+              secretAccessKey: connection.password,
+              sessionToken: connection.s3Config?.sessionToken
+            }
+          : undefined
+    }
+
+    await configureS3Session(config)
+    s3SessionConfigured.value = true
+    s3CurrentConnection.value = connection
+  }
+
+  async function loadS3Files(bucket: string, prefix?: string) {
+    const result = await listS3Objects({ bucket, prefix, maxKeys: 1000 })
+
+    // Convert S3 objects to FileSystemEntry format
+    const entries: FileSystemEntry[] = result.objects.map((obj) => ({
+      name: obj.key.split('/').pop() || obj.key,
+      path: `s3://${bucket}/${obj.key}`,
+      type: obj.key.endsWith('/') ? 'directory' : 'file',
+      size: obj.size,
+      mod_time: obj.last_modified,
+      is_dir: obj.key.endsWith('/')
+    }))
+
+    return entries
+  }
+
   return {
     // State
     entriesByConnection,
@@ -192,6 +248,8 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
     errorsByConnection,
     selectedPathsByConnection,
     loadingByConnection,
+    s3SessionConfigured,
+    s3CurrentConnection,
 
     // Getters
     getEntries,
@@ -202,10 +260,13 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
 
     // Actions
     isFilesConnectionType,
+    isS3ConnectionType,
     loadEntries,
     loadFileMetadata,
     setSelectedPath,
     clearSelection,
-    clearConnectionData
+    clearConnectionData,
+    configureS3SessionForConnection,
+    loadS3Files
   }
 })

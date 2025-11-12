@@ -5,6 +5,31 @@ export interface SSLConfig {
   client_key?: string
 }
 
+// Storage provider types
+export type StorageProvider = 'local' | 's3' | 'gcs' | 'azure' | 'sftp' | 'ftp'
+
+// Storage credentials for cloud providers
+export interface StorageCredentials {
+  aws_access_key?: string
+  aws_secret_key?: string
+  aws_session_token?: string
+  gcp_service_account_json?: string
+  azure_account_name?: string
+  azure_account_key?: string
+  azure_sas_token?: string
+}
+
+// Storage configuration for file/cloud connections
+export interface StorageConfig {
+  provider: StorageProvider
+  uri: string // e.g., "s3://bucket-name/prefix/"
+  region?: string
+  endpoint?: string
+  credentials_ref?: string
+  credentials?: StorageCredentials
+  options?: Record<string, string>
+}
+
 export interface Connection {
   id: string | ''
   name: string
@@ -22,6 +47,19 @@ export interface Connection {
   status?: string
   // Path field for file format connections
   path?: string
+  // Storage configuration for file/cloud connections
+  storage_config?: StorageConfig
+  // S3-specific configuration (UI helper - not sent to backend)
+  s3Config?: {
+    credentialSource: 'aws' | 'static'
+    endpoint?: string
+    region: string
+    urlStyle?: 'auto' | 'path' | 'virtual'
+    useSSL?: boolean
+    bucket?: string // Optional: Scope connection to specific bucket
+    prefix?: string // Optional: Scope connection to specific prefix
+    sessionToken?: string // For temporary credentials
+  }
 }
 
 export interface Schema {
