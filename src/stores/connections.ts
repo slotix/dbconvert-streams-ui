@@ -25,12 +25,24 @@ interface State {
 export const useConnectionsStore = defineStore('connections', {
   state: (): State => ({
     dbTypes: [
-      { id: 0, type: 'All', logo: '/images/db-logos/all.svg' },
-      { id: 1, type: 'PostgreSQL', logo: '/images/db-logos/postgresql.svg' },
-      { id: 2, type: 'MySQL', logo: '/images/db-logos/mysql.svg' },
-      { id: 3, type: 'Snowflake', logo: '/images/db-logos/snowflake.svg' },
-      { id: 4, type: 'Files', logo: '/images/db-logos/local-files.svg' },
-      { id: 5, type: 'S3', logo: '/images/db-logos/s3.svg' }
+      { id: 0, type: 'All', logo: '/images/db-logos/all.svg', category: 'all' },
+      { id: 1, type: 'PostgreSQL', logo: '/images/db-logos/postgresql.svg', category: 'database' },
+      { id: 2, type: 'MySQL', logo: '/images/db-logos/mysql.svg', category: 'database' },
+      { id: 3, type: 'Snowflake', logo: '/images/db-logos/snowflake.svg', category: 'database' },
+      {
+        id: 4,
+        type: 'Files',
+        logo: '/images/db-logos/local-files.svg',
+        category: 'file',
+        description: 'Local file formats'
+      },
+      {
+        id: 5,
+        type: 'S3',
+        logo: '/images/db-logos/s3.svg',
+        category: 'file',
+        description: 'AWS, MinIO, etc.'
+      }
     ],
     connections: [],
     currentConnection: null,

@@ -49,14 +49,16 @@
 
     <!-- Files Section -->
     <div>
-      <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6 text-center">Files</h3>
+      <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6 text-center">
+        Files &amp; Object Storage
+      </h3>
 
       <!-- File Connection Button and Info Side by Side -->
-      <div class="flex justify-center items-start gap-6 max-w-4xl mx-auto">
-        <!-- File Connection Button -->
-        <div class="shrink-0">
+      <div class="flex flex-col lg:flex-row justify-center items-start gap-6 max-w-4xl mx-auto">
+        <!-- File Connection Buttons -->
+        <div class="flex flex-wrap justify-center gap-4 flex-1">
           <button
-            v-for="dbType in localFileTypes"
+            v-for="dbType in fileTypes"
             :key="dbType.id"
             :class="[
               selectedDBType?.id === dbType.id
@@ -74,7 +76,9 @@
             <span class="text-base font-medium text-gray-900 dark:text-gray-100">{{
               dbType.type
             }}</span>
-            <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">Local file formats</div>
+            <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              {{ dbType.description || 'File-based source' }}
+            </div>
 
             <!-- Selection indicator -->
             <div
@@ -88,7 +92,7 @@
 
         <!-- Supported Formats Info -->
         <div
-          class="flex-1 max-w-xs bg-linear-to-br from-slate-50 to-gray-50 dark:from-gray-800 dark:to-gray-850 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-sm dark:shadow-gray-900/30"
+          class="w-full lg:w-auto max-w-xs bg-linear-to-br from-slate-50 to-gray-50 dark:from-gray-800 dark:to-gray-850 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-sm dark:shadow-gray-900/30"
         >
           <h4 class="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
             Supported Formats
@@ -180,13 +184,26 @@ const connectionsStore = useConnectionsStore()
 
 const selectedDBType = ref<DbType | null>(null)
 
+const categorizeDbType = (dbType: DbType): 'all' | 'database' | 'file' => {
+  if (dbType.category) {
+    return dbType.category
+  }
+  if (dbType.type === 'All') {
+    return 'all'
+  }
+  if (dbType.type.toLowerCase().includes('file')) {
+    return 'file'
+  }
+  return 'database'
+}
+
 // Get database types from store, separated by category
 const databaseTypes = computed(() =>
-  connectionsStore.dbTypes.filter((dbType) => dbType.type !== 'All' && dbType.type !== 'Files')
+  connectionsStore.dbTypes.filter((dbType) => categorizeDbType(dbType) === 'database')
 )
 
-const localFileTypes = computed(() =>
-  connectionsStore.dbTypes.filter((dbType) => dbType.type === 'Files')
+const fileTypes = computed(() =>
+  connectionsStore.dbTypes.filter((dbType) => categorizeDbType(dbType) === 'file')
 )
 
 const emit = defineEmits<{

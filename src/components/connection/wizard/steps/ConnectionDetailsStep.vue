@@ -31,28 +31,37 @@ const emit = defineEmits<{
   'update:can-proceed': [canProceed: boolean]
 }>()
 
+type ConnectionCategory = 'database' | 'file' | null
+
+function determineConnectionCategory(type?: string): ConnectionCategory {
+  if (!type) return null
+  const normalized = type.toLowerCase()
+  const match = connectionsStore.dbTypes.find((db) => db.type.toLowerCase() === normalized)
+
+  if (match?.category && match.category !== 'all') {
+    return match.category
+  }
+
+  // Fallback: treat anything mentioning "file" as file-like, otherwise database
+  return normalized.includes('file') ? 'file' : 'database'
+}
+
+const connectionCategory = computed(() => determineConnectionCategory(props.connectionType))
+
 // Check if we have minimum required connection details
 const canProceed = computed(() => {
   const connection = connectionsStore.currentConnection
   if (!connection) return false
 
-  // For Files connections, only require name and folder path (case-insensitive)
-  if (props.connectionType?.toLowerCase() === 'files') {
-    return !!(
-      connection.name?.trim() &&
-      connection.path?.trim() // path field contains the folder path for files
-    )
+  if (connectionCategory.value === 'file') {
+    return !!(connection.name?.trim() && connection.path?.trim())
   }
 
-  // Basic validation for database connections - check if required fields are present
   return !!(
-    (
-      connection.name?.trim() &&
-      connection.host?.trim() &&
-      connection.port &&
-      connection.username?.trim()
-    )
-    // Note: password can be empty for some configurations
+    connection.name?.trim() &&
+    connection.host?.trim() &&
+    connection.port &&
+    connection.username?.trim()
   )
 })
 
@@ -93,10 +102,13 @@ watch(
   }
 )
 
-// Only show the access notice when we have connection details filled out (not for Files)
+// Only show the access notice for database-style connections
 const showAccessNotice = computed(() => {
+  if (connectionCategory.value === 'file') {
+    return false
+  }
   const connection = connectionsStore.currentConnection
-  return !!(props.connectionType?.toLowerCase() !== 'files' && connection?.host && connection?.port)
+  return !!(connection?.host && connection?.port)
 })
 
 // Watch for changes and emit can-proceed updates

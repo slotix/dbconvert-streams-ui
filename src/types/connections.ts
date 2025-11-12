@@ -74,6 +74,8 @@ export interface DbType {
   id: number
   type: string
   logo: string
+  category?: 'all' | 'database' | 'file'
+  description?: string
 }
 
 export interface DatabaseInfo {
