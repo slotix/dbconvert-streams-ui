@@ -23,7 +23,8 @@
 │  ├─ host, port (DB only)          ◄─ Type-specific         │
 │  ├─ username, password                                      │
 │  ├─ database (DB only)                                      │
-│  └─ path (FILES only)                                       │
+│  ├─ file_format (FILES only)      ◄─ csv|json|jsonl|parquet│
+│  └─ storage_config (FILES only)   ◄─ provider + uri        │
 │                                                              │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -57,9 +58,12 @@
 │• Auto name from path │   │• Port input          │
 │• Apply defaults:     │   │• Username input      │
 │  - type='files'      │   │• Password input      │
-│  - port=0            │   │• Database (optional) │
-│  - user='local'      │   │• SSL tab             │
-│  - pass=''           │   │• Type-specific hints │
+│  - storage_config:   │   │• Database (optional) │
+│    - provider='local'│   │• SSL tab             │
+│    - uri=path        │   │• Type-specific hints │
+│  - port=0            │   │                      │
+│  - user='local'      │   │                      │
+│  - pass=''           │   │                      │
 └──────────────────────┘   └──────────────────────┘
 ```
 
@@ -222,23 +226,17 @@ Stream Source: File Connection
 ├────────────────────────────────────────────────┤
 │                                                │
 │  const connection = {                         │
-│    type: 'files'  // varies                   │
+│    type: 'files'                              │
 │  }                                            │
 │                                                │
-│  // Pattern 1: Exact match                   │
+│  // Detection: Exact match                   │
 │  if (type?.toLowerCase() === 'files') {      │
 │    // This IS a file connection              │
 │  }                                            │
 │                                                │
-│  // Pattern 2: Contains check               │
-│  if (type?.toLowerCase().includes('file')) { │
-│    // This IS a file connection              │
-│  }                                            │
-│                                                │
-│  // Pattern 3: Store helper                 │
-│  fileExplorer.isFilesConnectionType(connId)  │
-│    └─ Checks: type.toLowerCase().             │
-│        includes('file')                      │
+│  File format is specified separately:         │
+│  - connection.file_format (optional)          │
+│  - streamConfig.targetFileFormat (for target) │
 │                                                │
 └────────────────────────────────────────────────┘
 ```

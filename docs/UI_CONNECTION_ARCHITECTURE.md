@@ -15,7 +15,7 @@ The UI codebase defines a flexible connection system that supports both traditio
 export interface Connection {
   id: string | ''
   name: string
-  type: string                    // 'PostgreSQL', 'MySQL', 'Snowflake', 'Files'
+  type: string                    // 'PostgreSQL', 'MySQL', 'Snowflake', 'files'
   host: string                    // Not used for file connections
   port: number                    // Not used for file connections
   username: string                // Set to 'local' for file connections
@@ -26,8 +26,23 @@ export interface Connection {
   ssl?: SSLConfig
   cloud_provider?: string
   status?: string
-  path?: string                   // FILE CONNECTIONS: Folder path containing data files
+  file_format?: FileFormat        // FILE CONNECTIONS: csv, json, jsonl, parquet
+  storage_config?: StorageConfig  // FILE CONNECTIONS: Storage provider and URI
 }
+
+export type FileFormat = 'csv' | 'json' | 'jsonl' | 'parquet'
+
+export interface StorageConfig {
+  provider: StorageProvider       // 'local', 's3', 'gcs', 'azure', 'sftp', 'ftp'
+  uri: string                     // Local path or cloud URI (e.g., s3://bucket/prefix)
+  region?: string
+  endpoint?: string
+  credentials_ref?: string
+  credentials?: StorageCredentials
+  options?: Record<string, string>
+}
+
+export type StorageProvider = 'local' | 's3' | 'gcs' | 'azure' | 'sftp' | 'ftp'
 
 export interface SSLConfig {
   mode: string
@@ -38,9 +53,12 @@ export interface SSLConfig {
 ```
 
 **Key Design Pattern**:
-- File connections use the `path` field instead of host/port/database
+- File connections use `storage_config.uri` for folder path or cloud URI
+- Connection type is 'files'
+- File format specified separately in `file_format` field
+- Storage provider specifies WHERE files are stored (local, S3, etc.)
 - Database credentials are set to defaults (username='local', password='')
-- The `type` field distinguishes connection types (case-insensitive check for 'file')
+- Type detection: exact match `type === 'files'`
 
 ---
 
@@ -84,17 +102,20 @@ Handles file connections with:
 - **Connection Name auto-generation**: `Files-{folderName}`
 - **Default values applied**:
   - `type`: 'files' (lowercase)
+  - `storage_config.provider`: 'local'
+  - `storage_config.uri`: folder path from user input
   - `port`: 0 (not used)
   - `username`: 'local'
   - `password`: '' (empty)
   - `database`: '' (not used)
 
-**Supported File Formats** (shown in UI):
-- CSV
-- JSON
-- JSONL
-- Parquet (with .zst and .gz compression support)
+**Supported File Formats**:
+- CSV (.csv, .csv.gz, .csv.zst)
+- JSON (.json, .json.gz, .json.zst)
+- JSONL (.jsonl, .jsonl.gz, .jsonl.zst)
+- Parquet (.parquet)
 - Mixed formats in the same folder allowed
+- Compression: gzip (.gz) and zstd (.zst) supported
 
 ### Connection Params Wrapper
 **Location**: `/home/dm3/dbconvert/dbconvert-streams-ui/src/components/connection/params/ConnectionParams.vue`
@@ -165,7 +186,8 @@ isFilesConnectionType()        // Helper to detect 'files' connections
 ```
 
 **Key Features**:
-- Checks if connection type includes 'file' (case-insensitive)
+- Checks if connection type exactly matches 'files' (case-insensitive)
+- Uses `storage_config.uri` for folder path
 - Validates path exists before listing
 - Filters directory entries to only files
 - Returns error message if path not configured
@@ -364,10 +386,7 @@ Shows output configuration for file-based streams.
 ### Type Detection Pattern
 Throughout the codebase, file connections are detected using:
 ```typescript
-// Case-insensitive check for 'file' in type
-connection?.type?.toLowerCase().includes('file')
-
-// Or exact match
+// Exact match
 connectionType?.toLowerCase() === 'files'
 ```
 
@@ -412,9 +431,9 @@ All connection operations:
 ### 1. Type-Based Routing
 ```typescript
 // In components:
-if (connection.type?.toLowerCase().includes('file')) {
+if (connection.type?.toLowerCase() === 'files') {
   // Handle as file connection
-  // Use path field
+  // Use storage_config.uri field
 } else {
   // Handle as database connection
   // Use host/port/database fields
@@ -423,18 +442,21 @@ if (connection.type?.toLowerCase().includes('file')) {
 
 ### 2. Unified Connection Object
 - Same `Connection` interface for all types
-- Type-specific fields (path vs host/port/database) used conditionally
+- Type-specific fields (storage_config vs host/port/database) used conditionally
 - All connections stored in single array
 
 ### 3. Default Values for File Connections
 ```typescript
 // Applied in LocalFilesConnectionParams
 connection.type = 'files'
+connection.storage_config = {
+  provider: 'local',
+  uri: '/path/to/folder'  // User-provided
+}
 connection.port = 0
 connection.username = 'local'
 connection.password = ''
 connection.database = ''
-connection.path = '/path/to/folder'  // User-provided
 ```
 
 ### 4. Auto-Generation
@@ -484,12 +506,14 @@ connection.path = '/path/to/folder'  // User-provided
 | Aspect | Database | File |
 |--------|----------|------|
 | **Type Field** | 'postgresql', 'mysql', 'snowflake' | 'files' |
-| **Location** | host + port + database | path (folder) |
+| **Location** | host + port + database | storage_config.uri |
+| **Storage Provider** | N/A | storage_config.provider (local, s3, etc.) |
+| **File Format** | N/A | file_format (csv, json, jsonl, parquet) |
 | **Credentials** | username + password | 'local' + empty |
 | **Component** | UnifiedConnectionParams + SSLParams | LocalFilesConnectionParams |
 | **Database Ops** | getDatabases, getTables, etc. | N/A |
 | **File Ops** | N/A | listDirectory, getFileMetadata, etc. |
 | **Stream Source** | Tables list | Files list |
 | **Stream Target** | Database | File format + compression |
-| **Discovery** | type === 'postgresql' | type.includes('file') |
+| **Discovery** | type === 'postgresql' | type === 'files' |
 

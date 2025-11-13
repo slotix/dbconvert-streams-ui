@@ -32,7 +32,7 @@
 interface Connection {
   id: string
   name: string
-  type: string           // 'postgresql', 'mysql', 'snowflake', 'files'
+  type: string                   // 'postgresql', 'mysql', 'snowflake', 'files'
   host: string
   port: number
   username: string
@@ -43,7 +43,18 @@ interface Connection {
   ssl?: SSLConfig
   cloud_provider?: string
   status?: string
-  path?: string          // FOR FILES: folder path
+  file_format?: FileFormat       // FOR FILES: csv, json, jsonl, parquet
+  storage_config?: StorageConfig // FOR FILES: provider + uri
+}
+
+type FileFormat = 'csv' | 'json' | 'jsonl' | 'parquet'
+
+interface StorageConfig {
+  provider: 'local' | 's3' | 'gcs' | 'azure' | 'sftp' | 'ftp'
+  uri: string                    // Local path or cloud URI
+  region?: string
+  endpoint?: string
+  credentials?: StorageCredentials
 }
 ```
 
@@ -55,13 +66,6 @@ interface Connection {
 ```typescript
 // Exact match
 if (connectionType?.toLowerCase() === 'files') { }
-
-// Contains 'file'
-if (connection?.type?.toLowerCase().includes('file')) { }
-
-// Using store helper
-const fileExplorer = useFileExplorerStore()
-fileExplorer.isFilesConnectionType(connectionId)
 ```
 
 ---
@@ -71,7 +75,9 @@ fileExplorer.isFilesConnectionType(connectionId)
 | Property | Value | Notes |
 |----------|-------|-------|
 | `type` | 'files' | Case-insensitive |
-| `path` | '/home/user/data' | Required, folder path |
+| `storage_config.provider` | 'local' | Or 's3', 'gcs', 'azure', etc. |
+| `storage_config.uri` | '/home/user/data' | Required, folder path or cloud URI |
+| `file_format` | 'csv' | Optional: csv, json, jsonl, parquet |
 | `port` | 0 | Unused |
 | `username` | 'local' | Default |
 | `password` | '' | Empty string |
@@ -93,7 +99,11 @@ const newConnection = {
   username: 'local',
   password: '',
   database: '',
-  path: '/path/to/folder',
+  storage_config: {
+    provider: 'local',
+    uri: '/path/to/folder'
+  },
+  file_format: 'csv',  // Optional
   databasesInfo: []
 }
 
