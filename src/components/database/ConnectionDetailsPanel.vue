@@ -107,9 +107,10 @@ function copyConnectionString() {
 }
 
 async function copyFolderPath() {
-  if (!props.connection.path) return
+  const folderPath = props.connection.storage_config?.uri
+  if (!folderPath) return
   try {
-    await navigator.clipboard.writeText(props.connection.path)
+    await navigator.clipboard.writeText(folderPath)
     isPathCopied.value = true
     setTimeout(() => (isPathCopied.value = false), 1200)
   } catch (fallbackError) {
@@ -159,10 +160,10 @@ const createdDisplay = computed(() => {
             class="mt-1 flex items-start gap-2 rounded-lg bg-linear-to-r from-slate-50 to-gray-50 dark:from-gray-800 dark:to-gray-850 p-3 font-mono text-sm border border-gray-100 dark:border-gray-700"
           >
             <span class="flex-1 break-all text-gray-800 dark:text-gray-200 overflow-x-auto">
-              {{ connection.path || 'No path configured' }}
+              {{ connection.storage_config?.uri || 'No path configured' }}
             </span>
             <button
-              v-if="connection.path"
+              v-if="connection.storage_config?.uri"
               class="shrink-0 transition-colors"
               :class="
                 isPathCopied

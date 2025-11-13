@@ -257,12 +257,13 @@
             <!-- Bucket -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
               <label class="text-sm font-medium text-gray-700 dark:text-gray-300"
-                >Bucket (optional)</label
+                >Bucket <span class="text-red-500">*</span></label
               >
               <div class="md:col-span-2">
                 <input
                   v-model="bucket"
                   type="text"
+                  required
                   class="w-full rounded-lg border border-gray-300 dark:border-gray-600 py-2.5 px-4 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 dark:focus:ring-teal-400 focus:border-teal-500 dark:focus:border-teal-400 transition-colors"
                   placeholder="my-data-bucket"
                 />
@@ -398,7 +399,8 @@ const updateConnectionName = () => {
 // Helper function to apply connection defaults for S3
 const applyConnectionDefaults = (connectionType: string) => {
   if (connection.value) {
-    connection.value.type = connectionType.toLowerCase()
+    // S3 connections should have type="files" with storage_config.provider="s3"
+    connection.value.type = 'files'
 
     // Load existing S3 config if in edit mode
     if (isEdit.value) {
@@ -447,7 +449,6 @@ const applyConnectionDefaults = (connectionType: string) => {
       connection.value.host = ''
       connection.value.port = 443
       connection.value.database = ''
-      connection.value.path = ''
     }
 
     // Update name after applying defaults (for new connections only)
@@ -461,8 +462,13 @@ const applyConnectionDefaults = (connectionType: string) => {
 const syncS3ConfigToConnection = () => {
   if (!connection.value) return
 
-  // Build S3 URI
-  const bucketName = bucket.value || 'my-bucket'
+  // Build S3 URI (only if bucket is provided)
+  if (!bucket.value) {
+    // If no bucket specified, don't set storage_config yet
+    return
+  }
+
+  const bucketName = bucket.value
   const prefixPath = prefix.value || ''
   const s3URI = `s3://${bucketName}${prefixPath ? '/' + prefixPath : ''}`
 
@@ -510,7 +516,7 @@ const syncS3ConfigToConnection = () => {
   connection.value.host = endpoint.value || 's3.amazonaws.com'
   connection.value.port = 443
   connection.value.database = bucket.value || ''
-  connection.value.path = s3URI
+  // S3 URI is now stored in storage_config.uri (line 482)
 }
 
 // Watch for connection type changes and update defaults

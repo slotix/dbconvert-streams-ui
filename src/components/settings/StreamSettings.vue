@@ -194,9 +194,9 @@ const isFileTarget = computed(() => {
   if (!target) return false
   // Check if it's a file connection (starts with / or file://)
   if (target.startsWith('/') || target.startsWith('file://')) return true
-  // Or check connection type
+  // Or check connection type (only 'files' is valid file connection type now)
   const conn = connectionsStore.connectionByID(target)
-  return conn?.type?.toLowerCase().includes('file')
+  return conn?.type?.toLowerCase() === 'files'
 })
 
 // File format computed property

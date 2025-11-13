@@ -74,10 +74,9 @@ const targetApproxRows = computed(() => {
 })
 
 // Check if target is file-based
+// Only 'files' is a valid file connection type now (legacy csv/jsonl/parquet removed)
 const isFileTarget = computed(() => {
-  return (
-    props.target.type === 'csv' || props.target.type === 'jsonl' || props.target.type === 'parquet'
-  )
+  return props.target.type?.toLowerCase() === 'files'
 })
 
 // Get list of tables from stream config

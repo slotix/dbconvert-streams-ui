@@ -5,6 +5,9 @@ export interface SSLConfig {
   client_key?: string
 }
 
+// File format types
+export type FileFormat = 'csv' | 'json' | 'jsonl' | 'parquet'
+
 // Storage provider types
 export type StorageProvider = 'local' | 's3' | 'gcs' | 'azure' | 'sftp' | 'ftp'
 
@@ -45,8 +48,8 @@ export interface Connection {
   // Cloud provider detection - empty string means not a cloud provider
   cloud_provider?: string
   status?: string
-  // Path field for file format connections
-  path?: string
+  // File format for file-based connections (csv, json, jsonl, parquet)
+  file_format?: FileFormat
   // Storage configuration for file/cloud connections
   storage_config?: StorageConfig
   // S3-specific configuration (UI helper - not sent to backend)

@@ -81,7 +81,11 @@
                 <div
                   class="truncate text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400"
                 >
-                  {{ getFileDirectory(connection.id) || connection.path || 'No folder configured' }}
+                  {{
+                    getFileDirectory(connection.id) ||
+                    connection.storage_config?.uri ||
+                    'No folder configured'
+                  }}
                 </div>
                 <div class="mt-1">
                   <template v-if="getFileError(connection.id)">
@@ -249,7 +253,9 @@ function getConnectionById(connectionId?: string | null) {
 }
 
 function isFileConnection(connection: Connection): boolean {
-  return ['files', 'csv', 'parquet', 'jsonl'].includes((connection.type || '').toLowerCase())
+  // Only 'files' is a valid file connection type now (legacy csv/json/jsonl/parquet removed)
+  // File format is now specified in stream config, not connection type
+  return (connection.type || '').toLowerCase() === 'files'
 }
 
 function getFileCount(connectionId: string): number {

@@ -56,14 +56,15 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
     if (!connId) return false
     const connectionsStore = useConnectionsStore()
     const conn = connectionsStore.connections.find((c) => c.id === connId)
-    return (conn?.type || '').toLowerCase().includes('file')
+    return (conn?.type || '').toLowerCase() === 'files'
   }
 
   function isS3ConnectionType(connId: string | null | undefined): boolean {
     if (!connId) return false
     const connectionsStore = useConnectionsStore()
     const conn = connectionsStore.connections.find((c) => c.id === connId)
-    return (conn?.type || '').toLowerCase() === 's3'
+    // S3 connections have type='files' with storage_config.provider='s3'
+    return conn?.storage_config?.provider === 's3'
   }
 
   // Actions
@@ -77,7 +78,8 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
     if (!connection) return
 
     // Handle missing path
-    if (!connection.path) {
+    const folderPath = connection.storage_config?.uri
+    if (!folderPath) {
       entriesByConnection.value = {
         ...entriesByConnection.value,
         [connectionId]: []
@@ -105,7 +107,7 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
 
     try {
       // Pass connection type to backend for filtering supported file formats
-      const response = await listDirectory(connection.path, connection.type)
+      const response = await listDirectory(folderPath, connection.type)
       const files = response.entries.filter((entry) => entry.type === 'file')
 
       entriesByConnection.value = {
@@ -127,7 +129,7 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
       }
       directoryPathsByConnection.value = {
         ...directoryPathsByConnection.value,
-        [connectionId]: connection.path || ''
+        [connectionId]: folderPath || ''
       }
       errorsByConnection.value = {
         ...errorsByConnection.value,

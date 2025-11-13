@@ -54,7 +54,7 @@ const canProceed = computed(() => {
   if (!connection) return false
 
   if (connectionCategory.value === 'file') {
-    return !!(connection.name?.trim() && connection.path?.trim())
+    return !!(connection.name?.trim() && connection.storage_config?.uri?.trim())
   }
 
   return !!(

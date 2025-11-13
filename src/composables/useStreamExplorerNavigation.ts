@@ -12,7 +12,8 @@ interface UseStreamExplorerNavigationOptions {
   target: Ref<Connection | undefined>
 }
 
-const FILE_TYPES = ['csv', 'jsonl', 'parquet']
+// Only 'files' is a valid file connection type now (legacy csv/jsonl/parquet removed)
+const FILE_CONNECTION_TYPE = 'files'
 
 export function useStreamExplorerNavigation({
   stream,
@@ -26,7 +27,7 @@ export function useStreamExplorerNavigation({
 
   const isFileTarget = computed(() => {
     const type = target.value?.type?.toLowerCase() || ''
-    return type.includes('file') || FILE_TYPES.includes(type)
+    return type === FILE_CONNECTION_TYPE
   })
 
   async function navigateToSourceExplorer() {
@@ -36,7 +37,7 @@ export function useStreamExplorerNavigation({
     connectionsStore.setCurrentConnection(source.value.id)
 
     const sourceType = source.value.type?.toLowerCase() || ''
-    const isSourceFile = FILE_TYPES.includes(sourceType) || sourceType.includes('file')
+    const isSourceFile = sourceType === FILE_CONNECTION_TYPE
 
     if (isSourceFile) {
       await fileExplorerStore.loadEntries(source.value.id, true)

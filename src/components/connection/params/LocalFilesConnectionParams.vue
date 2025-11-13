@@ -63,7 +63,7 @@
             <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Folder Path</label>
             <div class="md:col-span-2">
               <FolderSelector
-                v-model="connection.path"
+                v-model="folderPath"
                 placeholder="/home/user/Documents/my-data-folder"
                 help-text="Select the folder containing your data files"
               />
@@ -115,6 +115,24 @@ const connectionsStore = useConnectionsStore()
 // Direct store access - single source of truth
 const connection = computed(() => connectionsStore.currentConnection)
 
+// Computed property for folder path that uses storage_config
+const folderPath = computed({
+  get: () => connection.value?.storage_config?.uri || '',
+  set: (value: string) => {
+    if (connection.value) {
+      if (!connection.value.storage_config) {
+        connection.value.storage_config = {
+          provider: 'local',
+          uri: value
+        }
+      } else {
+        connection.value.storage_config.uri = value
+        connection.value.storage_config.provider = 'local'
+      }
+    }
+  }
+})
+
 // Helper function to apply connection defaults for local files
 const applyConnectionDefaults = (connectionType: string) => {
   if (connection.value) {
@@ -124,9 +142,12 @@ const applyConnectionDefaults = (connectionType: string) => {
     connection.value.password = '' // Not needed for local files
     connection.value.database = '' // Not used for local files
 
-    // Set path to empty if it's a new connection
-    if (!connection.value.path && !isEdit.value) {
-      connection.value.path = ''
+    // Initialize storage_config for new connections
+    if (!connection.value.storage_config && !isEdit.value) {
+      connection.value.storage_config = {
+        provider: 'local',
+        uri: ''
+      }
     }
 
     // Update name after applying defaults (for new connections only)
@@ -141,10 +162,10 @@ const isEdit = computed(() => !!connection.value?.id)
 
 // Auto-generate connection name based on connection details
 const buildConnectionName = computed(() => {
-  if (!connection.value?.type || !connection.value?.path) {
+  if (!connection.value?.type || !folderPath.value) {
     return ''
   }
-  const folderName = connection.value.path.split('/').pop() || 'files'
+  const folderName = folderPath.value.split('/').pop() || 'files'
   return `Files-${folderName}`
 })
 
@@ -181,7 +202,7 @@ watch(
 
 // Watch for path changes to update connection name
 watch(
-  () => connection.value?.path,
+  () => folderPath.value,
   () => {
     if (!isEdit.value) {
       updateConnectionName()
