@@ -1,8 +1,8 @@
 // src/types/streams.ts
 export interface Table {
   name: string
-  query: string
-  selected: boolean
+  query?: string
+  selected?: boolean
 }
 
 export interface StreamID {
@@ -17,45 +17,104 @@ export interface StreamRunHistory {
   dataSize: string
 }
 
-export interface StreamConfig {
-  id: string
-  name: string
-  source?: string
-  target?: string
-  sourceDatabase?: string
-  targetDatabase?: string
-  created?: number
-  mode: 'cdc' | 'convert'
-  dataBundleSize: number
-  reportingIntervals: {
-    source: number
-    target: number
-  }
-  operations?: string[]
-  targetFileFormat?: 'csv' | 'json' | 'jsonl' | 'parquet'
-  compressionType?: 'uncompressed' | 'gzip' | 'zstd'
+export interface SourceOptions {
+  dataBundleSize?: number
+  replicationSlot?: string
+  publicationName?: string
+  binlogPosition?: string
+  operations?: string[] // CDC operation filter: 'insert', 'update', 'delete'
+}
 
-  // Granular structure creation options
+export interface TargetOptions {
+  stagingDirectory?: string
+  compressionType?: 'uncompressed' | 'gzip' | 'zstd' | 'none'
+  workerPoolSize?: number
   structureOptions?: {
-    tables?: boolean
-    indexes?: boolean
-    foreignKeys?: boolean
+    tables?: string | boolean
+    indexes?: string | boolean
+    foreignKeys?: string | boolean
   }
-
-  // Skip data transfer - only create structure
   skipData?: boolean
+  useDuckDBWriter?: boolean
+  parquetConfig?: ParquetConfig
+  csvConfig?: CSVConfig
+  snowflakeConfig?: SnowflakeConfig
+  s3UploadConfig?: S3UploadConfig
+  performanceConfig?: PerformanceConfig
+}
 
-  // File writer implementation selector
-  useDuckDBWriter?: boolean // Use DuckDB Appender API for file writers (csv/jsonl/parquet)
+export interface ParquetConfig {
+  compressionCodec?: string
+  rowGroupSize?: number
+  pageSize?: number
+}
 
-  limits: {
-    numberOfEvents: number
-    elapsedTime: number
-  }
+export interface CSVConfig {
+  delimiter?: string
+  quote?: string
+  header?: boolean
+}
+
+export interface SnowflakeConfig {
+  outputDirectory?: string
+  timestampFormat?: string
+}
+
+export interface S3UploadConfig {
+  bucket?: string
+  prefix?: string
+  region?: string
+  credentialSource?: string
+  accessKeyId?: string
+  secretAccessKey?: string
+  keepLocalFiles?: boolean
+  storageClass?: string
+  serverSideEnc?: string
+  kmsKeyId?: string
+  useSSL?: boolean
+}
+
+export interface PerformanceConfig {
+  batchSize?: number
+  workerPoolSize?: number
+  channelBuffer?: number
+  flushIntervalMs?: number
+}
+
+export interface SourceConfig {
+  id: string
   tables?: Table[]
+  options?: SourceOptions
+}
+
+export interface TargetConfig {
+  id: string
+  fileFormat?: 'csv' | 'json' | 'jsonl' | 'parquet'
+  subDirectory?: string
+  options?: TargetOptions
+}
+
+export interface Limits {
+  numberOfEvents?: number
+  elapsedTime?: number
+}
+
+export interface StreamConfig {
+  id?: string
+  name: string
+  mode: 'cdc' | 'convert'
+  description?: string
+  created?: number
+  reportingInterval?: number // Reporting interval in seconds for both source and target
+  source: SourceConfig
+  target: TargetConfig
+  limits?: Limits
+
+  // Legacy file fields - for file browser component compatibility
   files?: FileEntry[]
-  // Note: history is now fetched separately from /api/v1/stream-configs/{id}/history endpoint
-  [key: string]: any
+
+  // Index signature for potential future extensions
+  [key: string]: unknown
 }
 
 export interface FileEntry {
@@ -63,14 +122,4 @@ export interface FileEntry {
   path: string
   size?: number
   selected: boolean
-}
-
-export interface ReportingIntervals {
-  source: number
-  target: number
-}
-
-export interface Limits {
-  numberOfEvents: number
-  elapsedTime: number
 }
