@@ -260,9 +260,9 @@ Store app-wide constants and static maps here (e.g., connection/engine type maps
 
 ---
 
-## Dark Mode Guidelines (`DARK_MODE.md`)
+## Dark Mode Guidelines (`DESIGN_SYSTEM.md`)
 
-Refer to **`DARK_MODE.md`** for all design and implementation details related to the dark theme.
+Refer to **`DESIGN_SYSTEM.md` → Section 6** for all design and implementation details related to the dark theme.
 
 ---
 
@@ -274,4 +274,4 @@ Refer to **`DARK_MODE.md`** for all design and implementation details related to
 4. Do not modify backend references or credentials.
 5. Use Heroicons only.
 6. Follow Vue 3 + Tailwind best practices strictly.
-7. Follow `DARK_MODE.md` whenever adjusting colors or adding new visual elements.
+7. Follow `DESIGN_SYSTEM.md` (Section 6) whenever adjusting colors or adding new visual elements.
