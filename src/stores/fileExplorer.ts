@@ -106,21 +106,91 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
     }
 
     try {
-      // Pass connection type to backend for filtering supported file formats
-      const response = await listDirectory(folderPath, connection.type)
-      const files = response.entries.filter((entry) => entry.type === 'file')
+      // Check if this is an S3 connection
+      const isS3 = connection.storage_config?.provider === 's3'
 
-      entriesByConnection.value = {
-        ...entriesByConnection.value,
-        [connectionId]: files
-      }
-      directoryPathsByConnection.value = {
-        ...directoryPathsByConnection.value,
-        [connectionId]: response.path
-      }
-      errorsByConnection.value = {
-        ...errorsByConnection.value,
-        [connectionId]: ''
+      if (isS3) {
+        // Ensure storage_config exists for S3 connections
+        if (!connection.storage_config) {
+          throw new Error('S3 connection missing storage_config')
+        }
+
+        // Configure S3 session first
+        const { configureS3Session } = await import('@/api/files')
+        const storedCredentials = connection.storage_config.credentials
+        const hasCredentials = storedCredentials && storedCredentials.aws_access_key
+
+        await configureS3Session({
+          credentialSource: hasCredentials ? 'static' : 'aws',
+          credentials: hasCredentials
+            ? {
+                accessKeyId: storedCredentials.aws_access_key || '',
+                secretAccessKey: storedCredentials.aws_secret_key || '',
+                sessionToken: storedCredentials.aws_session_token
+              }
+            : undefined,
+          region: connection.storage_config.region || 'us-east-1',
+          endpoint: connection.storage_config.endpoint || undefined,
+          useSSL: connection.storage_config.endpoint
+            ? !connection.storage_config.endpoint.includes('localhost')
+            : true
+        })
+
+        // Parse bucket and prefix from URI (e.g., s3://my-bucket/prefix)
+        const uri: string = connection.storage_config.uri
+        const s3Match = uri.match(/^s3:\/\/([^/]+)(\/(.*))?$/)
+        if (!s3Match) {
+          throw new Error('Invalid S3 URI format. Expected s3://bucket-name/optional-prefix')
+        }
+
+        const bucket = s3Match[1]
+        const prefix = s3Match[3] || ''
+
+        // List S3 objects
+        const { listS3Objects } = await import('@/api/files')
+        const response = await listS3Objects({
+          bucket,
+          prefix,
+          maxKeys: 1000
+        })
+
+        // Convert S3 objects to file entries
+        const files = response.objects.map((obj) => ({
+          name: obj.key.split('/').pop() || obj.key,
+          path: `s3://${bucket}/${obj.key}`,
+          type: 'file' as const,
+          size: obj.size
+        }))
+
+        entriesByConnection.value = {
+          ...entriesByConnection.value,
+          [connectionId]: files
+        }
+        directoryPathsByConnection.value = {
+          ...directoryPathsByConnection.value,
+          [connectionId]: uri
+        }
+        errorsByConnection.value = {
+          ...errorsByConnection.value,
+          [connectionId]: ''
+        }
+      } else {
+        // Local filesystem - use existing logic
+        const response = await listDirectory(folderPath, connection.type)
+        const files = response.entries.filter((entry) => entry.type === 'file')
+
+        entriesByConnection.value = {
+          ...entriesByConnection.value,
+          [connectionId]: files
+        }
+        directoryPathsByConnection.value = {
+          ...directoryPathsByConnection.value,
+          [connectionId]: response.path
+        }
+        errorsByConnection.value = {
+          ...errorsByConnection.value,
+          [connectionId]: ''
+        }
       }
     } catch (error: unknown) {
       entriesByConnection.value = {
