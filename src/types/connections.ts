@@ -43,7 +43,9 @@ export interface Connection {
   username: string
   password: string
   databasesInfo: DatabaseInfo[]
-  database: string
+  // Optional default database - parsed from connection strings, used for testing and as UI default
+  // NOT used during stream execution - streams specify database in source/target config
+  defaultDatabase?: string
   created?: number
   ssl?: SSLConfig
   // Cloud provider detection - empty string means not a cloud provider

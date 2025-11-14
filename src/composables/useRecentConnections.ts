@@ -9,7 +9,7 @@ export type RecentConnection = {
   type?: string
   host?: string
   port?: string
-  database?: string
+  defaultDatabase?: string
   cloud_provider?: string
 }
 

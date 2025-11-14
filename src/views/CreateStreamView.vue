@@ -245,13 +245,14 @@ watch(
   () => wizard.selection.value.sourceConnectionId,
   async (newSourceId) => {
     if (newSourceId && streamsStore.currentStreamConfig) {
-      // Update store with source connection
+      // Update store with source connection and database
       streamsStore.updateSource(newSourceId)
-
-      // Auto-discover tables when moving to step 2
-      // if (wizard.currentStepIndex.value === 1) {
-      //   await autoDiscoverTables()
-      // }
+      if (wizard.selection.value.sourceDatabase) {
+        streamsStore.currentStreamConfig.sourceDatabase = wizard.selection.value.sourceDatabase
+      }
+      if (wizard.selection.value.sourceSchema) {
+        streamsStore.currentStreamConfig.sourceSchema = wizard.selection.value.sourceSchema
+      }
     }
   }
 )
@@ -260,8 +261,17 @@ watch(
   () => wizard.selection.value.targetConnectionId,
   (newTargetId) => {
     if (newTargetId && streamsStore.currentStreamConfig) {
-      // Update store with target connection
+      // Update store with target connection and database
       streamsStore.updateTarget(newTargetId)
+      if (wizard.selection.value.targetDatabase) {
+        streamsStore.currentStreamConfig.targetDatabase = wizard.selection.value.targetDatabase
+      }
+      if (wizard.selection.value.targetSchema) {
+        streamsStore.currentStreamConfig.targetSchema = wizard.selection.value.targetSchema
+      }
+      if (wizard.selection.value.targetPath) {
+        streamsStore.currentStreamConfig.targetPath = wizard.selection.value.targetPath
+      }
     }
   }
 )
@@ -276,8 +286,14 @@ watch(
       if (wizard.selection.value.sourceConnectionId && streamsStore.currentStreamConfig) {
         const sourceId = wizard.selection.value.sourceConnectionId
 
-        // Re-set the source to trigger TableList's watch
+        // Update source connection and database in the store
         streamsStore.updateSource(sourceId)
+        if (wizard.selection.value.sourceDatabase) {
+          streamsStore.currentStreamConfig.sourceDatabase = wizard.selection.value.sourceDatabase
+        }
+        if (wizard.selection.value.sourceSchema) {
+          streamsStore.currentStreamConfig.sourceSchema = wizard.selection.value.sourceSchema
+        }
 
         // Wait for next tick to ensure TableList component is rendered
         await nextTick()
@@ -291,12 +307,14 @@ watch(
 
 function handleSourceUpdate(connectionId: string, database?: string, schema?: string) {
   wizard.setSourceConnection(connectionId, database, schema)
-
-  // Also update the connection's database field so TableList can find it
-  if (database) {
-    const connection = connectionsStore.connectionByID(connectionId)
-    if (connection) {
-      connection.database = database
+  // Update both the wizard state and the stream config
+  if (streamsStore.currentStreamConfig) {
+    streamsStore.updateSource(connectionId)
+    if (database) {
+      streamsStore.currentStreamConfig.sourceDatabase = database
+    }
+    if (schema) {
+      streamsStore.currentStreamConfig.sourceSchema = schema
     }
   }
 }
@@ -308,12 +326,17 @@ function handleTargetUpdate(
   path?: string
 ) {
   wizard.setTargetConnection(connectionId, database, schema, path)
-
-  // Also update the connection's database field if provided
-  if (database) {
-    const connection = connectionsStore.connectionByID(connectionId)
-    if (connection) {
-      connection.database = database
+  // Update both the wizard state and the stream config
+  if (streamsStore.currentStreamConfig) {
+    streamsStore.updateTarget(connectionId)
+    if (database) {
+      streamsStore.currentStreamConfig.targetDatabase = database
+    }
+    if (schema) {
+      streamsStore.currentStreamConfig.targetSchema = schema
+    }
+    if (path) {
+      streamsStore.currentStreamConfig.targetPath = path
     }
   }
 }

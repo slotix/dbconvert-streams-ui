@@ -79,6 +79,9 @@ const omitDefaults = (stream: StreamConfig): Partial<StreamConfig> => {
   // Handle source configuration
   filteredStream.source = {
     id: stream.source.id,
+    // Include database and schema if specified
+    ...(stream.source.database && { database: stream.source.database }),
+    ...(stream.source.schema && { schema: stream.source.schema }),
     ...(stream.source.tables &&
       stream.source.tables.length > 0 && {
         tables: stream.source.tables.map((table) => {
@@ -123,7 +126,10 @@ const omitDefaults = (stream: StreamConfig): Partial<StreamConfig> => {
 
   // Handle target configuration
   filteredStream.target = {
-    id: stream.target.id
+    id: stream.target.id,
+    // Include database and schema if specified
+    ...(stream.target.database && { database: stream.target.database }),
+    ...(stream.target.schema && { schema: stream.target.schema })
   }
 
   if (stream.target.fileFormat) {
@@ -324,6 +330,20 @@ export const useStreamsStore = defineStore('streams', {
     },
     prepareStreamData() {
       if (this.currentStreamConfig) {
+        // Ensure database/schema are copied from root level to source/target objects
+        if (this.currentStreamConfig.sourceDatabase) {
+          this.currentStreamConfig.source.database = this.currentStreamConfig.sourceDatabase
+        }
+        if (this.currentStreamConfig.sourceSchema) {
+          this.currentStreamConfig.source.schema = this.currentStreamConfig.sourceSchema
+        }
+        if (this.currentStreamConfig.targetDatabase) {
+          this.currentStreamConfig.target.database = this.currentStreamConfig.targetDatabase
+        }
+        if (this.currentStreamConfig.targetSchema) {
+          this.currentStreamConfig.target.schema = this.currentStreamConfig.targetSchema
+        }
+
         const refinedStream = omitDefaults(this.currentStreamConfig)
 
         // Remove temporary UI-only state property before saving

@@ -233,13 +233,13 @@ export const useConnectionsStore = defineStore('connections', {
     },
     async createSchema(schemaName: string, connectionId: string) {
       try {
-        if (!this.currentConnection?.database) {
+        if (!this.currentConnection?.defaultDatabase) {
           throw new Error('Database not selected')
         }
         const response = await api.createSchema(
           schemaName,
           connectionId,
-          this.currentConnection.database
+          this.currentConnection.defaultDatabase
         )
         if (response.status === 'success') {
           await this.getDatabases(connectionId)
@@ -259,9 +259,9 @@ export const useConnectionsStore = defineStore('connections', {
           if (!connection) {
             throw new Error(`Connection with ID: ${connectionId} not found`)
           }
-          dbName = connection.database
+          dbName = connection.defaultDatabase
           if (!dbName) {
-            throw new Error(`database with ID: ${connection.database} not found`)
+            throw new Error(`database with ID: ${connection.defaultDatabase} not found`)
           }
         }
         const tables = await api.getTables(connectionId, dbName)
@@ -294,7 +294,7 @@ export const useConnectionsStore = defineStore('connections', {
         port: 0,
         username: '',
         password: '',
-        database: '',
+        defaultDatabase: '',
         created: 0,
         cloud_provider: '',
         databasesInfo: []

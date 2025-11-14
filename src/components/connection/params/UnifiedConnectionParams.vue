@@ -143,17 +143,18 @@
           <!-- Database Field (Optional) -->
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
             <label class="text-sm font-medium text-gray-700 dark:text-gray-300"
-              >Database (Optional)</label
+              >Default Database (Optional)</label
             >
             <div class="md:col-span-2">
               <input
-                v-model="connection.database"
+                v-model="connection.defaultDatabase"
                 type="text"
                 class="w-full rounded-lg border border-gray-300 dark:border-gray-600 py-2 px-4 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-gray-600 dark:focus:ring-teal-400 focus:border-transparent"
                 :placeholder="getDatabasePlaceholder()"
               />
               <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                💡 Leave blank to browse all databases, or specify one for direct access
+                💡 Used for connection testing and UI defaults. Streams specify database in their
+                config.
               </p>
             </div>
           </div>
@@ -206,8 +207,8 @@ const applyConnectionDefaults = (connectionType: string) => {
     }
 
     // Only clear database if it's not already set (preserve parsed values from connection string)
-    if (!connection.value.database) {
-      connection.value.database = '' // Empty for new wizard flow
+    if (!connection.value.defaultDatabase) {
+      connection.value.defaultDatabase = '' // Empty for new wizard flow
     }
 
     // Only set host to localhost if it's empty (don't override existing values)

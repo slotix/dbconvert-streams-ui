@@ -83,12 +83,18 @@ export interface PerformanceConfig {
 
 export interface SourceConfig {
   id: string
+  // Database and schema selection (stream-specific)
+  database?: string // Database name - required for database connections
+  schema?: string // Schema name - optional, defaults to provider-specific default
   tables?: Table[]
   options?: SourceOptions
 }
 
 export interface TargetConfig {
   id: string
+  // Database and schema selection (stream-specific)
+  database?: string // Database name - required for database connections
+  schema?: string // Schema name - optional, defaults to provider-specific default
   fileFormat?: 'csv' | 'json' | 'jsonl' | 'parquet'
   subDirectory?: string
   options?: TargetOptions

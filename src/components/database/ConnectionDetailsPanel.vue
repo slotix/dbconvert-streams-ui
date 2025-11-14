@@ -197,7 +197,7 @@ const createdDisplay = computed(() => {
 
       <!-- Database Connection Details -->
       <div v-else>
-        <div class="grid gap-4" :class="connection.database ? 'grid-cols-2' : 'grid-cols-1'">
+        <div class="grid gap-4" :class="connection.defaultDatabase ? 'grid-cols-2' : 'grid-cols-1'">
           <div>
             <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
               >Host</label
@@ -209,12 +209,12 @@ const createdDisplay = computed(() => {
               {{ hostWithPort }}
             </p>
           </div>
-          <div v-if="connection.database">
+          <div v-if="connection.defaultDatabase">
             <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
-              >Database</label
+              >Default Database</label
             >
             <p class="mt-1 font-medium text-gray-900 dark:text-gray-100 truncate">
-              {{ connection.database }}
+              {{ connection.defaultDatabase }}
             </p>
           </div>
         </div>

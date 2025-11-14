@@ -186,7 +186,7 @@ type RecentConnection = {
   type?: string
   host?: string
   port?: string
-  database?: string
+  defaultDatabase?: string
   cloud_provider?: string
 }
 
@@ -227,7 +227,7 @@ const recentConnections = computed(() => {
     type: conn.type,
     host: conn.host,
     port: conn.port?.toString(),
-    database: conn.database,
+    defaultDatabase: conn.defaultDatabase,
     cloud_provider: conn.cloud_provider
   }))
 })
@@ -346,18 +346,18 @@ function getConnectionHost(connectionId: string) {
 function getConnectionDatabase(connectionId: string) {
   const connection = connectionsStore.connections.find((conn) => conn.id === connectionId)
   if (connection) {
-    let dbName = connection.database
+    let dbName = connection.defaultDatabase
     // Truncate database name if it's too long
-    if (dbName.length > 20) {
+    if (dbName && dbName.length > 20) {
       dbName = `${dbName.substring(0, 17)}...`
     }
-    return `Database: ${dbName}`
+    return dbName ? `Database: ${dbName}` : ''
   }
 
   // Fallback: try to get from recent connections data
   const recentConn = recentConnectionsRaw.value.find((conn) => conn.id === connectionId)
-  if (recentConn?.database) {
-    let dbName = recentConn.database
+  if (recentConn?.defaultDatabase) {
+    let dbName = recentConn.defaultDatabase
     if (dbName.length > 20) {
       dbName = `${dbName.substring(0, 17)}...`
     }
@@ -385,12 +385,13 @@ function getConnectionDetails(connectionId: string) {
         displayHost = `${displayHost.substring(0, 25)}...`
       }
     }
-    return `${displayHost}:${connection.port} • ${connection.database}`
+    const dbPart = connection.defaultDatabase ? ` • ${connection.defaultDatabase}` : ''
+    return `${displayHost}:${connection.port}${dbPart}`
   }
 
   // Fallback: try to get from recent connections data
   const recentConn = recentConnectionsRaw.value.find((conn) => conn.id === connectionId)
-  if (recentConn?.host && recentConn?.port && recentConn?.database) {
+  if (recentConn?.host && recentConn?.port) {
     let displayHost = recentConn.host
     if (displayHost.length > 30) {
       if (displayHost.includes('.')) {
@@ -402,7 +403,8 @@ function getConnectionDetails(connectionId: string) {
         displayHost = `${displayHost.substring(0, 25)}...`
       }
     }
-    return `${displayHost}:${recentConn.port} • ${recentConn.database}`
+    const dbPart = recentConn.defaultDatabase ? ` • ${recentConn.defaultDatabase}` : ''
+    return `${displayHost}:${recentConn.port}${dbPart}`
   }
 
   return ''
@@ -433,8 +435,8 @@ function isFileConnection(connectionId: string): boolean {
 function getFileConnectionPath(connectionId: string): string {
   const connection = connectionsStore.connections.find((conn) => conn.id === connectionId)
   if (connection) {
-    // For file connections, the 'database' field typically contains the directory path
-    let path = connection.database || connection.host || ''
+    // For file connections, use storage_config.uri or fallback to host
+    let path = connection.storage_config?.uri || connection.host || ''
     // Truncate long paths
     if (path.length > 40) {
       // Try to show the end of the path (most relevant part)
@@ -451,7 +453,7 @@ function getFileConnectionPath(connectionId: string): string {
   // Fallback: try to get from recent connections data
   const recentConn = recentConnectionsRaw.value.find((conn) => conn.id === connectionId)
   if (recentConn) {
-    let path = recentConn.database || recentConn.host || ''
+    let path = recentConn.host || ''
     if (path.length > 40) {
       const parts = path.split('/')
       if (parts.length > 3) {

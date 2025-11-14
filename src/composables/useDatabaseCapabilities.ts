@@ -119,10 +119,8 @@ export function useDatabaseCapabilities(databaseType: Ref<string> | string) {
     if (!connection.port) errors.push('Port is required')
     if (!connection.username) errors.push('Username is required')
 
-    // Database validation: only require if showDatabaseLevel is true AND databaseOptional is false
-    if (showDatabaseLevel.value && !connection.database && !capabilities.value?.databaseOptional) {
-      errors.push('Database is required')
-    }
+    // DefaultDatabase is always optional for connections - streams specify database in their config
+    // No validation needed here for defaultDatabase
 
     // Schema validation removed - handled in explorer/stream contexts
 

@@ -25,8 +25,8 @@ export function generateConnectionString(
     ? `${connection.username}:${encodeURIComponent(password || '')}@`
     : ''
 
-  // Include database in path if specified, otherwise omit it
-  const databasePath = connection.database ? `/${connection.database}` : ''
+  // Include default database in path if specified, otherwise omit it
+  const databasePath = connection.defaultDatabase ? `/${connection.defaultDatabase}` : ''
 
   return `${protocol}://${auth}${connection.host}:${connection.port}${databasePath}`
 }

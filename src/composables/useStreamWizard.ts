@@ -197,13 +197,43 @@ export function useStreamWizard() {
       return null
     }
 
+    // Helper to get database from either root level or nested in source/target
+    const resolveDatabase = (
+      rootLevel: string | undefined | null,
+      nested: unknown
+    ): string | null => {
+      if (rootLevel) return rootLevel
+      if (
+        nested &&
+        typeof nested === 'object' &&
+        'database' in (nested as Record<string, unknown>)
+      ) {
+        const dbValue = (nested as Record<string, unknown>).database
+        return typeof dbValue === 'string' ? dbValue : null
+      }
+      return null
+    }
+
+    // Helper to get schema from either root level or nested in source/target
+    const resolveSchema = (
+      rootLevel: string | undefined | null,
+      nested: unknown
+    ): string | null => {
+      if (rootLevel) return rootLevel
+      if (nested && typeof nested === 'object' && 'schema' in (nested as Record<string, unknown>)) {
+        const schemaValue = (nested as Record<string, unknown>).schema
+        return typeof schemaValue === 'string' ? schemaValue : null
+      }
+      return null
+    }
+
     // Populate source and target selection
     selection.value.sourceConnectionId = resolveConnectionId(config.source)
     selection.value.targetConnectionId = resolveConnectionId(config.target)
-    selection.value.sourceDatabase = config.sourceDatabase ?? null
-    selection.value.targetDatabase = config.targetDatabase ?? null
-    selection.value.sourceSchema = config.sourceSchema ?? null
-    selection.value.targetSchema = config.targetSchema ?? null
+    selection.value.sourceDatabase = resolveDatabase(config.sourceDatabase, config.source)
+    selection.value.targetDatabase = resolveDatabase(config.targetDatabase, config.target)
+    selection.value.sourceSchema = resolveSchema(config.sourceSchema, config.source)
+    selection.value.targetSchema = resolveSchema(config.targetSchema, config.target)
     selection.value.targetPath = config.targetPath ?? null
 
     // Populate structure options
