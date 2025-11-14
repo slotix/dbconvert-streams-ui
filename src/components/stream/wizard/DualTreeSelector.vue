@@ -27,21 +27,22 @@
                 </p>
               </div>
             </div>
-            <span
-              class="inline-flex items-center rounded-full border border-blue-200 dark:border-blue-700 px-2.5 py-0.5 text-xs font-semibold text-blue-700 dark:text-blue-200 bg-white/70 dark:bg-blue-950/30 shadow-sm whitespace-nowrap"
+            <BaseButton
+              variant="secondary"
+              size="sm"
+              class="whitespace-nowrap"
+              @click="emit('add-connection', 'source')"
             >
-              Data Producer
-            </span>
+              New Connection
+            </BaseButton>
           </div>
         </div>
 
         <!-- Source Filters -->
         <StreamConnectionFilter
           :connection-search="sourceConnectionSearch"
-          pane-type="source"
           @update:connection-search="sourceConnectionSearch = $event"
           @update:selected-type="sourceConnectionType = $event"
-          @add-connection="emit('add-connection', $event)"
         />
 
         <div class="flex-1 overflow-y-auto p-3 bg-white dark:bg-gray-900/60">
@@ -83,21 +84,22 @@
                 </p>
               </div>
             </div>
-            <span
-              class="inline-flex items-center rounded-full border border-teal-200 dark:border-teal-700 px-2.5 py-0.5 text-xs font-semibold text-teal-700 dark:text-teal-200 bg-white/70 dark:bg-teal-950/30 shadow-sm whitespace-nowrap"
+            <BaseButton
+              variant="secondary"
+              size="sm"
+              class="whitespace-nowrap"
+              @click="emit('add-connection', 'target')"
             >
-              Data Consumers
-            </span>
+              New Connection
+            </BaseButton>
           </div>
         </div>
 
         <!-- Target Filters -->
         <StreamConnectionFilter
           :connection-search="targetConnectionSearch"
-          pane-type="target"
           @update:connection-search="targetConnectionSearch = $event"
           @update:selected-type="targetConnectionType = $event"
-          @add-connection="emit('add-connection', $event)"
         />
 
         <div class="flex-1 overflow-y-auto p-3 bg-white dark:bg-gray-900/60">
@@ -136,7 +138,9 @@
                 / {{ sourceDatabase }}
               </span>
             </span>
-            <span v-else class="text-blue-500/80 dark:text-blue-300/70 ml-1 italic">Not selected</span>
+            <span v-else class="text-blue-500/80 dark:text-blue-300/70 ml-1 italic"
+              >Not selected</span
+            >
           </div>
 
           <!-- Arrow - Sky Blue to Emerald Gradient -->
@@ -169,7 +173,9 @@
                 / {{ targetDatabase }}
               </span>
             </span>
-            <span v-else class="text-teal-500/80 dark:text-teal-300/70 ml-1 italic">Not selected</span>
+            <span v-else class="text-teal-500/80 dark:text-teal-300/70 ml-1 italic"
+              >Not selected</span
+            >
           </div>
         </div>
 
@@ -213,6 +219,7 @@
 import { ref, computed } from 'vue'
 import { useConnectionsStore } from '@/stores/connections'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
+import BaseButton from '@/components/base/BaseButton.vue'
 import ConnectionTreeSelector from './ConnectionTreeSelector.vue'
 import StreamConnectionFilter from './StreamConnectionFilter.vue'
 

@@ -10,13 +10,6 @@
       <div class="flex-1 min-w-[120px]">
         <SearchInput v-model="connectionSearch" placeholder="Filter..." size="sm" />
       </div>
-      <BaseButton
-        variant="primary"
-        size="sm"
-        @click="$emit('add-connection', props.paneType || 'source')"
-      >
-        New Connection
-      </BaseButton>
     </div>
   </div>
 </template>
@@ -25,17 +18,14 @@
 import { computed, ref, onMounted } from 'vue'
 import ConnectionTypeFilter from '@/components/common/ConnectionTypeFilter.vue'
 import SearchInput from '@/components/common/SearchInput.vue'
-import BaseButton from '@/components/base/BaseButton.vue'
 
 interface Props {
   connectionSearch: string
-  paneType?: 'source' | 'target'
 }
 
 const emit = defineEmits<{
   'update:connectionSearch': [value: string]
   'update:selectedType': [value: string | null]
-  'add-connection': [paneType: 'source' | 'target']
 }>()
 
 const props = defineProps<Props>()
