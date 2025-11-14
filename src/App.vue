@@ -103,7 +103,7 @@
               </TransitionChild>
 
               <div
-                class="flex grow flex-col gap-y-5 overflow-y-auto bg-gray-900 dark:bg-gray-950 px-6 pb-2 ring-1 ring-white/10 dark:ring-white/5"
+                class="flex grow flex-col gap-y-5 overflow-y-auto bg-gray-850 dark:bg-gray-900 px-6 pb-2 ring-1 ring-white/10 dark:ring-white/5 border-r border-gray-700/80 dark:border-gray-800/80"
               >
                 <div class="flex h-16 shrink-0 items-center">
                   <RouterLink to="/">
@@ -232,7 +232,7 @@
 
     <!-- Static sidebar for desktop -->
     <div
-      class="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-100 lg:block lg:w-20 lg:bg-gray-900 dark:lg:bg-gray-950 lg:pb-10"
+      class="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-100 lg:block lg:w-20 lg:bg-gray-850 dark:lg:bg-gray-900 lg:pb-10 lg:border-r lg:border-gray-700/80 dark:lg:border-gray-800/80"
     >
       <div class="flex h-20 shrink-0 items-center justify-center pt-6">
         <RouterLink to="/">
@@ -342,7 +342,7 @@
       </nav>
 
       <!-- External Links -->
-      <div class="fixed bottom-0 w-20 pb-5 bg-gray-900 dark:bg-gray-950">
+      <div class="fixed bottom-0 w-20 pb-5 bg-gray-850 dark:bg-gray-900">
         <div class="flex flex-col items-center space-y-1">
           <!-- Theme Toggle -->
           <div class="relative group">
