@@ -246,7 +246,7 @@ export default {
 import { computed, ref } from 'vue'
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/vue'
 import { ViewColumnsIcon, CodeBracketIcon } from '@heroicons/vue/24/outline'
-import { useStreamsStore } from '@/stores/streamConfig'
+import { useStreamsStore, buildStreamPayload } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
 import StreamSettings from '@/components/settings/StreamSettings.vue'
 
@@ -317,7 +317,10 @@ const customQueriesCount = computed(() => customQueryTables.value.length)
 
 // JSON configuration
 const configJson = computed(() => {
-  return JSON.stringify(currentStreamConfig.value, null, 2)
+  const config = currentStreamConfig.value
+  if (!config) return '{}'
+  const refinedConfig = buildStreamPayload(config)
+  return JSON.stringify(refinedConfig, null, 2)
 })
 
 // Always allow proceeding to save - validation is handled by StreamSettings

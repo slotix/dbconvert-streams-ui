@@ -57,7 +57,7 @@ const defaultTableOptions: Partial<Table> = {
   selected: false
 }
 
-const omitDefaults = (stream: StreamConfig): Partial<StreamConfig> => {
+export const buildStreamPayload = (stream: StreamConfig): Partial<StreamConfig> => {
   const filteredStream: Partial<StreamConfig> = {
     name: stream.name,
     mode: stream.mode
@@ -195,23 +195,6 @@ const omitDefaults = (stream: StreamConfig): Partial<StreamConfig> => {
     filteredStream.limits = stream.limits
   }
 
-  // Persist database/schema selections for wizard prefill
-  if (stream.sourceDatabase) {
-    filteredStream.sourceDatabase = stream.sourceDatabase
-  }
-  if (stream.targetDatabase) {
-    filteredStream.targetDatabase = stream.targetDatabase
-  }
-  if (stream.sourceSchema) {
-    filteredStream.sourceSchema = stream.sourceSchema
-  }
-  if (stream.targetSchema) {
-    filteredStream.targetSchema = stream.targetSchema
-  }
-  if (stream.targetPath) {
-    filteredStream.targetPath = stream.targetPath
-  }
-
   return filteredStream
 }
 
@@ -344,7 +327,7 @@ export const useStreamsStore = defineStore('streams', {
           this.currentStreamConfig.target.schema = this.currentStreamConfig.targetSchema
         }
 
-        const refinedStream = omitDefaults(this.currentStreamConfig)
+        const refinedStream = buildStreamPayload(this.currentStreamConfig)
 
         // Remove temporary UI-only state property before saving
         delete (refinedStream as any)._allTablesWithState

@@ -30,6 +30,9 @@ export function useStreamExplorerNavigation({
     return type === FILE_CONNECTION_TYPE
   })
 
+  const sourceDatabase = computed(() => stream.value?.source?.database || undefined)
+  const targetDatabase = computed(() => stream.value?.target?.database || undefined)
+
   async function navigateToSourceExplorer() {
     if (!source.value?.id) return
 
@@ -43,8 +46,8 @@ export function useStreamExplorerNavigation({
       await fileExplorerStore.loadEntries(source.value.id, true)
       explorerNavigationStore.selectConnection(source.value.id)
       window.sessionStorage.setItem('explorerFocusConnectionId', source.value.id)
-    } else if (stream.value?.sourceDatabase) {
-      explorerNavigationStore.selectDatabase(source.value.id, stream.value.sourceDatabase)
+    } else if (sourceDatabase.value) {
+      explorerNavigationStore.selectDatabase(source.value.id, sourceDatabase.value)
     }
 
     router.push({
@@ -52,7 +55,7 @@ export function useStreamExplorerNavigation({
       params: { id: source.value.id },
       query: {
         details: 'true',
-        db: isSourceFile ? undefined : stream.value.sourceDatabase || undefined
+        db: isSourceFile ? undefined : sourceDatabase.value || undefined
       }
     })
   }
@@ -67,8 +70,8 @@ export function useStreamExplorerNavigation({
       await fileExplorerStore.loadEntries(target.value.id, true)
       explorerNavigationStore.selectConnection(target.value.id)
       window.sessionStorage.setItem('explorerFocusConnectionId', target.value.id)
-    } else if (stream.value?.targetDatabase) {
-      explorerNavigationStore.selectDatabase(target.value.id, stream.value.targetDatabase)
+    } else if (targetDatabase.value) {
+      explorerNavigationStore.selectDatabase(target.value.id, targetDatabase.value)
     }
 
     router.push({
@@ -76,7 +79,7 @@ export function useStreamExplorerNavigation({
       params: { id: target.value.id },
       query: {
         details: 'true',
-        db: isFileTarget.value ? undefined : stream.value.targetDatabase || undefined
+        db: isFileTarget.value ? undefined : targetDatabase.value || undefined
       }
     })
   }

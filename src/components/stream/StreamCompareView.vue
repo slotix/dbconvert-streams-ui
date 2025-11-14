@@ -84,6 +84,11 @@ const tablesList = computed(() => {
   return (props.stream.source?.tables || []).map((t) => t.name)
 })
 
+const sourceDatabase = computed(() => props.stream.source?.database || undefined)
+const targetDatabase = computed(() => props.stream.target?.database || undefined)
+const sourceSchema = computed(() => props.stream.source?.schema || undefined)
+const targetSchema = computed(() => props.stream.target?.schema || undefined)
+
 // Schema comparison (only for database targets, not files)
 const schemaComparison = computed((): SchemaComparison | null => {
   // Only compare schemas for database-to-database transfers
@@ -168,10 +173,10 @@ onMounted(async () => {
   console.log('StreamCompareView mounted with props:', {
     streamId: props.stream.id,
     streamName: props.stream.name,
-    sourceDatabase: props.stream.sourceDatabase,
-    targetDatabase: props.stream.targetDatabase,
-    sourceSchema: props.stream.sourceSchema,
-    targetSchema: props.stream.targetSchema,
+    sourceDatabase: sourceDatabase.value,
+    targetDatabase: targetDatabase.value,
+    sourceSchema: sourceSchema.value,
+    targetSchema: targetSchema.value,
     tables: props.stream.source?.tables,
     source: props.source,
     target: props.target
@@ -197,26 +202,26 @@ async function loadTableData() {
 async function loadSourceTable() {
   try {
     console.log('loadSourceTable called with:', {
-      sourceDatabase: props.stream.sourceDatabase,
-      sourceSchema: props.stream.sourceSchema,
+      sourceDatabase: sourceDatabase.value,
+      sourceSchema: sourceSchema.value,
       selectedTable: selectedTable.value,
       sourceId: props.source.id,
       sourceType: props.source.type
     })
 
-    if (!props.stream.sourceDatabase) {
+    if (!sourceDatabase.value) {
       console.warn('No sourceDatabase in stream config')
       return
     }
 
     // Ensure metadata is loaded
     console.log('Calling ensureMetadata for source...')
-    await navigationStore.ensureMetadata(props.source.id, props.stream.sourceDatabase)
+    await navigationStore.ensureMetadata(props.source.id, sourceDatabase.value)
     console.log('ensureMetadata completed for source')
 
     // Fetch database overview to get row counts
     try {
-      await overviewStore.fetchOverview(props.source.id, props.stream.sourceDatabase)
+      await overviewStore.fetchOverview(props.source.id, sourceDatabase.value)
     } catch (e) {
       console.warn('Failed to fetch source database overview:', e)
     }
@@ -227,13 +232,13 @@ async function loadSourceTable() {
     if (props.source.type === 'mysql') {
       schema = undefined // MySQL doesn't use separate schemas
     } else {
-      schema = props.stream.sourceSchema || 'public'
+      schema = sourceSchema.value || 'public'
     }
 
     console.log('Looking for table metadata with schema:', schema)
     const meta = navigationStore.findTableMeta(
       props.source.id,
-      props.stream.sourceDatabase,
+      sourceDatabase.value,
       selectedTable.value,
       schema
     )
@@ -246,15 +251,15 @@ async function loadSourceTable() {
 
 async function loadTargetTable() {
   try {
-    if (!props.stream.targetDatabase) return
+    if (!targetDatabase.value) return
 
     // Force refresh metadata to ensure we get latest tables after stream completion
     // This ensures newly created tables are visible immediately
-    await navigationStore.ensureMetadata(props.target.id, props.stream.targetDatabase, true)
+    await navigationStore.ensureMetadata(props.target.id, targetDatabase.value, true)
 
     // Fetch database overview to get row counts
     try {
-      await overviewStore.fetchOverview(props.target.id, props.stream.targetDatabase)
+      await overviewStore.fetchOverview(props.target.id, targetDatabase.value)
     } catch (e) {
       console.warn('Failed to fetch target database overview:', e)
     }
@@ -265,13 +270,13 @@ async function loadTargetTable() {
     if (props.target.type === 'mysql') {
       schema = undefined // MySQL doesn't use separate schemas
     } else {
-      schema = props.stream.targetSchema || 'public'
+      schema = targetSchema.value || 'public'
     }
 
     // Find the table metadata
     const meta = navigationStore.findTableMeta(
       props.target.id,
-      props.stream.targetDatabase,
+      targetDatabase.value,
       selectedTable.value,
       schema
     )
@@ -545,10 +550,8 @@ async function selectTable(tableName: string) {
               <span class="text-xs text-gray-600 dark:text-gray-400">{{ source.name }}</span>
             </div>
             <div class="text-xs text-gray-600 dark:text-gray-400">
-              {{ stream.sourceDatabase }}
-              <span v-if="stream.sourceSchema && stream.sourceSchema !== 'public'">
-                / {{ stream.sourceSchema }}
-              </span>
+              {{ sourceDatabase }}
+              <span v-if="sourceSchema && sourceSchema !== 'public'"> / {{ sourceSchema }} </span>
               / {{ selectedTable }}
             </div>
           </div>
@@ -557,7 +560,7 @@ async function selectTable(tableName: string) {
         <!-- Source Data View -->
         <div class="flex-1 overflow-auto p-4">
           <div
-            v-if="sourceTableMeta && stream.sourceDatabase"
+            v-if="sourceTableMeta && sourceDatabase"
             class="h-full transition-all duration-300"
             :class="{ 'ring-2 ring-blue-400 ring-opacity-50': syncFlashSource }"
           >
@@ -565,7 +568,7 @@ async function selectTable(tableName: string) {
               ref="sourceGridRef"
               :table-meta="sourceTableMeta"
               :connection-id="source.id"
-              :database="stream.sourceDatabase"
+              :database="sourceDatabase"
               :is-view="false"
               :approx-rows="sourceApproxRows"
               :object-key="`compare-source-${stream.id}-${selectedTable}`"
@@ -599,10 +602,8 @@ async function selectTable(tableName: string) {
             <div class="text-xs text-gray-600 dark:text-gray-400">
               <template v-if="isFileTarget"> {{ selectedTable }}.{{ target.type }} </template>
               <template v-else>
-                {{ stream.targetDatabase }}
-                <span v-if="stream.targetSchema && stream.targetSchema !== 'public'">
-                  / {{ stream.targetSchema }}
-                </span>
+                {{ targetDatabase }}
+                <span v-if="targetSchema && targetSchema !== 'public'"> / {{ targetSchema }} </span>
                 / {{ selectedTable }}
               </template>
             </div>
@@ -613,7 +614,7 @@ async function selectTable(tableName: string) {
         <div class="flex-1 overflow-auto p-4">
           <!-- Database Target -->
           <div
-            v-if="!isFileTarget && targetTableMeta && stream.targetDatabase"
+            v-if="!isFileTarget && targetTableMeta && targetDatabase"
             class="h-full transition-all duration-300"
             :class="{ 'ring-2 ring-blue-400 ring-opacity-50': syncFlashTarget }"
           >
@@ -621,7 +622,7 @@ async function selectTable(tableName: string) {
               ref="targetGridRef"
               :table-meta="targetTableMeta"
               :connection-id="target.id"
-              :database="stream.targetDatabase"
+              :database="targetDatabase"
               :is-view="false"
               :approx-rows="targetApproxRows"
               :object-key="`compare-target-${stream.id}-${selectedTable}`"
