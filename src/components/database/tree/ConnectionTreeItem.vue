@@ -6,7 +6,7 @@ import DatabaseTreeItem from './DatabaseTreeItem.vue'
 import FileEntry from '../FileEntry.vue'
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
 import DatabaseIcon from '@/components/base/DatabaseIcon.vue'
-import { highlightParts as splitHighlight } from '@/utils/highlight'
+import HighlightedText from '@/components/common/HighlightedText.vue'
 import { getConnectionTooltip } from '@/utils/connectionUtils'
 import { useConnectionTreeLogic } from '@/composables/useConnectionTreeLogic'
 import { useFileExplorerStore } from '@/stores/fileExplorer'
@@ -99,8 +99,6 @@ const emit = defineEmits<{
   ): void
   (e: 'request-file-entries', payload: { connectionId: string }): void
 }>()
-
-const highlightParts = (text: string) => splitHighlight(text, searchQuery.value)
 
 function isDatabaseExpanded(dbName: string): boolean {
   const key = `${props.connection.id}:${dbName}`
@@ -215,21 +213,11 @@ const connectionTooltip = computed(() => {
       />
       <div class="flex-1 min-w-0 flex flex-col gap-0.5">
         <div class="flex items-center gap-1.5">
-          <span
+          <HighlightedText
             class="font-semibold truncate text-slate-800 dark:text-gray-100 group-hover:text-teal-900 dark:group-hover:text-teal-300"
-          >
-            <template
-              v-for="(p, i) in highlightParts(connection.name || connection.host || 'Connection')"
-              :key="i"
-            >
-              <span
-                v-if="p.match"
-                class="bg-yellow-200/60 dark:bg-yellow-300/30 rounded px-0.5"
-                v-text="p.text"
-              ></span>
-              <span v-else v-text="p.text"></span>
-            </template>
-          </span>
+            :text="connection.name || connection.host || 'Connection'"
+            :query="searchQuery"
+          />
           <CloudProviderBadge
             v-if="connection.cloud_provider"
             :cloud-provider="connection.cloud_provider"

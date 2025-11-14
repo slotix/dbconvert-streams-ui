@@ -4,7 +4,7 @@ import type { ComputedRef } from 'vue'
 import { ChevronRightIcon, ChevronDownIcon } from '@heroicons/vue/24/outline'
 import SchemaTreeItem from './SchemaTreeItem.vue'
 import ObjectList from './ObjectList.vue'
-import { highlightParts as splitHighlight } from '@/utils/highlight'
+import HighlightedText from '@/components/common/HighlightedText.vue'
 import { useDatabaseOverviewStore } from '@/stores/databaseOverview'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 
@@ -90,8 +90,6 @@ const emit = defineEmits<{
     }
   ): void
 }>()
-
-const highlightParts = (text: string) => splitHighlight(text, searchQuery.value)
 
 // Get table sizes from store (reactive)
 const tableSizes = computed(() => {
@@ -187,16 +185,7 @@ function handleFlatObjectContextMenu(payload: {
         :class="caretClass"
         @click.stop="$emit('toggle-database')"
       />
-      <span class="font-medium">
-        <template v-for="(p, i) in highlightParts(database.name)" :key="i">
-          <span
-            v-if="p.match"
-            class="bg-yellow-200/60 dark:bg-yellow-500/40 rounded px-0.5"
-            v-text="p.text"
-          ></span>
-          <span v-else v-text="p.text"></span>
-        </template>
-      </span>
+      <HighlightedText class="font-medium" :text="database.name" :query="searchQuery" />
     </div>
 
     <div

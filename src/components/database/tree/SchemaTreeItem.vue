@@ -3,7 +3,7 @@ import { inject, computed } from 'vue'
 import type { ComputedRef } from 'vue'
 import { ChevronRightIcon, ChevronDownIcon } from '@heroicons/vue/24/outline'
 import ObjectList from './ObjectList.vue'
-import { highlightParts as splitHighlight } from '@/utils/highlight'
+import HighlightedText from '@/components/common/HighlightedText.vue'
 
 type ObjectType = 'table' | 'view'
 
@@ -72,8 +72,6 @@ const emit = defineEmits<{
   ): void
 }>()
 
-const highlightParts = (text: string) => splitHighlight(text, searchQuery.value)
-
 function handleSchemaContextMenu(event: MouseEvent) {
   emit('contextmenu-schema', {
     event,
@@ -121,16 +119,7 @@ function handleObjectContextMenu(payload: {
       @contextmenu.stop.prevent="handleSchemaContextMenu"
     >
       <component :is="isExpanded ? ChevronDownIcon : ChevronRightIcon" :class="caretClass" />
-      <span class="font-medium">
-        <template v-for="(p, i) in highlightParts(schema.name || 'default')" :key="i">
-          <span
-            v-if="p.match"
-            class="bg-yellow-200/60 dark:bg-yellow-500/40 rounded px-0.5"
-            v-text="p.text"
-          ></span>
-          <span v-else v-text="p.text"></span>
-        </template>
-      </span>
+      <HighlightedText class="font-medium" :text="schema.name || 'default'" :query="searchQuery" />
     </div>
     <div v-if="isExpanded" class="ml-4 border-l border-gray-200 dark:border-gray-700 pl-2">
       <div

@@ -2,7 +2,7 @@
 import { inject, computed } from 'vue'
 import type { ComputedRef } from 'vue'
 import ObjectIcon from '@/components/common/ObjectIcon.vue'
-import { highlightParts as splitHighlight } from '@/utils/highlight'
+import HighlightedText from '@/components/common/HighlightedText.vue'
 import { formatDataSize } from '@/utils/formats'
 
 type ObjectType = 'table' | 'view'
@@ -49,8 +49,6 @@ const emit = defineEmits<{
     payload: { event: MouseEvent; kind: ObjectType; name: string; schema?: string }
   ): void
 }>()
-
-const highlightParts = (text: string) => splitHighlight(text, searchQuery.value)
 
 function handleClick(name: string) {
   emit('click', { name, mode: 'preview' })
@@ -103,16 +101,7 @@ function getTableSize(tableName: string): string | null {
   >
     <div class="flex items-center min-w-0 flex-1">
       <ObjectIcon :object-type="objectType" class="mr-2 flex-shrink-0" />
-      <span class="truncate">
-        <template v-for="(p, i) in highlightParts(item)" :key="i">
-          <span
-            v-if="p.match"
-            class="bg-yellow-200/60 dark:bg-yellow-500/40 rounded px-0.5"
-            v-text="p.text"
-          ></span>
-          <span v-else v-text="p.text"></span>
-        </template>
-      </span>
+      <HighlightedText class="truncate" :text="item" :query="searchQuery" />
     </div>
     <span
       v-if="getTableSize(item)"

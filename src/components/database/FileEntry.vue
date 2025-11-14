@@ -3,8 +3,8 @@ import { computed, inject } from 'vue'
 import type { ComputedRef } from 'vue'
 import type { FileSystemEntry } from '@/api/fileSystem'
 import { getFileFormat, isSupportedFile } from '@/utils/fileFormat'
-import { highlightParts } from '@/utils/highlight'
 import FileIcon from '@/components/common/FileIcon.vue'
+import HighlightedText from '@/components/common/HighlightedText.vue'
 import { SUPPORTED_FILE_FORMATS } from '@/constants/fileFormats'
 
 const props = defineProps<{
@@ -68,16 +68,7 @@ const formatFileSize = (bytes?: number): string => {
     <FileIcon :file-format="fileFormat" :is-directory="entry.type === 'dir'" class="mr-2" />
 
     <!-- File name -->
-    <div class="flex-1 min-w-0 truncate">
-      <template v-for="(p, i) in highlightParts(entry.name, searchQuery)" :key="i">
-        <span
-          v-if="p.match"
-          class="bg-yellow-200/60 dark:bg-yellow-500/40 rounded px-0.5"
-          v-text="p.text"
-        />
-        <span v-else v-text="p.text" />
-      </template>
-    </div>
+    <HighlightedText class="flex-1 min-w-0 truncate" :text="entry.name" :query="searchQuery" />
 
     <!-- File size -->
     <span v-if="entry.size" class="text-xs text-gray-500 dark:text-gray-400 ml-2 shrink-0">

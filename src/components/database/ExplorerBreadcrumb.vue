@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import ObjectIcon from '@/components/common/ObjectIcon.vue'
 import SearchInput from '@/components/common/SearchInput.vue'
-import { highlightParts } from '@/utils/highlight'
+import HighlightedText from '@/components/common/HighlightedText.vue'
 
 type ObjectType = 'table' | 'view'
 
@@ -128,19 +128,11 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
           @click="onPick(o)"
         >
           <ObjectIcon :object-type="o.type" />
-          <span class="text-gray-700 dark:text-gray-300">
-            <template
-              v-for="(p, i) in highlightParts((o.schema ? `${o.schema}.` : '') + o.name, search)"
-              :key="i"
-            >
-              <span
-                v-if="p.match"
-                class="bg-yellow-200/60 dark:bg-yellow-500/40 rounded px-0.5"
-                v-text="p.text"
-              ></span>
-              <span v-else v-text="p.text"></span>
-            </template>
-          </span>
+          <HighlightedText
+            class="text-gray-700 dark:text-gray-300"
+            :text="(o.schema ? `${o.schema}.` : '') + o.name"
+            :query="search"
+          />
         </button>
         <div v-if="!filtered.length" class="text-xs text-gray-500 dark:text-gray-400 px-2 py-3">
           No matches

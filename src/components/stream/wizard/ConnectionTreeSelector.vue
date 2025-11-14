@@ -40,12 +40,11 @@
         />
         <div class="flex-1 min-w-0 flex flex-col gap-0.5">
           <div class="flex items-center gap-1.5">
-            <span class="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
-              <template v-for="(part, i) in getHighlightedText(connection.name)" :key="i">
-                <mark v-if="part.match" class="bg-yellow-200 font-semibold">{{ part.text }}</mark>
-                <span v-else>{{ part.text }}</span>
-              </template>
-            </span>
+            <HighlightedText
+              class="truncate text-sm font-medium text-gray-900 dark:text-gray-100"
+              :text="connection.name || connection.host || 'Connection'"
+              :query="props.searchQuery"
+            />
             <CloudProviderBadge
               v-if="connection.cloud_provider"
               :cloud-provider="connection.cloud_provider"
@@ -154,14 +153,11 @@
                 @click="handleDatabaseSelect(connection, database.name)"
               >
                 <span class="h-4 w-4 shrink-0" />
-                <span class="truncate">
-                  <template v-for="(part, i) in getHighlightedText(database.name)" :key="i">
-                    <mark v-if="part.match" class="bg-yellow-200 font-semibold">
-                      {{ part.text }}
-                    </mark>
-                    <span v-else>{{ part.text }}</span>
-                  </template>
-                </span>
+                <HighlightedText
+                  class="truncate"
+                  :text="database.name"
+                  :query="props.searchQuery"
+                />
                 <span
                   v-if="getTableCount(connection.id, database.name) !== null"
                   class="ml-auto text-xs text-gray-400 dark:text-gray-500"
@@ -181,12 +177,12 @@
 import { ref, computed, watch, type Ref } from 'vue'
 import { ChevronRightIcon, ChevronDownIcon } from '@heroicons/vue/24/outline'
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
+import HighlightedText from '@/components/common/HighlightedText.vue'
 import DatabaseIcon from '@/components/base/DatabaseIcon.vue'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { useFileExplorerStore } from '@/stores/fileExplorer'
 import { useConnectionsStore } from '@/stores/connections'
 import { normalizeConnectionType, getConnectionTooltip } from '@/utils/connectionUtils'
-import { highlightParts, type HighlightPart } from '@/utils/highlight'
 import type { Connection } from '@/types/connections'
 
 interface Props {
@@ -277,10 +273,6 @@ function getFileLoadingState(connectionId: string): boolean {
 
 function getFileError(connectionId: string): string {
   return fileExplorerStore.getError(connectionId) || ''
-}
-
-function getHighlightedText(text: string): HighlightPart[] {
-  return highlightParts(text, props.searchQuery || '')
 }
 
 function refreshFileEntries(connectionId: string) {

@@ -118,7 +118,11 @@
                       :for="`table-${table.name}`"
                       class="cursor-pointer flex-1 text-gray-900 dark:text-gray-100"
                     >
-                      {{ getTableDisplayName(table.name) }}
+                      <HighlightedText
+                        class="block truncate"
+                        :text="getTableDisplayName(table.name)"
+                        :query="searchQuery"
+                      />
                     </label>
                   </div>
                   <button
@@ -183,6 +187,7 @@ import { useStreamsStore, defaultStreamConfigOptions } from '@/stores/streamConf
 import { useCommonStore } from '@/stores/common'
 import { useConnectionsStore } from '@/stores/connections'
 import Pagination from '@/components/common/Pagination.vue'
+import HighlightedText from '@/components/common/HighlightedText.vue'
 import TableSettings from './TableSettings.vue'
 import FormInput from '@/components/base/FormInput.vue'
 import { ChevronRightIcon, ChevronDownIcon, TableCellsIcon } from '@heroicons/vue/24/outline'
