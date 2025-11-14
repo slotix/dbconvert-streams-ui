@@ -1,15 +1,15 @@
 <template>
   <div class="flex flex-col gap-6">
     <!-- Split Pane Container -->
-    <div class="grid grid-cols-2 gap-4 h-[700px]">
+    <div class="grid gap-4 grid-cols-1 lg:grid-cols-2 lg:h-[700px]">
       <!-- Source Tree (Left) - Sky Blue Theme -->
       <div
-        class="relative rounded-xl bg-linear-to-br from-sky-50 to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-850 overflow-hidden flex flex-col border border-gray-200 dark:border-gray-800 shadow-sm dark:shadow-gray-900/30"
+        class="relative rounded-xl bg-linear-to-br from-sky-50 to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-850 overflow-hidden flex flex-col border border-gray-200 dark:border-gray-800 shadow-sm dark:shadow-gray-900/30 h-full"
       >
         <div
           class="px-4 py-3 border-b border-blue-200 dark:border-blue-800/60 bg-gradient-to-br from-blue-50 via-blue-100 to-blue-50 dark:from-blue-900/20 dark:via-blue-900/10 dark:to-blue-900/5 relative overflow-hidden"
         >
-          <div class="flex items-center justify-between gap-3">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div class="flex items-center gap-3 min-w-0">
               <div class="flex-shrink-0">
                 <img
@@ -61,12 +61,12 @@
 
       <!-- Target Tree (Right) - Emerald Theme -->
       <div
-        class="relative rounded-xl bg-linear-to-br from-teal-50 to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-850 overflow-hidden flex flex-col border border-gray-200 dark:border-gray-800 shadow-sm dark:shadow-gray-900/30"
+        class="relative rounded-xl bg-linear-to-br from-teal-50 to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-850 overflow-hidden flex flex-col border border-gray-200 dark:border-gray-800 shadow-sm dark:shadow-gray-900/30 h-full"
       >
         <div
           class="px-4 py-3 border-b border-teal-200 dark:border-teal-800/60 bg-gradient-to-br from-teal-50 via-teal-100 to-teal-50 dark:from-teal-900/20 dark:via-teal-900/10 dark:to-teal-900/5 relative overflow-hidden"
         >
-          <div class="flex items-center justify-between gap-3">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div class="flex items-center gap-3 min-w-0">
               <div class="flex-shrink-0">
                 <img
