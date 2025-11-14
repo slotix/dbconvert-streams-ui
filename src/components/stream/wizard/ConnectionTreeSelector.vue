@@ -10,7 +10,7 @@
     <div
       v-for="connection in connections"
       :key="connection.id"
-      class="rounded-lg transition-all duration-200"
+      class="relative rounded-lg transition-all duration-200 overflow-hidden"
       :class="connectionCardClass(connection.id)"
     >
       <button
@@ -30,13 +30,13 @@
       >
         <component
           :is="isConnectionExpanded(connection.id) ? ChevronDownIcon : ChevronRightIcon"
-          class="h-4 w-4 shrink-0 text-gray-400 dark:text-gray-500 mt-0.5"
+          class="h-4 w-4 shrink-0 text-gray-400 dark:text-gray-500 mt-3"
         />
         <DatabaseIcon
           :db-type="connection.type || ''"
           :logo-src="getLogoSrc(connection)"
-          size="SM"
-          container-class="!p-1"
+          size="LG"
+          container-class="!p-1.5"
         />
         <div class="flex-1 min-w-0 flex flex-col gap-0.5">
           <div class="flex items-center gap-1.5">
@@ -148,7 +148,7 @@
             <div v-for="database in getDatabases(connection.id)" :key="database.name" class="px-2">
               <button
                 type="button"
-                class="flex w-full items-center gap-3 rounded-md px-2 py-1.5 text-sm transition-colors"
+                class="relative flex w-full items-center gap-3 rounded-md px-2 py-1.5 text-sm transition-colors"
                 :class="databaseRowClass(connection.id, database.name)"
                 @click="handleDatabaseSelect(connection, database.name)"
               >
@@ -292,7 +292,8 @@ function connectionSubtitle(connection: Connection): string | null {
 const connectionTooltip = getConnectionTooltip
 
 function connectionCardClass(connectionId: string): string {
-  const base = 'bg-white/50 dark:bg-gray-900/20 hover:bg-gray-50 dark:hover:bg-gray-800/50'
+  const base =
+    'hover:border-gray-200/60 dark:hover:border-gray-700/60 transition-colors bg-transparent'
   if (props.selectedConnectionId !== connectionId) {
     return base
   }
@@ -304,10 +305,10 @@ function connectionCardClass(connectionId: string): string {
 
   const highlight =
     props.mode === 'source'
-      ? 'bg-sky-50 dark:bg-sky-900/30 ring-1 ring-sky-200 dark:ring-sky-500/40'
-      : 'bg-emerald-50 dark:bg-emerald-900/30 ring-1 ring-emerald-200 dark:ring-emerald-500/40'
+      ? 'ring-1 ring-sky-200 dark:ring-gray-600'
+      : 'ring-1 ring-emerald-200 dark:ring-gray-600'
 
-  return `${highlight}`
+  return `${base} ${highlight}`
 }
 
 function connectionHeaderClass(connectionId: string): string {
@@ -321,22 +322,22 @@ function connectionHeaderClass(connectionId: string): string {
   }
 
   return props.mode === 'source'
-    ? 'bg-transparent text-sky-700 dark:text-sky-200 font-semibold'
-    : 'bg-transparent text-emerald-700 dark:text-emerald-200 font-semibold'
+    ? 'bg-transparent text-sky-200 dark:text-sky-200 font-semibold'
+    : 'bg-transparent text-emerald-200 dark:text-emerald-200 font-semibold'
 }
 
 function filePathClass(connectionId: string): string {
   const isSelected = props.selectedConnectionId === connectionId
 
   if (!isSelected) {
-    return 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800/50 bg-white/40 dark:bg-gray-900/20'
+    return 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800/50 bg-transparent'
   }
 
-  // Selected file path: sky blue for source, emerald for target - enhanced for color-blind accessibility
+  // Selected file path: border-only accent to keep list tidy
   if (props.mode === 'source') {
-    return 'bg-sky-100 dark:bg-sky-400/30 text-sky-900 dark:text-sky-100 font-medium'
+    return 'bg-transparent text-sky-900 dark:text-sky-100 font-medium ring-1 ring-sky-400/30 border border-sky-400/40'
   } else {
-    return 'bg-emerald-100 dark:bg-emerald-400/30 text-emerald-900 dark:text-emerald-100 font-medium'
+    return 'bg-transparent text-emerald-900 dark:text-emerald-100 font-medium ring-1 ring-emerald-400/30 border border-emerald-400/40'
   }
 }
 
@@ -348,11 +349,11 @@ function databaseRowClass(connectionId: string, database: string): string {
     return 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800/50'
   }
 
-  // Selected database: sky blue for source, emerald for target - enhanced for color-blind accessibility
+  // Selected database: border highlights source vs target without extra fills
   if (props.mode === 'source') {
-    return 'bg-sky-100 dark:bg-sky-400/30 text-sky-900 dark:text-sky-100 font-medium'
+    return 'bg-gradient-to-r from-sky-100 via-transparent to-transparent dark:from-sky-500/10 text-gray-700 dark:text-gray-100 font-medium ring-1 ring-sky-200 dark:ring-sky-400/20 pl-2'
   } else {
-    return 'bg-emerald-100 dark:bg-emerald-400/30 text-emerald-900 dark:text-emerald-100 font-medium'
+    return 'bg-gradient-to-r from-emerald-100 via-transparent to-transparent dark:from-emerald-500/10 text-gray-700 dark:text-gray-100 font-medium ring-1 ring-emerald-200 dark:ring-emerald-400/20 pl-2'
   }
 }
 

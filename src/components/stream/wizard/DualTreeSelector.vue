@@ -4,7 +4,7 @@
     <div class="grid grid-cols-2 gap-4 h-[700px]">
       <!-- Source Tree (Left) - Sky Blue Theme -->
       <div
-        class="relative rounded-xl bg-linear-to-br from-sky-50 to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-850 overflow-hidden flex flex-col border border-sky-200 dark:border-sky-400/40 shadow-sm dark:shadow-gray-900/30"
+        class="relative rounded-xl bg-linear-to-br from-sky-50 to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-850 overflow-hidden flex flex-col border border-gray-200 dark:border-gray-800 shadow-sm dark:shadow-gray-900/30"
       >
         <div
           class="px-4 py-2 border-b border-sky-100 dark:border-sky-400/30 bg-linear-to-r from-sky-50 to-white dark:from-gray-900 dark:to-gray-900/60"
@@ -47,7 +47,7 @@
 
       <!-- Target Tree (Right) - Emerald Theme -->
       <div
-        class="relative rounded-xl bg-linear-to-br from-emerald-50 to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-850 overflow-hidden flex flex-col border border-emerald-200 dark:border-emerald-400/40 shadow-sm dark:shadow-gray-900/30"
+        class="relative rounded-xl bg-linear-to-br from-emerald-50 to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-850 overflow-hidden flex flex-col border border-gray-200 dark:border-gray-800 shadow-sm dark:shadow-gray-900/30"
       >
         <div
           class="px-4 py-2 border-b border-emerald-100 dark:border-emerald-400/30 bg-linear-to-r from-emerald-50 to-white dark:from-gray-900 dark:to-gray-900/60"
