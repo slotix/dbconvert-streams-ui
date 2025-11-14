@@ -293,7 +293,7 @@ const connectionTooltip = getConnectionTooltip
 
 function connectionCardClass(connectionId: string): string {
   const base =
-    'hover:border-gray-200/60 dark:hover:border-gray-700/60 transition-colors bg-transparent'
+    'border border-transparent hover:border-gray-200/60 dark:hover:border-gray-700/60 transition-all duration-200 bg-transparent'
   if (props.selectedConnectionId !== connectionId) {
     return base
   }
@@ -303,12 +303,15 @@ function connectionCardClass(connectionId: string): string {
     return base
   }
 
-  const highlight =
-    props.mode === 'source'
-      ? 'ring-1 ring-sky-200 dark:ring-gray-600'
-      : 'ring-1 ring-emerald-200 dark:ring-gray-600'
+  if (props.mode === 'source') {
+    const sourceHighlight =
+      'bg-gradient-to-r from-blue-50/90 via-blue-100/70 to-white dark:from-blue-900/40 dark:via-blue-900/20 dark:to-transparent border-blue-200/80 dark:border-blue-700/60 ring-1 ring-blue-300/60 dark:ring-blue-500/30 shadow-lg shadow-blue-900/10 dark:shadow-blue-900/40'
+    return `${base} ${sourceHighlight}`
+  }
 
-  return `${base} ${highlight}`
+  const targetHighlight =
+    'bg-gradient-to-r from-teal-50/90 via-teal-100/70 to-white dark:from-teal-900/40 dark:via-teal-900/20 dark:to-transparent border-teal-200/80 dark:border-teal-700/60 ring-1 ring-teal-300/60 dark:ring-teal-500/30 shadow-lg shadow-emerald-900/10 dark:shadow-emerald-900/40'
+  return `${base} ${targetHighlight}`
 }
 
 function connectionHeaderClass(connectionId: string): string {
@@ -322,8 +325,8 @@ function connectionHeaderClass(connectionId: string): string {
   }
 
   return props.mode === 'source'
-    ? 'bg-transparent text-sky-200 dark:text-sky-200 font-semibold'
-    : 'bg-transparent text-emerald-200 dark:text-emerald-200 font-semibold'
+    ? 'bg-transparent text-blue-800 dark:text-blue-100 font-semibold'
+    : 'bg-transparent text-teal-700 dark:text-teal-100 font-semibold'
 }
 
 function filePathClass(connectionId: string): string {
@@ -351,9 +354,9 @@ function databaseRowClass(connectionId: string, database: string): string {
 
   // Selected database: border highlights source vs target without extra fills
   if (props.mode === 'source') {
-    return 'bg-gradient-to-r from-sky-100 via-transparent to-transparent dark:from-sky-500/10 text-gray-700 dark:text-gray-100 font-medium ring-1 ring-sky-200 dark:ring-sky-400/20 pl-2'
+    return 'bg-gradient-to-r from-blue-50 via-blue-100/60 to-transparent dark:from-blue-900/30 dark:via-blue-900/15 dark:to-transparent text-blue-900 dark:text-blue-100 font-semibold ring-1 ring-blue-200 dark:ring-blue-500/30 border border-blue-100/70 dark:border-blue-800/40 pl-2 shadow-inner shadow-blue-900/5'
   } else {
-    return 'bg-gradient-to-r from-emerald-100 via-transparent to-transparent dark:from-emerald-500/10 text-gray-700 dark:text-gray-100 font-medium ring-1 ring-emerald-200 dark:ring-emerald-400/20 pl-2'
+    return 'bg-gradient-to-r from-teal-50 via-teal-100/60 to-transparent dark:from-teal-900/30 dark:via-teal-900/15 dark:to-transparent text-teal-900 dark:text-teal-100 font-semibold ring-1 ring-teal-200 dark:ring-teal-500/30 border border-teal-100/70 dark:border-teal-800/40 pl-2 shadow-inner shadow-emerald-900/5'
   }
 }
 

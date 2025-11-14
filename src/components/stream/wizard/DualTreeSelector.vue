@@ -7,19 +7,32 @@
         class="relative rounded-xl bg-linear-to-br from-sky-50 to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-850 overflow-hidden flex flex-col border border-gray-200 dark:border-gray-800 shadow-sm dark:shadow-gray-900/30"
       >
         <div
-          class="px-4 py-2 border-b border-sky-100 dark:border-sky-400/30 bg-linear-to-r from-sky-50 to-white dark:from-gray-900 dark:to-gray-900/60"
+          class="px-4 py-3 border-b border-blue-200 dark:border-blue-800/60 bg-gradient-to-br from-blue-50 via-blue-100 to-blue-50 dark:from-blue-900/20 dark:via-blue-900/10 dark:to-blue-900/5 relative overflow-hidden"
         >
-          <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100 flex items-center">
-            <img src="/images/steps/source-step.svg" alt="Source" class="w-6 h-6 mr-2" />
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="flex-shrink-0">
+                <img
+                  src="/images/steps/source-step.svg"
+                  alt="Source"
+                  class="w-9 h-9 drop-shadow-sm"
+                />
+              </div>
+              <div class="min-w-0">
+                <h3 class="text-base font-semibold text-blue-700 dark:text-blue-200 leading-tight">
+                  Source Connection
+                </h3>
+                <p class="text-xs text-blue-700/80 dark:text-blue-100/80 font-medium truncate">
+                  Select where to read data from
+                </p>
+              </div>
+            </div>
             <span
-              class="bg-linear-to-r from-sky-600 to-sky-500 dark:from-sky-400 dark:to-sky-300 bg-clip-text text-transparent"
+              class="inline-flex items-center rounded-full border border-blue-200 dark:border-blue-700 px-2.5 py-0.5 text-xs font-semibold text-blue-700 dark:text-blue-200 bg-white/70 dark:bg-blue-950/30 shadow-sm whitespace-nowrap"
             >
-              Source Connection
+              Data Producer
             </span>
-          </h3>
-          <p class="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
-            Select where to read data from
-          </p>
+          </div>
         </div>
 
         <!-- Source Filters -->
@@ -47,22 +60,35 @@
 
       <!-- Target Tree (Right) - Emerald Theme -->
       <div
-        class="relative rounded-xl bg-linear-to-br from-emerald-50 to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-850 overflow-hidden flex flex-col border border-gray-200 dark:border-gray-800 shadow-sm dark:shadow-gray-900/30"
+        class="relative rounded-xl bg-linear-to-br from-teal-50 to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-850 overflow-hidden flex flex-col border border-gray-200 dark:border-gray-800 shadow-sm dark:shadow-gray-900/30"
       >
         <div
-          class="px-4 py-2 border-b border-emerald-100 dark:border-emerald-400/30 bg-linear-to-r from-emerald-50 to-white dark:from-gray-900 dark:to-gray-900/60"
+          class="px-4 py-3 border-b border-teal-200 dark:border-teal-800/60 bg-gradient-to-br from-teal-50 via-teal-100 to-teal-50 dark:from-teal-900/20 dark:via-teal-900/10 dark:to-teal-900/5 relative overflow-hidden"
         >
-          <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100 flex items-center">
-            <img src="/images/steps/target-step.svg" alt="Target" class="w-6 h-6 mr-2" />
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="flex-shrink-0">
+                <img
+                  src="/images/steps/target-step.svg"
+                  alt="Target"
+                  class="w-9 h-9 drop-shadow-sm"
+                />
+              </div>
+              <div class="min-w-0">
+                <h3 class="text-base font-semibold text-teal-700 dark:text-teal-200 leading-tight">
+                  Target Connection
+                </h3>
+                <p class="text-xs text-teal-700/80 dark:text-teal-100/80 font-medium truncate">
+                  Select where to write data to
+                </p>
+              </div>
+            </div>
             <span
-              class="bg-linear-to-r from-emerald-600 to-emerald-500 dark:from-emerald-400 dark:to-emerald-300 bg-clip-text text-transparent"
+              class="inline-flex items-center rounded-full border border-teal-200 dark:border-teal-700 px-2.5 py-0.5 text-xs font-semibold text-teal-700 dark:text-teal-200 bg-white/70 dark:bg-teal-950/30 shadow-sm whitespace-nowrap"
             >
-              Target Connection
+              Data Consumers
             </span>
-          </h3>
-          <p class="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
-            Select where to write data to
-          </p>
+          </div>
         </div>
 
         <!-- Target Filters -->
@@ -98,19 +124,19 @@
         <div class="flex items-center gap-2 flex-1">
           <!-- Source Chip - Sky Blue -->
           <div
-            class="bg-sky-50 dark:bg-sky-500/10 border border-sky-200 dark:border-sky-400/40 rounded-lg px-3 py-1.5 text-sm shadow-sm dark:shadow-gray-900/30"
+            class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-600/60 rounded-lg px-3 py-1.5 text-sm shadow-sm shadow-blue-900/10 dark:shadow-blue-900/40"
           >
-            <span class="font-semibold text-sky-600 dark:text-sky-300">Source:</span>
+            <span class="font-semibold text-blue-700 dark:text-blue-200">Source:</span>
             <span
               v-if="sourceConnectionId"
-              class="text-slate-700 dark:text-gray-200 ml-1 font-medium"
+              class="text-blue-900 dark:text-blue-100 ml-1 font-medium"
             >
               {{ getConnectionName(sourceConnectionId) }}
-              <span v-if="sourceDatabase" class="text-slate-600 dark:text-gray-400">
+              <span v-if="sourceDatabase" class="text-blue-600 dark:text-blue-300">
                 / {{ sourceDatabase }}
               </span>
             </span>
-            <span v-else class="text-gray-500 dark:text-gray-400 ml-1 italic">Not selected</span>
+            <span v-else class="text-blue-500/80 dark:text-blue-300/70 ml-1 italic">Not selected</span>
           </div>
 
           <!-- Arrow - Sky Blue to Emerald Gradient -->
@@ -131,19 +157,19 @@
 
           <!-- Target Chip - Emerald -->
           <div
-            class="bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-400/40 rounded-lg px-3 py-1.5 text-sm shadow-sm dark:shadow-gray-900/30"
+            class="bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-600/60 rounded-lg px-3 py-1.5 text-sm shadow-sm shadow-emerald-900/10 dark:shadow-emerald-900/40"
           >
-            <span class="font-semibold text-emerald-600 dark:text-emerald-300">Target:</span>
+            <span class="font-semibold text-teal-700 dark:text-teal-200">Target:</span>
             <span
               v-if="targetConnectionId"
-              class="text-slate-700 dark:text-gray-200 ml-1 font-medium"
+              class="text-teal-900 dark:text-teal-100 ml-1 font-medium"
             >
               {{ getConnectionName(targetConnectionId) }}
-              <span v-if="targetDatabase" class="text-slate-600 dark:text-gray-400">
+              <span v-if="targetDatabase" class="text-teal-600 dark:text-teal-300">
                 / {{ targetDatabase }}
               </span>
             </span>
-            <span v-else class="text-gray-500 dark:text-gray-400 ml-1 italic">Not selected</span>
+            <span v-else class="text-teal-500/80 dark:text-teal-300/70 ml-1 italic">Not selected</span>
           </div>
         </div>
 
