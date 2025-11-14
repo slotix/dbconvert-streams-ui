@@ -40,10 +40,12 @@ onMounted(() => {
     watch(
       () => props.table,
       (newTable) => {
-        if (currentStreamConfig && currentStreamConfig.tables) {
-          const tableIndex = currentStreamConfig.tables.findIndex((t) => t.name === newTable.name)
+        if (currentStreamConfig && currentStreamConfig.source?.tables) {
+          const tableIndex = currentStreamConfig.source.tables.findIndex(
+            (t) => t.name === newTable.name
+          )
           if (tableIndex !== -1) {
-            currentStreamConfig.tables[tableIndex] = { ...newTable }
+            currentStreamConfig.source.tables[tableIndex] = { ...newTable }
           }
         }
       },
@@ -54,10 +56,10 @@ onMounted(() => {
 const updateStreamSettings = () => {
   if (streamsStore.currentStreamConfig) {
     const stream = streamsStore.currentStreamConfig
-    if (stream.tables) {
-      const tableIndex = stream.tables.findIndex((t) => t.name === props.table.name)
+    if (stream.source?.tables) {
+      const tableIndex = stream.source.tables.findIndex((t) => t.name === props.table.name)
       if (tableIndex !== -1) {
-        stream.tables[tableIndex] = { ...props.table }
+        stream.source.tables[tableIndex] = { ...props.table }
         streamsStore.currentStreamConfig = { ...stream }
       }
     }

@@ -26,18 +26,29 @@ export const defaultStreamConfigOptions: StreamConfig = {
   id: '',
   name: '',
   mode: 'convert',
-  dataBundleSize: 500,
-  reportingIntervals: { source: 3, target: 3 },
-  operations: ['insert', 'update', 'delete'],
-  targetFileFormat: undefined,
-  compressionType: 'zstd',
-  structureOptions: {
-    tables: true,
-    indexes: true,
-    foreignKeys: true
+  reportingInterval: 3,
+  source: {
+    id: '',
+    tables: [],
+    options: {
+      dataBundleSize: 500,
+      operations: ['insert', 'update', 'delete']
+    }
+  },
+  target: {
+    id: '',
+    fileFormat: undefined,
+    subDirectory: '',
+    options: {
+      compressionType: 'zstd',
+      structureOptions: {
+        tables: true,
+        indexes: true,
+        foreignKeys: true
+      }
+    }
   },
   limits: { numberOfEvents: 0, elapsedTime: 0 },
-  tables: [],
   files: []
 }
 
@@ -47,63 +58,152 @@ const defaultTableOptions: Partial<Table> = {
 }
 
 const omitDefaults = (stream: StreamConfig): Partial<StreamConfig> => {
-  const filteredStream: Partial<StreamConfig> = {}
+  const filteredStream: Partial<StreamConfig> = {
+    name: stream.name,
+    mode: stream.mode
+  }
 
-  for (const key in stream) {
-    if (Object.prototype.hasOwnProperty.call(stream, key)) {
-      if (Array.isArray(stream[key]) && stream[key].length === 0) {
-        continue
-      }
-      if (typeof stream[key] === 'object' && stream[key] !== null) {
-        // Special handling for structureOptions
-        if (key === 'structureOptions') {
-          const currentOptions = stream[key] as any
-          const defaultOptions = defaultStreamConfigOptions[key] as any
-          if (JSON.stringify(currentOptions) !== JSON.stringify(defaultOptions)) {
-            filteredStream[key] = stream[key]
+  // Include ID and created if they exist
+  if (stream.id) filteredStream.id = stream.id
+  if (stream.created) filteredStream.created = stream.created
+  if (stream.description) filteredStream.description = stream.description
+
+  // Handle reportingInterval
+  if (
+    stream.reportingInterval &&
+    stream.reportingInterval !== defaultStreamConfigOptions.reportingInterval
+  ) {
+    filteredStream.reportingInterval = stream.reportingInterval
+  }
+
+  // Handle source configuration
+  filteredStream.source = {
+    id: stream.source.id,
+    ...(stream.source.tables &&
+      stream.source.tables.length > 0 && {
+        tables: stream.source.tables.map((table) => {
+          const filteredTable: Partial<Table> = { name: table.name }
+
+          // Only delete query if it's empty/default for convert mode
+          // For CDC mode, queries are not supported so always delete
+          if (stream.mode === 'convert' && table.query && table.query !== '') {
+            filteredTable.query = table.query
           }
-          continue
-        }
-        if (JSON.stringify(stream[key]) === JSON.stringify(defaultStreamConfigOptions[key])) {
-          continue
-        }
-      }
-      if (stream[key] !== defaultStreamConfigOptions[key]) {
-        filteredStream[key] = stream[key]
-      }
+
+          return filteredTable as Table
+        })
+      })
+  }
+
+  // Handle source options
+  if (stream.source.options) {
+    const sourceOptions: any = {}
+    const defaultSourceOptions = defaultStreamConfigOptions.source.options!
+
+    if (stream.source.options.dataBundleSize !== defaultSourceOptions.dataBundleSize) {
+      sourceOptions.dataBundleSize = stream.source.options.dataBundleSize
+    }
+    if (stream.mode === 'cdc' && stream.source.options.operations) {
+      sourceOptions.operations = stream.source.options.operations
+    }
+    if (stream.source.options.replicationSlot) {
+      sourceOptions.replicationSlot = stream.source.options.replicationSlot
+    }
+    if (stream.source.options.publicationName) {
+      sourceOptions.publicationName = stream.source.options.publicationName
+    }
+    if (stream.source.options.binlogPosition) {
+      sourceOptions.binlogPosition = stream.source.options.binlogPosition
+    }
+
+    if (Object.keys(sourceOptions).length > 0) {
+      filteredStream.source.options = sourceOptions
     }
   }
 
-  if (stream.mode === 'convert') {
-    delete filteredStream.operations
+  // Handle target configuration
+  filteredStream.target = {
+    id: stream.target.id
   }
 
-  if (stream.tables) {
-    filteredStream.tables = stream.tables.map((table) => {
-      const filteredTable: Partial<Table> = {}
-      for (const key in table) {
-        if (Object.prototype.hasOwnProperty.call(table, key)) {
-          const tableKey = key as keyof Table
-          const defaultValue = defaultTableOptions[tableKey]
+  if (stream.target.fileFormat) {
+    filteredStream.target.fileFormat = stream.target.fileFormat
+  }
+  if (stream.target.subDirectory) {
+    filteredStream.target.subDirectory = stream.target.subDirectory
+  }
 
-          if (table[tableKey] !== defaultValue) {
-            filteredTable[tableKey] = table[tableKey] as any
-          }
-        }
+  // Handle target options
+  if (stream.target.options) {
+    const targetOptions: any = {}
+
+    if (
+      stream.target.options.compressionType &&
+      stream.target.options.compressionType !==
+        defaultStreamConfigOptions.target.options!.compressionType
+    ) {
+      targetOptions.compressionType = stream.target.options.compressionType
+    }
+    if (stream.target.options.structureOptions) {
+      const currentStructOpts = stream.target.options.structureOptions
+      const defaultStructOpts = defaultStreamConfigOptions.target.options!.structureOptions!
+      if (JSON.stringify(currentStructOpts) !== JSON.stringify(defaultStructOpts)) {
+        targetOptions.structureOptions = currentStructOpts
       }
+    }
+    if (stream.target.options.skipData !== undefined) {
+      targetOptions.skipData = stream.target.options.skipData
+    }
+    if (stream.target.options.useDuckDBWriter !== undefined) {
+      targetOptions.useDuckDBWriter = stream.target.options.useDuckDBWriter
+    }
+    if (stream.target.options.parquetConfig) {
+      targetOptions.parquetConfig = stream.target.options.parquetConfig
+    }
+    if (stream.target.options.csvConfig) {
+      targetOptions.csvConfig = stream.target.options.csvConfig
+    }
+    if (stream.target.options.snowflakeConfig) {
+      targetOptions.snowflakeConfig = stream.target.options.snowflakeConfig
+    }
+    if (stream.target.options.s3UploadConfig) {
+      targetOptions.s3UploadConfig = stream.target.options.s3UploadConfig
+    }
+    if (stream.target.options.performanceConfig) {
+      targetOptions.performanceConfig = stream.target.options.performanceConfig
+    }
+    if (stream.target.options.workerPoolSize) {
+      targetOptions.workerPoolSize = stream.target.options.workerPoolSize
+    }
+    if (stream.target.options.stagingDirectory) {
+      targetOptions.stagingDirectory = stream.target.options.stagingDirectory
+    }
 
-      // Only delete query if it's empty/default for convert mode
-      // For CDC mode, queries are not supported so always delete
-      if (stream.mode === 'convert') {
-        if (!filteredTable.query || filteredTable.query === '') {
-          delete filteredTable.query
-        }
-      } else if (stream.mode === 'cdc') {
-        delete filteredTable.query
-      }
+    if (Object.keys(targetOptions).length > 0) {
+      filteredStream.target.options = targetOptions
+    }
+  }
 
-      return filteredTable as Table
-    })
+  // Handle limits
+  if (stream.limits && (stream.limits.numberOfEvents || stream.limits.elapsedTime)) {
+    filteredStream.limits = stream.limits
+  }
+
+  // Persist database/schema selections for wizard prefill
+  if (stream.sourceDatabase) {
+    filteredStream.sourceDatabase = stream.sourceDatabase
+  }
+  if (stream.targetDatabase) {
+    filteredStream.targetDatabase = stream.targetDatabase
+  }
+  if (stream.sourceSchema) {
+    filteredStream.sourceSchema = stream.sourceSchema
+  }
+  if (stream.targetSchema) {
+    filteredStream.targetSchema = stream.targetSchema
+  }
+  if (stream.targetPath) {
+    filteredStream.targetPath = stream.targetPath
   }
 
   return filteredStream
@@ -142,7 +242,12 @@ export const useStreamsStore = defineStore('streams', {
     streamsByType(state: State): StreamConfig[] {
       return state.streamConfigs
         .filter((el) => {
-          return el.type && el.type.toLowerCase().indexOf(state.currentFilter.toLowerCase()) > -1
+          // Filter by stream name or mode
+          const filterLower = state.currentFilter.toLowerCase()
+          return (
+            el.name?.toLowerCase().includes(filterLower) ||
+            el.mode?.toLowerCase().includes(filterLower)
+          )
         })
         .reverse()
     },
@@ -157,28 +262,28 @@ export const useStreamsStore = defineStore('streams', {
 
       if (this.currentStreamConfig && !this.currentStreamConfig.name) {
         this.currentStreamConfig.name = this.generateDefaultStreamConfigName(
-          this.currentStreamConfig.source || '',
-          this.currentStreamConfig.target || '',
-          this.currentStreamConfig.tables || []
+          this.currentStreamConfig.source.id || '',
+          this.currentStreamConfig.target.id || '',
+          this.currentStreamConfig.source.tables || []
         )
       }
     },
     updateSource(sourceId: string) {
       if (this.currentStreamConfig) {
-        this.currentStreamConfig.source = sourceId
+        this.currentStreamConfig.source.id = sourceId
       }
     },
     updateTarget(targetId: string) {
       if (this.currentStreamConfig) {
-        this.currentStreamConfig.target = targetId
+        this.currentStreamConfig.target.id = targetId
         const connectionsStore = useConnectionsStore()
         const connection = connectionsStore.connectionByID(targetId)
         if (connection && connection.type?.toLowerCase().includes('file')) {
-          if (!this.currentStreamConfig.targetFileFormat) {
-            this.currentStreamConfig.targetFileFormat = 'csv'
+          if (!this.currentStreamConfig.target.fileFormat) {
+            this.currentStreamConfig.target.fileFormat = 'csv'
           }
         } else {
-          delete this.currentStreamConfig.targetFileFormat
+          delete this.currentStreamConfig.target.fileFormat
         }
       }
     },
@@ -194,16 +299,18 @@ export const useStreamsStore = defineStore('streams', {
         this.prepareStreamData()
         if (!this.currentStreamConfig?.name) {
           this.currentStreamConfig!.name = this.generateDefaultStreamConfigName(
-            this.currentStreamConfig?.source || '',
-            this.currentStreamConfig?.target || '',
-            this.currentStreamConfig?.tables || [],
-            this.currentStreamConfig?.sourceDatabase,
-            this.currentStreamConfig?.targetDatabase,
-            this.currentStreamConfig?.targetFileFormat
+            this.currentStreamConfig?.source.id || '',
+            this.currentStreamConfig?.target.id || '',
+            this.currentStreamConfig?.source.tables || [],
+            (this.currentStreamConfig as any)?.sourceDatabase,
+            (this.currentStreamConfig as any)?.targetDatabase,
+            this.currentStreamConfig?.target.fileFormat
           )
         }
 
-        const stream = await api.createStream(this.currentStreamConfig as StreamConfig)
+        const stream = await api.createStream(
+          this.currentStreamConfig as unknown as Record<string, unknown>
+        )
 
         this.resetCurrentStream()
         await this.refreshStreams()
@@ -218,23 +325,11 @@ export const useStreamsStore = defineStore('streams', {
     prepareStreamData() {
       if (this.currentStreamConfig) {
         const refinedStream = omitDefaults(this.currentStreamConfig)
-        // Create a new object excluding default values
-        const newStream: StreamConfig = {
-          ...this.currentStreamConfig,
-          ...refinedStream,
-          operations:
-            this.currentStreamConfig.mode === 'convert' ? [] : this.currentStreamConfig.operations
-        }
-
-        // Exclude default operations if mode is convert
-        if (newStream.mode === 'convert' && (newStream.operations?.length ?? 0) === 0) {
-          delete newStream.operations
-        }
 
         // Remove temporary UI-only state property before saving
-        delete newStream._allTablesWithState
+        delete (refinedStream as any)._allTablesWithState
 
-        this.currentStreamConfig = newStream
+        this.currentStreamConfig = refinedStream as StreamConfig
       }
     },
     async refreshStreams() {
@@ -312,9 +407,27 @@ export const useStreamsStore = defineStore('streams', {
         ...defaultStreamConfigOptions,
         id: '',
         name: '',
-        source: '',
-        target: '',
-        tables: []
+        source: {
+          id: '',
+          tables: [],
+          options: {
+            dataBundleSize: 500,
+            operations: ['insert', 'update', 'delete']
+          }
+        },
+        target: {
+          id: '',
+          fileFormat: undefined,
+          subDirectory: '',
+          options: {
+            compressionType: 'zstd',
+            structureOptions: {
+              tables: true,
+              indexes: true,
+              foreignKeys: true
+            }
+          }
+        }
       }
     },
     async clearStreams() {

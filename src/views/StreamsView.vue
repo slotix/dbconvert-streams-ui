@@ -44,15 +44,27 @@
     <!-- Main Content -->
     <main class="mx-auto py-4 overflow-x-hidden">
       <!-- No streams (show regardless of backend connection status) -->
-      <div v-if="streamsCount() === 0" class="text-center py-12">
-        <p class="text-gray-500 dark:text-gray-400">
-          No stream configurations yet. Create your first configuration to get started.
+      <div
+        v-if="streamsCount() === 0"
+        class="flex flex-col items-center justify-center py-16 px-4 text-center"
+      >
+        <div
+          class="bg-linear-to-br from-blue-50 to-teal-50 dark:from-blue-900/20 dark:to-teal-900/20 rounded-full p-6 mb-6"
+        >
+          <ArrowPathIcon class="h-16 w-16 text-blue-500 dark:text-blue-400" />
+        </div>
+        <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
+          No Stream Configurations Yet
+        </h3>
+        <p class="text-gray-500 dark:text-gray-400 mb-6 max-w-md">
+          Kick things off by creating your first stream configuration. Choose a source and target
+          connection to begin streaming data.
         </p>
         <router-link
           :to="{ name: 'CreateStream' }"
-          class="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
+          class="inline-flex items-center gap-2 px-6 py-3 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-linear-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 dark:from-blue-500 dark:to-teal-500 dark:hover:from-blue-600 dark:hover:to-teal-600 transition-all duration-200 hover:shadow-md hover:scale-105"
         >
-          <PlusIcon class="mr-2 h-5 w-5" />
+          <PlusIcon class="h-5 w-5" />
           Create Stream Configuration
         </router-link>
       </div>
@@ -157,8 +169,8 @@
             <div v-if="selectedStreamId && selectedStream" class="h-full">
               <StreamDetailsPanel
                 :stream="selectedStream"
-                :source="connectionByID(selectedStream.source)"
-                :target="connectionByID(selectedStream.target)"
+                :source="connectionByID(selectedStream.source?.id)"
+                :target="connectionByID(selectedStream.target?.id)"
                 @stream-deleted="handleStreamDeletedFromPanel"
               />
             </div>

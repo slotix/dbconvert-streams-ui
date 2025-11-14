@@ -113,8 +113,15 @@ export interface StreamConfig {
   // Legacy file fields - for file browser component compatibility
   files?: FileEntry[]
 
-  // Index signature for potential future extensions
-  [key: string]: unknown
+  // Temporary UI-only fields (not sent to backend)
+  _allTablesWithState?: Table[]
+  sourceDatabase?: string
+  targetDatabase?: string
+  sourceSchema?: string
+  targetSchema?: string
+  targetPath?: string
+  structureOptions?: TargetOptions['structureOptions']
+  skipData?: boolean
 }
 
 export interface FileEntry {

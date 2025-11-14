@@ -195,7 +195,7 @@ const currentStreamConfig = streamsStore.currentStreamConfig as StreamConfig
 
 // Get the source connection to determine database type
 const sourceConnection = computed(() => {
-  return connectionStore.connections.find((conn) => conn.id === currentStreamConfig.source)
+  return connectionStore.connections.find((conn) => conn.id === currentStreamConfig.source?.id)
 })
 
 const sourceConnectionType = computed(() => {
@@ -203,15 +203,17 @@ const sourceConnectionType = computed(() => {
 })
 
 // Initialize tables from _allTablesWithState if available (preserves unselected tables during navigation)
-// Otherwise, fall back to currentStreamConfig.tables (only selected tables from saved config)
+// Otherwise, fall back to currentStreamConfig.source.tables (only selected tables from saved config)
 const tables = ref<Table[]>(
-  (currentStreamConfig._allTablesWithState || currentStreamConfig.tables)?.map((table: Table) => ({
-    name: table.name,
-    query: table.query,
-    // If using _allTablesWithState, use the explicit selected property
-    // If using currentStreamConfig.tables, mark as selected because backend only stores selected tables
-    selected: currentStreamConfig._allTablesWithState ? table.selected : true
-  })) || []
+  (currentStreamConfig._allTablesWithState || currentStreamConfig.source?.tables)?.map(
+    (table: Table) => ({
+      name: table.name,
+      query: table.query,
+      // If using _allTablesWithState, use the explicit selected property (default false if undefined)
+      // If using currentStreamConfig.source.tables, mark as selected because backend only stores selected tables
+      selected: currentStreamConfig._allTablesWithState ? (table.selected ?? false) : true
+    })
+  ) || []
 )
 
 const searchQuery = ref('')
@@ -429,13 +431,13 @@ const refreshTables = async () => {
   const commonStore = useCommonStore()
   const connectionStore = useConnectionsStore()
   try {
-    if (!currentStreamConfig.source) {
+    if (!currentStreamConfig.source?.id) {
       tables.value = []
       return
     }
     // When editing a stream, use the sourceDatabase from the config if available
     const database = currentStreamConfig.sourceDatabase || undefined
-    const tablesResponse = await connectionStore.getTables(currentStreamConfig.source, database)
+    const tablesResponse = await connectionStore.getTables(currentStreamConfig.source.id, database)
 
     // Create a map of existing selections to preserve state
     // Check both the component's tables ref AND the stream config
@@ -444,7 +446,7 @@ const refreshTables = async () => {
 
     // First, get selections from component state (includes unselected tables)
     tables.value.forEach((table) => {
-      existingSelections.set(table.name, table.selected)
+      existingSelections.set(table.name, table.selected ?? false)
       if (table.query) {
         existingQueries.set(table.name, table.query)
       }
@@ -452,8 +454,8 @@ const refreshTables = async () => {
 
     // Then overlay with stream config (only selected tables, but has authoritative state)
     // Backend only stores selected tables, so mark them as selected
-    if (currentStreamConfig.tables) {
-      currentStreamConfig.tables.forEach((table) => {
+    if (currentStreamConfig.source?.tables) {
+      currentStreamConfig.source.tables.forEach((table) => {
         existingSelections.set(table.name, table.selected ?? true)
         if (table.query) {
           existingQueries.set(table.name, table.query)
@@ -504,10 +506,10 @@ const refreshTables = async () => {
 }
 
 watch(
-  () => currentStreamConfig.source,
-  async (newSource, oldSource) => {
-    // Refresh tables if source changed
-    if (newSource && newSource !== oldSource) {
+  () => currentStreamConfig.source?.id,
+  async (newSourceId, oldSourceId) => {
+    // Refresh tables if source ID changed
+    if (newSourceId && newSourceId !== oldSourceId) {
       await refreshTables()
     }
   },
@@ -537,7 +539,10 @@ watch(
     currentStreamConfig._allTablesWithState = newTables
 
     // Only store selected tables in stream config (for saving/execution)
-    currentStreamConfig.tables = newTables.filter((table) => table.selected)
+    if (!currentStreamConfig.source.tables) {
+      currentStreamConfig.source.tables = []
+    }
+    currentStreamConfig.source.tables = newTables.filter((table) => table.selected)
   },
   { deep: true }
 )

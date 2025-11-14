@@ -88,7 +88,7 @@ export default defineComponent({
         return props.streamConfig.id
       }
       const id = props.streamConfig.id
-      return id.length > 13 ? `${id.slice(0, 6)}...${id.slice(-4)}` : id
+      return id && id.length > 13 ? `${id.slice(0, 6)}...${id.slice(-4)}` : id
     })
 
     return {
@@ -122,7 +122,7 @@ export default defineComponent({
     },
     async deleteStreamConfig() {
       try {
-        await useStreamsStore().deleteStreamConfig(this.streamConfig.id)
+        await useStreamsStore().deleteStreamConfig(this.streamConfig.id!)
         useCommonStore().showNotification('Stream deleted', 'success')
         this.showDeleteConfirm = false
       } catch (e: unknown) {
@@ -137,7 +137,7 @@ export default defineComponent({
     },
     async cloneStreamConfig() {
       try {
-        await useStreamsStore().cloneStreamConfig(this.streamConfig.id)
+        await useStreamsStore().cloneStreamConfig(this.streamConfig.id!)
         await useStreamsStore().refreshStreams()
         useCommonStore().showNotification('Stream cloned', 'success')
       } catch (e: unknown) {
@@ -150,11 +150,11 @@ export default defineComponent({
       }
     },
     selectStream() {
-      useStreamsStore().setCurrentStream(this.streamConfig.id)
+      useStreamsStore().setCurrentStream(this.streamConfig.id!)
     },
     async startStream() {
       try {
-        const streamID = await useStreamsStore().startStream(this.streamConfig.id)
+        const streamID = await useStreamsStore().startStream(this.streamConfig.id!)
         useCommonStore().showNotification('Stream started', 'success')
         useMonitoringStore().setStream(streamID, this.streamConfig)
         useMonitoringStore().requestShowMonitorTab()
@@ -172,7 +172,7 @@ export default defineComponent({
             // Auto-retry after 2 seconds
             setTimeout(async () => {
               try {
-                const streamID = await useStreamsStore().startStream(this.streamConfig.id)
+                const streamID = await useStreamsStore().startStream(this.streamConfig.id!)
                 useCommonStore().showNotification('Stream started', 'success')
                 useMonitoringStore().setStream(streamID, this.streamConfig)
                 useMonitoringStore().requestShowMonitorTab()
@@ -193,7 +193,7 @@ export default defineComponent({
       }
     },
     copyId() {
-      navigator.clipboard.writeText(this.streamConfig.id).then(
+      navigator.clipboard.writeText(this.streamConfig.id!).then(
         () => {
           const commonStore = useCommonStore()
           commonStore.showNotification('Stream ID copied to clipboard', 'success')
@@ -246,24 +246,34 @@ export default defineComponent({
     },
     displayedTables(): string[] {
       const maxDisplayedTables = 5 // Adjust this number as needed
-      if (this.streamConfig && this.streamConfig.tables && this.streamConfig.tables.length) {
-        return this.streamConfig.tables.slice(0, maxDisplayedTables).map((table) => table.name)
+      if (
+        this.streamConfig &&
+        this.streamConfig.source?.tables &&
+        this.streamConfig.source.tables.length
+      ) {
+        return this.streamConfig.source.tables
+          .slice(0, maxDisplayedTables)
+          .map((table) => table.name)
       }
       return []
     },
     remainingTablesCount(): number {
-      if (this.streamConfig && this.streamConfig.tables) {
-        return Math.max(0, this.streamConfig.tables.length - this.displayedTables.length)
+      if (this.streamConfig && this.streamConfig.source?.tables) {
+        return Math.max(0, this.streamConfig.source.tables.length - this.displayedTables.length)
       }
       return 0
     },
     sourceConnectionString(): string {
-      const sourceConnection = useConnectionsStore().connectionByID(this.streamConfig?.source || '')
+      const sourceConnection = useConnectionsStore().connectionByID(
+        this.streamConfig?.source?.id || ''
+      )
       if (!sourceConnection) return ''
       return generateConnectionString(sourceConnection)
     },
     targetConnectionString(): string {
-      const targetConnection = useConnectionsStore().connectionByID(this.streamConfig?.target || '')
+      const targetConnection = useConnectionsStore().connectionByID(
+        this.streamConfig?.target?.id || ''
+      )
       if (!targetConnection) return ''
       return generateConnectionString(targetConnection)
     }

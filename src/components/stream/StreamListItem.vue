@@ -64,10 +64,10 @@
 
       <!-- Table count -->
       <div
-        v-if="stream.tables && stream.tables.length > 0"
+        v-if="stream.source?.tables && stream.source.tables.length > 0"
         class="text-xs text-gray-400 dark:text-gray-600"
       >
-        {{ stream.tables.length }} table{{ stream.tables.length !== 1 ? 's' : '' }}
+        {{ stream.source.tables.length }} table{{ stream.source.tables.length !== 1 ? 's' : '' }}
       </div>
     </div>
 
@@ -278,33 +278,33 @@ const hasHistory = computed(() => {
 })
 
 function selectStream() {
-  emit('select', { streamId: props.stream.id })
+  emit('select', { streamId: props.stream.id! })
 }
 
 function startStream() {
-  emit('start', { streamId: props.stream.id })
+  emit('start', { streamId: props.stream.id! })
 }
 
 function pauseStream() {
-  emit('pause', { streamId: props.stream.id })
+  emit('pause', { streamId: props.stream.id! })
 }
 
 function resumeStream() {
-  emit('resume', { streamId: props.stream.id })
+  emit('resume', { streamId: props.stream.id! })
 }
 
 function cloneStream() {
-  emit('clone', { streamId: props.stream.id })
+  emit('clone', { streamId: props.stream.id! })
 }
 
 function deleteStream() {
-  emit('delete', { streamId: props.stream.id })
+  emit('delete', { streamId: props.stream.id! })
 }
 
 function handleContextMenu(event: MouseEvent) {
   emit('contextmenu', {
     event,
-    streamId: props.stream.id,
+    streamId: props.stream.id!,
     streamName: props.stream.name,
     isRunning: isRunning.value,
     isPaused: isPaused.value,

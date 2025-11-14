@@ -40,8 +40,8 @@
           :key="stream.id"
           :stream="stream"
           :is-selected="selectedStreamId === stream.id"
-          :source="connectionByID(stream.source)"
-          :target="connectionByID(stream.target)"
+          :source="connectionByID(stream.source?.id)"
+          :target="connectionByID(stream.target?.id)"
           @select="handleSelectStream"
           @start="handleStartStream"
           @pause="handlePauseStream"
@@ -212,7 +212,7 @@ async function handleCloneStream(payload: { streamId: string }) {
 }
 
 async function confirmDelete() {
-  if (!pendingDeleteStream.value) return
+  if (!pendingDeleteStream.value?.id) return
 
   try {
     isLoading.value = true

@@ -45,7 +45,7 @@
       <h4 class="text-base font-medium text-gray-900 dark:text-gray-100 mb-4">
         Performance & Monitoring
       </h4>
-      <div class="grid grid-cols-1 gap-6 sm:grid-cols-3">
+      <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
         <!-- Data Bundle Size -->
         <div>
           <label
@@ -70,31 +70,16 @@
           </p>
         </div>
 
-        <!-- Source Reader Reporting Interval -->
+        <!-- Reporting Interval -->
         <div>
           <label
-            for="sourceReaderReportingInterval"
+            for="readerReportingInterval"
             class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >Source Interval (sec)</label
+            >Reporting Interval (sec)</label
           >
           <input
-            id="sourceReaderReportingInterval"
-            v-model="reportingIntervalsSource"
-            type="number"
-            class="block w-full rounded-md border-gray-300 dark:border-gray-700 shadow-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900 focus:border-teal-500 dark:focus:border-teal-400 focus:ring-1 focus:ring-teal-500 dark:focus:ring-teal-400 sm:text-sm"
-          />
-        </div>
-
-        <!-- Target Writers Reporting Interval -->
-        <div>
-          <label
-            for="targetReaderReportingInterval"
-            class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >Target Interval (sec)</label
-          >
-          <input
-            id="targetReaderReportingInterval"
-            v-model="reportingIntervalsTarget"
+            id="readerReportingInterval"
+            v-model="reportingInterval"
             type="number"
             class="block w-full rounded-md border-gray-300 dark:border-gray-700 shadow-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900 focus:border-teal-500 dark:focus:border-teal-400 focus:ring-1 focus:ring-teal-500 dark:focus:ring-teal-400 sm:text-sm"
           />
@@ -190,28 +175,31 @@ const compressionOptions = [
 
 // Check if target is a file connection
 const isFileTarget = computed(() => {
-  const target = currentStreamConfig.target
-  if (!target) return false
-  // Check if it's a file connection (starts with / or file://)
-  if (target.startsWith('/') || target.startsWith('file://')) return true
-  // Or check connection type (only 'files' is valid file connection type now)
-  const conn = connectionsStore.connectionByID(target)
+  const targetId = currentStreamConfig.target?.id
+  if (!targetId) return false
+  // Check connection type (only 'files' is valid file connection type now)
+  const conn = connectionsStore.connectionByID(targetId)
   return conn?.type?.toLowerCase() === 'files'
 })
 
 // File format computed property
 const targetFileFormat = computed({
-  get: () => currentStreamConfig.targetFileFormat || undefined,
+  get: () => currentStreamConfig.target?.fileFormat || undefined,
   set: (value) => {
-    currentStreamConfig.targetFileFormat = value
+    if (currentStreamConfig.target) {
+      currentStreamConfig.target.fileFormat = value
+    }
   }
 })
 
 // Compression type computed property
 const compressionType = computed({
-  get: () => currentStreamConfig.compressionType || 'zstd',
+  get: () => currentStreamConfig.target?.options?.compressionType || 'zstd',
   set: (value) => {
-    currentStreamConfig.compressionType = value
+    if (!currentStreamConfig.target.options) {
+      currentStreamConfig.target.options = {}
+    }
+    currentStreamConfig.target.options.compressionType = value
   }
 })
 
@@ -231,58 +219,71 @@ const compressionDescription = computed(() => {
 
 // DuckDB Writer toggle
 const useDuckDBWriter = computed({
-  get: () => currentStreamConfig.useDuckDBWriter ?? false,
+  get: () => currentStreamConfig.target?.options?.useDuckDBWriter ?? false,
   set: (value) => {
-    currentStreamConfig.useDuckDBWriter = value
+    if (!currentStreamConfig.target.options) {
+      currentStreamConfig.target.options = {}
+    }
+    currentStreamConfig.target.options.useDuckDBWriter = value
   }
 })
 
 const dataBundleSize = computed<number>({
-  get: () => currentStreamConfig.dataBundleSize ?? defaultStreamConfigOptions.dataBundleSize,
+  get: () => {
+    return (
+      currentStreamConfig.source?.options?.dataBundleSize ??
+      defaultStreamConfigOptions.source.options!.dataBundleSize ??
+      500
+    )
+  },
   set: (newValue) => {
     const clampedValue = Math.min(Math.max(newValue, 10), 1000)
-    currentStreamConfig.dataBundleSize = clampedValue
+    if (!currentStreamConfig.source.options) {
+      currentStreamConfig.source.options = {}
+    }
+    currentStreamConfig.source.options.dataBundleSize = clampedValue
   }
 })
 
-const reportingIntervalsSource = computed<number>({
-  get: () =>
-    currentStreamConfig.reportingIntervals?.source ??
-    defaultStreamConfigOptions.reportingIntervals.source,
+// Single reporting interval for both source and target
+const reportingInterval = computed<number>({
+  get: () => {
+    return (
+      currentStreamConfig.reportingInterval ?? defaultStreamConfigOptions.reportingInterval ?? 3
+    )
+  },
   set: (value) => {
-    if (currentStreamConfig.reportingIntervals) {
-      currentStreamConfig.reportingIntervals.source = value
-    }
-  }
-})
-const reportingIntervalsTarget = computed<number>({
-  get: () =>
-    currentStreamConfig.reportingIntervals?.target ??
-    defaultStreamConfigOptions.reportingIntervals.target,
-  set: (value) => {
-    if (currentStreamConfig.reportingIntervals) {
-      currentStreamConfig.reportingIntervals.target = value
-    }
+    currentStreamConfig.reportingInterval = value
   }
 })
 
 const limitsNumberOfEvents = computed<number>({
-  get: () =>
-    currentStreamConfig.limits?.numberOfEvents ?? defaultStreamConfigOptions.limits.numberOfEvents,
+  get: () => {
+    return (
+      currentStreamConfig.limits?.numberOfEvents ??
+      defaultStreamConfigOptions.limits?.numberOfEvents ??
+      0
+    )
+  },
   set: (value) => {
-    if (currentStreamConfig.limits) {
-      currentStreamConfig.limits.numberOfEvents = value
+    if (!currentStreamConfig.limits) {
+      currentStreamConfig.limits = {}
     }
+    currentStreamConfig.limits.numberOfEvents = value
   }
 })
 
 const limitsElapsedTime = computed<number>({
-  get: () =>
-    currentStreamConfig.limits?.elapsedTime ?? defaultStreamConfigOptions.limits.elapsedTime,
+  get: () => {
+    return (
+      currentStreamConfig.limits?.elapsedTime ?? defaultStreamConfigOptions.limits?.elapsedTime ?? 0
+    )
+  },
   set: (value) => {
-    if (currentStreamConfig.limits) {
-      currentStreamConfig.limits.elapsedTime = value
+    if (!currentStreamConfig.limits) {
+      currentStreamConfig.limits = {}
     }
+    currentStreamConfig.limits.elapsedTime = value
   }
 })
 </script>

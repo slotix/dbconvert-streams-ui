@@ -57,7 +57,7 @@ export function useStreamControls(stream: Ref<StreamConfig>) {
 
   async function startStream() {
     try {
-      const streamID = await streamsStore.startStream(stream.value.id)
+      const streamID = await streamsStore.startStream(stream.value.id!)
       commonStore.showNotification('Stream started', 'success')
       monitoringStore.setStream(streamID, stream.value)
       monitoringStore.requestShowMonitorTab()
@@ -70,7 +70,7 @@ export function useStreamControls(stream: Ref<StreamConfig>) {
           )
           setTimeout(async () => {
             try {
-              const streamID = await streamsStore.startStream(stream.value.id)
+              const streamID = await streamsStore.startStream(stream.value.id!)
               commonStore.showNotification('Stream started', 'success')
               monitoringStore.setStream(streamID, stream.value)
               monitoringStore.requestShowMonitorTab()

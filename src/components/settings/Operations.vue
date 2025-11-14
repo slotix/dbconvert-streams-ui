@@ -32,7 +32,9 @@ const props = defineProps<Props>()
 const emit = defineEmits(['update:modelValue'])
 
 // Computed property to get the list of operations with a fallback to an empty array if undefined
-const operationList = computed<string[]>(() => defaultStreamConfigOptions.operations ?? [])
+const operationList = computed<string[]>(
+  () => defaultStreamConfigOptions.source.options?.operations ?? []
+)
 
 // Function to generate unique IDs
 const generateId = (operation: string): string => `${props.prefix}-${operation}`

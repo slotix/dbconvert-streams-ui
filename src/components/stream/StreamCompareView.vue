@@ -81,7 +81,7 @@ const isFileTarget = computed(() => {
 
 // Get list of tables from stream config
 const tablesList = computed(() => {
-  return (props.stream.tables || []).map((t) => t.name)
+  return (props.stream.source?.tables || []).map((t) => t.name)
 })
 
 // Schema comparison (only for database targets, not files)
@@ -172,7 +172,7 @@ onMounted(async () => {
     targetDatabase: props.stream.targetDatabase,
     sourceSchema: props.stream.sourceSchema,
     targetSchema: props.stream.targetSchema,
-    tables: props.stream.tables,
+    tables: props.stream.source?.tables,
     source: props.source,
     target: props.target
   })
@@ -288,17 +288,17 @@ async function loadTargetFile() {
 
     // Find the file entry matching the table name
     const entries = fileExplorerStore.getEntries(props.target.id)
-    const fileExtension = props.stream.targetFileFormat || props.target.type // csv, jsonl, or parquet
+    const fileExtension = props.stream.target?.fileFormat || props.target.type // csv, jsonl, or parquet
     const fileName = `${selectedTable.value}.${fileExtension}`
 
     targetFileEntry.value =
       entries.find((entry) => entry.name === fileName || entry.path.endsWith(fileName)) || null
 
-    if (targetFileEntry.value && props.stream.targetFileFormat) {
+    if (targetFileEntry.value && props.stream.target?.fileFormat) {
       // Load file metadata from API - use full path from entry
       const metadata = await files.getFileMetadata(
         targetFileEntry.value.path,
-        props.stream.targetFileFormat,
+        props.stream.target.fileFormat,
         true
       )
       targetFileMetadata.value = metadata

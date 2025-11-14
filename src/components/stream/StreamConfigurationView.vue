@@ -72,7 +72,7 @@
         @navigate="emit('navigate-target')"
       />
 
-      <FileOutputSummary v-if="isFileTarget && stream.targetFileFormat" :stream="stream" />
+      <FileOutputSummary v-if="isFileTarget && stream.target?.fileFormat" :stream="stream" />
 
       <TablesSummary :displayed-tables="displayedTables" :remaining-count="remainingTablesCount" />
 
@@ -133,12 +133,12 @@ const jsonViewModel = computed({
 
 const prettyConfig = computed(() => JSON.stringify(props.stream, null, 2))
 const displayedTables = computed(() => {
-  if (!props.stream?.tables?.length) return []
-  return props.stream.tables.slice(0, 5).map((table) => table.name)
+  if (!props.stream?.source?.tables?.length) return []
+  return props.stream.source.tables.slice(0, 5).map((table) => table.name)
 })
 const remainingTablesCount = computed(() => {
-  if (!props.stream?.tables?.length) return 0
-  return Math.max(0, props.stream.tables.length - displayedTables.value.length)
+  if (!props.stream?.source?.tables?.length) return 0
+  return Math.max(0, props.stream.source.tables.length - displayedTables.value.length)
 })
 const streamCreated = computed(() => formatDateTime(props.stream?.created || 0))
 

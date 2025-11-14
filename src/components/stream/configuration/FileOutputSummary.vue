@@ -11,7 +11,7 @@
         <span
           class="inline-flex items-center rounded-md px-2.5 py-1 text-xs font-medium ring-1 ring-inset bg-blue-50 text-blue-700 ring-blue-600/20 dark:bg-blue-900/30 dark:text-blue-300 dark:ring-blue-500/30"
         >
-          {{ stream.targetFileFormat?.toUpperCase() }}
+          {{ stream.target?.fileFormat?.toUpperCase() }}
         </span>
       </div>
       <div class="flex items-center justify-between">
@@ -32,15 +32,18 @@ const props = defineProps<{
   stream: StreamConfig
 }>()
 
-const compressionLabel = computed(() => (props.stream.compressionType || 'zstd').toUpperCase())
+const compressionLabel = computed(() =>
+  (props.stream.target?.options?.compressionType || 'zstd').toUpperCase()
+)
 
 const compressionBadgeClass = computed(() => {
   const base =
     'inline-flex items-center rounded-md px-2.5 py-1 text-xs font-medium ring-1 ring-inset '
-  if (props.stream.compressionType === 'zstd') {
+  const compressionType = props.stream.target?.options?.compressionType
+  if (compressionType === 'zstd') {
     return `${base}bg-green-50 text-green-700 ring-green-600/20 dark:bg-green-900/30 dark:text-green-300 dark:ring-green-500/30`
   }
-  if (props.stream.compressionType === 'gzip') {
+  if (compressionType === 'gzip') {
     return `${base}bg-yellow-50 text-yellow-700 ring-yellow-600/20 dark:bg-yellow-900/30 dark:text-yellow-300 dark:ring-yellow-500/30`
   }
   return `${base}bg-gray-50 text-gray-700 ring-gray-600/20 dark:bg-gray-900/30 dark:text-gray-300 dark:ring-gray-600/30`

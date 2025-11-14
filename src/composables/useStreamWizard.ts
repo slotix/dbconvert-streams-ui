@@ -1,5 +1,5 @@
 import { ref, computed } from 'vue'
-import type { Connection } from '@/types/connections'
+import type { StreamConfig } from '@/types/streamConfig'
 
 export interface WizardStep {
   name: string
@@ -186,25 +186,41 @@ export function useStreamWizard() {
   }
 
   // Load wizard state from existing stream config (for edit mode)
-  function loadFromStreamConfig(config: any) {
-    // Populate source and target selection
-    selection.value.sourceConnectionId = config.source || null
-    selection.value.targetConnectionId = config.target || null
-    selection.value.sourceDatabase = config.sourceDatabase || null
-    selection.value.targetDatabase = config.targetDatabase || null
-    selection.value.sourceSchema = config.sourceSchema || null
-    selection.value.targetSchema = config.targetSchema || null
-    selection.value.targetPath = config.targetPath || null
-
-    // Populate structure options
-    if (config.structureOptions) {
-      createTables.value = config.structureOptions.tables ?? true
-      createIndexes.value = config.structureOptions.indexes ?? true
-      createForeignKeys.value = config.structureOptions.foreignKeys ?? true
+  function loadFromStreamConfig(config: Partial<StreamConfig>) {
+    const resolveConnectionId = (value: unknown): string | null => {
+      if (!value) return null
+      if (typeof value === 'string') return value
+      if (typeof value === 'object' && 'id' in (value as Record<string, unknown>)) {
+        const idValue = (value as Record<string, unknown>).id
+        return typeof idValue === 'string' ? idValue : null
+      }
+      return null
     }
 
-    // Populate data copy option (inverse of skipData)
-    copyData.value = !config.skipData
+    // Populate source and target selection
+    selection.value.sourceConnectionId = resolveConnectionId(config.source)
+    selection.value.targetConnectionId = resolveConnectionId(config.target)
+    selection.value.sourceDatabase = config.sourceDatabase ?? null
+    selection.value.targetDatabase = config.targetDatabase ?? null
+    selection.value.sourceSchema = config.sourceSchema ?? null
+    selection.value.targetSchema = config.targetSchema ?? null
+    selection.value.targetPath = config.targetPath ?? null
+
+    // Populate structure options
+    const structureOptions =
+      config?.target?.options?.structureOptions ?? (config as any)?.structureOptions
+    if (structureOptions) {
+      const normalize = (value: unknown, defaultValue: boolean) =>
+        typeof value === 'boolean' ? value : defaultValue
+      createTables.value = normalize(structureOptions.tables, true)
+      createIndexes.value = normalize(structureOptions.indexes, true)
+      createForeignKeys.value = normalize(structureOptions.foreignKeys, true)
+    }
+
+    const skipData =
+      config?.target?.options?.skipData ??
+      (typeof (config as any)?.skipData === 'boolean' ? (config as any).skipData : undefined)
+    copyData.value = skipData === undefined ? true : !skipData
   }
 
   return {

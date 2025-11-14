@@ -138,24 +138,24 @@
                   <div class="flex items-center justify-between">
                     <span>Bundle Size:</span>
                     <span class="font-medium text-gray-900 dark:text-gray-100">{{
-                      currentStreamConfig?.dataBundleSize || 500
+                      currentStreamConfig?.source?.options?.dataBundleSize || 500
                     }}</span>
                   </div>
                   <!-- Output format info for file targets -->
                   <div
-                    v-if="isFileTarget && currentStreamConfig?.targetFileFormat"
+                    v-if="isFileTarget && currentStreamConfig?.target?.fileFormat"
                     class="pt-2 border-t border-gray-100 dark:border-gray-700"
                   >
                     <div class="flex items-center justify-between">
                       <span>Format:</span>
                       <span class="font-medium text-gray-900 dark:text-gray-100 uppercase">{{
-                        currentStreamConfig.targetFileFormat
+                        currentStreamConfig.target.fileFormat
                       }}</span>
                     </div>
                     <div class="flex items-center justify-between mt-1">
                       <span>Compression:</span>
                       <span class="font-medium text-gray-900 dark:text-gray-100 capitalize">{{
-                        currentStreamConfig.compressionType || 'zstd'
+                        currentStreamConfig.target?.options?.compressionType || 'zstd'
                       }}</span>
                     </div>
                     <div class="flex items-center justify-between mt-1">
@@ -163,11 +163,15 @@
                       <span
                         class="font-medium"
                         :class="
-                          currentStreamConfig.useDuckDBWriter
+                          currentStreamConfig.target?.options?.useDuckDBWriter
                             ? 'text-teal-600 dark:text-teal-400'
                             : 'text-gray-900 dark:text-gray-100'
                         "
-                        >{{ currentStreamConfig.useDuckDBWriter ? 'DuckDB' : 'Standard' }}</span
+                        >{{
+                          currentStreamConfig.target?.options?.useDuckDBWriter
+                            ? 'DuckDB'
+                            : 'Standard'
+                        }}</span
                       >
                     </div>
                   </div>
@@ -282,7 +286,7 @@ const targetDisplay = computed(() => {
   let display = conn.name
   if (props.targetDatabase) display += ` / ${props.targetDatabase}`
   if (conn.type?.toLowerCase().includes('file')) {
-    const format = currentStreamConfig.value?.targetFileFormat
+    const format = currentStreamConfig.value?.target?.fileFormat
     if (format) {
       display += ` • ${format.toUpperCase()}`
     }
@@ -291,23 +295,21 @@ const targetDisplay = computed(() => {
 })
 
 const tableCount = computed(() => {
-  const tables = currentStreamConfig.value?.tables || []
+  const tables = currentStreamConfig.value?.source?.tables || []
   return tables.filter((t) => t.selected).length
 })
 
 const isFileTarget = computed(() => {
-  const target = currentStreamConfig.value?.target
-  if (!target) return false
-  // Check if it's a file connection (starts with / or file://)
-  if (target.startsWith('/') || target.startsWith('file://')) return true
-  // Or check connection type
-  const conn = connectionsStore.connectionByID(target)
+  const targetId = currentStreamConfig.value?.target?.id
+  if (!targetId) return false
+  // Check connection type
+  const conn = connectionsStore.connectionByID(targetId)
   return conn?.type?.toLowerCase().includes('file')
 })
 
 // Custom queries
 const customQueryTables = computed(() => {
-  const tables = currentStreamConfig.value?.tables || []
+  const tables = currentStreamConfig.value?.source?.tables || []
   return tables.filter((t) => t.selected && t.query && t.query.trim().length > 0)
 })
 

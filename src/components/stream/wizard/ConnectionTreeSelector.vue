@@ -305,16 +305,17 @@ function connectionCardClass(connectionId: string): string {
     return base
   }
 
-  // For file connections, don't highlight the parent connection card
-  // Only the file path inside should be highlighted (like database connections)
   const connection = getConnectionById(connectionId)
   if (connection && isFileConnection(connection)) {
     return base
   }
 
-  // Selected connection: subtle neutral styling
-  // Accent bar is now on the selected database row instead
-  return 'bg-white dark:bg-gray-850/50'
+  const highlight =
+    props.mode === 'source'
+      ? 'bg-sky-50 dark:bg-sky-900/30 ring-1 ring-sky-200 dark:ring-sky-500/40'
+      : 'bg-emerald-50 dark:bg-emerald-900/30 ring-1 ring-emerald-200 dark:ring-emerald-500/40'
+
+  return `${highlight}`
 }
 
 function connectionHeaderClass(connectionId: string): string {
@@ -322,14 +323,14 @@ function connectionHeaderClass(connectionId: string): string {
     return 'hover:bg-gray-50 dark:hover:bg-gray-800/50 text-gray-800 dark:text-gray-200'
   }
 
-  // For file connections, don't apply selected styling to the header
-  // Only the file path inside should be highlighted (like database connections)
   const connection = getConnectionById(connectionId)
   if (connection && isFileConnection(connection)) {
     return 'hover:bg-gray-50 dark:hover:bg-gray-800/50 text-gray-800 dark:text-gray-200'
   }
 
-  return 'bg-transparent text-gray-900 dark:text-gray-100'
+  return props.mode === 'source'
+    ? 'bg-transparent text-sky-700 dark:text-sky-200 font-semibold'
+    : 'bg-transparent text-emerald-700 dark:text-emerald-200 font-semibold'
 }
 
 function filePathClass(connectionId: string): string {

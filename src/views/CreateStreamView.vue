@@ -119,12 +119,12 @@ import { useStreamWizard } from '@/composables/useStreamWizard'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
 import { useCommonStore } from '@/stores/common'
+import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import WizardLayout from '@/components/connection/wizard/WizardLayout.vue'
 import SourceTargetSelectionStep from '@/components/stream/wizard/steps/SourceTargetSelectionStep.vue'
 import StructureDataStep from '@/components/stream/wizard/steps/StructureDataStep.vue'
 import StreamConfigurationStep from '@/components/stream/wizard/steps/StreamConfigurationStep.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
-
 // Props for stream ID (when in edit mode)
 interface Props {
   id?: string

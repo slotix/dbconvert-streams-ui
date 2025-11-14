@@ -52,7 +52,7 @@ export function useStreamExplorerNavigation({
       params: { id: source.value.id },
       query: {
         details: 'true',
-        db: isSourceFile ? undefined : stream.value.sourceDatabase
+        db: isSourceFile ? undefined : stream.value.sourceDatabase || undefined
       }
     })
   }
@@ -76,7 +76,7 @@ export function useStreamExplorerNavigation({
       params: { id: target.value.id },
       query: {
         details: 'true',
-        db: isFileTarget.value ? undefined : stream.value.targetDatabase
+        db: isFileTarget.value ? undefined : stream.value.targetDatabase || undefined
       }
     })
   }
