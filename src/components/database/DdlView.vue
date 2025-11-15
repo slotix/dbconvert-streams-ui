@@ -18,10 +18,26 @@ const props = defineProps<{
 // Use the explicitly passed dialect
 const dialect = computed(() => props.dialect)
 
+const ddlFormatOverrides = {
+  indentStyle: 'standard' as const,
+  expressionWidth: 40
+}
+
+const formatWithOverrides = (sql: string) => {
+  const options = getFormattingOptions(dialect.value)
+  return format(sql, {
+    ...options,
+    ...ddlFormatOverrides
+  })
+}
+
 const formattedCreateTable = computed(() => {
+  if (!props.ddl?.createTable) {
+    return ''
+  }
+
   try {
-    const options = getFormattingOptions(dialect.value)
-    return format(props.ddl.createTable, options)
+    return formatWithOverrides(props.ddl.createTable)
   } catch (error) {
     console.error('Error formatting SQL:', error)
     return props.ddl.createTable
@@ -32,10 +48,9 @@ const formattedIndexes = computed(() => {
   if (!props.ddl.createIndexes?.length) return ''
 
   try {
-    const options = getFormattingOptions(dialect.value)
     // Format each index, remove trailing semicolons, then join with semicolons and newlines
     return props.ddl.createIndexes
-      .map((sql) => format(sql, options).trim().replace(/;+$/, ''))
+      .map((sql) => formatWithOverrides(sql).trim().replace(/;+$/, ''))
       .join(';\n')
   } catch (error) {
     console.error('Error formatting indexes:', error)
@@ -46,12 +61,13 @@ const formattedIndexes = computed(() => {
 
 <template>
   <div class="space-y-8">
-    <SqlCodeBlock :code="formattedCreateTable" title="SQL Definition" :dialect="dialect" />
+    <SqlCodeBlock :code="formattedCreateTable" title="SQL Definition" :dialect="dialect" compact />
     <SqlCodeBlock
       v-if="formattedIndexes"
       :code="formattedIndexes"
       title="Indexes"
       :dialect="dialect"
+      compact
     />
   </div>
 </template>
