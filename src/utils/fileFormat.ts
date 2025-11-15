@@ -1,6 +1,6 @@
 export type FileFormat = 'csv' | 'json' | 'jsonl' | 'parquet'
 
-const COMPRESSION_EXTENSIONS = ['.gz', '.gzip']
+const COMPRESSION_EXTENSIONS = ['.gz', '.gzip', '.zst']
 
 function stripCompressionExtension(filename: string): string {
   let base = filename.toLowerCase()

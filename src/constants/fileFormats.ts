@@ -16,17 +16,17 @@ export interface SupportedFormat {
 export const SUPPORTED_FILE_FORMATS: SupportedFormat[] = [
   {
     name: 'CSV',
-    extensions: ['.csv', '.csv.gz'],
+    extensions: ['.csv', '.csv.gz', '.csv.zst'],
     description: 'Comma-separated values'
   },
   {
     name: 'JSON',
-    extensions: ['.json', '.json.gz'],
+    extensions: ['.json', '.json.gz', '.json.zst'],
     description: 'JavaScript Object Notation'
   },
   {
     name: 'JSONL',
-    extensions: ['.jsonl', '.ndjson', '.jsonl.gz'],
+    extensions: ['.jsonl', '.ndjson', '.jsonl.gz', '.jsonl.zst'],
     description: 'JSON Lines (newline-delimited JSON)'
   },
   {
