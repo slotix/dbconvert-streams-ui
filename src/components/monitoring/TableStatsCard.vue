@@ -1,9 +1,7 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import { TableCellsIcon, ChevronRightIcon } from '@heroicons/vue/24/outline'
 import { useMonitoringStore } from '@/stores/monitoring'
-import { useRouter } from 'vue-router'
-import { formatDataSize } from '@/utils/formats'
 import { STAT_STATUS } from '@/constants'
 
 const emit = defineEmits<{
@@ -11,28 +9,13 @@ const emit = defineEmits<{
 }>()
 
 const monitoringStore = useMonitoringStore()
-const router = useRouter()
-const showAll = ref(false)
-
 const tableStatsGroup = computed(() => monitoringStore.tableStats)
 
-// Show max 3 tables by default, all when expanded
-const MAX_VISIBLE_TABLES = 3
-
-const allTables = computed(() => {
-  // Combine and sort: running first, then completed, then failed
-  return [
-    ...tableStatsGroup.value.running,
-    ...tableStatsGroup.value.completed,
-    ...tableStatsGroup.value.failed
-  ]
-})
-
-const visibleTables = computed(() => {
-  return showAll.value ? allTables.value : allTables.value.slice(0, MAX_VISIBLE_TABLES)
-})
-
-const hasMore = computed(() => allTables.value.length > MAX_VISIBLE_TABLES)
+const allTables = computed(() => [
+  ...tableStatsGroup.value.running,
+  ...tableStatsGroup.value.completed,
+  ...tableStatsGroup.value.failed
+])
 
 const statusCounts = computed(() => {
   const group = tableStatsGroup.value
@@ -46,10 +29,6 @@ const statusCounts = computed(() => {
 
 const hasAnyTables = computed(() => statusCounts.value.total > 0)
 
-function toggleShowAll() {
-  showAll.value = !showAll.value
-}
-
 function handleCompareTable(tableName: string) {
   emit('compare-table', tableName)
 }
@@ -57,13 +36,26 @@ function handleCompareTable(tableName: string) {
 function getStatusClass(status: string) {
   switch (status) {
     case STAT_STATUS.FINISHED:
-      return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+      return 'bg-green-50 text-green-700 ring-green-600/20 dark:bg-green-900/30 dark:text-green-200 dark:ring-green-500/40'
     case STAT_STATUS.RUNNING:
-      return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+      return 'bg-blue-50 text-blue-700 ring-blue-600/20 dark:bg-blue-900/30 dark:text-blue-200 dark:ring-blue-500/40'
     case STAT_STATUS.FAILED:
-      return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
+      return 'bg-red-50 text-red-700 ring-red-600/20 dark:bg-red-900/30 dark:text-red-200 dark:ring-red-500/40'
     default:
-      return 'bg-gray-100 text-gray-700 dark:bg-gray-900/40 dark:text-gray-300'
+      return 'bg-gray-50 text-gray-700 ring-gray-600/20 dark:bg-gray-900/40 dark:text-gray-300 dark:ring-gray-500/30'
+  }
+}
+
+function getStatusDotClass(status: string) {
+  switch (status) {
+    case STAT_STATUS.FINISHED:
+      return 'bg-green-500'
+    case STAT_STATUS.RUNNING:
+      return 'bg-blue-500'
+    case STAT_STATUS.FAILED:
+      return 'bg-red-500'
+    default:
+      return 'bg-gray-400'
   }
 }
 
@@ -78,6 +70,18 @@ function getStatusLabel(status: string) {
     default:
       return status
   }
+}
+
+function formatDuration(seconds: number) {
+  if (seconds < 1) {
+    return `${(seconds * 1000).toFixed(0)}ms`
+  }
+  if (seconds < 60) {
+    return `${seconds.toFixed(2)}s`
+  }
+  const mins = Math.floor(seconds / 60)
+  const secs = Math.floor(seconds % 60)
+  return `${mins}m ${secs}s`
 }
 </script>
 
@@ -115,77 +119,109 @@ function getStatusLabel(status: string) {
       </div>
     </div>
 
-    <!-- Tables List -->
-    <div v-if="hasAnyTables" class="p-4">
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div
-          v-for="table in visibleTables"
-          :key="table.table"
-          class="bg-gradient-to-br from-gray-50 to-white dark:from-gray-900/40 dark:to-gray-900/20 border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md hover:border-teal-300 dark:hover:border-teal-500/40 dark:hover:bg-gray-900/60 transition-all duration-200"
-        >
-          <!-- Table Name and Status -->
-          <div class="flex items-start justify-between mb-3">
-            <h4
-              class="font-semibold text-gray-900 dark:text-gray-100 truncate flex-1"
-              :title="table.table"
+    <!-- Tables Grid -->
+    <div v-if="hasAnyTables" class="p-0">
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+          <thead class="bg-gray-50 dark:bg-gray-900/30">
+            <tr>
+              <th
+                scope="col"
+                class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"
+              >
+                Table
+              </th>
+              <th
+                scope="col"
+                class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"
+              >
+                Status
+              </th>
+              <th
+                scope="col"
+                class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider"
+              >
+                Rows
+              </th>
+              <th
+                scope="col"
+                class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider"
+              >
+                Size
+              </th>
+              <th
+                scope="col"
+                class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider"
+              >
+                Rate
+              </th>
+              <th
+                scope="col"
+                class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider"
+              >
+                Duration
+              </th>
+              <th
+                scope="col"
+                class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider"
+              >
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-gray-900/20">
+            <tr
+              v-for="table in allTables"
+              :key="table.table"
+              class="hover:bg-gray-50 dark:hover:bg-gray-900/40 transition-colors"
             >
-              {{ table.table }}
-            </h4>
-            <span
-              class="ml-2 shrink-0 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
-              :class="getStatusClass(table.status)"
-            >
-              {{ getStatusLabel(table.status) }}
-            </span>
-          </div>
-
-          <!-- Metrics -->
-          <dl class="grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
-            <div>
-              <dt class="text-gray-500 dark:text-gray-400">Rows</dt>
-              <dd class="font-semibold text-gray-900 dark:text-gray-100">
+              <td class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">
+                <span class="truncate block max-w-xs" :title="table.table">{{ table.table }}</span>
+              </td>
+              <td class="px-4 py-3">
+                <span
+                  class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-medium ring-1 ring-inset"
+                  :class="getStatusClass(table.status)"
+                >
+                  <span class="h-1.5 w-1.5 rounded-full" :class="getStatusDotClass(table.status)" />
+                  {{ getStatusLabel(table.status) }}
+                </span>
+              </td>
+              <td
+                class="px-4 py-3 text-sm text-right font-semibold text-gray-900 dark:text-gray-100"
+              >
                 {{ table.events.toLocaleString() }}
-              </dd>
-            </div>
-            <div>
-              <dt class="text-gray-500 dark:text-gray-400">Size</dt>
-              <dd class="font-semibold text-gray-900 dark:text-gray-100">{{ table.size }}</dd>
-            </div>
-            <div>
-              <dt class="text-gray-500 dark:text-gray-400">Rate</dt>
-              <dd class="font-semibold text-gray-900 dark:text-gray-100">{{ table.rate }}</dd>
-            </div>
-            <div>
-              <dt class="text-gray-500 dark:text-gray-400">Duration</dt>
-              <dd class="font-semibold text-gray-900 dark:text-gray-100">
-                {{ (table.elapsed * 1000).toFixed(0) }}ms
-              </dd>
-            </div>
-          </dl>
-
-          <!-- Compare Button (only for completed tables) -->
-          <button
-            v-if="table.status === STAT_STATUS.FINISHED"
-            type="button"
-            class="mt-3 w-full inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium bg-white dark:bg-gray-900 border border-teal-200 dark:border-teal-500/40 text-teal-700 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-gray-800 hover:border-teal-300 dark:hover:border-teal-400 transition-colors"
-            @click="handleCompareTable(table.table)"
-          >
-            Compare
-            <ChevronRightIcon class="h-3.5 w-3.5" />
-          </button>
-        </div>
-      </div>
-
-      <!-- View All Button -->
-      <div v-if="hasMore" class="mt-4 text-center">
-        <button
-          type="button"
-          class="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium bg-gradient-to-r from-teal-600 to-cyan-600 text-white hover:from-teal-700 hover:to-cyan-700 dark:from-teal-500 dark:to-cyan-500 dark:hover:from-teal-400 dark:hover:to-cyan-400 shadow-sm hover:shadow transition-all duration-200"
-          @click="toggleShowAll"
-        >
-          {{ showAll ? 'Show Less' : `View All ${allTables.length} Tables` }}
-          <ChevronRightIcon class="h-4 w-4" />
-        </button>
+              </td>
+              <td
+                class="px-4 py-3 text-sm text-right font-semibold text-gray-900 dark:text-gray-100"
+              >
+                {{ table.size }}
+              </td>
+              <td
+                class="px-4 py-3 text-sm text-right font-semibold text-gray-900 dark:text-gray-100"
+              >
+                {{ table.rate }}
+              </td>
+              <td
+                class="px-4 py-3 text-sm text-right font-semibold text-gray-900 dark:text-gray-100"
+              >
+                {{ formatDuration(table.elapsed) }}
+              </td>
+              <td class="px-4 py-3 text-sm text-right">
+                <button
+                  v-if="table.status === STAT_STATUS.FINISHED"
+                  type="button"
+                  class="inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium bg-white dark:bg-gray-900 border border-teal-200 dark:border-teal-500/50 text-teal-700 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-gray-800 hover:border-teal-400 dark:hover:border-teal-400 transition-all"
+                  @click="handleCompareTable(table.table)"
+                >
+                  Compare
+                  <ChevronRightIcon class="h-3.5 w-3.5" />
+                </button>
+                <span v-else class="text-xs text-gray-400 dark:text-gray-500">—</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
