@@ -5,7 +5,7 @@ import type { Connection } from '@/types/connections'
 import type { FileSystemEntry } from '@/api/fileSystem'
 
 export interface UseTreeSearchOptions {
-  typeFilter?: 'database' | 'file' | null
+  typeFilters?: string[]
 }
 
 /**
@@ -45,10 +45,13 @@ export function useTreeSearch(searchQuery: string, options: UseTreeSearchOptions
   const filterConnections = (connections: Connection[]): Connection[] => {
     const query = searchQuery.trim()
 
-    // Apply type filter first
-    let filtered = connections.filter((conn) =>
-      treeLogic.matchesTypeFilter(conn, options.typeFilter || '')
-    )
+    // Apply type filters first
+    let filtered = connections
+    if (options.typeFilters && options.typeFilters.length > 0) {
+      filtered = connections.filter((conn) =>
+        treeLogic.matchesTypeFilters(conn, options.typeFilters!)
+      )
+    }
 
     // Sort by creation date (newest first) then by name
     filtered = filtered.sort((a, b) => {

@@ -112,15 +112,20 @@ export function useConnectionTreeLogic() {
     return !!navigationStore.metadataState[connId]?.[dbName]
   }
 
-  function matchesTypeFilter(conn: Connection, typeFilter: string): boolean {
-    const filterLabel = typeFilter || 'All'
-    const filter = filterLabel.toLowerCase()
-    if (!filter || filter === 'all') return true
-    const connType = (conn.type || '').toLowerCase()
+  function matchesTypeFilters(conn: Connection, typeFilters: string[]): boolean {
+    // If no filters selected, show all
+    if (!typeFilters || typeFilters.length === 0) return true
+
+    const connType = (conn.type || '').toLowerCase().trim()
     if (!connType) return false
-    if (filter === 'postgresql') return connType.includes('postgres')
-    if (filter === 'files') return connType.includes('file')
-    return connType.includes(filter)
+
+    // Check if connection matches any of the selected type filters (case-insensitive)
+    return typeFilters.some((filter) => {
+      const filterLower = filter.toLowerCase().trim()
+      // Match if the filter is contained in the connection type or vice versa
+      // This handles 'PostgreSQL' matching 'postgresql', 'Files' matching 'files', etc.
+      return connType.includes(filterLower) || filterLower.includes(connType)
+    })
   }
 
   return {
@@ -134,6 +139,6 @@ export function useConnectionTreeLogic() {
     getFlatTables,
     getFlatViews,
     isMetadataLoaded,
-    matchesTypeFilter
+    matchesTypeFilters
   }
 }

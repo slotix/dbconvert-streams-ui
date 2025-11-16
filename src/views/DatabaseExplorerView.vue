@@ -43,9 +43,15 @@ const sidebar = useSidebar()
 
 // Connection search and filtering
 const connectionSearch = ref('')
-const selectedConnectionType = usePersistedState<string | null>('explorer.connectionType', null, {
-  serializer: (value) => value || '',
-  deserializer: (value) => value || null
+const selectedConnectionTypes = usePersistedState<string[]>('explorer.connectionTypes', [], {
+  serializer: (value) => JSON.stringify(value),
+  deserializer: (value) => {
+    try {
+      return value ? JSON.parse(value) : []
+    } catch {
+      return []
+    }
+  }
 })
 
 const searchInputRef = ref<InstanceType<typeof SearchInput> | null>(null)
@@ -63,7 +69,7 @@ const connectionsCount = computed(() => connectionsStore.connections.length || 0
 // Use the same filtering logic as the sidebar tree
 const treeSearch = computed(() =>
   useTreeSearch(connectionSearch.value, {
-    typeFilter: selectedConnectionType.value as 'database' | 'file' | null
+    typeFilters: selectedConnectionTypes.value
   })
 )
 
@@ -75,7 +81,7 @@ const filteredConnectionsCount = computed(() => {
 const connectionCountLabel = computed(() => {
   const filtered = filteredConnectionsCount.value
   const total = connectionsCount.value
-  if ((connectionSearch.value || selectedConnectionType.value) && filtered !== total) {
+  if ((connectionSearch.value || selectedConnectionTypes.value.length > 0) && filtered !== total) {
     return `${filtered} of ${total} connections`
   }
   return `${total} connection${total === 1 ? '' : 's'}`
@@ -155,9 +161,9 @@ function onRightTabChange(_tab: 'data' | 'structure') {
         <!-- Connection Type Filter -->
         <div class="shrink-0">
           <ConnectionTypeFilter
-            :selected-type="selectedConnectionType"
+            :selected-types="selectedConnectionTypes"
             :persistent="true"
-            @update:selected-type="selectedConnectionType = $event"
+            @update:selected-types="selectedConnectionTypes = $event"
           />
         </div>
 
@@ -263,7 +269,7 @@ function onRightTabChange(_tab: 'data' | 'structure') {
             <ExplorerSidebarConnections
               :initial-expanded-connection-id="explorerState.currentConnectionId.value || undefined"
               :search-query="connectionSearch"
-              :type-filter="selectedConnectionType || 'All'"
+              :type-filters="selectedConnectionTypes"
               :focus-connection-id="focusConnectionId || undefined"
               :selected="treeSelection"
               @open="handleOpenFromTree"

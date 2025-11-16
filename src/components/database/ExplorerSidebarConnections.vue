@@ -26,7 +26,7 @@ const props = defineProps<{
     name?: string | null
   }
   searchQuery: string
-  typeFilter: string
+  typeFilters?: string[]
   focusConnectionId?: string
 }>()
 
@@ -112,10 +112,10 @@ const canCopyDDL = computed(() => {
   return actions.canCopyDDL(mo.connectionId, mo.database, mo.name, mo.kind, mo.schema)
 })
 
-// Use tree search composable (reactive to searchQuery)
-const treeSearch = computed(() =>
-  useTreeSearch(searchQuery.value, { typeFilter: props.typeFilter as 'database' | 'file' | null })
-)
+// Use tree search composable (reactive to searchQuery and typeFilters)
+const treeSearch = computed(() => {
+  return useTreeSearch(searchQuery.value, { typeFilters: props.typeFilters })
+})
 
 // Computed for filtered connections using composable
 const filteredConnections = computed<Connection[]>(() => {
@@ -489,9 +489,9 @@ watch(
 )
 
 watch(
-  () => props.typeFilter,
-  (typeLabel) => {
-    if (!typeLabel) return
+  () => props.typeFilters,
+  (filters) => {
+    if (!filters || filters.length === 0) return
     if (searchQuery.value.trim()) void expandForSearch(searchQuery.value)
   }
 )
@@ -518,6 +518,13 @@ watch(
   <div
     class="bg-linear-to-br from-white via-slate-50/50 to-white dark:from-gray-850 dark:via-gray-850 dark:to-gray-900 shadow-xl dark:shadow-gray-900/50 rounded-2xl overflow-hidden h-[calc(100vh-140px)] flex flex-col transition-all duration-300 hover:shadow-2xl dark:hover:shadow-gray-900/70 border border-slate-200/50 dark:border-gray-700"
   >
+    <!-- Sidebar Header -->
+    <div class="px-4 py-3 border-b border-slate-200/50 dark:border-gray-700">
+      <h2 class="text-sm font-semibold text-slate-700 dark:text-gray-300 uppercase tracking-wide">
+        Connections
+      </h2>
+    </div>
+
     <!-- Scrollable tree content area with smooth scrolling and custom scrollbar -->
     <div class="flex-1 overflow-y-auto overscroll-contain p-3 scrollbar-thin">
       <!-- Loading state with centered spinner and blue-green gradient -->

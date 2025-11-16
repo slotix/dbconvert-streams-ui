@@ -196,24 +196,21 @@
 
       <!-- Monitor Tab -->
       <div v-else-if="activeTab === 'monitor'" class="p-6 space-y-6">
-        <!-- Unified Monitor Header (Status + Progress) -->
-        <MonitorHeader
-          :stream-config="stream"
+        <!-- Performance Stats -->
+        <StatContainer
           :is-running="isStreamRunning"
           :is-stream-finished="isStreamFinished"
           :is-stopped="isStopped"
           :is-paused="isPaused"
           :stream-status="streamStatus"
+          @compare-table="handleCompareTable"
         />
-
-        <!-- Performance Stats -->
-        <StatContainer :is-running="isStreamRunning" @compare-table="handleCompareTable" />
       </div>
 
       <!-- History Tab -->
       <div v-else-if="activeTab === 'history'" class="p-6">
         <StreamHistoryTableAGGrid
-          :config-id="stream.id"
+          :config-id="stream.id || ''"
           :runs="historyRuns"
           @delete-run="handleDeleteRun"
           @clear-all="handleClearAll"
@@ -269,7 +266,6 @@ import { useConnectionsStore } from '@/stores/connections'
 import { useCommonStore } from '@/stores/common'
 import { useMonitoringStore } from '@/stores/monitoring'
 import BaseButton from '@/components/base/BaseButton.vue'
-import MonitorHeader from '@/components/monitoring/MonitorHeader.vue'
 import StatContainer from '@/components/monitoring/StatContainer.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import type { StreamConfig } from '@/types/streamConfig'
@@ -328,7 +324,7 @@ const { isFileTarget, navigateToSourceExplorer, navigateToTargetExplorer } =
     target: targetRef
   })
 
-const streamIdRef = computed(() => streamRef.value.id)
+const streamIdRef = computed(() => streamRef.value.id || '')
 
 const { historyRuns, handleDeleteRun, handleClearAll } = useStreamHistory({
   streamId: streamIdRef,
@@ -366,6 +362,7 @@ function handleCompareTable(tableName: string) {
 }
 
 async function cloneStream() {
+  if (!props.stream.id) return
   try {
     await streamsStore.cloneStreamConfig(props.stream.id)
     commonStore.showNotification('Stream cloned successfully', 'success')
@@ -387,6 +384,7 @@ function cancelDelete() {
 }
 
 async function deleteStream() {
+  if (!props.stream.id) return
   try {
     await streamsStore.deleteStreamConfig(props.stream.id)
     commonStore.showNotification('Stream deleted', 'success')

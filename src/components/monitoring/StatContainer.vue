@@ -1,8 +1,13 @@
 <template>
   <div class="relative mt-4 mb-3">
-    <h2 class="text-xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
-      Stream Performance
-    </h2>
+    <h2 class="text-xl font-bold tracking-tight text-gray-900 dark:text-gray-100">Stream Flow</h2>
+    <!-- Status Summary Message -->
+    <div
+      v-if="statusMessage"
+      :class="['mt-2 px-3 py-2 rounded-md text-sm font-medium', statusMessageClass]"
+    >
+      {{ statusMessage }}
+    </div>
   </div>
 
   <!-- Source and Target Stats -->
@@ -229,9 +234,20 @@ import StatusBadge from './StatusBadge.vue'
 import StatRow from './StatRow.vue'
 import TableStatsCard from './TableStatsCard.vue'
 
-const props = defineProps<{
+interface Props {
   isRunning: boolean
-}>()
+  isStreamFinished?: boolean
+  isStopped?: boolean
+  isPaused?: boolean
+  streamStatus?: string
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  isStreamFinished: false,
+  isStopped: false,
+  isPaused: false,
+  streamStatus: ''
+})
 
 const emit = defineEmits<{
   (e: 'compare-table', tableName: string): void
@@ -243,6 +259,58 @@ const sourceStats = computed(() => store.aggregatedSourceStats)
 const targetStats = computed(() => store.aggregatedTargetStats)
 
 const modeLabel = computed(() => (store.streamConfig?.mode === 'convert' ? 'rows' : 'events'))
+
+// Status message for completed/stopped/failed states
+const statusMessage = computed(() => {
+  if (!props.isStreamFinished) return null
+
+  // Check for failed state
+  const hasFailed = store.stats.some((stat) => stat.status === 'FAILED')
+  if (hasFailed) {
+    const currentStage = store.currentStage?.title || 'Unknown Stage'
+    // Try to get first error message from logs
+    const errorLog = store.logs
+      .filter((log) => log.level === 'error')
+      .slice(-5)
+      .reverse()
+      .find((log) => log.msg && log.msg.trim().length > 0)
+    const errorMsg = errorLog?.msg || 'An error occurred'
+    return `✖ Failed during: ${currentStage} — Error: ${errorMsg}`
+  }
+
+  // Check for stopped state
+  if (props.isStopped) {
+    const currentStage = store.currentStage?.title || 'Unknown Stage'
+    // Try to find stop reason in logs (optional)
+    const stopLog = store.logs
+      .filter((log) => log.msg?.toLowerCase().includes('stop'))
+      .slice(-3)
+      .reverse()
+      .find((log) => log.msg && !log.msg.includes('Stopped'))
+    const reason = stopLog?.msg || ''
+    return reason
+      ? `⚠️ Stopped during: ${currentStage} — Reason: ${reason}`
+      : `⚠️ Stopped during: ${currentStage}`
+  }
+
+  // Finished successfully
+  return '✓ Completed all stages successfully'
+})
+
+const statusMessageClass = computed(() => {
+  if (!props.isStreamFinished) return ''
+
+  const hasFailed = store.stats.some((stat) => stat.status === 'FAILED')
+  if (hasFailed) {
+    return 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300 border border-red-200 dark:border-red-800'
+  }
+
+  if (props.isStopped) {
+    return 'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800'
+  }
+
+  return 'bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-300 border border-green-200 dark:border-green-800'
+})
 
 const sourceIcon = '/images/steps/source-step.svg'
 const targetIcon = '/images/steps/target-step.svg'
