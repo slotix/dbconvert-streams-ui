@@ -4,7 +4,8 @@
       "Bash(yarn lint:*)",
       "Bash(yarn format:*)",
       "Bash(yarn test:unit:*)",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "mcp__ide__getDiagnostics"
     ],
     "deny": [],
     "ask": []
