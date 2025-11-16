@@ -120,6 +120,17 @@ export function getStreamStatusBadgeColor(status: StreamStatus): string {
 }
 
 /**
+ * Shared styling helpers for STOPPED stream states
+ */
+export const STOP_STATUS_COLORS = {
+  iconBackground: 'bg-gray-100 dark:bg-gray-800',
+  text: 'text-gray-700 dark:text-gray-300',
+  iconColor: 'text-gray-600 dark:text-gray-300',
+  badgeBackground: 'bg-gray-50 dark:bg-gray-900/40',
+  badgeText: 'text-gray-800 dark:text-gray-200'
+} as const
+
+/**
  * Status names as they appear in log messages (uppercase strings)
  */
 export const STREAM_STATUS_NAMES = {

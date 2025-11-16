@@ -32,7 +32,7 @@
             statusBadgeClass
           ]"
         >
-          <component :is="statusIcon" class="h-3 w-3" />
+          <component v-if="statusIcon" :is="statusIcon" class="h-3 w-3" />
           <span class="hidden sm:inline">{{ statusText }}</span>
         </span>
 
@@ -164,9 +164,11 @@ import {
   CheckCircleIcon,
   XCircleIcon,
   PlayIcon,
-  PauseIcon
+  PauseIcon,
+  StopIcon
 } from '@heroicons/vue/24/outline'
 import { useMonitoringStore, statusEnum } from '@/stores/monitoring'
+import { getStreamStatusLabel, STOP_STATUS_COLORS } from '@/constants/streamStatus'
 import type { StreamConfig } from '@/types/streamConfig'
 import type { Connection } from '@/types/connections'
 
@@ -234,14 +236,26 @@ const isFinished = computed(() => {
   return areAllNodesFinished || isStreamStatusFinished
 })
 
+const hasFailed = computed(() => {
+  return (
+    monitoringStore.status === statusEnum.FAILED ||
+    monitoringStore.stats.some((stat) => stat.status === 'FAILED')
+  )
+})
+
+const isStoppedState = computed(() => {
+  return (
+    monitoringStore.status === statusEnum.STOPPED ||
+    monitoringStore.stats.some((stat) => stat.status === 'STOPPED')
+  )
+})
+
 const statusText = computed(() => {
   if (!isRunning.value) return ''
+  if (hasFailed.value) return 'Failed'
+  if (isStoppedState.value) return 'Stopped'
   if (isFinished.value) {
-    const hasFailed = monitoringStore.stats.some((stat) => stat.status === 'FAILED')
-    const isStopped = monitoringStore.stats.some((stat) => stat.status === 'STOPPED')
-    if (hasFailed) return 'Failed'
-    if (isStopped) return 'Stopped'
-    return 'Finished'
+    return getStreamStatusLabel(monitoringStore.status) || 'Finished'
   }
   if (isPaused.value) return 'Paused'
   return 'Running'
@@ -250,9 +264,10 @@ const statusText = computed(() => {
 const statusBadgeClass = computed(() => {
   if (!isRunning.value) return ''
   if (isFinished.value) {
-    const hasFailed = monitoringStore.stats.some((stat) => stat.status === 'FAILED')
-    if (hasFailed)
+    if (hasFailed.value)
       return 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 ring-red-600/20 dark:ring-red-500/30'
+    if (isStoppedState.value)
+      return `${STOP_STATUS_COLORS.badgeBackground} ${STOP_STATUS_COLORS.badgeText} ring-amber-600/20 dark:ring-amber-400/30`
     return 'bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 ring-teal-600/20 dark:ring-teal-500/30'
   }
   if (isPaused.value)
@@ -263,8 +278,8 @@ const statusBadgeClass = computed(() => {
 const statusIcon = computed(() => {
   if (!isRunning.value) return null
   if (isFinished.value) {
-    const hasFailed = monitoringStore.stats.some((stat) => stat.status === 'FAILED')
-    if (hasFailed) return XCircleIcon
+    if (hasFailed.value) return XCircleIcon
+    if (isStoppedState.value) return StopIcon
     return CheckCircleIcon
   }
   if (isPaused.value) return PauseCircleIcon

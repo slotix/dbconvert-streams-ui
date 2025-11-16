@@ -3,7 +3,7 @@ import { useStreamsStore } from '@/stores/streamConfig'
 import { useMonitoringStore, statusEnum } from '@/stores/monitoring'
 import { useCommonStore } from '@/stores/common'
 import type { StreamConfig } from '@/types/streamConfig'
-import type { StreamStatus } from '@/constants/streamStatus'
+import { getStreamStatusLabel, type StreamStatus } from '@/constants/streamStatus'
 
 export function useStreamControls(stream: Ref<StreamConfig>) {
   const streamsStore = useStreamsStore()
@@ -42,14 +42,28 @@ export function useStreamControls(stream: Ref<StreamConfig>) {
     return areAllNodesFinished || isStreamStatusFinished
   })
 
+  const hasFailed = computed(() => {
+    return (
+      monitoringStore.status === statusEnum.FAILED ||
+      monitoringStore.stats.some((stat) => stat.status === 'FAILED')
+    )
+  })
+
+  const isStopped = computed(() => {
+    return (
+      monitoringStore.status === statusEnum.STOPPED ||
+      monitoringStore.stats.some((stat) => stat.status === 'STOPPED')
+    )
+  })
+
   const streamStatus = computed(() => {
-    if (!isStreamRunning.value) return 'Ready'
+    if (!isStreamRunning.value) {
+      return getStreamStatusLabel(monitoringStore.status) || 'Ready'
+    }
+    if (hasFailed.value) return 'Failed'
+    if (isStopped.value) return 'Stopped'
     if (isStreamFinished.value) {
-      const hasFailed = monitoringStore.stats.some((stat) => stat.status === 'FAILED')
-      const isStopped = monitoringStore.stats.some((stat) => stat.status === 'STOPPED')
-      if (hasFailed) return 'Failed'
-      if (isStopped) return 'Stopped'
-      return 'Finished'
+      return getStreamStatusLabel(monitoringStore.status) || 'Finished'
     }
     if (isPaused.value) return 'Paused'
     return monitoringStore.currentStage?.description || 'Running'
@@ -129,6 +143,7 @@ export function useStreamControls(stream: Ref<StreamConfig>) {
     isStreamRunning,
     isPaused,
     isStreamFinished,
+    isStopped,
     streamStatus,
     startStream,
     pauseStream,

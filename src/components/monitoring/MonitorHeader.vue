@@ -15,11 +15,15 @@
               'flex items-center justify-center w-12 h-12 rounded-full shrink-0 mt-0.5',
               isRunning
                 ? isStreamFinished
-                  ? 'bg-green-100 dark:bg-green-900/30'
+                  ? isStopped
+                    ? stopIconBackground
+                    : 'bg-green-100 dark:bg-green-900/30'
                   : isPaused
                     ? 'bg-yellow-100 dark:bg-yellow-900/30'
                     : 'bg-blue-100 dark:bg-blue-900/30'
-                : 'bg-gray-100 dark:bg-gray-800'
+                : isStopped
+                  ? stopIconBackground
+                  : 'bg-gray-100 dark:bg-gray-800'
             ]"
           >
             <span
@@ -27,7 +31,7 @@
               class="inline-block w-3 h-3 rounded-full bg-blue-600 animate-pulse"
             ></span>
             <svg
-              v-else-if="isStreamFinished"
+              v-else-if="isStreamFinished && !isStopped"
               class="h-6 w-6 text-green-600 dark:text-green-300"
               fill="none"
               viewBox="0 0 24 24"
@@ -40,6 +44,7 @@
                 d="M5 13l4 4L19 7"
               />
             </svg>
+            <StopIcon v-else-if="isStopped" class="h-6 w-6" :class="stopIconColor" />
             <PauseIcon v-else-if="isPaused" class="h-6 w-6 text-yellow-600 dark:text-yellow-300" />
             <svg
               v-else
@@ -66,11 +71,15 @@
                 'text-base font-semibold wrap-break-word',
                 isRunning
                   ? isStreamFinished
-                    ? 'text-green-700 dark:text-green-400'
+                    ? isStopped
+                      ? stopTextClass
+                      : 'text-green-700 dark:text-green-400'
                     : isPaused
                       ? 'text-yellow-700 dark:text-yellow-400'
                       : 'text-blue-700 dark:text-blue-400'
-                  : 'text-gray-600 dark:text-gray-400'
+                  : isStopped
+                    ? stopTextClass
+                    : 'text-gray-600 dark:text-gray-400'
               ]"
             >
               {{ streamStatus }}
@@ -135,23 +144,29 @@
 </template>
 
 <script setup lang="ts">
-import { PauseIcon } from '@heroicons/vue/24/outline'
+import { PauseIcon, StopIcon } from '@heroicons/vue/24/outline'
 import { useMonitoringStore } from '@/stores/monitoring'
 import type { StreamConfig } from '@/types/streamConfig'
+import { STOP_STATUS_COLORS } from '@/constants/streamStatus'
 
 interface Props {
   streamConfig?: StreamConfig
   isRunning: boolean
   isStreamFinished: boolean
+  isStopped: boolean
   isPaused: boolean
   streamStatus: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  streamStatus: 'Not Running'
+  streamStatus: 'Not Running',
+  isStopped: false
 })
 
 const store = useMonitoringStore()
+const stopIconBackground = STOP_STATUS_COLORS.iconBackground
+const stopIconColor = STOP_STATUS_COLORS.iconColor
+const stopTextClass = STOP_STATUS_COLORS.text
 
 function stageClass(index: number): string {
   if (!props.isRunning) return 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500'

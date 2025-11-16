@@ -201,6 +201,7 @@
           :stream-config="stream"
           :is-running="isStreamRunning"
           :is-stream-finished="isStreamFinished"
+          :is-stopped="isStopped"
           :is-paused="isPaused"
           :stream-status="streamStatus"
         />
@@ -312,6 +313,7 @@ const {
   isStreamRunning,
   isPaused,
   isStreamFinished,
+  isStopped,
   streamStatus,
   startStream,
   pauseStream,
