@@ -68,4 +68,43 @@ const themeStore = useThemeStore()
 themeStore.initializeTheme()
 themeStore.setupSystemThemeListener()
 
+// Global error handler for uncaught errors
+app.config.errorHandler = (err, instance, info) => {
+  console.error('Global error handler:', err, info)
+
+  // Don't show toast for specific errors that are already handled
+  const errorMessage = err instanceof Error ? err.message : String(err)
+  const isHandledError =
+    errorMessage.includes('Network Error') ||
+    errorMessage.includes('Invalid API key') ||
+    errorMessage.includes('API key') ||
+    errorMessage.includes('Failed to initialize')
+
+  // Only log to console, don't show additional toasts
+  // The specific error handlers will show appropriate toasts
+  if (!isHandledError) {
+    console.error('Unhandled error:', err)
+  }
+}
+
+// Global handler for unhandled promise rejections
+window.addEventListener('unhandledrejection', (event) => {
+  console.error('Unhandled promise rejection:', event.reason)
+
+  // Prevent the default browser behavior (logging to console)
+  event.preventDefault()
+
+  // Don't show toast for network errors - they're handled by the connection monitor
+  const errorMessage = event.reason instanceof Error ? event.reason.message : String(event.reason)
+  const isNetworkError =
+    errorMessage.includes('Network Error') ||
+    errorMessage.includes('timeout') ||
+    errorMessage.includes('connection') ||
+    errorMessage.includes('API key')
+
+  if (!isNetworkError) {
+    console.error('Unhandled rejection:', event.reason)
+  }
+})
+
 app.mount('#app')

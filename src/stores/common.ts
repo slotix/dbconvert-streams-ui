@@ -172,36 +172,52 @@ export const useCommonStore = defineStore('common', {
     },
     async checkSentryHealth() {
       // Use shorter retry delays for faster initialization
-      await this.retryOperation(
-        async () => {
-          try {
-            await api.sentryHealthCheck()
-            this.sentryHealthy = true
-          } catch (error) {
-            this.sentryHealthy = false
-            throw error
-          }
-        },
-        2,
-        1000
-      ) // 2 retries with 1 second delay instead of 3 retries with 5 second delay
+      try {
+        await this.retryOperation(
+          async () => {
+            try {
+              await api.sentryHealthCheck()
+              this.sentryHealthy = true
+            } catch (error) {
+              this.sentryHealthy = false
+              throw error
+            }
+          },
+          2,
+          1000
+        ) // 2 retries with 1 second delay instead of 3 retries with 5 second delay
+      } catch (error) {
+        // Silently catch health check failures - the health monitor will handle reconnection
+        const errorMessage = error instanceof Error ? error.message : String(error)
+        if (!errorMessage.includes('Network Error')) {
+          console.log('Sentry health check failed:', errorMessage)
+        }
+      }
     },
 
     async checkAPIHealth() {
       // Use shorter retry delays for faster initialization
-      await this.retryOperation(
-        async () => {
-          try {
-            await api.backendHealthCheck()
-            this.apiHealthy = true
-          } catch (error) {
-            this.apiHealthy = false
-            throw error
-          }
-        },
-        2,
-        1000
-      ) // 2 retries with 1 second delay instead of 3 retries with 5 second delay
+      try {
+        await this.retryOperation(
+          async () => {
+            try {
+              await api.backendHealthCheck()
+              this.apiHealthy = true
+            } catch (error) {
+              this.apiHealthy = false
+              throw error
+            }
+          },
+          2,
+          1000
+        ) // 2 retries with 1 second delay instead of 3 retries with 5 second delay
+      } catch (error) {
+        // Silently catch health check failures - the health monitor will handle reconnection
+        const errorMessage = error instanceof Error ? error.message : String(error)
+        if (!errorMessage.includes('Network Error')) {
+          console.log('Backend health check failed:', errorMessage)
+        }
+      }
     },
 
     async getApiKey(): Promise<string | null> {
@@ -301,8 +317,15 @@ export const useCommonStore = defineStore('common', {
         }
         await api.loadUserConfigs(this.apiKey)
       } catch (error) {
-        const toast = useToast()
-        toast.error('Failed to load user data')
+        // Don't show toast for network errors - the connection monitor handles that
+        const errorMessage = error instanceof Error ? error.message : String(error)
+        const isNetworkError =
+          errorMessage.includes('Unable to connect') || errorMessage.includes('Network Error')
+
+        if (!isNetworkError) {
+          const toast = useToast()
+          toast.error(errorMessage)
+        }
         throw error
       }
     },
@@ -334,12 +357,19 @@ export const useCommonStore = defineStore('common', {
       this.currentPage = page
     },
     async consumeLogsFromSSE() {
+      // Only start SSE connection if backend is available
+      if (!this.isBackendConnected) {
+        console.log('Backend not connected, skipping SSE connection')
+        return
+      }
+
       // Start the SSE logs connection in the background
       // Uses sseLogsServiceStructured (imported as sseLogsService) which handles:
       // - Category-aware deduplication (progress, stat, sql, error logs)
       // - Structured fields (stage, description, table, status, etc.)
       // - Validation that allows empty messages for structured logs
       setTimeout(async () => {
+        sseLogsService.setBackendAvailable(true)
         await sseLogsService.connect()
       }, 0)
     },
@@ -360,13 +390,8 @@ export const useCommonStore = defineStore('common', {
           return 'failed'
         }
 
-        // Try to check backend health
-        try {
-          await Promise.all([this.checkSentryHealth(), this.checkAPIHealth()])
-        } catch (healthError) {
-          console.log('Health check failed, backend unavailable:', healthError)
-          // Backend is unavailable
-        }
+        // Try to check backend health (methods now handle errors internally)
+        await Promise.all([this.checkSentryHealth(), this.checkAPIHealth()])
 
         if (this.sentryHealthy && this.apiHealthy) {
           // Online mode - full initialization
@@ -396,7 +421,7 @@ export const useCommonStore = defineStore('common', {
             }
             // For other errors, backend is unavailable
             console.log('Failed to fetch user data, backend unavailable:', error.message)
-            toast.error('Backend unavailable. Please check your connection.')
+            // Don't show toast - let health monitor handle it
             return 'failed'
           }
         } else if (this.apiHealthy) {
@@ -406,7 +431,7 @@ export const useCommonStore = defineStore('common', {
             // Try to load user configs directly since we have API access
             await this.loadUserConfigs()
             this.setBackendConnected(true)
-            toast.success('App initialized successfully (limited features)')
+            toast.success('App initialized successfully')
             this.clearError()
 
             // Start real-time health monitoring
@@ -415,13 +440,15 @@ export const useCommonStore = defineStore('common', {
             return 'success'
           } catch (error: any) {
             console.log('Failed to initialize with API only:', error)
+            // Don't show toast - error already handled in loadUserConfigs
             // Backend unavailable
           }
         } else {
           // Backend unavailable - cannot proceed
           console.log('Backend unavailable')
           this.setBackendConnected(false)
-          toast.error('Unable to connect to backend server.')
+          // Don't show error toast immediately - let the health monitor handle reconnection
+          // toast.error('Unable to connect to backend server.')
 
           // Start monitoring to detect when backend comes back online
           this.startHealthMonitoring()
@@ -439,7 +466,8 @@ export const useCommonStore = defineStore('common', {
           await this.clearApiKey()
           toast.error('Invalid API key. Please enter a valid key to continue.')
         } else {
-          toast.error('Failed to initialize app. Please try again.')
+          // Don't show generic error toast - specific errors are already handled
+          console.log('Initialization error handled by specific error handlers')
         }
 
         this.setBackendConnected(false)
@@ -454,6 +482,14 @@ export const useCommonStore = defineStore('common', {
     },
     setBackendConnected(status: boolean) {
       this.isBackendConnected = status
+
+      // Notify SSE service about backend status
+      sseLogsService.setBackendAvailable(status)
+
+      // If backend becomes available, try to connect SSE
+      if (status) {
+        this.consumeLogsFromSSE()
+      }
     },
     async fetchServiceStatus() {
       try {
@@ -574,9 +610,13 @@ export const useCommonStore = defineStore('common', {
           this.apiHealthy = false
           this.sentryHealthy = false
 
-          // Only show toast once when connection is first lost
-          const toast = useToast()
-          toast.error('Backend connection lost.')
+          // Only show toast if we've been connected for a while (not during initial startup)
+          const timeSinceInit = Date.now() - this.initializationStartTime
+          if (timeSinceInit > 5000) {
+            // Only show toast if it's been more than 5 seconds since initialization
+            const toast = useToast()
+            toast.warning('Backend connection lost. Reconnecting...')
+          }
         }
       }
     },

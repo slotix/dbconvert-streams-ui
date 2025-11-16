@@ -150,12 +150,25 @@ const getUserDataFromSentry = async (apiKey: string): Promise<UserData> => {
 }
 
 const loadUserConfigs = async (apiKey: string): Promise<void> => {
-  validateApiKey(apiKey)
   try {
+    // Validate API key first
+    await validateApiKey(apiKey)
+
+    // Load user configs
     await apiClient.get('/user/configs', {
       headers: { [API_HEADERS.API_KEY]: apiKey }
     })
   } catch (error) {
+    // Provide more specific error messages
+    if (error && typeof error === 'object' && 'response' in error) {
+      const axiosError = error as AxiosError
+      if (axiosError.response?.status === 401) {
+        throw new Error('Invalid API key')
+      }
+      if (!axiosError.response && axiosError.message.includes('Network Error')) {
+        throw new Error('Unable to connect to backend server')
+      }
+    }
     throw handleApiError(error)
   }
 }

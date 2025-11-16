@@ -582,10 +582,14 @@ const initializeApp = async () => {
     // API key validation and development fallbacks internally
     const initResult = await commonStore.initApp()
     if (initResult === 'failed') {
-      throw new Error('Failed to initialize app')
+      // Don't throw error - just return failed status
+      // The initApp method already shows appropriate toasts
+      return 'failed'
     }
     return 'success'
   } catch (error) {
+    // Catch and log errors, but don't show additional toasts
+    // The error handlers in initApp already handle user notifications
     console.error('Failed to initialize app:', error)
     return 'failed'
   } finally {

@@ -9,6 +9,7 @@ class SSELogsService {
   private maxReconnectAttempts = 5
   private reconnectDelay = 2000
   private isConnected = false
+  private backendAvailable = true // Track backend availability
 
   connect(sseUrl?: string) {
     if (this.eventSource) {
@@ -23,16 +24,23 @@ class SSELogsService {
       this.setupEventHandlers(this.eventSource, logsStore, url)
       this.reconnectAttempts = 0
     } catch (error) {
-      console.error('Failed to create EventSource:', error)
+      // Only log if backend is expected to be available
+      if (this.backendAvailable) {
+        console.error('Failed to create EventSource:', error)
+      }
       this.scheduleReconnect(url)
     }
   }
 
   private setupEventHandlers(eventSource: EventSource, logsStore: Store, sseUrl: string) {
     eventSource.addEventListener('open', () => {
-      console.log('SSE connection established')
+      // Only log if this is a new connection or reconnection after failure
+      if (!this.isConnected) {
+        console.log('SSE connection established')
+      }
       this.reconnectAttempts = 0
       this.isConnected = true
+      this.backendAvailable = true
     })
 
     eventSource.addEventListener('message', (event: MessageEvent) => {
@@ -74,7 +82,11 @@ class SSELogsService {
     })
 
     eventSource.addEventListener('error', (error) => {
-      console.error('SSE connection error:', error)
+      // Only log errors if we think backend should be available
+      // This prevents console spam when backend is known to be down
+      if (this.backendAvailable && this.isConnected) {
+        console.warn('Browser connection failed, will retry: Connection closed')
+      }
 
       if (eventSource.readyState === EventSource.CLOSED) {
         this.isConnected = false
@@ -112,14 +124,18 @@ class SSELogsService {
 
   private scheduleReconnect(sseUrl: string) {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.error('Max reconnection attempts reached')
+      // Silently mark backend as unavailable after max attempts
+      this.backendAvailable = false
       return
     }
 
     this.reconnectAttempts++
     const delay = this.reconnectDelay * this.reconnectAttempts
 
-    console.log(`Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})`)
+    // Only log if backend is expected to be available
+    if (this.backendAvailable) {
+      console.log(`Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})`)
+    }
 
     setTimeout(() => {
       this.connect(sseUrl)
@@ -131,7 +147,20 @@ class SSELogsService {
       this.eventSource.close()
       this.eventSource = null
       this.isConnected = false
-      console.log('SSE connection closed')
+      // Only log if this is an intentional disconnect (not due to backend being down)
+      if (this.backendAvailable) {
+        console.log('SSE connection closed')
+      }
+    }
+  }
+
+  // Method to notify SSE service about backend status
+  setBackendAvailable(available: boolean) {
+    this.backendAvailable = available
+
+    // Reset reconnect attempts when backend becomes available
+    if (available) {
+      this.reconnectAttempts = 0
     }
   }
 

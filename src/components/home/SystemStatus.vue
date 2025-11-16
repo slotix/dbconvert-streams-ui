@@ -239,7 +239,11 @@ onMounted(async () => {
     commonStore.clearError()
     isInitialLoading.value = false
   } catch (error) {
-    console.error('Failed to fetch initial service status:', error)
+    // Silently handle initial fetch failure - backend might not be available yet
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    if (!errorMessage.includes('Network Error') && !errorMessage.includes('connection')) {
+      console.log('Failed to fetch initial service status:', errorMessage)
+    }
   } finally {
     isInitialLoading.value = false
   }
@@ -254,7 +258,11 @@ onMounted(async () => {
           commonStore.clearError()
         })
         .catch((error) => {
-          console.warn('Service status polling failed:', error)
+          // Silently handle polling failures - backend connection monitor handles this
+          const errorMessage = error instanceof Error ? error.message : String(error)
+          if (!errorMessage.includes('Network Error') && !errorMessage.includes('connection')) {
+            console.log('Service status polling failed:', errorMessage)
+          }
         })
     }
   }, 10000)
