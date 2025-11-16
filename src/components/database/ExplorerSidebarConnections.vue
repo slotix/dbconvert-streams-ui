@@ -488,11 +488,26 @@ watch(
   { immediate: false }
 )
 
+// Track previous filter state to avoid unnecessary re-runs
+let previousTypeFilters: string[] = []
+
 watch(
   () => props.typeFilters,
-  (filters) => {
-    if (!filters || filters.length === 0) return
-    if (searchQuery.value.trim()) void expandForSearch(searchQuery.value)
+  (filters, oldFilters) => {
+    // Skip if filters haven't actually changed
+    if (
+      JSON.stringify(filters?.slice().sort()) ===
+      JSON.stringify(previousTypeFilters?.slice().sort())
+    ) {
+      return
+    }
+
+    previousTypeFilters = filters ? [...filters] : []
+
+    // Only expand if there's an active search query
+    if (searchQuery.value.trim()) {
+      void expandForSearch(searchQuery.value)
+    }
   }
 )
 

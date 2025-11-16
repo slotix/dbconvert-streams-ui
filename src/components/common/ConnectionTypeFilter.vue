@@ -114,25 +114,13 @@ const availableTypes = computed<DbType[]>(() => {
 })
 
 // Local state
-const selectedTypes = ref<string[]>([])
 const isOpen = ref(false)
 const buttonRef = ref<HTMLElement | null>(null)
 const dropdownRef = ref<HTMLElement | null>(null)
 const dropdownStyle = ref({})
 
-// Initialize from props
-watch(
-  () => props.selectedTypes,
-  (newTypes) => {
-    selectedTypes.value = [...newTypes]
-  },
-  { immediate: true }
-)
-
-// Emit changes
-watch(selectedTypes, (newTypes) => {
-  emit('update:selectedTypes', newTypes)
-})
+// Use props directly - no local copy needed
+const selectedTypes = computed(() => props.selectedTypes || [])
 
 // Position dropdown
 async function positionDropdown() {
@@ -233,21 +221,26 @@ function isTypeSelected(type: string): boolean {
 
 // Toggle a type selection
 function toggleType(type: string) {
-  const index = selectedTypes.value.indexOf(type)
+  const current = [...selectedTypes.value]
+  const index = current.indexOf(type)
   if (index > -1) {
-    selectedTypes.value = selectedTypes.value.filter((t) => t !== type)
+    current.splice(index, 1)
   } else {
-    selectedTypes.value = [...selectedTypes.value, type]
+    current.push(type)
   }
+  emit('update:selectedTypes', current)
 }
 
 // Select all types
 function selectAll() {
-  selectedTypes.value = availableTypes.value.map((t) => t.type)
+  emit(
+    'update:selectedTypes',
+    availableTypes.value.map((t) => t.type)
+  )
 }
 
 // Clear all selections
 function clearAll() {
-  selectedTypes.value = []
+  emit('update:selectedTypes', [])
 }
 </script>

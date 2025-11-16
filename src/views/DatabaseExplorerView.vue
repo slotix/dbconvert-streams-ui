@@ -67,14 +67,11 @@ const alwaysOpenNewTab = usePersistedState<boolean>('explorer.alwaysOpenNewTab',
 const connectionsCount = computed(() => connectionsStore.connections.length || 0)
 
 // Use the same filtering logic as the sidebar tree
-const treeSearch = computed(() =>
-  useTreeSearch(connectionSearch.value, {
+const filteredConnectionsCount = computed(() => {
+  const treeSearch = useTreeSearch(connectionSearch.value, {
     typeFilters: selectedConnectionTypes.value
   })
-)
-
-const filteredConnectionsCount = computed(() => {
-  const filtered = treeSearch.value.filterConnections(connectionsStore.connections)
+  const filtered = treeSearch.filterConnections(connectionsStore.connections)
   return filtered.length
 })
 
