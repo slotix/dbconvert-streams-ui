@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, nextTick, provide } from 'vue'
+import { useDebounceFn } from '@vueuse/core'
 import { CubeIcon } from '@heroicons/vue/24/outline'
 import { useConnectionsStore } from '@/stores/connections'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
@@ -66,6 +67,8 @@ const emit = defineEmits<{
   (e: 'request-file-entries', payload: { connectionId: string }): void
 }>()
 
+const MIN_SEARCH_LENGTH = 2
+
 const connectionsStore = useConnectionsStore()
 const navigationStore = useExplorerNavigationStore()
 const treeLogic = useConnectionTreeLogic()
@@ -115,6 +118,11 @@ const canCopyDDL = computed(() => {
 // Use tree search composable (reactive to searchQuery and typeFilters)
 const treeSearch = computed(() => {
   return useTreeSearch(searchQuery.value, { typeFilters: props.typeFilters })
+})
+
+const searchTooShort = computed(() => {
+  const len = searchQuery.value.trim().length
+  return len > 0 && len < MIN_SEARCH_LENGTH
 })
 
 // Computed for filtered connections using composable
@@ -447,11 +455,25 @@ watch(
 )
 
 // When searching, auto-expand connections and databases
-async function expandForSearch(query: string) {
+const searchRunId = ref(0)
+const isSearchExpanding = ref(false)
+
+async function expandForSearch(query: string, runId: number) {
   const trimmed = query.trim()
-  if (!trimmed) return
-  const conns = filteredConnections.value
+  if (!trimmed) {
+    if (runId === searchRunId.value) {
+      isSearchExpanding.value = false
+    }
+    return
+  }
+  const conns =
+    props.typeFilters && props.typeFilters.length
+      ? connectionsStore.connections.filter((conn) =>
+          treeLogic.matchesTypeFilters(conn, props.typeFilters!)
+        )
+      : connectionsStore.connections
   for (const c of conns) {
+    if (runId !== searchRunId.value) return
     if (!navigationStore.isConnectionExpanded(c.id)) {
       navigationStore.expandConnection(c.id)
     }
@@ -459,8 +481,10 @@ async function expandForSearch(query: string) {
       emit('request-file-entries', { connectionId: c.id })
     } else {
       await navigationStore.ensureDatabases(c.id)
+      if (runId !== searchRunId.value) return
       const dbs = navigationStore.databasesState[c.id] || []
       for (const d of dbs) {
+        if (runId !== searchRunId.value) return
         if (matchesDbFilter(c.id, d.name)) {
           navigationStore.expandDatabase(`${c.id}:${d.name}`)
           // Only fetch if not already loading or loaded (prevent duplicate requests)
@@ -474,6 +498,27 @@ async function expandForSearch(query: string) {
       }
     }
   }
+  if (runId === searchRunId.value) {
+    isSearchExpanding.value = false
+  }
+}
+
+const scheduleSearchExpansion = (query: string) => {
+  const runId = ++searchRunId.value
+  if (!shouldExpandSearch(query)) {
+    isSearchExpanding.value = false
+    return
+  }
+  isSearchExpanding.value = true
+  void expandForSearch(query, runId)
+}
+
+const debouncedExpandForSearch = useDebounceFn((query: string) => {
+  scheduleSearchExpansion(query)
+}, 250)
+
+function shouldExpandSearch(query: string): boolean {
+  return query.trim().length >= MIN_SEARCH_LENGTH
 }
 
 function matchesDbFilter(connId: string, dbName: string): boolean {
@@ -483,7 +528,12 @@ function matchesDbFilter(connId: string, dbName: string): boolean {
 watch(
   () => searchQuery.value,
   (q) => {
-    void expandForSearch(q)
+    if (shouldExpandSearch(q)) {
+      debouncedExpandForSearch(q)
+    } else {
+      searchRunId.value++
+      isSearchExpanding.value = false
+    }
   },
   { immediate: false }
 )
@@ -504,9 +554,12 @@ watch(
 
     previousTypeFilters = filters ? [...filters] : []
 
-    // Only expand if there's an active search query
-    if (searchQuery.value.trim()) {
-      void expandForSearch(searchQuery.value)
+    // Only expand if query meets minimum length
+    if (shouldExpandSearch(searchQuery.value)) {
+      debouncedExpandForSearch(searchQuery.value)
+    } else {
+      searchRunId.value++
+      isSearchExpanding.value = false
     }
   }
 )
@@ -534,10 +587,30 @@ watch(
     class="bg-linear-to-br from-white via-slate-50/50 to-white dark:from-gray-850 dark:via-gray-850 dark:to-gray-900 shadow-xl dark:shadow-gray-900/50 rounded-2xl overflow-hidden h-[calc(100vh-140px)] flex flex-col transition-all duration-300 hover:shadow-2xl dark:hover:shadow-gray-900/70 border border-slate-200/50 dark:border-gray-700"
   >
     <!-- Sidebar Header -->
-    <div class="px-4 py-3 border-b border-slate-200/50 dark:border-gray-700">
+    <div
+      class="px-4 py-3 border-b border-slate-200/50 dark:border-gray-700 flex items-center justify-between gap-4"
+    >
       <h2 class="text-sm font-semibold text-slate-700 dark:text-gray-300 uppercase tracking-wide">
         Connections
       </h2>
+      <div
+        v-if="isSearchExpanding"
+        class="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400"
+      >
+        <svg class="animate-spin h-4 w-4 text-slate-400" viewBox="0 0 24 24">
+          <circle
+            class="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            stroke-width="4"
+            fill="none"
+          ></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+        </svg>
+        <span>Searching…</span>
+      </div>
     </div>
 
     <!-- Scrollable tree content area with smooth scrolling and custom scrollbar -->
@@ -558,23 +631,52 @@ watch(
 
       <!-- Main content area (show connections even if there was a load error) -->
       <div v-else>
-        <!-- Enhanced empty state with modern design -->
-        <div
-          v-if="!filteredConnections.length"
-          class="flex flex-col items-center justify-center py-20 px-6"
-        >
+        <!-- Empty/searching state -->
+        <template v-if="!filteredConnections.length">
           <div
-            class="bg-linear-to-br from-slate-100 to-slate-50 dark:from-gray-800 dark:to-gray-700 rounded-full p-6 mb-5 shadow-inner border border-slate-200 dark:border-gray-700"
+            v-if="isSearchExpanding"
+            class="flex flex-col items-center justify-center py-20 px-6 text-slate-500 dark:text-slate-400"
           >
-            <CubeIcon class="h-10 w-10 text-slate-400 dark:text-gray-500" />
+            <svg class="animate-spin h-8 w-8 text-slate-400 mb-3" viewBox="0 0 24 24">
+              <circle
+                class="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="4"
+                fill="none"
+              ></circle>
+              <path
+                class="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+              />
+            </svg>
+            <p class="text-sm font-medium">Searching connections…</p>
+            <p class="text-xs mt-1 text-center">
+              Loading metadata that matches "{{ searchQuery }}"
+            </p>
           </div>
-          <p class="text-base font-semibold text-slate-700 dark:text-slate-300 mb-2">
-            No connections found
-          </p>
-          <p class="text-sm text-slate-500 dark:text-slate-400 text-center">
-            {{ searchQuery ? 'Try adjusting your search' : 'Add a connection to get started' }}
-          </p>
-        </div>
+          <div v-else class="flex flex-col items-center justify-center py-20 px-6 text-center">
+            <div
+              class="bg-linear-to-br from-slate-100 to-slate-50 dark:from-gray-800 dark:to-gray-700 rounded-full p-6 mb-5 shadow-inner border border-slate-200 dark:border-gray-700"
+            >
+              <CubeIcon class="h-10 w-10 text-slate-400 dark:text-gray-500" />
+            </div>
+            <p class="text-base font-semibold text-slate-700 dark:text-slate-300 mb-2">
+              No connections found
+            </p>
+            <p class="text-sm text-slate-500 dark:text-slate-400 text-center">
+              <template v-if="searchTooShort">
+                Type at least {{ MIN_SEARCH_LENGTH }} characters to search across all connections.
+              </template>
+              <template v-else>
+                {{ searchQuery ? 'Try adjusting your search' : 'Add a connection to get started' }}
+              </template>
+            </p>
+          </div>
+        </template>
 
         <!-- Connection tree with improved spacing and animations -->
         <div v-else class="space-y-1">
