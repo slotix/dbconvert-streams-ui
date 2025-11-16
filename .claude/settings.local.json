@@ -5,7 +5,8 @@
       "Bash(yarn format:*)",
       "Bash(yarn test:unit:*)",
       "Bash(chmod:*)",
-      "mcp__ide__getDiagnostics"
+      "mcp__ide__getDiagnostics",
+      "Bash(go build:*)"
     ],
     "deny": [],
     "ask": []
