@@ -101,7 +101,7 @@
             <label
               for="numberOfEvents"
               class="block text-sm font-medium text-gray-700 dark:text-gray-300"
-              >Number of Events</label
+              >{{ numberOfEventsLabel }}</label
             >
             <div class="mt-1">
               <input
@@ -109,18 +109,18 @@
                 v-model="limitsNumberOfEvents"
                 type="number"
                 class="block w-full rounded-md border-gray-300 dark:border-gray-700 shadow-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 bg-white dark:bg-gray-900 focus:border-teal-500 dark:focus:border-teal-400 focus:ring-1 focus:ring-teal-500 dark:focus:ring-teal-400 sm:text-sm"
-                placeholder="0 = no limit"
+                placeholder="0"
               />
             </div>
             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-              Maximum number of events to process (0 = no limit)
+              {{ numberOfEventsDescription }}
             </p>
           </div>
           <div>
             <label
               for="elapsedTime"
               class="block text-sm font-medium text-gray-700 dark:text-gray-300"
-              >Elapsed Time (seconds)</label
+              >Maximum execution time (seconds)</label
             >
             <div class="mt-1">
               <input
@@ -128,12 +128,10 @@
                 v-model="limitsElapsedTime"
                 type="number"
                 class="block w-full rounded-md border-gray-300 dark:border-gray-700 shadow-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 bg-white dark:bg-gray-900 focus:border-teal-500 dark:focus:border-teal-400 focus:ring-1 focus:ring-teal-500 dark:focus:ring-teal-400 sm:text-sm"
-                placeholder="0 = no limit"
+                placeholder="0"
               />
             </div>
-            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-              Maximum execution time in seconds (0 = no limit)
-            </p>
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Optional safety limit</p>
           </div>
         </div>
       </div>
@@ -290,5 +288,18 @@ const limitsElapsedTime = computed<number>({
     }
     currentStreamConfig.limits.elapsedTime = value
   }
+})
+
+// Dynamic labels based on stream mode
+const numberOfEventsLabel = computed(() => {
+  return currentStreamConfig.mode === 'convert'
+    ? 'Maximum rows to transfer'
+    : 'Maximum events to process'
+})
+
+const numberOfEventsDescription = computed(() => {
+  return currentStreamConfig.mode === 'convert'
+    ? 'Total rows copied from all tables'
+    : 'INSERT + UPDATE + DELETE counted as events'
 })
 </script>
