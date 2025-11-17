@@ -58,7 +58,10 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
 
     // Loading states
     loadingDatabases: {} as Record<string, boolean>,
-    loadingMetadata: {} as Record<string, boolean> // key: connectionId:database
+    loadingMetadata: {} as Record<string, boolean>, // key: connectionId:database
+
+    // Error states
+    databasesErrors: {} as Record<string, string | null> // connectionId -> error message
 
     // Removed timestamp-based cache validation - backend handles caching with X-Cache header
   }),
@@ -91,6 +94,10 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
 
     isDatabasesLoading: (state) => (connectionId: string) => {
       return state.loadingDatabases[connectionId] || false
+    },
+
+    getDatabasesError: (state) => (connectionId: string) => {
+      return state.databasesErrors[connectionId] || null
     }
 
     // Removed isMetadataStale and isDatabasesCacheStale getters
@@ -228,9 +235,15 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
       try {
         const dbs = await connectionsApi.getDatabases(connectionId)
         this.databasesState[connectionId] = dbs.map((d) => ({ name: d.name }))
+        // Clear error on successful load
+        this.databasesErrors[connectionId] = null
         return this.databasesState[connectionId]
       } catch (error) {
-        // Silently fail for databases - component will handle empty state
+        // Store error message for UI display
+        const errorMessage =
+          error instanceof Error ? error.message : 'Failed to connect to database'
+        this.databasesErrors[connectionId] = errorMessage
+
         // Only log in development to avoid console noise
         if (import.meta.env.DEV) {
           console.warn(`Failed to load databases for ${connectionId}:`, error)

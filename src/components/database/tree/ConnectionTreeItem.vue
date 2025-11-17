@@ -44,6 +44,9 @@ const treeSearch = computed(() => useTreeSearch(searchQuery.value))
 const fileEntries = computed(() => fileExplorerStore.getEntries(props.connection.id))
 const selectedFilePath = computed(() => fileExplorerStore.getSelectedPath(props.connection.id))
 
+// Get database error state
+const databaseError = computed(() => navigationStore.getDatabasesError(props.connection.id))
+
 const emit = defineEmits<{
   (e: 'toggle-connection'): void
   (e: 'select-connection', payload: { connectionId: string }): void
@@ -303,6 +306,27 @@ const connectionTooltip = computed(() => {
             ></path>
           </svg>
           <span>Loading databases…</span>
+        </div>
+        <!-- Error state when connection failed -->
+        <div
+          v-else-if="databaseError"
+          class="text-xs text-red-600 dark:text-red-400 px-3 py-1.5 flex items-center gap-1.5"
+          :title="databaseError"
+        >
+          <svg
+            class="w-3.5 h-3.5 flex-shrink-0"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            ></path>
+          </svg>
+          <span>Connection failed</span>
         </div>
         <!-- Empty state when loaded but no databases -->
         <div
