@@ -25,30 +25,50 @@ const progressPercent = computed(() => {
 
 const statusColor = computed(() => {
   if (props.status === STAT_STATUS.FINISHED) {
-    return 'bg-green-600 dark:bg-green-500'
+    return 'bg-emerald-400 dark:bg-emerald-800'
   }
   if (props.status === STAT_STATUS.FAILED) {
-    return 'bg-red-600 dark:bg-red-500'
+    return 'bg-rose-400 dark:bg-rose-800'
   }
-  return 'bg-blue-600 dark:bg-blue-500'
+  return 'bg-blue-400 dark:bg-blue-800'
 })
 
 const barBackground = computed(() => {
   if (props.status === STAT_STATUS.FINISHED) {
-    return 'bg-green-100 dark:bg-green-900/30'
+    return 'bg-emerald-50 dark:bg-emerald-950/40'
   }
   if (props.status === STAT_STATUS.FAILED) {
-    return 'bg-red-100 dark:bg-red-900/30'
+    return 'bg-rose-50 dark:bg-rose-950/40'
   }
-  return 'bg-blue-100 dark:bg-blue-900/30'
+  return 'bg-blue-50 dark:bg-blue-950/40'
+})
+
+const textColor = computed(() => {
+  if (props.status === STAT_STATUS.FINISHED) {
+    return 'text-emerald-950 dark:text-emerald-50'
+  }
+  if (props.status === STAT_STATUS.FAILED) {
+    return 'text-rose-950 dark:text-rose-50'
+  }
+  return 'text-cyan-950 dark:text-cyan-50'
+})
+
+const ringColor = computed(() => {
+  if (props.status === STAT_STATUS.FINISHED) {
+    return 'ring-emerald-200 dark:ring-emerald-800'
+  }
+  if (props.status === STAT_STATUS.FAILED) {
+    return 'ring-rose-200 dark:ring-rose-800'
+  }
+  return 'ring-cyan-200 dark:ring-cyan-800'
 })
 </script>
 
 <template>
   <div class="w-full">
     <div
-      class="w-full rounded-full h-6 overflow-hidden ring-1 ring-inset ring-gray-200 dark:ring-gray-700 relative"
-      :class="barBackground"
+      class="w-full rounded-full h-6 overflow-hidden ring-1 ring-inset relative"
+      :class="[barBackground, ringColor]"
     >
       <div
         :class="[statusColor, 'h-full transition-all duration-300 ease-out']"
@@ -59,7 +79,7 @@ const barBackground = computed(() => {
         aria-valuemax="100"
       />
       <div class="absolute inset-0 flex items-center justify-center">
-        <span class="text-xs font-semibold text-gray-900 dark:text-gray-100 drop-shadow-sm">
+        <span :class="['text-xs font-semibold', textColor]">
           {{ progressPercent.toFixed(1) }}%
         </span>
       </div>
