@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import type { StreamConfig } from '@/types/streamConfig'
 import { NodeTypes, type NodeType } from '@/types/common'
 import type { AggregatedStatResponse, AggregatedNodeStats } from '@/types/streamStats'
-import type { TableStat, TableStatsGroup } from '@/types/tableStats'
+import type { TableStat, TableStatsGroup, TableMetadata } from '@/types/tableStats'
 import {
   STREAM_STATUS,
   TERMINAL_STATUSES,
@@ -65,6 +65,7 @@ interface State {
   lastStreamId: string | null
   shouldShowMonitorTab: boolean
   aggregatedStats: AggregatedStatResponse | null
+  tableMetadata: Map<string, TableMetadata>
 }
 
 // Use centralized stream status constants
@@ -113,7 +114,8 @@ export const useMonitoringStore = defineStore('monitoring', {
     statsError: null,
     lastStreamId: null as string | null,
     shouldShowMonitorTab: false,
-    aggregatedStats: null
+    aggregatedStats: null,
+    tableMetadata: new Map()
   }),
   getters: {
     currentStage(state: State): Stage | null {
@@ -233,11 +235,15 @@ export const useMonitoringStore = defineStore('monitoring', {
         // Backend sends raw numeric bytes in size and rate fields
         // Handle both number (new format) and string (old cached format)
         let sizeFormatted: string
+        let sizeBytes: number
         if (typeof log.size === 'number') {
+          sizeBytes = log.size
           sizeFormatted = formatDataSize(log.size)
         } else if (typeof log.size === 'string') {
+          sizeBytes = parseDataSize(log.size)
           sizeFormatted = log.size // Already formatted
         } else {
+          sizeBytes = 0
           sizeFormatted = '0 B'
         }
 
@@ -250,14 +256,20 @@ export const useMonitoringStore = defineStore('monitoring', {
           rateFormatted = '0 B/s'
         }
 
+        // Get metadata for this table (if available)
+        const metadata = state.tableMetadata.get(log.table!)
+
         return {
           table: log.table!,
           status: (log.status as StatStatus) || STAT_STATUS.RUNNING,
           events: (log.events as number) || 0,
           size: sizeFormatted,
+          sizeBytes,
           rate: rateFormatted,
           elapsed: (log.elapsed as number) || 0,
-          timestamp: log.ts || Date.now()
+          timestamp: log.ts || Date.now(),
+          estimatedRows: metadata?.estimatedRows,
+          estimatedSizeBytes: metadata?.estimatedSizeBytes
         }
       })
 
@@ -285,6 +297,7 @@ export const useMonitoringStore = defineStore('monitoring', {
         this.nodes = []
         this.aggregatedStats = null
         this.currentStageID = 0
+        this.tableMetadata = new Map() // Clear old metadata
         // Reset all stage timestamps when switching streams
         this.stages.forEach((stage) => {
           stage.timestamp = null
@@ -293,6 +306,21 @@ export const useMonitoringStore = defineStore('monitoring', {
 
       this.streamID = id
       this.streamConfig = streamConfig
+
+      // Rebuild table metadata from logs that arrived before setStream was called
+      // Table metadata is now logged with the first stats report (after 500ms delay)
+      // when SSE connection is guaranteed to be established
+      const metadataLogs = this.logs.filter(
+        (log) => log.category === 'table_metadata' && log.table && log.streamId === id
+      )
+      metadataLogs.forEach((log) => {
+        const metadata: TableMetadata = {
+          name: log.table!,
+          estimatedRows: (log.estimatedRows as number) || 0,
+          estimatedSizeBytes: (log.estimatedSizeBytes as number) || 0
+        }
+        this.tableMetadata.set(log.table!, metadata)
+      })
 
       // Trigger aggregation to process any logs that arrived before setStream was called
       if (this.logs.length > 0) {
@@ -323,6 +351,18 @@ export const useMonitoringStore = defineStore('monitoring', {
       // Handle progress messages
       if (log.category === 'progress' && log.stage !== undefined) {
         this.currentStageID = log.stage
+      }
+
+      // Handle table metadata logs (from SSE instead of API)
+      // Accept metadata logs even before streamID is set (they arrive early during stream init)
+      // The tableStats getter will filter by streamID when reading from this Map
+      if (log.category === 'table_metadata' && log.table && log.streamId) {
+        const metadata: TableMetadata = {
+          name: log.table,
+          estimatedRows: (log.estimatedRows as number) || 0,
+          estimatedSizeBytes: (log.estimatedSizeBytes as number) || 0
+        }
+        this.tableMetadata.set(log.table, metadata)
       }
 
       if (log.type && log.nodeID && log.category === 'stat') {

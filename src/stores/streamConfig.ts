@@ -68,11 +68,8 @@ export const buildStreamPayload = (stream: StreamConfig): Partial<StreamConfig> 
   if (stream.created) filteredStream.created = stream.created
   if (stream.description) filteredStream.description = stream.description
 
-  // Handle reportingInterval
-  if (
-    stream.reportingInterval &&
-    stream.reportingInterval !== defaultStreamConfigOptions.reportingInterval
-  ) {
+  // Handle reportingInterval - always include if defined (even if it matches default)
+  if (stream.reportingInterval !== undefined) {
     filteredStream.reportingInterval = stream.reportingInterval
   }
 

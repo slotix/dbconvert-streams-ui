@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { TableCellsIcon, ChevronRightIcon } from '@heroicons/vue/24/outline'
 import { useMonitoringStore } from '@/stores/monitoring'
 import { STAT_STATUS } from '@/constants'
+import TableProgressBar from './TableProgressBar.vue'
 
 const emit = defineEmits<{
   (e: 'compare-table', tableName: string): void
@@ -151,6 +152,12 @@ function formatDuration(seconds: number) {
               </th>
               <th
                 scope="col"
+                class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"
+              >
+                Progress
+              </th>
+              <th
+                scope="col"
                 class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider"
               >
                 Rate
@@ -196,6 +203,15 @@ function formatDuration(seconds: number) {
                 class="px-4 py-3 text-sm text-right font-semibold text-gray-900 dark:text-gray-100"
               >
                 {{ table.size }}
+              </td>
+              <td class="px-4 py-3">
+                <TableProgressBar
+                  v-if="table.estimatedSizeBytes && table.estimatedSizeBytes > 0"
+                  :transferred="table.sizeBytes"
+                  :estimated="table.estimatedSizeBytes"
+                  :status="table.status"
+                />
+                <span v-else class="text-xs text-gray-400 dark:text-gray-500">—</span>
               </td>
               <td
                 class="px-4 py-3 text-sm text-right font-semibold text-gray-900 dark:text-gray-100"

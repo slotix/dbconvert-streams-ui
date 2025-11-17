@@ -2,8 +2,8 @@
 import { computed } from 'vue'
 import type { TableStatsGroup } from '@/types/tableStats'
 import { STAT_STATUS, type StatStatus } from '@/constants'
-import { formatDataSize } from '@/utils/formats'
 import { ArrowTopRightOnSquareIcon } from '@heroicons/vue/24/outline'
+import TableProgressBar from './TableProgressBar.vue'
 
 const props = defineProps<{
   tables: TableStatsGroup
@@ -129,6 +129,18 @@ function handleCompare(tableName: string) {
             <span class="text-gray-500">Duration:</span>
             <span class="font-medium text-gray-900">{{ formatDuration(table.elapsed) }}</span>
           </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div
+          v-if="table.estimatedSizeBytes && table.estimatedSizeBytes > 0"
+          class="mt-3 pt-3 border-t border-gray-100"
+        >
+          <TableProgressBar
+            :transferred="table.sizeBytes"
+            :estimated="table.estimatedSizeBytes"
+            :status="table.status"
+          />
         </div>
 
         <!-- Compare Button (only show for completed tables) -->

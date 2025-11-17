@@ -12,12 +12,18 @@ export interface TableStat {
   events: number
   /** Data size (formatted string, e.g., "111.83 KB") */
   size: string
+  /** Data size in bytes (for progress calculation) */
+  sizeBytes: number
   /** Transfer rate (formatted string, e.g., "3.77 MB/s") */
   rate: string
   /** Duration in seconds */
   elapsed: number
   /** Timestamp of last update */
   timestamp: number
+  /** Estimated total rows (from table metadata) */
+  estimatedRows?: number
+  /** Estimated total size in bytes (from table metadata) */
+  estimatedSizeBytes?: number
 }
 
 /**
@@ -32,4 +38,18 @@ export interface TableStatsGroup {
   failed: TableStat[]
   /** Total number of tables */
   total: number
+}
+
+/**
+ * Table metadata with size estimates (from backend)
+ */
+export interface TableMetadata {
+  /** Table name */
+  name: string
+  /** Estimated row count */
+  estimatedRows: number
+  /** Estimated size in bytes */
+  estimatedSizeBytes: number
+  /** Schema name (for PostgreSQL) */
+  schema?: string
 }

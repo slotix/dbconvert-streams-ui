@@ -25,6 +25,7 @@ export const LOG_CATEGORIES = {
   GENERAL: 'general',
   PROGRESS: 'progress',
   STAT: 'stat',
+  TABLE_METADATA: 'table_metadata',
   SQL: 'sql',
   ERROR: 'error',
   DEBUG: 'debug'
@@ -90,6 +91,7 @@ export const LOG_CATEGORY_LABELS: Record<LogCategory, string> = {
   [LOG_CATEGORIES.GENERAL]: 'General',
   [LOG_CATEGORIES.PROGRESS]: 'Progress',
   [LOG_CATEGORIES.STAT]: 'Statistics',
+  [LOG_CATEGORIES.TABLE_METADATA]: 'Table Metadata',
   [LOG_CATEGORIES.SQL]: 'SQL',
   [LOG_CATEGORIES.ERROR]: 'Error',
   [LOG_CATEGORIES.DEBUG]: 'Debug'

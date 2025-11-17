@@ -26,6 +26,10 @@ export interface StandardLogEntry {
   elapsed?: number
   status?: StatStatus
 
+  // Table Metadata
+  estimatedRows?: number
+  estimatedSizeBytes?: number
+
   // SQL
   query?: string
   database?: string

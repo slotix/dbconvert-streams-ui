@@ -797,6 +797,22 @@ export const useLogsStore = defineStore('logs', {
           category: 'stat',
           streamId: log.streamId // Include streamId to properly filter logs by stream
         })
+      } else if (log.category === 'table_metadata') {
+        // Handle table metadata logs (size estimates)
+        const monitoringStore = useMonitoringStore()
+        monitoringStore.addLog({
+          id: Date.now() + Math.random(),
+          type: log.type,
+          nodeID: log.nodeId || '',
+          msg: log.message,
+          level: 'info',
+          ts: new Date(log.timestamp).getTime(),
+          category: 'table_metadata',
+          table: log.table,
+          estimatedRows: log.estimatedRows,
+          estimatedSizeBytes: log.estimatedSizeBytes,
+          streamId: log.streamId
+        })
       }
     }
   }
