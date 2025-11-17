@@ -6,15 +6,29 @@ import AGGridDataView from '@/components/database/AGGridDataView.vue'
 import AGGridFileDataView from '@/components/files/AGGridFileDataView.vue'
 import SchemaComparisonPanel from './SchemaComparisonPanel.vue'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
-import { useFileExplorerStore } from '@/stores/fileExplorer'
 import { useDatabaseOverviewStore } from '@/stores/databaseOverview'
 import { normalizeDataType } from '@/constants/databaseTypes'
 import type { StreamConfig } from '@/types/streamConfig'
 import type { Connection } from '@/types/connections'
 import type { SQLTableMeta } from '@/types/metadata'
-import type { FileSystemEntry } from '@/api/fileSystem'
+import { listDirectory, type FileSystemEntry } from '@/api/fileSystem'
 import type { FileMetadata } from '@/types/files'
 import * as files from '@/api/files'
+import type { FileFormat } from '@/utils/fileFormat'
+import { getFileFormat } from '@/utils/fileFormat'
+
+type SortDirection = 'asc' | 'desc' | null | undefined
+
+interface GridSortModelEntry {
+  colId: string
+  sort?: SortDirection
+}
+
+interface GridState {
+  sortModel?: GridSortModelEntry[]
+  filterModel?: Record<string, unknown>
+  sqlBannerExpanded?: boolean
+}
 
 interface SchemaDifference {
   icon: string
@@ -38,7 +52,6 @@ const props = defineProps<{
 }>()
 
 const navigationStore = useExplorerNavigationStore()
-const fileExplorerStore = useFileExplorerStore()
 const overviewStore = useDatabaseOverviewStore()
 
 // Selected table from stream config
@@ -49,6 +62,7 @@ const sourceTableMeta = ref<SQLTableMeta | null>(null)
 const targetTableMeta = ref<SQLTableMeta | null>(null)
 const targetFileEntry = ref<FileSystemEntry | null>(null)
 const targetFileMetadata = ref<FileMetadata | null>(null)
+const targetFileError = ref<string | null>(null)
 
 // Refs to grid components for sync functionality
 const sourceGridRef = ref<InstanceType<typeof AGGridDataView> | null>(null)
@@ -77,6 +91,25 @@ const targetApproxRows = computed(() => {
 // Only 'files' is a valid file connection type now (legacy csv/jsonl/parquet removed)
 const isFileTarget = computed(() => {
   return props.target.type?.toLowerCase() === 'files'
+})
+
+const targetFileFormat = computed<FileFormat | undefined>(() => {
+  return props.stream.target?.fileFormat || props.target.file_format || undefined
+})
+
+const targetRootPath = computed(() => {
+  const storagePath = props.target.storage_config?.uri || props.target.path || ''
+  if (!storagePath) return ''
+  const subDirectory = props.stream.target?.subDirectory
+  return subDirectory ? joinPaths(storagePath, subDirectory) : storagePath
+})
+
+const targetFileDisplayName = computed(() => {
+  if (targetFileEntry.value?.name) return targetFileEntry.value.name
+  if (!selectedTable.value) return ''
+  if (!targetFileFormat.value) return selectedTable.value
+  const ext = getBaseExtensionForFormat(targetFileFormat.value)
+  return ext ? `${selectedTable.value}${ext}` : selectedTable.value
 })
 
 // Get list of tables from stream config
@@ -288,28 +321,76 @@ async function loadTargetTable() {
 
 async function loadTargetFile() {
   try {
-    // Load file entries if not already loaded
-    await fileExplorerStore.loadEntries(props.target.id, true)
+    targetFileError.value = null
+    targetFileEntry.value = null
+    targetFileMetadata.value = null
 
-    // Find the file entry matching the table name
-    const entries = fileExplorerStore.getEntries(props.target.id)
-    const fileExtension = props.stream.target?.fileFormat || props.target.type // csv, jsonl, or parquet
-    const fileName = `${selectedTable.value}.${fileExtension}`
-
-    targetFileEntry.value =
-      entries.find((entry) => entry.name === fileName || entry.path.endsWith(fileName)) || null
-
-    if (targetFileEntry.value && props.stream.target?.fileFormat) {
-      // Load file metadata from API - use full path from entry
-      const metadata = await files.getFileMetadata(
-        targetFileEntry.value.path,
-        props.stream.target.fileFormat,
-        true
-      )
-      targetFileMetadata.value = metadata
+    if (!targetRootPath.value) {
+      targetFileError.value = 'Target connection has no output directory configured'
+      return
     }
+
+    const tableFolderPath = joinPaths(targetRootPath.value, selectedTable.value)
+    const response = await listDirectory(tableFolderPath, props.target.type)
+    const tableFiles = response.entries.filter((entry) => entry.type === 'file')
+
+    if (tableFiles.length === 0) {
+      targetFileError.value = `No files found for table ${selectedTable.value} in ${tableFolderPath}`
+      return
+    }
+
+    tableFiles.sort((a, b) =>
+      a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' })
+    )
+
+    const entry = tableFiles[0]
+    targetFileEntry.value = entry
+
+    const detectedFormat: FileFormat | null = targetFileFormat.value || getFileFormat(entry.name)
+
+    if (!detectedFormat) {
+      targetFileError.value = `Unsupported file format for ${entry.name}`
+      return
+    }
+
+    const metadata = await files.getFileMetadata(entry.path, detectedFormat, true)
+    targetFileMetadata.value = metadata
   } catch (error) {
     console.error('Failed to load target file:', error)
+    targetFileError.value =
+      error instanceof Error ? error.message : 'Failed to load target file metadata'
+  }
+}
+
+function joinPaths(basePath: string, ...segments: (string | undefined)[]): string {
+  let current = basePath
+  for (const segment of segments) {
+    if (!segment) continue
+    if (!current) {
+      current = segment
+      continue
+    }
+    const separator = current.includes('\\') ? '\\' : '/'
+    const trimmedBase = current.replace(/[\\/]+$/, '')
+    const trimmedSegment = segment.replace(/^[\\/]+/, '')
+    current = `${trimmedBase}${separator}${trimmedSegment}`
+  }
+  return current
+}
+
+function getBaseExtensionForFormat(format?: FileFormat | null): string | null {
+  if (!format) return null
+  switch (format) {
+    case 'csv':
+      return '.csv'
+    case 'json':
+      return '.json'
+    case 'jsonl':
+      return '.jsonl'
+    case 'parquet':
+      return '.parquet'
+    default:
+      return null
   }
 }
 
@@ -330,13 +411,13 @@ function triggerSyncFlash(target: 'source' | 'target') {
 
 // Map grid state between source and target (handle column name differences)
 function mapGridState(
-  fromState: any,
-  fromMeta: SQLTableMeta | null,
+  fromState: GridState,
+  fromMeta: SQLTableMeta | FileMetadata | null,
   toMeta: SQLTableMeta | FileMetadata | null
-): any {
+): GridState {
   if (!fromMeta || !toMeta) return fromState
 
-  const mappedState: any = {
+  const mappedState: GridState = {
     sqlBannerExpanded: fromState.sqlBannerExpanded
   }
 
@@ -345,26 +426,27 @@ function mapGridState(
 
   // Map sort model - only include columns that exist in target
   if (fromState.sortModel && Array.isArray(fromState.sortModel)) {
-    mappedState.sortModel = fromState.sortModel.filter((sort: any) => {
-      return toColumns.includes(sort.colId.toLowerCase())
+    mappedState.sortModel = fromState.sortModel.filter((sort) => {
+      return Boolean(sort.colId) && toColumns.includes(sort.colId.toLowerCase())
     })
   }
 
   // Map filter model - only include columns that exist in target
   if (fromState.filterModel && typeof fromState.filterModel === 'object') {
-    mappedState.filterModel = {}
+    const filteredModel: Record<string, unknown> = {}
     Object.entries(fromState.filterModel).forEach(([colId, filter]) => {
       if (toColumns.includes(colId.toLowerCase())) {
-        mappedState.filterModel[colId] = filter
+        filteredModel[colId] = filter
       }
     })
+    mappedState.filterModel = filteredModel
   }
 
   return mappedState
 }
 
 // Sync from source to target
-async function syncToTarget(sourceState: any) {
+async function syncToTarget(sourceState: GridState) {
   if (!syncEnabled.value || isSyncing.value || !targetGridRef.value) return
 
   isSyncing.value = true
@@ -386,14 +468,14 @@ async function syncToTarget(sourceState: any) {
 }
 
 // Sync from target to source
-async function syncToSource(targetState: any) {
+async function syncToSource(targetState: GridState) {
   if (!syncEnabled.value || isSyncing.value || !sourceGridRef.value) return
 
   isSyncing.value = true
   try {
     // Map state
     const targetMeta = isFileTarget.value ? targetFileMetadata.value : targetTableMeta.value
-    const mappedState = mapGridState(targetState, targetMeta as any, sourceTableMeta.value)
+    const mappedState = mapGridState(targetState, targetMeta, sourceTableMeta.value)
 
     // Apply to source grid
     await sourceGridRef.value.applyGridState(mappedState)
@@ -410,7 +492,7 @@ async function syncToSource(targetState: any) {
 // Watch source grid state changes and sync to target
 watch(
   () => sourceGridRef.value?.getGridState(),
-  (newState) => {
+  (newState: GridState | undefined) => {
     if (newState && syncEnabled.value && !isSyncing.value) {
       syncToTarget(newState)
     }
@@ -421,7 +503,7 @@ watch(
 // Watch target grid state changes and sync to source
 watch(
   () => targetGridRef.value?.getGridState(),
-  (newState) => {
+  (newState: GridState | undefined) => {
     if (newState && syncEnabled.value && !isSyncing.value) {
       syncToSource(newState)
     }
@@ -600,7 +682,9 @@ async function selectTable(tableName: string) {
               <span class="text-xs text-gray-600 dark:text-gray-400">{{ target.name }}</span>
             </div>
             <div class="text-xs text-gray-600 dark:text-gray-400">
-              <template v-if="isFileTarget"> {{ selectedTable }}.{{ target.type }} </template>
+              <template v-if="isFileTarget">
+                {{ targetFileDisplayName || `${selectedTable}.${target.type}` }}
+              </template>
               <template v-else>
                 {{ targetDatabase }}
                 <span v-if="targetSchema && targetSchema !== 'public'"> / {{ targetSchema }} </span>
@@ -641,6 +725,13 @@ async function selectTable(tableName: string) {
               :metadata="targetFileMetadata"
               :connection-id="target.id"
             />
+          </div>
+
+          <div
+            v-else-if="targetFileError"
+            class="h-full flex items-center justify-center text-center text-sm text-red-600 dark:text-red-400 px-4"
+          >
+            {{ targetFileError }}
           </div>
 
           <!-- Loading/Error State -->
