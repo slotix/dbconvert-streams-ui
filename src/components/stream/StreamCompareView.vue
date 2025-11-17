@@ -575,8 +575,8 @@ async function selectTable(tableName: string) {
             />
           </div>
           <div
-            class="h-full flex items-center justify-center text-gray-500 dark:text-gray-400 text-sm"
             v-else
+            class="h-full flex items-center justify-center text-gray-500 dark:text-gray-400 text-sm"
           >
             Loading source table...
           </div>
@@ -645,8 +645,8 @@ async function selectTable(tableName: string) {
 
           <!-- Loading/Error State -->
           <div
-            class="h-full flex items-center justify-center text-gray-500 dark:text-gray-400 text-sm"
             v-else
+            class="h-full flex items-center justify-center text-gray-500 dark:text-gray-400 text-sm"
           >
             Loading target {{ isFileTarget ? 'file' : 'table' }}...
           </div>

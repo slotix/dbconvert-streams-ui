@@ -160,11 +160,29 @@ function handleFileContextMenu(payload: { event: MouseEvent; entry: FileSystemEn
   })
 }
 
-function handleSelectFile(path: string) {
+function handleSelectFile(payload: { path: string; entry: FileSystemEntry }) {
   emit('select-file', {
     connectionId: props.connection.id,
-    path
+    path: payload.path,
+    entry: payload.entry
   })
+}
+
+async function handleExpandFolder(payload: { entry: FileSystemEntry }) {
+  const folder = payload.entry
+  const isExpanded = fileExplorerStore.isFolderExpanded(props.connection.id, folder.path)
+
+  if (isExpanded) {
+    // Collapse the folder
+    fileExplorerStore.collapseFolder(props.connection.id, folder.path)
+  } else {
+    // Expand and load folder contents if not already loaded
+    if (!folder.isLoaded) {
+      await fileExplorerStore.loadFolderContents(props.connection.id, folder.path)
+    } else {
+      fileExplorerStore.expandFolder(props.connection.id, folder.path)
+    }
+  }
 }
 
 const visibleFileEntries = computed(() => {
@@ -194,7 +212,7 @@ const connectionTooltip = computed(() => {
           : ''
       ]"
       :title="connectionTooltip"
-      @click="$emit('select-connection', { connectionId: connection.id })"
+      @click="$emit('toggle-connection')"
       @contextmenu.stop.prevent="handleConnectionContextMenu"
     >
       <component
@@ -203,7 +221,6 @@ const connectionTooltip = computed(() => {
           caretClass,
           'transition-transform duration-200 group-hover:text-teal-600 dark:group-hover:text-teal-400'
         ]"
-        @click.stop="$emit('toggle-connection')"
       />
       <DatabaseIcon
         :db-type="connection.type || ''"
@@ -252,10 +269,11 @@ const connectionTooltip = computed(() => {
           :key="entry.path"
           :entry="entry"
           :connection-id="connection.id"
-          :selected="selectedFilePath === entry.path"
-          @select="handleSelectFile(entry.path)"
+          :selected-path="selectedFilePath"
+          @select="handleSelectFile"
           @open="handleFileOpen"
           @context-menu="handleFileContextMenu"
+          @expand-folder="handleExpandFolder"
         />
       </div>
       <div v-else>

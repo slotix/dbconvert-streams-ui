@@ -98,8 +98,8 @@ function toggleExpand() {
 
       <!-- Badge Icon -->
       <component
-        v-if="badge"
         :is="badge.icon"
+        v-if="badge"
         class="w-4 h-4 flex-shrink-0 transition-colors"
         :class="[badge.colorClass]"
       />

@@ -15,6 +15,7 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
   const errorsByConnection = ref<Record<string, string>>({})
   const selectedPathsByConnection = ref<Record<string, string | null>>({})
   const loadingByConnection = ref<Record<string, boolean>>({})
+  const expandedFoldersByConnection = ref<Record<string, Set<string>>>({})
 
   // S3 session configuration
   const s3SessionConfigured = ref<boolean>(false)
@@ -48,6 +49,12 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
   const isLoading = computed(() => {
     return (connectionId: string): boolean => {
       return loadingByConnection.value[connectionId] || false
+    }
+  })
+
+  const isFolderExpanded = computed(() => {
+    return (connectionId: string, folderPath: string): boolean => {
+      return expandedFoldersByConnection.value[connectionId]?.has(folderPath) || false
     }
   })
 
@@ -154,17 +161,12 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
           maxKeys: 1000
         })
 
-        // Convert S3 objects to file entries
-        const files = response.objects.map((obj) => ({
-          name: obj.key.split('/').pop() || obj.key,
-          path: `s3://${bucket}/${obj.key}`,
-          type: 'file' as const,
-          size: obj.size
-        }))
+        // Group S3 objects into folders and files at the root level
+        const entries = groupS3ObjectsIntoTree(response.objects, bucket, prefix)
 
         entriesByConnection.value = {
           ...entriesByConnection.value,
-          [connectionId]: files
+          [connectionId]: entries
         }
         directoryPathsByConnection.value = {
           ...directoryPathsByConnection.value,
@@ -177,11 +179,12 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
       } else {
         // Local filesystem - use existing logic
         const response = await listDirectory(folderPath, connection.type)
-        const files = response.entries.filter((entry) => entry.type === 'file')
+        // Keep both files AND directories for nested browsing
+        const entries = response.entries
 
         entriesByConnection.value = {
           ...entriesByConnection.value,
-          [connectionId]: files
+          [connectionId]: entries
         }
         directoryPathsByConnection.value = {
           ...directoryPathsByConnection.value,
@@ -311,6 +314,185 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
     return entries
   }
 
+  // Folder expansion management
+  function toggleFolder(connectionId: string, folderPath: string) {
+    if (!expandedFoldersByConnection.value[connectionId]) {
+      expandedFoldersByConnection.value[connectionId] = new Set()
+    }
+
+    const expandedSet = expandedFoldersByConnection.value[connectionId]
+    if (expandedSet.has(folderPath)) {
+      expandedSet.delete(folderPath)
+    } else {
+      expandedSet.add(folderPath)
+    }
+  }
+
+  function collapseFolder(connectionId: string, folderPath: string) {
+    expandedFoldersByConnection.value[connectionId]?.delete(folderPath)
+  }
+
+  function expandFolder(connectionId: string, folderPath: string) {
+    if (!expandedFoldersByConnection.value[connectionId]) {
+      expandedFoldersByConnection.value[connectionId] = new Set()
+    }
+    expandedFoldersByConnection.value[connectionId].add(folderPath)
+  }
+
+  // Helper to find and update a folder entry in the nested structure
+  function findFolderEntry(entries: FileSystemEntry[], folderPath: string): FileSystemEntry | null {
+    for (const entry of entries) {
+      if (entry.path === folderPath) {
+        return entry
+      }
+      if (entry.children) {
+        const found = findFolderEntry(entry.children, folderPath)
+        if (found) return found
+      }
+    }
+    return null
+  }
+
+  // Load contents of a specific folder
+  async function loadFolderContents(connectionId: string, folderPath: string) {
+    const connectionsStore = useConnectionsStore()
+    const connection = connectionsStore.connections.find((c) => c.id === connectionId)
+    if (!connection) return
+
+    try {
+      const isS3 = connection.storage_config?.provider === 's3'
+
+      if (isS3) {
+        // For S3, extract bucket and prefix from folder path
+        const s3Match = folderPath.match(/^s3:\/\/([^/]+)\/(.*)$/)
+        if (!s3Match) return
+
+        const bucket = s3Match[1]
+        const prefix = s3Match[2]
+
+        // Configure S3 session if not already done
+        if (!s3SessionConfigured.value || s3CurrentConnection.value?.id !== connectionId) {
+          const storedCredentials = connection.storage_config?.credentials
+          const hasCredentials = storedCredentials && storedCredentials.aws_access_key
+
+          await configureS3Session({
+            credentialSource: hasCredentials ? 'static' : 'aws',
+            credentials: hasCredentials
+              ? {
+                  accessKeyId: storedCredentials.aws_access_key || '',
+                  secretAccessKey: storedCredentials.aws_secret_key || '',
+                  sessionToken: storedCredentials.aws_session_token
+                }
+              : undefined,
+            region: connection.storage_config?.region || 'us-east-1',
+            endpoint: connection.storage_config?.endpoint || undefined,
+            useSSL: connection.storage_config?.endpoint
+              ? !connection.storage_config.endpoint.includes('localhost')
+              : true
+          })
+          s3SessionConfigured.value = true
+          s3CurrentConnection.value = connection
+        }
+
+        // List objects under this prefix
+        const response = await listS3Objects({
+          bucket,
+          prefix: prefix.endsWith('/') ? prefix : `${prefix}/`,
+          maxKeys: 1000
+        })
+
+        // Group S3 objects into folders and files
+        const folderContents = groupS3ObjectsIntoTree(response.objects, bucket, prefix)
+
+        // Find the folder entry and update its children
+        const allEntries = entriesByConnection.value[connectionId] || []
+        const folderEntry = findFolderEntry(allEntries, folderPath)
+        if (folderEntry) {
+          folderEntry.children = folderContents
+          folderEntry.isLoaded = true
+          // Trigger reactivity
+          entriesByConnection.value = { ...entriesByConnection.value }
+        }
+      } else {
+        // Local filesystem
+        const response = await listDirectory(folderPath, connection.type)
+
+        // Find the folder entry and update its children
+        const allEntries = entriesByConnection.value[connectionId] || []
+        const folderEntry = findFolderEntry(allEntries, folderPath)
+        if (folderEntry) {
+          folderEntry.children = response.entries
+          folderEntry.isLoaded = true
+          // Trigger reactivity
+          entriesByConnection.value = { ...entriesByConnection.value }
+        }
+      }
+
+      // Expand the folder
+      expandFolder(connectionId, folderPath)
+    } catch (error) {
+      console.error('Failed to load folder contents:', error)
+    }
+  }
+
+  // Helper to group S3 objects into folders and files at the current level
+  function groupS3ObjectsIntoTree(
+    objects: Array<{ key: string; size: number }>,
+    bucket: string,
+    currentPrefix: string
+  ): FileSystemEntry[] {
+    const entries: FileSystemEntry[] = []
+    const seen = new Set<string>()
+
+    // Normalize prefix (remove trailing slash for comparison)
+    const normalizedPrefix = currentPrefix.endsWith('/')
+      ? currentPrefix.slice(0, -1)
+      : currentPrefix
+
+    for (const obj of objects) {
+      // Get the relative path from current prefix
+      let relativePath = obj.key
+      if (normalizedPrefix && obj.key.startsWith(normalizedPrefix + '/')) {
+        relativePath = obj.key.substring(normalizedPrefix.length + 1)
+      } else if (normalizedPrefix === obj.key) {
+        continue // Skip the prefix itself
+      }
+
+      // Find the first segment (immediate child)
+      const firstSlash = relativePath.indexOf('/')
+      const isFolder = firstSlash !== -1
+
+      if (isFolder) {
+        // This is a folder
+        const folderName = relativePath.substring(0, firstSlash)
+        if (!seen.has(folderName)) {
+          seen.add(folderName)
+          entries.push({
+            name: folderName,
+            path: `s3://${bucket}/${normalizedPrefix ? normalizedPrefix + '/' : ''}${folderName}`,
+            type: 'dir',
+            children: [],
+            isLoaded: false
+          })
+        }
+      } else {
+        // This is a file at the current level
+        const fileName = relativePath
+        if (!seen.has(fileName) && fileName) {
+          seen.add(fileName)
+          entries.push({
+            name: fileName,
+            path: `s3://${bucket}/${obj.key}`,
+            type: 'file',
+            size: obj.size
+          })
+        }
+      }
+    }
+
+    return entries
+  }
+
   return {
     // State
     entriesByConnection,
@@ -318,6 +500,7 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
     errorsByConnection,
     selectedPathsByConnection,
     loadingByConnection,
+    expandedFoldersByConnection,
     s3SessionConfigured,
     s3CurrentConnection,
 
@@ -327,6 +510,7 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
     getError,
     getSelectedPath,
     isLoading,
+    isFolderExpanded,
 
     // Actions
     isFilesConnectionType,
@@ -337,6 +521,10 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
     clearSelection,
     clearConnectionData,
     configureS3SessionForConnection,
-    loadS3Files
+    loadS3Files,
+    toggleFolder,
+    collapseFolder,
+    expandFolder,
+    loadFolderContents
   }
 })

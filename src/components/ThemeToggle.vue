@@ -36,7 +36,6 @@ const themes = [
         <div class="py-1">
           <MenuItem v-for="theme in themes" :key="theme.value" v-slot="{ active }">
             <button
-              @click="themeStore.setTheme(theme.value)"
               :class="[
                 active ? 'bg-gray-100 dark:bg-gray-700' : '',
                 themeStore.mode === theme.value
@@ -44,6 +43,7 @@ const themes = [
                   : 'text-gray-700 dark:text-gray-300',
                 'group flex w-full items-center px-4 py-2 text-sm'
               ]"
+              @click="themeStore.setTheme(theme.value)"
             >
               <component
                 :is="theme.icon"

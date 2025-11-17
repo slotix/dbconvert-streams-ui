@@ -6,8 +6,8 @@
     <div class="mt-2 flex flex-wrap items-center gap-x-3">
       <FormCheckbox
         v-for="operation in operationList"
-        :key="operation"
         :id="generateId(operation)"
+        :key="operation"
         :name="`${prefix}-operations`"
         :model-value="modelValue"
         :value="operation"

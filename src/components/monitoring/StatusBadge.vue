@@ -3,7 +3,7 @@
     :class="statusClass"
     class="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium shadow-sm"
   >
-    <component v-if="statusIcon" :is="statusIcon" class="mr-1.5 h-3 w-3" />
+    <component :is="statusIcon" v-if="statusIcon" class="mr-1.5 h-3 w-3" />
     <span v-else class="mr-1.5 h-2 w-2 rounded-full" :class="dotClass"></span>
     {{ status }}
   </span>

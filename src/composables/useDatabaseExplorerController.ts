@@ -204,6 +204,12 @@ export function useDatabaseExplorerController({
     defaultTab?: 'structure' | 'data'
     openInRightSplit?: boolean
   }) {
+    // Guard: only allow opening files, not directories
+    if (payload.entry.type !== 'file') {
+      console.warn('Attempted to open a directory as a file:', payload.path)
+      return
+    }
+
     navigationStore.setActiveConnectionId(payload.connectionId)
     connectionsStore.setCurrentConnection(payload.connectionId)
 
@@ -303,14 +309,17 @@ export function useDatabaseExplorerController({
     schemaStore.fetchSchema(false)
   }
 
-  function handleFileSelect(payload: { connectionId: string; path: string }) {
+  function handleFileSelect(payload: {
+    connectionId: string
+    path: string
+    entry: FileSystemEntry
+  }) {
     navigationStore.setActiveConnectionId(payload.connectionId)
 
     showConnectionDetails.value = false
 
-    const entries = currentFileEntries.value
-    const entry = entries.find((e) => e.path === payload.path)
-    if (!entry) {
+    // Only open files for preview, not directories
+    if (payload.entry.type !== 'file') {
       fileExplorerStore.setSelectedPath(payload.connectionId, payload.path)
       focusConnectionId.value = null
       return
@@ -319,7 +328,7 @@ export function useDatabaseExplorerController({
     void handleOpenFile({
       connectionId: payload.connectionId,
       path: payload.path,
-      entry,
+      entry: payload.entry,
       mode: 'preview',
       defaultTab: 'data'
     })
@@ -584,14 +593,31 @@ export function useDatabaseExplorerController({
         type: explorerState.currentConnection.value.type,
         host: explorerState.currentConnection.value.host,
         port: explorerState.currentConnection.value.port?.toString(),
-        database: explorerState.currentConnection.value.database,
+        defaultDatabase: explorerState.currentConnection.value.defaultDatabase,
         cloud_provider: explorerState.currentConnection.value.cloud_provider || ''
       })
       if (fileExplorerStore.isFilesConnectionType(newId)) {
         await fileExplorerStore.loadEntries(newId, true)
         const fileParam = route.query.file as string
         if (fileParam && currentFileEntries.value.length > 0) {
-          handleFileSelect({ connectionId: newId, path: fileParam })
+          // Find the entry recursively
+          const findEntry = (
+            entries: FileSystemEntry[],
+            targetPath: string
+          ): FileSystemEntry | null => {
+            for (const entry of entries) {
+              if (entry.path === targetPath) return entry
+              if (entry.children) {
+                const found = findEntry(entry.children, targetPath)
+                if (found) return found
+              }
+            }
+            return null
+          }
+          const entry = findEntry(currentFileEntries.value, fileParam)
+          if (entry) {
+            handleFileSelect({ connectionId: newId, path: fileParam, entry })
+          }
         }
       }
     }
@@ -722,7 +748,7 @@ export function useDatabaseExplorerController({
         type: explorerState.currentConnection.value.type,
         host: explorerState.currentConnection.value.host,
         port: explorerState.currentConnection.value.port?.toString(),
-        database: explorerState.currentConnection.value.database,
+        defaultDatabase: explorerState.currentConnection.value.defaultDatabase,
         cloud_provider: explorerState.currentConnection.value.cloud_provider || ''
       })
     }

@@ -188,8 +188,8 @@
           <div class="border-t border-gray-200 dark:border-gray-700 pt-4">
             <button
               type="button"
-              @click="showAdvanced = !showAdvanced"
               class="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
+              @click="showAdvanced = !showAdvanced"
             >
               <ChevronDownIcon
                 :class="[showAdvanced ? 'rotate-180' : '', 'h-5 w-5 mr-1 transition-transform']"

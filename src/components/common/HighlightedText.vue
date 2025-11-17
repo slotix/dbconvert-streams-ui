@@ -1,7 +1,7 @@
 <template>
   <component :is="tag" v-bind="attrs">
     <template v-for="(part, index) in parts" :key="index">
-      <component v-if="part.match" :is="highlightTag" :class="highlightClass">
+      <component :is="highlightTag" v-if="part.match" :class="highlightClass">
         {{ part.text }}
       </component>
       <span v-else>{{ part.text }}</span>

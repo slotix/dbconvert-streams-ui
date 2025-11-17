@@ -32,7 +32,7 @@
             statusBadgeClass
           ]"
         >
-          <component v-if="statusIcon" :is="statusIcon" class="h-3 w-3" />
+          <component :is="statusIcon" v-if="statusIcon" class="h-3 w-3" />
           <span class="hidden sm:inline">{{ statusText }}</span>
         </span>
 

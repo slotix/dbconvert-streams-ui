@@ -177,14 +177,10 @@ function handleFlatObjectContextMenu(payload: {
         isSelected ? 'bg-gray-100 dark:bg-gray-800 ring-1 ring-gray-300 dark:ring-gray-600' : ''
       ]"
       :data-explorer-db="`${connectionId}:${database.name}`"
-      @click="$emit('select-database', { connectionId, database: database.name })"
+      @click="$emit('toggle-database')"
       @contextmenu.stop.prevent="handleDatabaseContextMenu"
     >
-      <component
-        :is="isExpanded ? ChevronDownIcon : ChevronRightIcon"
-        :class="caretClass"
-        @click.stop="$emit('toggle-database')"
-      />
+      <component :is="isExpanded ? ChevronDownIcon : ChevronRightIcon" :class="caretClass" />
       <HighlightedText class="font-medium" :text="database.name" :query="searchQuery" />
     </div>
 

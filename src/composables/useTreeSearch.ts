@@ -103,13 +103,13 @@ export function useTreeSearch(searchQuery: string, options: UseTreeSearchOptions
 
   /**
    * Filter file entries based on search query
+   * Includes both files and directories for nested folder browsing
    */
   const filterFileEntries = (entries: FileSystemEntry[]): FileSystemEntry[] => {
     const query = searchQuery.trim()
 
-    return entries
-      .filter((item) => item.type === 'file')
-      .filter((item) => !query || matchesQuery(item.name, query))
+    // Include both files and directories, filter by name if query exists
+    return entries.filter((item) => !query || matchesQuery(item.name, query))
   }
 
   /**

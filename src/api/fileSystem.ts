@@ -5,6 +5,8 @@ export interface FileSystemEntry {
   path: string
   type: 'file' | 'dir'
   size?: number
+  children?: FileSystemEntry[] // Nested entries for directories
+  isLoaded?: boolean // Whether this directory's children have been loaded
 }
 
 export interface DirectoryListResponse {
