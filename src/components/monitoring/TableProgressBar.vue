@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { formatDataSize } from '@/utils/formats'
 import type { StatStatus } from '@/constants'
 import { STAT_STATUS } from '@/constants'
 
@@ -47,16 +46,8 @@ const barBackground = computed(() => {
 
 <template>
   <div class="w-full">
-    <div class="flex justify-between items-center text-xs mb-1.5">
-      <span class="text-gray-600 dark:text-gray-400">
-        {{ formatDataSize(transferred) }} / {{ formatDataSize(estimated) }}
-      </span>
-      <span class="font-semibold text-gray-900 dark:text-gray-100">
-        {{ progressPercent.toFixed(1) }}%
-      </span>
-    </div>
     <div
-      class="w-full rounded-full h-2.5 overflow-hidden ring-1 ring-inset ring-gray-200 dark:ring-gray-700"
+      class="w-full rounded-full h-6 overflow-hidden ring-1 ring-inset ring-gray-200 dark:ring-gray-700 relative"
       :class="barBackground"
     >
       <div
@@ -67,6 +58,11 @@ const barBackground = computed(() => {
         aria-valuemin="0"
         aria-valuemax="100"
       />
+      <div class="absolute inset-0 flex items-center justify-center">
+        <span class="text-xs font-semibold text-gray-900 dark:text-gray-100 drop-shadow-sm">
+          {{ progressPercent.toFixed(1) }}%
+        </span>
+      </div>
     </div>
   </div>
 </template>
