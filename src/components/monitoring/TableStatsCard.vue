@@ -92,14 +92,14 @@ function formatDuration(seconds: number) {
   >
     <!-- Header -->
     <div
-      class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-teal-900/20 dark:to-cyan-900/20"
+      class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/30"
     >
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
           <div
             class="p-2 bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700"
           >
-            <TableCellsIcon class="h-5 w-5 text-teal-600 dark:text-teal-300" />
+            <TableCellsIcon class="h-5 w-5 text-gray-600 dark:text-gray-300" />
           </div>
           <div>
             <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">Tables</h3>
@@ -113,7 +113,7 @@ function formatDuration(seconds: number) {
           </div>
         </div>
         <span
-          class="inline-flex items-center rounded-full px-3 py-1.5 text-sm font-semibold bg-teal-600 text-white dark:bg-teal-500 dark:text-gray-900"
+          class="inline-flex items-center rounded-full px-3 py-1.5 text-sm font-semibold bg-gray-600 text-white dark:bg-gray-500 dark:text-gray-100"
         >
           {{ statusCounts.total }}
         </span>
@@ -155,12 +155,6 @@ function formatDuration(seconds: number) {
                 class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"
               >
                 Progress
-              </th>
-              <th
-                scope="col"
-                class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider"
-              >
-                Rate
               </th>
               <th
                 scope="col"
@@ -212,11 +206,6 @@ function formatDuration(seconds: number) {
                   :status="table.status"
                 />
                 <span v-else class="text-xs text-gray-400 dark:text-gray-500">—</span>
-              </td>
-              <td
-                class="px-4 py-3 text-sm text-right font-semibold text-gray-900 dark:text-gray-100"
-              >
-                {{ table.rate }}
               </td>
               <td
                 class="px-4 py-3 text-sm text-right font-semibold text-gray-900 dark:text-gray-100"
