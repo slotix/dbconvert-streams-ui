@@ -7,6 +7,7 @@ import FileEntry from '../FileEntry.vue'
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
 import DatabaseIcon from '@/components/base/DatabaseIcon.vue'
 import HighlightedText from '@/components/common/HighlightedText.vue'
+import ConnectionErrorState from '@/components/common/ConnectionErrorState.vue'
 import { getConnectionTooltip } from '@/utils/connectionUtils'
 import { useConnectionTreeLogic } from '@/composables/useConnectionTreeLogic'
 import { useFileExplorerStore } from '@/stores/fileExplorer'
@@ -292,26 +293,7 @@ const connectionTooltip = computed(() => {
           <span>Loading files…</span>
         </div>
         <!-- Error state for file connections -->
-        <div
-          v-else-if="fileConnectionError"
-          class="text-xs text-red-600 dark:text-red-400 px-3 py-1.5 flex items-center gap-1.5"
-          :title="fileConnectionError"
-        >
-          <svg
-            class="w-3.5 h-3.5 flex-shrink-0"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            ></path>
-          </svg>
-          <span>Connection failed</span>
-        </div>
+        <ConnectionErrorState v-if="fileConnectionError" :error="fileConnectionError" />
         <!-- Empty state -->
         <div
           v-else-if="!visibleFileEntries.length"
@@ -361,26 +343,7 @@ const connectionTooltip = computed(() => {
           <span>Loading databases…</span>
         </div>
         <!-- Error state when connection failed -->
-        <div
-          v-else-if="databaseError"
-          class="text-xs text-red-600 dark:text-red-400 px-3 py-1.5 flex items-center gap-1.5"
-          :title="databaseError"
-        >
-          <svg
-            class="w-3.5 h-3.5 flex-shrink-0"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            ></path>
-          </svg>
-          <span>Connection failed</span>
-        </div>
+        <ConnectionErrorState v-if="databaseError" :error="databaseError" />
         <!-- Empty state when loaded but no databases -->
         <div
           v-else-if="!databases.length"
