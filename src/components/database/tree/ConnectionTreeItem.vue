@@ -50,7 +50,7 @@ const emit = defineEmits<{
   (e: 'toggle-database', dbName: string): void
   (e: 'toggle-schema', payload: { dbName: string; schemaName: string }): void
   (e: 'select-database', payload: { connectionId: string; database: string }): void
-  (e: 'select-file', payload: { connectionId: string; path: string }): void
+  (e: 'select-file', payload: { connectionId: string; path: string; entry?: FileSystemEntry }): void
   (
     e: 'open-object',
     payload: {

@@ -63,7 +63,7 @@ const emit = defineEmits<{
   (e: 'show-diagram', payload: { connectionId: string; database: string }): void
   (e: 'select-connection', payload: { connectionId: string }): void
   (e: 'select-database', payload: { connectionId: string; database: string }): void
-  (e: 'select-file', payload: { connectionId: string; path: string; entry: FileSystemEntry }): void
+  (e: 'select-file', payload: { connectionId: string; path: string; entry?: FileSystemEntry }): void
   (e: 'request-file-entries', payload: { connectionId: string }): void
 }>()
 

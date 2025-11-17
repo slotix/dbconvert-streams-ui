@@ -312,15 +312,40 @@ export function useDatabaseExplorerController({
   function handleFileSelect(payload: {
     connectionId: string
     path: string
-    entry: FileSystemEntry
+    entry?: FileSystemEntry
   }) {
     navigationStore.setActiveConnectionId(payload.connectionId)
 
     showConnectionDetails.value = false
 
+    // Find entry if not provided (e.g., from router/URL navigation)
+    let entry = payload.entry
+    if (!entry) {
+      const findEntry = (
+        entries: FileSystemEntry[],
+        targetPath: string
+      ): FileSystemEntry | null => {
+        for (const e of entries) {
+          if (e.path === targetPath) return e
+          if (e.children) {
+            const found = findEntry(e.children, targetPath)
+            if (found) return found
+          }
+        }
+        return null
+      }
+      entry = findEntry(currentFileEntries.value, payload.path) || undefined
+    }
+
+    // Guard: if we still don't have an entry, bail out
+    if (!entry) {
+      console.warn('handleFileSelect: Could not find entry for path:', payload.path)
+      return
+    }
+
     // Only open files for preview, not directories
-    if (payload.entry.type !== 'file') {
-      fileExplorerStore.setSelectedPath(payload.connectionId, payload.path)
+    if (entry.type !== 'file') {
+      // Don't set selected path for folders - they should just expand/collapse
       focusConnectionId.value = null
       return
     }
@@ -328,7 +353,7 @@ export function useDatabaseExplorerController({
     void handleOpenFile({
       connectionId: payload.connectionId,
       path: payload.path,
-      entry: payload.entry,
+      entry: entry,
       mode: 'preview',
       defaultTab: 'data'
     })
@@ -600,24 +625,8 @@ export function useDatabaseExplorerController({
         await fileExplorerStore.loadEntries(newId, true)
         const fileParam = route.query.file as string
         if (fileParam && currentFileEntries.value.length > 0) {
-          // Find the entry recursively
-          const findEntry = (
-            entries: FileSystemEntry[],
-            targetPath: string
-          ): FileSystemEntry | null => {
-            for (const entry of entries) {
-              if (entry.path === targetPath) return entry
-              if (entry.children) {
-                const found = findEntry(entry.children, targetPath)
-                if (found) return found
-              }
-            }
-            return null
-          }
-          const entry = findEntry(currentFileEntries.value, fileParam)
-          if (entry) {
-            handleFileSelect({ connectionId: newId, path: fileParam, entry })
-          }
+          // handleFileSelect will find the entry if needed
+          handleFileSelect({ connectionId: newId, path: fileParam })
         }
       }
     }
