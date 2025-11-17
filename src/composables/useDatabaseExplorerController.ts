@@ -224,6 +224,8 @@ export function useDatabaseExplorerController({
 
     if (!payload.openInRightSplit) {
       explorerState.setFileSelection(payload.entry)
+      // Clear selections from other connections to avoid double highlights
+      fileExplorerStore.clearAllSelectionsExcept(payload.connectionId)
       fileExplorerStore.setSelectedPath(payload.connectionId, payload.path)
     }
 
@@ -309,7 +311,7 @@ export function useDatabaseExplorerController({
     schemaStore.fetchSchema(false)
   }
 
-  function handleFileSelect(payload: {
+  async function handleFileSelect(payload: {
     connectionId: string
     path: string
     entry?: FileSystemEntry
@@ -334,7 +336,27 @@ export function useDatabaseExplorerController({
         }
         return null
       }
+
       entry = findEntry(currentFileEntries.value, payload.path) || undefined
+
+      // If entry not found, try expanding parent folders and search again
+      if (!entry) {
+        const pathSegments = payload.path.split('/')
+
+        // Expand each parent folder in the path
+        for (let i = pathSegments.length - 1; i > 0; i--) {
+          const parentPath = pathSegments.slice(0, i).join('/')
+          const parentEntry = findEntry(currentFileEntries.value, parentPath)
+
+          if (parentEntry && parentEntry.type === 'dir' && !parentEntry.isLoaded) {
+            // Load folder contents if not already loaded
+            await fileExplorerStore.loadFolderContents(payload.connectionId, parentPath)
+            // Retry finding the entry after loading
+            entry = findEntry(currentFileEntries.value, payload.path) || undefined
+            if (entry) break
+          }
+        }
+      }
     }
 
     // Guard: if we still don't have an entry, bail out
@@ -625,8 +647,8 @@ export function useDatabaseExplorerController({
         await fileExplorerStore.loadEntries(newId, true)
         const fileParam = route.query.file as string
         if (fileParam && currentFileEntries.value.length > 0) {
-          // handleFileSelect will find the entry if needed
-          handleFileSelect({ connectionId: newId, path: fileParam })
+          // handleFileSelect will find the entry if needed (runs async)
+          void handleFileSelect({ connectionId: newId, path: fileParam })
         }
       }
     }

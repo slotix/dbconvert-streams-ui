@@ -253,6 +253,15 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
     }
   }
 
+  function clearAllSelectionsExcept(connectionId: string) {
+    const newSelected: Record<string, string | null> = {}
+    // Keep only the selection for the specified connection
+    for (const key in selectedPathsByConnection.value) {
+      newSelected[key] = key === connectionId ? selectedPathsByConnection.value[key] : null
+    }
+    selectedPathsByConnection.value = newSelected
+  }
+
   function clearConnectionData(connectionId: string) {
     const newEntries = { ...entriesByConnection.value }
     const newPaths = { ...directoryPathsByConnection.value }
@@ -519,6 +528,7 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
     loadFileMetadata,
     setSelectedPath,
     clearSelection,
+    clearAllSelectionsExcept,
     clearConnectionData,
     configureS3SessionForConnection,
     loadS3Files,
