@@ -32,6 +32,24 @@ export interface OpenFileParams {
   openInRightSplit?: boolean
 }
 
+function findFileEntryByPath(
+  entries: FileSystemEntry[],
+  targetPath: string
+): FileSystemEntry | undefined {
+  for (const entry of entries) {
+    if (entry.path === targetPath) {
+      return entry
+    }
+    if (entry.children?.length) {
+      const found = findFileEntryByPath(entry.children, targetPath)
+      if (found) {
+        return found
+      }
+    }
+  }
+  return undefined
+}
+
 /**
  * Composable for connection-related actions (test, refresh, edit, delete, etc.)
  */
@@ -189,7 +207,7 @@ export function useConnectionActions(emits?: {
     openInRightSplit?: boolean
   ) {
     const entries = fileExplorerStore.getEntries(connectionId)
-    const entry = entries.find((e) => e.path === path)
+    const entry = findFileEntryByPath(entries, path)
     if (!entry) return
 
     if (emits?.openFile) {
