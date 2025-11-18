@@ -4,8 +4,8 @@
       'px-3 py-2.5 cursor-pointer transition-all duration-200 ease-out group relative',
       'rounded-lg',
       isSelected
-        ? 'bg-linear-to-r from-blue-100 to-teal-100 dark:from-gray-800 dark:to-gray-700 shadow-md ring-2 ring-blue-200/50 dark:ring-teal-800/50'
-        : 'hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50 dark:hover:from-gray-850 dark:hover:to-gray-800 hover:shadow-sm hover:scale-[1.01] active:scale-[0.98]'
+        ? 'bg-linear-to-r from-gray-200 to-gray-300 dark:from-gray-800 dark:to-gray-700 shadow-md ring-2 ring-gray-300/50 dark:ring-gray-700/50'
+        : 'hover:bg-linear-to-r hover:from-gray-100 hover:to-gray-200 dark:hover:from-gray-850 dark:hover:to-gray-800 hover:shadow-sm hover:scale-[1.01] active:scale-[0.98]'
     ]"
     @click="selectStream"
     @contextmenu="handleContextMenu"

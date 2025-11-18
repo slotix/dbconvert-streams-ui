@@ -209,13 +209,13 @@ const connectionTooltip = computed(() => {
       :class="[
         'group flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 rounded-lg cursor-pointer select-none',
         'transition-all duration-200 ease-out',
-        'hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50 dark:hover:from-gray-850 dark:hover:to-gray-800',
+        'hover:bg-linear-to-r hover:from-gray-100 hover:to-gray-200 dark:hover:from-gray-850 dark:hover:to-gray-800',
         'hover:shadow-sm hover:scale-[1.02] hover:-translate-y-0.5',
         'active:scale-[0.98]',
         // For file connections, don't highlight the parent connection when a file is selected
         // Only highlight when explicitly focused and no file is selected (same behavior as databases)
         isFocused && !(isFileConnection && selectedFilePath)
-          ? 'bg-linear-to-r from-blue-100 to-teal-100 dark:from-gray-800 dark:to-gray-700 shadow-md ring-2 ring-blue-200/50 dark:ring-teal-800/50'
+          ? 'bg-linear-to-r from-gray-200 to-gray-300 dark:from-gray-800 dark:to-gray-700 shadow-md ring-2 ring-gray-300/50 dark:ring-gray-700/50'
           : ''
       ]"
       :title="connectionTooltip"
