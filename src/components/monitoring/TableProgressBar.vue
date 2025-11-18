@@ -1,19 +1,19 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { StatStatus } from '@/constants'
-import { STAT_STATUS } from '@/constants'
+import type { Status } from '@/constants'
+import { STATUS } from '@/constants'
 
 interface Props {
   transferred: number // Actual bytes transferred
   estimated: number // Estimated total bytes
-  status: StatStatus
+  status: Status
 }
 
 const props = defineProps<Props>()
 
 const progressPercent = computed(() => {
   // Always show 100% when finished to avoid confusion
-  if (props.status === STAT_STATUS.FINISHED) {
+  if (props.status === STATUS.FINISHED) {
     return 100
   }
 
@@ -24,40 +24,40 @@ const progressPercent = computed(() => {
 })
 
 const statusColor = computed(() => {
-  if (props.status === STAT_STATUS.FINISHED) {
+  if (props.status === STATUS.FINISHED) {
     return 'bg-emerald-400 dark:bg-emerald-800'
   }
-  if (props.status === STAT_STATUS.FAILED) {
+  if (props.status === STATUS.FAILED) {
     return 'bg-rose-400 dark:bg-rose-800'
   }
   return 'bg-blue-400 dark:bg-blue-800'
 })
 
 const barBackground = computed(() => {
-  if (props.status === STAT_STATUS.FINISHED) {
+  if (props.status === STATUS.FINISHED) {
     return 'bg-emerald-50 dark:bg-emerald-950/40'
   }
-  if (props.status === STAT_STATUS.FAILED) {
+  if (props.status === STATUS.FAILED) {
     return 'bg-rose-50 dark:bg-rose-950/40'
   }
   return 'bg-blue-50 dark:bg-blue-950/40'
 })
 
 const textColor = computed(() => {
-  if (props.status === STAT_STATUS.FINISHED) {
+  if (props.status === STATUS.FINISHED) {
     return 'text-emerald-950 dark:text-emerald-50'
   }
-  if (props.status === STAT_STATUS.FAILED) {
+  if (props.status === STATUS.FAILED) {
     return 'text-rose-950 dark:text-rose-50'
   }
   return 'text-cyan-950 dark:text-cyan-50'
 })
 
 const ringColor = computed(() => {
-  if (props.status === STAT_STATUS.FINISHED) {
+  if (props.status === STATUS.FINISHED) {
     return 'ring-emerald-200 dark:ring-emerald-800'
   }
-  if (props.status === STAT_STATUS.FAILED) {
+  if (props.status === STATUS.FAILED) {
     return 'ring-rose-200 dark:ring-rose-800'
   }
   return 'ring-cyan-200 dark:ring-cyan-800'

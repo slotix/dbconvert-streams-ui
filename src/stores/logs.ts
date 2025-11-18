@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import type { StandardLogEntry } from '@/types/logs'
 import { useMonitoringStore } from '@/stores/monitoring'
-import type { LogLevel, LogCategory, NodeType, StatStatus } from '@/constants'
+import type { LogLevel, LogCategory, NodeType, Status } from '@/constants'
 
 // localStorage keys for user preferences
 const STORAGE_KEYS = {
@@ -47,7 +47,7 @@ export interface SystemLog {
   percentage?: number
   // Stat fields
   table?: string
-  status?: StatStatus
+  status?: Status
   events?: number
   size?: string
   rate?: string
@@ -500,7 +500,7 @@ export const useLogsStore = defineStore('logs', {
           streamId: ((log.streamId as string) || streamId) as string,
           category: log.category as LogCategory | undefined,
           table: log.table as string | undefined,
-          status: log.status as StatStatus | undefined,
+          status: log.status as Status | undefined,
           events: log.events as number | undefined,
           size: log.size as string | undefined,
           rate: log.rate as string | undefined,

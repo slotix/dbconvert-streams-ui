@@ -46,20 +46,6 @@ export const NODE_TYPES = {
 export type NodeType = (typeof NODE_TYPES)[keyof typeof NODE_TYPES]
 
 /**
- * Stat log status values
- * Indicates the state of a table/stream processing operation
- */
-export const STAT_STATUS = {
-  RUNNING: 'RUNNING',
-  FINISHED: 'FINISHED',
-  FAILED: 'FAILED',
-  STOPPED: 'STOPPED',
-  PAUSED: 'PAUSED'
-} as const
-
-export type StatStatus = (typeof STAT_STATUS)[keyof typeof STAT_STATUS]
-
-/**
  * SQL query purposes
  * Categorizes what the SQL query is doing
  */
@@ -120,26 +106,4 @@ export const NODE_TYPE_DISPLAY: Record<NodeType, string> = {
   [NODE_TYPES.API]: 'API',
   [NODE_TYPES.SOURCE]: 'SOURCE',
   [NODE_TYPES.TARGET]: 'TARGET'
-}
-
-/**
- * Stat status display with emoji
- */
-export const STAT_STATUS_DISPLAY: Record<StatStatus, string> = {
-  [STAT_STATUS.RUNNING]: '→ RUNNING',
-  [STAT_STATUS.FINISHED]: '✓ FINISHED',
-  [STAT_STATUS.FAILED]: '✗ FAILED',
-  [STAT_STATUS.STOPPED]: '◼ STOPPED',
-  [STAT_STATUS.PAUSED]: '⏸ PAUSED'
-}
-
-/**
- * Status emoji only (for compact display)
- */
-export const STAT_STATUS_EMOJI: Record<StatStatus, string> = {
-  [STAT_STATUS.RUNNING]: '→',
-  [STAT_STATUS.FINISHED]: '✓',
-  [STAT_STATUS.FAILED]: '✗',
-  [STAT_STATUS.STOPPED]: '◼',
-  [STAT_STATUS.PAUSED]: '⏸'
 }

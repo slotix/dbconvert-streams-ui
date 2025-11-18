@@ -18,7 +18,7 @@ You can import from individual files or from the central index:
 
 ```typescript
 // Import from central index (recommended)
-import { DATABASE_TYPES, API_TIMEOUTS, STREAM_STATUS } from '@/constants'
+import { DATABASE_TYPES, API_TIMEOUTS, STATUS } from '@/constants'
 
 // Or import from specific files
 import { DATABASE_TYPES } from '@/constants/databaseTypes'
@@ -130,29 +130,40 @@ const bgColor = getDatabaseBgColor(connection.type)
 
 ---
 
-### 4. Stream Status (`streamStatus.ts`)
+### 4. Unified Status System (`status.ts`)
 
 ```typescript
 import {
-  STREAM_STATUS,
-  isStreamRunning,
-  getStreamStatusLabel,
-  getStreamStatusBadgeColor
+  STATUS,
+  isActiveStatus,
+  isTerminalStatus,
+  getStatusLabel,
+  getWorstStatus,
+  STOP_STATUS_COLORS
 } from '@/constants'
 
 // Check status
-if (stream.status === STREAM_STATUS.RUNNING) {
+if (stream.status === STATUS.RUNNING) {
   // Stream is active
 }
 
 // Use helper functions
-if (isStreamRunning(stream.status)) {
+if (isActiveStatus(stream.status)) {
   // Show stop button
 }
 
+if (isTerminalStatus(stream.status)) {
+  // Execution has ended
+}
+
 // Get UI elements
-const label = getStreamStatusLabel(stream.status) // 'Running'
-const badgeClass = getStreamStatusBadgeColor(stream.status) // 'bg-blue-100 text-blue-800'
+const label = getStatusLabel(stream.status) // 'Running'
+
+// Compare statuses
+const worst = getWorstStatus(STATUS.RUNNING, STATUS.FAILED) // Returns STATUS.FAILED
+
+// Use shared color constants
+const iconBg = STOP_STATUS_COLORS.iconBackground // 'bg-gray-100 dark:bg-gray-800'
 ```
 
 **Before:**
@@ -167,9 +178,9 @@ if (stream.status === 2) {
 **After:**
 
 ```typescript
-import { STREAM_STATUS, isStreamRunning } from '@/constants'
+import { STATUS, isActiveStatus } from '@/constants'
 
-if (isStreamRunning(stream.status)) {
+if (isActiveStatus(stream.status)) {
   // Clear and self-documenting
 }
 ```

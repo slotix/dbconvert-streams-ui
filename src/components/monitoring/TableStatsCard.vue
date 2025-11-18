@@ -2,7 +2,8 @@
 import { computed } from 'vue'
 import { TableCellsIcon, ChevronRightIcon } from '@heroicons/vue/24/outline'
 import { useMonitoringStore } from '@/stores/monitoring'
-import { STAT_STATUS } from '@/constants'
+import { STATUS } from '@/constants'
+import StatusBadge from '@/components/common/StatusBadge.vue'
 import TableProgressBar from './TableProgressBar.vue'
 
 const emit = defineEmits<{
@@ -36,57 +37,6 @@ const hasAnyTables = computed(() => statusCounts.value.total > 0)
 
 function handleCompareTable(tableName: string) {
   emit('compare-table', tableName)
-}
-
-function getStatusClass(status: string) {
-  switch (status) {
-    case STAT_STATUS.FINISHED:
-      return 'bg-emerald-50 text-emerald-700 ring-emerald-600/20 dark:bg-emerald-900/30 dark:text-emerald-200 dark:ring-emerald-500/40'
-    case STAT_STATUS.RUNNING:
-      return 'bg-blue-50 text-blue-700 ring-blue-600/20 dark:bg-blue-900/30 dark:text-blue-200 dark:ring-blue-500/40'
-    case STAT_STATUS.FAILED:
-      return 'bg-red-50 text-red-700 ring-red-600/20 dark:bg-red-900/30 dark:text-red-200 dark:ring-red-500/40'
-    case STAT_STATUS.STOPPED:
-      return 'bg-orange-50 text-orange-700 ring-orange-600/20 dark:bg-orange-900/30 dark:text-orange-200 dark:ring-orange-500/40'
-    case STAT_STATUS.PAUSED:
-      return 'bg-yellow-50 text-yellow-700 ring-yellow-600/20 dark:bg-yellow-900/30 dark:text-yellow-200 dark:ring-yellow-500/40'
-    default:
-      return 'bg-gray-50 text-gray-700 ring-gray-600/20 dark:bg-gray-900/40 dark:text-gray-300 dark:ring-gray-500/30'
-  }
-}
-
-function getStatusDotClass(status: string) {
-  switch (status) {
-    case STAT_STATUS.FINISHED:
-      return 'bg-emerald-500'
-    case STAT_STATUS.RUNNING:
-      return 'bg-blue-500'
-    case STAT_STATUS.FAILED:
-      return 'bg-red-500'
-    case STAT_STATUS.STOPPED:
-      return 'bg-orange-500'
-    case STAT_STATUS.PAUSED:
-      return 'bg-yellow-500'
-    default:
-      return 'bg-gray-400'
-  }
-}
-
-function getStatusLabel(status: string) {
-  switch (status) {
-    case STAT_STATUS.FINISHED:
-      return 'Finished'
-    case STAT_STATUS.RUNNING:
-      return 'Running'
-    case STAT_STATUS.FAILED:
-      return 'Failed'
-    case STAT_STATUS.STOPPED:
-      return 'Stopped'
-    case STAT_STATUS.PAUSED:
-      return 'Paused'
-    default:
-      return status
-  }
 }
 
 function formatDuration(seconds: number) {
@@ -198,13 +148,7 @@ function formatDuration(seconds: number) {
                 <span class="truncate block max-w-xs" :title="table.table">{{ table.table }}</span>
               </td>
               <td class="px-4 py-3">
-                <span
-                  class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-medium ring-1 ring-inset"
-                  :class="getStatusClass(table.status)"
-                >
-                  <span class="h-1.5 w-1.5 rounded-full" :class="getStatusDotClass(table.status)" />
-                  {{ getStatusLabel(table.status) }}
-                </span>
+                <StatusBadge :status="table.status" />
               </td>
               <td
                 class="px-4 py-3 text-sm text-right font-semibold text-gray-900 dark:text-gray-100"
@@ -232,7 +176,7 @@ function formatDuration(seconds: number) {
               </td>
               <td class="px-4 py-3 text-sm text-right">
                 <button
-                  v-if="table.status === STAT_STATUS.FINISHED"
+                  v-if="table.status === STATUS.FINISHED"
                   type="button"
                   class="inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium bg-white dark:bg-gray-900 border border-teal-200 dark:border-teal-500/50 text-teal-700 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-gray-800 hover:border-teal-400 dark:hover:border-teal-400 transition-all"
                   @click="handleCompareTable(table.table)"

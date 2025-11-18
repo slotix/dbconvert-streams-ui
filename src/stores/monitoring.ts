@@ -3,14 +3,7 @@ import type { StreamConfig } from '@/types/streamConfig'
 import { NodeTypes, type NodeType } from '@/types/common'
 import type { AggregatedStatResponse, AggregatedNodeStats } from '@/types/streamStats'
 import type { TableStat, TableStatsGroup, TableMetadata } from '@/types/tableStats'
-import {
-  STREAM_STATUS,
-  TERMINAL_STATUSES,
-  STREAM_STATUS_PRIORITY,
-  STAT_STATUS,
-  type StreamStatus,
-  type StatStatus
-} from '@/constants'
+import { STATUS, STATUS_PRIORITY, TERMINAL_STATUSES, type Status } from '@/constants'
 import {
   parseDataSize,
   parseDuration,
@@ -57,7 +50,7 @@ interface State {
   logs: Log[]
   currentStageID: number
   stages: Stage[]
-  status: StreamStatus
+  status: Status
   streamConfig: StreamConfig
   maxLogs: number
   isLoadingStats: boolean
@@ -68,8 +61,8 @@ interface State {
   tableMetadata: Map<string, TableMetadata>
 }
 
-// Use centralized stream status constants
-export const statusEnum = STREAM_STATUS
+// Export status enum for backward compatibility
+export const statusEnum = STATUS
 
 export const useMonitoringStore = defineStore('monitoring', {
   state: (): State => ({
@@ -107,7 +100,7 @@ export const useMonitoringStore = defineStore('monitoring', {
         timestamp: null
       }
     ],
-    status: STREAM_STATUS.UNDEFINED,
+    status: STATUS.UNDEFINED,
     streamConfig: {} as StreamConfig,
     maxLogs: 1000,
     isLoadingStats: false,
@@ -127,8 +120,8 @@ export const useMonitoringStore = defineStore('monitoring', {
       // When stream finishes, update the final stage title based on status
       if (this.stats.length > 0) {
         const runningNodesNumber = this.stats.filter((stat: Log) => {
-          const statusID = STREAM_STATUS[stat.status as keyof typeof STREAM_STATUS]
-          return statusID < STREAM_STATUS.FAILED
+          const statusPriority = STATUS_PRIORITY[stat.status as Status] || 0
+          return statusPriority < STATUS_PRIORITY[STATUS.FAILED]
         }).length
 
         // All nodes finished - update stage 4 title
@@ -211,8 +204,8 @@ export const useMonitoringStore = defineStore('monitoring', {
           latestByTable.set(log.table!, log)
         } else {
           // Prefer FINISHED status entries (they contain final aggregated counts from backend)
-          const logIsFinished = log.status === STAT_STATUS.FINISHED
-          const existingIsFinished = existing.status === STAT_STATUS.FINISHED
+          const logIsFinished = log.status === STATUS.FINISHED
+          const existingIsFinished = existing.status === STATUS.FINISHED
 
           if (logIsFinished && !existingIsFinished) {
             // New log is finished, existing is not - take new (aggregated)
@@ -261,7 +254,7 @@ export const useMonitoringStore = defineStore('monitoring', {
 
         return {
           table: log.table!,
-          status: (log.status as StatStatus) || STAT_STATUS.RUNNING,
+          status: (log.status as Status) || STATUS.RUNNING,
           events: (log.events as number) || 0,
           size: sizeFormatted,
           sizeBytes,
@@ -274,11 +267,11 @@ export const useMonitoringStore = defineStore('monitoring', {
       })
 
       // Group by status
-      const completed = allTableStats.filter((t) => t.status === STAT_STATUS.FINISHED)
-      const running = allTableStats.filter((t) => t.status === STAT_STATUS.RUNNING)
-      const failed = allTableStats.filter((t) => t.status === STAT_STATUS.FAILED)
-      const stopped = allTableStats.filter((t) => t.status === STAT_STATUS.STOPPED)
-      const paused = allTableStats.filter((t) => t.status === STAT_STATUS.PAUSED)
+      const completed = allTableStats.filter((t) => t.status === STATUS.FINISHED)
+      const running = allTableStats.filter((t) => t.status === STATUS.RUNNING)
+      const failed = allTableStats.filter((t) => t.status === STATUS.FAILED)
+      const stopped = allTableStats.filter((t) => t.status === STATUS.STOPPED)
+      const paused = allTableStats.filter((t) => t.status === STATUS.PAUSED)
 
       return {
         completed,
@@ -337,7 +330,7 @@ export const useMonitoringStore = defineStore('monitoring', {
         stage.timestamp = Date.now()
       }
     },
-    updateStreamStatus(status: StreamStatus) {
+    updateStreamStatus(status: Status) {
       this.status = status
     },
     requestShowMonitorTab() {
@@ -434,18 +427,19 @@ export const useMonitoringStore = defineStore('monitoring', {
 
         // Determine overall stream status (use worst status from both nodes)
         const statusPriority = Math.max(
-          STREAM_STATUS_PRIORITY[sourceStatus] || 0,
-          STREAM_STATUS_PRIORITY[targetStatus] || 0
+          STATUS_PRIORITY[sourceStatus as Status] || 0,
+          STATUS_PRIORITY[targetStatus as Status] || 0
         )
 
-        // Map status string back to StreamStatus enum
-        const statusName = Object.keys(STREAM_STATUS_PRIORITY).find(
-          (key) => STREAM_STATUS_PRIORITY[key] === statusPriority
+        // Find the status with this priority
+        const statusWithPriority = Object.entries(STATUS_PRIORITY).find(
+          ([_, priority]) => priority === statusPriority
         )
-        if (statusName) {
-          const statusEnum = STREAM_STATUS[statusName as keyof typeof STREAM_STATUS]
-          if (statusEnum !== undefined && this.status !== statusEnum) {
-            this.status = statusEnum
+        if (statusWithPriority) {
+          const [statusKey] = statusWithPriority
+          const newStatus = statusKey as Status
+          if (this.status !== newStatus) {
+            this.status = newStatus
           }
         }
       }
@@ -542,15 +536,15 @@ export const useMonitoringStore = defineStore('monitoring', {
 
       return aggregated
     },
-    getWorstStatus(stats: Log[]): string {
-      let worst = 'READY'
+    getWorstStatus(stats: Log[]): Status {
+      let worst: Status = STATUS.READY
       let worstPriority = 0
 
       stats.forEach((stat) => {
         const status = stat.status || stat.msg?.split('|')[0]?.split(' ')[1] || ''
-        const priority = STREAM_STATUS_PRIORITY[status] || 0
+        const priority = STATUS_PRIORITY[status as Status] || 0
         if (priority > worstPriority) {
-          worst = status
+          worst = status as Status
           worstPriority = priority
         }
       })

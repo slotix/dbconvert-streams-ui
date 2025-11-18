@@ -230,7 +230,7 @@ import {
   formatElapsedTimeWithUnit,
   formatNumber
 } from '@/utils/formats'
-import StatusBadge from './StatusBadge.vue'
+import StatusBadge from '@/components/common/StatusBadge.vue'
 import StatRow from './StatRow.vue'
 import TableStatsCard from './TableStatsCard.vue'
 

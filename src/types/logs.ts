@@ -1,4 +1,4 @@
-import type { LogLevel, LogCategory, NodeType, StatStatus } from '@/constants'
+import type { LogLevel, LogCategory, NodeType, Status } from '@/constants'
 
 // Standard structured log entry from backend
 export interface StandardLogEntry {
@@ -24,7 +24,7 @@ export interface StandardLogEntry {
   size?: string
   rate?: string
   elapsed?: number
-  status?: StatStatus
+  status?: Status
 
   // Table Metadata
   estimatedRows?: number

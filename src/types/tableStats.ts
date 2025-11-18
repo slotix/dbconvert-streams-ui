@@ -1,4 +1,4 @@
-import type { StatStatus } from '@/constants'
+import type { Status } from '@/constants'
 
 /**
  * Table-level statistics extracted from stream logs
@@ -7,7 +7,7 @@ export interface TableStat {
   /** Table name */
   table: string
   /** Transfer status */
-  status: StatStatus
+  status: Status
   /** Number of events/rows transferred */
   events: number
   /** Data size (formatted string, e.g., "111.83 KB") */

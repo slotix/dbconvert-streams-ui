@@ -147,7 +147,7 @@
 import { PauseIcon, StopIcon } from '@heroicons/vue/24/outline'
 import { useMonitoringStore } from '@/stores/monitoring'
 import type { StreamConfig } from '@/types/streamConfig'
-import { STOP_STATUS_COLORS } from '@/constants/streamStatus'
+import { STOP_STATUS_COLORS } from '@/constants'
 
 interface Props {
   streamConfig?: StreamConfig

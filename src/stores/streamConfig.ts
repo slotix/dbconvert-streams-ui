@@ -5,7 +5,7 @@ import type { Table } from '@/types/streamConfig'
 import type { Step } from '@/stores/common'
 import { useConnectionsStore } from '@/stores/connections'
 import { useMonitoringStore } from '@/stores/monitoring'
-import { STREAM_STATUS } from '@/constants/streamStatus'
+import { STATUS } from '@/constants'
 
 interface State {
   generateDefaultStreamConfigName(
@@ -392,7 +392,7 @@ export const useStreamsStore = defineStore('streams', {
         await api.stopStream(id)
         // Update monitoring store status immediately
         const monitoringStore = useMonitoringStore()
-        monitoringStore.updateStreamStatus(STREAM_STATUS.STOPPED)
+        monitoringStore.updateStreamStatus(STATUS.STOPPED)
         // Status updates will come via SSE structured logs
       } catch (err) {
         console.error('Failed to stop stream:', err)

@@ -3,7 +3,7 @@ import { useStreamsStore } from '@/stores/streamConfig'
 import { useMonitoringStore, statusEnum } from '@/stores/monitoring'
 import { useCommonStore } from '@/stores/common'
 import type { StreamConfig } from '@/types/streamConfig'
-import { getStreamStatusLabel, type StreamStatus } from '@/constants/streamStatus'
+import { getStreamStatusLabel, type Status } from '@/constants'
 
 export function useStreamControls(stream: Ref<StreamConfig>) {
   const streamsStore = useStreamsStore()
@@ -29,7 +29,7 @@ export function useStreamControls(stream: Ref<StreamConfig>) {
       monitoringStore.stats.length > 0 &&
       monitoringStore.stats.every((stat) => stat.status === 'FINISHED')
 
-    const finishedStates: StreamStatus[] = [
+    const finishedStates: Status[] = [
       statusEnum.FINISHED,
       statusEnum.STOPPED,
       statusEnum.FAILED,
@@ -37,7 +37,7 @@ export function useStreamControls(stream: Ref<StreamConfig>) {
       statusEnum.EVENT_LIMIT_REACHED
     ]
 
-    const isStreamStatusFinished = finishedStates.includes(monitoringStore.status)
+    const isStreamStatusFinished = finishedStates.includes(monitoringStore.status as Status)
 
     return areAllNodesFinished || isStreamStatusFinished
   })

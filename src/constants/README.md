@@ -17,7 +17,7 @@ constants/
 ├── notificationTypes.ts       # Toast notification types
 ├── serviceStatus.ts           # Service health status values
 ├── storageKeys.ts             # localStorage/sessionStorage keys
-├── streamStatus.ts            # Stream lifecycle statuses
+├── status.ts                  # Unified stream/table/node status system
 └── viewTypes.ts               # UI view modes (cards/table)
 ```
 
@@ -26,7 +26,7 @@ constants/
 ### Import from Central Index (Recommended)
 
 ```typescript
-import { DATABASE_TYPES, API_TIMEOUTS, STREAM_STATUS } from '@/constants'
+import { DATABASE_TYPES, API_TIMEOUTS, STATUS } from '@/constants'
 ```
 
 ### Or Import from Specific Files
@@ -197,26 +197,35 @@ localStorage and sessionStorage key names.
 
 ---
 
-### `streamStatus.ts`
+### `status.ts`
 
-Stream lifecycle status values.
+Unified status system for streams, tables, and nodes.
 
 **Constants:**
 
-- `STREAM_STATUS` - Stream status enum (RUNNING, FINISHED, etc.)
-- `STREAM_STATUS_LABELS` - Human-readable labels
-- `STREAM_STATUS_CATEGORIES` - Status groupings
+- `STATUS` - Unified status enum (RUNNING, FINISHED, STOPPED, PAUSED, FAILED, etc.)
+- `STATUS_LABELS` - Human-readable labels for all statuses
+- `STATUS_PRIORITY` - Priority values for determining worst status
+- `STATUS_DISPLAY` - Display labels with emoji
+- `STATUS_EMOJI` - Emoji-only representation
+- `TERMINAL_STATUSES` - Array of terminal (ended) statuses
+- `ACTIVE_STATUSES` - Array of active (ongoing) statuses
+- `SUCCESS_STATUSES` - Array of success statuses
+- `ERROR_STATUSES` - Array of error statuses
+- `STOPPED_STATUSES` - Array of stopped statuses
+- `STOP_STATUS_COLORS` - Shared color constants for STOPPED state
 
 **Helper Functions:**
 
-- `isStreamRunning(status)` - Check if actively running
-- `isStreamCompleted(status)` - Check if completed successfully
-- `isStreamFailed(status)` - Check if failed
-- `isStreamStopped(status)` - Check if stopped/paused
-- `isStreamPending(status)` - Check if pending
-- `getStreamStatusLabel(status)` - Get display label
-- `getStreamStatusColor(status)` - Get CSS color class
-- `getStreamStatusBadgeColor(status)` - Get badge color class
+- `isTerminalStatus(status)` - Check if execution has ended
+- `isActiveStatus(status)` - Check if execution is ongoing
+- `isSuccessStatus(status)` - Check if completed successfully
+- `isErrorStatus(status)` - Check if failed
+- `isStoppedStatus(status)` - Check if user-stopped
+- `getStatusLabel(status)` - Get display label
+- `getStatusPriority(status)` - Get priority value
+- `getWorstStatus(status1, status2)` - Compare and return worse status
+- `getStreamStatusLabel(status)` - Get stream status label (backward compatible)
 
 ---
 
@@ -252,7 +261,7 @@ if (status === 'runing') {
 }
 
 // ✅ Type-safe
-if (status === STREAM_STATUS.RUNNING) {
+if (status === STATUS.RUNNING) {
 }
 ```
 
@@ -270,7 +279,7 @@ if (stream.status === 2) {
 }
 
 // ✅ Clear and obvious
-if (stream.status === STREAM_STATUS.RUNNING) {
+if (stream.status === STATUS.RUNNING) {
 }
 ```
 
@@ -300,9 +309,9 @@ if (status === 0 || status === 1) {
 }
 
 // ✅ Good - helper function
-import { isStreamPending } from '@/constants'
-if (isStreamPending(status)) {
-  // is pending
+import { isActiveStatus } from '@/constants'
+if (isActiveStatus(status)) {
+  // is active
 }
 ```
 
@@ -310,8 +319,8 @@ if (isStreamPending(status)) {
 
 ```typescript
 // ✅ TypeScript enforces correct values
-const validStatus: StreamStatus = STREAM_STATUS.RUNNING // ✓
-const invalidStatus: StreamStatus = 'invalid' // ✗ Type error
+const validStatus: Status = STATUS.RUNNING // ✓
+const invalidStatus: Status = 'invalid' // ✗ Type error
 ```
 
 ### 4. Use as const for Literals

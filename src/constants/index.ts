@@ -15,11 +15,21 @@ export * from './databaseColors'
 // File-related
 export * from './fileFormats'
 
-// Stream-related
-export * from './streamStatus'
+// Status system
+export * from './status'
 
-// Logging-related
-export * from './logTypes'
+// Logging
+export {
+  LOG_LEVELS,
+  LOG_CATEGORIES,
+  NODE_TYPES,
+  QUERY_PURPOSE,
+  LOG_LEVEL_LABELS,
+  LOG_CATEGORY_LABELS,
+  STREAM_PROGRESS_CATEGORIES,
+  TERMINAL_LOG_CATEGORIES,
+  NODE_TYPE_DISPLAY
+} from './logTypes'
 
 // Service-related
 export * from './serviceStatus'
