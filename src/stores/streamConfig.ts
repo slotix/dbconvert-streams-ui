@@ -140,11 +140,8 @@ export const buildStreamPayload = (stream: StreamConfig): Partial<StreamConfig> 
   if (stream.target.options) {
     const targetOptions: any = {}
 
-    if (
-      stream.target.options.compressionType &&
-      stream.target.options.compressionType !==
-        defaultStreamConfigOptions.target.options!.compressionType
-    ) {
+    // Always include compressionType explicitly (even if it matches default)
+    if (stream.target.options.compressionType) {
       targetOptions.compressionType = stream.target.options.compressionType
     }
     if (stream.target.options.structureOptions) {

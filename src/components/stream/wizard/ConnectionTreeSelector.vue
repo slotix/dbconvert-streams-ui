@@ -137,6 +137,12 @@
             Loading databases…
           </div>
 
+          <!-- Error state when connection failed -->
+          <ConnectionErrorState
+            v-else-if="getDatabaseError(connection.id)"
+            :error="getDatabaseError(connection.id) || ''"
+          />
+
           <div
             v-else-if="getDatabases(connection.id).length === 0"
             class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400"
@@ -179,6 +185,7 @@ import { ChevronRightIcon, ChevronDownIcon } from '@heroicons/vue/24/outline'
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
 import HighlightedText from '@/components/common/HighlightedText.vue'
 import DatabaseIcon from '@/components/base/DatabaseIcon.vue'
+import ConnectionErrorState from '@/components/common/ConnectionErrorState.vue'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { useFileExplorerStore } from '@/stores/fileExplorer'
 import { useConnectionsStore } from '@/stores/connections'
@@ -273,6 +280,10 @@ function getFileLoadingState(connectionId: string): boolean {
 
 function getFileError(connectionId: string): string {
   return fileExplorerStore.getError(connectionId) || ''
+}
+
+function getDatabaseError(connectionId: string): string | null {
+  return navigationStore.getDatabasesError(connectionId)
 }
 
 function refreshFileEntries(connectionId: string) {
