@@ -387,11 +387,22 @@ export const useMonitoringStore = defineStore('monitoring', {
         return
       }
 
+      // Filter to only "Total" stats (empty table name) for aggregate views
+      // Backend logs both:
+      // 1. Total stats (table="") - aggregated across all writers via NATS counters
+      // 2. Per-table stats (table="products", etc.) - also aggregated, shown in table list
+      // For aggregate node stats, we only want Total stats, not per-table stats
       const sourceStats = logsForCurrentStream.filter(
-        (log) => log.type === 'source' && log.category === 'stat'
+        (log) =>
+          log.type === 'source' &&
+          log.category === 'stat' &&
+          (!log.table || log.table === '' || log.table.toLowerCase() === 'total')
       )
       const targetStats = logsForCurrentStream.filter(
-        (log) => log.type === 'target' && log.category === 'stat'
+        (log) =>
+          log.type === 'target' &&
+          log.category === 'stat' &&
+          (!log.table || log.table === '' || log.table.toLowerCase() === 'total')
       )
 
       // Update aggregated stats
