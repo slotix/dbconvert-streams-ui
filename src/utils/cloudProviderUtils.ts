@@ -20,8 +20,8 @@ export const CLOUD_PROVIDERS: Record<string, CloudProviderInfo> = {
     name: 'aws-rds',
     displayName: 'AWS RDS',
     logo: '/images/db-logos/amazon.svg',
-    badgeColor: 'bg-orange-100 dark:bg-orange-900/40',
-    textColor: 'text-orange-700 dark:text-orange-200'
+    badgeColor: 'bg-amber-100 dark:bg-amber-900/20',
+    textColor: 'text-amber-700 dark:text-amber-300'
   },
   azure: {
     name: 'azure',
