@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-col gap-6">
     <!-- Split Pane Container -->
-    <div class="grid gap-4 grid-cols-1 lg:grid-cols-2 lg:h-[700px]">
+    <div class="grid gap-4 grid-cols-1 lg:grid-cols-2 lg:h-[600px]">
       <!-- Source Tree (Left) - Sky Blue Theme -->
       <div
         class="relative rounded-xl bg-linear-to-br from-sky-50 to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-850 overflow-hidden flex flex-col border border-gray-200 dark:border-gray-800 shadow-sm dark:shadow-gray-900/30 h-full"
