@@ -36,6 +36,10 @@ export interface TableStatsGroup {
   running: TableStat[]
   /** Tables that failed during transfer */
   failed: TableStat[]
+  /** Tables that were stopped */
+  stopped: TableStat[]
+  /** Tables that are paused */
+  paused: TableStat[]
   /** Total number of tables */
   total: number
 }

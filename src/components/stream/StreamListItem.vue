@@ -24,18 +24,6 @@
 
       <!-- Badges Row - Wrap freely -->
       <div class="flex items-center gap-1.5 mb-1.5 flex-wrap">
-        <!-- Running Status Badge -->
-        <span
-          v-if="isRunning"
-          :class="[
-            'inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-xs font-medium ring-1 ring-inset shrink-0',
-            statusBadgeClass
-          ]"
-        >
-          <component :is="statusIcon" v-if="statusIcon" class="h-3 w-3" />
-          <span class="hidden sm:inline">{{ statusText }}</span>
-        </span>
-
         <!-- Mode Badge -->
         <span
           :class="[
@@ -159,16 +147,10 @@ import {
   TrashIcon,
   ArrowRightIcon,
   DocumentDuplicateIcon,
-  ArrowPathIcon,
-  PauseCircleIcon,
-  CheckCircleIcon,
-  XCircleIcon,
   PlayIcon,
-  PauseIcon,
-  StopIcon
+  PauseIcon
 } from '@heroicons/vue/24/outline'
 import { useMonitoringStore, statusEnum } from '@/stores/monitoring'
-import { getStreamStatusLabel, STOP_STATUS_COLORS } from '@/constants/streamStatus'
 import type { StreamConfig } from '@/types/streamConfig'
 import type { Connection } from '@/types/connections'
 
@@ -234,56 +216,6 @@ const isFinished = computed(() => {
   )
 
   return areAllNodesFinished || isStreamStatusFinished
-})
-
-const hasFailed = computed(() => {
-  return (
-    monitoringStore.status === statusEnum.FAILED ||
-    monitoringStore.stats.some((stat) => stat.status === 'FAILED')
-  )
-})
-
-const isStoppedState = computed(() => {
-  return (
-    monitoringStore.status === statusEnum.STOPPED ||
-    monitoringStore.stats.some((stat) => stat.status === 'STOPPED')
-  )
-})
-
-const statusText = computed(() => {
-  if (!isRunning.value) return ''
-  if (hasFailed.value) return 'Failed'
-  if (isStoppedState.value) return 'Stopped'
-  if (isFinished.value) {
-    return getStreamStatusLabel(monitoringStore.status) || 'Finished'
-  }
-  if (isPaused.value) return 'Paused'
-  return 'Running'
-})
-
-const statusBadgeClass = computed(() => {
-  if (!isRunning.value) return ''
-  if (isFinished.value) {
-    if (hasFailed.value)
-      return 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 ring-red-600/20 dark:ring-red-500/30'
-    if (isStoppedState.value)
-      return `${STOP_STATUS_COLORS.badgeBackground} ${STOP_STATUS_COLORS.badgeText} ring-amber-600/20 dark:ring-amber-400/30`
-    return 'bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 ring-teal-600/20 dark:ring-teal-500/30'
-  }
-  if (isPaused.value)
-    return 'bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 ring-yellow-600/20 dark:ring-yellow-500/30'
-  return 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 ring-blue-600/20 dark:ring-blue-500/30'
-})
-
-const statusIcon = computed(() => {
-  if (!isRunning.value) return null
-  if (isFinished.value) {
-    if (hasFailed.value) return XCircleIcon
-    if (isStoppedState.value) return StopIcon
-    return CheckCircleIcon
-  }
-  if (isPaused.value) return PauseCircleIcon
-  return ArrowPathIcon
 })
 
 // History is now stored separately in the API, so we can't check it here

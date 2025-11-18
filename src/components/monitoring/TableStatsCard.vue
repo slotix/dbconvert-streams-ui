@@ -15,7 +15,9 @@ const tableStatsGroup = computed(() => monitoringStore.tableStats)
 const allTables = computed(() => [
   ...tableStatsGroup.value.running,
   ...tableStatsGroup.value.completed,
-  ...tableStatsGroup.value.failed
+  ...tableStatsGroup.value.failed,
+  ...tableStatsGroup.value.stopped,
+  ...tableStatsGroup.value.paused
 ])
 
 const statusCounts = computed(() => {
@@ -24,6 +26,8 @@ const statusCounts = computed(() => {
     completed: group.completed.length,
     running: group.running.length,
     failed: group.failed.length,
+    stopped: group.stopped.length,
+    paused: group.paused.length,
     total: group.total
   }
 })
@@ -37,11 +41,15 @@ function handleCompareTable(tableName: string) {
 function getStatusClass(status: string) {
   switch (status) {
     case STAT_STATUS.FINISHED:
-      return 'bg-green-50 text-green-700 ring-green-600/20 dark:bg-green-900/30 dark:text-green-200 dark:ring-green-500/40'
+      return 'bg-emerald-50 text-emerald-700 ring-emerald-600/20 dark:bg-emerald-900/30 dark:text-emerald-200 dark:ring-emerald-500/40'
     case STAT_STATUS.RUNNING:
       return 'bg-blue-50 text-blue-700 ring-blue-600/20 dark:bg-blue-900/30 dark:text-blue-200 dark:ring-blue-500/40'
     case STAT_STATUS.FAILED:
       return 'bg-red-50 text-red-700 ring-red-600/20 dark:bg-red-900/30 dark:text-red-200 dark:ring-red-500/40'
+    case STAT_STATUS.STOPPED:
+      return 'bg-orange-50 text-orange-700 ring-orange-600/20 dark:bg-orange-900/30 dark:text-orange-200 dark:ring-orange-500/40'
+    case STAT_STATUS.PAUSED:
+      return 'bg-yellow-50 text-yellow-700 ring-yellow-600/20 dark:bg-yellow-900/30 dark:text-yellow-200 dark:ring-yellow-500/40'
     default:
       return 'bg-gray-50 text-gray-700 ring-gray-600/20 dark:bg-gray-900/40 dark:text-gray-300 dark:ring-gray-500/30'
   }
@@ -50,11 +58,15 @@ function getStatusClass(status: string) {
 function getStatusDotClass(status: string) {
   switch (status) {
     case STAT_STATUS.FINISHED:
-      return 'bg-green-500'
+      return 'bg-emerald-500'
     case STAT_STATUS.RUNNING:
       return 'bg-blue-500'
     case STAT_STATUS.FAILED:
       return 'bg-red-500'
+    case STAT_STATUS.STOPPED:
+      return 'bg-orange-500'
+    case STAT_STATUS.PAUSED:
+      return 'bg-yellow-500'
     default:
       return 'bg-gray-400'
   }
@@ -63,11 +75,15 @@ function getStatusDotClass(status: string) {
 function getStatusLabel(status: string) {
   switch (status) {
     case STAT_STATUS.FINISHED:
-      return 'Completed'
+      return 'Finished'
     case STAT_STATUS.RUNNING:
       return 'Running'
     case STAT_STATUS.FAILED:
       return 'Failed'
+    case STAT_STATUS.STOPPED:
+      return 'Stopped'
+    case STAT_STATUS.PAUSED:
+      return 'Paused'
     default:
       return status
   }
@@ -104,10 +120,12 @@ function formatDuration(seconds: number) {
           <div>
             <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">Tables</h3>
             <p class="text-sm text-gray-600 dark:text-gray-400">
-              {{ statusCounts.completed }} completed
+              {{ statusCounts.completed }} finished
               <span v-if="statusCounts.running > 0">
                 · {{ statusCounts.running }} in progress
               </span>
+              <span v-if="statusCounts.stopped > 0"> · {{ statusCounts.stopped }} stopped </span>
+              <span v-if="statusCounts.paused > 0"> · {{ statusCounts.paused }} paused </span>
               <span v-if="statusCounts.failed > 0"> · {{ statusCounts.failed }} failed </span>
             </p>
           </div>

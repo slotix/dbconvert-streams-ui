@@ -277,11 +277,15 @@ export const useMonitoringStore = defineStore('monitoring', {
       const completed = allTableStats.filter((t) => t.status === STAT_STATUS.FINISHED)
       const running = allTableStats.filter((t) => t.status === STAT_STATUS.RUNNING)
       const failed = allTableStats.filter((t) => t.status === STAT_STATUS.FAILED)
+      const stopped = allTableStats.filter((t) => t.status === STAT_STATUS.STOPPED)
+      const paused = allTableStats.filter((t) => t.status === STAT_STATUS.PAUSED)
 
       return {
         completed,
         running,
         failed,
+        stopped,
+        paused,
         total: allTableStats.length
       }
     }

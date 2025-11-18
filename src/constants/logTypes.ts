@@ -52,7 +52,9 @@ export type NodeType = (typeof NODE_TYPES)[keyof typeof NODE_TYPES]
 export const STAT_STATUS = {
   RUNNING: 'RUNNING',
   FINISHED: 'FINISHED',
-  FAILED: 'FAILED'
+  FAILED: 'FAILED',
+  STOPPED: 'STOPPED',
+  PAUSED: 'PAUSED'
 } as const
 
 export type StatStatus = (typeof STAT_STATUS)[keyof typeof STAT_STATUS]
@@ -126,7 +128,9 @@ export const NODE_TYPE_DISPLAY: Record<NodeType, string> = {
 export const STAT_STATUS_DISPLAY: Record<StatStatus, string> = {
   [STAT_STATUS.RUNNING]: '→ RUNNING',
   [STAT_STATUS.FINISHED]: '✓ FINISHED',
-  [STAT_STATUS.FAILED]: '✗ FAILED'
+  [STAT_STATUS.FAILED]: '✗ FAILED',
+  [STAT_STATUS.STOPPED]: '◼ STOPPED',
+  [STAT_STATUS.PAUSED]: '⏸ PAUSED'
 }
 
 /**
@@ -135,5 +139,7 @@ export const STAT_STATUS_DISPLAY: Record<StatStatus, string> = {
 export const STAT_STATUS_EMOJI: Record<StatStatus, string> = {
   [STAT_STATUS.RUNNING]: '→',
   [STAT_STATUS.FINISHED]: '✓',
-  [STAT_STATUS.FAILED]: '✗'
+  [STAT_STATUS.FAILED]: '✗',
+  [STAT_STATUS.STOPPED]: '◼',
+  [STAT_STATUS.PAUSED]: '⏸'
 }
