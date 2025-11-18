@@ -548,7 +548,7 @@ async function selectTable(tableName: string) {
                     :class="[
                       active ? 'bg-gray-100 dark:bg-gray-800' : '',
                       selectedTable === table
-                        ? 'bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 font-medium'
+                        ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 font-medium'
                         : '',
                       'block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200'
                     ]"
@@ -566,9 +566,9 @@ async function selectTable(tableName: string) {
           >
             <Switch
               v-model="syncEnabled"
-              class="relative inline-flex h-5 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-teal-500 dark:focus:ring-teal-300 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
+              class="relative inline-flex h-5 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-300 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
               :class="[
-                syncEnabled ? 'bg-gray-600 dark:bg-teal-500' : 'bg-gray-400 dark:bg-gray-600'
+                syncEnabled ? 'bg-gray-600 dark:bg-gray-500' : 'bg-gray-400 dark:bg-gray-600'
               ]"
             >
               <span class="sr-only">Sync view options between source and target</span>
@@ -588,7 +588,7 @@ async function selectTable(tableName: string) {
             />
             <span
               class="text-sm text-gray-700 dark:text-gray-200"
-              :class="{ 'font-medium text-teal-700 dark:text-teal-300': syncEnabled }"
+              :class="{ 'font-medium text-emerald-700 dark:text-emerald-300': syncEnabled }"
             >
               Sync Views
             </span>
@@ -613,19 +613,19 @@ async function selectTable(tableName: string) {
 
     <!-- Split View -->
     <div class="flex-1 flex overflow-hidden">
-      <!-- Source Pane (Left) - Orange Theme -->
+      <!-- Source Pane (Left) - Blue Theme -->
       <div
         class="flex-1 flex flex-col border-r border-gray-200 dark:border-gray-800 overflow-hidden"
       >
         <!-- Source Header -->
         <div
-          class="px-4 py-3 border-b border-orange-100 dark:border-orange-800/60 bg-linear-to-r from-orange-50 to-white dark:from-orange-900/20 dark:to-gray-900/20 shrink-0"
+          class="px-4 py-3 border-b border-blue-100 dark:border-blue-800/60 bg-linear-to-r from-blue-50 to-white dark:from-blue-900/20 dark:to-gray-900/20 shrink-0"
         >
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
               <img src="/images/steps/source-step.svg" alt="Source" class="w-6 h-6" />
               <span
-                class="text-sm font-semibold bg-linear-to-r from-orange-600 to-orange-500 dark:from-orange-400 dark:to-orange-300 bg-clip-text text-transparent"
+                class="text-sm font-semibold bg-linear-to-r from-blue-600 to-blue-500 dark:from-blue-400 dark:to-blue-300 bg-clip-text text-transparent"
               >
                 Source
               </span>
@@ -666,17 +666,17 @@ async function selectTable(tableName: string) {
         </div>
       </div>
 
-      <!-- Target Pane (Right) - Teal Theme -->
+      <!-- Target Pane (Right) - Emerald Theme -->
       <div class="flex-1 flex flex-col overflow-hidden">
         <!-- Target Header -->
         <div
-          class="px-4 py-3 border-b border-teal-100 dark:border-teal-800/60 bg-linear-to-r from-teal-50 to-white dark:from-teal-900/20 dark:to-gray-900/20 shrink-0"
+          class="px-4 py-3 border-b border-emerald-100 dark:border-emerald-800/60 bg-linear-to-r from-emerald-50 to-white dark:from-emerald-900/20 dark:to-gray-900/20 shrink-0"
         >
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
               <img src="/images/steps/target-step.svg" alt="Target" class="w-6 h-6" />
               <span
-                class="text-sm font-semibold bg-linear-to-r from-teal-600 to-teal-500 dark:from-teal-400 dark:to-teal-300 bg-clip-text text-transparent"
+                class="text-sm font-semibold bg-linear-to-r from-emerald-600 to-emerald-500 dark:from-emerald-400 dark:to-emerald-300 bg-clip-text text-transparent"
               >
                 Target
               </span>

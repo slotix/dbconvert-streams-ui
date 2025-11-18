@@ -61,10 +61,10 @@
 
       <!-- Target Tree (Right) - Emerald Theme -->
       <div
-        class="relative rounded-xl bg-linear-to-br from-teal-50 to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-850 overflow-hidden flex flex-col border border-gray-200 dark:border-gray-800 shadow-sm dark:shadow-gray-900/30 h-full"
+        class="relative rounded-xl bg-linear-to-br from-emerald-50 to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-850 overflow-hidden flex flex-col border border-gray-200 dark:border-gray-800 shadow-sm dark:shadow-gray-900/30 h-full"
       >
         <div
-          class="px-4 py-3 border-b border-teal-200 dark:border-teal-800/60 bg-gradient-to-br from-teal-50 via-teal-100 to-teal-50 dark:from-teal-900/20 dark:via-teal-900/10 dark:to-teal-900/5 relative overflow-hidden"
+          class="px-4 py-3 border-b border-emerald-200 dark:border-emerald-800/60 bg-gradient-to-br from-emerald-50 via-emerald-100 to-emerald-50 dark:from-emerald-900/20 dark:via-emerald-900/10 dark:to-emerald-900/5 relative overflow-hidden"
         >
           <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div class="flex items-center gap-3 min-w-0">
@@ -76,10 +76,14 @@
                 />
               </div>
               <div class="min-w-0">
-                <h3 class="text-base font-semibold text-teal-700 dark:text-teal-200 leading-tight">
+                <h3
+                  class="text-base font-semibold text-emerald-700 dark:text-emerald-200 leading-tight"
+                >
                   Target Connection
                 </h3>
-                <p class="text-xs text-teal-700/80 dark:text-teal-100/80 font-medium truncate">
+                <p
+                  class="text-xs text-emerald-700/80 dark:text-emerald-100/80 font-medium truncate"
+                >
                   Select where to write data to
                 </p>
               </div>
@@ -161,19 +165,19 @@
 
           <!-- Target Chip - Emerald -->
           <div
-            class="bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-600/60 rounded-lg px-3 py-1.5 text-sm shadow-sm shadow-emerald-900/10 dark:shadow-emerald-900/40"
+            class="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-600/60 rounded-lg px-3 py-1.5 text-sm shadow-sm shadow-emerald-900/10 dark:shadow-emerald-900/40"
           >
-            <span class="font-semibold text-teal-700 dark:text-teal-200">Target:</span>
+            <span class="font-semibold text-emerald-700 dark:text-emerald-200">Target:</span>
             <span
               v-if="targetConnectionId"
-              class="text-teal-900 dark:text-teal-100 ml-1 font-medium"
+              class="text-emerald-900 dark:text-emerald-100 ml-1 font-medium"
             >
               {{ getConnectionName(targetConnectionId) }}
-              <span v-if="targetDatabase" class="text-teal-600 dark:text-teal-300">
+              <span v-if="targetDatabase" class="text-emerald-600 dark:text-emerald-300">
                 / {{ targetDatabase }}
               </span>
             </span>
-            <span v-else class="text-teal-500/80 dark:text-teal-300/70 ml-1 italic"
+            <span v-else class="text-emerald-500/80 dark:text-emerald-300/70 ml-1 italic"
               >Not selected</span
             >
           </div>
@@ -182,7 +186,7 @@
         <!-- Clear All Button -->
         <button
           type="button"
-          class="text-sm text-gray-600 dark:text-gray-300 hover:text-teal-600 dark:hover:text-teal-400 font-medium whitespace-nowrap transition-colors duration-200"
+          class="text-sm text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium whitespace-nowrap transition-colors duration-200"
           @click="clearAll"
         >
           Clear All

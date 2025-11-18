@@ -107,13 +107,13 @@
       </dl>
     </div>
 
-    <!-- Target Stats - Teal Theme -->
+    <!-- Target Stats - Emerald Theme -->
     <div class="flex flex-col">
       <div
         :class="[
           'px-4 py-3 bg-gradient-to-br border-b',
           isRunning
-            ? 'from-teal-50 via-teal-100 to-teal-50 border-teal-200 dark:from-teal-900/20 dark:via-teal-900/10 dark:to-teal-900/5 dark:border-teal-800/60'
+            ? 'from-emerald-50 via-emerald-100 to-emerald-50 border-emerald-200 dark:from-emerald-900/20 dark:via-emerald-900/10 dark:to-emerald-900/5 dark:border-emerald-800/60'
             : 'from-gray-50 via-gray-100 to-gray-50 border-gray-100 dark:from-gray-900/20 dark:via-gray-900/10 dark:to-gray-900/5 dark:border-gray-800/70'
         ]"
       >
@@ -132,7 +132,7 @@
                 class="text-sm sm:text-base font-bold leading-tight flex items-center justify-between gap-2"
                 :class="
                   isRunning
-                    ? 'text-teal-700 dark:text-teal-300'
+                    ? 'text-emerald-700 dark:text-emerald-300'
                     : 'text-gray-900 dark:text-gray-100'
                 "
               >
@@ -143,7 +143,7 @@
                 </span>
                 <span
                   v-if="isRunning && targetStats && targetStats.activeNodes > 1"
-                  class="inline-flex items-center rounded-full bg-teal-600 dark:bg-teal-500 px-1.5 py-0.5 text-xs font-semibold text-white dark:text-gray-900 shadow-sm flex-shrink-0"
+                  class="inline-flex items-center rounded-full bg-emerald-600 dark:bg-emerald-500 px-1.5 py-0.5 text-xs font-semibold text-white dark:text-gray-900 shadow-sm flex-shrink-0"
                 >
                   {{ targetStats.activeNodes }}×
                 </span>

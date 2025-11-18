@@ -15,7 +15,7 @@
     >
       <button
         type="button"
-        class="flex w-full items-start gap-2.5 px-3 py-2 text-left transition-colors rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 dark:focus-visible:ring-teal-400"
+        class="flex w-full items-start gap-2.5 px-3 py-2 text-left transition-colors rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:focus-visible:ring-emerald-400"
         :class="[
           connectionHeaderClass(connection.id),
           isFileConnection(connection) && mode === 'source' ? 'opacity-50 cursor-not-allowed' : ''
@@ -321,7 +321,7 @@ function connectionCardClass(connectionId: string): string {
   }
 
   const targetHighlight =
-    'bg-gradient-to-r from-teal-50/90 via-teal-100/70 to-white dark:from-teal-900/40 dark:via-teal-900/20 dark:to-transparent border-teal-200/80 dark:border-teal-700/60 ring-1 ring-teal-300/60 dark:ring-teal-500/30 shadow-lg shadow-emerald-900/10 dark:shadow-emerald-900/40'
+    'bg-gradient-to-r from-emerald-50/90 via-emerald-100/70 to-white dark:from-emerald-900/40 dark:via-emerald-900/20 dark:to-transparent border-emerald-200/80 dark:border-emerald-700/60 ring-1 ring-emerald-300/60 dark:ring-emerald-500/30 shadow-lg shadow-emerald-900/10 dark:shadow-emerald-900/40'
   return `${base} ${targetHighlight}`
 }
 
@@ -337,7 +337,7 @@ function connectionHeaderClass(connectionId: string): string {
 
   return props.mode === 'source'
     ? 'bg-transparent text-blue-800 dark:text-blue-100 font-semibold'
-    : 'bg-transparent text-teal-700 dark:text-teal-100 font-semibold'
+    : 'bg-transparent text-emerald-700 dark:text-emerald-100 font-semibold'
 }
 
 function filePathClass(connectionId: string): string {
@@ -367,7 +367,7 @@ function databaseRowClass(connectionId: string, database: string): string {
   if (props.mode === 'source') {
     return 'bg-gradient-to-r from-blue-50 via-blue-100/60 to-transparent dark:from-blue-900/30 dark:via-blue-900/15 dark:to-transparent text-blue-900 dark:text-blue-100 font-semibold ring-1 ring-blue-200 dark:ring-blue-500/30 border border-blue-100/70 dark:border-blue-800/40 pl-2 shadow-inner shadow-blue-900/5'
   } else {
-    return 'bg-gradient-to-r from-teal-50 via-teal-100/60 to-transparent dark:from-teal-900/30 dark:via-teal-900/15 dark:to-transparent text-teal-900 dark:text-teal-100 font-semibold ring-1 ring-teal-200 dark:ring-teal-500/30 border border-teal-100/70 dark:border-teal-800/40 pl-2 shadow-inner shadow-emerald-900/5'
+    return 'bg-gradient-to-r from-emerald-50 via-emerald-100/60 to-transparent dark:from-emerald-900/30 dark:via-emerald-900/15 dark:to-transparent text-emerald-900 dark:text-emerald-100 font-semibold ring-1 ring-emerald-200 dark:ring-emerald-500/30 border border-emerald-100/70 dark:border-emerald-800/40 pl-2 shadow-inner shadow-emerald-900/5'
   }
 }
 
