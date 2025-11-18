@@ -93,7 +93,7 @@ const emit = defineEmits<{
 
 // Get table sizes from store (reactive)
 const tableSizes = computed(() => {
-  return overviewStore.getAllTableSizes()
+  return overviewStore.getAllTableSizes(props.connectionId, props.database.name)
 })
 
 // Fetch overview data when database is expanded

@@ -90,15 +90,16 @@ const isCountingRows = ref(false)
 const exactRowCount = ref<number | null>(null)
 const countError = ref<string | null>(null)
 
-// Cache for exact counts (persists across table switches)
-// Key format: "connectionId:database:schema:tableName"
+// Cache for exact counts (persists across table switches within same context)
+// Key format: "objectKey:connectionId:database:schema:tableName"
+// Including objectKey ensures cache is scoped to the specific use case (e.g., separate for source vs target in compare view)
 const exactCountCache = ref<Map<string, number>>(new Map())
 
 // Generate cache key for current table/view
 const getCacheKey = () => {
   const objectName = getObjectName(props.tableMeta)
   const objectSchema = getObjectSchema(props.tableMeta)
-  return `${props.connectionId}:${props.database}:${objectSchema || ''}:${objectName}`
+  return `${props.objectKey}:${props.connectionId}:${props.database}:${objectSchema || ''}:${objectName}`
 }
 
 // Watch for approxRows prop changes and update totalRowCount
@@ -108,6 +109,7 @@ watch(
   (newApproxRows) => {
     // Check if we have a saved exact count - if so, don't overwrite with approx
     const savedState = tabStateStore.getAGGridDataState(props.objectKey)
+
     if (savedState && savedState.exactRowCount !== null) {
       // Use the saved exact count
       totalRowCount.value = savedState.exactRowCount
@@ -125,6 +127,12 @@ watch(
       // Reset count when switching to a table not in top tables list
       totalRowCount.value = 0
     }
+
+    // Recreate datasource so AG Grid knows about the updated totalRowCount
+    // This ensures the grid pagination shows the correct total count immediately
+    if (gridApi.value && !gridApi.value.isDestroyed()) {
+      gridApi.value.setGridOption('datasource', createDatasource())
+    }
   },
   { immediate: true }
 )
@@ -138,7 +146,8 @@ watch(
     if (savedState) {
       // Restore state from store
       currentSortModel.value = savedState.sortModel || []
-      totalRowCount.value = savedState.totalRowCount || 0
+      // DON'T restore totalRowCount here - approxRows watcher handles it
+      // and savedState.totalRowCount might be stale/wrong
       exactRowCount.value = savedState.exactRowCount || null
       agGridFilters.value = savedState.filterModel || {}
 
@@ -162,7 +171,7 @@ watch(
       }
     } else {
       // Reset to default state
-      totalRowCount.value = 0
+      // DON'T reset totalRowCount here - approxRows watcher handles it
       currentFirstRow.value = 1
       currentLastRow.value = 100
       currentSortModel.value = []
@@ -183,7 +192,15 @@ watch(
         totalRowCount.value = cachedCount
       } else {
         exactRowCount.value = null
+        // DON'T set totalRowCount to 0 here - approxRows watcher will set it
       }
+    }
+
+    // Recreate datasource to ensure AG Grid knows about the (potentially updated) totalRowCount
+    // This is critical when switching tables - even though approxRows watcher will update
+    // totalRowCount, AG Grid won't know about it until we recreate the datasource
+    if (gridApi.value) {
+      gridApi.value.setGridOption('datasource', createDatasource())
     }
   },
   { deep: true }

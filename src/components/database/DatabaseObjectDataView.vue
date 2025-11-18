@@ -24,7 +24,7 @@ const tableName = computed(() => {
 // Get approximate row count from store (reactive)
 const approxRows = computed(() => {
   if (props.isView) return -1 // Views have unknown count (-1)
-  return overviewStore.getTableRowCount(tableName.value)
+  return overviewStore.getTableRowCount(tableName.value, props.connectionId, props.database)
 })
 
 // Fetch overview data on mount

@@ -78,13 +78,13 @@ const syncFlashTarget = ref(false) // Visual feedback for target grid
 
 // Get approximate row counts from store for both source and target
 const sourceApproxRows = computed(() => {
-  if (!selectedTable.value) return 0
-  return overviewStore.getTableRowCount(selectedTable.value)
+  if (!selectedTable.value || !sourceDatabase.value) return 0
+  return overviewStore.getTableRowCount(selectedTable.value, props.source.id, sourceDatabase.value)
 })
 
 const targetApproxRows = computed(() => {
-  if (!selectedTable.value || isFileTarget.value) return 0
-  return overviewStore.getTableRowCount(selectedTable.value)
+  if (!selectedTable.value || !targetDatabase.value || isFileTarget.value) return 0
+  return overviewStore.getTableRowCount(selectedTable.value, props.target.id, targetDatabase.value)
 })
 
 // Check if target is file-based
@@ -647,6 +647,7 @@ async function selectTable(tableName: string) {
             :class="{ 'ring-2 ring-blue-400 ring-opacity-50': syncFlashSource }"
           >
             <AGGridDataView
+              :key="`compare-source-${stream.id}-${selectedTable}`"
               ref="sourceGridRef"
               :table-meta="sourceTableMeta"
               :connection-id="source.id"
@@ -703,6 +704,7 @@ async function selectTable(tableName: string) {
             :class="{ 'ring-2 ring-blue-400 ring-opacity-50': syncFlashTarget }"
           >
             <AGGridDataView
+              :key="`compare-target-${stream.id}-${selectedTable}`"
               ref="targetGridRef"
               :table-meta="targetTableMeta"
               :connection-id="target.id"

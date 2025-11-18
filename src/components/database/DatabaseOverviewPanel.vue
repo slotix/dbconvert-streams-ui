@@ -24,10 +24,12 @@ const emit = defineEmits<{
 
 const overviewStore = useDatabaseOverviewStore()
 
-// Get overview and loading state directly from store
-const overview = computed(() => overviewStore.currentOverview)
-const isLoading = computed(() => overviewStore.isLoading)
-const error = computed(() => overviewStore.error)
+// Get overview and loading state for this specific connection + database
+const overview = computed(() => overviewStore.getOverview(props.connectionId, props.database))
+const isLoading = computed(() =>
+  overviewStore.isLoadingOverview(props.connectionId, props.database)
+)
+const error = computed(() => overviewStore.getError(props.connectionId, props.database))
 
 async function load() {
   // Guard: Don't load if either connectionId or database is missing
@@ -45,7 +47,7 @@ async function load() {
         `Skipping overview load for ${props.database} on connection ${props.connectionId}: database not found (likely during connection switch)`
       )
       // Clear the error from store since this is an expected transient error
-      overviewStore.clearOverview()
+      overviewStore.clearOverview(props.connectionId, props.database)
       return
     }
     // Re-throw other errors
