@@ -12,11 +12,10 @@ import { normalizeDataType } from '@/constants/databaseTypes'
 import type { StreamConfig } from '@/types/streamConfig'
 import type { Connection } from '@/types/connections'
 import type { SQLTableMeta } from '@/types/metadata'
-import { listDirectory, type FileSystemEntry } from '@/api/fileSystem'
+import type { FileSystemEntry } from '@/api/fileSystem'
 import type { FileMetadata } from '@/types/files'
 import * as files from '@/api/files'
 import type { FileFormat } from '@/utils/fileFormat'
-import { getFileFormat } from '@/utils/fileFormat'
 
 type SortDirection = 'asc' | 'desc' | null | undefined
 
@@ -107,7 +106,13 @@ const targetRootPath = computed(() => {
 })
 
 const targetFileDisplayName = computed(() => {
-  if (targetFileEntry.value?.name) return targetFileEntry.value.name
+  if (targetFileEntry.value?.name) {
+    // For folder entries (multiple files), just show the table name
+    if (targetFileEntry.value.type === 'dir') {
+      return `${targetFileEntry.value.name}/ (${targetFileMetadata.value?.rowCount?.toLocaleString() || 0} rows)`
+    }
+    return targetFileEntry.value.name
+  }
   if (!selectedTable.value) return ''
   if (!targetFileFormat.value) return selectedTable.value
   const ext = getBaseExtensionForFormat(targetFileFormat.value)
@@ -205,24 +210,9 @@ const schemaComparison = computed((): SchemaComparison | null => {
 
 // Initialize with first table
 onMounted(async () => {
-  console.log('StreamCompareView mounted with props:', {
-    streamId: props.stream.id,
-    streamName: props.stream.name,
-    sourceDatabase: sourceDatabase.value,
-    targetDatabase: targetDatabase.value,
-    sourceSchema: sourceSchema.value,
-    targetSchema: targetSchema.value,
-    tables: props.stream.source?.tables,
-    source: props.source,
-    target: props.target
-  })
-
   if (tablesList.value.length > 0) {
     selectedTable.value = tablesList.value[0]
-    console.log('Selected first table:', selectedTable.value)
     await loadTableData()
-  } else {
-    console.warn('No tables in stream config')
   }
 })
 
@@ -236,23 +226,12 @@ async function loadTableData() {
 
 async function loadSourceTable() {
   try {
-    console.log('loadSourceTable called with:', {
-      sourceDatabase: sourceDatabase.value,
-      sourceSchema: sourceSchema.value,
-      selectedTable: selectedTable.value,
-      sourceId: props.source.id,
-      sourceType: props.source.type
-    })
-
     if (!sourceDatabase.value) {
-      console.warn('No sourceDatabase in stream config')
       return
     }
 
     // Ensure metadata is loaded
-    console.log('Calling ensureMetadata for source...')
     await navigationStore.ensureMetadata(props.source.id, sourceDatabase.value)
-    console.log('ensureMetadata completed for source')
 
     // Fetch database overview to get row counts
     try {
@@ -270,14 +249,12 @@ async function loadSourceTable() {
       schema = sourceSchema.value || 'public'
     }
 
-    console.log('Looking for table metadata with schema:', schema)
     const meta = navigationStore.findTableMeta(
       props.source.id,
       sourceDatabase.value,
       selectedTable.value,
       schema
     )
-    console.log('Found source table metadata:', meta)
     sourceTableMeta.value = meta || null
   } catch (error) {
     console.error('Failed to load source table metadata:', error)
@@ -341,35 +318,30 @@ async function loadTargetFile() {
     }
 
     const tableFolderPath = joinPaths(targetRootPath.value, streamId, selectedTable.value)
-    console.log('Loading target file from path:', {
-      targetRootPath: targetRootPath.value,
-      streamId,
-      tableName: selectedTable.value,
-      fullPath: tableFolderPath
-    })
-    const response = await listDirectory(tableFolderPath, props.target.type)
-    const tableFiles = response.entries.filter((entry) => entry.type === 'file')
 
-    if (tableFiles.length === 0) {
-      targetFileError.value = `No files found for table ${selectedTable.value} in ${tableFolderPath}`
-      return
-    }
-
-    tableFiles.sort((a, b) =>
-      a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' })
-    )
-
-    const entry = tableFiles[0]
-    targetFileEntry.value = entry
-
-    const detectedFormat: FileFormat | null = targetFileFormat.value || getFileFormat(entry.name)
+    // Instead of loading individual files, we need to pass the FOLDER to DuckDB
+    // DuckDB will automatically query all part-*.ext files in the folder
+    const detectedFormat = targetFileFormat.value
 
     if (!detectedFormat) {
-      targetFileError.value = `Unsupported file format for ${entry.name}`
+      targetFileError.value = `File format not configured for this stream`
       return
     }
 
-    const metadata = await files.getFileMetadata(entry.path, detectedFormat, true)
+    // Create a FileSystemEntry for the folder itself (not individual files)
+    // DuckDB will use wildcard patterns like "folder/*.csv.zst" to read all files
+    const folderEntry: FileSystemEntry = {
+      name: selectedTable.value,
+      path: tableFolderPath,
+      type: 'dir',
+      isTable: true,
+      format: detectedFormat
+    }
+
+    targetFileEntry.value = folderEntry
+
+    // Get metadata for the entire folder (DuckDB aggregates across all files)
+    const metadata = await files.getFileMetadata(tableFolderPath, detectedFormat, true)
     targetFileMetadata.value = metadata
   } catch (error) {
     console.error('Failed to load target file:', error)
