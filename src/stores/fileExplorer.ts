@@ -225,7 +225,7 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
     computeStats: boolean = true
   ): Promise<FileMetadata | null> {
     try {
-      const fileFormat = getFileFormat(fileEntry.name)
+      const fileFormat = fileEntry.format || getFileFormat(fileEntry.name)
       if (!fileFormat) {
         console.warn('Unable to determine file format for:', fileEntry.name)
         return null

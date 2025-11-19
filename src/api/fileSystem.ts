@@ -1,10 +1,14 @@
 import { apiClient } from './apiClient'
+import type { FileFormat } from '@/utils/fileFormat'
 
 export interface FileSystemEntry {
   name: string
   path: string
   type: 'file' | 'dir'
   size?: number
+  isTable?: boolean
+  format?: FileFormat
+  fileCount?: number
   children?: FileSystemEntry[] // Nested entries for directories
   isLoaded?: boolean // Whether this directory's children have been loaded
 }

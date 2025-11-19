@@ -37,9 +37,13 @@ const emit = defineEmits<{
   (e: 'expand-folder', payload: { entry: FileSystemEntry }): void
 }>()
 
-const fileFormat = computed(() => getFileFormat(props.entry.name))
-const isSupported = computed(() => props.entry.type === 'dir' || isSupportedFile(props.entry.name))
+const fileFormat = computed(() => props.entry.format || getFileFormat(props.entry.name))
 const isFolder = computed(() => props.entry.type === 'dir')
+const isTableFolder = computed(() => isFolder.value && !!props.entry.isTable)
+const isSelectableFile = computed(() => props.entry.type === 'file' || isTableFolder.value)
+const isSupported = computed(
+  () => isTableFolder.value || props.entry.type === 'dir' || isSupportedFile(props.entry.name)
+)
 const isSelected = computed(() => props.selectedPath === props.entry.path)
 const isExpanded = computed(() =>
   fileExplorerStore.isFolderExpanded(props.connectionId, props.entry.path)
@@ -75,7 +79,9 @@ const handleChevronClick = (event: MouseEvent) => {
 
 // Handle entry selection
 const handleSelect = () => {
-  if (isFolder.value) {
+  if (isTableFolder.value) {
+    emit('select', { path: props.entry.path, entry: props.entry })
+  } else if (isFolder.value) {
     // Single-click on folder: expand/collapse it
     emit('expand-folder', { entry: props.entry })
   } else {
@@ -86,10 +92,10 @@ const handleSelect = () => {
 
 // Handle double-click - expand folder or open file
 const handleDoubleClick = () => {
-  if (isFolder.value) {
-    emit('expand-folder', { entry: props.entry })
-  } else {
+  if (isTableFolder.value || !isFolder.value) {
     emit('open', { entry: props.entry, mode: 'pinned' })
+  } else {
+    emit('expand-folder', { entry: props.entry })
   }
 }
 
@@ -126,16 +132,16 @@ const handleChildExpandFolder = (payload: { entry: FileSystemEntry }) => {
       class="flex items-center py-1.5 text-sm text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer select-none"
       :class="{
         'bg-gray-100 dark:bg-gray-800 ring-1 ring-gray-300 dark:ring-gray-600':
-          isSelected && !isFolder,
+          isSelected && isSelectableFile,
         'opacity-60': !isSupported && entry.type !== 'dir'
       }"
       :style="indentStyle"
       :title="unsupportedTooltip"
       @click="handleSelect"
       @dblclick.stop="handleDoubleClick"
-      @click.middle.stop="!isFolder && emit('open', { entry, mode: 'pinned' })"
+      @click.middle.stop="isSelectableFile && emit('open', { entry, mode: 'pinned' })"
       @contextmenu.stop.prevent="
-        $event.shiftKey && !isFolder
+        $event.shiftKey && isSelectableFile
           ? emit('open', { entry, mode: 'preview', openInRightSplit: true })
           : emit('context-menu', { event: $event, entry })
       "

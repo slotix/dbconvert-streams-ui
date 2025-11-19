@@ -56,7 +56,7 @@ const isLoading = ref(false)
 const isInitialLoading = ref(true) // Track initial load (metadata + first data)
 const warnings = ref<string[]>([])
 
-const fileFormat = computed(() => getFileFormat(props.entry.name))
+const fileFormat = computed(() => props.entry.format || getFileFormat(props.entry.name))
 
 // Check if file format is supported
 const isUnsupportedFile = computed(() => fileFormat.value === null)

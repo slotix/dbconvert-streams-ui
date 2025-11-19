@@ -204,8 +204,10 @@ export function useDatabaseExplorerController({
     defaultTab?: 'structure' | 'data'
     openInRightSplit?: boolean
   }) {
-    // Guard: only allow opening files, not directories
-    if (payload.entry.type !== 'file') {
+    const isTableFolder = payload.entry.type === 'dir' && payload.entry.isTable
+
+    // Guard: only allow opening files or table folders
+    if (payload.entry.type !== 'file' && !isTableFolder) {
       console.warn('Attempted to open a directory as a file:', payload.path)
       return
     }
@@ -365,8 +367,10 @@ export function useDatabaseExplorerController({
       return
     }
 
-    // Only open files for preview, not directories
-    if (entry.type !== 'file') {
+    const isTableFolder = entry.type === 'dir' && entry.isTable
+
+    // Only open files or table folders for preview
+    if (entry.type !== 'file' && !isTableFolder) {
       // Don't set selected path for folders - they should just expand/collapse
       focusConnectionId.value = null
       return

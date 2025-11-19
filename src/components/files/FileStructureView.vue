@@ -24,7 +24,7 @@ const emit = defineEmits<{
   (e: 'refresh-metadata'): void
 }>()
 
-const fileFormat = computed(() => getFileFormat(props.entry.name))
+const fileFormat = computed(() => props.entry.format || getFileFormat(props.entry.name))
 const isUnsupportedFile = computed(() => fileFormat.value === null)
 
 const formatFileSize = (bytes?: number): string => {
