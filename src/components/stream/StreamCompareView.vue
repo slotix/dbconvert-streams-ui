@@ -7,6 +7,7 @@ import AGGridFileDataView from '@/components/files/AGGridFileDataView.vue'
 import SchemaComparisonPanel from './SchemaComparisonPanel.vue'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { useDatabaseOverviewStore } from '@/stores/databaseOverview'
+import { useMonitoringStore } from '@/stores/monitoring'
 import { normalizeDataType } from '@/constants/databaseTypes'
 import type { StreamConfig } from '@/types/streamConfig'
 import type { Connection } from '@/types/connections'
@@ -53,6 +54,7 @@ const props = defineProps<{
 
 const navigationStore = useExplorerNavigationStore()
 const overviewStore = useDatabaseOverviewStore()
+const monitoringStore = useMonitoringStore()
 
 // Selected table from stream config
 const selectedTable = ref<string>('')
@@ -330,7 +332,21 @@ async function loadTargetFile() {
       return
     }
 
-    const tableFolderPath = joinPaths(targetRootPath.value, selectedTable.value)
+    // Get the stream execution ID from monitoring store
+    // The new file structure is: <outputRoot>/<streamID>/<table>/
+    const streamId = monitoringStore.streamID || monitoringStore.lastStreamId
+    if (!streamId) {
+      targetFileError.value = 'No stream execution ID available. Please run the stream first.'
+      return
+    }
+
+    const tableFolderPath = joinPaths(targetRootPath.value, streamId, selectedTable.value)
+    console.log('Loading target file from path:', {
+      targetRootPath: targetRootPath.value,
+      streamId,
+      tableName: selectedTable.value,
+      fullPath: tableFolderPath
+    })
     const response = await listDirectory(tableFolderPath, props.target.type)
     const tableFiles = response.entries.filter((entry) => entry.type === 'file')
 
