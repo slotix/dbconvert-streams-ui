@@ -8,7 +8,8 @@
       "mcp__ide__getDiagnostics",
       "Bash(go build:*)",
       "Bash(yarn build:*)",
-      "Bash(git restore:*)"
+      "Bash(git restore:*)",
+      "Bash(yarn lint:fix:*)"
     ],
     "deny": [],
     "ask": []
