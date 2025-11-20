@@ -61,14 +61,32 @@ const currentTab = ref('')
 
 const currentConnection = computed(() => connectionsStore.currentConnection)
 
-// Check if this is an S3 connection (case-insensitive)
+// Check if this is an S3 connection
+// In wizard: type="s3" or type="S3"
+// After save: type="files" with storage_config.provider="s3"
 const isS3 = computed(() => {
-  return props.connectionType?.toLowerCase() === 's3'
+  const connType = props.connectionType?.toLowerCase()
+  // Direct S3 type (wizard shows "S3", we check lowercase)
+  if (connType === 's3') {
+    return true
+  }
+  // Files type - check storage_config.provider (for editing existing connections)
+  if (connType === 'files' && currentConnection.value?.storage_config?.provider === 's3') {
+    return true
+  }
+  return false
 })
 
-// Check if this is a Files connection (case-insensitive)
+// Check if this is a Local Files connection
+// Local files have type="files" with storage_config.provider="local" or no provider
 const isLocalFiles = computed(() => {
-  return props.connectionType?.toLowerCase() === 'files'
+  const connType = props.connectionType?.toLowerCase()
+  if (connType !== 'files') {
+    return false
+  }
+  // If it's files type, check that it's NOT S3
+  const provider = currentConnection.value?.storage_config?.provider
+  return !provider || provider === 'local'
 })
 
 const componentMap = {

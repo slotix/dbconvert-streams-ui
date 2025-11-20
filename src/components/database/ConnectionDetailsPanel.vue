@@ -27,9 +27,19 @@ const showPassword = ref(false)
 const isCopied = ref(false)
 const isPathCopied = ref(false)
 
-// Check if this is a file connection
+// Check if this is an S3/MinIO connection
+const isS3Connection = computed(() => {
+  const type = props.connection?.type?.toLowerCase()
+  const provider = props.connection?.storage_config?.provider?.toLowerCase()
+
+  // Check both the connection type and the storage provider
+  return type === 's3' || type === 'minio' || provider === 's3' || provider === 'minio'
+})
+
+// Check if this is a file connection (includes S3, MinIO, local files, etc.)
 const isFileConnection = computed(() => {
-  return props.connection?.type?.toLowerCase() === 'files'
+  const type = props.connection?.type?.toLowerCase()
+  return type === 'files' || type === 's3' || type === 'minio' || !!props.connection?.storage_config
 })
 
 // Check if connection has a path configured
@@ -107,10 +117,23 @@ function copyConnectionString() {
 }
 
 async function copyFolderPath() {
-  const folderPath = props.connection.storage_config?.uri
-  if (!folderPath) return
+  // For S3 connections, copy the base URI without extra info
+  let pathToCopy = props.connection.storage_config?.uri
+
+  // If no storage_config.uri, construct from s3Config
+  if (!pathToCopy && props.connection.s3Config?.bucket) {
+    const bucket = props.connection.s3Config.bucket
+    const prefix = props.connection.s3Config.prefix || ''
+    pathToCopy = `s3://${bucket}${prefix ? '/' + prefix : ''}`
+  }
+
+  // If still no path, use the base s3://
+  if (!pathToCopy) {
+    pathToCopy = 's3://'
+  }
+
   try {
-    await navigator.clipboard.writeText(folderPath)
+    await navigator.clipboard.writeText(pathToCopy)
     isPathCopied.value = true
     setTimeout(() => (isPathCopied.value = false), 1200)
   } catch (fallbackError) {
@@ -121,6 +144,49 @@ async function copyFolderPath() {
 const createdDisplay = computed(() => {
   return formatDateTime(props.connection?.created || 0)
 })
+
+// Compute displayable S3 URI
+const displayS3URI = computed(() => {
+  const storageURI = props.connection.storage_config?.uri || ''
+
+  // If URI is just "s3://", show more meaningful info
+  if (storageURI === 's3://') {
+    const endpoint =
+      props.connection.storage_config?.endpoint || props.connection.s3Config?.endpoint
+    const region = props.connection.storage_config?.region || props.connection.s3Config?.region
+
+    if (endpoint) {
+      return `s3://${endpoint} (All buckets)`
+    } else if (region) {
+      return `s3:// (All buckets in ${region})`
+    }
+    return 's3:// (All buckets)'
+  }
+
+  // If s3Config has bucket/prefix but storage_config doesn't, use that
+  if (!storageURI && props.connection.s3Config?.bucket) {
+    const bucket = props.connection.s3Config.bucket
+    const prefix = props.connection.s3Config.prefix || ''
+    return `s3://${bucket}${prefix ? '/' + prefix : ''}`
+  }
+
+  return storageURI || 's3://'
+})
+
+// Debug: Log connection object to console
+if (import.meta.env.DEV) {
+  console.log('[ConnectionDetailsPanel] Connection data:', {
+    id: props.connection.id,
+    name: props.connection.name,
+    type: props.connection.type,
+    storage_config: props.connection.storage_config,
+    s3Config: props.connection.s3Config,
+    path: props.connection.path,
+    displayS3URI: displayS3URI.value,
+    isS3Connection: isS3Connection.value,
+    isFileConnection: isFileConnection.value
+  })
+}
 </script>
 
 <template>
@@ -151,8 +217,95 @@ const createdDisplay = computed(() => {
 
     <div class="p-4 space-y-6">
       <!-- File Connection Details -->
-      <div v-if="isFileConnection" class="space-y-6">
-        <div class="min-w-0">
+      <div v-if="isFileConnection" class="space-y-4">
+        <!-- S3/MinIO Specific Details -->
+        <div v-if="isS3Connection" class="space-y-4">
+          <!-- Storage URI -->
+          <div class="min-w-0">
+            <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+              >Storage URI</label
+            >
+            <div
+              class="mt-1 flex items-start gap-2 rounded-lg bg-linear-to-r from-slate-50 to-gray-50 dark:from-gray-800 dark:to-gray-850 p-3 font-mono text-sm border border-gray-100 dark:border-gray-700"
+            >
+              <span class="flex-1 break-all text-gray-800 dark:text-gray-200 overflow-x-auto">
+                {{ displayS3URI }}
+              </span>
+              <button
+                v-if="displayS3URI && displayS3URI !== 's3://'"
+                class="shrink-0 transition-colors"
+                :class="
+                  isPathCopied
+                    ? 'text-green-400'
+                    : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'
+                "
+                :title="isPathCopied ? 'Copied!' : 'Copy storage URI to clipboard'"
+                @click.stop="copyFolderPath"
+              >
+                <ClipboardIcon v-if="!isPathCopied" class="h-4 w-4" />
+                <CheckIcon v-else class="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+
+          <!-- S3 Configuration Grid -->
+          <div class="grid grid-cols-2 gap-4">
+            <!-- Endpoint -->
+            <div v-if="connection.storage_config?.endpoint || connection.s3Config?.endpoint">
+              <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+                >Endpoint</label
+              >
+              <p class="mt-1 font-medium text-gray-900 dark:text-gray-100 truncate text-sm">
+                {{ connection.storage_config?.endpoint || connection.s3Config?.endpoint }}
+              </p>
+            </div>
+
+            <!-- Region -->
+            <div v-if="connection.storage_config?.region || connection.s3Config?.region">
+              <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+                >Region</label
+              >
+              <p class="mt-1 font-medium text-gray-900 dark:text-gray-100 truncate text-sm">
+                {{ connection.storage_config?.region || connection.s3Config?.region }}
+              </p>
+            </div>
+
+            <!-- Bucket (if specified) -->
+            <div v-if="connection.s3Config?.bucket">
+              <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+                >Bucket</label
+              >
+              <p class="mt-1 font-medium text-gray-900 dark:text-gray-100 truncate text-sm">
+                {{ connection.s3Config.bucket }}
+              </p>
+            </div>
+
+            <!-- Prefix (if specified) -->
+            <div v-if="connection.s3Config?.prefix">
+              <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+                >Prefix</label
+              >
+              <p class="mt-1 font-medium text-gray-900 dark:text-gray-100 truncate text-sm">
+                {{ connection.s3Config.prefix }}
+              </p>
+            </div>
+          </div>
+
+          <!-- Info message for unscoped connections -->
+          <div
+            v-if="!connection.s3Config?.bucket"
+            class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg"
+          >
+            <p class="text-xs text-blue-700 dark:text-blue-300">
+              <strong>Note:</strong> This connection is not scoped to a specific bucket. You can
+              browse all buckets in the Data Explorer. To use as a stream target, edit and specify a
+              bucket.
+            </p>
+          </div>
+        </div>
+
+        <!-- Local Files Path (non-S3) -->
+        <div v-else class="min-w-0">
           <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
             >Folder Path</label
           >
@@ -179,6 +332,7 @@ const createdDisplay = computed(() => {
           </div>
         </div>
 
+        <!-- File Count and Size (for all file connections) -->
         <div class="min-w-0">
           <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
             >Files</label
@@ -187,8 +341,15 @@ const createdDisplay = computed(() => {
             <div v-if="totalFileCount > 0" class="text-gray-900 dark:text-gray-100 font-medium">
               {{ fileSummary }}
             </div>
-            <div v-else-if="hasPath" class="text-gray-500 dark:text-gray-400">
-              No supported files found
+            <div
+              v-else-if="hasPath || connection.s3Config?.bucket || isS3Connection"
+              class="text-gray-500 dark:text-gray-400"
+            >
+              {{
+                isS3Connection && !connection.s3Config?.bucket
+                  ? 'Browse buckets to view files'
+                  : 'No supported files found'
+              }}
             </div>
             <div v-else class="text-gray-500 dark:text-gray-400">No path configured</div>
           </div>

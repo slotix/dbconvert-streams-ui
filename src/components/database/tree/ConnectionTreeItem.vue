@@ -112,6 +112,14 @@ function isDatabaseExpanded(dbName: string): boolean {
   return navigationStore.isDatabaseExpanded(key)
 }
 
+function handleConnectionClick() {
+  // Emit both toggle (expand/collapse) and select (show details) events
+  emit('toggle-connection')
+  emit('select-connection', {
+    connectionId: props.connection.id
+  })
+}
+
 function handleConnectionContextMenu(event: MouseEvent) {
   emit('contextmenu-connection', {
     event,
@@ -219,7 +227,7 @@ const connectionTooltip = computed(() => {
           : ''
       ]"
       :title="connectionTooltip"
-      @click="$emit('toggle-connection')"
+      @click="handleConnectionClick"
       @contextmenu.stop.prevent="handleConnectionContextMenu"
     >
       <component

@@ -63,15 +63,19 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
     if (!connId) return false
     const connectionsStore = useConnectionsStore()
     const conn = connectionsStore.connections.find((c) => c.id === connId)
-    return (conn?.type || '').toLowerCase() === 'files'
+    const connType = (conn?.type || '').toLowerCase()
+    // Both "files" and "s3" types are file-based connections
+    return connType === 'files' || connType === 's3'
   }
 
   function isS3ConnectionType(connId: string | null | undefined): boolean {
     if (!connId) return false
     const connectionsStore = useConnectionsStore()
     const conn = connectionsStore.connections.find((c) => c.id === connId)
-    // S3 connections have type='files' with storage_config.provider='s3'
-    return conn?.storage_config?.provider === 's3'
+    const connType = (conn?.type || '').toLowerCase()
+    // S3 in wizard: type='s3' or type='S3'
+    // S3 after save: type='files' with storage_config.provider='s3'
+    return connType === 's3' || conn?.storage_config?.provider === 's3'
   }
 
   // Actions
@@ -143,8 +147,40 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
             : true
         })
 
-        // Parse bucket and prefix from URI (e.g., s3://my-bucket/prefix)
+        // Parse bucket and prefix from URI (e.g., s3://my-bucket/prefix or s3://)
         const uri: string = connection.storage_config.uri
+
+        // Check if URI is just "s3://" (no bucket specified - browse all buckets)
+        if (uri === 's3://') {
+          // List all buckets
+          const { listS3Buckets } = await import('@/api/files')
+          const response = await listS3Buckets()
+
+          // Convert buckets to FileSystemEntry format
+          const entries: FileSystemEntry[] = response.buckets.map((bucketName) => ({
+            name: bucketName,
+            path: `s3://${bucketName}`,
+            isDirectory: true,
+            type: 'dir' as const,
+            size: 0
+          }))
+
+          entriesByConnection.value = {
+            ...entriesByConnection.value,
+            [connectionId]: entries
+          }
+          directoryPathsByConnection.value = {
+            ...directoryPathsByConnection.value,
+            [connectionId]: uri
+          }
+          errorsByConnection.value = {
+            ...errorsByConnection.value,
+            [connectionId]: ''
+          }
+          return
+        }
+
+        // Parse bucket and prefix from URI
         const s3Match = uri.match(/^s3:\/\/([^/]+)(\/(.*))?$/)
         if (!s3Match) {
           throw new Error('Invalid S3 URI format. Expected s3://bucket-name/optional-prefix')

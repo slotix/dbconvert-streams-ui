@@ -113,6 +113,20 @@ export async function listS3Objects(params: S3ListRequest): Promise<S3ListRespon
   }
 }
 
+export async function listS3Buckets(): Promise<{ buckets: string[]; count: number }> {
+  try {
+    const response = await apiClient.get<{ buckets: string[]; count: number }>(
+      '/files/s3/buckets',
+      {
+        ...withAuthHeaders()
+      }
+    )
+    return response.data
+  } catch (error) {
+    throw handleApiError(error)
+  }
+}
+
 export async function validateS3Path(path: string): Promise<S3ValidationResponse> {
   try {
     const response = await apiClient.get<S3ValidationResponse>('/files/s3/validate', {
@@ -143,6 +157,7 @@ export default {
   getFileExactCount,
   configureS3Session,
   listS3Objects,
+  listS3Buckets,
   validateS3Path,
   readS3Manifest
 }

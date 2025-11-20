@@ -112,6 +112,15 @@ function isSchemaExpanded(schemaName: string): boolean {
   return navigationStore.isSchemaExpanded(key)
 }
 
+function handleDatabaseClick() {
+  // Emit both toggle (expand/collapse) and select (show overview) events
+  emit('toggle-database')
+  emit('select-database', {
+    connectionId: props.connectionId,
+    database: props.database.name
+  })
+}
+
 function handleDatabaseContextMenu(event: MouseEvent) {
   emit('contextmenu-database', {
     event,
@@ -177,7 +186,7 @@ function handleFlatObjectContextMenu(payload: {
         isSelected ? 'bg-gray-100 dark:bg-gray-800 ring-1 ring-gray-300 dark:ring-gray-600' : ''
       ]"
       :data-explorer-db="`${connectionId}:${database.name}`"
-      @click="$emit('toggle-database')"
+      @click="handleDatabaseClick"
       @contextmenu.stop.prevent="handleDatabaseContextMenu"
     >
       <component :is="isExpanded ? ChevronDownIcon : ChevronRightIcon" :class="caretClass" />

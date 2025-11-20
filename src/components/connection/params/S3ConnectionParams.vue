@@ -252,20 +252,21 @@
 
           <!-- Optional Scope -->
           <div class="border-t border-gray-200 dark:border-gray-700 pt-4 space-y-4">
-            <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300">Optional Scope</h4>
+            <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300">Scope (Optional)</h4>
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+              Leave empty to browse all buckets in Data Explorer. Required when using as stream
+              target.
+            </p>
 
             <!-- Bucket -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-              <label class="text-sm font-medium text-gray-700 dark:text-gray-300"
-                >Bucket <span class="text-red-500">*</span></label
-              >
+              <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Bucket</label>
               <div class="md:col-span-2">
                 <input
                   v-model="bucket"
                   type="text"
-                  required
                   class="w-full rounded-lg border border-gray-300 dark:border-gray-600 py-2.5 px-4 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 dark:focus:ring-teal-400 focus:border-teal-500 dark:focus:border-teal-400 transition-colors"
-                  placeholder="my-data-bucket"
+                  placeholder="my-data-bucket (optional)"
                 />
                 <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
                   Scope this connection to a specific bucket
@@ -397,7 +398,7 @@ const updateConnectionName = () => {
 }
 
 // Helper function to apply connection defaults for S3
-const applyConnectionDefaults = (connectionType: string) => {
+const applyConnectionDefaults = (_connectionType: string) => {
   if (connection.value) {
     // S3 connections should have type="files" with storage_config.provider="s3"
     connection.value.type = 'files'
@@ -448,7 +449,6 @@ const applyConnectionDefaults = (connectionType: string) => {
       // New connection defaults
       connection.value.host = ''
       connection.value.port = 443
-      connection.value.database = ''
     }
 
     // Update name after applying defaults (for new connections only)
@@ -462,15 +462,12 @@ const applyConnectionDefaults = (connectionType: string) => {
 const syncS3ConfigToConnection = () => {
   if (!connection.value) return
 
-  // Build S3 URI (only if bucket is provided)
-  if (!bucket.value) {
-    // If no bucket specified, don't set storage_config yet
-    return
-  }
-
-  const bucketName = bucket.value
+  // Build S3 URI
+  // If bucket is provided, use full s3://bucket/prefix format
+  // If no bucket, use s3:// (allows browsing all buckets in Data Explorer)
+  const bucketName = bucket.value || ''
   const prefixPath = prefix.value || ''
-  const s3URI = `s3://${bucketName}${prefixPath ? '/' + prefixPath : ''}`
+  const s3URI = bucketName ? `s3://${bucketName}${prefixPath ? '/' + prefixPath : ''}` : 's3://'
 
   // Build storage credentials if using static credentials
   const credentials =
@@ -512,11 +509,22 @@ const syncS3ConfigToConnection = () => {
     connection.value.password = ''
   }
 
-  // Set other fields
-  connection.value.host = endpoint.value || 's3.amazonaws.com'
-  connection.value.port = 443
-  connection.value.database = bucket.value || ''
-  // S3 URI is now stored in storage_config.uri (line 482)
+  // Set other fields for S3 connections
+  // For S3, endpoint can include port (e.g., "localhost:9010"), so parse it
+  const endpointValue = endpoint.value || 's3.amazonaws.com'
+  const endpointParts = endpointValue.split(':')
+
+  if (endpointParts.length === 2) {
+    // Has port in endpoint (e.g., "localhost:9010")
+    connection.value.host = endpointParts[0]
+    connection.value.port = parseInt(endpointParts[1], 10)
+  } else {
+    // No port in endpoint, use default HTTPS port
+    connection.value.host = endpointValue
+    connection.value.port = useSSL.value ? 443 : 80
+  }
+
+  // S3 URI is now stored in storage_config.uri
 }
 
 // Watch for connection type changes and update defaults
