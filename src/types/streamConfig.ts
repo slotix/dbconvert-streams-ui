@@ -96,6 +96,7 @@ export interface TargetConfig {
   database?: string // Database name - required for database connections
   schema?: string // Schema name - optional, defaults to provider-specific default
   fileFormat?: 'csv' | 'json' | 'jsonl' | 'parquet'
+  outputDirectory?: string // For S3 targets: local staging directory before upload
   subDirectory?: string
   options?: TargetOptions
 }

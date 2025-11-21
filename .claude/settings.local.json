@@ -9,7 +9,10 @@
       "Bash(go build:*)",
       "Bash(yarn build:*)",
       "Bash(git restore:*)",
-      "Bash(yarn lint:fix:*)"
+      "Bash(yarn lint:fix:*)",
+      "Bash(cat:*)",
+      "Bash(tree:*)",
+      "Bash(curl:*)"
     ],
     "deny": [],
     "ask": []

@@ -132,6 +132,8 @@ export const buildStreamPayload = (stream: StreamConfig): Partial<StreamConfig> 
   if (stream.target.fileFormat) {
     filteredStream.target.fileFormat = stream.target.fileFormat
   }
+  // Note: outputDirectory is no longer sent from UI.
+  // The backend automatically computes it from the connection's storage_config.uri
   if (stream.target.subDirectory) {
     filteredStream.target.subDirectory = stream.target.subDirectory
   }
@@ -174,9 +176,6 @@ export const buildStreamPayload = (stream: StreamConfig): Partial<StreamConfig> 
     }
     if (stream.target.options.workerPoolSize) {
       targetOptions.workerPoolSize = stream.target.options.workerPoolSize
-    }
-    if (stream.target.options.stagingDirectory) {
-      targetOptions.stagingDirectory = stream.target.options.stagingDirectory
     }
 
     if (Object.keys(targetOptions).length > 0) {

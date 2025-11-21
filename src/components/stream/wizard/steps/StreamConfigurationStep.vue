@@ -141,9 +141,9 @@
                       currentStreamConfig?.source?.options?.dataBundleSize || 500
                     }}</span>
                   </div>
-                  <!-- Output format info for file targets -->
+                  <!-- Output format info for file/S3 targets -->
                   <div
-                    v-if="isFileTarget && currentStreamConfig?.target?.fileFormat"
+                    v-if="(isFileTarget || isS3Target) && currentStreamConfig?.target?.fileFormat"
                     class="pt-2 border-t border-gray-100 dark:border-gray-700"
                   >
                     <div class="flex items-center justify-between">
@@ -158,7 +158,7 @@
                         currentStreamConfig.target?.options?.compressionType || 'zstd'
                       }}</span>
                     </div>
-                    <div class="flex items-center justify-between mt-1">
+                    <div v-if="isFileTarget" class="flex items-center justify-between mt-1">
                       <span>Writer:</span>
                       <span
                         class="font-medium"
@@ -173,6 +173,49 @@
                             : 'Standard'
                         }}</span
                       >
+                    </div>
+                  </div>
+
+                  <!-- S3 Upload info for S3 targets -->
+                  <div
+                    v-if="isS3Target && currentStreamConfig?.target"
+                    class="pt-2 border-t border-gray-100 dark:border-gray-700 mt-2"
+                  >
+                    <div
+                      v-if="currentStreamConfig.target.options?.s3UploadConfig"
+                      class="flex items-center justify-between"
+                    >
+                      <span>S3 Bucket:</span>
+                      <span class="font-medium text-teal-600 dark:text-teal-400">{{
+                        currentStreamConfig.target.options.s3UploadConfig.bucket || 'Not set'
+                      }}</span>
+                    </div>
+                    <div
+                      v-if="currentStreamConfig.target.options?.s3UploadConfig?.prefix"
+                      class="flex items-center justify-between mt-1"
+                    >
+                      <span>Prefix:</span>
+                      <span class="font-medium text-gray-900 dark:text-gray-100">{{
+                        currentStreamConfig.target.options.s3UploadConfig.prefix
+                      }}</span>
+                    </div>
+                    <div
+                      v-if="currentStreamConfig.target.options?.s3UploadConfig"
+                      class="flex items-center justify-between mt-1"
+                    >
+                      <span>Storage Class:</span>
+                      <span class="font-medium text-gray-900 dark:text-gray-100">{{
+                        currentStreamConfig.target.options.s3UploadConfig.storageClass || 'STANDARD'
+                      }}</span>
+                    </div>
+                    <div
+                      v-if="currentStreamConfig.target.options?.s3UploadConfig?.serverSideEnc"
+                      class="flex items-center justify-between mt-1"
+                    >
+                      <span>Encryption:</span>
+                      <span class="font-medium text-gray-900 dark:text-gray-100">{{
+                        currentStreamConfig.target.options.s3UploadConfig.serverSideEnc
+                      }}</span>
                     </div>
                   </div>
                 </div>
@@ -302,9 +345,17 @@ const tableCount = computed(() => {
 const isFileTarget = computed(() => {
   const targetId = currentStreamConfig.value?.target?.id
   if (!targetId) return false
-  // Check connection type
+  // Check connection type (local files)
   const conn = connectionsStore.connectionByID(targetId)
-  return conn?.type?.toLowerCase().includes('file')
+  return conn?.type?.toLowerCase() === 'files' && conn.storage_config?.provider === 'local'
+})
+
+const isS3Target = computed(() => {
+  const targetId = currentStreamConfig.value?.target?.id
+  if (!targetId) return false
+  // Check if storage provider is S3
+  const conn = connectionsStore.connectionByID(targetId)
+  return conn?.type?.toLowerCase() === 'files' && conn.storage_config?.provider === 's3'
 })
 
 // Custom queries

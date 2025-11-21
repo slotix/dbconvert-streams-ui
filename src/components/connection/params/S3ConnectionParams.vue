@@ -78,8 +78,11 @@
             </div>
           </div>
 
-          <!-- Credential Source -->
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+          <!-- Credential Source (only show for AWS S3) -->
+          <div
+            v-if="selectedProvider === 'AWS S3'"
+            class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center"
+          >
             <label class="text-sm font-medium text-gray-700 dark:text-gray-300"
               >Credential Source</label
             >
@@ -107,8 +110,8 @@
             </div>
           </div>
 
-          <!-- Static Credentials (conditional) -->
-          <template v-if="credentialSource === 'static'">
+          <!-- Static Credentials (always show for non-AWS, conditional for AWS) -->
+          <template v-if="selectedProvider !== 'AWS S3' || credentialSource === 'static'">
             <!-- Access Key ID -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
               <label class="text-sm font-medium text-gray-700 dark:text-gray-300"
@@ -254,8 +257,8 @@
           <div class="border-t border-gray-200 dark:border-gray-700 pt-4 space-y-4">
             <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300">Scope (Optional)</h4>
             <p class="text-xs text-gray-500 dark:text-gray-400">
-              Leave empty to browse all buckets in Data Explorer. Required when using as stream
-              target.
+              Optional: Scope the Data Explorer view to a specific bucket/prefix. When using this
+              connection as a stream target, bucket/prefix are configured in stream settings.
             </p>
 
             <!-- Bucket -->
@@ -320,7 +323,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { CloudIcon, DocumentTextIcon, ChevronDownIcon } from '@heroicons/vue/24/outline'
 import Spinner from '@/components/common/Spinner.vue'
 import { useConnectionsStore } from '@/stores/connections'
@@ -356,14 +359,22 @@ const showAdvanced = ref<boolean>(false)
 // Check if we're in edit mode (connection has an ID)
 const isEdit = computed(() => !!connection.value?.id)
 
-// Apply provider preset when selected
+// Flag to skip preset application during edit mode load
+const isLoadingEditData = ref(false)
+
+// Apply provider preset when selected (skip during edit mode load)
 watch(selectedProvider, (provider) => {
+  if (isLoadingEditData.value) return
   const preset = S3_PROVIDER_PRESETS[provider]
   if (preset) {
     endpoint.value = preset.endpoint
     region.value = preset.region
     urlStyle.value = preset.urlStyle
     useSSL.value = preset.useSSL
+  }
+  // Force static credentials for non-AWS providers
+  if (provider !== 'AWS S3') {
+    credentialSource.value = 'static'
   }
   updateConnectionName()
 })
@@ -405,13 +416,31 @@ const applyConnectionDefaults = (_connectionType: string) => {
 
     // Load existing S3 config if in edit mode
     if (isEdit.value) {
+      isLoadingEditData.value = true
+
       // Try to load from storage_config first (backend format)
       if (connection.value.storage_config) {
         const sc = connection.value.storage_config
         region.value = sc.region || 'us-east-1'
         endpoint.value = sc.endpoint || ''
 
-        // Extract bucket and prefix from URI
+        // Detect provider preset from endpoint
+        if (sc.endpoint?.includes('localhost') || sc.endpoint?.includes('127.0.0.1')) {
+          selectedProvider.value = 'MinIO'
+        } else if (sc.endpoint?.includes('digitaloceanspaces')) {
+          selectedProvider.value = 'DigitalOcean Spaces'
+        } else if (sc.endpoint?.includes('wasabi')) {
+          selectedProvider.value = 'Wasabi'
+        } else if (!sc.endpoint) {
+          selectedProvider.value = 'AWS S3'
+        } else {
+          selectedProvider.value = 'Custom'
+        }
+
+        // Note: storage_config.uri is now a LOCAL path (e.g., "/tmp/dbconvert-s3-staging")
+        // not an S3 URI. Bucket/prefix are specified at stream level, not connection level.
+        // For backward compatibility with old connections that had s3:// URIs,
+        // we extract bucket/prefix but won't save them back to the connection.
         if (sc.uri && sc.uri.startsWith('s3://')) {
           const uriPath = sc.uri.substring(5) // Remove "s3://"
           const parts = uriPath.split('/')
@@ -445,6 +474,11 @@ const applyConnectionDefaults = (_connectionType: string) => {
           secretAccessKey.value = connection.value.password || ''
         }
       }
+
+      // Reset flag after loading (use nextTick to ensure watchers have processed)
+      nextTick(() => {
+        isLoadingEditData.value = false
+      })
     } else {
       // New connection defaults
       connection.value.host = ''
@@ -462,12 +496,11 @@ const applyConnectionDefaults = (_connectionType: string) => {
 const syncS3ConfigToConnection = () => {
   if (!connection.value) return
 
-  // Build S3 URI
-  // If bucket is provided, use full s3://bucket/prefix format
-  // If no bucket, use s3:// (allows browsing all buckets in Data Explorer)
-  const bucketName = bucket.value || ''
-  const prefixPath = prefix.value || ''
-  const s3URI = bucketName ? `s3://${bucketName}${prefixPath ? '/' + prefixPath : ''}` : 's3://'
+  // Build the S3 URI from bucket/prefix if specified
+  // URI format: s3://bucket/prefix or s3:// if no bucket scoped (allows browsing all buckets)
+  const s3Uri = bucket.value
+    ? `s3://${bucket.value}${prefix.value ? '/' + prefix.value : ''}`
+    : 's3://'
 
   // Build storage credentials if using static credentials
   const credentials =
@@ -482,7 +515,7 @@ const syncS3ConfigToConnection = () => {
   // Build storage config for backend
   connection.value.storage_config = {
     provider: 's3' as const,
-    uri: s3URI,
+    uri: s3Uri,
     region: region.value,
     endpoint: endpoint.value || undefined,
     credentials: credentials
@@ -527,12 +560,23 @@ const syncS3ConfigToConnection = () => {
   // S3 URI is now stored in storage_config.uri
 }
 
-// Watch for connection type changes and update defaults
+// Watch for connection type changes and update defaults (new connections)
 watch(
   () => props.connectionType,
   (newConnectionType) => {
     if (!isEdit.value && newConnectionType) {
       applyConnectionDefaults(newConnectionType)
+    }
+  },
+  { immediate: true }
+)
+
+// Watch for connection ID to load existing data (edit mode)
+watch(
+  () => connection.value?.id,
+  (newId) => {
+    if (newId && isEdit.value) {
+      applyConnectionDefaults(props.connectionType)
     }
   },
   { immediate: true }
