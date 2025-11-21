@@ -59,6 +59,7 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
     // Loading states
     loadingDatabases: {} as Record<string, boolean>,
     loadingMetadata: {} as Record<string, boolean>, // key: connectionId:database
+    pendingMetadataRequests: {} as Record<string, Promise<DatabaseMetadata | null>>, // key: connectionId:database
 
     // Error states
     databasesErrors: {} as Record<string, string | null> // connectionId -> error message
@@ -264,33 +265,39 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
         return this.metadataState[connectionId][database]
       }
 
-      // Avoid duplicate requests
-      if (this.loadingMetadata[cacheKey]) {
-        return this.metadataState[connectionId]?.[database] || null
+      // Await pending request if one exists
+      if (cacheKey in this.pendingMetadataRequests) {
+        return this.pendingMetadataRequests[cacheKey]
       }
 
       this.loadingMetadata[cacheKey] = true
 
-      try {
-        const meta = await connectionsApi.getMetadata(connectionId, database, forceRefresh)
+      const fetchPromise = (async (): Promise<DatabaseMetadata | null> => {
+        try {
+          const meta = await connectionsApi.getMetadata(connectionId, database, forceRefresh)
 
-        // Initialize connection cache if needed
-        if (!this.metadataState[connectionId]) {
-          this.metadataState[connectionId] = {}
-        }
+          // Initialize connection cache if needed
+          if (!this.metadataState[connectionId]) {
+            this.metadataState[connectionId] = {}
+          }
 
-        this.metadataState[connectionId][database] = meta
-        return meta
-      } catch (error) {
-        // Silently fail for metadata - component will handle empty state
-        // Only log in development to avoid console noise
-        if (import.meta.env.DEV) {
-          console.warn(`Failed to load metadata for ${connectionId}/${database}:`, error)
+          this.metadataState[connectionId][database] = meta
+          return meta
+        } catch (error) {
+          // Silently fail for metadata - component will handle empty state
+          // Only log in development to avoid console noise
+          if (import.meta.env.DEV) {
+            console.warn(`Failed to load metadata for ${connectionId}/${database}:`, error)
+          }
+          return null
+        } finally {
+          this.loadingMetadata[cacheKey] = false
+          delete this.pendingMetadataRequests[cacheKey]
         }
-        return null
-      } finally {
-        this.loadingMetadata[cacheKey] = false
-      }
+      })()
+
+      this.pendingMetadataRequests[cacheKey] = fetchPromise
+      return fetchPromise
     },
 
     // Cache management (UI state only - not HTTP caching)
