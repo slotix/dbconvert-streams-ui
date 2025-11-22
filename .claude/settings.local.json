@@ -12,7 +12,8 @@
       "Bash(yarn lint:fix:*)",
       "Bash(cat:*)",
       "Bash(tree:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []
