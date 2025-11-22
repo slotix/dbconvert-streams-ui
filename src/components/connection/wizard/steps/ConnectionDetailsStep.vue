@@ -54,10 +54,18 @@ const canProceed = computed(() => {
   if (!connection) return false
 
   if (connectionCategory.value === 'file') {
-    // For S3/file connections: name is required, URI is optional (can browse all buckets)
-    // Need either endpoint configured or credentials
+    // For file connections: name is required
     const hasName = !!connection.name?.trim()
     const hasStorageConfig = !!connection.storage_config?.provider
+
+    // For local files: need URI (folder path)
+    // For S3/cloud: need endpoint or credentials
+    if (connection.storage_config?.provider === 'local') {
+      const hasUri = !!connection.storage_config?.uri?.trim()
+      return hasName && hasStorageConfig && hasUri
+    }
+
+    // For cloud storage (S3, GCS, Azure)
     const hasEndpointOrCredentials = !!(
       connection.storage_config?.endpoint || connection.storage_config?.credentials
     )
