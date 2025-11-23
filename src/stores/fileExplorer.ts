@@ -1,7 +1,7 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { listDirectory, type FileSystemEntry } from '@/api/fileSystem'
-import { getFileMetadata, configureS3Session, listS3Objects } from '@/api/files'
+import { getFileMetadata, configureS3Session, listS3Objects, listS3Buckets } from '@/api/files'
 import { getFileFormat } from '@/utils/fileFormat'
 import { useConnectionsStore } from '@/stores/connections'
 import type { FileMetadata } from '@/types/files'
@@ -64,18 +64,38 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
     const connectionsStore = useConnectionsStore()
     const conn = connectionsStore.connections.find((c) => c.id === connId)
     const connType = (conn?.type || '').toLowerCase()
-    // Both "files" and "s3" types are file-based connections
-    return connType === 'files' || connType === 's3'
+    return connType === 'files' || connType === 'localfiles'
   }
 
   function isS3ConnectionType(connId: string | null | undefined): boolean {
     if (!connId) return false
     const connectionsStore = useConnectionsStore()
     const conn = connectionsStore.connections.find((c) => c.id === connId)
-    const connType = (conn?.type || '').toLowerCase()
-    // S3 in wizard: type='s3' or type='S3'
-    // S3 after save: type='files' with storage_config.provider='s3'
-    return connType === 's3' || conn?.storage_config?.provider === 's3'
+    const provider = conn?.storage_config?.provider?.toLowerCase()
+    return provider === 's3'
+  }
+
+  function parseS3Uri(uri: string): { bucket: string; prefix: string } | null {
+    const match = uri.match(/^s3:\/\/([^/]+)(\/(.*))?$/)
+    if (!match) return null
+    const rawPrefix = match[3] || ''
+    const prefix = rawPrefix.replace(/^\/+/, '')
+    return { bucket: match[1], prefix }
+  }
+
+  function buildS3RequestPrefix(prefix: string): string | undefined {
+    if (!prefix) return undefined
+    const trimmed = prefix.replace(/^\/+/, '')
+    if (!trimmed) return undefined
+    return trimmed.endsWith('/') ? trimmed : `${trimmed}/`
+  }
+
+  function getS3UriFromConnection(connection: Connection): string {
+    return connection.storage_config?.uri || ''
+  }
+
+  function resolveConnectionFolderPath(connection: Connection): string {
+    return getS3UriFromConnection(connection)
   }
 
   // Actions
@@ -89,7 +109,7 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
     if (!connection) return
 
     // Handle missing path
-    const folderPath = connection.storage_config?.uri
+    const folderPath = resolveConnectionFolderPath(connection)
     if (!folderPath) {
       entriesByConnection.value = {
         ...entriesByConnection.value,
@@ -118,42 +138,17 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
 
     try {
       // Check if this is an S3 connection
-      const isS3 = connection.storage_config?.provider === 's3'
+      const isS3 = folderPath.startsWith('s3://')
 
       if (isS3) {
-        // Ensure storage_config exists for S3 connections
-        if (!connection.storage_config) {
-          throw new Error('S3 connection missing storage_config')
-        }
-
-        // Configure S3 session first
-        const { configureS3Session } = await import('@/api/files')
-        const storedCredentials = connection.storage_config.credentials
-        const hasCredentials = storedCredentials && storedCredentials.aws_access_key
-
-        await configureS3Session({
-          credentialSource: hasCredentials ? 'static' : 'aws',
-          credentials: hasCredentials
-            ? {
-                accessKeyId: storedCredentials.aws_access_key || '',
-                secretAccessKey: storedCredentials.aws_secret_key || '',
-                sessionToken: storedCredentials.aws_session_token
-              }
-            : undefined,
-          region: connection.storage_config.region || 'us-east-1',
-          endpoint: connection.storage_config.endpoint || undefined,
-          useSSL: connection.storage_config.endpoint
-            ? !connection.storage_config.endpoint.includes('localhost')
-            : true
-        })
+        await configureS3SessionForConnection(connection)
 
         // Parse bucket and prefix from URI (e.g., s3://my-bucket/prefix or s3://)
-        const uri: string = connection.storage_config.uri
+        const uri: string = folderPath
 
         // Check if URI is just "s3://" (no bucket specified - browse all buckets)
         if (uri === 's3://') {
           // List all buckets
-          const { listS3Buckets } = await import('@/api/files')
           const response = await listS3Buckets()
 
           // Convert buckets to FileSystemEntry format
@@ -181,19 +176,19 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
         }
 
         // Parse bucket and prefix from URI
-        const s3Match = uri.match(/^s3:\/\/([^/]+)(\/(.*))?$/)
-        if (!s3Match) {
+        const parsed = parseS3Uri(uri)
+        if (!parsed) {
           throw new Error('Invalid S3 URI format. Expected s3://bucket-name/optional-prefix')
         }
 
-        const bucket = s3Match[1]
-        const prefix = s3Match[3] || ''
+        const bucket = parsed.bucket
+        const prefix = parsed.prefix
+        const requestPrefix = buildS3RequestPrefix(prefix)
 
         // List S3 objects
-        const { listS3Objects } = await import('@/api/files')
         const response = await listS3Objects({
           bucket,
-          prefix,
+          prefix: requestPrefix,
           maxKeys: 1000
         })
 
@@ -320,24 +315,41 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
 
   // S3-specific actions
   async function configureS3SessionForConnection(connection: Connection) {
-    if (connection.type.toLowerCase() !== 's3') {
+    const storageConfig = connection.storage_config
+    if (!storageConfig || storageConfig.provider?.toLowerCase() !== 's3') {
       return
     }
 
+    if (s3SessionConfigured.value && s3CurrentConnection.value?.id === connection.id) {
+      return
+    }
+
+    const storedCredentials = storageConfig.credentials
+    const hasCredentials = storedCredentials && storedCredentials.aws_access_key
+
+    const hasCustomEndpoint = !!storageConfig.endpoint
+    const inferredUrlStyle =
+      storageConfig.options?.urlStyle === 'virtual' ||
+      storageConfig.options?.urlStyle === 'path' ||
+      storageConfig.options?.urlStyle === 'auto'
+        ? storageConfig.options.urlStyle
+        : hasCustomEndpoint
+          ? 'path'
+          : 'auto'
+
     const config: S3ConfigRequest = {
-      credentialSource: connection.s3Config?.credentialSource || 'static',
-      region: connection.s3Config?.region || 'us-east-1',
-      endpoint: connection.s3Config?.endpoint,
-      urlStyle: connection.s3Config?.urlStyle || 'auto',
-      useSSL: connection.s3Config?.useSSL !== false,
-      credentials:
-        connection.username !== 'aws-default'
-          ? {
-              accessKeyId: connection.username,
-              secretAccessKey: connection.password,
-              sessionToken: connection.s3Config?.sessionToken
-            }
-          : undefined
+      credentialSource: hasCredentials ? 'static' : 'aws',
+      region: storageConfig.region || 'us-east-1',
+      endpoint: storageConfig.endpoint || undefined,
+      urlStyle: inferredUrlStyle,
+      useSSL: hasCustomEndpoint ? !storageConfig.endpoint!.includes('localhost') : true,
+      credentials: hasCredentials
+        ? {
+            accessKeyId: storedCredentials!.aws_access_key || '',
+            secretAccessKey: storedCredentials!.aws_secret_key || '',
+            sessionToken: storedCredentials!.aws_session_token
+          }
+        : undefined
     }
 
     await configureS3Session(config)
@@ -346,7 +358,11 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
   }
 
   async function loadS3Files(bucket: string, prefix?: string) {
-    const result = await listS3Objects({ bucket, prefix, maxKeys: 1000 })
+    const result = await listS3Objects({
+      bucket,
+      prefix: prefix ? buildS3RequestPrefix(prefix) : undefined,
+      maxKeys: 1000
+    })
 
     // Convert S3 objects to FileSystemEntry format
     const entries: FileSystemEntry[] = result.objects.map((obj) => ({
@@ -405,44 +421,22 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
     if (!connection) return
 
     try {
-      const isS3 = connection.storage_config?.provider === 's3'
+      const isS3 = folderPath.startsWith('s3://')
 
       if (isS3) {
         // For S3, extract bucket and prefix from folder path
-        const s3Match = folderPath.match(/^s3:\/\/([^/]+)\/(.*)$/)
-        if (!s3Match) return
+        const parsed = parseS3Uri(folderPath)
+        if (!parsed) return
 
-        const bucket = s3Match[1]
-        const prefix = s3Match[2]
+        const bucket = parsed.bucket
+        const prefix = parsed.prefix
 
-        // Configure S3 session if not already done
-        if (!s3SessionConfigured.value || s3CurrentConnection.value?.id !== connectionId) {
-          const storedCredentials = connection.storage_config?.credentials
-          const hasCredentials = storedCredentials && storedCredentials.aws_access_key
-
-          await configureS3Session({
-            credentialSource: hasCredentials ? 'static' : 'aws',
-            credentials: hasCredentials
-              ? {
-                  accessKeyId: storedCredentials.aws_access_key || '',
-                  secretAccessKey: storedCredentials.aws_secret_key || '',
-                  sessionToken: storedCredentials.aws_session_token
-                }
-              : undefined,
-            region: connection.storage_config?.region || 'us-east-1',
-            endpoint: connection.storage_config?.endpoint || undefined,
-            useSSL: connection.storage_config?.endpoint
-              ? !connection.storage_config.endpoint.includes('localhost')
-              : true
-          })
-          s3SessionConfigured.value = true
-          s3CurrentConnection.value = connection
-        }
+        await configureS3SessionForConnection(connection)
 
         // List objects under this prefix
         const response = await listS3Objects({
           bucket,
-          prefix: prefix.endsWith('/') ? prefix : `${prefix}/`,
+          prefix: prefix ? buildS3RequestPrefix(prefix) : undefined,
           maxKeys: 1000
         })
 

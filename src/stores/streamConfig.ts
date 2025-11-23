@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import api from '@/api/streams'
 import type { StreamConfig } from '@/types/streamConfig'
 import type { Table } from '@/types/streamConfig'
+import type { TargetSpec } from '@/types/specs'
 import type { Step } from '@/stores/common'
 import { useConnectionsStore } from '@/stores/connections'
 import { useMonitoringStore } from '@/stores/monitoring'
@@ -47,6 +48,7 @@ export const defaultStreamConfigOptions: StreamConfig = {
     id: '',
     fileFormat: undefined,
     subDirectory: '',
+    spec: {} as TargetSpec,
     options: {
       compressionType: 'zstd',
       structureOptions: {
@@ -322,8 +324,11 @@ export const useStreamsStore = defineStore('streams', {
             throw new Error('Target connection not found')
           }
 
-          // Use connection.type to determine what kind of target spec to build
+          // Use connection metadata to determine what kind of target spec to build
           const connectionType = targetConnection.type?.toLowerCase() || ''
+          const storageProvider = targetConnection.storage_config?.provider?.toLowerCase()
+          const isS3Target = storageProvider === 's3'
+          const isFileConnectionType = connectionType.includes('file')
 
           // Get structure options and file format settings
           const structureOptions =
@@ -332,9 +337,10 @@ export const useStreamsStore = defineStore('streams', {
           const targetDatabase = this.currentStreamConfig.targetDatabase || ''
           const targetSchema = this.currentStreamConfig.targetSchema
           const targetPath = this.currentStreamConfig.targetPath || '/tmp/dbconvert'
-          const fileFormat = connectionType.includes('file')
-            ? (this.currentStreamConfig.target as any).fileFormat || 'csv'
-            : 'parquet'
+          const fileFormat =
+            isS3Target || isFileConnectionType
+              ? (this.currentStreamConfig.target as any).fileFormat || 'csv'
+              : 'parquet'
           const compressionType = this.currentStreamConfig.target.options?.compressionType
           const parquetConfig = this.currentStreamConfig.target.options?.parquetConfig
           const csvConfig = this.currentStreamConfig.target.options?.csvConfig
@@ -353,15 +359,7 @@ export const useStreamsStore = defineStore('streams', {
               this.currentStreamConfig.target.options?.snowflakeConfig?.filePrefix,
               this.currentStreamConfig.target.options?.snowflakeConfig?.timestampFormat
             )
-          } else if (connectionType.includes('file')) {
-            this.currentStreamConfig.target.spec = buildFileTargetSpec(
-              targetPath,
-              fileFormat,
-              compressionType,
-              parquetConfig,
-              csvConfig
-            )
-          } else if (connectionType === 's3' || connectionType === 'minio') {
+          } else if (isS3Target) {
             const s3Spec = targetConnection.spec?.s3
             this.currentStreamConfig.target.spec = buildS3TargetSpec(
               targetPath,
@@ -370,6 +368,14 @@ export const useStreamsStore = defineStore('streams', {
               s3Spec?.scope?.prefix,
               this.currentStreamConfig.target.options?.s3UploadConfig?.storageClass,
               this.currentStreamConfig.target.options?.s3UploadConfig?.keepLocalFiles,
+              compressionType,
+              parquetConfig,
+              csvConfig
+            )
+          } else if (connectionType.includes('file')) {
+            this.currentStreamConfig.target.spec = buildFileTargetSpec(
+              targetPath,
+              fileFormat,
               compressionType,
               parquetConfig,
               csvConfig
@@ -504,6 +510,7 @@ export const useStreamsStore = defineStore('streams', {
           id: '',
           fileFormat: undefined,
           subDirectory: '',
+          spec: {} as TargetSpec,
           options: {
             compressionType: 'zstd',
             structureOptions: {

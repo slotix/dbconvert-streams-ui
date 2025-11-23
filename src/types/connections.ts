@@ -35,6 +35,17 @@ export interface StorageConfig {
   options?: Record<string, string>
 }
 
+export interface ConnectionS3Config {
+  credentialSource?: 'aws' | 'static'
+  endpoint?: string
+  region?: string
+  urlStyle?: 'auto' | 'path' | 'virtual'
+  useSSL?: boolean
+  bucket?: string
+  prefix?: string
+  sessionToken?: string
+}
+
 export interface Connection {
   id: string | ''
   name: string
@@ -45,7 +56,13 @@ export interface Connection {
   cloud_provider?: string
   status?: string
   storage_config?: StorageConfig
-  // Matryoshka spec pattern (REQUIRED)
+  s3Config?: ConnectionS3Config
+  host?: string
+  port?: number
+  username?: string
+  password?: string
+  defaultDatabase?: string
+  path?: string
   spec: ConnectionSpec
 }
 

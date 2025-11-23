@@ -27,19 +27,16 @@ const showPassword = ref(false)
 const isCopied = ref(false)
 const isPathCopied = ref(false)
 
-// Check if this is an S3/MinIO connection
+// Check if this is an S3 connection (includes MinIO endpoints via S3 provider)
 const isS3Connection = computed(() => {
-  const type = props.connection?.type?.toLowerCase()
   const provider = props.connection?.storage_config?.provider?.toLowerCase()
-
-  // Check both the connection type and the storage provider
-  return type === 's3' || type === 'minio' || provider === 's3' || provider === 'minio'
+  return provider === 's3'
 })
 
-// Check if this is a file connection (includes S3, MinIO, local files, etc.)
+// Check if this is a file connection (local files or anything with storage_config)
 const isFileConnection = computed(() => {
   const type = props.connection?.type?.toLowerCase()
-  return type === 'files' || type === 's3' || type === 'minio' || !!props.connection?.storage_config
+  return type === 'files' || type === 'localfiles' || !!props.connection?.storage_config
 })
 
 // Check if connection has a path configured
@@ -172,21 +169,6 @@ const displayS3URI = computed(() => {
 
   return storageURI || 's3://'
 })
-
-// Debug: Log connection object to console
-if (import.meta.env.DEV) {
-  console.log('[ConnectionDetailsPanel] Connection data:', {
-    id: props.connection.id,
-    name: props.connection.name,
-    type: props.connection.type,
-    storage_config: props.connection.storage_config,
-    s3Config: props.connection.s3Config,
-    path: props.connection.path,
-    displayS3URI: displayS3URI.value,
-    isS3Connection: isS3Connection.value,
-    isFileConnection: isFileConnection.value
-  })
-}
 </script>
 
 <template>

@@ -59,6 +59,7 @@ export interface CSVConfig {
 
 export interface SnowflakeConfig {
   outputDirectory?: string
+  filePrefix?: string
   timestampFormat?: string
 }
 
@@ -94,6 +95,8 @@ export interface SourceConfig {
 
 export interface TargetConfig {
   id: string
+  fileFormat?: string
+  subDirectory?: string
   // Matryoshka spec pattern (REQUIRED)
   spec: TargetSpec
   options?: TargetOptions
