@@ -16,6 +16,7 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
   const selectedPathsByConnection = ref<Record<string, string | null>>({})
   const loadingByConnection = ref<Record<string, boolean>>({})
   const expandedFoldersByConnection = ref<Record<string, Set<string>>>({})
+  const pendingMetadataRequests = new Map<string, Promise<FileMetadata | null>>()
 
   // S3 session configuration
   const s3SessionConfigured = ref<boolean>(false)
@@ -255,19 +256,31 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
     fileEntry: FileSystemEntry,
     computeStats: boolean = true
   ): Promise<FileMetadata | null> {
-    try {
-      const fileFormat = fileEntry.format || getFileFormat(fileEntry.name)
-      if (!fileFormat) {
-        console.warn('Unable to determine file format for:', fileEntry.name)
-        return null
-      }
-
-      const metadata = await getFileMetadata(fileEntry.path, fileFormat, computeStats)
-      return metadata
-    } catch (error) {
-      console.error('Failed to load file metadata:', error)
-      return null
+    const requestKey = `${fileEntry.path}::${computeStats ? 'stats' : 'basic'}`
+    if (pendingMetadataRequests.has(requestKey)) {
+      return pendingMetadataRequests.get(requestKey)!
     }
+
+    const requestPromise = (async () => {
+      try {
+        const fileFormat = fileEntry.format || getFileFormat(fileEntry.name)
+        if (!fileFormat) {
+          console.warn('Unable to determine file format for:', fileEntry.name)
+          return null
+        }
+
+        const metadata = await getFileMetadata(fileEntry.path, fileFormat, computeStats)
+        return metadata
+      } catch (error) {
+        console.error('Failed to load file metadata:', error)
+        return null
+      } finally {
+        pendingMetadataRequests.delete(requestKey)
+      }
+    })()
+
+    pendingMetadataRequests.set(requestKey, requestPromise)
+    return requestPromise
   }
 
   function setSelectedPath(connectionId: string, filePath: string | null) {
@@ -311,6 +324,7 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
     errorsByConnection.value = newErrors
     selectedPathsByConnection.value = newSelected
     loadingByConnection.value = newLoading
+    pendingMetadataRequests.clear()
   }
 
   // S3-specific actions
