@@ -76,7 +76,7 @@
             <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Server</label>
             <div class="md:col-span-2">
               <input
-                v-model="connection.host"
+                v-model="connection.spec.database!.host"
                 type="text"
                 class="w-full rounded-lg border border-gray-300 dark:border-gray-600 py-2 px-4 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-gray-600 dark:focus:ring-teal-400 focus:border-transparent"
                 placeholder="localhost"
@@ -89,7 +89,7 @@
             <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Port</label>
             <div class="md:col-span-2">
               <input
-                v-model.number.lazy="connection.port"
+                v-model.number.lazy="connection.spec.database!.port"
                 type="number"
                 class="w-full rounded-lg border border-gray-300 dark:border-gray-600 py-2 px-4 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-gray-600 dark:focus:ring-teal-400 focus:border-transparent"
                 :placeholder="defaultPort.toString()"
@@ -102,7 +102,7 @@
             <label class="text-sm font-medium text-gray-700 dark:text-gray-300">User ID</label>
             <div class="md:col-span-2">
               <input
-                v-model="connection.username"
+                v-model="connection.spec.database!.username"
                 type="text"
                 class="w-full rounded-lg border border-gray-300 dark:border-gray-600 py-2 px-4 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-gray-600 dark:focus:ring-teal-400 focus:border-transparent"
                 :placeholder="getConnectionDefaults().username"
@@ -116,7 +116,7 @@
             <div class="md:col-span-2">
               <div class="relative">
                 <input
-                  v-model="connection.password"
+                  v-model="connection.spec.database!.password"
                   :type="passwordFieldType"
                   class="w-full rounded-lg border border-gray-300 dark:border-gray-600 py-2 px-4 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-gray-600 dark:focus:ring-teal-400 focus:border-transparent pr-10"
                   placeholder="Enter password"
@@ -147,7 +147,7 @@
             >
             <div class="md:col-span-2">
               <input
-                v-model="connection.defaultDatabase"
+                v-model="connection.spec.database!.database"
                 type="text"
                 class="w-full rounded-lg border border-gray-300 dark:border-gray-600 py-2 px-4 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-gray-600 dark:focus:ring-teal-400 focus:border-transparent"
                 :placeholder="getDatabasePlaceholder()"
@@ -192,28 +192,28 @@ const connection = computed(() => connectionsStore.currentConnection)
 
 // Helper function to apply connection defaults for a specific database type
 const applyConnectionDefaults = (connectionType: string) => {
-  if (connection.value) {
+  if (connection.value && connection.value.spec?.database) {
     const defaults = getConnectionDefaults()
     connection.value.type = connectionType.toLowerCase()
 
     // Only set port to default if it's not already set (preserve parsed values from connection string)
-    if (!connection.value.port) {
-      connection.value.port = defaultPort.value
+    if (!connection.value.spec.database.port) {
+      connection.value.spec.database.port = defaultPort.value
     }
 
     // Only set username to default if it's not already set (preserve parsed values from connection string)
-    if (!connection.value.username) {
-      connection.value.username = defaults.username
+    if (!connection.value.spec.database.username) {
+      connection.value.spec.database.username = defaults.username
     }
 
     // Only clear database if it's not already set (preserve parsed values from connection string)
-    if (!connection.value.defaultDatabase) {
-      connection.value.defaultDatabase = '' // Empty for new wizard flow
+    if (!connection.value.spec.database.database) {
+      connection.value.spec.database.database = '' // Empty for new wizard flow
     }
 
     // Only set host to localhost if it's empty (don't override existing values)
-    if (!connection.value.host) {
-      connection.value.host = 'localhost'
+    if (!connection.value.spec.database.host) {
+      connection.value.spec.database.host = 'localhost'
     }
 
     // Update name after applying defaults (for new connections only)
@@ -228,11 +228,12 @@ const isEdit = computed(() => !!connection.value?.id)
 
 // Auto-generate connection name based on connection details
 const buildConnectionName = computed(() => {
-  if (!connection.value?.type || !connection.value?.host || !connection.value?.username) {
+  const spec = connection.value?.spec?.database
+  if (!connection.value?.type || !spec?.host || !spec?.username) {
     return ''
   }
   const normalizedType = normalizeConnectionType(connection.value.type)
-  return `${normalizedType}-${connection.value.host}-${connection.value.username}`
+  return `${normalizedType}-${spec.host}-${spec.username}`
 })
 
 // Update connection name based on mode
@@ -266,7 +267,7 @@ watch(
 
 // Watch for host changes to update connection name
 watch(
-  () => connection.value?.host,
+  () => connection.value?.spec?.database?.host,
   () => {
     if (!isEdit.value) {
       updateConnectionName()
@@ -276,7 +277,7 @@ watch(
 
 // Watch for username changes to update connection name
 watch(
-  () => connection.value?.username,
+  () => connection.value?.spec?.database?.username,
   () => {
     if (!isEdit.value) {
       updateConnectionName()

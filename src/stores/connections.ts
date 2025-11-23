@@ -4,6 +4,8 @@ import { debounce } from '@/utils/debounce'
 
 import type { Connection, DbType } from '@/types/connections'
 import { useCommonStore } from './common'
+import { useExplorerNavigationStore } from './explorerNavigation'
+import { getConnectionDatabase } from '@/utils/specBuilder'
 
 // Define interfaces for the state and other objects
 interface State {
@@ -104,6 +106,11 @@ export const useConnectionsStore = defineStore('connections', {
         const response = await api.getConnections()
         this.connections = response
         // No longer saving to localStorage - always fetch fresh from API
+
+        // Cleanup stale connection references in explorerNavigation store
+        const explorerNavigationStore = useExplorerNavigationStore()
+        const validConnectionIds = this.connections.map((conn) => conn.id)
+        explorerNavigationStore.cleanupStaleConnections(validConnectionIds)
       } catch (error) {
         console.error('Failed to refresh connections:', error)
         throw error
@@ -118,6 +125,11 @@ export const useConnectionsStore = defineStore('connections', {
           this.connections.splice(index, 1)
         }
         await api.deleteConnection(id)
+
+        // Cleanup stale connection references in explorerNavigation store
+        const explorerNavigationStore = useExplorerNavigationStore()
+        const validConnectionIds = this.connections.map((conn) => conn.id)
+        explorerNavigationStore.cleanupStaleConnections(validConnectionIds)
       } catch (error) {
         console.error('Failed to delete connection:', error)
         throw error
@@ -173,6 +185,11 @@ export const useConnectionsStore = defineStore('connections', {
     },
     async createConnection(): Promise<void> {
       try {
+        // Spec is now required - no need to build from flat fields
+        if (!this.currentConnection?.spec) {
+          throw new Error('Connection spec is required')
+        }
+
         const response = await api.createConnection(
           this.currentConnection as Record<string, unknown>
         )
@@ -233,14 +250,13 @@ export const useConnectionsStore = defineStore('connections', {
     },
     async createSchema(schemaName: string, connectionId: string) {
       try {
-        if (!this.currentConnection?.defaultDatabase) {
+        const targetDatabase = this.currentConnection
+          ? getConnectionDatabase(this.currentConnection)
+          : ''
+        if (!targetDatabase) {
           throw new Error('Database not selected')
         }
-        const response = await api.createSchema(
-          schemaName,
-          connectionId,
-          this.currentConnection.defaultDatabase
-        )
+        const response = await api.createSchema(schemaName, connectionId, targetDatabase)
         if (response.status === 'success') {
           await this.getDatabases(connectionId)
         }
@@ -259,9 +275,9 @@ export const useConnectionsStore = defineStore('connections', {
           if (!connection) {
             throw new Error(`Connection with ID: ${connectionId} not found`)
           }
-          dbName = connection.defaultDatabase
+          dbName = getConnectionDatabase(connection)
           if (!dbName) {
-            throw new Error(`database with ID: ${connection.defaultDatabase} not found`)
+            throw new Error(`No default database configured for connection ${connectionId}`)
           }
         }
         const tables = await api.getTables(connectionId, dbName)
@@ -290,14 +306,19 @@ export const useConnectionsStore = defineStore('connections', {
         id: '',
         name: '',
         type: '',
-        host: '',
-        port: 0,
-        username: '',
-        password: '',
-        defaultDatabase: '',
         created: 0,
         cloud_provider: '',
-        databasesInfo: []
+        databasesInfo: [],
+        // Initialize with an empty spec - will be populated based on connection type
+        spec: {
+          database: {
+            host: '',
+            port: 0,
+            username: '',
+            password: '',
+            database: ''
+          }
+        }
       }
     },
 

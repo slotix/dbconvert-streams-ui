@@ -82,11 +82,13 @@
                 </p>
                 <!-- Database field only for database connections -->
                 <p
-                  v-if="!isFileConnection(connection.id) && getConnectionDatabase(connection.id)"
+                  v-if="
+                    !isFileConnection(connection.id) && getConnectionDatabaseDisplay(connection.id)
+                  "
                   class="text-xs text-gray-400 dark:text-gray-500 truncate"
-                  :title="getConnectionDatabase(connection.id)"
+                  :title="getConnectionDatabaseDisplay(connection.id)"
                 >
-                  {{ getConnectionDatabase(connection.id) }}
+                  {{ getConnectionDatabaseDisplay(connection.id) }}
                 </p>
               </div>
             </div>
@@ -177,6 +179,11 @@ import {
   FolderIcon
 } from '@heroicons/vue/24/outline'
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
+import {
+  getConnectionHost as getHostFromSpec,
+  getConnectionPort,
+  getConnectionDatabase
+} from '@/utils/specBuilder'
 import DatabaseIcon from '@/components/base/DatabaseIcon.vue'
 import { normalizeConnectionType } from '@/utils/connectionUtils'
 
@@ -225,9 +232,9 @@ const recentConnections = computed(() => {
     id: conn.id,
     name: conn.name,
     type: conn.type,
-    host: conn.host,
-    port: conn.port?.toString(),
-    defaultDatabase: conn.defaultDatabase,
+    host: getHostFromSpec(conn),
+    port: getConnectionPort(conn).toString(),
+    defaultDatabase: getConnectionDatabase(conn),
     cloud_provider: conn.cloud_provider
   }))
 })
@@ -301,8 +308,10 @@ function getConnectionHost(connectionId: string) {
   const connection = connectionsStore.connections.find((conn) => conn.id === connectionId)
   if (connection) {
     // More aggressive truncation for long hostnames to ensure arrow visibility
-    let displayHost = connection.host
-    if (displayHost.length > 25) {
+    let displayHost = getHostFromSpec(connection)
+    const port = getConnectionPort(connection)
+
+    if (displayHost && displayHost.length > 25) {
       // For cloud providers, try to show the important part
       if (displayHost.includes('.')) {
         const parts = displayHost.split('.')
@@ -318,7 +327,11 @@ function getConnectionHost(connectionId: string) {
         displayHost = `${displayHost.substring(0, 22)}...`
       }
     }
-    return `${displayHost}:${connection.port}`
+
+    if (port > 0) {
+      return `${displayHost}:${port}`
+    }
+    return displayHost || ''
   }
 
   // Fallback: try to get from recent connections data
@@ -343,10 +356,10 @@ function getConnectionHost(connectionId: string) {
   return ''
 }
 
-function getConnectionDatabase(connectionId: string) {
+function getConnectionDatabaseDisplay(connectionId: string) {
   const connection = connectionsStore.connections.find((conn) => conn.id === connectionId)
   if (connection) {
-    let dbName = connection.defaultDatabase
+    let dbName = getConnectionDatabase(connection)
     // Truncate database name if it's too long
     if (dbName && dbName.length > 20) {
       dbName = `${dbName.substring(0, 17)}...`
@@ -371,8 +384,8 @@ function getConnectionDetails(connectionId: string) {
   const connection = connectionsStore.connections.find((conn) => conn.id === connectionId)
   if (connection) {
     // Truncate long hostnames for better display
-    let displayHost = connection.host
-    if (displayHost.length > 30) {
+    let displayHost = getHostFromSpec(connection)
+    if (displayHost && displayHost.length > 30) {
       // For cloud providers, try to show the important part
       if (displayHost.includes('.')) {
         const parts = displayHost.split('.')
@@ -385,8 +398,11 @@ function getConnectionDetails(connectionId: string) {
         displayHost = `${displayHost.substring(0, 25)}...`
       }
     }
-    const dbPart = connection.defaultDatabase ? ` • ${connection.defaultDatabase}` : ''
-    return `${displayHost}:${connection.port}${dbPart}`
+    const port = getConnectionPort(connection)
+    const dbName = getConnectionDatabase(connection)
+    const dbPart = dbName ? ` • ${dbName}` : ''
+    const portPart = port ? `:${port}` : ''
+    return `${displayHost || ''}${portPart}${dbPart}`
   }
 
   // Fallback: try to get from recent connections data
@@ -436,7 +452,7 @@ function getFileConnectionPath(connectionId: string): string {
   const connection = connectionsStore.connections.find((conn) => conn.id === connectionId)
   if (connection) {
     // For file connections, use storage_config.uri or fallback to host
-    let path = connection.storage_config?.uri || connection.host || ''
+    let path = connection.storage_config?.uri || getHostFromSpec(connection) || ''
     // Truncate long paths
     if (path.length > 40) {
       // Try to show the end of the path (most relevant part)

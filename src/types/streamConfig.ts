@@ -1,4 +1,6 @@
 // src/types/streams.ts
+import type { TargetSpec } from './specs'
+
 export interface Table {
   name: string
   query?: string
@@ -92,12 +94,8 @@ export interface SourceConfig {
 
 export interface TargetConfig {
   id: string
-  // Database and schema selection (stream-specific)
-  database?: string // Database name - required for database connections
-  schema?: string // Schema name - optional, defaults to provider-specific default
-  fileFormat?: 'csv' | 'json' | 'jsonl' | 'parquet'
-  outputDirectory?: string // For S3 targets: local staging directory before upload
-  subDirectory?: string
+  // Matryoshka spec pattern (REQUIRED)
+  spec: TargetSpec
   options?: TargetOptions
 }
 

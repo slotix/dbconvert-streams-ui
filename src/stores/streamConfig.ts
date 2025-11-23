@@ -6,6 +6,14 @@ import type { Step } from '@/stores/common'
 import { useConnectionsStore } from '@/stores/connections'
 import { useMonitoringStore } from '@/stores/monitoring'
 import { STATUS } from '@/constants'
+import {
+  buildDatabaseTargetSpec,
+  buildFileTargetSpec,
+  buildS3TargetSpec,
+  buildGCSTargetSpec,
+  buildAzureTargetSpec,
+  buildSnowflakeTargetSpec
+} from '@/utils/specBuilder'
 
 interface State {
   generateDefaultStreamConfigName(
@@ -124,18 +132,7 @@ export const buildStreamPayload = (stream: StreamConfig): Partial<StreamConfig> 
   // Handle target configuration
   filteredStream.target = {
     id: stream.target.id,
-    // Include database and schema if specified
-    ...(stream.target.database && { database: stream.target.database }),
-    ...(stream.target.schema && { schema: stream.target.schema })
-  }
-
-  if (stream.target.fileFormat) {
-    filteredStream.target.fileFormat = stream.target.fileFormat
-  }
-  // Note: outputDirectory is no longer sent from UI.
-  // The backend automatically computes it from the connection's storage_config.uri
-  if (stream.target.subDirectory) {
-    filteredStream.target.subDirectory = stream.target.subDirectory
+    spec: stream.target.spec
   }
 
   // Handle target options
@@ -313,11 +310,103 @@ export const useStreamsStore = defineStore('streams', {
         if (this.currentStreamConfig.sourceSchema) {
           this.currentStreamConfig.source.schema = this.currentStreamConfig.sourceSchema
         }
-        if (this.currentStreamConfig.targetDatabase) {
-          this.currentStreamConfig.target.database = this.currentStreamConfig.targetDatabase
-        }
-        if (this.currentStreamConfig.targetSchema) {
-          this.currentStreamConfig.target.schema = this.currentStreamConfig.targetSchema
+
+        // Build target spec if not already present
+        if (!this.currentStreamConfig.target.spec) {
+          const connectionsStore = useConnectionsStore()
+          const targetConnection = connectionsStore.connectionByID(
+            this.currentStreamConfig.target.id
+          )
+
+          if (!targetConnection) {
+            throw new Error('Target connection not found')
+          }
+
+          // Use connection.type to determine what kind of target spec to build
+          const connectionType = targetConnection.type?.toLowerCase() || ''
+
+          // Get structure options and file format settings
+          const structureOptions =
+            this.currentStreamConfig.structureOptions ||
+            this.currentStreamConfig.target.options?.structureOptions
+          const targetDatabase = this.currentStreamConfig.targetDatabase || ''
+          const targetSchema = this.currentStreamConfig.targetSchema
+          const targetPath = this.currentStreamConfig.targetPath || '/tmp/dbconvert'
+          const fileFormat = connectionType.includes('file')
+            ? (this.currentStreamConfig.target as any).fileFormat || 'csv'
+            : 'parquet'
+          const compressionType = this.currentStreamConfig.target.options?.compressionType
+          const parquetConfig = this.currentStreamConfig.target.options?.parquetConfig
+          const csvConfig = this.currentStreamConfig.target.options?.csvConfig
+
+          // Build the appropriate target spec based on connection type
+          if (connectionType === 'snowflake') {
+            this.currentStreamConfig.target.spec = buildSnowflakeTargetSpec(
+              targetDatabase,
+              targetPath,
+              fileFormat,
+              targetSchema,
+              structureOptions,
+              compressionType,
+              parquetConfig,
+              csvConfig,
+              this.currentStreamConfig.target.options?.snowflakeConfig?.filePrefix,
+              this.currentStreamConfig.target.options?.snowflakeConfig?.timestampFormat
+            )
+          } else if (connectionType.includes('file')) {
+            this.currentStreamConfig.target.spec = buildFileTargetSpec(
+              targetPath,
+              fileFormat,
+              compressionType,
+              parquetConfig,
+              csvConfig
+            )
+          } else if (connectionType === 's3' || connectionType === 'minio') {
+            const s3Spec = targetConnection.spec?.s3
+            this.currentStreamConfig.target.spec = buildS3TargetSpec(
+              targetPath,
+              fileFormat,
+              s3Spec?.scope?.bucket || '',
+              s3Spec?.scope?.prefix,
+              this.currentStreamConfig.target.options?.s3UploadConfig?.storageClass,
+              this.currentStreamConfig.target.options?.s3UploadConfig?.keepLocalFiles,
+              compressionType,
+              parquetConfig,
+              csvConfig
+            )
+          } else if (connectionType === 'gcs') {
+            const gcsSpec = targetConnection.spec?.gcs
+            this.currentStreamConfig.target.spec = buildGCSTargetSpec(
+              targetPath,
+              fileFormat,
+              gcsSpec?.scope?.bucket || '',
+              gcsSpec?.scope?.prefix,
+              this.currentStreamConfig.target.options?.s3UploadConfig?.storageClass,
+              this.currentStreamConfig.target.options?.s3UploadConfig?.keepLocalFiles,
+              compressionType,
+              parquetConfig,
+              csvConfig
+            )
+          } else if (connectionType === 'azure') {
+            const azureSpec = targetConnection.spec?.azure
+            this.currentStreamConfig.target.spec = buildAzureTargetSpec(
+              targetPath,
+              fileFormat,
+              azureSpec?.scope?.container || '',
+              azureSpec?.scope?.prefix,
+              this.currentStreamConfig.target.options?.s3UploadConfig?.keepLocalFiles,
+              compressionType,
+              parquetConfig,
+              csvConfig
+            )
+          } else {
+            // Default to database target
+            this.currentStreamConfig.target.spec = buildDatabaseTargetSpec(
+              targetDatabase,
+              targetSchema,
+              structureOptions
+            )
+          }
         }
 
         const refinedStream = buildStreamPayload(this.currentStreamConfig)

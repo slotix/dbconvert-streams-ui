@@ -1,3 +1,5 @@
+import type { ConnectionSpec } from './specs'
+
 export interface SSLConfig {
   mode: string
   ca?: string
@@ -37,35 +39,14 @@ export interface Connection {
   id: string | ''
   name: string
   type: string
-  host: string
-  port: number
-  path?: string
-  username: string
-  password: string
   databasesInfo: DatabaseInfo[]
-  // Optional default database - parsed from connection strings, used for testing and as UI default
-  // NOT used during stream execution - streams specify database in source/target config
-  defaultDatabase?: string
   created?: number
   ssl?: SSLConfig
-  // Cloud provider detection - empty string means not a cloud provider
   cloud_provider?: string
   status?: string
-  // File format for file-based connections (csv, json, jsonl, parquet)
-  file_format?: FileFormat
-  // Storage configuration for file/cloud connections
   storage_config?: StorageConfig
-  // S3-specific configuration (UI helper - not sent to backend)
-  s3Config?: {
-    credentialSource: 'aws' | 'static'
-    endpoint?: string
-    region: string
-    urlStyle?: 'auto' | 'path' | 'virtual'
-    useSSL?: boolean
-    bucket?: string // Optional: Scope connection to specific bucket
-    prefix?: string // Optional: Scope connection to specific prefix
-    sessionToken?: string // For temporary credentials
-  }
+  // Matryoshka spec pattern (REQUIRED)
+  spec: ConnectionSpec
 }
 
 export interface Schema {

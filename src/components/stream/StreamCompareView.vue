@@ -95,13 +95,22 @@ const isFileTarget = computed(() => {
 })
 
 const targetFileFormat = computed<FileFormat | undefined>(() => {
-  return props.stream.target?.fileFormat || props.target.file_format || undefined
+  const spec = props.stream.target?.spec
+  if (!spec) return undefined
+  if (spec.files?.fileFormat) return spec.files.fileFormat as FileFormat
+  if (spec.s3?.fileFormat) return spec.s3.fileFormat as FileFormat
+  if (spec.gcs?.fileFormat) return spec.gcs.fileFormat as FileFormat
+  if (spec.azure?.fileFormat) return spec.azure.fileFormat as FileFormat
+  if (spec.snowflake?.staging?.fileFormat) {
+    return spec.snowflake.staging.fileFormat as FileFormat
+  }
+  return undefined
 })
 
 const targetRootPath = computed(() => {
-  const storagePath = props.target.storage_config?.uri || props.target.path || ''
+  const storagePath = props.target.storage_config?.uri || props.target.spec?.files?.basePath || ''
   if (!storagePath) return ''
-  const subDirectory = props.stream.target?.subDirectory
+  const subDirectory = props.stream.target?.spec?.files?.outputDirectory
   return subDirectory ? joinPaths(storagePath, subDirectory) : storagePath
 })
 
@@ -125,9 +134,19 @@ const tablesList = computed(() => {
 })
 
 const sourceDatabase = computed(() => props.stream.source?.database || undefined)
-const targetDatabase = computed(() => props.stream.target?.database || undefined)
+const targetDatabase = computed(() => {
+  const spec = props.stream.target?.spec
+  if (spec?.database?.database) return spec.database.database
+  if (spec?.snowflake?.database) return spec.snowflake.database
+  return undefined
+})
 const sourceSchema = computed(() => props.stream.source?.schema || undefined)
-const targetSchema = computed(() => props.stream.target?.schema || undefined)
+const targetSchema = computed(() => {
+  const spec = props.stream.target?.spec
+  if (spec?.database?.schema) return spec.database.schema
+  if (spec?.snowflake?.schema) return spec.snowflake.schema
+  return undefined
+})
 
 // Schema comparison (only for database targets, not files)
 const schemaComparison = computed((): SchemaComparison | null => {

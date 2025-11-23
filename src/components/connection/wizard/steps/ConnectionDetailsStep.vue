@@ -72,12 +72,8 @@ const canProceed = computed(() => {
     return hasName && hasStorageConfig && hasEndpointOrCredentials
   }
 
-  return !!(
-    connection.name?.trim() &&
-    connection.host?.trim() &&
-    connection.port &&
-    connection.username?.trim()
-  )
+  const spec = connection.spec?.database
+  return !!(connection.name?.trim() && spec?.host?.trim() && spec?.port && spec?.username?.trim())
 })
 
 // Store the user's actual public IP address
@@ -87,7 +83,7 @@ const publicIp = ref<string>('Loading...')
 async function updatePublicIp() {
   try {
     const connection = connectionsStore.currentConnection
-    const host = connection?.host
+    const host = connection?.spec?.database?.host
 
     // If connecting to localhost/local IP, show local IP
     if (host && isLocalIp(host)) {
@@ -111,7 +107,7 @@ onMounted(() => {
 
 // Watch for connection host changes and update IP accordingly
 watch(
-  () => connectionsStore.currentConnection?.host,
+  () => connectionsStore.currentConnection?.spec?.database?.host,
   () => {
     updatePublicIp()
   }
@@ -123,7 +119,9 @@ const showAccessNotice = computed(() => {
     return false
   }
   const connection = connectionsStore.currentConnection
-  return !!(connection?.host && connection?.port)
+  const host = connection?.spec?.database?.host
+  const port = connection?.spec?.database?.port
+  return !!(host && port)
 })
 
 // Watch for changes and emit can-proceed updates

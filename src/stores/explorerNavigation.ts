@@ -106,6 +106,67 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
   },
 
   actions: {
+    // Cleanup stale connection references
+    cleanupStaleConnections(validConnectionIds: string[]) {
+      const validIdSet = new Set(validConnectionIds)
+
+      // Clean up expanded connections
+      for (const connId of this.expandedConnections) {
+        if (!validIdSet.has(connId)) {
+          this.expandedConnections.delete(connId)
+        }
+      }
+
+      // Clean up databases state
+      for (const connId in this.databasesState) {
+        if (!validIdSet.has(connId)) {
+          delete this.databasesState[connId]
+          delete this.loadingDatabases[connId]
+          delete this.databasesErrors[connId]
+        }
+      }
+
+      // Clean up metadata state
+      for (const connId in this.metadataState) {
+        if (!validIdSet.has(connId)) {
+          delete this.metadataState[connId]
+        }
+      }
+
+      // Clean up expanded databases and schemas
+      const expandedDbsToRemove: string[] = []
+      for (const key of this.expandedDatabases) {
+        const connId = key.split(':')[0]
+        if (!validIdSet.has(connId)) {
+          expandedDbsToRemove.push(key)
+        }
+      }
+      for (const key of expandedDbsToRemove) {
+        this.expandedDatabases.delete(key)
+      }
+
+      const expandedSchemasToRemove: string[] = []
+      for (const key of this.expandedSchemas) {
+        const connId = key.split(':')[0]
+        if (!validIdSet.has(connId)) {
+          expandedSchemasToRemove.push(key)
+        }
+      }
+      for (const key of expandedSchemasToRemove) {
+        this.expandedSchemas.delete(key)
+      }
+
+      // Clear active connection if it's invalid
+      if (this.activeConnectionId && !validIdSet.has(this.activeConnectionId)) {
+        this.activeConnectionId = null
+      }
+
+      // Clear selection if it references an invalid connection
+      if (this.selection && !validIdSet.has(this.selection.connectionId)) {
+        this.selection = null
+      }
+    },
+
     // Active connection management
     setActiveConnectionId(connectionId: string | null) {
       this.activeConnectionId = connectionId
