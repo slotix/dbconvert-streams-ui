@@ -227,6 +227,7 @@ function updateConnectionParams(params: Connection) {
   if (dbType) {
     selectedDBType.value = dbType
     emit('update:selected-db-type', dbType)
+    connectionsStore.ensureSpecForType(dbType.type)
     connectionsStore.updateConnectionParams(params)
     updateCanProceed()
   }

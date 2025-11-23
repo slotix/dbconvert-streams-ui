@@ -158,6 +158,7 @@ function handleDBTypeUpdate(dbType: DbType | null) {
   if (dbType) {
     // Set connection type - defaults will be applied by UnifiedConnectionParams watch
     connectionsStore.setConnectionType(dbType.type)
+    connectionsStore.ensureSpecForType(dbType.type)
   }
 }
 

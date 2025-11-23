@@ -7,6 +7,58 @@ import { useCommonStore } from './common'
 import { useExplorerNavigationStore } from './explorerNavigation'
 import { getConnectionDatabase } from '@/utils/specBuilder'
 
+type ConnectionSpecFactory = () => Connection['spec']
+
+const databaseTypeAliases = new Set([
+  'postgresql',
+  'postgres',
+  'mysql',
+  'mariadb',
+  'sqlserver',
+  'mssql',
+  'oracle',
+  'db2'
+])
+
+const buildDatabaseSpec: ConnectionSpecFactory = () => ({
+  database: {
+    host: '',
+    port: 0,
+    username: '',
+    password: '',
+    database: ''
+  }
+})
+
+const buildFilesSpec: ConnectionSpecFactory = () => ({
+  files: {
+    basePath: ''
+  }
+})
+
+const buildS3Spec: ConnectionSpecFactory = () => ({
+  s3: {
+    region: '',
+    scope: {}
+  }
+})
+
+const specFactories: Record<string, ConnectionSpecFactory> = {
+  database: buildDatabaseSpec,
+  snowflake: buildDatabaseSpec,
+  files: buildFilesSpec,
+  localfiles: buildFilesSpec,
+  s3: buildS3Spec
+}
+
+function resolveSpecFactory(type: string): ConnectionSpecFactory | undefined {
+  const normalized = type.toLowerCase()
+  if (databaseTypeAliases.has(normalized)) {
+    return specFactories.database
+  }
+  return specFactories[normalized]
+}
+
 // Define interfaces for the state and other objects
 interface State {
   dbTypes: DbType[]
@@ -309,16 +361,26 @@ export const useConnectionsStore = defineStore('connections', {
         created: 0,
         cloud_provider: '',
         databasesInfo: [],
-        // Initialize with an empty spec - will be populated based on connection type
-        spec: {
-          database: {
-            host: '',
-            port: 0,
-            username: '',
-            password: '',
-            database: ''
-          }
-        }
+        spec: {}
+      }
+    },
+
+    ensureSpecForType(connectionType: string) {
+      if (this.currentConnection?.id) {
+        // Editing existing connection - don't overwrite spec
+        return
+      }
+
+      if (!this.currentConnection) {
+        this.initializeNewConnection()
+      }
+      if (!this.currentConnection) return
+
+      const factory = resolveSpecFactory(connectionType)
+      if (factory) {
+        this.currentConnection.spec = factory()
+      } else {
+        this.currentConnection.spec = {}
       }
     },
 
