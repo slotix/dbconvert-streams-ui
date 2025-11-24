@@ -5,7 +5,33 @@ import { debounce } from '@/utils/debounce'
 import type { Connection, DbType } from '@/types/connections'
 import { useCommonStore } from './common'
 import { useExplorerNavigationStore } from './explorerNavigation'
-import { getConnectionDatabase } from '@/utils/specBuilder'
+import {
+  getConnectionDatabase,
+  getConnectionHost,
+  getConnectionPassword,
+  getConnectionPort,
+  getConnectionUsername
+} from '@/utils/specBuilder'
+
+function hydrateConnectionFromSpec(connection: Connection): Connection {
+  const derivedHost = getConnectionHost(connection)
+  const derivedPort = getConnectionPort(connection)
+  const derivedUsername = getConnectionUsername(connection)
+  const derivedPassword = getConnectionPassword(connection)
+  const derivedDatabase = getConnectionDatabase(connection)
+  const derivedPath =
+    connection.storage_config?.uri || connection.spec?.files?.basePath || connection.path || ''
+
+  return {
+    ...connection,
+    host: derivedHost || connection.host,
+    port: derivedPort || connection.port,
+    username: derivedUsername || connection.username,
+    password: derivedPassword || connection.password,
+    defaultDatabase: derivedDatabase || connection.defaultDatabase,
+    path: derivedPath
+  }
+}
 
 type ConnectionSpecFactory = () => Connection['spec']
 
@@ -156,7 +182,7 @@ export const useConnectionsStore = defineStore('connections', {
       this.isLoadingConnections = true
       try {
         const response = await api.getConnections()
-        this.connections = response
+        this.connections = response.map(hydrateConnectionFromSpec)
         // No longer saving to localStorage - always fetch fresh from API
 
         // Cleanup stale connection references in explorerNavigation store
