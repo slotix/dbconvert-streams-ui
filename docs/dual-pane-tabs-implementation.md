@@ -471,6 +471,8 @@ Implement full context menu for tabs:
 - 🎯 Smooth transitions for pane show/hide
 - 🎯 Close right pane button
 
+ℹ️ Persisted AG Grid filter/sort state now lives only as long as the tab stays open. Closing a tab (or preview) clears its stored filters so reopening that object starts from a clean slate, while browser reloads still restore the state for tabs that remained open.
+
 ### Future Enhancements 🚀 (Out of Scope)
 - Drag-and-drop tab reordering within pane
 - Drag-and-drop tabs between panes
@@ -534,7 +536,7 @@ Adding a third pane (middle, bottom, etc.) requires:
 
 ### 🚧 Optional Enhancements (Not Required for MVP)
 - ⏳ **Keyboard shortcuts**: Ctrl+Tab, Ctrl+W, Ctrl+1/2 for pane switching
-- ⏳ **State persistence**: localStorage for tabs/panes across page reloads
+- ✅ **State persistence**: localStorage for tabs/panes across page reloads
 - ⏳ **Drag and drop**: Reorder tabs within pane or move between panes
 - ⏳ **Comprehensive testing**: Unit and integration tests
 

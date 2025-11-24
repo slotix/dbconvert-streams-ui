@@ -7,6 +7,7 @@ defineProps<{
   entry: FileSystemEntry
   metadata: FileMetadata | null
   connectionId: string
+  objectKey: string
 }>()
 </script>
 
@@ -18,7 +19,12 @@ defineProps<{
     ]"
   >
     <div class="p-4">
-      <AGGridFileDataView :entry="entry" :metadata="metadata" :connection-id="connectionId" />
+      <AGGridFileDataView
+        :entry="entry"
+        :metadata="metadata"
+        :connection-id="connectionId"
+        :object-key="objectKey"
+      />
     </div>
   </div>
 </template>

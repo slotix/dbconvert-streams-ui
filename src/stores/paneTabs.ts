@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import type { SQLTableMeta, SQLViewMeta } from '@/types/metadata'
 import type { FileSystemEntry } from '@/api/fileSystem'
 import type { FileMetadata } from '@/types/files'
+import { useObjectTabStateStore } from '@/stores/objectTabState'
 
 /**
  * Pane identifier type - extensible to support multiple panes
@@ -19,6 +20,7 @@ export type PaneTab = {
   name: string
   tabType: 'database' | 'file'
   pinned: boolean
+  objectKey?: string
 
   // Database-specific properties
   database?: string
@@ -53,6 +55,60 @@ function createEmptyPaneState(): PaneState {
   }
 }
 
+const STORAGE_KEY = 'explorer.paneTabs'
+
+type PersistedPaneTabsState = {
+  panes: Record<PaneId, PaneState>
+  activePane: PaneId
+  visiblePanes: PaneId[]
+}
+
+function buildObjectKey(paneId: PaneId, tab: PaneTab): string | null {
+  if (tab.tabType === 'database' && tab.database && tab.name) {
+    const schema = tab.schema || 'default'
+    return `${paneId}:db-${tab.database}-${schema}-${tab.name}`
+  }
+  if (tab.tabType === 'file' && tab.filePath) {
+    return `${paneId}:file-${tab.filePath}`
+  }
+  return null
+}
+
+function hasBrowserStorage(): boolean {
+  return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined'
+}
+
+function loadPersistedPaneTabsState(): PersistedPaneTabsState | null {
+  if (!hasBrowserStorage()) {
+    return null
+  }
+
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as PersistedPaneTabsState
+    if (parsed && parsed.panes) {
+      return parsed
+    }
+  } catch (error) {
+    console.warn('Failed to load pane tabs state from localStorage:', error)
+  }
+
+  return null
+}
+
+function persistPaneTabsState(state: PersistedPaneTabsState) {
+  if (!hasBrowserStorage()) {
+    return
+  }
+
+  try {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+  } catch (error) {
+    console.warn('Failed to persist pane tabs state to localStorage:', error)
+  }
+}
+
 /**
  * Pinia store for managing multiple independent panes with tabs
  * Each pane (left, right, future: middle, etc.) has its own tab state
@@ -62,12 +118,12 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
   const panes = ref<Map<PaneId, PaneState>>(new Map())
   const activePane = ref<PaneId>('left')
   const visiblePanes = ref<Set<PaneId>>(new Set(['left'])) // Left always visible by default
+  const objectTabStateStore = useObjectTabStateStore()
 
   // Initialize panes
   panes.value.set('left', createEmptyPaneState())
   panes.value.set('right', createEmptyPaneState())
 
-  // Getters
   const getPaneState = (paneId: PaneId): PaneState => {
     const state = panes.value.get(paneId)
     if (!state) {
@@ -78,6 +134,69 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
     }
     return state
   }
+
+  const ensureObjectKey = (paneId: PaneId, tab?: PaneTab | null): string | null => {
+    if (!tab) return null
+    if (tab.objectKey) return tab.objectKey
+    const key = buildObjectKey(paneId, tab)
+    if (key) {
+      tab.objectKey = key
+    }
+    return tab.objectKey || null
+  }
+
+  const clearObjectState = (paneId: PaneId, tab?: PaneTab | null) => {
+    const key = ensureObjectKey(paneId, tab)
+    if (key) {
+      objectTabStateStore.clearTabState(key)
+    }
+  }
+
+  const hydratePaneState = (paneId: PaneId, savedState?: PaneState): PaneState => {
+    const state = {
+      ...createEmptyPaneState(),
+      ...(savedState || {})
+    }
+    state.pinnedTabs = state.pinnedTabs.map((tab) => {
+      const hydratedTab = { ...tab }
+      ensureObjectKey(paneId, hydratedTab)
+      return hydratedTab
+    })
+    if (state.previewTab) {
+      const hydratedPreview = { ...state.previewTab }
+      ensureObjectKey(paneId, hydratedPreview)
+      state.previewTab = hydratedPreview
+    }
+    return state
+  }
+
+  function persistState() {
+    persistPaneTabsState({
+      panes: {
+        left: getPaneState('left'),
+        right: getPaneState('right')
+      },
+      activePane: activePane.value,
+      visiblePanes: Array.from(visiblePanes.value)
+    })
+  }
+
+  function restoreFromStorage() {
+    const savedState = loadPersistedPaneTabsState()
+    if (!savedState) return
+
+    panes.value.set('left', hydratePaneState('left', savedState.panes?.left))
+    panes.value.set('right', hydratePaneState('right', savedState.panes?.right))
+
+    activePane.value = savedState.activePane || 'left'
+    const visible =
+      savedState.visiblePanes && savedState.visiblePanes.length > 0
+        ? savedState.visiblePanes
+        : ['left']
+    visiblePanes.value = new Set(visible)
+  }
+
+  restoreFromStorage()
 
   const hasPaneContent = (paneId: PaneId): boolean => {
     const state = getPaneState(paneId)
@@ -121,6 +240,7 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
    */
   function setActivePane(paneId: PaneId) {
     activePane.value = paneId
+    persistState()
   }
 
   /**
@@ -128,6 +248,7 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
    */
   function showPane(paneId: PaneId) {
     visiblePanes.value.add(paneId)
+    persistState()
   }
 
   /**
@@ -144,6 +265,7 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
     if (activePane.value === paneId) {
       activePane.value = 'left'
     }
+    persistState()
   }
 
   /**
@@ -157,6 +279,7 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
   ) {
     const state = getPaneState(paneId)
     const fullTab: PaneTab = { ...tab, pinned: mode === 'pinned' }
+    ensureObjectKey(paneId, fullTab)
     const key = generateTabKey(fullTab)
 
     // Show pane if not visible
@@ -175,12 +298,16 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
       }
     } else {
       // Set as preview tab (replaces current preview)
+      if (state.previewTab) {
+        clearObjectState(paneId, state.previewTab)
+      }
       state.previewTab = fullTab
       state.activePinnedIndex = null
     }
 
     // Set this pane as active
     setActivePane(paneId)
+    persistState()
   }
 
   /**
@@ -188,12 +315,17 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
    */
   function setPreviewTab(paneId: PaneId, tab: PaneTab | null) {
     const state = getPaneState(paneId)
+    if (state.previewTab && (!tab || ensureObjectKey(paneId, tab) !== ensureObjectKey(paneId, state.previewTab))) {
+      clearObjectState(paneId, state.previewTab)
+    }
     state.previewTab = tab
     if (tab) {
+      ensureObjectKey(paneId, tab)
       state.activePinnedIndex = null
       showPane(paneId)
       setActivePane(paneId)
     }
+    persistState()
   }
 
   /**
@@ -204,6 +336,7 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
     if (!state.previewTab) return
 
     const tab = { ...state.previewTab, pinned: true }
+    ensureObjectKey(paneId, tab)
     const key = generateTabKey(tab)
 
     // Check if already exists in pinned tabs
@@ -219,6 +352,7 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
 
     // Clear preview
     state.previewTab = null
+    persistState()
   }
 
   /**
@@ -229,7 +363,8 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
     if (index < 0 || index >= state.pinnedTabs.length) return
 
     const wasActive = state.activePinnedIndex === index
-    state.pinnedTabs.splice(index, 1)
+    const [removedTab] = state.pinnedTabs.splice(index, 1)
+    clearObjectState(paneId, removedTab)
 
     // Adjust active index
     if (!state.pinnedTabs.length) {
@@ -249,6 +384,7 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
       // Adjust index if we closed a tab before the active one
       state.activePinnedIndex--
     }
+    persistState()
   }
 
   /**
@@ -259,8 +395,14 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
     if (keepIndex < 0 || keepIndex >= state.pinnedTabs.length) return
 
     const keepTab = state.pinnedTabs[keepIndex]
+    state.pinnedTabs.forEach((tab, idx) => {
+      if (idx !== keepIndex) {
+        clearObjectState(paneId, tab)
+      }
+    })
     state.pinnedTabs = [keepTab]
     state.activePinnedIndex = 0
+    persistState()
   }
 
   /**
@@ -268,6 +410,8 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
    */
   function closeAllTabs(paneId: PaneId) {
     const state = getPaneState(paneId)
+    state.pinnedTabs.forEach((tab) => clearObjectState(paneId, tab))
+    clearObjectState(paneId, state.previewTab)
     state.pinnedTabs = []
     state.activePinnedIndex = null
 
@@ -275,6 +419,7 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
     if (!state.previewTab && paneId !== 'left') {
       hidePane(paneId)
     }
+    persistState()
   }
 
   /**
@@ -282,12 +427,14 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
    */
   function closePreviewTab(paneId: PaneId) {
     const state = getPaneState(paneId)
+    clearObjectState(paneId, state.previewTab)
     state.previewTab = null
 
     // If no pinned tabs and not left pane, hide it
     if (!state.pinnedTabs.length && paneId !== 'left') {
       hidePane(paneId)
     }
+    persistState()
   }
 
   /**
@@ -299,6 +446,7 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
 
     state.activePinnedIndex = index
     setActivePane(paneId)
+    persistState()
   }
 
   /**
@@ -310,26 +458,36 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
 
     state.activePinnedIndex = null
     setActivePane(paneId)
+    persistState()
   }
 
   /**
    * Clear all state for a pane (reset to empty)
    */
   function clearPane(paneId: PaneId) {
+    const state = getPaneState(paneId)
+    state.pinnedTabs.forEach((tab) => clearObjectState(paneId, tab))
+    clearObjectState(paneId, state.previewTab)
     panes.value.set(paneId, createEmptyPaneState())
     if (paneId !== 'left') {
       hidePane(paneId)
     }
+    persistState()
   }
 
   /**
    * Clear all panes and reset to initial state
    */
   function clearAllPanes() {
+    panes.value.get('left')?.pinnedTabs.forEach((tab) => clearObjectState('left', tab))
+    panes.value.get('right')?.pinnedTabs.forEach((tab) => clearObjectState('right', tab))
+    clearObjectState('left', panes.value.get('left')?.previewTab)
+    clearObjectState('right', panes.value.get('right')?.previewTab)
     panes.value.set('left', createEmptyPaneState())
     panes.value.set('right', createEmptyPaneState())
     activePane.value = 'left'
     visiblePanes.value = new Set(['left'])
+    persistState()
   }
 
   return {

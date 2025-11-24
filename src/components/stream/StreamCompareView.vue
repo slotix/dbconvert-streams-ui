@@ -762,6 +762,7 @@ async function selectTable(tableName: string) {
               :entry="targetFileEntry"
               :metadata="targetFileMetadata"
               :connection-id="target.id"
+              :object-key="`compare-target-file-${stream.id}-${targetFileEntry.path}`"
             />
           </div>
 

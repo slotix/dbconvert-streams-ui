@@ -71,7 +71,8 @@ const tabs = computed<TabItem[]>(() => {
         props: {
           entry: props.fileEntry,
           metadata: props.fileMetadata,
-          connectionId: props.connectionId
+          connectionId: props.connectionId,
+          objectKey: objectKey.value
         }
       },
       {

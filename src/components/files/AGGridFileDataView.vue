@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, computed, onBeforeUnmount } from 'vue'
+import { ref, watch, computed, onBeforeUnmount, onMounted } from 'vue'
 import { AgGridVue } from 'ag-grid-vue3'
 import { ModuleRegistry, AllCommunityModule } from 'ag-grid-community'
 import type {
@@ -19,6 +19,7 @@ import UnsupportedFileMessage from './UnsupportedFileMessage.vue'
 import { MonacoEditor } from '@/components/monaco'
 import { useAGGridFiltering } from '@/composables/useAGGridFiltering'
 import { convertFilterModelToSQL, determineFilterType } from '@/utils/agGridFilterUtils'
+import { useObjectTabStateStore } from '@/stores/objectTabState'
 import 'ag-grid-community/styles/ag-grid.css'
 import 'ag-grid-community/styles/ag-theme-alpine.css'
 import '@/styles/agGridTheme.css'
@@ -30,6 +31,7 @@ const props = defineProps<{
   entry: FileSystemEntry
   metadata: FileMetadata | null
   connectionId: string
+  objectKey: string
 }>()
 
 // Use shared AG Grid filtering composable
@@ -47,8 +49,57 @@ const {
   needsTruncation,
   displayedSql,
   toggleSqlBanner,
-  closeContextMenu
+  closeContextMenu,
+  clearAllFilters: clearAgGridFilters
 } = useAGGridFiltering()
+
+const tabStateStore = useObjectTabStateStore()
+
+function syncGridStateFromStore() {
+  const savedState = tabStateStore.getAGGridDataState(props.objectKey)
+
+  if (savedState) {
+    currentSortModel.value = savedState.sortModel || []
+    agGridFilters.value = savedState.filterModel || {}
+    agGridWhereSQL.value =
+      savedState.filterModel && Object.keys(savedState.filterModel).length > 0
+        ? convertFilterModelToSQL(savedState.filterModel, 'duckdb')
+        : ''
+  } else {
+    currentSortModel.value = []
+    agGridFilters.value = {}
+    agGridWhereSQL.value = ''
+  }
+
+  return savedState
+}
+
+onMounted(() => {
+  syncGridStateFromStore()
+})
+
+watch(
+  () => props.objectKey,
+  () => {
+    const savedState = syncGridStateFromStore()
+
+    if (!gridApi.value) return
+
+    if (savedState) {
+      applyGridState({
+        sortModel: savedState.sortModel,
+        filterModel: savedState.filterModel
+      })
+    } else {
+      gridApi.value.applyColumnState({
+        defaultState: { sort: null }
+      })
+      gridApi.value.setFilterModel(null)
+    }
+
+    gridApi.value.setGridOption('datasource', createDatasource())
+  }
+)
 
 // Scoped ref for this grid instance to properly attach event listeners
 const gridContainerRef = ref<HTMLElement | null>(null)
@@ -145,6 +196,8 @@ const columnDefs = computed<ColDef[]>(() => {
 
 // Clear all filters
 function clearAllFilters() {
+  clearAgGridFilters()
+
   // Clear AG Grid filters
   if (gridApi.value) {
     gridApi.value.setFilterModel(null)
@@ -312,6 +365,14 @@ function onGridReady(params: GridReadyEvent) {
     }
   }, 100)
 
+  const savedState = tabStateStore.getAGGridDataState(props.objectKey)
+  if (savedState) {
+    applyGridState({
+      sortModel: savedState.sortModel,
+      filterModel: savedState.filterModel
+    })
+  }
+
   // Set the datasource
   params.api.setGridOption('datasource', createDatasource())
 }
@@ -365,6 +426,26 @@ watch(
       // Refresh the grid with new datasource
       gridApi.value.setGridOption('datasource', createDatasource())
     }
+  },
+  { deep: true }
+)
+
+watch(
+  () => currentSortModel.value,
+  (sortModel) => {
+    tabStateStore.setAGGridDataState(props.objectKey, {
+      sortModel
+    })
+  },
+  { deep: true }
+)
+
+watch(
+  () => agGridFilters.value,
+  (filterModel) => {
+    tabStateStore.setAGGridDataState(props.objectKey, {
+      filterModel
+    })
   },
   { deep: true }
 )

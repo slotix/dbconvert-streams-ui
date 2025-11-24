@@ -16,18 +16,62 @@ type ObjectTabState = {
   agGridData?: AGGridDataState
 }
 
+const STORAGE_KEY = 'explorer.objectTabState'
+
+function hasBrowserStorage(): boolean {
+  return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined'
+}
+
+function loadPersistedTabStates(): Record<string, ObjectTabState> {
+  if (!hasBrowserStorage()) {
+    return {}
+  }
+
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY)
+    if (!raw) {
+      return {}
+    }
+    const parsed = JSON.parse(raw)
+    if (parsed && typeof parsed === 'object') {
+      return parsed as Record<string, ObjectTabState>
+    }
+  } catch (error) {
+    console.warn('Failed to load object tab state from localStorage:', error)
+  }
+
+  return {}
+}
+
+function persistTabStates(tabStates: Record<string, ObjectTabState>) {
+  if (!hasBrowserStorage()) {
+    return
+  }
+
+  try {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(tabStates))
+  } catch (error) {
+    console.warn('Failed to persist object tab state to localStorage:', error)
+  }
+}
+
 export const useObjectTabStateStore = defineStore('objectTabState', {
   state: () => ({
     // Map of object keys to their complete tab state
-    tabStates: {} as Record<string, ObjectTabState>
+    tabStates: loadPersistedTabStates()
   }),
 
   actions: {
+    persistState() {
+      persistTabStates(this.tabStates)
+    },
+
     setTabState(objectKey: string, tabIndex: number) {
       if (!this.tabStates[objectKey]) {
         this.tabStates[objectKey] = { mainTab: 0, subTab: 0 }
       }
       this.tabStates[objectKey].mainTab = tabIndex
+      this.persistState()
     },
 
     getTabState(objectKey: string): number {
@@ -39,6 +83,7 @@ export const useObjectTabStateStore = defineStore('objectTabState', {
         this.tabStates[objectKey] = { mainTab: 0, subTab: 0 }
       }
       this.tabStates[objectKey].subTab = subTabIndex
+      this.persistState()
     },
 
     getSubTabState(objectKey: string): number {
@@ -63,6 +108,7 @@ export const useObjectTabStateStore = defineStore('objectTabState', {
         ...this.tabStates[objectKey].agGridData!,
         ...dataState
       }
+      this.persistState()
     },
 
     getAGGridDataState(objectKey: string): AGGridDataState | null {
@@ -71,10 +117,12 @@ export const useObjectTabStateStore = defineStore('objectTabState', {
 
     clearTabState(objectKey: string) {
       delete this.tabStates[objectKey]
+      this.persistState()
     },
 
     clearAllTabStates() {
       this.tabStates = {}
+      this.persistState()
     }
   }
 })
