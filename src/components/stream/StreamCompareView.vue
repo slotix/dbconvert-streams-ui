@@ -108,7 +108,18 @@ const targetFileFormat = computed<FileFormat | undefined>(() => {
 })
 
 const targetRootPath = computed(() => {
-  const storagePath = props.target.storage_config?.uri || props.target.spec?.files?.basePath || ''
+  const storageConfig = props.target.storage_config
+  const s3UploadConfig = props.stream.target?.options?.s3UploadConfig
+
+  if (storageConfig?.provider === 's3') {
+    const parsedUri = parseS3Uri(storageConfig.uri)
+    const bucket = s3UploadConfig?.bucket || props.target.s3Config?.bucket || parsedUri.bucket
+    const prefix = s3UploadConfig?.prefix || props.target.s3Config?.prefix || parsedUri.prefix
+    const base = buildS3BasePath(bucket, prefix)
+    if (base) return base
+  }
+
+  const storagePath = storageConfig?.uri || props.target.spec?.files?.basePath || ''
   if (!storagePath) return ''
   const subDirectory = props.stream.target?.spec?.files?.outputDirectory
   return subDirectory ? joinPaths(storagePath, subDirectory) : storagePath
@@ -383,6 +394,24 @@ function joinPaths(basePath: string, ...segments: (string | undefined)[]): strin
     current = `${trimmedBase}${separator}${trimmedSegment}`
   }
   return current
+}
+
+function buildS3BasePath(bucket?: string, prefix?: string): string {
+  if (!bucket) return ''
+  const normalizedPrefix = prefix ? prefix.replace(/^\/+|\/+$/g, '') : ''
+  return normalizedPrefix ? `s3://${bucket}/${normalizedPrefix}` : `s3://${bucket}`
+}
+
+function parseS3Uri(uri?: string | null): { bucket?: string; prefix?: string } {
+  if (!uri || !uri.startsWith('s3://')) {
+    return {}
+  }
+  const withoutScheme = uri.slice(5)
+  const [bucket, ...rest] = withoutScheme.split('/')
+  return {
+    bucket: bucket || undefined,
+    prefix: rest.join('/') || undefined
+  }
 }
 
 function getBaseExtensionForFormat(format?: FileFormat | null): string | null {
