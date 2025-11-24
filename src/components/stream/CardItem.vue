@@ -54,12 +54,7 @@
       <!-- Content -->
       <div class="flex-1 p-6">
         <div v-if="isJsonView" class="h-full">
-          <div class="rounded-md bg-gray-50 p-4 h-full overflow-auto custom-scrollbar">
-            <pre
-              v-highlightjs
-              class="text-sm"
-            ><code class="language-json block text-sm leading-6 select-text">{{ prettyConfig }}</code></pre>
-          </div>
+          <JsonViewer :json="prettyConfig" title="Stream Configuration" height="500px" compact />
         </div>
         <div v-else class="space-y-6 h-full flex flex-col">
           <!-- Connection Details -->
@@ -224,11 +219,13 @@ import { defineComponent } from 'vue'
 import shared from './shared'
 import { vTooltip } from '@/directives/tooltip'
 import BaseButton from '@/components/base/BaseButton.vue'
+import { JsonViewer } from '@/components/monaco'
 
 export default defineComponent({
   ...shared,
   components: {
-    BaseButton
+    BaseButton,
+    JsonViewer
   },
   directives: {
     tooltip: vTooltip

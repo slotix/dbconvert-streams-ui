@@ -170,8 +170,7 @@ function toggleExpanded() {
           :title="fullQuery"
         >
           <code
-            v-highlightjs
-            class="language-sql text-xs font-mono bg-gray-50 dark:bg-gray-800 hover:bg-blue-50 dark:hover:bg-blue-900/30 px-2 py-1 rounded whitespace-nowrap overflow-hidden text-ellipsis block"
+            class="text-xs font-mono bg-gray-50 dark:bg-gray-800 hover:bg-blue-50 dark:hover:bg-blue-900/30 px-2 py-1 rounded whitespace-nowrap overflow-hidden text-ellipsis block text-gray-700 dark:text-gray-300"
             >{{ oneLineQuery }}</code
           >
         </span>

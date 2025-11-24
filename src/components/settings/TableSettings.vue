@@ -2,26 +2,25 @@
   <div v-if="table && isConvertMode">
     <label
       :for="`custom-query-${table.name}`"
-      class="block text-sm font-medium leading-6 text-gray-900 dark:text-gray-100 mt-4"
-      >Custom Query.</label
+      class="block text-sm font-medium leading-6 text-gray-900 dark:text-gray-100 mt-4 mb-2"
+      >Custom Query</label
     >
     <div>
-      <textarea
-        :id="`custom-query-${table.name}`"
-        v-model="table.query"
-        :name="`custom-query-${table.name}`"
-        rows="2"
-        class="block w-full rounded-lg border-0 py-2 text-gray-900 dark:text-gray-100 shadow-sm dark:shadow-gray-900/30 ring-1 ring-inset ring-gray-300 dark:ring-gray-700 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-2 focus:ring-inset focus:ring-slate-600 dark:focus:ring-emerald-400 bg-white dark:bg-gray-900/60 transition-colors sm:text-sm sm:leading-6"
+      <SqlEditor
+        v-model="queryModel"
+        :dialect="connectionDialect"
+        height="120px"
         placeholder="Integrate conditions, sorting, and limiting as needed..."
-        @input="updateStreamSettings"
-      ></textarea>
+      />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { watch, onMounted, computed } from 'vue'
+import { watch, onMounted, computed, ref } from 'vue'
 import { useStreamsStore } from '@/stores/streamConfig'
+import { useConnectionsStore } from '@/stores/connections'
+import { SqlEditor } from '@/components/monaco'
 import { type StreamConfig, type Table } from '@/types/streamConfig'
 
 interface Props {
@@ -31,9 +30,31 @@ interface Props {
 const props = defineProps<Props>()
 
 const streamsStore = useStreamsStore()
+const connectionsStore = useConnectionsStore()
 const currentStreamConfig = streamsStore.currentStreamConfig as StreamConfig | null
 
 const isConvertMode = computed(() => currentStreamConfig?.mode === 'convert' || false)
+
+// Get connection dialect for SQL syntax highlighting
+const connectionDialect = computed(() => {
+  const sourceConnectionId = currentStreamConfig?.source?.id
+  if (sourceConnectionId) {
+    const connection = connectionsStore.connectionByID(sourceConnectionId)
+    return connection?.type?.toLowerCase() || 'sql'
+  }
+  return 'sql'
+})
+
+// Two-way binding for query
+const queryModel = computed({
+  get: () => props.table.query || '',
+  set: (value: string) => {
+    if (props.table) {
+      props.table.query = value
+      updateStreamSettings()
+    }
+  }
+})
 
 onMounted(() => {
   if (props.table) {
@@ -53,6 +74,7 @@ onMounted(() => {
     )
   }
 })
+
 const updateStreamSettings = () => {
   if (streamsStore.currentStreamConfig) {
     const stream = streamsStore.currentStreamConfig

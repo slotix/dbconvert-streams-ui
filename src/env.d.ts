@@ -22,4 +22,15 @@ interface Window {
     VITE_SENTRY_DSN: string
     [key: string]: any
   }
+  MonacoEnvironment?: {
+    getWorker?: (workerId: string, label: string) => Worker
+  }
+}
+
+// Monaco Editor worker types
+declare module '*?worker' {
+  const workerConstructor: {
+    new (): Worker
+  }
+  export default workerConstructor
 }

@@ -13,7 +13,6 @@ import type {
 import { type SQLTableMeta, type SQLViewMeta } from '@/types/metadata'
 import connections from '@/api/connections'
 import { formatTableValue } from '@/utils/dataUtils'
-import { vHighlightjs } from '@/directives/highlightjs'
 import { useObjectTabStateStore } from '@/stores/objectTabState'
 import { useConnectionsStore } from '@/stores/connections'
 import ColumnContextMenu from './ColumnContextMenu.vue'
@@ -807,13 +806,12 @@ onBeforeUnmount(() => {
         <!-- SQL Content -->
         <div class="flex-1 min-w-0">
           <pre
-            v-highlightjs
             class="m-0 p-0 overflow-x-auto"
             :class="{
               'whitespace-pre-wrap': isSqlBannerExpanded,
               'whitespace-nowrap': !isSqlBannerExpanded
             }"
-          ><code class="language-sql font-mono text-xs leading-relaxed">{{ displayedSql }}</code></pre>
+          ><code class="font-mono text-xs leading-relaxed text-gray-700 dark:text-gray-300">{{ displayedSql }}</code></pre>
         </div>
 
         <!-- Action Buttons -->

@@ -261,12 +261,8 @@
 
           <!-- JSON View -->
           <TabPanel>
-            <div
-              class="rounded-md bg-gray-50 dark:bg-gray-900 p-4 border border-gray-300 dark:border-gray-700 overflow-auto custom-scrollbar max-h-96"
-            >
-              <pre v-highlightjs class="text-sm">
-<code class="language-json block text-sm leading-6 select-text">{{ configJson }}</code>
-              </pre>
+            <div class="p-4">
+              <JsonViewer :json="configJson" title="Stream Configuration" height="400px" compact />
             </div>
           </TabPanel>
         </TabPanels>
@@ -275,22 +271,13 @@
   </div>
 </template>
 
-<script lang="ts">
-import { vHighlightjs } from '@/directives/highlightjs'
-
-export default {
-  directives: {
-    highlightjs: vHighlightjs
-  }
-}
-</script>
-
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/vue'
 import { ViewColumnsIcon, CodeBracketIcon } from '@heroicons/vue/24/outline'
 import { useStreamsStore, buildStreamPayload } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
+import { JsonViewer } from '@/components/monaco'
 import StreamSettings from '@/components/settings/StreamSettings.vue'
 
 interface Props {

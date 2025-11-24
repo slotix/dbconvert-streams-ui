@@ -2,21 +2,6 @@ import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import Toast, { type PluginOptions, POSITION } from 'vue-toastification'
 import 'vue-toastification/dist/index.css'
-import hljs from 'highlight.js/lib/core'
-import sql from 'highlight.js/lib/languages/sql'
-import json from 'highlight.js/lib/languages/json'
-import { vHighlightjs } from '@/directives/highlightjs'
-// Import centralized code highlighting styles for both light and dark themes
-import '@/styles/codeHighlighting.css'
-
-// Register languages
-hljs.registerLanguage('sql', sql)
-hljs.registerLanguage('json', json)
-
-// Configure hljs to use the modern API
-hljs.configure({
-  ignoreUnescapedHTML: true
-})
 
 import './assets/style.css'
 import App from './App.vue'
@@ -24,6 +9,36 @@ import router from './router'
 import { logEnvironment } from '@/utils/environment'
 import { vTooltip } from '@/directives/tooltip'
 import { useThemeStore } from '@/stores/theme'
+
+// Configure Monaco Editor to use local package instead of CDN
+import loader from '@monaco-editor/loader'
+import * as monaco from 'monaco-editor'
+import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
+import jsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker'
+import cssWorker from 'monaco-editor/esm/vs/language/css/css.worker?worker'
+import htmlWorker from 'monaco-editor/esm/vs/language/html/html.worker?worker'
+import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker'
+
+// Configure worker environment before loading Monaco
+window.MonacoEnvironment = {
+  getWorker(_: string, label: string) {
+    if (label === 'json') {
+      return new jsonWorker()
+    }
+    if (label === 'css' || label === 'scss' || label === 'less') {
+      return new cssWorker()
+    }
+    if (label === 'html' || label === 'handlebars' || label === 'razor') {
+      return new htmlWorker()
+    }
+    if (label === 'typescript' || label === 'javascript') {
+      return new tsWorker()
+    }
+    return new editorWorker()
+  }
+}
+
+loader.config({ monaco })
 
 // Ensure window.ENV exists
 if (!window.ENV) {
@@ -61,7 +76,6 @@ app.use(pinia)
 app.use(router)
 app.use(Toast, toastOptions)
 app.directive('tooltip', vTooltip)
-app.directive('highlightjs', vHighlightjs)
 
 // Initialize theme before mounting
 const themeStore = useThemeStore()

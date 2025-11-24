@@ -16,6 +16,9 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     }
   },
+  worker: {
+    format: 'es'
+  },
   build: {
     rollupOptions: {
       output: {
@@ -26,8 +29,7 @@ export default defineConfig({
           heroicons: ['@heroicons/vue/24/solid', '@heroicons/vue/24/outline'],
           axios: ['axios'],
           notifications: ['vue-toastification'],
-          'syntax-highlighting': ['highlight.js'],
-          'sql-formatter': ['sql-formatter'],
+          'monaco-editor': ['monaco-editor', '@monaco-editor/loader'],
           'visualization-d3': ['d3'],
           'pdf-export': ['jspdf'],
           'canvas-export': ['html2canvas']
@@ -43,7 +45,8 @@ export default defineConfig({
       '@headlessui/vue',
       '@heroicons/vue/24/solid',
       '@heroicons/vue/24/outline',
-      'axios'
+      'axios',
+      'monaco-editor'
     ]
   }
 })

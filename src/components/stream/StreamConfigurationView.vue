@@ -30,13 +30,7 @@
     </div>
 
     <div v-if="jsonViewModel">
-      <div
-        class="rounded-md bg-gray-50 dark:bg-gray-900 p-4 border border-gray-300 dark:border-gray-700 overflow-auto custom-scrollbar"
-      >
-        <pre v-highlightjs class="text-sm">
-<code class="language-json block text-sm leading-6 select-text">{{ prettyConfig }}</code>
-        </pre>
-      </div>
+      <JsonViewer :json="prettyConfig" title="Stream Configuration" height="600px" compact />
     </div>
 
     <div v-else class="space-y-4">
@@ -105,6 +99,7 @@ import { formatDateTime } from '@/utils/formats'
 import { useCommonStore } from '@/stores/common'
 import type { StreamConfig } from '@/types/streamConfig'
 import type { Connection, DbType } from '@/types/connections'
+import { JsonViewer } from '@/components/monaco'
 import ConnectionCard from './configuration/ConnectionCard.vue'
 import FileOutputSummary from './configuration/FileOutputSummary.vue'
 import TablesSummary from './configuration/TablesSummary.vue'

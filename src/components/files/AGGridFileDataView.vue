@@ -14,7 +14,6 @@ import { type FileMetadata } from '@/types/files'
 import { getFileFormat } from '@/utils/fileFormat'
 import filesApi from '@/api/files'
 import { formatTableValue } from '@/utils/dataUtils'
-import { vHighlightjs } from '@/directives/highlightjs'
 import ColumnContextMenu from '../database/ColumnContextMenu.vue'
 import UnsupportedFileMessage from './UnsupportedFileMessage.vue'
 import { useAGGridFiltering } from '@/composables/useAGGridFiltering'
@@ -418,13 +417,12 @@ onBeforeUnmount(() => {
         <!-- SQL Content -->
         <div class="flex-1 min-w-0">
           <pre
-            v-highlightjs
             class="m-0 p-0 overflow-x-auto"
             :class="{
               'whitespace-pre-wrap': isSqlBannerExpanded,
               'whitespace-nowrap': !isSqlBannerExpanded
             }"
-          ><code class="language-sql font-mono text-xs leading-relaxed">{{ displayedSql }}</code></pre>
+          ><code class="font-mono text-xs text-gray-700 dark:text-gray-300 leading-relaxed">{{ displayedSql }}</code></pre>
         </div>
 
         <!-- Action Buttons -->
@@ -568,5 +566,5 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-/* Component-specific styles only - code highlighting styles are centralized in src/styles/codeHighlighting.css */
+/* Component-specific styles only */
 </style>
