@@ -16,6 +16,7 @@ import { formatTableValue } from '@/utils/dataUtils'
 import { useObjectTabStateStore } from '@/stores/objectTabState'
 import { useConnectionsStore } from '@/stores/connections'
 import ColumnContextMenu from './ColumnContextMenu.vue'
+import { MonacoEditor } from '@/components/monaco'
 import { useAGGridFiltering } from '@/composables/useAGGridFiltering'
 import { convertFilterModelToSQL, determineFilterType } from '@/utils/agGridFilterUtils'
 import 'ag-grid-community/styles/ag-grid.css'
@@ -46,6 +47,46 @@ const connectionType = computed(() => {
   return conn?.type || 'mysql' // Default to mysql if not found
 })
 
+// Monaco language based on connection type
+const monacoLanguage = computed(() => {
+  const type = connectionType.value.toLowerCase()
+  if (type.includes('mysql')) return 'mysql'
+  if (type.includes('postgres')) return 'pgsql'
+  return 'sql'
+})
+
+const SQL_BANNER_COLLAPSED_HEIGHT = '3.25rem'
+const SQL_BANNER_EXPANDED_HEIGHT = '12rem'
+
+// Monaco editor options for inline SQL banner
+const sqlBannerEditorOptions = computed<Record<string, any>>(() => ({
+  readOnly: true,
+  minimap: { enabled: false },
+  scrollBeyondLastLine: false,
+  fontSize: 13,
+  lineNumbers: 'off',
+  glyphMargin: false,
+  folding: false,
+  lineDecorationsWidth: 0,
+  lineNumbersMinChars: 0,
+  renderLineHighlight: 'none',
+  automaticLayout: true,
+  scrollbar: {
+    vertical: 'auto',
+    horizontal: 'auto',
+    verticalScrollbarSize: 8,
+    horizontalScrollbarSize: 8
+  },
+  overviewRulerLanes: 0,
+  hideCursorInOverviewRuler: true,
+  overviewRulerBorder: false,
+  wordWrap: 'off',
+  contextmenu: false,
+  domReadOnly: true,
+  renderValidationDecorations: 'off',
+  padding: { top: 10, bottom: 2 }
+}))
+
 // Use shared AG Grid filtering composable (but override context menu state locally)
 const {
   gridApi,
@@ -62,6 +103,10 @@ const {
   updateAgGridWhereSQL,
   clearAllFilters: clearAgGridFilters
 } = useAGGridFiltering()
+
+const sqlBannerHeight = computed(() =>
+  isSqlBannerExpanded.value ? SQL_BANNER_EXPANDED_HEIGHT : SQL_BANNER_COLLAPSED_HEIGHT
+)
 
 // Local context menu state (not shared between instances)
 const showContextMenu = ref(false)
@@ -800,18 +845,18 @@ onBeforeUnmount(() => {
     <!-- SQL Query Banner (like DataGrip) -->
     <div
       v-if="fullSqlQuery"
-      class="mb-3 bg-gray-50 dark:bg-gray-900/40 border border-gray-200 dark:border-gray-700 rounded-md overflow-hidden"
+      class="mb-3 border border-gray-200 dark:border-gray-700 rounded-md overflow-hidden"
     >
-      <div class="flex items-start gap-2 px-3 py-2">
-        <!-- SQL Content -->
+      <div class="flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-gray-900/40">
+        <!-- SQL Content with Syntax Highlighting -->
         <div class="flex-1 min-w-0">
-          <pre
-            class="m-0 p-0 overflow-x-auto"
-            :class="{
-              'whitespace-pre-wrap': isSqlBannerExpanded,
-              'whitespace-nowrap': !isSqlBannerExpanded
-            }"
-          ><code class="font-mono text-xs leading-relaxed text-gray-700 dark:text-gray-300">{{ displayedSql }}</code></pre>
+          <MonacoEditor
+            :model-value="displayedSql"
+            :language="monacoLanguage"
+            :height="sqlBannerHeight"
+            :read-only="true"
+            :options="sqlBannerEditorOptions"
+          />
         </div>
 
         <!-- Action Buttons -->

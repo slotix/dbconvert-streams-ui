@@ -156,9 +156,13 @@ function handleDocumentClick(event: MouseEvent) {
 }
 
 function handleKeyboardShortcut(event: KeyboardEvent) {
-  // Don't trigger shortcuts if typing in an input field (except for specific keys)
+  // Don't trigger shortcuts if typing in an input field or editor
   const target = event.target as HTMLElement
-  const isInputField = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA'
+  const isInputField =
+    target.tagName === 'INPUT' ||
+    target.tagName === 'TEXTAREA' ||
+    target.isContentEditable ||
+    target.closest('.monaco-editor') !== null
 
   // F: Focus search box
   if (event.key.toLowerCase() === 'f' && !isInputField) {

@@ -69,8 +69,11 @@ Migrate from highlight.js + sql-formatter to Monaco Editor for all code display 
 - [x] Migrate `CardItem.vue` to `JsonViewer.vue`
 - [x] Migrate `StreamConfigurationView.vue` to `JsonViewer.vue`
 
-### 3.5 AGGrid SQL Filters
-- [ ] `AGGridDataView.vue` and `AGGridFileDataView.vue` - SQL filters use text input (optional future enhancement)
+### 3.5 AGGrid SQL Filters ✅
+- [x] `AGGridDataView.vue` - SQL banner with syntax highlighting using SqlViewer
+- [x] `AGGridFileDataView.vue` - SQL banner with syntax highlighting using SqlViewer
+- [x] Banner displays WHERE + ORDER BY clauses generated from AG Grid filters
+- [x] Monaco Editor provides SQL syntax highlighting in banner
 
 ---
 
@@ -151,8 +154,8 @@ Migrate from highlight.js + sql-formatter to Monaco Editor for all code display 
 | StreamConfigurationStep.vue | v-highlightjs | JsonViewer | ✅ Complete |
 | CardItem.vue | v-highlightjs | JsonViewer | ✅ Complete |
 | StreamConfigurationView.vue | v-highlightjs | JsonViewer | ✅ Complete |
-| AGGridDataView.vue | SQL filter input | Text input (future enhancement) | ⏸️ Skipped |
-| AGGridFileDataView.vue | SQL filter input | Text input (future enhancement) | ⏸️ Skipped |
+| AGGridDataView.vue | Plain text SQL banner | SqlViewer (syntax highlighting) | ✅ Complete |
+| AGGridFileDataView.vue | Plain text SQL banner | SqlViewer (syntax highlighting) | ✅ Complete |
 
 ---
 

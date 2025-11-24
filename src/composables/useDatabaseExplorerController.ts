@@ -513,7 +513,16 @@ export function useDatabaseExplorerController({
       e.preventDefault()
       sidebar.toggleSidebar()
     }
-    if (e.key === '/' && document.activeElement?.tagName !== 'INPUT') {
+
+    // Check if user is typing in an input field or editor
+    const target = e.target as HTMLElement
+    const isInputField =
+      target.tagName === 'INPUT' ||
+      target.tagName === 'TEXTAREA' ||
+      target.isContentEditable ||
+      target.closest('.monaco-editor') !== null
+
+    if (e.key === '/' && !isInputField) {
       e.preventDefault()
       searchInputRef.value?.focus()
     }

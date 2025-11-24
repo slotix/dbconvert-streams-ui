@@ -36,7 +36,7 @@ export function useAGGridFiltering(options: UseAGGridFilteringOptions = {}) {
   const isSqlBannerExpanded = ref(false)
 
   /**
-   * Combined WHERE clause (only AG Grid filters, no manual WHERE input)
+   * Combined WHERE clause (only AG Grid filters)
    */
   const combinedWhereClause = computed(() => {
     return agGridWhereSQL.value
