@@ -9,7 +9,7 @@
  */
 function quoteIdentifier(identifier: string, dbType: string): string {
   const type = dbType.toLowerCase()
-  if (type === 'postgresql' || type === 'snowflake') {
+  if (type === 'postgresql' || type === 'snowflake' || type === 'duckdb') {
     return `"${identifier}"`
   } else if (type === 'mysql') {
     return `\`${identifier}\``
@@ -81,8 +81,9 @@ export function buildFilterClause(column: string, filter: any, dbType: string): 
 
   // PostgreSQL uses ILIKE for case-insensitive string matching
   const type = dbType.toLowerCase()
-  const likeOperator = type === 'postgresql' ? 'ILIKE' : 'LIKE'
-  const notLikeOperator = type === 'postgresql' ? 'NOT ILIKE' : 'NOT LIKE'
+  const usesILike = type === 'postgresql' || type === 'duckdb'
+  const likeOperator = usesILike ? 'ILIKE' : 'LIKE'
+  const notLikeOperator = usesILike ? 'NOT ILIKE' : 'NOT LIKE'
 
   // Build SQL based on filter type
   switch (filter.type) {

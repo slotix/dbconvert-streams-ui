@@ -50,6 +50,9 @@ const {
   closeContextMenu
 } = useAGGridFiltering()
 
+// Scoped ref for this grid instance to properly attach event listeners
+const gridContainerRef = ref<HTMLElement | null>(null)
+
 // Component-specific state
 const error = ref<string>()
 const isLoading = ref(false)
@@ -230,7 +233,7 @@ function createDatasource(): IDatasource {
         // Extract filter model from AG Grid and convert to SQL
         const filterModel = params.filterModel || {}
         agGridFilters.value = filterModel
-        const agGridWhereClause = convertFilterModelToSQL(filterModel)
+        const agGridWhereClause = convertFilterModelToSQL(filterModel, 'duckdb')
         agGridWhereSQL.value = agGridWhereClause
 
         // Use AG Grid filters only (no manual WHERE clause)
@@ -304,9 +307,8 @@ function onGridReady(params: GridReadyEvent) {
 
   // Add context menu listener for column headers
   setTimeout(() => {
-    const gridElement = document.querySelector('.ag-root') as HTMLElement
-    if (gridElement) {
-      gridElement.addEventListener('contextmenu', handleContextMenu)
+    if (gridContainerRef.value) {
+      gridContainerRef.value.addEventListener('contextmenu', handleContextMenu)
     }
   }, 100)
 
@@ -425,9 +427,8 @@ defineExpose({
 
 // Cleanup
 onBeforeUnmount(() => {
-  const gridElement = document.querySelector('.ag-root') as HTMLElement
-  if (gridElement) {
-    gridElement.removeEventListener('contextmenu', handleContextMenu as EventListener)
+  if (gridContainerRef.value) {
+    gridContainerRef.value.removeEventListener('contextmenu', handleContextMenu as EventListener)
   }
   if (gridApi.value) {
     gridApi.value.destroy()
@@ -549,6 +550,7 @@ onBeforeUnmount(() => {
     <!-- AG Grid (only show when no error) -->
     <div
       v-if="!isUnsupportedFile && !error"
+      ref="gridContainerRef"
       class="relative ag-theme-alpine"
       style="height: 750px; width: 100%"
     >
