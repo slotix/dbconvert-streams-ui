@@ -2,6 +2,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import MonacoEditor from './MonacoEditor.vue'
+import { useMonacoSqlProviders, type SchemaContext } from '@/composables/useMonacoSqlProviders'
 
 interface Props {
   modelValue: string
@@ -9,17 +10,14 @@ interface Props {
   height?: string
   placeholder?: string
   showFormatButton?: boolean
-  tableSuggestions?: string[]
-  columnSuggestions?: Record<string, string[]>
+  schemaContext?: SchemaContext
 }
 
 const props = withDefaults(defineProps<Props>(), {
   dialect: 'sql',
   height: '200px',
   placeholder: '',
-  showFormatButton: false,
-  tableSuggestions: () => [],
-  columnSuggestions: () => ({})
+  showFormatButton: false
 })
 
 const emit = defineEmits<{
@@ -30,6 +28,7 @@ const emit = defineEmits<{
 
 const editorRef = ref<InstanceType<typeof MonacoEditor>>()
 const localValue = ref(props.modelValue)
+const monacoInstance = ref<any>()
 
 // Sync local value with prop changes
 watch(
@@ -41,17 +40,34 @@ watch(
   }
 )
 
+// Re-register providers when schema context changes
+watch(
+  () => props.schemaContext,
+  (newSchemaContext) => {
+    if (monacoInstance.value) {
+      console.log('Schema context updated, re-registering providers:', {
+        tables: newSchemaContext?.tables?.length || 0,
+        dialect: sqlDialect.value
+      })
+      useMonacoSqlProviders(monacoInstance.value, monacoLanguage, sqlDialect.value, newSchemaContext)
+    }
+  },
+  { deep: true }
+)
+
 // Emit changes to parent
 watch(localValue, (newValue) => {
   emit('update:modelValue', newValue)
 })
 
-// Determine Monaco language based on dialect
-const monacoLanguage = computed(() => {
+// Monaco only supports 'sql' language - dialect is used for SQL-specific features
+const monacoLanguage = 'sql'
+
+// Determine SQL dialect for autocomplete features
+const sqlDialect = computed<'mysql' | 'pgsql' | 'sql'>(() => {
   const dialect = props.dialect.toLowerCase()
   if (dialect.includes('mysql')) return 'mysql'
   if (dialect.includes('pgsql') || dialect.includes('postgres')) return 'pgsql'
-  if (dialect.includes('mssql') || dialect.includes('sqlserver')) return 'sql'
   return 'sql'
 })
 
@@ -74,59 +90,49 @@ const editorOptions = computed<Record<string, any>>(() => ({
   },
   wordWrap: 'on',
   contextmenu: true,
-  quickSuggestions: true,
+  quickSuggestions: {
+    other: true,
+    comments: false,
+    strings: false
+  },
   suggestOnTriggerCharacters: true,
   acceptSuggestionOnEnter: 'on',
   tabCompletion: 'on',
   formatOnPaste: true,
-  formatOnType: true
+  formatOnType: true,
+  suggest: {
+    showKeywords: true,
+    showSnippets: true,
+    showClasses: true,
+    showFunctions: true,
+    showFields: true
+  }
 }))
 
 const handleEditorMount = (editor: any, monaco: any) => {
-  // Register autocomplete provider if suggestions are provided
-  if (props.tableSuggestions.length > 0 || Object.keys(props.columnSuggestions).length > 0) {
-    registerCompletionProvider(monaco, monacoLanguage.value)
-  }
+  // Store monaco instance for later use (when schema updates)
+  monacoInstance.value = monaco
+
+  // Register Monaco SQL providers (autocomplete, hover, validation)
+  // Always use 'sql' as language, pass dialect for SQL-specific features
+  useMonacoSqlProviders(monaco, monacoLanguage, sqlDialect.value, props.schemaContext)
 
   // Add keyboard shortcut for execute (Ctrl+Enter)
   editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
     emit('execute')
   })
 
-  // Add keyboard shortcut for format (Ctrl+Shift+F)
-  editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyF, () => {
-    formatQuery()
-  })
-}
-
-const registerCompletionProvider = (monaco: any, language: string) => {
-  monaco.languages.registerCompletionItemProvider(language, {
-    provideCompletionItems: (model: any, position: any) => {
-      const suggestions: any[] = []
-
-      // Add table suggestions
-      props.tableSuggestions.forEach((table) => {
-        suggestions.push({
-          label: table,
-          kind: monaco.languages.CompletionItemKind.Class,
-          insertText: table,
-          detail: `Table: ${table}`
-        })
-      })
-
-      // Add column suggestions for each table
-      Object.entries(props.columnSuggestions).forEach(([table, columns]) => {
-        columns.forEach((column) => {
-          suggestions.push({
-            label: `${table}.${column}`,
-            kind: monaco.languages.CompletionItemKind.Field,
-            insertText: column,
-            detail: `Column from ${table}`
-          })
-        })
-      })
-
-      return { suggestions }
+  // Add keyboard shortcut for format (Shift+Alt+F - Monaco's default)
+  // Note: Ctrl+Shift+F conflicts with browser search
+  editor.addAction({
+    id: 'format-sql',
+    label: 'Format SQL',
+    keybindings: [
+      monaco.KeyMod.Shift | monaco.KeyMod.Alt | monaco.KeyCode.KeyF,
+      monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyF
+    ],
+    run: () => {
+      formatQuery()
     }
   })
 }
