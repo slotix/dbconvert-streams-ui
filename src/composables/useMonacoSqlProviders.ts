@@ -55,12 +55,12 @@ export function useMonacoSqlProviders(
   disposables.forEach((d) => d.dispose())
   disposables = []
 
-  console.log('Registering SQL providers:', {
-    language,
-    dialect,
-    hasTables: !!schemaContext?.tables,
-    tableCount: schemaContext?.tables?.length || 0
-  })
+  // console.log('Registering SQL providers:', {
+  //   language,
+  //   dialect,
+  //   hasTables: !!schemaContext?.tables,
+  //   tableCount: schemaContext?.tables?.length || 0
+  // })
 
   // Register completion provider (autocomplete)
   disposables.push(registerCompletionProvider(monaco, language, dialect, schemaContext))

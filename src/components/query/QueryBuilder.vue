@@ -229,24 +229,127 @@
       </div>
 
       <!-- Generated Query Preview with Syntax Highlighting -->
-      <div v-if="hasModifications" class="relative">
-        <SqlViewer
-          :code="formattedQuery"
-          :dialect="dialect"
-          :show-header="false"
-          :auto-resize="true"
-          :min-height="60"
-          :max-height="120"
-          compact
-        />
-        <button
-          type="button"
-          class="absolute top-1 right-1 p-1 text-gray-500 hover:text-teal-400 bg-gray-800/80 rounded transition-colors"
-          title="Copy query"
-          @click="copyQuery"
+      <div v-if="hasModifications" class="space-y-2">
+        <div class="relative">
+          <SqlViewer
+            :code="formattedQuery"
+            :dialect="dialect"
+            :show-header="false"
+            :auto-resize="true"
+            :min-height="60"
+            :max-height="120"
+            compact
+          />
+          <div class="absolute top-1 right-1 flex items-center gap-1">
+            <button
+              v-if="canPreview"
+              type="button"
+              class="p-1 text-gray-500 hover:text-teal-400 bg-gray-800/80 rounded transition-colors"
+              :class="isLoadingPreview ? 'animate-pulse' : ''"
+              :disabled="isLoadingPreview"
+              title="Preview sample data"
+              @click="runPreview"
+            >
+              <PlayIcon v-if="!isLoadingPreview" class="w-3.5 h-3.5" />
+              <ArrowPathIcon v-else class="w-3.5 h-3.5 animate-spin" />
+            </button>
+            <button
+              type="button"
+              class="p-1 text-gray-500 hover:text-teal-400 bg-gray-800/80 rounded transition-colors"
+              title="Copy query"
+              @click="copyQuery"
+            >
+              <ClipboardDocumentIcon class="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+
+        <!-- Preview Results Panel -->
+        <div
+          v-if="showPreview"
+          class="bg-white dark:bg-gray-800/70 rounded border border-gray-200 dark:border-gray-700 overflow-hidden"
         >
-          <ClipboardDocumentIcon class="w-3.5 h-3.5" />
-        </button>
+          <!-- Preview Header -->
+          <div
+            class="flex items-center justify-between px-2 py-1.5 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700"
+          >
+            <div class="flex items-center gap-2">
+              <TableCellsIcon class="w-3.5 h-3.5 text-teal-500" />
+              <span class="text-xs font-medium text-gray-600 dark:text-gray-300">
+                Preview
+                <span v-if="previewData" class="text-gray-400">
+                  ({{ previewData.rows.length }}
+                  {{ previewData.rows.length === previewLimit ? '+' : '' }} rows)
+                </span>
+              </span>
+            </div>
+            <button
+              type="button"
+              class="p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+              @click="showPreview = false"
+            >
+              <XMarkIcon class="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          <!-- Error State -->
+          <div
+            v-if="previewError"
+            class="p-3 text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20"
+          >
+            <div class="flex items-start gap-2">
+              <ExclamationTriangleIcon class="w-4 h-4 shrink-0 mt-0.5" />
+              <div>
+                <p class="font-medium">Query error</p>
+                <p class="mt-1 text-red-500 dark:text-red-300">{{ previewError }}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Data Table -->
+          <div
+            v-else-if="previewData && previewData.rows.length > 0"
+            class="overflow-auto max-h-48"
+          >
+            <table class="w-full text-xs">
+              <thead class="bg-gray-50 dark:bg-gray-900 sticky top-0">
+                <tr>
+                  <th
+                    v-for="col in previewData.columns"
+                    :key="col"
+                    class="px-2 py-1.5 text-left font-medium text-gray-600 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700 whitespace-nowrap"
+                  >
+                    {{ col }}
+                  </th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                <tr
+                  v-for="(row, idx) in previewData.rows"
+                  :key="idx"
+                  class="hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                >
+                  <td
+                    v-for="col in previewData.columns"
+                    :key="col"
+                    class="px-2 py-1 text-gray-900 dark:text-gray-100 whitespace-nowrap max-w-[200px] truncate"
+                    :title="formatCellValue(row[col])"
+                  >
+                    {{ formatCellValue(row[col]) }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Empty State -->
+          <div
+            v-else-if="previewData && previewData.rows.length === 0"
+            class="p-4 text-center text-xs text-gray-500 dark:text-gray-400"
+          >
+            No rows match the filter criteria
+          </div>
+        </div>
       </div>
 
       <!-- Empty state hint -->
@@ -268,22 +371,34 @@ import {
   FunnelIcon,
   ArrowsUpDownIcon,
   ClipboardDocumentIcon,
-  ViewColumnsIcon
+  ViewColumnsIcon,
+  PlayIcon,
+  ArrowPathIcon,
+  TableCellsIcon,
+  ExclamationTriangleIcon
 } from '@heroicons/vue/24/outline'
 import { SqlViewer } from '@/components/monaco'
 import { useQueryBuilder } from './useQueryBuilder'
 import { type ColumnInfo, type FilterOperator, UNARY_OPERATORS, getOperatorsForType } from './types'
+import connections from '@/api/connections'
 
 interface Props {
   tableName: string
   modelValue: string
   dialect?: 'mysql' | 'pgsql' | 'sql'
   columns?: ColumnInfo[]
+  // Preview support
+  connectionId?: string
+  database?: string
+  schema?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
   dialect: 'sql',
-  columns: () => []
+  columns: () => [],
+  connectionId: '',
+  database: '',
+  schema: ''
 })
 
 const emit = defineEmits<{
@@ -292,6 +407,16 @@ const emit = defineEmits<{
 
 // Local UI state
 const showColumnSelector = ref(false)
+const showPreview = ref(false)
+const isLoadingPreview = ref(false)
+const previewError = ref<string | null>(null)
+const previewData = ref<{ columns: string[]; rows: Record<string, unknown>[] } | null>(null)
+const previewLimit = 10
+
+// Check if preview is available (requires connection info)
+const canPreview = computed(() => {
+  return Boolean(props.connectionId && props.database && props.tableName)
+})
 
 // Use the composable
 const tableNameRef = computed(() => props.tableName)
@@ -332,6 +457,124 @@ const selectAllColumns = () => {
 const clearAllColumns = () => {
   selectedColumns.value = []
   emitUpdate()
+}
+
+/**
+ * Run a preview query to validate the filter
+ */
+const runPreview = async () => {
+  if (!canPreview.value) return
+
+  isLoadingPreview.value = true
+  previewError.value = null
+  previewData.value = null
+  showPreview.value = true
+
+  try {
+    // Build WHERE clause from filters
+    let whereClause = ''
+    if (filters.value.length > 0) {
+      const conditions = filters.value
+        .filter((f) => f.column && (UNARY_OPERATORS.includes(f.operator) || f.value))
+        .map((f) => {
+          if (f.operator === 'IS NULL') return `${f.column} IS NULL`
+          if (f.operator === 'IS NOT NULL') return `${f.column} IS NOT NULL`
+          if (f.operator === 'IN' || f.operator === 'NOT IN') {
+            const values = f.value
+              .split(',')
+              .map((v) => v.trim())
+              .filter((v) => v)
+              .map((v) => (isNaN(Number(v)) ? `'${v}'` : v))
+              .join(', ')
+            return `${f.column} ${f.operator} (${values})`
+          }
+          if (f.operator === 'LIKE' || f.operator === 'NOT LIKE') {
+            return `${f.column} ${f.operator} '${f.value}'`
+          }
+          if (f.operator === 'BETWEEN' && f.valueTo) {
+            return `${f.column} BETWEEN '${f.value}' AND '${f.valueTo}'`
+          }
+          // For numeric values, don't quote
+          const val = isNaN(Number(f.value)) ? `'${f.value}'` : f.value
+          return `${f.column} ${f.operator} ${val}`
+        })
+      whereClause = conditions.join(' AND ')
+    }
+
+    // Build ORDER BY
+    let orderByCol = ''
+    let orderDir = ''
+    if (orderBy.value.length > 0 && orderBy.value[0].column) {
+      orderByCol = orderBy.value[0].column
+      orderDir = orderBy.value[0].direction
+    }
+
+    // Call API to get preview data
+    const result = await connections.getTableData(
+      props.connectionId,
+      props.database,
+      props.tableName,
+      {
+        limit: previewLimit,
+        offset: 0,
+        skip_count: true,
+        schema: props.schema || undefined,
+        order_by: orderByCol || undefined,
+        order_dir: orderDir || undefined,
+        where: whereClause || undefined
+      }
+    )
+
+    // Transform result for display
+    if (result && result.rows && result.columns) {
+      // Determine which columns to display
+      // If selectedColumns is not empty, only show those columns
+      const displayColumns =
+        selectedColumns.value.length > 0
+          ? result.columns.filter((col) => selectedColumns.value.includes(col))
+          : result.columns
+
+      // API returns rows as arrays, transform to objects for easier display
+      // Only include data for displayed columns
+      const rowObjects = result.rows.map((row) => {
+        const obj: Record<string, unknown> = {}
+        displayColumns.forEach((col) => {
+          const idx = result.columns.indexOf(col)
+          if (idx !== -1) {
+            obj[col] = (row as unknown[])[idx]
+          }
+        })
+        return obj
+      })
+      previewData.value = {
+        columns: displayColumns,
+        rows: rowObjects
+      }
+    } else {
+      previewData.value = { columns: [], rows: [] }
+    }
+  } catch (err) {
+    previewError.value = err instanceof Error ? err.message : 'Failed to preview data'
+    console.error('Preview error:', err)
+  } finally {
+    isLoadingPreview.value = false
+  }
+}
+
+/**
+ * Format cell value for display
+ */
+const formatCellValue = (value: unknown): string => {
+  if (value === null) return 'NULL'
+  if (value === undefined) return ''
+  if (typeof value === 'object') {
+    try {
+      return JSON.stringify(value)
+    } catch {
+      return String(value)
+    }
+  }
+  return String(value)
 }
 
 /**

@@ -6,6 +6,9 @@
       :dialect="connectionDialect"
       :columns="tableColumns"
       :schema-context="schemaContext"
+      :connection-id="sourceConnectionId"
+      :database="sourceDatabase"
+      :schema="tableSchema"
       height="120px"
     />
   </div>
@@ -55,6 +58,18 @@ const tableColumns = computed((): ColumnInfo[] => {
   if (!schemaContext.value || !props.table) return []
   const columns = schemaContext.value.columns[props.table.name]
   return columns || []
+})
+
+// Get source connection info for preview
+const sourceConnectionId = computed(() => currentStreamConfig?.source?.id || '')
+const sourceDatabase = computed(
+  () => currentStreamConfig?.sourceDatabase || currentStreamConfig?.source?.database || ''
+)
+
+// Extract schema from table name (for PostgreSQL: schema.table format)
+const tableSchema = computed(() => {
+  const parts = props.table?.name?.split('.') || []
+  return parts.length > 1 ? parts[0] : ''
 })
 
 // Two-way binding for query
