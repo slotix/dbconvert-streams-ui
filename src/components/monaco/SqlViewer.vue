@@ -11,13 +11,15 @@ interface Props {
   dialect?: string
   compact?: boolean
   height?: string
+  showHeader?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   title: 'SQL',
   dialect: 'sql',
   compact: false,
-  height: '300px'
+  showHeader: true,
+  height: '200px'
 })
 
 const editorRef = ref<InstanceType<typeof MonacoEditor>>()
@@ -49,21 +51,19 @@ const editorOptions = computed<Record<string, any>>(() => ({
   renderLineHighlight: 'none',
   scrollbar: {
     verticalScrollbarSize: 10,
-    horizontalScrollbarSize: 10,
-    useShadows: false
+    horizontalScrollbarSize: 10
   },
-  overviewRulerLanes: 0,
-  hideCursorInOverviewRuler: true,
-  overviewRulerBorder: false,
   wordWrap: props.compact ? 'off' : 'on',
-  contextmenu: false
+  contextmenu: false,
+  automaticLayout: true
 }))
 
 const handleEditorMount = (editor: any) => {
-  // Format SQL on mount
+  // Format SQL and blur to prevent focus stealing
   setTimeout(() => {
     editor.getAction('editor.action.formatDocument')?.run()
-  }, 100)
+    editor.blur()
+  }, 50)
 }
 </script>
 
@@ -73,6 +73,7 @@ const handleEditorMount = (editor: any) => {
   >
     <!-- Header -->
     <div
+      v-if="showHeader"
       class="flex items-center justify-between px-4 py-2 bg-gray-100 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700"
     >
       <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -82,7 +83,7 @@ const handleEditorMount = (editor: any) => {
     </div>
 
     <!-- Monaco Editor -->
-    <div class="bg-white dark:bg-gray-900">
+    <div class="bg-white dark:bg-gray-900" :class="{ 'mt-4': !showHeader }">
       <MonacoEditor
         ref="editorRef"
         :model-value="code"

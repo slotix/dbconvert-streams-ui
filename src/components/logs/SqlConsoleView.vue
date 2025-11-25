@@ -86,7 +86,7 @@ onUnmounted(() => {
     </div>
 
     <!-- Flat View with Optional Visual Grouping -->
-    <div v-else class="overflow-auto flex-1">
+    <div v-else class="overflow-auto flex-1 scroll-smooth">
       <FlatQueryRow
         v-for="item in logsWithHeaders"
         :key="item.log.id"

@@ -9,6 +9,8 @@ const props = defineProps<{
   index?: number | string
   dialect: string
   compact?: boolean
+  showHeader?: boolean
+  height?: string
 }>()
 
 // Compute display title
@@ -18,20 +20,6 @@ const displayTitle = computed(() => {
   }
   return props.title || 'SQL'
 })
-
-// Compute height based on compact mode
-const viewerHeight = computed(() => {
-  if (props.compact) {
-    return '200px'
-  }
-  // Auto-size based on content (with reasonable limits)
-  const lines = props.code.split('\n').length
-  const minHeight = 150
-  const maxHeight = 600
-  const lineHeight = 24
-  const calculatedHeight = Math.max(minHeight, Math.min(lines * lineHeight + 80, maxHeight))
-  return `${calculatedHeight}px`
-})
 </script>
 
 <template>
@@ -40,6 +28,7 @@ const viewerHeight = computed(() => {
     :title="displayTitle"
     :dialect="dialect"
     :compact="compact"
-    :height="viewerHeight"
+    :show-header="showHeader"
+    :height="height"
   />
 </template>
