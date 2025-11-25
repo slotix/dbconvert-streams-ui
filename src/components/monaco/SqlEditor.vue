@@ -49,7 +49,12 @@ watch(
         tables: newSchemaContext?.tables?.length || 0,
         dialect: sqlDialect.value
       })
-      useMonacoSqlProviders(monacoInstance.value, monacoLanguage, sqlDialect.value, newSchemaContext)
+      useMonacoSqlProviders(
+        monacoInstance.value,
+        monacoLanguage,
+        sqlDialect.value,
+        newSchemaContext
+      )
     }
   },
   { deep: true }

@@ -1,19 +1,13 @@
 <template>
   <div v-if="table && isConvertMode">
-    <label
-      :for="`custom-query-${table.name}`"
-      class="block text-sm font-medium leading-6 text-gray-900 dark:text-gray-100 mt-4 mb-2"
-      >Custom Query</label
-    >
-    <div>
-      <SqlEditor
-        v-model="queryModel"
-        :dialect="connectionDialect"
-        :schema-context="schemaContext"
-        height="120px"
-        placeholder="Add conditions, sorting, and limiting as needed..."
-      />
-    </div>
+    <QueryBuilder
+      v-model="queryModel"
+      :table-name="table.name"
+      :dialect="connectionDialect"
+      :columns="tableColumns"
+      :schema-context="schemaContext"
+      height="120px"
+    />
   </div>
 </template>
 
@@ -22,7 +16,8 @@ import { watch, onMounted, computed, ref } from 'vue'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
-import { SqlEditor } from '@/components/monaco'
+import { QueryBuilder } from '@/components/query'
+import type { ColumnInfo } from '@/components/query'
 import { type StreamConfig, type Table } from '@/types/streamConfig'
 import type { SchemaContext } from '@/composables/useMonacoSqlProviders'
 
@@ -43,13 +38,23 @@ const isConvertMode = computed(() => currentStreamConfig?.mode === 'convert' || 
 const schemaContext = ref<SchemaContext | undefined>()
 
 // Get connection dialect for SQL syntax highlighting
-const connectionDialect = computed(() => {
+const connectionDialect = computed((): 'mysql' | 'pgsql' | 'sql' => {
   const sourceConnectionId = currentStreamConfig?.source?.id
   if (sourceConnectionId) {
     const connection = connectionsStore.connectionByID(sourceConnectionId)
-    return connection?.type?.toLowerCase() || 'sql'
+    const type = connection?.type?.toLowerCase() || 'sql'
+    if (type === 'mysql' || type === 'pgsql' || type === 'postgresql') {
+      return type === 'postgresql' ? 'pgsql' : (type as 'mysql' | 'pgsql')
+    }
   }
   return 'sql'
+})
+
+// Get columns for the current table from schema context
+const tableColumns = computed((): ColumnInfo[] => {
+  if (!schemaContext.value || !props.table) return []
+  const columns = schemaContext.value.columns[props.table.name]
+  return columns || []
 })
 
 // Two-way binding for query
@@ -92,10 +97,10 @@ onMounted(async () => {
           ),
           dialect: connectionDialect.value as 'mysql' | 'pgsql' | 'sql'
         }
-        console.log('Schema context loaded:', {
-          tables: schemaContext.value.tables.length,
-          dialect: schemaContext.value.dialect
-        })
+        // console.log('Schema context loaded:', {
+        //   tables: schemaContext.value.tables.length,
+        //   dialect: schemaContext.value.dialect
+        // })
       }
     } catch (error) {
       console.error('Failed to load schema metadata for SQL autocomplete:', error)

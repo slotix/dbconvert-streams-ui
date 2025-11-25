@@ -105,7 +105,11 @@ const handleEditorMount = (editor: any, monacoInstance?: any) => {
   // Format SQL and blur to prevent focus stealing
   setTimeout(() => {
     editor.getAction('editor.action.formatDocument')?.run()
-    editor.blur()
+    // Blur the editor to prevent focus stealing - use DOM element
+    const domNode = editor.getDomNode()
+    if (domNode) {
+      ;(document.activeElement as HTMLElement)?.blur()
+    }
     updateHeight()
   }, 50)
 

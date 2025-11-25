@@ -1,176 +1,189 @@
 <template>
-  <div>
-    <!-- Single row with all controls -->
-    <div class="mb-4 flex items-center gap-4">
-      <!-- Table count -->
-      <div class="text-sm font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap">
-        {{ checkedTablesCount }} / {{ tables.length }}
+  <div class="space-y-3">
+    <!-- Header Bar -->
+    <div
+      class="flex flex-wrap items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700"
+    >
+      <!-- Table count badge -->
+      <div
+        class="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-600 text-sm font-medium"
+      >
+        <span class="text-teal-600 dark:text-teal-400">{{ checkedTablesCount }}</span>
+        <span class="text-gray-400">/</span>
+        <span class="text-gray-600 dark:text-gray-300">{{ tables.length }}</span>
       </div>
 
-      <!-- Filter input -->
-      <div class="flex-1">
-        <FormInput v-model="searchQuery" type="text" placeholder="Filter tables..." />
+      <!-- Filter input - grows to fill space -->
+      <div class="flex-1 min-w-[180px]">
+        <div class="relative">
+          <MagnifyingGlassIcon
+            class="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
+          />
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="Filter tables..."
+            class="w-full pl-8 pr-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:ring-1 focus:ring-teal-500 focus:border-teal-500"
+          />
+        </div>
       </div>
 
-      <!-- Select All checkbox -->
-      <div class="flex items-center whitespace-nowrap">
+      <!-- Select All -->
+      <label class="inline-flex items-center gap-2 cursor-pointer group">
         <input
-          :id="'select-all-checkbox'"
           :checked="selectAllCheckboxState"
           :indeterminate="indeterminate"
           type="checkbox"
-          class="h-4 w-4 text-teal-600 dark:text-teal-500 focus:ring-teal-500 dark:focus:ring-teal-400 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
+          class="h-4 w-4 text-teal-600 dark:text-teal-500 focus:ring-teal-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
           @change="toggleSelectAll"
         />
-        <label :for="'select-all-checkbox'" class="ml-2 text-sm text-gray-700 dark:text-gray-300">
-          Select All
-        </label>
-      </div>
+        <span
+          class="text-sm text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-200"
+          >All</span
+        >
+      </label>
 
       <!-- Refresh button -->
       <button
         type="button"
-        class="inline-flex items-center rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:focus:ring-gray-400 dark:focus:ring-offset-gray-900 whitespace-nowrap"
+        class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+        title="Refresh tables"
         @click="debouncedRefreshTables"
       >
-        Refresh tables
+        <ArrowPathIcon class="w-4 h-4" />
+        <span class="hidden sm:inline">Refresh</span>
       </button>
     </div>
 
-    <!-- Schema-grouped Table List -->
+    <!-- Table List Container -->
     <div
-      class="bg-white dark:bg-gray-850 shadow-sm dark:shadow-gray-900/30 ring-1 ring-gray-900/5 dark:ring-gray-700 rounded-lg divide-y divide-gray-200 dark:divide-gray-800"
+      class="bg-white dark:bg-gray-850 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden"
     >
+      <!-- Empty State -->
       <div
         v-if="filteredTablesCount === 0"
-        class="text-center text-gray-500 dark:text-gray-400 py-8"
+        class="text-center text-gray-500 dark:text-gray-400 py-8 text-sm"
       >
         No tables found
       </div>
-      <div v-else class="p-4">
-        <div class="space-y-1">
-          <template v-for="schemaGroup in paginatedGroupedTables" :key="schemaGroup.schema">
-            <!-- Schema Header - only show for PostgreSQL -->
-            <div
-              v-if="sourceConnectionType === 'postgresql' && schemaGroup.schema"
-              class="flex items-center justify-between px-3 py-2 text-sm text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800/70 cursor-pointer border-b border-gray-100 dark:border-gray-800"
-              @click="toggleSchema(schemaGroup.schema)"
-            >
-              <div class="flex items-center">
-                <component
-                  :is="isSchemaExpanded(schemaGroup.schema) ? ChevronDownIcon : ChevronRightIcon"
-                  class="h-4 w-4 text-gray-400 dark:text-gray-500 mr-2 flex-shrink-0"
-                />
-                <span class="font-medium">{{ schemaGroup.schema }}</span>
-                <span
-                  class="ml-2 text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded-full px-2 py-0.5"
-                >
-                  {{ schemaGroup.tables.length }}
-                </span>
-              </div>
-              <div class="flex items-center gap-2">
-                <button
-                  class="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
-                  @click.stop="selectAllInSchema(schemaGroup.schema)"
-                >
-                  Select All
-                </button>
-                <button
-                  class="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-                  @click.stop="clearAllInSchema(schemaGroup.schema)"
-                >
-                  Clear All
-                </button>
-              </div>
+
+      <!-- Table Grid -->
+      <div v-else>
+        <template v-for="schemaGroup in paginatedGroupedTables" :key="schemaGroup.schema">
+          <!-- Schema Header - PostgreSQL only -->
+          <div
+            v-if="sourceConnectionType === 'postgresql' && schemaGroup.schema"
+            class="flex items-center justify-between px-4 py-2.5 bg-gray-50 dark:bg-gray-800/70 border-b border-gray-200 dark:border-gray-700 cursor-pointer"
+            @click="toggleSchema(schemaGroup.schema)"
+          >
+            <div class="flex items-center gap-2">
+              <component
+                :is="isSchemaExpanded(schemaGroup.schema) ? ChevronDownIcon : ChevronRightIcon"
+                class="h-4 w-4 text-gray-400"
+              />
+              <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">{{
+                schemaGroup.schema
+              }}</span>
+              <span
+                class="text-xs text-gray-500 dark:text-gray-400 bg-gray-200 dark:bg-gray-700 rounded px-2 py-0.5"
+              >
+                {{ schemaGroup.tables.length }}
+              </span>
             </div>
+            <div class="flex items-center gap-3">
+              <button
+                class="text-xs text-teal-600 dark:text-teal-400 hover:underline"
+                @click.stop="selectAllInSchema(schemaGroup.schema)"
+              >
+                Select
+              </button>
+              <button
+                class="text-xs text-gray-500 dark:text-gray-400 hover:underline"
+                @click.stop="clearAllInSchema(schemaGroup.schema)"
+              >
+                Clear
+              </button>
+            </div>
+          </div>
 
-            <!-- Tables in Schema -->
-            <div
-              v-if="sourceConnectionType !== 'postgresql' || isSchemaExpanded(schemaGroup.schema)"
-              :class="
-                sourceConnectionType === 'postgresql' && schemaGroup.schema
-                  ? 'space-y-1 ml-4 border-l border-gray-200 dark:border-gray-800 pl-4'
-                  : 'space-y-1'
-              "
-            >
-              <template v-for="table in schemaGroup.tables" :key="table.name">
-                <!-- Table Row -->
-                <div
-                  class="flex items-center justify-between px-3 py-2 text-sm rounded-md hover:bg-gray-50 dark:hover:bg-gray-800/70"
-                >
-                  <div class="flex items-center flex-1">
-                    <input
-                      :id="`table-${table.name}`"
-                      v-model="table.selected"
-                      type="checkbox"
-                      class="h-4 w-4 text-teal-600 dark:text-teal-500 focus:ring-teal-500 dark:focus:ring-teal-400 border-gray-300 dark:border-gray-600 rounded mr-3 bg-white dark:bg-gray-800"
-                      @change="
-                        handleCheckboxChange(
-                          table,
-                          ($event.target as HTMLInputElement)?.checked || false
-                        )
-                      "
-                    />
-                    <TableCellsIcon
-                      class="h-4 w-4 text-gray-400 dark:text-gray-500 mr-2 flex-shrink-0"
-                    />
-                    <label
-                      :for="`table-${table.name}`"
-                      class="cursor-pointer flex-1 text-gray-900 dark:text-gray-100"
-                    >
-                      <HighlightedText
-                        class="block truncate"
-                        :text="getTableDisplayName(table.name)"
-                        :query="searchQuery"
-                      />
-                    </label>
-                  </div>
-                  <button
-                    v-if="table.selected && !isCDCMode"
-                    class="text-xs font-medium transition-colors"
-                    :class="
-                      selectedTableNames.includes(table.name)
-                        ? 'text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100'
-                        : 'text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100'
-                    "
-                    @click="toggleTableSettings(table.name)"
-                  >
-                    {{
-                      selectedTableNames.includes(table.name) ? '▲ Hide Options' : '▼ Show Options'
-                    }}
-                  </button>
-                </div>
-
-                <!-- Table Settings (immediately under the table) -->
-                <div
-                  v-if="selectedTableNames.includes(table.name) && !isCDCMode"
-                  :class="
-                    sourceConnectionType === 'postgresql' && schemaGroup.schema
-                      ? 'ml-8 mt-1 mb-3'
-                      : 'ml-4 mt-1 mb-3'
+          <!-- Tables Grid - 2 columns on wider screens -->
+          <div
+            v-if="sourceConnectionType !== 'postgresql' || isSchemaExpanded(schemaGroup.schema)"
+            class="grid grid-cols-1 lg:grid-cols-2"
+            :class="
+              sourceConnectionType === 'postgresql' && schemaGroup.schema
+                ? 'border-l-2 border-gray-200 dark:border-gray-700 ml-3'
+                : ''
+            "
+          >
+            <template v-for="(table, idx) in schemaGroup.tables" :key="table.name">
+              <!-- Table Row -->
+              <div
+                class="group flex items-center gap-3 px-4 py-2.5 border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                :class="[
+                  idx % 2 === 0 ? 'lg:border-r lg:border-r-gray-100 lg:dark:border-r-gray-800' : ''
+                ]"
+              >
+                <!-- Checkbox -->
+                <input
+                  :id="`table-${table.name}`"
+                  v-model="table.selected"
+                  type="checkbox"
+                  class="h-4 w-4 text-teal-600 dark:text-teal-500 focus:ring-teal-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 shrink-0"
+                  @change="
+                    handleCheckboxChange(
+                      table,
+                      ($event.target as HTMLInputElement)?.checked || false
+                    )
                   "
+                />
+
+                <!-- Table Icon -->
+                <TableCellsIcon class="h-4 w-4 text-gray-400 dark:text-gray-500 shrink-0" />
+
+                <!-- Table Name -->
+                <label
+                  :for="`table-${table.name}`"
+                  class="flex-1 min-w-0 cursor-pointer text-sm text-gray-900 dark:text-gray-100 truncate"
                 >
-                  <div
-                    class="bg-gray-50 dark:bg-gray-900/40 border border-gray-200 dark:border-gray-700 rounded-md p-4"
-                  >
-                    <div class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
-                      Settings for:
-                      <span class="font-semibold text-gray-900 dark:text-gray-100">
-                        {{ getTableDisplayName(table.name) }}
-                      </span>
-                    </div>
-                    <TableSettings :table="table" />
-                  </div>
-                </div>
-              </template>
-            </div>
-          </template>
-        </div>
+                  <HighlightedText :text="getTableDisplayName(table.name)" :query="searchQuery" />
+                </label>
+
+                <!-- Filter indicator/toggle - only when selected and not CDC -->
+                <button
+                  v-if="table.selected && !isCDCMode"
+                  class="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-all"
+                  :class="
+                    selectedTableNames.includes(table.name)
+                      ? 'bg-teal-500/20 text-teal-600 dark:text-teal-400'
+                      : hasTableFilter(table)
+                        ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
+                        : 'text-gray-400 opacity-0 group-hover:opacity-100 hover:bg-gray-200 dark:hover:bg-gray-700'
+                  "
+                  :title="hasTableFilter(table) ? 'Edit filter' : 'Add filter'"
+                  @click="toggleTableSettings(table.name)"
+                >
+                  <FunnelIcon class="w-3.5 h-3.5" />
+                  <span v-if="hasTableFilter(table)" class="hidden sm:inline">filtered</span>
+                  <ChevronUpIcon v-if="selectedTableNames.includes(table.name)" class="w-3 h-3" />
+                </button>
+              </div>
+
+              <!-- Table Settings Panel - Full width below row -->
+              <div
+                v-if="selectedTableNames.includes(table.name) && !isCDCMode"
+                class="col-span-1 lg:col-span-2 px-4 py-3 bg-gray-50 dark:bg-gray-800/30 border-b border-gray-200 dark:border-gray-700"
+              >
+                <TableSettings :table="table" />
+              </div>
+            </template>
+          </div>
+        </template>
       </div>
     </div>
 
-    <!-- Pagination -->
-    <div v-if="totalPages > 1" class="mt-4">
+    <!-- Compact Pagination -->
+    <div v-if="totalPages > 1" class="flex items-center justify-between">
       <Pagination
         :total-items="filteredTablesCount"
         :itemsPerPage="itemsPerPage"
@@ -183,14 +196,21 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { useStreamsStore, defaultStreamConfigOptions } from '@/stores/streamConfig'
+import { useStreamsStore } from '@/stores/streamConfig'
 import { useCommonStore } from '@/stores/common'
 import { useConnectionsStore } from '@/stores/connections'
 import Pagination from '@/components/common/Pagination.vue'
 import HighlightedText from '@/components/common/HighlightedText.vue'
 import TableSettings from './TableSettings.vue'
-import FormInput from '@/components/base/FormInput.vue'
-import { ChevronRightIcon, ChevronDownIcon, TableCellsIcon } from '@heroicons/vue/24/outline'
+import {
+  ChevronRightIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  TableCellsIcon,
+  FunnelIcon,
+  MagnifyingGlassIcon,
+  ArrowPathIcon
+} from '@heroicons/vue/24/outline'
 import { debounce } from '@/utils/debounce'
 import { type StreamConfig, type Table } from '@/types/streamConfig'
 
@@ -324,7 +344,7 @@ const isCDCMode = computed(() => {
 const groupedTables = computed<SchemaGroup[]>(() => buildGroupedTables(filteredTables.value, true))
 const filteredTablesCount = computed(() => filteredTables.value.length)
 const currentPage = ref(1)
-const itemsPerPage = 10
+const itemsPerPage = 20
 
 const totalPages = computed(() =>
   itemsPerPage > 0 ? Math.max(1, Math.ceil(filteredTablesCount.value / itemsPerPage)) : 1
@@ -414,6 +434,10 @@ function toggleTableSettings(tableName: string) {
   } else {
     selectedTableNames.value.push(tableName)
   }
+}
+
+function hasTableFilter(table: Table): boolean {
+  return Boolean(table.query && table.query.trim().length > 0)
 }
 
 function handleCheckboxChange(table: Table, checked: boolean) {
