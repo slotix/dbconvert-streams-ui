@@ -315,7 +315,10 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
    */
   function setPreviewTab(paneId: PaneId, tab: PaneTab | null) {
     const state = getPaneState(paneId)
-    if (state.previewTab && (!tab || ensureObjectKey(paneId, tab) !== ensureObjectKey(paneId, state.previewTab))) {
+    if (
+      state.previewTab &&
+      (!tab || ensureObjectKey(paneId, tab) !== ensureObjectKey(paneId, state.previewTab))
+    ) {
       clearObjectState(paneId, state.previewTab)
     }
     state.previewTab = tab

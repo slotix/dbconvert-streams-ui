@@ -2,7 +2,7 @@ import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { listDirectory, type FileSystemEntry } from '@/api/fileSystem'
 import { getFileMetadata, configureS3Session, listS3Objects, listS3Buckets } from '@/api/files'
-import { getFileFormat } from '@/utils/fileFormat'
+import { getFileFormat, type FileFormat } from '@/utils/fileFormat'
 import { useConnectionsStore } from '@/stores/connections'
 import type { FileMetadata } from '@/types/files'
 import type { Connection } from '@/types/connections'
@@ -497,11 +497,15 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
     const entries: FileSystemEntry[] = []
     const seen = new Set<string>()
 
+    // Map to track files in each folder for table detection
+    const folderFiles = new Map<string, Array<{ name: string; size: number; fullKey: string }>>()
+
     // Normalize prefix (remove trailing slash for comparison)
     const normalizedPrefix = currentPrefix.endsWith('/')
       ? currentPrefix.slice(0, -1)
       : currentPrefix
 
+    // First pass: group objects into folders and collect file information
     for (const obj of objects) {
       // Get the relative path from current prefix
       let relativePath = obj.key
@@ -527,6 +531,21 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
             children: [],
             isLoaded: false
           })
+
+          // Initialize file tracking for this folder
+          folderFiles.set(folderName, [])
+        }
+
+        // Track files in this folder
+        const remainingPath = relativePath.substring(firstSlash + 1)
+        const nextSlash = remainingPath.indexOf('/')
+        // Only track direct children (files at the immediate level)
+        if (nextSlash === -1 && remainingPath) {
+          folderFiles.get(folderName)!.push({
+            name: remainingPath,
+            size: obj.size,
+            fullKey: obj.key
+          })
         }
       } else {
         // This is a file at the current level
@@ -543,7 +562,95 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
       }
     }
 
+    // Second pass: detect table folders
+    for (const entry of entries) {
+      if (entry.type === 'dir') {
+        const files = folderFiles.get(entry.name) || []
+        const tableInfo = detectTableFolder(files)
+
+        if (tableInfo.isTable) {
+          entry.isTable = true
+          entry.format = tableInfo.format
+          entry.fileCount = tableInfo.fileCount
+          entry.size = tableInfo.totalSize
+        }
+      }
+    }
+
     return entries
+  }
+
+  // Detect if a folder contains part files that should be treated as a table
+  function detectTableFolder(files: Array<{ name: string; size: number; fullKey: string }>): {
+    isTable: boolean
+    format?: FileFormat
+    fileCount: number
+    totalSize: number
+  } {
+    if (files.length === 0) {
+      return { isTable: false, fileCount: 0, totalSize: 0 }
+    }
+
+    // Helper to extract full file extension (e.g., ".csv.zst", ".parquet")
+    function getFullExtension(filename: string): string {
+      const parts = filename.split('.')
+      if (parts.length < 2) return ''
+
+      // Check for compressed extensions
+      const lastExt = parts[parts.length - 1].toLowerCase()
+      const secondLastExt = parts.length >= 3 ? parts[parts.length - 2].toLowerCase() : ''
+
+      const compressedExts = ['gz', 'gzip', 'zst', 'zstd', 'bz2', 'lz4', 'snappy']
+      const dataExts = ['csv', 'json', 'jsonl', 'parquet']
+
+      if (compressedExts.includes(lastExt) && dataExts.includes(secondLastExt)) {
+        return `.${secondLastExt}.${lastExt}`
+      } else if (dataExts.includes(lastExt)) {
+        return `.${lastExt}`
+      }
+
+      return ''
+    }
+
+    // Helper to get format from extension
+    function getFormatFromExtension(ext: string): FileFormat | null {
+      if (ext.includes('.csv')) return 'csv'
+      if (ext.includes('.json')) return ext.includes('.jsonl') ? 'jsonl' : 'json'
+      if (ext.includes('.parquet')) return 'parquet'
+      return null
+    }
+
+    // Check if all files have the same extension
+    const extensions = new Set<string>()
+    let totalSize = 0
+
+    for (const file of files) {
+      const ext = getFullExtension(file.name)
+      if (!ext) return { isTable: false, fileCount: 0, totalSize: 0 }
+
+      extensions.add(ext)
+      totalSize += file.size
+    }
+
+    // All files must have the same extension
+    if (extensions.size !== 1) {
+      return { isTable: false, fileCount: 0, totalSize: 0 }
+    }
+
+    const extension = Array.from(extensions)[0]
+    const format = getFormatFromExtension(extension)
+
+    if (!format) {
+      return { isTable: false, fileCount: 0, totalSize: 0 }
+    }
+
+    // Consider it a table folder if it has at least 1 file with a supported format
+    return {
+      isTable: true,
+      format,
+      fileCount: files.length,
+      totalSize
+    }
   }
 
   return {

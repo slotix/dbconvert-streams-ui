@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { ChevronDownIcon, LinkIcon, LinkSlashIcon } from '@heroicons/vue/24/outline'
 import { Menu, MenuButton, MenuItems, MenuItem, Switch } from '@headlessui/vue'
+import type { SortModelItem } from 'ag-grid-community'
 import AGGridDataView from '@/components/database/AGGridDataView.vue'
 import AGGridFileDataView from '@/components/files/AGGridFileDataView.vue'
 import SchemaComparisonPanel from './SchemaComparisonPanel.vue'
@@ -17,15 +18,8 @@ import type { FileMetadata } from '@/types/files'
 import * as files from '@/api/files'
 import type { FileFormat } from '@/utils/fileFormat'
 
-type SortDirection = 'asc' | 'desc' | null | undefined
-
-interface GridSortModelEntry {
-  colId: string
-  sort?: SortDirection
-}
-
 interface GridState {
-  sortModel?: GridSortModelEntry[]
+  sortModel?: SortModelItem[]
   filterModel?: Record<string, unknown>
   sqlBannerExpanded?: boolean
 }
@@ -119,10 +113,10 @@ const targetRootPath = computed(() => {
     if (base) return base
   }
 
+  // For local file connections, use storage_config.uri or spec.files.basePath from the CONNECTION
+  // Do NOT use the stream's target.spec.files.outputDirectory as it contains the absolute path
   const storagePath = storageConfig?.uri || props.target.spec?.files?.basePath || ''
-  if (!storagePath) return ''
-  const subDirectory = props.stream.target?.spec?.files?.outputDirectory
-  return subDirectory ? joinPaths(storagePath, subDirectory) : storagePath
+  return storagePath
 })
 
 const targetFileDisplayName = computed(() => {
