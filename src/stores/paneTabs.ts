@@ -117,7 +117,7 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
   // Core state
   const panes = ref<Map<PaneId, PaneState>>(new Map())
   const activePane = ref<PaneId>('left')
-  const visiblePanes = ref<Set<PaneId>>(new Set(['left'])) // Left always visible by default
+  const visiblePanes = ref<Set<PaneId>>(new Set<PaneId>(['left'])) // Left always visible by default
   const objectTabStateStore = useObjectTabStateStore()
 
   // Initialize panes
@@ -189,11 +189,11 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
     panes.value.set('right', hydratePaneState('right', savedState.panes?.right))
 
     activePane.value = savedState.activePane || 'left'
-    const visible =
+    const visible: PaneId[] =
       savedState.visiblePanes && savedState.visiblePanes.length > 0
         ? savedState.visiblePanes
         : ['left']
-    visiblePanes.value = new Set(visible)
+    visiblePanes.value = new Set<PaneId>(visible)
   }
 
   restoreFromStorage()
@@ -489,7 +489,7 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
     panes.value.set('left', createEmptyPaneState())
     panes.value.set('right', createEmptyPaneState())
     activePane.value = 'left'
-    visiblePanes.value = new Set(['left'])
+    visiblePanes.value = new Set<PaneId>(['left'])
     persistState()
   }
 
