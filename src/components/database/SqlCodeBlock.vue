@@ -11,6 +11,9 @@ const props = defineProps<{
   compact?: boolean
   showHeader?: boolean
   height?: string
+  autoResize?: boolean
+  minHeight?: number
+  maxHeight?: number
 }>()
 
 // Compute display title
@@ -30,5 +33,8 @@ const displayTitle = computed(() => {
     :compact="compact"
     :show-header="showHeader"
     :height="height"
+    :auto-resize="autoResize"
+    :min-height="minHeight"
+    :max-height="maxHeight"
   />
 </template>

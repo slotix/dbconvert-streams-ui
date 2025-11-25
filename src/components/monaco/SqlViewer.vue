@@ -1,6 +1,6 @@
 <!-- Read-only SQL viewer with syntax highlighting and copy functionality -->
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import MonacoEditor from './MonacoEditor.vue'
 import CopyButton from '@/components/common/CopyButton.vue'
 
@@ -12,6 +12,9 @@ interface Props {
   compact?: boolean
   height?: string
   showHeader?: boolean
+  autoResize?: boolean
+  minHeight?: number
+  maxHeight?: number
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -19,10 +22,23 @@ const props = withDefaults(defineProps<Props>(), {
   dialect: 'sql',
   compact: false,
   showHeader: true,
-  height: '200px'
+  height: '200px',
+  autoResize: false,
+  minHeight: 96,
+  maxHeight: 480
 })
 
 const editorRef = ref<InstanceType<typeof MonacoEditor>>()
+const editorHeight = ref<string>(props.height)
+
+watch(
+  () => props.height,
+  (newHeight) => {
+    if (!props.autoResize) {
+      editorHeight.value = newHeight
+    }
+  }
+)
 
 // Determine Monaco language based on dialect
 const monacoLanguage = computed(() => {
@@ -51,19 +67,51 @@ const editorOptions = computed<Record<string, any>>(() => ({
   renderLineHighlight: 'none',
   scrollbar: {
     verticalScrollbarSize: 10,
-    horizontalScrollbarSize: 10
+    horizontalScrollbarSize: 10,
+    alwaysConsumeMouseWheel: false
   },
   wordWrap: props.compact ? 'off' : 'on',
   contextmenu: false,
   automaticLayout: true
 }))
 
-const handleEditorMount = (editor: any) => {
+const clampHeight = (rawHeight: number, lineHeight = 20, lineCount = 1) => {
+  const contentBasedMin = (Math.max(lineCount, 1) + 1) * lineHeight + 12
+  const min = Math.max(80, props.minHeight, contentBasedMin)
+  const max = Math.max(min, props.maxHeight)
+  const clamped = Math.min(max, Math.max(min, Math.round(rawHeight)))
+  editorHeight.value = `${clamped}px`
+}
+
+const handleEditorMount = (editor: any, monacoInstance?: any) => {
+  const updateHeight = (contentHeight?: number) => {
+    if (!props.autoResize) return
+
+    const model = editor.getModel()
+    const editorOptions = monacoInstance?.editor?.EditorOption
+    const defaultLineHeight =
+      monacoInstance?.editor?.BareFontInfo?.createFromRawSettings?.({ fontSize: 14 }).lineHeight ||
+      20
+    const lineHeight =
+      (editorOptions ? editor.getOption(editorOptions.lineHeight) : null) || defaultLineHeight
+    const lineCount = model?.getLineCount() || 1
+    const measuredHeight =
+      typeof contentHeight === 'number' ? contentHeight : lineCount * lineHeight
+
+    clampHeight(measuredHeight + 16, lineHeight, lineCount)
+    editor.layout()
+  }
+
   // Format SQL and blur to prevent focus stealing
   setTimeout(() => {
     editor.getAction('editor.action.formatDocument')?.run()
     editor.blur()
+    updateHeight()
   }, 50)
+
+  // Keep height in sync with content size (word wrap, formatting, etc.)
+  editor.onDidContentSizeChange((event: any) => updateHeight(event.contentHeight))
+  updateHeight()
 }
 </script>
 
@@ -88,7 +136,7 @@ const handleEditorMount = (editor: any) => {
         ref="editorRef"
         :model-value="code"
         :language="monacoLanguage"
-        :height="height"
+        :height="editorHeight"
         :read-only="true"
         :options="editorOptions"
         @mount="handleEditorMount"

@@ -197,7 +197,7 @@ function toggleExpanded() {
       >
         <!-- Full Query using SqlCodeBlock -->
         <div class="mb-3">
-          <SqlCodeBlock :code="fullQuery" :dialect="dialect" :show-header="false" height="250px" />
+          <SqlCodeBlock :code="fullQuery" :dialect="dialect" :show-header="false" auto-resize />
           <div v-if="log.redacted" class="text-xs text-orange-600 dark:text-orange-400 mt-1">
             ⚠️ Query contains redacted sensitive values
           </div>
