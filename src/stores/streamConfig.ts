@@ -48,7 +48,7 @@ export const defaultStreamConfigOptions: StreamConfig = {
     id: '',
     fileFormat: undefined,
     subDirectory: '',
-    spec: {} as TargetSpec,
+    spec: undefined,
     options: {
       compressionType: 'zstd',
       structureOptions: {
@@ -314,7 +314,10 @@ export const useStreamsStore = defineStore('streams', {
         }
 
         // Build target spec if not already present
-        if (!this.currentStreamConfig.target.spec) {
+        if (
+          !this.currentStreamConfig.target.spec ||
+          Object.keys(this.currentStreamConfig.target.spec).length === 0
+        ) {
           const connectionsStore = useConnectionsStore()
           const targetConnection = connectionsStore.connectionByID(
             this.currentStreamConfig.target.id
@@ -510,7 +513,7 @@ export const useStreamsStore = defineStore('streams', {
           id: '',
           fileFormat: undefined,
           subDirectory: '',
-          spec: {} as TargetSpec,
+          spec: undefined,
           options: {
             compressionType: 'zstd',
             structureOptions: {

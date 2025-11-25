@@ -97,8 +97,8 @@ export interface TargetConfig {
   id: string
   fileFormat?: string
   subDirectory?: string
-  // Matryoshka spec pattern (REQUIRED)
-  spec: TargetSpec
+  // Matryoshka spec pattern (built dynamically before sending to backend)
+  spec?: TargetSpec
   options?: TargetOptions
 }
 
