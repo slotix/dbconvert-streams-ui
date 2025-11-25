@@ -1,15 +1,7 @@
 <script setup lang="ts">
-import { ref, watch, computed, onBeforeUnmount, onMounted } from 'vue'
+import { ref, watch, computed, onMounted } from 'vue'
 import { AgGridVue } from 'ag-grid-vue3'
-import { ModuleRegistry, AllCommunityModule } from 'ag-grid-community'
-import type {
-  GridReadyEvent,
-  ColDef,
-  GridOptions,
-  IDatasource,
-  IGetRowsParams,
-  Column
-} from 'ag-grid-community'
+import type { ColDef } from 'ag-grid-community'
 import { type SQLTableMeta, type SQLViewMeta } from '@/types/metadata'
 import connections from '@/api/connections'
 import { formatTableValue } from '@/utils/dataUtils'
@@ -17,14 +9,12 @@ import { useObjectTabStateStore } from '@/stores/objectTabState'
 import { useConnectionsStore } from '@/stores/connections'
 import ColumnContextMenu from './ColumnContextMenu.vue'
 import { MonacoEditor } from '@/components/monaco'
-import { useAGGridFiltering } from '@/composables/useAGGridFiltering'
-import { convertFilterModelToSQL, determineFilterType } from '@/utils/agGridFilterUtils'
-import 'ag-grid-community/styles/ag-grid.css'
-import 'ag-grid-community/styles/ag-theme-alpine.css'
-import '@/styles/agGridTheme.css'
-
-// Register AG Grid modules
-ModuleRegistry.registerModules([AllCommunityModule])
+import { determineFilterType } from '@/utils/agGridFilterUtils'
+import {
+  useBaseAGGridView,
+  type FetchDataParams,
+  type FetchDataResult
+} from '@/composables/useBaseAGGridView'
 
 const props = defineProps<{
   tableMeta: SQLTableMeta | SQLViewMeta
@@ -47,96 +37,12 @@ const connectionType = computed(() => {
   return conn?.type || 'mysql' // Default to mysql if not found
 })
 
-// Monaco language based on connection type
-const monacoLanguage = computed(() => {
-  const type = connectionType.value.toLowerCase()
-  if (type.includes('mysql')) return 'mysql'
-  if (type.includes('postgres')) return 'pgsql'
-  return 'sql'
-})
-
-const SQL_BANNER_COLLAPSED_HEIGHT = '3.25rem'
-const SQL_BANNER_EXPANDED_HEIGHT = '12rem'
-
-// Monaco editor options for inline SQL banner
-const sqlBannerEditorOptions = computed<Record<string, any>>(() => ({
-  readOnly: true,
-  minimap: { enabled: false },
-  scrollBeyondLastLine: false,
-  fontSize: 13,
-  lineNumbers: 'off',
-  glyphMargin: false,
-  folding: false,
-  lineDecorationsWidth: 0,
-  lineNumbersMinChars: 0,
-  renderLineHighlight: 'none',
-  automaticLayout: true,
-  scrollbar: {
-    vertical: 'auto',
-    horizontal: 'auto',
-    verticalScrollbarSize: 8,
-    horizontalScrollbarSize: 8
-  },
-  overviewRulerLanes: 0,
-  hideCursorInOverviewRuler: true,
-  overviewRulerBorder: false,
-  wordWrap: 'off',
-  contextmenu: false,
-  domReadOnly: true,
-  renderValidationDecorations: 'off',
-  padding: { top: 10, bottom: 2 }
-}))
-
-// Use shared AG Grid filtering composable (but override context menu state locally)
-const {
-  gridApi,
-  currentSortModel,
-  agGridFilters,
-  agGridWhereSQL,
-  isSqlBannerExpanded,
-  combinedWhereClause,
-  orderByClause,
-  fullSqlQuery,
-  needsTruncation,
-  displayedSql,
-  toggleSqlBanner,
-  updateAgGridWhereSQL,
-  clearAllFilters: clearAgGridFilters
-} = useAGGridFiltering()
-
-const sqlBannerHeight = computed(() =>
-  isSqlBannerExpanded.value ? SQL_BANNER_EXPANDED_HEIGHT : SQL_BANNER_COLLAPSED_HEIGHT
-)
-
-// Local context menu state (not shared between instances)
-const showContextMenu = ref(false)
-const contextMenuX = ref(0)
-const contextMenuY = ref(0)
-const contextMenuColumn = ref<Column | null>(null)
-
-// Ref to grid container for scoped event listeners
-const gridContainerRef = ref<HTMLElement | null>(null)
-
-// Local closeContextMenu function
-function closeContextMenu(): void {
-  showContextMenu.value = false
-}
-
-// Component-specific state
-const error = ref<string>()
-const totalRowCount = ref<number>(0)
-const isLoading = ref(false)
-const currentFirstRow = ref<number>(1)
-const currentLastRow = ref<number>(100)
-
 // Exact row count state for views
 const isCountingRows = ref(false)
 const exactRowCount = ref<number | null>(null)
 const countError = ref<string | null>(null)
 
 // Cache for exact counts (persists across table switches within same context)
-// Key format: "objectKey:connectionId:database:schema:tableName"
-// Including objectKey ensures cache is scoped to the specific use case (e.g., separate for source vs target in compare view)
 const exactCountCache = ref<Map<string, number>>(new Map())
 
 // Generate cache key for current table/view
@@ -145,110 +51,6 @@ const getCacheKey = () => {
   const objectSchema = getObjectSchema(props.tableMeta)
   return `${props.objectKey}:${props.connectionId}:${props.database}:${objectSchema || ''}:${objectName}`
 }
-
-// Watch for approxRows prop changes and update totalRowCount
-// Only update if we don't have an exact count saved
-watch(
-  () => props.approxRows,
-  (newApproxRows) => {
-    // Check if we have a saved exact count - if so, don't overwrite with approx
-    const savedState = tabStateStore.getAGGridDataState(props.objectKey)
-
-    if (savedState && savedState.exactRowCount !== null) {
-      // Use the saved exact count
-      totalRowCount.value = savedState.exactRowCount
-      exactRowCount.value = savedState.exactRowCount
-      return
-    }
-
-    // Otherwise use approxRows
-    if (newApproxRows && newApproxRows > 0) {
-      totalRowCount.value = newApproxRows
-    } else if (newApproxRows === -1) {
-      // -1 indicates unknown count (for views)
-      totalRowCount.value = -1
-    } else if (newApproxRows === undefined) {
-      // Reset count when switching to a table not in top tables list
-      totalRowCount.value = 0
-    }
-
-    // Recreate datasource so AG Grid knows about the updated totalRowCount
-    // This ensures the grid pagination shows the correct total count immediately
-    if (gridApi.value && !gridApi.value.isDestroyed()) {
-      gridApi.value.setGridOption('datasource', createDatasource())
-    }
-  },
-  { immediate: true }
-)
-
-// Watch for table changes and restore state from store or reset
-watch(
-  () => props.tableMeta,
-  () => {
-    const savedState = tabStateStore.getAGGridDataState(props.objectKey)
-
-    if (savedState) {
-      // Restore state from store
-      currentSortModel.value = savedState.sortModel || []
-      // DON'T restore totalRowCount here - approxRows watcher handles it
-      // and savedState.totalRowCount might be stale/wrong
-      exactRowCount.value = savedState.exactRowCount || null
-      agGridFilters.value = savedState.filterModel || {}
-
-      // Apply saved filters and sort to grid
-      if (gridApi.value) {
-        // Set filter model
-        gridApi.value.setFilterModel(savedState.filterModel || null)
-
-        // Apply sort model
-        if (savedState.sortModel && savedState.sortModel.length > 0) {
-          const columnState = savedState.sortModel.map((sort, index) => ({
-            colId: sort.colId,
-            sort: sort.sort,
-            sortIndex: index
-          }))
-          gridApi.value.applyColumnState({
-            state: columnState,
-            defaultState: { sort: null }
-          })
-        }
-      }
-    } else {
-      // Reset to default state
-      // DON'T reset totalRowCount here - approxRows watcher handles it
-      currentFirstRow.value = 1
-      currentLastRow.value = 100
-      currentSortModel.value = []
-      countError.value = null
-      agGridFilters.value = {}
-      agGridWhereSQL.value = ''
-
-      if (gridApi.value) {
-        // Clear any AG Grid column filters carried over from the previous table
-        gridApi.value.setFilterModel(null)
-      }
-
-      // Check if we have a cached exact count for this table
-      const cacheKey = getCacheKey()
-      const cachedCount = exactCountCache.value.get(cacheKey)
-      if (cachedCount !== undefined) {
-        exactRowCount.value = cachedCount
-        totalRowCount.value = cachedCount
-      } else {
-        exactRowCount.value = null
-        // DON'T set totalRowCount to 0 here - approxRows watcher will set it
-      }
-    }
-
-    // Recreate datasource to ensure AG Grid knows about the (potentially updated) totalRowCount
-    // This is critical when switching tables - even though approxRows watcher will update
-    // totalRowCount, AG Grid won't know about it until we recreate the datasource
-    if (gridApi.value) {
-      gridApi.value.setGridOption('datasource', createDatasource())
-    }
-  },
-  { deep: true }
-)
 
 function getObjectName(meta: SQLTableMeta | SQLViewMeta): string {
   return props.isView ? (meta as SQLViewMeta).name : (meta as SQLTableMeta).name
@@ -277,7 +79,6 @@ const columnDefs = computed<ColDef[]>(() => {
   if (!props.isView && (meta as SQLTableMeta).indexes) {
     ;(meta as SQLTableMeta).indexes.forEach((idx) => {
       // Only consider the first column of composite indexes for sorting
-      // (sorting by first column can use the index efficiently)
       if (idx.columns && idx.columns.length > 0) {
         indexedColumns.add(idx.columns[0].toLowerCase())
       }
@@ -310,8 +111,8 @@ const columnDefs = computed<ColDef[]>(() => {
       sortable: canSort,
       filter: filterType,
       floatingFilter: false,
-      suppressHeaderMenuButton: false, // Ensure menu button is shown
-      suppressHeaderFilterButton: true, // Hide the filter button, use menu only
+      suppressHeaderMenuButton: false,
+      suppressHeaderFilterButton: true,
       resizable: true,
       flex: 1,
       minWidth: 120,
@@ -325,314 +126,199 @@ const columnDefs = computed<ColDef[]>(() => {
   })
 })
 
-// Database-specific clear all filters wrapper
-function clearAllFilters() {
-  // Use the base clearing from composable
-  clearAgGridFilters()
+// Data fetching callback for base composable
+async function fetchData(params: FetchDataParams): Promise<FetchDataResult> {
+  const objectName = getObjectName(props.tableMeta)
+  const objectSchema = getObjectSchema(props.tableMeta)
 
-  // Clear sorting
-  if (gridApi.value) {
-    gridApi.value.applyColumnState({
-      defaultState: { sort: null }
-    })
+  if (!objectName) throw new Error('Table/View name is undefined')
+
+  // Build comma-separated order_by and order_dir for multi-column sorting
+  let orderBy: string | undefined
+  let orderDir: string | undefined
+
+  if (params.sortModel.length > 0) {
+    orderBy = params.sortModel.map((s) => s.colId).join(',')
+    orderDir = params.sortModel.map((s) => s.sort?.toUpperCase() || 'ASC').join(',')
   }
 
-  // Reset to first page
-  totalRowCount.value = 0
-  currentFirstRow.value = 1
-  currentLastRow.value = 100
+  const queryParams: {
+    limit: number
+    offset: number
+    skip_count: boolean
+    schema?: string
+    order_by?: string
+    order_dir?: string
+    where?: string
+    tabId?: string
+  } = {
+    limit: params.limit,
+    offset: params.offset,
+    // Skip count if we already have one (either approximate or exact)
+    skip_count:
+      (params.offset > 0 && baseGrid.totalRowCount.value > 0) ||
+      (exactRowCount.value !== null && !params.whereClause)
+  }
 
-  // Reset exact count for views
-  exactRowCount.value = null
-  countError.value = null
+  // Add optional parameters only if they have values
+  if (objectSchema && objectSchema !== 'public' && objectSchema !== '') {
+    queryParams.schema = objectSchema
+  }
+  if (orderBy) {
+    queryParams.order_by = orderBy
+  }
+  if (orderDir) {
+    queryParams.order_dir = orderDir
+  }
+  if (params.whereClause) {
+    queryParams.where = params.whereClause
+  }
+  // Add tabId for query grouping
+  if (objectName) {
+    queryParams.tabId = objectName
+  }
 
-  // Clear state from store
-  tabStateStore.setAGGridDataState(props.objectKey, {
-    sortModel: [],
-    filterModel: {},
-    totalRowCount: 0,
-    exactRowCount: null
+  const data = props.isView
+    ? await connections.getViewData(props.connectionId, props.database, objectName, queryParams)
+    : await connections.getTableData(props.connectionId, props.database, objectName, queryParams)
+
+  // Convert rows array to objects with column names as keys
+  const convertedRowData = data.rows.map((row) => {
+    const obj: Record<string, unknown> = {}
+    data.columns.forEach((colName, idx) => {
+      obj[colName] = row[idx]
+    })
+    return obj
   })
 
-  // Refresh data
-  if (gridApi.value) {
-    gridApi.value.setGridOption('datasource', createDatasource())
-  }
-}
-
-// Convert AG Grid filter model to SQL WHERE clause
-// AG Grid options for Infinite Row Model
-const gridOptions = computed<GridOptions>(() => ({
-  theme: 'legacy',
-  rowModelType: 'infinite',
-  rowHeight: 32,
-  headerHeight: 40,
-  suppressCellFocus: true,
-  animateRows: false,
-  enableCellTextSelection: true,
-  ensureDomOrder: true,
-  domLayout: 'normal',
-  pagination: true,
-  paginationAutoPageSize: true,
-  // paginationPageSize: 100,
-  // paginationPageSizeSelector: [100, 200, 500, 1000],
-  cacheBlockSize: 200, // Must match paginationPageSize for infinite row model
-  cacheOverflowSize: 2, // Keep 2 extra blocks in cache before/after viewport
-  maxConcurrentDatasourceRequests: 2, // Allow 2 concurrent requests for faster loading
-  infiniteInitialRowCount: 100,
-  maxBlocksInCache: 20, // Keep more blocks in cache (4000 rows)
-  // Enable multi-column sorting with Alt+Click
-  multiSortKey: 'ctrl', // Use Ctrl (or Cmd on Mac) for multi-sort
-  alwaysMultiSort: false, // Only multi-sort when holding Ctrl/Cmd
-  // Always show menu icon in column headers
-  suppressMenuHide: true,
-  // Default column settings (Community Edition compatible)
-  defaultColDef: {
-    sortable: true,
-    filter: true,
-    resizable: true,
-    suppressHeaderFilterButton: false,
-    suppressHeaderMenuButton: false
-  }
-}))
-
-// Create datasource for Infinite Row Model
-function createDatasource(): IDatasource {
   return {
-    getRows: async (params: IGetRowsParams) => {
-      isLoading.value = true
-      error.value = undefined
-
-      try {
-        const objectName = getObjectName(props.tableMeta)
-        const objectSchema = getObjectSchema(props.tableMeta)
-
-        if (!objectName) throw new Error('Table/View name is undefined')
-
-        const limit = params.endRow - params.startRow
-        const offset = params.startRow
-
-        // Extract sort information from params (support multi-column sorting)
-        const sortModel = params.sortModel || []
-        currentSortModel.value = sortModel
-
-        // Build comma-separated order_by and order_dir for multi-column sorting
-        let orderBy: string | undefined
-        let orderDir: string | undefined
-
-        if (sortModel.length > 0) {
-          orderBy = sortModel.map((s) => s.colId).join(',')
-          orderDir = sortModel.map((s) => s.sort?.toUpperCase() || 'ASC').join(',')
-        }
-
-        // Extract filter model from AG Grid and convert to SQL
-        const filterModel = params.filterModel || {}
-        agGridFilters.value = filterModel
-        const agGridWhereClause = convertFilterModelToSQL(filterModel, connectionType.value)
-        agGridWhereSQL.value = agGridWhereClause
-
-        // Use AG Grid filters only (no manual WHERE clause)
-        const combinedWhereClause = agGridWhereClause
-
-        const queryParams: {
-          limit: number
-          offset: number
-          skip_count: boolean
-          schema?: string
-          order_by?: string
-          order_dir?: string
-          where?: string
-          tabId?: string
-        } = {
-          limit,
-          offset,
-          // Skip count if we already have one (either approximate or exact)
-          // Always skip on subsequent pages (offset > 0)
-          // Also skip if we have an exact count (exactRowCount.value !== null)
-          skip_count:
-            (offset > 0 && totalRowCount.value > 0) || // Skip on non-first pages
-            (exactRowCount.value !== null && !combinedWhereClause) // Skip if we have exact count (without filters)
-        }
-
-        // Add optional parameters only if they have values
-        if (objectSchema && objectSchema !== 'public' && objectSchema !== '') {
-          queryParams.schema = objectSchema
-        }
-        if (orderBy) {
-          queryParams.order_by = orderBy
-        }
-        if (orderDir) {
-          queryParams.order_dir = orderDir
-        }
-        if (combinedWhereClause) {
-          queryParams.where = combinedWhereClause
-        }
-        // Add tabId for query grouping (use table/view name)
-        if (objectName) {
-          queryParams.tabId = objectName
-        }
-
-        const data = props.isView
-          ? await connections.getViewData(
-              props.connectionId,
-              props.database,
-              objectName,
-              queryParams
-            )
-          : await connections.getTableData(
-              props.connectionId,
-              props.database,
-              objectName,
-              queryParams
-            )
-
-        // Convert rows array to objects with column names as keys
-        const convertedRowData = data.rows.map((row) => {
-          const obj: Record<string, unknown> = {}
-          data.columns.forEach((colName, idx) => {
-            obj[colName] = row[idx]
-          })
-          return obj
-        })
-
-        // Update total count if we have a real count from API
-        if (data.total_count > 0) {
-          totalRowCount.value = data.total_count
-        } else if (data.total_count === -1 && totalRowCount.value <= 0) {
-          // Only set -1 if we don't already have an approximate count
-          // (Views start with -1 from approxRows, tables have positive approxRows)
-          totalRowCount.value = -1
-        }
-
-        // For small tables where we don't have a count, if this is the first block
-        // and we got fewer rows than requested, we know the total
-        // (Don't infer for views with -1)
-        if (offset === 0 && totalRowCount.value === 0 && convertedRowData.length < limit) {
-          totalRowCount.value = convertedRowData.length
-        }
-
-        // Use totalRowCount for grid (either from API or approxRows prop)
-        const rowCount = totalRowCount.value > 0 ? totalRowCount.value : undefined
-        params.successCallback(convertedRowData, rowCount)
-
-        // Update visible rows immediately after data loads
-        setTimeout(() => updateVisibleRows(), 100)
-
-        error.value = undefined
-      } catch (err) {
-        console.error('Error loading data:', err)
-        const errorMessage = err instanceof Error ? err.message : 'Failed to load data'
-        error.value = errorMessage
-        params.failCallback()
-      } finally {
-        isLoading.value = false
-      }
-    }
+    rows: convertedRowData,
+    columns: data.columns,
+    totalCount: data.total_count
   }
 }
 
-// Grid ready handler
-function onGridReady(params: GridReadyEvent) {
-  gridApi.value = params.api
-
-  // Add scroll listener to update position indicator
-  params.api.addEventListener('bodyScroll', updateVisibleRows)
-  params.api.addEventListener('modelUpdated', updateVisibleRows)
-  params.api.addEventListener('firstDataRendered', updateVisibleRows)
-
-  // Add filter changed listener
-  params.api.addEventListener('filterChanged', () => {
-    // Reset total count so we get fresh count with filters
-    totalRowCount.value = 0
-    currentFirstRow.value = 1
-    currentLastRow.value = 100
-
-    // Reset exact count for views
+// Initialize base AG Grid composable
+const baseGrid = useBaseAGGridView({
+  objectKey: computed(() => props.objectKey),
+  connectionType,
+  initialTotalRowCount: computed(() => props.approxRows || 0),
+  fetchData,
+  onFilterChanged: () => {
+    // Reset exact count for views when filters change
     exactRowCount.value = null
     countError.value = null
-
-    // Note: AG Grid Infinite Row Model automatically purges cache and refetches when filters change
-    // No need to manually call purgeInfiniteCache() - it would cause duplicate fetch
-  })
-
-  // Add context menu listener for column headers - wait for next tick to ensure DOM is ready
-  // Use the grid container ref to ensure we attach to the correct grid instance
-  setTimeout(() => {
-    if (gridContainerRef.value) {
-      gridContainerRef.value.addEventListener('contextmenu', handleContextMenu)
-    }
-  }, 100)
-
-  // Restore saved state before setting datasource
-  const savedState = tabStateStore.getAGGridDataState(props.objectKey)
-
-  if (savedState) {
-    // Restore filters
-    if (savedState.filterModel && Object.keys(savedState.filterModel).length > 0) {
-      params.api.setFilterModel(savedState.filterModel)
-    }
-
-    // Restore sort - apply before setting datasource
-    if (savedState.sortModel && savedState.sortModel.length > 0) {
-      const columnState = savedState.sortModel.map((sort, index) => ({
-        colId: sort.colId,
-        sort: sort.sort,
-        sortIndex: index
-      }))
-      params.api.applyColumnState({
-        state: columnState,
-        defaultState: { sort: null }
-      })
-    }
   }
+})
 
-  // Set datasource for infinite row model (this will use the restored sort/filter state)
-  params.api.setGridOption('datasource', createDatasource())
-}
+// Watch for approxRows prop changes and update totalRowCount
+// Only update if we don't have an exact count saved
+watch(
+  () => props.approxRows,
+  (newApproxRows) => {
+    // Check if we have a saved exact count - if so, don't overwrite with approx
+    const savedState = tabStateStore.getAGGridDataState(props.objectKey)
 
-// Handle right-click on column headers
-function handleContextMenu(event: MouseEvent) {
-  const target = event.target as HTMLElement
+    if (savedState && savedState.exactRowCount !== null) {
+      // Use the saved exact count
+      baseGrid.totalRowCount.value = savedState.exactRowCount
+      exactRowCount.value = savedState.exactRowCount
+      return
+    }
 
-  // Check if click was on a column header
-  const headerCell = target.closest('.ag-header-cell')
+    // Otherwise use approxRows
+    if (newApproxRows && newApproxRows > 0) {
+      baseGrid.totalRowCount.value = newApproxRows
+    } else if (newApproxRows === -1) {
+      // -1 indicates unknown count (for views)
+      baseGrid.totalRowCount.value = -1
+    } else if (newApproxRows === undefined) {
+      // Reset count when switching to a table not in top tables list
+      baseGrid.totalRowCount.value = 0
+    }
 
-  if (headerCell && gridApi.value) {
-    event.preventDefault()
+    // Recreate datasource so AG Grid knows about the updated totalRowCount
+    if (baseGrid.gridApi.value && !baseGrid.gridApi.value.isDestroyed()) {
+      baseGrid.gridApi.value.setGridOption('datasource', baseGrid.createDatasource())
+    }
+  },
+  { immediate: true }
+)
 
-    // Get the column from the header cell
-    const colId = headerCell.getAttribute('col-id')
+// Watch for table changes and restore state from store or reset
+watch(
+  () => props.tableMeta,
+  () => {
+    const savedState = tabStateStore.getAGGridDataState(props.objectKey)
 
-    if (colId) {
-      const column = gridApi.value.getColumn(colId)
+    if (savedState) {
+      // Restore state from store
+      baseGrid.currentSortModel.value = savedState.sortModel || []
+      exactRowCount.value = savedState.exactRowCount || null
+      baseGrid.agGridFilters.value = savedState.filterModel || {}
 
-      if (column) {
-        contextMenuColumn.value = column
-        contextMenuX.value = event.clientX
-        contextMenuY.value = event.clientY
-        showContextMenu.value = true
+      // Apply saved filters and sort to grid
+      if (baseGrid.gridApi.value) {
+        // Set filter model
+        baseGrid.gridApi.value.setFilterModel(savedState.filterModel || null)
+
+        // Apply sort model
+        if (savedState.sortModel && savedState.sortModel.length > 0) {
+          const columnState = savedState.sortModel.map((sort, index) => ({
+            colId: sort.colId,
+            sort: sort.sort,
+            sortIndex: index
+          }))
+          baseGrid.gridApi.value.applyColumnState({
+            state: columnState,
+            defaultState: { sort: null }
+          })
+        }
+      }
+    } else {
+      // Reset to default state
+      baseGrid.currentSortModel.value = []
+      countError.value = null
+      baseGrid.agGridFilters.value = {}
+      baseGrid.agGridWhereSQL.value = ''
+
+      if (baseGrid.gridApi.value) {
+        // Clear any AG Grid column filters carried over from the previous table
+        baseGrid.gridApi.value.setFilterModel(null)
+      }
+
+      // Check if we have a cached exact count for this table
+      const cacheKey = getCacheKey()
+      const cachedCount = exactCountCache.value.get(cacheKey)
+      if (cachedCount !== undefined) {
+        exactRowCount.value = cachedCount
+        baseGrid.totalRowCount.value = cachedCount
+      } else {
+        exactRowCount.value = null
       }
     }
-  } else {
-    // Prevent system context menu on data cells too
-    // (Only show our custom context menu on header cells)
-    event.preventDefault()
-  }
-}
+
+    // Recreate datasource to ensure AG Grid knows about the (potentially updated) totalRowCount
+    if (baseGrid.gridApi.value) {
+      baseGrid.gridApi.value.setGridOption('datasource', baseGrid.createDatasource())
+    }
+  },
+  { deep: true }
+)
 
 // Reload data when table metadata changes
 watch(
   () => props.tableMeta,
   () => {
-    if (gridApi.value) {
+    if (baseGrid.gridApi.value) {
       const savedState = tabStateStore.getAGGridDataState(props.objectKey)
 
       // Reset the datasource with the new table
-      gridApi.value.setGridOption('datasource', createDatasource())
+      baseGrid.gridApi.value.setGridOption('datasource', baseGrid.createDatasource())
 
-      // Apply saved state AFTER setting datasource (setTimeout to ensure grid is ready)
+      // Apply saved state AFTER setting datasource
       setTimeout(() => {
-        if (!gridApi.value) return
+        if (!baseGrid.gridApi.value) return
 
         if (savedState && savedState.sortModel && savedState.sortModel.length > 0) {
           const columnState = savedState.sortModel.map((sort, index) => ({
@@ -640,13 +326,13 @@ watch(
             sort: sort.sort,
             sortIndex: index
           }))
-          gridApi.value.applyColumnState({
+          baseGrid.gridApi.value.applyColumnState({
             state: columnState,
             defaultState: { sort: null }
           })
         } else {
           // Clear any existing sort state when switching tables (only if no saved state)
-          gridApi.value.applyColumnState({
+          baseGrid.gridApi.value.applyColumnState({
             defaultState: { sort: null }
           })
         }
@@ -656,38 +342,20 @@ watch(
   { deep: true }
 )
 
-// Save AG Grid state to store when it changes
+// Save AG Grid state to store when it changes (including exact count)
 watch(
   () =>
-    [
-      currentSortModel.value,
-      agGridFilters.value,
-      totalRowCount.value,
-      exactRowCount.value
-    ] as const,
-  ([sortModel, filterModel, totalCount, exactCount]) => {
+    [baseGrid.currentSortModel.value, baseGrid.agGridFilters.value, exactRowCount.value] as const,
+  ([sortModel, filterModel, exactCount]) => {
     tabStateStore.setAGGridDataState(props.objectKey, {
       sortModel,
       filterModel,
-      totalRowCount: totalCount,
+      totalRowCount: baseGrid.totalRowCount.value,
       exactRowCount: exactCount
     })
   },
   { deep: true }
 )
-
-// Track visible rows for position indicator
-function updateVisibleRows() {
-  if (!gridApi.value || gridApi.value.isDestroyed()) return
-
-  const firstRow = gridApi.value.getFirstDisplayedRowIndex()
-  const lastRow = gridApi.value.getLastDisplayedRowIndex()
-
-  if (firstRow !== null && lastRow !== null && firstRow >= 0 && lastRow >= 0) {
-    currentFirstRow.value = firstRow + 1 // 1-indexed for display
-    currentLastRow.value = lastRow + 1
-  }
-}
 
 // Calculate exact row count for tables and views (on-demand)
 async function calculateExactCount() {
@@ -705,10 +373,9 @@ async function calculateExactCount() {
     if (objectSchema && objectSchema !== 'public' && objectSchema !== '') {
       params.schema = objectSchema
     }
-    if (combinedWhereClause.value) {
-      params.where = combinedWhereClause.value
+    if (baseGrid.combinedWhereClause.value) {
+      params.where = baseGrid.combinedWhereClause.value
     }
-    // Use table/view name as tabId for SQL logging grouping
     params.tabId = objectName
 
     // Call appropriate API based on whether it's a view or table
@@ -717,31 +384,17 @@ async function calculateExactCount() {
       : await connections.getTableExactCount(props.connectionId, props.database, objectName, params)
 
     exactRowCount.value = result.count
-    totalRowCount.value = result.count // Update grid's total count
+    baseGrid.totalRowCount.value = result.count
 
     // Cache the exact count (only if no filters applied)
-    if (!combinedWhereClause.value) {
+    if (!baseGrid.combinedWhereClause.value) {
       const cacheKey = getCacheKey()
       exactCountCache.value.set(cacheKey, result.count)
     }
 
-    // Update AG Grid's pagination display with the exact count
-    // We've updated totalRowCount.value which will be used in the next data fetch
-    // Unfortunately AG Grid's Infinite Row Model doesn't have a direct API to update
-    // the row count without triggering a data refresh. We have two options:
-    //
-    // Option 1: Don't refresh - pagination updates on next user interaction (scroll/page)
-    //   Pros: Zero additional queries
-    //   Cons: User doesn't see updated page count until they interact with the grid
-    //
-    // Option 2: Trigger cache purge to immediately update pagination
-    //   Pros: User immediately sees updated page count (e.g., "Page 1 of 1,154,000")
-    //   Cons: Triggers one data fetch + metadata queries (if not cached)
-    //
-    // We choose Option 2 for better UX. The backend fix to share metadata cache
-    // should minimize additional queries on subsequent operations.
-    if (gridApi.value) {
-      gridApi.value.purgeInfiniteCache()
+    // Trigger cache purge to immediately update pagination
+    if (baseGrid.gridApi.value) {
+      baseGrid.gridApi.value.purgeInfiniteCache()
     }
   } catch (err) {
     console.error('Error calculating exact count:', err)
@@ -751,92 +404,31 @@ async function calculateExactCount() {
   }
 }
 
-// Refresh data - exposed to parent
-function refresh() {
-  if (gridApi.value) {
-    // This will trigger a fresh data fetch from the backend
-    gridApi.value.setGridOption('datasource', createDatasource())
-  }
+// Database-specific clear all filters wrapper
+function clearAllFilters() {
+  // Use the base clearing
+  baseGrid.clearAllFilters()
+
+  // Reset exact count for views
+  exactRowCount.value = null
+  countError.value = null
 }
-
-// Get current grid state for sync purposes
-function getGridState() {
-  return {
-    sortModel: currentSortModel.value,
-    filterModel: agGridFilters.value,
-    sqlBannerExpanded: isSqlBannerExpanded.value
-  }
-}
-
-// Apply grid state from sync (without triggering watchers)
-function applyGridState(state: {
-  sortModel?: any[]
-  filterModel?: Record<string, any>
-  sqlBannerExpanded?: boolean
-}) {
-  if (!gridApi.value) return
-
-  // Apply sort model
-  if (state.sortModel !== undefined) {
-    currentSortModel.value = state.sortModel
-    if (state.sortModel.length > 0) {
-      const columnState = state.sortModel.map((sort: any, index: number) => ({
-        colId: sort.colId,
-        sort: sort.sort,
-        sortIndex: index
-      }))
-      gridApi.value.applyColumnState({
-        state: columnState,
-        defaultState: { sort: null }
-      })
-    } else {
-      // Clear sorting
-      gridApi.value.applyColumnState({
-        defaultState: { sort: null }
-      })
-    }
-  }
-
-  // Apply filter model
-  if (state.filterModel !== undefined) {
-    agGridFilters.value = state.filterModel
-    gridApi.value.setFilterModel(state.filterModel)
-  }
-
-  // Apply SQL banner expansion state
-  if (state.sqlBannerExpanded !== undefined) {
-    isSqlBannerExpanded.value = state.sqlBannerExpanded
-  }
-}
-
-// Expose methods to parent
-defineExpose({
-  refresh,
-  getGridState,
-  applyGridState
-})
 
 // Initialize and restore state on mount
 onMounted(() => {
   const savedState = tabStateStore.getAGGridDataState(props.objectKey)
 
   if (savedState) {
-    // Restore state from store
-    currentSortModel.value = savedState.sortModel || []
-    totalRowCount.value = savedState.totalRowCount || 0
+    // Restore exact row count
     exactRowCount.value = savedState.exactRowCount || null
-    agGridFilters.value = savedState.filterModel || {}
   }
 })
 
-// Cleanup
-onBeforeUnmount(() => {
-  if (gridContainerRef.value) {
-    gridContainerRef.value.removeEventListener('contextmenu', handleContextMenu)
-  }
-  if (gridApi.value) {
-    gridApi.value.destroy()
-  }
+// Expose methods to parent
+defineExpose({
+  refresh: baseGrid.refresh,
+  getGridState: baseGrid.getGridState,
+  applyGridState: baseGrid.applyGridState
 })
 </script>
 
@@ -844,32 +436,32 @@ onBeforeUnmount(() => {
   <div class="flex flex-col h-full">
     <!-- SQL Query Banner (like DataGrip) -->
     <div
-      v-if="fullSqlQuery"
+      v-if="baseGrid.fullSqlQuery.value"
       class="mb-3 border border-gray-200 dark:border-gray-700 rounded-md overflow-hidden"
     >
       <div class="flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-gray-900/40">
         <!-- SQL Content with Syntax Highlighting -->
         <div class="flex-1 min-w-0">
           <MonacoEditor
-            :model-value="displayedSql"
-            :language="monacoLanguage"
-            :height="sqlBannerHeight"
+            :model-value="baseGrid.displayedSql.value"
+            :language="baseGrid.monacoLanguage.value"
+            :height="baseGrid.sqlBannerHeight.value"
             :read-only="true"
-            :options="sqlBannerEditorOptions"
+            :options="baseGrid.sqlBannerEditorOptions.value"
           />
         </div>
 
         <!-- Action Buttons -->
-        <div class="flex items-center gap-1 flex-shrink-0">
+        <div class="flex items-center gap-1 shrink-0">
           <!-- Expand/Collapse button (only show if truncation is needed) -->
           <button
-            v-if="needsTruncation"
+            v-if="baseGrid.needsTruncation.value"
             type="button"
             class="px-2 py-1 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
-            :title="isSqlBannerExpanded ? 'Collapse' : 'Expand'"
-            @click="toggleSqlBanner"
+            :title="baseGrid.isSqlBannerExpanded.value ? 'Collapse' : 'Expand'"
+            @click="baseGrid.toggleSqlBanner"
           >
-            {{ isSqlBannerExpanded ? 'Collapse' : 'Expand' }}
+            {{ baseGrid.isSqlBannerExpanded.value ? 'Collapse' : 'Expand' }}
           </button>
 
           <!-- Clear filters button -->
@@ -912,15 +504,15 @@ onBeforeUnmount(() => {
 
     <!-- Error message -->
     <div
-      v-if="error"
+      v-if="baseGrid.error.value"
       class="mb-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-md text-sm text-red-700 dark:text-red-300"
     >
-      {{ error }}
+      {{ baseGrid.error.value }}
     </div>
 
     <!-- AG Grid -->
     <div
-      ref="gridContainerRef"
+      :ref="(el) => (baseGrid.gridContainerRef.value = el as HTMLElement)"
       class="ag-theme-alpine"
       :style="{
         width: '100%',
@@ -929,9 +521,9 @@ onBeforeUnmount(() => {
     >
       <AgGridVue
         :columnDefs="columnDefs"
-        :gridOptions="gridOptions"
+        :gridOptions="baseGrid.gridOptions.value"
         style="width: 100%; height: 100%"
-        @grid-ready="onGridReady"
+        @grid-ready="baseGrid.onGridReady"
       />
     </div>
 
@@ -943,7 +535,7 @@ onBeforeUnmount(() => {
       <div class="flex items-center gap-3">
         <!-- Approximate count hint -->
         <span
-          v-if="!isView && totalRowCount > 0 && exactRowCount === null"
+          v-if="!isView && baseGrid.totalRowCount.value > 0 && exactRowCount === null"
           class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1"
         >
           <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
@@ -953,7 +545,7 @@ onBeforeUnmount(() => {
               clip-rule="evenodd"
             />
           </svg>
-          <span>Count (~{{ totalRowCount.toLocaleString() }}) is approximate</span>
+          <span>Count (~{{ baseGrid.totalRowCount.value.toLocaleString() }}) is approximate</span>
         </span>
 
         <!-- Exact count result -->
@@ -1040,12 +632,12 @@ onBeforeUnmount(() => {
 
     <!-- Custom Context Menu -->
     <ColumnContextMenu
-      v-if="showContextMenu"
-      :x="contextMenuX"
-      :y="contextMenuY"
-      :column="contextMenuColumn"
-      :grid-api="gridApi"
-      @close="closeContextMenu"
+      v-if="baseGrid.showContextMenu.value"
+      :x="baseGrid.contextMenuX.value"
+      :y="baseGrid.contextMenuY.value"
+      :column="baseGrid.contextMenuColumn.value"
+      :grid-api="baseGrid.gridApi.value"
+      @close="baseGrid.closeContextMenu"
     />
   </div>
 </template>
@@ -1066,6 +658,4 @@ onBeforeUnmount(() => {
 :deep(.ag-header-cell-not-sortable .ag-header-cell-label) {
   cursor: not-allowed !important;
 }
-
-/* Component-specific styles only - code highlighting styles are centralized in src/styles/codeHighlighting.css */
 </style>

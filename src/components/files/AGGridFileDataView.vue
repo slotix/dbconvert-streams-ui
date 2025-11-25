@@ -1,14 +1,7 @@
 <script setup lang="ts">
-import { ref, watch, computed, onBeforeUnmount, onMounted } from 'vue'
+import { ref, watch, computed, onMounted } from 'vue'
 import { AgGridVue } from 'ag-grid-vue3'
-import { ModuleRegistry, AllCommunityModule } from 'ag-grid-community'
-import type {
-  GridReadyEvent,
-  ColDef,
-  GridOptions,
-  IDatasource,
-  IGetRowsParams
-} from 'ag-grid-community'
+import type { ColDef } from 'ag-grid-community'
 import { type FileSystemEntry } from '@/api/fileSystem'
 import { type FileMetadata } from '@/types/files'
 import { getFileFormat } from '@/utils/fileFormat'
@@ -17,15 +10,13 @@ import { formatTableValue } from '@/utils/dataUtils'
 import ColumnContextMenu from '../database/ColumnContextMenu.vue'
 import UnsupportedFileMessage from './UnsupportedFileMessage.vue'
 import { MonacoEditor } from '@/components/monaco'
-import { useAGGridFiltering } from '@/composables/useAGGridFiltering'
-import { convertFilterModelToSQL, determineFilterType } from '@/utils/agGridFilterUtils'
+import { determineFilterType } from '@/utils/agGridFilterUtils'
+import {
+  useBaseAGGridView,
+  type FetchDataParams,
+  type FetchDataResult
+} from '@/composables/useBaseAGGridView'
 import { useObjectTabStateStore } from '@/stores/objectTabState'
-import 'ag-grid-community/styles/ag-grid.css'
-import 'ag-grid-community/styles/ag-theme-alpine.css'
-import '@/styles/agGridTheme.css'
-
-// Register AG Grid modules
-ModuleRegistry.registerModules([AllCommunityModule])
 
 const props = defineProps<{
   entry: FileSystemEntry
@@ -34,125 +25,16 @@ const props = defineProps<{
   objectKey: string
 }>()
 
-// Use shared AG Grid filtering composable
-const {
-  gridApi,
-  currentSortModel,
-  agGridFilters,
-  agGridWhereSQL,
-  showContextMenu,
-  contextMenuX,
-  contextMenuY,
-  contextMenuColumn,
-  isSqlBannerExpanded,
-  fullSqlQuery,
-  needsTruncation,
-  displayedSql,
-  toggleSqlBanner,
-  closeContextMenu,
-  clearAllFilters: clearAgGridFilters
-} = useAGGridFiltering()
-
 const tabStateStore = useObjectTabStateStore()
 
-function syncGridStateFromStore() {
-  const savedState = tabStateStore.getAGGridDataState(props.objectKey)
-
-  if (savedState) {
-    currentSortModel.value = savedState.sortModel || []
-    agGridFilters.value = savedState.filterModel || {}
-    agGridWhereSQL.value =
-      savedState.filterModel && Object.keys(savedState.filterModel).length > 0
-        ? convertFilterModelToSQL(savedState.filterModel, 'duckdb')
-        : ''
-  } else {
-    currentSortModel.value = []
-    agGridFilters.value = {}
-    agGridWhereSQL.value = ''
-  }
-
-  return savedState
-}
-
-onMounted(() => {
-  syncGridStateFromStore()
-})
-
-watch(
-  () => props.objectKey,
-  () => {
-    const savedState = syncGridStateFromStore()
-
-    if (!gridApi.value) return
-
-    if (savedState) {
-      applyGridState({
-        sortModel: savedState.sortModel,
-        filterModel: savedState.filterModel
-      })
-    } else {
-      gridApi.value.applyColumnState({
-        defaultState: { sort: null }
-      })
-      gridApi.value.setFilterModel(null)
-    }
-
-    gridApi.value.setGridOption('datasource', createDatasource())
-  }
-)
-
-// Scoped ref for this grid instance to properly attach event listeners
-const gridContainerRef = ref<HTMLElement | null>(null)
-
 // Component-specific state
-const error = ref<string>()
-const isLoading = ref(false)
-const isInitialLoading = ref(true) // Track initial load (metadata + first data)
+const isInitialLoading = ref(true)
 const warnings = ref<string[]>([])
 
 const fileFormat = computed(() => props.entry.format || getFileFormat(props.entry.name))
 
 // Check if file format is supported
 const isUnsupportedFile = computed(() => fileFormat.value === null)
-
-const SQL_BANNER_COLLAPSED_HEIGHT = '3.25rem'
-const SQL_BANNER_EXPANDED_HEIGHT = '12rem'
-
-const sqlBannerHeight = computed(() =>
-  isSqlBannerExpanded.value ? SQL_BANNER_EXPANDED_HEIGHT : SQL_BANNER_COLLAPSED_HEIGHT
-)
-
-// Monaco editor options for inline SQL banner (DuckDB SQL)
-const sqlBannerEditorOptions = computed<Record<string, any>>(() => ({
-  readOnly: true,
-  minimap: { enabled: false },
-  scrollBeyondLastLine: false,
-  fontSize: 13,
-  lineNumbers: 'off',
-  glyphMargin: false,
-  folding: false,
-  lineDecorationsWidth: 0,
-  lineNumbersMinChars: 0,
-  renderLineHighlight: 'none',
-  automaticLayout: true,
-  scrollbar: {
-    vertical: 'auto',
-    horizontal: 'auto',
-    verticalScrollbarSize: 8,
-    horizontalScrollbarSize: 8
-  },
-  overviewRulerLanes: 0,
-  hideCursorInOverviewRuler: true,
-  overviewRulerBorder: false,
-  wordWrap: 'off',
-  contextmenu: false,
-  domReadOnly: true,
-  renderValidationDecorations: 'off',
-  padding: { top: 10, bottom: 2 }
-}))
-
-// Get row count directly from metadata (DuckDB provides accurate counts)
-const totalRowCount = ref<number>(props.metadata?.rowCount ?? 0)
 
 // Watch for metadata warnings
 watch(
@@ -194,223 +76,122 @@ const columnDefs = computed<ColDef[]>(() => {
   })
 })
 
-// Clear all filters
-function clearAllFilters() {
-  clearAgGridFilters()
-
-  // Clear AG Grid filters
-  if (gridApi.value) {
-    gridApi.value.setFilterModel(null)
+// Data fetching callback for base composable
+async function fetchData(params: FetchDataParams): Promise<FetchDataResult> {
+  if (!fileFormat.value) {
+    throw new Error('Unsupported file format')
   }
 
-  // Clear sorting
-  if (gridApi.value) {
-    gridApi.value.applyColumnState({
-      defaultState: { sort: null }
-    })
+  // Build comma-separated order_by and order_dir for multi-column sorting
+  let orderBy: string | undefined
+  let orderDir: string | undefined
+
+  if (params.sortModel.length > 0) {
+    orderBy = params.sortModel.map((s) => s.colId).join(',')
+    orderDir = params.sortModel.map((s) => s.sort?.toUpperCase() || 'ASC').join(',')
   }
 
-  // Reset to first page
-  totalRowCount.value = props.metadata?.rowCount ?? 0
-
-  // Refresh data
-  if (gridApi.value) {
-    gridApi.value.setGridOption('datasource', createDatasource())
-  }
-}
-
-// Convert AG Grid filter model to SQL WHERE clause
-// AG Grid options with infinite row model (matches database grid exactly)
-const gridOptions = computed<GridOptions>(() => ({
-  theme: 'legacy',
-  rowModelType: 'infinite',
-  rowHeight: 32,
-  headerHeight: 40,
-  suppressCellFocus: true,
-  animateRows: false,
-  enableCellTextSelection: true,
-  ensureDomOrder: true,
-  domLayout: 'normal',
-  pagination: true,
-  paginationAutoPageSize: true,
-  cacheBlockSize: 200, // Must match paginationPageSize for infinite row model
-  cacheOverflowSize: 2,
-  maxConcurrentDatasourceRequests: 2,
-  infiniteInitialRowCount: 100,
-  maxBlocksInCache: 20,
-  multiSortKey: 'ctrl', // Use Ctrl (or Cmd on Mac) for multi-sort
-  alwaysMultiSort: false, // Only multi-sort when holding Ctrl/Cmd
-  suppressMenuHide: true,
-  defaultColDef: {
-    sortable: true,
-    filter: true,
-    resizable: true,
-    suppressHeaderFilterButton: false,
-    suppressHeaderMenuButton: false,
-    wrapText: false,
-    autoHeight: false
-  }
-}))
-
-// Create datasource for infinite row model
-function createDatasource(): IDatasource {
-  return {
-    getRows: async (params: IGetRowsParams) => {
-      if (!fileFormat.value) {
-        params.failCallback()
-        return
-      }
-
-      isLoading.value = true
-      error.value = undefined
-
-      try {
-        const startRow = params.startRow || 0
-        const endRow = params.endRow || 200
-        const limit = endRow - startRow
-        const offset = startRow
-
-        // Extract sort information from params (support multi-column sorting)
-        const sortModel = params.sortModel || []
-        currentSortModel.value = sortModel
-
-        // Build comma-separated order_by and order_dir for multi-column sorting
-        let orderBy: string | undefined
-        let orderDir: string | undefined
-
-        if (sortModel.length > 0) {
-          orderBy = sortModel.map((s) => s.colId).join(',')
-          orderDir = sortModel.map((s) => s.sort?.toUpperCase() || 'ASC').join(',')
-        }
-
-        // Extract filter model from AG Grid and convert to SQL
-        const filterModel = params.filterModel || {}
-        agGridFilters.value = filterModel
-        const agGridWhereClause = convertFilterModelToSQL(filterModel, 'duckdb')
-        agGridWhereSQL.value = agGridWhereClause
-
-        // Use AG Grid filters only (no manual WHERE clause)
-        const combinedWhere = agGridWhereClause
-
-        const response = await filesApi.getFileData(props.entry.path, fileFormat.value, {
-          limit,
-          offset,
-          skipCount: offset > 0, // Skip count on subsequent pages
-          order_by: orderBy,
-          order_dir: orderDir,
-          where: combinedWhere || undefined
-        })
-
-        // Update total count if we have a real count from API
-        if (response.total > 0) {
-          totalRowCount.value = response.total
-        }
-
-        // Use row count from state
-        const rowCount = totalRowCount.value > 0 ? totalRowCount.value : undefined
-
-        // Convert data to row format expected by AG Grid
-        const rows = response.data.map((row) => {
-          const gridRow: Record<string, unknown> = {}
-          Object.entries(row).forEach(([key, value]) => {
-            gridRow[key] = value
-          })
-          return gridRow
-        })
-
-        // Merge warnings from data response with existing metadata warnings
-        const dataWarnings = response.warnings || []
-        const metadataWarnings = props.metadata?.warnings || []
-        const allWarnings = new Set([...metadataWarnings, ...dataWarnings])
-        warnings.value = Array.from(allWarnings)
-
-        params.successCallback(rows, rowCount)
-        error.value = undefined
-      } catch (err) {
-        console.error('Error loading file data:', err)
-        const errorMessage = err instanceof Error ? err.message : 'Failed to load file data'
-        error.value = errorMessage
-        params.failCallback()
-      } finally {
-        // Mark initial loading as complete (on both success and error)
-        if (isInitialLoading.value) {
-          isInitialLoading.value = false
-        }
-        isLoading.value = false
-      }
-    }
-  }
-}
-
-// Grid ready handler
-function onGridReady(params: GridReadyEvent) {
-  gridApi.value = params.api
-
-  // Don't set up grid for unsupported files
-  if (isUnsupportedFile.value) {
-    isInitialLoading.value = false
-    return
-  }
-
-  // Add filter changed listener
-  params.api.addEventListener('filterChanged', () => {
-    // Reset total count so we get fresh count with filters
-    totalRowCount.value = 0
+  const response = await filesApi.getFileData(props.entry.path, fileFormat.value, {
+    limit: params.limit,
+    offset: params.offset,
+    skipCount: params.offset > 0, // Skip count on subsequent pages
+    order_by: orderBy,
+    order_dir: orderDir,
+    where: params.whereClause || undefined
   })
 
-  // Add context menu listener for column headers
-  setTimeout(() => {
-    if (gridContainerRef.value) {
-      gridContainerRef.value.addEventListener('contextmenu', handleContextMenu)
-    }
-  }, 100)
-
-  const savedState = tabStateStore.getAGGridDataState(props.objectKey)
-  if (savedState) {
-    applyGridState({
-      sortModel: savedState.sortModel,
-      filterModel: savedState.filterModel
+  // Convert data to row format expected by AG Grid
+  const rows = response.data.map((row) => {
+    const gridRow: Record<string, unknown> = {}
+    Object.entries(row).forEach(([key, value]) => {
+      gridRow[key] = value
     })
+    return gridRow
+  })
+
+  // Merge warnings from data response with existing metadata warnings
+  const dataWarnings = response.warnings || []
+  const metadataWarnings = props.metadata?.warnings || []
+  const allWarnings = new Set([...metadataWarnings, ...dataWarnings])
+  warnings.value = Array.from(allWarnings)
+
+  // Mark initial loading as complete on first successful fetch
+  if (isInitialLoading.value) {
+    isInitialLoading.value = false
   }
 
-  // Set the datasource
-  params.api.setGridOption('datasource', createDatasource())
+  return {
+    rows,
+    columns: response.schema.map((field) => field.name),
+    totalCount: response.total
+  }
 }
 
-// Handle right-click on column headers
-function handleContextMenu(event: MouseEvent) {
-  const target = event.target as HTMLElement
-
-  // Check if click was on a column header
-  const headerCell = target.closest('.ag-header-cell')
-
-  if (headerCell && gridApi.value) {
-    event.preventDefault()
-
-    // Get the column from the header cell
-    const colId = headerCell.getAttribute('col-id')
-
-    if (colId) {
-      const column = gridApi.value.getColumn(colId)
-
-      if (column) {
-        contextMenuColumn.value = column
-        contextMenuX.value = event.clientX
-        contextMenuY.value = event.clientY
-        showContextMenu.value = true
-      }
+// Initialize base AG Grid composable
+const baseGrid = useBaseAGGridView({
+  objectKey: computed(() => props.objectKey),
+  connectionType: computed(() => 'duckdb'),
+  initialTotalRowCount: computed(() => props.metadata?.rowCount ?? 0),
+  fetchData,
+  onGridReady: () => {
+    // Don't set up grid for unsupported files
+    if (isUnsupportedFile.value) {
+      isInitialLoading.value = false
     }
   }
+})
+
+// Sync grid state from store on mount
+function syncGridStateFromStore() {
+  const savedState = tabStateStore.getAGGridDataState(props.objectKey)
+
+  if (savedState) {
+    baseGrid.currentSortModel.value = savedState.sortModel || []
+    baseGrid.agGridFilters.value = savedState.filterModel || {}
+  } else {
+    baseGrid.currentSortModel.value = []
+    baseGrid.agGridFilters.value = {}
+  }
+
+  return savedState
 }
+
+onMounted(() => {
+  syncGridStateFromStore()
+})
+
+// Watch for objectKey changes (tab switches)
+watch(
+  () => props.objectKey,
+  () => {
+    const savedState = syncGridStateFromStore()
+
+    if (!baseGrid.gridApi.value) return
+
+    if (savedState) {
+      baseGrid.applyGridState({
+        sortModel: savedState.sortModel,
+        filterModel: savedState.filterModel
+      })
+    } else {
+      baseGrid.gridApi.value.applyColumnState({
+        defaultState: { sort: null }
+      })
+      baseGrid.gridApi.value.setFilterModel(null)
+    }
+
+    baseGrid.gridApi.value.setGridOption('datasource', baseGrid.createDatasource())
+  }
+)
 
 // Reload data when entry changes
 watch(
   () => props.entry,
   () => {
-    if (gridApi.value) {
+    if (baseGrid.gridApi.value) {
       // Reset state and reload
       isInitialLoading.value = true
-      gridApi.value.setGridOption('datasource', createDatasource())
+      baseGrid.gridApi.value.setGridOption('datasource', baseGrid.createDatasource())
     }
   },
   { deep: true }
@@ -422,98 +203,18 @@ watch(
   (newCols, oldCols) => {
     // Only refresh if schema actually changed (not just row count update)
     const schemaChanged = JSON.stringify(newCols) !== JSON.stringify(oldCols)
-    if (schemaChanged && gridApi.value && columnDefs.value.length > 0) {
+    if (schemaChanged && baseGrid.gridApi.value && columnDefs.value.length > 0) {
       // Refresh the grid with new datasource
-      gridApi.value.setGridOption('datasource', createDatasource())
+      baseGrid.gridApi.value.setGridOption('datasource', baseGrid.createDatasource())
     }
   },
   { deep: true }
 )
-
-watch(
-  () => currentSortModel.value,
-  (sortModel) => {
-    tabStateStore.setAGGridDataState(props.objectKey, {
-      sortModel
-    })
-  },
-  { deep: true }
-)
-
-watch(
-  () => agGridFilters.value,
-  (filterModel) => {
-    tabStateStore.setAGGridDataState(props.objectKey, {
-      filterModel
-    })
-  },
-  { deep: true }
-)
-
-// Get current grid state for sync purposes
-function getGridState() {
-  return {
-    sortModel: currentSortModel.value,
-    filterModel: agGridFilters.value,
-    sqlBannerExpanded: isSqlBannerExpanded.value
-  }
-}
-
-// Apply grid state from sync (without triggering watchers)
-function applyGridState(state: {
-  sortModel?: any[]
-  filterModel?: Record<string, any>
-  sqlBannerExpanded?: boolean
-}) {
-  if (!gridApi.value) return
-
-  // Apply sort model
-  if (state.sortModel !== undefined) {
-    currentSortModel.value = state.sortModel
-    if (state.sortModel.length > 0) {
-      const columnState = state.sortModel.map((sort: any, index: number) => ({
-        colId: sort.colId,
-        sort: sort.sort,
-        sortIndex: index
-      }))
-      gridApi.value.applyColumnState({
-        state: columnState,
-        defaultState: { sort: null }
-      })
-    } else {
-      // Clear sorting
-      gridApi.value.applyColumnState({
-        defaultState: { sort: null }
-      })
-    }
-  }
-
-  // Apply filter model
-  if (state.filterModel !== undefined) {
-    agGridFilters.value = state.filterModel
-    gridApi.value.setFilterModel(state.filterModel)
-  }
-
-  // Apply SQL banner expansion state
-  if (state.sqlBannerExpanded !== undefined) {
-    isSqlBannerExpanded.value = state.sqlBannerExpanded
-  }
-}
 
 // Expose methods to parent
 defineExpose({
-  getGridState,
-  applyGridState
-})
-
-// Cleanup
-onBeforeUnmount(() => {
-  if (gridContainerRef.value) {
-    gridContainerRef.value.removeEventListener('contextmenu', handleContextMenu as EventListener)
-  }
-  if (gridApi.value) {
-    gridApi.value.destroy()
-  }
+  getGridState: baseGrid.getGridState,
+  applyGridState: baseGrid.applyGridState
 })
 </script>
 
@@ -529,18 +230,18 @@ onBeforeUnmount(() => {
 
     <!-- SQL Query Banner (like DataGrip) -->
     <div
-      v-if="!isUnsupportedFile && fullSqlQuery"
+      v-if="!isUnsupportedFile && baseGrid.fullSqlQuery.value"
       class="mb-3 border border-gray-200 dark:border-gray-700 rounded-md overflow-hidden"
     >
       <div class="flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-gray-900/40">
         <!-- SQL Content with Syntax Highlighting -->
         <div class="flex-1 min-w-0">
           <MonacoEditor
-            :model-value="displayedSql"
+            :model-value="baseGrid.displayedSql.value"
             language="sql"
-            :height="sqlBannerHeight"
+            :height="baseGrid.sqlBannerHeight.value"
             :read-only="true"
-            :options="sqlBannerEditorOptions"
+            :options="baseGrid.sqlBannerEditorOptions.value"
           />
         </div>
 
@@ -548,13 +249,13 @@ onBeforeUnmount(() => {
         <div class="flex items-center gap-1 shrink-0">
           <!-- Expand/Collapse button (only show if truncation is needed) -->
           <button
-            v-if="needsTruncation"
+            v-if="baseGrid.needsTruncation.value"
             type="button"
             class="px-2 py-1 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
-            :title="isSqlBannerExpanded ? 'Collapse' : 'Expand'"
-            @click="toggleSqlBanner"
+            :title="baseGrid.isSqlBannerExpanded.value ? 'Collapse' : 'Expand'"
+            @click="baseGrid.toggleSqlBanner"
           >
-            {{ isSqlBannerExpanded ? 'Collapse' : 'Expand' }}
+            {{ baseGrid.isSqlBannerExpanded.value ? 'Collapse' : 'Expand' }}
           </button>
 
           <!-- Clear filters button -->
@@ -562,7 +263,7 @@ onBeforeUnmount(() => {
             type="button"
             class="px-2 py-1 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors flex items-center gap-1"
             title="Clear all filters and sorting"
-            @click="clearAllFilters"
+            @click="baseGrid.clearAllFilters"
           >
             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
@@ -580,7 +281,7 @@ onBeforeUnmount(() => {
 
     <!-- Warnings (only show when there's no error) -->
     <div
-      v-if="!isUnsupportedFile && !error && warnings.length > 0"
+      v-if="!isUnsupportedFile && !baseGrid.error.value && warnings.length > 0"
       class="mb-3 p-3 bg-yellow-50 dark:bg-amber-900 border border-yellow-200 dark:border-amber-700 rounded-md text-sm text-yellow-700 dark:text-amber-300"
     >
       <div class="font-medium mb-1">Warnings:</div>
@@ -591,7 +292,7 @@ onBeforeUnmount(() => {
 
     <!-- Error State Placeholder -->
     <div
-      v-if="!isUnsupportedFile && error"
+      v-if="!isUnsupportedFile && baseGrid.error.value"
       class="flex items-center justify-center py-12 bg-gray-50 dark:bg-gray-900/40 rounded-md border border-gray-200 dark:border-gray-700"
     >
       <div class="text-center p-8 max-w-md">
@@ -612,7 +313,7 @@ onBeforeUnmount(() => {
           Failed to Load File
         </h3>
         <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-          {{ error }}
+          {{ baseGrid.error.value }}
         </p>
         <div
           class="text-xs text-gray-500 dark:text-gray-500 bg-white dark:bg-gray-800 rounded p-3 border border-gray-200 dark:border-gray-700"
@@ -630,16 +331,16 @@ onBeforeUnmount(() => {
 
     <!-- AG Grid (only show when no error) -->
     <div
-      v-if="!isUnsupportedFile && !error"
-      ref="gridContainerRef"
+      v-if="!isUnsupportedFile && !baseGrid.error.value"
+      :ref="(el) => (baseGrid.gridContainerRef.value = el as HTMLElement)"
       class="relative ag-theme-alpine"
       style="height: 750px; width: 100%"
     >
       <ag-grid-vue
         class="h-full w-full"
         :columnDefs="columnDefs"
-        :gridOptions="gridOptions"
-        @grid-ready="onGridReady"
+        :gridOptions="baseGrid.gridOptions.value"
+        @grid-ready="baseGrid.onGridReady"
       ></ag-grid-vue>
 
       <!-- Loading overlay -->
@@ -675,12 +376,12 @@ onBeforeUnmount(() => {
 
     <!-- Custom Context Menu -->
     <ColumnContextMenu
-      v-if="!isUnsupportedFile && showContextMenu"
-      :x="contextMenuX"
-      :y="contextMenuY"
-      :column="contextMenuColumn"
-      :grid-api="gridApi"
-      @close="closeContextMenu"
+      v-if="!isUnsupportedFile && baseGrid.showContextMenu.value"
+      :x="baseGrid.contextMenuX.value"
+      :y="baseGrid.contextMenuY.value"
+      :column="baseGrid.contextMenuColumn.value"
+      :grid-api="baseGrid.gridApi.value"
+      @close="baseGrid.closeContextMenu"
     />
   </div>
 </template>
