@@ -308,20 +308,22 @@ const emit = defineEmits<{
   (e: 'columns-change', columns: string[]): void
 }>()
 
-// Operators list
+// Operators list - ordered by common usage
 const OPERATORS = [
-  { value: '=', label: '=' },
-  { value: '!=', label: '!=' },
-  { value: '<', label: '<' },
-  { value: '<=', label: '<=' },
-  { value: '>', label: '>' },
-  { value: '>=', label: '>=' },
-  { value: 'LIKE', label: 'LIKE' },
-  { value: 'NOT LIKE', label: 'NOT LIKE' },
-  { value: 'IN', label: 'IN' },
-  { value: 'NOT IN', label: 'NOT IN' },
-  { value: 'IS NULL', label: 'IS NULL' },
-  { value: 'IS NOT NULL', label: 'IS NOT NULL' }
+  { value: 'CONTAINS', label: 'Contains (%val%)' },
+  { value: 'NOT_CONTAINS', label: "Doesn't Contain" },
+  { value: '=', label: 'Equals (=)' },
+  { value: '!=', label: "Doesn't Equal (!=)" },
+  { value: 'STARTS_WITH', label: 'Begins with (val%)' },
+  { value: 'ENDS_WITH', label: 'Ends with (%val)' },
+  { value: 'IS NULL', label: 'Blank (NULL)' },
+  { value: 'IS NOT NULL', label: 'Not Blank' },
+  { value: '<', label: 'Less than (<)' },
+  { value: '<=', label: 'Less or equal (<=)' },
+  { value: '>', label: 'Greater than (>)' },
+  { value: '>=', label: 'Greater or equal (>=)' },
+  { value: 'IN', label: 'In list (IN)' },
+  { value: 'NOT IN', label: 'Not in list' }
 ]
 const UNARY_OPERATORS = ['IS NULL', 'IS NOT NULL']
 
@@ -381,25 +383,7 @@ const generatedSql = computed(() => {
   // WHERE clause
   const whereConditions = filters.value
     .filter((f) => f.column && (isUnaryOperator(f.operator) || f.value))
-    .map((f) => {
-      if (f.operator === 'IS NULL' || f.operator === 'IS NOT NULL') {
-        return `${quoteIdentifier(f.column)} ${f.operator}`
-      }
-      if (f.operator === 'LIKE' || f.operator === 'NOT LIKE') {
-        return `${quoteIdentifier(f.column)} ${f.operator} '${f.value}'`
-      }
-      if (f.operator === 'IN' || f.operator === 'NOT IN') {
-        const values = f.value
-          .split(',')
-          .map((v) => v.trim())
-          .filter((v) => v)
-          .map((v) => (isNaN(Number(v)) ? `'${v}'` : v))
-          .join(', ')
-        return `${quoteIdentifier(f.column)} ${f.operator} (${values})`
-      }
-      const val = isNaN(Number(f.value)) ? `'${f.value}'` : f.value
-      return `${quoteIdentifier(f.column)} ${f.operator} ${val}`
-    })
+    .map((f) => operatorToSqlCondition(f.column, f.operator, f.value, true))
 
   if (whereConditions.length > 0) {
     parts.push(`WHERE ${whereConditions.join(' AND ')}`)
@@ -423,9 +407,51 @@ function isUnaryOperator(op: string) {
 }
 
 function getPlaceholder(operator: string) {
-  if (operator === 'LIKE' || operator === 'NOT LIKE') return '%value%'
+  if (operator === 'CONTAINS' || operator === 'NOT_CONTAINS') return 'search text'
+  if (operator === 'STARTS_WITH') return 'starts with...'
+  if (operator === 'ENDS_WITH') return 'ends with...'
   if (operator === 'IN' || operator === 'NOT IN') return 'val1, val2, ...'
   return 'value'
+}
+
+// Convert UI operator to SQL condition (with quoted identifier for preview)
+function operatorToSqlCondition(
+  column: string,
+  operator: string,
+  value: string,
+  quoted: boolean = false
+): string {
+  const col = quoted ? quoteIdentifier(column) : column
+
+  switch (operator) {
+    case 'IS NULL':
+      return `${col} IS NULL`
+    case 'IS NOT NULL':
+      return `${col} IS NOT NULL`
+    case 'CONTAINS':
+      return `${col} LIKE '%${value}%'`
+    case 'NOT_CONTAINS':
+      return `${col} NOT LIKE '%${value}%'`
+    case 'STARTS_WITH':
+      return `${col} LIKE '${value}%'`
+    case 'ENDS_WITH':
+      return `${col} LIKE '%${value}'`
+    case 'IN':
+    case 'NOT IN': {
+      const values = value
+        .split(',')
+        .map((v) => v.trim())
+        .filter((v) => v)
+        .map((v) => (isNaN(Number(v)) ? `'${v}'` : v))
+        .join(', ')
+      return `${col} ${operator} (${values})`
+    }
+    default: {
+      // =, !=, <, <=, >, >=
+      const val = isNaN(Number(value)) ? `'${value}'` : value
+      return `${col} ${operator} ${val}`
+    }
+  }
 }
 
 function getAvailableColumnsForSort(currentIndex: number) {
@@ -461,7 +487,7 @@ function addFilter() {
   filters.value.push({
     id: generateId(),
     column: '',
-    operator: '=',
+    operator: 'CONTAINS',
     value: ''
   })
   isDirty.value = true
@@ -500,25 +526,7 @@ function applyFilters() {
   // Build WHERE clause (without quoting for backend)
   const whereConditions = filters.value
     .filter((f) => f.column && (isUnaryOperator(f.operator) || f.value))
-    .map((f) => {
-      if (f.operator === 'IS NULL' || f.operator === 'IS NOT NULL') {
-        return `${f.column} ${f.operator}`
-      }
-      if (f.operator === 'LIKE' || f.operator === 'NOT LIKE') {
-        return `${f.column} ${f.operator} '${f.value}'`
-      }
-      if (f.operator === 'IN' || f.operator === 'NOT IN') {
-        const values = f.value
-          .split(',')
-          .map((v) => v.trim())
-          .filter((v) => v)
-          .map((v) => (isNaN(Number(v)) ? `'${v}'` : v))
-          .join(', ')
-        return `${f.column} ${f.operator} (${values})`
-      }
-      const val = isNaN(Number(f.value)) ? `'${f.value}'` : f.value
-      return `${f.column} ${f.operator} ${val}`
-    })
+    .map((f) => operatorToSqlCondition(f.column, f.operator, f.value, false))
 
   const where = whereConditions.join(' AND ')
 
