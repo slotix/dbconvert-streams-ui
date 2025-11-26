@@ -8,8 +8,7 @@ import { formatTableValue } from '@/utils/dataUtils'
 import { useObjectTabStateStore } from '@/stores/objectTabState'
 import { useConnectionsStore } from '@/stores/connections'
 import ColumnContextMenu from './ColumnContextMenu.vue'
-import { MonacoEditor } from '@/components/monaco'
-import { determineFilterType } from '@/utils/agGridFilterUtils'
+import DataFilterPanel from './DataFilterPanel.vue'
 import {
   useBaseAGGridView,
   type FetchDataParams,
@@ -61,55 +60,18 @@ function getObjectSchema(meta: SQLTableMeta | SQLViewMeta): string {
 }
 
 // Generate column definitions from table metadata
+// Note: sortable and filter are disabled - Query Filter Panel is the single source of truth
 const columnDefs = computed<ColDef[]>(() => {
   const meta = props.tableMeta
   if (!meta || !meta.columns) return []
 
-  const isLargeTable = props.approxRows && props.approxRows > 1000000
-
-  // Build a set of indexed columns for fast lookup
-  const indexedColumns = new Set<string>()
-
-  // Add primary key columns
-  if (!props.isView && (meta as SQLTableMeta).primaryKeys) {
-    ;(meta as SQLTableMeta).primaryKeys.forEach((pk) => indexedColumns.add(pk.toLowerCase()))
-  }
-
-  // Add indexed columns from indexes
-  if (!props.isView && (meta as SQLTableMeta).indexes) {
-    ;(meta as SQLTableMeta).indexes.forEach((idx) => {
-      // Only consider the first column of composite indexes for sorting
-      if (idx.columns && idx.columns.length > 0) {
-        indexedColumns.add(idx.columns[0].toLowerCase())
-      }
-    })
-  }
-
   return meta.columns.map((col) => {
-    const isIndexed = indexedColumns.has(col.name.toLowerCase())
-    const canSort = !isLargeTable || isIndexed
-
-    let tooltip = `${col.dataType}${col.isNullable ? '' : ' NOT NULL'}`
-
-    // Add tooltip info for large tables
-    if (isLargeTable) {
-      if (isIndexed) {
-        tooltip += ' - Indexed (sortable, Ctrl+Click for multi-sort)'
-      } else {
-        tooltip += ' - No index (sorting disabled)'
-      }
-    } else {
-      tooltip += ' - Click to sort, Ctrl+Click for multi-sort'
-    }
-
-    // Determine filter type based on column data type
-    const filterType = determineFilterType(col.dataType)
-
     return {
       field: col.name,
       headerName: col.name,
-      sortable: canSort,
-      filter: filterType,
+      // Disable AG-Grid native sorting/filtering - Query Filter Panel is the single source of truth
+      sortable: false,
+      filter: false,
       floatingFilter: false,
       suppressHeaderMenuButton: false,
       suppressHeaderFilterButton: true,
@@ -117,11 +79,9 @@ const columnDefs = computed<ColDef[]>(() => {
       flex: 1,
       minWidth: 120,
       valueFormatter: (params) => formatTableValue(params.value),
-      headerTooltip: tooltip,
+      headerTooltip: `${col.dataType}${col.isNullable ? '' : ' NOT NULL'} - Use Query Filter panel to sort/filter`,
       wrapText: false,
-      autoHeight: false,
-      // Add header class to distinguish sortable vs non-sortable
-      headerClass: isLargeTable && !isIndexed ? 'ag-header-cell-not-sortable' : undefined
+      autoHeight: false
     }
   })
 })
@@ -253,39 +213,15 @@ watch(
 
     if (savedState) {
       // Restore state from store
-      baseGrid.currentSortModel.value = savedState.sortModel || []
       exactRowCount.value = savedState.exactRowCount || null
-      baseGrid.agGridFilters.value = savedState.filterModel || {}
 
-      // Apply saved filters and sort to grid
-      if (baseGrid.gridApi.value) {
-        // Set filter model
-        baseGrid.gridApi.value.setFilterModel(savedState.filterModel || null)
-
-        // Apply sort model
-        if (savedState.sortModel && savedState.sortModel.length > 0) {
-          const columnState = savedState.sortModel.map((sort, index) => ({
-            colId: sort.colId,
-            sort: sort.sort,
-            sortIndex: index
-          }))
-          baseGrid.gridApi.value.applyColumnState({
-            state: columnState,
-            defaultState: { sort: null }
-          })
-        }
+      // Restore panel filters if saved
+      if (savedState.panelWhereSQL || (savedState.sortModel && savedState.sortModel.length > 0)) {
+        baseGrid.setPanelFilters(savedState.panelWhereSQL || '', savedState.sortModel || [])
       }
     } else {
       // Reset to default state
-      baseGrid.currentSortModel.value = []
       countError.value = null
-      baseGrid.agGridFilters.value = {}
-      baseGrid.agGridWhereSQL.value = ''
-
-      if (baseGrid.gridApi.value) {
-        // Clear any AG Grid column filters carried over from the previous table
-        baseGrid.gridApi.value.setFilterModel(null)
-      }
 
       // Check if we have a cached exact count for this table
       const cacheKey = getCacheKey()
@@ -306,55 +242,18 @@ watch(
   { deep: true }
 )
 
-// Reload data when table metadata changes
+// Save exact row count to store when it changes
 watch(
-  () => props.tableMeta,
-  () => {
-    if (baseGrid.gridApi.value) {
-      const savedState = tabStateStore.getAGGridDataState(props.objectKey)
-
-      // Reset the datasource with the new table
-      baseGrid.gridApi.value.setGridOption('datasource', baseGrid.createDatasource())
-
-      // Apply saved state AFTER setting datasource
-      setTimeout(() => {
-        if (!baseGrid.gridApi.value) return
-
-        if (savedState && savedState.sortModel && savedState.sortModel.length > 0) {
-          const columnState = savedState.sortModel.map((sort, index) => ({
-            colId: sort.colId,
-            sort: sort.sort,
-            sortIndex: index
-          }))
-          baseGrid.gridApi.value.applyColumnState({
-            state: columnState,
-            defaultState: { sort: null }
-          })
-        } else {
-          // Clear any existing sort state when switching tables (only if no saved state)
-          baseGrid.gridApi.value.applyColumnState({
-            defaultState: { sort: null }
-          })
-        }
-      }, 100)
-    }
-  },
-  { deep: true }
-)
-
-// Save AG Grid state to store when it changes (including exact count)
-watch(
-  () =>
-    [baseGrid.currentSortModel.value, baseGrid.agGridFilters.value, exactRowCount.value] as const,
-  ([sortModel, filterModel, exactCount]) => {
+  () => exactRowCount.value,
+  (exactCount) => {
     tabStateStore.setAGGridDataState(props.objectKey, {
-      sortModel,
-      filterModel,
+      sortModel: baseGrid.panelSortModel.value,
+      panelWhereSQL: baseGrid.panelWhereSQL.value,
+      filterModel: {},
       totalRowCount: baseGrid.totalRowCount.value,
       exactRowCount: exactCount
     })
-  },
-  { deep: true }
+  }
 )
 
 // Calculate exact row count for tables and views (on-demand)
@@ -373,8 +272,8 @@ async function calculateExactCount() {
     if (objectSchema && objectSchema !== 'public' && objectSchema !== '') {
       params.schema = objectSchema
     }
-    if (baseGrid.combinedWhereClause.value) {
-      params.where = baseGrid.combinedWhereClause.value
+    if (baseGrid.whereClause.value) {
+      params.where = baseGrid.whereClause.value
     }
     params.tabId = objectName
 
@@ -387,7 +286,7 @@ async function calculateExactCount() {
     baseGrid.totalRowCount.value = result.count
 
     // Cache the exact count (only if no filters applied)
-    if (!baseGrid.combinedWhereClause.value) {
+    if (!baseGrid.whereClause.value) {
       const cacheKey = getCacheKey()
       exactCountCache.value.set(cacheKey, result.count)
     }
@@ -414,6 +313,52 @@ function clearAllFilters() {
   countError.value = null
 }
 
+// Reference to filter panel
+const filterPanelRef = ref<InstanceType<typeof DataFilterPanel> | null>(null)
+
+// Handle filter panel apply - applies custom WHERE/ORDER BY from the panel
+function onFilterPanelApply(payload: { where: string; orderBy: string; orderDir: string }) {
+  // Build sort model from payload
+  let sortModel: { colId: string; sort: 'asc' | 'desc' }[] = []
+  if (payload.orderBy) {
+    const columns = payload.orderBy.split(',')
+    const directions = payload.orderDir.split(',')
+    sortModel = columns.map((col, i) => ({
+      colId: col.trim(),
+      sort: (directions[i]?.toLowerCase() || 'asc') as 'asc' | 'desc'
+    }))
+  }
+
+  // Set panel filters - this is the single source of truth
+  baseGrid.setPanelFilters(payload.where, sortModel)
+
+  // Reset exact count since filters changed
+  exactRowCount.value = null
+  countError.value = null
+
+  // Refresh the datasource to fetch data with new filters
+  if (baseGrid.gridApi.value) {
+    baseGrid.gridApi.value.setGridOption('datasource', baseGrid.createDatasource())
+  }
+}
+
+// Handle column visibility changes from filter panel
+function onColumnsChange(visibleColumns: string[]) {
+  if (!baseGrid.gridApi.value) return
+
+  // If empty array or all columns selected, show all
+  const showAll = visibleColumns.length === 0 || visibleColumns.length === columnDefs.value.length
+
+  // Update column visibility
+  columnDefs.value.forEach((col) => {
+    const colId = col.field
+    if (colId) {
+      const isVisible = showAll || visibleColumns.includes(colId)
+      baseGrid.gridApi.value?.setColumnsVisible([colId], isVisible)
+    }
+  })
+}
+
 // Initialize and restore state on mount
 onMounted(() => {
   const savedState = tabStateStore.getAGGridDataState(props.objectKey)
@@ -434,73 +379,17 @@ defineExpose({
 
 <template>
   <div class="flex flex-col h-full">
-    <!-- SQL Query Banner (like DataGrip) -->
-    <div
-      v-if="baseGrid.fullSqlQuery.value"
-      class="mb-3 border border-gray-200 dark:border-gray-700 rounded-md overflow-hidden"
-    >
-      <div class="flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-gray-900/40">
-        <!-- SQL Content with Syntax Highlighting -->
-        <div class="flex-1 min-w-0">
-          <MonacoEditor
-            :model-value="baseGrid.displayedSql.value"
-            :language="baseGrid.monacoLanguage.value"
-            :height="baseGrid.sqlBannerHeight.value"
-            :read-only="true"
-            :options="baseGrid.sqlBannerEditorOptions.value"
-          />
-        </div>
-
-        <!-- Action Buttons -->
-        <div class="flex items-center gap-1 shrink-0">
-          <!-- Expand/Collapse button (only show if truncation is needed) -->
-          <button
-            v-if="baseGrid.needsTruncation.value"
-            type="button"
-            class="px-2 py-1 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
-            :title="baseGrid.isSqlBannerExpanded.value ? 'Collapse' : 'Expand'"
-            @click="baseGrid.toggleSqlBanner"
-          >
-            {{ baseGrid.isSqlBannerExpanded.value ? 'Collapse' : 'Expand' }}
-          </button>
-
-          <!-- Clear filters button -->
-          <button
-            type="button"
-            class="px-2 py-1 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors flex items-center gap-1"
-            title="Clear all filters and sorting"
-            @click="clearAllFilters"
-          >
-            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-            Clear
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Large table warning (keep at top) -->
-    <div
-      v-if="!isView && approxRows && approxRows > 1000000"
-      class="mb-3 flex items-center justify-between"
-    >
-      <span class="text-xs text-blue-600 dark:text-blue-400 flex items-center gap-1">
-        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-          <path
-            fill-rule="evenodd"
-            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-            clip-rule="evenodd"
-          />
-        </svg>
-        Large table: only indexed columns are sortable
-      </span>
-    </div>
+    <!-- Data Filter Panel (replaces SQL Query Banner) -->
+    <DataFilterPanel
+      ref="filterPanelRef"
+      :columns="columnDefs"
+      :dialect="connectionType === 'pgsql' || connectionType === 'postgresql' ? 'pgsql' : 'mysql'"
+      :table-name="getObjectName(tableMeta)"
+      :object-key="objectKey"
+      @apply="onFilterPanelApply"
+      @clear="clearAllFilters"
+      @columns-change="onColumnsChange"
+    />
 
     <!-- Error message -->
     <div
@@ -647,15 +536,5 @@ defineExpose({
   white-space: normal;
   line-height: 1.5;
   padding: 8px;
-}
-
-/* Style for non-sortable columns in large tables */
-:deep(.ag-header-cell-not-sortable) {
-  opacity: 0.6;
-  cursor: not-allowed !important;
-}
-
-:deep(.ag-header-cell-not-sortable .ag-header-cell-label) {
-  cursor: not-allowed !important;
 }
 </style>

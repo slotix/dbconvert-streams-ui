@@ -8,8 +8,8 @@ import { getFileFormat } from '@/utils/fileFormat'
 import filesApi from '@/api/files'
 import { formatTableValue } from '@/utils/dataUtils'
 import ColumnContextMenu from '../database/ColumnContextMenu.vue'
+import DataFilterPanel from '../database/DataFilterPanel.vue'
 import UnsupportedFileMessage from './UnsupportedFileMessage.vue'
-import { MonacoEditor } from '@/components/monaco'
 import { determineFilterType } from '@/utils/agGridFilterUtils'
 import {
   useBaseAGGridView,
@@ -146,11 +146,10 @@ function syncGridStateFromStore() {
   const savedState = tabStateStore.getAGGridDataState(props.objectKey)
 
   if (savedState) {
-    baseGrid.currentSortModel.value = savedState.sortModel || []
-    baseGrid.agGridFilters.value = savedState.filterModel || {}
-  } else {
-    baseGrid.currentSortModel.value = []
-    baseGrid.agGridFilters.value = {}
+    // Restore panel filters from saved state
+    if (savedState.panelWhereSQL || (savedState.sortModel && savedState.sortModel.length > 0)) {
+      baseGrid.setPanelFilters(savedState.panelWhereSQL || '', savedState.sortModel || [])
+    }
   }
 
   return savedState
@@ -171,13 +170,12 @@ watch(
     if (savedState) {
       baseGrid.applyGridState({
         sortModel: savedState.sortModel,
-        filterModel: savedState.filterModel
+        whereClause: savedState.panelWhereSQL
       })
     } else {
       baseGrid.gridApi.value.applyColumnState({
         defaultState: { sort: null }
       })
-      baseGrid.gridApi.value.setFilterModel(null)
     }
 
     baseGrid.gridApi.value.setGridOption('datasource', baseGrid.createDatasource())
@@ -211,6 +209,37 @@ watch(
   { deep: true }
 )
 
+// Reference to filter panel
+const filterPanelRef = ref<InstanceType<typeof DataFilterPanel> | null>(null)
+
+// Handle filter panel apply - applies custom WHERE/ORDER BY from the panel
+function onFilterPanelApply(payload: { where: string; orderBy: string; orderDir: string }) {
+  // Clear AG Grid's internal filter/sort state to avoid conflicts
+  if (baseGrid.gridApi.value) {
+    baseGrid.gridApi.value.setFilterModel(null)
+    baseGrid.gridApi.value.applyColumnState({ state: [], defaultState: { sort: null } })
+  }
+
+  // Build sort model from payload
+  let sortModel: { colId: string; sort: 'asc' | 'desc' }[] = []
+  if (payload.orderBy) {
+    const columns = payload.orderBy.split(',')
+    const directions = payload.orderDir.split(',')
+    sortModel = columns.map((col, i) => ({
+      colId: col.trim(),
+      sort: (directions[i]?.toLowerCase() || 'asc') as 'asc' | 'desc'
+    }))
+  }
+
+  // Use the new setPanelFilters method - this marks panel filters as active
+  baseGrid.setPanelFilters(payload.where, sortModel)
+
+  // Refresh the datasource to fetch data with new filters
+  if (baseGrid.gridApi.value) {
+    baseGrid.gridApi.value.setGridOption('datasource', baseGrid.createDatasource())
+  }
+}
+
 // Expose methods to parent
 defineExpose({
   getGridState: baseGrid.getGridState,
@@ -228,56 +257,17 @@ defineExpose({
       class="h-full"
     />
 
-    <!-- SQL Query Banner (like DataGrip) -->
-    <div
-      v-if="!isUnsupportedFile && baseGrid.fullSqlQuery.value"
-      class="mb-3 border border-gray-200 dark:border-gray-700 rounded-md overflow-hidden"
-    >
-      <div class="flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-gray-900/40">
-        <!-- SQL Content with Syntax Highlighting -->
-        <div class="flex-1 min-w-0">
-          <MonacoEditor
-            :model-value="baseGrid.displayedSql.value"
-            language="sql"
-            :height="baseGrid.sqlBannerHeight.value"
-            :read-only="true"
-            :options="baseGrid.sqlBannerEditorOptions.value"
-          />
-        </div>
-
-        <!-- Action Buttons -->
-        <div class="flex items-center gap-1 shrink-0">
-          <!-- Expand/Collapse button (only show if truncation is needed) -->
-          <button
-            v-if="baseGrid.needsTruncation.value"
-            type="button"
-            class="px-2 py-1 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
-            :title="baseGrid.isSqlBannerExpanded.value ? 'Collapse' : 'Expand'"
-            @click="baseGrid.toggleSqlBanner"
-          >
-            {{ baseGrid.isSqlBannerExpanded.value ? 'Collapse' : 'Expand' }}
-          </button>
-
-          <!-- Clear filters button -->
-          <button
-            type="button"
-            class="px-2 py-1 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors flex items-center gap-1"
-            title="Clear all filters and sorting"
-            @click="baseGrid.clearAllFilters"
-          >
-            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-            Clear
-          </button>
-        </div>
-      </div>
-    </div>
+    <!-- Data Filter Panel -->
+    <DataFilterPanel
+      v-if="!isUnsupportedFile"
+      ref="filterPanelRef"
+      :columns="columnDefs"
+      dialect="sql"
+      :table-name="entry.name"
+      :object-key="objectKey"
+      @apply="onFilterPanelApply"
+      @clear="baseGrid.clearAllFilters"
+    />
 
     <!-- Warnings (only show when there's no error) -->
     <div

@@ -4,7 +4,8 @@ import type { SortModelItem } from 'ag-grid-community'
 type AGGridDataState = {
   sortModel: SortModelItem[]
   filterModel: Record<string, any>
-  whereClause: string
+  // Panel-driven WHERE clause (Query Filter Panel is the single source of truth)
+  panelWhereSQL?: string
   totalRowCount: number
   exactRowCount: number | null
 }
@@ -99,7 +100,7 @@ export const useObjectTabStateStore = defineStore('objectTabState', {
         this.tabStates[objectKey].agGridData = {
           sortModel: [],
           filterModel: {},
-          whereClause: '',
+          panelWhereSQL: '',
           totalRowCount: 0,
           exactRowCount: null
         }

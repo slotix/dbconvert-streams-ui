@@ -1,11 +1,13 @@
 /**
- * Composable for shared AG Grid filtering state and logic
+ * Composable for AG Grid filtering state and logic
  * Used by both database table views and file data views
+ *
+ * SIMPLIFIED: Query Filter Panel is the single source of truth for filtering/sorting.
+ * AG-Grid only displays data - it does not manage filter or sort state.
  */
 
 import { ref, computed } from 'vue'
 import type { GridApi, SortModelItem, Column } from 'ag-grid-community'
-import { convertFilterModelToSQL } from '@/utils/agGridFilterUtils'
 
 const SQL_BANNER_MAX_LENGTH = 150
 
@@ -15,16 +17,17 @@ interface UseAGGridFilteringOptions {
 
 /**
  * Shared AG Grid filtering state and computed properties
- * Manages filter conversion, SQL query generation, and filter UI state
+ * Query Filter Panel is the single source of truth - no AG-Grid sync needed
  */
 export function useAGGridFiltering(options: UseAGGridFilteringOptions = {}) {
   const sqlBannerMaxLength = options.sqlBannerMaxLength || SQL_BANNER_MAX_LENGTH
 
-  // Reactive state - shared between database and file views
+  // Grid API reference
   const gridApi = ref<GridApi | null>(null)
-  const currentSortModel = ref<SortModelItem[]>([])
-  const agGridFilters = ref<Record<string, unknown>>({})
-  const agGridWhereSQL = ref<string>('')
+
+  // Panel-driven state (Query Filter Panel is the single source of truth)
+  const panelWhereSQL = ref<string>('')
+  const panelSortModel = ref<SortModelItem[]>([])
 
   // Context menu state
   const showContextMenu = ref(false)
@@ -36,19 +39,22 @@ export function useAGGridFiltering(options: UseAGGridFilteringOptions = {}) {
   const isSqlBannerExpanded = ref(false)
 
   /**
-   * Combined WHERE clause (only AG Grid filters)
+   * WHERE clause from Query Filter Panel
    */
-  const combinedWhereClause = computed(() => {
-    return agGridWhereSQL.value
-  })
+  const whereClause = computed(() => panelWhereSQL.value)
 
   /**
-   * ORDER BY clause generated from current sort model
+   * Sort model from Query Filter Panel
+   */
+  const sortModel = computed(() => panelSortModel.value)
+
+  /**
+   * ORDER BY clause generated from panel sort model
    */
   const orderByClause = computed(() => {
-    if (currentSortModel.value.length === 0) return ''
+    if (panelSortModel.value.length === 0) return ''
 
-    const sortParts = currentSortModel.value.map((sort) => {
+    const sortParts = panelSortModel.value.map((sort) => {
       const direction = sort.sort?.toUpperCase() || 'ASC'
       return `${sort.colId} ${direction}`
     })
@@ -62,8 +68,8 @@ export function useAGGridFiltering(options: UseAGGridFilteringOptions = {}) {
   const fullSqlQuery = computed(() => {
     const parts: string[] = []
 
-    if (combinedWhereClause.value) {
-      parts.push(`WHERE ${combinedWhereClause.value}`)
+    if (panelWhereSQL.value) {
+      parts.push(`WHERE ${panelWhereSQL.value}`)
     }
 
     if (orderByClause.value) {
@@ -71,6 +77,13 @@ export function useAGGridFiltering(options: UseAGGridFilteringOptions = {}) {
     }
 
     return parts.join(' ')
+  })
+
+  /**
+   * Check if any filters or sorts are active
+   */
+  const hasActiveFilters = computed(() => {
+    return panelWhereSQL.value.length > 0 || panelSortModel.value.length > 0
   })
 
   /**
@@ -105,38 +118,26 @@ export function useAGGridFiltering(options: UseAGGridFilteringOptions = {}) {
   }
 
   /**
-   * Convert AG Grid filter model to SQL and update state
-   * Should be called when grid filters change
+   * Set panel filters (from DataFilterPanel)
    */
-  function updateAgGridWhereSQL(filterModel: Record<string, any>): void {
-    if (!filterModel || Object.keys(filterModel).length === 0) {
-      agGridWhereSQL.value = ''
-    } else {
-      agGridWhereSQL.value = convertFilterModelToSQL(filterModel)
-    }
+  function setPanelFilters(where: string, sortModel: SortModelItem[]): void {
+    panelWhereSQL.value = where
+    panelSortModel.value = sortModel
   }
 
   /**
-   * Clear all AG Grid filters
-   * Components can extend this with their own cleanup logic
+   * Clear all filters and sorting
    */
   function clearAllFilters(): void {
-    // Clear AG Grid filters
-    if (gridApi.value) {
-      gridApi.value.setFilterModel(null)
-    }
-
-    // Clear agGridWhereSQL
-    agGridWhereSQL.value = ''
-    agGridFilters.value = {}
+    panelWhereSQL.value = ''
+    panelSortModel.value = []
   }
 
   return {
     // State
     gridApi,
-    currentSortModel,
-    agGridFilters,
-    agGridWhereSQL,
+    panelWhereSQL,
+    panelSortModel,
     showContextMenu,
     contextMenuX,
     contextMenuY,
@@ -144,16 +145,18 @@ export function useAGGridFiltering(options: UseAGGridFilteringOptions = {}) {
     isSqlBannerExpanded,
 
     // Computed
-    combinedWhereClause,
+    whereClause,
+    sortModel,
     orderByClause,
     fullSqlQuery,
+    hasActiveFilters,
     needsTruncation,
     displayedSql,
 
     // Methods
     toggleSqlBanner,
     closeContextMenu,
-    updateAgGridWhereSQL,
+    setPanelFilters,
     clearAllFilters
   }
 }

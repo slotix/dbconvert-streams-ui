@@ -1,6 +1,9 @@
 /**
  * Base composable for AG Grid data views
  * Provides shared logic for database tables and file data grids
+ *
+ * SIMPLIFIED: Query Filter Panel is the single source of truth for filtering/sorting.
+ * AG-Grid only displays data - it does not manage filter or sort state.
  */
 
 import { ref, computed, watch, onBeforeUnmount, type Ref } from 'vue'
@@ -16,7 +19,6 @@ import type {
 } from 'ag-grid-community'
 import { useAGGridFiltering } from '@/composables/useAGGridFiltering'
 import { useObjectTabStateStore } from '@/stores/objectTabState'
-import { convertFilterModelToSQL } from '@/utils/agGridFilterUtils'
 import 'ag-grid-community/styles/ag-grid.css'
 import 'ag-grid-community/styles/ag-theme-alpine.css'
 import '@/styles/agGridTheme.css'
@@ -43,7 +45,6 @@ export interface FetchDataParams {
   limit: number
   offset: number
   sortModel: SortModelItem[]
-  filterModel: Record<string, unknown>
   whereClause: string
 }
 
@@ -91,20 +92,22 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
   // Tab state store for persistence
   const tabStateStore = useObjectTabStateStore()
 
-  // Use shared AG Grid filtering composable
+  // Use shared AG Grid filtering composable (simplified - panel only)
   const {
     gridApi,
-    currentSortModel,
-    agGridFilters,
-    agGridWhereSQL,
+    panelWhereSQL,
+    panelSortModel,
     isSqlBannerExpanded,
-    combinedWhereClause,
+    whereClause,
+    sortModel,
     orderByClause,
     fullSqlQuery,
+    hasActiveFilters,
     needsTruncation,
     displayedSql,
     toggleSqlBanner,
-    clearAllFilters: clearAgGridFilters
+    setPanelFilters,
+    clearAllFilters: clearFilteringState
   } = useAGGridFiltering()
 
   // Local state
@@ -168,6 +171,7 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
   }))
 
   // AG Grid options for Infinite Row Model
+  // Note: sortable and filter are disabled - Query Filter Panel is the single source of truth
   const gridOptions = computed<GridOptions>(() => ({
     theme: 'legacy',
     rowModelType: 'infinite',
@@ -185,20 +189,20 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
     maxConcurrentDatasourceRequests: 2,
     infiniteInitialRowCount: 100,
     maxBlocksInCache: 20,
-    multiSortKey: 'ctrl',
-    alwaysMultiSort: false,
     suppressMenuHide: true,
     defaultColDef: {
-      sortable: true,
-      filter: true,
+      // Disable native sorting/filtering - Query Filter Panel controls these
+      sortable: false,
+      filter: false,
       resizable: true,
-      suppressHeaderFilterButton: false,
+      suppressHeaderFilterButton: true,
       suppressHeaderMenuButton: false
     }
   }))
 
   /**
    * Create datasource for Infinite Row Model
+   * Uses panel filters only - single source of truth
    */
   function createDatasource(): IDatasource {
     return {
@@ -210,26 +214,12 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
           const limit = params.endRow - params.startRow
           const offset = params.startRow
 
-          // Extract sort information from params (support multi-column sorting)
-          const sortModel = params.sortModel || []
-          currentSortModel.value = sortModel
-
-          // Extract filter model from AG Grid and convert to SQL
-          const filterModel = params.filterModel || {}
-          agGridFilters.value = filterModel
-          const agGridWhereClause = convertFilterModelToSQL(
-            filterModel,
-            connectionType?.value || 'mysql'
-          )
-          agGridWhereSQL.value = agGridWhereClause
-
-          // Call the injected fetch callback
+          // Call the injected fetch callback with panel filters
           const result = await fetchData({
             limit,
             offset,
-            sortModel,
-            filterModel,
-            whereClause: agGridWhereClause
+            sortModel: panelSortModel.value,
+            whereClause: panelWhereSQL.value
           })
 
           // Update total count if we have a real count from the result
@@ -324,14 +314,7 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
    */
   function clearAllFilters() {
     // Use the base clearing from composable
-    clearAgGridFilters()
-
-    // Clear sorting
-    if (gridApi.value) {
-      gridApi.value.applyColumnState({
-        defaultState: { sort: null }
-      })
-    }
+    clearFilteringState()
 
     // Reset to first page
     totalRowCount.value = initialTotalRowCount?.value ?? 0
@@ -366,8 +349,8 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
    */
   function getGridState() {
     return {
-      sortModel: currentSortModel.value,
-      filterModel: agGridFilters.value,
+      sortModel: panelSortModel.value,
+      whereClause: panelWhereSQL.value,
       sqlBannerExpanded: isSqlBannerExpanded.value
     }
   }
@@ -377,36 +360,15 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
    */
   function applyGridState(state: {
     sortModel?: SortModelItem[]
-    filterModel?: Record<string, unknown>
+    whereClause?: string
     sqlBannerExpanded?: boolean
   }) {
-    if (!gridApi.value) return
-
-    // Apply sort model
-    if (state.sortModel !== undefined) {
-      currentSortModel.value = state.sortModel
-      if (state.sortModel.length > 0) {
-        const columnState = state.sortModel.map((sort: SortModelItem, index: number) => ({
-          colId: sort.colId,
-          sort: sort.sort,
-          sortIndex: index
-        }))
-        gridApi.value.applyColumnState({
-          state: columnState,
-          defaultState: { sort: null }
-        })
-      } else {
-        // Clear sorting
-        gridApi.value.applyColumnState({
-          defaultState: { sort: null }
-        })
-      }
-    }
-
-    // Apply filter model
-    if (state.filterModel !== undefined) {
-      agGridFilters.value = state.filterModel
-      gridApi.value.setFilterModel(state.filterModel)
+    // Apply panel filters
+    if (state.sortModel !== undefined || state.whereClause !== undefined) {
+      setPanelFilters(
+        state.whereClause ?? panelWhereSQL.value,
+        state.sortModel ?? panelSortModel.value
+      )
     }
 
     // Apply SQL banner expansion state
@@ -426,26 +388,6 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
     params.api.addEventListener('modelUpdated', updateVisibleRows)
     params.api.addEventListener('firstDataRendered', updateVisibleRows)
 
-    // Add filter changed listener
-    params.api.addEventListener('filterChanged', () => {
-      // Reset total count so we get fresh count with filters
-      totalRowCount.value = 0
-      currentFirstRow.value = 1
-      currentLastRow.value = 100
-
-      // Call optional callback
-      if (onFilterChanged) {
-        onFilterChanged()
-      }
-
-      // Note: AG Grid Infinite Row Model automatically purges cache and refetches when filters change
-    })
-
-    // Add sort changed listener
-    if (onSortChanged) {
-      params.api.addEventListener('sortChanged', onSortChanged)
-    }
-
     // Add context menu listener for column headers
     setTimeout(() => {
       if (gridContainerRef.value) {
@@ -457,22 +399,9 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
     const savedState = tabStateStore.getAGGridDataState(objectKey.value)
 
     if (savedState) {
-      // Restore filters
-      if (savedState.filterModel && Object.keys(savedState.filterModel).length > 0) {
-        params.api.setFilterModel(savedState.filterModel)
-      }
-
-      // Restore sort - apply before setting datasource
-      if (savedState.sortModel && savedState.sortModel.length > 0) {
-        const columnState = savedState.sortModel.map((sort, index) => ({
-          colId: sort.colId,
-          sort: sort.sort,
-          sortIndex: index
-        }))
-        params.api.applyColumnState({
-          state: columnState,
-          defaultState: { sort: null }
-        })
+      // Restore panel filters from saved state
+      if (savedState.panelWhereSQL || (savedState.sortModel && savedState.sortModel.length > 0)) {
+        setPanelFilters(savedState.panelWhereSQL || '', savedState.sortModel || [])
       }
     }
 
@@ -486,14 +415,15 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
   }
 
   /**
-   * Save AG Grid state to store when it changes
+   * Save panel filter state to store when it changes
    */
   watch(
-    () => [currentSortModel.value, agGridFilters.value] as const,
-    ([sortModel, filterModel]) => {
+    () => [panelWhereSQL.value, panelSortModel.value] as const,
+    ([whereSQL, sortModel]) => {
       tabStateStore.setAGGridDataState(objectKey.value, {
         sortModel,
-        filterModel
+        panelWhereSQL: whereSQL,
+        filterModel: {} // Keep for backwards compatibility
       })
     },
     { deep: true }
@@ -522,9 +452,13 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
     totalRowCount,
     currentFirstRow,
     currentLastRow,
-    currentSortModel,
-    agGridFilters,
-    agGridWhereSQL,
+
+    // Panel filters state (single source of truth)
+    panelWhereSQL,
+    panelSortModel,
+    whereClause,
+    sortModel,
+    hasActiveFilters,
 
     // Context menu
     showContextMenu,
@@ -535,7 +469,6 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
 
     // SQL banner
     isSqlBannerExpanded,
-    combinedWhereClause,
     orderByClause,
     fullSqlQuery,
     needsTruncation,
@@ -552,6 +485,7 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
     createDatasource,
     onGridReady,
     clearAllFilters,
+    setPanelFilters,
     refresh,
     getGridState,
     applyGridState,
