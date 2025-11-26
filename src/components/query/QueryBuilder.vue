@@ -41,8 +41,9 @@
         </button>
         <button
           type="button"
-          class="inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-white dark:hover:bg-gray-800 rounded transition-colors"
-          title="Add ORDER BY"
+          class="inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-white dark:hover:bg-gray-800 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-gray-600 dark:disabled:hover:text-gray-400"
+          :title="canAddSort ? 'Add ORDER BY' : 'All columns are already used in sorting'"
+          :disabled="!canAddSort"
           @click="addSort"
         >
           <ArrowsUpDownIcon class="w-3 h-3" />
@@ -195,6 +196,13 @@
           class="flex items-center gap-1.5 p-1.5 bg-white dark:bg-gray-800/70 rounded border border-gray-200 dark:border-gray-700"
         >
           <span class="text-xs text-gray-400 px-1">ORDER</span>
+          <span
+            v-if="orderBy.length > 1"
+            class="flex items-center justify-center w-4 h-4 text-[10px] font-medium bg-teal-500/20 text-teal-600 dark:text-teal-400 rounded"
+            :title="`Sort priority ${index + 1}`"
+          >
+            {{ index + 1 }}
+          </span>
           <select
             v-model="sort.column"
             class="flex-1 min-w-0 px-1.5 py-0.5 text-xs border-0 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded focus:ring-0 cursor-pointer"
@@ -202,7 +210,7 @@
           >
             <option value="" disabled class="bg-white dark:bg-gray-800">column</option>
             <option
-              v-for="col in columns"
+              v-for="col in getAvailableColumnsForSort(index)"
               :key="col.name"
               :value="col.name"
               class="bg-white dark:bg-gray-800"
@@ -218,6 +226,27 @@
             <option value="ASC" class="bg-white dark:bg-gray-700">↑ ASC</option>
             <option value="DESC" class="bg-white dark:bg-gray-700">↓ DESC</option>
           </select>
+          <!-- Move up/down buttons for reordering -->
+          <div v-if="orderBy.length > 1" class="flex items-center">
+            <button
+              type="button"
+              class="p-0.5 text-gray-400 hover:text-teal-500 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              :disabled="index === 0"
+              title="Move up"
+              @click="moveSortUp(index)"
+            >
+              <ChevronUpIcon class="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              class="p-0.5 text-gray-400 hover:text-teal-500 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              :disabled="index === orderBy.length - 1"
+              title="Move down"
+              @click="moveSortDown(index)"
+            >
+              <ChevronDownIcon class="w-3.5 h-3.5" />
+            </button>
+          </div>
           <button
             type="button"
             class="p-0.5 text-gray-400 hover:text-red-500 transition-colors"
@@ -375,7 +404,9 @@ import {
   PlayIcon,
   ArrowPathIcon,
   TableCellsIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  ChevronUpIcon,
+  ChevronDownIcon
 } from '@heroicons/vue/24/outline'
 import { SqlViewer } from '@/components/monaco'
 import { useQueryBuilder } from './useQueryBuilder'
@@ -436,12 +467,24 @@ const {
   addSort,
   removeSort,
   reset,
-  parseQuery
+  parseQuery,
+  getAvailableSortColumns
 } = useQueryBuilder({
   tableName: tableNameRef,
   dialect: dialectRef,
   columns: columnsRef
 })
+
+// Check if more sort columns can be added
+const canAddSort = computed(() => getAvailableSortColumns().length > 0)
+
+/**
+ * Get available columns for a specific sort row (includes current column + unused ones)
+ */
+const getAvailableColumnsForSort = (index: number) => {
+  const availableNames = getAvailableSortColumns(index)
+  return props.columns.filter((col) => availableNames.includes(col.name))
+}
 
 /**
  * Select all columns
@@ -457,6 +500,30 @@ const selectAllColumns = () => {
 const clearAllColumns = () => {
   selectedColumns.value = []
   emitUpdate()
+}
+
+/**
+ * Move a sort column up in priority
+ */
+const moveSortUp = (index: number) => {
+  if (index > 0) {
+    const temp = orderBy.value[index]
+    orderBy.value[index] = orderBy.value[index - 1]
+    orderBy.value[index - 1] = temp
+    emitUpdate()
+  }
+}
+
+/**
+ * Move a sort column down in priority
+ */
+const moveSortDown = (index: number) => {
+  if (index < orderBy.value.length - 1) {
+    const temp = orderBy.value[index]
+    orderBy.value[index] = orderBy.value[index + 1]
+    orderBy.value[index + 1] = temp
+    emitUpdate()
+  }
 }
 
 /**
@@ -501,12 +568,13 @@ const runPreview = async () => {
       whereClause = conditions.join(' AND ')
     }
 
-    // Build ORDER BY
+    // Build ORDER BY (support multiple columns)
     let orderByCol = ''
     let orderDir = ''
-    if (orderBy.value.length > 0 && orderBy.value[0].column) {
-      orderByCol = orderBy.value[0].column
-      orderDir = orderBy.value[0].direction
+    const validSorts = orderBy.value.filter((s) => s.column)
+    if (validSorts.length > 0) {
+      orderByCol = validSorts.map((s) => s.column).join(',')
+      orderDir = validSorts.map((s) => s.direction).join(',')
     }
 
     // Call API to get preview data

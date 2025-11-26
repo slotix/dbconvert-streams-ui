@@ -320,12 +320,27 @@ export function useQueryBuilder(options: UseQueryBuilderOptions) {
   }
 
   /**
-   * Add a sort column
+   * Get columns that are not already used in ORDER BY
+   */
+  const getAvailableSortColumns = (excludeIndex?: number): string[] => {
+    const usedColumns = orderBy.value
+      .filter((_, idx) => idx !== excludeIndex)
+      .map((s) => s.column)
+      .filter((c) => c)
+    return columns.value.map((c) => c.name).filter((name) => !usedColumns.includes(name))
+  }
+
+  /**
+   * Add a sort column (picks first available unused column)
    */
   const addSort = () => {
-    const defaultColumn = columns.value.length > 0 ? columns.value[0].name : ''
+    const availableColumns = getAvailableSortColumns()
+    if (availableColumns.length === 0) {
+      // All columns are already used in ORDER BY
+      return
+    }
     orderBy.value.push({
-      column: defaultColumn,
+      column: availableColumns[0],
       direction: 'ASC'
     })
   }
@@ -386,6 +401,7 @@ export function useQueryBuilder(options: UseQueryBuilderOptions) {
     parseQuery,
     loadFromParsed,
     quoteIdentifier,
-    escapeValue
+    escapeValue,
+    getAvailableSortColumns
   }
 }
