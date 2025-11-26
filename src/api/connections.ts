@@ -72,6 +72,29 @@ const updateConnection = async (): Promise<void> => {
   }
 }
 
+/**
+ * Update a connection by ID with the provided connection data.
+ * Unlike updateConnection(), this doesn't read from the store - it uses the provided data directly.
+ * Used by the JSON editor to save edited connection configurations.
+ */
+const updateConnectionById = async (id: string, connection: Connection): Promise<void> => {
+  const commonStore = useCommonStore()
+  validateApiKey(commonStore.apiKey)
+
+  if (!id) {
+    throw new Error('Connection ID is required')
+  }
+
+  try {
+    await apiClient.put(`/connections/${id}`, connection, {
+      headers: { [API_HEADERS.API_KEY]: commonStore.apiKey },
+      timeout: OPERATION_TIMEOUTS.updateConnection
+    })
+  } catch (error) {
+    throw handleApiError(error)
+  }
+}
+
 const deleteConnection = async (id: string): Promise<void> => {
   const commonStore = useCommonStore()
   validateApiKey(commonStore.apiKey)
@@ -499,6 +522,7 @@ export default {
   getConnections,
   createConnection,
   updateConnection,
+  updateConnectionById,
   deleteConnection,
   cloneConnection,
   testConnection,

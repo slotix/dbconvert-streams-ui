@@ -1,10 +1,11 @@
 <template>
   <JsonConfigEditor
+    v-if="config"
     ref="editorRef"
     :config="config as unknown as Record<string, unknown>"
     :height="height"
-    title="Stream Configuration"
-    :validator="validateStreamConfig"
+    title="Connection Configuration"
+    :validator="validateConnection"
     @save="handleSave"
   />
 </template>
@@ -12,29 +13,35 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import JsonConfigEditor, { type ValidationResult } from '@/components/common/JsonConfigEditor.vue'
-import { parseAndValidateStreamConfig } from '@/utils/StreamConfigValidator'
-import type { StreamConfig } from '@/types/streamConfig'
+import { validateConnectionConfig } from '@/utils/ConnectionConfigValidator'
+import type { Connection } from '@/types/connections'
 
-interface Props {
-  config: StreamConfig
+defineProps<{
+  config: Connection | null
   height?: string
-}
-
-withDefaults(defineProps<Props>(), {
-  height: '600px'
-})
+}>()
 
 const emit = defineEmits<{
-  (e: 'save', config: StreamConfig): void
+  (e: 'save', config: Connection): void
 }>()
 
 const editorRef = ref<InstanceType<typeof JsonConfigEditor>>()
 
-function validateStreamConfig(
-  content: string,
-  original: Record<string, unknown>
-): ValidationResult {
-  const result = parseAndValidateStreamConfig(content, original as unknown as StreamConfig)
+function validateConnection(content: string, original: Record<string, unknown>): ValidationResult {
+  // Parse the JSON content first
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(content)
+  } catch (e) {
+    const error = e as SyntaxError
+    return {
+      valid: false,
+      errors: [{ path: '', message: `Invalid JSON: ${error.message}` }]
+    }
+  }
+
+  // Run connection-specific validation
+  const result = validateConnectionConfig(parsed, original as unknown as Connection | undefined)
 
   return {
     valid: result.valid,
@@ -42,12 +49,12 @@ function validateStreamConfig(
       path: e.path,
       message: e.message
     })),
-    parsed: result.valid ? result.parsed : undefined
+    parsed: result.valid ? parsed : undefined
   }
 }
 
 function handleSave(config: Record<string, unknown>) {
-  emit('save', config as unknown as StreamConfig)
+  emit('save', config as unknown as Connection)
 }
 
 /**

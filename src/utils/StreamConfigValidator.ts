@@ -259,11 +259,28 @@ function validateTargetSpec(spec: unknown, errors: ValidationError[]): void {
 
   const s = spec as Record<string, unknown>
 
-  // Check for common spec types and validate their compression
-  const specTypes = ['local', 's3', 'snowflake'] as const
+  // All possible spec types that can contain file format and compression settings
+  const specTypes = ['local', 's3', 'snowflake', 'files', 'database'] as const
+
   for (const specType of specTypes) {
     const specObj = s[specType] as Record<string, unknown> | undefined
-    if (specObj?.compression !== undefined) {
+    if (!specObj) continue
+
+    // Validate fileFormat at spec level (e.g., spec.files.fileFormat)
+    if (specObj.fileFormat !== undefined) {
+      if (
+        typeof specObj.fileFormat !== 'string' ||
+        !VALID_FILE_FORMATS.includes(specObj.fileFormat as (typeof VALID_FILE_FORMATS)[number])
+      ) {
+        errors.push({
+          path: `target.spec.${specType}.fileFormat`,
+          message: `fileFormat must be one of: ${VALID_FILE_FORMATS.join(', ')}`
+        })
+      }
+    }
+
+    // Validate compression at spec level (e.g., spec.local.compression)
+    if (specObj.compression !== undefined) {
       if (
         typeof specObj.compression !== 'string' ||
         !VALID_COMPRESSION_TYPES.includes(
@@ -277,16 +294,46 @@ function validateTargetSpec(spec: unknown, errors: ValidationError[]): void {
       }
     }
 
-    // Validate file format in spec if present
-    if (specObj?.format !== undefined) {
-      if (
-        typeof specObj.format !== 'string' ||
-        !VALID_FILE_FORMATS.includes(specObj.format as (typeof VALID_FILE_FORMATS)[number])
-      ) {
-        errors.push({
-          path: `target.spec.${specType}.format`,
-          message: `format must be one of: ${VALID_FILE_FORMATS.join(', ')}`
-        })
+    // Validate nested format object (e.g., spec.files.format.compression)
+    if (specObj.format !== undefined) {
+      if (typeof specObj.format === 'object' && specObj.format !== null) {
+        const formatObj = specObj.format as Record<string, unknown>
+
+        // Validate compression inside format object
+        if (formatObj.compression !== undefined) {
+          if (
+            typeof formatObj.compression !== 'string' ||
+            !VALID_COMPRESSION_TYPES.includes(
+              formatObj.compression as (typeof VALID_COMPRESSION_TYPES)[number]
+            )
+          ) {
+            errors.push({
+              path: `target.spec.${specType}.format.compression`,
+              message: `compression must be one of: ${VALID_COMPRESSION_TYPES.join(', ')}`
+            })
+          }
+        }
+
+        // Validate type inside format object (some specs use format.type for file format)
+        if (formatObj.type !== undefined) {
+          if (
+            typeof formatObj.type !== 'string' ||
+            !VALID_FILE_FORMATS.includes(formatObj.type as (typeof VALID_FILE_FORMATS)[number])
+          ) {
+            errors.push({
+              path: `target.spec.${specType}.format.type`,
+              message: `format type must be one of: ${VALID_FILE_FORMATS.join(', ')}`
+            })
+          }
+        }
+      } else if (typeof specObj.format === 'string') {
+        // format can also be a string directly (e.g., spec.local.format: "csv")
+        if (!VALID_FILE_FORMATS.includes(specObj.format as (typeof VALID_FILE_FORMATS)[number])) {
+          errors.push({
+            path: `target.spec.${specType}.format`,
+            message: `format must be one of: ${VALID_FILE_FORMATS.join(', ')}`
+          })
+        }
       }
     }
   }
