@@ -4,8 +4,8 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, watch, shallowRef } from 'vue'
-import loader from '@monaco-editor/loader'
 import { useThemeStore } from '@/stores/theme'
+import { initializeMonaco } from '@/utils/monaco-loader'
 
 // Import Monaco types
 import type * as Monaco from 'monaco-editor/esm/vs/editor/editor.api'
@@ -108,8 +108,8 @@ onMounted(async () => {
   if (!editorContainer.value) return
 
   try {
-    // Load Monaco
-    const monacoInstance = await loader.init()
+    // Load Monaco using lazy loader (only loads workers on first use)
+    const monacoInstance = await initializeMonaco()
     monaco.value = monacoInstance
 
     // Default editor options

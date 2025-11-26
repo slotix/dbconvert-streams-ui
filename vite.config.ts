@@ -11,6 +11,14 @@ export default defineConfig({
     'process.env.VITE_API_URL': JSON.stringify(process.env.VITE_API_URL),
     'process.env.VITE_SENTRY_DSN': JSON.stringify(process.env.VITE_SENTRY_DSN)
   },
+  optimizeDeps: {
+    exclude: [
+      // Exclude Monaco workers we don't use (reduces bundle size)
+      'monaco-editor/esm/vs/language/typescript/ts.worker',
+      'monaco-editor/esm/vs/language/css/css.worker',
+      'monaco-editor/esm/vs/language/html/html.worker'
+    ]
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
@@ -20,6 +28,9 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
+          // Monaco Editor - lazy-loaded chunk
+          'monaco-editor': ['monaco-editor', '@monaco-editor/loader'],
+
           // Separate ag-grid into its own chunk (large library ~1MB)
           'ag-grid': ['ag-grid-community', 'ag-grid-vue3'],
 
@@ -40,15 +51,15 @@ export default defineConfig({
           'export-libs': ['html2canvas', 'jspdf']
         }
       },
-      // Suppress warnings for ag-grid which is legitimately large but lazy-loaded
+      // Suppress warnings for large libraries that are lazy-loaded
       onwarn(warning, warn) {
         // Ignore chunk size warnings since we've properly code-split
         if (warning.code === 'CHUNK_SIZE_WARNING') return
         warn(warning)
       }
     },
-    // ag-grid is legitimately large (~1MB), but it's lazy-loaded
-    // Set warning limit to 1100KB (measured in KB, not bytes)
-    chunkSizeWarningLimit: 1100
+    // Large libraries (monaco-editor, ag-grid) are lazy-loaded
+    // Set warning limit to 4000KB to accommodate Monaco when it loads
+    chunkSizeWarningLimit: 4000
   }
 })

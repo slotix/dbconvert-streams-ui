@@ -10,35 +10,8 @@ import { logEnvironment } from '@/utils/environment'
 import { vTooltip } from '@/directives/tooltip'
 import { useThemeStore } from '@/stores/theme'
 
-// Configure Monaco Editor to use local package instead of CDN
-import loader from '@monaco-editor/loader'
-import * as monaco from 'monaco-editor'
-import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
-import jsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker'
-import cssWorker from 'monaco-editor/esm/vs/language/css/css.worker?worker'
-import htmlWorker from 'monaco-editor/esm/vs/language/html/html.worker?worker'
-import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker'
-
-// Configure worker environment before loading Monaco
-window.MonacoEnvironment = {
-  getWorker(_: string, label: string) {
-    if (label === 'json') {
-      return new jsonWorker()
-    }
-    if (label === 'css' || label === 'scss' || label === 'less') {
-      return new cssWorker()
-    }
-    if (label === 'html' || label === 'handlebars' || label === 'razor') {
-      return new htmlWorker()
-    }
-    if (label === 'typescript' || label === 'javascript') {
-      return new tsWorker()
-    }
-    return new editorWorker()
-  }
-}
-
-loader.config({ monaco })
+// Monaco Editor is now lazy-loaded via src/utils/monaco-loader.ts
+// This reduces the initial bundle size by ~3.8MB (986KB gzipped)
 
 // Ensure window.ENV exists
 if (!window.ENV) {
@@ -83,7 +56,7 @@ themeStore.initializeTheme()
 themeStore.setupSystemThemeListener()
 
 // Global error handler for uncaught errors
-app.config.errorHandler = (err, instance, info) => {
+app.config.errorHandler = (err, _instance, info) => {
   console.error('Global error handler:', err, info)
 
   // Don't show toast for specific errors that are already handled
