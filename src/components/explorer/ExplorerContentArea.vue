@@ -3,7 +3,8 @@
     <ConnectionDetailsPanel
       :connection="currentConnection"
       :file-entries="fileEntries"
-      @edit="$emit('edit-connection')"
+      @edit-wizard="$emit('edit-connection-wizard')"
+      @edit-json="$emit('edit-connection-json')"
       @clone="$emit('clone-connection')"
       @delete="$emit('delete-connection')"
     />
@@ -147,7 +148,8 @@ const props = withDefaults(defineProps<Props>(), {
 
 // Define emits
 const emit = defineEmits<{
-  'edit-connection': []
+  'edit-connection-wizard': []
+  'edit-connection-json': []
   'clone-connection': []
   'delete-connection': []
   'show-diagram': [payload: { connectionId: string; database: string }]

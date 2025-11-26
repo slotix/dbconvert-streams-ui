@@ -33,11 +33,19 @@
         <div class="flex items-center gap-2 ml-4">
           <BaseButton
             v-if="!isStreamRunning || isStreamFinished"
-            v-tooltip="'Edit stream configuration'"
+            v-tooltip="'Edit using step-by-step wizard'"
             variant="secondary"
             @click="navigateToEdit"
           >
-            Edit Config
+            Edit Wizard
+          </BaseButton>
+          <BaseButton
+            v-if="!isStreamRunning || isStreamFinished"
+            v-tooltip="'Edit raw JSON configuration'"
+            variant="secondary"
+            @click="navigateToEditJson"
+          >
+            Edit JSON
           </BaseButton>
           <BaseButton
             v-if="!isStreamRunning || isStreamFinished"
@@ -183,7 +191,6 @@
       <!-- Configuration Tab -->
       <div v-if="activeTab === 'configuration'" class="p-6">
         <StreamConfigurationView
-          v-model:is-json-view="isJsonView"
           :stream="stream"
           :source="source"
           :target="target"
@@ -191,7 +198,6 @@
           :is-file-target="isFileTarget"
           @navigate-source="navigateToSourceExplorer"
           @navigate-target="navigateToTargetExplorer"
-          @stream-updated="handleStreamUpdated"
         />
       </div>
 
@@ -298,7 +304,6 @@ const connectionsStore = useConnectionsStore()
 const commonStore = useCommonStore()
 const monitoringStore = useMonitoringStore()
 
-const isJsonView = ref(false)
 const showDeleteConfirm = ref(false)
 const activeTab = ref<StreamDetailsTab>('configuration')
 
@@ -354,22 +359,16 @@ function navigateToEdit() {
   router.push({ name: 'EditStream', params: { id: props.stream.id } })
 }
 
+function navigateToEditJson() {
+  router.push({ name: 'EditStreamJson', params: { id: props.stream.id } })
+}
+
 function handleCompareTable(tableName: string) {
   // Switch to Compare tab and pass the table name
   activeTab.value = 'compare'
   // Note: The StreamCompareView component will need to handle table selection
   // This could be done via URL query params or by passing a prop
   // For now, just switching to the Compare tab
-}
-
-function handleStreamUpdated(updatedConfig: StreamConfig) {
-  // Update the stream in the store - this will trigger reactivity
-  if (updatedConfig.id) {
-    const index = streamsStore.streamConfigs.findIndex((c) => c.id === updatedConfig.id)
-    if (index !== -1) {
-      streamsStore.streamConfigs[index] = updatedConfig
-    }
-  }
 }
 
 async function cloneStream() {

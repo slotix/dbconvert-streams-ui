@@ -460,6 +460,11 @@ export function useDatabaseExplorerController({
     router.push(`/explorer/edit/${explorerState.activeConnectionId.value}`)
   }
 
+  const onEditConnectionJson = () => {
+    if (!explorerState.activeConnectionId.value) return
+    router.push(`/explorer/edit-json/${explorerState.activeConnectionId.value}`)
+  }
+
   const onDeleteConnection = () => {
     const id = explorerState.activeConnectionId.value
     if (!id) return
@@ -865,6 +870,7 @@ export function useDatabaseExplorerController({
     handleBreadcrumbNavigate,
     onAddConnection,
     onEditConnection,
+    onEditConnectionJson,
     onDeleteConnection,
     confirmDeleteConnection,
     cancelDeleteConnection,

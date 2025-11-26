@@ -18,7 +18,8 @@ const props = defineProps<{
   fileEntries?: Array<{ name: string; path: string; type: 'file' | 'dir'; size?: number }>
 }>()
 const emit = defineEmits<{
-  (e: 'edit'): void
+  (e: 'edit-wizard'): void
+  (e: 'edit-json'): void
   (e: 'clone'): void
   (e: 'delete'): void
 }>()
@@ -191,7 +192,8 @@ const displayS3URI = computed(() => {
         />
       </div>
       <div class="hidden sm:flex items-center gap-2">
-        <BaseButton variant="secondary" @click="emit('edit')">Edit</BaseButton>
+        <BaseButton variant="secondary" @click="emit('edit-wizard')">Edit Wizard</BaseButton>
+        <BaseButton variant="secondary" @click="emit('edit-json')">Edit JSON</BaseButton>
         <BaseButton variant="secondary" @click="emit('clone')">Clone</BaseButton>
         <BaseButton variant="danger" @click="emit('delete')">Delete</BaseButton>
       </div>

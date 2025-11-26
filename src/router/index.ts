@@ -26,6 +26,12 @@ const routes = [
     props: true
   },
   {
+    path: '/explorer/edit-json/:id',
+    name: 'EditConnectionJson',
+    component: () => import('@/views/EditConnectionJsonView.vue'),
+    props: true
+  },
+  {
     path: '/explorer',
     name: 'DatabaseExplorer',
     component: DatabaseExplorerView
@@ -50,6 +56,12 @@ const routes = [
     path: '/streams/edit/:id',
     name: 'EditStream',
     component: () => import('@/views/CreateStreamView.vue'),
+    props: true
+  },
+  {
+    path: '/streams/edit-json/:id',
+    name: 'EditStreamJson',
+    component: () => import('@/views/EditStreamJsonView.vue'),
     props: true
   },
   {

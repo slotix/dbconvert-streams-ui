@@ -1,38 +1,7 @@
 <template>
   <div class="space-y-6">
-    <div class="flex items-center justify-end">
-      <div class="flex items-center gap-2">
-        <span class="text-xs text-gray-600 dark:text-gray-400">JSON</span>
-        <Switch
-          v-model="jsonViewModel"
-          class="relative inline-flex h-5 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-gray-600 dark:focus:ring-teal-400 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
-          :class="[jsonViewModel ? 'bg-gray-600 dark:bg-teal-500' : 'bg-gray-400 dark:bg-gray-600']"
-        >
-          <span class="sr-only">Toggle JSON view</span>
-          <span
-            aria-hidden="true"
-            class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white dark:bg-gray-200 shadow-md ring-0 transition duration-200 ease-in-out"
-            :class="[
-              jsonViewModel ? 'translate-x-5' : 'translate-x-0',
-              'shadow-[0_1px_4px_rgba(0,0,0,0.15)]'
-            ]"
-          />
-        </Switch>
-      </div>
-    </div>
-
-    <!-- JSON Editor View (always editable) -->
-    <div v-if="jsonViewModel">
-      <StreamConfigJsonEditor
-        ref="jsonEditorRef"
-        :config="stream"
-        height="600px"
-        @save="handleSaveConfig"
-      />
-    </div>
-
-    <!-- Summary View -->
-    <div v-else class="space-y-4">
+    <!-- Summary View (read-only) -->
+    <div class="space-y-4">
       <div class="pb-4 border-b border-gray-100 dark:border-gray-800">
         <div class="flex items-center gap-2">
           <span class="text-sm text-gray-500 dark:text-gray-400">Mode:</span>
@@ -90,41 +59,28 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { Switch } from '@headlessui/vue'
+import { computed } from 'vue'
 import { CalendarIcon } from '@heroicons/vue/24/outline'
 import { normalizeConnectionType } from '@/utils/connectionUtils'
 import { formatDateTime } from '@/utils/formats'
-import streamsApi from '@/api/streams'
 import type { StreamConfig } from '@/types/streamConfig'
 import type { Connection, DbType } from '@/types/connections'
 import ConnectionCard from './configuration/ConnectionCard.vue'
 import FileOutputSummary from './configuration/FileOutputSummary.vue'
 import TablesSummary from './configuration/TablesSummary.vue'
-import StreamConfigJsonEditor from './StreamConfigJsonEditor.vue'
 
 const props = defineProps<{
   stream: StreamConfig
   source?: Connection
   target?: Connection
   dbTypes: DbType[]
-  isJsonView: boolean
   isFileTarget: boolean
 }>()
 
 const emit = defineEmits<{
-  (e: 'update:isJsonView', value: boolean): void
   (e: 'navigate-source'): void
   (e: 'navigate-target'): void
-  (e: 'stream-updated', config: StreamConfig): void
 }>()
-
-const jsonEditorRef = ref<InstanceType<typeof StreamConfigJsonEditor>>()
-
-const jsonViewModel = computed({
-  get: () => props.isJsonView,
-  set: (value: boolean) => emit('update:isJsonView', value)
-})
 
 const displayedTables = computed(() => {
   if (!props.stream?.source?.tables?.length) return []
@@ -147,22 +103,6 @@ function getLogo(connection?: Connection) {
 
 const sourceLogo = computed(() => getLogo(props.source))
 const targetLogo = computed(() => getLogo(props.target))
-
-async function handleSaveConfig(config: StreamConfig) {
-  if (!props.stream.id) {
-    jsonEditorRef.value?.onSaveError('Stream ID is missing')
-    return
-  }
-
-  try {
-    const updatedConfig = await streamsApi.updateStreamConfig(props.stream.id, config)
-    jsonEditorRef.value?.onSaveSuccess()
-    emit('stream-updated', updatedConfig)
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Failed to save configuration'
-    jsonEditorRef.value?.onSaveError(errorMessage)
-  }
-}
 </script>
 
 <style scoped>

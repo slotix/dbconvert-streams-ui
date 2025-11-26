@@ -104,6 +104,7 @@ const {
   handleBreadcrumbNavigate,
   onAddConnection,
   onEditConnection,
+  onEditConnectionJson,
   onDeleteConnection,
   confirmDeleteConnection,
   cancelDeleteConnection,
@@ -363,7 +364,8 @@ function onRightTabChange(_tab: 'data' | 'structure') {
               :file-entries="currentFileEntries"
               :active-pane="paneTabsStore.activePane"
               :split-pane-resize="splitPaneResize"
-              @edit-connection="onEditConnection"
+              @edit-connection-wizard="onEditConnection"
+              @edit-connection-json="onEditConnectionJson"
               @clone-connection="onCloneConnection"
               @delete-connection="onDeleteConnection"
               @show-diagram="handleShowDiagram"
