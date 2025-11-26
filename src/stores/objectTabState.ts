@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import type { SortModelItem } from 'ag-grid-community'
+import type { SortModelItem, ColumnState } from 'ag-grid-community'
 
 type AGGridDataState = {
   sortModel: SortModelItem[]
@@ -8,6 +8,8 @@ type AGGridDataState = {
   panelWhereSQL?: string
   totalRowCount: number
   exactRowCount: number | null
+  // Column state (pinned, width, order, etc.)
+  columnState?: ColumnState[]
 }
 
 // Filter panel config types (matching DataFilterPanel)

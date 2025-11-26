@@ -379,8 +379,22 @@ watch(
     if (api && pendingColumnVisibility.value) {
       applyColumnVisibility(pendingColumnVisibility.value)
     }
+    // Restore column state (pinned, width, order) when grid is ready
+    if (api) {
+      const savedState = tabStateStore.getAGGridDataState(props.objectKey)
+      if (savedState?.columnState) {
+        api.applyColumnState({ state: savedState.columnState, applyOrder: true })
+      }
+    }
   }
 )
+
+// Save column state when it changes (pin, resize, reorder)
+function saveColumnState() {
+  if (!baseGrid.gridApi.value) return
+  const columnState = baseGrid.gridApi.value.getColumnState()
+  tabStateStore.setAGGridDataState(props.objectKey, { columnState })
+}
 
 // Initialize and restore state on mount
 onMounted(() => {
@@ -437,6 +451,9 @@ defineExpose({
         :gridOptions="baseGrid.gridOptions.value"
         style="width: 100%; height: 100%"
         @grid-ready="baseGrid.onGridReady"
+        @column-pinned="saveColumnState"
+        @column-moved="saveColumnState"
+        @column-resized="saveColumnState"
       />
     </div>
 
