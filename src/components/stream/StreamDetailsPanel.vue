@@ -191,6 +191,7 @@
           :is-file-target="isFileTarget"
           @navigate-source="navigateToSourceExplorer"
           @navigate-target="navigateToTargetExplorer"
+          @stream-updated="handleStreamUpdated"
         />
       </div>
 
@@ -359,6 +360,16 @@ function handleCompareTable(tableName: string) {
   // Note: The StreamCompareView component will need to handle table selection
   // This could be done via URL query params or by passing a prop
   // For now, just switching to the Compare tab
+}
+
+function handleStreamUpdated(updatedConfig: StreamConfig) {
+  // Update the stream in the store - this will trigger reactivity
+  if (updatedConfig.id) {
+    const index = streamsStore.streamConfigs.findIndex((c) => c.id === updatedConfig.id)
+    if (index !== -1) {
+      streamsStore.streamConfigs[index] = updatedConfig
+    }
+  }
 }
 
 async function cloneStream() {

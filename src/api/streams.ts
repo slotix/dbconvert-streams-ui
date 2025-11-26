@@ -114,6 +114,24 @@ const stopStream = async (id: string): Promise<void> => {
   }
 }
 
+const updateStreamConfig = async (id: string, config: StreamConfig): Promise<StreamConfig> => {
+  const commonStore = useCommonStore()
+  validateApiKey(commonStore.apiKey)
+
+  try {
+    const response: AxiosResponse<StreamConfig> = await apiClient.put(
+      `/stream-configs/${id}`,
+      config,
+      {
+        headers: { [API_HEADERS.API_KEY]: commonStore.apiKey }
+      }
+    )
+    return response.data
+  } catch (error) {
+    throw handleApiError(error)
+  }
+}
+
 export default {
   getStreams,
   createStream,
@@ -122,5 +140,6 @@ export default {
   startStream,
   pauseStream,
   resumeStream,
-  stopStream
+  stopStream,
+  updateStreamConfig
 }

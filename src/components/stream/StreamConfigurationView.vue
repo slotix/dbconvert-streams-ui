@@ -18,21 +18,20 @@
             ]"
           />
         </Switch>
-        <button
-          v-if="jsonViewModel"
-          v-tooltip="'Copy configuration'"
-          class="p-1.5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-          @click="copyConfig"
-        >
-          <ClipboardIcon class="h-4 w-4" />
-        </button>
       </div>
     </div>
 
+    <!-- JSON Editor View (always editable) -->
     <div v-if="jsonViewModel">
-      <JsonViewer :json="prettyConfig" title="Stream Configuration" height="600px" compact />
+      <StreamConfigJsonEditor
+        ref="jsonEditorRef"
+        :config="stream"
+        height="600px"
+        @save="handleSaveConfig"
+      />
     </div>
 
+    <!-- Summary View -->
     <div v-else class="space-y-4">
       <div class="pb-4 border-b border-gray-100 dark:border-gray-800">
         <div class="flex items-center gap-2">
@@ -91,18 +90,18 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import { Switch } from '@headlessui/vue'
-import { ClipboardIcon, CalendarIcon } from '@heroicons/vue/24/outline'
+import { CalendarIcon } from '@heroicons/vue/24/outline'
 import { normalizeConnectionType } from '@/utils/connectionUtils'
 import { formatDateTime } from '@/utils/formats'
-import { useCommonStore } from '@/stores/common'
+import streamsApi from '@/api/streams'
 import type { StreamConfig } from '@/types/streamConfig'
 import type { Connection, DbType } from '@/types/connections'
-import { JsonViewer } from '@/components/monaco'
 import ConnectionCard from './configuration/ConnectionCard.vue'
 import FileOutputSummary from './configuration/FileOutputSummary.vue'
 import TablesSummary from './configuration/TablesSummary.vue'
+import StreamConfigJsonEditor from './StreamConfigJsonEditor.vue'
 
 const props = defineProps<{
   stream: StreamConfig
@@ -117,16 +116,16 @@ const emit = defineEmits<{
   (e: 'update:isJsonView', value: boolean): void
   (e: 'navigate-source'): void
   (e: 'navigate-target'): void
+  (e: 'stream-updated', config: StreamConfig): void
 }>()
 
-const commonStore = useCommonStore()
+const jsonEditorRef = ref<InstanceType<typeof StreamConfigJsonEditor>>()
 
 const jsonViewModel = computed({
   get: () => props.isJsonView,
   set: (value: boolean) => emit('update:isJsonView', value)
 })
 
-const prettyConfig = computed(() => JSON.stringify(props.stream, null, 2))
 const displayedTables = computed(() => {
   if (!props.stream?.source?.tables?.length) return []
   return props.stream.source.tables.slice(0, 5).map((table) => table.name)
@@ -149,9 +148,20 @@ function getLogo(connection?: Connection) {
 const sourceLogo = computed(() => getLogo(props.source))
 const targetLogo = computed(() => getLogo(props.target))
 
-function copyConfig() {
-  navigator.clipboard.writeText(prettyConfig.value)
-  commonStore.showNotification('Configuration copied to clipboard', 'success')
+async function handleSaveConfig(config: StreamConfig) {
+  if (!props.stream.id) {
+    jsonEditorRef.value?.onSaveError('Stream ID is missing')
+    return
+  }
+
+  try {
+    const updatedConfig = await streamsApi.updateStreamConfig(props.stream.id, config)
+    jsonEditorRef.value?.onSaveSuccess()
+    emit('stream-updated', updatedConfig)
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to save configuration'
+    jsonEditorRef.value?.onSaveError(errorMessage)
+  }
 }
 </script>
 

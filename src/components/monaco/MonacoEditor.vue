@@ -3,7 +3,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, watch, shallowRef } from 'vue'
+import { ref, onMounted, onBeforeUnmount, watch, shallowRef, nextTick } from 'vue'
 import { useThemeStore } from '@/stores/theme'
 import { initializeMonaco } from '@/utils/monaco-loader'
 
@@ -104,13 +104,32 @@ watch(
   { deep: true }
 )
 
+// Watch readOnly changes
+watch(
+  () => props.readOnly,
+  (newReadOnly) => {
+    if (editor.value) {
+      editor.value.updateOptions({ readOnly: newReadOnly })
+    }
+  }
+)
+
 onMounted(async () => {
+  // Wait for next tick to ensure DOM is fully rendered
+  await nextTick()
+
   if (!editorContainer.value) return
 
   try {
     // Load Monaco using lazy loader (only loads workers on first use)
     const monacoInstance = await initializeMonaco()
     monaco.value = monacoInstance
+
+    // Check again after async operation - container might be gone if component unmounted
+    if (!editorContainer.value) {
+      console.warn('Monaco editor container no longer available after initialization')
+      return
+    }
 
     // Default editor options
     const defaultOptions: Record<string, any> = {

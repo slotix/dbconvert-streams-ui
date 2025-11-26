@@ -451,6 +451,23 @@ export const useStreamsStore = defineStore('streams', {
         throw err
       }
     },
+    async updateStreamConfig(configID: string, config: StreamConfig) {
+      try {
+        const updatedConfig = await api.updateStreamConfig(configID, config)
+        // Update local store
+        const index = this.streamConfigs.findIndex((c) => c.id === configID)
+        if (index !== -1) {
+          this.streamConfigs[index] = updatedConfig
+        }
+        if (this.currentStreamConfig?.id === configID) {
+          this.currentStreamConfig = updatedConfig
+        }
+        return updatedConfig
+      } catch (err) {
+        console.error('Failed to update stream config:', err)
+        throw err
+      }
+    },
     async startStream(configID: string): Promise<string> {
       try {
         const streamID = await api.startStream(configID)
