@@ -10,11 +10,34 @@ type AGGridDataState = {
   exactRowCount: number | null
 }
 
+// Filter panel config types (matching DataFilterPanel)
+export type FilterConfig = {
+  id: string
+  column: string
+  operator: string
+  value: string
+}
+
+export type SortConfig = {
+  column: string
+  direction: 'ASC' | 'DESC'
+}
+
+export type FilterPanelState = {
+  filters: FilterConfig[]
+  sorts: SortConfig[]
+  selectedColumns: string[]
+  isExpanded: boolean
+  showColumnSelector: boolean
+}
+
 type ObjectTabState = {
   mainTab: number // 0 = Data, 1 = Structure
   subTab: number // For Structure tab: 0 = Columns, 1 = Keys, 2 = Indexes, 3 = DDL
   // AG Grid data state (for Data tab)
   agGridData?: AGGridDataState
+  // Filter panel state (for Data tab)
+  filterPanelState?: FilterPanelState
 }
 
 const STORAGE_KEY = 'explorer.objectTabState'
@@ -124,6 +147,26 @@ export const useObjectTabStateStore = defineStore('objectTabState', {
     clearAllTabStates() {
       this.tabStates = {}
       this.persistState()
+    },
+
+    // Filter Panel state management
+    setFilterPanelState(objectKey: string, panelState: FilterPanelState) {
+      if (!this.tabStates[objectKey]) {
+        this.tabStates[objectKey] = { mainTab: 0, subTab: 0 }
+      }
+      this.tabStates[objectKey].filterPanelState = panelState
+      this.persistState()
+    },
+
+    getFilterPanelState(objectKey: string): FilterPanelState | null {
+      return this.tabStates[objectKey]?.filterPanelState || null
+    },
+
+    clearFilterPanelState(objectKey: string) {
+      if (this.tabStates[objectKey]) {
+        delete this.tabStates[objectKey].filterPanelState
+        this.persistState()
+      }
     }
   }
 })

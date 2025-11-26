@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { computed, ref, watch, defineAsyncComponent, type Component } from 'vue'
-import { ArrowPathIcon } from '@heroicons/vue/24/outline'
+import {
+  ArrowPathIcon,
+  ViewColumnsIcon,
+  FunnelIcon,
+  ArrowsUpDownIcon
+} from '@heroicons/vue/24/outline'
 import { type SQLTableMeta, type SQLViewMeta } from '@/types/metadata'
 import { type FileSystemEntry } from '@/api/fileSystem'
 import { type FileMetadata } from '@/types/files'
@@ -171,8 +176,77 @@ function onTabChange(i: number) {
 
 // Keep refs to the rendered child components so parent can trigger refresh
 type Refreshable = { refresh?: () => Promise<void> | void }
-const panelRefs = ref<Refreshable[]>([])
+type FilterPanelMethods = {
+  addFilter?: () => void
+  addSort?: () => void
+  toggleColumnSelector?: () => void
+  canAddSort?: { value: boolean }
+  showColumnSelector?: { value: boolean }
+  hasActiveFilters?: { value: boolean }
+  hasActiveSorts?: { value: boolean }
+  selectedColumns?: { value: string[] }
+  columns?: () => { field?: string }[]
+}
+type DataViewComponent = Refreshable & {
+  filterPanelRef?: FilterPanelMethods | { value: FilterPanelMethods | null }
+}
+const panelRefs = ref<DataViewComponent[]>([])
 const isRefreshing = ref(false)
+
+// Get the current data view's filter panel ref (handles both ref and direct value)
+function getFilterPanel(): FilterPanelMethods | null {
+  const dataView = panelRefs.value[0] as DataViewComponent | undefined
+  if (!dataView?.filterPanelRef) return null
+  // Handle case where filterPanelRef is a ref (computed) or direct value
+  const panel = dataView.filterPanelRef
+  if ('value' in panel && panel.value !== undefined) {
+    return panel.value as FilterPanelMethods
+  }
+  return panel as FilterPanelMethods
+}
+
+// Computed values that read from child panel state
+const showingColumnSelector = computed(() => {
+  const panel = getFilterPanel()
+  return panel?.showColumnSelector?.value ?? false
+})
+
+const hasActiveFilters = computed(() => {
+  const panel = getFilterPanel()
+  return panel?.hasActiveFilters?.value ?? false
+})
+
+const hasActiveSorts = computed(() => {
+  const panel = getFilterPanel()
+  return panel?.hasActiveSorts?.value ?? false
+})
+
+const canAddSort = computed(() => {
+  const panel = getFilterPanel()
+  return panel?.canAddSort?.value ?? true
+})
+
+// Filter control methods that delegate to child component
+function toggleColumnSelector() {
+  const panel = getFilterPanel()
+  if (panel?.toggleColumnSelector) {
+    panel.toggleColumnSelector()
+  }
+}
+
+function addFilter() {
+  const panel = getFilterPanel()
+  if (panel?.addFilter) {
+    panel.addFilter()
+  }
+}
+
+function addSort() {
+  const panel = getFilterPanel()
+  if (panel?.addSort) {
+    panel.addSort()
+  }
+}
 
 async function onRefreshClick() {
   try {
@@ -202,31 +276,86 @@ async function onRefreshClick() {
       $attrs.class ? $attrs.class : 'shadow-sm ring-1 ring-gray-900/5 dark:ring-gray-700 rounded-lg'
     ]"
   >
-    <!-- Header with segmented control tabs and refresh button -->
+    <!-- Header with segmented control tabs, filter controls, and refresh button -->
     <div class="border-b border-gray-200 dark:border-gray-700 px-4 py-2.5">
       <div class="flex items-center justify-between">
-        <div class="inline-flex rounded-md shadow-sm" role="group">
-          <button
-            v-for="(tab, i) in tabs"
-            :key="tab.name"
-            :class="[
-              'px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-all duration-200',
-              'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 dark:focus:ring-teal-400 focus:z-10',
-              'border',
-              // Rounded corners only on first and last
-              i === 0 ? 'rounded-l-md' : '',
-              i === tabs.length - 1 ? 'rounded-r-md' : '',
-              // Remove left border from middle buttons to avoid double borders
-              i !== 0 ? '-ml-px' : '',
-              selectedIndex === i
-                ? 'bg-teal-600 dark:bg-teal-900 text-white border-teal-600 dark:border-teal-600 hover:bg-teal-700 dark:hover:bg-teal-800 z-10'
-                : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100'
-            ]"
-            @click="onTabChange(i)"
-          >
-            {{ tab.name }}
-          </button>
+        <!-- Left: Tabs + Filter Controls -->
+        <div class="flex items-center gap-4">
+          <!-- Data/Structure tabs -->
+          <div class="inline-flex rounded-md shadow-sm" role="group">
+            <button
+              v-for="(tab, i) in tabs"
+              :key="tab.name"
+              :class="[
+                'px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-all duration-200',
+                'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 dark:focus:ring-teal-400 focus:z-10',
+                'border',
+                // Rounded corners only on first and last
+                i === 0 ? 'rounded-l-md' : '',
+                i === tabs.length - 1 ? 'rounded-r-md' : '',
+                // Remove left border from middle buttons to avoid double borders
+                i !== 0 ? '-ml-px' : '',
+                selectedIndex === i
+                  ? 'bg-teal-600 dark:bg-teal-900 text-white border-teal-600 dark:border-teal-600 hover:bg-teal-700 dark:hover:bg-teal-800 z-10'
+                  : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100'
+              ]"
+              @click="onTabChange(i)"
+            >
+              {{ tab.name }}
+            </button>
+          </div>
+
+          <!-- Filter Action Buttons (only shown on Data tab) -->
+          <div v-if="selectedIndex === 0" class="flex items-center gap-1">
+            <button
+              type="button"
+              class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded transition-colors"
+              :class="
+                showingColumnSelector
+                  ? 'bg-teal-100 dark:bg-teal-900/40 text-teal-700 dark:text-teal-300 border border-teal-300 dark:border-teal-700'
+                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 border border-transparent'
+              "
+              title="Select columns to display"
+              @click="toggleColumnSelector"
+            >
+              <ViewColumnsIcon class="w-4 h-4" />
+              <span class="hidden sm:inline">Columns</span>
+            </button>
+
+            <button
+              type="button"
+              class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded transition-colors"
+              :class="
+                hasActiveFilters
+                  ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-700'
+                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 border border-transparent'
+              "
+              title="Add filter condition"
+              @click="addFilter"
+            >
+              <FunnelIcon class="w-4 h-4" />
+              <span class="hidden sm:inline">Filter</span>
+            </button>
+
+            <button
+              type="button"
+              class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded transition-colors"
+              :class="
+                hasActiveSorts
+                  ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-700'
+                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 border border-transparent'
+              "
+              :disabled="!canAddSort"
+              title="Add sort column"
+              @click="addSort"
+            >
+              <ArrowsUpDownIcon class="w-4 h-4" />
+              <span class="hidden sm:inline">Sort</span>
+            </button>
+          </div>
         </div>
+
+        <!-- Right: Refresh button -->
         <div>
           <button
             type="button"

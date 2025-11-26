@@ -46,8 +46,12 @@ function refresh() {
   agGridRef.value?.refresh()
 }
 
+// Expose filterPanelRef for header controls
+const filterPanelRef = computed(() => agGridRef.value?.filterPanelRef)
+
 defineExpose({
-  refresh
+  refresh,
+  filterPanelRef
 })
 </script>
 

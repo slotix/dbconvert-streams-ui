@@ -240,10 +240,52 @@ function onFilterPanelApply(payload: { where: string; orderBy: string; orderDir:
   }
 }
 
+// Pending column visibility (applied when grid is ready)
+const pendingColumnVisibility = ref<string[] | null>(null)
+
+// Handle column visibility changes from filter panel
+function onColumnsChange(visibleColumns: string[]) {
+  // Store for later if grid not ready
+  pendingColumnVisibility.value = visibleColumns
+
+  if (!baseGrid.gridApi.value) return
+
+  applyColumnVisibility(visibleColumns)
+}
+
+// Apply column visibility to the grid
+function applyColumnVisibility(visibleColumns: string[]) {
+  if (!baseGrid.gridApi.value) return
+
+  // If empty array or all columns selected, show all
+  const showAll = visibleColumns.length === 0 || visibleColumns.length === columnDefs.value.length
+
+  // Update column visibility
+  columnDefs.value.forEach((col) => {
+    const colId = col.field
+    if (colId) {
+      const isVisible = showAll || visibleColumns.includes(colId)
+      baseGrid.gridApi.value?.setColumnsVisible([colId], isVisible)
+    }
+  })
+}
+
+// Watch for grid API to become ready and apply pending visibility
+watch(
+  () => baseGrid.gridApi.value,
+  (api) => {
+    if (api && pendingColumnVisibility.value) {
+      applyColumnVisibility(pendingColumnVisibility.value)
+    }
+  }
+)
+
 // Expose methods to parent
 defineExpose({
+  refresh: baseGrid.refresh,
   getGridState: baseGrid.getGridState,
-  applyGridState: baseGrid.applyGridState
+  applyGridState: baseGrid.applyGridState,
+  filterPanelRef
 })
 </script>
 
@@ -267,6 +309,7 @@ defineExpose({
       :object-key="objectKey"
       @apply="onFilterPanelApply"
       @clear="baseGrid.clearAllFilters"
+      @columns-change="onColumnsChange"
     />
 
     <!-- Warnings (only show when there's no error) -->

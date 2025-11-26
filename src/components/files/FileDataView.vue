@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref, computed } from 'vue'
 import { type FileSystemEntry } from '@/api/fileSystem'
 import { type FileMetadata } from '@/types/files'
 import AGGridFileDataView from './AGGridFileDataView.vue'
@@ -9,6 +10,22 @@ defineProps<{
   connectionId: string
   objectKey: string
 }>()
+
+// Ref to AGGridFileDataView
+const agGridRef = ref<InstanceType<typeof AGGridFileDataView> | null>(null)
+
+// Expose refresh function to parent
+function refresh() {
+  agGridRef.value?.refresh()
+}
+
+// Expose filterPanelRef for header controls
+const filterPanelRef = computed(() => agGridRef.value?.filterPanelRef)
+
+defineExpose({
+  refresh,
+  filterPanelRef
+})
 </script>
 
 <template>
@@ -20,6 +37,7 @@ defineProps<{
   >
     <div class="p-4">
       <AGGridFileDataView
+        ref="agGridRef"
         :entry="entry"
         :metadata="metadata"
         :connection-id="connectionId"
