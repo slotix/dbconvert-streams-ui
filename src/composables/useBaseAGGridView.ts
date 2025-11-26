@@ -46,6 +46,8 @@ export interface FetchDataParams {
   offset: number
   sortModel: SortModelItem[]
   whereClause: string
+  /** Maximum total rows to return (user-specified LIMIT clause) */
+  maxRows?: number
 }
 
 /**
@@ -97,6 +99,7 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
     gridApi,
     panelWhereSQL,
     panelSortModel,
+    panelLimit,
     isSqlBannerExpanded,
     whereClause,
     sortModel,
@@ -211,20 +214,55 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
         error.value = undefined
 
         try {
-          const limit = params.endRow - params.startRow
-          const offset = params.startRow
+          const pageSize = params.endRow - params.startRow
+          const startRow = params.startRow
+
+          // Check if we have a user-specified max rows limit
+          const userLimit = panelLimit.value
+
+          // If user specified a limit and we're trying to fetch beyond it, return empty
+          if (userLimit && startRow >= userLimit) {
+            params.successCallback([], userLimit)
+            isLoading.value = false
+            return
+          }
+
+          // Adjust the fetch limit if user's limit would be exceeded
+          let adjustedLimit = pageSize
+          if (userLimit) {
+            const remainingRows = userLimit - startRow
+            adjustedLimit = Math.min(pageSize, remainingRows)
+          }
 
           // Call the injected fetch callback with panel filters
           const result = await fetchData({
-            limit,
-            offset,
+            limit: adjustedLimit,
+            offset: startRow,
             sortModel: panelSortModel.value,
-            whereClause: panelWhereSQL.value
+            whereClause: panelWhereSQL.value,
+            maxRows: userLimit
           })
 
-          // Update total count if we have a real count from the result
-          if (result.totalCount > 0) {
-            totalRowCount.value = result.totalCount
+          const rowsThisPage = result.rows || []
+
+          // Determine the effective total count (capped by user limit if set)
+          let effectiveTotal = result.totalCount
+
+          // If user specified a limit, use it as the known total
+          // (capped to actual count if we know it's smaller)
+          if (userLimit) {
+            if (result.totalCount > 0 && result.totalCount < userLimit) {
+              // Actual data is less than limit - use actual count
+              effectiveTotal = result.totalCount
+            } else {
+              // Use the user's limit as the total
+              effectiveTotal = userLimit
+            }
+          }
+
+          // Update total count for display
+          if (effectiveTotal > 0) {
+            totalRowCount.value = effectiveTotal
           } else if (result.totalCount === -1 && totalRowCount.value <= 0) {
             // Handle unknown count (e.g., for views)
             totalRowCount.value = -1
@@ -232,13 +270,38 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
 
           // For small datasets where we don't have a count, if this is the first block
           // and we got fewer rows than requested, we know the total
-          if (offset === 0 && totalRowCount.value === 0 && result.rows.length < limit) {
-            totalRowCount.value = result.rows.length
+          if (startRow === 0 && totalRowCount.value === 0 && rowsThisPage.length < adjustedLimit) {
+            totalRowCount.value = rowsThisPage.length
+            effectiveTotal = rowsThisPage.length
           }
 
-          // Use totalRowCount for grid
-          const rowCount = totalRowCount.value > 0 ? totalRowCount.value : undefined
-          params.successCallback(result.rows, rowCount)
+          // Calculate lastRow for AG-Grid pagination
+          // lastRow = undefined means "more rows available"
+          // lastRow = N means "total is exactly N rows"
+          let lastRow: number | undefined = undefined
+
+          const fetchedUpTo = startRow + rowsThisPage.length
+
+          if (rowsThisPage.length < adjustedLimit) {
+            // We got fewer rows than requested - this is the last page
+            lastRow = fetchedUpTo
+          } else if (effectiveTotal > 0) {
+            // We have a known total count - tell AG-Grid so pagination works
+            lastRow = effectiveTotal
+          }
+
+          // console.log('[AG-Grid Datasource]', {
+          //   userLimit,
+          //   resultTotalCount: result.totalCount,
+          //   effectiveTotal,
+          //   rowsThisPage: rowsThisPage.length,
+          //   adjustedLimit,
+          //   startRow,
+          //   fetchedUpTo,
+          //   lastRow
+          // })
+
+          params.successCallback(rowsThisPage, lastRow)
 
           // Update visible rows immediately after data loads
           setTimeout(() => updateVisibleRows(), 100)
@@ -400,8 +463,16 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
 
     if (savedState) {
       // Restore panel filters from saved state
-      if (savedState.panelWhereSQL || (savedState.sortModel && savedState.sortModel.length > 0)) {
-        setPanelFilters(savedState.panelWhereSQL || '', savedState.sortModel || [])
+      if (
+        savedState.panelWhereSQL ||
+        (savedState.sortModel && savedState.sortModel.length > 0) ||
+        savedState.panelLimit
+      ) {
+        setPanelFilters(
+          savedState.panelWhereSQL || '',
+          savedState.sortModel || [],
+          savedState.panelLimit
+        )
       }
     }
 
@@ -418,11 +489,12 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
    * Save panel filter state to store when it changes
    */
   watch(
-    () => [panelWhereSQL.value, panelSortModel.value] as const,
-    ([whereSQL, sortModel]) => {
+    () => [panelWhereSQL.value, panelSortModel.value, panelLimit.value] as const,
+    ([whereSQL, sortModel, limit]) => {
       tabStateStore.setAGGridDataState(objectKey.value, {
         sortModel,
         panelWhereSQL: whereSQL,
+        panelLimit: limit,
         filterModel: {} // Keep for backwards compatibility
       })
     },
@@ -456,6 +528,7 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
     // Panel filters state (single source of truth)
     panelWhereSQL,
     panelSortModel,
+    panelLimit,
     whereClause,
     sortModel,
     hasActiveFilters,

@@ -6,6 +6,8 @@ type AGGridDataState = {
   filterModel: Record<string, any>
   // Panel-driven WHERE clause (Query Filter Panel is the single source of truth)
   panelWhereSQL?: string
+  // Panel-driven LIMIT (user-specified row limit)
+  panelLimit?: number
   totalRowCount: number
   exactRowCount: number | null
   // Column state (pinned, width, order, etc.)
@@ -31,6 +33,7 @@ export type FilterPanelState = {
   selectedColumns: string[]
   isExpanded: boolean
   showColumnSelector: boolean
+  limit?: number | null
 }
 
 type ObjectTabState = {

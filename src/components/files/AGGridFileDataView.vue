@@ -10,7 +10,6 @@ import { formatTableValue } from '@/utils/dataUtils'
 import ColumnContextMenu from '../database/ColumnContextMenu.vue'
 import DataFilterPanel from '../database/DataFilterPanel.vue'
 import UnsupportedFileMessage from './UnsupportedFileMessage.vue'
-import { determineFilterType } from '@/utils/agGridFilterUtils'
 import {
   useBaseAGGridView,
   type FetchDataParams,
@@ -48,20 +47,17 @@ watch(
 )
 
 // Generate column definitions from file metadata
+// Note: sortable and filter are disabled - Query Filter Panel is the single source of truth
 const columnDefs = computed<ColDef[]>(() => {
   if (!props.metadata?.columns) return []
 
   return props.metadata.columns.map((col) => {
-    // Determine filter type based on column data type
-    const filterType = determineFilterType(col.type)
-
-    const tooltip = `${col.type}${col.nullable ? '' : ' NOT NULL'} - Click to sort, Ctrl+Click for multi-sort`
-
     return {
       field: col.name,
       headerName: col.name,
-      sortable: true,
-      filter: filterType,
+      // Disable AG-Grid native sorting/filtering - Query Filter Panel is the single source of truth
+      sortable: false,
+      filter: false,
       floatingFilter: false,
       suppressHeaderMenuButton: false,
       suppressHeaderFilterButton: true,
@@ -69,7 +65,7 @@ const columnDefs = computed<ColDef[]>(() => {
       flex: 1,
       minWidth: 120,
       valueFormatter: (params) => formatTableValue(params.value),
-      headerTooltip: tooltip,
+      headerTooltip: `${col.type}${col.nullable ? '' : ' NOT NULL'} - Use Query Filter panel to sort/filter`,
       wrapText: false,
       autoHeight: false
     }
@@ -97,7 +93,8 @@ async function fetchData(params: FetchDataParams): Promise<FetchDataResult> {
     skipCount: params.offset > 0, // Skip count on subsequent pages
     order_by: orderBy,
     order_dir: orderDir,
-    where: params.whereClause || undefined
+    where: params.whereClause || undefined,
+    max_rows: params.maxRows
   })
 
   // Convert data to row format expected by AG Grid
@@ -172,10 +169,6 @@ watch(
         sortModel: savedState.sortModel,
         whereClause: savedState.panelWhereSQL
       })
-    } else {
-      baseGrid.gridApi.value.applyColumnState({
-        defaultState: { sort: null }
-      })
     }
 
     baseGrid.gridApi.value.setGridOption('datasource', baseGrid.createDatasource())
@@ -212,14 +205,13 @@ watch(
 // Reference to filter panel
 const filterPanelRef = ref<InstanceType<typeof DataFilterPanel> | null>(null)
 
-// Handle filter panel apply - applies custom WHERE/ORDER BY from the panel
-function onFilterPanelApply(payload: { where: string; orderBy: string; orderDir: string }) {
-  // Clear AG Grid's internal filter/sort state to avoid conflicts
-  if (baseGrid.gridApi.value) {
-    baseGrid.gridApi.value.setFilterModel(null)
-    baseGrid.gridApi.value.applyColumnState({ state: [], defaultState: { sort: null } })
-  }
-
+// Handle filter panel apply - applies custom WHERE/ORDER BY/LIMIT from the panel
+function onFilterPanelApply(payload: {
+  where: string
+  orderBy: string
+  orderDir: string
+  limit?: number
+}) {
   // Build sort model from payload
   let sortModel: { colId: string; sort: 'asc' | 'desc' }[] = []
   if (payload.orderBy) {
@@ -231,8 +223,8 @@ function onFilterPanelApply(payload: { where: string; orderBy: string; orderDir:
     }))
   }
 
-  // Use the new setPanelFilters method - this marks panel filters as active
-  baseGrid.setPanelFilters(payload.where, sortModel)
+  // Set panel filters - this is the single source of truth
+  baseGrid.setPanelFilters(payload.where, sortModel, payload.limit)
 
   // Refresh the datasource to fetch data with new filters
   if (baseGrid.gridApi.value) {

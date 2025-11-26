@@ -190,6 +190,30 @@
           </div>
         </div>
 
+        <!-- LIMIT -->
+        <div
+          class="flex items-center gap-1.5 p-1.5 bg-white dark:bg-gray-800/70 rounded border border-gray-200 dark:border-gray-700"
+        >
+          <span class="text-xs text-gray-400 px-1 w-12 shrink-0">LIMIT</span>
+          <input
+            v-model.number="limit"
+            type="number"
+            min="1"
+            placeholder="no limit"
+            class="w-24 px-1.5 py-1 text-xs border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded focus:ring-1 focus:ring-teal-500"
+            @input="markDirty"
+          />
+          <span class="text-xs text-gray-400">rows</span>
+          <button
+            v-if="limit !== null"
+            type="button"
+            class="p-1 text-gray-400 hover:text-red-500 transition-colors shrink-0 ml-auto"
+            @click="clearLimit"
+          >
+            <XMarkIcon class="w-3.5 h-3.5" />
+          </button>
+        </div>
+
         <!-- Generated Query Preview with Syntax Highlighting -->
         <div v-if="hasModifications" class="space-y-2">
           <div class="relative">
@@ -248,7 +272,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import {
   XMarkIcon,
   PlayIcon,
@@ -276,7 +300,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<{
-  (e: 'apply', payload: { where: string; orderBy: string; orderDir: string }): void
+  (e: 'apply', payload: { where: string; orderBy: string; orderDir: string; limit?: number }): void
   (e: 'clear'): void
   (e: 'columns-change', columns: string[]): void
 }>()
@@ -312,6 +336,7 @@ const isDirty = ref(false)
 const selectedColumns = ref<string[]>([])
 const filters = ref<FilterConfig[]>([])
 const sorts = ref<SortConfig[]>([])
+const limit = ref<number | null>(null)
 
 // Generate unique ID
 let filterId = 0
@@ -325,7 +350,8 @@ function saveState() {
     sorts: sorts.value,
     selectedColumns: selectedColumns.value,
     isExpanded: isExpanded.value,
-    showColumnSelector: showColumnSelector.value
+    showColumnSelector: showColumnSelector.value,
+    limit: limit.value
   })
 }
 
@@ -339,12 +365,21 @@ function restoreState() {
     selectedColumns.value = savedState.selectedColumns || []
     isExpanded.value = savedState.isExpanded || false
     showColumnSelector.value = savedState.showColumnSelector || false
+    limit.value = savedState.limit ?? null
     // Update filterId to avoid ID collisions
     const maxId = filters.value.reduce((max, f) => {
       const num = parseInt(f.id.replace('filter-', ''), 10)
       return isNaN(num) ? max : Math.max(max, num)
     }, 0)
     filterId = maxId
+
+    // Auto-apply restored filters if there are any modifications
+    // Use nextTick to ensure the computed values are updated
+    nextTick(() => {
+      if (hasModifications.value) {
+        applyFilters()
+      }
+    })
   }
 }
 
@@ -370,7 +405,8 @@ const monacoLanguage = computed(() => {
 const hasModifications = computed(() => {
   const hasFilters = filters.value.some((f) => f.column && (isUnaryOperator(f.operator) || f.value))
   const hasSorts = sorts.value.some((s) => s.column)
-  return hasFilters || hasSorts
+  const hasLimit = limit.value !== null && limit.value > 0
+  return hasFilters || hasSorts || hasLimit
 })
 
 const canAddSort = computed(() => {
@@ -403,6 +439,11 @@ const collapsedSqlPreview = computed(() => {
 
   if (sortClauses.length > 0) {
     parts.push(`ORDER BY ${sortClauses.join(', ')}`)
+  }
+
+  // LIMIT
+  if (limit.value !== null && limit.value > 0) {
+    parts.push(`LIMIT ${limit.value}`)
   }
 
   return parts.join(' ')
@@ -438,6 +479,11 @@ const generatedSql = computed(() => {
 
   if (sortClauses.length > 0) {
     parts.push(`ORDER BY ${sortClauses.join(', ')}`)
+  }
+
+  // LIMIT clause
+  if (limit.value !== null && limit.value > 0) {
+    parts.push(`LIMIT ${limit.value}`)
   }
 
   return parts.join('\n')
@@ -517,6 +563,11 @@ function markDirty() {
   saveState()
 }
 
+function clearLimit() {
+  limit.value = null
+  markDirty()
+}
+
 function selectAllColumns() {
   selectedColumns.value = props.columns.map((c) => c.field || '').filter(Boolean)
   onColumnsChange()
@@ -591,7 +642,12 @@ function applyFilters() {
   const orderBy = validSorts.map((s) => s.column).join(',')
   const orderDir = validSorts.map((s) => s.direction).join(',')
 
-  emit('apply', { where, orderBy, orderDir })
+  // Build LIMIT
+  const limitValue = limit.value !== null && limit.value > 0 ? limit.value : undefined
+
+  //   console.log('[DataFilterPanel] applyFilters', { limitRaw: limit.value, limitValue })
+
+  emit('apply', { where, orderBy, orderDir, limit: limitValue })
   isDirty.value = false
   // Collapse after applying
   isExpanded.value = false
@@ -603,6 +659,7 @@ function clearAll() {
   filters.value = []
   sorts.value = []
   selectedColumns.value = []
+  limit.value = null
   isDirty.value = false
   isExpanded.value = false
   showColumnSelector.value = false

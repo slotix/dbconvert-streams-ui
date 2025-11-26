@@ -111,6 +111,7 @@ async function fetchData(params: FetchDataParams): Promise<FetchDataResult> {
     order_dir?: string
     where?: string
     tabId?: string
+    max_rows?: number
   } = {
     limit: params.limit,
     offset: params.offset,
@@ -136,6 +137,10 @@ async function fetchData(params: FetchDataParams): Promise<FetchDataResult> {
   // Add tabId for query grouping
   if (objectName) {
     queryParams.tabId = objectName
+  }
+  // Add max_rows limit if specified
+  if (params.maxRows && params.maxRows > 0) {
+    queryParams.max_rows = params.maxRows
   }
 
   const data = props.isView
@@ -316,8 +321,13 @@ function clearAllFilters() {
 // Reference to filter panel
 const filterPanelRef = ref<InstanceType<typeof DataFilterPanel> | null>(null)
 
-// Handle filter panel apply - applies custom WHERE/ORDER BY from the panel
-function onFilterPanelApply(payload: { where: string; orderBy: string; orderDir: string }) {
+// Handle filter panel apply - applies custom WHERE/ORDER BY/LIMIT from the panel
+function onFilterPanelApply(payload: {
+  where: string
+  orderBy: string
+  orderDir: string
+  limit?: number
+}) {
   // Build sort model from payload
   let sortModel: { colId: string; sort: 'asc' | 'desc' }[] = []
   if (payload.orderBy) {
@@ -330,7 +340,7 @@ function onFilterPanelApply(payload: { where: string; orderBy: string; orderDir:
   }
 
   // Set panel filters - this is the single source of truth
-  baseGrid.setPanelFilters(payload.where, sortModel)
+  baseGrid.setPanelFilters(payload.where, sortModel, payload.limit)
 
   // Reset exact count since filters changed
   exactRowCount.value = null

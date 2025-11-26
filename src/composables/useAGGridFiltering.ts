@@ -28,6 +28,7 @@ export function useAGGridFiltering(options: UseAGGridFilteringOptions = {}) {
   // Panel-driven state (Query Filter Panel is the single source of truth)
   const panelWhereSQL = ref<string>('')
   const panelSortModel = ref<SortModelItem[]>([])
+  const panelLimit = ref<number | undefined>(undefined)
 
   // Context menu state
   const showContextMenu = ref(false)
@@ -83,7 +84,11 @@ export function useAGGridFiltering(options: UseAGGridFilteringOptions = {}) {
    * Check if any filters or sorts are active
    */
   const hasActiveFilters = computed(() => {
-    return panelWhereSQL.value.length > 0 || panelSortModel.value.length > 0
+    return (
+      panelWhereSQL.value.length > 0 ||
+      panelSortModel.value.length > 0 ||
+      panelLimit.value !== undefined
+    )
   })
 
   /**
@@ -120,9 +125,10 @@ export function useAGGridFiltering(options: UseAGGridFilteringOptions = {}) {
   /**
    * Set panel filters (from DataFilterPanel)
    */
-  function setPanelFilters(where: string, sortModel: SortModelItem[]): void {
+  function setPanelFilters(where: string, sortModel: SortModelItem[], limit?: number): void {
     panelWhereSQL.value = where
     panelSortModel.value = sortModel
+    panelLimit.value = limit
   }
 
   /**
@@ -131,6 +137,7 @@ export function useAGGridFiltering(options: UseAGGridFilteringOptions = {}) {
   function clearAllFilters(): void {
     panelWhereSQL.value = ''
     panelSortModel.value = []
+    panelLimit.value = undefined
   }
 
   return {
@@ -138,6 +145,7 @@ export function useAGGridFiltering(options: UseAGGridFilteringOptions = {}) {
     gridApi,
     panelWhereSQL,
     panelSortModel,
+    panelLimit,
     showContextMenu,
     contextMenuX,
     contextMenuY,

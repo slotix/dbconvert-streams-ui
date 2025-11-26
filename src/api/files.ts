@@ -21,6 +21,7 @@ interface FileDataParams {
   order_by?: string
   order_dir?: string
   where?: string
+  max_rows?: number
 }
 
 const withAuthHeaders = () => {
@@ -58,6 +59,7 @@ export async function getFileData(
     if (params.order_by) query.set('order_by', params.order_by)
     if (params.order_dir) query.set('order_dir', params.order_dir)
     if (params.where) query.set('where', params.where)
+    if (params.max_rows !== undefined) query.set('max_rows', String(params.max_rows))
 
     const response = await apiClient.get<FileDataResponse>(`/files/data?${query.toString()}`, {
       ...withAuthHeaders()
