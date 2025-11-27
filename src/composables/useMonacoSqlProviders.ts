@@ -81,6 +81,10 @@ function registerCompletionProvider(
   dialect: 'mysql' | 'pgsql' | 'sql',
   schemaContext?: SchemaContext
 ) {
+  // Quote character based on dialect
+  const quoteChar = dialect === 'mysql' ? '`' : '"'
+  const quoteIdentifier = (name: string) => `${quoteChar}${name}${quoteChar}`
+
   return monaco.languages.registerCompletionItemProvider(language, {
     triggerCharacters: [' ', '.', '('],
     provideCompletionItems: (model: any, position: any) => {
@@ -147,7 +151,7 @@ function registerCompletionProvider(
           suggestions.push({
             label: displayName,
             kind: monaco.languages.CompletionItemKind.Class,
-            insertText: table.name,
+            insertText: quoteIdentifier(table.name),
             range,
             detail: table.schema ? `Table (${table.schema})` : 'Table',
             documentation: `Table: ${displayName}`,
@@ -164,7 +168,7 @@ function registerCompletionProvider(
             suggestions.push({
               label: `${tableName}.${column.name}`,
               kind: monaco.languages.CompletionItemKind.Field,
-              insertText: column.name,
+              insertText: quoteIdentifier(column.name),
               range,
               detail: `${column.type} ${nullableStr}`,
               documentation: `Column from table ${tableName}\nType: ${column.type} ${nullableStr}`,

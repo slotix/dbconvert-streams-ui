@@ -1,5 +1,5 @@
 <template>
-  <div class="sql-console-tab h-full flex flex-col bg-gray-50 dark:bg-gray-900">
+  <div class="sql-console-tab h-full flex flex-col bg-gray-50 dark:bg-gray-900 pb-2">
     <!-- Header with context info -->
     <div
       class="bg-white dark:bg-gray-850 border-b border-gray-200 dark:border-gray-700 px-4 py-2 flex items-center justify-between"
@@ -30,10 +30,10 @@
     </div>
 
     <!-- Main Content Area -->
-    <div class="flex-1 flex overflow-hidden">
+    <div class="flex-1 flex overflow-hidden min-h-0">
       <!-- Query Editor Section -->
       <div
-        class="flex flex-col border-r border-gray-200 dark:border-gray-700"
+        class="flex flex-col border-r border-gray-200 dark:border-gray-700 min-h-0"
         :style="{ width: `${editorWidth}%` }"
       >
         <!-- Toolbar -->
@@ -47,6 +47,14 @@
           >
             <PlayIcon class="h-3.5 w-3.5 mr-1.5" />
             {{ isExecuting ? 'Running...' : 'Run' }}
+          </button>
+
+          <button
+            class="inline-flex items-center px-2 py-1.5 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded shadow-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500"
+            title="Format SQL (Shift+Alt+F)"
+            @click="formatQuery"
+          >
+            <CodeBracketIcon class="h-3.5 w-3.5" />
           </button>
 
           <span class="text-xs text-gray-400 dark:text-gray-500">Ctrl+Enter</span>
@@ -76,8 +84,7 @@
             v-model="sqlQuery"
             :dialect="currentDialect"
             height="100%"
-            :table-suggestions="tableSuggestions"
-            :column-suggestions="columnSuggestions"
+            :schema-context="schemaContext"
             @execute="executeQuery"
           />
         </div>
@@ -91,7 +98,7 @@
 
       <!-- Results Panel -->
       <div
-        class="flex flex-col bg-white dark:bg-gray-850"
+        class="flex flex-col bg-white dark:bg-gray-850 min-h-0"
         :style="{ width: `${100 - editorWidth}%` }"
       >
         <!-- Results Toolbar -->
@@ -240,6 +247,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { SqlEditor } from '@/components/monaco'
+import type { SchemaContext } from '@/composables/useMonacoSqlProviders'
 import { useConnectionsStore } from '@/stores/connections'
 import connections from '@/api/connections'
 import {
@@ -247,7 +255,8 @@ import {
   ArrowDownTrayIcon,
   CommandLineIcon,
   XCircleIcon,
-  CheckCircleIcon
+  CheckCircleIcon,
+  CodeBracketIcon
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps<{
@@ -292,8 +301,23 @@ const scopeLabel = computed(() => {
   return connection.value?.name || 'Connection'
 })
 
-const tableSuggestions = ref<string[]>([])
-const columnSuggestions = ref<Record<string, string[]>>({})
+// Schema context for Monaco autocomplete
+const tablesList = ref<Array<{ name: string; schema?: string }>>([])
+const columnsMap = ref<Record<string, Array<{ name: string; type: string; nullable: boolean }>>>({})
+
+// Build SchemaContext for SqlEditor autocomplete
+const schemaContext = computed<SchemaContext>(() => {
+  const dialect = currentDialect.value
+  let sqlDialect: 'mysql' | 'pgsql' | 'sql' = 'sql'
+  if (dialect.includes('mysql')) sqlDialect = 'mysql'
+  else if (dialect.includes('postgres') || dialect.includes('pgsql')) sqlDialect = 'pgsql'
+
+  return {
+    tables: tablesList.value,
+    columns: columnsMap.value,
+    dialect: sqlDialect
+  }
+})
 
 const paginatedResults = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value
@@ -317,29 +341,41 @@ async function loadDatabases() {
   }
 }
 
-// Load table suggestions for autocomplete
+// Load table and column suggestions for autocomplete
 async function loadTableSuggestions() {
   const db = props.database || selectedDatabase.value
   if (!db) {
-    tableSuggestions.value = []
-    columnSuggestions.value = {}
+    tablesList.value = []
+    columnsMap.value = {}
     return
   }
 
   try {
     const metadata = await connections.getMetadata(props.connectionId, db)
     // metadata.tables is Record<string, SQLTableMeta>
-    tableSuggestions.value = Object.keys(metadata.tables)
+    // Build tables list for SchemaContext
+    tablesList.value = Object.keys(metadata.tables).map((name) => ({ name }))
 
-    // Build column suggestions map
-    const colMap: Record<string, string[]> = {}
+    // Build columns map with type info for SchemaContext
+    const colMap: Record<string, Array<{ name: string; type: string; nullable: boolean }>> = {}
     for (const [tableName, table] of Object.entries(metadata.tables)) {
-      colMap[tableName] = table.columns.map((c: { name: string }) => c.name)
+      colMap[tableName] = table.columns.map(
+        (c: { name: string; dataType?: string; isNullable?: boolean }) => ({
+          name: c.name,
+          type: c.dataType || 'unknown',
+          nullable: c.isNullable ?? true
+        })
+      )
     }
-    columnSuggestions.value = colMap
+    columnsMap.value = colMap
   } catch (error) {
     console.error('Failed to load table suggestions:', error)
   }
+}
+
+// Format SQL query
+function formatQuery() {
+  sqlEditorRef.value?.formatQuery()
 }
 
 // Execute query
