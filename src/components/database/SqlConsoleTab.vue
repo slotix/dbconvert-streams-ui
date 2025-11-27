@@ -29,6 +29,55 @@
       </div>
     </div>
 
+    <!-- Query Tabs Bar -->
+    <div
+      class="bg-gray-100 dark:bg-gray-850 border-b border-gray-200 dark:border-gray-700 flex items-center"
+    >
+      <div class="flex-1 flex items-center overflow-x-auto scrollbar-thin">
+        <div
+          v-for="tab in queryTabs"
+          :key="tab.id"
+          class="group flex items-center gap-1 px-3 py-1.5 border-r border-gray-200 dark:border-gray-700 cursor-pointer text-xs transition-colors min-w-0"
+          :class="[
+            tab.id === activeQueryTabId
+              ? 'bg-white dark:bg-gray-900 text-teal-600 dark:text-teal-400'
+              : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+          ]"
+          @click="setActiveQueryTab(tab.id)"
+          @dblclick="startRenameTab(tab)"
+        >
+          <span v-if="renamingTabId !== tab.id" class="truncate max-w-[120px]">{{ tab.name }}</span>
+          <input
+            v-else
+            ref="renameInputRef"
+            v-model="renameValue"
+            type="text"
+            class="w-24 px-1 py-0 text-xs bg-white dark:bg-gray-800 border border-teal-500 rounded focus:outline-none"
+            @blur="finishRenameTab"
+            @keydown.enter="finishRenameTab"
+            @keydown.escape="cancelRenameTab"
+            @click.stop
+          />
+          <button
+            v-if="queryTabs.length > 1 && renamingTabId !== tab.id"
+            class="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-opacity"
+            title="Close tab"
+            @click.stop="closeQueryTab(tab.id)"
+          >
+            <XMarkIcon class="h-3 w-3" />
+          </button>
+        </div>
+      </div>
+      <!-- Add Tab Button -->
+      <button
+        class="px-2 py-1.5 text-gray-500 dark:text-gray-400 hover:text-teal-500 dark:hover:text-teal-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+        title="New Query Tab"
+        @click="addQueryTab"
+      >
+        <PlusIcon class="h-4 w-4" />
+      </button>
+    </div>
+
     <!-- Main Content Area -->
     <div class="flex-1 flex overflow-hidden min-h-0">
       <!-- Query Editor Section -->
@@ -245,10 +294,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { SqlEditor } from '@/components/monaco'
 import type { SchemaContext } from '@/composables/useMonacoSqlProviders'
 import { useConnectionsStore } from '@/stores/connections'
+import { useSqlConsoleStore, type SqlQueryTab } from '@/stores/sqlConsole'
 import connections from '@/api/connections'
 import { format as formatSQL } from 'sql-formatter'
 import {
@@ -257,7 +307,9 @@ import {
   CommandLineIcon,
   XCircleIcon,
   CheckCircleIcon,
-  CodeBracketIcon
+  CodeBracketIcon,
+  PlusIcon,
+  XMarkIcon
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps<{
@@ -267,6 +319,7 @@ const props = defineProps<{
 }>()
 
 const connectionsStore = useConnectionsStore()
+const sqlConsoleStore = useSqlConsoleStore()
 
 // State
 const sqlQuery = ref('')
@@ -287,6 +340,116 @@ const availableDatabases = ref<string[]>([])
 // Resizable panel state
 const editorWidth = ref(50)
 const isResizing = ref(false)
+
+// Tab renaming state
+const renamingTabId = ref<string | null>(null)
+const renameValue = ref('')
+const renameInputRef = ref<HTMLInputElement[]>()
+
+// Query tabs - computed from store
+const queryTabs = computed(() => sqlConsoleStore.getTabs(props.connectionId, props.database))
+const activeQueryTabId = computed(() =>
+  sqlConsoleStore.getActiveTabId(props.connectionId, props.database)
+)
+const activeQueryTab = computed(() =>
+  sqlConsoleStore.getActiveTab(props.connectionId, props.database)
+)
+
+// Sync sqlQuery with active tab and restore cached results
+watch(
+  activeQueryTab,
+  (tab) => {
+    if (tab) {
+      sqlQuery.value = tab.query
+
+      // Restore cached results if available
+      const cached = sqlConsoleStore.getResultCache(tab.id)
+      if (cached) {
+        hasExecutedQuery.value = true
+        queryError.value = cached.error
+        queryResults.value = cached.rows
+        resultColumns.value = cached.columns
+        lastQueryStats.value = cached.stats
+        currentPage.value = 1
+      } else {
+        // No cached results - reset to empty state
+        hasExecutedQuery.value = false
+        queryError.value = null
+        queryResults.value = []
+        resultColumns.value = []
+        lastQueryStats.value = null
+        currentPage.value = 1
+      }
+    }
+  },
+  { immediate: true }
+)
+
+// Save query content to store when it changes (debounced)
+let saveTimeout: ReturnType<typeof setTimeout> | null = null
+watch(sqlQuery, (newQuery) => {
+  const tabId = activeQueryTabId.value
+  if (tabId) {
+    // Debounce saving to avoid excessive localStorage writes
+    if (saveTimeout) clearTimeout(saveTimeout)
+    saveTimeout = setTimeout(() => {
+      sqlConsoleStore.updateTabQuery(props.connectionId, props.database, tabId, newQuery)
+    }, 500)
+  }
+})
+
+// Query tab management functions
+function setActiveQueryTab(tabId: string) {
+  // Save current query before switching
+  const currentTabId = activeQueryTabId.value
+  if (currentTabId) {
+    sqlConsoleStore.updateTabQuery(props.connectionId, props.database, currentTabId, sqlQuery.value)
+  }
+  sqlConsoleStore.setActiveTab(props.connectionId, props.database, tabId)
+}
+
+function addQueryTab() {
+  // Save current query before adding new tab
+  const currentTabId = activeQueryTabId.value
+  if (currentTabId) {
+    sqlConsoleStore.updateTabQuery(props.connectionId, props.database, currentTabId, sqlQuery.value)
+  }
+  sqlConsoleStore.addTab(props.connectionId, props.database)
+}
+
+function closeQueryTab(tabId: string) {
+  sqlConsoleStore.closeTab(props.connectionId, props.database, tabId)
+}
+
+function startRenameTab(tab: SqlQueryTab) {
+  renamingTabId.value = tab.id
+  renameValue.value = tab.name
+  nextTick(() => {
+    const inputs = renameInputRef.value
+    if (inputs && inputs.length > 0) {
+      inputs[0].focus()
+      inputs[0].select()
+    }
+  })
+}
+
+function finishRenameTab() {
+  if (renamingTabId.value && renameValue.value.trim()) {
+    sqlConsoleStore.renameTab(
+      props.connectionId,
+      props.database,
+      renamingTabId.value,
+      renameValue.value.trim()
+    )
+  }
+  renamingTabId.value = null
+  renameValue.value = ''
+}
+
+function cancelRenameTab() {
+  renamingTabId.value = null
+  renameValue.value = ''
+}
 
 // Computed
 const connection = computed(() => connectionsStore.connectionByID(props.connectionId))
@@ -452,12 +615,34 @@ async function executeQuery() {
       duration
     }
     currentPage.value = 1
+
+    // Cache results for this tab
+    const tabId = activeQueryTabId.value
+    if (tabId) {
+      sqlConsoleStore.setResultCache(tabId, {
+        columns: resultColumns.value,
+        rows: queryResults.value,
+        error: null,
+        stats: lastQueryStats.value
+      })
+    }
   } catch (error: unknown) {
     const err = error as Error
     queryError.value = err.message || 'Failed to execute query'
     queryResults.value = []
     resultColumns.value = []
     lastQueryStats.value = null
+
+    // Cache error state for this tab
+    const tabId = activeQueryTabId.value
+    if (tabId) {
+      sqlConsoleStore.setResultCache(tabId, {
+        columns: [],
+        rows: [],
+        error: queryError.value,
+        stats: null
+      })
+    }
   } finally {
     isExecuting.value = false
   }
@@ -545,17 +730,34 @@ onMounted(async () => {
   await loadDatabases()
   await loadTableSuggestions()
 
-  // Set default query hint based on scope
-  if (props.database) {
-    sqlQuery.value = `-- Database: ${props.database}\nSELECT * FROM  LIMIT 100;`
-  } else {
-    sqlQuery.value = `-- Use: USE database_name; or prefix tables with database.table\nSHOW DATABASES;`
+  // Set default query hint based on scope only if the active tab has no content
+  const activeTab = activeQueryTab.value
+  if (activeTab && !activeTab.query.trim()) {
+    const defaultQuery = props.database
+      ? `-- Database: ${props.database}\nSELECT * FROM  LIMIT 100;`
+      : `-- Use: USE database_name; or prefix tables with database.table\nSHOW DATABASES;`
+    sqlQuery.value = defaultQuery
+    // Also save to store
+    if (activeQueryTabId.value) {
+      sqlConsoleStore.updateTabQuery(
+        props.connectionId,
+        props.database,
+        activeQueryTabId.value,
+        defaultQuery
+      )
+    }
   }
 })
 
 onUnmounted(() => {
   document.removeEventListener('mousemove', handleResize)
   document.removeEventListener('mouseup', stopResize)
+  // Save current query before unmounting
+  if (saveTimeout) clearTimeout(saveTimeout)
+  const tabId = activeQueryTabId.value
+  if (tabId) {
+    sqlConsoleStore.updateTabQuery(props.connectionId, props.database, tabId, sqlQuery.value)
+  }
 })
 </script>
 
