@@ -1,5 +1,5 @@
 <template>
-  <div v-if="activeTab">
+  <div v-if="activeTab" class="h-[calc(100vh-220px)] overflow-hidden">
     <ObjectContainer
       v-if="activeTab.tabType === 'database'"
       :key="`${paneId}-${activeTab.database}.${activeTab.schema || 'default'}.${activeTab.name}`"

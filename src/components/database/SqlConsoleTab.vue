@@ -250,6 +250,7 @@ import { SqlEditor } from '@/components/monaco'
 import type { SchemaContext } from '@/composables/useMonacoSqlProviders'
 import { useConnectionsStore } from '@/stores/connections'
 import connections from '@/api/connections'
+import { format as formatSQL } from 'sql-formatter'
 import {
   PlayIcon,
   ArrowDownTrayIcon,
@@ -373,9 +374,26 @@ async function loadTableSuggestions() {
   }
 }
 
-// Format SQL query
+// Format SQL query using sql-formatter
 function formatQuery() {
-  sqlEditorRef.value?.formatQuery()
+  if (!sqlQuery.value.trim()) return
+
+  // Determine dialect based on connection type
+  const dialect = currentDialect.value
+  let language: 'mysql' | 'postgresql' | 'sql' = 'sql'
+  if (dialect.includes('mysql')) language = 'mysql'
+  else if (dialect.includes('postgres') || dialect.includes('pgsql')) language = 'postgresql'
+
+  try {
+    sqlQuery.value = formatSQL(sqlQuery.value, {
+      language,
+      tabWidth: 2,
+      keywordCase: 'upper',
+      linesBetweenQueries: 2
+    })
+  } catch (error) {
+    console.error('Failed to format SQL:', error)
+  }
 }
 
 // Execute query
