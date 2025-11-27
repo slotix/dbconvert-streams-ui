@@ -1,8 +1,9 @@
-import { ref, computed, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { ref, computed } from 'vue'
+import { useRoute } from 'vue-router'
 import { useConnectionsStore } from '@/stores/connections'
 import { useSchemaStore } from '@/stores/schema'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
+import { getConnectionHost, getConnectionPort } from '@/utils/specBuilder'
 import type { SQLTableMeta, SQLViewMeta } from '@/types/metadata'
 import type { FileSystemEntry } from '@/api/fileSystem'
 import type { FileMetadata } from '@/types/files'
@@ -11,7 +12,6 @@ type ObjectType = 'table' | 'view'
 
 export function useExplorerState() {
   const route = useRoute()
-  const router = useRouter()
   const connectionsStore = useConnectionsStore()
   const schemaStore = useSchemaStore()
   const navigationStore = useExplorerNavigationStore()
@@ -27,7 +27,6 @@ export function useExplorerState() {
       : null
   )
 
-  // Selection state (database as root)
   const selectedDatabaseName = ref<string | null>(null)
   const selectedSchemaName = ref<string | null>(null)
   const selectedObjectType = ref<ObjectType | null>(null)
@@ -44,38 +43,7 @@ export function useExplorerState() {
   // Active pane tracking
   const activePane = ref<'left' | 'right'>('left')
 
-  // Update URL when selection changes
-  watch(
-    [
-      selectedFileEntry,
-      selectedMeta,
-      currentConnectionId,
-      selectedDatabaseName,
-      selectedSchemaName,
-      selectedObjectType,
-      selectedObjectName
-    ],
-    () => {
-      if (!currentConnectionId.value) return
-
-      if (selectedFileEntry.value) {
-        router.replace({
-          path: `/explorer/${currentConnectionId.value}`,
-          query: { file: selectedFileEntry.value.path }
-        })
-      } else if (selectedMeta.value) {
-        router.replace({
-          path: `/explorer/${currentConnectionId.value}`,
-          query: {
-            db: selectedDatabaseName.value || undefined,
-            schema: selectedSchemaName.value || undefined,
-            type: selectedObjectType.value || undefined,
-            name: selectedObjectName.value || undefined
-          }
-        })
-      }
-    }
-  )
+  // REMOVED: URL update watcher - URL is now set directly by action handlers in controller
 
   // Computed properties for active connection details
   // Pinia store is the SYNCHRONOUS source of truth for connection ID
@@ -97,9 +65,9 @@ export function useExplorerState() {
       return c.name
     }
 
-    // For database connections, show host:port
-    const host = c?.host
-    const port = c?.port && String(c?.port)
+    // For database connections, show host:port using spec utilities
+    const host = getConnectionHost(c)
+    const port = getConnectionPort(c)
     if (!host || !port) return c.name // fallback to name if no host/port
     return `${host}:${port}`
   })

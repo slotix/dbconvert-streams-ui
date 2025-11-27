@@ -5,6 +5,7 @@ import type { FileSystemEntry } from '@/api/fileSystem'
 import { getConnectionHost, getConnectionPort, getConnectionDatabase } from '@/utils/specBuilder'
 import type { SQLTableMeta, SQLViewMeta } from '@/types/metadata'
 import type { PaneId, PaneTab, PaneState } from '@/stores/paneTabs'
+import { useExplorerViewStateStore } from '@/stores/explorerViewState'
 import type SearchInput from '@/components/common/SearchInput.vue'
 import type { useExplorerState } from '@/composables/useExplorerState'
 import type { useSidebar } from '@/composables/useSidebar'
@@ -57,7 +58,11 @@ export function useDatabaseExplorerController({
   recentConnectionsManager,
   alwaysOpenNewTab
 }: UseDatabaseExplorerControllerOptions) {
-  const showConnectionDetails = ref(route.query.details === 'true')
+  // Use the new view state store as the single source of truth
+  const viewState = useExplorerViewStateStore()
+
+  // Derived from store (no longer from URL)
+  const showConnectionDetails = viewState.showConnectionDetails
   const showDeleteConfirm = ref(false)
   const pendingDeleteConnectionId = ref<string | null>(null)
   const pendingDeleteName = ref('')
@@ -69,33 +74,8 @@ export function useDatabaseExplorerController({
     return fileExplorerStore.getEntries(id)
   })
 
-  const treeSelection = computed(() => {
-    const activePane = paneTabsStore.activePane
-    const activeState = paneTabsStore.getPaneState(activePane)
-    const activePinnedIndex = activeState.activePinnedIndex
-    const activePinnedTab =
-      activePinnedIndex !== null ? activeState.pinnedTabs[activePinnedIndex] : null
-    const activePreviewTab = activeState.previewTab
-    const activeTab = activePinnedTab || activePreviewTab
-
-    if (activeTab && activeTab.tabType === 'database' && activeTab.database) {
-      return {
-        connectionId: activeTab.connectionId,
-        database: activeTab.database,
-        schema: activeTab.schema || undefined,
-        type: activeTab.type || undefined,
-        name: activeTab.name || undefined
-      }
-    }
-
-    return {
-      connectionId: explorerState.activeConnectionId.value || undefined,
-      database: explorerState.selectedDatabaseName.value || undefined,
-      schema: explorerState.selectedSchemaName.value || undefined,
-      type: explorerState.selectedObjectType.value || undefined,
-      name: explorerState.selectedObjectName.value || undefined
-    }
-  })
+  // Tree selection is derived from store (single source of truth)
+  const treeSelection = viewState.treeSelection
 
   const deleteConnectionMessage = computed(() => {
     const label = pendingDeleteName.value || 'this connection'
@@ -115,21 +95,12 @@ export function useDatabaseExplorerController({
   })
 
   const lacksExplorerContent = computed(() => {
-    if (showConnectionDetails.value) return false
+    if (showConnectionDetails) return false
     if (explorerState.showDiagram.value) return false
     if (explorerState.selectedDatabaseName.value) return false
     if (explorerState.selectedFileEntry.value) return false
     return !hasPaneContent.value
   })
-
-  const activeConnectionId = computed(() => navigationStore.activeConnectionId)
-  const selectedDatabase = computed(() => explorerState.selectedDatabaseName.value)
-  const selectedSchema = computed(() => explorerState.selectedSchemaName.value)
-  const selectedObjectType = computed(() => explorerState.selectedObjectType.value)
-  const selectedObjectName = computed(() => explorerState.selectedObjectName.value)
-  const selectedFilePath = computed(() => explorerState.selectedFileEntry.value?.path || null)
-  const leftActiveTab = computed<PaneTab | null>(() => paneTabsStore.getActiveTab('left'))
-  const rightActiveTab = computed<PaneTab | null>(() => paneTabsStore.getActiveTab('right'))
 
   function clearRightPaneQueryParams() {
     const nextQuery = { ...route.query }
@@ -157,10 +128,18 @@ export function useDatabaseExplorerController({
   }) {
     const previousConnectionId = explorerState.currentConnectionId.value
 
+    // Update store - URL will sync automatically via useExplorerUrlSync
+    viewState.selectTable(
+      payload.connectionId,
+      payload.database,
+      payload.type,
+      payload.name,
+      payload.schema
+    )
+
     navigationStore.setActiveConnectionId(payload.connectionId)
     connectionsStore.setCurrentConnection(payload.connectionId)
 
-    showConnectionDetails.value = false
     focusConnectionId.value = null
 
     explorerState.clearPanelStates()
@@ -216,8 +195,6 @@ export function useDatabaseExplorerController({
     navigationStore.setActiveConnectionId(payload.connectionId)
     connectionsStore.setCurrentConnection(payload.connectionId)
 
-    showConnectionDetails.value = false
-
     explorerState.clearPanelStates()
     explorerState.clearDatabaseSelection()
 
@@ -253,8 +230,6 @@ export function useDatabaseExplorerController({
   function handleShowDiagram(payload: { connectionId: string; database: string }) {
     navigationStore.setActiveConnectionId(payload.connectionId)
 
-    showConnectionDetails.value = false
-
     explorerState.clearPanelStates()
     explorerState.setDatabaseSelection({ database: payload.database })
     explorerState.showDiagram.value = true
@@ -269,22 +244,21 @@ export function useDatabaseExplorerController({
   }
 
   function handleSelectConnection(payload: { connectionId: string }) {
+    // Update store - URL will sync automatically via useExplorerUrlSync
+    viewState.selectConnection(payload.connectionId)
+
     navigationStore.setActiveConnectionId(payload.connectionId)
-
     connectionsStore.setCurrentConnection(payload.connectionId)
-    showConnectionDetails.value = true
 
-    router.replace({
-      query: {
-        details: 'true',
-        file: undefined,
-        db: undefined,
-        schema: undefined,
-        type: undefined,
-        name: undefined,
-        diagram: undefined
-      }
-    })
+    // Clear pane tabs when transitioning to Connection Details view
+    paneTabsStore.closeAllTabs('left')
+    paneTabsStore.closeAllTabs('right')
+    if (paneTabsStore.leftPaneState.previewTab) {
+      paneTabsStore.closePreviewTab('left')
+    }
+    if (paneTabsStore.rightPaneState.previewTab) {
+      paneTabsStore.closePreviewTab('right')
+    }
 
     focusConnectionId.value = payload.connectionId
     explorerState.clearPanelStates()
@@ -298,10 +272,11 @@ export function useDatabaseExplorerController({
   }
 
   function handleSelectDatabase(payload: { connectionId: string; database: string }) {
-    navigationStore.setActiveConnectionId(payload.connectionId)
+    // Update store - URL will sync automatically via useExplorerUrlSync
+    viewState.selectDatabase(payload.connectionId, payload.database)
 
+    navigationStore.setActiveConnectionId(payload.connectionId)
     connectionsStore.setCurrentConnection(payload.connectionId)
-    showConnectionDetails.value = false
 
     explorerState.clearPanelStates()
     explorerState.setDatabaseSelection({ database: payload.database })
@@ -320,8 +295,6 @@ export function useDatabaseExplorerController({
     entry?: FileSystemEntry
   }) {
     navigationStore.setActiveConnectionId(payload.connectionId)
-
-    showConnectionDetails.value = false
 
     // Find entry if not provided (e.g., from router/URL navigation)
     let entry = payload.entry
@@ -545,111 +518,6 @@ export function useDatabaseExplorerController({
     { immediate: true }
   )
 
-  watch(
-    [
-      activeConnectionId,
-      selectedDatabase,
-      selectedSchema,
-      selectedObjectType,
-      selectedObjectName,
-      selectedFilePath,
-      () => explorerState.showDiagram.value,
-      () => showConnectionDetails.value,
-      leftActiveTab,
-      rightActiveTab,
-      () => paneTabsStore.activePane
-    ],
-    ([
-      connId,
-      db,
-      schema,
-      type,
-      name,
-      file,
-      diagram,
-      connectionDetails,
-      leftTab,
-      rightTab,
-      activePane
-    ]) => {
-      if (!connId) return
-
-      const currentPath = route.path
-      const newPath = `/explorer/${connId}`
-
-      const query: Record<string, string | undefined> = {}
-      const hasFile = Boolean(file)
-      const hasDatabaseSelection = Boolean(db)
-      const hasDiagram = Boolean(diagram) && hasDatabaseSelection
-      const shouldShowDetails =
-        Boolean(connectionDetails) && !hasFile && !hasDatabaseSelection && !hasDiagram
-
-      if (hasFile) {
-        if (file != null) query.file = file
-      } else if (hasDatabaseSelection) {
-        if (db != null) query.db = db
-        if (schema) query.schema = schema
-        if (type) query.type = type
-        if (name) query.name = name
-        if (hasDiagram) query.diagram = 'true'
-      } else if (shouldShowDetails) {
-        query.details = 'true'
-      }
-
-      if (
-        leftTab &&
-        leftTab.tabType === 'database' &&
-        leftTab.type &&
-        leftTab.name &&
-        leftTab.database &&
-        leftTab.connectionId === connId
-      ) {
-        query.db = leftTab.database
-        query.type = leftTab.type
-        query.name = leftTab.name
-        if (leftTab.schema) query.schema = leftTab.schema
-      }
-
-      if (
-        rightTab &&
-        rightTab.tabType === 'database' &&
-        rightTab.type &&
-        rightTab.name &&
-        rightTab.database &&
-        rightTab.connectionId === connId
-      ) {
-        query.rightDb = rightTab.database
-        query.rightType = rightTab.type
-        query.rightName = rightTab.name
-        if (rightTab.schema) query.rightSchema = rightTab.schema
-      }
-
-      if (activePane === 'right' && rightTab && rightTab.connectionId === connId) {
-        query.pane = 'right'
-      } else if (activePane === 'left' && leftTab && leftTab.connectionId === connId) {
-        query.pane = 'left'
-      }
-
-      const pathChanged = newPath !== currentPath
-      const queryChanged = JSON.stringify(query) !== JSON.stringify(route.query)
-
-      if (pathChanged || queryChanged) {
-        router.replace({ path: newPath, query })
-      }
-    },
-    { flush: 'post' }
-  )
-
-  watch(
-    () => route.query.details,
-    (val) => {
-      const wantsDetails = val === 'true'
-      if (wantsDetails !== showConnectionDetails.value) {
-        showConnectionDetails.value = wantsDetails
-      }
-    }
-  )
-
   watch(explorerState.currentConnectionId, async (newId) => {
     navigationStore.setActiveConnectionId(newId)
 
@@ -806,44 +674,42 @@ export function useDatabaseExplorerController({
       })
     }
 
-    const { db, schema, type, name, file } = route.query as Record<string, string | undefined>
-    if (file && fileExplorerStore.isFilesConnectionType(explorerState.currentConnectionId.value)) {
-      explorerState.clearDatabaseSelection()
-    } else if (db) {
-      explorerState.clearFileSelection()
-      fileExplorerStore.clearSelection(explorerState.currentConnectionId.value || '')
+    // REMOVED: All URL reading logic
+    // State is now loaded from store (which loads from localStorage)
+    // URL sync is handled by useExplorerUrlSync watcher
 
+    // If no view state at all, default to connection details for current connection
+    if (!viewState.viewType && explorerState.currentConnectionId.value) {
+      viewState.selectConnection(explorerState.currentConnectionId.value)
+    }
+
+    // Sync explorerState with viewState if database is selected
+    if (viewState.databaseName && explorerState.currentConnectionId.value) {
       explorerState.setDatabaseSelection({
-        database: db,
-        schema,
-        type: type as 'table' | 'view',
-        name
+        database: viewState.databaseName,
+        schema: viewState.schemaName || undefined,
+        type: viewState.objectType || undefined,
+        name: viewState.objectName || undefined
       })
 
-      if (type && name) {
-        connections
-          .getMetadata(explorerState.currentConnectionId.value || '', db)
-          .then((m) => {
-            const obj =
-              type === 'table'
-                ? Object.values(m.tables).find((t) => t.name === name)
-                : Object.values(m.views).find((v) => v.name === name)
-            if (obj) explorerState.selectedMeta.value = obj
-          })
-          .catch(() => void 0)
-      }
-
-      schemaStore.setConnectionId(explorerState.currentConnectionId.value || '')
-      schemaStore.setDatabaseName(db)
+      schemaStore.setConnectionId(explorerState.currentConnectionId.value)
+      schemaStore.setDatabaseName(viewState.databaseName)
       schemaStore.fetchSchema(false)
     }
 
-    if (fileExplorerStore.isFilesConnectionType(explorerState.currentConnectionId.value)) {
+    // Load file entries for file connections
+    if (
+      viewState.filePath &&
+      fileExplorerStore.isFilesConnectionType(explorerState.currentConnectionId.value)
+    ) {
       void fileExplorerStore
         .loadEntries(explorerState.currentConnectionId.value as string, true)
         .then(() => {
-          if (file) {
-            fileExplorerStore.setSelectedPath(explorerState.currentConnectionId.value || '', file)
+          if (viewState.filePath) {
+            fileExplorerStore.setSelectedPath(
+              explorerState.currentConnectionId.value || '',
+              viewState.filePath
+            )
             focusConnectionId.value = null
           }
         })

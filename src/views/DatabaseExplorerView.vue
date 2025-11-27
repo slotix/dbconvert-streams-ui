@@ -22,6 +22,7 @@ import { usePersistedState } from '@/composables/usePersistedState'
 import { useRecentConnections } from '@/composables/useRecentConnections'
 import { useExplorerRouter } from '@/composables/useExplorerRouter'
 import { useTreeSearch } from '@/composables/useTreeSearch'
+import { useExplorerUrlSync } from '@/composables/useExplorerUrlSync'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import DisconnectedOverlay from '@/components/common/DisconnectedOverlay.vue'
 import EmptyStateMessage from '@/components/explorer/EmptyStateMessage.vue'
@@ -34,6 +35,9 @@ const connectionsStore = useConnectionsStore()
 const schemaStore = useSchemaStore()
 const paneTabsStore = usePaneTabsStore()
 const navigationStore = useExplorerNavigationStore()
+
+// Set up two-way URL sync (Store ↔ URL)
+useExplorerUrlSync()
 
 // Use composables and stores for state management
 const explorerState = useExplorerState()
@@ -269,7 +273,7 @@ function onRightTabChange(_tab: 'data' | 'structure') {
               :search-query="connectionSearch"
               :type-filters="selectedConnectionTypes"
               :focus-connection-id="focusConnectionId || undefined"
-              :selected="treeSelection"
+              :selected="treeSelection || undefined"
               @open="handleOpenFromTree"
               @show-diagram="handleShowDiagram"
               @select-connection="handleSelectConnection"
