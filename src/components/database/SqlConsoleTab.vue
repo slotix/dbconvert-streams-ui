@@ -381,16 +381,35 @@ function formatQuery() {
   // Determine dialect based on connection type
   const dialect = currentDialect.value
   let language: 'mysql' | 'postgresql' | 'sql' = 'sql'
+  const quoteChar = dialect.includes('mysql') ? '`' : '"'
   if (dialect.includes('mysql')) language = 'mysql'
   else if (dialect.includes('postgres') || dialect.includes('pgsql')) language = 'postgresql'
 
   try {
-    sqlQuery.value = formatSQL(sqlQuery.value, {
+    let formatted = formatSQL(sqlQuery.value, {
       language,
       tabWidth: 2,
       keywordCase: 'upper',
       linesBetweenQueries: 2
     })
+
+    // Quote known table and column names from schema context
+    const knownTables = tablesList.value.map((t) => t.name)
+    const knownColumns = new Set<string>()
+    Object.values(columnsMap.value).forEach((cols) => {
+      cols.forEach((c) => knownColumns.add(c.name))
+    })
+
+    // Quote identifiers (tables and columns) - only unquoted ones
+    const allIdentifiers = [...knownTables, ...knownColumns]
+    for (const identifier of allIdentifiers) {
+      // Match identifier that's not already quoted, as whole word
+      const pattern = `(?<![${quoteChar}"\`])\\b${identifier}\\b(?![${quoteChar}"\`])`
+      const regex = new RegExp(pattern, 'gi')
+      formatted = formatted.replace(regex, `${quoteChar}${identifier}${quoteChar}`)
+    }
+
+    sqlQuery.value = formatted
   } catch (error) {
     console.error('Failed to format SQL:', error)
   }
