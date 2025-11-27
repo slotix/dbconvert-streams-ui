@@ -59,13 +59,16 @@ export const useDatabaseOverviewStore = defineStore('databaseOverview', () => {
   }
 
   /**
-   * Get approximate row count for a specific table
+   * Get row count for a specific table
+   * Prefers exact count (for small tables ≤10k rows) over approximate count
    */
   function getTableRowCount(tableName: string, connId: string, dbName: string): number | undefined {
     const overview = getOverview(connId, dbName)
     if (!overview?.allTablesByRows) return undefined
     const table = overview.allTablesByRows.find((t) => t.name === tableName)
-    return table?.approxRows
+    // Prefer exact count (populated for small tables ≤10k rows in backend)
+    // Fall back to approximate count for larger tables
+    return table?.exactRows ?? table?.approxRows
   }
 
   /**

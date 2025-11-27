@@ -176,6 +176,16 @@ const baseGrid = useBaseAGGridView({
   }
 })
 
+// Determine if the current count is exact (vs approximate)
+// Count is exact if:
+// 1. User manually calculated it (exactRowCount is set), OR
+// 2. Backend auto-calculated it for small tables (≤10k rows)
+const isCountExact = computed(() => {
+  if (exactRowCount.value !== null) return true // User manually calculated
+  if (props.approxRows && props.approxRows <= 10000) return true // Backend auto-calculated
+  return false
+})
+
 // Watch for approxRows prop changes and update totalRowCount
 // Only update if we don't have an exact count saved
 watch(
@@ -245,6 +255,31 @@ watch(
     }
   },
   { deep: true }
+)
+
+// Auto-calculate exact count when backend returns unknown count (-1)
+// and no filters/limits are applied
+watch(
+  () => baseGrid.totalRowCount.value,
+  (newCount) => {
+    // Auto-calculate exact count if:
+    // 1. Backend returned -1 (unknown count)
+    // 2. We don't have an exact count yet
+    // 3. No WHERE clause is applied (baseGrid.whereClause is empty)
+    // 4. Not currently counting
+    // 5. No error from previous count attempt
+    if (
+      newCount === -1 &&
+      exactRowCount.value === null &&
+      !baseGrid.whereClause.value &&
+      !isCountingRows.value &&
+      !countError.value
+    ) {
+      // Automatically calculate exact count for better UX
+      // This avoids showing "1 to 20 of more" when we can get the exact count
+      calculateExactCount()
+    }
+  }
 )
 
 // Save exact row count to store when it changes
@@ -475,7 +510,7 @@ defineExpose({
       <div class="flex items-center gap-3">
         <!-- Approximate count hint -->
         <span
-          v-if="!isView && baseGrid.totalRowCount.value > 0 && exactRowCount === null"
+          v-if="!isView && baseGrid.totalRowCount.value > 0 && !isCountExact"
           class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1"
         >
           <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
@@ -486,30 +521,6 @@ defineExpose({
             />
           </svg>
           <span>Count (~{{ baseGrid.totalRowCount.value.toLocaleString() }}) is approximate</span>
-        </span>
-
-        <!-- Exact count result -->
-        <span
-          v-if="exactRowCount !== null"
-          class="text-sm text-gray-600 dark:text-gray-300 flex items-center gap-1"
-        >
-          <svg
-            class="w-4 h-4 text-green-600 dark:text-green-400"
-            fill="currentColor"
-            viewBox="0 0 20 20"
-          >
-            <path
-              fill-rule="evenodd"
-              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-              clip-rule="evenodd"
-            />
-          </svg>
-          <span
-            >Exact count:
-            <span class="font-semibold text-green-600 dark:text-green-400">{{
-              exactRowCount.toLocaleString()
-            }}</span></span
-          >
         </span>
 
         <!-- Error display -->
@@ -530,7 +541,7 @@ defineExpose({
 
       <!-- Calculate Exact Count link -->
       <button
-        v-if="exactRowCount === null"
+        v-if="!isCountExact"
         type="button"
         :disabled="isCountingRows"
         class="text-xs text-teal-600 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-300 bg-teal-50 dark:bg-teal-900/20 hover:bg-teal-100 dark:hover:bg-teal-800/30 rounded-full px-3 py-1 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5 w-fit"

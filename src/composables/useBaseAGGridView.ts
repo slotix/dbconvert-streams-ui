@@ -245,28 +245,44 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
 
           const rowsThisPage = result.rows || []
 
-          // Determine the effective total count (capped by user limit if set)
+          // Determine the effective total count
+          // Priority order:
+          // 1. User-specified limit (intentional restriction - always highest priority)
+          // 2. Existing totalRowCount if we already have it (from exact count or previous fetch)
+          // 3. Backend's total_count from response
           let effectiveTotal = result.totalCount
 
-          // If user specified a limit, use it as the known total
-          // (capped to actual count if we know it's smaller)
           if (userLimit) {
+            // User-specified limit takes highest priority (intentional restriction)
+            // Cap to actual count if we know it's smaller
             if (result.totalCount > 0 && result.totalCount < userLimit) {
               // Actual data is less than limit - use actual count
               effectiveTotal = result.totalCount
+            } else if (totalRowCount.value > 0 && totalRowCount.value < userLimit) {
+              // We have an exact count that's less than the limit
+              effectiveTotal = totalRowCount.value
             } else {
               // Use the user's limit as the total
               effectiveTotal = userLimit
             }
+          } else if (totalRowCount.value > 0) {
+            // No limit, but we already have a known total (e.g., from exact count calculation)
+            // Use that instead of the backend's response (which may be 0 due to skip_count)
+            effectiveTotal = totalRowCount.value
+          } else {
+            // Use backend's total count
+            effectiveTotal = result.totalCount
           }
 
-          // Update total count for display
-          if (effectiveTotal > 0) {
+          // Update total count for display only if we got a new valid count
+          if (effectiveTotal > 0 && result.totalCount > 0) {
             totalRowCount.value = effectiveTotal
           } else if (result.totalCount === -1 && totalRowCount.value <= 0) {
             // Handle unknown count (e.g., for views)
             totalRowCount.value = -1
           }
+          // Note: if result.totalCount is 0 (skip_count=true) and we already have
+          // a totalRowCount, we keep the existing value
 
           // For small datasets where we don't have a count, if this is the first block
           // and we got fewer rows than requested, we know the total
@@ -499,6 +515,28 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
       })
     },
     { deep: true }
+  )
+
+  /**
+   * Watch for totalRowCount changes and update AG Grid's pagination
+   * This ensures AG Grid displays the correct total when count is updated after initial load
+   */
+  watch(
+    () => totalRowCount.value,
+    (newCount, oldCount) => {
+      // If count changed from unknown/zero to a known value, or changed to a different value
+      // we need to tell AG Grid by recreating the datasource
+      if (
+        gridApi.value &&
+        !gridApi.value.isDestroyed() &&
+        newCount > 0 &&
+        newCount !== oldCount &&
+        (oldCount === -1 || oldCount === 0 || oldCount !== newCount)
+      ) {
+        // Purge cache and refresh to update pagination with new total
+        gridApi.value.purgeInfiniteCache()
+      }
+    }
   )
 
   /**

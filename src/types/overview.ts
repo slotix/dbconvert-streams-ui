@@ -56,7 +56,7 @@ export interface DatabaseOverview {
   counts: { schemas?: number; tables: number; views: number; functions?: number }
   sizeBytes: number
   allTablesBySize: Array<{ name: string; sizeBytes: number }>
-  allTablesByRows: Array<{ name: string; approxRows: number }>
+  allTablesByRows: Array<{ name: string; approxRows: number; exactRows?: number }>
   activity: OverviewActivity
   health: OverviewHealth
   notes: OverviewNote[]
