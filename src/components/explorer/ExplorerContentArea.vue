@@ -177,8 +177,10 @@ const selectedDatabase = computed(() => props.selectedDatabase)
 const showConnectionDetails = computed(
   () => viewStateStore.showConnectionDetails && currentConnection.value !== null
 )
+// Use store's showDatabaseOverview which checks viewType === 'database-overview'
+// This ensures table-data view type shows tabs, not the overview panel
 const showDatabaseOverview = computed(
-  () => !showConnectionDetails.value && !props.showDiagram && !!selectedDatabase.value
+  () => viewStateStore.showDatabaseOverview && !!selectedDatabase.value
 )
 
 const currentConnection = computed(

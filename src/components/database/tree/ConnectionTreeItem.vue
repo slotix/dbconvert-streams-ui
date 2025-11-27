@@ -14,7 +14,6 @@ import { useConnectionTreeLogic } from '@/composables/useConnectionTreeLogic'
 import { useFileExplorerStore } from '@/stores/fileExplorer'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { useTreeSearch } from '@/composables/useTreeSearch'
-import { useContextualIconSizes } from '@/composables/useIconSizes'
 import type { Connection } from '@/types/connections'
 import type { FileSystemEntry } from '@/api/fileSystem'
 
@@ -28,13 +27,27 @@ const props = defineProps<{
   connection: Connection
   isExpanded: boolean
   isFileConnection: boolean
-  isFocused: boolean
   databases: DatabaseInfo[]
 }>()
 
-// Inject search query and caret class from parent
+// Inject search query, caret class, and selection from parent
 const searchQuery = inject<ComputedRef<string>>('treeSearchQuery')!
 const caretClass = inject<string>('treeCaretClass')!
+const treeSelection = inject<
+  ComputedRef<{
+    connectionId?: string
+    database?: string
+    schema?: string
+    type?: 'table' | 'view' | null
+    name?: string | null
+  }>
+>('treeSelection')!
+
+// Check if this connection is selected (connection selected but no database/table)
+const isSelected = computed(() => {
+  const sel = treeSelection.value
+  return sel.connectionId === props.connection.id && !sel.database && !sel.name
+})
 
 // Use composable and stores directly
 const treeLogic = useConnectionTreeLogic()
@@ -225,9 +238,8 @@ const connectionPort = computed(() => getConnectionPort(props.connection))
         'hover:bg-linear-to-r hover:from-gray-100 hover:to-gray-200 dark:hover:from-gray-850 dark:hover:to-gray-800',
         'hover:shadow-sm hover:scale-[1.02] hover:-translate-y-0.5',
         'active:scale-[0.98]',
-        // For file connections, don't highlight the parent connection when a file is selected
-        // Only highlight when explicitly focused and no file is selected (same behavior as databases)
-        isFocused && !(isFileConnection && selectedFilePath)
+        // Highlight when connection is selected (but no database/table selected)
+        isSelected
           ? 'bg-linear-to-r from-gray-200 to-gray-300 dark:from-gray-800 dark:to-gray-700 shadow-md ring-2 ring-gray-300/50 dark:ring-gray-700/50'
           : ''
       ]"

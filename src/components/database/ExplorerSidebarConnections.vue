@@ -28,7 +28,6 @@ const props = defineProps<{
   }
   searchQuery: string
   typeFilters?: string[]
-  focusConnectionId?: string
 }>()
 
 type DefaultTab = 'structure' | 'data'
@@ -563,22 +562,6 @@ watch(
     }
   }
 )
-
-watch(
-  () => props.focusConnectionId,
-  async (id) => {
-    if (!id) return
-    navigationStore.expandedConnections.clear()
-    navigationStore.expandedDatabases.clear()
-    navigationStore.expandedSchemas.clear()
-    navigationStore.expandConnection(id)
-    await navigationStore.ensureDatabases(id).catch(() => {})
-    await nextTick(() => {
-      const el = document.querySelector<HTMLElement>(`[data-explorer-connection="${id}"]`)
-      if (el) el.scrollIntoView({ block: 'nearest' })
-    })
-  }
-)
 </script>
 
 <template>
@@ -686,7 +669,6 @@ watch(
             :connection="conn"
             :is-expanded="navigationStore.isConnectionExpanded(conn.id)"
             :is-file-connection="treeLogic.isFileConnection(conn.id)"
-            :is-focused="focusConnectionId === conn.id"
             :databases="
               (navigationStore.databasesState[conn.id] || []).filter((d) =>
                 matchesDbFilter(conn.id, d.name)

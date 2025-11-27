@@ -93,7 +93,6 @@ const selectedDatabase = computed(() => explorerState.selectedDatabaseName.value
 const {
   showDeleteConfirm,
   deleteConnectionMessage,
-  focusConnectionId,
   currentFileEntries,
   treeSelection,
   handleOpenFromTree,
@@ -112,8 +111,7 @@ const {
   onDeleteConnection,
   confirmDeleteConnection,
   cancelDeleteConnection,
-  onCloneConnection,
-  setFocusConnectionId
+  onCloneConnection
 } = useDatabaseExplorerController({
   route,
   router,
@@ -136,8 +134,7 @@ useExplorerRouter({
   currentConnectionId: explorerState.currentConnectionId,
   currentFileEntries,
   onSelectConnection: handleSelectConnection,
-  onFileSelect: handleFileSelect,
-  setFocusConnectionId
+  onFileSelect: handleFileSelect
 })
 
 // Tab change handlers - no-op for now (tabs handle their own state)
@@ -272,7 +269,6 @@ function onRightTabChange(_tab: 'data' | 'structure') {
               :initial-expanded-connection-id="explorerState.currentConnectionId.value || undefined"
               :search-query="connectionSearch"
               :type-filters="selectedConnectionTypes"
-              :focus-connection-id="focusConnectionId || undefined"
               :selected="treeSelection || undefined"
               @open="handleOpenFromTree"
               @show-diagram="handleShowDiagram"

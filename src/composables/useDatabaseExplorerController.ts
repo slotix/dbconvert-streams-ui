@@ -67,7 +67,6 @@ export function useDatabaseExplorerController({
   const showDeleteConfirm = ref(false)
   const pendingDeleteConnectionId = ref<string | null>(null)
   const pendingDeleteName = ref('')
-  const focusConnectionId = ref<string | null>(null)
 
   const currentFileEntries = computed<FileSystemEntry[]>(() => {
     const id = explorerState.currentConnectionId.value
@@ -142,20 +141,12 @@ export function useDatabaseExplorerController({
     navigationStore.setActiveConnectionId(payload.connectionId)
     connectionsStore.setCurrentConnection(payload.connectionId)
 
-    focusConnectionId.value = null
-
+    // Clear panel states and file selection - database selection will be synced by watcher
     explorerState.clearPanelStates()
-    explorerState.clearDatabaseSelection()
     explorerState.clearFileSelection()
 
     if (payload.connectionId !== previousConnectionId && previousConnectionId) {
       fileExplorerStore.clearSelection(previousConnectionId)
-    }
-
-    if (payload.database) {
-      schemaStore.setConnectionId(payload.connectionId)
-      schemaStore.setDatabaseName(payload.database)
-      schemaStore.fetchSchema(false)
     }
 
     const targetPane: PaneId = payload.openInRightSplit
@@ -194,11 +185,14 @@ export function useDatabaseExplorerController({
       return
     }
 
+    // Update viewState - URL will sync automatically via useExplorerUrlSync
+    viewState.selectFile(payload.connectionId, payload.path)
+
     navigationStore.setActiveConnectionId(payload.connectionId)
     connectionsStore.setCurrentConnection(payload.connectionId)
 
+    // Clear panel states - file selection will be synced by watcher
     explorerState.clearPanelStates()
-    explorerState.clearDatabaseSelection()
 
     const targetPane: PaneId = payload.openInRightSplit
       ? 'right'
@@ -262,7 +256,6 @@ export function useDatabaseExplorerController({
       paneTabsStore.closePreviewTab('right')
     }
 
-    focusConnectionId.value = payload.connectionId
     explorerState.clearPanelStates()
     explorerState.clearDatabaseSelection()
 
@@ -284,7 +277,6 @@ export function useDatabaseExplorerController({
     explorerState.setDatabaseSelection({ database: payload.database })
     explorerState.activePane.value = 'left'
     explorerState.showDiagram.value = false
-    focusConnectionId.value = null
 
     schemaStore.setConnectionId(payload.connectionId)
     schemaStore.setDatabaseName(payload.database)
@@ -348,7 +340,6 @@ export function useDatabaseExplorerController({
     // Only open files or table folders for preview
     if (entry.type !== 'file' && !isTableFolder) {
       // Don't set selected path for folders - they should just expand/collapse
-      focusConnectionId.value = null
       return
     }
 
@@ -484,10 +475,6 @@ export function useDatabaseExplorerController({
     } catch (e) {
       console.error('Failed to clone connection from Explorer:', e)
     }
-  }
-
-  function setFocusConnectionId(id: string | null) {
-    focusConnectionId.value = id
   }
 
   function handleKeyboardShortcut(e: KeyboardEvent) {
@@ -638,6 +625,59 @@ export function useDatabaseExplorerController({
     }
   )
 
+  // Watch viewState changes to sync with explorerState and fetch data
+  // This handles URL sync updates and store changes
+  watch(
+    () => ({
+      viewType: viewState.viewType,
+      connectionId: viewState.connectionId,
+      databaseName: viewState.databaseName,
+      schemaName: viewState.schemaName,
+      objectType: viewState.objectType,
+      objectName: viewState.objectName,
+      filePath: viewState.filePath
+    }),
+    (state) => {
+      if (!state.connectionId) return
+
+      // Sync connection
+      if (state.connectionId !== explorerState.currentConnectionId.value) {
+        navigationStore.setActiveConnectionId(state.connectionId)
+        connectionsStore.setCurrentConnection(state.connectionId)
+      }
+
+      // Sync database selection
+      if (state.viewType === 'database-overview' || state.viewType === 'table-data') {
+        if (state.databaseName) {
+          explorerState.setDatabaseSelection({
+            database: state.databaseName,
+            schema: state.schemaName || undefined,
+            type: state.objectType || undefined,
+            name: state.objectName || undefined
+          })
+
+          schemaStore.setConnectionId(state.connectionId)
+          schemaStore.setDatabaseName(state.databaseName)
+          schemaStore.fetchSchema(false)
+        }
+      } else if (state.viewType === 'connection-details') {
+        explorerState.clearDatabaseSelection()
+      }
+
+      // Sync file selection
+      if (state.viewType === 'file-browser' && state.filePath) {
+        if (fileExplorerStore.isFilesConnectionType(state.connectionId)) {
+          void fileExplorerStore.loadEntries(state.connectionId, true).then(() => {
+            if (state.filePath) {
+              fileExplorerStore.setSelectedPath(state.connectionId!, state.filePath)
+            }
+          })
+        }
+      }
+    },
+    { immediate: true, deep: true }
+  )
+
   onMounted(async () => {
     commonStore.setCurrentPage('Data Explorer')
     sidebar.initializeSidebar()
@@ -652,7 +692,8 @@ export function useDatabaseExplorerController({
 
     const focusConnIdFromStream = window.sessionStorage.getItem('explorerFocusConnectionId')
     if (focusConnIdFromStream) {
-      focusConnectionId.value = focusConnIdFromStream
+      // Navigation from stream config - select the connection
+      viewState.selectConnection(focusConnIdFromStream)
       window.sessionStorage.removeItem('explorerFocusConnectionId')
     }
 
@@ -676,45 +717,13 @@ export function useDatabaseExplorerController({
       })
     }
 
-    // REMOVED: All URL reading logic
-    // State is now loaded from store (which loads from localStorage)
-    // URL sync is handled by useExplorerUrlSync watcher
+    // REMOVED: All URL reading logic and state sync
+    // State sync is now handled by the viewState watcher above
+    // URL sync is handled by useExplorerUrlSync
 
     // If no view state at all, default to connection details for current connection
     if (!viewState.viewType && explorerState.currentConnectionId.value) {
       viewState.selectConnection(explorerState.currentConnectionId.value)
-    }
-
-    // Sync explorerState with viewState if database is selected
-    if (viewState.databaseName && explorerState.currentConnectionId.value) {
-      explorerState.setDatabaseSelection({
-        database: viewState.databaseName,
-        schema: viewState.schemaName || undefined,
-        type: viewState.objectType || undefined,
-        name: viewState.objectName || undefined
-      })
-
-      schemaStore.setConnectionId(explorerState.currentConnectionId.value)
-      schemaStore.setDatabaseName(viewState.databaseName)
-      schemaStore.fetchSchema(false)
-    }
-
-    // Load file entries for file connections
-    if (
-      viewState.filePath &&
-      fileExplorerStore.isFilesConnectionType(explorerState.currentConnectionId.value)
-    ) {
-      void fileExplorerStore
-        .loadEntries(explorerState.currentConnectionId.value as string, true)
-        .then(() => {
-          if (viewState.filePath) {
-            fileExplorerStore.setSelectedPath(
-              explorerState.currentConnectionId.value || '',
-              viewState.filePath
-            )
-            focusConnectionId.value = null
-          }
-        })
     }
   })
 
@@ -727,7 +736,6 @@ export function useDatabaseExplorerController({
     showDeleteConfirm,
     pendingDeleteName,
     deleteConnectionMessage,
-    focusConnectionId,
     currentFileEntries,
     treeSelection,
     handleOpenFromTree,
@@ -746,7 +754,6 @@ export function useDatabaseExplorerController({
     onDeleteConnection,
     confirmDeleteConnection,
     cancelDeleteConnection,
-    onCloneConnection,
-    setFocusConnectionId
+    onCloneConnection
   }
 }

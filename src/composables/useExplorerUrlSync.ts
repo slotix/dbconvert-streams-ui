@@ -1,16 +1,14 @@
-import { watch } from 'vue'
+import { watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useExplorerViewStateStore } from '@/stores/explorerViewState'
 
 /**
  * Syncs explorer view state with URL (two-way)
  *
- * CRITICAL: This runs in watchers, NOT in onMounted, so it doesn't suffer
- * from Vue Router timing issues.
- *
  * Data Flow:
- * 1. Store → URL: When user navigates via UI (click connection/database/table)
- * 2. URL → Store: When user uses back/forward buttons or opens shared URL
+ * 1. On mount: URL → Store (for shared URLs)
+ * 2. Store → URL: When user navigates via UI (click connection/database/table)
+ * 3. URL → Store: When user uses back/forward buttons
  *
  * Usage:
  * Call this once in DatabaseExplorerView.vue setup:
@@ -20,6 +18,35 @@ export function useExplorerUrlSync() {
   const route = useRoute()
   const router = useRouter()
   const viewState = useExplorerViewStateStore()
+
+  // Helper to parse URL and update store
+  function syncUrlToStore() {
+    const connId = route.params.id as string
+    if (!connId) return
+
+    const query = route.query
+
+    // Parse URL params and update store
+    viewState._updateFromUrl({
+      connId,
+      details: query.details === 'true',
+      database: query.db as string | undefined,
+      schema: query.schema as string | undefined,
+      type: query.type as 'table' | 'view' | undefined,
+      name: query.name as string | undefined,
+      file: query.file as string | undefined
+    })
+  }
+
+  // On mount: Read URL and update store
+  // This handles shared URLs - the URL takes precedence over localStorage
+  onMounted(() => {
+    const connId = route.params.id as string
+    if (connId) {
+      // URL has a connection - sync to store
+      syncUrlToStore()
+    }
+  })
 
   // Watcher 1: Store → URL (when user navigates via UI)
   // This updates the URL to reflect the current store state
@@ -81,33 +108,19 @@ export function useExplorerUrlSync() {
     { deep: true }
   )
 
-  // Watcher 2: URL → Store (when user uses back/forward buttons or shares URL)
-  // This updates the store to reflect the current URL
+  // Watcher 2: URL → Store (when user uses back/forward buttons)
   watch(
     [() => route.params.id, () => route.query] as const,
-    ([connId, query]) => {
+    ([connId, query], [oldConnId, oldQuery]) => {
       if (!connId) return
 
-      const connIdStr = connId as string
+      // Skip if this is the initial trigger (handled by onMounted)
+      if (oldConnId === undefined && oldQuery === undefined) return
 
-      // Parse URL params and update store
-      // Use the internal _updateFromUrl method to avoid double-saving to localStorage
-      viewState._updateFromUrl({
-        connId: connIdStr,
-        details: query.details === 'true',
-        database: query.db as string | undefined,
-        schema: query.schema as string | undefined,
-        type: query.type as 'table' | 'view' | undefined,
-        name: query.name as string | undefined,
-        file: query.file as string | undefined
-      })
+      syncUrlToStore()
     },
     {
-      // immediate: false is CRITICAL
-      // We don't want this to run on mount because:
-      // 1. Store already has correct state from localStorage
-      // 2. Store→URL watcher will sync URL to match store
-      // 3. Running immediately would cause URL to override localStorage state
+      // immediate: false - onMounted handles initial sync
       immediate: false
     }
   )

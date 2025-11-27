@@ -12,7 +12,6 @@ export function useExplorerRouter(options: {
   currentFileEntries: Ref<any[]>
   onSelectConnection: (payload: { connectionId: string }) => void
   onFileSelect: (payload: { connectionId: string; path: string }) => void
-  setFocusConnectionId: (id: string | null) => void
 }) {
   const route = useRoute()
   const router = useRouter()
@@ -43,7 +42,6 @@ export function useExplorerRouter(options: {
       const id = options.currentConnectionId.value
       if (!id) return
       options.onSelectConnection({ connectionId: id })
-      options.setFocusConnectionId(id)
       await nextTick()
       // After onSelectConnection sets details=true in the route, we need to preserve it
       // while removing the focus/new params
