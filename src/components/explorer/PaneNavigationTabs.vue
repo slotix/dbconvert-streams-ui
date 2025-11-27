@@ -96,7 +96,13 @@
 
 <script setup lang="ts">
 import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
-import { TableCellsIcon, EyeIcon, DocumentIcon, XMarkIcon } from '@heroicons/vue/20/solid'
+import {
+  TableCellsIcon,
+  EyeIcon,
+  DocumentIcon,
+  XMarkIcon,
+  CommandLineIcon
+} from '@heroicons/vue/20/solid'
 import { usePaneTabsStore, type PaneId, type PaneTab } from '@/stores/paneTabs'
 
 const props = defineProps<{
@@ -132,6 +138,7 @@ function isActiveTab(index: number): boolean {
 
 function getObjectIcon(tab: PaneTab) {
   if (tab.tabType === 'file') return DocumentIcon
+  if (tab.tabType === 'sql-console') return CommandLineIcon
   return tab.type === 'view' ? EyeIcon : TableCellsIcon
 }
 

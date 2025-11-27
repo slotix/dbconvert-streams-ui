@@ -65,11 +65,6 @@ const routes = [
     props: true
   },
   {
-    path: '/sql-console',
-    name: 'SqlConsole',
-    component: () => import('@/views/SqlConsoleView.vue')
-  },
-  {
     path: '/:catchAll(.*)',
     component: NotFound
   }

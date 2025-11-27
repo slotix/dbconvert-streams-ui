@@ -518,6 +518,41 @@ const getViewExactCount = async (
   }
 }
 
+/**
+ * Execute an arbitrary SQL query on a connection.
+ * If database is provided, the query runs in that database context.
+ */
+const executeQuery = async (
+  connectionId: string,
+  query: string,
+  database?: string
+): Promise<{ columns: string[]; rows: unknown[][]; affected_rows?: number }> => {
+  const commonStore = useCommonStore()
+  validateApiKey(commonStore.apiKey)
+  try {
+    // Use database-scoped endpoint if database is provided
+    const url = database
+      ? `/connections/${connectionId}/databases/${encodeURIComponent(database)}/query`
+      : `/connections/${connectionId}/query`
+
+    const response: AxiosResponse<{
+      columns: string[]
+      rows: unknown[][]
+      affected_rows?: number
+    }> = await apiClient.post(
+      url,
+      { query },
+      {
+        headers: { [API_HEADERS.API_KEY]: commonStore.apiKey },
+        timeout: OPERATION_TIMEOUTS.getTableData // Use table data timeout for queries
+      }
+    )
+    return response.data
+  } catch (error) {
+    throw handleApiError(error)
+  }
+}
+
 export default {
   getConnections,
   createConnection,
@@ -538,5 +573,6 @@ export default {
   getViews,
   getViewData,
   getTableExactCount,
-  getViewExactCount
+  getViewExactCount,
+  executeQuery
 }

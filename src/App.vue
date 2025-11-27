@@ -447,8 +447,7 @@ import {
   XMarkIcon,
   DocumentTextIcon,
   UserCircleIcon,
-  TableCellsIcon,
-  CommandLineIcon
+  TableCellsIcon
 } from '@heroicons/vue/24/outline'
 import { ExclamationCircleIcon } from '@heroicons/vue/24/solid'
 
@@ -469,8 +468,7 @@ const navigation = computed(() => {
       icon: TableCellsIcon,
       show: true
     },
-    { name: 'Streams', href: '/streams', icon: ArrowPathIcon, show: true },
-    { name: 'SQL Console', href: '/sql-console', icon: CommandLineIcon, show: true }
+    { name: 'Streams', href: '/streams', icon: ArrowPathIcon, show: true }
   ].filter((item) => item.show)
 })
 

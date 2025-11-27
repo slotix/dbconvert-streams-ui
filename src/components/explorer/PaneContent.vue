@@ -24,12 +24,20 @@
       @tab-change="$emit('tab-change', $event)"
       @refresh-metadata="$emit('refresh-metadata')"
     />
+    <SqlConsoleTab
+      v-else-if="activeTab.tabType === 'sql-console'"
+      :key="`${paneId}-sql-${activeTab.connectionId}-${activeTab.database || '*'}`"
+      :connection-id="activeTab.connectionId"
+      :database="activeTab.database"
+      :sql-scope="activeTab.sqlScope || 'database'"
+    />
   </div>
   <EmptyStateMessage v-else-if="showEmptyState" />
 </template>
 
 <script setup lang="ts">
 import ObjectContainer from '@/components/common/ObjectContainer.vue'
+import SqlConsoleTab from '@/components/database/SqlConsoleTab.vue'
 import EmptyStateMessage from './EmptyStateMessage.vue'
 import type { PaneId } from '@/stores/paneTabs'
 import type { PaneTab } from '@/stores/paneTabs'

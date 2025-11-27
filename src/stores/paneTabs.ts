@@ -18,7 +18,7 @@ export type PaneTab = {
   id: string
   connectionId: string
   name: string
-  tabType: 'database' | 'file'
+  tabType: 'database' | 'file' | 'sql-console'
   pinned: boolean
   objectKey?: string
 
@@ -27,6 +27,9 @@ export type PaneTab = {
   schema?: string
   type?: 'table' | 'view'
   meta?: SQLTableMeta | SQLViewMeta
+
+  // SQL Console specific properties
+  sqlScope?: 'database' | 'connection' // database = pre-sets USE db; connection = raw
 
   // File-specific properties
   filePath?: string
@@ -70,6 +73,10 @@ function buildObjectKey(paneId: PaneId, tab: PaneTab): string | null {
   }
   if (tab.tabType === 'file' && tab.filePath) {
     return `${paneId}:file-${tab.filePath}`
+  }
+  if (tab.tabType === 'sql-console') {
+    const dbPart = tab.database || '*'
+    return `${paneId}:sql-${tab.connectionId}-${dbPart}`
   }
   return null
 }
@@ -229,6 +236,10 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
   function generateTabKey(tab: PaneTab): string {
     if (tab.tabType === 'file') {
       return `file:${tab.filePath}`
+    }
+    if (tab.tabType === 'sql-console') {
+      const dbPart = tab.database || '*'
+      return `sql:${tab.connectionId}:${dbPart}`
     }
     return `db:${tab.connectionId}:${tab.database || ''}:${tab.schema || ''}:${tab.name || ''}:${tab.type || ''}`
   }

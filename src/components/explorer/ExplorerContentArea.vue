@@ -18,6 +18,7 @@
       :connection-id="connectionId"
       :database="selectedDatabase"
       @show-diagram="$emit('show-diagram', $event)"
+      @open-sql-console="handleOpenSqlConsole"
     />
   </div>
   <div
@@ -227,5 +228,31 @@ function handleCloseOtherTabs(paneId: PaneId, keepIndex: number) {
 
 function handleCloseAllTabs(paneId: PaneId) {
   paneTabsStore.closeAllTabs(paneId)
+}
+
+/**
+ * Handle opening SQL Console from Database Overview panel
+ * Opens a database-scoped SQL console as a pinned tab in the left pane
+ */
+function handleOpenSqlConsole(payload: { connectionId: string; database: string }) {
+  const tabId = `sql::${payload.connectionId}::${payload.database}`
+
+  paneTabsStore.addTab(
+    'left',
+    {
+      id: tabId,
+      connectionId: payload.connectionId,
+      database: payload.database,
+      name: `SQL: ${payload.database}`,
+      tabType: 'sql-console',
+      sqlScope: 'database',
+      objectKey: tabId
+    },
+    'pinned'
+  )
+
+  // Switch view state to show tabs instead of database overview
+  // Set viewType directly since there's no dedicated action for sql-console
+  viewStateStore.viewType = 'table-data'
 }
 </script>

@@ -9,7 +9,8 @@ import {
   SignalIcon,
   ChartBarIcon,
   TableCellsIcon,
-  InformationCircleIcon
+  InformationCircleIcon,
+  CommandLineIcon
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps<{
@@ -20,6 +21,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'show-diagram', payload: { connectionId: string; database: string }): void
   (e: 'open-table', payload: { name: string }): void
+  (e: 'open-sql-console', payload: { connectionId: string; database: string }): void
 }>()
 
 const overviewStore = useDatabaseOverviewStore()
@@ -88,6 +90,19 @@ const sizeDisplay = computed(() => {
     <div class="flex items-center justify-between mb-4">
       <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">Database Overview</h3>
       <div class="flex items-center gap-2">
+        <BaseButton
+          variant="primary"
+          size="sm"
+          @click="
+            emit('open-sql-console', {
+              connectionId: props.connectionId,
+              database: props.database
+            })
+          "
+        >
+          <CommandLineIcon class="w-4 h-4 mr-1.5" />
+          SQL Console
+        </BaseButton>
         <BaseButton variant="secondary" size="sm" @click="load()"> Refresh </BaseButton>
         <BaseButton
           variant="secondary"
