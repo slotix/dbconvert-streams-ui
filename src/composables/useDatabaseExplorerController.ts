@@ -246,9 +246,7 @@ export function useDatabaseExplorerController({
     navigationStore.setActiveConnectionId(payload.connectionId)
     connectionsStore.setCurrentConnection(payload.connectionId)
 
-    // Clear pane tabs when transitioning to Connection Details view
-    paneTabsStore.closeAllTabs('left')
-    paneTabsStore.closeAllTabs('right')
+    // Only close preview tabs, not pinned tabs - preserve user's open tabs
     if (paneTabsStore.leftPaneState.previewTab) {
       paneTabsStore.closePreviewTab('left')
     }
@@ -262,7 +260,8 @@ export function useDatabaseExplorerController({
     fileExplorerStore.clearSelection(payload.connectionId)
 
     if (fileExplorerStore.isFilesConnectionType(payload.connectionId)) {
-      void fileExplorerStore.loadEntries(payload.connectionId, true)
+      // Load entries if not already cached - don't force reload to preserve expanded folders
+      void fileExplorerStore.loadEntries(payload.connectionId, false)
     }
   }
 

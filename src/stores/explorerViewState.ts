@@ -106,7 +106,8 @@ export const useExplorerViewStateStore = defineStore('explorerViewState', () => 
           database: undefined,
           schema: undefined,
           type: undefined,
-          name: undefined
+          name: undefined,
+          filePath: undefined
         }
 
       case 'database-overview':
@@ -115,7 +116,8 @@ export const useExplorerViewStateStore = defineStore('explorerViewState', () => 
           database: databaseName.value || undefined,
           schema: undefined,
           type: undefined,
-          name: undefined
+          name: undefined,
+          filePath: undefined
         }
 
       case 'table-data':
@@ -124,7 +126,8 @@ export const useExplorerViewStateStore = defineStore('explorerViewState', () => 
           database: databaseName.value || undefined,
           schema: schemaName.value || undefined,
           type: objectType.value || undefined,
-          name: objectName.value || undefined
+          name: objectName.value || undefined,
+          filePath: undefined
         }
 
       case 'file-browser':
@@ -133,7 +136,8 @@ export const useExplorerViewStateStore = defineStore('explorerViewState', () => 
           database: undefined,
           schema: undefined,
           type: undefined,
-          name: undefined
+          name: undefined,
+          filePath: filePath.value || undefined
         }
 
       default:
@@ -142,7 +146,8 @@ export const useExplorerViewStateStore = defineStore('explorerViewState', () => 
           database: undefined,
           schema: undefined,
           type: undefined,
-          name: undefined
+          name: undefined,
+          filePath: undefined
         }
     }
   })

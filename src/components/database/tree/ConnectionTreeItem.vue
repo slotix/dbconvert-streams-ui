@@ -40,13 +40,14 @@ const treeSelection = inject<
     schema?: string
     type?: 'table' | 'view' | null
     name?: string | null
+    filePath?: string
   }>
 >('treeSelection')!
 
-// Check if this connection is selected (connection selected but no database/table)
+// Check if this connection is selected (connection selected but no database/table/file)
 const isSelected = computed(() => {
   const sel = treeSelection.value
-  return sel.connectionId === props.connection.id && !sel.database && !sel.name
+  return sel.connectionId === props.connection.id && !sel.database && !sel.name && !sel.filePath
 })
 
 // Use composable and stores directly

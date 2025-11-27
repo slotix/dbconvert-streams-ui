@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, inject } from 'vue'
+import { computed, inject, watch } from 'vue'
 import type { ComputedRef } from 'vue'
 import { ChevronRightIcon } from '@heroicons/vue/24/outline'
 import type { FileSystemEntry } from '@/api/fileSystem'
@@ -49,6 +49,17 @@ const isExpanded = computed(() =>
   fileExplorerStore.isFolderExpanded(props.connectionId, props.entry.path)
 )
 const hasChildren = computed(() => props.entry.children && props.entry.children.length > 0)
+
+// Auto-load children when folder is expanded but not loaded
+watch(
+  () => isExpanded.value && isFolder.value && !props.entry.isLoaded,
+  (shouldLoad) => {
+    if (shouldLoad) {
+      fileExplorerStore.loadFolderContents(props.connectionId, props.entry.path)
+    }
+  },
+  { immediate: true }
+)
 
 // Generate tooltip for unsupported files
 const unsupportedTooltip = computed(() => {
