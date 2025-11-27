@@ -8,6 +8,8 @@ type AGGridDataState = {
   panelWhereSQL?: string
   // Panel-driven LIMIT (user-specified row limit)
   panelLimit?: number
+  // Page size (rows per page)
+  pageSize?: number
   totalRowCount: number
   exactRowCount: number | null
   // Column state (pinned, width, order, etc.)

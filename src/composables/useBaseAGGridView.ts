@@ -120,6 +120,10 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
   const currentFirstRow = ref<number>(1)
   const currentLastRow = ref<number>(100)
 
+  // Page size options and state
+  const PAGE_SIZE_OPTIONS = [20, 50, 100, 200, 500] as const
+  const pageSize = ref<number>(100) // Default page size
+
   // Context menu state (local to each instance)
   const showContextMenu = ref(false)
   const contextMenuX = ref(0)
@@ -186,7 +190,7 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
     ensureDomOrder: true,
     domLayout: 'normal',
     pagination: true,
-    paginationAutoPageSize: true,
+    paginationPageSize: pageSize.value,
     cacheBlockSize: 200,
     cacheOverflowSize: 2,
     maxConcurrentDatasourceRequests: 2,
@@ -478,6 +482,11 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
     const savedState = tabStateStore.getAGGridDataState(objectKey.value)
 
     if (savedState) {
+      // Restore page size from saved state
+      if (savedState.pageSize && PAGE_SIZE_OPTIONS.includes(savedState.pageSize as any)) {
+        pageSize.value = savedState.pageSize
+      }
+
       // Restore panel filters from saved state
       if (
         savedState.panelWhereSQL ||
@@ -502,15 +511,16 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
   }
 
   /**
-   * Save panel filter state to store when it changes
+   * Save panel filter state and page size to store when they change
    */
   watch(
-    () => [panelWhereSQL.value, panelSortModel.value, panelLimit.value] as const,
-    ([whereSQL, sortModel, limit]) => {
+    () => [panelWhereSQL.value, panelSortModel.value, panelLimit.value, pageSize.value] as const,
+    ([whereSQL, sortModel, limit, size]) => {
       tabStateStore.setAGGridDataState(objectKey.value, {
         sortModel,
         panelWhereSQL: whereSQL,
         panelLimit: limit,
+        pageSize: size,
         filterModel: {} // Keep for backwards compatibility
       })
     },
@@ -540,6 +550,20 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
   )
 
   /**
+   * Watch for page size changes and update AG Grid
+   */
+  watch(
+    () => pageSize.value,
+    (newSize) => {
+      if (gridApi.value && !gridApi.value.isDestroyed()) {
+        // Update grid option and purge cache to reload with new page size
+        gridApi.value.setGridOption('paginationPageSize', newSize)
+        gridApi.value.purgeInfiniteCache()
+      }
+    }
+  )
+
+  /**
    * Cleanup on unmount
    */
   onBeforeUnmount(() => {
@@ -562,6 +586,10 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
     totalRowCount,
     currentFirstRow,
     currentLastRow,
+
+    // Pagination
+    pageSize,
+    PAGE_SIZE_OPTIONS,
 
     // Panel filters state (single source of truth)
     panelWhereSQL,

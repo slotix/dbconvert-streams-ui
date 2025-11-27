@@ -503,10 +503,7 @@ defineExpose({
     </div>
 
     <!-- Row count controls below table -->
-    <div
-      v-if="(!isView && approxRows && approxRows > 0) || isView === true"
-      class="mt-3 flex items-center justify-between"
-    >
+    <div class="mt-3 flex items-center justify-between">
       <div class="flex items-center gap-3">
         <!-- Approximate count hint -->
         <span
