@@ -9,6 +9,8 @@ import { useObjectTabStateStore } from '@/stores/objectTabState'
 import { useConnectionsStore } from '@/stores/connections'
 import ColumnContextMenu from './ColumnContextMenu.vue'
 import DataFilterPanel from './DataFilterPanel.vue'
+import ExportToolbar from '@/components/common/ExportToolbar.vue'
+import { exportData, type ExportFormat } from '@/composables/useDataExport'
 import {
   useBaseAGGridView,
   type FetchDataParams,
@@ -451,6 +453,59 @@ onMounted(() => {
   }
 })
 
+// Export visible grid data
+function getVisibleData(): { columns: string[]; rows: Record<string, unknown>[] } {
+  const api = baseGrid.gridApi.value
+  if (!api) return { columns: [], rows: [] }
+
+  const columns: string[] = []
+  const displayedColumns = api.getAllDisplayedColumns()
+  for (const col of displayedColumns) {
+    const colId = col.getColId()
+    if (colId) columns.push(colId)
+  }
+
+  const rows: Record<string, unknown>[] = []
+  // Get rows from current page
+  const pageSize = api.paginationGetPageSize()
+  const currentPage = api.paginationGetCurrentPage()
+  const startRow = currentPage * pageSize
+  const endRow = startRow + pageSize
+
+  for (let i = startRow; i < endRow; i++) {
+    const node = api.getDisplayedRowAtIndex(i)
+    if (node && node.data) {
+      rows.push(node.data)
+    }
+  }
+
+  return { columns, rows }
+}
+
+// Handle export request
+function handleExport(format: ExportFormat) {
+  const { columns, rows } = getVisibleData()
+  if (rows.length === 0) {
+    console.warn('No data to export')
+    return
+  }
+
+  const objectName = getObjectName(props.tableMeta)
+  exportData(format, {
+    columns,
+    rows,
+    filename: objectName || 'table-data',
+    tableName: objectName
+  })
+}
+
+// Check if there's data available for export
+const hasDataForExport = computed(() => {
+  const api = baseGrid.gridApi.value
+  if (!api) return false
+  return baseGrid.totalRowCount.value > 0
+})
+
 // Expose methods to parent
 defineExpose({
   refresh: baseGrid.refresh,
@@ -462,17 +517,31 @@ defineExpose({
 
 <template>
   <div class="flex flex-col h-full">
-    <!-- Data Filter Panel (replaces SQL Query Banner) -->
-    <DataFilterPanel
-      ref="filterPanelRef"
-      :columns="columnDefs"
-      :dialect="connectionType === 'pgsql' || connectionType === 'postgresql' ? 'pgsql' : 'mysql'"
-      :table-name="getObjectName(tableMeta)"
-      :object-key="objectKey"
-      @apply="onFilterPanelApply"
-      @clear="clearAllFilters"
-      @columns-change="onColumnsChange"
-    />
+    <!-- Toolbar with Filter Panel and Export -->
+    <div class="flex flex-col">
+      <!-- Data Filter Panel (replaces SQL Query Banner) -->
+      <DataFilterPanel
+        ref="filterPanelRef"
+        :columns="columnDefs"
+        :dialect="connectionType === 'pgsql' || connectionType === 'postgresql' ? 'pgsql' : 'mysql'"
+        :table-name="getObjectName(tableMeta)"
+        :object-key="objectKey"
+        @apply="onFilterPanelApply"
+        @clear="clearAllFilters"
+        @columns-change="onColumnsChange"
+      />
+
+      <!-- Export Toolbar -->
+      <div
+        v-if="hasDataForExport"
+        class="flex items-center justify-between px-3 py-1.5 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700"
+      >
+        <span class="text-xs text-gray-500 dark:text-gray-400">
+          Export current page ({{ baseGrid.totalRowCount.value.toLocaleString() }} total rows)
+        </span>
+        <ExportToolbar @export="handleExport" />
+      </div>
+    </div>
 
     <!-- Error message -->
     <div
