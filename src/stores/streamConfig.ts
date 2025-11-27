@@ -275,7 +275,7 @@ export const useStreamsStore = defineStore('streams', {
       this.resetCurrentStream()
       useConnectionsStore().resetCurrentConnection()
     },
-    async saveStream() {
+    async saveStream(): Promise<string | undefined> {
       try {
         this.prepareStreamData()
         if (!this.currentStreamConfig?.name) {
@@ -293,11 +293,13 @@ export const useStreamsStore = defineStore('streams', {
           this.currentStreamConfig as unknown as Record<string, unknown>
         )
 
+        const savedId = stream.id
         this.resetCurrentStream()
         await this.refreshStreams()
         this.currentStreamConfig!.id = stream.id
         this.currentStreamConfig!.created = stream.created
         this.currentStreamConfig!.name = stream.name // The backend will return the updated name with uppended 5 last characters of the id
+        return savedId
       } catch (err) {
         console.error('Failed to save stream:', err)
         throw err

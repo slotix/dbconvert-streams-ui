@@ -201,6 +201,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { PlusIcon, ArrowPathIcon } from '@heroicons/vue/24/solid'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
@@ -219,6 +220,7 @@ const streamsStore = useStreamsStore()
 const connectionsStore = useConnectionsStore()
 const monitoringStore = useMonitoringStore()
 const commonStore = useCommonStore()
+const route = useRoute()
 
 // Use sidebar composable for resize and toggle functionality
 const sidebar = useSidebar()
@@ -298,9 +300,12 @@ onMounted(async () => {
       // Then fetch streams
       await streamsStore.refreshStreams()
 
-      // Check if there's a running stream and auto-select it (from SSE structured logs)
-      if (monitoringStore.streamID) {
-        // Auto-select the running stream
+      // Check if there's a selected stream from query param (e.g., coming back from edit)
+      const selectedFromQuery = route.query.selected as string
+      if (selectedFromQuery) {
+        selectedStreamId.value = selectedFromQuery
+      } else if (monitoringStore.streamID) {
+        // Otherwise check if there's a running stream and auto-select it (from SSE structured logs)
         selectedStreamId.value = monitoringStore.streamID
       }
     } catch (error) {
@@ -311,6 +316,16 @@ onMounted(async () => {
   // Add keyboard shortcut listener
   window.addEventListener('keydown', handleKeyboardShortcut)
 })
+
+// Watch for selected query param changes (e.g., when navigating back from edit)
+watch(
+  () => route.query.selected,
+  (newSelected) => {
+    if (newSelected && typeof newSelected === 'string') {
+      selectedStreamId.value = newSelected
+    }
+  }
+)
 
 // Watch for backend connection status changes and refresh data when reconnected
 watch(

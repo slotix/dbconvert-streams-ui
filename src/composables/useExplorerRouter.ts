@@ -43,12 +43,11 @@ export function useExplorerRouter(options: {
       const id = options.currentConnectionId.value
       if (!id) return
       options.onSelectConnection({ connectionId: id })
-      await nextTick()
-      const clearedQuery = { ...route.query }
-      delete clearedQuery.new
-      delete clearedQuery.focus
       options.setFocusConnectionId(id)
-      router.replace({ path: `/explorer/${id}`, query: clearedQuery })
+      await nextTick()
+      // After onSelectConnection sets details=true in the route, we need to preserve it
+      // while removing the focus/new params
+      router.replace({ path: `/explorer/${id}`, query: { details: 'true' } })
     },
     { immediate: true }
   )

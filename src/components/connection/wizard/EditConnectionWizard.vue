@@ -174,8 +174,12 @@ async function updateConnection() {
 function cancelWizard() {
   // Reset current connection to avoid affecting other operations
   connectionsStore.currentConnection = null
-  // Navigate back to connections list
-  router.push('/explorer')
+  // Navigate back to connection details view
+  if (connectionId.value) {
+    router.push({ path: `/explorer/${connectionId.value}`, query: { details: 'true' } })
+  } else {
+    router.push('/explorer')
+  }
 }
 
 // Initialize when component mounts

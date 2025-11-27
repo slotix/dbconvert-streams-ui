@@ -2,6 +2,7 @@ import { computed, onMounted, onUnmounted, ref, watch, type Ref } from 'vue'
 import type { RouteLocationNormalizedLoaded, Router } from 'vue-router'
 import connections from '@/api/connections'
 import type { FileSystemEntry } from '@/api/fileSystem'
+import { getConnectionHost, getConnectionPort, getConnectionDatabase } from '@/utils/specBuilder'
 import type { SQLTableMeta, SQLViewMeta } from '@/types/metadata'
 import type { PaneId, PaneTab, PaneState } from '@/stores/paneTabs'
 import type SearchInput from '@/components/common/SearchInput.vue'
@@ -470,7 +471,8 @@ export function useDatabaseExplorerController({
     if (!id) return
     const conn = connectionsStore.connections.find((c) => c.id === id)
     pendingDeleteConnectionId.value = id
-    pendingDeleteName.value = conn?.name || conn?.host || 'this connection'
+    pendingDeleteName.value =
+      conn?.name || (conn ? getConnectionHost(conn) : '') || 'this connection'
     showDeleteConfirm.value = true
   }
 
@@ -652,14 +654,15 @@ export function useDatabaseExplorerController({
     navigationStore.setActiveConnectionId(newId)
 
     if (newId && explorerState.currentConnection.value) {
+      const conn = explorerState.currentConnection.value
       recentConnectionsManager.addToRecent({
-        id: explorerState.currentConnection.value.id,
-        name: explorerState.currentConnection.value.name,
-        type: explorerState.currentConnection.value.type,
-        host: explorerState.currentConnection.value.host,
-        port: explorerState.currentConnection.value.port?.toString(),
-        defaultDatabase: explorerState.currentConnection.value.defaultDatabase,
-        cloud_provider: explorerState.currentConnection.value.cloud_provider || ''
+        id: conn.id,
+        name: conn.name,
+        type: conn.type,
+        host: getConnectionHost(conn),
+        port: getConnectionPort(conn)?.toString(),
+        defaultDatabase: getConnectionDatabase(conn),
+        cloud_provider: conn.cloud_provider || ''
       })
       if (fileExplorerStore.isFilesConnectionType(newId)) {
         await fileExplorerStore.loadEntries(newId, true)
@@ -791,14 +794,15 @@ export function useDatabaseExplorerController({
         (c) => c.id === explorerState.currentConnectionId.value
       )
     ) {
+      const conn = explorerState.currentConnection.value
       recentConnectionsManager.addToRecent({
-        id: explorerState.currentConnection.value.id,
-        name: explorerState.currentConnection.value.name,
-        type: explorerState.currentConnection.value.type,
-        host: explorerState.currentConnection.value.host,
-        port: explorerState.currentConnection.value.port?.toString(),
-        defaultDatabase: explorerState.currentConnection.value.defaultDatabase,
-        cloud_provider: explorerState.currentConnection.value.cloud_provider || ''
+        id: conn.id,
+        name: conn.name,
+        type: conn.type,
+        host: getConnectionHost(conn),
+        port: getConnectionPort(conn)?.toString(),
+        defaultDatabase: getConnectionDatabase(conn),
+        cloud_provider: conn.cloud_provider || ''
       })
     }
 

@@ -398,15 +398,20 @@ async function handleFinish() {
     }
 
     // Save the stream
-    await streamsStore.saveStream()
+    const savedStreamId = await streamsStore.saveStream()
 
     commonStore.showNotification(
       isEditMode.value ? 'Stream updated successfully!' : 'Stream created successfully!',
       'success'
     )
 
-    // Navigate to streams list
-    router.push({ name: 'Streams' })
+    // Navigate to streams list with the stream selected
+    const selectId = savedStreamId || streamId.value
+    if (selectId) {
+      router.push({ name: 'Streams', query: { selected: selectId } })
+    } else {
+      router.push({ name: 'Streams' })
+    }
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred'
     commonStore.showNotification(`Failed to create stream: ${errorMessage}`, 'error')
@@ -454,12 +459,17 @@ async function handleQuickSave() {
     }
 
     // Save the stream
-    await streamsStore.saveStream()
+    const savedStreamId = await streamsStore.saveStream()
 
     commonStore.showNotification('Stream updated successfully!', 'success')
 
-    // Navigate back to streams list
-    router.push({ name: 'Streams' })
+    // Navigate back to streams list with the stream selected
+    const selectId = savedStreamId || streamId.value
+    if (selectId) {
+      router.push({ name: 'Streams', query: { selected: selectId } })
+    } else {
+      router.push({ name: 'Streams' })
+    }
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred'
     commonStore.showNotification(`Failed to update stream: ${errorMessage}`, 'error')
@@ -479,6 +489,11 @@ function cancelWizard() {
 function confirmExit() {
   wizard.reset()
   streamsStore.resetCurrentStream()
-  router.push({ name: 'Streams' })
+  // If in edit mode, return to streams with the stream selected
+  if (isEditMode.value && streamId.value) {
+    router.push({ name: 'Streams', query: { selected: streamId.value } })
+  } else {
+    router.push({ name: 'Streams' })
+  }
 }
 </script>
