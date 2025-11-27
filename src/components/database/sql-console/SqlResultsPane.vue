@@ -30,6 +30,16 @@
           JSON
         </button>
 
+        <!-- Primary: Excel -->
+        <button
+          class="inline-flex items-center px-2 py-1 border border-gray-300 dark:border-gray-600 text-xs rounded text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+          title="Export as Excel"
+          @click="exportResults('excel')"
+        >
+          <ArrowDownTrayIcon class="h-3.5 w-3.5 mr-1" />
+          Excel
+        </button>
+
         <!-- More Formats Dropdown -->
         <div class="relative">
           <button
@@ -174,6 +184,7 @@ import {
   CheckCircleIcon,
   EllipsisHorizontalIcon
 } from '@heroicons/vue/24/outline'
+import * as XLSX from 'xlsx'
 
 const props = defineProps<{
   columns: string[]
@@ -192,9 +203,9 @@ defineEmits<{
 const showExportMenu = ref(false)
 
 // Available export formats
-type ExportFormat = 'csv' | 'json' | 'jsonl' | 'tsv' | 'sql' | 'markdown'
+type ExportFormat = 'csv' | 'json' | 'jsonl' | 'tsv' | 'sql' | 'markdown' | 'excel'
 
-// More formats for the dropdown (excluding primary CSV/JSON)
+// More formats for the dropdown (excluding primary CSV/JSON/Excel)
 const moreExportFormats: { id: ExportFormat; label: string }[] = [
   { id: 'jsonl', label: 'JSONL' },
   { id: 'tsv', label: 'TSV' },
@@ -245,9 +256,28 @@ function escapeMarkdown(value: unknown): string {
   return str.replace(/\|/g, '\\|')
 }
 
+function exportToExcel() {
+  // Create worksheet from data
+  const wsData = [props.columns, ...props.rows.map((row) => props.columns.map((col) => row[col]))]
+  const worksheet = XLSX.utils.aoa_to_sheet(wsData)
+
+  // Create workbook and add sheet
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, worksheet, 'Query Results')
+
+  // Generate and download file
+  XLSX.writeFile(wb, 'query-results.xlsx')
+}
+
 function exportResults(format: ExportFormat) {
   if (props.rows.length === 0) return
   showExportMenu.value = false
+
+  // Handle Excel separately (binary format)
+  if (format === 'excel') {
+    exportToExcel()
+    return
+  }
 
   let content = ''
   let filename = ''
