@@ -9,6 +9,7 @@ import DatabaseIcon from '@/components/base/DatabaseIcon.vue'
 import HighlightedText from '@/components/common/HighlightedText.vue'
 import ConnectionErrorState from '@/components/common/ConnectionErrorState.vue'
 import { getConnectionTooltip } from '@/utils/connectionUtils'
+import { getConnectionHost, getConnectionPort } from '@/utils/specBuilder'
 import { useConnectionTreeLogic } from '@/composables/useConnectionTreeLogic'
 import { useFileExplorerStore } from '@/stores/fileExplorer'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
@@ -208,6 +209,10 @@ const visibleFileEntries = computed(() => {
 const connectionTooltip = computed(() => {
   return getConnectionTooltip(props.connection)
 })
+
+// Derived host and port from spec
+const connectionHost = computed(() => getConnectionHost(props.connection))
+const connectionPort = computed(() => getConnectionPort(props.connection))
 </script>
 
 <template>
@@ -247,7 +252,7 @@ const connectionTooltip = computed(() => {
         <div class="flex items-center gap-1.5">
           <HighlightedText
             class="font-semibold truncate text-slate-800 dark:text-gray-100 group-hover:text-teal-900 dark:group-hover:text-teal-300"
-            :text="connection.name || connection.host || 'Connection'"
+            :text="connection.name || connectionHost || 'Connection'"
             :query="searchQuery"
           />
           <CloudProviderBadge
@@ -259,10 +264,10 @@ const connectionTooltip = computed(() => {
           />
         </div>
         <div
-          v-if="connection.host && connection.port"
+          v-if="connectionHost && connectionPort"
           class="text-xs text-slate-500 dark:text-gray-400 truncate leading-tight group-hover:text-slate-600 dark:group-hover:text-gray-300"
         >
-          {{ connection.host }}:{{ connection.port }}
+          {{ connectionHost }}:{{ connectionPort }}
         </div>
       </div>
     </div>

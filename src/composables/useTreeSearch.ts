@@ -3,6 +3,7 @@ import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { useConnectionTreeLogic } from '@/composables/useConnectionTreeLogic'
 import type { Connection } from '@/types/connections'
 import type { FileSystemEntry } from '@/api/fileSystem'
+import { getConnectionHost } from '@/utils/specBuilder'
 
 export interface UseTreeSearchOptions {
   typeFilters?: string[]
@@ -68,7 +69,8 @@ export function useTreeSearch(searchQuery: string, options: UseTreeSearchOptions
 
     return filtered.filter((connection) => {
       // Search in connection basic info
-      const connectionLabel = `${connection.name || ''} ${connection.host || ''} ${connection.type || ''}`
+      const host = getConnectionHost(connection)
+      const connectionLabel = `${connection.name || ''} ${host || ''} ${connection.type || ''}`
       if (normalize(connectionLabel).includes(normalizedQuery)) return true
 
       // Search in database names

@@ -115,9 +115,14 @@ export function useDatabaseCapabilities(databaseType: Ref<string> | string) {
   const validateConnection = (connection: any) => {
     const errors: string[] = []
 
-    if (!connection.host) errors.push('Host is required')
-    if (!connection.port) errors.push('Port is required')
-    if (!connection.username) errors.push('Username is required')
+    // Validate based on spec.database fields
+    const host = connection?.spec?.database?.host
+    const port = connection?.spec?.database?.port
+    const username = connection?.spec?.database?.username
+
+    if (!host) errors.push('Host is required')
+    if (!port) errors.push('Port is required')
+    if (!username) errors.push('Username is required')
 
     // DefaultDatabase is always optional for connections - streams specify database in their config
     // No validation needed here for defaultDatabase

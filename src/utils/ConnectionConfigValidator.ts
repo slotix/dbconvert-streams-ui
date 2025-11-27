@@ -116,31 +116,43 @@ function validateRequiredFields(cfg: Record<string, unknown>, errors: Validation
 }
 
 function validateDatabaseConnection(cfg: Record<string, unknown>, errors: ValidationError[]): void {
+  // Check for spec.database fields (new format)
+  const spec = cfg.spec as Record<string, unknown> | undefined
+  const databaseSpec = spec?.database as Record<string, unknown> | undefined
+  const snowflakeSpec = spec?.snowflake as Record<string, unknown> | undefined
+
+  // Get host from spec (either database or snowflake)
+  const host = databaseSpec?.host || snowflakeSpec?.account
+  const port = databaseSpec?.port
+  const username = databaseSpec?.username || snowflakeSpec?.username
+  const password = databaseSpec?.password || snowflakeSpec?.password
+
   // Host is required for database connections
-  if (!cfg.host || typeof cfg.host !== 'string' || cfg.host.trim() === '') {
-    errors.push({ path: 'host', message: 'Host is required for database connections' })
+  if (!host || (typeof host === 'string' && host.trim() === '')) {
+    errors.push({
+      path: 'spec.database.host',
+      message: 'Host is required for database connections'
+    })
   }
 
-  // Port validation
-  if (cfg.port !== undefined) {
-    if (typeof cfg.port !== 'number' || cfg.port < 1 || cfg.port > 65535) {
-      errors.push({ path: 'port', message: 'Port must be a number between 1 and 65535' })
+  // Port validation (only for database connections, not Snowflake)
+  if (databaseSpec && port !== undefined) {
+    if (typeof port !== 'number' || port < 1 || port > 65535) {
+      errors.push({
+        path: 'spec.database.port',
+        message: 'Port must be a number between 1 and 65535'
+      })
     }
   }
 
   // Username validation (optional but if present must be string)
-  if (cfg.username !== undefined && typeof cfg.username !== 'string') {
-    errors.push({ path: 'username', message: 'Username must be a string' })
+  if (username !== undefined && typeof username !== 'string') {
+    errors.push({ path: 'spec.database.username', message: 'Username must be a string' })
   }
 
   // Password validation (optional but if present must be string)
-  if (cfg.password !== undefined && typeof cfg.password !== 'string') {
-    errors.push({ path: 'password', message: 'Password must be a string' })
-  }
-
-  // Default database validation (optional but if present must be string)
-  if (cfg.defaultDatabase !== undefined && typeof cfg.defaultDatabase !== 'string') {
-    errors.push({ path: 'defaultDatabase', message: 'Default database must be a string' })
+  if (password !== undefined && typeof password !== 'string') {
+    errors.push({ path: 'spec.database.password', message: 'Password must be a string' })
   }
 }
 

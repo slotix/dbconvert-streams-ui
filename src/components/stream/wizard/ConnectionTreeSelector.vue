@@ -42,7 +42,7 @@
           <div class="flex items-center gap-1.5">
             <HighlightedText
               class="truncate text-sm font-medium text-gray-900 dark:text-gray-100"
-              :text="connection.name || connection.host || 'Connection'"
+              :text="connection.name || getConnectionHostValue(connection) || 'Connection'"
               :query="props.searchQuery"
             />
             <CloudProviderBadge
@@ -190,6 +190,7 @@ import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { useFileExplorerStore } from '@/stores/fileExplorer'
 import { useConnectionsStore } from '@/stores/connections'
 import { normalizeConnectionType, getConnectionTooltip } from '@/utils/connectionUtils'
+import { getConnectionHost, getConnectionPort } from '@/utils/specBuilder'
 import type { Connection } from '@/types/connections'
 
 interface Props {
@@ -270,8 +271,10 @@ function getFileDirectory(connectionId: string): string {
   if (directory) {
     return directory
   }
+  // For file connections, the path is stored in spec.files.basePath
+  // getConnectionHost returns this for file connections
   const connection = getConnectionById(connectionId)
-  return connection?.path || ''
+  return getConnectionHost(connection)
 }
 
 function getFileLoadingState(connectionId: string): boolean {
@@ -292,11 +295,18 @@ function refreshFileEntries(connectionId: string) {
 
 function connectionSubtitle(connection: Connection): string | null {
   const parts: string[] = []
-  if (connection.host) {
-    const hostPort = connection.port ? `${connection.host}:${connection.port}` : connection.host
+  const host = getConnectionHost(connection)
+  const port = getConnectionPort(connection)
+  if (host) {
+    const hostPort = port ? `${host}:${port}` : host
     parts.push(hostPort)
   }
   return parts.length ? parts.join(' · ') : null
+}
+
+// Helper to get host value for display
+function getConnectionHostValue(connection: Connection): string {
+  return getConnectionHost(connection)
 }
 
 // Use imported getConnectionTooltip from utils/connectionUtils.ts

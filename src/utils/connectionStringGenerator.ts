@@ -1,4 +1,11 @@
 import type { Connection } from '@/types/connections'
+import {
+  getConnectionHost,
+  getConnectionPort,
+  getConnectionUsername,
+  getConnectionPassword,
+  getConnectionDatabase
+} from '@/utils/specBuilder'
 
 export function generateConnectionString(
   connection: Partial<Connection>,
@@ -16,17 +23,21 @@ export function generateConnectionString(
 
   const protocol = protocolMap[connection.type] || connection.type.toLowerCase()
 
-  if (!connection.host || !connection.port) {
+  const host = getConnectionHost(connection as Connection)
+  const port = getConnectionPort(connection as Connection)
+  const username = getConnectionUsername(connection as Connection)
+  const password = getConnectionPassword(connection as Connection)
+  const defaultDatabase = getConnectionDatabase(connection as Connection)
+
+  if (!host || !port) {
     return ''
   }
 
-  const password = showPassword ? connection.password : '****'
-  const auth = connection.username
-    ? `${connection.username}:${encodeURIComponent(password || '')}@`
-    : ''
+  const displayPassword = showPassword ? password : '****'
+  const auth = username ? `${username}:${encodeURIComponent(displayPassword || '')}@` : ''
 
   // Include default database in path if specified, otherwise omit it
-  const databasePath = connection.defaultDatabase ? `/${connection.defaultDatabase}` : ''
+  const databasePath = defaultDatabase ? `/${defaultDatabase}` : ''
 
-  return `${protocol}://${auth}${connection.host}:${connection.port}${databasePath}`
+  return `${protocol}://${auth}${host}:${port}${databasePath}`
 }

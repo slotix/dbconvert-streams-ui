@@ -1,4 +1,5 @@
 import type { Connection } from '@/types/connections'
+import { getConnectionHost, getConnectionPort } from '@/utils/specBuilder'
 
 export function normalizeConnectionType(type: string): string {
   return type.toLowerCase()
@@ -15,8 +16,10 @@ export function isSameConnectionType(type1: string, type2: string): boolean {
  */
 export function getConnectionTooltip(connection: Connection): string {
   const parts = [connection.name || 'Connection']
-  if (connection.host && connection.port) {
-    parts.push(`${connection.host}:${connection.port}`)
+  const host = getConnectionHost(connection)
+  const port = getConnectionPort(connection)
+  if (host && port) {
+    parts.push(`${host}:${port}`)
   }
   if (connection.type) {
     parts.push(`Type: ${connection.type}`)

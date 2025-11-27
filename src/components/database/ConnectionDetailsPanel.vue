@@ -5,6 +5,7 @@ import BaseButton from '@/components/base/BaseButton.vue'
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
 import { generateConnectionString } from '@/utils/connectionStringGenerator'
 import { formatDateTime } from '@/utils/formats'
+import { getConnectionHost, getConnectionPort, getConnectionDatabase } from '@/utils/specBuilder'
 import {
   CalendarIcon,
   ClipboardIcon,
@@ -42,7 +43,10 @@ const isFileConnection = computed(() => {
 
 // Check if connection has a path configured
 const hasPath = computed(() => {
-  return !!props.connection?.path?.trim()
+  return (
+    !!props.connection?.storage_config?.uri?.trim() ||
+    !!props.connection?.spec?.files?.basePath?.trim()
+  )
 })
 
 // Filter files to show only supported formats
@@ -94,10 +98,13 @@ function formatFileSize(bytes: number): string {
 }
 
 const hostWithPort = computed(() => {
-  const { host, port } = props.connection || {}
+  const host = getConnectionHost(props.connection)
+  const port = getConnectionPort(props.connection)
   if (!host && !port) return ''
   return `${host || ''}${port ? `:${port}` : ''}`
 })
+
+const defaultDatabase = computed(() => getConnectionDatabase(props.connection))
 
 const connectionString = computed(() =>
   generateConnectionString(props.connection, showPassword.value)
@@ -342,7 +349,7 @@ const displayS3URI = computed(() => {
 
       <!-- Database Connection Details -->
       <div v-else>
-        <div class="grid gap-4" :class="connection.defaultDatabase ? 'grid-cols-2' : 'grid-cols-1'">
+        <div class="grid gap-4" :class="defaultDatabase ? 'grid-cols-2' : 'grid-cols-1'">
           <div>
             <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
               >Host</label
@@ -354,12 +361,12 @@ const displayS3URI = computed(() => {
               {{ hostWithPort }}
             </p>
           </div>
-          <div v-if="connection.defaultDatabase">
+          <div v-if="defaultDatabase">
             <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
               >Default Database</label
             >
             <p class="mt-1 font-medium text-gray-900 dark:text-gray-100 truncate">
-              {{ connection.defaultDatabase }}
+              {{ defaultDatabase }}
             </p>
           </div>
         </div>

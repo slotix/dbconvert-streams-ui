@@ -57,12 +57,6 @@ export interface Connection {
   status?: string
   storage_config?: StorageConfig
   s3Config?: ConnectionS3Config
-  host?: string
-  port?: number
-  username?: string
-  password?: string
-  defaultDatabase?: string
-  path?: string
   spec: ConnectionSpec
 }
 
