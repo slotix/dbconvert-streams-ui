@@ -62,7 +62,8 @@ export function useDatabaseExplorerController({
   const viewState = useExplorerViewStateStore()
 
   // Derived from store (no longer from URL)
-  const showConnectionDetails = viewState.showConnectionDetails
+  // Use computed to maintain reactivity when store values change
+  const showConnectionDetails = computed(() => viewState.showConnectionDetails)
   const showDeleteConfirm = ref(false)
   const pendingDeleteConnectionId = ref<string | null>(null)
   const pendingDeleteName = ref('')
@@ -75,7 +76,8 @@ export function useDatabaseExplorerController({
   })
 
   // Tree selection is derived from store (single source of truth)
-  const treeSelection = viewState.treeSelection
+  // Use computed to maintain reactivity when store values change
+  const treeSelection = computed(() => viewState.treeSelection)
 
   const deleteConnectionMessage = computed(() => {
     const label = pendingDeleteName.value || 'this connection'
@@ -95,7 +97,7 @@ export function useDatabaseExplorerController({
   })
 
   const lacksExplorerContent = computed(() => {
-    if (showConnectionDetails) return false
+    if (showConnectionDetails.value) return false
     if (explorerState.showDiagram.value) return false
     if (explorerState.selectedDatabaseName.value) return false
     if (explorerState.selectedFileEntry.value) return false

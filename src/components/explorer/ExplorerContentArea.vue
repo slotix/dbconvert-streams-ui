@@ -109,10 +109,10 @@
 
 <script setup lang="ts">
 import { computed, defineAsyncComponent } from 'vue'
-import { useRoute } from 'vue-router'
 import { useConnectionsStore } from '@/stores/connections'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { usePaneTabsStore, type PaneId } from '@/stores/paneTabs'
+import { useExplorerViewStateStore } from '@/stores/explorerViewState'
 import ConnectionDetailsPanel from '@/components/database/ConnectionDetailsPanel.vue'
 import DatabaseOverviewPanel from '@/components/database/DatabaseOverviewPanel.vue'
 // Lazy load DiagramView since it includes heavy D3.js and export libraries
@@ -167,15 +167,15 @@ const emit = defineEmits<{
   ]
 }>()
 
-const route = useRoute()
 const connectionsStore = useConnectionsStore()
 const navigationStore = useExplorerNavigationStore()
 const paneTabsStore = usePaneTabsStore()
+const viewStateStore = useExplorerViewStateStore()
 
-// Computed properties - derive view mode from route
+// Computed properties - derive view mode from store (single source of truth)
 const selectedDatabase = computed(() => props.selectedDatabase)
 const showConnectionDetails = computed(
-  () => route.query.details === 'true' && currentConnection.value !== null
+  () => viewStateStore.showConnectionDetails && currentConnection.value !== null
 )
 const showDatabaseOverview = computed(
   () => !showConnectionDetails.value && !props.showDiagram && !!selectedDatabase.value
