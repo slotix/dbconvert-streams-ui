@@ -8,23 +8,55 @@
 
       <div class="flex-1"></div>
 
-      <button
-        v-if="rows.length > 0"
-        class="inline-flex items-center px-2 py-1 border border-gray-300 dark:border-gray-600 text-xs rounded text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
-        @click="exportResults('csv')"
-      >
-        <ArrowDownTrayIcon class="h-3.5 w-3.5 mr-1" />
-        CSV
-      </button>
+      <!-- Export Buttons -->
+      <template v-if="rows.length > 0">
+        <!-- Primary: CSV -->
+        <button
+          class="inline-flex items-center px-2 py-1 border border-gray-300 dark:border-gray-600 text-xs rounded text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+          title="Export as CSV"
+          @click="exportResults('csv')"
+        >
+          <ArrowDownTrayIcon class="h-3.5 w-3.5 mr-1" />
+          CSV
+        </button>
 
-      <button
-        v-if="rows.length > 0"
-        class="inline-flex items-center px-2 py-1 border border-gray-300 dark:border-gray-600 text-xs rounded text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
-        @click="exportResults('json')"
-      >
-        <ArrowDownTrayIcon class="h-3.5 w-3.5 mr-1" />
-        JSON
-      </button>
+        <!-- Primary: JSON -->
+        <button
+          class="inline-flex items-center px-2 py-1 border border-gray-300 dark:border-gray-600 text-xs rounded text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+          title="Export as JSON"
+          @click="exportResults('json')"
+        >
+          <ArrowDownTrayIcon class="h-3.5 w-3.5 mr-1" />
+          JSON
+        </button>
+
+        <!-- More Formats Dropdown -->
+        <div class="relative">
+          <button
+            class="inline-flex items-center px-2 py-1 border border-gray-300 dark:border-gray-600 text-xs rounded text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+            title="More export formats"
+            @click="showExportMenu = !showExportMenu"
+          >
+            <EllipsisHorizontalIcon class="h-3.5 w-3.5" />
+          </button>
+
+          <!-- Dropdown Menu -->
+          <div
+            v-if="showExportMenu"
+            class="absolute right-0 mt-1 w-36 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-10"
+            @mouseleave="showExportMenu = false"
+          >
+            <button
+              v-for="format in moreExportFormats"
+              :key="format.id"
+              class="w-full px-3 py-1.5 text-left text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 first:rounded-t-md last:rounded-b-md"
+              @click="exportResults(format.id)"
+            >
+              {{ format.label }}
+            </button>
+          </div>
+        </div>
+      </template>
     </div>
 
     <!-- Results Display -->
@@ -134,12 +166,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import {
   ArrowDownTrayIcon,
   CommandLineIcon,
   XCircleIcon,
-  CheckCircleIcon
+  CheckCircleIcon,
+  EllipsisHorizontalIcon
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps<{
@@ -154,6 +187,20 @@ const props = defineProps<{
 defineEmits<{
   'update:currentPage': [page: number]
 }>()
+
+// Export menu state
+const showExportMenu = ref(false)
+
+// Available export formats
+type ExportFormat = 'csv' | 'json' | 'jsonl' | 'tsv' | 'sql' | 'markdown'
+
+// More formats for the dropdown (excluding primary CSV/JSON)
+const moreExportFormats: { id: ExportFormat; label: string }[] = [
+  { id: 'jsonl', label: 'JSONL' },
+  { id: 'tsv', label: 'TSV' },
+  { id: 'sql', label: 'SQL INSERT' },
+  { id: 'markdown', label: 'Markdown' }
+]
 
 const paginatedRows = computed(() => {
   const start = (props.currentPage - 1) * props.pageSize
@@ -175,25 +222,102 @@ function formatCellValue(value: unknown): string {
   return String(value)
 }
 
-function exportResults(format: 'csv' | 'json') {
+function escapeCSV(value: unknown): string {
+  const str = value === null || value === undefined ? '' : String(value)
+  // Escape quotes and wrap in quotes if contains comma, quote, or newline
+  if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+    return `"${str.replace(/"/g, '""')}"`
+  }
+  return str
+}
+
+function escapeSQLValue(value: unknown): string {
+  if (value === null || value === undefined) return 'NULL'
+  if (typeof value === 'number') return String(value)
+  if (typeof value === 'boolean') return value ? 'TRUE' : 'FALSE'
+  const str = String(value)
+  return `'${str.replace(/'/g, "''")}'`
+}
+
+function escapeMarkdown(value: unknown): string {
+  const str = value === null || value === undefined ? '' : String(value)
+  // Escape pipe characters
+  return str.replace(/\|/g, '\\|')
+}
+
+function exportResults(format: ExportFormat) {
   if (props.rows.length === 0) return
+  showExportMenu.value = false
 
   let content = ''
   let filename = ''
   let mimeType = ''
 
-  if (format === 'csv') {
-    const headers = props.columns.join(',')
-    const rows = props.rows.map((row) =>
-      props.columns.map((col) => JSON.stringify(row[col] ?? '')).join(',')
-    )
-    content = [headers, ...rows].join('\n')
-    filename = 'query-results.csv'
-    mimeType = 'text/csv'
-  } else {
-    content = JSON.stringify(props.rows, null, 2)
-    filename = 'query-results.json'
-    mimeType = 'application/json'
+  switch (format) {
+    case 'csv': {
+      const headers = props.columns.map((c) => escapeCSV(c)).join(',')
+      const rows = props.rows.map((row) =>
+        props.columns.map((col) => escapeCSV(row[col])).join(',')
+      )
+      content = [headers, ...rows].join('\n')
+      filename = 'query-results.csv'
+      mimeType = 'text/csv'
+      break
+    }
+
+    case 'json': {
+      content = JSON.stringify(props.rows, null, 2)
+      filename = 'query-results.json'
+      mimeType = 'application/json'
+      break
+    }
+
+    case 'jsonl': {
+      // JSON Lines - one JSON object per line
+      content = props.rows.map((row) => JSON.stringify(row)).join('\n')
+      filename = 'query-results.jsonl'
+      mimeType = 'application/x-ndjson'
+      break
+    }
+
+    case 'tsv': {
+      // Tab-separated values
+      const headers = props.columns.join('\t')
+      const rows = props.rows.map((row) =>
+        props.columns.map((col) => String(row[col] ?? '')).join('\t')
+      )
+      content = [headers, ...rows].join('\n')
+      filename = 'query-results.tsv'
+      mimeType = 'text/tab-separated-values'
+      break
+    }
+
+    case 'sql': {
+      // SQL INSERT statements
+      const tableName = 'exported_data'
+      const columnList = props.columns.join(', ')
+      const inserts = props.rows.map((row) => {
+        const values = props.columns.map((col) => escapeSQLValue(row[col])).join(', ')
+        return `INSERT INTO ${tableName} (${columnList}) VALUES (${values});`
+      })
+      content = inserts.join('\n')
+      filename = 'query-results.sql'
+      mimeType = 'application/sql'
+      break
+    }
+
+    case 'markdown': {
+      // Markdown table
+      const header = `| ${props.columns.join(' | ')} |`
+      const separator = `| ${props.columns.map(() => '---').join(' | ')} |`
+      const rows = props.rows.map(
+        (row) => `| ${props.columns.map((col) => escapeMarkdown(row[col])).join(' | ')} |`
+      )
+      content = [header, separator, ...rows].join('\n')
+      filename = 'query-results.md'
+      mimeType = 'text/markdown'
+      break
+    }
   }
 
   const blob = new Blob([content], { type: mimeType })
