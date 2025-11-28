@@ -56,20 +56,31 @@ const canProceed = computed(() => {
   if (connectionCategory.value === 'file') {
     // For file connections: name is required
     const hasName = !!connection.name?.trim()
-    const hasStorageConfig = !!connection.storage_config?.provider
 
-    // For local files: need URI (folder path)
-    // For S3/cloud: need endpoint or credentials
-    if (connection.storage_config?.provider === 'local') {
-      const hasUri = !!connection.storage_config?.uri?.trim()
-      return hasName && hasStorageConfig && hasUri
+    // For local files: need spec.files.basePath
+    if (connection.spec?.files) {
+      const hasBasePath = !!connection.spec.files.basePath?.trim()
+      return hasName && hasBasePath
     }
 
-    // For cloud storage (S3, GCS, Azure)
-    const hasEndpointOrCredentials = !!(
-      connection.storage_config?.endpoint || connection.storage_config?.credentials
-    )
-    return hasName && hasStorageConfig && hasEndpointOrCredentials
+    // For cloud storage (S3): need spec.s3 with region
+    if (connection.spec?.s3) {
+      const hasRegion = !!connection.spec.s3.region
+      return hasName && hasRegion
+    }
+
+    // For GCS: need spec.gcs
+    if (connection.spec?.gcs) {
+      return hasName
+    }
+
+    // For Azure: need spec.azure
+    if (connection.spec?.azure) {
+      return hasName && !!connection.spec.azure.accountName
+    }
+
+    // Fallback: just need a name for new connections
+    return hasName
   }
 
   const spec = connection.spec?.database

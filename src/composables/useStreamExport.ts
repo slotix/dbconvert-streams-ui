@@ -93,13 +93,14 @@ export function useStreamExport() {
     }
 
     // Create a new file connection for exports
-    // Using storage_config with provider: 'local' for local file connections
+    // Using spec.files for local file connections (basePath only)
     const connectionData = {
       name: EXPORT_CONNECTION_NAME,
       type: 'files',
-      storage_config: {
-        provider: 'local',
-        uri: DEFAULT_EXPORT_PATH
+      spec: {
+        files: {
+          basePath: DEFAULT_EXPORT_PATH
+        }
       }
     }
 

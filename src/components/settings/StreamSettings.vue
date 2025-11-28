@@ -315,20 +315,21 @@ const targetConnection = computed(() => {
   return connectionsStore.connectionByID(targetId)
 })
 
-// Check if target is a file connection
+// Check if target is a file connection (local files)
 const isFileTarget = computed(() => {
   const conn = targetConnection.value
   if (!conn) return false
-  // Check if it's a file connection (local files)
-  return conn.type?.toLowerCase() === 'files' && conn.storage_config?.provider === 'local'
+  // Check if it's a local file connection via spec.files
+  // FileConnectionSpec is only for local files - cloud storage uses dedicated specs
+  return conn.type?.toLowerCase() === 'files' && !!conn.spec?.files
 })
 
 // Check if target is an S3 connection
 const isS3Target = computed(() => {
   const conn = targetConnection.value
   if (!conn) return false
-  // Check if storage provider is S3
-  return conn.type?.toLowerCase() === 'files' && conn.storage_config?.provider === 's3'
+  // Check if spec.s3 is present - S3 connections use dedicated spec
+  return !!conn.spec?.s3
 })
 
 // File format computed property
@@ -378,8 +379,8 @@ const useDuckDBWriter = computed({
 })
 
 // Note: S3 staging directory is now automatically set by the backend based on
-// the connection's storage_config.uri (typically /tmp/dbconvert-s3-staging).
-// The backend computes the final path as: <storage_config.uri>/<streamID>/<table>/
+// the connection's spec.files.basePath (typically /tmp/dbconvert-s3-staging).
+// The backend computes the final path as: <basePath>/<streamID>/<table>/
 // We no longer need to specify outputDirectory in the stream configuration.
 
 // S3 Upload Configuration computed properties
@@ -542,31 +543,37 @@ async function loadS3Buckets() {
   if (!isS3Target.value) return
 
   const conn = targetConnection.value
-  if (!conn || !conn.storage_config) return
+  if (!conn) return
+
+  // Get S3 config from spec.s3 (S3 connections use dedicated spec)
+  const s3Spec = conn.spec?.s3
+
+  if (!s3Spec) {
+    bucketLoadError.value = 'No S3 configuration found'
+    return
+  }
 
   try {
     loadingBuckets.value = true
     bucketLoadError.value = null
 
-    // First, configure S3 session with connection credentials
-    const s3Config = conn.s3Config
-    if (s3Config) {
-      await configureS3Session({
-        credentialSource: s3Config.credentialSource,
-        region: s3Config.region || 'us-east-1',
-        endpoint: s3Config.endpoint,
-        urlStyle: s3Config.urlStyle,
-        useSSL: s3Config.useSSL,
-        credentials:
-          s3Config.credentialSource === 'static' && conn.username && conn.password
-            ? {
-                accessKeyId: conn.username,
-                secretAccessKey: conn.password,
-                sessionToken: s3Config.sessionToken
-              }
-            : undefined
-      })
-    }
+    // Configure S3 session with connection credentials from spec.s3
+    const hasStaticCredentials = s3Spec.credentials?.accessKey && s3Spec.credentials?.secretKey
+
+    await configureS3Session({
+      credentialSource: hasStaticCredentials ? 'static' : 'aws',
+      region: s3Spec.region || 'us-east-1',
+      endpoint: s3Spec.endpoint,
+      urlStyle: 'auto',
+      useSSL: !s3Spec.endpoint?.includes('localhost'),
+      credentials: hasStaticCredentials
+        ? {
+            accessKeyId: s3Spec.credentials!.accessKey!,
+            secretAccessKey: s3Spec.credentials!.secretKey!,
+            sessionToken: s3Spec.credentials?.sessionToken
+          }
+        : undefined
+    })
 
     // Then list buckets
     const response = await listS3Buckets()

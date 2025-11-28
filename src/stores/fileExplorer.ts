@@ -65,15 +65,15 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
     const connectionsStore = useConnectionsStore()
     const conn = connectionsStore.connections.find((c) => c.id === connId)
     const connType = (conn?.type || '').toLowerCase()
-    return connType === 'files' || connType === 'localfiles'
+    return connType === 'files'
   }
 
   function isS3ConnectionType(connId: string | null | undefined): boolean {
     if (!connId) return false
     const connectionsStore = useConnectionsStore()
     const conn = connectionsStore.connections.find((c) => c.id === connId)
-    const provider = conn?.storage_config?.provider?.toLowerCase()
-    return provider === 's3'
+    // Check spec.s3 - S3 connections use dedicated spec
+    return !!conn?.spec?.s3
   }
 
   function parseS3Uri(uri: string): { bucket: string; prefix: string } | null {
@@ -92,7 +92,24 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
   }
 
   function getS3UriFromConnection(connection: Connection): string {
-    return connection.storage_config?.uri || ''
+    // Try to build S3 URI from spec.s3.scope
+    const s3Spec = connection.spec?.s3
+    if (s3Spec) {
+      // If bucket is specified, use bucket/prefix path
+      if (s3Spec.scope?.bucket) {
+        const bucket = s3Spec.scope.bucket
+        const prefix = s3Spec.scope.prefix || ''
+        return `s3://${bucket}${prefix ? '/' + prefix : ''}`
+      }
+      // S3 connection without scoped bucket - return s3:// to browse all buckets
+      return 's3://'
+    }
+    // Try spec.files.basePath for local file connections
+    const filesSpec = connection.spec?.files
+    if (filesSpec?.basePath) {
+      return filesSpec.basePath
+    }
+    return ''
   }
 
   function resolveConnectionFolderPath(connection: Connection): string {
@@ -329,8 +346,10 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
 
   // S3-specific actions
   async function configureS3SessionForConnection(connection: Connection) {
-    const storageConfig = connection.storage_config
-    if (!storageConfig || storageConfig.provider?.toLowerCase() !== 's3') {
+    // Get S3 config from spec.s3 (S3 connections use dedicated spec)
+    const s3Spec = connection.spec?.s3
+
+    if (!s3Spec) {
       return
     }
 
@@ -338,30 +357,23 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
       return
     }
 
-    const storedCredentials = storageConfig.credentials
-    const hasCredentials = storedCredentials && storedCredentials.aws_access_key
+    // Get credentials from spec.s3
+    const hasCredentials = s3Spec.credentials?.accessKey && s3Spec.credentials?.secretKey
+    const hasCustomEndpoint = !!s3Spec.endpoint
 
-    const hasCustomEndpoint = !!storageConfig.endpoint
-    const inferredUrlStyle =
-      storageConfig.options?.urlStyle === 'virtual' ||
-      storageConfig.options?.urlStyle === 'path' ||
-      storageConfig.options?.urlStyle === 'auto'
-        ? storageConfig.options.urlStyle
-        : hasCustomEndpoint
-          ? 'path'
-          : 'auto'
+    const inferredUrlStyle = hasCustomEndpoint ? 'path' : 'auto'
 
     const config: S3ConfigRequest = {
       credentialSource: hasCredentials ? 'static' : 'aws',
-      region: storageConfig.region || 'us-east-1',
-      endpoint: storageConfig.endpoint || undefined,
+      region: s3Spec.region || 'us-east-1',
+      endpoint: s3Spec.endpoint || undefined,
       urlStyle: inferredUrlStyle,
-      useSSL: hasCustomEndpoint ? !storageConfig.endpoint!.includes('localhost') : true,
+      useSSL: hasCustomEndpoint ? !s3Spec.endpoint!.includes('localhost') : true,
       credentials: hasCredentials
         ? {
-            accessKeyId: storedCredentials!.aws_access_key || '',
-            secretAccessKey: storedCredentials!.aws_secret_key || '',
-            sessionToken: storedCredentials!.aws_session_token
+            accessKeyId: s3Spec.credentials!.accessKey || '',
+            secretAccessKey: s3Spec.credentials!.secretKey || '',
+            sessionToken: s3Spec.credentials!.sessionToken
           }
         : undefined
     }

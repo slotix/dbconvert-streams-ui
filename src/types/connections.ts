@@ -10,41 +10,8 @@ export interface SSLConfig {
 // File format types
 export type FileFormat = 'csv' | 'json' | 'jsonl' | 'parquet'
 
-// Storage provider types
+// Storage provider types - used internally and can be inferred from spec
 export type StorageProvider = 'local' | 's3' | 'gcs' | 'azure' | 'sftp' | 'ftp'
-
-// Storage credentials for cloud providers
-export interface StorageCredentials {
-  aws_access_key?: string
-  aws_secret_key?: string
-  aws_session_token?: string
-  gcp_service_account_json?: string
-  azure_account_name?: string
-  azure_account_key?: string
-  azure_sas_token?: string
-}
-
-// Storage configuration for file/cloud connections
-export interface StorageConfig {
-  provider: StorageProvider
-  uri: string // e.g., "s3://bucket-name/prefix/"
-  region?: string
-  endpoint?: string
-  credentials_ref?: string
-  credentials?: StorageCredentials
-  options?: Record<string, string>
-}
-
-export interface ConnectionS3Config {
-  credentialSource?: 'aws' | 'static'
-  endpoint?: string
-  region?: string
-  urlStyle?: 'auto' | 'path' | 'virtual'
-  useSSL?: boolean
-  bucket?: string
-  prefix?: string
-  sessionToken?: string
-}
 
 export interface Connection {
   id: string | ''
@@ -55,9 +22,13 @@ export interface Connection {
   ssl?: SSLConfig
   cloud_provider?: string
   status?: string
-  storage_config?: StorageConfig
-  s3Config?: ConnectionS3Config
   spec: ConnectionSpec
+  // Legacy fields used by connection editing forms
+  // These are mapped to/from spec fields during save/load
+  host?: string
+  port?: number
+  username?: string
+  password?: string
 }
 
 export interface Schema {

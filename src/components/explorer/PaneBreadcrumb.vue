@@ -56,7 +56,7 @@ function formatConnectionLabel(connectionId: string | undefined) {
   const conn = connectionsStore.connections.find((c) => c.id === connectionId)
   if (!conn) return null
 
-  if (conn.type === 'localfiles' || conn.type === 'files') {
+  if (conn.type === 'files') {
     return conn.name || conn.id
   }
 

@@ -17,9 +17,9 @@ export function parseConnectionString(connectionString: string): ParsedConnectio
   // Check if it's a plain path (starts with / or ~)
   const trimmedString = connectionString.trim()
   if (trimmedString.startsWith('/') || trimmedString.startsWith('~')) {
-    // Plain path - treat as Files connection
+    // Plain path - treat as files connection
     return {
-      type: 'Files',
+      type: 'files',
       host: 'localhost',
       port: 0,
       username: 'local',
@@ -48,13 +48,13 @@ export function parseConnectionString(connectionString: string): ParsedConnectio
       oracle: 'Oracle',
       sqlserver: 'SQLServer',
       db2: 'DB2',
-      file: 'Files'
+      file: 'files'
     }
 
     // Handle file:// protocol specially
     if (type === 'file') {
       return {
-        type: 'Files',
+        type: 'files',
         host: 'localhost',
         port: 0,
         username: 'local',

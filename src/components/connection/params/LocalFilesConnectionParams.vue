@@ -115,19 +115,17 @@ const connectionsStore = useConnectionsStore()
 // Direct store access - single source of truth
 const connection = computed(() => connectionsStore.currentConnection)
 
-// Computed property for folder path that uses storage_config
+// Computed property for folder path that uses spec.files.basePath
 const folderPath = computed({
-  get: () => connection.value?.storage_config?.uri || '',
+  get: () => connection.value?.spec?.files?.basePath || '',
   set: (value: string) => {
     if (connection.value) {
-      if (!connection.value.storage_config) {
-        connection.value.storage_config = {
-          provider: 'local',
-          uri: value
-        }
+      if (!connection.value.spec) {
+        connection.value.spec = { files: { basePath: value } }
+      } else if (!connection.value.spec.files) {
+        connection.value.spec.files = { basePath: value }
       } else {
-        connection.value.storage_config.uri = value
-        connection.value.storage_config.provider = 'local'
+        connection.value.spec.files.basePath = value
       }
     }
   }
@@ -142,12 +140,14 @@ const applyConnectionDefaults = (connectionType: string) => {
     connection.value.password = '' // Not needed for local files
     connection.value.database = '' // Not used for local files
 
-    // Initialize storage_config for new connections
-    if (!connection.value.storage_config && !isEdit.value) {
-      connection.value.storage_config = {
-        provider: 'local',
-        uri: ''
+    // Initialize spec.files for new connections
+    if (!connection.value.spec && !isEdit.value) {
+      connection.value.spec = { files: { basePath: '' } }
+    } else if (!connection.value.spec?.files && !isEdit.value) {
+      if (!connection.value.spec) {
+        connection.value.spec = {}
       }
+      connection.value.spec.files = { basePath: '' }
     }
 
     // Update name after applying defaults (for new connections only)

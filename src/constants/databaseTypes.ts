@@ -11,7 +11,6 @@ export const DATABASE_TYPES = {
   MYSQL: 'MySQL',
   SNOWFLAKE: 'Snowflake',
   FILES: 'Files',
-  LOCAL_FILES: 'LocalFiles',
   ORACLE: 'Oracle',
   SQL_SERVER: 'SQLServer',
   DB2: 'DB2',
@@ -39,7 +38,6 @@ export const DATABASE_TYPE_ALIASES = {
   mysql: DATABASE_TYPES.MYSQL,
   snowflake: DATABASE_TYPES.SNOWFLAKE,
   files: DATABASE_TYPES.FILES,
-  localfiles: DATABASE_TYPES.LOCAL_FILES,
   oracle: DATABASE_TYPES.ORACLE,
   sqlserver: DATABASE_TYPES.SQL_SERVER,
   mssql: DATABASE_TYPES.MSSQL,
@@ -82,7 +80,7 @@ export const NOSQL_DATABASES = [
 /**
  * File-based connections
  */
-export const FILE_BASED_CONNECTIONS = [DATABASE_TYPES.FILES, DATABASE_TYPES.LOCAL_FILES] as const
+export const FILE_BASED_CONNECTIONS = [DATABASE_TYPES.FILES] as const
 
 /**
  * Check if a database type is SQL-based

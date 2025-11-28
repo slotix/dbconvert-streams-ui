@@ -29,24 +29,81 @@ const showPassword = ref(false)
 const isCopied = ref(false)
 const isPathCopied = ref(false)
 
-// Check if this is an S3 connection (includes MinIO endpoints via S3 provider)
-const isS3Connection = computed(() => {
-  const provider = props.connection?.storage_config?.provider?.toLowerCase()
-  return provider === 's3'
+// Helper to get storage provider from spec
+const storageProvider = computed(() => {
+  const spec = props.connection?.spec
+  if (spec?.s3) return 's3'
+  if (spec?.gcs) return 'gcs'
+  if (spec?.azure) return 'azure'
+  if (spec?.files) return 'local' // FileConnectionSpec is only for local files
+  return null
 })
 
-// Check if this is a file connection (local files or anything with storage_config)
+// Check if this is an S3 connection
+const isS3Connection = computed(() => {
+  return storageProvider.value === 's3'
+})
+
+// Check if this is a file connection (files type or cloud storage)
 const isFileConnection = computed(() => {
   const type = props.connection?.type?.toLowerCase()
-  return type === 'files' || type === 'localfiles' || !!props.connection?.storage_config
+  return type === 'files' || !!storageProvider.value
+})
+
+// Get base path from spec
+const basePath = computed(() => {
+  const spec = props.connection?.spec
+  if (spec?.files) return spec.files.basePath
+  return ''
+})
+
+// Get endpoint from spec (S3 only, local files don't have endpoint)
+const storageEndpoint = computed(() => {
+  const spec = props.connection?.spec
+  if (spec?.s3) return spec.s3.endpoint
+  return ''
+})
+
+// Get region from spec (S3 only, local files don't have region)
+const storageRegion = computed(() => {
+  const spec = props.connection?.spec
+  if (spec?.s3) return spec.s3.region
+  return ''
 })
 
 // Check if connection has a path configured
 const hasPath = computed(() => {
-  return (
-    !!props.connection?.storage_config?.uri?.trim() ||
-    !!props.connection?.spec?.files?.basePath?.trim()
-  )
+  return !!basePath.value?.trim()
+})
+
+// Parse S3 URI to extract bucket and prefix
+// e.g., "s3://my-bucket/prefix/path" -> { bucket: "my-bucket", prefix: "prefix/path" }
+function parseS3Uri(uri: string | undefined): { bucket: string; prefix: string } {
+  if (!uri) return { bucket: '', prefix: '' }
+  const match = uri.match(/^s3:\/\/([^/]+)(?:\/(.*))?$/)
+  if (!match) return { bucket: '', prefix: '' }
+  return { bucket: match[1] || '', prefix: match[2] || '' }
+}
+
+// Computed S3 bucket and prefix from spec.s3.scope or spec.files.basePath
+const s3Bucket = computed(() => {
+  const spec = props.connection?.spec
+  if (spec?.s3?.scope?.bucket) return spec.s3.scope.bucket
+  // Try parsing from basePath if it's an S3 URI
+  if (spec?.files?.basePath) {
+    return parseS3Uri(spec.files.basePath).bucket
+  }
+  return ''
+})
+
+const s3Prefix = computed(() => {
+  const spec = props.connection?.spec
+  if (spec?.s3?.scope?.prefix) return spec.s3.scope.prefix
+  // Try parsing from basePath if it's an S3 URI
+  if (spec?.files?.basePath) {
+    return parseS3Uri(spec.files.basePath).prefix
+  }
+  return ''
 })
 
 // Filter files to show only supported formats
@@ -122,19 +179,22 @@ function copyConnectionString() {
 }
 
 async function copyFolderPath() {
-  // For S3 connections, copy the base URI without extra info
-  let pathToCopy = props.connection.storage_config?.uri
+  // Use spec.files.basePath or build S3 URI from spec.s3
+  let pathToCopy = basePath.value
 
-  // If no storage_config.uri, construct from s3Config
-  if (!pathToCopy && props.connection.s3Config?.bucket) {
-    const bucket = props.connection.s3Config.bucket
-    const prefix = props.connection.s3Config.prefix || ''
-    pathToCopy = `s3://${bucket}${prefix ? '/' + prefix : ''}`
+  // If S3 connection, build URI from spec.s3.scope
+  if (isS3Connection.value) {
+    const spec = props.connection?.spec
+    if (spec?.s3?.scope?.bucket) {
+      pathToCopy = `s3://${spec.s3.scope.bucket}${spec.s3.scope.prefix ? '/' + spec.s3.scope.prefix : ''}`
+    } else {
+      pathToCopy = 's3://'
+    }
   }
 
-  // If still no path, use the base s3://
+  // If no path, use fallback
   if (!pathToCopy) {
-    pathToCopy = 's3://'
+    pathToCopy = isS3Connection.value ? 's3://' : ''
   }
 
   try {
@@ -150,32 +210,30 @@ const createdDisplay = computed(() => {
   return formatDateTime(props.connection?.created || 0)
 })
 
-// Compute displayable S3 URI
+// Compute displayable S3 URI from spec.s3 or spec.files
 const displayS3URI = computed(() => {
-  const storageURI = props.connection.storage_config?.uri || ''
+  const spec = props.connection?.spec
 
-  // If URI is just "s3://", show more meaningful info
-  if (storageURI === 's3://') {
-    const endpoint =
-      props.connection.storage_config?.endpoint || props.connection.s3Config?.endpoint
-    const region = props.connection.storage_config?.region || props.connection.s3Config?.region
-
-    if (endpoint) {
-      return `s3://${endpoint} (All buckets)`
-    } else if (region) {
-      return `s3:// (All buckets in ${region})`
-    }
-    return 's3:// (All buckets)'
-  }
-
-  // If s3Config has bucket/prefix but storage_config doesn't, use that
-  if (!storageURI && props.connection.s3Config?.bucket) {
-    const bucket = props.connection.s3Config.bucket
-    const prefix = props.connection.s3Config.prefix || ''
+  // Build URI from S3 scope
+  if (spec?.s3?.scope?.bucket) {
+    const bucket = spec.s3.scope.bucket
+    const prefix = spec.s3.scope.prefix || ''
     return `s3://${bucket}${prefix ? '/' + prefix : ''}`
   }
 
-  return storageURI || 's3://'
+  // Try basePath from files spec
+  if (spec?.files?.basePath) {
+    return spec.files.basePath
+  }
+
+  // Show meaningful info for unscoped connections
+  if (storageEndpoint.value) {
+    return `s3://${storageEndpoint.value} (All buckets)`
+  } else if (storageRegion.value) {
+    return `s3:// (All buckets in ${storageRegion.value})`
+  }
+
+  return 's3:// (All buckets)'
 })
 </script>
 
@@ -242,49 +300,49 @@ const displayS3URI = computed(() => {
           <!-- S3 Configuration Grid -->
           <div class="grid grid-cols-2 gap-4">
             <!-- Endpoint -->
-            <div v-if="connection.storage_config?.endpoint || connection.s3Config?.endpoint">
+            <div v-if="storageEndpoint">
               <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
                 >Endpoint</label
               >
               <p class="mt-1 font-medium text-gray-900 dark:text-gray-100 truncate text-sm">
-                {{ connection.storage_config?.endpoint || connection.s3Config?.endpoint }}
+                {{ storageEndpoint }}
               </p>
             </div>
 
             <!-- Region -->
-            <div v-if="connection.storage_config?.region || connection.s3Config?.region">
+            <div v-if="storageRegion">
               <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
                 >Region</label
               >
               <p class="mt-1 font-medium text-gray-900 dark:text-gray-100 truncate text-sm">
-                {{ connection.storage_config?.region || connection.s3Config?.region }}
+                {{ storageRegion }}
               </p>
             </div>
 
-            <!-- Bucket (if specified) -->
-            <div v-if="connection.s3Config?.bucket">
+            <!-- Bucket (from spec.s3.scope or parsed from basePath) -->
+            <div v-if="s3Bucket">
               <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
                 >Bucket</label
               >
               <p class="mt-1 font-medium text-gray-900 dark:text-gray-100 truncate text-sm">
-                {{ connection.s3Config.bucket }}
+                {{ s3Bucket }}
               </p>
             </div>
 
-            <!-- Prefix (if specified) -->
-            <div v-if="connection.s3Config?.prefix">
+            <!-- Prefix (from spec.s3.scope or parsed from basePath) -->
+            <div v-if="s3Prefix">
               <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
                 >Prefix</label
               >
               <p class="mt-1 font-medium text-gray-900 dark:text-gray-100 truncate text-sm">
-                {{ connection.s3Config.prefix }}
+                {{ s3Prefix }}
               </p>
             </div>
           </div>
 
           <!-- Info message for unscoped connections -->
           <div
-            v-if="!connection.s3Config?.bucket"
+            v-if="!s3Bucket"
             class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg"
           >
             <p class="text-xs text-blue-700 dark:text-blue-300">
@@ -304,10 +362,10 @@ const displayS3URI = computed(() => {
             class="mt-1 flex items-start gap-2 rounded-lg bg-linear-to-r from-slate-50 to-gray-50 dark:from-gray-800 dark:to-gray-850 p-3 font-mono text-sm border border-gray-100 dark:border-gray-700"
           >
             <span class="flex-1 break-all text-gray-800 dark:text-gray-200 overflow-x-auto">
-              {{ connection.storage_config?.uri || 'No path configured' }}
+              {{ basePath || 'No path configured' }}
             </span>
             <button
-              v-if="connection.storage_config?.uri"
+              v-if="basePath"
               class="shrink-0 transition-colors"
               :class="
                 isPathCopied
@@ -333,11 +391,11 @@ const displayS3URI = computed(() => {
               {{ fileSummary }}
             </div>
             <div
-              v-else-if="hasPath || connection.s3Config?.bucket || isS3Connection"
+              v-else-if="hasPath || s3Bucket || isS3Connection"
               class="text-gray-500 dark:text-gray-400"
             >
               {{
-                isS3Connection && !connection.s3Config?.bucket
+                isS3Connection && !s3Bucket
                   ? 'Browse buckets to view files'
                   : 'No supported files found'
               }}

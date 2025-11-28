@@ -411,67 +411,44 @@ const updateConnectionName = () => {
 // Helper function to apply connection defaults for S3
 const applyConnectionDefaults = (_connectionType: string) => {
   if (connection.value) {
-    // S3 connections should have type="files" with storage_config.provider="s3"
+    // S3 connections should have type="files" with spec.s3
     connection.value.type = 'files'
 
     // Load existing S3 config if in edit mode
     if (isEdit.value) {
       isLoadingEditData.value = true
 
-      // Try to load from storage_config first (backend format)
-      if (connection.value.storage_config) {
-        const sc = connection.value.storage_config
-        region.value = sc.region || 'us-east-1'
-        endpoint.value = sc.endpoint || ''
+      // Load from spec.s3 (new format)
+      const s3Spec = connection.value.spec?.s3
+      if (s3Spec) {
+        region.value = s3Spec.region || 'us-east-1'
+        endpoint.value = s3Spec.endpoint || ''
 
         // Detect provider preset from endpoint
-        if (sc.endpoint?.includes('localhost') || sc.endpoint?.includes('127.0.0.1')) {
+        if (s3Spec.endpoint?.includes('localhost') || s3Spec.endpoint?.includes('127.0.0.1')) {
           selectedProvider.value = 'MinIO'
-        } else if (sc.endpoint?.includes('digitaloceanspaces')) {
+        } else if (s3Spec.endpoint?.includes('digitaloceanspaces')) {
           selectedProvider.value = 'DigitalOcean Spaces'
-        } else if (sc.endpoint?.includes('wasabi')) {
+        } else if (s3Spec.endpoint?.includes('wasabi')) {
           selectedProvider.value = 'Wasabi'
-        } else if (!sc.endpoint) {
+        } else if (!s3Spec.endpoint) {
           selectedProvider.value = 'AWS S3'
         } else {
           selectedProvider.value = 'Custom'
         }
 
-        // Note: storage_config.uri is now a LOCAL path (e.g., "/tmp/dbconvert-s3-staging")
-        // not an S3 URI. Bucket/prefix are specified at stream level, not connection level.
-        // For backward compatibility with old connections that had s3:// URIs,
-        // we extract bucket/prefix but won't save them back to the connection.
-        if (sc.uri && sc.uri.startsWith('s3://')) {
-          const uriPath = sc.uri.substring(5) // Remove "s3://"
-          const parts = uriPath.split('/')
-          bucket.value = parts[0] || ''
-          prefix.value = parts.slice(1).join('/') || ''
-        }
+        // Load scope (bucket/prefix)
+        bucket.value = s3Spec.scope?.bucket || ''
+        prefix.value = s3Spec.scope?.prefix || ''
 
         // Determine credential source
-        credentialSource.value = sc.credentials ? 'static' : 'aws'
+        credentialSource.value = s3Spec.credentials ? 'static' : 'aws'
 
         // Load credentials
-        if (sc.credentials) {
-          accessKeyId.value = sc.credentials.aws_access_key || connection.value.username || ''
-          secretAccessKey.value = sc.credentials.aws_secret_key || connection.value.password || ''
-          sessionToken.value = sc.credentials.aws_session_token || ''
-        }
-      } else if (connection.value.s3Config) {
-        // Fall back to s3Config (UI format)
-        credentialSource.value = connection.value.s3Config.credentialSource || 'static'
-        region.value = connection.value.s3Config.region || 'us-east-1'
-        endpoint.value = connection.value.s3Config.endpoint || ''
-        urlStyle.value = connection.value.s3Config.urlStyle || 'auto'
-        useSSL.value = connection.value.s3Config.useSSL !== false
-        bucket.value = connection.value.s3Config.bucket || ''
-        prefix.value = connection.value.s3Config.prefix || ''
-        sessionToken.value = connection.value.s3Config.sessionToken || ''
-
-        // Load credentials if static
-        if (credentialSource.value === 'static') {
-          accessKeyId.value = connection.value.username || ''
-          secretAccessKey.value = connection.value.password || ''
+        if (s3Spec.credentials) {
+          accessKeyId.value = s3Spec.credentials.accessKey || connection.value.username || ''
+          secretAccessKey.value = s3Spec.credentials.secretKey || connection.value.password || ''
+          sessionToken.value = s3Spec.credentials.sessionToken || ''
         }
       }
 
@@ -496,41 +473,33 @@ const applyConnectionDefaults = (_connectionType: string) => {
 const syncS3ConfigToConnection = () => {
   if (!connection.value) return
 
-  // Build the S3 URI from bucket/prefix if specified
-  // URI format: s3://bucket/prefix or s3:// if no bucket scoped (allows browsing all buckets)
-  const s3Uri = bucket.value
-    ? `s3://${bucket.value}${prefix.value ? '/' + prefix.value : ''}`
-    : 's3://'
-
-  // Build storage credentials if using static credentials
+  // Build S3 credentials if using static credentials
   const credentials =
     credentialSource.value === 'static' && accessKeyId.value
       ? {
-          aws_access_key: accessKeyId.value,
-          aws_secret_key: secretAccessKey.value,
-          aws_session_token: sessionToken.value || undefined
+          accessKey: accessKeyId.value,
+          secretKey: secretAccessKey.value,
+          sessionToken: sessionToken.value || undefined
         }
       : undefined
 
-  // Build storage config for backend
-  connection.value.storage_config = {
-    provider: 's3' as const,
-    uri: s3Uri,
-    region: region.value,
-    endpoint: endpoint.value || undefined,
-    credentials: credentials
-  }
+  // Build S3 scope from bucket/prefix if specified
+  const scope =
+    bucket.value || prefix.value
+      ? {
+          bucket: bucket.value || undefined,
+          prefix: prefix.value || undefined
+        }
+      : undefined
 
-  // Keep S3 config for UI state management
-  connection.value.s3Config = {
-    credentialSource: credentialSource.value,
-    endpoint: endpoint.value || undefined,
-    region: region.value,
-    urlStyle: urlStyle.value,
-    useSSL: useSSL.value,
-    bucket: bucket.value || undefined,
-    prefix: prefix.value || undefined,
-    sessionToken: sessionToken.value || undefined
+  // Build spec.s3 for backend (new format)
+  connection.value.spec = {
+    s3: {
+      region: region.value,
+      endpoint: endpoint.value || undefined,
+      credentials: credentials,
+      scope: scope
+    }
   }
 
   // Map credentials to username/password fields for backward compatibility
@@ -556,8 +525,6 @@ const syncS3ConfigToConnection = () => {
     connection.value.host = endpointValue
     connection.value.port = useSSL.value ? 443 : 80
   }
-
-  // S3 URI is now stored in storage_config.uri
 }
 
 // Watch for connection type changes and update defaults (new connections)

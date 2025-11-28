@@ -102,20 +102,19 @@ const targetFileFormat = computed<FileFormat | undefined>(() => {
 })
 
 const targetRootPath = computed(() => {
-  const storageConfig = props.target.storage_config
+  const spec = props.target.spec
   const s3UploadConfig = props.stream.target?.options?.s3UploadConfig
 
-  if (storageConfig?.provider === 's3') {
-    const parsedUri = parseS3Uri(storageConfig.uri)
-    const bucket = s3UploadConfig?.bucket || props.target.s3Config?.bucket || parsedUri.bucket
-    const prefix = s3UploadConfig?.prefix || props.target.s3Config?.prefix || parsedUri.prefix
+  if (spec?.s3) {
+    const bucket = s3UploadConfig?.bucket || spec.s3.scope?.bucket || ''
+    const prefix = s3UploadConfig?.prefix || spec.s3.scope?.prefix || ''
     const base = buildS3BasePath(bucket, prefix)
     if (base) return base
   }
 
-  // For local file connections, use storage_config.uri or spec.files.basePath from the CONNECTION
+  // For local file connections, use spec.files.basePath from the CONNECTION
   // Do NOT use the stream's target.spec.files.outputDirectory as it contains the absolute path
-  const storagePath = storageConfig?.uri || props.target.spec?.files?.basePath || ''
+  const storagePath = spec?.files?.basePath || ''
   return storagePath
 })
 

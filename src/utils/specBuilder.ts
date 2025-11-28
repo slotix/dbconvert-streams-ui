@@ -325,6 +325,7 @@ export function buildSnowflakeTargetSpec(
 
 /**
  * Safely get the host from a connection spec
+ * For local file connections, uses spec.files.basePath
  */
 export function getConnectionHost(connection: Connection | undefined): string {
   if (!connection?.spec) return ''
@@ -349,8 +350,9 @@ export function getConnectionHost(connection: Connection | undefined): string {
     return connection.spec.azure.accountName || ''
   }
 
-  if (connection.spec.files) {
-    return connection.spec.files.basePath || ''
+  // For local file connections, use spec.files.basePath
+  if (connection.spec.files?.basePath) {
+    return connection.spec.files.basePath
   }
 
   return ''

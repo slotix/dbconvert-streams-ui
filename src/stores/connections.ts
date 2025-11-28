@@ -30,7 +30,8 @@ const buildDatabaseSpec: ConnectionSpecFactory = () => ({
   }
 })
 
-const buildFilesSpec: ConnectionSpecFactory = () => ({
+// File-based connections use spec.files (local files only)
+const buildFileSpec: ConnectionSpecFactory = () => ({
   files: {
     basePath: ''
   }
@@ -46,8 +47,7 @@ const buildS3Spec: ConnectionSpecFactory = () => ({
 const specFactories: Record<string, ConnectionSpecFactory> = {
   database: buildDatabaseSpec,
   snowflake: buildDatabaseSpec,
-  files: buildFilesSpec,
-  localfiles: buildFilesSpec,
+  files: buildFileSpec,
   s3: buildS3Spec
 }
 
@@ -342,11 +342,8 @@ export const useConnectionsStore = defineStore('connections', {
     // Helper to check if a connection supports multi-schema operations
     supportsMultiSchema(connectionId: string): boolean {
       const connection = this.connections.find((conn) => conn.id === connectionId)
-      return (
-        connection?.type === 'PostgreSQL' ||
-        connection?.type === 'SQL Server' ||
-        connection?.type === 'Oracle'
-      )
+      const type = connection?.type?.toLowerCase()
+      return type === 'postgresql' || type === 'sqlserver' || type === 'oracle'
     },
     async forceRefreshConnections() {
       await this.refreshConnections()

@@ -61,7 +61,7 @@ export function useExplorerState() {
     if (!c) return null
 
     // For file connections, show connection name instead of host:port
-    if (c.type === 'localfiles' || c.type === 'files') {
+    if (c.type === 'files') {
       return c.name
     }
 

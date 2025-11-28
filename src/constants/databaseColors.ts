@@ -385,19 +385,11 @@ export const DATABASE_ICON_COLORS: Record<string, IconColorScheme> = {
     iconBg: 'bg-gray-50 dark:bg-gray-500/10',
     iconTint: 'brightness-95 saturate-50 dark:invert'
   },
-  [DATABASE_TYPES.LOCAL_FILES]: {
-    iconBg: 'bg-gray-50 dark:bg-gray-500/10',
-    iconTint: 'brightness-95 saturate-50 dark:invert'
-  },
   file: {
     iconBg: 'bg-gray-50 dark:bg-gray-500/10',
     iconTint: 'brightness-95 saturate-50 dark:invert'
   },
   files: {
-    iconBg: 'bg-gray-50 dark:bg-gray-500/10',
-    iconTint: 'brightness-95 saturate-50 dark:invert'
-  },
-  localfiles: {
     iconBg: 'bg-gray-50 dark:bg-gray-500/10',
     iconTint: 'brightness-95 saturate-50 dark:invert'
   }

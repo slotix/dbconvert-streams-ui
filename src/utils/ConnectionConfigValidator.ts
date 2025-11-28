@@ -23,17 +23,7 @@ export interface ValidationResult {
 const IMMUTABLE_FIELDS = ['id', 'created'] as const
 
 // Valid connection types
-const VALID_CONNECTION_TYPES = [
-  'mysql',
-  'postgresql',
-  'postgres',
-  'snowflake',
-  'files',
-  'localfiles'
-] as const
-
-// Valid storage providers
-const VALID_STORAGE_PROVIDERS = ['local', 's3', 'gcs', 'azure', 'sftp', 'ftp'] as const
+const VALID_CONNECTION_TYPES = ['mysql', 'postgresql', 'postgres', 'snowflake', 'files'] as const
 
 // Valid SSL modes
 const VALID_SSL_MODES = ['disabled', 'require', 'verify-ca', 'verify-full'] as const
@@ -71,7 +61,9 @@ export function validateConnectionConfig(
 
   // Type-specific validation
   const connType = (cfg.type as string)?.toLowerCase()
-  if (connType === 'files' || connType === 'localfiles' || cfg.storage_config) {
+  const spec = cfg.spec as Record<string, unknown> | undefined
+  const hasFileSpec = spec?.files || spec?.s3 || spec?.gcs || spec?.azure
+  if (connType === 'files' || hasFileSpec) {
     validateFileConnection(cfg, errors)
   } else {
     validateDatabaseConnection(cfg, errors)
@@ -157,78 +149,41 @@ function validateDatabaseConnection(cfg: Record<string, unknown>, errors: Valida
 }
 
 function validateFileConnection(cfg: Record<string, unknown>, errors: ValidationError[]): void {
-  const storageConfig = cfg.storage_config as Record<string, unknown> | undefined
+  const spec = cfg.spec as Record<string, unknown> | undefined
+  const filesSpec = spec?.files as Record<string, unknown> | undefined
+  const s3Spec = spec?.s3 as Record<string, unknown> | undefined
+  const gcsSpec = spec?.gcs as Record<string, unknown> | undefined
+  const azureSpec = spec?.azure as Record<string, unknown> | undefined
 
-  if (storageConfig) {
-    // Provider validation
-    if (storageConfig.provider !== undefined) {
-      if (
-        typeof storageConfig.provider !== 'string' ||
-        !VALID_STORAGE_PROVIDERS.includes(
-          storageConfig.provider.toLowerCase() as (typeof VALID_STORAGE_PROVIDERS)[number]
-        )
-      ) {
-        errors.push({
-          path: 'storage_config.provider',
-          message: `Provider must be one of: ${VALID_STORAGE_PROVIDERS.join(', ')}`
-        })
-      }
-    }
-
-    // URI validation
-    if (storageConfig.uri !== undefined && typeof storageConfig.uri !== 'string') {
-      errors.push({ path: 'storage_config.uri', message: 'URI must be a string' })
-    }
-
-    // Region validation
-    if (storageConfig.region !== undefined && typeof storageConfig.region !== 'string') {
-      errors.push({ path: 'storage_config.region', message: 'Region must be a string' })
-    }
-
-    // Endpoint validation
-    if (storageConfig.endpoint !== undefined && typeof storageConfig.endpoint !== 'string') {
-      errors.push({ path: 'storage_config.endpoint', message: 'Endpoint must be a string' })
+  // Validate files spec (local files only)
+  if (filesSpec) {
+    // BasePath validation - required for local files
+    if (filesSpec.basePath !== undefined && typeof filesSpec.basePath !== 'string') {
+      errors.push({ path: 'spec.files.basePath', message: 'BasePath must be a string' })
     }
   }
 
-  // S3 config validation
-  const s3Config = cfg.s3Config as Record<string, unknown> | undefined
-  if (s3Config) {
-    validateS3Config(s3Config, errors)
-  }
-}
-
-function validateS3Config(s3Config: Record<string, unknown>, errors: ValidationError[]): void {
-  // Credential source validation
-  if (s3Config.credentialSource !== undefined) {
-    if (!['aws', 'static'].includes(s3Config.credentialSource as string)) {
-      errors.push({
-        path: 's3Config.credentialSource',
-        message: "Credential source must be 'aws' or 'static'"
-      })
+  // Validate S3 spec
+  if (s3Spec) {
+    if (s3Spec.region !== undefined && typeof s3Spec.region !== 'string') {
+      errors.push({ path: 'spec.s3.region', message: 'Region must be a string' })
+    }
+    if (s3Spec.endpoint !== undefined && typeof s3Spec.endpoint !== 'string') {
+      errors.push({ path: 'spec.s3.endpoint', message: 'Endpoint must be a string' })
     }
   }
 
-  // URL style validation
-  if (s3Config.urlStyle !== undefined) {
-    if (!['auto', 'path', 'virtual'].includes(s3Config.urlStyle as string)) {
-      errors.push({
-        path: 's3Config.urlStyle',
-        message: "URL style must be 'auto', 'path', or 'virtual'"
-      })
+  // Validate GCS spec
+  if (gcsSpec) {
+    if (gcsSpec.region !== undefined && typeof gcsSpec.region !== 'string') {
+      errors.push({ path: 'spec.gcs.region', message: 'Region must be a string' })
     }
   }
 
-  // Boolean fields
-  if (s3Config.useSSL !== undefined && typeof s3Config.useSSL !== 'boolean') {
-    errors.push({ path: 's3Config.useSSL', message: 'useSSL must be a boolean' })
-  }
-
-  // String fields
-  const stringFields = ['endpoint', 'region', 'bucket', 'prefix', 'sessionToken']
-  for (const field of stringFields) {
-    if (s3Config[field] !== undefined && typeof s3Config[field] !== 'string') {
-      errors.push({ path: `s3Config.${field}`, message: `${field} must be a string` })
+  // Validate Azure spec
+  if (azureSpec) {
+    if (azureSpec.accountName !== undefined && typeof azureSpec.accountName !== 'string') {
+      errors.push({ path: 'spec.azure.accountName', message: 'Account name must be a string' })
     }
   }
 }

@@ -439,20 +439,20 @@ function isFileConnection(connectionId: string): boolean {
   const connection = connectionsStore.connections.find((conn) => conn.id === connectionId)
   if (connection) {
     const type = connection.type?.toLowerCase() || ''
-    return type === 'files' || type === 'localfiles'
+    return type === 'files'
   }
 
   // Fallback: try to get from recent connections data
   const recentConn = recentConnectionsRaw.value.find((conn) => conn.id === connectionId)
   const type = recentConn?.type?.toLowerCase() || ''
-  return type === 'files' || type === 'localfiles'
+  return type === 'files'
 }
 
 function getFileConnectionPath(connectionId: string): string {
   const connection = connectionsStore.connections.find((conn) => conn.id === connectionId)
   if (connection) {
-    // For file connections, use storage_config.uri or fallback to host
-    let path = connection.storage_config?.uri || getHostFromSpec(connection) || ''
+    // For file connections, use spec.files.basePath or fallback to host
+    let path = connection.spec?.files?.basePath || getHostFromSpec(connection) || ''
     // Truncate long paths
     if (path.length > 40) {
       // Try to show the end of the path (most relevant part)

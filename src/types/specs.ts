@@ -61,10 +61,6 @@ export interface AzureConnectionSpec {
   scope?: AzureConnectionScope
 }
 
-export interface FileConnectionSpec {
-  basePath: string
-}
-
 export interface SnowflakeConnectionSpec {
   account: string // e.g., xy12345.us-east-1
   username: string
@@ -75,14 +71,20 @@ export interface SnowflakeConnectionSpec {
   role?: string
 }
 
+// File connection spec - for local files only
+// Cloud storage (S3, GCS, Azure) uses their dedicated spec types
+export interface FileConnectionSpec {
+  basePath: string // Local filesystem path: /data/files, /tmp/exports, etc.
+}
+
 // Discriminated union - exactly ONE of these should be present
 export interface ConnectionSpec {
   database?: DatabaseConnectionSpec
   s3?: S3ConnectionSpec
   gcs?: GCSConnectionSpec
   azure?: AzureConnectionSpec
-  files?: FileConnectionSpec
   snowflake?: SnowflakeConnectionSpec
+  files?: FileConnectionSpec
 }
 
 // ===== Target Specs =====
@@ -226,8 +228,8 @@ export function getConnectionSpecType(spec: ConnectionSpec | undefined): string 
   if (spec.s3) return 's3'
   if (spec.gcs) return 'gcs'
   if (spec.azure) return 'azure'
-  if (spec.files) return 'files'
   if (spec.snowflake) return 'snowflake'
+  if (spec.files) return 'files'
   return null
 }
 
@@ -245,7 +247,7 @@ export function getTargetSpecType(spec: TargetSpec | undefined): string | null {
 
 // Validate that only one spec type is present
 export function validateConnectionSpec(spec: ConnectionSpec): boolean {
-  const types = [spec.database, spec.s3, spec.gcs, spec.azure, spec.files, spec.snowflake]
+  const types = [spec.database, spec.s3, spec.gcs, spec.azure, spec.snowflake, spec.files]
   const nonNullCount = types.filter((t) => t !== undefined).length
   return nonNullCount === 1
 }

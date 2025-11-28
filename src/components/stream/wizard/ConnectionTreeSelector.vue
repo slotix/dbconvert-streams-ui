@@ -82,7 +82,7 @@
                 >
                   {{
                     getFileDirectory(connection.id) ||
-                    connection.storage_config?.uri ||
+                    connection.spec?.files?.basePath ||
                     'No folder configured'
                   }}
                 </div>
@@ -274,6 +274,10 @@ function getFileDirectory(connectionId: string): string {
   // For file connections, the path is stored in spec.files.basePath
   // getConnectionHost returns this for file connections
   const connection = getConnectionById(connectionId)
+  // Try spec.files.basePath first
+  if (connection?.spec?.files?.basePath) {
+    return connection.spec.files.basePath
+  }
   return getConnectionHost(connection)
 }
 

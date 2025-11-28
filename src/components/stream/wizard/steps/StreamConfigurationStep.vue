@@ -332,17 +332,17 @@ const tableCount = computed(() => {
 const isFileTarget = computed(() => {
   const targetId = currentStreamConfig.value?.target?.id
   if (!targetId) return false
-  // Check connection type (local files)
+  // Check connection type (local files via spec.files)
   const conn = connectionsStore.connectionByID(targetId)
-  return conn?.type?.toLowerCase() === 'files' && conn.storage_config?.provider === 'local'
+  return conn?.type?.toLowerCase() === 'files' && !!conn.spec?.files
 })
 
 const isS3Target = computed(() => {
   const targetId = currentStreamConfig.value?.target?.id
   if (!targetId) return false
-  // Check if storage provider is S3
+  // Check if storage is S3 (via spec.s3)
   const conn = connectionsStore.connectionByID(targetId)
-  return conn?.type?.toLowerCase() === 'files' && conn.storage_config?.provider === 's3'
+  return conn?.type?.toLowerCase() === 'files' && !!conn.spec?.s3
 })
 
 // Custom queries
