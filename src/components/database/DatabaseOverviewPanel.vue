@@ -2,6 +2,7 @@
 import { onMounted, watch, computed, ref, nextTick } from 'vue'
 import { useDatabaseOverviewStore } from '@/stores/databaseOverview'
 import { useConnectionsStore } from '@/stores/connections'
+import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { useDatabaseCapabilities } from '@/composables/useDatabaseCapabilities'
 import { formatDataSize } from '@/utils/formats'
 import BaseButton from '@/components/base/BaseButton.vue'
@@ -31,6 +32,7 @@ const emit = defineEmits<{
 
 const overviewStore = useDatabaseOverviewStore()
 const connectionsStore = useConnectionsStore()
+const navigationStore = useExplorerNavigationStore()
 
 // Schema creation state
 const newSchemaName = ref('')
@@ -109,8 +111,53 @@ watch(
   { deep: true }
 )
 
-const topSize = computed(() => (overview.value?.allTablesBySize || []).slice(0, 10))
-const topRows = computed(() => (overview.value?.allTablesByRows || []).slice(0, 10))
+// Get set of system schema names for filtering
+const systemSchemaNames = computed(() => {
+  const schemas = navigationStore.getFilteredSchemas(props.connectionId, props.database)
+  const allSchemas = navigationStore
+    .getDatabasesRaw(props.connectionId)
+    ?.find((db) => db.name === props.database)?.schemas
+  if (!schemas || !allSchemas) return new Set<string>()
+
+  // Find schemas that are in allSchemas but NOT in filtered schemas (those are system)
+  const filteredNames = new Set(schemas.map((s) => s.name))
+  const systemNames = new Set<string>()
+  for (const schema of allSchemas) {
+    if (!filteredNames.has(schema.name)) {
+      systemNames.add(schema.name)
+    }
+  }
+  return systemNames
+})
+
+// Filter function for tables - checks if table belongs to a system schema
+function isSystemTable(tableName: string): boolean {
+  // Table names can be "schema.table" or just "table"
+  const dotIndex = tableName.indexOf('.')
+  if (dotIndex > 0) {
+    const schemaName = tableName.substring(0, dotIndex)
+    return systemSchemaNames.value.has(schemaName)
+  }
+  return false
+}
+
+// Filter tables based on showSystemObjects setting
+const topSize = computed(() => {
+  const allTables = overview.value?.allTablesBySize || []
+  const filtered = navigationStore.showSystemObjects
+    ? allTables
+    : allTables.filter((t) => !isSystemTable(t.name))
+  return filtered.slice(0, 10)
+})
+
+const topRows = computed(() => {
+  const allTables = overview.value?.allTablesByRows || []
+  const filtered = navigationStore.showSystemObjects
+    ? allTables
+    : allTables.filter((t) => !isSystemTable(t.name))
+  return filtered.slice(0, 10)
+})
+
 const counts = computed(() => overview.value?.counts)
 const activity = computed(() => overview.value?.activity)
 
@@ -218,261 +265,270 @@ async function handleCreateSchema() {
     <div v-else-if="overview" class="grid grid-cols-1 md:grid-cols-6 gap-4">
       <!-- Essentials -->
       <div
-        class="group bg-white dark:bg-gray-900/40 ring-1 ring-slate-200/70 dark:ring-gray-800 rounded-xl p-4 md:col-span-2 hover:shadow-lg dark:hover:shadow-gray-900/40 hover:ring-slate-300 dark:hover:ring-gray-600 transition-all duration-200"
+        class="bg-slate-50 dark:bg-gray-800/50 rounded-xl p-4 ring-1 ring-slate-200/70 dark:ring-gray-700 md:col-span-2"
       >
-        <div class="flex items-center justify-between mb-3">
-          <div class="flex items-center gap-2">
-            <div
-              class="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg group-hover:bg-linear-to-br group-hover:from-blue-100 group-hover:to-teal-100 dark:group-hover:from-blue-900/30 dark:group-hover:to-teal-900/30 transition-all duration-200"
-            >
-              <CircleStackIcon class="h-4 w-4 text-blue-600 dark:text-blue-400" />
-            </div>
-            <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Essentials</span>
+        <div class="flex items-center gap-2 mb-3">
+          <div class="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+            <CircleStackIcon class="h-4 w-4 text-blue-600 dark:text-blue-400" />
           </div>
-          <span
-            class="inline-flex items-center text-xs px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium ring-1 ring-inset ring-slate-200 dark:ring-slate-700"
-            >{{ overview.engine }} {{ overview.version }}</span
-          >
+          <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Essentials</span>
         </div>
-        <div class="mt-3 text-sm text-gray-700 dark:text-gray-300 space-y-2">
-          <div v-if="overview.encoding" class="flex justify-between items-center">
-            <span class="text-gray-600 dark:text-gray-400">Encoding:</span>
-            <span class="font-semibold text-gray-900 dark:text-gray-100">{{
-              overview.encoding
-            }}</span>
-          </div>
-          <div v-if="overview.collation" class="flex justify-between items-center">
-            <span class="text-gray-600 dark:text-gray-400">Collation:</span>
-            <span class="font-semibold text-gray-900 dark:text-gray-100">{{
-              overview.collation
-            }}</span>
-          </div>
-          <div class="flex justify-between items-center">
-            <span class="text-gray-600 dark:text-gray-400">Size:</span>
+
+        <div class="space-y-3">
+          <!-- Engine/Version Badge -->
+          <div class="flex items-center gap-2">
             <span
-              class="font-semibold text-gray-900 dark:text-gray-100"
-              :title="
-                typeof sizeBytes === 'number'
-                  ? Intl.NumberFormat().format(sizeBytes || 0) + ' bytes'
-                  : ''
+              class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize"
+              :class="
+                overview.engine === 'postgres'
+                  ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
+                  : 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300'
               "
-              >{{ sizeDisplay }}</span
             >
+              {{ overview.engine === 'postgres' ? 'PostgreSQL' : 'MySQL' }}
+            </span>
+            <span class="text-xs text-gray-500 dark:text-gray-400">{{ overview.version }}</span>
           </div>
-          <div class="flex justify-between items-center">
-            <span class="text-gray-600 dark:text-gray-400">Tables:</span>
-            <span class="font-semibold text-gray-900 dark:text-gray-100">{{
-              counts?.tables ?? '—'
-            }}</span>
-          </div>
-          <div class="flex justify-between items-center">
-            <span class="text-gray-600 dark:text-gray-400">Views:</span>
-            <span class="font-semibold text-gray-900 dark:text-gray-100">{{
-              counts?.views ?? '—'
-            }}</span>
-          </div>
-          <div v-if="typeof counts?.schemas === 'number'" class="flex justify-between items-center">
-            <span class="text-gray-600 dark:text-gray-400">Schemas:</span>
-            <span class="font-semibold text-gray-900 dark:text-gray-100">{{ counts.schemas }}</span>
+
+          <!-- Stats Grid -->
+          <div class="grid grid-cols-2 gap-2">
+            <div v-if="overview.encoding">
+              <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+                >Encoding</label
+              >
+              <p class="mt-0.5 font-semibold text-gray-900 dark:text-gray-100 text-sm">
+                {{ overview.encoding }}
+              </p>
+            </div>
+            <div v-if="overview.collation">
+              <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+                >Collation</label
+              >
+              <p
+                class="mt-0.5 font-semibold text-gray-900 dark:text-gray-100 text-sm truncate"
+                :title="overview.collation"
+              >
+                {{ overview.collation }}
+              </p>
+            </div>
+            <div>
+              <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+                >Size</label
+              >
+              <p
+                class="mt-0.5 font-semibold text-gray-900 dark:text-gray-100 text-base"
+                :title="
+                  typeof sizeBytes === 'number'
+                    ? Intl.NumberFormat().format(sizeBytes || 0) + ' bytes'
+                    : ''
+                "
+              >
+                {{ sizeDisplay }}
+              </p>
+            </div>
+            <div>
+              <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+                >Tables</label
+              >
+              <p class="mt-0.5 font-semibold text-gray-900 dark:text-gray-100 text-base">
+                {{ counts?.tables ?? '—' }}
+              </p>
+            </div>
+            <div>
+              <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+                >Views</label
+              >
+              <p class="mt-0.5 font-semibold text-gray-900 dark:text-gray-100 text-base">
+                {{ counts?.views ?? '—' }}
+              </p>
+            </div>
+            <div v-if="typeof counts?.schemas === 'number'">
+              <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+                >Schemas</label
+              >
+              <p class="mt-0.5 font-semibold text-gray-900 dark:text-gray-100 text-base">
+                {{ counts.schemas }}
+              </p>
+            </div>
           </div>
         </div>
       </div>
 
       <!-- CDC readiness -->
       <div
-        class="group bg-white dark:bg-gray-900/40 ring-1 ring-slate-200/70 dark:ring-gray-800 rounded-xl p-4 md:col-span-2 hover:shadow-lg dark:hover:shadow-gray-900/40 hover:ring-slate-300 dark:hover:ring-gray-600 transition-all duration-200"
+        class="bg-slate-50 dark:bg-gray-800/50 rounded-xl p-4 ring-1 ring-slate-200/70 dark:ring-gray-700 md:col-span-2"
       >
         <div class="flex items-center justify-between mb-3">
           <div class="flex items-center gap-2">
-            <div
-              class="p-2 bg-teal-50 dark:bg-teal-900/20 rounded-lg group-hover:bg-linear-to-br group-hover:from-teal-100 group-hover:to-blue-100 dark:group-hover:from-teal-900/30 dark:group-hover:to-blue-900/30 transition-all duration-200"
-            >
+            <div class="p-1.5 bg-teal-100 dark:bg-teal-900/30 rounded-lg">
               <SignalIcon class="h-4 w-4 text-teal-600 dark:text-teal-400" />
             </div>
             <span class="text-sm font-semibold text-gray-700 dark:text-gray-300"
               >CDC readiness</span
             >
           </div>
+          <!-- Status Badge -->
           <span
             v-if="overview.engine === 'mysql'"
-            class="inline-flex items-center text-xs px-2 py-1 rounded-md font-medium ring-1 ring-inset shadow-sm"
+            class="inline-flex items-center text-xs px-2 py-0.5 rounded font-medium"
             :class="{
-              'bg-green-50 text-green-700 ring-green-600/20 dark:bg-green-900/40 dark:text-green-200 dark:ring-green-500/40':
+              'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300':
                 overview.health?.binlog?.enabled &&
                 overview.health?.binlog?.format === 'ROW' &&
                 overview.health?.binlog?.rowImage === 'FULL',
-              'bg-amber-50 text-amber-700 ring-amber-600/20 dark:bg-amber-900/40 dark:text-amber-200 dark:ring-amber-500/40':
+              'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300':
                 overview.health?.binlog?.enabled &&
                 (overview.health?.binlog?.format !== 'ROW' ||
                   overview.health?.binlog?.rowImage !== 'FULL'),
-              'bg-red-50 text-red-700 ring-red-600/20 dark:bg-red-900/40 dark:text-red-200 dark:ring-red-500/40':
+              'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300':
                 !overview.health?.binlog?.enabled
             }"
           >
-            <span
-              class="mr-1.5 h-1.5 w-1.5 rounded-full"
-              :class="{
-                'bg-green-600 dark:bg-green-400':
-                  overview.health?.binlog?.enabled &&
-                  overview.health?.binlog?.format === 'ROW' &&
-                  overview.health?.binlog?.rowImage === 'FULL',
-                'bg-amber-600 dark:bg-amber-400':
-                  overview.health?.binlog?.enabled &&
-                  (overview.health?.binlog?.format !== 'ROW' ||
-                    overview.health?.binlog?.rowImage !== 'FULL'),
-                'bg-red-600 dark:bg-red-400': !overview.health?.binlog?.enabled
-              }"
-            ></span>
-            {{ overview.health?.binlog?.enabled ? 'Enabled' : 'Not enabled' }}
+            {{ overview.health?.binlog?.enabled ? 'enabled' : 'disabled' }}
           </span>
           <span
             v-else-if="overview.engine === 'postgres'"
-            class="inline-flex items-center text-xs px-2 py-1 rounded-md font-medium ring-1 ring-inset shadow-sm"
+            class="inline-flex items-center text-xs px-2 py-0.5 rounded font-medium"
             :class="{
-              'bg-green-50 text-green-700 ring-green-600/20 dark:bg-green-900/40 dark:text-green-200 dark:ring-green-500/40':
+              'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300':
                 overview.health?.wal?.level === 'logical',
-              'bg-red-50 text-red-700 ring-red-600/20 dark:bg-red-900/40 dark:text-red-200 dark:ring-red-500/40':
+              'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300':
                 overview.health?.wal?.level !== 'logical'
             }"
           >
-            <span
-              class="mr-1.5 h-1.5 w-1.5 rounded-full"
-              :class="{
-                'bg-green-600 dark:bg-green-400': overview.health?.wal?.level === 'logical',
-                'bg-red-600 dark:bg-red-400': overview.health?.wal?.level !== 'logical'
-              }"
-            ></span>
             {{ overview.health?.wal?.level || 'unknown' }}
           </span>
         </div>
-        <div class="mt-3 text-sm text-gray-700 dark:text-gray-300 space-y-2">
+
+        <div class="grid grid-cols-2 gap-2">
           <template v-if="overview.engine === 'mysql'">
-            <div class="flex justify-between items-center">
-              <span class="text-gray-600 dark:text-gray-400">Binary log:</span>
-              <span class="font-semibold text-gray-900 dark:text-gray-100">{{
-                overview.health?.binlog?.enabled ? 'ON' : 'OFF'
-              }}</span>
+            <div>
+              <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+                >Binary log</label
+              >
+              <p class="mt-0.5 font-semibold text-gray-900 dark:text-gray-100 text-sm">
+                {{ overview.health?.binlog?.enabled ? 'ON' : 'OFF' }}
+              </p>
             </div>
-            <div v-if="overview.health?.binlog?.format" class="flex justify-between items-center">
-              <span class="text-gray-600 dark:text-gray-400">Format:</span>
-              <span class="font-semibold text-gray-900 dark:text-gray-100">{{
-                overview.health?.binlog?.format
-              }}</span>
+            <div v-if="overview.health?.binlog?.format">
+              <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+                >Format</label
+              >
+              <p class="mt-0.5 font-semibold text-gray-900 dark:text-gray-100 text-sm">
+                {{ overview.health?.binlog?.format }}
+              </p>
             </div>
-            <div v-if="overview.health?.binlog?.rowImage" class="flex justify-between items-center">
-              <span class="text-gray-600 dark:text-gray-400">Row image:</span>
-              <span class="font-semibold text-gray-900 dark:text-gray-100">{{
-                overview.health?.binlog?.rowImage
-              }}</span>
+            <div v-if="overview.health?.binlog?.rowImage">
+              <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+                >Row image</label
+              >
+              <p class="mt-0.5 font-semibold text-gray-900 dark:text-gray-100 text-sm">
+                {{ overview.health?.binlog?.rowImage }}
+              </p>
             </div>
-            <!-- GTID mode intentionally omitted per product scope -->
-            <div
-              v-if="typeof overview.health?.binlog?.serverId === 'number'"
-              class="flex justify-between items-center"
-            >
-              <span class="text-gray-600 dark:text-gray-400">Server ID:</span>
-              <span class="font-semibold text-gray-900 dark:text-gray-100">{{
-                overview.health?.binlog?.serverId
-              }}</span>
+            <div v-if="typeof overview.health?.binlog?.serverId === 'number'">
+              <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+                >Server ID</label
+              >
+              <p class="mt-0.5 font-semibold text-gray-900 dark:text-gray-100 text-sm">
+                {{ overview.health?.binlog?.serverId }}
+              </p>
             </div>
           </template>
           <template v-else>
-            <div class="flex justify-between items-center">
-              <span class="text-gray-600 dark:text-gray-400">wal_level:</span>
-              <span class="font-semibold text-gray-900 dark:text-gray-100">{{
-                overview.health?.wal?.level || 'unknown'
-              }}</span>
+            <div>
+              <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+                >wal_level</label
+              >
+              <p class="mt-0.5 font-semibold text-gray-900 dark:text-gray-100 text-sm">
+                {{ overview.health?.wal?.level || 'unknown' }}
+              </p>
             </div>
-            <div
-              v-if="typeof overview.health?.wal?.maxReplicationSlots === 'number'"
-              class="flex justify-between items-center"
-            >
-              <span class="text-gray-600 dark:text-gray-400">Replication slots (max):</span>
-              <span class="font-semibold text-gray-900 dark:text-gray-100">{{
-                overview.health?.wal?.maxReplicationSlots
-              }}</span>
+            <div v-if="typeof overview.health?.wal?.maxReplicationSlots === 'number'">
+              <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+                >Slots (max)</label
+              >
+              <p class="mt-0.5 font-semibold text-gray-900 dark:text-gray-100 text-sm">
+                {{ overview.health?.wal?.maxReplicationSlots }}
+              </p>
             </div>
-            <div
-              v-if="typeof overview.health?.wal?.freeReplicationSlots === 'number'"
-              class="flex justify-between items-center"
-            >
-              <span class="text-gray-600 dark:text-gray-400">Replication slots (free):</span>
-              <span class="font-semibold text-gray-900 dark:text-gray-100">{{
-                overview.health?.wal?.freeReplicationSlots
-              }}</span>
+            <div v-if="typeof overview.health?.wal?.freeReplicationSlots === 'number'">
+              <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+                >Slots (free)</label
+              >
+              <p class="mt-0.5 font-semibold text-gray-900 dark:text-gray-100 text-sm">
+                {{ overview.health?.wal?.freeReplicationSlots }}
+              </p>
             </div>
-            <div
-              v-if="typeof overview.health?.wal?.maxWalSenders === 'number'"
-              class="flex justify-between items-center"
-            >
-              <span class="text-gray-600 dark:text-gray-400">Wal senders (max):</span>
-              <span class="font-semibold text-gray-900 dark:text-gray-100">{{
-                overview.health?.wal?.maxWalSenders
-              }}</span>
+            <div v-if="typeof overview.health?.wal?.maxWalSenders === 'number'">
+              <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+                >WAL senders</label
+              >
+              <p class="mt-0.5 font-semibold text-gray-900 dark:text-gray-100 text-sm">
+                {{ overview.health?.wal?.maxWalSenders }}
+              </p>
             </div>
           </template>
         </div>
       </div>
 
-      <!-- Activity (compact) -->
+      <!-- Activity -->
       <div
-        class="group bg-white dark:bg-gray-900/40 ring-1 ring-slate-200/70 dark:ring-gray-800 rounded-xl p-4 md:col-span-2 hover:shadow-lg dark:hover:shadow-gray-900/40 hover:ring-slate-300 dark:hover:ring-gray-600 transition-all duration-200"
+        class="bg-slate-50 dark:bg-gray-800/50 rounded-xl p-4 ring-1 ring-slate-200/70 dark:ring-gray-700 md:col-span-2"
       >
         <div class="flex items-center gap-2 mb-3">
-          <div
-            class="p-2 bg-orange-50 dark:bg-orange-900/20 rounded-lg group-hover:bg-linear-to-br group-hover:from-orange-100 group-hover:to-amber-100 dark:group-hover:from-orange-900/30 dark:group-hover:to-amber-900/30 transition-all duration-200"
-          >
+          <div class="p-1.5 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
             <ChartBarIcon class="h-4 w-4 text-orange-600 dark:text-orange-400" />
           </div>
           <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Activity</span>
         </div>
-        <div class="mt-2 text-sm text-gray-700 dark:text-gray-300 space-y-2">
-          <div class="flex justify-between items-center">
-            <span class="text-gray-600 dark:text-gray-400">Connections:</span>
-            <span class="font-semibold text-gray-900 dark:text-gray-100">
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+              >Connections</label
+            >
+            <p class="mt-0.5 font-semibold text-gray-900 dark:text-gray-100 text-base">
               {{ activity?.connections?.used ?? '—' }}
               <span
                 v-if="activity?.connections?.max"
-                class="text-gray-500 dark:text-gray-400 font-normal"
+                class="text-xs font-normal text-gray-500 dark:text-gray-400"
               >
                 / {{ activity.connections.max }}
               </span>
-            </span>
+            </p>
           </div>
-          <div class="flex justify-between items-center">
-            <span class="text-gray-600 dark:text-gray-400">Active sessions:</span>
-            <span class="font-semibold text-gray-900 dark:text-gray-100">{{
-              activity?.activeSessions ?? '—'
-            }}</span>
+          <div>
+            <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+              >Active sessions</label
+            >
+            <p class="mt-0.5 font-semibold text-gray-900 dark:text-gray-100 text-base">
+              {{ activity?.activeSessions ?? '—' }}
+            </p>
           </div>
         </div>
+
+        <!-- Long-running queries -->
         <div
           v-if="activity?.longRunning?.length"
-          class="mt-4 pt-3 border-t border-gray-100 dark:border-gray-700"
+          class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700"
         >
-          <div
-            class="text-xs uppercase tracking-wide font-semibold text-gray-500 dark:text-gray-400 mb-2"
+          <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400 mb-2 block"
+            >Long-running queries</label
           >
-            Long-running queries
-          </div>
-          <ul class="text-sm text-gray-700 dark:text-gray-300 space-y-2">
+          <ul class="space-y-1.5">
             <li
-              v-for="(q, idx) in activity.longRunning.slice(0, 5)"
+              v-for="(q, idx) in activity.longRunning.slice(0, 3)"
               :key="q.pid || q.threadId || idx"
-              class="flex items-start justify-between gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              class="flex items-center justify-between gap-2 text-xs"
             >
               <div class="truncate min-w-0 flex-1">
-                <span class="text-xs text-gray-500 dark:text-gray-400 font-medium">{{
-                  q.user
-                }}</span>
-                <div
-                  class="truncate text-xs text-gray-700 dark:text-gray-300 mt-0.5"
-                  :title="q.query"
-                >
-                  {{ q.query }}
-                </div>
+                <span class="text-gray-500 dark:text-gray-400">{{ q.user }}:</span>
+                <span class="ml-1 text-gray-700 dark:text-gray-300 truncate" :title="q.query">
+                  {{ q.query.slice(0, 40) }}{{ q.query.length > 40 ? '...' : '' }}
+                </span>
               </div>
-              <span class="shrink-0 text-xs font-medium text-gray-500 dark:text-gray-400">{{
+              <span class="shrink-0 font-medium text-gray-500 dark:text-gray-400">{{
                 q.duration
               }}</span>
             </li>
@@ -482,27 +538,25 @@ async function handleCreateSchema() {
 
       <!-- Top by size -->
       <div
-        class="group bg-white dark:bg-gray-900/40 ring-1 ring-slate-200/70 dark:ring-gray-800 rounded-xl p-4 md:col-span-3 hover:shadow-lg dark:hover:shadow-gray-900/40 hover:ring-slate-300 dark:hover:ring-gray-600 transition-all duration-200"
+        class="bg-slate-50 dark:bg-gray-800/50 rounded-xl p-4 ring-1 ring-slate-200/70 dark:ring-gray-700 md:col-span-3"
       >
         <div class="flex items-center gap-2 mb-3">
-          <div
-            class="p-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg group-hover:bg-linear-to-br group-hover:from-purple-100 group-hover:to-pink-100 dark:group-hover:from-purple-900/30 dark:group-hover:to-pink-900/30 transition-all duration-200"
-          >
+          <div class="p-1.5 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
             <ServerIcon class="h-4 w-4 text-purple-600 dark:text-purple-400" />
           </div>
           <span class="text-sm font-semibold text-gray-700 dark:text-gray-300"
             >Top tables by size</span
           >
         </div>
-        <ul class="mt-2 text-sm text-gray-700 dark:text-gray-300 space-y-1">
+        <ul class="space-y-1">
           <li
             v-for="t in topSize"
             :key="t.name"
-            class="flex items-center justify-between p-2 rounded-lg hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50 dark:hover:from-blue-900/20 dark:hover:to-teal-900/20 transition-all duration-150"
+            class="flex items-center justify-between py-1 px-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors"
           >
             <button
               type="button"
-              class="truncate text-left hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors min-w-0 flex-1"
+              class="truncate text-left text-sm hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors min-w-0 flex-1"
               :title="t.name"
               @click="$emit('open-table', { name: t.name })"
             >
@@ -518,17 +572,21 @@ async function handleCreateSchema() {
               >{{ formatDataSize(t.sizeBytes, true) }}</span
             >
           </li>
+          <li
+            v-if="!topSize.length"
+            class="text-xs text-gray-500 dark:text-gray-400 py-2 text-center"
+          >
+            No tables
+          </li>
         </ul>
       </div>
 
       <!-- Top by rows -->
       <div
-        class="group bg-white dark:bg-gray-900/40 ring-1 ring-slate-200/70 dark:ring-gray-800 rounded-xl p-4 md:col-span-3 hover:shadow-lg dark:hover:shadow-gray-900/40 hover:ring-slate-300 dark:hover:ring-gray-600 transition-all duration-200"
+        class="bg-slate-50 dark:bg-gray-800/50 rounded-xl p-4 ring-1 ring-slate-200/70 dark:ring-gray-700 md:col-span-3"
       >
         <div class="flex items-center gap-2 mb-3">
-          <div
-            class="p-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg group-hover:bg-linear-to-br group-hover:from-indigo-100 group-hover:to-purple-100 dark:group-hover:from-indigo-900/30 dark:group-hover:to-purple-900/30 transition-all duration-200"
-          >
+          <div class="p-1.5 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
             <TableCellsIcon class="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
           </div>
           <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">
@@ -540,15 +598,15 @@ async function handleCreateSchema() {
             >
           </span>
         </div>
-        <ul class="mt-2 text-sm text-gray-700 dark:text-gray-300 space-y-1">
+        <ul class="space-y-1">
           <li
             v-for="t in topRows"
             :key="t.name"
-            class="flex items-center justify-between p-2 rounded-lg hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50 dark:hover:from-blue-900/20 dark:hover:to-teal-900/20 transition-all duration-150"
+            class="flex items-center justify-between py-1 px-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors"
           >
             <button
               type="button"
-              class="truncate text-left hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors min-w-0 flex-1"
+              class="truncate text-left text-sm hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors min-w-0 flex-1"
               :title="t.name"
               @click="$emit('open-table', { name: t.name })"
             >
@@ -558,35 +616,39 @@ async function handleCreateSchema() {
               {{ Intl.NumberFormat().format(t.approxRows) }}
             </span>
           </li>
+          <li
+            v-if="!topRows.length"
+            class="text-xs text-gray-500 dark:text-gray-400 py-2 text-center"
+          >
+            No tables
+          </li>
         </ul>
       </div>
 
       <!-- Notes -->
       <div
         v-if="overview.notes?.length"
-        class="group bg-white dark:bg-gray-900/40 ring-1 ring-slate-200/70 dark:ring-gray-800 rounded-xl p-4 md:col-span-6 hover:shadow-lg dark:hover:shadow-gray-900/40 hover:ring-slate-300 dark:hover:ring-gray-600 transition-all duration-200"
+        class="bg-slate-50 dark:bg-gray-800/50 rounded-xl p-4 ring-1 ring-slate-200/70 dark:ring-gray-700 md:col-span-6"
       >
         <div class="flex items-center gap-2 mb-3">
-          <div
-            class="p-2 bg-sky-50 dark:bg-sky-900/20 rounded-lg group-hover:bg-linear-to-br group-hover:from-sky-100 group-hover:to-blue-100 dark:group-hover:from-sky-900/30 dark:group-hover:to-blue-900/30 transition-all duration-200"
-          >
+          <div class="p-1.5 bg-sky-100 dark:bg-sky-900/30 rounded-lg">
             <InformationCircleIcon class="h-4 w-4 text-sky-600 dark:text-sky-400" />
           </div>
           <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Notes</span>
         </div>
-        <ul class="mt-2 space-y-2 text-sm">
+        <ul class="space-y-2">
           <li
             v-for="(n, i) in overview.notes"
             :key="i"
-            class="flex items-start gap-3 p-3 rounded-lg transition-colors"
+            class="flex items-start gap-2 p-2 rounded-lg text-sm"
             :class="{
-              'bg-sky-50 dark:bg-sky-900/20': n.severity === 'info',
-              'bg-amber-50 dark:bg-amber-900/20': n.severity === 'warn',
-              'bg-red-50 dark:bg-red-900/20': n.severity === 'error'
+              'bg-sky-100/50 dark:bg-sky-900/20': n.severity === 'info',
+              'bg-amber-100/50 dark:bg-amber-900/20': n.severity === 'warn',
+              'bg-red-100/50 dark:bg-red-900/20': n.severity === 'error'
             }"
           >
             <span
-              class="mt-0.5 inline-block w-2 h-2 rounded-full shrink-0"
+              class="mt-1.5 inline-block w-1.5 h-1.5 rounded-full shrink-0"
               :class="{
                 'bg-sky-500': n.severity === 'info',
                 'bg-amber-500': n.severity === 'warn',
@@ -595,11 +657,10 @@ async function handleCreateSchema() {
             />
             <div class="flex-1 min-w-0">
               <span
-                class="text-gray-800 dark:text-gray-200 font-medium"
                 :class="{
-                  'text-sky-900 dark:text-sky-300': n.severity === 'info',
-                  'text-amber-900 dark:text-amber-300': n.severity === 'warn',
-                  'text-red-900 dark:text-red-300': n.severity === 'error'
+                  'text-sky-800 dark:text-sky-300': n.severity === 'info',
+                  'text-amber-800 dark:text-amber-300': n.severity === 'warn',
+                  'text-red-800 dark:text-red-300': n.severity === 'error'
                 }"
                 >{{ n.message }}</span
               >

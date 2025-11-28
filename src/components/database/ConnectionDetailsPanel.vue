@@ -1,13 +1,15 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import type { Connection } from '@/types/connections'
 import BaseButton from '@/components/base/BaseButton.vue'
 import FormInput from '@/components/base/FormInput.vue'
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
 import { generateConnectionString } from '@/utils/connectionStringGenerator'
-import { formatDateTime } from '@/utils/formats'
+import { formatDateTime, formatDataSize } from '@/utils/formats'
 import { getConnectionHost, getConnectionPort, getConnectionDatabase } from '@/utils/specBuilder'
 import { useDatabaseCapabilities } from '@/composables/useDatabaseCapabilities'
+import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
+import { useDatabaseOverviewStore } from '@/stores/databaseOverview'
 import {
   CalendarIcon,
   ClipboardIcon,
@@ -16,8 +18,12 @@ import {
   EyeSlashIcon,
   PlusIcon,
   ServerIcon,
-  CircleStackIcon
+  CircleStackIcon,
+  ChartBarIcon
 } from '@heroicons/vue/24/outline'
+
+const navigationStore = useExplorerNavigationStore()
+const overviewStore = useDatabaseOverviewStore()
 
 const props = defineProps<{
   connection: Connection
@@ -285,6 +291,117 @@ const displayS3URI = computed(() => {
 
   return 's3:// (All buckets)'
 })
+
+// Server Stats - aggregated across all databases
+const databases = computed(() => {
+  if (!props.connection?.id) return []
+  return navigationStore.getDatabases(props.connection.id) || []
+})
+
+// Track loading state for overview fetching
+const isLoadingOverviews = ref(false)
+
+// Fetch overviews for all databases when they become available
+watch(
+  databases,
+  async (dbs) => {
+    if (!dbs.length || !props.connection?.id) return
+
+    // Check which databases don't have overview data yet
+    const dbsNeedingOverview = dbs.filter(
+      (db) => !overviewStore.getOverview(props.connection.id, db.name)
+    )
+
+    if (dbsNeedingOverview.length === 0) return
+
+    isLoadingOverviews.value = true
+    try {
+      // Fetch overviews in parallel (limit to 5 concurrent to avoid overwhelming the server)
+      const batchSize = 5
+      for (let i = 0; i < dbsNeedingOverview.length; i += batchSize) {
+        const batch = dbsNeedingOverview.slice(i, i + batchSize)
+        await Promise.all(
+          batch.map((db) =>
+            overviewStore.fetchOverview(props.connection.id, db.name).catch((err) => {
+              // Silently ignore errors for individual databases (e.g., permission issues)
+              console.debug(`Failed to fetch overview for ${db.name}:`, err)
+            })
+          )
+        )
+      }
+    } finally {
+      isLoadingOverviews.value = false
+    }
+  },
+  { immediate: true }
+)
+
+const serverStats = computed(() => {
+  const stats = {
+    databases: databases.value.length,
+    tables: 0,
+    views: 0,
+    schemas: 0,
+    sizeBytes: 0,
+    usedConnections: 0,
+    maxConnections: 0,
+    activeSessions: 0,
+    engine: '' as string,
+    version: '' as string,
+    hasData: false
+  }
+
+  if (!props.connection?.id) return stats
+
+  // Aggregate stats from all loaded database overviews
+  for (const db of databases.value) {
+    const overview = overviewStore.getOverview(props.connection.id, db.name)
+    if (overview) {
+      stats.hasData = true
+      stats.tables += overview.counts?.tables || 0
+      stats.views += overview.counts?.views || 0
+      stats.schemas += overview.counts?.schemas || 0
+      stats.sizeBytes += overview.sizeBytes || 0
+
+      // Take engine/version from first overview (same for all DBs on same server)
+      if (!stats.engine && overview.engine) {
+        stats.engine = overview.engine
+        stats.version = overview.version || ''
+      }
+
+      // Take max connections value (same for all DBs on server)
+      if (overview.activity?.connections) {
+        // Use the highest values seen (connections are server-level, not DB-level)
+        if (overview.activity.connections.used > stats.usedConnections) {
+          stats.usedConnections = overview.activity.connections.used
+        }
+        if (
+          overview.activity.connections.max &&
+          overview.activity.connections.max > stats.maxConnections
+        ) {
+          stats.maxConnections = overview.activity.connections.max
+        }
+      }
+
+      // Sum active sessions
+      if (overview.activity?.activeSessions) {
+        stats.activeSessions = Math.max(stats.activeSessions, overview.activity.activeSessions)
+      }
+    }
+  }
+
+  return stats
+})
+
+const serverSizeDisplay = computed(() => {
+  if (serverStats.value.sizeBytes === 0) return '—'
+  return formatDataSize(serverStats.value.sizeBytes)
+})
+
+const isLoadingDatabases = computed(() => {
+  if (!props.connection?.id) return false
+  return navigationStore.isDatabasesLoading(props.connection.id)
+})
 </script>
 
 <template>
@@ -456,7 +573,7 @@ const displayS3URI = computed(() => {
       </div>
 
       <!-- Database Connection Details - Card Layout -->
-      <div v-else class="grid gap-4" :class="canCreateDatabase ? 'md:grid-cols-2' : 'grid-cols-1'">
+      <div v-else class="grid gap-4 md:grid-cols-2">
         <!-- Connection Info Card -->
         <div
           class="bg-slate-50 dark:bg-gray-800/50 rounded-xl p-4 ring-1 ring-slate-200/70 dark:ring-gray-700"
@@ -530,6 +647,152 @@ const displayS3URI = computed(() => {
                     <ClipboardIcon v-if="!isCopied" class="h-3.5 w-3.5" />
                     <CheckIcon v-else class="h-3.5 w-3.5" />
                   </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Server Stats Card -->
+        <div
+          class="bg-slate-50 dark:bg-gray-800/50 rounded-xl p-4 ring-1 ring-slate-200/70 dark:ring-gray-700"
+        >
+          <div class="flex items-center gap-2 mb-3">
+            <div class="p-1.5 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+              <ChartBarIcon class="h-4 w-4 text-purple-600 dark:text-purple-400" />
+            </div>
+            <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Server Stats</span>
+          </div>
+
+          <div
+            v-if="isLoadingDatabases || isLoadingOverviews"
+            class="flex items-center gap-2 text-sm text-gray-500"
+          >
+            <svg
+              class="animate-spin h-4 w-4"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                class="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="4"
+              />
+              <path
+                class="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              />
+            </svg>
+            {{ isLoadingDatabases ? 'Loading databases...' : 'Loading stats...' }}
+          </div>
+
+          <div v-else class="space-y-3">
+            <!-- Engine/Version Badge -->
+            <div v-if="serverStats.engine" class="flex items-center gap-2">
+              <span
+                class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize"
+                :class="
+                  serverStats.engine === 'postgres'
+                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
+                    : 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300'
+                "
+              >
+                {{ serverStats.engine === 'postgres' ? 'PostgreSQL' : 'MySQL' }}
+              </span>
+              <span class="text-xs text-gray-500 dark:text-gray-400">{{
+                serverStats.version
+              }}</span>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+                  >Databases</label
+                >
+                <p class="mt-0.5 font-semibold text-gray-900 dark:text-gray-100 text-base">
+                  {{ serverStats.databases }}
+                </p>
+              </div>
+              <div>
+                <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+                  >Total Size</label
+                >
+                <p
+                  class="mt-0.5 font-semibold text-base"
+                  :class="
+                    serverStats.hasData
+                      ? 'text-gray-900 dark:text-gray-100'
+                      : 'text-gray-400 dark:text-gray-500'
+                  "
+                >
+                  {{ serverSizeDisplay }}
+                </p>
+              </div>
+              <div>
+                <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+                  >Tables</label
+                >
+                <p
+                  class="mt-0.5 font-semibold text-base"
+                  :class="
+                    serverStats.hasData
+                      ? 'text-gray-900 dark:text-gray-100'
+                      : 'text-gray-400 dark:text-gray-500'
+                  "
+                >
+                  {{ serverStats.hasData ? serverStats.tables : '—' }}
+                </p>
+              </div>
+              <div>
+                <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+                  >Views</label
+                >
+                <p
+                  class="mt-0.5 font-semibold text-base"
+                  :class="
+                    serverStats.hasData
+                      ? 'text-gray-900 dark:text-gray-100'
+                      : 'text-gray-400 dark:text-gray-500'
+                  "
+                >
+                  {{ serverStats.hasData ? serverStats.views : '—' }}
+                </p>
+              </div>
+            </div>
+
+            <!-- Connections & Sessions -->
+            <div
+              v-if="
+                serverStats.hasData &&
+                (serverStats.maxConnections > 0 || serverStats.activeSessions > 0)
+              "
+              class="pt-2 border-t border-gray-200 dark:border-gray-700"
+            >
+              <div class="grid grid-cols-2 gap-2">
+                <div v-if="serverStats.maxConnections > 0">
+                  <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+                    >Connections</label
+                  >
+                  <p class="mt-0.5 font-semibold text-base text-gray-900 dark:text-gray-100">
+                    {{ serverStats.usedConnections }}
+                    <span class="text-xs font-normal text-gray-500 dark:text-gray-400"
+                      >/ {{ serverStats.maxConnections }}</span
+                    >
+                  </p>
+                </div>
+                <div v-if="serverStats.activeSessions > 0">
+                  <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+                    >Active Sessions</label
+                  >
+                  <p class="mt-0.5 font-semibold text-base text-gray-900 dark:text-gray-100">
+                    {{ serverStats.activeSessions }}
+                  </p>
                 </div>
               </div>
             </div>
