@@ -2,9 +2,10 @@
 import {
   DocumentTextIcon,
   CodeBracketIcon,
-  TableCellsIcon as ParquetIcon,
+  TableCellsIcon,
   DocumentIcon,
-  FolderIcon
+  FolderIcon,
+  RectangleStackIcon
 } from '@heroicons/vue/24/outline'
 import { useIconSizes } from '@/composables/useIconSizes'
 import type { IconSizeKey } from '@/constants'
@@ -13,19 +14,26 @@ import type { FileFormat } from '@/utils/fileFormat'
 interface Props {
   fileFormat: FileFormat | null
   isDirectory?: boolean
+  isTableFolder?: boolean // Folder containing files that DuckDB can read as a table
   size?: IconSizeKey
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  size: 'LG',
-  isDirectory: false
+  size: 'BASE',
+  isDirectory: false,
+  isTableFolder: false
 })
 
 const { iconClass } = useIconSizes(props.size)
 
 // Map file formats to Heroicons
 const iconComponent = computed(() => {
-  // If it's a directory, always show folder icon
+  // Table folder - a special folder that DuckDB can treat as a table
+  if (props.isTableFolder) {
+    return RectangleStackIcon // Stacked rectangles - represents partitioned data
+  }
+
+  // Regular directory
   if (props.isDirectory) {
     return FolderIcon
   }
@@ -37,7 +45,7 @@ const iconComponent = computed(() => {
     case 'jsonl':
       return CodeBracketIcon // JSON files - code brackets
     case 'parquet':
-      return ParquetIcon // Parquet files - table/structured data
+      return TableCellsIcon // Parquet files - table/structured data
     default:
       return DocumentIcon // Generic file
   }
@@ -45,19 +53,24 @@ const iconComponent = computed(() => {
 
 // Color coding for different file types with dark mode support
 const iconColor = computed(() => {
-  // Folders are neutral gray (don't compete with connection colors)
+  // Table folders get special color - teal to indicate queryable data
+  if (props.isTableFolder) {
+    return 'text-teal-500 dark:text-teal-400'
+  }
+
+  // Regular folders - amber/yellow color
   if (props.isDirectory) {
-    return 'text-slate-400 dark:text-slate-500'
+    return 'text-amber-500 dark:text-amber-400'
   }
 
   switch (props.fileFormat) {
     case 'csv':
-      return 'text-slate-500 dark:text-slate-400' // CSV - neutral gray
+      return 'text-green-500 dark:text-green-400' // CSV - green
     case 'json':
     case 'jsonl':
-      return 'text-slate-500 dark:text-slate-400' // JSON - neutral gray
+      return 'text-orange-500 dark:text-orange-400' // JSON - orange
     case 'parquet':
-      return 'text-slate-500 dark:text-slate-400' // Parquet - neutral gray
+      return 'text-blue-500 dark:text-blue-400' // Parquet - blue (structured data)
     default:
       return 'text-gray-400 dark:text-gray-500' // Unsupported/Unknown - lighter gray
   }

@@ -256,9 +256,9 @@ const connectionPort = computed(() => getConnectionPort(props.connection))
         ]"
       />
       <DatabaseIcon
-        :db-type="connection.type || ''"
-        :logo-src="treeLogic.getDbLogoForType(connection.type)"
-        size="LG"
+        :db-type="treeLogic.getEffectiveType(connection)"
+        :logo-src="treeLogic.getDbLogoForConnection(connection)"
+        size="MD"
         container-class="group-hover:shadow-sm"
       />
       <div class="flex-1 min-w-0 flex flex-col gap-0.5">

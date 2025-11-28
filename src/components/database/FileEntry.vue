@@ -171,7 +171,12 @@ const handleChildExpandFolder = (payload: { entry: FileSystemEntry }) => {
       <span v-else :class="caretClass" class="shrink-0 mr-1"></span>
 
       <!-- File/Folder icon -->
-      <FileIcon :file-format="fileFormat" :is-directory="entry.type === 'dir'" class="mr-2" />
+      <FileIcon
+        :file-format="fileFormat"
+        :is-directory="entry.type === 'dir'"
+        :is-table-folder="isTableFolder"
+        class="mr-2"
+      />
 
       <!-- File/Folder name -->
       <HighlightedText class="flex-1 min-w-0 truncate" :text="entry.name" :query="searchQuery" />

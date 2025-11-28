@@ -140,6 +140,47 @@ export function useConnectionActions(emits?: {
     }
   }
 
+  async function createDatabase(connectionId: string, databaseName?: string) {
+    // Prompt for database name if not provided
+    const dbName = databaseName || window.prompt('Enter database name:')
+    if (!dbName || !dbName.trim()) {
+      return
+    }
+
+    try {
+      await connectionsApi.createDatabase(dbName.trim(), connectionId)
+      toast.success(`Database "${dbName}" created successfully`)
+      // Refresh databases to show the new one
+      await refreshDatabases(connectionId)
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Failed to create database'
+      toast.error(msg)
+    }
+  }
+
+  async function createSchema(connectionId: string, database: string, schemaName?: string) {
+    if (!database) {
+      toast.error('Database name is required to create a schema')
+      return
+    }
+
+    // Prompt for schema name if not provided
+    const sName = schemaName || window.prompt(`Enter schema name (for database "${database}"):`)
+    if (!sName || !sName.trim()) {
+      return
+    }
+
+    try {
+      await connectionsApi.createSchema(sName.trim(), connectionId, database)
+      toast.success(`Schema "${sName}" created successfully in database "${database}"`)
+      // Refresh metadata to show the new schema
+      await refreshDatabase(connectionId, database)
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Failed to create schema'
+      toast.error(msg)
+    }
+  }
+
   async function copyToClipboard(text: string, label = 'Copied') {
     try {
       await navigator.clipboard.writeText(text)
@@ -255,6 +296,8 @@ export function useConnectionActions(emits?: {
 
     // Database/object actions
     refreshDatabase,
+    createDatabase,
+    createSchema,
     openTable,
     openFile,
     showDiagram,

@@ -12,7 +12,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  size: 'LG'
+  size: 'BASE'
 })
 
 const { iconClass } = useIconSizes(props.size)
@@ -21,9 +21,9 @@ const { iconClass } = useIconSizes(props.size)
 const iconColor = computed(() => {
   switch (props.objectType) {
     case 'table':
-      return 'text-slate-500 dark:text-slate-400' // Tables - neutral gray (don't compete with connection colors)
+      return 'text-blue-500 dark:text-blue-400' // Tables - blue (primary data)
     case 'view':
-      return 'text-slate-400 dark:text-slate-500' // Views - lighter gray
+      return 'text-teal-500 dark:text-teal-400' // Views - teal (derived/virtual)
     default:
       return 'text-gray-400 dark:text-gray-500'
   }

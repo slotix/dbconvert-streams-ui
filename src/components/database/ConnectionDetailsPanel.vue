@@ -2,16 +2,21 @@
 import { computed, ref } from 'vue'
 import type { Connection } from '@/types/connections'
 import BaseButton from '@/components/base/BaseButton.vue'
+import FormInput from '@/components/base/FormInput.vue'
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
 import { generateConnectionString } from '@/utils/connectionStringGenerator'
 import { formatDateTime } from '@/utils/formats'
 import { getConnectionHost, getConnectionPort, getConnectionDatabase } from '@/utils/specBuilder'
+import { useDatabaseCapabilities } from '@/composables/useDatabaseCapabilities'
 import {
   CalendarIcon,
   ClipboardIcon,
   CheckIcon,
   EyeIcon,
-  EyeSlashIcon
+  EyeSlashIcon,
+  PlusIcon,
+  ServerIcon,
+  CircleStackIcon
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps<{
@@ -23,11 +28,29 @@ const emit = defineEmits<{
   (e: 'edit-json'): void
   (e: 'clone'): void
   (e: 'delete'): void
+  (e: 'create-database', databaseName: string): void
+  (e: 'create-schema', schemaName: string): void
 }>()
 
 const showPassword = ref(false)
 const isCopied = ref(false)
 const isPathCopied = ref(false)
+
+// Database/Schema creation form state
+const newDatabaseName = ref('')
+const newSchemaName = ref('')
+const isCreatingDatabase = ref(false)
+const isCreatingSchema = ref(false)
+
+// Database capabilities - computed based on connection type
+const databaseType = computed(() => props.connection?.type || '')
+const { canCreateDatabase, canCreateSchema, isPostgreSQL } = useDatabaseCapabilities(databaseType)
+
+// For PostgreSQL, schema creation is available at database level (DatabaseOverviewPanel)
+// so we hide it from connection level to avoid confusion
+const showSchemaCreationAtConnectionLevel = computed(
+  () => canCreateSchema.value && !isPostgreSQL.value && defaultDatabase.value
+)
 
 // Helper to get storage provider from spec
 const storageProvider = computed(() => {
@@ -209,6 +232,33 @@ async function copyFolderPath() {
 const createdDisplay = computed(() => {
   return formatDateTime(props.connection?.created || 0)
 })
+
+// Database/Schema creation handlers
+async function handleCreateDatabase() {
+  const dbName = newDatabaseName.value.trim()
+  if (!dbName) return
+
+  isCreatingDatabase.value = true
+  try {
+    emit('create-database', dbName)
+    newDatabaseName.value = '' // Clear input on success
+  } finally {
+    isCreatingDatabase.value = false
+  }
+}
+
+async function handleCreateSchema() {
+  const schemaName = newSchemaName.value.trim()
+  if (!schemaName) return
+
+  isCreatingSchema.value = true
+  try {
+    emit('create-schema', schemaName)
+    newSchemaName.value = '' // Clear input on success
+  } finally {
+    isCreatingSchema.value = false
+  }
+}
 
 // Compute displayable S3 URI from spec.s3 or spec.files
 const displayS3URI = computed(() => {
@@ -405,68 +455,154 @@ const displayS3URI = computed(() => {
         </div>
       </div>
 
-      <!-- Database Connection Details -->
-      <div v-else>
-        <div class="grid gap-4" :class="defaultDatabase ? 'grid-cols-2' : 'grid-cols-1'">
-          <div>
-            <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
-              >Host</label
+      <!-- Database Connection Details - Card Layout -->
+      <div v-else class="grid gap-4" :class="canCreateDatabase ? 'md:grid-cols-2' : 'grid-cols-1'">
+        <!-- Connection Info Card -->
+        <div
+          class="bg-slate-50 dark:bg-gray-800/50 rounded-xl p-4 ring-1 ring-slate-200/70 dark:ring-gray-700"
+        >
+          <div class="flex items-center gap-2 mb-3">
+            <div class="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+              <ServerIcon class="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            </div>
+            <span class="text-sm font-semibold text-gray-700 dark:text-gray-300"
+              >Connection Info</span
             >
-            <p
-              class="mt-1 font-medium text-gray-900 dark:text-gray-100 truncate"
-              :title="hostWithPort"
-            >
-              {{ hostWithPort }}
-            </p>
           </div>
-          <div v-if="defaultDatabase">
-            <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
-              >Default Database</label
-            >
-            <p class="mt-1 font-medium text-gray-900 dark:text-gray-100 truncate">
-              {{ defaultDatabase }}
-            </p>
+
+          <div class="space-y-3">
+            <div>
+              <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+                >Host</label
+              >
+              <p
+                class="mt-0.5 font-medium text-gray-900 dark:text-gray-100 truncate text-sm"
+                :title="hostWithPort"
+              >
+                {{ hostWithPort }}
+              </p>
+            </div>
+            <div v-if="defaultDatabase">
+              <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+                >Default Database</label
+              >
+              <p class="mt-0.5 font-medium text-gray-900 dark:text-gray-100 truncate text-sm">
+                {{ defaultDatabase }}
+              </p>
+            </div>
+            <div>
+              <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+                >Connection String</label
+              >
+              <div
+                class="mt-1 flex items-start gap-2 rounded-lg bg-white dark:bg-gray-900 p-2 font-mono text-xs border border-gray-200 dark:border-gray-700"
+              >
+                <span
+                  class="flex-1 break-all text-gray-800 dark:text-gray-100 overflow-x-auto max-h-16 overflow-y-auto"
+                >
+                  {{
+                    showPassword
+                      ? connectionString
+                      : maskedConnectionString.replace(/(?<=:)[^@]+(?=@)/g, '****')
+                  }}
+                </span>
+                <div class="flex flex-col gap-1">
+                  <button
+                    class="shrink-0 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+                    :title="
+                      showPassword ? 'Hide password and truncate' : 'Show password and full details'
+                    "
+                    @click="showPassword = !showPassword"
+                  >
+                    <EyeIcon v-if="!showPassword" class="h-3.5 w-3.5" />
+                    <EyeSlashIcon v-else class="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    class="shrink-0 transition-colors"
+                    :class="
+                      isCopied
+                        ? 'text-green-400'
+                        : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'
+                    "
+                    :title="isCopied ? 'Copied!' : 'Copy connection string to clipboard'"
+                    @click="copyConnectionString"
+                  >
+                    <ClipboardIcon v-if="!isCopied" class="h-3.5 w-3.5" />
+                    <CheckIcon v-else class="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div>
-          <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
-            >Connection String</label
-          >
+        <!-- Create Database Card -->
+        <div
+          v-if="canCreateDatabase"
+          class="bg-slate-50 dark:bg-gray-800/50 rounded-xl p-4 ring-1 ring-slate-200/70 dark:ring-gray-700"
+        >
+          <div class="flex items-center gap-2 mb-3">
+            <div class="p-1.5 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
+              <CircleStackIcon class="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <span class="text-sm font-semibold text-gray-700 dark:text-gray-300"
+              >Create Database</span
+            >
+          </div>
+
+          <p class="text-xs text-gray-600 dark:text-gray-400 mb-3">
+            Create a new database on this server
+          </p>
+
+          <div class="space-y-2">
+            <FormInput
+              v-model="newDatabaseName"
+              placeholder="database_name"
+              :disabled="isCreatingDatabase"
+              @keyup.enter="handleCreateDatabase"
+            />
+            <BaseButton
+              variant="primary"
+              size="sm"
+              class="w-full justify-center"
+              :disabled="!newDatabaseName.trim() || isCreatingDatabase"
+              @click="handleCreateDatabase"
+            >
+              <PlusIcon class="w-4 h-4 mr-1.5" />
+              Create Database
+            </BaseButton>
+          </div>
+
+          <!-- Schema creation for non-PostgreSQL databases -->
           <div
-            class="mt-1 flex items-start gap-2 rounded-lg bg-linear-to-r from-slate-50 to-gray-50 dark:from-gray-800 dark:to-gray-850 p-3 font-mono text-sm border border-gray-100 dark:border-gray-700"
+            v-if="showSchemaCreationAtConnectionLevel"
+            class="mt-4 pt-4 border-t border-slate-200 dark:border-gray-700"
           >
-            <span class="flex-1 break-all text-gray-800 dark:text-gray-100 overflow-x-auto">
-              {{
-                showPassword
-                  ? connectionString
-                  : maskedConnectionString.replace(/(?<=:)[^@]+(?=@)/g, '****')
-              }}
-            </span>
-            <div class="flex flex-col gap-1">
-              <button
-                class="shrink-0 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
-                :title="
-                  showPassword ? 'Hide password and truncate' : 'Show password and full details'
-                "
-                @click="showPassword = !showPassword"
+            <div class="flex items-center gap-2 mb-2">
+              <span class="text-sm font-semibold text-gray-700 dark:text-gray-300"
+                >Create Schema</span
               >
-                <EyeIcon v-if="!showPassword" class="h-4 w-4" />
-                <EyeSlashIcon v-else class="h-4 w-4" />
-              </button>
-              <button
-                class="shrink-0 transition-colors"
-                :class="
-                  isCopied
-                    ? 'text-green-400'
-                    : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'
-                "
-                :title="isCopied ? 'Copied!' : 'Copy connection string to clipboard'"
-                @click="copyConnectionString"
+            </div>
+            <p class="text-xs text-gray-600 dark:text-gray-400 mb-2">
+              In database: <span class="font-medium">{{ defaultDatabase }}</span>
+            </p>
+            <div class="space-y-2">
+              <FormInput
+                v-model="newSchemaName"
+                placeholder="schema_name"
+                :disabled="isCreatingSchema"
+                @keyup.enter="handleCreateSchema"
+              />
+              <BaseButton
+                variant="secondary"
+                size="sm"
+                class="w-full justify-center"
+                :disabled="!newSchemaName.trim() || isCreatingSchema"
+                @click="handleCreateSchema"
               >
-                <ClipboardIcon v-if="!isCopied" class="h-4 w-4" />
-                <CheckIcon v-else class="h-4 w-4" />
-              </button>
+                <PlusIcon class="w-4 h-4 mr-1.5" />
+                Create Schema
+              </BaseButton>
             </div>
           </div>
         </div>

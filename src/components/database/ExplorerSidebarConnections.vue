@@ -7,6 +7,7 @@ import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { useConnectionTreeLogic } from '@/composables/useConnectionTreeLogic'
 import { useTreeContextMenu, type ContextTarget } from '@/composables/useTreeContextMenu'
 import { useConnectionActions } from '@/composables/useConnectionActions'
+import { useDatabaseCapabilities } from '@/composables/useDatabaseCapabilities'
 import { useTreeSearch } from '@/composables/useTreeSearch'
 import type { Connection } from '@/types/connections'
 import type { SQLTableMeta, SQLViewMeta } from '@/types/metadata'
@@ -112,6 +113,25 @@ const canCopyDDL = computed(() => {
   const mo = contextMenu.menuObj.value
   if (!mo) return false
   return actions.canCopyDDL(mo.connectionId, mo.database, mo.name, mo.kind, mo.schema)
+})
+
+// Database creation capabilities based on context menu target
+const canCreateDatabase = computed(() => {
+  const target = contextMenu.contextTarget.value
+  if (!target || target.kind !== 'connection') return false
+  const conn = connectionsStore.connections.find((c) => c.id === target.connectionId)
+  if (!conn) return false
+  const capabilities = useDatabaseCapabilities(conn.type)
+  return capabilities.canCreateDatabase.value
+})
+
+const canCreateSchema = computed(() => {
+  const target = contextMenu.contextTarget.value
+  if (!target || target.kind !== 'database') return false
+  const conn = connectionsStore.connections.find((c) => c.id === target.connectionId)
+  if (!conn) return false
+  const capabilities = useDatabaseCapabilities(conn.type)
+  return capabilities.canCreateSchema.value
 })
 
 // Use tree search composable (reactive to searchQuery and typeFilters)
@@ -225,6 +245,9 @@ function onMenuAction(payload: {
     case 'refresh-databases':
       if (t.kind === 'connection') actions.refreshDatabases(t.connectionId)
       break
+    case 'create-database':
+      if (t.kind === 'connection') actions.createDatabase(t.connectionId)
+      break
     case 'edit-connection':
       if (t.kind === 'connection') actions.editConnection(t.connectionId)
       break
@@ -237,6 +260,9 @@ function onMenuAction(payload: {
     case 'refresh-metadata':
       if (t.kind === 'database' || t.kind === 'schema')
         actions.refreshDatabase(t.connectionId, t.database)
+      break
+    case 'create-schema':
+      if (t.kind === 'database') actions.createSchema(t.connectionId, t.database)
       break
     case 'show-diagram':
       if (t.kind === 'database') actions.showDiagram(t.connectionId, t.database)
@@ -699,6 +725,8 @@ watch(
         :y="contextMenu.contextMenuY.value"
         :target="contextMenu.contextTarget.value"
         :canCopyDDL="canCopyDDL"
+        :canCreateDatabase="canCreateDatabase"
+        :canCreateSchema="canCreateSchema"
         @menu-action="onMenuAction"
         @close="contextMenu.close"
       />

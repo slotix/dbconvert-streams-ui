@@ -18,7 +18,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  size: 'LG',
+  size: 'BASE',
   containerClass: '',
   imageClass: ''
 })

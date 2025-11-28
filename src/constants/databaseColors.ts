@@ -392,6 +392,16 @@ export const DATABASE_ICON_COLORS: Record<string, IconColorScheme> = {
   files: {
     iconBg: 'bg-gray-50 dark:bg-gray-500/10',
     iconTint: 'brightness-95 saturate-50 dark:invert'
+  },
+
+  // S3 / Cloud Storage - Teal (cloud/sky theme)
+  [DATABASE_TYPES.S3]: {
+    iconBg: 'bg-teal-50 dark:bg-teal-900/30',
+    iconTint: 'dark:brightness-0 dark:invert dark:opacity-80'
+  },
+  s3: {
+    iconBg: 'bg-teal-50 dark:bg-teal-900/30',
+    iconTint: 'dark:brightness-0 dark:invert dark:opacity-80'
   }
 }
 

@@ -25,6 +25,8 @@ const props = defineProps<{
   y: number
   target: ContextTarget | null
   canCopyDDL?: boolean
+  canCreateDatabase?: boolean
+  canCreateSchema?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -72,6 +74,13 @@ function click(action: string, openInRightSplit?: boolean) {
           >
             Refresh
           </button>
+          <button
+            v-if="canCreateDatabase"
+            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+            @click="click('create-database')"
+          >
+            New Database
+          </button>
           <div class="my-1 border-t border-gray-100 dark:border-gray-700"></div>
           <button
             class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -101,6 +110,17 @@ function click(action: string, openInRightSplit?: boolean) {
           >
             Refresh metadata
           </button>
+          <button
+            v-if="canCreateSchema"
+            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+            @click="click('create-schema')"
+          >
+            New Schema
+          </button>
+          <div
+            v-if="canCreateSchema"
+            class="my-1 border-t border-gray-100 dark:border-gray-700"
+          ></div>
           <button
             class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
             @click="click('show-diagram')"

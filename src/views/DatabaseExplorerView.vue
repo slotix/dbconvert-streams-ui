@@ -23,6 +23,7 @@ import { useRecentConnections } from '@/composables/useRecentConnections'
 import { useExplorerRouter } from '@/composables/useExplorerRouter'
 import { useTreeSearch } from '@/composables/useTreeSearch'
 import { useExplorerUrlSync } from '@/composables/useExplorerUrlSync'
+import { useConnectionActions } from '@/composables/useConnectionActions'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import DisconnectedOverlay from '@/components/common/DisconnectedOverlay.vue'
 import EmptyStateMessage from '@/components/explorer/EmptyStateMessage.vue'
@@ -144,6 +145,30 @@ function onLeftTabChange(_tab: 'data' | 'structure') {
 
 function onRightTabChange(_tab: 'data' | 'structure') {
   // Tab state is managed by ObjectContainer internally
+}
+
+// Database/Schema creation handlers
+const connectionActions = useConnectionActions()
+
+function handleCreateDatabase(databaseName: string) {
+  const connectionId = explorerState.currentConnectionId.value
+  if (connectionId) {
+    connectionActions.createDatabase(connectionId, databaseName)
+  }
+}
+
+function handleCreateSchema(schemaName: string) {
+  const connectionId = explorerState.currentConnectionId.value
+  // Use the selected database from explorer (database-level schema creation)
+  // or fall back to the default database from connection spec (connection-level schema creation)
+  const targetDatabase =
+    selectedDatabase.value ||
+    connectionsStore.connections.find((c) => c.id === connectionId)?.spec?.database?.database ||
+    connectionsStore.connections.find((c) => c.id === connectionId)?.spec?.snowflake?.database
+
+  if (connectionId && targetDatabase) {
+    connectionActions.createSchema(connectionId, targetDatabase, schemaName)
+  }
 }
 </script>
 
@@ -368,6 +393,8 @@ function onRightTabChange(_tab: 'data' | 'structure') {
               @edit-connection-json="onEditConnectionJson"
               @clone-connection="onCloneConnection"
               @delete-connection="onDeleteConnection"
+              @create-database="handleCreateDatabase"
+              @create-schema="handleCreateSchema"
               @show-diagram="handleShowDiagram"
               @set-active-pane="(pane) => paneTabsStore.setActivePane(pane)"
               @left-tab-change="onLeftTabChange"

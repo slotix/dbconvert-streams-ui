@@ -7,6 +7,8 @@
       @edit-json="$emit('edit-connection-json')"
       @clone="$emit('clone-connection')"
       @delete="$emit('delete-connection')"
+      @create-database="$emit('create-database', $event)"
+      @create-schema="$emit('create-schema', $event)"
     />
   </div>
   <div
@@ -19,6 +21,7 @@
       :database="selectedDatabase"
       @show-diagram="$emit('show-diagram', $event)"
       @open-sql-console="handleOpenSqlConsole"
+      @create-schema="handleCreateSchema"
     />
   </div>
   <div
@@ -153,6 +156,8 @@ const emit = defineEmits<{
   'edit-connection-json': []
   'clone-connection': []
   'delete-connection': []
+  'create-database': [databaseName: string]
+  'create-schema': [schemaName: string]
   'show-diagram': [payload: { connectionId: string; database: string }]
   'set-active-pane': [pane: 'left' | 'right']
   'left-tab-change': [tab: 'data' | 'structure']
@@ -254,5 +259,13 @@ function handleOpenSqlConsole(payload: { connectionId: string; database: string 
   // Switch view state to show tabs instead of database overview
   // Set viewType directly since there's no dedicated action for sql-console
   viewStateStore.viewType = 'table-data'
+}
+
+/**
+ * Handle creating a schema from Database Overview panel
+ * Emits the create-schema event with the database context
+ */
+function handleCreateSchema(schemaName: string) {
+  emit('create-schema', schemaName)
 }
 </script>

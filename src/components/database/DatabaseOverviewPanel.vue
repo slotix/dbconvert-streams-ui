@@ -1,16 +1,20 @@
 <script setup lang="ts">
-import { onMounted, watch, computed } from 'vue'
+import { onMounted, watch, computed, ref, nextTick } from 'vue'
 import { useDatabaseOverviewStore } from '@/stores/databaseOverview'
+import { useConnectionsStore } from '@/stores/connections'
+import { useDatabaseCapabilities } from '@/composables/useDatabaseCapabilities'
 import { formatDataSize } from '@/utils/formats'
 import BaseButton from '@/components/base/BaseButton.vue'
+import FormInput from '@/components/base/FormInput.vue'
 import {
-  ServerIcon,
   CircleStackIcon,
   SignalIcon,
   ChartBarIcon,
   TableCellsIcon,
   InformationCircleIcon,
-  CommandLineIcon
+  CommandLineIcon,
+  PlusIcon,
+  ChevronDownIcon
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps<{
@@ -22,9 +26,42 @@ const emit = defineEmits<{
   (e: 'show-diagram', payload: { connectionId: string; database: string }): void
   (e: 'open-table', payload: { name: string }): void
   (e: 'open-sql-console', payload: { connectionId: string; database: string }): void
+  (e: 'create-schema', schemaName: string): void
 }>()
 
 const overviewStore = useDatabaseOverviewStore()
+const connectionsStore = useConnectionsStore()
+
+// Schema creation state
+const newSchemaName = ref('')
+const isCreatingSchema = ref(false)
+const showNewDropdown = ref(false)
+const schemaInputRef = ref<InstanceType<typeof FormInput> | null>(null)
+
+// Get connection type for capabilities
+const connectionType = computed(() => {
+  const conn = connectionsStore.connectionByID(props.connectionId)
+  return conn?.type || ''
+})
+
+// Database capabilities
+const { canCreateSchema } = useDatabaseCapabilities(connectionType)
+
+// Toggle dropdown and focus input
+function toggleNewDropdown() {
+  showNewDropdown.value = !showNewDropdown.value
+  if (showNewDropdown.value) {
+    nextTick(() => {
+      schemaInputRef.value?.$el?.querySelector('input')?.focus()
+    })
+  }
+}
+
+// Close dropdown
+function closeDropdown() {
+  showNewDropdown.value = false
+  newSchemaName.value = ''
+}
 
 // Get overview and loading state for this specific connection + database
 const overview = computed(() => overviewStore.getOverview(props.connectionId, props.database))
@@ -83,6 +120,21 @@ const sizeDisplay = computed(() => {
   const b = sizeBytes.value
   return typeof b === 'number' && Number.isFinite(b) ? formatDataSize(b) : '—'
 })
+
+// Schema creation handler
+async function handleCreateSchema() {
+  const schemaName = newSchemaName.value.trim()
+  if (!schemaName) return
+
+  isCreatingSchema.value = true
+  try {
+    emit('create-schema', schemaName)
+    newSchemaName.value = '' // Clear input on success
+    showNewDropdown.value = false // Close dropdown on success
+  } finally {
+    isCreatingSchema.value = false
+  }
+}
 </script>
 
 <template>
@@ -116,8 +168,47 @@ const sizeDisplay = computed(() => {
         >
           Show diagram
         </BaseButton>
+
+        <!-- New Schema Dropdown -->
+        <div v-if="canCreateSchema" class="relative">
+          <BaseButton variant="secondary" size="sm" @click="toggleNewDropdown">
+            <PlusIcon class="w-4 h-4 mr-1" />
+            New Schema
+            <ChevronDownIcon class="w-3 h-3 ml-1" />
+          </BaseButton>
+
+          <!-- Dropdown Panel -->
+          <div
+            v-if="showNewDropdown"
+            class="absolute right-0 top-full mt-1 z-50 w-64 bg-white dark:bg-gray-850 rounded-lg shadow-lg dark:shadow-gray-900/50 border border-gray-200 dark:border-gray-700 p-3"
+          >
+            <!-- Click outside overlay -->
+            <div class="fixed inset-0 z-[-1]" @click="closeDropdown"></div>
+
+            <div class="flex gap-2">
+              <FormInput
+                ref="schemaInputRef"
+                v-model="newSchemaName"
+                placeholder="schema_name"
+                class="flex-1"
+                :disabled="isCreatingSchema"
+                @keyup.enter="handleCreateSchema"
+                @keyup.escape="closeDropdown"
+              />
+              <BaseButton
+                variant="primary"
+                size="sm"
+                :disabled="!newSchemaName.trim() || isCreatingSchema"
+                @click="handleCreateSchema"
+              >
+                Create
+              </BaseButton>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
+
     <div v-if="isLoading" class="text-sm text-gray-500 dark:text-gray-400 py-8 text-center">
       Loading overview…
     </div>

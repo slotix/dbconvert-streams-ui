@@ -17,10 +17,29 @@ export function useConnectionTreeLogic() {
     return (conn?.type || '').toLowerCase().includes('file')
   }
 
+  function isS3Connection(conn: Connection): boolean {
+    // Check if connection has S3 spec
+    return !!conn.spec?.s3
+  }
+
+  function getEffectiveType(conn: Connection): string {
+    // For file connections, distinguish between S3 and local files
+    const baseType = (conn.type || '').toLowerCase()
+    if (baseType.includes('file')) {
+      return isS3Connection(conn) ? 's3' : 'files'
+    }
+    return baseType
+  }
+
   function getDbLogoForType(dbType?: string): string {
     const t = (dbType || '').toString().toLowerCase()
     const found = connectionsStore.dbTypes.find((d) => d.type.toLowerCase() === t)
     return found?.logo || '/images/db-logos/all.svg'
+  }
+
+  function getDbLogoForConnection(conn: Connection): string {
+    const effectiveType = getEffectiveType(conn)
+    return getDbLogoForType(effectiveType)
   }
 
   function isMySQL(connId: string): boolean {
@@ -130,7 +149,10 @@ export function useConnectionTreeLogic() {
 
   return {
     isFileConnection,
+    isS3Connection,
+    getEffectiveType,
     getDbLogoForType,
+    getDbLogoForConnection,
     isMySQL,
     isPostgres,
     isSnowflake,
