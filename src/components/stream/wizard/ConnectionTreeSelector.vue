@@ -426,7 +426,8 @@ async function loadDatabases(connectionId: string) {
 }
 
 function getDatabases(connectionId: string) {
-  return navigationStore.databasesState[connectionId] || []
+  // Use the filtered getter that respects showSystemObjects setting
+  return navigationStore.getDatabases(connectionId) || []
 }
 
 async function ensureMetadata(connectionId: string, database: string) {

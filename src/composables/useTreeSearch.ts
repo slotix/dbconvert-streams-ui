@@ -73,8 +73,8 @@ export function useTreeSearch(searchQuery: string, options: UseTreeSearchOptions
       const connectionLabel = `${connection.name || ''} ${host || ''} ${connection.type || ''}`
       if (normalize(connectionLabel).includes(normalizedQuery)) return true
 
-      // Search in database names
-      const databases = navigationStore.databasesState[connection.id] || []
+      // Search in database names (use filtered getter to respect showSystemObjects)
+      const databases = navigationStore.getDatabases(connection.id) || []
       if (databases.some((db) => normalize(db.name).includes(normalizedQuery))) return true
 
       // Search in metadata (tables and views)

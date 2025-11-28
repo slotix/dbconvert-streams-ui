@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, nextTick, provide } from 'vue'
 import { useDebounceFn } from '@vueuse/core'
-import { CubeIcon } from '@heroicons/vue/24/outline'
+import { CubeIcon, EyeIcon, EyeSlashIcon } from '@heroicons/vue/24/outline'
 import { useConnectionsStore } from '@/stores/connections'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { useConnectionTreeLogic } from '@/composables/useConnectionTreeLogic'
@@ -599,9 +599,25 @@ watch(
     <div
       class="px-4 py-3 border-b border-slate-200/50 dark:border-gray-700 flex items-center justify-between gap-4"
     >
-      <h2 class="text-sm font-semibold text-slate-700 dark:text-gray-300 uppercase tracking-wide">
-        Connections
-      </h2>
+      <div class="flex items-center gap-2">
+        <h2 class="text-sm font-semibold text-slate-700 dark:text-gray-300 uppercase tracking-wide">
+          Connections
+        </h2>
+        <!-- System Objects Toggle - compact icon button -->
+        <button
+          @click="navigationStore.toggleShowSystemObjects()"
+          class="p-1 rounded transition-colors duration-150"
+          :class="[
+            navigationStore.showSystemObjects
+              ? 'text-amber-500 hover:text-amber-600 hover:bg-amber-500/10'
+              : 'text-slate-400 hover:text-slate-500 hover:bg-slate-500/10 dark:text-gray-500 dark:hover:text-gray-400'
+          ]"
+          :title="navigationStore.showSystemObjects ? 'Hide system objects' : 'Show system objects'"
+        >
+          <EyeIcon v-if="navigationStore.showSystemObjects" class="w-4 h-4" />
+          <EyeSlashIcon v-else class="w-4 h-4" />
+        </button>
+      </div>
       <div
         v-if="isSearchExpanding"
         class="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400"
@@ -696,7 +712,7 @@ watch(
             :is-expanded="navigationStore.isConnectionExpanded(conn.id)"
             :is-file-connection="treeLogic.isFileConnection(conn.id)"
             :databases="
-              (navigationStore.databasesState[conn.id] || []).filter((d) =>
+              (navigationStore.getDatabases(conn.id) || []).filter((d) =>
                 matchesDbFilter(conn.id, d.name)
               )
             "

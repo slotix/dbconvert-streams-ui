@@ -66,6 +66,15 @@ export function useConnectionTreeLogic() {
     const meta = navigationStore.metadataState[connId]?.[db]
     if (!meta) return []
 
+    // Get schema system info from databasesState (from /databases API)
+    const dbInfo = navigationStore.databasesState[connId]?.find((d) => d.name === db)
+    const schemaSystemInfo = new Map<string, boolean>()
+    if (dbInfo?.schemas) {
+      dbInfo.schemas.forEach((s) => {
+        schemaSystemInfo.set(s.name, s.isSystem || false)
+      })
+    }
+
     // Initialize buckets for all schemas from the API response
     const buckets = new Map<string, { tables: string[]; views: string[] }>()
 
@@ -88,19 +97,18 @@ export function useConnectionTreeLogic() {
       buckets.get(s)!.views.push(v.name)
     })
 
-    const arr = Array.from(buckets.entries()).map(([name, bucket]) => ({
+    let arr = Array.from(buckets.entries()).map(([name, bucket]) => ({
       name,
       tables: bucket.tables.sort((a, b) => a.localeCompare(b)),
       views: bucket.views.sort((a, b) => a.localeCompare(b))
     }))
 
-    // Filter out MySQL default/system schemas
-    const mysqlSystemSchemas = new Set(['information_schema', 'mysql', 'performance_schema', 'sys'])
-    const filtered = isMySQL(connId)
-      ? arr.filter((s) => !mysqlSystemSchemas.has((s.name || '').toLowerCase()))
-      : arr
+    // Filter out system schemas when showSystemObjects is false
+    if (!navigationStore.showSystemObjects) {
+      arr = arr.filter((schema) => !schemaSystemInfo.get(schema.name))
+    }
 
-    return filtered.sort((a, b) => {
+    return arr.sort((a, b) => {
       const an = a.name
       const bn = b.name
       if (!an) return -1

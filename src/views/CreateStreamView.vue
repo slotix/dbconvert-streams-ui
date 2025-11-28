@@ -397,8 +397,8 @@ async function handleFinish() {
       foreignKeys: wizard.createForeignKeys.value
     }
 
-    // Save the stream
-    const savedStreamId = await streamsStore.saveStream()
+    // Save the stream (use update if editing existing stream)
+    const savedStreamId = await streamsStore.saveStream(isEditMode.value)
 
     commonStore.showNotification(
       isEditMode.value ? 'Stream updated successfully!' : 'Stream created successfully!',
@@ -458,8 +458,8 @@ async function handleQuickSave() {
       foreignKeys: wizard.createForeignKeys.value
     }
 
-    // Save the stream
-    const savedStreamId = await streamsStore.saveStream()
+    // Save the stream (use update if editing existing stream)
+    const savedStreamId = await streamsStore.saveStream(isEditMode.value)
 
     commonStore.showNotification('Stream updated successfully!', 'success')
 

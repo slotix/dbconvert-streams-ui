@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import type { DatabaseMetadata, SQLTableMeta, SQLViewMeta } from '@/types/metadata'
 import type { FileSystemEntry } from '@/api/fileSystem'
+import type { DatabaseInfo } from '@/types/connections'
 import connectionsApi from '@/api/connections'
 
 export type ObjectType = 'table' | 'view'
@@ -41,6 +42,10 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
     // Active connection ID - SINGLE SOURCE OF TRUTH (synchronous)
     activeConnectionId: null as string | null,
 
+    // UI Filter: Show/hide system objects (databases, schemas, tables)
+    // Default: OFF - hide system objects for cleaner UI
+    showSystemObjects: false,
+
     // Expansion state
     expandedConnections: new Set<string>(),
     expandedDatabases: new Set<string>(),
@@ -51,7 +56,8 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
     metadataState: {} as Record<string, Record<string, DatabaseMetadata>>,
 
     // Database list state - stores fetched lists for UI reactivity only (NOT HTTP caching)
-    databasesState: {} as Record<string, Array<{ name: string }>>,
+    // Now includes isSystem flag from API for native database detection
+    databasesState: {} as Record<string, DatabaseInfo[]>,
 
     // Current selection
     selection: null as NavigationSelection | null,
@@ -80,8 +86,29 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
       return state.expandedSchemas.has(key)
     },
 
-    getDatabases: (state) => (connectionId: string) => {
+    // Get ALL databases (including system)
+    getDatabasesRaw: (state) => (connectionId: string) => {
       return state.databasesState[connectionId] || null
+    },
+
+    // Get filtered databases based on showSystemObjects setting
+    getDatabases: (state) => (connectionId: string) => {
+      const databases = state.databasesState[connectionId]
+      if (!databases) return null
+      if (state.showSystemObjects) return databases
+      // Filter out system databases when showSystemObjects is false
+      return databases.filter((db) => !db.isSystem)
+    },
+
+    // Get filtered schemas for a database based on showSystemObjects setting
+    getFilteredSchemas: (state) => (connectionId: string, databaseName: string) => {
+      const databases = state.databasesState[connectionId]
+      if (!databases) return null
+      const database = databases.find((db) => db.name === databaseName)
+      if (!database?.schemas) return null
+      if (state.showSystemObjects) return database.schemas
+      // Filter out system schemas when showSystemObjects is false
+      return database.schemas.filter((schema) => !schema.isSystem)
     },
 
     getMetadata: (state) => (connectionId: string, database: string) => {
@@ -106,6 +133,15 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
   },
 
   actions: {
+    // Toggle showSystemObjects setting
+    toggleShowSystemObjects() {
+      this.showSystemObjects = !this.showSystemObjects
+    },
+
+    setShowSystemObjects(show: boolean) {
+      this.showSystemObjects = show
+    },
+
     // Cleanup stale connection references
     cleanupStaleConnections(validConnectionIds: string[]) {
       const validIdSet = new Set(validConnectionIds)
@@ -296,7 +332,13 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
 
       try {
         const dbs = await connectionsApi.getDatabases(connectionId)
-        this.databasesState[connectionId] = dbs.map((d) => ({ name: d.name }))
+        // Preserve isSystem and systemReason flags from API for filtering
+        this.databasesState[connectionId] = dbs.map((d) => ({
+          name: d.name,
+          isSystem: d.isSystem,
+          systemReason: d.systemReason,
+          schemas: d.schemas
+        }))
         // Clear error on successful load
         this.databasesErrors[connectionId] = null
         return this.databasesState[connectionId]

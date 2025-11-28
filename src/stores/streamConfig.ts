@@ -275,7 +275,7 @@ export const useStreamsStore = defineStore('streams', {
       this.resetCurrentStream()
       useConnectionsStore().resetCurrentConnection()
     },
-    async saveStream(): Promise<string | undefined> {
+    async saveStream(isEditMode: boolean = false): Promise<string | undefined> {
       try {
         this.prepareStreamData()
         if (!this.currentStreamConfig?.name) {
@@ -289,9 +289,19 @@ export const useStreamsStore = defineStore('streams', {
           )
         }
 
-        const stream = await api.createStream(
-          this.currentStreamConfig as unknown as Record<string, unknown>
-        )
+        let stream: StreamConfig
+        if (isEditMode && this.currentStreamConfig?.id) {
+          // Update existing stream config
+          stream = await api.updateStreamConfig(
+            this.currentStreamConfig.id,
+            this.currentStreamConfig as StreamConfig
+          )
+        } else {
+          // Create new stream config
+          stream = await api.createStream(
+            this.currentStreamConfig as unknown as Record<string, unknown>
+          )
+        }
 
         const savedId = stream.id
         this.resetCurrentStream()

@@ -10,7 +10,11 @@ export interface DatabaseCapabilities {
 
   // Schema/Database structure
   hierarchyLevels: ('database' | 'schema' | 'table' | 'collection')[]
-  systemObjects: {
+
+  // DEPRECATED: systemObjects is no longer used
+  // System object detection is now handled by the backend API via isSystem flag
+  // Kept for backward compatibility but should be empty
+  systemObjects?: {
     databases?: string[]
     schemas?: string[]
     tables?: string[]
@@ -41,9 +45,7 @@ export const DATABASE_CAPABILITIES: DatabaseTypeRegistry = {
     defaultPort: 5432,
     protocolName: 'postgresql',
     hierarchyLevels: ['database', 'schema', 'table'],
-    systemObjects: {
-      schemas: ['information_schema', 'pg_catalog', 'pg_toast', 'tiger', 'topology']
-    },
+    // System objects now detected by API via isSystem flag
     supportsSchemaFiltering: true,
     requiresSchemaSelection: true,
     canCreateDatabases: true,
@@ -61,9 +63,7 @@ export const DATABASE_CAPABILITIES: DatabaseTypeRegistry = {
     defaultPort: 3306,
     protocolName: 'mysql',
     hierarchyLevels: ['database', 'table'],
-    systemObjects: {
-      databases: ['information_schema', 'performance_schema', 'mysql', 'sys']
-    },
+    // System objects now detected by API via isSystem flag
     supportsSchemaFiltering: false,
     requiresSchemaSelection: false,
     canCreateDatabases: true,
@@ -81,9 +81,7 @@ export const DATABASE_CAPABILITIES: DatabaseTypeRegistry = {
     defaultPort: 1521,
     protocolName: 'oracle',
     hierarchyLevels: ['schema', 'table'],
-    systemObjects: {
-      schemas: ['SYS', 'SYSTEM', 'SYSAUX', 'DBSNMP']
-    },
+    // System objects now detected by API via isSystem flag
     supportsSchemaFiltering: true,
     requiresSchemaSelection: true,
     canCreateDatabases: false,
@@ -100,10 +98,7 @@ export const DATABASE_CAPABILITIES: DatabaseTypeRegistry = {
     defaultPort: 1433,
     protocolName: 'sqlserver',
     hierarchyLevels: ['database', 'schema', 'table'],
-    systemObjects: {
-      databases: ['master', 'model', 'msdb', 'tempdb'],
-      schemas: ['sys', 'INFORMATION_SCHEMA', 'guest', 'db_owner']
-    },
+    // System objects now detected by API via isSystem flag
     supportsSchemaFiltering: true,
     requiresSchemaSelection: true,
     canCreateDatabases: true,
@@ -120,9 +115,7 @@ export const DATABASE_CAPABILITIES: DatabaseTypeRegistry = {
     defaultPort: 27017,
     protocolName: 'mongodb',
     hierarchyLevels: ['database', 'collection'],
-    systemObjects: {
-      databases: ['admin', 'config', 'local']
-    },
+    // System objects now detected by API via isSystem flag
     supportsSchemaFiltering: false,
     requiresSchemaSelection: false,
     canCreateDatabases: true,
@@ -139,9 +132,7 @@ export const DATABASE_CAPABILITIES: DatabaseTypeRegistry = {
     defaultPort: 443,
     protocolName: 'snowflake',
     hierarchyLevels: ['database', 'schema', 'table'],
-    systemObjects: {
-      schemas: ['INFORMATION_SCHEMA']
-    },
+    // System objects now detected by API via isSystem flag
     supportsSchemaFiltering: true,
     requiresSchemaSelection: true,
     canCreateDatabases: true,
@@ -159,7 +150,7 @@ export const DATABASE_CAPABILITIES: DatabaseTypeRegistry = {
     defaultPort: 0, // Not applicable for file connections
     protocolName: 'file',
     hierarchyLevels: ['database', 'table'], // folders = "databases", files = "tables"
-    systemObjects: {},
+    // No system objects for file connections
     supportsSchemaFiltering: false,
     requiresSchemaSelection: false,
     canCreateDatabases: true, // Can create new folders

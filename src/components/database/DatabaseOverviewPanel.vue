@@ -510,8 +510,12 @@ async function handleCreateSchema() {
             </button>
             <span
               class="ml-2 shrink-0 text-gray-500 dark:text-gray-400 text-xs font-medium"
-              :title="Intl.NumberFormat().format(t.sizeBytes) + ' bytes'"
-              >{{ formatDataSize(t.sizeBytes) }}</span
+              :title="
+                t.sizeBytes > 0
+                  ? Intl.NumberFormat().format(t.sizeBytes) + ' bytes'
+                  : 'Size not available'
+              "
+              >{{ formatDataSize(t.sizeBytes, true) }}</span
             >
           </li>
         </ul>

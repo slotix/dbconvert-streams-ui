@@ -33,10 +33,14 @@ export interface Connection {
 
 export interface Schema {
   name: string
+  isSystem?: boolean
+  systemReason?: string
 }
 
 export interface Database {
   name: string
+  isSystem?: boolean
+  systemReason?: string
 }
 
 export interface DbType {
@@ -49,7 +53,15 @@ export interface DbType {
 
 export interface DatabaseInfo {
   name: string
-  schemas?: string[]
+  isSystem?: boolean
+  systemReason?: string
+  schemas?: SchemaInfo[]
+}
+
+export interface SchemaInfo {
+  name: string
+  isSystem?: boolean
+  systemReason?: string
 }
 
 export interface SchemaFilter {
