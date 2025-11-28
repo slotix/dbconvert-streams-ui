@@ -292,6 +292,7 @@ const props = defineProps<{
   stream: StreamConfig
   source?: Connection
   target?: Connection
+  initialTab?: StreamDetailsTab
 }>()
 
 const emit = defineEmits<{
@@ -305,7 +306,17 @@ const commonStore = useCommonStore()
 const monitoringStore = useMonitoringStore()
 
 const showDeleteConfirm = ref(false)
-const activeTab = ref<StreamDetailsTab>('configuration')
+const activeTab = ref<StreamDetailsTab>(props.initialTab || 'configuration')
+
+// Watch for initialTab prop changes (e.g., from URL query params)
+watch(
+  () => props.initialTab,
+  (newTab) => {
+    if (newTab) {
+      activeTab.value = newTab
+    }
+  }
+)
 
 const streamRef = toRef(props, 'stream')
 const sourceRef = toRef(props, 'source')

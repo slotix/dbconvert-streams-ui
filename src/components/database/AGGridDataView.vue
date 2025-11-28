@@ -11,6 +11,7 @@ import ColumnContextMenu from './ColumnContextMenu.vue'
 import DataFilterPanel from './DataFilterPanel.vue'
 import ExportToolbar from '@/components/common/ExportToolbar.vue'
 import { exportData, type ExportFormat } from '@/composables/useDataExport'
+import { useStreamExport, type StreamExportFormat } from '@/composables/useStreamExport'
 import {
   useBaseAGGridView,
   type FetchDataParams,
@@ -499,6 +500,26 @@ function handleExport(format: ExportFormat) {
   })
 }
 
+// Stream export for full table
+const { exportTable, isExporting: isStreamExporting } = useStreamExport()
+
+// Handle stream export request (full table via stream)
+async function handleStreamExport(format: StreamExportFormat) {
+  const objectName = getObjectName(props.tableMeta)
+  const objectSchema = getObjectSchema(props.tableMeta)
+
+  await exportTable({
+    connectionId: props.connectionId,
+    database: props.database,
+    schema: objectSchema || undefined,
+    table: objectName,
+    format,
+    objectKey: props.objectKey,
+    dialect:
+      connectionType.value === 'pgsql' || connectionType.value === 'postgresql' ? 'pgsql' : 'mysql'
+  })
+}
+
 // Check if there's data available for export
 const hasDataForExport = computed(() => {
   const api = baseGrid.gridApi.value
@@ -539,7 +560,12 @@ defineExpose({
         <span class="text-xs text-gray-500 dark:text-gray-400">
           Export current page ({{ baseGrid.totalRowCount.value.toLocaleString() }} total rows)
         </span>
-        <ExportToolbar @export="handleExport" />
+        <ExportToolbar
+          :show-stream-export="true"
+          :is-exporting="isStreamExporting"
+          @export="handleExport"
+          @stream-export="handleStreamExport"
+        />
       </div>
     </div>
 

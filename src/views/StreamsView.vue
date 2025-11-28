@@ -171,6 +171,7 @@
                 :stream="selectedStream"
                 :source="connectionByID(selectedStream.source?.id)"
                 :target="connectionByID(selectedStream.target?.id)"
+                :initial-tab="initialTab"
                 @stream-deleted="handleStreamDeletedFromPanel"
               />
             </div>
@@ -215,6 +216,7 @@ import DisconnectedOverlay from '@/components/common/DisconnectedOverlay.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
 import type { StreamConfig } from '@/types/streamConfig'
 import type { Connection } from '@/types/connections'
+import type { StreamDetailsTab } from '@/composables/useStreamHistory'
 
 const streamsStore = useStreamsStore()
 const connectionsStore = useConnectionsStore()
@@ -226,6 +228,9 @@ const route = useRoute()
 const sidebar = useSidebar()
 
 const selectedStreamId = ref<string>('')
+
+// Initial tab from query parameter (for navigating directly to a specific tab)
+const initialTab = computed(() => route.query.tab as StreamDetailsTab | undefined)
 const searchQuery = ref('')
 const searchInputRef = ref<InstanceType<typeof SearchInput> | null>(null)
 
