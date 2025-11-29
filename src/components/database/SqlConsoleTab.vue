@@ -374,9 +374,42 @@ onMounted(async () => {
 
   const activeTab = activeQueryTab.value
   if (activeTab && !activeTab.query.trim()) {
-    const defaultQuery = props.database
-      ? `-- Database: ${props.database}\nSELECT * FROM  LIMIT 100;`
-      : `-- Use: USE database_name; or prefix tables with database.table\nSHOW DATABASES;`
+    const dialect = currentDialect.value
+    const isPostgres = dialect.includes('postgres') || dialect.includes('pgsql')
+
+    let defaultQuery: string
+    if (props.database) {
+      // Database-scoped console - data exploration focused
+      defaultQuery = `-- Database: ${props.database}\nSELECT * FROM  LIMIT 100;`
+    } else if (props.sqlScope === 'connection') {
+      // Connection-scoped console - admin operations focused
+      if (isPostgres) {
+        defaultQuery = `-- Admin Console: Run DDL and admin commands
+-- Examples:
+--   SELECT datname FROM pg_database;
+--   CREATE DATABASE mydb;
+--   DROP DATABASE mydb;
+--   SELECT version();
+
+SELECT datname FROM pg_database WHERE datistemplate = false;`
+      } else {
+        // MySQL syntax
+        defaultQuery = `-- Admin Console: Run DDL and admin commands
+-- Examples:
+--   SHOW DATABASES;
+--   CREATE DATABASE mydb;
+--   DROP DATABASE mydb;
+--   SHOW VARIABLES LIKE '%version%';
+
+SHOW DATABASES;`
+      }
+    } else {
+      if (isPostgres) {
+        defaultQuery = `-- Use: SET search_path TO schema_name; or prefix tables with schema.table\nSELECT datname FROM pg_database;`
+      } else {
+        defaultQuery = `-- Use: USE database_name; or prefix tables with database.table\nSHOW DATABASES;`
+      }
+    }
     sqlQuery.value = defaultQuery
     if (activeQueryTabId.value) {
       sqlConsoleStore.updateTabQuery(

@@ -27,6 +27,7 @@ const props = defineProps<{
   canCopyDDL?: boolean
   canCreateDatabase?: boolean
   canCreateSchema?: boolean
+  isFileConnection?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -62,6 +63,17 @@ function click(action: string, openInRightSplit?: boolean) {
       >
         <template v-if="target.kind === 'connection'">
           <!-- Connection menu -->
+          <button
+            v-if="!props.isFileConnection"
+            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+            @click="click('sql-console')"
+          >
+            SQL Console
+          </button>
+          <div
+            v-if="!props.isFileConnection"
+            class="my-1 border-t border-gray-100 dark:border-gray-700"
+          ></div>
           <button
             class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
             @click="click('test-connection')"
@@ -104,6 +116,13 @@ function click(action: string, openInRightSplit?: boolean) {
 
         <template v-else-if="target.kind === 'database'">
           <!-- Database menu -->
+          <button
+            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+            @click="click('sql-console')"
+          >
+            SQL Console
+          </button>
+          <div class="my-1 border-t border-gray-100 dark:border-gray-700"></div>
           <button
             class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
             @click="click('refresh-metadata')"

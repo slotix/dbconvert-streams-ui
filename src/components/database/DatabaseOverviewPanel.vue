@@ -15,7 +15,8 @@ import {
   InformationCircleIcon,
   CommandLineIcon,
   PlusIcon,
-  ChevronDownIcon
+  ChevronDownIcon,
+  ServerIcon
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps<{

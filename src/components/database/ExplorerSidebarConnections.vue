@@ -59,6 +59,14 @@ const emit = defineEmits<{
       openInRightSplit?: boolean
     }
   ): void
+  (
+    e: 'open-sql-console',
+    payload: {
+      connectionId: string
+      database?: string
+      sqlScope: 'database' | 'connection'
+    }
+  ): void
   (e: 'expanded-connection', payload: { connectionId: string }): void
   (e: 'show-diagram', payload: { connectionId: string; database: string }): void
   (e: 'select-connection', payload: { connectionId: string }): void
@@ -132,6 +140,13 @@ const canCreateSchema = computed(() => {
   if (!conn) return false
   const capabilities = useDatabaseCapabilities(conn.type)
   return capabilities.canCreateSchema.value
+})
+
+// Check if the context menu target is a file connection
+const isFileConnection = computed(() => {
+  const target = contextMenu.contextTarget.value
+  if (!target || target.kind !== 'connection') return false
+  return treeLogic.isFileConnection(target.connectionId)
 })
 
 // Use tree search composable (reactive to searchQuery and typeFilters)
@@ -239,6 +254,21 @@ function onMenuAction(payload: {
   const t = payload.target
   contextMenu.close()
   switch (payload.action) {
+    case 'sql-console':
+      // Open SQL console for connection or database scope
+      if (t.kind === 'connection') {
+        emit('open-sql-console', {
+          connectionId: t.connectionId,
+          sqlScope: 'connection'
+        })
+      } else if (t.kind === 'database') {
+        emit('open-sql-console', {
+          connectionId: t.connectionId,
+          database: t.database,
+          sqlScope: 'database'
+        })
+      }
+      break
     case 'test-connection':
       if (t.kind === 'connection') actions.testConnection(t.connectionId)
       break
@@ -743,6 +773,7 @@ watch(
         :canCopyDDL="canCopyDDL"
         :canCreateDatabase="canCreateDatabase"
         :canCreateSchema="canCreateSchema"
+        :isFileConnection="isFileConnection"
         @menu-action="onMenuAction"
         @close="contextMenu.close"
       />

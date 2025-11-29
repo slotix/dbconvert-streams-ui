@@ -258,8 +258,19 @@ export const useExplorerViewStateStore = defineStore('explorerViewState', () => 
     } else if (params.database) {
       selectDatabase(params.connId, params.database)
     } else {
-      // No query params - default to connection details
-      selectConnection(params.connId)
+      // No query params - set to table-data view (pane tabs)
+      // This allows SQL Console and other tab-based views to work
+      // If connectionId changes, update it but preserve table-data view
+      if (connectionId.value !== params.connId) {
+        connectionId.value = params.connId
+        viewType.value = 'table-data'
+        databaseName.value = null
+        schemaName.value = null
+        objectType.value = null
+        objectName.value = null
+        filePath.value = null
+        saveState()
+      }
     }
   }
 
@@ -284,6 +295,10 @@ export const useExplorerViewStateStore = defineStore('explorerViewState', () => 
     selectTable,
     selectFile,
     reset,
+    setViewType: (type: ViewType) => {
+      viewType.value = type
+      saveState()
+    },
 
     // Internal (for URL sync only)
     _updateFromUrl

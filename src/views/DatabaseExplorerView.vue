@@ -7,6 +7,7 @@ import { useConnectionsStore } from '@/stores/connections'
 import { useSchemaStore } from '@/stores/schema'
 import { usePaneTabsStore } from '@/stores/paneTabs'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
+import { useExplorerViewStateStore } from '@/stores/explorerViewState'
 import ExplorerSidebarConnections from '@/components/database/ExplorerSidebarConnections.vue'
 import ExplorerContentArea from '@/components/explorer/ExplorerContentArea.vue'
 import ConnectionTypeFilter from '@/components/common/ConnectionTypeFilter.vue'
@@ -36,6 +37,7 @@ const connectionsStore = useConnectionsStore()
 const schemaStore = useSchemaStore()
 const paneTabsStore = usePaneTabsStore()
 const navigationStore = useExplorerNavigationStore()
+const viewStateStore = useExplorerViewStateStore()
 
 // Set up two-way URL sync (Store ↔ URL)
 useExplorerUrlSync()
@@ -170,6 +172,33 @@ function handleCreateSchema(schemaName: string) {
     connectionActions.createSchema(connectionId, targetDatabase, schemaName)
   }
 }
+
+// SQL Console handler
+function handleOpenSqlConsole(payload: {
+  connectionId: string
+  database?: string
+  sqlScope: 'database' | 'connection'
+}) {
+  const connection = connectionsStore.connectionByID(payload.connectionId)
+  const connName = connection?.name || 'SQL'
+  const tabName = payload.database ? `${connName} → ${payload.database}` : `${connName} (Admin)`
+
+  // Switch view to show pane tabs instead of connection details or database overview
+  viewStateStore.setViewType('table-data')
+
+  paneTabsStore.addTab(
+    paneTabsStore.activePane || 'left',
+    {
+      id: `sql-console:${payload.connectionId}:${payload.database || '*'}`,
+      connectionId: payload.connectionId,
+      database: payload.database,
+      name: tabName,
+      tabType: 'sql-console',
+      sqlScope: payload.sqlScope
+    },
+    'pinned'
+  )
+}
 </script>
 
 <template>
@@ -301,6 +330,7 @@ function handleCreateSchema(schemaName: string) {
               @select-database="handleSelectDatabase"
               @select-file="handleFileSelect"
               @open-file="handleOpenFile"
+              @open-sql-console="handleOpenSqlConsole"
               @request-file-entries="handleRequestFileEntries"
             />
           </div>

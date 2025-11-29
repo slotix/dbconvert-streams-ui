@@ -9,6 +9,7 @@
       @delete="$emit('delete-connection')"
       @create-database="$emit('create-database', $event)"
       @create-schema="$emit('create-schema', $event)"
+      @open-sql-console="handleOpenConnectionSqlConsole"
     />
   </div>
   <div
@@ -267,5 +268,32 @@ function handleOpenSqlConsole(payload: { connectionId: string; database: string 
  */
 function handleCreateSchema(schemaName: string) {
   emit('create-schema', schemaName)
+}
+
+/**
+ * Handle opening SQL Console from Connection Details panel
+ * Opens a connection-scoped SQL console (no USE database; prefix)
+ */
+function handleOpenConnectionSqlConsole() {
+  if (!props.connectionId) return
+
+  // Switch view state FIRST to show tabs instead of connection details
+  viewStateStore.setViewType('table-data')
+
+  const tabId = `sql-console:${props.connectionId}:*`
+
+  paneTabsStore.addTab(
+    'left',
+    {
+      id: tabId,
+      connectionId: props.connectionId,
+      database: '',
+      name: `${currentConnection.value?.name || 'SQL'} (Admin)`,
+      tabType: 'sql-console',
+      sqlScope: 'connection',
+      objectKey: tabId
+    },
+    'pinned'
+  )
 }
 </script>

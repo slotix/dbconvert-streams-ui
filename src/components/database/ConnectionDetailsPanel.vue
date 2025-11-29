@@ -19,7 +19,8 @@ import {
   PlusIcon,
   ServerIcon,
   CircleStackIcon,
-  ChartBarIcon
+  ChartBarIcon,
+  CommandLineIcon
 } from '@heroicons/vue/24/outline'
 
 const navigationStore = useExplorerNavigationStore()
@@ -36,6 +37,7 @@ const emit = defineEmits<{
   (e: 'delete'): void
   (e: 'create-database', databaseName: string): void
   (e: 'create-schema', schemaName: string): void
+  (e: 'open-sql-console'): void
 }>()
 
 const showPassword = ref(false)
@@ -797,6 +799,32 @@ const isLoadingDatabases = computed(() => {
               </div>
             </div>
           </div>
+        </div>
+
+        <!-- SQL Console Card -->
+        <div
+          class="bg-slate-50 dark:bg-gray-800/50 rounded-xl p-4 ring-1 ring-slate-200/70 dark:ring-gray-700"
+        >
+          <div class="flex items-center gap-2 mb-3">
+            <div class="p-1.5 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
+              <CommandLineIcon class="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+            </div>
+            <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">SQL Console</span>
+          </div>
+
+          <p class="text-xs text-gray-600 dark:text-gray-400 mb-3">
+            Execute SQL commands directly on this server (CREATE DATABASE, DROP, etc.)
+          </p>
+
+          <BaseButton
+            variant="secondary"
+            size="sm"
+            class="w-full justify-center"
+            @click="emit('open-sql-console')"
+          >
+            <CommandLineIcon class="w-4 h-4 mr-1.5" />
+            Open SQL Console
+          </BaseButton>
         </div>
 
         <!-- Create Database Card -->
