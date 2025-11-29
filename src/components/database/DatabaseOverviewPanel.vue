@@ -98,6 +98,14 @@ async function load() {
   }
 }
 
+async function refresh() {
+  // Refresh both overview and database list from sidebar
+  // This ensures dropped databases are removed from the sidebar
+  navigationStore.invalidateDatabases(props.connectionId)
+  await navigationStore.ensureDatabases(props.connectionId, true)
+  await load()
+}
+
 onMounted(load)
 
 watch(
@@ -203,7 +211,7 @@ async function handleCreateSchema() {
           <CommandLineIcon class="w-4 h-4 mr-1.5" />
           SQL Console
         </BaseButton>
-        <BaseButton variant="secondary" size="sm" @click="load()"> Refresh </BaseButton>
+        <BaseButton variant="secondary" size="sm" @click="refresh()"> Refresh </BaseButton>
         <BaseButton
           variant="secondary"
           size="sm"

@@ -64,6 +64,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import type { SchemaContext } from '@/composables/useMonacoSqlProviders'
 import { useConnectionsStore } from '@/stores/connections'
 import { useSqlConsoleStore } from '@/stores/sqlConsole'
+import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import connections from '@/api/connections'
 import { format as formatSQL } from 'sql-formatter'
 import { SqlConsoleHeader, SqlQueryTabs, SqlEditorPane, SqlResultsPane } from './sql-console'
@@ -76,6 +77,7 @@ const props = defineProps<{
 
 const connectionsStore = useConnectionsStore()
 const sqlConsoleStore = useSqlConsoleStore()
+const navigationStore = useExplorerNavigationStore()
 
 // ========== State ==========
 const sqlQuery = ref('')
@@ -184,12 +186,37 @@ function setActiveQueryTab(tabId: string) {
   sqlConsoleStore.setActiveTab(props.connectionId, props.database, tabId)
 }
 
+function getDefaultQueryTemplate(): string {
+  const dialect = currentDialect.value
+  const isPostgres = dialect.includes('postgres') || dialect.includes('pgsql')
+
+  if (props.database) {
+    // Database-scoped console - minimal template for new queries
+    return `-- Write your query here\nSELECT * FROM  LIMIT 100;`
+  } else if (props.sqlScope === 'connection') {
+    // Connection-scoped console - admin operations
+    if (isPostgres) {
+      return `-- Write your query here\n`
+    } else {
+      return `-- Write your query here\n`
+    }
+  }
+  return `-- Write your query here\n`
+}
+
 function addQueryTab() {
   const currentTabId = activeQueryTabId.value
   if (currentTabId) {
     sqlConsoleStore.updateTabQuery(props.connectionId, props.database, currentTabId, sqlQuery.value)
   }
-  sqlConsoleStore.addTab(props.connectionId, props.database)
+  const newTab = sqlConsoleStore.addTab(props.connectionId, props.database)
+  // Set a minimal template for the new tab
+  sqlConsoleStore.updateTabQuery(
+    props.connectionId,
+    props.database,
+    newTab.id,
+    getDefaultQueryTemplate()
+  )
 }
 
 function closeQueryTab(tabId: string) {
@@ -316,6 +343,20 @@ async function executeQuery() {
         error: null,
         stats: lastQueryStats.value
       })
+    }
+
+    // If DDL query succeeded, refresh the affected parts of the sidebar
+    // Backend returns affectedObject: "database", "schema", or "table"
+    if (result.affectedObject) {
+      if (result.affectedObject === 'database' || result.affectedObject === 'schema') {
+        // Refresh database list for CREATE/DROP DATABASE or SCHEMA
+        navigationStore.invalidateDatabases(props.connectionId)
+        await navigationStore.ensureDatabases(props.connectionId, true)
+      }
+      if (result.affectedObject === 'table' && db) {
+        // Refresh metadata for CREATE/DROP/ALTER TABLE
+        navigationStore.invalidateMetadata(props.connectionId, db)
+      }
     }
   } catch (error: unknown) {
     const err = error as Error

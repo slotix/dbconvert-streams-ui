@@ -521,12 +521,18 @@ const getViewExactCount = async (
 /**
  * Execute an arbitrary SQL query on a connection.
  * If database is provided, the query runs in that database context.
+ * Returns affectedObject ("database", "schema", "table") for DDL operations.
  */
 const executeQuery = async (
   connectionId: string,
   query: string,
   database?: string
-): Promise<{ columns: string[]; rows: unknown[][]; affected_rows?: number }> => {
+): Promise<{
+  columns: string[]
+  rows: unknown[][]
+  affected_rows?: number
+  affectedObject?: string
+}> => {
   const commonStore = useCommonStore()
   validateApiKey(commonStore.apiKey)
   try {
@@ -539,6 +545,7 @@ const executeQuery = async (
       columns: string[]
       rows: unknown[][]
       affected_rows?: number
+      affectedObject?: string
     }> = await apiClient.post(
       url,
       { query },
