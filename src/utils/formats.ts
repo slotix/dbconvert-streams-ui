@@ -19,18 +19,6 @@ export function formatDateTime(timestamp: number): string {
     .replace(',', ' -')
 }
 
-/**
- * Legacy formatDate - kept for backward compatibility
- * @deprecated Use formatDateTime instead for consistent formatting
- */
-export function formatDate(date: number): string {
-  return new Date(date * 1000).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric'
-  })
-}
-
 export function formatDataSize(bytes: number, zeroAsNA = false): string {
   const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
   if (bytes === 0) return zeroAsNA ? 'N/A' : '0 B'

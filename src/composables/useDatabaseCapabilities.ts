@@ -46,12 +46,6 @@ export function useDatabaseCapabilities(databaseType: Ref<string> | string) {
   const showTableLevel = computed(() => hierarchyLevels.value.includes('table'))
   const showCollectionLevel = computed(() => hierarchyLevels.value.includes('collection'))
 
-  // DEPRECATED: System objects filtering is now handled by API via isSystem flag
-  // These are kept for backward compatibility but will return empty arrays
-  const systemDatabases = computed(() => capabilities.value?.systemObjects?.databases || [])
-  const systemSchemas = computed(() => capabilities.value?.systemObjects?.schemas || [])
-  const systemTables = computed(() => capabilities.value?.systemObjects?.tables || [])
-
   // UI conditional helpers
   const isPostgreSQL = computed(() => dbType.value.toLowerCase().includes('postgres'))
   const isMySQL = computed(() => dbType.value.toLowerCase().includes('mysql'))
@@ -160,11 +154,6 @@ export function useDatabaseCapabilities(databaseType: Ref<string> | string) {
     showSchemaLevel,
     showTableLevel,
     showCollectionLevel,
-
-    // System objects
-    systemDatabases,
-    systemSchemas,
-    systemTables,
 
     // Database type checks
     isPostgreSQL,

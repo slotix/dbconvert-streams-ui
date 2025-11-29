@@ -11,15 +11,6 @@ export interface DatabaseCapabilities {
   // Schema/Database structure
   hierarchyLevels: ('database' | 'schema' | 'table' | 'collection')[]
 
-  // DEPRECATED: systemObjects is no longer used
-  // System object detection is now handled by the backend API via isSystem flag
-  // Kept for backward compatibility but should be empty
-  systemObjects?: {
-    databases?: string[]
-    schemas?: string[]
-    tables?: string[]
-  }
-
   // UI specific features
   supportsSchemaFiltering: boolean
   requiresSchemaSelection: boolean

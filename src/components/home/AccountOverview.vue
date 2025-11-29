@@ -66,7 +66,7 @@
               v-if="subscriptionStatus === 'trialing' && userData?.trialEnd"
               class="text-sm text-gray-500 dark:text-gray-400 mt-1"
             >
-              Trial ends on {{ formatDate(userData.trialEnd) }}
+              Trial ends on {{ formatDateTime(userData.trialEnd) }}
             </p>
             <a
               href="http://streams.dbconvert.com/pricing"
@@ -298,7 +298,7 @@ import {
   UserIcon,
   DocumentDuplicateIcon
 } from '@heroicons/vue/24/outline'
-import { formatDate, formatDataSize } from '@/utils/formats'
+import { formatDateTime, formatDataSize } from '@/utils/formats'
 
 const commonStore = useCommonStore()
 
@@ -342,12 +342,12 @@ async function copyApiKey() {
 // Add period information
 const currentPeriodStart = computed(() => {
   const date = commonStore.userData?.subscriptionPeriodUsage?.period_start
-  return date ? formatDate(date) : null
+  return date ? formatDateTime(date) : null
 })
 
 const currentPeriodEnd = computed(() => {
   const date = commonStore.userData?.subscriptionPeriodUsage?.period_end
-  return date ? formatDate(date) : null
+  return date ? formatDateTime(date) : null
 })
 
 const trialEnded = computed(() => {
