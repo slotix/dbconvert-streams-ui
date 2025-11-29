@@ -41,7 +41,6 @@ const emit = defineEmits<{
   (e: 'close'): void
 }>()
 
-const hasMenu = computed(() => props.visible && !!props.target)
 const target = computed(() => props.target as ContextTarget)
 const isTableOrView = computed(
   () => !!props.target && (props.target.kind === 'table' || props.target.kind === 'view')
@@ -54,8 +53,15 @@ const isFileOrTableFolder = computed(() => {
   // For regular files, always true
   return true
 })
+// Check if this is a navigation folder (no menu items)
+const isNavigationFolder = computed(() => {
+  if (!props.target || props.target.kind !== 'file') return false
+  return props.target.isDir && !props.target.isTable
+})
 // Objects that can be opened (tables, views, files, table folders)
 const isOpenable = computed(() => isTableOrView.value || isFileOrTableFolder.value)
+// Only show menu if visible, has target, and is not a navigation folder
+const hasMenu = computed(() => props.visible && !!props.target && !isNavigationFolder.value)
 
 function click(action: string, openInRightSplit?: boolean) {
   if (!props.target) return
