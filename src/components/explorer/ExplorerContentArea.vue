@@ -10,6 +10,7 @@
       @create-database="$emit('create-database', $event)"
       @create-schema="$emit('create-schema', $event)"
       @open-sql-console="handleOpenConnectionSqlConsole"
+      @open-file-console="handleOpenFileConsole"
     />
   </div>
   <div
@@ -291,6 +292,38 @@ function handleOpenConnectionSqlConsole() {
       name: `${currentConnection.value?.name || 'SQL'} (Admin)`,
       tabType: 'sql-console',
       sqlScope: 'connection',
+      objectKey: tabId
+    },
+    'pinned'
+  )
+}
+
+/**
+ * Handle opening DuckDB Console from Connection Details panel (for file/S3 connections)
+ */
+function handleOpenFileConsole() {
+  if (!props.connectionId) return
+
+  // Switch view state FIRST to show tabs instead of connection details
+  viewStateStore.setViewType('table-data')
+
+  const conn = currentConnection.value
+  const connType = conn?.type?.toLowerCase()
+  const isS3 = connType === 's3' || conn?.spec?.s3 !== undefined
+  const basePath =
+    conn?.storage_config?.uri || conn?.spec?.files?.outputDirectory || conn?.spec?.s3?.scope?.bucket
+
+  const tabId = `file-console:${props.connectionId}`
+
+  paneTabsStore.addTab(
+    'left',
+    {
+      id: tabId,
+      connectionId: props.connectionId,
+      name: `${conn?.name || 'Files'} (DuckDB)`,
+      tabType: 'file-console',
+      fileConnectionType: isS3 ? 's3' : 'files',
+      basePath: basePath,
       objectKey: tabId
     },
     'pinned'

@@ -139,6 +139,7 @@ function isActiveTab(index: number): boolean {
 function getObjectIcon(tab: PaneTab) {
   if (tab.tabType === 'file') return DocumentIcon
   if (tab.tabType === 'sql-console') return CommandLineIcon
+  if (tab.tabType === 'file-console') return CommandLineIcon
   return tab.type === 'view' ? EyeIcon : TableCellsIcon
 }
 

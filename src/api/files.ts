@@ -153,6 +153,42 @@ export async function readS3Manifest(path: string): Promise<S3ManifestResponse> 
   }
 }
 
+// File SQL Query Execution (DuckDB Console)
+
+export interface FileQueryRequest {
+  query: string
+}
+
+export interface FileQueryResponse {
+  columns: string[]
+  rows: unknown[][]
+  count: number
+  status: string
+}
+
+/**
+ * Execute a SQL query on files using DuckDB
+ * The query can use DuckDB file reading functions like:
+ * - read_csv_auto('/path/to/file.csv')
+ * - read_parquet('/path/to/file.parquet')
+ * - read_json_auto('/path/to/file.json')
+ * - S3 paths: read_parquet('s3://bucket/path/*.parquet')
+ */
+export async function executeFileQuery(query: string): Promise<FileQueryResponse> {
+  try {
+    const response = await apiClient.post<FileQueryResponse>(
+      '/files/query',
+      { query },
+      {
+        ...withAuthHeaders()
+      }
+    )
+    return response.data
+  } catch (error) {
+    throw handleApiError(error)
+  }
+}
+
 export default {
   getFileMetadata,
   getFileData,
@@ -161,5 +197,6 @@ export default {
   listS3Objects,
   listS3Buckets,
   validateS3Path,
-  readS3Manifest
+  readS3Manifest,
+  executeFileQuery
 }

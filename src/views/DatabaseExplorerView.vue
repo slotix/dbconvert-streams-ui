@@ -199,6 +199,33 @@ function handleOpenSqlConsole(payload: {
     'pinned'
   )
 }
+
+// File Console handler (DuckDB console for file/S3 connections)
+function handleOpenFileConsole(payload: {
+  connectionId: string
+  connectionType: 'files' | 's3'
+  basePath?: string
+}) {
+  const connection = connectionsStore.connectionByID(payload.connectionId)
+  const connName = connection?.name || 'Files'
+  const tabName = `${connName} (DuckDB)`
+
+  // Switch view to show pane tabs instead of connection details
+  viewStateStore.setViewType('table-data')
+
+  paneTabsStore.addTab(
+    paneTabsStore.activePane || 'left',
+    {
+      id: `file-console:${payload.connectionId}`,
+      connectionId: payload.connectionId,
+      name: tabName,
+      tabType: 'file-console',
+      fileConnectionType: payload.connectionType,
+      basePath: payload.basePath
+    },
+    'pinned'
+  )
+}
 </script>
 
 <template>
@@ -331,6 +358,7 @@ function handleOpenSqlConsole(payload: {
               @select-file="handleFileSelect"
               @open-file="handleOpenFile"
               @open-sql-console="handleOpenSqlConsole"
+              @open-file-console="handleOpenFileConsole"
               @request-file-entries="handleRequestFileEntries"
             />
           </div>

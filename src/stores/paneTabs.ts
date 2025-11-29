@@ -18,7 +18,7 @@ export type PaneTab = {
   id: string
   connectionId: string
   name: string
-  tabType: 'database' | 'file' | 'sql-console'
+  tabType: 'database' | 'file' | 'sql-console' | 'file-console'
   pinned: boolean
   objectKey?: string
 
@@ -36,6 +36,10 @@ export type PaneTab = {
   fileEntry?: FileSystemEntry
   fileMetadata?: FileMetadata | null
   fileType?: string
+
+  // File console specific properties
+  fileConnectionType?: 'files' | 's3'
+  basePath?: string
 }
 
 /**

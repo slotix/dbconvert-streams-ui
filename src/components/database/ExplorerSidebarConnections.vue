@@ -67,6 +67,14 @@ const emit = defineEmits<{
       sqlScope: 'database' | 'connection'
     }
   ): void
+  (
+    e: 'open-file-console',
+    payload: {
+      connectionId: string
+      connectionType: 'files' | 's3'
+      basePath?: string
+    }
+  ): void
   (e: 'expanded-connection', payload: { connectionId: string }): void
   (e: 'show-diagram', payload: { connectionId: string; database: string }): void
   (e: 'select-connection', payload: { connectionId: string }): void
@@ -266,6 +274,23 @@ function onMenuAction(payload: {
           connectionId: t.connectionId,
           database: t.database,
           sqlScope: 'database'
+        })
+      }
+      break
+    case 'file-console':
+      // Open DuckDB console for file/S3 connections
+      if (t.kind === 'connection') {
+        const conn = connectionsStore.connectionByID(t.connectionId)
+        const connType = conn?.type?.toLowerCase()
+        const isS3 = connType === 's3' || conn?.spec?.s3 !== undefined
+        const basePath =
+          conn?.storage_config?.uri ||
+          conn?.spec?.files?.outputDirectory ||
+          conn?.spec?.s3?.scope?.bucket
+        emit('open-file-console', {
+          connectionId: t.connectionId,
+          connectionType: isS3 ? 's3' : 'files',
+          basePath: basePath
         })
       }
       break

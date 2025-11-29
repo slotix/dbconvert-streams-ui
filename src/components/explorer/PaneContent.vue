@@ -31,6 +31,13 @@
       :database="activeTab.database"
       :sql-scope="activeTab.sqlScope || 'database'"
     />
+    <FileConsoleTab
+      v-else-if="activeTab.tabType === 'file-console'"
+      :key="`${paneId}-file-console-${activeTab.connectionId}`"
+      :connection-id="activeTab.connectionId"
+      :connection-type="activeTab.fileConnectionType || 'files'"
+      :base-path="activeTab.basePath"
+    />
   </div>
   <EmptyStateMessage v-else-if="showEmptyState" />
 </template>
@@ -38,6 +45,7 @@
 <script setup lang="ts">
 import ObjectContainer from '@/components/common/ObjectContainer.vue'
 import SqlConsoleTab from '@/components/database/SqlConsoleTab.vue'
+import FileConsoleTab from '@/components/file-console/FileConsoleTab.vue'
 import EmptyStateMessage from './EmptyStateMessage.vue'
 import type { PaneId } from '@/stores/paneTabs'
 import type { PaneTab } from '@/stores/paneTabs'
