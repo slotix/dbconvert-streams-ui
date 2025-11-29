@@ -94,4 +94,9 @@ window.addEventListener('unhandledrejection', (event) => {
   }
 })
 
+// Suppress browser's default context menu globally
+document.addEventListener('contextmenu', (event) => {
+  event.preventDefault()
+})
+
 app.mount('#app')
