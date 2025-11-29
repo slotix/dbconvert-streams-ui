@@ -3,7 +3,7 @@
 import { computed } from 'vue'
 import { SqlViewer } from '@/components/monaco'
 
-const props = defineProps<{
+interface Props {
   code: string
   title?: string
   index?: number | string
@@ -14,7 +14,11 @@ const props = defineProps<{
   autoResize?: boolean
   minHeight?: number
   maxHeight?: number
-}>()
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  showHeader: true
+})
 
 // Compute display title
 const displayTitle = computed(() => {
