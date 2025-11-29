@@ -325,129 +325,117 @@ export const useStreamsStore = defineStore('streams', {
           this.currentStreamConfig.source.schema = this.currentStreamConfig.sourceSchema
         }
 
-        // Build target spec if not already present
-        if (
-          !this.currentStreamConfig.target.spec ||
-          Object.keys(this.currentStreamConfig.target.spec).length === 0
-        ) {
-          const connectionsStore = useConnectionsStore()
-          const targetConnection = connectionsStore.connectionByID(
-            this.currentStreamConfig.target.id
-          )
+        // Always rebuild target spec to ensure structureOptions and other settings are current
+        const connectionsStore = useConnectionsStore()
+        const targetConnection = connectionsStore.connectionByID(this.currentStreamConfig.target.id)
 
-          if (!targetConnection) {
-            throw new Error('Target connection not found')
-          }
-
-          // Use connection metadata to determine what kind of target spec to build
-          const connectionType = targetConnection.type?.toLowerCase() || ''
-          // Check for S3/GCS/Azure by spec presence (new format)
-          const isS3Target = !!targetConnection.spec?.s3
-          const isGCSTarget = !!targetConnection.spec?.gcs
-          const isAzureTarget = !!targetConnection.spec?.azure
-          const isLocalFileTarget = !!targetConnection.spec?.files
-          const isFileConnectionType = connectionType.includes('file')
-
-          // Get structure options and file format settings
-          const structureOptions =
-            this.currentStreamConfig.structureOptions ||
-            this.currentStreamConfig.target.options?.structureOptions
-          const targetDatabase = this.currentStreamConfig.targetDatabase || ''
-          const targetSchema = this.currentStreamConfig.targetSchema
-          const targetPath = this.currentStreamConfig.targetPath || '/tmp/dbconvert'
-          const fileFormat =
-            isS3Target || isGCSTarget || isAzureTarget || isLocalFileTarget || isFileConnectionType
-              ? (this.currentStreamConfig.target as any).fileFormat || 'csv'
-              : 'parquet'
-          const compressionType = this.currentStreamConfig.target.options?.compressionType
-          const parquetConfig = this.currentStreamConfig.target.options?.parquetConfig
-          const csvConfig = this.currentStreamConfig.target.options?.csvConfig
-
-          // Build the appropriate target spec based on connection type
-          const specBuilders: Record<string, () => TargetSpec> = {
-            snowflake: () =>
-              buildSnowflakeTargetSpec(
-                targetDatabase,
-                targetPath,
-                fileFormat,
-                targetSchema,
-                structureOptions,
-                compressionType,
-                parquetConfig,
-                csvConfig,
-                this.currentStreamConfig!.target.options?.snowflakeConfig?.filePrefix,
-                this.currentStreamConfig!.target.options?.snowflakeConfig?.timestampFormat
-              ),
-            s3: () => {
-              const s3Spec = targetConnection.spec?.s3
-              return buildS3TargetSpec(
-                targetPath,
-                fileFormat,
-                s3Spec?.scope?.bucket || '',
-                s3Spec?.scope?.prefix,
-                this.currentStreamConfig!.target.options?.s3UploadConfig?.storageClass,
-                this.currentStreamConfig!.target.options?.s3UploadConfig?.keepLocalFiles,
-                compressionType,
-                parquetConfig,
-                csvConfig
-              )
-            },
-            gcs: () => {
-              const gcsSpec = targetConnection.spec?.gcs
-              return buildGCSTargetSpec(
-                targetPath,
-                fileFormat,
-                gcsSpec?.scope?.bucket || '',
-                gcsSpec?.scope?.prefix,
-                this.currentStreamConfig!.target.options?.s3UploadConfig?.storageClass,
-                this.currentStreamConfig!.target.options?.s3UploadConfig?.keepLocalFiles,
-                compressionType,
-                parquetConfig,
-                csvConfig
-              )
-            },
-            azure: () => {
-              const azureSpec = targetConnection.spec?.azure
-              return buildAzureTargetSpec(
-                targetPath,
-                fileFormat,
-                azureSpec?.scope?.container || '',
-                azureSpec?.scope?.prefix,
-                this.currentStreamConfig!.target.options?.s3UploadConfig?.keepLocalFiles,
-                compressionType,
-                parquetConfig,
-                csvConfig
-              )
-            },
-            file: () =>
-              buildFileTargetSpec(
-                targetPath,
-                fileFormat,
-                compressionType,
-                parquetConfig,
-                csvConfig
-              ),
-            database: () => buildDatabaseTargetSpec(targetDatabase, targetSchema, structureOptions)
-          }
-
-          // Determine which builder to use
-          let builderKey: string
-          if (connectionType === 'snowflake') {
-            builderKey = 'snowflake'
-          } else if (isS3Target) {
-            builderKey = 's3'
-          } else if (isGCSTarget) {
-            builderKey = 'gcs'
-          } else if (isAzureTarget) {
-            builderKey = 'azure'
-          } else if (isLocalFileTarget || isFileConnectionType) {
-            builderKey = 'file'
-          } else {
-            builderKey = 'database'
-          }
-
-          this.currentStreamConfig.target.spec = specBuilders[builderKey]()
+        if (!targetConnection) {
+          throw new Error('Target connection not found')
         }
+
+        // Use connection metadata to determine what kind of target spec to build
+        const connectionType = targetConnection.type?.toLowerCase() || ''
+        // Check for S3/GCS/Azure by spec presence (new format)
+        const isS3Target = !!targetConnection.spec?.s3
+        const isGCSTarget = !!targetConnection.spec?.gcs
+        const isAzureTarget = !!targetConnection.spec?.azure
+        const isLocalFileTarget = !!targetConnection.spec?.files
+        const isFileConnectionType = connectionType.includes('file')
+
+        // Get structure options and file format settings
+        // Priority: root level structureOptions (set by wizard) > target.options.structureOptions
+        const structureOptions =
+          this.currentStreamConfig.structureOptions ||
+          this.currentStreamConfig.target.options?.structureOptions
+        const targetDatabase = this.currentStreamConfig.targetDatabase || ''
+        const targetSchema = this.currentStreamConfig.targetSchema
+        const targetPath = this.currentStreamConfig.targetPath || '/tmp/dbconvert'
+        const fileFormat =
+          isS3Target || isGCSTarget || isAzureTarget || isLocalFileTarget || isFileConnectionType
+            ? (this.currentStreamConfig.target as any).fileFormat || 'csv'
+            : 'parquet'
+        const compressionType = this.currentStreamConfig.target.options?.compressionType
+        const parquetConfig = this.currentStreamConfig.target.options?.parquetConfig
+        const csvConfig = this.currentStreamConfig.target.options?.csvConfig
+
+        // Build the appropriate target spec based on connection type
+        const specBuilders: Record<string, () => TargetSpec> = {
+          snowflake: () =>
+            buildSnowflakeTargetSpec(
+              targetDatabase,
+              targetPath,
+              fileFormat,
+              targetSchema,
+              structureOptions,
+              compressionType,
+              parquetConfig,
+              csvConfig,
+              this.currentStreamConfig!.target.options?.snowflakeConfig?.filePrefix,
+              this.currentStreamConfig!.target.options?.snowflakeConfig?.timestampFormat
+            ),
+          s3: () => {
+            const s3Spec = targetConnection.spec?.s3
+            return buildS3TargetSpec(
+              targetPath,
+              fileFormat,
+              s3Spec?.scope?.bucket || '',
+              s3Spec?.scope?.prefix,
+              this.currentStreamConfig!.target.options?.s3UploadConfig?.storageClass,
+              this.currentStreamConfig!.target.options?.s3UploadConfig?.keepLocalFiles,
+              compressionType,
+              parquetConfig,
+              csvConfig
+            )
+          },
+          gcs: () => {
+            const gcsSpec = targetConnection.spec?.gcs
+            return buildGCSTargetSpec(
+              targetPath,
+              fileFormat,
+              gcsSpec?.scope?.bucket || '',
+              gcsSpec?.scope?.prefix,
+              this.currentStreamConfig!.target.options?.s3UploadConfig?.storageClass,
+              this.currentStreamConfig!.target.options?.s3UploadConfig?.keepLocalFiles,
+              compressionType,
+              parquetConfig,
+              csvConfig
+            )
+          },
+          azure: () => {
+            const azureSpec = targetConnection.spec?.azure
+            return buildAzureTargetSpec(
+              targetPath,
+              fileFormat,
+              azureSpec?.scope?.container || '',
+              azureSpec?.scope?.prefix,
+              this.currentStreamConfig!.target.options?.s3UploadConfig?.keepLocalFiles,
+              compressionType,
+              parquetConfig,
+              csvConfig
+            )
+          },
+          file: () =>
+            buildFileTargetSpec(targetPath, fileFormat, compressionType, parquetConfig, csvConfig),
+          database: () => buildDatabaseTargetSpec(targetDatabase, targetSchema, structureOptions)
+        }
+
+        // Determine which builder to use
+        let builderKey: string
+        if (connectionType === 'snowflake') {
+          builderKey = 'snowflake'
+        } else if (isS3Target) {
+          builderKey = 's3'
+        } else if (isGCSTarget) {
+          builderKey = 'gcs'
+        } else if (isAzureTarget) {
+          builderKey = 'azure'
+        } else if (isLocalFileTarget || isFileConnectionType) {
+          builderKey = 'file'
+        } else {
+          builderKey = 'database'
+        }
+
+        this.currentStreamConfig.target.spec = specBuilders[builderKey]()
 
         const refinedStream = buildStreamPayload(this.currentStreamConfig)
 

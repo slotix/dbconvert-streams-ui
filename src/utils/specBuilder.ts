@@ -161,13 +161,12 @@ export function buildDatabaseTargetSpec(
   const spec: DatabaseTargetSpec = {
     database,
     schema,
+    // Backend expects: tables, indexes, foreignKeys (not createTables, etc.)
     structureOptions: structureOptions
       ? {
-          createDatabase: structureOptions.tables === 'create' || structureOptions.tables === true,
-          createSchema: structureOptions.tables === 'create' || structureOptions.tables === true,
-          createTables: structureOptions.tables === 'create' || structureOptions.tables === true,
-          createIndexes: structureOptions.indexes === 'create' || structureOptions.indexes === true,
-          createForeignKeys:
+          tables: structureOptions.tables === 'create' || structureOptions.tables === true,
+          indexes: structureOptions.indexes === 'create' || structureOptions.indexes === true,
+          foreignKeys:
             structureOptions.foreignKeys === 'create' || structureOptions.foreignKeys === true
         }
       : undefined
@@ -295,13 +294,12 @@ export function buildSnowflakeTargetSpec(
   const spec: SnowflakeTargetSpec = {
     database,
     schema,
+    // Backend expects: tables, indexes, foreignKeys (not createTables, etc.)
     structureOptions: structureOptions
       ? {
-          createDatabase: structureOptions.tables === 'create' || structureOptions.tables === true,
-          createSchema: structureOptions.tables === 'create' || structureOptions.tables === true,
-          createTables: structureOptions.tables === 'create' || structureOptions.tables === true,
-          createIndexes: structureOptions.indexes === 'create' || structureOptions.indexes === true,
-          createForeignKeys:
+          tables: structureOptions.tables === 'create' || structureOptions.tables === true,
+          indexes: structureOptions.indexes === 'create' || structureOptions.indexes === true,
+          foreignKeys:
             structureOptions.foreignKeys === 'create' || structureOptions.foreignKeys === true
         }
       : undefined,

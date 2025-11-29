@@ -96,12 +96,10 @@ export interface DatabaseTargetSpec {
 }
 
 export interface StructureOptions {
-  createDatabase?: boolean
-  createSchema?: boolean
-  createTables?: boolean
-  createIndexes?: boolean
-  createForeignKeys?: boolean
-  createViews?: boolean
+  // Backend fields - these are what gets sent to the API
+  tables?: boolean
+  indexes?: boolean
+  foreignKeys?: boolean
 }
 
 export interface ParquetConfig {

@@ -203,13 +203,23 @@ export function useStreamWizard() {
       nested: unknown
     ): string | null => {
       if (rootLevel) return rootLevel
-      if (
-        nested &&
-        typeof nested === 'object' &&
-        'database' in (nested as Record<string, unknown>)
-      ) {
-        const dbValue = (nested as Record<string, unknown>).database
-        return typeof dbValue === 'string' ? dbValue : null
+      if (nested && typeof nested === 'object') {
+        const obj = nested as Record<string, unknown>
+        // Check direct .database property first
+        if ('database' in obj) {
+          const dbValue = obj.database
+          if (typeof dbValue === 'string') return dbValue
+        }
+        // Check nested .spec.database.database path (for target with spec structure)
+        if ('spec' in obj && obj.spec && typeof obj.spec === 'object') {
+          const spec = obj.spec as Record<string, unknown>
+          if ('database' in spec && spec.database && typeof spec.database === 'object') {
+            const dbSpec = spec.database as Record<string, unknown>
+            if ('database' in dbSpec && typeof dbSpec.database === 'string') {
+              return dbSpec.database
+            }
+          }
+        }
       }
       return null
     }
@@ -236,15 +246,42 @@ export function useStreamWizard() {
     selection.value.targetSchema = resolveSchema(config.targetSchema, config.target)
     selection.value.targetPath = config.targetPath ?? null
 
-    // Populate structure options
-    const structureOptions =
+    // Populate structure options - check multiple possible locations
+    // Priority: 1. target.options.structureOptions (new format)
+    //           2. target.spec.database.structureOptions (database target spec format)
+    //           3. config.structureOptions (root level, legacy)
+    let structureOptions =
       config?.target?.options?.structureOptions ?? (config as any)?.structureOptions
-    if (structureOptions) {
+
+    // Also check target.spec.database.structureOptions path
+    if (!structureOptions || Object.keys(structureOptions).length === 0) {
+      const targetSpec = config?.target?.spec as Record<string, unknown> | undefined
+      if (targetSpec?.database && typeof targetSpec.database === 'object') {
+        const dbSpec = targetSpec.database as Record<string, unknown>
+        if (dbSpec.structureOptions && typeof dbSpec.structureOptions === 'object') {
+          structureOptions = dbSpec.structureOptions as Record<string, unknown>
+        }
+      }
+    }
+
+    if (structureOptions && Object.keys(structureOptions).length > 0) {
+      // Handle both naming conventions: tables/indexes/foreignKeys and createTables/createIndexes/createForeignKeys
       const normalize = (value: unknown, defaultValue: boolean) =>
         typeof value === 'boolean' ? value : defaultValue
-      createTables.value = normalize(structureOptions.tables, true)
-      createIndexes.value = normalize(structureOptions.indexes, true)
-      createForeignKeys.value = normalize(structureOptions.foreignKeys, true)
+      createTables.value = normalize(structureOptions.tables ?? structureOptions.createTables, true)
+      createIndexes.value = normalize(
+        structureOptions.indexes ?? structureOptions.createIndexes,
+        true
+      )
+      createForeignKeys.value = normalize(
+        structureOptions.foreignKeys ?? structureOptions.createForeignKeys,
+        true
+      )
+    } else {
+      // Default to true when structureOptions is empty or missing
+      createTables.value = true
+      createIndexes.value = true
+      createForeignKeys.value = true
     }
 
     const skipData =

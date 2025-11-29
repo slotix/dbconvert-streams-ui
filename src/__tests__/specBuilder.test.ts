@@ -49,9 +49,10 @@ describe('Target Spec Builders', () => {
     expect(spec.database).toBeDefined()
     expect(spec.database?.database).toBe('targetdb')
     expect(spec.database?.schema).toBe('public')
-    expect(spec.database?.structureOptions?.createTables).toBe(true)
-    expect(spec.database?.structureOptions?.createIndexes).toBe(true)
-    expect(spec.database?.structureOptions?.createForeignKeys).toBe(false)
+    // Backend expects: tables, indexes, foreignKeys
+    expect(spec.database?.structureOptions?.tables).toBe(true)
+    expect(spec.database?.structureOptions?.indexes).toBe(true)
+    expect(spec.database?.structureOptions?.foreignKeys).toBe(false)
   })
 
   it('builds S3 target spec', () => {
