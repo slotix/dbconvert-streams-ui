@@ -173,12 +173,18 @@ export interface FileQueryResponse {
  * - read_parquet('/path/to/file.parquet')
  * - read_json_auto('/path/to/file.json')
  * - S3 paths: read_parquet('s3://bucket/path/*.parquet')
+ *
+ * @param query - The SQL query to execute
+ * @param connectionId - Optional connection ID for S3 connections (to use stored credentials)
  */
-export async function executeFileQuery(query: string): Promise<FileQueryResponse> {
+export async function executeFileQuery(
+  query: string,
+  connectionId?: string
+): Promise<FileQueryResponse> {
   try {
     const response = await apiClient.post<FileQueryResponse>(
       '/files/query',
-      { query },
+      { query, connectionId },
       {
         ...withAuthHeaders()
       }

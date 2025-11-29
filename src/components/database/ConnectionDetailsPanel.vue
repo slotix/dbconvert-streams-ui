@@ -802,7 +802,7 @@ const isLoadingDatabases = computed(() => {
           </div>
         </div>
 
-        <!-- SQL Console Card (for database connections only) -->
+        <!-- Database Console Card (for database connections only) -->
         <div
           v-if="!isFileConnection"
           class="bg-slate-50 dark:bg-gray-800/50 rounded-xl p-4 ring-1 ring-slate-200/70 dark:ring-gray-700"
@@ -811,7 +811,9 @@ const isLoadingDatabases = computed(() => {
             <div class="p-1.5 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
               <CommandLineIcon class="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
             </div>
-            <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">SQL Console</span>
+            <span class="text-sm font-semibold text-gray-700 dark:text-gray-300"
+              >Database Console</span
+            >
           </div>
 
           <p class="text-xs text-gray-600 dark:text-gray-400 mb-3">
@@ -825,11 +827,11 @@ const isLoadingDatabases = computed(() => {
             @click="emit('open-sql-console')"
           >
             <CommandLineIcon class="w-4 h-4 mr-1.5" />
-            Open SQL Console
+            Open Database Console
           </BaseButton>
         </div>
 
-        <!-- DuckDB Console Card (for file/S3 connections) -->
+        <!-- File Console Card (for file/S3 connections) -->
         <div
           v-if="isFileConnection"
           class="bg-slate-50 dark:bg-gray-800/50 rounded-xl p-4 ring-1 ring-slate-200/70 dark:ring-gray-700"
@@ -838,13 +840,11 @@ const isLoadingDatabases = computed(() => {
             <div class="p-1.5 bg-teal-100 dark:bg-teal-900/30 rounded-lg">
               <CommandLineIcon class="h-4 w-4 text-teal-600 dark:text-teal-400" />
             </div>
-            <span class="text-sm font-semibold text-gray-700 dark:text-gray-300"
-              >DuckDB Console</span
-            >
+            <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">File Console</span>
           </div>
 
           <p class="text-xs text-gray-600 dark:text-gray-400 mb-3">
-            Query files directly using DuckDB SQL (CSV, Parquet, JSON, S3)
+            Query files directly using SQL (CSV, Parquet, JSON, S3)
           </p>
 
           <BaseButton
@@ -854,7 +854,7 @@ const isLoadingDatabases = computed(() => {
             @click="emit('open-file-console')"
           >
             <CommandLineIcon class="w-4 h-4 mr-1.5" />
-            Open DuckDB Console
+            Open File Console
           </BaseButton>
         </div>
 

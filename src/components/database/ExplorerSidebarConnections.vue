@@ -4,6 +4,7 @@ import { useDebounceFn } from '@vueuse/core'
 import { CubeIcon, EyeIcon, EyeSlashIcon } from '@heroicons/vue/24/outline'
 import { useConnectionsStore } from '@/stores/connections'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
+import { useSqlConsoleStore } from '@/stores/sqlConsole'
 import { useConnectionTreeLogic } from '@/composables/useConnectionTreeLogic'
 import { useTreeContextMenu, type ContextTarget } from '@/composables/useTreeContextMenu'
 import { useConnectionActions } from '@/composables/useConnectionActions'
@@ -87,6 +88,7 @@ const MIN_SEARCH_LENGTH = 2
 
 const connectionsStore = useConnectionsStore()
 const navigationStore = useExplorerNavigationStore()
+const sqlConsoleStore = useSqlConsoleStore()
 const treeLogic = useConnectionTreeLogic()
 
 // Use composables for context menu and actions
@@ -253,6 +255,56 @@ function onOpen(
   })
 }
 
+/**
+ * Generate DuckDB read function call based on file extension
+ */
+function generateDuckDBReadFunction(path: string, fileName: string, _isS3: boolean): string {
+  // Get file extension (handle compressed files like .csv.gz)
+  const lowerName = fileName.toLowerCase()
+  let ext = ''
+  if (
+    lowerName.endsWith('.csv') ||
+    lowerName.endsWith('.csv.gz') ||
+    lowerName.endsWith('.csv.zst')
+  ) {
+    ext = 'csv'
+  } else if (
+    lowerName.endsWith('.json') ||
+    lowerName.endsWith('.json.gz') ||
+    lowerName.endsWith('.json.zst')
+  ) {
+    ext = 'json'
+  } else if (
+    lowerName.endsWith('.jsonl') ||
+    lowerName.endsWith('.jsonl.gz') ||
+    lowerName.endsWith('.jsonl.zst')
+  ) {
+    ext = 'jsonl'
+  } else if (lowerName.endsWith('.parquet')) {
+    ext = 'parquet'
+  }
+
+  // Generate the appropriate read function
+  let funcCall: string
+  switch (ext) {
+    case 'csv':
+      funcCall = `read_csv_auto('${path}')`
+      break
+    case 'json':
+    case 'jsonl':
+      funcCall = `read_json_auto('${path}')`
+      break
+    case 'parquet':
+      funcCall = `read_parquet('${path}')`
+      break
+    default:
+      // Default to csv_auto as fallback
+      funcCall = `read_csv_auto('${path}')`
+  }
+
+  return `SELECT * FROM ${funcCall} LIMIT 100;`
+}
+
 // Simplified menu action handler using composables
 function onMenuAction(payload: {
   action: string
@@ -283,10 +335,7 @@ function onMenuAction(payload: {
         const conn = connectionsStore.connectionByID(t.connectionId)
         const connType = conn?.type?.toLowerCase()
         const isS3 = connType === 's3' || conn?.spec?.s3 !== undefined
-        const basePath =
-          conn?.storage_config?.uri ||
-          conn?.spec?.files?.outputDirectory ||
-          conn?.spec?.s3?.scope?.bucket
+        const basePath = conn?.spec?.files?.basePath || conn?.spec?.s3?.scope?.bucket
         emit('open-file-console', {
           connectionId: t.connectionId,
           connectionType: isS3 ? 's3' : 'files',
@@ -356,6 +405,26 @@ function onMenuAction(payload: {
       break
     case 'copy-file-path':
       if (t.kind === 'file') actions.copyToClipboard(t.path, 'File path copied')
+      break
+    case 'insert-into-console':
+      if (t.kind === 'file') {
+        const conn = connectionsStore.connectionByID(t.connectionId)
+        const connType = conn?.type?.toLowerCase()
+        const isS3 = connType === 's3' || conn?.spec?.s3 !== undefined
+        const consoleKey = `file:${t.connectionId}`
+        const duckdbQuery = generateDuckDBReadFunction(t.path, t.name, isS3)
+
+        // Insert into the active tab of the file console
+        sqlConsoleStore.insertIntoActiveTab(consoleKey, undefined, duckdbQuery)
+
+        // Open the file console if not already visible
+        const basePath = conn?.spec?.files?.basePath || conn?.spec?.s3?.scope?.bucket
+        emit('open-file-console', {
+          connectionId: t.connectionId,
+          connectionType: isS3 ? 's3' : 'files',
+          basePath: basePath
+        })
+      }
       break
   }
   contextMenu.close()

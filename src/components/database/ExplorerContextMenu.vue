@@ -68,14 +68,14 @@ function click(action: string, openInRightSplit?: boolean) {
             class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
             @click="click('sql-console')"
           >
-            SQL Console
+            Database Console
           </button>
           <button
             v-if="props.isFileConnection"
             class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
             @click="click('file-console')"
           >
-            DuckDB Console
+            File Console
           </button>
           <div
             v-if="!props.isFileConnection"
@@ -216,6 +216,13 @@ function click(action: string, openInRightSplit?: boolean) {
 
           <!-- File specific actions -->
           <template v-else-if="isFile">
+            <button
+              class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+              @click="click('insert-into-console')"
+            >
+              Insert into SQL Console
+            </button>
+            <div class="my-1 border-t border-gray-100 dark:border-gray-700"></div>
             <button
               class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
               @click="click('copy-file-name')"

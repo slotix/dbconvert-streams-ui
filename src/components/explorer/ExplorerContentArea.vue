@@ -310,8 +310,7 @@ function handleOpenFileConsole() {
   const conn = currentConnection.value
   const connType = conn?.type?.toLowerCase()
   const isS3 = connType === 's3' || conn?.spec?.s3 !== undefined
-  const basePath =
-    conn?.storage_config?.uri || conn?.spec?.files?.outputDirectory || conn?.spec?.s3?.scope?.bucket
+  const basePath = conn?.spec?.files?.basePath || conn?.spec?.s3?.scope?.bucket
 
   const tabId = `file-console:${props.connectionId}`
 

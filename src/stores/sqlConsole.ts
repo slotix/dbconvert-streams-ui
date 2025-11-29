@@ -325,6 +325,19 @@ export const useSqlConsoleStore = defineStore('sqlConsole', () => {
     return resultCache.value.has(tabId)
   }
 
+  // Insert text into the active tab's query (appends to existing content)
+  function insertIntoActiveTab(connectionId: string, database: string | undefined, text: string) {
+    const state = getConsoleState(connectionId, database)
+    const tab = state.tabs.find((t) => t.id === state.activeTabId)
+    if (tab) {
+      // Append text to existing query (with newline if query is not empty)
+      const currentQuery = tab.query.trimEnd()
+      tab.query = currentQuery ? `${currentQuery}\n\n${text}` : text
+      tab.updatedAt = Date.now()
+      saveState()
+    }
+  }
+
   return {
     // State
     consoles,
@@ -350,6 +363,9 @@ export const useSqlConsoleStore = defineStore('sqlConsole', () => {
     getResultCache,
     setResultCache,
     clearResultCache,
-    hasResultCache
+    hasResultCache,
+
+    // Insert helpers
+    insertIntoActiveTab
   }
 })

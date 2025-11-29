@@ -24,16 +24,18 @@
       @tab-change="$emit('tab-change', $event)"
       @refresh-metadata="$emit('refresh-metadata')"
     />
-    <SqlConsoleTab
+    <UnifiedConsoleTab
       v-else-if="activeTab.tabType === 'sql-console'"
       :key="`${paneId}-sql-${activeTab.connectionId}-${activeTab.database || '*'}`"
+      mode="database"
       :connection-id="activeTab.connectionId"
       :database="activeTab.database"
       :sql-scope="activeTab.sqlScope || 'database'"
     />
-    <FileConsoleTab
+    <UnifiedConsoleTab
       v-else-if="activeTab.tabType === 'file-console'"
       :key="`${paneId}-file-console-${activeTab.connectionId}`"
+      mode="file"
       :connection-id="activeTab.connectionId"
       :connection-type="activeTab.fileConnectionType || 'files'"
       :base-path="activeTab.basePath"
@@ -44,8 +46,7 @@
 
 <script setup lang="ts">
 import ObjectContainer from '@/components/common/ObjectContainer.vue'
-import SqlConsoleTab from '@/components/database/SqlConsoleTab.vue'
-import FileConsoleTab from '@/components/file-console/FileConsoleTab.vue'
+import { UnifiedConsoleTab } from '@/components/console'
 import EmptyStateMessage from './EmptyStateMessage.vue'
 import type { PaneId } from '@/stores/paneTabs'
 import type { PaneTab } from '@/stores/paneTabs'

@@ -1,53 +1,95 @@
 <template>
-  <div class="sql-console-tab h-full flex flex-col bg-gray-50 dark:bg-gray-900 pb-2">
+  <div class="console-tab h-full flex flex-col bg-gray-50 dark:bg-gray-900 pb-2">
     <!-- Header -->
-    <SqlConsoleHeader
-      :title="consoleTitle"
-      :scope-label="scopeLabel"
-      :history-count="queryHistory.length"
-      @toggle-templates="showTemplates = !showTemplates"
-      @toggle-history="showHistory = !showHistory"
-    />
-
-    <!-- Templates Dropdown Panel -->
     <div
-      v-if="showTemplates"
-      class="absolute right-4 top-12 w-80 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-50 max-h-96 overflow-y-auto"
+      class="flex items-center justify-between px-4 py-3 bg-white dark:bg-gray-850 border-b border-gray-200 dark:border-gray-700"
     >
-      <div class="py-1">
+      <div class="flex items-center space-x-2">
+        <component :is="headerIcon" class="h-5 w-5 text-teal-600 dark:text-teal-400" />
+        <span class="text-sm font-medium text-gray-900 dark:text-gray-100">
+          {{ consoleTitle }}
+        </span>
+        <span class="text-xs text-gray-500 dark:text-gray-400">
+          {{ scopeLabel }}
+        </span>
+      </div>
+
+      <div class="flex items-center space-x-2">
+        <!-- Help button (file mode only) -->
         <button
-          v-for="template in queryTemplates"
-          :key="template.name"
-          class="w-full text-left px-3 py-2 text-xs hover:bg-gray-100 dark:hover:bg-gray-700"
-          @click="insertTemplate(template.query)"
+          v-if="mode === 'file'"
+          class="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded transition-colors"
+          title="Query Help"
+          @click="showHelp = !showHelp"
         >
-          <div class="font-medium text-gray-700 dark:text-gray-300">{{ template.name }}</div>
-          <div class="text-gray-500 dark:text-gray-400 truncate font-mono text-[10px]">
-            {{ template.query.split('\n')[0] }}
-          </div>
+          <QuestionMarkCircleIcon class="h-5 w-5" />
         </button>
       </div>
     </div>
 
-    <!-- History Dropdown Panel -->
+    <!-- Help Panel (file mode only) -->
     <div
-      v-if="showHistory && queryHistory.length > 0"
-      class="absolute right-4 top-12 w-96 max-h-64 overflow-y-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-50"
+      v-if="mode === 'file' && showHelp"
+      class="px-4 py-3 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-800 text-xs max-h-64 overflow-y-auto"
     >
-      <div class="py-1">
-        <button
-          v-for="(item, index) in queryHistory"
-          :key="index"
-          class="w-full text-left px-3 py-2 text-xs hover:bg-gray-100 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700 last:border-0"
-          @click="insertHistoryQuery(item)"
-        >
-          <div class="text-gray-500 dark:text-gray-400 text-[10px] mb-0.5">
-            {{ formatHistoryTime(item.timestamp) }}
+      <div class="flex items-start space-x-2">
+        <InformationCircleIcon class="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
+        <div class="text-blue-700 dark:text-blue-300 space-y-2">
+          <p class="font-medium">File Console - Query Files with SQL</p>
+
+          <div>
+            <p class="font-medium mb-1">File Reading Functions:</p>
+            <ul class="list-disc list-inside space-y-0.5 ml-2">
+              <li>
+                <code class="bg-blue-100 dark:bg-blue-800 px-1 rounded"
+                  >read_csv_auto('/path/file.csv')</code
+                >
+                - CSV files
+              </li>
+              <li>
+                <code class="bg-blue-100 dark:bg-blue-800 px-1 rounded"
+                  >read_parquet('/path/file.parquet')</code
+                >
+                - Parquet files
+              </li>
+              <li>
+                <code class="bg-blue-100 dark:bg-blue-800 px-1 rounded"
+                  >read_json_auto('/path/file.json')</code
+                >
+                - JSON/JSONL files
+              </li>
+              <li>
+                <code class="bg-blue-100 dark:bg-blue-800 px-1 rounded"
+                  >read_parquet('s3://bucket/path/*.parquet')</code
+                >
+                - S3 files with glob
+              </li>
+            </ul>
           </div>
-          <div class="text-gray-700 dark:text-gray-300 font-mono truncate">
-            {{ item.query }}
+
+          <div>
+            <p class="font-medium mb-1">Multi-File Join Examples:</p>
+            <ul class="list-disc list-inside space-y-0.5 ml-2">
+              <li>
+                <code class="bg-blue-100 dark:bg-blue-800 px-1 rounded text-[10px]"
+                  >SELECT * FROM read_csv_auto('orders.csv') o JOIN read_csv_auto('customers.csv') c
+                  ON o.customer_id = c.id</code
+                >
+              </li>
+              <li>
+                <code class="bg-blue-100 dark:bg-blue-800 px-1 rounded text-[10px]"
+                  >SELECT * FROM read_parquet('*.parquet')</code
+                >
+                - Query all parquet files
+              </li>
+            </ul>
           </div>
-        </button>
+
+          <p>
+            Press <kbd class="px-1 py-0.5 bg-blue-100 dark:bg-blue-800 rounded">Ctrl+Enter</kbd> to
+            execute.
+          </p>
+        </div>
       </div>
     </div>
 
@@ -74,8 +116,12 @@
           :schema-context="schemaContext"
           :is-executing="isExecuting"
           :stats="lastQueryStats"
+          :templates="queryTemplates"
+          :history="queryHistory"
           @execute="executeQuery"
           @format="formatQuery"
+          @select-template="insertTemplate"
+          @select-history="insertHistoryQuery"
         />
       </div>
 
@@ -102,19 +148,36 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, type Component } from 'vue'
+import {
+  CommandLineIcon,
+  CircleStackIcon,
+  QuestionMarkCircleIcon,
+  InformationCircleIcon
+} from '@heroicons/vue/24/outline'
 import type { SchemaContext } from '@/composables/useMonacoSqlProviders'
 import { useConnectionsStore } from '@/stores/connections'
 import { useSqlConsoleStore } from '@/stores/sqlConsole'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import connections from '@/api/connections'
+import { executeFileQuery } from '@/api/files'
 import { format as formatSQL } from 'sql-formatter'
-import { SqlConsoleHeader, SqlQueryTabs, SqlEditorPane, SqlResultsPane } from './sql-console'
+import { SqlQueryTabs, SqlEditorPane, SqlResultsPane } from '@/components/database/sql-console'
+
+// ========== Props ==========
+export type ConsoleMode = 'database' | 'file'
+export type DatabaseScope = 'database' | 'connection'
+export type FileConnectionType = 'files' | 's3'
 
 const props = defineProps<{
   connectionId: string
+  mode: ConsoleMode
+  // Database mode props
   database?: string
-  sqlScope: 'database' | 'connection'
+  sqlScope?: DatabaseScope
+  // File mode props
+  connectionType?: FileConnectionType
+  basePath?: string
 }>()
 
 const connectionsStore = useConnectionsStore()
@@ -131,8 +194,7 @@ const resultColumns = ref<string[]>([])
 const lastQueryStats = ref<{ rowCount: number; duration: number } | null>(null)
 const currentPage = ref(1)
 const pageSize = ref(100)
-const showTemplates = ref(false)
-const showHistory = ref(false)
+const showHelp = ref(false)
 
 // Query history
 interface QueryHistoryItem {
@@ -140,10 +202,9 @@ interface QueryHistoryItem {
   timestamp: number
 }
 const queryHistory = ref<QueryHistoryItem[]>([])
-const HISTORY_KEY = 'db-console-history'
 const MAX_HISTORY_ITEMS = 50
 
-// Database selection (for connection-scoped console)
+// Database selection (for connection-scoped database console)
 const selectedDatabase = ref(props.database || '')
 const availableDatabases = ref<string[]>([])
 
@@ -151,31 +212,128 @@ const availableDatabases = ref<string[]>([])
 const editorWidth = ref(50)
 const isResizing = ref(false)
 
-// Schema context for autocomplete
+// Schema context for autocomplete (database mode only)
 const tablesList = ref<Array<{ name: string; schema?: string }>>([])
 const columnsMap = ref<Record<string, Array<{ name: string; type: string; nullable: boolean }>>>({})
 
 // ========== Computed ==========
 const connection = computed(() => connectionsStore.connectionByID(props.connectionId))
 
-const currentDialect = computed(() => connection.value?.type?.toLowerCase() || 'sql')
-
-const scopeLabel = computed(() => {
-  if (props.database) {
-    return `${connection.value?.name || 'Connection'} → ${props.database}`
+// Console key for store - different between database and file modes
+const consoleKey = computed(() => {
+  if (props.mode === 'file') {
+    return `file:${props.connectionId}`
   }
-  return connection.value?.name || 'Connection'
+  // Database mode: connectionId + optional database
+  return props.database ? `${props.connectionId}:${props.database}` : props.connectionId
+})
+
+// History storage key
+const historyKey = computed(() => {
+  if (props.mode === 'file') {
+    return `file-console-history:${props.connectionId}`
+  }
+  return `db-console-history:${props.connectionId}`
+})
+
+const currentDialect = computed(() => {
+  if (props.mode === 'file') {
+    return 'sql' // DuckDB uses standard SQL
+  }
+  return connection.value?.type?.toLowerCase() || 'sql'
+})
+
+const headerIcon = computed<Component>(() => {
+  return props.mode === 'file' ? CommandLineIcon : CircleStackIcon
 })
 
 const consoleTitle = computed(() => {
+  if (props.mode === 'file') {
+    return 'File Console'
+  }
+  // Database mode
   if (props.database) {
     return 'SQL Console'
   }
   return 'Database Console'
 })
 
-// Query templates based on console type and dialect
+const scopeLabel = computed(() => {
+  const connName = connection.value?.name || 'Connection'
+  if (props.mode === 'file') {
+    if (props.basePath) {
+      return `${connName} → ${props.basePath}`
+    }
+    return connName
+  }
+  // Database mode
+  if (props.database) {
+    return `${connName} → ${props.database}`
+  }
+  return connName
+})
+
+// Query templates based on mode and dialect
 const queryTemplates = computed(() => {
+  if (props.mode === 'file') {
+    return getFileTemplates()
+  }
+  return getDatabaseTemplates()
+})
+
+function getFileTemplates() {
+  const basePath = props.basePath || '/path/to'
+  const isS3 = props.connectionType === 's3'
+  const prefix = isS3 ? 's3://bucket/path' : basePath
+
+  return [
+    {
+      name: 'Select from CSV',
+      query: `SELECT * FROM read_csv_auto('${prefix}/data.csv') LIMIT 100;`
+    },
+    {
+      name: 'Select from Parquet',
+      query: `SELECT * FROM read_parquet('${prefix}/data.parquet') LIMIT 100;`
+    },
+    {
+      name: 'Select from JSON/JSONL',
+      query: `SELECT * FROM read_json_auto('${prefix}/data.json') LIMIT 100;`
+    },
+    {
+      name: 'Query all CSV files (glob)',
+      query: `SELECT * FROM read_csv_auto('${prefix}/*.csv') LIMIT 100;`
+    },
+    {
+      name: 'Query all Parquet files (glob)',
+      query: `SELECT * FROM read_parquet('${prefix}/*.parquet') LIMIT 100;`
+    },
+    {
+      name: 'Join two CSV files',
+      query: `SELECT a.*, b.*
+FROM read_csv_auto('${prefix}/orders.csv') a
+JOIN read_csv_auto('${prefix}/customers.csv') b
+  ON a.customer_id = b.id
+LIMIT 100;`
+    },
+    {
+      name: 'Aggregate with GROUP BY',
+      query: `SELECT category, COUNT(*) as count, SUM(amount) as total
+FROM read_csv_auto('${prefix}/data.csv')
+GROUP BY category
+ORDER BY total DESC;`
+    },
+    {
+      name: 'Schema inspection (CSV)',
+      query: `DESCRIBE SELECT * FROM read_csv_auto('${prefix}/data.csv');`
+    },
+    {
+      name: 'File metadata (Parquet)',
+      query: `SELECT * FROM parquet_metadata('${prefix}/data.parquet');`
+    }
+  ]
+}
+
+function getDatabaseTemplates() {
   const dialect = currentDialect.value
   const isPostgres = dialect.includes('postgres') || dialect.includes('pgsql')
 
@@ -250,9 +408,20 @@ const queryTemplates = computed(() => {
       ]
     }
   }
-})
+}
 
+// Schema context for autocomplete
 const schemaContext = computed<SchemaContext>(() => {
+  if (props.mode === 'file') {
+    // No table autocomplete for file mode - users use DuckDB functions
+    return {
+      tables: [],
+      columns: {},
+      dialect: 'sql'
+    }
+  }
+
+  // Database mode - provide table/column suggestions
   const dialect = currentDialect.value
   let sqlDialect: 'mysql' | 'pgsql' | 'sql' = 'sql'
   if (dialect.includes('mysql')) sqlDialect = 'mysql'
@@ -266,13 +435,9 @@ const schemaContext = computed<SchemaContext>(() => {
 })
 
 // Query tabs from store
-const queryTabs = computed(() => sqlConsoleStore.getTabs(props.connectionId, props.database))
-const activeQueryTabId = computed(() =>
-  sqlConsoleStore.getActiveTabId(props.connectionId, props.database)
-)
-const activeQueryTab = computed(() =>
-  sqlConsoleStore.getActiveTab(props.connectionId, props.database)
-)
+const queryTabs = computed(() => sqlConsoleStore.getTabs(consoleKey.value))
+const activeQueryTabId = computed(() => sqlConsoleStore.getActiveTabId(consoleKey.value))
+const activeQueryTab = computed(() => sqlConsoleStore.getActiveTab(consoleKey.value))
 
 // ========== Tab Sync ==========
 watch(
@@ -310,7 +475,7 @@ watch(sqlQuery, (newQuery) => {
   if (tabId) {
     if (saveTimeout) clearTimeout(saveTimeout)
     saveTimeout = setTimeout(() => {
-      sqlConsoleStore.updateTabQuery(props.connectionId, props.database, tabId, newQuery)
+      sqlConsoleStore.updateTabQuery(consoleKey.value, undefined, tabId, newQuery)
     }, 500)
   }
 })
@@ -319,38 +484,40 @@ watch(sqlQuery, (newQuery) => {
 function setActiveQueryTab(tabId: string) {
   const currentTabId = activeQueryTabId.value
   if (currentTabId) {
-    sqlConsoleStore.updateTabQuery(props.connectionId, props.database, currentTabId, sqlQuery.value)
+    sqlConsoleStore.updateTabQuery(consoleKey.value, undefined, currentTabId, sqlQuery.value)
   }
-  sqlConsoleStore.setActiveTab(props.connectionId, props.database, tabId)
+  sqlConsoleStore.setActiveTab(consoleKey.value, undefined, tabId)
 }
 
 function getDefaultQueryTemplate(): string {
-  const dialect = currentDialect.value
-  const isPostgres = dialect.includes('postgres') || dialect.includes('pgsql')
+  return `-- Write your query here or select a template from the dropdown above\n`
+}
 
-  if (props.database) {
-    // Database-scoped console - minimal template for new queries
-    return `-- Write your query here\nSELECT * FROM  LIMIT 100;`
-  } else if (props.sqlScope === 'connection') {
-    // Connection-scoped console - admin operations
-    if (isPostgres) {
-      return `-- Write your query here\n`
-    } else {
-      return `-- Write your query here\n`
-    }
+function addQueryTab() {
+  const currentTabId = activeQueryTabId.value
+  if (currentTabId) {
+    sqlConsoleStore.updateTabQuery(consoleKey.value, undefined, currentTabId, sqlQuery.value)
   }
-  return `-- Write your query here\n`
+  const newTab = sqlConsoleStore.addTab(consoleKey.value, undefined)
+  sqlConsoleStore.updateTabQuery(consoleKey.value, undefined, newTab.id, getDefaultQueryTemplate())
+}
+
+function closeQueryTab(tabId: string) {
+  sqlConsoleStore.closeTab(consoleKey.value, undefined, tabId)
+}
+
+function handleRenameTab(tabId: string, newName: string) {
+  sqlConsoleStore.renameTab(consoleKey.value, undefined, tabId, newName)
 }
 
 // ========== Templates & History ==========
 function insertTemplate(query: string) {
   sqlQuery.value = query
-  showTemplates.value = false
 }
 
 function loadHistory() {
   try {
-    const stored = localStorage.getItem(HISTORY_KEY)
+    const stored = localStorage.getItem(historyKey.value)
     if (stored) {
       queryHistory.value = JSON.parse(stored)
     }
@@ -379,7 +546,7 @@ function saveToHistory(query: string) {
 
   // Persist to localStorage
   try {
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(queryHistory.value))
+    localStorage.setItem(historyKey.value, JSON.stringify(queryHistory.value))
   } catch (e) {
     console.warn('Failed to save query history:', e)
   }
@@ -387,50 +554,11 @@ function saveToHistory(query: string) {
 
 function insertHistoryQuery(item: QueryHistoryItem) {
   sqlQuery.value = item.query
-  showHistory.value = false
 }
 
-function formatHistoryTime(timestamp: number): string {
-  const now = new Date()
-  const date = new Date(timestamp)
-  const isToday = date.toDateString() === now.toDateString()
-  const yesterday = new Date(now)
-  yesterday.setDate(yesterday.getDate() - 1)
-  const isYesterday = date.toDateString() === yesterday.toDateString()
-
-  const time = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-
-  if (isToday) return `Today ${time}`
-  if (isYesterday) return `Yesterday ${time}`
-  return date.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ` ${time}`
-}
-
-function addQueryTab() {
-  const currentTabId = activeQueryTabId.value
-  if (currentTabId) {
-    sqlConsoleStore.updateTabQuery(props.connectionId, props.database, currentTabId, sqlQuery.value)
-  }
-  const newTab = sqlConsoleStore.addTab(props.connectionId, props.database)
-  // Set a minimal template for the new tab
-  sqlConsoleStore.updateTabQuery(
-    props.connectionId,
-    props.database,
-    newTab.id,
-    getDefaultQueryTemplate()
-  )
-}
-
-function closeQueryTab(tabId: string) {
-  sqlConsoleStore.closeTab(props.connectionId, props.database, tabId)
-}
-
-function handleRenameTab(tabId: string, newName: string) {
-  sqlConsoleStore.renameTab(props.connectionId, props.database, tabId, newName)
-}
-
-// ========== Data Loading ==========
+// ========== Data Loading (Database Mode) ==========
 async function loadDatabases() {
-  if (props.database) return
+  if (props.mode !== 'database' || props.database) return
   try {
     const dbs = await connections.getDatabases(props.connectionId)
     availableDatabases.value = dbs.map((d) => d.name)
@@ -440,6 +568,8 @@ async function loadDatabases() {
 }
 
 async function loadTableSuggestions() {
+  if (props.mode !== 'database') return
+
   const db = props.database || selectedDatabase.value
   if (!db) {
     tablesList.value = []
@@ -453,13 +583,13 @@ async function loadTableSuggestions() {
 
     const colMap: Record<string, Array<{ name: string; type: string; nullable: boolean }>> = {}
     for (const [tableName, table] of Object.entries(metadata.tables)) {
-      colMap[tableName] = table.columns.map(
-        (c: { name: string; dataType?: string; isNullable?: boolean }) => ({
-          name: c.name,
-          type: c.dataType || 'unknown',
-          nullable: c.isNullable ?? true
-        })
-      )
+      colMap[tableName] = (
+        table as { columns: Array<{ name: string; dataType?: string; isNullable?: boolean }> }
+      ).columns.map((c) => ({
+        name: c.name,
+        type: c.dataType || 'unknown',
+        nullable: c.isNullable ?? true
+      }))
     }
     columnsMap.value = colMap
   } catch (error) {
@@ -471,33 +601,13 @@ async function loadTableSuggestions() {
 function formatQuery() {
   if (!sqlQuery.value.trim()) return
 
-  const dialect = currentDialect.value
-  let language: 'mysql' | 'postgresql' | 'sql' = 'sql'
-  const quoteChar = dialect.includes('mysql') ? '`' : '"'
-  if (dialect.includes('mysql')) language = 'mysql'
-  else if (dialect.includes('postgres') || dialect.includes('pgsql')) language = 'postgresql'
-
   try {
-    let formatted = formatSQL(sqlQuery.value, {
-      language,
+    const formatted = formatSQL(sqlQuery.value, {
+      language: 'sql',
       tabWidth: 2,
       keywordCase: 'upper',
       linesBetweenQueries: 2
     })
-
-    const knownTables = tablesList.value.map((t) => t.name)
-    const knownColumns = new Set<string>()
-    Object.values(columnsMap.value).forEach((cols) => {
-      cols.forEach((c) => knownColumns.add(c.name))
-    })
-
-    const allIdentifiers = [...knownTables, ...knownColumns]
-    for (const identifier of allIdentifiers) {
-      const pattern = `(?<![${quoteChar}"\`])\\b${identifier}\\b(?![${quoteChar}"\`])`
-      const regex = new RegExp(pattern, 'gi')
-      formatted = formatted.replace(regex, `${quoteChar}${identifier}${quoteChar}`)
-    }
-
     sqlQuery.value = formatted
   } catch (error) {
     console.error('Failed to format SQL:', error)
@@ -514,8 +624,16 @@ async function executeQuery() {
   const startTime = Date.now()
 
   try {
-    const db = props.database || selectedDatabase.value
-    const result = await connections.executeQuery(props.connectionId, query, db || undefined)
+    let result: { columns: string[]; rows: unknown[][]; affectedObject?: string }
+
+    if (props.mode === 'file') {
+      // File mode - use DuckDB file query API with connection ID for S3 credentials
+      result = await executeFileQuery(query, props.connectionId)
+    } else {
+      // Database mode - use database connection API
+      const db = props.database || selectedDatabase.value
+      result = await connections.executeQuery(props.connectionId, query, db || undefined)
+    }
 
     if (result.columns && result.rows) {
       resultColumns.value = result.columns
@@ -535,6 +653,9 @@ async function executeQuery() {
     lastQueryStats.value = { rowCount: queryResults.value.length, duration }
     currentPage.value = 1
 
+    // Save successful query to history
+    saveToHistory(query)
+
     // Cache results
     const tabId = activeQueryTabId.value
     if (tabId) {
@@ -546,22 +667,17 @@ async function executeQuery() {
       })
     }
 
-    // If DDL query succeeded, refresh the affected parts of the sidebar
-    // Backend returns affectedObject: "database", "schema", or "table"
-    if (result.affectedObject) {
+    // Database mode: refresh sidebar if DDL query succeeded
+    if (props.mode === 'database' && result.affectedObject) {
+      const db = props.database || selectedDatabase.value
       if (result.affectedObject === 'database' || result.affectedObject === 'schema') {
-        // Refresh database list for CREATE/DROP DATABASE or SCHEMA
         navigationStore.invalidateDatabases(props.connectionId)
         await navigationStore.ensureDatabases(props.connectionId, true)
       }
       if (result.affectedObject === 'table' && db) {
-        // Refresh metadata for CREATE/DROP/ALTER TABLE
         navigationStore.invalidateMetadata(props.connectionId, db)
       }
     }
-
-    // Save successful query to history
-    saveToHistory(query)
   } catch (error: unknown) {
     const err = error as Error
     queryError.value = err.message || 'Failed to execute query'
@@ -586,22 +702,19 @@ async function executeQuery() {
 // ========== Resize Handling ==========
 function startResize(e: MouseEvent) {
   isResizing.value = true
+  e.preventDefault()
   document.addEventListener('mousemove', handleResize)
   document.addEventListener('mouseup', stopResize)
-  e.preventDefault()
 }
 
 function handleResize(e: MouseEvent) {
   if (!isResizing.value) return
-
-  const container = document.querySelector('.sql-console-tab')
+  const container = document.querySelector('.console-tab')
   if (!container) return
 
-  const containerRect = container.getBoundingClientRect()
-  const mouseX = e.clientX - containerRect.left
-  let newWidth = (mouseX / containerRect.width) * 100
-  newWidth = Math.max(25, Math.min(75, newWidth))
-  editorWidth.value = newWidth
+  const rect = container.getBoundingClientRect()
+  const newWidth = ((e.clientX - rect.left) / rect.width) * 100
+  editorWidth.value = Math.min(Math.max(newWidth, 20), 80)
 }
 
 function stopResize() {
@@ -614,23 +727,29 @@ function stopResize() {
 watch(() => selectedDatabase.value, loadTableSuggestions)
 
 onMounted(async () => {
-  // Load query history from localStorage
+  // Load query history
   loadHistory()
 
-  await loadDatabases()
-  await loadTableSuggestions()
+  if (props.mode === 'database') {
+    await loadDatabases()
+    await loadTableSuggestions()
+  }
 
+  // Initialize first tab if needed
+  if (queryTabs.value.length === 0) {
+    addQueryTab()
+  }
+
+  // Set default query if tab is empty
   const activeTab = activeQueryTab.value
   if (activeTab && !activeTab.query.trim()) {
-    // Set a minimal default query - templates are available via dropdown
-    const defaultQuery = `-- Write your query here or select a template from the dropdown above\n`
-    sqlQuery.value = defaultQuery
+    sqlQuery.value = getDefaultQueryTemplate()
     if (activeQueryTabId.value) {
       sqlConsoleStore.updateTabQuery(
-        props.connectionId,
-        props.database,
+        consoleKey.value,
+        undefined,
         activeQueryTabId.value,
-        defaultQuery
+        sqlQuery.value
       )
     }
   }
@@ -642,13 +761,22 @@ onUnmounted(() => {
   if (saveTimeout) clearTimeout(saveTimeout)
   const tabId = activeQueryTabId.value
   if (tabId) {
-    sqlConsoleStore.updateTabQuery(props.connectionId, props.database, tabId, sqlQuery.value)
+    sqlConsoleStore.updateTabQuery(consoleKey.value, undefined, tabId, sqlQuery.value)
   }
+})
+
+// ========== Public API for external interaction ==========
+function insertIntoEditor(text: string) {
+  sqlQuery.value = text
+}
+
+defineExpose({
+  insertIntoEditor
 })
 </script>
 
 <style scoped>
-.sql-console-tab {
+.console-tab {
   min-height: 400px;
 }
 </style>
