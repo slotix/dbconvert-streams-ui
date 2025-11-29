@@ -17,6 +17,9 @@ type ContextTarget =
       connectionId: string
       path: string
       name: string
+      isDir?: boolean
+      isTable?: boolean
+      format?: string
     }
 
 const props = defineProps<{
@@ -43,9 +46,16 @@ const target = computed(() => props.target as ContextTarget)
 const isTableOrView = computed(
   () => !!props.target && (props.target.kind === 'table' || props.target.kind === 'view')
 )
-const isFile = computed(() => !!props.target && props.target.kind === 'file')
-// Objects that can be opened (tables, views, files)
-const isOpenable = computed(() => isTableOrView.value || isFile.value)
+// Check if this is a file or table folder (not a navigation folder)
+const isFileOrTableFolder = computed(() => {
+  if (!props.target || props.target.kind !== 'file') return false
+  // For directories, only true if it's a table folder (contains data files)
+  if (props.target.isDir) return !!props.target.isTable
+  // For regular files, always true
+  return true
+})
+// Objects that can be opened (tables, views, files, table folders)
+const isOpenable = computed(() => isTableOrView.value || isFileOrTableFolder.value)
 
 function click(action: string, openInRightSplit?: boolean) {
   if (!props.target) return
@@ -215,7 +225,7 @@ function click(action: string, openInRightSplit?: boolean) {
           </template>
 
           <!-- File specific actions -->
-          <template v-else-if="isFile">
+          <template v-else-if="isFileOrTableFolder">
             <button
               class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
               @click="click('insert-into-console')"

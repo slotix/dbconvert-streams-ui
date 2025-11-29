@@ -17,6 +17,9 @@ export type ContextTarget =
       connectionId: string
       path: string
       name: string
+      isDir?: boolean
+      isTable?: boolean
+      format?: string
     }
 
 export type TableOrViewTarget = Extract<ContextTarget, { kind: 'table' | 'view' }>

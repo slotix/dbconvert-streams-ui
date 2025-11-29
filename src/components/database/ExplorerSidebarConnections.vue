@@ -257,11 +257,33 @@ function onOpen(
 
 /**
  * Generate DuckDB read function call based on file extension
+ * For directories, uses /*.* glob pattern to read all files
  */
-function generateDuckDBReadFunction(path: string, fileName: string, _isS3: boolean): string {
+function generateDuckDBReadFunction(
+  path: string,
+  fileName: string,
+  _isS3: boolean,
+  isDir: boolean = false,
+  format?: string
+): string {
+  // For directories, use /*.* glob pattern with appropriate read function
+  if (isDir) {
+    const fullPath = `${path}/*.*`
+    // Use format from folder metadata if available
+    const fmt = format?.toLowerCase()
+    if (fmt === 'parquet') {
+      return `SELECT * FROM read_parquet('${fullPath}') LIMIT 100;`
+    } else if (fmt === 'json' || fmt === 'jsonl') {
+      return `SELECT * FROM read_json_auto('${fullPath}') LIMIT 100;`
+    }
+    // Default to csv_auto which handles most formats
+    return `SELECT * FROM read_csv_auto('${fullPath}') LIMIT 100;`
+  }
+
   // Get file extension (handle compressed files like .csv.gz)
   const lowerName = fileName.toLowerCase()
   let ext = ''
+
   if (
     lowerName.endsWith('.csv') ||
     lowerName.endsWith('.csv.gz') ||
@@ -412,10 +434,10 @@ function onMenuAction(payload: {
         const connType = conn?.type?.toLowerCase()
         const isS3 = connType === 's3' || conn?.spec?.s3 !== undefined
         const consoleKey = `file:${t.connectionId}`
-        const duckdbQuery = generateDuckDBReadFunction(t.path, t.name, isS3)
+        const duckdbQuery = generateDuckDBReadFunction(t.path, t.name, isS3, t.isDir, t.format)
 
-        // Insert into the active tab of the file console
-        sqlConsoleStore.insertIntoActiveTab(consoleKey, undefined, duckdbQuery)
+        // Create a new tab with the query (use file/folder name as tab name)
+        sqlConsoleStore.addTabWithQuery(consoleKey, undefined, duckdbQuery, t.name)
 
         // Open the file console if not already visible
         const basePath = conn?.spec?.files?.basePath || conn?.spec?.s3?.scope?.bucket
@@ -516,12 +538,18 @@ function handleContextMenuFile(payload: {
   connectionId: string
   path: string
   name: string
+  isDir?: boolean
+  isTable?: boolean
+  format?: string
 }) {
   contextMenu.open(payload.event, {
     kind: 'file',
     connectionId: payload.connectionId,
     path: payload.path,
-    name: payload.name
+    name: payload.name,
+    isDir: payload.isDir,
+    isTable: payload.isTable,
+    format: payload.format
   })
 }
 

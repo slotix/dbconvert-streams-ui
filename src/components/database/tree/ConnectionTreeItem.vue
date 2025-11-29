@@ -186,7 +186,10 @@ function handleFileContextMenu(payload: { event: MouseEvent; entry: FileSystemEn
     event: payload.event,
     connectionId: props.connection.id,
     path: payload.entry.path,
-    name: payload.entry.name
+    name: payload.entry.name,
+    isDir: payload.entry.type === 'dir',
+    isTable: payload.entry.isTable,
+    format: payload.entry.format
   })
 }
 

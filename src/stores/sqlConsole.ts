@@ -338,6 +338,23 @@ export const useSqlConsoleStore = defineStore('sqlConsole', () => {
     }
   }
 
+  // Create a new tab with the given query content
+  function addTabWithQuery(
+    connectionId: string,
+    database: string | undefined,
+    query: string,
+    name?: string
+  ): SqlQueryTab {
+    const state = getConsoleState(connectionId, database)
+    const tabNumber = state.tabs.length + 1
+    const newTab = createDefaultTab(name || `Query ${tabNumber}`)
+    newTab.query = query
+    state.tabs.push(newTab)
+    state.activeTabId = newTab.id
+    saveState()
+    return newTab
+  }
+
   return {
     // State
     consoles,
@@ -366,6 +383,7 @@ export const useSqlConsoleStore = defineStore('sqlConsole', () => {
     hasResultCache,
 
     // Insert helpers
-    insertIntoActiveTab
+    insertIntoActiveTab,
+    addTabWithQuery
   }
 })
