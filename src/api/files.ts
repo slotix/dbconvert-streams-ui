@@ -11,7 +11,9 @@ import type {
   S3ListRequest,
   S3ListResponse,
   S3ValidationResponse,
-  S3ManifestResponse
+  S3ManifestResponse,
+  S3CreateBucketRequest,
+  S3CreateBucketResponse
 } from '@/types/s3'
 
 interface FileDataParams {
@@ -139,6 +141,19 @@ export async function listS3Buckets(
   }
 }
 
+export async function createS3Bucket(
+  payload: S3CreateBucketRequest
+): Promise<S3CreateBucketResponse> {
+  try {
+    const response = await apiClient.post<S3CreateBucketResponse>('/files/s3/buckets', payload, {
+      ...withAuthHeaders()
+    })
+    return response.data
+  } catch (error) {
+    throw handleApiError(error)
+  }
+}
+
 export async function validateS3Path(path: string): Promise<S3ValidationResponse> {
   try {
     const response = await apiClient.get<S3ValidationResponse>('/files/s3/validate', {
@@ -212,6 +227,7 @@ export default {
   configureS3Session,
   listS3Objects,
   listS3Buckets,
+  createS3Bucket,
   validateS3Path,
   readS3Manifest,
   executeFileQuery

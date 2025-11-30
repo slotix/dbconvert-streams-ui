@@ -66,6 +66,19 @@ export interface S3ListResponse {
   total_size: number
 }
 
+// S3 bucket creation
+export interface S3CreateBucketRequest {
+  bucket: string
+  region?: string
+  connectionId?: string
+}
+
+export interface S3CreateBucketResponse {
+  status: string
+  bucket: string
+  region: string
+}
+
 // S3 Validation Response
 export interface S3ValidationResponse {
   valid: boolean

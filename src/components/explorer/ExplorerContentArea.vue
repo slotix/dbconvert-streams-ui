@@ -9,6 +9,7 @@
       @delete="$emit('delete-connection')"
       @create-database="$emit('create-database', $event)"
       @create-schema="$emit('create-schema', $event)"
+      @create-bucket="$emit('create-bucket', $event)"
       @open-sql-console="handleOpenConnectionSqlConsole"
       @open-file-console="handleOpenFileConsole"
     />
@@ -160,6 +161,7 @@ const emit = defineEmits<{
   'delete-connection': []
   'create-database': [databaseName: string]
   'create-schema': [schemaName: string]
+  'create-bucket': [payload: { bucket: string; region?: string }]
   'show-diagram': [payload: { connectionId: string; database: string }]
   'set-active-pane': [pane: 'left' | 'right']
   'left-tab-change': [tab: 'data' | 'structure']

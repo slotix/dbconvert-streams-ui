@@ -20,7 +20,9 @@ import {
   ServerIcon,
   CircleStackIcon,
   ChartBarIcon,
-  CommandLineIcon
+  CommandLineIcon,
+  CloudIcon,
+  FolderIcon
 } from '@heroicons/vue/24/outline'
 
 const navigationStore = useExplorerNavigationStore()
@@ -39,6 +41,7 @@ const emit = defineEmits<{
   (e: 'create-schema', schemaName: string): void
   (e: 'open-sql-console'): void
   (e: 'open-file-console'): void
+  (e: 'create-bucket', payload: { bucket: string; region?: string }): void
 }>()
 
 const showPassword = ref(false)
@@ -50,6 +53,9 @@ const newDatabaseName = ref('')
 const newSchemaName = ref('')
 const isCreatingDatabase = ref(false)
 const isCreatingSchema = ref(false)
+const newBucketName = ref('')
+const newBucketRegion = ref('')
+const isCreatingBucket = ref(false)
 
 // Database capabilities - computed based on connection type
 const databaseType = computed(() => props.connection?.type || '')
@@ -103,6 +109,14 @@ const storageRegion = computed(() => {
   return ''
 })
 
+watch(
+  () => props.connection?.id,
+  () => {
+    newBucketRegion.value = storageRegion.value || ''
+  },
+  { immediate: true }
+)
+
 // Check if connection has a path configured
 const hasPath = computed(() => {
   return !!basePath.value?.trim()
@@ -115,6 +129,13 @@ function parseS3Uri(uri: string | undefined): { bucket: string; prefix: string }
   const match = uri.match(/^s3:\/\/([^/]+)(?:\/(.*))?$/)
   if (!match) return { bucket: '', prefix: '' }
   return { bucket: match[1] || '', prefix: match[2] || '' }
+}
+
+function maskAccessKey(key: string): string {
+  if (key.length <= 8) {
+    return `${key.slice(0, 2)}••${key.slice(-2)}`
+  }
+  return `${key.slice(0, 4)}••••${key.slice(-4)}`
 }
 
 // Computed S3 bucket and prefix from spec.s3.scope or spec.files.basePath
@@ -136,6 +157,38 @@ const s3Prefix = computed(() => {
     return parseS3Uri(spec.files.basePath).prefix
   }
   return ''
+})
+
+const isScopedS3Connection = computed(() => !!s3Bucket.value)
+
+const credentialSummary = computed(() => {
+  const credentials = props.connection?.spec?.s3?.credentials
+  if (!credentials) return 'IAM role / AWS default credentials'
+  if (credentials.credentialsRef) {
+    return `Vault secret (${credentials.credentialsRef})`
+  }
+  if (credentials.accessKey) {
+    return `Access key ${maskAccessKey(credentials.accessKey)}`
+  }
+  return 'Static credentials configured'
+})
+
+const s3AccessScopeLabel = computed(() => {
+  if (isScopedS3Connection.value) return 'Scoped bucket'
+  return 'All buckets'
+})
+
+const s3AccessScopeDescription = computed(() => {
+  if (isScopedS3Connection.value) {
+    if (s3Prefix.value) {
+      return `Access limited to s3://${s3Bucket.value}/${s3Prefix.value}`
+    }
+    return `Access limited to bucket "${s3Bucket.value}"`
+  }
+  if (storageRegion.value) {
+    return `Browse all buckets in ${storageRegion.value}`
+  }
+  return 'Browse all buckets with this credential'
 })
 
 // Filter files to show only supported formats
@@ -242,6 +295,28 @@ const createdDisplay = computed(() => {
   return formatDateTime(props.connection?.created || 0)
 })
 
+const bucketValidationMessage = computed(() => {
+  const value = newBucketName.value.trim()
+  if (!value) return ''
+  if (value.length < 3 || value.length > 63) {
+    return 'Bucket names must be 3-63 characters.'
+  }
+  if (!/^[a-z0-9][a-z0-9.-]+[a-z0-9]$/.test(value)) {
+    return 'Use lowercase letters, numbers, dots, and hyphens only.'
+  }
+  if (value.includes('..')) {
+    return 'Bucket names cannot contain consecutive periods.'
+  }
+  if (value.includes('.-') || value.includes('-.')) {
+    return 'Dots cannot be adjacent to hyphens.'
+  }
+  return ''
+})
+
+const canCreateBucket = computed(() => {
+  return !!newBucketName.value.trim() && !bucketValidationMessage.value
+})
+
 // Database/Schema creation handlers
 async function handleCreateDatabase() {
   const dbName = newDatabaseName.value.trim()
@@ -266,6 +341,22 @@ async function handleCreateSchema() {
     newSchemaName.value = '' // Clear input on success
   } finally {
     isCreatingSchema.value = false
+  }
+}
+
+async function handleCreateBucket() {
+  const bucket = newBucketName.value.trim()
+  if (!bucket || bucketValidationMessage.value) return
+
+  isCreatingBucket.value = true
+  try {
+    emit('create-bucket', {
+      bucket,
+      region: newBucketRegion.value.trim() || undefined
+    })
+    newBucketName.value = ''
+  } finally {
+    isCreatingBucket.value = false
   }
 }
 
@@ -436,143 +527,296 @@ const isLoadingDatabases = computed(() => {
 
     <div class="p-4 space-y-6">
       <!-- File Connection Details -->
-      <div v-if="isFileConnection" class="space-y-4">
-        <!-- S3/MinIO Specific Details -->
-        <div v-if="isS3Connection" class="space-y-4">
-          <!-- Storage URI -->
-          <div class="min-w-0">
-            <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
-              >Storage URI</label
-            >
+      <div v-if="isFileConnection" class="space-y-6">
+        <template v-if="isS3Connection">
+          <div class="grid gap-4 md:grid-cols-2">
             <div
-              class="mt-1 flex items-start gap-2 rounded-lg bg-linear-to-r from-slate-50 to-gray-50 dark:from-gray-800 dark:to-gray-850 p-3 font-mono text-sm border border-gray-100 dark:border-gray-700"
+              class="bg-slate-50 dark:bg-gray-800/50 rounded-xl p-4 ring-1 ring-slate-200/70 dark:ring-gray-700"
             >
-              <span class="flex-1 break-all text-gray-800 dark:text-gray-200 overflow-x-auto">
-                {{ displayS3URI }}
-              </span>
-              <button
-                v-if="displayS3URI && displayS3URI !== 's3://'"
-                class="shrink-0 transition-colors"
-                :class="
-                  isPathCopied
-                    ? 'text-green-400'
-                    : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'
-                "
-                :title="isPathCopied ? 'Copied!' : 'Copy storage URI to clipboard'"
-                @click.stop="copyFolderPath"
-              >
-                <ClipboardIcon v-if="!isPathCopied" class="h-4 w-4" />
-                <CheckIcon v-else class="h-4 w-4" />
-              </button>
+              <div class="flex items-center gap-2 mb-3">
+                <div class="p-1.5 bg-sky-100 dark:bg-sky-900/30 rounded-lg">
+                  <CloudIcon class="h-4 w-4 text-sky-600 dark:text-sky-400" />
+                </div>
+                <span class="text-sm font-semibold text-gray-700 dark:text-gray-300"
+                  >Storage Info</span
+                >
+              </div>
+              <div class="space-y-4">
+                <div>
+                  <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+                    >Storage URI</label
+                  >
+                  <div
+                    class="mt-1 flex items-start gap-2 rounded-lg bg-linear-to-r from-slate-50 to-gray-50 dark:from-gray-800 dark:to-gray-850 p-3 font-mono text-sm border border-gray-100 dark:border-gray-700"
+                  >
+                    <span class="flex-1 break-all text-gray-800 dark:text-gray-200 overflow-x-auto">
+                      {{ displayS3URI }}
+                    </span>
+                    <button
+                      v-if="displayS3URI && displayS3URI !== 's3://'"
+                      class="shrink-0 transition-colors"
+                      :class="
+                        isPathCopied
+                          ? 'text-green-400'
+                          : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'
+                      "
+                      :title="isPathCopied ? 'Copied!' : 'Copy storage URI to clipboard'"
+                      @click.stop="copyFolderPath"
+                    >
+                      <ClipboardIcon v-if="!isPathCopied" class="h-4 w-4" />
+                      <CheckIcon v-else class="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                  <div v-if="storageRegion">
+                    <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+                      >Region</label
+                    >
+                    <p class="mt-1 font-medium text-gray-900 dark:text-gray-100 truncate text-sm">
+                      {{ storageRegion }}
+                    </p>
+                  </div>
+                  <div v-if="storageEndpoint">
+                    <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+                      >Endpoint</label
+                    >
+                    <p class="mt-1 font-medium text-gray-900 dark:text-gray-100 truncate text-sm">
+                      {{ storageEndpoint }}
+                    </p>
+                  </div>
+                </div>
+                <div>
+                  <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+                    >Credentials</label
+                  >
+                  <p class="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100">
+                    {{ credentialSummary }}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div
+              class="bg-slate-50 dark:bg-gray-800/50 rounded-xl p-4 ring-1 ring-slate-200/70 dark:ring-gray-700"
+            >
+              <div class="flex items-center gap-2 mb-3">
+                <div class="p-1.5 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
+                  <FolderIcon class="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                </div>
+                <span class="text-sm font-semibold text-gray-700 dark:text-gray-300"
+                  >Scope & Files</span
+                >
+              </div>
+              <div class="space-y-4">
+                <div>
+                  <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+                    >Access Scope</label
+                  >
+                  <p class="mt-1 font-semibold text-gray-900 dark:text-gray-100">
+                    {{ s3AccessScopeLabel }}
+                  </p>
+                  <p class="text-xs text-gray-600 dark:text-gray-400">
+                    {{ s3AccessScopeDescription }}
+                  </p>
+                </div>
+                <div v-if="s3Bucket">
+                  <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+                    >Bucket</label
+                  >
+                  <p class="mt-1 font-medium text-gray-900 dark:text-gray-100 truncate text-sm">
+                    {{ s3Bucket }}
+                  </p>
+                </div>
+                <div v-if="s3Prefix">
+                  <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+                    >Prefix</label
+                  >
+                  <p class="mt-1 font-medium text-gray-900 dark:text-gray-100 truncate text-sm">
+                    {{ s3Prefix }}
+                  </p>
+                </div>
+                <div>
+                  <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+                    >Files</label
+                  >
+                  <p class="mt-1 text-sm text-gray-700 dark:text-gray-300 font-medium">
+                    <span v-if="totalFileCount > 0">{{ fileSummary }}</span>
+                    <span v-else-if="hasPath || s3Bucket || isS3Connection">
+                      {{
+                        isS3Connection && !s3Bucket
+                          ? 'Browse buckets to view files'
+                          : 'No supported files found'
+                      }}
+                    </span>
+                    <span v-else>No path configured</span>
+                  </p>
+                </div>
+                <div
+                  v-if="!s3Bucket"
+                  class="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg"
+                >
+                  <p class="text-xs text-blue-700 dark:text-blue-300">
+                    <strong>Note:</strong> This connection can browse all buckets. Specify a bucket
+                    when using it as a stream target.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
 
-          <!-- S3 Configuration Grid -->
-          <div class="grid grid-cols-2 gap-4">
-            <!-- Endpoint -->
-            <div v-if="storageEndpoint">
-              <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
-                >Endpoint</label
-              >
-              <p class="mt-1 font-medium text-gray-900 dark:text-gray-100 truncate text-sm">
-                {{ storageEndpoint }}
+          <div class="grid gap-4 md:grid-cols-2">
+            <div
+              class="bg-slate-50 dark:bg-gray-800/50 rounded-xl p-4 ring-1 ring-slate-200/70 dark:ring-gray-700"
+            >
+              <div class="flex items-center gap-2 mb-3">
+                <div class="p-1.5 bg-teal-100 dark:bg-teal-900/30 rounded-lg">
+                  <CommandLineIcon class="h-4 w-4 text-teal-600 dark:text-teal-400" />
+                </div>
+                <span class="text-sm font-semibold text-gray-700 dark:text-gray-300"
+                  >File Console</span
+                >
+              </div>
+              <p class="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                Query CSV, JSONL, Parquet, and manifests in this bucket using DuckDB SQL.
               </p>
+              <BaseButton
+                variant="secondary"
+                size="sm"
+                class="w-full justify-center"
+                @click="emit('open-file-console')"
+              >
+                <CommandLineIcon class="w-4 h-4 mr-1.5" />
+                Open File Console
+              </BaseButton>
             </div>
 
-            <!-- Region -->
-            <div v-if="storageRegion">
-              <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
-                >Region</label
-              >
-              <p class="mt-1 font-medium text-gray-900 dark:text-gray-100 truncate text-sm">
-                {{ storageRegion }}
+            <div
+              class="bg-slate-50 dark:bg-gray-800/50 rounded-xl p-4 ring-1 ring-slate-200/70 dark:ring-gray-700"
+            >
+              <div class="flex items-center gap-2 mb-3">
+                <div class="p-1.5 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
+                  <CircleStackIcon class="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <span class="text-sm font-semibold text-gray-700 dark:text-gray-300"
+                  >Create Bucket</span
+                >
+              </div>
+              <p class="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                Provision a new bucket using this connection's credentials.
               </p>
-            </div>
-
-            <!-- Bucket (from spec.s3.scope or parsed from basePath) -->
-            <div v-if="s3Bucket">
-              <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
-                >Bucket</label
-              >
-              <p class="mt-1 font-medium text-gray-900 dark:text-gray-100 truncate text-sm">
-                {{ s3Bucket }}
-              </p>
-            </div>
-
-            <!-- Prefix (from spec.s3.scope or parsed from basePath) -->
-            <div v-if="s3Prefix">
-              <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
-                >Prefix</label
-              >
-              <p class="mt-1 font-medium text-gray-900 dark:text-gray-100 truncate text-sm">
-                {{ s3Prefix }}
-              </p>
+              <div class="space-y-2">
+                <FormInput
+                  v-model="newBucketName"
+                  placeholder="analytics-exports"
+                  :disabled="isCreatingBucket"
+                  @keyup.enter="handleCreateBucket"
+                />
+                <FormInput
+                  v-model="newBucketRegion"
+                  :placeholder="storageRegion || 'us-east-1'"
+                  :disabled="isCreatingBucket"
+                  @keyup.enter="handleCreateBucket"
+                />
+                <p class="text-[11px] text-gray-500 dark:text-gray-400">
+                  Region defaults to the connection's region if left blank.
+                </p>
+                <p v-if="bucketValidationMessage" class="text-xs text-red-500">
+                  {{ bucketValidationMessage }}
+                </p>
+                <BaseButton
+                  variant="primary"
+                  size="sm"
+                  class="w-full justify-center"
+                  :disabled="!canCreateBucket || isCreatingBucket"
+                  @click="handleCreateBucket"
+                >
+                  <PlusIcon class="w-4 h-4 mr-1.5" />
+                  Create Bucket
+                </BaseButton>
+              </div>
             </div>
           </div>
-
-          <!-- Info message for unscoped connections -->
+        </template>
+        <template v-else>
           <div
-            v-if="!s3Bucket"
-            class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg"
+            class="bg-slate-50 dark:bg-gray-800/50 rounded-xl p-4 ring-1 ring-slate-200/70 dark:ring-gray-700 space-y-4"
           >
-            <p class="text-xs text-blue-700 dark:text-blue-300">
-              <strong>Note:</strong> This connection is not scoped to a specific bucket. You can
-              browse all buckets in the Data Explorer. To use as a stream target, edit and specify a
-              bucket.
+            <div class="flex items-center gap-2">
+              <div class="p-1.5 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
+                <FolderIcon class="h-4 w-4 text-amber-600 dark:text-amber-400" />
+              </div>
+              <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Local Path</span>
+            </div>
+            <div>
+              <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+                >Folder Path</label
+              >
+              <div
+                class="mt-1 flex items-start gap-2 rounded-lg bg-linear-to-r from-slate-50 to-gray-50 dark:from-gray-800 dark:to-gray-850 p-3 font-mono text-sm border border-gray-100 dark:border-gray-700"
+              >
+                <span class="flex-1 break-all text-gray-800 dark:text-gray-200 overflow-x-auto">
+                  {{ basePath || 'No path configured' }}
+                </span>
+                <button
+                  v-if="basePath"
+                  class="shrink-0 transition-colors"
+                  :class="
+                    isPathCopied
+                      ? 'text-green-400'
+                      : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'
+                  "
+                  :title="isPathCopied ? 'Copied!' : 'Copy folder path to clipboard'"
+                  @click.stop="copyFolderPath"
+                >
+                  <ClipboardIcon v-if="!isPathCopied" class="h-4 w-4" />
+                  <CheckIcon v-else class="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+            <div>
+              <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+                >Files</label
+              >
+              <p class="mt-1 text-sm text-gray-700 dark:text-gray-300">
+                <span
+                  v-if="totalFileCount > 0"
+                  class="font-medium text-gray-900 dark:text-gray-100"
+                >
+                  {{ fileSummary }}
+                </span>
+                <span v-else-if="hasPath" class="text-gray-500 dark:text-gray-400">
+                  No supported files found
+                </span>
+                <span v-else class="text-gray-500 dark:text-gray-400">No path configured</span>
+              </p>
+            </div>
+          </div>
+          <div
+            class="bg-slate-50 dark:bg-gray-800/50 rounded-xl p-4 ring-1 ring-slate-200/70 dark:ring-gray-700"
+          >
+            <div class="flex items-center gap-2 mb-3">
+              <div class="p-1.5 bg-teal-100 dark:bg-teal-900/30 rounded-lg">
+                <CommandLineIcon class="h-4 w-4 text-teal-600 dark:text-teal-400" />
+              </div>
+              <span class="text-sm font-semibold text-gray-700 dark:text-gray-300"
+                >File Console</span
+              >
+            </div>
+            <p class="text-xs text-gray-600 dark:text-gray-400 mb-3">
+              Query CSV, JSON, and Parquet files directly with DuckDB SQL.
             </p>
-          </div>
-        </div>
-
-        <!-- Local Files Path (non-S3) -->
-        <div v-else class="min-w-0">
-          <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
-            >Folder Path</label
-          >
-          <div
-            class="mt-1 flex items-start gap-2 rounded-lg bg-linear-to-r from-slate-50 to-gray-50 dark:from-gray-800 dark:to-gray-850 p-3 font-mono text-sm border border-gray-100 dark:border-gray-700"
-          >
-            <span class="flex-1 break-all text-gray-800 dark:text-gray-200 overflow-x-auto">
-              {{ basePath || 'No path configured' }}
-            </span>
-            <button
-              v-if="basePath"
-              class="shrink-0 transition-colors"
-              :class="
-                isPathCopied
-                  ? 'text-green-400'
-                  : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'
-              "
-              :title="isPathCopied ? 'Copied!' : 'Copy folder path to clipboard'"
-              @click.stop="copyFolderPath"
+            <BaseButton
+              variant="secondary"
+              size="sm"
+              class="w-full justify-center"
+              @click="emit('open-file-console')"
             >
-              <ClipboardIcon v-if="!isPathCopied" class="h-4 w-4" />
-              <CheckIcon v-else class="h-4 w-4" />
-            </button>
+              <CommandLineIcon class="w-4 h-4 mr-1.5" />
+              Open File Console
+            </BaseButton>
           </div>
-        </div>
-
-        <!-- File Count and Size (for all file connections) -->
-        <div class="min-w-0">
-          <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
-            >Files</label
-          >
-          <div class="mt-1 text-sm text-gray-700 dark:text-gray-300">
-            <div v-if="totalFileCount > 0" class="text-gray-900 dark:text-gray-100 font-medium">
-              {{ fileSummary }}
-            </div>
-            <div
-              v-else-if="hasPath || s3Bucket || isS3Connection"
-              class="text-gray-500 dark:text-gray-400"
-            >
-              {{
-                isS3Connection && !s3Bucket
-                  ? 'Browse buckets to view files'
-                  : 'No supported files found'
-              }}
-            </div>
-            <div v-else class="text-gray-500 dark:text-gray-400">No path configured</div>
-          </div>
-        </div>
+        </template>
       </div>
 
       <!-- Database Connection Details - Card Layout -->
@@ -828,33 +1072,6 @@ const isLoadingDatabases = computed(() => {
           >
             <CommandLineIcon class="w-4 h-4 mr-1.5" />
             Open Database Console
-          </BaseButton>
-        </div>
-
-        <!-- File Console Card (for file/S3 connections) -->
-        <div
-          v-if="isFileConnection"
-          class="bg-slate-50 dark:bg-gray-800/50 rounded-xl p-4 ring-1 ring-slate-200/70 dark:ring-gray-700"
-        >
-          <div class="flex items-center gap-2 mb-3">
-            <div class="p-1.5 bg-teal-100 dark:bg-teal-900/30 rounded-lg">
-              <CommandLineIcon class="h-4 w-4 text-teal-600 dark:text-teal-400" />
-            </div>
-            <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">File Console</span>
-          </div>
-
-          <p class="text-xs text-gray-600 dark:text-gray-400 mb-3">
-            Query files directly using SQL (CSV, Parquet, JSON, S3)
-          </p>
-
-          <BaseButton
-            variant="secondary"
-            size="sm"
-            class="w-full justify-center"
-            @click="emit('open-file-console')"
-          >
-            <CommandLineIcon class="w-4 h-4 mr-1.5" />
-            Open File Console
           </BaseButton>
         </div>
 

@@ -5,6 +5,7 @@ import { useConnectionsStore } from '@/stores/connections'
 import { useFileExplorerStore } from '@/stores/fileExplorer'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import connectionsApi from '@/api/connections'
+import { createS3Bucket } from '@/api/files'
 import type { FileSystemEntry } from '@/api/fileSystem'
 import type { SQLTableMeta, SQLViewMeta } from '@/types/metadata'
 
@@ -181,6 +182,30 @@ export function useConnectionActions(emits?: {
     }
   }
 
+  async function createBucket(
+    connectionId: string,
+    bucketName?: string,
+    options?: { region?: string }
+  ) {
+    const bucket = bucketName || window.prompt('Enter bucket name:')
+    if (!bucket || !bucket.trim()) {
+      return
+    }
+
+    try {
+      await createS3Bucket({
+        bucket: bucket.trim(),
+        region: options?.region?.trim() || undefined,
+        connectionId
+      })
+      toast.success(`Bucket "${bucket}" created successfully`)
+      await fileExplorerStore.loadEntries(connectionId, true)
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Failed to create bucket'
+      toast.error(msg)
+    }
+  }
+
   async function copyToClipboard(text: string, label = 'Copied') {
     try {
       await navigator.clipboard.writeText(text)
@@ -298,6 +323,7 @@ export function useConnectionActions(emits?: {
     refreshDatabase,
     createDatabase,
     createSchema,
+    createBucket,
     openTable,
     openFile,
     showDiagram,

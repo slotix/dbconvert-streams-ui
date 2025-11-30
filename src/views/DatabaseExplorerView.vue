@@ -173,6 +173,13 @@ function handleCreateSchema(schemaName: string) {
   }
 }
 
+function handleCreateBucket(payload: { bucket: string; region?: string }) {
+  const connectionId = explorerState.currentConnectionId.value
+  if (connectionId) {
+    connectionActions.createBucket(connectionId, payload.bucket, { region: payload.region })
+  }
+}
+
 // SQL Console handler
 function handleOpenSqlConsole(payload: {
   connectionId: string
@@ -453,6 +460,7 @@ function handleOpenFileConsole(payload: {
               @delete-connection="onDeleteConnection"
               @create-database="handleCreateDatabase"
               @create-schema="handleCreateSchema"
+              @create-bucket="handleCreateBucket"
               @show-diagram="handleShowDiagram"
               @set-active-pane="(pane) => paneTabsStore.setActivePane(pane)"
               @left-tab-change="onLeftTabChange"
