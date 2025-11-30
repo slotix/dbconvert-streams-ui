@@ -44,6 +44,15 @@
     >
       <PlusIcon class="h-4 w-4" />
     </button>
+    <!-- Close All Tabs Button -->
+    <button
+      v-if="tabs.length > 1"
+      class="shrink-0 px-2 py-1.5 text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ml-auto"
+      title="Close All Tabs"
+      @click="$emit('closeAll')"
+    >
+      <XMarkIcon class="h-4 w-4" />
+    </button>
   </div>
 </template>
 
@@ -60,6 +69,7 @@ defineProps<{
 const emit = defineEmits<{
   select: [tabId: string]
   close: [tabId: string]
+  closeAll: []
   add: []
   rename: [tabId: string, newName: string]
 }>()

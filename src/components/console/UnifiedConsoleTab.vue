@@ -99,6 +99,7 @@
       :active-tab-id="activeQueryTabId"
       @select="setActiveQueryTab"
       @close="closeQueryTab"
+      @close-all="closeAllQueryTabs"
       @add="addQueryTab"
       @rename="handleRenameTab"
     />
@@ -159,10 +160,46 @@ import type { SchemaContext } from '@/composables/useMonacoSqlProviders'
 import { useConnectionsStore } from '@/stores/connections'
 import { useSqlConsoleStore } from '@/stores/sqlConsole'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
+import { useLogsStore, type QueryPurpose } from '@/stores/logs'
 import connections from '@/api/connections'
 import { executeFileQuery } from '@/api/files'
 import { format as formatSQL } from 'sql-formatter'
 import { SqlQueryTabs, SqlEditorPane, SqlResultsPane } from '@/components/database/sql-console'
+
+// Helper to detect query purpose from SQL
+function detectQueryPurpose(query: string): QueryPurpose {
+  const normalized = query.trim().toUpperCase()
+  const firstWord = normalized.split(/\s+/)[0]
+
+  // Schema changes
+  if (['CREATE', 'ALTER', 'DROP', 'TRUNCATE'].includes(firstWord)) {
+    return 'SCHEMA_CHANGE'
+  }
+
+  // DML operations
+  if (['INSERT', 'UPDATE', 'DELETE', 'MERGE', 'UPSERT'].includes(firstWord)) {
+    return 'DML_OPERATION'
+  }
+
+  // Schema introspection
+  if (
+    ['SHOW', 'DESCRIBE', 'DESC', 'EXPLAIN'].includes(firstWord) ||
+    normalized.includes('INFORMATION_SCHEMA') ||
+    normalized.includes('PG_CATALOG') ||
+    normalized.includes('PG_TABLES') ||
+    normalized.includes('PG_DATABASE')
+  ) {
+    return 'SCHEMA_INTROSPECTION'
+  }
+
+  // Count queries
+  if (normalized.includes('COUNT(') || normalized.includes('COUNT (')) {
+    return 'COUNT_QUERY'
+  }
+
+  // Default to data query for SELECT and other reads (including utility queries like VERSION())
+  return 'DATA_QUERY'
+}
 
 // ========== Props ==========
 export type ConsoleMode = 'database' | 'file'
@@ -183,6 +220,7 @@ const props = defineProps<{
 const connectionsStore = useConnectionsStore()
 const sqlConsoleStore = useSqlConsoleStore()
 const navigationStore = useExplorerNavigationStore()
+const logsStore = useLogsStore()
 
 // ========== State ==========
 const sqlQuery = ref('')
@@ -506,6 +544,10 @@ function closeQueryTab(tabId: string) {
   sqlConsoleStore.closeTab(consoleKey.value, undefined, tabId)
 }
 
+function closeAllQueryTabs() {
+  sqlConsoleStore.clearTabs(consoleKey.value, undefined)
+}
+
 function handleRenameTab(tabId: string, newName: string) {
   sqlConsoleStore.renameTab(consoleKey.value, undefined, tabId, newName)
 }
@@ -653,6 +695,19 @@ async function executeQuery() {
     lastQueryStats.value = { rowCount: queryResults.value.length, duration }
     currentPage.value = 1
 
+    // Log the SQL query to SQL Logs
+    logsStore.addSQLLog({
+      id: `sql-console-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      connectionId: props.connectionId,
+      tabId: activeQueryTabId.value || undefined,
+      database: props.mode === 'file' ? '' : props.database || selectedDatabase.value || '',
+      query: query,
+      purpose: detectQueryPurpose(query),
+      startedAt: new Date(startTime).toISOString(),
+      durationMs: duration,
+      rowCount: queryResults.value.length
+    })
+
     // Save successful query to history
     saveToHistory(query)
 
@@ -684,6 +739,22 @@ async function executeQuery() {
     queryResults.value = []
     resultColumns.value = []
     lastQueryStats.value = null
+
+    const duration = Date.now() - startTime
+
+    // Log the failed SQL query to SQL Logs
+    logsStore.addSQLLog({
+      id: `sql-console-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      connectionId: props.connectionId,
+      tabId: activeQueryTabId.value || undefined,
+      database: props.mode === 'file' ? '' : props.database || selectedDatabase.value || '',
+      query: query,
+      purpose: detectQueryPurpose(query),
+      startedAt: new Date(startTime).toISOString(),
+      durationMs: duration,
+      rowCount: 0,
+      error: queryError.value
+    })
 
     const tabId = activeQueryTabId.value
     if (tabId) {
