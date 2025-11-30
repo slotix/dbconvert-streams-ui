@@ -7,6 +7,7 @@ export interface FileSystemEntry {
   type: 'file' | 'dir'
   size?: number
   isTable?: boolean
+  isBucket?: boolean // Whether this is an S3 bucket
   format?: FileFormat
   fileCount?: number
   children?: FileSystemEntry[] // Nested entries for directories

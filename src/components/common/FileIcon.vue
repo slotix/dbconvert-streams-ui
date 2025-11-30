@@ -5,7 +5,8 @@ import {
   TableCellsIcon,
   DocumentIcon,
   FolderIcon,
-  RectangleStackIcon
+  RectangleStackIcon,
+  ArchiveBoxIcon
 } from '@heroicons/vue/24/outline'
 import { useIconSizes } from '@/composables/useIconSizes'
 import type { IconSizeKey } from '@/constants'
@@ -15,19 +16,26 @@ interface Props {
   fileFormat: FileFormat | null
   isDirectory?: boolean
   isTableFolder?: boolean // Folder containing files that DuckDB can read as a table
+  isBucket?: boolean // S3 bucket
   size?: IconSizeKey
 }
 
 const props = withDefaults(defineProps<Props>(), {
   size: 'BASE',
   isDirectory: false,
-  isTableFolder: false
+  isTableFolder: false,
+  isBucket: false
 })
 
 const { iconClass } = useIconSizes(props.size)
 
 // Map file formats to Heroicons
 const iconComponent = computed(() => {
+  // S3 bucket - distinct from regular folders
+  if (props.isBucket) {
+    return ArchiveBoxIcon
+  }
+
   // Table folder - a special folder that DuckDB can treat as a table
   if (props.isTableFolder) {
     return RectangleStackIcon // Stacked rectangles - represents partitioned data
@@ -53,6 +61,11 @@ const iconComponent = computed(() => {
 
 // Color coding for different file types with dark mode support
 const iconColor = computed(() => {
+  // S3 buckets - distinct blue color
+  if (props.isBucket) {
+    return 'text-sky-500 dark:text-sky-400'
+  }
+
   // Table folders get special color - teal to indicate queryable data
   if (props.isTableFolder) {
     return 'text-teal-500 dark:text-teal-400'

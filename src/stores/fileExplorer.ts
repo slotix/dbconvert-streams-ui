@@ -175,6 +175,7 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
             path: `s3://${bucketName}`,
             isDirectory: true,
             type: 'dir' as const,
+            isBucket: true,
             size: 0
           }))
 

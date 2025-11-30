@@ -175,6 +175,7 @@ const handleChildExpandFolder = (payload: { entry: FileSystemEntry }) => {
         :file-format="fileFormat"
         :is-directory="entry.type === 'dir'"
         :is-table-folder="isTableFolder"
+        :is-bucket="entry.isBucket"
         class="mr-2"
       />
 
