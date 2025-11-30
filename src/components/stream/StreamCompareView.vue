@@ -106,28 +106,35 @@ const targetRootPath = computed(() => {
   const streamTargetSpec = props.stream.target?.spec
   const s3UploadConfig = props.stream.target?.options?.s3UploadConfig
 
+  // Debug logging to help diagnose path resolution
+  console.log('[StreamCompareView] targetRootPath computed:', {
+    connSpec,
+    streamTargetSpec,
+    s3UploadConfig
+  })
+
   // For S3 targets, look for bucket in multiple places:
   // 1. stream.target.options.s3UploadConfig (legacy)
   // 2. stream.target.spec.s3.upload.bucket (current structure)
   // 3. connection.spec.s3.scope.bucket (connection-level scope)
-  if (connSpec?.s3 || streamTargetSpec?.s3) {
-    const bucket =
-      s3UploadConfig?.bucket ||
-      streamTargetSpec?.s3?.upload?.bucket ||
-      connSpec?.s3?.scope?.bucket ||
-      ''
+  const s3Bucket =
+    s3UploadConfig?.bucket || streamTargetSpec?.s3?.upload?.bucket || connSpec?.s3?.scope?.bucket
+
+  if (s3Bucket) {
     const prefix =
       s3UploadConfig?.prefix ||
       streamTargetSpec?.s3?.upload?.prefix ||
       connSpec?.s3?.scope?.prefix ||
       ''
-    const base = buildS3BasePath(bucket, prefix)
+    const base = buildS3BasePath(s3Bucket, prefix)
+    console.log('[StreamCompareView] S3 base path:', base)
     if (base) return base
   }
 
   // For local file connections, use spec.files.basePath from the CONNECTION
   // Do NOT use the stream's target.spec.files.outputDirectory as it contains the absolute path
   const storagePath = connSpec?.files?.basePath || ''
+  console.log('[StreamCompareView] Local file storage path:', storagePath)
   return storagePath
 })
 
