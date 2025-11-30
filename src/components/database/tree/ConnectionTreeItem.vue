@@ -117,7 +117,15 @@ const emit = defineEmits<{
   ): void
   (
     e: 'contextmenu-file',
-    payload: { event: MouseEvent; connectionId: string; path: string; name: string }
+    payload: {
+      event: MouseEvent
+      connectionId: string
+      path: string
+      name: string
+      isDir?: boolean
+      isTable?: boolean
+      format?: string
+    }
   ): void
   (e: 'request-file-entries', payload: { connectionId: string }): void
 }>()

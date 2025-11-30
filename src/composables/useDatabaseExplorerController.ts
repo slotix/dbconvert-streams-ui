@@ -61,6 +61,9 @@ export function useDatabaseExplorerController({
   // Use the new view state store as the single source of truth
   const viewState = useExplorerViewStateStore()
 
+  // Loading state to prevent multiple file clicks during loading
+  const isLoadingFile = ref(false)
+
   // Derived from store (no longer from URL)
   // Use computed to maintain reactivity when store values change
   const showConnectionDetails = computed(() => viewState.showConnectionDetails)
@@ -177,6 +180,11 @@ export function useDatabaseExplorerController({
     defaultTab?: 'structure' | 'data'
     openInRightSplit?: boolean
   }) {
+    // Prevent multiple clicks while loading
+    if (isLoadingFile.value) {
+      return
+    }
+
     const isTableFolder = payload.entry.type === 'dir' && payload.entry.isTable
 
     // Guard: only allow opening files or table folders
@@ -205,27 +213,36 @@ export function useDatabaseExplorerController({
       fileExplorerStore.setSelectedPath(payload.connectionId, payload.path)
     }
 
-    // Pass connectionId for S3 credential configuration
-    const metadata = await fileExplorerStore.loadFileMetadata(
-      payload.entry,
-      true,
-      payload.connectionId
-    )
+    const tabId = `file:${payload.path}`
 
+    // Set loading state to prevent additional clicks
+    isLoadingFile.value = true
+
+    // Add tab immediately with null metadata to show loading spinner right away
     paneTabsStore.addTab(
       targetPane,
       {
-        id: `file:${payload.path}`,
+        id: tabId,
         connectionId: payload.connectionId,
         name: payload.entry.name,
         filePath: payload.path,
         fileEntry: payload.entry,
-        fileMetadata: metadata,
+        fileMetadata: null, // Will be updated after fetch
         fileType: payload.entry.type,
         tabType: 'file'
       },
       alwaysOpenNewTab.value ? 'pinned' : payload.mode
     )
+
+    // Fetch metadata in background and update tab when ready
+    fileExplorerStore
+      .loadFileMetadata(payload.entry, true, payload.connectionId)
+      .then((metadata) => {
+        paneTabsStore.updateTabFileMetadata(targetPane, tabId, metadata)
+      })
+      .finally(() => {
+        isLoadingFile.value = false
+      })
   }
 
   function handleShowDiagram(payload: { connectionId: string; database: string }) {
@@ -292,6 +309,11 @@ export function useDatabaseExplorerController({
     path: string
     entry?: FileSystemEntry
   }) {
+    // Prevent multiple clicks while loading
+    if (isLoadingFile.value) {
+      return
+    }
+
     // Skip if this file is already selected (prevents double processing from URL watcher)
     const currentSelectedPath = fileExplorerStore.getSelectedPath(payload.connectionId)
     if (currentSelectedPath === payload.path) {
@@ -752,6 +774,7 @@ export function useDatabaseExplorerController({
     deleteConnectionMessage,
     currentFileEntries,
     treeSelection,
+    isLoadingFile,
     handleOpenFromTree,
     handleOpenFile,
     handleShowDiagram,

@@ -480,6 +480,28 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
   }
 
   /**
+   * Update file metadata for an existing file tab
+   * Used to update metadata after initial tab creation for immediate loading feedback
+   */
+  function updateTabFileMetadata(paneId: PaneId, tabId: string, metadata: FileMetadata | null) {
+    const state = getPaneState(paneId)
+
+    // Check preview tab
+    if (state.previewTab && state.previewTab.id === tabId) {
+      state.previewTab = { ...state.previewTab, fileMetadata: metadata }
+      persistState()
+      return
+    }
+
+    // Check pinned tabs
+    const index = state.pinnedTabs.findIndex((t) => t.id === tabId)
+    if (index >= 0) {
+      state.pinnedTabs[index] = { ...state.pinnedTabs[index], fileMetadata: metadata }
+      persistState()
+    }
+  }
+
+  /**
    * Clear all state for a pane (reset to empty)
    */
   function clearPane(paneId: PaneId) {
@@ -541,6 +563,7 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
     closePreviewTab,
     activateTab,
     activatePreviewTab,
+    updateTabFileMetadata,
     clearPane,
     clearAllPanes
   }
