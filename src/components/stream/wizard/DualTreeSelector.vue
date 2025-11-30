@@ -419,7 +419,14 @@ function handleTargetFileSelect(payload: { connectionId: string; path: string })
 
 function handleTargetBucketSelect(payload: { connectionId: string; bucket: string }) {
   // For S3 targets, the bucket is passed as the "database" parameter
-  emit('update:target-connection', payload.connectionId, payload.bucket)
+  // Also set a default output path for staging files before S3 upload
+  emit(
+    'update:target-connection',
+    payload.connectionId,
+    payload.bucket,
+    undefined,
+    '/tmp/dbconvert'
+  )
 }
 
 function clearAll() {

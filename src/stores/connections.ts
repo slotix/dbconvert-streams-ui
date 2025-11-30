@@ -278,6 +278,16 @@ export const useConnectionsStore = defineStore('connections', {
         throw error
       }
     },
+    async updateConnectionById(connectionId: string, connection: Connection): Promise<void> {
+      try {
+        await api.updateConnectionById(connectionId, connection)
+        // Refresh connections to get the latest data
+        await this.refreshConnections()
+      } catch (error) {
+        console.error('[Store] Failed to update connection by ID:', error)
+        throw error
+      }
+    },
     async getDatabases(connectionId: string) {
       this.isLoadingDatabases = true
       try {
