@@ -292,6 +292,12 @@ export function useDatabaseExplorerController({
     path: string
     entry?: FileSystemEntry
   }) {
+    // Skip if this file is already selected (prevents double processing from URL watcher)
+    const currentSelectedPath = fileExplorerStore.getSelectedPath(payload.connectionId)
+    if (currentSelectedPath === payload.path) {
+      return
+    }
+
     navigationStore.setActiveConnectionId(payload.connectionId)
 
     // Find entry if not provided (e.g., from router/URL navigation)
@@ -668,14 +674,18 @@ export function useDatabaseExplorerController({
         explorerState.clearDatabaseSelection()
       }
 
-      // Sync file selection
+      // Sync file selection without forcing a reload that would remount the tree
       if (state.viewType === 'file-browser' && state.filePath) {
-        if (fileExplorerStore.isFilesConnectionType(state.connectionId)) {
-          void fileExplorerStore.loadEntries(state.connectionId, true).then(() => {
-            if (state.filePath) {
-              fileExplorerStore.setSelectedPath(state.connectionId!, state.filePath)
+        const targetConnectionId = state.connectionId
+        const targetFilePath = state.filePath
+
+        if (targetConnectionId && fileExplorerStore.isFilesConnectionType(targetConnectionId)) {
+          void (async () => {
+            await fileExplorerStore.loadEntries(targetConnectionId)
+            if (targetFilePath) {
+              fileExplorerStore.setSelectedPath(targetConnectionId, targetFilePath)
             }
-          })
+          })()
         }
       }
     },
