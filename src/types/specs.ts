@@ -134,11 +134,18 @@ export interface FileSpec {
   format?: FileFormatSpec
 }
 
+/**
+ * S3 upload configuration for stream targets.
+ * Credentials and region are inherited from the referenced Connection.
+ */
 export interface S3UploadConfig {
   bucket: string
   prefix?: string
   storageClass?: string
   keepLocalFiles?: boolean
+  // Encryption options
+  serverSideEnc?: string // AES256, aws:kms, etc.
+  kmsKeyId?: string // KMS key ARN when using aws:kms
 }
 
 export interface S3Spec {

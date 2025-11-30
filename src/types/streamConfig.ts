@@ -63,18 +63,18 @@ export interface SnowflakeConfig {
   timestampFormat?: string
 }
 
+/**
+ * S3 upload configuration for stream targets (UI temporary state).
+ * This matches the backend config.S3UploadConfig structure.
+ * Credentials come from Connection.spec.s3, NOT stored here.
+ */
 export interface S3UploadConfig {
   bucket?: string
   prefix?: string
-  region?: string
-  credentialSource?: string
-  accessKeyId?: string
-  secretAccessKey?: string
   keepLocalFiles?: boolean
   storageClass?: string
   serverSideEnc?: string
   kmsKeyId?: string
-  useSSL?: boolean
 }
 
 export interface PerformanceConfig {

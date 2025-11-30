@@ -375,6 +375,7 @@ export const useStreamsStore = defineStore('streams', {
             ),
           s3: () => {
             // Get bucket/prefix from stream config (user input), fall back to connection scope
+            // Note: Credentials come from connection (targetConnection.spec.s3), NOT duplicated here
             const s3UploadConfig = this.currentStreamConfig!.target.options?.s3UploadConfig
             const s3Spec = targetConnection.spec?.s3
             return buildS3TargetSpec(
@@ -386,7 +387,9 @@ export const useStreamsStore = defineStore('streams', {
               s3UploadConfig?.keepLocalFiles,
               compressionType,
               parquetConfig,
-              csvConfig
+              csvConfig,
+              s3UploadConfig?.serverSideEnc,
+              s3UploadConfig?.kmsKeyId
             )
           },
           gcs: () => {

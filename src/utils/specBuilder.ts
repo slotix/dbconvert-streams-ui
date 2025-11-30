@@ -206,6 +206,11 @@ export function buildFileTargetSpec(
   return { files: spec }
 }
 
+/**
+ * Build S3 target spec for stream configuration.
+ * Note: Credentials (accessKey, secretKey, region) are NOT stored here -
+ * they come from the Connection referenced by stream.target.id
+ */
 export function buildS3TargetSpec(
   outputDirectory: string,
   fileFormat: string,
@@ -215,7 +220,9 @@ export function buildS3TargetSpec(
   keepLocalFiles?: boolean,
   compression?: string,
   parquetConfig?: ParquetConfig,
-  csvConfig?: CSVConfig
+  csvConfig?: CSVConfig,
+  serverSideEnc?: string,
+  kmsKeyId?: string
 ): TargetSpec {
   const spec: S3Spec = {
     outputDirectory,
@@ -225,7 +232,9 @@ export function buildS3TargetSpec(
       bucket,
       prefix,
       storageClass,
-      keepLocalFiles
+      keepLocalFiles,
+      serverSideEnc,
+      kmsKeyId
     }
   }
   return { s3: spec }
