@@ -50,29 +50,24 @@
         </h4>
       </div>
 
+      <!-- Show selected bucket as read-only info (selected in Step 1) -->
       <div
-        class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6"
+        class="bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-800 rounded-lg p-4 mb-6"
       >
-        <p class="text-sm text-blue-700 dark:text-blue-300">
-          <strong>Required for S3 targets:</strong> Specify the destination bucket and upload
-          settings for this stream. Files are staged locally at the path configured in the S3
-          connection before uploading.
-        </p>
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-teal-800 dark:text-teal-200">Target Bucket</p>
+            <p class="text-lg font-semibold text-teal-900 dark:text-teal-100">
+              {{ s3Bucket || 'Not selected' }}
+            </p>
+          </div>
+          <div class="text-teal-600 dark:text-teal-400">
+            <CloudIcon class="h-8 w-8" />
+          </div>
+        </div>
       </div>
 
       <div class="space-y-6">
-        <!-- Bucket (Required) - Combobox with bucket listing -->
-        <BucketCombobox
-          v-model="s3Bucket"
-          :buckets="availableBuckets"
-          :loading="loadingBuckets"
-          :error="bucketLoadError"
-          label="Bucket"
-          placeholder="Select or type bucket name..."
-          helper-text="S3 bucket where files will be uploaded. Select from existing buckets or type a custom name."
-          required
-        />
-
         <!-- Prefix (Optional) -->
         <div>
           <label
@@ -246,7 +241,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch, onMounted } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { CloudIcon } from '@heroicons/vue/24/outline'
 import { useStreamsStore, defaultStreamConfigOptions } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
@@ -255,18 +250,11 @@ import { type StreamConfig } from '@/types/streamConfig'
 import SelectionButtonGroup from '@/components/base/SelectionButtonGroup.vue'
 import FormSelect from '@/components/base/FormSelect.vue'
 import FormSwitch from '@/components/base/FormSwitch.vue'
-import BucketCombobox from '@/components/base/BucketCombobox.vue'
-import { listS3Buckets, configureS3Session } from '@/api/files'
 
 const streamsStore = useStreamsStore()
 const connectionsStore = useConnectionsStore()
 const commonStore = useCommonStore()
 const currentStreamConfig = streamsStore.currentStreamConfig as StreamConfig
-
-// S3 bucket listing state
-const availableBuckets = ref<string[]>([])
-const loadingBuckets = ref(false)
-const bucketLoadError = ref<string | null>(null)
 
 const fileFormats = [
   {
@@ -536,76 +524,5 @@ const numberOfEventsDescription = computed(() => {
   return currentStreamConfig.mode === 'convert'
     ? 'Total rows copied from all tables'
     : 'INSERT + UPDATE + DELETE counted as events'
-})
-
-// Load S3 buckets function
-async function loadS3Buckets() {
-  if (!isS3Target.value) return
-
-  const conn = targetConnection.value
-  if (!conn) return
-
-  // Get S3 config from spec.s3 (S3 connections use dedicated spec)
-  const s3Spec = conn.spec?.s3
-
-  if (!s3Spec) {
-    bucketLoadError.value = 'No S3 configuration found'
-    return
-  }
-
-  try {
-    loadingBuckets.value = true
-    bucketLoadError.value = null
-
-    // Configure S3 session with connection credentials from spec.s3
-    const hasStaticCredentials = s3Spec.credentials?.accessKey && s3Spec.credentials?.secretKey
-
-    await configureS3Session({
-      credentialSource: hasStaticCredentials ? 'static' : 'aws',
-      region: s3Spec.region || 'us-east-1',
-      endpoint: s3Spec.endpoint,
-      urlStyle: 'auto',
-      useSSL: !s3Spec.endpoint?.includes('localhost'),
-      credentials: hasStaticCredentials
-        ? {
-            accessKeyId: s3Spec.credentials!.accessKey!,
-            secretAccessKey: s3Spec.credentials!.secretKey!,
-            sessionToken: s3Spec.credentials?.sessionToken
-          }
-        : undefined
-    })
-
-    // Then list buckets
-    const response = await listS3Buckets()
-    availableBuckets.value = response.buckets
-  } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : 'Failed to load buckets'
-    bucketLoadError.value = errorMessage
-    commonStore.showNotification(`Failed to load S3 buckets: ${errorMessage}`, 'error')
-  } finally {
-    loadingBuckets.value = false
-  }
-}
-
-// Watch for S3 target changes and load buckets
-watch(
-  isS3Target,
-  (newValue) => {
-    if (newValue) {
-      loadS3Buckets()
-    } else {
-      // Clear buckets when switching away from S3 target
-      availableBuckets.value = []
-      bucketLoadError.value = null
-    }
-  },
-  { immediate: true }
-)
-
-// Load buckets on mount if S3 target is already selected
-onMounted(() => {
-  if (isS3Target.value) {
-    loadS3Buckets()
-  }
 })
 </script>

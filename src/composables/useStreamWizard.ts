@@ -241,7 +241,16 @@ export function useStreamWizard() {
     selection.value.sourceConnectionId = resolveConnectionId(config.source)
     selection.value.targetConnectionId = resolveConnectionId(config.target)
     selection.value.sourceDatabase = resolveDatabase(config.sourceDatabase, config.source)
-    selection.value.targetDatabase = resolveDatabase(config.targetDatabase, config.target)
+
+    // For S3 targets, get the bucket from multiple possible locations
+    const s3Bucket =
+      config.target?.options?.s3UploadConfig?.bucket || config.target?.spec?.s3?.upload?.bucket // UI format // API/backend format
+    if (s3Bucket) {
+      selection.value.targetDatabase = s3Bucket
+    } else {
+      selection.value.targetDatabase = resolveDatabase(config.targetDatabase, config.target)
+    }
+
     selection.value.sourceSchema = resolveSchema(config.sourceSchema, config.source)
     selection.value.targetSchema = resolveSchema(config.targetSchema, config.target)
     selection.value.targetPath = config.targetPath ?? null

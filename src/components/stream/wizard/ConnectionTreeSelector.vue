@@ -69,7 +69,61 @@
       </button>
 
       <div v-if="isConnectionExpanded(connection.id)" class="pt-1">
-        <div v-if="isFileConnection(connection)" class="space-y-2 py-2">
+        <!-- S3 Connection - Show buckets like databases -->
+        <div v-if="isS3Connection(connection)" class="py-1">
+          <div
+            v-if="isS3BucketsLoading(connection.id)"
+            class="flex items-center gap-2 px-4 py-3 text-sm text-gray-500 dark:text-gray-400"
+          >
+            <svg class="h-4 w-4 animate-spin text-teal-500" viewBox="0 0 24 24" fill="none">
+              <circle
+                class="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="4"
+              />
+              <path
+                class="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              />
+            </svg>
+            Loading buckets…
+          </div>
+
+          <div
+            v-else-if="getS3BucketsError(connection.id)"
+            class="px-4 py-3 text-sm text-red-600 dark:text-red-400"
+          >
+            {{ getS3BucketsError(connection.id) }}
+          </div>
+
+          <div
+            v-else-if="getS3Buckets(connection.id).length === 0"
+            class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400"
+          >
+            No buckets found
+          </div>
+
+          <div v-else class="py-1">
+            <div v-for="bucket in getS3Buckets(connection.id)" :key="bucket" class="px-2">
+              <button
+                type="button"
+                class="relative flex w-full items-center gap-3 rounded-md px-2 py-1.5 text-sm transition-colors"
+                :class="s3BucketRowClass(connection.id, bucket)"
+                @click="handleS3BucketSelect(connection, bucket)"
+              >
+                <span class="h-4 w-4 shrink-0" />
+                <HighlightedText class="truncate" :text="bucket" :query="props.searchQuery" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Local File Connection - Show file path and count -->
+        <div v-else-if="isLocalFileConnection(connection)" class="space-y-2 py-2">
           <div class="px-2">
             <div
               class="flex w-full items-start gap-3 rounded-md px-2 py-2 text-sm transition-all duration-200"
@@ -191,6 +245,7 @@ import { useFileExplorerStore } from '@/stores/fileExplorer'
 import { useConnectionsStore } from '@/stores/connections'
 import { normalizeConnectionType, getConnectionTooltip } from '@/utils/connectionUtils'
 import { getConnectionHost, getConnectionPort } from '@/utils/specBuilder'
+import { listS3Buckets, configureS3Session } from '@/api/files'
 import type { Connection } from '@/types/connections'
 
 interface Props {
@@ -215,6 +270,7 @@ const emit = defineEmits<{
   'select-connection': [payload: { connectionId: string; database?: string; schema?: string }]
   'select-database': [payload: { connectionId: string; database: string; schema?: string }]
   'select-file': [payload: { connectionId: string; path: string }]
+  'select-bucket': [payload: { connectionId: string; bucket: string }]
 }>()
 
 const navigationStore = useExplorerNavigationStore()
@@ -222,6 +278,11 @@ const fileExplorerStore = useFileExplorerStore()
 const connectionsStore = useConnectionsStore()
 
 const expandedConnections = ref<Set<string>>(new Set())
+
+// S3 bucket state
+const s3BucketsState = ref<
+  Record<string, { buckets: string[]; loading: boolean; error: string | null }>
+>({})
 
 const connectionsMap = computed(() => {
   const map = new Map<string, Connection>()
@@ -260,6 +321,99 @@ function isFileConnection(connection: Connection): boolean {
   // Only 'files' is a valid file connection type now (legacy csv/json/jsonl/parquet removed)
   // File format is now specified in stream config, not connection type
   return (connection.type || '').toLowerCase() === 'files'
+}
+
+function isS3Connection(connection: Connection): boolean {
+  // S3 connections have type='files' and spec.s3 present
+  return isFileConnection(connection) && !!connection.spec?.s3
+}
+
+function isLocalFileConnection(connection: Connection): boolean {
+  // Local file connections have type='files' and spec.files present (not S3)
+  return isFileConnection(connection) && !!connection.spec?.files && !connection.spec?.s3
+}
+
+// S3 bucket functions
+function isS3BucketsLoading(connectionId: string): boolean {
+  return s3BucketsState.value[connectionId]?.loading || false
+}
+
+function getS3BucketsError(connectionId: string): string | null {
+  return s3BucketsState.value[connectionId]?.error || null
+}
+
+function getS3Buckets(connectionId: string): string[] {
+  return s3BucketsState.value[connectionId]?.buckets || []
+}
+
+async function loadS3Buckets(connection: Connection) {
+  const connectionId = connection.id
+  const s3Spec = connection.spec?.s3
+
+  if (!s3Spec) {
+    s3BucketsState.value[connectionId] = {
+      buckets: [],
+      loading: false,
+      error: 'No S3 configuration found'
+    }
+    return
+  }
+
+  // Initialize loading state
+  s3BucketsState.value[connectionId] = { buckets: [], loading: true, error: null }
+
+  try {
+    // Configure S3 session with connection credentials
+    const hasStaticCredentials = s3Spec.credentials?.accessKey && s3Spec.credentials?.secretKey
+
+    await configureS3Session({
+      credentialSource: hasStaticCredentials ? 'static' : 'aws',
+      region: s3Spec.region || 'us-east-1',
+      endpoint: s3Spec.endpoint,
+      urlStyle: 'auto',
+      useSSL: !s3Spec.endpoint?.includes('localhost'),
+      credentials: hasStaticCredentials
+        ? {
+            accessKeyId: s3Spec.credentials!.accessKey!,
+            secretAccessKey: s3Spec.credentials!.secretKey!,
+            sessionToken: s3Spec.credentials!.sessionToken
+          }
+        : undefined
+    })
+
+    // List buckets
+    const response = await listS3Buckets(connectionId)
+    s3BucketsState.value[connectionId] = {
+      buckets: response.buckets || [],
+      loading: false,
+      error: null
+    }
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : 'Failed to load buckets'
+    s3BucketsState.value[connectionId] = { buckets: [], loading: false, error: errorMessage }
+  }
+}
+
+function handleS3BucketSelect(connection: Connection, bucket: string) {
+  addToSet(expandedConnections, connection.id)
+  emit('select-connection', { connectionId: connection.id, database: bucket })
+  emit('select-bucket', { connectionId: connection.id, bucket })
+}
+
+function s3BucketRowClass(connectionId: string, bucket: string): string {
+  const isSelected =
+    props.selectedConnectionId === connectionId && props.selectedDatabase === bucket
+
+  if (!isSelected) {
+    return 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800/50'
+  }
+
+  // Selected bucket styling (same as database row)
+  if (props.mode === 'source') {
+    return 'bg-gradient-to-r from-blue-50 via-blue-100/60 to-transparent dark:from-blue-900/30 dark:via-blue-900/15 dark:to-transparent text-blue-900 dark:text-blue-100 font-semibold ring-1 ring-blue-200 dark:ring-blue-500/30 border border-blue-100/70 dark:border-blue-800/40 pl-2 shadow-inner shadow-blue-900/5'
+  } else {
+    return 'bg-gradient-to-r from-emerald-50 via-emerald-100/60 to-transparent dark:from-emerald-900/30 dark:via-emerald-900/15 dark:to-transparent text-emerald-900 dark:text-emerald-100 font-semibold ring-1 ring-emerald-200 dark:ring-emerald-500/30 border border-emerald-100/70 dark:border-emerald-800/40 pl-2 shadow-inner shadow-emerald-900/5'
+  }
 }
 
 function getFileCount(connectionId: string): number {
@@ -324,29 +478,49 @@ function connectionCardClass(connectionId: string): string {
   }
 
   const connection = getConnectionById(connectionId)
+
+  // For file connections (local files or S3), don't highlight the card
+  // Only the selected item (bucket or file path) should be highlighted
   if (connection && isFileConnection(connection)) {
     return base
   }
 
-  if (props.mode === 'source') {
-    const sourceHighlight =
-      'bg-gradient-to-r from-blue-50/90 via-blue-100/70 to-white dark:from-blue-900/40 dark:via-blue-900/20 dark:to-transparent border-blue-200/80 dark:border-blue-700/60 ring-1 ring-blue-300/60 dark:ring-blue-500/30 shadow-lg shadow-blue-900/10 dark:shadow-blue-900/40'
-    return `${base} ${sourceHighlight}`
+  // For database connections, only highlight the card if no database is selected yet
+  // Once a database is selected, only the database row should be highlighted
+  if (!props.selectedDatabase) {
+    if (props.mode === 'source') {
+      const sourceHighlight =
+        'bg-gradient-to-r from-blue-50/90 via-blue-100/70 to-white dark:from-blue-900/40 dark:via-blue-900/20 dark:to-transparent border-blue-200/80 dark:border-blue-700/60 ring-1 ring-blue-300/60 dark:ring-blue-500/30 shadow-lg shadow-blue-900/10 dark:shadow-blue-900/40'
+      return `${base} ${sourceHighlight}`
+    }
+    const targetHighlight =
+      'bg-gradient-to-r from-emerald-50/90 via-emerald-100/70 to-white dark:from-emerald-900/40 dark:via-emerald-900/20 dark:to-transparent border-emerald-200/80 dark:border-emerald-700/60 ring-1 ring-emerald-300/60 dark:ring-emerald-500/30 shadow-lg shadow-emerald-900/10 dark:shadow-emerald-900/40'
+    return `${base} ${targetHighlight}`
   }
 
-  const targetHighlight =
-    'bg-gradient-to-r from-emerald-50/90 via-emerald-100/70 to-white dark:from-emerald-900/40 dark:via-emerald-900/20 dark:to-transparent border-emerald-200/80 dark:border-emerald-700/60 ring-1 ring-emerald-300/60 dark:ring-emerald-500/30 shadow-lg shadow-emerald-900/10 dark:shadow-emerald-900/40'
-  return `${base} ${targetHighlight}`
+  // Database is selected - don't highlight the connection card, only the database row
+  return base
 }
 
 function connectionHeaderClass(connectionId: string): string {
+  const defaultClass = 'hover:bg-gray-50 dark:hover:bg-gray-800/50 text-gray-800 dark:text-gray-200'
+
   if (props.selectedConnectionId !== connectionId) {
-    return 'hover:bg-gray-50 dark:hover:bg-gray-800/50 text-gray-800 dark:text-gray-200'
+    return defaultClass
   }
 
   const connection = getConnectionById(connectionId)
+
+  // For file connections (local files or S3), use default styling
+  // The selected bucket/file row will be highlighted, not the connection header
   if (connection && isFileConnection(connection)) {
-    return 'hover:bg-gray-50 dark:hover:bg-gray-800/50 text-gray-800 dark:text-gray-200'
+    return defaultClass
+  }
+
+  // For database connections, highlight header only when no database is selected
+  // Once a database is selected, only the database row should be highlighted
+  if (props.selectedDatabase) {
+    return defaultClass
   }
 
   return props.mode === 'source'
@@ -403,12 +577,21 @@ async function toggleConnectionExpansion(connection: Connection) {
 
   addToSet(expandedConnections, connection.id)
 
-  if (isFileConnection(connection)) {
+  // Handle S3 connections - load buckets
+  if (isS3Connection(connection)) {
+    await loadS3Buckets(connection)
+    emit('select-connection', { connectionId: connection.id })
+    return
+  }
+
+  // Handle local file connections - load file entries
+  if (isLocalFileConnection(connection)) {
     await fileExplorerStore.loadEntries(connection.id)
     emit('select-connection', { connectionId: connection.id })
     return
   }
 
+  // Handle database connections
   await loadDatabases(connection.id)
 }
 
@@ -468,10 +651,17 @@ watch(
     if (!connection) {
       return
     }
-    if (isFileConnection(connection)) {
+    // Handle S3 connections - load buckets
+    if (isS3Connection(connection)) {
+      void loadS3Buckets(connection)
+      return
+    }
+    // Handle local file connections
+    if (isLocalFileConnection(connection)) {
       void fileExplorerStore.loadEntries(connectionId)
       return
     }
+    // Handle database connections
     void loadDatabases(connectionId)
   },
   { immediate: true }

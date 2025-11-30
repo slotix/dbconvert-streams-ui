@@ -374,41 +374,47 @@ export const useStreamsStore = defineStore('streams', {
               this.currentStreamConfig!.target.options?.snowflakeConfig?.timestampFormat
             ),
           s3: () => {
+            // Get bucket/prefix from stream config (user input), fall back to connection scope
+            const s3UploadConfig = this.currentStreamConfig!.target.options?.s3UploadConfig
             const s3Spec = targetConnection.spec?.s3
             return buildS3TargetSpec(
               targetPath,
               fileFormat,
-              s3Spec?.scope?.bucket || '',
-              s3Spec?.scope?.prefix,
-              this.currentStreamConfig!.target.options?.s3UploadConfig?.storageClass,
-              this.currentStreamConfig!.target.options?.s3UploadConfig?.keepLocalFiles,
+              s3UploadConfig?.bucket || s3Spec?.scope?.bucket || '',
+              s3UploadConfig?.prefix || s3Spec?.scope?.prefix,
+              s3UploadConfig?.storageClass,
+              s3UploadConfig?.keepLocalFiles,
               compressionType,
               parquetConfig,
               csvConfig
             )
           },
           gcs: () => {
+            // Get bucket/prefix from stream config (user input), fall back to connection scope
+            const gcsUploadConfig = this.currentStreamConfig!.target.options?.s3UploadConfig
             const gcsSpec = targetConnection.spec?.gcs
             return buildGCSTargetSpec(
               targetPath,
               fileFormat,
-              gcsSpec?.scope?.bucket || '',
-              gcsSpec?.scope?.prefix,
-              this.currentStreamConfig!.target.options?.s3UploadConfig?.storageClass,
-              this.currentStreamConfig!.target.options?.s3UploadConfig?.keepLocalFiles,
+              gcsUploadConfig?.bucket || gcsSpec?.scope?.bucket || '',
+              gcsUploadConfig?.prefix || gcsSpec?.scope?.prefix,
+              gcsUploadConfig?.storageClass,
+              gcsUploadConfig?.keepLocalFiles,
               compressionType,
               parquetConfig,
               csvConfig
             )
           },
           azure: () => {
+            // Get container/prefix from stream config (user input), fall back to connection scope
+            const azureUploadConfig = this.currentStreamConfig!.target.options?.s3UploadConfig
             const azureSpec = targetConnection.spec?.azure
             return buildAzureTargetSpec(
               targetPath,
               fileFormat,
-              azureSpec?.scope?.container || '',
-              azureSpec?.scope?.prefix,
-              this.currentStreamConfig!.target.options?.s3UploadConfig?.keepLocalFiles,
+              azureUploadConfig?.bucket || azureSpec?.scope?.container || '',
+              azureUploadConfig?.prefix || azureSpec?.scope?.prefix,
+              azureUploadConfig?.keepLocalFiles,
               compressionType,
               parquetConfig,
               csvConfig

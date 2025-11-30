@@ -118,6 +118,7 @@
             @select-connection="handleTargetConnectionSelect"
             @select-database="handleTargetDatabaseSelect"
             @select-file="handleTargetFileSelect"
+            @select-bucket="handleTargetBucketSelect"
           />
         </div>
       </div>
@@ -414,6 +415,11 @@ function handleTargetDatabaseSelect(payload: {
 
 function handleTargetFileSelect(payload: { connectionId: string; path: string }) {
   emit('update:target-connection', payload.connectionId, undefined, undefined, payload.path)
+}
+
+function handleTargetBucketSelect(payload: { connectionId: string; bucket: string }) {
+  // For S3 targets, the bucket is passed as the "database" parameter
+  emit('update:target-connection', payload.connectionId, payload.bucket)
 }
 
 function clearAll() {

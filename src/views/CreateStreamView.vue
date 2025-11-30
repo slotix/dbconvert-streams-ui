@@ -233,6 +233,28 @@ async function loadStreamForEdit() {
 
     // Populate wizard state from the loaded stream config
     wizard.loadFromStreamConfig(existingStream)
+
+    // For S3 targets, ensure s3UploadConfig is populated from existing spec
+    // This is needed because prepareStreamData reads from s3UploadConfig
+    const s3Bucket = existingStream.target?.spec?.s3?.upload?.bucket
+    if (s3Bucket && streamsStore.currentStreamConfig) {
+      if (!streamsStore.currentStreamConfig.target.options) {
+        streamsStore.currentStreamConfig.target.options = {}
+      }
+      if (!streamsStore.currentStreamConfig.target.options.s3UploadConfig) {
+        streamsStore.currentStreamConfig.target.options.s3UploadConfig = {}
+      }
+      streamsStore.currentStreamConfig.target.options.s3UploadConfig.bucket = s3Bucket
+      // Also copy prefix and other settings if present
+      const s3Spec = existingStream.target?.spec?.s3
+      if (s3Spec?.upload?.prefix) {
+        streamsStore.currentStreamConfig.target.options.s3UploadConfig.prefix = s3Spec.upload.prefix
+      }
+      if (s3Spec?.upload?.storageClass) {
+        streamsStore.currentStreamConfig.target.options.s3UploadConfig.storageClass =
+          s3Spec.upload.storageClass
+      }
+    }
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     commonStore.showNotification(`Failed to load stream: ${errorMessage}`, 'error')
@@ -337,6 +359,19 @@ function handleTargetUpdate(
     }
     if (path) {
       streamsStore.currentStreamConfig.targetPath = path
+    }
+
+    // For S3 connections, also set the bucket in s3UploadConfig
+    const targetConnection = connectionsStore.connectionByID(connectionId)
+    if (targetConnection?.spec?.s3 && database) {
+      // database parameter holds the bucket name for S3 connections
+      if (!streamsStore.currentStreamConfig.target.options) {
+        streamsStore.currentStreamConfig.target.options = {}
+      }
+      if (!streamsStore.currentStreamConfig.target.options.s3UploadConfig) {
+        streamsStore.currentStreamConfig.target.options.s3UploadConfig = {}
+      }
+      streamsStore.currentStreamConfig.target.options.s3UploadConfig.bucket = database
     }
   }
 }
