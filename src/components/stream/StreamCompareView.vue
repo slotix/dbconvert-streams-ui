@@ -102,19 +102,32 @@ const targetFileFormat = computed<FileFormat | undefined>(() => {
 })
 
 const targetRootPath = computed(() => {
-  const spec = props.target.spec
+  const connSpec = props.target.spec
+  const streamTargetSpec = props.stream.target?.spec
   const s3UploadConfig = props.stream.target?.options?.s3UploadConfig
 
-  if (spec?.s3) {
-    const bucket = s3UploadConfig?.bucket || spec.s3.scope?.bucket || ''
-    const prefix = s3UploadConfig?.prefix || spec.s3.scope?.prefix || ''
+  // For S3 targets, look for bucket in multiple places:
+  // 1. stream.target.options.s3UploadConfig (legacy)
+  // 2. stream.target.spec.s3.upload.bucket (current structure)
+  // 3. connection.spec.s3.scope.bucket (connection-level scope)
+  if (connSpec?.s3 || streamTargetSpec?.s3) {
+    const bucket =
+      s3UploadConfig?.bucket ||
+      streamTargetSpec?.s3?.upload?.bucket ||
+      connSpec?.s3?.scope?.bucket ||
+      ''
+    const prefix =
+      s3UploadConfig?.prefix ||
+      streamTargetSpec?.s3?.upload?.prefix ||
+      connSpec?.s3?.scope?.prefix ||
+      ''
     const base = buildS3BasePath(bucket, prefix)
     if (base) return base
   }
 
   // For local file connections, use spec.files.basePath from the CONNECTION
   // Do NOT use the stream's target.spec.files.outputDirectory as it contains the absolute path
-  const storagePath = spec?.files?.basePath || ''
+  const storagePath = connSpec?.files?.basePath || ''
   return storagePath
 })
 
@@ -364,7 +377,13 @@ async function loadTargetFile() {
     targetFileEntry.value = folderEntry
 
     // Get metadata for the entire folder (DuckDB aggregates across all files)
-    const metadata = await files.getFileMetadata(tableFolderPath, detectedFormat, true)
+    // Pass target connection ID for S3 credential configuration
+    const metadata = await files.getFileMetadata(
+      tableFolderPath,
+      detectedFormat,
+      true,
+      props.target.id
+    )
     targetFileMetadata.value = metadata
   } catch (error) {
     console.error('Failed to load target file:', error)
