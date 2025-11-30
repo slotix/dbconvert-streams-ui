@@ -167,7 +167,7 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
         // Check if URI is just "s3://" (no bucket specified - browse all buckets)
         if (uri === 's3://') {
           // List all buckets
-          const response = await listS3Buckets()
+          const response = await listS3Buckets(connectionId)
 
           // Convert buckets to FileSystemEntry format
           const entries: FileSystemEntry[] = response.buckets.map((bucketName) => ({
@@ -207,7 +207,8 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
         const response = await listS3Objects({
           bucket,
           prefix: requestPrefix,
-          maxKeys: 1000
+          maxKeys: 1000,
+          connectionId
         })
 
         // Group S3 objects into folders and files at the root level
@@ -271,7 +272,8 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
 
   async function loadFileMetadata(
     fileEntry: FileSystemEntry,
-    computeStats: boolean = true
+    computeStats: boolean = true,
+    connectionId?: string
   ): Promise<FileMetadata | null> {
     const requestKey = `${fileEntry.path}::${computeStats ? 'stats' : 'basic'}`
     if (pendingMetadataRequests.has(requestKey)) {
@@ -286,7 +288,15 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
           return null
         }
 
-        const metadata = await getFileMetadata(fileEntry.path, fileFormat, computeStats)
+        // Debug: log connectionId to verify it's being passed
+        console.log('[loadFileMetadata] path:', fileEntry.path, 'connectionId:', connectionId)
+
+        const metadata = await getFileMetadata(
+          fileEntry.path,
+          fileFormat,
+          computeStats,
+          connectionId
+        )
         return metadata
       } catch (error) {
         console.error('Failed to load file metadata:', error)
@@ -383,11 +393,12 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
     s3CurrentConnection.value = connection
   }
 
-  async function loadS3Files(bucket: string, prefix?: string) {
+  async function loadS3Files(bucket: string, prefix?: string, connectionId?: string) {
     const result = await listS3Objects({
       bucket,
       prefix: prefix ? buildS3RequestPrefix(prefix) : undefined,
-      maxKeys: 1000
+      maxKeys: 1000,
+      connectionId
     })
 
     // Convert S3 objects to FileSystemEntry format
@@ -463,7 +474,8 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
         const response = await listS3Objects({
           bucket,
           prefix: prefix ? buildS3RequestPrefix(prefix) : undefined,
-          maxKeys: 1000
+          maxKeys: 1000,
+          connectionId
         })
 
         // Group S3 objects into folders and files

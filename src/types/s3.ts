@@ -43,6 +43,7 @@ export interface S3ListRequest {
   prefix?: string
   maxKeys?: number
   continuationToken?: string
+  connectionId?: string
 }
 
 // S3 Object

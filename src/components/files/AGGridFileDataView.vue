@@ -87,15 +87,20 @@ async function fetchData(params: FetchDataParams): Promise<FetchDataResult> {
     orderDir = params.sortModel.map((s) => s.sort?.toUpperCase() || 'ASC').join(',')
   }
 
-  const response = await filesApi.getFileData(props.entry.path, fileFormat.value, {
-    limit: params.limit,
-    offset: params.offset,
-    skipCount: params.offset > 0, // Skip count on subsequent pages
-    order_by: orderBy,
-    order_dir: orderDir,
-    where: params.whereClause || undefined,
-    max_rows: params.maxRows
-  })
+  const response = await filesApi.getFileData(
+    props.entry.path,
+    fileFormat.value,
+    {
+      limit: params.limit,
+      offset: params.offset,
+      skipCount: params.offset > 0, // Skip count on subsequent pages
+      order_by: orderBy,
+      order_dir: orderDir,
+      where: params.whereClause || undefined,
+      max_rows: params.maxRows
+    },
+    props.connectionId
+  )
 
   // Convert data to row format expected by AG Grid
   const rows = response.data.map((row) => {

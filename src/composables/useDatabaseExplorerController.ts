@@ -205,7 +205,12 @@ export function useDatabaseExplorerController({
       fileExplorerStore.setSelectedPath(payload.connectionId, payload.path)
     }
 
-    const metadata = await fileExplorerStore.loadFileMetadata(payload.entry)
+    // Pass connectionId for S3 credential configuration
+    const metadata = await fileExplorerStore.loadFileMetadata(
+      payload.entry,
+      true,
+      payload.connectionId
+    )
 
     paneTabsStore.addTab(
       targetPane,

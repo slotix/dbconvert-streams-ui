@@ -33,11 +33,15 @@ const withAuthHeaders = () => {
 export async function getFileMetadata(
   path: string,
   format: FileFormat,
-  stats: boolean = false
+  stats: boolean = false,
+  connectionId?: string
 ): Promise<FileMetadata> {
   try {
+    const params: Record<string, string> = { path, format, stats: stats.toString() }
+    if (connectionId) params.connectionId = connectionId
+
     const response = await apiClient.get<FileMetadata>('/files/meta', {
-      params: { path, format, stats: stats.toString() },
+      params,
       ...withAuthHeaders()
     })
     return response.data
@@ -49,10 +53,12 @@ export async function getFileMetadata(
 export async function getFileData(
   path: string,
   format: FileFormat,
-  params: FileDataParams = {}
+  params: FileDataParams = {},
+  connectionId?: string
 ): Promise<FileDataResponse> {
   try {
     const query = new URLSearchParams({ path, format })
+    if (connectionId) query.set('connectionId', connectionId)
     if (params.limit !== undefined) query.set('limit', String(params.limit))
     if (params.offset !== undefined) query.set('offset', String(params.offset))
     if (params.skipCount !== undefined) query.set('skipCount', params.skipCount ? 'true' : 'false')
@@ -105,6 +111,7 @@ export async function listS3Objects(params: S3ListRequest): Promise<S3ListRespon
     if (params.prefix) query.set('prefix', params.prefix)
     if (params.maxKeys) query.set('maxKeys', String(params.maxKeys))
     if (params.continuationToken) query.set('continuationToken', params.continuationToken)
+    if (params.connectionId) query.set('connectionId', params.connectionId)
 
     const response = await apiClient.get<S3ListResponse>(`/files/s3/list?${query.toString()}`, {
       ...withAuthHeaders()
@@ -115,14 +122,17 @@ export async function listS3Objects(params: S3ListRequest): Promise<S3ListRespon
   }
 }
 
-export async function listS3Buckets(): Promise<{ buckets: string[]; count: number }> {
+export async function listS3Buckets(
+  connectionId?: string
+): Promise<{ buckets: string[]; count: number }> {
   try {
-    const response = await apiClient.get<{ buckets: string[]; count: number }>(
-      '/files/s3/buckets',
-      {
-        ...withAuthHeaders()
-      }
-    )
+    const query = new URLSearchParams()
+    if (connectionId) query.set('connectionId', connectionId)
+
+    const url = query.toString() ? `/files/s3/buckets?${query.toString()}` : '/files/s3/buckets'
+    const response = await apiClient.get<{ buckets: string[]; count: number }>(url, {
+      ...withAuthHeaders()
+    })
     return response.data
   } catch (error) {
     throw handleApiError(error)
