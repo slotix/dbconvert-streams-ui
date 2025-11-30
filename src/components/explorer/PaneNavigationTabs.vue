@@ -30,7 +30,7 @@
         <!-- Object type icon only (no data/structure indicator) -->
         <component
           :is="getObjectIcon(tab)"
-          class="h-4 w-4 text-slate-500 dark:text-slate-400 shrink-0"
+          :class="['h-4 w-4 shrink-0', getIconColor(tab)]"
           aria-hidden="true"
         />
 
@@ -141,6 +141,30 @@ function getObjectIcon(tab: PaneTab) {
   if (tab.tabType === 'sql-console') return CommandLineIcon
   if (tab.tabType === 'file-console') return CommandLineIcon
   return tab.type === 'view' ? EyeIcon : TableCellsIcon
+}
+
+function getIconColor(tab: PaneTab): string {
+  // Database tabs: tables and views
+  if (tab.tabType === 'database') {
+    if (tab.type === 'view') {
+      return 'text-teal-500 dark:text-teal-400'
+    }
+    return 'text-blue-500 dark:text-blue-400'
+  }
+  // SQL Console tabs
+  if (tab.tabType === 'sql-console') {
+    return 'text-emerald-500 dark:text-emerald-400'
+  }
+  // File tabs
+  if (tab.tabType === 'file') {
+    return 'text-amber-500 dark:text-amber-400'
+  }
+  // File console tabs
+  if (tab.tabType === 'file-console') {
+    return 'text-orange-500 dark:text-orange-400'
+  }
+  // Default fallback
+  return 'text-slate-500 dark:text-slate-400'
 }
 
 function showContextMenu(event: MouseEvent, index: number) {
