@@ -171,8 +171,11 @@
             </div>
           </div>
 
-          <!-- Endpoint -->
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+          <!-- Endpoint (hide for AWS S3 with Default Chain - AWS SDK auto-resolves endpoint) -->
+          <div
+            v-if="selectedProvider !== 'AWS S3' || credentialSource === 'static'"
+            class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center"
+          >
             <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Endpoint</label>
             <div class="md:col-span-2">
               <input
@@ -343,7 +346,7 @@ const connection = computed(() => connectionsStore.currentConnection)
 
 // S3-specific reactive state
 const selectedProvider = ref<string>('AWS S3')
-const credentialSource = ref<'aws' | 'static'>('static')
+const credentialSource = ref<'aws' | 'static'>('aws')
 const accessKeyId = ref<string>('')
 const secretAccessKey = ref<string>('')
 const sessionToken = ref<string>('')
@@ -372,8 +375,10 @@ watch(selectedProvider, (provider) => {
     urlStyle.value = preset.urlStyle
     useSSL.value = preset.useSSL
   }
-  // Force static credentials for non-AWS providers
-  if (provider !== 'AWS S3') {
+  // Set appropriate credential source based on provider
+  if (provider === 'AWS S3') {
+    credentialSource.value = 'aws'
+  } else {
     credentialSource.value = 'static'
   }
   updateConnectionName()
