@@ -47,13 +47,7 @@
         class="bg-white dark:bg-gray-850 rounded-xl border border-gray-100 dark:border-gray-700 p-6 mb-6 shadow-sm dark:shadow-gray-900/30"
       >
         <h3 class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-6 flex items-center">
-          <img
-            v-if="logo"
-            :src="logo"
-            alt="S3 logo"
-            class="h-6 w-6 mr-2.5 object-contain dark:brightness-0 dark:invert dark:opacity-70"
-          />
-          <CloudIcon v-else class="h-6 w-6 mr-2.5 text-teal-600 dark:text-teal-400" />
+          <CloudIcon class="h-5 w-5 mr-2 text-teal-600 dark:text-teal-400" />
           S3 Configuration
         </h3>
 
@@ -190,72 +184,6 @@
             </div>
           </div>
 
-          <!-- Advanced Settings (collapsible) -->
-          <div class="border-t border-gray-200 dark:border-gray-700 pt-4">
-            <button
-              type="button"
-              class="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
-              @click="showAdvanced = !showAdvanced"
-            >
-              <ChevronDownIcon
-                :class="[showAdvanced ? 'rotate-180' : '', 'h-5 w-5 mr-1 transition-transform']"
-              />
-              Advanced Settings
-            </button>
-
-            <div v-if="showAdvanced" class="mt-4 space-y-4">
-              <!-- URL Style -->
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-                <label class="text-sm font-medium text-gray-700 dark:text-gray-300"
-                  >URL Style</label
-                >
-                <div class="md:col-span-2">
-                  <select
-                    v-model="urlStyle"
-                    class="w-full rounded-lg border border-gray-300 dark:border-gray-600 py-2.5 px-4 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 dark:focus:ring-teal-400 focus:border-teal-500 dark:focus:border-teal-400 transition-colors"
-                  >
-                    <option value="auto">Auto</option>
-                    <option value="path">Path</option>
-                    <option value="virtual">Virtual-hosted</option>
-                  </select>
-                </div>
-              </div>
-
-              <!-- Use SSL -->
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-                <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Use SSL</label>
-                <div class="md:col-span-2">
-                  <label class="flex items-center cursor-pointer">
-                    <input
-                      v-model="useSSL"
-                      type="checkbox"
-                      class="rounded text-teal-600 focus:ring-teal-500"
-                    />
-                    <span class="ml-2 text-sm text-gray-700 dark:text-gray-300"
-                      >Enable SSL/TLS</span
-                    >
-                  </label>
-                </div>
-              </div>
-
-              <!-- Thread Count -->
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-                <label class="text-sm font-medium text-gray-700 dark:text-gray-300"
-                  >Thread Count</label
-                >
-                <div class="md:col-span-2">
-                  <input
-                    v-model.number="threadCount"
-                    type="number"
-                    min="1"
-                    max="32"
-                    class="w-full rounded-lg border border-gray-300 dark:border-gray-600 py-2.5 px-4 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 dark:focus:ring-teal-400 focus:border-teal-500 dark:focus:border-teal-400 transition-colors"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
           <!-- Optional Scope -->
           <div class="border-t border-gray-200 dark:border-gray-700 pt-4 space-y-4">
             <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300">Scope (Optional)</h4>
@@ -327,7 +255,7 @@
 
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
-import { CloudIcon, DocumentTextIcon, ChevronDownIcon } from '@heroicons/vue/24/outline'
+import { CloudIcon, DocumentTextIcon } from '@heroicons/vue/24/outline'
 import Spinner from '@/components/common/Spinner.vue'
 import { useConnectionsStore } from '@/stores/connections'
 import { S3_PROVIDER_PRESETS } from '@/types/s3'
@@ -352,12 +280,8 @@ const secretAccessKey = ref<string>('')
 const sessionToken = ref<string>('')
 const region = ref<string>('us-east-1')
 const endpoint = ref<string>('')
-const urlStyle = ref<'auto' | 'path' | 'virtual'>('auto')
-const useSSL = ref<boolean>(true)
-const threadCount = ref<number>(8)
 const bucket = ref<string>('')
 const prefix = ref<string>('')
-const showAdvanced = ref<boolean>(false)
 
 // Check if we're in edit mode (connection has an ID)
 const isEdit = computed(() => !!connection.value?.id)
@@ -372,8 +296,6 @@ watch(selectedProvider, (provider) => {
   if (preset) {
     endpoint.value = preset.endpoint
     region.value = preset.region
-    urlStyle.value = preset.urlStyle
-    useSSL.value = preset.useSSL
   }
   // Set appropriate credential source based on provider
   if (provider === 'AWS S3') {
@@ -521,14 +443,20 @@ const syncS3ConfigToConnection = () => {
   const endpointValue = endpoint.value || 's3.amazonaws.com'
   const endpointParts = endpointValue.split(':')
 
+  // Determine SSL based on endpoint (local endpoints don't use SSL)
+  const isLocalEndpoint =
+    endpointValue.includes('localhost') ||
+    endpointValue.includes('127.0.0.1') ||
+    endpointValue.startsWith('0.0.0.0')
+
   if (endpointParts.length === 2) {
     // Has port in endpoint (e.g., "localhost:9010")
     connection.value.host = endpointParts[0]
     connection.value.port = parseInt(endpointParts[1], 10)
   } else {
-    // No port in endpoint, use default HTTPS port
+    // No port in endpoint, use default port based on SSL
     connection.value.host = endpointValue
-    connection.value.port = useSSL.value ? 443 : 80
+    connection.value.port = isLocalEndpoint ? 80 : 443
   }
 }
 
@@ -556,18 +484,7 @@ watch(
 
 // Watch for S3 config changes to sync back to connection
 watch(
-  [
-    credentialSource,
-    accessKeyId,
-    secretAccessKey,
-    sessionToken,
-    region,
-    endpoint,
-    urlStyle,
-    useSSL,
-    bucket,
-    prefix
-  ],
+  [credentialSource, accessKeyId, secretAccessKey, sessionToken, region, endpoint, bucket, prefix],
   () => {
     syncS3ConfigToConnection()
   }
