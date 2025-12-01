@@ -218,7 +218,8 @@ export function useDatabaseExplorerController({
     // Set loading state to prevent additional clicks
     isLoadingFile.value = true
 
-    // Add tab immediately with null metadata to show loading spinner right away
+    // Add tab immediately with null metadata - data grid will load data directly
+    // This allows the data to show immediately without waiting for metadata
     paneTabsStore.addTab(
       targetPane,
       {
@@ -227,21 +228,25 @@ export function useDatabaseExplorerController({
         name: payload.entry.name,
         filePath: payload.path,
         fileEntry: payload.entry,
-        fileMetadata: null, // Will be updated after fetch
+        fileMetadata: null, // Data grid will fetch data; metadata loaded lazily in background
         fileType: payload.entry.type,
         tabType: 'file'
       },
       alwaysOpenNewTab.value ? 'pinned' : payload.mode
     )
 
-    // Fetch metadata in background and update tab when ready
+    // Clear loading state immediately - let the data grid handle its own loading
+    isLoadingFile.value = false
+
+    // Fetch metadata lazily in background (for structure tab, not blocking data display)
+    const isS3 = payload.path.startsWith('s3://')
+
+    // For S3: fetch schema only (no stats) to populate structure tab
+    // For local: fetch with stats since it's fast
     fileExplorerStore
-      .loadFileMetadata(payload.entry, true, payload.connectionId)
+      .loadFileMetadata(payload.entry, !isS3, payload.connectionId)
       .then((metadata) => {
         paneTabsStore.updateTabFileMetadata(targetPane, tabId, metadata)
-      })
-      .finally(() => {
-        isLoadingFile.value = false
       })
   }
 

@@ -29,6 +29,8 @@ const tabStateStore = useObjectTabStateStore()
 // Component-specific state
 const isInitialLoading = ref(true)
 const warnings = ref<string[]>([])
+// Columns derived from data response when metadata is not yet available
+const derivedColumns = ref<Array<{ name: string; type: string }>>([])
 
 const fileFormat = computed(() => props.entry.format || getFileFormat(props.entry.name))
 
@@ -46,12 +48,19 @@ watch(
   { immediate: true }
 )
 
-// Generate column definitions from file metadata
+// Generate column definitions from file metadata or derived columns from data response
 // Note: sortable and filter are disabled - Query Filter Panel is the single source of truth
 const columnDefs = computed<ColDef[]>(() => {
-  if (!props.metadata?.columns) return []
+  // Don't show columns until initial data is loaded - prevents empty grid flash
+  if (isInitialLoading.value) return []
 
-  return props.metadata.columns.map((col) => {
+  // Prefer metadata columns if available, otherwise use columns derived from data response
+  const columns = props.metadata?.columns || derivedColumns.value
+  if (!columns || columns.length === 0) return []
+
+  return columns.map((col) => {
+    const colType = col.type || 'unknown'
+    const colNullable = 'nullable' in col ? col.nullable : true
     return {
       field: col.name,
       headerName: col.name,
@@ -65,7 +74,7 @@ const columnDefs = computed<ColDef[]>(() => {
       flex: 1,
       minWidth: 120,
       valueFormatter: (params) => formatTableValue(params.value),
-      headerTooltip: `${col.type}${col.nullable ? '' : ' NOT NULL'} - Use Query Filter panel to sort/filter`,
+      headerTooltip: `${colType}${colNullable ? '' : ' NOT NULL'} - Use Query Filter panel to sort/filter`,
       wrapText: false,
       autoHeight: false
     }
@@ -87,13 +96,18 @@ async function fetchData(params: FetchDataParams): Promise<FetchDataResult> {
     orderDir = params.sortModel.map((s) => s.sort?.toUpperCase() || 'ASC').join(',')
   }
 
+  // For S3 files, skip COUNT(*) on first page to avoid slow full-file scan
+  // Users can still paginate; they just won't see total count initially
+  const isS3 = props.entry.path.startsWith('s3://')
+  const skipCount = params.offset > 0 || isS3
+
   const response = await filesApi.getFileData(
     props.entry.path,
     fileFormat.value,
     {
       limit: params.limit,
       offset: params.offset,
-      skipCount: params.offset > 0, // Skip count on subsequent pages
+      skipCount,
       order_by: orderBy,
       order_dir: orderDir,
       where: params.whereClause || undefined,
@@ -110,6 +124,15 @@ async function fetchData(params: FetchDataParams): Promise<FetchDataResult> {
     })
     return gridRow
   })
+
+  // If we don't have metadata columns yet, derive them from the data response schema
+  // This allows the grid to display data immediately while metadata loads in background
+  if (!props.metadata?.columns && response.schema && response.schema.length > 0) {
+    derivedColumns.value = response.schema.map((field) => ({
+      name: field.name,
+      type: field.type || 'unknown'
+    }))
+  }
 
   // Merge warnings from data response with existing metadata warnings
   const dataWarnings = response.warnings || []
@@ -194,9 +217,14 @@ watch(
 )
 
 // Reload when metadata SCHEMA changes (but not when only rowCount changes)
+// Skip if we already have derived columns from the first data fetch
 watch(
   () => props.metadata?.columns,
   (newCols, oldCols) => {
+    // Skip if we already derived columns from data response - no need to refetch
+    if (derivedColumns.value.length > 0) {
+      return
+    }
     // Only refresh if schema actually changed (not just row count update)
     const schemaChanged = JSON.stringify(newCols) !== JSON.stringify(oldCols)
     if (schemaChanged && baseGrid.gridApi.value && columnDefs.value.length > 0) {
@@ -390,10 +418,10 @@ defineExpose({
         @column-resized="saveColumnState"
       ></ag-grid-vue>
 
-      <!-- Loading overlay -->
+      <!-- Loading overlay - fully opaque to hide empty grid -->
       <div
         v-if="isInitialLoading"
-        class="absolute inset-0 bg-white dark:bg-gray-850 bg-opacity-75 dark:bg-opacity-90 flex items-center justify-center z-10"
+        class="absolute inset-0 bg-white dark:bg-gray-850 flex items-center justify-center z-50"
       >
         <div class="flex flex-col items-center gap-3">
           <svg
@@ -416,7 +444,13 @@ defineExpose({
               d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
             ></path>
           </svg>
-          <span class="text-sm text-gray-600 dark:text-gray-300">Loading file data...</span>
+          <span class="text-sm text-gray-600 dark:text-gray-300">
+            {{
+              props.entry.path.startsWith('s3://')
+                ? 'Loading data from S3...'
+                : 'Loading file data...'
+            }}
+          </span>
         </div>
       </div>
     </div>
