@@ -66,6 +66,8 @@
                 <option value="MinIO">MinIO</option>
                 <option value="DigitalOcean Spaces">DigitalOcean Spaces</option>
                 <option value="Wasabi">Wasabi</option>
+                <option value="Backblaze B2">Backblaze B2</option>
+                <option value="Cloudflare R2">Cloudflare R2</option>
                 <option value="Custom">Custom</option>
               </select>
             </div>
@@ -243,7 +245,8 @@
             </p>
             <p class="text-xs text-blue-600 dark:text-blue-400 font-medium">Supported Providers:</p>
             <p class="text-xs text-blue-700 dark:text-blue-300 leading-relaxed">
-              AWS S3, MinIO, DigitalOcean Spaces, Wasabi, and any S3-compatible storage
+              AWS S3, MinIO, DigitalOcean Spaces, Wasabi, Backblaze B2, Cloudflare R2, and any
+              S3-compatible storage
             </p>
           </div>
         </div>
@@ -357,6 +360,10 @@ const applyConnectionDefaults = (_connectionType: string) => {
           selectedProvider.value = 'DigitalOcean Spaces'
         } else if (s3Spec.endpoint?.includes('wasabi')) {
           selectedProvider.value = 'Wasabi'
+        } else if (s3Spec.endpoint?.includes('backblazeb2')) {
+          selectedProvider.value = 'Backblaze B2'
+        } else if (s3Spec.endpoint?.includes('r2.cloudflarestorage')) {
+          selectedProvider.value = 'Cloudflare R2'
         } else if (!s3Spec.endpoint) {
           selectedProvider.value = 'AWS S3'
         } else {
@@ -392,6 +399,10 @@ const applyConnectionDefaults = (_connectionType: string) => {
     if (!isEdit.value) {
       updateConnectionName()
     }
+
+    // Sync initial S3 config to connection object immediately
+    // This ensures spec.s3 is set with defaults (region, etc.) for validation
+    syncS3ConfigToConnection()
   }
 }
 
@@ -486,7 +497,8 @@ watch(
   [credentialSource, accessKeyId, secretAccessKey, sessionToken, region, endpoint, bucket, prefix],
   () => {
     syncS3ConfigToConnection()
-  }
+  },
+  { immediate: true }
 )
 
 // Watch for bucket/prefix changes to update connection name

@@ -138,6 +138,18 @@ export const S3_PROVIDER_PRESETS: Record<string, S3ProviderPreset> = {
     urlStyle: 'path',
     useSSL: true
   },
+  'Backblaze B2': {
+    endpoint: 's3.us-west-004.backblazeb2.com',
+    region: 'us-west-004',
+    urlStyle: 'path',
+    useSSL: true
+  },
+  'Cloudflare R2': {
+    endpoint: '<account-id>.r2.cloudflarestorage.com',
+    region: 'auto',
+    urlStyle: 'path',
+    useSSL: true
+  },
   Custom: {
     endpoint: '',
     region: '',
