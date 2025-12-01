@@ -626,6 +626,10 @@ function getTableCount(connectionId: string, database: string): number | null {
 }
 
 function handleDatabaseSelect(connection: Connection, database: string) {
+  // Skip file connections - they don't have database metadata
+  if (isFileConnection(connection)) {
+    return
+  }
   addToSet(expandedConnections, connection.id)
   emit('select-connection', { connectionId: connection.id, database })
   emit('select-database', { connectionId: connection.id, database })
@@ -672,6 +676,11 @@ watch(
   (database) => {
     const connectionId = props.selectedConnectionId
     if (!connectionId || !database) {
+      return
+    }
+    // Skip file connections - they don't have database metadata
+    const connection = getConnectionById(connectionId)
+    if (connection && isFileConnection(connection)) {
       return
     }
     addToSet(expandedConnections, connectionId)
