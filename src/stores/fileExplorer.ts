@@ -591,13 +591,22 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
     for (const entry of entries) {
       if (entry.type === 'dir') {
         const files = folderFiles.get(entry.name) || []
+        console.log(
+          `[S3 Table Detection] Folder "${entry.name}": ${files.length} direct files`,
+          files.map((f) => f.name)
+        )
         const tableInfo = detectTableFolder(files)
 
         if (tableInfo.isTable) {
+          console.log(
+            `[S3 Table Detection] Folder "${entry.name}" IS a table folder (format=${tableInfo.format}, count=${tableInfo.fileCount})`
+          )
           entry.isTable = true
           entry.format = tableInfo.format
           entry.fileCount = tableInfo.fileCount
           entry.size = tableInfo.totalSize
+        } else {
+          console.log(`[S3 Table Detection] Folder "${entry.name}" is NOT a table folder`)
         }
       }
     }
