@@ -112,7 +112,7 @@ export interface S3ProviderPreset {
   useSSL: boolean
 }
 
-// Provider presets mapping
+// Provider presets mapping (ordered by popularity)
 export const S3_PROVIDER_PRESETS: Record<string, S3ProviderPreset> = {
   'AWS S3': {
     endpoint: '', // Empty for AWS S3
@@ -120,21 +120,21 @@ export const S3_PROVIDER_PRESETS: Record<string, S3ProviderPreset> = {
     urlStyle: 'auto',
     useSSL: true
   },
-  MinIO: {
-    endpoint: 'localhost:9000',
-    region: 'us-east-1',
+  'Google Cloud Storage': {
+    endpoint: 'storage.googleapis.com',
+    region: 'auto',
     urlStyle: 'path',
-    useSSL: false
+    useSSL: true
+  },
+  'Cloudflare R2': {
+    endpoint: '<account-id>.r2.cloudflarestorage.com',
+    region: 'auto',
+    urlStyle: 'path',
+    useSSL: true
   },
   'DigitalOcean Spaces': {
     endpoint: 'nyc3.digitaloceanspaces.com',
     region: 'nyc3',
-    urlStyle: 'path',
-    useSSL: true
-  },
-  Wasabi: {
-    endpoint: 's3.wasabisys.com',
-    region: 'us-east-1',
     urlStyle: 'path',
     useSSL: true
   },
@@ -144,11 +144,11 @@ export const S3_PROVIDER_PRESETS: Record<string, S3ProviderPreset> = {
     urlStyle: 'path',
     useSSL: true
   },
-  'Cloudflare R2': {
-    endpoint: '<account-id>.r2.cloudflarestorage.com',
-    region: 'auto',
+  MinIO: {
+    endpoint: 'localhost:9000',
+    region: 'us-east-1',
     urlStyle: 'path',
-    useSSL: true
+    useSSL: false
   },
   Custom: {
     endpoint: '',

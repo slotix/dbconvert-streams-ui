@@ -63,11 +63,11 @@
                 class="w-full rounded-lg border border-gray-300 dark:border-gray-600 py-2.5 px-4 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 dark:focus:ring-teal-400 focus:border-teal-500 dark:focus:border-teal-400 transition-colors"
               >
                 <option value="AWS S3">AWS S3</option>
-                <option value="MinIO">MinIO</option>
-                <option value="DigitalOcean Spaces">DigitalOcean Spaces</option>
-                <option value="Wasabi">Wasabi</option>
-                <option value="Backblaze B2">Backblaze B2</option>
+                <option value="Google Cloud Storage">Google Cloud Storage</option>
                 <option value="Cloudflare R2">Cloudflare R2</option>
+                <option value="DigitalOcean Spaces">DigitalOcean Spaces</option>
+                <option value="Backblaze B2">Backblaze B2</option>
+                <option value="MinIO">MinIO</option>
                 <option value="Custom">Custom</option>
               </select>
             </div>
@@ -195,7 +195,9 @@
 
             <!-- Bucket -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-              <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Bucket</label>
+              <label class="text-sm font-medium text-gray-700 dark:text-gray-300"
+                >Bucket (optional)</label
+              >
               <div class="md:col-span-2">
                 <input
                   v-model="bucket"
@@ -245,8 +247,8 @@
             </p>
             <p class="text-xs text-blue-600 dark:text-blue-400 font-medium">Supported Providers:</p>
             <p class="text-xs text-blue-700 dark:text-blue-300 leading-relaxed">
-              AWS S3, MinIO, DigitalOcean Spaces, Wasabi, Backblaze B2, Cloudflare R2, and any
-              S3-compatible storage
+              AWS S3, Google Cloud Storage, Cloudflare R2, DigitalOcean Spaces, Backblaze B2, MinIO,
+              and any S3-compatible storage
             </p>
           </div>
         </div>
@@ -358,8 +360,8 @@ const applyConnectionDefaults = (_connectionType: string) => {
           selectedProvider.value = 'MinIO'
         } else if (s3Spec.endpoint?.includes('digitaloceanspaces')) {
           selectedProvider.value = 'DigitalOcean Spaces'
-        } else if (s3Spec.endpoint?.includes('wasabi')) {
-          selectedProvider.value = 'Wasabi'
+        } else if (s3Spec.endpoint?.includes('storage.googleapis.com')) {
+          selectedProvider.value = 'Google Cloud Storage'
         } else if (s3Spec.endpoint?.includes('backblazeb2')) {
           selectedProvider.value = 'Backblaze B2'
         } else if (s3Spec.endpoint?.includes('r2.cloudflarestorage')) {
