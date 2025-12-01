@@ -98,8 +98,9 @@ const basePath = computed(() => {
 // Get endpoint from spec (S3 only, local files don't have endpoint)
 const storageEndpoint = computed(() => {
   const spec = props.connection?.spec
-  if (spec?.s3) return spec.s3.endpoint
-  return ''
+  if (!spec?.s3?.endpoint) return ''
+  // Normalize endpoint for display by stripping scheme and trailing slash artifacts
+  return spec.s3.endpoint.replace(/^https?:\/\//i, '').replace(/\/+$/, '')
 })
 
 // Get region from spec (S3 only, local files don't have region)
@@ -273,13 +274,13 @@ async function copyFolderPath() {
     if (spec?.s3?.scope?.bucket) {
       pathToCopy = `s3://${spec.s3.scope.bucket}${spec.s3.scope.prefix ? '/' + spec.s3.scope.prefix : ''}`
     } else {
-      pathToCopy = 's3://'
+      pathToCopy = displayS3URI.value || 's3://'
     }
   }
 
   // If no path, use fallback
   if (!pathToCopy) {
-    pathToCopy = isS3Connection.value ? 's3://' : ''
+    pathToCopy = isS3Connection.value ? displayS3URI.value || 's3://' : ''
   }
 
   try {
@@ -378,12 +379,12 @@ const displayS3URI = computed(() => {
 
   // Show meaningful info for unscoped connections
   if (storageEndpoint.value) {
-    return `s3://${storageEndpoint.value} (All buckets)`
+    return `s3://${storageEndpoint.value}`
   } else if (storageRegion.value) {
-    return `s3:// (All buckets in ${storageRegion.value})`
+    return `s3://${storageRegion.value}`
   }
 
-  return 's3:// (All buckets)'
+  return 's3://'
 })
 
 // Server Stats - aggregated across all databases
