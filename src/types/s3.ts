@@ -138,12 +138,6 @@ export const S3_PROVIDER_PRESETS: Record<string, S3ProviderPreset> = {
     urlStyle: 'path',
     useSSL: true
   },
-  'Ceph RADOS Gateway': {
-    endpoint: 'ceph-rgw.example.com:7480',
-    region: 'default',
-    urlStyle: 'path',
-    useSSL: false
-  },
   Custom: {
     endpoint: '',
     region: '',

@@ -66,7 +66,6 @@
                 <option value="MinIO">MinIO</option>
                 <option value="DigitalOcean Spaces">DigitalOcean Spaces</option>
                 <option value="Wasabi">Wasabi</option>
-                <option value="Ceph RADOS Gateway">Ceph RADOS Gateway</option>
                 <option value="Custom">Custom</option>
               </select>
             </div>
@@ -244,7 +243,7 @@
             </p>
             <p class="text-xs text-blue-600 dark:text-blue-400 font-medium">Supported Providers:</p>
             <p class="text-xs text-blue-700 dark:text-blue-300 leading-relaxed">
-              AWS S3, MinIO, DigitalOcean Spaces, Wasabi, Ceph, and any S3-compatible storage
+              AWS S3, MinIO, DigitalOcean Spaces, Wasabi, and any S3-compatible storage
             </p>
           </div>
         </div>
