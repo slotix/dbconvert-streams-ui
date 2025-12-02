@@ -256,21 +256,24 @@ export function useStreamWizard() {
     selection.value.targetPath = config.targetPath ?? null
 
     // Populate structure options - check multiple possible locations
-    // Priority: 1. target.options.structureOptions (new format)
-    //           2. target.spec.database.structureOptions (database target spec format)
-    //           3. config.structureOptions (root level, legacy)
-    let structureOptions =
-      config?.target?.options?.structureOptions ?? (config as any)?.structureOptions
+    // Priority: 1. target.spec.database.structureOptions (spec is source of truth)
+    //           2. config.structureOptions (root level, legacy/wizard state)
+    //           3. target.options.structureOptions (deprecated, for backwards compat)
+    let structureOptions: Record<string, unknown> | undefined
 
-    // Also check target.spec.database.structureOptions path
-    if (!structureOptions || Object.keys(structureOptions).length === 0) {
-      const targetSpec = config?.target?.spec as Record<string, unknown> | undefined
-      if (targetSpec?.database && typeof targetSpec.database === 'object') {
-        const dbSpec = targetSpec.database as Record<string, unknown>
-        if (dbSpec.structureOptions && typeof dbSpec.structureOptions === 'object') {
-          structureOptions = dbSpec.structureOptions as Record<string, unknown>
-        }
+    // First check target.spec.database.structureOptions (source of truth)
+    const targetSpec = config?.target?.spec as Record<string, unknown> | undefined
+    if (targetSpec?.database && typeof targetSpec.database === 'object') {
+      const dbSpec = targetSpec.database as Record<string, unknown>
+      if (dbSpec.structureOptions && typeof dbSpec.structureOptions === 'object') {
+        structureOptions = dbSpec.structureOptions as Record<string, unknown>
       }
+    }
+
+    // Fall back to root level (legacy) or deprecated options
+    if (!structureOptions || Object.keys(structureOptions).length === 0) {
+      structureOptions =
+        (config as any)?.structureOptions ?? config?.target?.options?.structureOptions
     }
 
     if (structureOptions && Object.keys(structureOptions).length > 0) {

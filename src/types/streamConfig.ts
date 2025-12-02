@@ -27,65 +27,6 @@ export interface SourceOptions {
   operations?: string[] // CDC operation filter: 'insert', 'update', 'delete'
 }
 
-// TargetOptions is UI-side only - these settings flow into target.spec via prepareStreamData()
-// The backend TargetConfig only has: id and spec (no options field)
-export interface TargetOptions {
-  stagingDirectory?: string
-  compressionType?: 'uncompressed' | 'gzip' | 'zstd' | 'none'
-  workerPoolSize?: number
-  structureOptions?: {
-    tables?: string | boolean
-    indexes?: string | boolean
-    foreignKeys?: string | boolean
-  }
-  skipData?: boolean
-  useDuckDBWriter?: boolean // flows to spec.{files|s3|...}.format.useDuckDB
-  parquetConfig?: ParquetConfig
-  csvConfig?: CSVConfig
-  snowflakeConfig?: SnowflakeConfig
-  s3UploadConfig?: S3UploadConfig
-  performanceConfig?: PerformanceConfig
-}
-
-export interface ParquetConfig {
-  compressionCodec?: string
-  rowGroupSize?: number
-  pageSize?: number
-}
-
-export interface CSVConfig {
-  delimiter?: string
-  quote?: string
-  header?: boolean
-}
-
-export interface SnowflakeConfig {
-  outputDirectory?: string
-  filePrefix?: string
-  timestampFormat?: string
-}
-
-/**
- * S3 upload configuration for stream targets (UI temporary state).
- * This matches the backend config.S3UploadConfig structure.
- * Credentials come from Connection.spec.s3, NOT stored here.
- */
-export interface S3UploadConfig {
-  bucket?: string
-  prefix?: string
-  keepLocalFiles?: boolean
-  storageClass?: string
-  serverSideEnc?: string
-  kmsKeyId?: string
-}
-
-export interface PerformanceConfig {
-  batchSize?: number
-  workerPoolSize?: number
-  channelBuffer?: number
-  flushIntervalMs?: number
-}
-
 export interface SourceConfig {
   id: string
   // Database and schema selection (stream-specific)
@@ -95,13 +36,17 @@ export interface SourceConfig {
   options?: SourceOptions
 }
 
+/**
+ * Target configuration matching backend TargetConfig.
+ * The backend only has: id and spec (no options field).
+ * @see internal/stream/target_spec.go
+ */
 export interface TargetConfig {
   id: string
   fileFormat?: string
   subDirectory?: string
-  // Matryoshka spec pattern (built dynamically before sending to backend)
+  // Matryoshka spec pattern matching backend exactly
   spec?: TargetSpec
-  options?: TargetOptions
 }
 
 export interface Limits {
@@ -130,8 +75,11 @@ export interface StreamConfig {
   sourceSchema?: string
   targetSchema?: string
   targetPath?: string
-  structureOptions?: TargetOptions['structureOptions']
-  skipData?: boolean
+  structureOptions?: {
+    tables?: string | boolean
+    indexes?: string | boolean
+    foreignKeys?: string | boolean
+  }
 }
 
 export interface FileEntry {

@@ -75,4 +75,31 @@ describe('Target Spec Builders', () => {
     expect(spec.s3?.upload.storageClass).toBe('INTELLIGENT_TIERING')
     expect(spec.s3?.upload.keepLocalFiles).toBe(false)
   })
+
+  it('defaults useDuckDB to true for S3 target spec', () => {
+    const spec = buildS3TargetSpec('/tmp/staging', 'csv', 'my-bucket')
+
+    expect(spec.s3).toBeDefined()
+    expect(spec.s3?.format?.useDuckDB).toBe(true)
+  })
+
+  it('allows useDuckDB to be explicitly set to false', () => {
+    const spec = buildS3TargetSpec(
+      '/tmp/staging',
+      'csv',
+      'my-bucket',
+      undefined, // prefix
+      undefined, // storageClass
+      undefined, // keepLocalFiles
+      undefined, // compression
+      undefined, // parquetConfig
+      undefined, // csvConfig
+      undefined, // serverSideEnc
+      undefined, // kmsKeyId
+      false // useDuckDB
+    )
+
+    expect(spec.s3).toBeDefined()
+    expect(spec.s3?.format?.useDuckDB).toBe(false)
+  })
 })

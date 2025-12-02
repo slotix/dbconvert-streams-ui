@@ -16,10 +16,10 @@ import type {
   SnowflakeTargetSpec,
   FileFormatSpec,
   ParquetConfig,
-  CSVConfig
+  CSVConfig,
+  StructureOptions
 } from '../types/specs'
 import type { Connection } from '../types/connections'
-import type { TargetConfig, TargetOptions } from '../types/streamConfig'
 
 // ===== Connection Spec Builders =====
 
@@ -153,10 +153,17 @@ export function buildSnowflakeConnectionSpec(
 
 // ===== Target Spec Builders =====
 
+// UI structure options can have string values like 'create' or boolean values
+type UIStructureOptions = {
+  tables?: string | boolean
+  indexes?: string | boolean
+  foreignKeys?: string | boolean
+}
+
 export function buildDatabaseTargetSpec(
   database: string,
   schema?: string,
-  structureOptions?: TargetOptions['structureOptions']
+  structureOptions?: UIStructureOptions
 ): TargetSpec {
   const spec: DatabaseTargetSpec = {
     database,
@@ -181,9 +188,13 @@ export function buildFileFormatSpec(
   csvConfig?: CSVConfig,
   useDuckDB: boolean = true
 ): FileFormatSpec | undefined {
-  // Always return format spec when useDuckDB is true (default)
-  if (!parquetConfig && !csvConfig && !compression && !useDuckDB) {
-    return undefined
+  // Always return format spec to include useDuckDB setting
+  // useDuckDB defaults to true, but false is also a valid explicit setting
+  const hasFormatSettings = parquetConfig || csvConfig || compression
+
+  if (!hasFormatSettings) {
+    // No other settings - just return useDuckDB
+    return { useDuckDB }
   }
 
   return {
@@ -300,7 +311,7 @@ export function buildSnowflakeTargetSpec(
   outputDirectory: string,
   fileFormat: string,
   schema?: string,
-  structureOptions?: TargetOptions['structureOptions'],
+  structureOptions?: UIStructureOptions,
   compression?: string,
   parquetConfig?: ParquetConfig,
   csvConfig?: CSVConfig,

@@ -234,27 +234,8 @@ async function loadStreamForEdit() {
     // Populate wizard state from the loaded stream config
     wizard.loadFromStreamConfig(existingStream)
 
-    // For S3 targets, ensure s3UploadConfig is populated from existing spec
-    // This is needed because prepareStreamData reads from s3UploadConfig
-    const s3Bucket = existingStream.target?.spec?.s3?.upload?.bucket
-    if (s3Bucket && streamsStore.currentStreamConfig) {
-      if (!streamsStore.currentStreamConfig.target.options) {
-        streamsStore.currentStreamConfig.target.options = {}
-      }
-      if (!streamsStore.currentStreamConfig.target.options.s3UploadConfig) {
-        streamsStore.currentStreamConfig.target.options.s3UploadConfig = {}
-      }
-      streamsStore.currentStreamConfig.target.options.s3UploadConfig.bucket = s3Bucket
-      // Also copy prefix and other settings if present
-      const s3Spec = existingStream.target?.spec?.s3
-      if (s3Spec?.upload?.prefix) {
-        streamsStore.currentStreamConfig.target.options.s3UploadConfig.prefix = s3Spec.upload.prefix
-      }
-      if (s3Spec?.upload?.storageClass) {
-        streamsStore.currentStreamConfig.target.options.s3UploadConfig.storageClass =
-          s3Spec.upload.storageClass
-      }
-    }
+    // For S3 targets, the spec is already loaded from existingStream.target.spec
+    // No need to copy to options - spec is the source of truth
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     commonStore.showNotification(`Failed to load stream: ${errorMessage}`, 'error')
@@ -361,17 +342,22 @@ function handleTargetUpdate(
       streamsStore.currentStreamConfig.targetPath = path
     }
 
-    // For S3 connections, also set the bucket in s3UploadConfig
+    // For S3 connections, set the bucket in target.spec.s3.upload
     const targetConnection = connectionsStore.connectionByID(connectionId)
     if (targetConnection?.spec?.s3 && database) {
       // database parameter holds the bucket name for S3 connections
-      if (!streamsStore.currentStreamConfig.target.options) {
-        streamsStore.currentStreamConfig.target.options = {}
+      // Ensure S3 spec structure exists
+      if (!streamsStore.currentStreamConfig.target.spec) {
+        streamsStore.currentStreamConfig.target.spec = {}
       }
-      if (!streamsStore.currentStreamConfig.target.options.s3UploadConfig) {
-        streamsStore.currentStreamConfig.target.options.s3UploadConfig = {}
+      if (!streamsStore.currentStreamConfig.target.spec.s3) {
+        streamsStore.currentStreamConfig.target.spec.s3 = {
+          outputDirectory: '/tmp/dbconvert',
+          fileFormat: 'csv',
+          upload: { bucket: '' }
+        }
       }
-      streamsStore.currentStreamConfig.target.options.s3UploadConfig.bucket = database
+      streamsStore.currentStreamConfig.target.spec.s3.upload.bucket = database
     }
   }
 }

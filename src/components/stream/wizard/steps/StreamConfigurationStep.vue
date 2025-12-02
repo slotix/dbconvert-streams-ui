@@ -155,7 +155,7 @@
                     <div class="flex items-center justify-between mt-1">
                       <span>Compression:</span>
                       <span class="font-medium text-gray-900 dark:text-gray-100 capitalize">{{
-                        currentStreamConfig.target?.options?.compressionType || 'zstd'
+                        compressionDisplay
                       }}</span>
                     </div>
                     <div v-if="isFileTarget" class="flex items-center justify-between mt-1">
@@ -163,58 +163,48 @@
                       <span
                         class="font-medium"
                         :class="
-                          currentStreamConfig.target?.options?.useDuckDBWriter
+                          useDuckDBDisplay
                             ? 'text-teal-600 dark:text-teal-400'
                             : 'text-gray-900 dark:text-gray-100'
                         "
-                        >{{
-                          currentStreamConfig.target?.options?.useDuckDBWriter
-                            ? 'DuckDB'
-                            : 'Standard'
-                        }}</span
+                        >{{ useDuckDBDisplay ? 'DuckDB' : 'Standard' }}</span
                       >
                     </div>
                   </div>
 
                   <!-- S3 Upload info for S3 targets -->
                   <div
-                    v-if="isS3Target && currentStreamConfig?.target"
+                    v-if="isS3Target && currentStreamConfig?.target?.spec?.s3?.upload"
                     class="pt-2 border-t border-gray-100 dark:border-gray-700 mt-2"
                   >
-                    <div
-                      v-if="currentStreamConfig.target.options?.s3UploadConfig"
-                      class="flex items-center justify-between"
-                    >
+                    <div class="flex items-center justify-between">
                       <span>S3 Bucket:</span>
                       <span class="font-medium text-teal-600 dark:text-teal-400">{{
-                        currentStreamConfig.target.options.s3UploadConfig.bucket || 'Not set'
+                        currentStreamConfig.target.spec.s3.upload.bucket || 'Not set'
                       }}</span>
                     </div>
                     <div
-                      v-if="currentStreamConfig.target.options?.s3UploadConfig?.prefix"
+                      v-if="currentStreamConfig.target.spec.s3.upload.prefix"
                       class="flex items-center justify-between mt-1"
                     >
                       <span>Prefix:</span>
                       <span class="font-medium text-gray-900 dark:text-gray-100">{{
-                        currentStreamConfig.target.options.s3UploadConfig.prefix
+                        currentStreamConfig.target.spec.s3.upload.prefix
                       }}</span>
                     </div>
-                    <div
-                      v-if="currentStreamConfig.target.options?.s3UploadConfig"
-                      class="flex items-center justify-between mt-1"
-                    >
+                    <div class="flex items-center justify-between mt-1">
                       <span>Storage Class:</span>
                       <span class="font-medium text-gray-900 dark:text-gray-100">{{
-                        currentStreamConfig.target.options.s3UploadConfig.storageClass || 'STANDARD'
+                        currentStreamConfig.target.spec.s3.upload.storageClass || 'STANDARD'
                       }}</span>
                     </div>
                     <div
-                      v-if="currentStreamConfig.target.options?.s3UploadConfig?.serverSideEnc"
+                      v-if="currentStreamConfig.target.spec.s3.upload.serverSideEnc"
                       class="flex items-center justify-between mt-1"
                     >
                       <span>Encryption:</span>
                       <span class="font-medium text-gray-900 dark:text-gray-100">{{
-                        currentStreamConfig.target.options.s3UploadConfig.serverSideEnc
+                        currentStreamConfig.target.spec.s3.upload.serverSideEnc
                       }}</span>
                     </div>
                   </div>
@@ -279,6 +269,7 @@ import { useStreamsStore, buildStreamPayload } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
 import { JsonViewer } from '@/components/monaco'
 import StreamSettings from '@/components/settings/StreamSettings.vue'
+import { getFormatSpec } from '@/composables/useTargetSpec'
 
 interface Props {
   sourceConnectionId?: string | null
@@ -343,6 +334,20 @@ const isS3Target = computed(() => {
   // Check if storage is S3 (via spec.s3)
   const conn = connectionsStore.connectionByID(targetId)
   return conn?.type?.toLowerCase() === 'files' && !!conn.spec?.s3
+})
+
+// Get compression display from target.spec
+const compressionDisplay = computed(() => {
+  const spec = currentStreamConfig.value?.target?.spec
+  const format = getFormatSpec(spec)
+  return format?.compression || 'zstd'
+})
+
+// Get useDuckDB display from target.spec
+const useDuckDBDisplay = computed(() => {
+  const spec = currentStreamConfig.value?.target?.spec
+  const format = getFormatSpec(spec)
+  return format?.useDuckDB ?? true
 })
 
 // Custom queries

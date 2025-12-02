@@ -93,6 +93,7 @@ export interface DatabaseTargetSpec {
   database: string
   schema?: string
   structureOptions?: StructureOptions
+  skipData?: boolean // Skip data transfer - only create structure
 }
 
 export interface StructureOptions {

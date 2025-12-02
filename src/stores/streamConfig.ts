@@ -48,15 +48,8 @@ export const defaultStreamConfigOptions: StreamConfig = {
     id: '',
     fileFormat: undefined,
     subDirectory: '',
-    spec: undefined,
-    options: {
-      compressionType: 'zstd',
-      structureOptions: {
-        tables: true,
-        indexes: true,
-        foreignKeys: true
-      }
-    }
+    spec: undefined
+    // Note: options field is deprecated - use spec directly
   },
   limits: { numberOfEvents: 0, elapsedTime: 0 },
   files: []
@@ -299,23 +292,34 @@ export const useStreamsStore = defineStore('streams', {
         const isLocalFileTarget = !!targetConnection.spec?.files
         const isFileConnectionType = connectionType.includes('file')
 
-        // Get structure options and file format settings
-        // Priority: root level structureOptions (set by wizard) > target.options.structureOptions
-        const structureOptions =
-          this.currentStreamConfig.structureOptions ||
-          this.currentStreamConfig.target.options?.structureOptions
+        // Get existing spec values (spec is the source of truth)
+        const existingSpec = this.currentStreamConfig.target.spec
+        const existingFileSpec =
+          existingSpec?.files || existingSpec?.s3 || existingSpec?.gcs || existingSpec?.azure
+        const existingFormat = existingFileSpec?.format
+
+        // Get structure options from root level (set by wizard) or existing spec
+        const structureOptions = this.currentStreamConfig.structureOptions ||
+          existingSpec?.database?.structureOptions || {
+            tables: true,
+            indexes: true,
+            foreignKeys: true
+          }
+
         const targetDatabase = this.currentStreamConfig.targetDatabase || ''
         const targetSchema = this.currentStreamConfig.targetSchema
         const targetPath = this.currentStreamConfig.targetPath || '/tmp/dbconvert'
         const fileFormat =
           isS3Target || isGCSTarget || isAzureTarget || isLocalFileTarget || isFileConnectionType
-            ? (this.currentStreamConfig.target as any).fileFormat || 'csv'
+            ? this.currentStreamConfig.target.fileFormat || 'csv'
             : 'parquet'
-        const compressionType = this.currentStreamConfig.target.options?.compressionType
-        const parquetConfig = this.currentStreamConfig.target.options?.parquetConfig
-        const csvConfig = this.currentStreamConfig.target.options?.csvConfig
-        // useDuckDBWriter defaults to true if not explicitly set
-        const useDuckDBWriter = this.currentStreamConfig.target.options?.useDuckDBWriter ?? true
+
+        // Read format settings from existing spec (spec is source of truth)
+        const compressionType = existingFormat?.compression || 'zstd'
+        const parquetConfig = existingFormat?.parquet
+        const csvConfig = existingFormat?.csv
+        // useDuckDB defaults to true
+        const useDuckDB = existingFormat?.useDuckDB ?? true
 
         // Build the appropriate target spec based on connection type
         const specBuilders: Record<string, () => TargetSpec> = {
@@ -329,61 +333,60 @@ export const useStreamsStore = defineStore('streams', {
               compressionType,
               parquetConfig,
               csvConfig,
-              this.currentStreamConfig!.target.options?.snowflakeConfig?.filePrefix,
-              this.currentStreamConfig!.target.options?.snowflakeConfig?.timestampFormat,
-              useDuckDBWriter
+              existingSpec?.snowflake?.staging?.config?.filePrefix,
+              existingSpec?.snowflake?.staging?.config?.timestampFormat,
+              useDuckDB
             ),
           s3: () => {
-            // Get bucket/prefix from stream config (user input), fall back to connection scope
-            // Note: Credentials come from connection (targetConnection.spec.s3), NOT duplicated here
-            const s3UploadConfig = this.currentStreamConfig!.target.options?.s3UploadConfig
-            const s3Spec = targetConnection.spec?.s3
+            // Read S3 upload config from existing spec, fall back to connection scope
+            const existingUpload = existingSpec?.s3?.upload
+            const s3ConnSpec = targetConnection.spec?.s3
             return buildS3TargetSpec(
               targetPath,
               fileFormat,
-              s3UploadConfig?.bucket || s3Spec?.scope?.bucket || '',
-              s3UploadConfig?.prefix || s3Spec?.scope?.prefix,
-              s3UploadConfig?.storageClass,
-              s3UploadConfig?.keepLocalFiles,
+              existingUpload?.bucket || s3ConnSpec?.scope?.bucket || '',
+              existingUpload?.prefix || s3ConnSpec?.scope?.prefix,
+              existingUpload?.storageClass,
+              existingUpload?.keepLocalFiles,
               compressionType,
               parquetConfig,
               csvConfig,
-              s3UploadConfig?.serverSideEnc,
-              s3UploadConfig?.kmsKeyId,
-              useDuckDBWriter
+              existingUpload?.serverSideEnc,
+              existingUpload?.kmsKeyId,
+              useDuckDB
             )
           },
           gcs: () => {
-            // Get bucket/prefix from stream config (user input), fall back to connection scope
-            const gcsUploadConfig = this.currentStreamConfig!.target.options?.s3UploadConfig
-            const gcsSpec = targetConnection.spec?.gcs
+            // Read GCS upload config from existing spec, fall back to connection scope
+            const existingUpload = existingSpec?.gcs?.upload
+            const gcsConnSpec = targetConnection.spec?.gcs
             return buildGCSTargetSpec(
               targetPath,
               fileFormat,
-              gcsUploadConfig?.bucket || gcsSpec?.scope?.bucket || '',
-              gcsUploadConfig?.prefix || gcsSpec?.scope?.prefix,
-              gcsUploadConfig?.storageClass,
-              gcsUploadConfig?.keepLocalFiles,
+              existingUpload?.bucket || gcsConnSpec?.scope?.bucket || '',
+              existingUpload?.prefix || gcsConnSpec?.scope?.prefix,
+              existingUpload?.storageClass,
+              existingUpload?.keepLocalFiles,
               compressionType,
               parquetConfig,
               csvConfig,
-              useDuckDBWriter
+              useDuckDB
             )
           },
           azure: () => {
-            // Get container/prefix from stream config (user input), fall back to connection scope
-            const azureUploadConfig = this.currentStreamConfig!.target.options?.s3UploadConfig
-            const azureSpec = targetConnection.spec?.azure
+            // Read Azure upload config from existing spec, fall back to connection scope
+            const existingUpload = existingSpec?.azure?.upload
+            const azureConnSpec = targetConnection.spec?.azure
             return buildAzureTargetSpec(
               targetPath,
               fileFormat,
-              azureUploadConfig?.bucket || azureSpec?.scope?.container || '',
-              azureUploadConfig?.prefix || azureSpec?.scope?.prefix,
-              azureUploadConfig?.keepLocalFiles,
+              existingUpload?.container || azureConnSpec?.scope?.container || '',
+              existingUpload?.prefix || azureConnSpec?.scope?.prefix,
+              existingUpload?.keepLocalFiles,
               compressionType,
               parquetConfig,
               csvConfig,
-              useDuckDBWriter
+              useDuckDB
             )
           },
           file: () =>
@@ -393,7 +396,7 @@ export const useStreamsStore = defineStore('streams', {
               compressionType,
               parquetConfig,
               csvConfig,
-              useDuckDBWriter
+              useDuckDB
             ),
           database: () => buildDatabaseTargetSpec(targetDatabase, targetSchema, structureOptions)
         }
@@ -419,7 +422,8 @@ export const useStreamsStore = defineStore('streams', {
         const refinedStream = buildStreamPayload(this.currentStreamConfig)
 
         // Remove temporary UI-only state property before saving
-        delete (refinedStream as any)._allTablesWithState
+        delete (refinedStream as StreamConfig & { _allTablesWithState?: unknown })
+          ._allTablesWithState
 
         this.currentStreamConfig = refinedStream as StreamConfig
       }
@@ -528,15 +532,8 @@ export const useStreamsStore = defineStore('streams', {
           id: '',
           fileFormat: undefined,
           subDirectory: '',
-          spec: undefined,
-          options: {
-            compressionType: 'zstd',
-            structureOptions: {
-              tables: true,
-              indexes: true,
-              foreignKeys: true
-            }
-          }
+          spec: undefined
+          // Note: options field is deprecated - use spec directly
         }
       }
     },

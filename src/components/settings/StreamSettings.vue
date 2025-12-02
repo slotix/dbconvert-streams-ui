@@ -247,6 +247,7 @@ import { useStreamsStore, defaultStreamConfigOptions } from '@/stores/streamConf
 import { useConnectionsStore } from '@/stores/connections'
 import { useCommonStore } from '@/stores/common'
 import { type StreamConfig } from '@/types/streamConfig'
+import { useTargetSpec, getFormatSpec } from '@/composables/useTargetSpec'
 import SelectionButtonGroup from '@/components/base/SelectionButtonGroup.vue'
 import FormSelect from '@/components/base/FormSelect.vue'
 import FormSwitch from '@/components/base/FormSwitch.vue'
@@ -255,6 +256,9 @@ const streamsStore = useStreamsStore()
 const connectionsStore = useConnectionsStore()
 const commonStore = useCommonStore()
 const currentStreamConfig = streamsStore.currentStreamConfig as StreamConfig
+
+// Use the composable for target spec fields
+const targetSpec = useTargetSpec(currentStreamConfig)
 
 const fileFormats = [
   {
@@ -330,14 +334,11 @@ const targetFileFormat = computed({
   }
 })
 
-// Compression type computed property
+// Compression type - reads/writes directly to target.spec via composable
 const compressionType = computed({
-  get: () => currentStreamConfig.target?.options?.compressionType || 'zstd',
+  get: () => targetSpec.compression.value,
   set: (value) => {
-    if (!currentStreamConfig.target.options) {
-      currentStreamConfig.target.options = {}
-    }
-    currentStreamConfig.target.options.compressionType = value
+    targetSpec.compression.value = value
   }
 })
 
@@ -355,14 +356,11 @@ const compressionDescription = computed(() => {
   }
 })
 
-// DuckDB Writer toggle
+// DuckDB Writer toggle - reads/writes directly to target.spec via composable
 const useDuckDBWriter = computed({
-  get: () => currentStreamConfig.target?.options?.useDuckDBWriter ?? false,
+  get: () => targetSpec.useDuckDB.value,
   set: (value) => {
-    if (!currentStreamConfig.target.options) {
-      currentStreamConfig.target.options = {}
-    }
-    currentStreamConfig.target.options.useDuckDBWriter = value
+    targetSpec.useDuckDB.value = value
   }
 })
 
@@ -371,86 +369,46 @@ const useDuckDBWriter = computed({
 // The backend computes the final path as: <basePath>/<streamID>/<table>/
 // We no longer need to specify outputDirectory in the stream configuration.
 
-// S3 Upload Configuration computed properties
+// S3 Upload Configuration - reads/writes directly to target.spec.s3.upload via composable
 const s3Bucket = computed({
-  get: () => currentStreamConfig.target?.options?.s3UploadConfig?.bucket || '',
+  get: () => targetSpec.s3Bucket.value,
   set: (value) => {
-    if (!currentStreamConfig.target.options) {
-      currentStreamConfig.target.options = {}
-    }
-    if (!currentStreamConfig.target.options.s3UploadConfig) {
-      currentStreamConfig.target.options.s3UploadConfig = {}
-    }
-    currentStreamConfig.target.options.s3UploadConfig.bucket = value
+    targetSpec.s3Bucket.value = value
   }
 })
 
 const s3Prefix = computed({
-  get: () => currentStreamConfig.target?.options?.s3UploadConfig?.prefix || '',
+  get: () => targetSpec.s3Prefix.value,
   set: (value) => {
-    if (!currentStreamConfig.target.options) {
-      currentStreamConfig.target.options = {}
-    }
-    if (!currentStreamConfig.target.options.s3UploadConfig) {
-      currentStreamConfig.target.options.s3UploadConfig = {}
-    }
-    currentStreamConfig.target.options.s3UploadConfig.prefix = value
+    targetSpec.s3Prefix.value = value
   }
 })
 
 const s3StorageClass = computed({
-  get: () => currentStreamConfig.target?.options?.s3UploadConfig?.storageClass || 'STANDARD',
+  get: () => targetSpec.s3StorageClass.value,
   set: (value) => {
-    if (!currentStreamConfig.target.options) {
-      currentStreamConfig.target.options = {}
-    }
-    if (!currentStreamConfig.target.options.s3UploadConfig) {
-      currentStreamConfig.target.options.s3UploadConfig = {}
-    }
-    currentStreamConfig.target.options.s3UploadConfig.storageClass = value
+    targetSpec.s3StorageClass.value = value
   }
 })
 
 const s3ServerSideEnc = computed({
-  get: () => currentStreamConfig.target?.options?.s3UploadConfig?.serverSideEnc || '',
+  get: () => targetSpec.s3ServerSideEnc.value,
   set: (value) => {
-    if (!currentStreamConfig.target.options) {
-      currentStreamConfig.target.options = {}
-    }
-    if (!currentStreamConfig.target.options.s3UploadConfig) {
-      currentStreamConfig.target.options.s3UploadConfig = {}
-    }
-    currentStreamConfig.target.options.s3UploadConfig.serverSideEnc = value
-    // Clear KMS key if encryption is not aws:kms
-    if (value !== 'aws:kms') {
-      currentStreamConfig.target.options.s3UploadConfig.kmsKeyId = undefined
-    }
+    targetSpec.s3ServerSideEnc.value = value
   }
 })
 
 const s3KmsKeyId = computed({
-  get: () => currentStreamConfig.target?.options?.s3UploadConfig?.kmsKeyId || '',
+  get: () => targetSpec.s3KmsKeyId.value,
   set: (value) => {
-    if (!currentStreamConfig.target.options) {
-      currentStreamConfig.target.options = {}
-    }
-    if (!currentStreamConfig.target.options.s3UploadConfig) {
-      currentStreamConfig.target.options.s3UploadConfig = {}
-    }
-    currentStreamConfig.target.options.s3UploadConfig.kmsKeyId = value
+    targetSpec.s3KmsKeyId.value = value
   }
 })
 
 const s3KeepLocalFiles = computed({
-  get: () => currentStreamConfig.target?.options?.s3UploadConfig?.keepLocalFiles ?? false,
+  get: () => targetSpec.s3KeepLocalFiles.value,
   set: (value) => {
-    if (!currentStreamConfig.target.options) {
-      currentStreamConfig.target.options = {}
-    }
-    if (!currentStreamConfig.target.options.s3UploadConfig) {
-      currentStreamConfig.target.options.s3UploadConfig = {}
-    }
-    currentStreamConfig.target.options.s3UploadConfig.keepLocalFiles = value
+    targetSpec.s3KeepLocalFiles.value = value
   }
 })
 
