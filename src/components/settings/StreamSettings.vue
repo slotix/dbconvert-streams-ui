@@ -324,13 +324,11 @@ const isS3Target = computed(() => {
   return !!conn.spec?.s3
 })
 
-// File format computed property
+// File format - reads/writes directly to target.spec via composable
 const targetFileFormat = computed({
-  get: () => currentStreamConfig.target?.fileFormat || undefined,
+  get: () => targetSpec.fileFormat.value,
   set: (value) => {
-    if (currentStreamConfig.target) {
-      currentStreamConfig.target.fileFormat = value
-    }
+    targetSpec.fileFormat.value = value
   }
 })
 

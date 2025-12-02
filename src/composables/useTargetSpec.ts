@@ -87,6 +87,21 @@ export function useTargetSpec(streamConfig: StreamConfig) {
     return fileSpec?.format || {}
   }
 
+  // File format (csv, jsonl, parquet) - reads from spec.{s3|files|gcs|azure}.fileFormat
+  const fileFormat = computed({
+    get: () => {
+      const fileSpec = getFileSpec(streamConfig.target.spec)
+      return fileSpec?.fileFormat || 'csv'
+    },
+    set: (value: string) => {
+      const spec = ensureSpec()
+      const fileSpec = getFileSpec(spec)
+      if (fileSpec) {
+        fileSpec.fileFormat = value
+      }
+    }
+  })
+
   // Compression
   const compression = computed({
     get: () => getFormatSpec(streamConfig.target.spec)?.compression || 'zstd',
@@ -222,6 +237,7 @@ export function useTargetSpec(streamConfig: StreamConfig) {
 
   return {
     // File format settings
+    fileFormat,
     compression,
     useDuckDB,
 

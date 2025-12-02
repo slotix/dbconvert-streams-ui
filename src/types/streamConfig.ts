@@ -43,9 +43,6 @@ export interface SourceConfig {
  */
 export interface TargetConfig {
   id: string
-  fileFormat?: string
-  subDirectory?: string
-  // Matryoshka spec pattern matching backend exactly
   spec?: TargetSpec
 }
 

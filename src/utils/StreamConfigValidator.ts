@@ -227,18 +227,8 @@ function validateTarget(target: unknown, errors: ValidationError[]): void {
     errors.push({ path: 'target.id', message: 'Target connection ID is required' })
   }
 
-  // fileFormat validation (for file targets)
-  if (tgt.fileFormat !== undefined) {
-    if (
-      typeof tgt.fileFormat !== 'string' ||
-      !VALID_FILE_FORMATS.includes(tgt.fileFormat as (typeof VALID_FILE_FORMATS)[number])
-    ) {
-      errors.push({
-        path: 'target.fileFormat',
-        message: `fileFormat must be one of: ${VALID_FILE_FORMATS.join(', ')}`
-      })
-    }
-  }
+  // Note: fileFormat is inside target.spec.{files|s3|gcs|azure}.fileFormat
+  // Not at target.fileFormat level - that doesn't exist in backend
 
   // Target spec validation
   if (tgt.spec) {

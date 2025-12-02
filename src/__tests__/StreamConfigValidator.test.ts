@@ -400,42 +400,54 @@ describe('StreamConfigValidator', () => {
     })
   })
 
-  describe('fileFormat validation', () => {
-    it('should accept valid fileFormat: csv', () => {
+  describe('fileFormat validation in target spec', () => {
+    it('should accept valid fileFormat: csv in spec.files', () => {
       const config = {
         ...validConfig,
-        target: { ...validConfig.target, fileFormat: 'csv' }
+        target: {
+          ...validConfig.target,
+          spec: { files: { outputDirectory: '/tmp', fileFormat: 'csv' } }
+        }
       }
       const result = validateStreamConfig(config)
-      expect(result.errors.filter((e) => e.path === 'target.fileFormat')).toHaveLength(0)
+      expect(result.errors.filter((e) => e.path === 'target.spec.files.fileFormat')).toHaveLength(0)
     })
 
-    it('should accept valid fileFormat: jsonl', () => {
+    it('should accept valid fileFormat: jsonl in spec.s3', () => {
       const config = {
         ...validConfig,
-        target: { ...validConfig.target, fileFormat: 'jsonl' }
+        target: {
+          ...validConfig.target,
+          spec: { s3: { outputDirectory: '/tmp', fileFormat: 'jsonl', upload: { bucket: 'test' } } }
+        }
       }
       const result = validateStreamConfig(config)
-      expect(result.errors.filter((e) => e.path === 'target.fileFormat')).toHaveLength(0)
+      expect(result.errors.filter((e) => e.path === 'target.spec.s3.fileFormat')).toHaveLength(0)
     })
 
-    it('should accept valid fileFormat: parquet', () => {
+    it('should accept valid fileFormat: parquet in spec.files', () => {
       const config = {
         ...validConfig,
-        target: { ...validConfig.target, fileFormat: 'parquet' }
+        target: {
+          ...validConfig.target,
+          spec: { files: { outputDirectory: '/tmp', fileFormat: 'parquet' } }
+        }
       }
       const result = validateStreamConfig(config)
-      expect(result.errors.filter((e) => e.path === 'target.fileFormat')).toHaveLength(0)
+      expect(result.errors.filter((e) => e.path === 'target.spec.files.fileFormat')).toHaveLength(0)
     })
 
-    it('should reject invalid fileFormat', () => {
+    it('should reject invalid fileFormat in spec.files', () => {
       const config = {
         ...validConfig,
-        target: { ...validConfig.target, fileFormat: 'csv1' }
+        target: {
+          ...validConfig.target,
+          spec: { files: { outputDirectory: '/tmp', fileFormat: 'invalid' } }
+        }
       }
       const result = validateStreamConfig(config)
       expect(result.valid).toBe(false)
-      expect(result.errors.some((e) => e.path === 'target.fileFormat')).toBe(true)
+      expect(result.errors.some((e) => e.path === 'target.spec.files.fileFormat')).toBe(true)
       expect(result.errors.some((e) => e.message.includes('csv, jsonl, parquet'))).toBe(true)
     })
   })

@@ -11,7 +11,7 @@
         <span
           class="inline-flex items-center rounded-md px-2.5 py-1 text-xs font-medium ring-1 ring-inset bg-blue-50 text-blue-700 ring-blue-600/20 dark:bg-blue-900/30 dark:text-blue-300 dark:ring-blue-500/30"
         >
-          {{ stream.target?.fileFormat?.toUpperCase() }}
+          {{ fileFormat?.toUpperCase() }}
         </span>
       </div>
       <div class="flex items-center justify-between">
@@ -27,19 +27,26 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { StreamConfig } from '@/types/streamConfig'
+import { getFileSpec, getFormatSpec } from '@/composables/useTargetSpec'
 
 const props = defineProps<{
   stream: StreamConfig
 }>()
 
-const compressionLabel = computed(() =>
-  (props.stream.target?.options?.compressionType || 'zstd').toUpperCase()
-)
+// Get file format from spec (source of truth)
+const fileFormat = computed(() => getFileSpec(props.stream.target?.spec)?.fileFormat)
+
+// Get compression from spec.format
+const compressionLabel = computed(() => {
+  const format = getFormatSpec(props.stream.target?.spec)
+  return (format?.compression || 'zstd').toUpperCase()
+})
 
 const compressionBadgeClass = computed(() => {
   const base =
     'inline-flex items-center rounded-md px-2.5 py-1 text-xs font-medium ring-1 ring-inset '
-  const compressionType = props.stream.target?.options?.compressionType
+  const format = getFormatSpec(props.stream.target?.spec)
+  const compressionType = format?.compression
   if (compressionType === 'zstd') {
     return `${base}bg-green-50 text-green-700 ring-green-600/20 dark:bg-green-900/30 dark:text-green-300 dark:ring-green-500/30`
   }

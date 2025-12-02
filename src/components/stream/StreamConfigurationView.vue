@@ -34,7 +34,7 @@
         @navigate="emit('navigate-target')"
       />
 
-      <FileOutputSummary v-if="isFileTarget && stream.target?.fileFormat" :stream="stream" />
+      <FileOutputSummary v-if="isFileTarget && hasFileFormat" :stream="stream" />
 
       <TablesSummary :displayed-tables="displayedTables" :remaining-count="remainingTablesCount" />
 
@@ -68,6 +68,7 @@ import type { Connection, DbType } from '@/types/connections'
 import ConnectionCard from './configuration/ConnectionCard.vue'
 import FileOutputSummary from './configuration/FileOutputSummary.vue'
 import TablesSummary from './configuration/TablesSummary.vue'
+import { getFileSpec } from '@/composables/useTargetSpec'
 
 const props = defineProps<{
   stream: StreamConfig
@@ -76,6 +77,9 @@ const props = defineProps<{
   dbTypes: DbType[]
   isFileTarget: boolean
 }>()
+
+// Check if stream has file format in spec
+const hasFileFormat = computed(() => !!getFileSpec(props.stream.target?.spec)?.fileFormat)
 
 const emit = defineEmits<{
   (e: 'navigate-source'): void

@@ -15,6 +15,7 @@ import {
   buildAzureTargetSpec,
   buildSnowflakeTargetSpec
 } from '@/utils/specBuilder'
+import { getFileSpec } from '@/composables/useTargetSpec'
 
 interface State {
   generateDefaultStreamConfigName(
@@ -46,10 +47,7 @@ export const defaultStreamConfigOptions: StreamConfig = {
   },
   target: {
     id: '',
-    fileFormat: undefined,
-    subDirectory: '',
     spec: undefined
-    // Note: options field is deprecated - use spec directly
   },
   limits: { numberOfEvents: 0, elapsedTime: 0 },
   files: []
@@ -207,15 +205,7 @@ export const useStreamsStore = defineStore('streams', {
     updateTarget(targetId: string) {
       if (this.currentStreamConfig) {
         this.currentStreamConfig.target.id = targetId
-        const connectionsStore = useConnectionsStore()
-        const connection = connectionsStore.connectionByID(targetId)
-        if (connection && connection.type?.toLowerCase().includes('file')) {
-          if (!this.currentStreamConfig.target.fileFormat) {
-            this.currentStreamConfig.target.fileFormat = 'csv'
-          }
-        } else {
-          delete this.currentStreamConfig.target.fileFormat
-        }
+        // Note: fileFormat is set in target.spec by prepareStreamData() and StreamSettings component
       }
     },
     setFilter(filter: string) {
@@ -235,7 +225,7 @@ export const useStreamsStore = defineStore('streams', {
             this.currentStreamConfig?.source.tables || [],
             (this.currentStreamConfig as any)?.sourceDatabase,
             (this.currentStreamConfig as any)?.targetDatabase,
-            this.currentStreamConfig?.target.fileFormat
+            getFileSpec(this.currentStreamConfig?.target.spec)?.fileFormat
           )
         }
 
@@ -311,7 +301,7 @@ export const useStreamsStore = defineStore('streams', {
         const targetPath = this.currentStreamConfig.targetPath || '/tmp/dbconvert'
         const fileFormat =
           isS3Target || isGCSTarget || isAzureTarget || isLocalFileTarget || isFileConnectionType
-            ? this.currentStreamConfig.target.fileFormat || 'csv'
+            ? getFileSpec(this.currentStreamConfig.target.spec)?.fileFormat || 'csv'
             : 'parquet'
 
         // Read format settings from existing spec (spec is source of truth)
@@ -530,10 +520,7 @@ export const useStreamsStore = defineStore('streams', {
         },
         target: {
           id: '',
-          fileFormat: undefined,
-          subDirectory: '',
           spec: undefined
-          // Note: options field is deprecated - use spec directly
         }
       }
     },

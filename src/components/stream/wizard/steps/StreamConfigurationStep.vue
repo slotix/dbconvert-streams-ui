@@ -143,13 +143,13 @@
                   </div>
                   <!-- Output format info for file/S3 targets -->
                   <div
-                    v-if="(isFileTarget || isS3Target) && currentStreamConfig?.target?.fileFormat"
+                    v-if="(isFileTarget || isS3Target) && fileFormatDisplay"
                     class="pt-2 border-t border-gray-100 dark:border-gray-700"
                   >
                     <div class="flex items-center justify-between">
                       <span>Format:</span>
                       <span class="font-medium text-gray-900 dark:text-gray-100 uppercase">{{
-                        currentStreamConfig.target.fileFormat
+                        fileFormatDisplay
                       }}</span>
                     </div>
                     <div class="flex items-center justify-between mt-1">
@@ -268,8 +268,8 @@ import { ViewColumnsIcon, CodeBracketIcon } from '@heroicons/vue/24/outline'
 import { useStreamsStore, buildStreamPayload } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
 import { JsonViewer } from '@/components/monaco'
+import { getFileSpec, getFormatSpec } from '@/composables/useTargetSpec'
 import StreamSettings from '@/components/settings/StreamSettings.vue'
-import { getFormatSpec } from '@/composables/useTargetSpec'
 
 interface Props {
   sourceConnectionId?: string | null
@@ -307,7 +307,7 @@ const targetDisplay = computed(() => {
   let display = conn.name
   if (props.targetDatabase) display += ` / ${props.targetDatabase}`
   if (conn.type?.toLowerCase().includes('file')) {
-    const format = currentStreamConfig.value?.target?.fileFormat
+    const format = getFileSpec(currentStreamConfig.value?.target?.spec)?.fileFormat
     if (format) {
       display += ` • ${format.toUpperCase()}`
     }
@@ -337,6 +337,12 @@ const isS3Target = computed(() => {
 })
 
 // Get compression display from target.spec
+// Get file format from target.spec (spec is the source of truth)
+const fileFormatDisplay = computed(() => {
+  const spec = currentStreamConfig.value?.target?.spec
+  return getFileSpec(spec)?.fileFormat
+})
+
 const compressionDisplay = computed(() => {
   const spec = currentStreamConfig.value?.target?.spec
   const format = getFormatSpec(spec)
