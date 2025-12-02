@@ -40,248 +40,51 @@
         <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Filter Builder</span>
       </div>
 
-      <!-- Builder Content -->
-      <div class="px-3 pb-3 pt-2 space-y-3">
-        <!-- Column Selector -->
-        <div
-          v-if="showColumnSelector"
-          class="p-2 bg-white dark:bg-gray-800/70 rounded border border-gray-200 dark:border-gray-700"
+      <!-- Builder Content - using shared FilterBuilder component -->
+      <div class="px-3 pb-3 pt-2">
+        <FilterBuilder
+          ref="filterBuilderRef"
+          :columns="normalizedColumns"
+          :dialect="dialect"
+          :table-name="tableName"
+          mode="explorer"
+          :show-column-selector="showColumnSelector"
+          :initial-selected-columns="selectedColumns"
+          :initial-filters="filters"
+          :initial-sorts="sorts"
+          :initial-limit="limit"
+          @update="onBuilderUpdate"
+          @apply="applyFilters"
+          @columns-change="onColumnsChange"
         >
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-xs font-medium text-gray-600 dark:text-gray-400">
-              Select columns to display
-            </span>
-            <div class="flex items-center gap-2">
-              <button
-                type="button"
-                class="text-[10px] text-teal-600 dark:text-teal-400 hover:underline"
-                @click="selectAllColumns"
-              >
-                All
-              </button>
-              <button
-                type="button"
-                class="text-[10px] text-gray-500 dark:text-gray-400 hover:underline"
-                @click="clearAllColumns"
-              >
-                None
-              </button>
-            </div>
-          </div>
-          <div class="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto">
-            <label
-              v-for="col in columns"
-              :key="col.field"
-              class="inline-flex items-center gap-1 px-2 py-1 rounded cursor-pointer transition-colors"
-              :class="
-                selectedColumns.includes(col.field || '')
-                  ? 'bg-teal-500/20 text-teal-700 dark:text-teal-400 border border-teal-500/40'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 border border-transparent hover:border-gray-300 dark:hover:border-gray-600'
-              "
-            >
-              <input
-                v-model="selectedColumns"
-                type="checkbox"
-                :value="col.field"
-                class="sr-only"
-                @change="onColumnsChange"
-              />
-              <span class="text-xs">{{ col.headerName || col.field }}</span>
-            </label>
-          </div>
-          <p
-            v-if="selectedColumns.length === 0 || selectedColumns.length === columns.length"
-            class="mt-1.5 text-[10px] text-gray-400"
-          >
-            All columns visible
-          </p>
-          <p v-else class="mt-1.5 text-[10px] text-gray-500 dark:text-gray-400">
-            {{ selectedColumns.length }} of {{ columns.length }} columns selected
-          </p>
-        </div>
-
-        <!-- WHERE Filters -->
-        <div v-if="filters.length > 0" class="space-y-1.5">
-          <div
-            v-for="filter in filters"
-            :key="filter.id"
-            class="flex items-center gap-1.5 p-1.5 bg-white dark:bg-gray-800/70 rounded border border-gray-200 dark:border-gray-700"
-          >
-            <span class="text-xs text-gray-400 px-1 w-12 shrink-0">WHERE</span>
-            <select
-              v-model="filter.column"
-              class="flex-1 min-w-0 px-1.5 py-1 text-xs border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded focus:ring-1 focus:ring-teal-500 cursor-pointer"
-              @change="markDirty"
-            >
-              <option value="" disabled>column</option>
-              <option v-for="col in columns" :key="col.field" :value="col.field">
-                {{ col.headerName || col.field }}
-              </option>
-            </select>
-            <select
-              v-model="filter.operator"
-              class="w-44 shrink-0 px-1 py-1 text-xs border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded focus:ring-1 focus:ring-teal-500 cursor-pointer"
-              @change="markDirty"
-            >
-              <option v-for="op in OPERATORS" :key="op.value" :value="op.value">
-                {{ op.label }}
-              </option>
-            </select>
-            <template v-if="!isUnaryOperator(filter.operator)">
-              <input
-                v-model="filter.value"
-                type="text"
-                :placeholder="getPlaceholder(filter.operator)"
-                class="flex-1 min-w-0 px-1.5 py-1 text-xs border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded focus:ring-1 focus:ring-teal-500"
-                @input="markDirty"
-                @keyup.enter="applyFilters"
-              />
-            </template>
-            <button
-              type="button"
-              class="p-1 text-gray-400 hover:text-red-500 transition-colors shrink-0"
-              @click="removeFilter(filter.id)"
-            >
-              <XMarkIcon class="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </div>
-
-        <!-- ORDER BY -->
-        <div v-if="sorts.length > 0" class="space-y-1.5">
-          <div
-            v-for="(sort, index) in sorts"
-            :key="index"
-            class="flex items-center gap-1.5 p-1.5 bg-white dark:bg-gray-800/70 rounded border border-gray-200 dark:border-gray-700"
-          >
-            <span class="text-xs text-gray-400 px-1 w-12 shrink-0">ORDER</span>
-            <select
-              v-model="sort.column"
-              class="flex-1 min-w-0 px-1.5 py-1 text-xs border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded focus:ring-1 focus:ring-teal-500 cursor-pointer"
-              @change="markDirty"
-            >
-              <option value="" disabled>column</option>
-              <option
-                v-for="col in getAvailableColumnsForSort(index)"
-                :key="col.field"
-                :value="col.field"
-              >
-                {{ col.headerName || col.field }}
-              </option>
-            </select>
-            <button
-              type="button"
-              class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors shrink-0"
-              :class="
-                sort.direction === 'ASC'
-                  ? 'bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/40'
-                  : 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/40'
-              "
-              @click="toggleSortDirection(index)"
-            >
-              <ArrowUpIcon v-if="sort.direction === 'ASC'" class="w-3 h-3" />
-              <ArrowDownIcon v-else class="w-3 h-3" />
-              {{ sort.direction }}
-            </button>
-            <button
-              type="button"
-              class="p-1 text-gray-400 hover:text-red-500 transition-colors shrink-0"
-              @click="removeSort(index)"
-            >
-              <XMarkIcon class="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </div>
-
-        <!-- LIMIT -->
-        <div
-          class="flex items-center gap-1.5 p-1.5 bg-white dark:bg-gray-800/70 rounded border border-gray-200 dark:border-gray-700"
-        >
-          <span class="text-xs text-gray-400 px-1 w-12 shrink-0">LIMIT</span>
-          <input
-            v-model.number="limit"
-            type="number"
-            min="1"
-            placeholder="optional"
-            class="w-24 px-1.5 py-1 text-xs border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded focus:ring-1 focus:ring-teal-500"
-            @input="markDirty"
-          />
-          <span class="text-xs text-gray-400">rows</span>
-          <span class="text-[10px] text-gray-400 italic ml-1">(optional)</span>
-          <button
-            v-if="limit !== null && limit > 0"
-            type="button"
-            class="p-1 text-gray-400 hover:text-red-500 transition-colors shrink-0 ml-auto"
-            @click="clearLimit"
-          >
-            <XMarkIcon class="w-3.5 h-3.5" />
-          </button>
-        </div>
-
-        <!-- Generated Query Preview with Syntax Highlighting - Always show when expanded -->
-        <div class="space-y-2">
-          <div v-if="generatedSql" class="relative">
-            <MonacoEditor
-              :model-value="generatedSql"
-              :language="monacoLanguage"
-              height="80px"
-              :options="{
-                readOnly: true,
-                minimap: { enabled: false },
-                lineNumbers: 'on',
-                scrollBeyondLastLine: false,
-                wordWrap: 'on',
-                fontSize: 12,
-                padding: { top: 8, bottom: 8 },
-                automaticLayout: true,
-                renderLineHighlight: 'none',
-                scrollbar: { vertical: 'auto', horizontal: 'hidden' }
-              }"
-            />
-            <div class="absolute top-1 right-1">
-              <button
-                type="button"
-                class="p-1 text-gray-400 hover:text-teal-400 bg-gray-800/80 rounded transition-colors"
-                title="Copy query"
-                @click="copyQuery"
-              >
-                <ClipboardDocumentIcon class="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
-          <div v-else class="text-center py-2 text-xs text-gray-400 dark:text-gray-500">
-            Add filters or sorts using the buttons above
-          </div>
-
-          <!-- Apply button - Always show, but enable/disable based on state -->
-          <div class="flex items-center justify-between gap-2">
-            <p class="text-[10px] text-gray-500 dark:text-gray-400 italic">
-              {{
-                !isDirty
-                  ? 'No changes to apply'
-                  : hasValidModifications && !hasModifications
-                    ? 'Complete the filter values first'
-                    : hasModifications
+          <template #footer="{ hasModifications: hasMod, isDirty: dirty }">
+            <div class="flex items-center justify-between gap-2">
+              <p class="text-[10px] text-gray-500 dark:text-gray-400 italic">
+                {{
+                  !dirty
+                    ? 'No changes to apply'
+                    : hasMod
                       ? 'Click Apply to execute the query'
                       : 'Click Apply to refresh data'
-              }}
-            </p>
-            <button
-              type="button"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              :class="
-                isDirty && !(hasValidModifications && !hasModifications)
-                  ? 'text-white bg-teal-600 hover:bg-teal-700'
-                  : 'text-gray-400 bg-gray-200 dark:bg-gray-700 cursor-not-allowed'
-              "
-              :disabled="!isDirty || (hasValidModifications && !hasModifications)"
-              @click="applyFilters"
-            >
-              <PlayIcon class="w-3.5 h-3.5" />
-              Apply
-            </button>
-          </div>
-        </div>
+                }}
+              </p>
+              <button
+                type="button"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                :class="
+                  dirty
+                    ? 'text-white bg-teal-600 hover:bg-teal-700'
+                    : 'text-gray-400 bg-gray-200 dark:bg-gray-700 cursor-not-allowed'
+                "
+                :disabled="!dirty"
+                @click="applyFilters"
+              >
+                <PlayIcon class="w-3.5 h-3.5" />
+                Apply
+              </button>
+            </div>
+          </template>
+        </FilterBuilder>
       </div>
     </div>
   </div>
@@ -289,18 +92,15 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue'
-import {
-  XMarkIcon,
-  PlayIcon,
-  ClipboardDocumentIcon,
-  ArrowUpIcon,
-  ArrowDownIcon,
-  ChevronRightIcon,
-  ChevronDownIcon
-} from '@heroicons/vue/24/outline'
-import { MonacoEditor } from '@/components/monaco'
+import { XMarkIcon, PlayIcon, ChevronRightIcon, ChevronDownIcon } from '@heroicons/vue/24/outline'
 import type { ColDef } from 'ag-grid-community'
 import { useObjectTabStateStore, type FilterConfig, type SortConfig } from '@/stores/objectTabState'
+import {
+  FilterBuilder,
+  type ColumnDef,
+  type FilterCondition,
+  type SortCondition
+} from '@/components/query'
 
 interface Props {
   columns: ColDef[]
@@ -321,42 +121,115 @@ const emit = defineEmits<{
   (e: 'columns-change', columns: string[]): void
 }>()
 
-// Operators list - ordered by common usage
-const OPERATORS = [
-  { value: 'CONTAINS', label: 'Contains (%val%)' },
-  { value: 'NOT_CONTAINS', label: "Doesn't Contain" },
-  { value: '=', label: 'Equals (=)' },
-  { value: '!=', label: "Doesn't Equal (!=)" },
-  { value: 'STARTS_WITH', label: 'Begins with (val%)' },
-  { value: 'ENDS_WITH', label: 'Ends with (%val)' },
-  { value: 'IS NULL', label: 'Blank (NULL)' },
-  { value: 'IS NOT NULL', label: 'Not Blank' },
-  { value: '<', label: 'Less than (<)' },
-  { value: '<=', label: 'Less or equal (<=)' },
-  { value: '>', label: 'Greater than (>)' },
-  { value: '>=', label: 'Greater or equal (>=)' },
-  { value: 'IN', label: 'In list (IN)' },
-  { value: 'NOT IN', label: 'Not in list' }
-]
-const UNARY_OPERATORS = ['IS NULL', 'IS NOT NULL']
-
 // Pinia store for state persistence
 const tabStateStore = useObjectTabStateStore()
+
+// Reference to FilterBuilder component
+const filterBuilderRef = ref<InstanceType<typeof FilterBuilder> | null>(null)
 
 // UI State
 const isExpanded = ref(false)
 const showColumnSelector = ref(false)
 const isDirty = ref(false)
 
-// Data state
+// Data state - synced with FilterBuilder via events
 const selectedColumns = ref<string[]>([])
 const filters = ref<FilterConfig[]>([])
 const sorts = ref<SortConfig[]>([])
 const limit = ref<number | null>(null)
 
-// Generate unique ID
-let filterId = 0
-const generateId = () => `filter-${++filterId}`
+// Convert AG Grid ColDef[] to ColumnDef[]
+const normalizedColumns = computed<ColumnDef[]>(() =>
+  props.columns.map((col) => ({
+    name: col.field || '',
+    label: (col.headerName as string) || col.field || '',
+    type: col.type as string | undefined
+  }))
+)
+
+// Check for unary operators
+const UNARY_OPERATORS = ['IS NULL', 'IS NOT NULL']
+const isUnaryOperator = (op: string) => UNARY_OPERATORS.includes(op)
+
+// Convert operator to SQL condition (for collapsed preview)
+function operatorToSqlCondition(column: string, operator: string, value: string): string {
+  switch (operator) {
+    case 'IS NULL':
+      return `${column} IS NULL`
+    case 'IS NOT NULL':
+      return `${column} IS NOT NULL`
+    case 'CONTAINS':
+      return `${column} LIKE '%${value}%'`
+    case 'NOT_CONTAINS':
+      return `${column} NOT LIKE '%${value}%'`
+    case 'STARTS_WITH':
+      return `${column} LIKE '${value}%'`
+    case 'ENDS_WITH':
+      return `${column} LIKE '%${value}'`
+    case 'IN':
+    case 'NOT IN': {
+      const values = value
+        .split(',')
+        .map((v) => v.trim())
+        .filter((v) => v)
+        .map((v) => (isNaN(Number(v)) ? `'${v}'` : v))
+        .join(', ')
+      return `${column} ${operator} (${values})`
+    }
+    default: {
+      const val = isNaN(Number(value)) ? `'${value}'` : value
+      return `${column} ${operator} ${val}`
+    }
+  }
+}
+
+// Collapsed SQL preview (single line)
+const collapsedSqlPreview = computed(() => {
+  const parts: string[] = []
+
+  // WHERE conditions
+  const whereConditions = filters.value
+    .filter((f) => f.column && (isUnaryOperator(f.operator) || f.value))
+    .map((f) => operatorToSqlCondition(f.column, f.operator, f.value))
+
+  if (whereConditions.length > 0) {
+    parts.push(`WHERE ${whereConditions.join(' AND ')}`)
+  }
+
+  // ORDER BY
+  const sortClauses = sorts.value.filter((s) => s.column).map((s) => `${s.column} ${s.direction}`)
+
+  if (sortClauses.length > 0) {
+    parts.push(`ORDER BY ${sortClauses.join(', ')}`)
+  }
+
+  // LIMIT
+  if (limit.value !== null && limit.value > 0) {
+    parts.push(`LIMIT ${limit.value}`)
+  }
+
+  return parts.join(' ')
+})
+
+// Check for modifications
+const hasModifications = computed(() => {
+  const hasFilters = filters.value.some((f) => f.column && (isUnaryOperator(f.operator) || f.value))
+  const hasSorts = sorts.value.some((s) => s.column)
+  const hasLimit = limit.value !== null && limit.value > 0
+  return hasFilters || hasSorts || hasLimit
+})
+
+// More lenient check - includes incomplete filters
+const hasValidModifications = computed(() => {
+  const hasAnyFilters = filters.value.some((f) => f.column)
+  const hasAnySorts = sorts.value.some((s) => s.column)
+  return hasAnyFilters || hasAnySorts || hasModifications.value
+})
+
+const canAddSort = computed(() => {
+  const usedColumns = new Set(sorts.value.map((s) => s.column).filter(Boolean))
+  return props.columns.some((col) => col.field && !usedColumns.has(col.field))
+})
 
 // Save state to store
 function saveState() {
@@ -382,21 +255,35 @@ function restoreState() {
     isExpanded.value = savedState.isExpanded || false
     showColumnSelector.value = savedState.showColumnSelector || false
     limit.value = savedState.limit ?? null
-    // Update filterId to avoid ID collisions
-    const maxId = filters.value.reduce((max, f) => {
-      const num = parseInt(f.id.replace('filter-', ''), 10)
-      return isNaN(num) ? max : Math.max(max, num)
-    }, 0)
-    filterId = maxId
 
     // Auto-apply restored filters if there are any modifications
-    // Use nextTick to ensure the computed values are updated
     nextTick(() => {
       if (hasModifications.value) {
         applyFilters()
       }
     })
   }
+}
+
+// Handle updates from FilterBuilder
+function onBuilderUpdate(payload: {
+  selectedColumns: string[]
+  filters: FilterCondition[]
+  sorts: SortCondition[]
+  limit: number | null
+}) {
+  selectedColumns.value = payload.selectedColumns
+  filters.value = payload.filters as FilterConfig[]
+  sorts.value = payload.sorts as SortConfig[]
+  limit.value = payload.limit
+  isDirty.value = true
+  saveState()
+}
+
+function onColumnsChange(columns: string[]) {
+  selectedColumns.value = columns
+  emit('columns-change', columns)
+  saveState()
 }
 
 // Restore state when objectKey changes (switching tabs)
@@ -414,183 +301,15 @@ watch(
 watch(
   () => props.columns,
   (newColumns) => {
-    // Only initialize if selectedColumns is empty and we have columns
     if (selectedColumns.value.length === 0 && newColumns.length > 0) {
       selectedColumns.value = newColumns.map((col) => col.field || '').filter(Boolean)
-      // Save to store so ObjectContainer can read it
       saveState()
     }
+    // Always emit columns-change to sync AG-Grid column visibility
+    emit('columns-change', selectedColumns.value)
   },
   { immediate: true }
 )
-
-// Monaco language
-const monacoLanguage = computed(() => {
-  if (props.dialect === 'pgsql') return 'pgsql'
-  if (props.dialect === 'mysql') return 'mysql'
-  return 'sql'
-})
-
-// Computed
-const hasModifications = computed(() => {
-  const hasFilters = filters.value.some((f) => f.column && (isUnaryOperator(f.operator) || f.value))
-  const hasSorts = sorts.value.some((s) => s.column)
-  const hasLimit = limit.value !== null && limit.value > 0
-  return hasFilters || hasSorts || hasLimit
-})
-
-// More lenient check - includes incomplete filters that could still generate SQL
-const hasValidModifications = computed(() => {
-  // Count filters that have at least a column selected (even if value is empty for LIKE operators, we can show SQL)
-  const hasAnyFilters = filters.value.some((f) => f.column)
-  // Count sorts that have a column
-  const hasAnySorts = sorts.value.some((s) => s.column)
-  // Limit is always optional
-  return hasAnyFilters || hasAnySorts || hasModifications.value
-})
-
-const canAddSort = computed(() => {
-  const usedColumns = new Set(sorts.value.map((s) => s.column).filter(Boolean))
-  return props.columns.some((col) => col.field && !usedColumns.has(col.field))
-})
-
-// Quote identifier based on dialect
-const quoteIdentifier = (name: string): string => {
-  if (props.dialect === 'mysql') return '`' + name + '`'
-  if (props.dialect === 'pgsql') return '"' + name + '"'
-  return name
-}
-
-// Collapsed SQL preview (single line)
-const collapsedSqlPreview = computed(() => {
-  const parts: string[] = []
-
-  // WHERE conditions
-  const whereConditions = filters.value
-    .filter((f) => f.column && (isUnaryOperator(f.operator) || f.value))
-    .map((f) => operatorToSqlCondition(f.column, f.operator, f.value, false))
-
-  if (whereConditions.length > 0) {
-    parts.push(`WHERE ${whereConditions.join(' AND ')}`)
-  }
-
-  // ORDER BY
-  const sortClauses = sorts.value.filter((s) => s.column).map((s) => `${s.column} ${s.direction}`)
-
-  if (sortClauses.length > 0) {
-    parts.push(`ORDER BY ${sortClauses.join(', ')}`)
-  }
-
-  // LIMIT
-  if (limit.value !== null && limit.value > 0) {
-    parts.push(`LIMIT ${limit.value}`)
-  }
-
-  return parts.join(' ')
-})
-
-// Generate full SQL for preview
-const generatedSql = computed(() => {
-  const parts: string[] = []
-
-  // SELECT columns FROM table
-  if (props.tableName) {
-    const cols =
-      selectedColumns.value.length > 0 && selectedColumns.value.length < props.columns.length
-        ? selectedColumns.value.map((c) => quoteIdentifier(c)).join(', ')
-        : '*'
-    parts.push(`SELECT ${cols}`)
-    parts.push(`FROM ${quoteIdentifier(props.tableName)}`)
-  }
-
-  // WHERE clause
-  const whereConditions = filters.value
-    .filter((f) => f.column && (isUnaryOperator(f.operator) || f.value))
-    .map((f) => operatorToSqlCondition(f.column, f.operator, f.value, true))
-
-  if (whereConditions.length > 0) {
-    parts.push(`WHERE ${whereConditions.join(' AND ')}`)
-  }
-
-  // ORDER BY clause
-  const sortClauses = sorts.value
-    .filter((s) => s.column)
-    .map((s) => `${quoteIdentifier(s.column)} ${s.direction}`)
-
-  if (sortClauses.length > 0) {
-    parts.push(`ORDER BY ${sortClauses.join(', ')}`)
-  }
-
-  // LIMIT clause
-  if (limit.value !== null && limit.value > 0) {
-    parts.push(`LIMIT ${limit.value}`)
-  }
-
-  return parts.join('\n')
-})
-
-// Helpers
-function isUnaryOperator(op: string) {
-  return UNARY_OPERATORS.includes(op)
-}
-
-function getPlaceholder(operator: string) {
-  if (operator === 'CONTAINS' || operator === 'NOT_CONTAINS') return 'search text'
-  if (operator === 'STARTS_WITH') return 'starts with...'
-  if (operator === 'ENDS_WITH') return 'ends with...'
-  if (operator === 'IN' || operator === 'NOT IN') return 'val1, val2, ...'
-  return 'value'
-}
-
-// Convert UI operator to SQL condition (with quoted identifier for preview)
-function operatorToSqlCondition(
-  column: string,
-  operator: string,
-  value: string,
-  quoted: boolean = false
-): string {
-  const col = quoted ? quoteIdentifier(column) : column
-
-  switch (operator) {
-    case 'IS NULL':
-      return `${col} IS NULL`
-    case 'IS NOT NULL':
-      return `${col} IS NOT NULL`
-    case 'CONTAINS':
-      return `${col} LIKE '%${value}%'`
-    case 'NOT_CONTAINS':
-      return `${col} NOT LIKE '%${value}%'`
-    case 'STARTS_WITH':
-      return `${col} LIKE '${value}%'`
-    case 'ENDS_WITH':
-      return `${col} LIKE '%${value}'`
-    case 'IN':
-    case 'NOT IN': {
-      const values = value
-        .split(',')
-        .map((v) => v.trim())
-        .filter((v) => v)
-        .map((v) => (isNaN(Number(v)) ? `'${v}'` : v))
-        .join(', ')
-      return `${col} ${operator} (${values})`
-    }
-    default: {
-      // =, !=, <, <=, >, >=
-      const val = isNaN(Number(value)) ? `'${value}'` : value
-      return `${col} ${operator} ${val}`
-    }
-  }
-}
-
-function getAvailableColumnsForSort(currentIndex: number) {
-  const usedColumns = new Set(
-    sorts.value
-      .filter((_, i) => i !== currentIndex)
-      .map((s) => s.column)
-      .filter(Boolean)
-  )
-  return props.columns.filter((col) => col.field && !usedColumns.has(col.field))
-}
 
 // Actions
 function toggleExpanded() {
@@ -598,82 +317,33 @@ function toggleExpanded() {
   saveState()
 }
 
-function markDirty() {
-  isDirty.value = true
-  saveState()
-}
-
-function clearLimit() {
-  limit.value = null
-  markDirty()
-}
-
-function selectAllColumns() {
-  selectedColumns.value = props.columns.map((c) => c.field || '').filter(Boolean)
-  onColumnsChange()
-}
-
-function clearAllColumns() {
-  selectedColumns.value = []
-  onColumnsChange()
-}
-
-function onColumnsChange() {
-  emit('columns-change', selectedColumns.value)
-  saveState()
-}
-
 function addFilter() {
-  filters.value.push({
-    id: generateId(),
-    column: '',
-    operator: 'CONTAINS',
-    value: ''
-  })
+  filterBuilderRef.value?.addFilter()
   isDirty.value = true
   isExpanded.value = true
   saveState()
 }
 
-function removeFilter(id: string) {
-  filters.value = filters.value.filter((f) => f.id !== id)
-  isDirty.value = true
-  saveState()
-}
-
 function addSort() {
-  const usedColumns = new Set(sorts.value.map((s) => s.column).filter(Boolean))
-  const availableCol = props.columns.find((col) => col.field && !usedColumns.has(col.field))
-  if (availableCol && availableCol.field) {
-    sorts.value.push({
-      column: availableCol.field,
-      direction: 'ASC'
-    })
-    isDirty.value = true
-    isExpanded.value = true
-    saveState()
-  }
-}
-
-function removeSort(index: number) {
-  sorts.value.splice(index, 1)
+  filterBuilderRef.value?.addSort()
   isDirty.value = true
+  isExpanded.value = true
   saveState()
 }
 
-function toggleSortDirection(index: number) {
-  if (sorts.value[index]) {
-    sorts.value[index].direction = sorts.value[index].direction === 'ASC' ? 'DESC' : 'ASC'
-    isDirty.value = true
-    saveState()
+function toggleColumnSelector() {
+  showColumnSelector.value = !showColumnSelector.value
+  if (showColumnSelector.value) {
+    isExpanded.value = true
   }
+  saveState()
 }
 
 function applyFilters() {
-  // Build WHERE clause (without quoting for backend)
+  // Build WHERE clause
   const whereConditions = filters.value
     .filter((f) => f.column && (isUnaryOperator(f.operator) || f.value))
-    .map((f) => operatorToSqlCondition(f.column, f.operator, f.value, false))
+    .map((f) => operatorToSqlCondition(f.column, f.operator, f.value))
 
   const where = whereConditions.join(' AND ')
 
@@ -685,13 +355,9 @@ function applyFilters() {
   // Build LIMIT
   const limitValue = limit.value !== null && limit.value > 0 ? limit.value : undefined
 
-  //   console.log('[DataFilterPanel] applyFilters', { limitRaw: limit.value, limitValue })
-
   emit('apply', { where, orderBy, orderDir, limit: limitValue })
   isDirty.value = false
-  // Collapse after applying
   isExpanded.value = false
-  // Save state after applying
   saveState()
 }
 
@@ -705,53 +371,10 @@ function clearAll() {
   showColumnSelector.value = false
   emit('clear')
   emit('columns-change', [])
-  // Clear saved state
   if (props.objectKey) {
     tabStateStore.clearFilterPanelState(props.objectKey)
   }
 }
-
-async function copyQuery() {
-  try {
-    await navigator.clipboard.writeText(generatedSql.value)
-  } catch (err) {
-    console.error('Failed to copy query:', err)
-  }
-}
-
-function toggleColumnSelector() {
-  showColumnSelector.value = !showColumnSelector.value
-  if (showColumnSelector.value) {
-    isExpanded.value = true
-  }
-  saveState()
-}
-
-// Initialize columns when props change
-watch(
-  () => props.columns,
-  () => {
-    if (props.columns.length === 0) return
-
-    // Get available column names
-    const availableColumns = new Set(props.columns.map((c) => c.field).filter(Boolean) as string[])
-
-    // Filter selected columns to only include valid ones for current table
-    const validSelectedColumns = selectedColumns.value.filter((col) => availableColumns.has(col))
-
-    // If no valid columns selected (either empty or all were invalid), select all
-    if (validSelectedColumns.length === 0) {
-      selectedColumns.value = props.columns.map((c) => c.field || '').filter(Boolean)
-    } else if (validSelectedColumns.length !== selectedColumns.value.length) {
-      // Some columns were invalid, update to only valid ones
-      selectedColumns.value = validSelectedColumns
-    }
-
-    // Always emit columns-change to sync AG-Grid column visibility with restored state
-    emit('columns-change', selectedColumns.value)
-  },
-  { immediate: true }
-)
 
 // Computed for active state (for header button indicators)
 const hasActiveFilters = computed(() => filters.value.length > 0)

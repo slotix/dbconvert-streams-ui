@@ -5,7 +5,25 @@
  */
 
 /**
+ * Unified column interface that works for both AG Grid ColDef and ColumnInfo
+ */
+export interface ColumnDef {
+  name: string
+  label?: string
+  type?: string
+}
+
+/**
+ * Sort condition for ORDER BY clause
+ */
+export interface SortCondition {
+  column: string
+  direction: 'ASC' | 'DESC'
+}
+
+/**
  * Filter condition operator types
+ * Includes user-friendly operators that auto-handle wildcards
  */
 export type FilterOperator =
   | '='
@@ -21,6 +39,39 @@ export type FilterOperator =
   | 'IS NULL'
   | 'IS NOT NULL'
   | 'BETWEEN'
+  // User-friendly operators (auto-handle wildcards)
+  | 'CONTAINS'
+  | 'NOT_CONTAINS'
+  | 'STARTS_WITH'
+  | 'ENDS_WITH'
+
+/**
+ * Operator display configuration
+ */
+export interface OperatorConfig {
+  value: FilterOperator
+  label: string
+}
+
+/**
+ * User-friendly operators list - ordered by common usage
+ */
+export const FRIENDLY_OPERATORS: OperatorConfig[] = [
+  { value: 'CONTAINS', label: 'Contains (%val%)' },
+  { value: 'NOT_CONTAINS', label: "Doesn't Contain" },
+  { value: '=', label: 'Equals (=)' },
+  { value: '!=', label: "Doesn't Equal (!=)" },
+  { value: 'STARTS_WITH', label: 'Begins with (val%)' },
+  { value: 'ENDS_WITH', label: 'Ends with (%val)' },
+  { value: 'IS NULL', label: 'Blank (NULL)' },
+  { value: 'IS NOT NULL', label: 'Not Blank' },
+  { value: '<', label: 'Less than (<)' },
+  { value: '<=', label: 'Less or equal (<=)' },
+  { value: '>', label: 'Greater than (>)' },
+  { value: '>=', label: 'Greater or equal (>=)' },
+  { value: 'IN', label: 'In list (IN)' },
+  { value: 'NOT IN', label: 'Not in list' }
+]
 
 /**
  * Single filter condition
@@ -28,7 +79,7 @@ export type FilterOperator =
 export interface FilterCondition {
   id: string
   column: string
-  operator: FilterOperator
+  operator: string // Can be any FilterOperator value
   value: string
   valueTo?: string // For BETWEEN operator
 }
@@ -56,121 +107,9 @@ export interface ColumnInfo {
 }
 
 /**
- * Query builder mode
- */
-export type QueryBuilderMode = 'simple' | 'advanced'
-
-/**
- * Props for the QueryBuilder component
- */
-export interface QueryBuilderProps {
-  /**
-   * The table name being queried
-   */
-  tableName: string
-
-  /**
-   * Current query value (full SQL or empty for default)
-   */
-  modelValue: string
-
-  /**
-   * SQL dialect for syntax
-   */
-  dialect?: 'mysql' | 'pgsql' | 'sql'
-
-  /**
-   * Available columns for the table
-   */
-  columns?: ColumnInfo[]
-
-  /**
-   * Placeholder text
-   */
-  placeholder?: string
-
-  /**
-   * Component height
-   */
-  height?: string
-}
-
-/**
- * Emits for the QueryBuilder component
- */
-export interface QueryBuilderEmits {
-  (e: 'update:modelValue', value: string): void
-}
-
-/**
- * Parse a full SQL query into structured parts
- */
-export interface ParsedQuery {
-  selectColumns: string[] | '*'
-  whereClause: string
-  orderBy: SortConfig[]
-  limit: number | null
-  isCustom: boolean // true if query couldn't be fully parsed
-}
-
-/**
  * Operators that don't require a value
  */
-export const UNARY_OPERATORS: FilterOperator[] = ['IS NULL', 'IS NOT NULL']
-
-/**
- * Operators available for different column types
- */
-export const OPERATORS_BY_TYPE: Record<string, FilterOperator[]> = {
-  text: ['=', '!=', 'LIKE', 'NOT LIKE', 'IN', 'NOT IN', 'IS NULL', 'IS NOT NULL'],
-  number: ['=', '!=', '>', '>=', '<', '<=', 'BETWEEN', 'IN', 'NOT IN', 'IS NULL', 'IS NOT NULL'],
-  date: ['=', '!=', '>', '>=', '<', '<=', 'BETWEEN', 'IS NULL', 'IS NOT NULL'],
-  boolean: ['=', '!=', 'IS NULL', 'IS NOT NULL'],
-  default: ['=', '!=', '>', '>=', '<', '<=', 'LIKE', 'NOT LIKE', 'IS NULL', 'IS NOT NULL']
-}
-
-/**
- * Get operators for a column based on its type
- */
-export function getOperatorsForType(dataType: string): FilterOperator[] {
-  const type = dataType.toLowerCase()
-
-  if (
-    type.includes('char') ||
-    type.includes('text') ||
-    type.includes('varchar') ||
-    type.includes('string')
-  ) {
-    return OPERATORS_BY_TYPE.text
-  }
-
-  if (
-    type.includes('int') ||
-    type.includes('decimal') ||
-    type.includes('float') ||
-    type.includes('double') ||
-    type.includes('numeric') ||
-    type.includes('real') ||
-    type.includes('money')
-  ) {
-    return OPERATORS_BY_TYPE.number
-  }
-
-  if (
-    type.includes('date') ||
-    type.includes('time') ||
-    type.includes('timestamp') ||
-    type.includes('year')
-  ) {
-    return OPERATORS_BY_TYPE.date
-  }
-
-  if (type.includes('bool') || type.includes('bit')) {
-    return OPERATORS_BY_TYPE.boolean
-  }
-
-  return OPERATORS_BY_TYPE.default
-}
+export const UNARY_OPERATORS: string[] = ['IS NULL', 'IS NOT NULL']
 
 /**
  * Generate unique ID for filter conditions
