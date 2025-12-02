@@ -244,11 +244,6 @@ function validateTarget(target: unknown, errors: ValidationError[]): void {
   if (tgt.spec) {
     validateTargetSpec(tgt.spec, errors)
   }
-
-  // Target options validation
-  if (tgt.options) {
-    validateTargetOptions(tgt.options, errors)
-  }
 }
 
 function validateTargetSpec(spec: unknown, errors: ValidationError[]): void {
@@ -335,52 +330,6 @@ function validateTargetSpec(spec: unknown, errors: ValidationError[]): void {
           })
         }
       }
-    }
-  }
-}
-
-function validateTargetOptions(options: unknown, errors: ValidationError[]): void {
-  if (typeof options !== 'object' || options === null) {
-    errors.push({ path: 'target.options', message: 'Target options must be an object' })
-    return
-  }
-
-  const opts = options as Record<string, unknown>
-
-  // workerPoolSize must be > 0
-  if (opts.workerPoolSize !== undefined) {
-    if (typeof opts.workerPoolSize !== 'number' || opts.workerPoolSize <= 0) {
-      errors.push({
-        path: 'target.options.workerPoolSize',
-        message: 'workerPoolSize must be greater than 0'
-      })
-    }
-  }
-
-  // useDuckDBWriter must be boolean
-  if (opts.useDuckDBWriter !== undefined && typeof opts.useDuckDBWriter !== 'boolean') {
-    errors.push({
-      path: 'target.options.useDuckDBWriter',
-      message: 'useDuckDBWriter must be a boolean'
-    })
-  }
-
-  // skipData must be boolean
-  if (opts.skipData !== undefined && typeof opts.skipData !== 'boolean') {
-    errors.push({ path: 'target.options.skipData', message: 'skipData must be a boolean' })
-  }
-
-  // compressionType validation
-  if (opts.compressionType !== undefined) {
-    const validCompressionTypes = ['uncompressed', 'gzip', 'zstd', 'none']
-    if (
-      typeof opts.compressionType !== 'string' ||
-      !validCompressionTypes.includes(opts.compressionType)
-    ) {
-      errors.push({
-        path: 'target.options.compressionType',
-        message: `compressionType must be one of: ${validCompressionTypes.join(', ')}`
-      })
     }
   }
 }

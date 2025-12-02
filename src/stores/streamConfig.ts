@@ -132,54 +132,11 @@ export const buildStreamPayload = (stream: StreamConfig): Partial<StreamConfig> 
   }
 
   // Handle target configuration
+  // Backend TargetConfig only has: id and spec (no options field)
+  // All settings flow into spec via prepareStreamData()
   filteredStream.target = {
     id: stream.target.id,
     spec: stream.target.spec
-  }
-
-  // Handle target options
-  if (stream.target.options) {
-    const targetOptions: any = {}
-
-    // Always include compressionType explicitly (even if it matches default)
-    if (stream.target.options.compressionType) {
-      targetOptions.compressionType = stream.target.options.compressionType
-    }
-    if (stream.target.options.structureOptions) {
-      const currentStructOpts = stream.target.options.structureOptions
-      const defaultStructOpts = defaultStreamConfigOptions.target.options!.structureOptions!
-      if (JSON.stringify(currentStructOpts) !== JSON.stringify(defaultStructOpts)) {
-        targetOptions.structureOptions = currentStructOpts
-      }
-    }
-    if (stream.target.options.skipData !== undefined) {
-      targetOptions.skipData = stream.target.options.skipData
-    }
-    if (stream.target.options.useDuckDBWriter !== undefined) {
-      targetOptions.useDuckDBWriter = stream.target.options.useDuckDBWriter
-    }
-    if (stream.target.options.parquetConfig) {
-      targetOptions.parquetConfig = stream.target.options.parquetConfig
-    }
-    if (stream.target.options.csvConfig) {
-      targetOptions.csvConfig = stream.target.options.csvConfig
-    }
-    if (stream.target.options.snowflakeConfig) {
-      targetOptions.snowflakeConfig = stream.target.options.snowflakeConfig
-    }
-    if (stream.target.options.s3UploadConfig) {
-      targetOptions.s3UploadConfig = stream.target.options.s3UploadConfig
-    }
-    if (stream.target.options.performanceConfig) {
-      targetOptions.performanceConfig = stream.target.options.performanceConfig
-    }
-    if (stream.target.options.workerPoolSize) {
-      targetOptions.workerPoolSize = stream.target.options.workerPoolSize
-    }
-
-    if (Object.keys(targetOptions).length > 0) {
-      filteredStream.target.options = targetOptions
-    }
   }
 
   // Handle limits
@@ -357,6 +314,8 @@ export const useStreamsStore = defineStore('streams', {
         const compressionType = this.currentStreamConfig.target.options?.compressionType
         const parquetConfig = this.currentStreamConfig.target.options?.parquetConfig
         const csvConfig = this.currentStreamConfig.target.options?.csvConfig
+        // useDuckDBWriter defaults to true if not explicitly set
+        const useDuckDBWriter = this.currentStreamConfig.target.options?.useDuckDBWriter ?? true
 
         // Build the appropriate target spec based on connection type
         const specBuilders: Record<string, () => TargetSpec> = {
@@ -371,7 +330,8 @@ export const useStreamsStore = defineStore('streams', {
               parquetConfig,
               csvConfig,
               this.currentStreamConfig!.target.options?.snowflakeConfig?.filePrefix,
-              this.currentStreamConfig!.target.options?.snowflakeConfig?.timestampFormat
+              this.currentStreamConfig!.target.options?.snowflakeConfig?.timestampFormat,
+              useDuckDBWriter
             ),
           s3: () => {
             // Get bucket/prefix from stream config (user input), fall back to connection scope
@@ -389,7 +349,8 @@ export const useStreamsStore = defineStore('streams', {
               parquetConfig,
               csvConfig,
               s3UploadConfig?.serverSideEnc,
-              s3UploadConfig?.kmsKeyId
+              s3UploadConfig?.kmsKeyId,
+              useDuckDBWriter
             )
           },
           gcs: () => {
@@ -405,7 +366,8 @@ export const useStreamsStore = defineStore('streams', {
               gcsUploadConfig?.keepLocalFiles,
               compressionType,
               parquetConfig,
-              csvConfig
+              csvConfig,
+              useDuckDBWriter
             )
           },
           azure: () => {
@@ -420,11 +382,19 @@ export const useStreamsStore = defineStore('streams', {
               azureUploadConfig?.keepLocalFiles,
               compressionType,
               parquetConfig,
-              csvConfig
+              csvConfig,
+              useDuckDBWriter
             )
           },
           file: () =>
-            buildFileTargetSpec(targetPath, fileFormat, compressionType, parquetConfig, csvConfig),
+            buildFileTargetSpec(
+              targetPath,
+              fileFormat,
+              compressionType,
+              parquetConfig,
+              csvConfig,
+              useDuckDBWriter
+            ),
           database: () => buildDatabaseTargetSpec(targetDatabase, targetSchema, structureOptions)
         }
 

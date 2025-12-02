@@ -27,6 +27,8 @@ export interface SourceOptions {
   operations?: string[] // CDC operation filter: 'insert', 'update', 'delete'
 }
 
+// TargetOptions is UI-side only - these settings flow into target.spec via prepareStreamData()
+// The backend TargetConfig only has: id and spec (no options field)
 export interface TargetOptions {
   stagingDirectory?: string
   compressionType?: 'uncompressed' | 'gzip' | 'zstd' | 'none'
@@ -37,7 +39,7 @@ export interface TargetOptions {
     foreignKeys?: string | boolean
   }
   skipData?: boolean
-  useDuckDBWriter?: boolean
+  useDuckDBWriter?: boolean // flows to spec.{files|s3|...}.format.useDuckDB
   parquetConfig?: ParquetConfig
   csvConfig?: CSVConfig
   snowflakeConfig?: SnowflakeConfig

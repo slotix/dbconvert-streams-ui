@@ -215,63 +215,6 @@ describe('StreamConfigValidator', () => {
       expect(result.valid).toBe(false)
       expect(result.errors.some((e) => e.path === 'target.id')).toBe(true)
     })
-
-    it('should validate workerPoolSize > 0', () => {
-      const config = {
-        ...validConfig,
-        target: {
-          id: 'conn-456',
-          options: { workerPoolSize: 0 }
-        }
-      }
-      const result = validateStreamConfig(config)
-      expect(result.valid).toBe(false)
-      expect(result.errors.some((e) => e.message === 'workerPoolSize must be greater than 0')).toBe(
-        true
-      )
-    })
-
-    it('should validate useDuckDBWriter is boolean', () => {
-      const config = {
-        ...validConfig,
-        target: {
-          id: 'conn-456',
-          options: { useDuckDBWriter: 'yes' }
-        }
-      }
-      const result = validateStreamConfig(config)
-      expect(result.valid).toBe(false)
-      expect(result.errors.some((e) => e.message === 'useDuckDBWriter must be a boolean')).toBe(
-        true
-      )
-    })
-
-    it('should validate compressionType enum', () => {
-      const config = {
-        ...validConfig,
-        target: {
-          id: 'conn-456',
-          options: { compressionType: 'invalid' }
-        }
-      }
-      const result = validateStreamConfig(config)
-      expect(result.valid).toBe(false)
-      expect(result.errors.some((e) => e.message.includes('compressionType must be one of'))).toBe(
-        true
-      )
-    })
-
-    it('should accept valid compressionType', () => {
-      const config = {
-        ...validConfig,
-        target: {
-          id: 'conn-456',
-          options: { compressionType: 'gzip' }
-        }
-      }
-      const result = validateStreamConfig(config)
-      expect(result.valid).toBe(true)
-    })
   })
 
   describe('limits validation', () => {
