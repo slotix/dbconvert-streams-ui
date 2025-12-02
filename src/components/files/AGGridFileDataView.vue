@@ -28,6 +28,7 @@ const tabStateStore = useObjectTabStateStore()
 
 // Component-specific state
 const isInitialLoading = ref(true)
+const isRefreshing = ref(false)
 const warnings = ref<string[]>([])
 // Columns derived from data response when metadata is not yet available
 const derivedColumns = ref<Array<{ name: string; type: string }>>([])
@@ -150,9 +151,12 @@ async function fetchData(params: FetchDataParams): Promise<FetchDataResult> {
   const allWarnings = new Set([...metadataWarnings, ...dataWarnings])
   warnings.value = Array.from(allWarnings)
 
-  // Mark initial loading as complete on first successful fetch
+  // Mark loading as complete on successful fetch
   if (isInitialLoading.value) {
     isInitialLoading.value = false
+  }
+  if (isRefreshing.value) {
+    isRefreshing.value = false
   }
 
   return {
@@ -218,8 +222,9 @@ watch(
   () => props.entry,
   () => {
     if (baseGrid.gridApi.value) {
-      // Reset state and reload
-      isInitialLoading.value = true
+      // Reset derived columns and reload - don't reset isInitialLoading
+      // as it would clear columnDefs causing empty grid
+      derivedColumns.value = []
       baseGrid.gridApi.value.setGridOption('datasource', baseGrid.createDatasource())
     }
   },
@@ -332,6 +337,7 @@ function saveColumnState() {
 // Custom refresh that invalidates S3 cache for fresh data
 function refreshWithCacheInvalidation() {
   forceRefresh.value = true
+  isRefreshing.value = true
   baseGrid.refresh()
 }
 
@@ -436,7 +442,7 @@ defineExpose({
 
       <!-- Loading overlay - fully opaque to hide empty grid -->
       <div
-        v-if="isInitialLoading"
+        v-if="isInitialLoading || isRefreshing"
         class="absolute inset-0 bg-white dark:bg-gray-850 flex items-center justify-center z-50"
       >
         <div class="flex flex-col items-center gap-3">
@@ -462,9 +468,11 @@ defineExpose({
           </svg>
           <span class="text-sm text-gray-600 dark:text-gray-300">
             {{
-              props.entry.path.startsWith('s3://')
-                ? 'Loading data from S3...'
-                : 'Loading file data...'
+              isRefreshing
+                ? 'Refreshing data...'
+                : props.entry.path.startsWith('s3://')
+                  ? 'Loading data from S3...'
+                  : 'Loading file data...'
             }}
           </span>
         </div>
