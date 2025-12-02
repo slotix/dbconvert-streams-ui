@@ -99,17 +99,16 @@ async function fetchData(params: FetchDataParams): Promise<FetchDataResult> {
     orderDir = params.sortModel.map((s) => s.sort?.toUpperCase() || 'ASC').join(',')
   }
 
-  // For S3 files, skip COUNT(*) on first page to avoid slow full-file scan
-  // Users can still paginate; they just won't see total count initially
-  const isS3 = props.entry.path.startsWith('s3://')
-  const skipCount = params.offset > 0 || isS3
-
   // Check if we should force refresh (invalidate S3 cache)
   // Only apply on first page request to trigger cache invalidation once
   const shouldRefresh = forceRefresh.value && params.offset === 0
   if (shouldRefresh) {
     forceRefresh.value = false // Reset after using
   }
+
+  // Skip COUNT(*) only on pagination (offset > 0) since we already have the count
+  // For first page (offset === 0) or refresh, always get count - data is cached locally so it's fast
+  const skipCount = params.offset > 0
 
   const response = await filesApi.getFileData(
     props.entry.path,
