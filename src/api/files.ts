@@ -24,6 +24,7 @@ interface FileDataParams {
   order_dir?: string
   where?: string
   max_rows?: number
+  refresh?: boolean // If true, invalidates S3 cache to fetch fresh data
 }
 
 const withAuthHeaders = () => {
@@ -68,6 +69,7 @@ export async function getFileData(
     if (params.order_dir) query.set('order_dir', params.order_dir)
     if (params.where) query.set('where', params.where)
     if (params.max_rows !== undefined) query.set('max_rows', String(params.max_rows))
+    if (params.refresh) query.set('refresh', 'true')
 
     const response = await apiClient.get<FileDataResponse>(`/files/data?${query.toString()}`, {
       ...withAuthHeaders()

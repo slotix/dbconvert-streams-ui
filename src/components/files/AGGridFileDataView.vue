@@ -31,6 +31,8 @@ const isInitialLoading = ref(true)
 const warnings = ref<string[]>([])
 // Columns derived from data response when metadata is not yet available
 const derivedColumns = ref<Array<{ name: string; type: string }>>([])
+// Flag to force S3 cache invalidation on next fetch (set by refresh button)
+const forceRefresh = ref(false)
 
 const fileFormat = computed(() => props.entry.format || getFileFormat(props.entry.name))
 
@@ -101,6 +103,13 @@ async function fetchData(params: FetchDataParams): Promise<FetchDataResult> {
   const isS3 = props.entry.path.startsWith('s3://')
   const skipCount = params.offset > 0 || isS3
 
+  // Check if we should force refresh (invalidate S3 cache)
+  // Only apply on first page request to trigger cache invalidation once
+  const shouldRefresh = forceRefresh.value && params.offset === 0
+  if (shouldRefresh) {
+    forceRefresh.value = false // Reset after using
+  }
+
   const response = await filesApi.getFileData(
     props.entry.path,
     fileFormat.value,
@@ -111,7 +120,8 @@ async function fetchData(params: FetchDataParams): Promise<FetchDataResult> {
       order_by: orderBy,
       order_dir: orderDir,
       where: params.whereClause || undefined,
-      max_rows: params.maxRows
+      max_rows: params.maxRows,
+      refresh: shouldRefresh
     },
     props.connectionId
   )
@@ -319,9 +329,15 @@ function saveColumnState() {
   tabStateStore.setAGGridDataState(props.objectKey, { columnState })
 }
 
+// Custom refresh that invalidates S3 cache for fresh data
+function refreshWithCacheInvalidation() {
+  forceRefresh.value = true
+  baseGrid.refresh()
+}
+
 // Expose methods to parent
 defineExpose({
-  refresh: baseGrid.refresh,
+  refresh: refreshWithCacheInvalidation,
   getGridState: baseGrid.getGridState,
   applyGridState: baseGrid.applyGridState,
   filterPanelRef
