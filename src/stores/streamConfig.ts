@@ -288,13 +288,16 @@ export const useStreamsStore = defineStore('streams', {
           existingSpec?.files || existingSpec?.s3 || existingSpec?.gcs || existingSpec?.azure
         const existingFormat = existingFileSpec?.format
 
-        // Get structure options from root level (set by wizard) or existing spec
+        // Get structure options and skipData from root level (set by wizard) or existing spec
+        // These only apply to database targets (not file targets)
         const structureOptions = this.currentStreamConfig.structureOptions ||
           existingSpec?.database?.structureOptions || {
             tables: true,
             indexes: true,
             foreignKeys: true
           }
+        const skipData =
+          this.currentStreamConfig.skipData ?? existingSpec?.database?.skipData ?? false
 
         const targetDatabase = this.currentStreamConfig.targetDatabase || ''
         const targetSchema = this.currentStreamConfig.targetSchema
@@ -325,7 +328,8 @@ export const useStreamsStore = defineStore('streams', {
               csvConfig,
               existingSpec?.snowflake?.staging?.config?.filePrefix,
               existingSpec?.snowflake?.staging?.config?.timestampFormat,
-              useDuckDB
+              useDuckDB,
+              skipData
             ),
           s3: () => {
             // Read S3 upload config from existing spec, fall back to connection scope
@@ -388,7 +392,8 @@ export const useStreamsStore = defineStore('streams', {
               csvConfig,
               useDuckDB
             ),
-          database: () => buildDatabaseTargetSpec(targetDatabase, targetSchema, structureOptions)
+          database: () =>
+            buildDatabaseTargetSpec(targetDatabase, targetSchema, structureOptions, skipData)
         }
 
         // Determine which builder to use

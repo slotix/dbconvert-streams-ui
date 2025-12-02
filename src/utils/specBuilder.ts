@@ -17,7 +17,8 @@ import type {
   FileFormatSpec,
   ParquetConfig,
   CSVConfig,
-  StructureOptions
+  StructureOptions,
+  UIStructureOptions
 } from '../types/specs'
 import type { Connection } from '../types/connections'
 
@@ -153,30 +154,17 @@ export function buildSnowflakeConnectionSpec(
 
 // ===== Target Spec Builders =====
 
-// UI structure options can have string values like 'create' or boolean values
-type UIStructureOptions = {
-  tables?: string | boolean
-  indexes?: string | boolean
-  foreignKeys?: string | boolean
-}
-
 export function buildDatabaseTargetSpec(
   database: string,
   schema?: string,
-  structureOptions?: UIStructureOptions
+  structureOptions?: UIStructureOptions,
+  skipData?: boolean
 ): TargetSpec {
   const spec: DatabaseTargetSpec = {
     database,
     schema,
-    // Backend expects: tables, indexes, foreignKeys (not createTables, etc.)
-    structureOptions: structureOptions
-      ? {
-          tables: structureOptions.tables === 'create' || structureOptions.tables === true,
-          indexes: structureOptions.indexes === 'create' || structureOptions.indexes === true,
-          foreignKeys:
-            structureOptions.foreignKeys === 'create' || structureOptions.foreignKeys === true
-        }
-      : undefined
+    structureOptions, // Already in correct format
+    skipData
   }
   return { database: spec }
 }
@@ -317,20 +305,14 @@ export function buildSnowflakeTargetSpec(
   csvConfig?: CSVConfig,
   filePrefix?: string,
   timestampFormat?: string,
-  useDuckDB: boolean = true
+  useDuckDB: boolean = true,
+  skipData?: boolean
 ): TargetSpec {
   const spec: SnowflakeTargetSpec = {
     database,
     schema,
-    // Backend expects: tables, indexes, foreignKeys (not createTables, etc.)
-    structureOptions: structureOptions
-      ? {
-          tables: structureOptions.tables === 'create' || structureOptions.tables === true,
-          indexes: structureOptions.indexes === 'create' || structureOptions.indexes === true,
-          foreignKeys:
-            structureOptions.foreignKeys === 'create' || structureOptions.foreignKeys === true
-        }
-      : undefined,
+    structureOptions, // Already in correct format
+    skipData,
     staging: {
       outputDirectory,
       fileFormat,

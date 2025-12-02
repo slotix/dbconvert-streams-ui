@@ -20,8 +20,9 @@
       <TableList v-else />
     </div>
 
-    <!-- Structure Options Section -->
+    <!-- Structure Options Section - Only show for database targets -->
     <div
+      v-if="isTargetDatabase"
       class="bg-linear-to-br from-slate-50 to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-850 border border-gray-100 dark:border-gray-700 rounded-xl p-6 shadow-sm dark:shadow-gray-900/30"
     >
       <!-- Warning when nothing is selected -->
@@ -240,17 +241,17 @@ const currentMode = computed(() => streamsStore.currentStreamConfig?.mode || 'co
 
 // CDC Operations
 const cdcOperations = computed({
-  get: () => streamsStore.currentStreamConfig?.operations || [],
+  get: () => streamsStore.currentStreamConfig?.source?.options?.operations || [],
   set: (value: string[]) => {
-    if (streamsStore.currentStreamConfig) {
-      streamsStore.currentStreamConfig.operations = value
+    if (streamsStore.currentStreamConfig?.source?.options) {
+      streamsStore.currentStreamConfig.source.options.operations = value
     }
   }
 })
 
 const sourceConnectionId = computed(() => {
   const source = streamsStore.currentStreamConfig?.source
-  return source || null
+  return source?.id || null
 })
 
 const sourceConnection = computed(() => {
@@ -263,6 +264,26 @@ const sourceConnection = computed(() => {
 const isFileSourceConnection = computed(() => {
   const type = sourceConnection.value?.type?.toLowerCase() || ''
   return type.includes('file')
+})
+
+// Check if target is a database type that supports structure options
+const targetConnection = computed(() => {
+  const targetId = streamsStore.currentStreamConfig?.target?.id
+  if (!targetId) return null
+  return connectionsStore.connectionByID(targetId)
+})
+
+const isTargetDatabase = computed(() => {
+  const type = targetConnection.value?.type?.toLowerCase() || ''
+  // Structure options only apply to database targets (not S3, GCS, Azure, or local files)
+  // Snowflake is a database type that also supports structure options
+  return (
+    type === 'mysql' ||
+    type === 'postgresql' ||
+    type === 'clickhouse' ||
+    type === 'duckdb' ||
+    type === 'snowflake'
+  )
 })
 
 watch(
@@ -311,8 +332,9 @@ function handleOptionsChange() {
   emit('update:create-foreign-keys', createForeignKeys.value)
   emit('update:copy-data', copyData.value)
 
-  // Can proceed as long as at least one option is selected
-  const canProceed = anyStructureEnabled.value || copyData.value
+  // Can proceed as long as at least one option is selected (for database targets)
+  // For file targets, structure options are not applicable, so always allow proceeding
+  const canProceed = !isTargetDatabase.value || anyStructureEnabled.value || copyData.value
   emit('update:can-proceed', canProceed)
 }
 

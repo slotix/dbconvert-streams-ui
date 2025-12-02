@@ -1,5 +1,5 @@
 // src/types/streams.ts
-import type { TargetSpec } from './specs'
+import type { TargetSpec, UIStructureOptions } from './specs'
 
 export interface Table {
   name: string
@@ -72,11 +72,8 @@ export interface StreamConfig {
   sourceSchema?: string
   targetSchema?: string
   targetPath?: string
-  structureOptions?: {
-    tables?: string | boolean
-    indexes?: string | boolean
-    foreignKeys?: string | boolean
-  }
+  structureOptions?: UIStructureOptions
+  skipData?: boolean // Skip data transfer - only create structure (set by wizard)
 }
 
 export interface FileEntry {

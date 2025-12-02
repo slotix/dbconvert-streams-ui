@@ -103,6 +103,9 @@ export interface StructureOptions {
   foreignKeys?: boolean
 }
 
+// UI structure options - same as backend, just used in wizard before saving
+export type UIStructureOptions = StructureOptions
+
 export interface ParquetConfig {
   compressionCodec?: string
   compressionLevel?: number
@@ -212,6 +215,7 @@ export interface SnowflakeTargetSpec {
   database: string
   schema?: string
   structureOptions?: StructureOptions
+  skipData?: boolean // Skip data transfer - only create structure
   // Snowflake-specific
   staging: SnowflakeStagingSpec
 }
