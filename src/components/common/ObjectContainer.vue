@@ -226,6 +226,25 @@ const canAddSort = computed(() => {
   return panel?.canAddSort?.value ?? true
 })
 
+// Get selected columns count and total columns count for badge display
+// Read from the store which is reactive and gets updated by DataFilterPanel
+const selectedColumnsCount = computed(() => {
+  const state = tabStateStore.getFilterPanelState(objectKey.value)
+  return state?.selectedColumns?.length ?? 0
+})
+
+const totalColumnsCount = computed(() => {
+  // Access panelRefs.value to ensure reactivity
+  const dataView = panelRefs.value[0] as DataViewComponent | undefined
+  if (!dataView?.filterPanelRef) return 0
+  const panel =
+    'value' in dataView.filterPanelRef && dataView.filterPanelRef.value !== undefined
+      ? (dataView.filterPanelRef.value as FilterPanelMethods)
+      : (dataView.filterPanelRef as FilterPanelMethods)
+  const columns = panel?.columns?.()
+  return columns?.length ?? 0
+})
+
 // Filter control methods that delegate to child component
 function toggleColumnSelector() {
   const panel = getFilterPanel()
@@ -320,6 +339,12 @@ async function onRefreshClick() {
             >
               <ViewColumnsIcon class="w-4 h-4" />
               <span class="hidden sm:inline">Columns</span>
+              <span
+                v-if="selectedColumnsCount > 0"
+                class="px-1.5 py-0.5 text-[10px] font-semibold rounded bg-teal-500/30 text-teal-700 dark:text-teal-300"
+              >
+                {{ selectedColumnsCount }}
+              </span>
             </button>
 
             <button

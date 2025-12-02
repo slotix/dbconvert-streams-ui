@@ -4,7 +4,7 @@
  * Handles SQL query generation and parsing for the QueryBuilder component
  */
 
-import { computed, ref, type Ref } from 'vue'
+import { computed, ref, watch, type Ref } from 'vue'
 import {
   type FilterCondition,
   type SortConfig,
@@ -23,8 +23,20 @@ export interface UseQueryBuilderOptions {
 export function useQueryBuilder(options: UseQueryBuilderOptions) {
   const { tableName, dialect, columns } = options
 
-  // State
-  const selectedColumns = ref<string[]>([]) // Empty means all columns (*)
+  // State - initialize selectedColumns with all columns when available
+  const selectedColumns = ref<string[]>(columns.value.map((c) => c.name))
+
+  // Watch for columns changes and initialize selectedColumns with all columns by default
+  watch(
+    columns,
+    (newColumns) => {
+      // Only initialize if selectedColumns is empty and we have columns
+      if (selectedColumns.value.length === 0 && newColumns.length > 0) {
+        selectedColumns.value = newColumns.map((c) => c.name)
+      }
+    },
+    { immediate: true }
+  )
   const filters = ref<FilterCondition[]>([])
   const orderBy = ref<SortConfig[]>([])
   const limit = ref<number | null>(null)
@@ -126,7 +138,13 @@ export function useQueryBuilder(options: UseQueryBuilderOptions) {
    * Build SELECT columns part
    */
   const buildSelectColumns = (): string => {
-    if (selectedColumns.value.length === 0) return '*'
+    // Use * if no columns selected OR if all columns are selected
+    if (
+      selectedColumns.value.length === 0 ||
+      selectedColumns.value.length === columns.value.length
+    ) {
+      return '*'
+    }
     return selectedColumns.value.map(quoteIdentifier).join(', ')
   }
 
@@ -198,8 +216,12 @@ export function useQueryBuilder(options: UseQueryBuilderOptions) {
    * Check if query has any modifications from default
    */
   const hasModifications = computed((): boolean => {
+    // Having all columns selected is NOT a modification (it's the default)
+    // Only count as modification if some columns are deselected
+    const hasColumnModification =
+      selectedColumns.value.length > 0 && selectedColumns.value.length < columns.value.length
     return (
-      selectedColumns.value.length > 0 ||
+      hasColumnModification ||
       filters.value.length > 0 ||
       orderBy.value.length > 0 ||
       (limit.value !== null && limit.value > 0)

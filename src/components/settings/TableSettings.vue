@@ -86,7 +86,9 @@ const queryModel = computed({
 onMounted(async () => {
   // Fetch schema metadata for intelligent SQL autocomplete
   const connectionId = currentStreamConfig?.source?.id
-  const database = currentStreamConfig?.source?.database
+  // Database can be at source.database or at root level sourceDatabase (wizard stores it at root)
+  const database =
+    currentStreamConfig?.source?.database || currentStreamConfig?.sourceDatabase || ''
 
   if (connectionId && database) {
     try {

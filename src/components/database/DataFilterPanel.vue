@@ -410,6 +410,20 @@ watch(
   { immediate: true }
 )
 
+// Initialize selectedColumns with all columns when columns become available
+watch(
+  () => props.columns,
+  (newColumns) => {
+    // Only initialize if selectedColumns is empty and we have columns
+    if (selectedColumns.value.length === 0 && newColumns.length > 0) {
+      selectedColumns.value = newColumns.map((col) => col.field || '').filter(Boolean)
+      // Save to store so ObjectContainer can read it
+      saveState()
+    }
+  },
+  { immediate: true }
+)
+
 // Monaco language
 const monacoLanguage = computed(() => {
   if (props.dialect === 'pgsql') return 'pgsql'

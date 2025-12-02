@@ -256,8 +256,8 @@
         </div>
       </div>
 
-      <!-- Generated Query Preview with Syntax Highlighting -->
-      <div v-if="hasModifications" class="space-y-2">
+      <!-- Generated Query Preview with Syntax Highlighting - Always visible -->
+      <div class="space-y-2">
         <div class="relative">
           <SqlViewer
             :code="formattedQuery"
@@ -378,14 +378,6 @@
             No rows match the filter criteria
           </div>
         </div>
-      </div>
-
-      <!-- Empty state hint -->
-      <div
-        v-if="!hasModifications"
-        class="text-center py-2 text-xs text-gray-400 dark:text-gray-500"
-      >
-        All rows will be transferred • Add filters or limit to refine
       </div>
     </div>
   </div>
