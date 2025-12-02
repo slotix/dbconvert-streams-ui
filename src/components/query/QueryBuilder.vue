@@ -112,12 +112,11 @@
       <div class="flex items-center gap-2">
         <label class="text-xs font-medium text-gray-600 dark:text-gray-400">Limit:</label>
         <input
-          v-model.number="limit"
+          v-model.number.lazy="limit"
           type="number"
           min="0"
           placeholder="∞"
           class="w-24 px-2 py-1 text-xs border border-gray-200 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-1 focus:ring-teal-500 focus:border-teal-500 placeholder:text-gray-400"
-          @input="emitUpdate"
         />
         <span class="text-xs text-gray-400">rows</span>
       </div>

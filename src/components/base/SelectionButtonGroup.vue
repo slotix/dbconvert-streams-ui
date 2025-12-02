@@ -118,17 +118,13 @@ const activeDescription = computed(() => {
       >
         <div
           :class="[
-            'rounded-md font-medium border transition-all duration-150',
-            'focus:outline-none cursor-pointer',
+            'rounded-md font-medium transition-all duration-150',
+            'focus:outline-none focus:ring-2 focus:ring-offset-2 cursor-pointer',
             sizeClasses[size],
-            active
-              ? 'ring-2 ring-teal-500 dark:ring-teal-400 ring-offset-2 dark:ring-offset-gray-900'
-              : '',
             checked
-              ? 'bg-teal-600 dark:bg-teal-500 text-white border-teal-600 dark:border-teal-400'
-              : 'bg-white dark:bg-gray-850 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800 hover:border-gray-400 dark:hover:border-gray-500',
-            (disabled || option.disabled) &&
-              'opacity-50 cursor-not-allowed hover:bg-white hover:border-gray-300',
+              ? 'bg-teal-600 dark:bg-teal-900 text-white border border-transparent dark:border-teal-600 hover:bg-teal-700 dark:hover:bg-teal-800 focus:ring-teal-500 dark:focus:ring-teal-400'
+              : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 focus:ring-gray-500',
+            (disabled || option.disabled) && 'opacity-60 cursor-not-allowed',
             showCheckIcon && checked
               ? 'flex items-center justify-center gap-2'
               : 'flex items-center justify-center'

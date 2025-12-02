@@ -32,17 +32,13 @@
         >
           <div
             :class="[
-              active
-                ? 'ring-2 ring-gray-600 dark:ring-gray-400 ring-offset-2 dark:ring-offset-gray-900'
-                : '',
               checked
-                ? 'bg-gray-600 dark:bg-gray-500 text-white hover:bg-gray-500 dark:hover:bg-gray-400'
-                : 'ring-1 ring-inset ring-gray-300 dark:ring-gray-600 bg-white dark:bg-gray-850 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800',
-              'flex items-center justify-center rounded-md py-3 px-3 text-xs transition-colors duration-150 cursor-pointer'
+                ? 'bg-teal-600 dark:bg-teal-900 text-white border border-transparent dark:border-teal-600 hover:bg-teal-700 dark:hover:bg-teal-800 focus:ring-teal-500 dark:focus:ring-teal-400'
+                : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 focus:ring-gray-500',
+              'flex items-center justify-center rounded-md py-3 px-3 text-sm font-medium transition-all duration-150 cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2'
             ]"
           >
             <RadioGroupLabel as="span" class="cursor-pointer">{{ option.title }}</RadioGroupLabel>
-            <CheckCircleIcon v-if="checked" class="ml-2 h-4 w-4" aria-hidden="true" />
           </div>
         </RadioGroupOption>
       </div>
