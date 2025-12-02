@@ -1,8 +1,11 @@
 <template>
-  <div v-if="hasModifications || isExpanded" class="border-b border-gray-200 dark:border-gray-700">
+  <div
+    v-if="hasValidModifications || isExpanded"
+    class="border-b border-gray-200 dark:border-gray-700"
+  >
     <!-- Collapsed State: Single-line SQL preview -->
     <div
-      v-if="!isExpanded && hasModifications"
+      v-if="!isExpanded && hasValidModifications"
       class="flex items-center gap-2 px-3 py-1.5 bg-gray-50 dark:bg-gray-800/50 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
       @click="toggleExpanded"
     >
@@ -199,13 +202,14 @@
             v-model.number="limit"
             type="number"
             min="1"
-            placeholder="no limit"
+            placeholder="optional"
             class="w-24 px-1.5 py-1 text-xs border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded focus:ring-1 focus:ring-teal-500"
             @input="markDirty"
           />
           <span class="text-xs text-gray-400">rows</span>
+          <span class="text-[10px] text-gray-400 italic ml-1">(optional)</span>
           <button
-            v-if="limit !== null"
+            v-if="limit !== null && limit > 0"
             type="button"
             class="p-1 text-gray-400 hover:text-red-500 transition-colors shrink-0 ml-auto"
             @click="clearLimit"
@@ -214,9 +218,9 @@
           </button>
         </div>
 
-        <!-- Generated Query Preview with Syntax Highlighting -->
-        <div v-if="hasModifications" class="space-y-2">
-          <div class="relative">
+        <!-- Generated Query Preview with Syntax Highlighting - Always show when expanded -->
+        <div class="space-y-2">
+          <div v-if="generatedSql" class="relative">
             <MonacoEditor
               :model-value="generatedSql"
               :language="monacoLanguage"
@@ -245,26 +249,38 @@
               </button>
             </div>
           </div>
+          <div v-else class="text-center py-2 text-xs text-gray-400 dark:text-gray-500">
+            Add filters or sorts using the buttons above
+          </div>
 
-          <!-- Apply button -->
-          <div v-if="isDirty" class="flex justify-end">
+          <!-- Apply button - Always show, but enable/disable based on state -->
+          <div class="flex items-center justify-between gap-2">
+            <p class="text-[10px] text-gray-500 dark:text-gray-400 italic">
+              {{
+                !isDirty
+                  ? 'No changes to apply'
+                  : hasValidModifications && !hasModifications
+                    ? 'Complete the filter values first'
+                    : hasModifications
+                      ? 'Click Apply to execute the query'
+                      : 'Click Apply to refresh data'
+              }}
+            </p>
             <button
               type="button"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-teal-600 hover:bg-teal-700 rounded transition-colors"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              :class="
+                isDirty && !(hasValidModifications && !hasModifications)
+                  ? 'text-white bg-teal-600 hover:bg-teal-700'
+                  : 'text-gray-400 bg-gray-200 dark:bg-gray-700 cursor-not-allowed'
+              "
+              :disabled="!isDirty || (hasValidModifications && !hasModifications)"
               @click="applyFilters"
             >
               <PlayIcon class="w-3.5 h-3.5" />
               Apply
             </button>
           </div>
-        </div>
-
-        <!-- Empty state hint when expanded but no filters -->
-        <div
-          v-if="!hasModifications && !showColumnSelector"
-          class="text-center py-2 text-xs text-gray-400 dark:text-gray-500"
-        >
-          Add filters or sorts using the buttons above
         </div>
       </div>
     </div>
@@ -407,6 +423,16 @@ const hasModifications = computed(() => {
   const hasSorts = sorts.value.some((s) => s.column)
   const hasLimit = limit.value !== null && limit.value > 0
   return hasFilters || hasSorts || hasLimit
+})
+
+// More lenient check - includes incomplete filters that could still generate SQL
+const hasValidModifications = computed(() => {
+  // Count filters that have at least a column selected (even if value is empty for LIKE operators, we can show SQL)
+  const hasAnyFilters = filters.value.some((f) => f.column)
+  // Count sorts that have a column
+  const hasAnySorts = sorts.value.some((s) => s.column)
+  // Limit is always optional
+  return hasAnyFilters || hasAnySorts || hasModifications.value
 })
 
 const canAddSort = computed(() => {
