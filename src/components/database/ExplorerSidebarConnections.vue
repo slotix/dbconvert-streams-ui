@@ -428,6 +428,36 @@ function onMenuAction(payload: {
     case 'copy-file-path':
       if (t.kind === 'file') actions.copyToClipboard(t.path, 'File path copied')
       break
+    case 'open-in-sql-console':
+      if (t.kind === 'table' || t.kind === 'view') {
+        // Generate console key (must match UnifiedConsoleTab's consoleKey computed)
+        const consoleKey = `${t.connectionId}:${t.database}`
+
+        // Generate qualified table name
+        const schemaPrefix = t.schema ? `${t.schema}.` : ''
+        const tableName = `${schemaPrefix}${t.name}`
+
+        // Generate SELECT query
+        const query = `SELECT * FROM ${tableName} LIMIT 100;`
+
+        // Create table context for customizing templates
+        const tableContext = {
+          tableName: t.name,
+          schema: t.schema
+        }
+
+        // Create a new tab with the query (use table name as tab name)
+        // Pass consoleKey as first param to match how UnifiedConsoleTab calls getTabs
+        sqlConsoleStore.addTabWithQuery(consoleKey, undefined, query, t.name, tableContext)
+
+        // Open the SQL console if not already visible
+        emit('open-sql-console', {
+          connectionId: t.connectionId,
+          database: t.database,
+          sqlScope: 'database'
+        })
+      }
+      break
     case 'insert-into-console':
       if (t.kind === 'file') {
         const conn = connectionsStore.connectionByID(t.connectionId)
@@ -436,8 +466,22 @@ function onMenuAction(payload: {
         const consoleKey = `file:${t.connectionId}`
         const duckdbQuery = generateDuckDBReadFunction(t.path, t.name, isS3, t.isDir, t.format)
 
+        // Create file context for customizing templates
+        const fileContext = {
+          path: t.path,
+          format: t.format,
+          isS3: isS3
+        }
+
         // Create a new tab with the query (use file/folder name as tab name)
-        sqlConsoleStore.addTabWithQuery(consoleKey, undefined, duckdbQuery, t.name)
+        sqlConsoleStore.addTabWithQuery(
+          consoleKey,
+          undefined,
+          duckdbQuery,
+          t.name,
+          undefined,
+          fileContext
+        )
 
         // Open the file console if not already visible
         const basePath = conn?.spec?.files?.basePath || conn?.spec?.s3?.scope?.bucket

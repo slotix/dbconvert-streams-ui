@@ -217,6 +217,13 @@ function click(action: string, openInRightSplit?: boolean) {
           <template v-if="isTableOrView">
             <button
               class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+              @click="click('open-in-sql-console')"
+            >
+              Open in SQL Console
+            </button>
+            <div class="my-1 border-t border-gray-100 dark:border-gray-700"></div>
+            <button
+              class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
               @click="click('copy-object-name')"
             >
               Copy name

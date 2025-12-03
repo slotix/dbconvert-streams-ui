@@ -320,53 +320,76 @@ const queryTemplates = computed(() => {
 })
 
 function getFileTemplates() {
-  const basePath = props.basePath || '/path/to'
-  const isS3 = props.connectionType === 's3'
-  const prefix = isS3 ? 's3://bucket/path' : basePath
+  // Get file context from active tab if available
+  const activeTab = activeQueryTab.value
+  const fileCtx = activeTab?.fileContext
+
+  // Use file context path if available, otherwise fall back to basePath or generic path
+  let prefix: string
+  let actualPath: string | undefined
+
+  if (fileCtx?.path) {
+    actualPath = fileCtx.path
+    // For directory paths, keep as-is; for file paths, extract directory
+    if (actualPath.includes('/*')) {
+      // Already a glob pattern
+      prefix = actualPath.replace(/\/\*\.\*$/, '')
+    } else if (actualPath.match(/\.(csv|parquet|json|jsonl)$/i)) {
+      // Single file - extract directory
+      prefix = actualPath.substring(0, actualPath.lastIndexOf('/'))
+    } else {
+      // Assume it's a directory
+      prefix = actualPath
+    }
+  } else {
+    const basePath = props.basePath || '/path/to'
+    const isS3 = props.connectionType === 's3'
+    prefix = isS3 ? 's3://bucket/path' : basePath
+  }
 
   return [
     {
+      name: 'Select all files',
+      query: `SELECT * FROM read_parquet('${prefix}/*.*') LIMIT 100;`
+    },
+    {
       name: 'Select from CSV',
-      query: `SELECT * FROM read_csv_auto('${prefix}/data.csv') LIMIT 100;`
-    },
-    {
-      name: 'Select from Parquet',
-      query: `SELECT * FROM read_parquet('${prefix}/data.parquet') LIMIT 100;`
-    },
-    {
-      name: 'Select from JSON/JSONL',
-      query: `SELECT * FROM read_json_auto('${prefix}/data.json') LIMIT 100;`
-    },
-    {
-      name: 'Query all CSV files (glob)',
       query: `SELECT * FROM read_csv_auto('${prefix}/*.csv') LIMIT 100;`
     },
     {
-      name: 'Query all Parquet files (glob)',
+      name: 'Select from Parquet',
       query: `SELECT * FROM read_parquet('${prefix}/*.parquet') LIMIT 100;`
     },
     {
-      name: 'Join two CSV files',
+      name: 'Select from JSON/JSONL',
+      query: `SELECT * FROM read_json_auto('${prefix}/*.json*') LIMIT 100;`
+    },
+    {
+      name: 'Join two tables',
       query: `SELECT a.*, b.*
-FROM read_csv_auto('${prefix}/orders.csv') a
-JOIN read_csv_auto('${prefix}/customers.csv') b
-  ON a.customer_id = b.id
+FROM read_parquet('${prefix}/table1.*') a
+JOIN read_parquet('${prefix}/table2.*') b
+  ON a.id = b.id
 LIMIT 100;`
     },
     {
       name: 'Aggregate with GROUP BY',
-      query: `SELECT category, COUNT(*) as count, SUM(amount) as total
-FROM read_csv_auto('${prefix}/data.csv')
-GROUP BY category
-ORDER BY total DESC;`
+      query: `SELECT column_name, COUNT(*) as count
+FROM read_parquet('${prefix}/*.*')
+GROUP BY column_name
+ORDER BY count DESC;`
     },
     {
-      name: 'Schema inspection (CSV)',
-      query: `DESCRIBE SELECT * FROM read_csv_auto('${prefix}/data.csv');`
+      name: 'Count rows',
+      query: `SELECT COUNT(*) as total_rows FROM read_parquet('${prefix}/*.*');`
+    },
+    {
+      name: 'Schema inspection',
+      query: `DESCRIBE SELECT * FROM read_parquet('${prefix}/*.*');`
     },
     {
       name: 'File metadata (Parquet)',
-      query: `SELECT * FROM parquet_metadata('${prefix}/data.parquet');`
+      query: `SELECT * FROM parquet_metadata('${prefix}/*.parquet');`
     }
   ]
 }
@@ -375,43 +398,53 @@ function getDatabaseTemplates() {
   const dialect = currentDialect.value
   const isPostgres = dialect.includes('postgres') || dialect.includes('pgsql')
 
+  // Get table context from active tab if available
+  const activeTab = activeQueryTab.value
+  const tableCtx = activeTab?.tableContext
+  const tableName = tableCtx
+    ? tableCtx.schema
+      ? `${tableCtx.schema}.${tableCtx.tableName}`
+      : tableCtx.tableName
+    : 'table_name'
+  const bareTableName = tableCtx?.tableName || 'table_name'
+
   if (props.database) {
     // Database-scoped SQL Console - data exploration templates
     if (isPostgres) {
       return [
-        { name: 'Select all rows', query: `SELECT * FROM table_name LIMIT 100;` },
-        { name: 'Count rows', query: `SELECT COUNT(*) FROM table_name;` },
+        { name: 'Select all rows', query: `SELECT * FROM ${tableName} LIMIT 100;` },
+        { name: 'Count rows', query: `SELECT COUNT(*) FROM ${tableName};` },
         {
           name: 'List tables',
           query: `SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';`
         },
         {
           name: 'Describe table',
-          query: `SELECT column_name, data_type, is_nullable FROM information_schema.columns WHERE table_name = 'table_name';`
+          query: `SELECT column_name, data_type, is_nullable FROM information_schema.columns WHERE table_name = '${bareTableName}';`
         },
         {
           name: 'Find duplicates',
-          query: `SELECT column_name, COUNT(*) as count FROM table_name GROUP BY column_name HAVING COUNT(*) > 1;`
+          query: `SELECT column_name, COUNT(*) as count FROM ${tableName} GROUP BY column_name HAVING COUNT(*) > 1;`
         },
         {
           name: 'Search text',
-          query: `SELECT * FROM table_name WHERE column_name ILIKE '%search_term%';`
+          query: `SELECT * FROM ${tableName} WHERE column_name ILIKE '%search_term%';`
         }
       ]
     } else {
       // MySQL
       return [
-        { name: 'Select all rows', query: `SELECT * FROM table_name LIMIT 100;` },
-        { name: 'Count rows', query: `SELECT COUNT(*) FROM table_name;` },
+        { name: 'Select all rows', query: `SELECT * FROM ${tableName} LIMIT 100;` },
+        { name: 'Count rows', query: `SELECT COUNT(*) FROM ${tableName};` },
         { name: 'Show tables', query: `SHOW TABLES;` },
-        { name: 'Describe table', query: `DESCRIBE table_name;` },
+        { name: 'Describe table', query: `DESCRIBE ${tableName};` },
         {
           name: 'Find duplicates',
-          query: `SELECT column_name, COUNT(*) as count FROM table_name GROUP BY column_name HAVING COUNT(*) > 1;`
+          query: `SELECT column_name, COUNT(*) as count FROM ${tableName} GROUP BY column_name HAVING COUNT(*) > 1;`
         },
         {
           name: 'Search text',
-          query: `SELECT * FROM table_name WHERE column_name LIKE '%search_term%';`
+          query: `SELECT * FROM ${tableName} WHERE column_name LIKE '%search_term%';`
         }
       ]
     }

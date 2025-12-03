@@ -21,6 +21,15 @@ export interface SqlQueryTab {
   query: string
   createdAt: number
   updatedAt: number
+  tableContext?: {
+    tableName: string
+    schema?: string
+  }
+  fileContext?: {
+    path: string
+    format?: string
+    isS3?: boolean
+  }
 }
 
 /**
@@ -343,12 +352,20 @@ export const useSqlConsoleStore = defineStore('sqlConsole', () => {
     connectionId: string,
     database: string | undefined,
     query: string,
-    name?: string
+    name?: string,
+    tableContext?: { tableName: string; schema?: string },
+    fileContext?: { path: string; format?: string; isS3?: boolean }
   ): SqlQueryTab {
     const state = getConsoleState(connectionId, database)
     const tabNumber = state.tabs.length + 1
     const newTab = createDefaultTab(name || `Query ${tabNumber}`)
     newTab.query = query
+    if (tableContext) {
+      newTab.tableContext = tableContext
+    }
+    if (fileContext) {
+      newTab.fileContext = fileContext
+    }
     state.tabs.push(newTab)
     state.activeTabId = newTab.id
     saveState()
