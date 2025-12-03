@@ -181,7 +181,7 @@ defineExpose({
           </div>
           <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Columns</span>
         </div>
-        <div class="mt-3 overflow-x-auto">
+        <div class="mt-3 overflow-x-auto overflow-y-auto max-h-128">
           <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead>
               <tr class="bg-gray-50 dark:bg-gray-900/60">
