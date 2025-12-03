@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import api from '@/api/streams'
-import type { StreamConfig } from '@/types/streamConfig'
+import type { StreamConfig, QuerySource } from '@/types/streamConfig'
 import type { Table } from '@/types/streamConfig'
 import type { TargetSpec } from '@/types/specs'
 import type { Step } from '@/stores/common'
@@ -92,6 +92,22 @@ export const buildStreamPayload = (stream: StreamConfig): Partial<StreamConfig> 
           }
 
           return filteredTable as Table
+        })
+      }),
+    // Include custom queries (only for convert mode)
+    ...(stream.mode === 'convert' &&
+      stream.source.queries &&
+      stream.source.queries.length > 0 && {
+        queries: stream.source.queries.map((q) => {
+          const filteredQuery: Partial<QuerySource> = {
+            name: q.name,
+            query: q.query
+          }
+          // Include columns if detected (for target table creation)
+          if (q.columns && q.columns.length > 0) {
+            filteredQuery.columns = q.columns
+          }
+          return filteredQuery as QuerySource
         })
       })
   }
@@ -384,14 +400,7 @@ export const useStreamsStore = defineStore('streams', {
             )
           },
           file: () =>
-            buildFileTargetSpec(
-              targetPath,
-              fileFormat,
-              compressionType,
-              parquetConfig,
-              csvConfig,
-              useDuckDB
-            ),
+            buildFileTargetSpec(fileFormat, compressionType, parquetConfig, csvConfig, useDuckDB),
           database: () =>
             buildDatabaseTargetSpec(targetDatabase, targetSchema, structureOptions, skipData)
         }

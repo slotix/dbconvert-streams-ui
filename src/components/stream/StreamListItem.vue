@@ -50,12 +50,25 @@
         <span v-else class="text-gray-400 dark:text-gray-600 shrink-0 text-xs">Unknown</span>
       </div>
 
-      <!-- Table count -->
-      <div
-        v-if="stream.source?.tables && stream.source.tables.length > 0"
-        class="text-xs text-gray-400 dark:text-gray-600"
-      >
-        {{ stream.source.tables.length }} table{{ stream.source.tables.length !== 1 ? 's' : '' }}
+      <!-- Table/Query count -->
+      <div class="text-xs text-gray-400 dark:text-gray-600">
+        <span v-if="stream.source?.tables && stream.source.tables.length > 0">
+          {{ stream.source.tables.length }} table{{ stream.source.tables.length !== 1 ? 's' : '' }}
+        </span>
+        <span
+          v-if="
+            stream.source?.tables?.length &&
+            stream.source?.queries?.length &&
+            stream.source.queries.length > 0
+          "
+        >
+          ,
+        </span>
+        <span v-if="stream.source?.queries && stream.source.queries.length > 0">
+          {{ stream.source.queries.length }} quer{{
+            stream.source.queries.length !== 1 ? 'ies' : 'y'
+          }}
+        </span>
       </div>
     </div>
 

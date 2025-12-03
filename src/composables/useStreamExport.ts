@@ -202,11 +202,10 @@ export function useStreamExport() {
       selected: true
     }
 
-    // Build the output directory path
-    const outputDirectory = `${DEFAULT_EXPORT_PATH}/${table}_${timestamp}`
-
     // Build target spec for file output
-    const targetSpec = buildFileTargetSpec(outputDirectory, format)
+    // Output goes to the connection's basePath (/tmp/dbconvert-exports)
+    // The backend handles file organization within that directory
+    const targetSpec = buildFileTargetSpec(format)
 
     const streamConfig: Partial<StreamConfig> = {
       name: streamName,

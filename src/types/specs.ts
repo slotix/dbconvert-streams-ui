@@ -134,7 +134,10 @@ export interface FileFormatSpec {
 }
 
 export interface FileSpec {
-  outputDirectory: string
+  // Note: outputDirectory is NOT used for local file targets.
+  // The connection's spec.files.basePath determines the output location.
+  // outputDirectory is only meaningful for cloud targets (S3/GCS/Azure) where
+  // it specifies the local staging directory before upload.
   fileFormat: string // csv, json, jsonl, parquet
   format?: FileFormatSpec
 }

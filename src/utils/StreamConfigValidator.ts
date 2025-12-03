@@ -142,17 +142,43 @@ function validateSource(source: unknown, errors: ValidationError[]): void {
     errors.push({ path: 'source.id', message: 'Source connection ID is required' })
   }
 
-  // Tables validation
-  if (!Array.isArray(src.tables) || src.tables.length === 0) {
-    errors.push({ path: 'source.tables', message: 'At least one table is required' })
-  } else {
-    validateTables(src.tables, errors)
+  // Tables or Queries validation - at least one must be specified
+  const hasTables = Array.isArray(src.tables) && src.tables.length > 0
+  const hasQueries = Array.isArray(src.queries) && src.queries.length > 0
+
+  if (!hasTables && !hasQueries) {
+    errors.push({ path: 'source.tables', message: 'At least one table or query is required' })
+  }
+
+  if (hasTables) {
+    validateTables(src.tables as unknown[], errors)
+  }
+
+  if (hasQueries) {
+    validateQueries(src.queries as unknown[], errors)
   }
 
   // Source options validation
   if (src.options) {
     validateSourceOptions(src.options, errors)
   }
+}
+
+function validateQueries(queries: unknown[], errors: ValidationError[]): void {
+  queries.forEach((query, index) => {
+    if (typeof query !== 'object' || query === null) {
+      errors.push({ path: `source.queries[${index}]`, message: 'Query must be an object' })
+      return
+    }
+
+    const q = query as Record<string, unknown>
+    if (!q.name || typeof q.name !== 'string') {
+      errors.push({ path: `source.queries[${index}].name`, message: 'Query name is required' })
+    }
+    if (!q.query || typeof q.query !== 'string') {
+      errors.push({ path: `source.queries[${index}].query`, message: 'Query SQL is required' })
+    }
+  })
 }
 
 function validateTables(tables: unknown[], errors: ValidationError[]): void {

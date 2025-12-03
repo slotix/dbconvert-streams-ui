@@ -38,6 +38,8 @@
 
       <TablesSummary :displayed-tables="displayedTables" :remaining-count="remainingTablesCount" />
 
+      <QuerySourcesSummary :queries="stream.source?.queries || []" />
+
       <div class="pt-4 border-t border-gray-100 dark:border-gray-800">
         <div class="flex items-center gap-2">
           <CalendarIcon class="h-4 w-4 text-gray-500 dark:text-gray-400" />
@@ -68,6 +70,7 @@ import type { Connection, DbType } from '@/types/connections'
 import ConnectionCard from './configuration/ConnectionCard.vue'
 import FileOutputSummary from './configuration/FileOutputSummary.vue'
 import TablesSummary from './configuration/TablesSummary.vue'
+import QuerySourcesSummary from './configuration/QuerySourcesSummary.vue'
 import { getFileSpec } from '@/composables/useTargetSpec'
 
 const props = defineProps<{

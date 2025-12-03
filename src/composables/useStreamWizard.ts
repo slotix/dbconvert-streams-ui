@@ -1,5 +1,6 @@
 import { ref, computed } from 'vue'
 import type { StreamConfig } from '@/types/streamConfig'
+import { useStreamsStore } from '@/stores/streamConfig'
 
 export interface WizardStep {
   name: string
@@ -79,7 +80,19 @@ export function useStreamWizard() {
 
   const canProceedStep2 = computed(() => {
     // At least one option must be selected (structure or data)
-    return createTables.value || createIndexes.value || createForeignKeys.value || copyData.value
+    const hasStructureOrDataOption =
+      createTables.value || createIndexes.value || createForeignKeys.value || copyData.value
+
+    // Check if tables or custom queries are selected
+    const streamsStore = useStreamsStore()
+    const config = streamsStore.currentStreamConfig
+    const selectedTables = config?.source?.tables?.filter((t) => t.selected) || []
+    const customQueries = config?.source?.queries || []
+
+    // Must have at least one table selected OR one custom query defined
+    const hasDataSource = selectedTables.length > 0 || customQueries.length > 0
+
+    return hasStructureOrDataOption && hasDataSource
   })
 
   const canProceedStep3 = computed(() => {
@@ -242,9 +255,8 @@ export function useStreamWizard() {
     selection.value.targetConnectionId = resolveConnectionId(config.target)
     selection.value.sourceDatabase = resolveDatabase(config.sourceDatabase, config.source)
 
-    // For S3 targets, get the bucket from multiple possible locations
-    const s3Bucket =
-      config.target?.options?.s3UploadConfig?.bucket || config.target?.spec?.s3?.upload?.bucket // UI format // API/backend format
+    // For S3 targets, get the bucket from spec
+    const s3Bucket = config.target?.spec?.s3?.upload?.bucket
     if (s3Bucket) {
       selection.value.targetDatabase = s3Bucket
     } else {
@@ -270,10 +282,10 @@ export function useStreamWizard() {
       }
     }
 
-    // Fall back to root level (legacy) or deprecated options
+    // Fall back to root level (legacy)
     if (!structureOptions || Object.keys(structureOptions).length === 0) {
-      structureOptions =
-        (config as any)?.structureOptions ?? config?.target?.options?.structureOptions
+      structureOptions = (config as StreamConfig & { structureOptions?: Record<string, unknown> })
+        ?.structureOptions
     }
 
     if (structureOptions && Object.keys(structureOptions).length > 0) {
@@ -296,9 +308,9 @@ export function useStreamWizard() {
       createForeignKeys.value = true
     }
 
-    const skipData =
-      config?.target?.options?.skipData ??
-      (typeof (config as any)?.skipData === 'boolean' ? (config as any).skipData : undefined)
+    // Check skipData from root level (legacy UI state)
+    const configWithSkipData = config as StreamConfig & { skipData?: boolean }
+    const skipData = configWithSkipData?.skipData
     copyData.value = skipData === undefined ? true : !skipData
   }
 

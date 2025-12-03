@@ -17,7 +17,21 @@
       class="bg-linear-to-br from-slate-50 to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-850 border border-gray-100 dark:border-gray-700 rounded-xl p-6 shadow-sm dark:shadow-gray-900/30"
     >
       <FilePreviewList v-if="isFileSourceConnection" :connection-id="sourceConnectionId" />
-      <TableList v-else />
+      <template v-else>
+        <!-- Data Source Mode Selector - Only show for Convert mode (not CDC) -->
+        <DataSourceModeSelector
+          v-if="currentMode === 'convert'"
+          v-model="dataSourceMode"
+          :show-query-mode="currentMode === 'convert'"
+          class="mb-4"
+        />
+
+        <!-- Table Selection Mode -->
+        <TableList v-if="dataSourceMode === 'tables'" />
+
+        <!-- Custom Query Mode - Only in Convert mode -->
+        <CustomQueryEditor v-else-if="dataSourceMode === 'queries' && currentMode === 'convert'" />
+      </template>
     </div>
 
     <!-- Structure Options Section - Only show for database targets -->
@@ -202,6 +216,9 @@ import TableList from '@/components/settings/TableList.vue'
 import FilePreviewList from '@/components/stream/wizard/FilePreviewList.vue'
 import ModeButtons from '@/components/settings/ModeButtons.vue'
 import Operations from '@/components/settings/Operations.vue'
+import DataSourceModeSelector from '@/components/stream/wizard/DataSourceModeSelector.vue'
+import CustomQueryEditor from '@/components/stream/wizard/CustomQueryEditor.vue'
+import type { DataSourceMode } from '@/components/stream/wizard/DataSourceModeSelector.vue'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
 
@@ -233,11 +250,21 @@ const createForeignKeys = ref(props.createForeignKeys)
 const copyData = ref(props.copyData)
 const showAdvanced = ref(false)
 
+// Data source mode: 'tables' for table selection, 'queries' for custom SQL
+const dataSourceMode = ref<DataSourceMode>('tables')
+
 const streamsStore = useStreamsStore()
 const connectionsStore = useConnectionsStore()
 
 // Current mode from stream config
 const currentMode = computed(() => streamsStore.currentStreamConfig?.mode || 'convert')
+
+// Reset dataSourceMode to 'tables' when switching to CDC mode
+watch(currentMode, (newMode) => {
+  if (newMode === 'cdc') {
+    dataSourceMode.value = 'tables'
+  }
+})
 
 // CDC Operations
 const cdcOperations = computed({

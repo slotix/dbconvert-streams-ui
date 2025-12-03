@@ -406,7 +406,7 @@ describe('StreamConfigValidator', () => {
         ...validConfig,
         target: {
           ...validConfig.target,
-          spec: { files: { outputDirectory: '/tmp', fileFormat: 'csv' } }
+          spec: { files: { fileFormat: 'csv' } }
         }
       }
       const result = validateStreamConfig(config)
@@ -430,7 +430,7 @@ describe('StreamConfigValidator', () => {
         ...validConfig,
         target: {
           ...validConfig.target,
-          spec: { files: { outputDirectory: '/tmp', fileFormat: 'parquet' } }
+          spec: { files: { fileFormat: 'parquet' } }
         }
       }
       const result = validateStreamConfig(config)
@@ -442,7 +442,7 @@ describe('StreamConfigValidator', () => {
         ...validConfig,
         target: {
           ...validConfig.target,
-          spec: { files: { outputDirectory: '/tmp', fileFormat: 'invalid' } }
+          spec: { files: { fileFormat: 'invalid' } }
         }
       }
       const result = validateStreamConfig(config)

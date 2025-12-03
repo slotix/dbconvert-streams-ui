@@ -194,7 +194,6 @@ export function buildFileFormatSpec(
 }
 
 export function buildFileTargetSpec(
-  outputDirectory: string,
   fileFormat: string,
   compression?: string,
   parquetConfig?: ParquetConfig,
@@ -202,7 +201,6 @@ export function buildFileTargetSpec(
   useDuckDB: boolean = true
 ): TargetSpec {
   const spec: FileSpec = {
-    outputDirectory,
     fileFormat,
     format: buildFileFormatSpec(fileFormat, compression, parquetConfig, csvConfig, useDuckDB)
   }

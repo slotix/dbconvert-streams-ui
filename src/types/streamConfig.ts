@@ -7,6 +7,26 @@ export interface Table {
   selected?: boolean
 }
 
+/**
+ * Column definition for query results - auto-detected or user-provided
+ */
+export interface QueryColumn {
+  name: string
+  type: string
+  nullable?: boolean
+}
+
+/**
+ * Virtual query source - complex SQL that creates derived data
+ * Only available in 'convert' mode (not CDC)
+ */
+export interface QuerySource {
+  name: string // Virtual table name for target
+  query: string // Full SQL query (CTE, JOINs, aggregations, etc.)
+  columns?: QueryColumn[] // Auto-detected from EXPLAIN or user-provided
+  validated?: boolean // Whether query has been validated
+}
+
 export interface StreamID {
   id: string
 }
@@ -33,6 +53,7 @@ export interface SourceConfig {
   database?: string // Database name - required for database connections
   schema?: string // Schema name - optional, defaults to provider-specific default
   tables?: Table[]
+  queries?: QuerySource[] // Virtual query sources - complex SQL for derived data (convert mode only)
   options?: SourceOptions
 }
 
