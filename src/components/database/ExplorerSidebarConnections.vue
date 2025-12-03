@@ -813,7 +813,6 @@ watch(
         </h2>
         <!-- System Objects Toggle - compact icon button -->
         <button
-          @click="navigationStore.toggleShowSystemObjects()"
           class="p-1 rounded transition-colors duration-150"
           :class="[
             navigationStore.showSystemObjects
@@ -821,6 +820,7 @@ watch(
               : 'text-slate-400 hover:text-slate-500 hover:bg-slate-500/10 dark:text-gray-500 dark:hover:text-gray-400'
           ]"
           :title="navigationStore.showSystemObjects ? 'Hide system objects' : 'Show system objects'"
+          @click="navigationStore.toggleShowSystemObjects()"
         >
           <EyeIcon v-if="navigationStore.showSystemObjects" class="w-4 h-4" />
           <EyeSlashIcon v-else class="w-4 h-4" />

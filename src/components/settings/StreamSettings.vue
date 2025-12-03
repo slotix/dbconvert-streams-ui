@@ -241,40 +241,43 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, watch } from 'vue'
 import { CloudIcon } from '@heroicons/vue/24/outline'
 import { useStreamsStore, defaultStreamConfigOptions } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
-import { useCommonStore } from '@/stores/common'
 import { type StreamConfig } from '@/types/streamConfig'
-import { useTargetSpec, getFormatSpec } from '@/composables/useTargetSpec'
+import { useTargetSpec, getFileSpec } from '@/composables/useTargetSpec'
+import { buildFileTargetSpec, buildS3TargetSpec } from '@/utils/specBuilder'
 import SelectionButtonGroup from '@/components/base/SelectionButtonGroup.vue'
 import FormSelect from '@/components/base/FormSelect.vue'
 import FormSwitch from '@/components/base/FormSwitch.vue'
 
 const streamsStore = useStreamsStore()
 const connectionsStore = useConnectionsStore()
-const commonStore = useCommonStore()
-const currentStreamConfig = streamsStore.currentStreamConfig as StreamConfig
+
+// Use computed to ensure reactivity with the store's current stream config
+const currentStreamConfig = computed(() => streamsStore.currentStreamConfig as StreamConfig)
 
 // Use the composable for target spec fields
-const targetSpec = useTargetSpec(currentStreamConfig)
+// The composable works with the reactive config
+const targetSpec = computed(() => {
+  const config = currentStreamConfig.value
+  if (!config) return null
+  return useTargetSpec(config)
+})
 
 const fileFormats = [
   {
     value: 'csv' as const,
-    label: 'CSV',
-    description: 'Comma-separated values - widely compatible, good for spreadsheets'
+    label: 'CSV'
   },
   {
     value: 'jsonl' as const,
-    label: 'JSONL',
-    description: 'JSON Lines - one JSON object per line, ideal for streaming'
+    label: 'JSONL'
   },
   {
     value: 'parquet' as const,
-    label: 'Parquet',
-    description: 'Columnar format - highly compressed, optimized for analytics'
+    label: 'Parquet'
   }
 ]
 
@@ -302,7 +305,7 @@ const encryptionOptions = [
 
 // Get target connection
 const targetConnection = computed(() => {
-  const targetId = currentStreamConfig.target?.id
+  const targetId = currentStreamConfig.value?.target?.id
   if (!targetId) return null
   return connectionsStore.connectionByID(targetId)
 })
@@ -324,19 +327,71 @@ const isS3Target = computed(() => {
   return !!conn.spec?.s3
 })
 
+// Ensure target spec is properly initialized for file/S3 targets
+// This is critical for create mode where spec may not exist yet
+function ensureTargetSpec() {
+  const config = currentStreamConfig.value
+  if (!config) return
+
+  const conn = targetConnection.value
+  if (!conn) return
+
+  // Check if spec already has the correct structure
+  const existingFileSpec = getFileSpec(config.target.spec)
+  if (existingFileSpec) return // Already initialized
+
+  // Initialize spec based on connection type
+  if (conn.spec?.files) {
+    // Local file target
+    config.target.spec = buildFileTargetSpec('csv', 'zstd', undefined, undefined, true)
+  } else if (conn.spec?.s3) {
+    // S3 target - get bucket from connection scope if available
+    const bucket = conn.spec.s3.scope?.bucket || ''
+    config.target.spec = buildS3TargetSpec(
+      '/tmp/dbconvert',
+      'csv',
+      bucket,
+      conn.spec.s3.scope?.prefix,
+      undefined,
+      undefined,
+      'zstd',
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      true
+    )
+  }
+}
+
+// Watch for target connection changes and initialize spec
+watch(
+  targetConnection,
+  () => {
+    if (isFileTarget.value || isS3Target.value) {
+      ensureTargetSpec()
+    }
+  },
+  { immediate: true }
+)
+
 // File format - reads/writes directly to target.spec via composable
 const targetFileFormat = computed({
-  get: () => targetSpec.fileFormat.value,
+  get: () => targetSpec.value?.fileFormat.value ?? 'csv',
   set: (value) => {
-    targetSpec.fileFormat.value = value
+    if (targetSpec.value) {
+      targetSpec.value.fileFormat.value = value
+    }
   }
 })
 
 // Compression type - reads/writes directly to target.spec via composable
 const compressionType = computed({
-  get: () => targetSpec.compression.value,
+  get: () => targetSpec.value?.compression.value ?? 'zstd',
   set: (value) => {
-    targetSpec.compression.value = value
+    if (targetSpec.value) {
+      targetSpec.value.compression.value = value
+    }
   }
 })
 
@@ -356,9 +411,11 @@ const compressionDescription = computed(() => {
 
 // DuckDB Writer toggle - reads/writes directly to target.spec via composable
 const useDuckDBWriter = computed({
-  get: () => targetSpec.useDuckDB.value,
+  get: () => targetSpec.value?.useDuckDB.value ?? true,
   set: (value) => {
-    targetSpec.useDuckDB.value = value
+    if (targetSpec.value) {
+      targetSpec.value.useDuckDB.value = value
+    }
   }
 })
 
@@ -369,61 +426,75 @@ const useDuckDBWriter = computed({
 
 // S3 Upload Configuration - reads/writes directly to target.spec.s3.upload via composable
 const s3Bucket = computed({
-  get: () => targetSpec.s3Bucket.value,
+  get: () => targetSpec.value?.s3Bucket.value ?? '',
   set: (value) => {
-    targetSpec.s3Bucket.value = value
+    if (targetSpec.value) {
+      targetSpec.value.s3Bucket.value = value
+    }
   }
 })
 
 const s3Prefix = computed({
-  get: () => targetSpec.s3Prefix.value,
+  get: () => targetSpec.value?.s3Prefix.value ?? '',
   set: (value) => {
-    targetSpec.s3Prefix.value = value
+    if (targetSpec.value) {
+      targetSpec.value.s3Prefix.value = value
+    }
   }
 })
 
 const s3StorageClass = computed({
-  get: () => targetSpec.s3StorageClass.value,
+  get: () => targetSpec.value?.s3StorageClass.value ?? 'STANDARD',
   set: (value) => {
-    targetSpec.s3StorageClass.value = value
+    if (targetSpec.value) {
+      targetSpec.value.s3StorageClass.value = value
+    }
   }
 })
 
 const s3ServerSideEnc = computed({
-  get: () => targetSpec.s3ServerSideEnc.value,
+  get: () => targetSpec.value?.s3ServerSideEnc.value ?? '',
   set: (value) => {
-    targetSpec.s3ServerSideEnc.value = value
+    if (targetSpec.value) {
+      targetSpec.value.s3ServerSideEnc.value = value
+    }
   }
 })
 
 const s3KmsKeyId = computed({
-  get: () => targetSpec.s3KmsKeyId.value,
+  get: () => targetSpec.value?.s3KmsKeyId.value ?? '',
   set: (value) => {
-    targetSpec.s3KmsKeyId.value = value
+    if (targetSpec.value) {
+      targetSpec.value.s3KmsKeyId.value = value
+    }
   }
 })
 
 const s3KeepLocalFiles = computed({
-  get: () => targetSpec.s3KeepLocalFiles.value,
+  get: () => targetSpec.value?.s3KeepLocalFiles.value ?? false,
   set: (value) => {
-    targetSpec.s3KeepLocalFiles.value = value
+    if (targetSpec.value) {
+      targetSpec.value.s3KeepLocalFiles.value = value
+    }
   }
 })
 
 const dataBundleSize = computed<number>({
   get: () => {
     return (
-      currentStreamConfig.source?.options?.dataBundleSize ??
+      currentStreamConfig.value?.source?.options?.dataBundleSize ??
       defaultStreamConfigOptions.source.options!.dataBundleSize ??
       500
     )
   },
   set: (newValue) => {
     const clampedValue = Math.min(Math.max(newValue, 10), 1000)
-    if (!currentStreamConfig.source.options) {
-      currentStreamConfig.source.options = {}
+    const config = currentStreamConfig.value
+    if (!config) return
+    if (!config.source.options) {
+      config.source.options = {}
     }
-    currentStreamConfig.source.options.dataBundleSize = clampedValue
+    config.source.options.dataBundleSize = clampedValue
   }
 })
 
@@ -431,53 +502,64 @@ const dataBundleSize = computed<number>({
 const reportingInterval = computed<number>({
   get: () => {
     return (
-      currentStreamConfig.reportingInterval ?? defaultStreamConfigOptions.reportingInterval ?? 3
+      currentStreamConfig.value?.reportingInterval ??
+      defaultStreamConfigOptions.reportingInterval ??
+      3
     )
   },
   set: (value) => {
-    currentStreamConfig.reportingInterval = value
+    const config = currentStreamConfig.value
+    if (config) {
+      config.reportingInterval = value
+    }
   }
 })
 
 const limitsNumberOfEvents = computed<number>({
   get: () => {
     return (
-      currentStreamConfig.limits?.numberOfEvents ??
+      currentStreamConfig.value?.limits?.numberOfEvents ??
       defaultStreamConfigOptions.limits?.numberOfEvents ??
       0
     )
   },
   set: (value) => {
-    if (!currentStreamConfig.limits) {
-      currentStreamConfig.limits = {}
+    const config = currentStreamConfig.value
+    if (!config) return
+    if (!config.limits) {
+      config.limits = {}
     }
-    currentStreamConfig.limits.numberOfEvents = value
+    config.limits.numberOfEvents = value
   }
 })
 
 const limitsElapsedTime = computed<number>({
   get: () => {
     return (
-      currentStreamConfig.limits?.elapsedTime ?? defaultStreamConfigOptions.limits?.elapsedTime ?? 0
+      currentStreamConfig.value?.limits?.elapsedTime ??
+      defaultStreamConfigOptions.limits?.elapsedTime ??
+      0
     )
   },
   set: (value) => {
-    if (!currentStreamConfig.limits) {
-      currentStreamConfig.limits = {}
+    const config = currentStreamConfig.value
+    if (!config) return
+    if (!config.limits) {
+      config.limits = {}
     }
-    currentStreamConfig.limits.elapsedTime = value
+    config.limits.elapsedTime = value
   }
 })
 
 // Dynamic labels based on stream mode
 const numberOfEventsLabel = computed(() => {
-  return currentStreamConfig.mode === 'convert'
+  return currentStreamConfig.value?.mode === 'convert'
     ? 'Maximum rows to transfer'
     : 'Maximum events to process'
 })
 
 const numberOfEventsDescription = computed(() => {
-  return currentStreamConfig.mode === 'convert'
+  return currentStreamConfig.value?.mode === 'convert'
     ? 'Total rows copied from all tables'
     : 'INSERT + UPDATE + DELETE counted as events'
 })
