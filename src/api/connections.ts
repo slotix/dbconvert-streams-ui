@@ -560,6 +560,39 @@ const executeQuery = async (
   }
 }
 
+/**
+ * Discover column names and types for a SQL query without executing it fully.
+ * Uses LIMIT 0 to get metadata efficiently.
+ */
+const discoverQueryColumns = async (
+  connectionId: string,
+  database: string,
+  query: string
+): Promise<{
+  columns: { name: string; type: string; nullable?: boolean }[]
+  status: string
+}> => {
+  const commonStore = useCommonStore()
+  validateApiKey(commonStore.apiKey)
+  try {
+    const url = `/connections/${connectionId}/databases/${encodeURIComponent(database)}/query/columns`
+    const response: AxiosResponse<{
+      columns: { name: string; type: string; nullable?: boolean }[]
+      status: string
+    }> = await apiClient.post(
+      url,
+      { query },
+      {
+        headers: { [API_HEADERS.API_KEY]: commonStore.apiKey },
+        timeout: OPERATION_TIMEOUTS.getTableData
+      }
+    )
+    return response.data
+  } catch (error) {
+    throw handleApiError(error)
+  }
+}
+
 export default {
   getConnections,
   createConnection,
@@ -581,5 +614,6 @@ export default {
   getViewData,
   getTableExactCount,
   getViewExactCount,
-  executeQuery
+  executeQuery,
+  discoverQueryColumns
 }

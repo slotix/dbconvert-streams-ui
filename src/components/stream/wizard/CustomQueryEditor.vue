@@ -368,24 +368,20 @@ const validateQuery = async (query: QuerySource, index: number) => {
   delete validationErrors.value[index]
 
   try {
-    // Execute query with LIMIT 0 to validate and get columns without fetching data
-    const validationQuery = wrapQueryForValidation(query.query)
-    console.log('Validation query:', validationQuery)
-    const result = await connections.executeQuery(
+    // Use discoverQueryColumns API to get column names and types
+    const result = await connections.discoverQueryColumns(
       sourceConnectionId.value,
-      validationQuery,
-      sourceDatabase.value
+      sourceDatabase.value,
+      query.query
     )
-    console.log('Validation result:', result)
 
-    // Extract columns from result
     if (result.columns && result.columns.length > 0) {
-      query.columns = result.columns.map((col) => ({
-        name: col,
-        type: 'unknown', // We don't get type info from simple query
-        nullable: true
-      }))
       query.validated = true
+      // Store discovered columns with types for display
+      query.columns = result.columns.map((col) => ({
+        name: col.name,
+        type: col.type
+      }))
     } else {
       validationErrors.value[index] = 'Query must return columns'
     }
@@ -396,23 +392,6 @@ const validateQuery = async (query: QuerySource, index: number) => {
     query.validated = false
   } finally {
     isValidating.value = null
-  }
-}
-
-const wrapQueryForValidation = (sql: string): string => {
-  // Add LIMIT 1 to validate and get column metadata with minimal data fetch
-  // Note: LIMIT 0 doesn't return column metadata in MySQL
-  const trimmed = sql.trim().replace(/;+$/, '')
-
-  // Check if query already has LIMIT clause
-  const hasLimit = /\bLIMIT\s+\d+/i.test(trimmed)
-
-  if (hasLimit) {
-    // Replace existing LIMIT with LIMIT 1
-    return trimmed.replace(/\bLIMIT\s+\d+/i, 'LIMIT 1')
-  } else {
-    // Append LIMIT 1
-    return `${trimmed} LIMIT 1`
   }
 }
 
