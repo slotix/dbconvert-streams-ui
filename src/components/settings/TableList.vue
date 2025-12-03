@@ -73,7 +73,7 @@
           <!-- Schema Header - PostgreSQL only -->
           <div
             v-if="sourceConnectionType === 'postgresql' && schemaGroup.schema"
-            class="flex items-center justify-between px-4 py-2.5 bg-gray-50 dark:bg-gray-800/70 border-b border-gray-200 dark:border-gray-700 cursor-pointer"
+            class="sticky top-0 z-10 flex items-center justify-between px-4 py-2.5 bg-gray-50 dark:bg-gray-800/70 border-b border-gray-200 dark:border-gray-700 cursor-pointer backdrop-blur-sm"
             @click="toggleSchema(schemaGroup.schema)"
           >
             <div class="flex items-center gap-2">
@@ -81,6 +81,7 @@
                 :is="isSchemaExpanded(schemaGroup.schema) ? ChevronDownIcon : ChevronRightIcon"
                 class="h-4 w-4 text-gray-400"
               />
+              <Squares2X2Icon class="w-4 h-4 text-purple-500 dark:text-purple-400 shrink-0" />
               <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">{{
                 schemaGroup.schema
               }}</span>
@@ -209,7 +210,8 @@ import {
   TableCellsIcon,
   FunnelIcon,
   MagnifyingGlassIcon,
-  ArrowPathIcon
+  ArrowPathIcon,
+  Squares2X2Icon
 } from '@heroicons/vue/24/outline'
 import { debounce } from '@/utils/debounce'
 import { type StreamConfig, type Table } from '@/types/streamConfig'
