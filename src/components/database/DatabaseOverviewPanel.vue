@@ -167,11 +167,84 @@ const topRows = computed(() => {
   return filtered.slice(0, 10)
 })
 
-const counts = computed(() => overview.value?.counts)
+// Get filtered schema count based on showSystemObjects setting
+// Uses the same logic as the sidebar tree for consistency
+const schemaSystemInfo = computed(() => {
+  const dbInfo = navigationStore
+    .getDatabasesRaw(props.connectionId)
+    ?.find((d) => d.name === props.database)
+  const info = new Map<string, boolean>()
+  if (dbInfo?.schemas) {
+    dbInfo.schemas.forEach((s) => {
+      info.set(s.name, s.isSystem || false)
+    })
+  }
+  return info
+})
+
+const filteredSchemaCount = computed(() => {
+  const meta = navigationStore.getMetadata(props.connectionId, props.database)
+  if (!meta?.schemas) return overview.value?.counts?.schemas
+
+  // Count schemas, filtering out system ones if needed
+  if (navigationStore.showSystemObjects) {
+    return meta.schemas.length
+  }
+  return meta.schemas.filter((schemaName) => !schemaSystemInfo.value.get(schemaName)).length
+})
+
+// Get filtered table count based on showSystemObjects setting
+const filteredTableCount = computed(() => {
+  const meta = navigationStore.getMetadata(props.connectionId, props.database)
+  if (!meta?.tables) return overview.value?.counts?.tables
+
+  const tables = Object.values(meta.tables)
+  if (navigationStore.showSystemObjects) {
+    return tables.length
+  }
+  // Filter out tables in system schemas
+  return tables.filter((t) => !schemaSystemInfo.value.get(t.schema)).length
+})
+
+// Get filtered view count based on showSystemObjects setting
+const filteredViewCount = computed(() => {
+  const meta = navigationStore.getMetadata(props.connectionId, props.database)
+  if (!meta?.views) return overview.value?.counts?.views
+
+  const views = Object.values(meta.views)
+  if (navigationStore.showSystemObjects) {
+    return views.length
+  }
+  // Filter out views in system schemas
+  return views.filter((v) => !schemaSystemInfo.value.get(v.schema)).length
+})
+
+// Counts with filtered schema, table, and view counts
+const counts = computed(() => {
+  const rawCounts = overview.value?.counts
+  if (!rawCounts) return undefined
+  return {
+    ...rawCounts,
+    schemas: filteredSchemaCount.value,
+    tables: filteredTableCount.value,
+    views: filteredViewCount.value
+  }
+})
 const activity = computed(() => overview.value?.activity)
 
+// Calculate filtered database size based on showSystemObjects setting
+const filteredSizeBytes = computed(() => {
+  const allTables = overview.value?.allTablesBySize || []
+  if (navigationStore.showSystemObjects) {
+    return overview.value?.sizeBytes
+  }
+  // Sum sizes of non-system tables only
+  const filtered = allTables.filter((t) => !isSystemTable(t.name))
+  return filtered.reduce((sum, t) => sum + (t.sizeBytes || 0), 0)
+})
+
 // Safe display for total database size
-const sizeBytes = computed(() => overview.value?.sizeBytes)
+const sizeBytes = computed(() => filteredSizeBytes.value)
 const sizeDisplay = computed(() => {
   const b = sizeBytes.value
   return typeof b === 'number' && Number.isFinite(b) ? formatDataSize(b) : '—'
