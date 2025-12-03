@@ -55,9 +55,9 @@
       </button>
     </div>
 
-    <!-- Table List Container -->
+    <!-- Table List Container with scroll -->
     <div
-      class="bg-white dark:bg-gray-850 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden"
+      class="bg-white dark:bg-gray-850 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden max-h-[500px] overflow-y-auto"
     >
       <!-- Empty State -->
       <div
@@ -69,7 +69,7 @@
 
       <!-- Table Grid -->
       <div v-else>
-        <template v-for="schemaGroup in paginatedGroupedTables" :key="schemaGroup.schema">
+        <template v-for="schemaGroup in groupedTables" :key="schemaGroup.schema">
           <!-- Schema Header - PostgreSQL only -->
           <div
             v-if="sourceConnectionType === 'postgresql' && schemaGroup.schema"
@@ -149,6 +149,15 @@
                   <HighlightedText :text="getTableDisplayName(table.name)" :query="searchQuery" />
                 </label>
 
+                <!-- Row count badge (informational only, shown if overview data is cached) -->
+                <span
+                  v-if="getTableRowCount(table.name) !== undefined"
+                  class="text-xs px-1.5 py-0.5 rounded shrink-0 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
+                  title="Approximate row count"
+                >
+                  {{ formatRowCount(getTableRowCount(table.name)) }}
+                </span>
+
                 <!-- Filter indicator/toggle - only when selected and not CDC -->
                 <button
                   v-if="table.selected && !isCDCMode"
@@ -181,16 +190,6 @@
         </template>
       </div>
     </div>
-
-    <!-- Compact Pagination -->
-    <div v-if="totalPages > 1" class="flex items-center justify-between">
-      <Pagination
-        :total-items="filteredTablesCount"
-        :itemsPerPage="itemsPerPage"
-        :current-page="currentPage"
-        @update:currentPage="updateCurrentPage"
-      />
-    </div>
   </div>
 </template>
 
@@ -200,7 +199,7 @@ import { useStreamsStore } from '@/stores/streamConfig'
 import { useCommonStore } from '@/stores/common'
 import { useConnectionsStore } from '@/stores/connections'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
-import Pagination from '@/components/common/Pagination.vue'
+import { useDatabaseOverviewStore } from '@/stores/databaseOverview'
 import HighlightedText from '@/components/common/HighlightedText.vue'
 import TableSettings from './TableSettings.vue'
 import {
@@ -217,6 +216,7 @@ import { type StreamConfig, type Table } from '@/types/streamConfig'
 
 const streamsStore = useStreamsStore()
 const connectionStore = useConnectionsStore()
+const overviewStore = useDatabaseOverviewStore()
 const currentStreamConfig = streamsStore.currentStreamConfig as StreamConfig
 
 // Get the source connection to determine database type
@@ -344,33 +344,6 @@ const isCDCMode = computed(() => {
 
 const groupedTables = computed<SchemaGroup[]>(() => buildGroupedTables(filteredTables.value, true))
 const filteredTablesCount = computed(() => filteredTables.value.length)
-const currentPage = ref(1)
-const itemsPerPage = 20
-
-const totalPages = computed(() =>
-  itemsPerPage > 0 ? Math.max(1, Math.ceil(filteredTablesCount.value / itemsPerPage)) : 1
-)
-
-const paginatedTables = computed(() => {
-  if (itemsPerPage <= 0) {
-    return filteredTables.value
-  }
-  const start = (currentPage.value - 1) * itemsPerPage
-  return filteredTables.value.slice(start, start + itemsPerPage)
-})
-
-const paginatedGroupedTables = computed(() => {
-  const pageSet = new Set(paginatedTables.value.map((table) => table.name))
-  if (pageSet.size === 0) {
-    return []
-  }
-  return groupedTables.value
-    .map((group) => ({
-      schema: group.schema,
-      tables: group.tables.filter((table) => pageSet.has(table.name))
-    }))
-    .filter((group) => group.tables.length > 0)
-})
 
 // Helper functions
 function getTableSchema(tableName: string): string {
@@ -387,6 +360,24 @@ function getTableSchema(tableName: string): string {
 function getTableDisplayName(tableName: string): string {
   const parts = tableName.split('.')
   return parts.length > 1 ? parts[1] : tableName
+}
+
+// Get the row count for a table from the overview store (cached data only)
+function getTableRowCount(tableName: string): number | undefined {
+  const connId = currentStreamConfig.source?.id
+  const database = currentStreamConfig.sourceDatabase
+  if (!connId || !database) return undefined
+  // Only returns data if overview was already loaded (no API call)
+  return overviewStore.getTableRowCount(tableName, connId, database)
+}
+
+// Format row count for display
+function formatRowCount(count: number | undefined): string {
+  if (count === undefined) return ''
+  if (count === 0) return '0 rows'
+  if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M rows`
+  if (count >= 1000) return `${(count / 1000).toFixed(1)}K rows`
+  return `${count} rows`
 }
 
 function isSchemaExpanded(schema: string): boolean {
@@ -452,11 +443,6 @@ function toggleSelectAll(event: Event) {
   })
 }
 
-function updateCurrentPage(newPage: number) {
-  const boundedPage = Math.min(Math.max(1, newPage), totalPages.value)
-  currentPage.value = boundedPage
-}
-
 const refreshTables = async () => {
   const commonStore = useCommonStore()
   const connectionStore = useConnectionsStore()
@@ -468,28 +454,50 @@ const refreshTables = async () => {
     }
     // When editing a stream, use the sourceDatabase from the config if available
     const database = currentStreamConfig.sourceDatabase || undefined
+    const connectionId = currentStreamConfig.source.id
+
+    if (!database) {
+      tables.value = []
+      return
+    }
 
     // For PostgreSQL and other multi-schema databases, filter out system schemas
-    let options: { schemas?: string[] } | undefined
-    if (connectionStore.supportsMultiSchema(currentStreamConfig.source.id) && database) {
+    let schemaFilter: string[] | undefined
+    if (connectionStore.supportsMultiSchema(connectionId)) {
       // Ensure databases are loaded to get schema information
-      await navigationStore.ensureDatabases(currentStreamConfig.source.id)
+      await navigationStore.ensureDatabases(connectionId)
 
       // Get user schemas only (excluding system schemas)
-      const userSchemas = navigationStore.getFilteredSchemas(
-        currentStreamConfig.source.id,
-        database
-      )
+      const userSchemas = navigationStore.getFilteredSchemas(connectionId, database)
       if (userSchemas && userSchemas.length > 0) {
-        options = { schemas: userSchemas.map((s) => s.name) }
+        schemaFilter = userSchemas.map((s) => s.name)
       }
     }
 
-    const tablesResponse = await connectionStore.getTables(
-      currentStreamConfig.source.id,
-      database,
-      options
-    )
+    // Fetch metadata (includes ALL tables) - overview is NOT fetched here
+    // Row counts will only be shown if overview was already loaded (e.g., from Database Explorer)
+    await navigationStore.ensureMetadata(connectionId, database, true)
+
+    // Get all tables from metadata (includes empty tables)
+    const metadata = navigationStore.getMetadata(connectionId, database)
+    const allTableNames: string[] = []
+
+    if (metadata?.tables) {
+      Object.values(metadata.tables).forEach((tableMeta) => {
+        // Filter by schema if needed
+        if (schemaFilter) {
+          if (schemaFilter.includes(tableMeta.schema)) {
+            // Include schema prefix for PostgreSQL
+            const fullName = tableMeta.schema
+              ? `${tableMeta.schema}.${tableMeta.name}`
+              : tableMeta.name
+            allTableNames.push(fullName)
+          }
+        } else {
+          allTableNames.push(tableMeta.name)
+        }
+      })
+    }
 
     // Create a map of existing selections to preserve state
     // Check both the component's tables ref AND the stream config
@@ -520,31 +528,31 @@ const refreshTables = async () => {
     // In edit mode (has stream ID), only keep previously selected tables, new ones default to false
     const isEditMode = Boolean(currentStreamConfig.id)
 
-    tables.value = tablesResponse.map((entry: any) => {
-      const name = typeof entry === 'string' ? entry : 'Unknown'
+    tables.value = allTableNames.map((name: string) => {
       const hasExistingSelection = existingSelections.has(name)
+
       // Tables that were previously selected should remain selected
       // In edit mode: new tables default to false; in create mode: new tables default to true
       const selected = hasExistingSelection ? existingSelections.get(name)! : !isEditMode
+
       const query = existingQueries.get(name) || ''
 
       if (currentStreamConfig.mode === 'cdc') {
         return {
           name,
           query: '',
-          selected: selected
+          selected
         }
       } else {
         return {
           name,
           query,
-          selected: selected
+          selected
         }
       }
     })
 
     // Reset schema initialization so expansion logic runs again
-    currentPage.value = 1
     schemasInitialized.value = false
     expandedSchemas.value.clear()
   } catch (err) {
@@ -569,20 +577,6 @@ watch(
 )
 
 const debouncedRefreshTables = debounce(refreshTables, 500)
-
-watch(searchQuery, () => {
-  currentPage.value = 1
-})
-
-watch(filteredTablesCount, () => {
-  const maxPage = totalPages.value
-  if (currentPage.value > maxPage) {
-    currentPage.value = maxPage
-  }
-  if (currentPage.value < 1) {
-    currentPage.value = 1
-  }
-})
 
 watch(
   tables,

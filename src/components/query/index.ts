@@ -7,3 +7,4 @@
 export { default as QueryBuilder } from './QueryBuilder.vue'
 export { default as FilterBuilder } from './FilterBuilder.vue'
 export * from './types'
+export * from './sql-utils'

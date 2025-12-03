@@ -56,7 +56,14 @@ const connectionDialect = computed((): 'mysql' | 'pgsql' | 'sql' => {
 // Get columns for the current table from schema context
 const tableColumns = computed((): ColumnInfo[] => {
   if (!schemaContext.value || !props.table) return []
-  const columns = schemaContext.value.columns[props.table.name]
+
+  // For PostgreSQL, table name might be "schema.table" format
+  // Try both the full name and just the table name part
+  const fullName = props.table.name
+  const shortName = fullName.includes('.') ? fullName.split('.')[1] : fullName
+
+  // Try full name first (for consistency), then fall back to short name
+  const columns = schemaContext.value.columns[fullName] || schemaContext.value.columns[shortName]
   return columns || []
 })
 
@@ -96,22 +103,35 @@ onMounted(async () => {
       const metadata = navigationStore.getMetadata(connectionId, database)
 
       if (metadata) {
+        // Build columns map with both short name and full schema.table name as keys
+        const columnsMap: Record<
+          string,
+          Array<{ name: string; type: string; nullable: boolean }>
+        > = {}
+
+        Object.entries(metadata.tables).forEach(([tableName, table]) => {
+          const cols = table.columns.map((col) => ({
+            name: col.name,
+            type: col.dataType,
+            nullable: col.isNullable
+          }))
+
+          // Store under the original key (usually just table name)
+          columnsMap[tableName] = cols
+
+          // Also store under full schema.table format for PostgreSQL
+          if (table.schema) {
+            const fullName = `${table.schema}.${table.name}`
+            columnsMap[fullName] = cols
+          }
+        })
+
         schemaContext.value = {
           tables: Object.keys(metadata.tables).map((name) => ({
             name,
             schema: metadata.tables[name].schema
           })),
-          columns: Object.entries(metadata.tables).reduce(
-            (acc, [tableName, table]) => {
-              acc[tableName] = table.columns.map((col) => ({
-                name: col.name,
-                type: col.dataType,
-                nullable: col.isNullable
-              }))
-              return acc
-            },
-            {} as Record<string, Array<{ name: string; type: string; nullable: boolean }>>
-          ),
+          columns: columnsMap,
           dialect: connectionDialect.value as 'mysql' | 'pgsql' | 'sql'
         }
         // console.log('Schema context loaded:', {

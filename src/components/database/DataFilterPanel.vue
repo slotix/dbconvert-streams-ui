@@ -99,7 +99,9 @@ import {
   FilterBuilder,
   type ColumnDef,
   type FilterCondition,
-  type SortCondition
+  type SortCondition,
+  operatorToSql,
+  isUnaryOperator
 } from '@/components/query'
 
 interface Props {
@@ -147,42 +149,6 @@ const normalizedColumns = computed<ColumnDef[]>(() =>
   }))
 )
 
-// Check for unary operators
-const UNARY_OPERATORS = ['IS NULL', 'IS NOT NULL']
-const isUnaryOperator = (op: string) => UNARY_OPERATORS.includes(op)
-
-// Convert operator to SQL condition (for collapsed preview)
-function operatorToSqlCondition(column: string, operator: string, value: string): string {
-  switch (operator) {
-    case 'IS NULL':
-      return `${column} IS NULL`
-    case 'IS NOT NULL':
-      return `${column} IS NOT NULL`
-    case 'CONTAINS':
-      return `${column} LIKE '%${value}%'`
-    case 'NOT_CONTAINS':
-      return `${column} NOT LIKE '%${value}%'`
-    case 'STARTS_WITH':
-      return `${column} LIKE '${value}%'`
-    case 'ENDS_WITH':
-      return `${column} LIKE '%${value}'`
-    case 'IN':
-    case 'NOT IN': {
-      const values = value
-        .split(',')
-        .map((v) => v.trim())
-        .filter((v) => v)
-        .map((v) => (isNaN(Number(v)) ? `'${v}'` : v))
-        .join(', ')
-      return `${column} ${operator} (${values})`
-    }
-    default: {
-      const val = isNaN(Number(value)) ? `'${value}'` : value
-      return `${column} ${operator} ${val}`
-    }
-  }
-}
-
 // Collapsed SQL preview (single line)
 const collapsedSqlPreview = computed(() => {
   const parts: string[] = []
@@ -190,7 +156,7 @@ const collapsedSqlPreview = computed(() => {
   // WHERE conditions
   const whereConditions = filters.value
     .filter((f) => f.column && (isUnaryOperator(f.operator) || f.value))
-    .map((f) => operatorToSqlCondition(f.column, f.operator, f.value))
+    .map((f) => operatorToSql(f.column, f.operator, f.value, props.dialect, false))
 
   if (whereConditions.length > 0) {
     parts.push(`WHERE ${whereConditions.join(' AND ')}`)
@@ -343,7 +309,7 @@ function applyFilters() {
   // Build WHERE clause
   const whereConditions = filters.value
     .filter((f) => f.column && (isUnaryOperator(f.operator) || f.value))
-    .map((f) => operatorToSqlCondition(f.column, f.operator, f.value))
+    .map((f) => operatorToSql(f.column, f.operator, f.value, props.dialect, false))
 
   const where = whereConditions.join(' AND ')
 

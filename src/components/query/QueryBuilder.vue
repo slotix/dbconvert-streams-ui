@@ -187,6 +187,7 @@ import {
 import FilterBuilder from './FilterBuilder.vue'
 import type { ColumnInfo, FilterCondition, SortCondition, ColumnDef } from './types'
 import { UNARY_OPERATORS } from './types'
+import { operatorToSql } from './sql-utils'
 import connections from '@/api/connections'
 
 interface Props {
@@ -320,37 +321,9 @@ function buildQuery(): string {
   return parts.join('\n')
 }
 
-// Build SQL condition from filter
-function buildCondition(f: FilterCondition): string {
-  switch (f.operator) {
-    case 'IS NULL':
-      return `${f.column} IS NULL`
-    case 'IS NOT NULL':
-      return `${f.column} IS NOT NULL`
-    case 'CONTAINS':
-      return `${f.column} LIKE '%${f.value}%'`
-    case 'NOT_CONTAINS':
-      return `${f.column} NOT LIKE '%${f.value}%'`
-    case 'STARTS_WITH':
-      return `${f.column} LIKE '${f.value}%'`
-    case 'ENDS_WITH':
-      return `${f.column} LIKE '%${f.value}'`
-    case 'IN':
-    case 'NOT IN': {
-      const values = f.value
-        .split(',')
-        .map((v) => v.trim())
-        .filter((v) => v)
-        .map((v) => (isNaN(Number(v)) ? `'${v}'` : v))
-        .join(', ')
-      return `${f.column} ${f.operator} (${values})`
-    }
-    default: {
-      const val = isNaN(Number(f.value)) ? `'${f.value}'` : f.value
-      return `${f.column} ${f.operator} ${val}`
-    }
-  }
-}
+// Build SQL condition from filter - using shared utility
+const buildCondition = (f: FilterCondition): string =>
+  operatorToSql(f.column, f.operator, f.value, props.dialect, false)
 
 /**
  * Run a preview query to validate the filter

@@ -229,6 +229,11 @@ import {
 } from '@heroicons/vue/24/outline'
 import { MonacoEditor } from '@/components/monaco'
 import type { ColumnDef, SortCondition, FilterCondition } from './types'
+import {
+  operatorToSql as sharedOperatorToSql,
+  isUnaryOperator,
+  quoteIdentifier as sharedQuoteIdentifier
+} from './sql-utils'
 
 // Re-export types for consumers
 export type { ColumnDef, SortCondition, FilterCondition }
@@ -298,8 +303,6 @@ const OPERATORS = [
   { value: 'NOT IN', label: 'Not in list' }
 ]
 
-const UNARY_OPERATORS = ['IS NULL', 'IS NOT NULL']
-
 // State
 const selectedColumns = ref<string[]>([...props.initialSelectedColumns])
 const filters = ref<FilterCondition[]>([...props.initialFilters])
@@ -321,22 +324,8 @@ const monacoLanguage = computed(() => {
   return 'sql'
 })
 
-// Quote identifier based on dialect
-const quoteIdentifier = (name: string): string => {
-  if (props.dialect === 'mysql') {
-    // MySQL: quote with backticks (MySQL uses databases, not schemas)
-    return '`' + name + '`'
-  }
-  if (props.dialect === 'pgsql') {
-    // PostgreSQL: quote with double quotes, handle schema.table
-    if (name.includes('.')) {
-      const parts = name.split('.')
-      return parts.map((p) => '"' + p + '"').join('.')
-    }
-    return '"' + name + '"'
-  }
-  return name
-}
+// Quote identifier based on dialect - wrapper around shared utility
+const quoteIdentifier = (name: string): string => sharedQuoteIdentifier(name, props.dialect)
 
 // Check if has any modifications
 const hasModifications = computed(() => {
@@ -388,44 +377,9 @@ const generatedSql = computed(() => {
   return parts.join('\n')
 })
 
-// Convert operator to SQL
-function operatorToSql(column: string, operator: string, value: string): string {
-  const col = quoteIdentifier(column)
-
-  switch (operator) {
-    case 'IS NULL':
-      return `${col} IS NULL`
-    case 'IS NOT NULL':
-      return `${col} IS NOT NULL`
-    case 'CONTAINS':
-      return `${col} LIKE '%${value}%'`
-    case 'NOT_CONTAINS':
-      return `${col} NOT LIKE '%${value}%'`
-    case 'STARTS_WITH':
-      return `${col} LIKE '${value}%'`
-    case 'ENDS_WITH':
-      return `${col} LIKE '%${value}'`
-    case 'IN':
-    case 'NOT IN': {
-      const values = value
-        .split(',')
-        .map((v) => v.trim())
-        .filter((v) => v)
-        .map((v) => (isNaN(Number(v)) ? `'${v}'` : v))
-        .join(', ')
-      return `${col} ${operator} (${values})`
-    }
-    default: {
-      const val = isNaN(Number(value)) ? `'${value}'` : value
-      return `${col} ${operator} ${val}`
-    }
-  }
-}
-
-// Helpers
-function isUnaryOperator(op: string) {
-  return UNARY_OPERATORS.includes(op)
-}
+// Convert operator to SQL - wrapper around shared utility
+const operatorToSql = (column: string, operator: string, value: string): string =>
+  sharedOperatorToSql(column, operator, value, props.dialect)
 
 function getPlaceholder(operator: string) {
   switch (operator) {
