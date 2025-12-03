@@ -328,7 +328,7 @@ export const useConnectionsStore = defineStore('connections', {
         throw error
       }
     },
-    async getTables(connectionId: string, database?: string) {
+    async getTables(connectionId: string, database?: string, options?: { schemas?: string[] }) {
       try {
         // If database is not provided, try to get it from the connection
         let dbName = database
@@ -342,7 +342,7 @@ export const useConnectionsStore = defineStore('connections', {
             throw new Error(`No default database configured for connection ${connectionId}`)
           }
         }
-        const tables = await api.getTables(connectionId, dbName)
+        const tables = await api.getTables(connectionId, dbName, options)
         return tables
       } catch (error) {
         console.error('Failed to get tables:', error)

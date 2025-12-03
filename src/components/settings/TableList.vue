@@ -199,6 +199,7 @@ import { ref, computed, watch } from 'vue'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useCommonStore } from '@/stores/common'
 import { useConnectionsStore } from '@/stores/connections'
+import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import Pagination from '@/components/common/Pagination.vue'
 import HighlightedText from '@/components/common/HighlightedText.vue'
 import TableSettings from './TableSettings.vue'
@@ -459,6 +460,7 @@ function updateCurrentPage(newPage: number) {
 const refreshTables = async () => {
   const commonStore = useCommonStore()
   const connectionStore = useConnectionsStore()
+  const navigationStore = useExplorerNavigationStore()
   try {
     if (!currentStreamConfig.source?.id) {
       tables.value = []
@@ -466,7 +468,28 @@ const refreshTables = async () => {
     }
     // When editing a stream, use the sourceDatabase from the config if available
     const database = currentStreamConfig.sourceDatabase || undefined
-    const tablesResponse = await connectionStore.getTables(currentStreamConfig.source.id, database)
+
+    // For PostgreSQL and other multi-schema databases, filter out system schemas
+    let options: { schemas?: string[] } | undefined
+    if (connectionStore.supportsMultiSchema(currentStreamConfig.source.id) && database) {
+      // Ensure databases are loaded to get schema information
+      await navigationStore.ensureDatabases(currentStreamConfig.source.id)
+
+      // Get user schemas only (excluding system schemas)
+      const userSchemas = navigationStore.getFilteredSchemas(
+        currentStreamConfig.source.id,
+        database
+      )
+      if (userSchemas && userSchemas.length > 0) {
+        options = { schemas: userSchemas.map((s) => s.name) }
+      }
+    }
+
+    const tablesResponse = await connectionStore.getTables(
+      currentStreamConfig.source.id,
+      database,
+      options
+    )
 
     // Create a map of existing selections to preserve state
     // Check both the component's tables ref AND the stream config

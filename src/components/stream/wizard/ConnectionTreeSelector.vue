@@ -609,8 +609,11 @@ async function loadDatabases(connectionId: string) {
 }
 
 function getDatabases(connectionId: string) {
-  // Use the filtered getter that respects showSystemObjects setting
-  return navigationStore.getDatabases(connectionId) || []
+  // For stream wizard, always filter out system databases/schemas
+  const databases = navigationStore.getDatabasesRaw(connectionId)
+  if (!databases) return []
+  // Filter out system databases (information_schema, pg_catalog, etc.)
+  return databases.filter((db) => !db.isSystem)
 }
 
 async function ensureMetadata(connectionId: string, database: string) {
