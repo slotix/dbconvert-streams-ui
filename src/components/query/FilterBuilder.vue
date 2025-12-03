@@ -323,8 +323,18 @@ const monacoLanguage = computed(() => {
 
 // Quote identifier based on dialect
 const quoteIdentifier = (name: string): string => {
-  if (props.dialect === 'mysql') return '`' + name + '`'
-  if (props.dialect === 'pgsql') return '"' + name + '"'
+  if (props.dialect === 'mysql') {
+    // MySQL: quote with backticks (MySQL uses databases, not schemas)
+    return '`' + name + '`'
+  }
+  if (props.dialect === 'pgsql') {
+    // PostgreSQL: quote with double quotes, handle schema.table
+    if (name.includes('.')) {
+      const parts = name.split('.')
+      return parts.map((p) => '"' + p + '"').join('.')
+    }
+    return '"' + name + '"'
+  }
   return name
 }
 

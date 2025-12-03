@@ -146,7 +146,7 @@ export const useConnectionsStore = defineStore('connections', {
     setFilter(filter: string) {
       this.currentFilter = filter
     },
-    updateConnectionParams(params: any) {
+    updateConnectionParams(params: Partial<Connection>) {
       if (this.currentConnection && params) {
         Object.assign(this.currentConnection, params)
         console.log('Updated connection:', this.currentConnection)
@@ -220,12 +220,15 @@ export const useConnectionsStore = defineStore('connections', {
         this.isTestingConnection = false
       }
     },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     deleteConnection: debounce(function (this: any, id: string) {
       return this._deleteConnection(id)
     }, 500),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     cloneConnection: debounce(function (this: any, id: string) {
       return this._cloneConnection(id)
     }, 500),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     testConnection: debounce(function (this: any) {
       return this._testConnection()
     }, 500),
