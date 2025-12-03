@@ -216,13 +216,21 @@ const consoleTitle = computed(() => {
 const queryTemplates = computed(() => {
   const dialect = currentDialect.value
   const isPostgres = dialect.includes('postgres') || dialect.includes('pgsql')
+  const isMysql = dialect.includes('mysql')
+
+  // Helper to quote identifiers based on dialect
+  const quoteId = (name: string) => {
+    if (isMysql) return `\`${name}\``
+    if (isPostgres) return `"${name}"`
+    return name
+  }
 
   if (props.database) {
     // Database-scoped SQL Console - data exploration templates
     if (isPostgres) {
       return [
-        { name: 'Select all rows', query: `SELECT * FROM table_name LIMIT 100;` },
-        { name: 'Count rows', query: `SELECT COUNT(*) FROM table_name;` },
+        { name: 'Select all rows', query: `SELECT * FROM ${quoteId('table_name')} LIMIT 100;` },
+        { name: 'Count rows', query: `SELECT COUNT(*) FROM ${quoteId('table_name')};` },
         {
           name: 'List tables',
           query: `SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';`
@@ -233,27 +241,27 @@ const queryTemplates = computed(() => {
         },
         {
           name: 'Find duplicates',
-          query: `SELECT column_name, COUNT(*) as count FROM table_name GROUP BY column_name HAVING COUNT(*) > 1;`
+          query: `SELECT column_name, COUNT(*) as count FROM ${quoteId('table_name')} GROUP BY column_name HAVING COUNT(*) > 1;`
         },
         {
           name: 'Search text',
-          query: `SELECT * FROM table_name WHERE column_name ILIKE '%search_term%';`
+          query: `SELECT * FROM ${quoteId('table_name')} WHERE column_name ILIKE '%search_term%';`
         }
       ]
     } else {
       // MySQL
       return [
-        { name: 'Select all rows', query: `SELECT * FROM table_name LIMIT 100;` },
-        { name: 'Count rows', query: `SELECT COUNT(*) FROM table_name;` },
+        { name: 'Select all rows', query: `SELECT * FROM ${quoteId('table_name')} LIMIT 100;` },
+        { name: 'Count rows', query: `SELECT COUNT(*) FROM ${quoteId('table_name')};` },
         { name: 'Show tables', query: `SHOW TABLES;` },
-        { name: 'Describe table', query: `DESCRIBE table_name;` },
+        { name: 'Describe table', query: `DESCRIBE ${quoteId('table_name')};` },
         {
           name: 'Find duplicates',
-          query: `SELECT column_name, COUNT(*) as count FROM table_name GROUP BY column_name HAVING COUNT(*) > 1;`
+          query: `SELECT column_name, COUNT(*) as count FROM ${quoteId('table_name')} GROUP BY column_name HAVING COUNT(*) > 1;`
         },
         {
           name: 'Search text',
-          query: `SELECT * FROM table_name WHERE column_name LIKE '%search_term%';`
+          query: `SELECT * FROM ${quoteId('table_name')} WHERE column_name LIKE '%search_term%';`
         }
       ]
     }

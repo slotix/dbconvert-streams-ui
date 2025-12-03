@@ -397,15 +397,23 @@ ORDER BY count DESC;`
 function getDatabaseTemplates() {
   const dialect = currentDialect.value
   const isPostgres = dialect.includes('postgres') || dialect.includes('pgsql')
+  const isMysql = dialect.includes('mysql')
+
+  // Helper to quote identifiers based on dialect
+  const quoteId = (name: string) => {
+    if (isMysql) return `\`${name}\``
+    if (isPostgres) return `"${name}"`
+    return name
+  }
 
   // Get table context from active tab if available
   const activeTab = activeQueryTab.value
   const tableCtx = activeTab?.tableContext
   const tableName = tableCtx
     ? tableCtx.schema
-      ? `${tableCtx.schema}.${tableCtx.tableName}`
-      : tableCtx.tableName
-    : 'table_name'
+      ? `${quoteId(tableCtx.schema)}.${quoteId(tableCtx.tableName)}`
+      : quoteId(tableCtx.tableName)
+    : quoteId('table_name')
   const bareTableName = tableCtx?.tableName || 'table_name'
 
   if (props.database) {

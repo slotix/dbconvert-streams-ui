@@ -433,9 +433,21 @@ function onMenuAction(payload: {
         // Generate console key (must match UnifiedConsoleTab's consoleKey computed)
         const consoleKey = `${t.connectionId}:${t.database}`
 
-        // Generate qualified table name
-        const schemaPrefix = t.schema ? `${t.schema}.` : ''
-        const tableName = `${schemaPrefix}${t.name}`
+        // Get connection to determine dialect for proper quoting
+        const conn = connectionsStore.connectionByID(t.connectionId)
+        const dialect = conn?.type?.toLowerCase() || 'sql'
+        const isMysql = dialect.includes('mysql')
+        const isPostgres = dialect.includes('postgres') || dialect.includes('pgsql')
+
+        // Helper to quote identifiers based on dialect
+        const quoteId = (name: string) => {
+          if (isMysql) return `\`${name}\``
+          if (isPostgres) return `"${name}"`
+          return name
+        }
+
+        // Generate qualified table name with proper quoting
+        const tableName = t.schema ? `${quoteId(t.schema)}.${quoteId(t.name)}` : quoteId(t.name)
 
         // Generate SELECT query
         const query = `SELECT * FROM ${tableName} LIMIT 100;`
