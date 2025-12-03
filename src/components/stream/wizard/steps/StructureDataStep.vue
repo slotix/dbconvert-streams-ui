@@ -45,7 +45,7 @@
         class="mb-4 rounded-md bg-yellow-50 dark:bg-amber-900/30 border border-yellow-200 dark:border-amber-500/50 p-4"
       >
         <div class="flex">
-          <div class="flex-shrink-0">
+          <div class="shrink-0">
             <svg
               class="h-5 w-5 text-yellow-400 dark:text-amber-300"
               viewBox="0 0 20 20"
@@ -223,6 +223,7 @@ import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
 
 interface Props {
+  targetConnectionId?: string | null
   createTables?: boolean
   createIndexes?: boolean
   createForeignKeys?: boolean
@@ -230,6 +231,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  targetConnectionId: null,
   createTables: true,
   createIndexes: true,
   createForeignKeys: true,
@@ -295,7 +297,8 @@ const isFileSourceConnection = computed(() => {
 
 // Check if target is a database type that supports structure options
 const targetConnection = computed(() => {
-  const targetId = streamsStore.currentStreamConfig?.target?.id
+  // Use prop first (for wizard), fallback to stream config (for edit mode)
+  const targetId = props.targetConnectionId || streamsStore.currentStreamConfig?.target?.id
   if (!targetId) return null
   return connectionsStore.connectionByID(targetId)
 })

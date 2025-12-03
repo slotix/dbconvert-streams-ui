@@ -20,10 +20,10 @@
       </label>
     </div>
 
-    <!-- Mode Buttons -->
+    <!-- Mode Radio Buttons -->
     <RadioGroup v-model="mode" class="flex-1">
       <RadioGroupLabel class="sr-only">Choose a data transfer mode</RadioGroupLabel>
-      <div class="grid grid-cols-2 gap-2">
+      <div class="flex gap-4">
         <RadioGroupOption
           v-for="option in modes"
           :key="option.id"
@@ -33,12 +33,31 @@
           <div
             :class="[
               checked
-                ? 'bg-teal-600 dark:bg-teal-900 text-white border border-transparent dark:border-teal-600 hover:bg-teal-700 dark:hover:bg-teal-800 focus:ring-teal-500 dark:focus:ring-teal-400'
-                : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 focus:ring-gray-500',
-              'flex items-center justify-center rounded-md py-3 px-3 text-sm font-medium transition-all duration-150 cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2'
+                ? 'bg-teal-50 dark:bg-teal-900/20 border-teal-200 dark:border-teal-700'
+                : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700',
+              active ? 'ring-2 ring-teal-500 ring-offset-2' : '',
+              'relative flex items-center cursor-pointer rounded-lg border p-3 transition-all duration-150 focus:outline-none'
             ]"
           >
-            <RadioGroupLabel as="span" class="cursor-pointer">{{ option.title }}</RadioGroupLabel>
+            <div class="flex items-center h-5">
+              <input
+                :checked="checked"
+                type="radio"
+                class="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 dark:border-gray-500 bg-white dark:bg-gray-700"
+                readonly
+              />
+            </div>
+            <div class="ml-3 flex-1">
+              <RadioGroupLabel
+                as="div"
+                :class="[
+                  checked ? 'text-teal-900 dark:text-teal-100' : 'text-gray-900 dark:text-gray-100',
+                  'text-sm font-medium cursor-pointer'
+                ]"
+              >
+                {{ option.title }}
+              </RadioGroupLabel>
+            </div>
           </div>
         </RadioGroupOption>
       </div>
@@ -52,7 +71,6 @@ import { useStreamsStore } from '@/stores/streamConfig'
 import { useCommonStore } from '@/stores/common'
 import { type ModeOption } from '@/stores/common'
 import { RadioGroup, RadioGroupLabel, RadioGroupOption } from '@headlessui/vue'
-import { CheckCircleIcon } from '@heroicons/vue/20/solid'
 
 const commonStore = useCommonStore()
 const modes = commonStore.modes as ModeOption[]

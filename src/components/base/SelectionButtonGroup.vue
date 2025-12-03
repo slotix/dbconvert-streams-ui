@@ -107,7 +107,7 @@ const activeDescription = computed(() => {
     </RadioGroupLabel>
 
     <!-- Button Grid -->
-    <div :class="['grid gap-2', gridColsClass[columns]]">
+    <div :class="['flex gap-4']">
       <RadioGroupOption
         v-for="option in options"
         :key="option.value"
@@ -118,22 +118,49 @@ const activeDescription = computed(() => {
       >
         <div
           :class="[
-            'rounded-md font-medium transition-all duration-150',
-            'focus:outline-none focus:ring-2 focus:ring-offset-2 cursor-pointer',
-            sizeClasses[size],
             checked
-              ? 'bg-teal-600 dark:bg-teal-900 text-white border border-transparent dark:border-teal-600 hover:bg-teal-700 dark:hover:bg-teal-800 focus:ring-teal-500 dark:focus:ring-teal-400'
-              : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 focus:ring-gray-500',
-            (disabled || option.disabled) && 'opacity-60 cursor-not-allowed',
-            showCheckIcon && checked
-              ? 'flex items-center justify-center gap-2'
-              : 'flex items-center justify-center'
+              ? 'bg-teal-50 dark:bg-teal-900/20 border-teal-200 dark:border-teal-700'
+              : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700',
+            active ? 'ring-2 ring-teal-500 ring-offset-2' : '',
+            'relative flex items-start cursor-pointer rounded-lg border p-3 transition-all duration-150 focus:outline-none flex-1',
+            (disabled || option.disabled) && 'opacity-60 cursor-not-allowed'
           ]"
         >
-          <RadioGroupLabel as="span">
-            {{ option.label }}
-          </RadioGroupLabel>
-          <CheckCircleIcon v-if="showCheckIcon && checked" class="h-5 w-5" aria-hidden="true" />
+          <div class="flex items-center h-5">
+            <input
+              :checked="checked"
+              type="radio"
+              class="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 dark:border-gray-500 bg-white dark:bg-gray-700"
+            />
+          </div>
+          <div class="ml-3 flex-1">
+            <div class="flex items-center justify-between">
+              <RadioGroupLabel
+                as="div"
+                :class="[
+                  checked ? 'text-teal-900 dark:text-teal-100' : 'text-gray-900 dark:text-gray-100',
+                  'text-sm font-medium cursor-pointer'
+                ]"
+              >
+                {{ option.label }}
+              </RadioGroupLabel>
+              <CheckCircleIcon
+                v-if="showCheckIcon && checked"
+                class="h-5 w-5 text-teal-600 dark:text-teal-400"
+                aria-hidden="true"
+              />
+            </div>
+            <RadioGroupDescription
+              v-if="option.description"
+              as="p"
+              :class="[
+                checked ? 'text-teal-700 dark:text-teal-300' : 'text-gray-500 dark:text-gray-400',
+                'text-xs mt-1'
+              ]"
+            >
+              {{ option.description }}
+            </RadioGroupDescription>
+          </div>
         </div>
       </RadioGroupOption>
     </div>

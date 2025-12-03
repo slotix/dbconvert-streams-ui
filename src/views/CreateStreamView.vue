@@ -72,6 +72,7 @@
             <!-- Step 2: Structure & Data -->
             <div v-if="currentStepIndex === 1">
               <StructureDataStep
+                :target-connection-id="wizard.selection.value.targetConnectionId"
                 :create-tables="wizard.createTables.value"
                 :create-indexes="wizard.createIndexes.value"
                 :create-foreign-keys="wizard.createForeignKeys.value"

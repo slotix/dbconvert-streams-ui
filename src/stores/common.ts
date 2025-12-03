@@ -138,8 +138,8 @@ export const useCommonStore = defineStore('common', {
       delete: 'Delete'
     },
     modes: [
-      { id: 'convert', title: 'Convert / Migrate Data' },
-      { id: 'cdc', title: 'Stream / Change Data Capture' }
+      { id: 'convert', title: 'Convert (Migrate Data)' },
+      { id: 'cdc', title: 'Stream (Change Data Capture)' }
     ] as ModeOption[],
     currentPage: '',
     isBackendConnected: false,
