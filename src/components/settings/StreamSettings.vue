@@ -281,11 +281,27 @@ const fileFormats = [
   }
 ]
 
-const compressionOptions = [
-  { value: 'zstd', label: 'ZSTD (.zst) - Recommended' },
-  { value: 'gzip', label: 'GZIP (.gz) - Legacy Compatibility' },
-  { value: 'uncompressed', label: 'Uncompressed - No Compression' }
-]
+// Compression options - dynamic based on file format
+// Parquet uses internal compression (no file extension), CSV/JSONL add compression extension
+const compressionOptions = computed(() => {
+  const isParquet = targetFileFormat.value === 'parquet'
+
+  if (isParquet) {
+    // Parquet has built-in compression - no file extension added
+    return [
+      { value: 'zstd', label: 'ZSTD - Recommended' },
+      { value: 'gzip', label: 'GZIP - Legacy Compatibility' },
+      { value: 'uncompressed', label: 'Uncompressed - No Compression' }
+    ]
+  }
+
+  // CSV/JSONL - compression adds file extension (.zst, .gz)
+  return [
+    { value: 'zstd', label: 'ZSTD (.zst) - Recommended' },
+    { value: 'gzip', label: 'GZIP (.gz) - Legacy Compatibility' },
+    { value: 'uncompressed', label: 'Uncompressed - No Compression' }
+  ]
+})
 
 const storageClassOptions = [
   { value: 'STANDARD', label: 'Standard - Frequently accessed data' },
@@ -397,11 +413,14 @@ const compressionType = computed({
 
 // Compression descriptions
 const compressionDescription = computed(() => {
+  const isParquet = targetFileFormat.value === 'parquet'
+  const parquetNote = isParquet ? ' (embedded in Parquet file)' : ''
+
   switch (compressionType.value) {
     case 'zstd':
-      return 'Best compression ratio with fast decompression - modern standard (recommended)'
+      return `Best compression ratio with fast decompression - modern standard (recommended)${parquetNote}`
     case 'gzip':
-      return 'Good balance of compression and speed - for legacy system compatibility'
+      return `Good balance of compression and speed - for legacy system compatibility${parquetNote}`
     case 'uncompressed':
       return 'No compression - fastest write speed, largest file size'
     default:
