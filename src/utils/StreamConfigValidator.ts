@@ -194,9 +194,9 @@ function validateTables(tables: unknown[], errors: ValidationError[]): void {
       errors.push({ path: `source.tables[${index}].name`, message: 'Table name is required' })
     }
 
-    // Query is optional but if present must be a string
-    if (t.query !== undefined && typeof t.query !== 'string') {
-      errors.push({ path: `source.tables[${index}].query`, message: 'Query must be a string' })
+    // Filter is optional but if present must be an object
+    if (t.filter !== undefined && (typeof t.filter !== 'object' || t.filter === null)) {
+      errors.push({ path: `source.tables[${index}].filter`, message: 'Filter must be an object' })
     }
   })
 }

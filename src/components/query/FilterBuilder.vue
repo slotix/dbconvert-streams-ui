@@ -180,54 +180,14 @@
       </div>
     </div>
 
-    <!-- Generated Query Preview -->
-    <div class="space-y-2">
-      <div class="relative">
-        <MonacoEditor
-          :model-value="generatedSql"
-          :language="monacoLanguage"
-          height="80px"
-          :options="{
-            readOnly: true,
-            minimap: { enabled: false },
-            lineNumbers: 'on',
-            scrollBeyondLastLine: false,
-            wordWrap: 'on',
-            fontSize: 12,
-            padding: { top: 8, bottom: 8 },
-            automaticLayout: true,
-            renderLineHighlight: 'none',
-            scrollbar: { vertical: 'auto', horizontal: 'hidden' }
-          }"
-        />
-        <div class="absolute top-1 right-1 flex items-center gap-1">
-          <slot name="preview-actions" />
-          <button
-            type="button"
-            class="p-1 text-gray-400 hover:text-teal-400 bg-gray-800/80 rounded transition-colors"
-            title="Copy query"
-            @click="copyQuery"
-          >
-            <ClipboardDocumentIcon class="w-3.5 h-3.5" />
-          </button>
-        </div>
-      </div>
-
-      <!-- Apply button slot for explorer mode -->
-      <slot name="footer" :has-modifications="hasModifications" :is-dirty="isDirty" />
-    </div>
+    <!-- Apply button slot for explorer mode -->
+    <slot name="footer" :has-modifications="hasModifications" :is-dirty="isDirty" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import {
-  XMarkIcon,
-  ArrowUpIcon,
-  ArrowDownIcon,
-  ClipboardDocumentIcon
-} from '@heroicons/vue/24/outline'
-import { MonacoEditor } from '@/components/monaco'
+import { XMarkIcon, ArrowUpIcon, ArrowDownIcon } from '@heroicons/vue/24/outline'
 import type { ColumnDef, SortCondition, FilterCondition } from './types'
 import {
   operatorToSql as sharedOperatorToSql,
@@ -316,13 +276,6 @@ const columnList = computed(() => props.columns)
 // Filter ID generator
 let filterId = 0
 const generateId = () => `filter-${++filterId}`
-
-// Monaco language
-const monacoLanguage = computed(() => {
-  if (props.dialect === 'pgsql') return 'pgsql'
-  if (props.dialect === 'mysql') return 'mysql'
-  return 'sql'
-})
 
 // Quote identifier based on dialect - wrapper around shared utility
 const quoteIdentifier = (name: string): string => sharedQuoteIdentifier(name, props.dialect)
@@ -463,10 +416,6 @@ function toggleSortDirection(index: number) {
   emitUpdate()
 }
 
-function copyQuery() {
-  navigator.clipboard.writeText(generatedSql.value)
-}
-
 function emitUpdate() {
   isDirty.value = true
   emit('update', {
@@ -485,6 +434,50 @@ watch(
   (newColumns) => {
     if (selectedColumns.value.length === 0 && newColumns.length > 0) {
       selectedColumns.value = newColumns.map((c) => c.name)
+    }
+  },
+  { immediate: true }
+)
+
+// Watch for initial props changes (for edit mode when props arrive after mount)
+watch(
+  () => props.initialFilters,
+  (newFilters) => {
+    if (newFilters && newFilters.length > 0 && filters.value.length === 0) {
+      filters.value = newFilters.map((f) => ({ ...f }))
+    }
+  },
+  { immediate: true }
+)
+
+watch(
+  () => props.initialSorts,
+  (newSorts) => {
+    if (newSorts && newSorts.length > 0 && sorts.value.length === 0) {
+      sorts.value = newSorts.map((s) => ({ ...s }))
+    }
+  },
+  { immediate: true }
+)
+
+watch(
+  () => props.initialLimit,
+  (newLimit) => {
+    if (newLimit !== null && newLimit !== undefined && limitValue.value === null) {
+      limitValue.value = newLimit
+    }
+  },
+  { immediate: true }
+)
+
+watch(
+  () => props.initialSelectedColumns,
+  (newColumns) => {
+    if (newColumns && newColumns.length > 0 && props.columns.length > 0) {
+      // Only update if initialSelectedColumns is a subset (not all columns)
+      if (newColumns.length < props.columns.length) {
+        selectedColumns.value = [...newColumns]
+      }
     }
   },
   { immediate: true }
@@ -509,7 +502,6 @@ defineExpose({
   removeSort,
   selectAllColumns,
   clearAllColumns,
-  clearLimit,
-  copyQuery
+  clearLimit
 })
 </script>

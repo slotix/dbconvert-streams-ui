@@ -356,10 +356,9 @@ const useDuckDBDisplay = computed(() => {
   return format?.useDuckDB ?? true
 })
 
-// Custom queries
+// Custom queries (from source.queries, not from table filters)
 const customQueryTables = computed(() => {
-  const tables = currentStreamConfig.value?.source?.tables || []
-  return tables.filter((t) => t.selected && t.query && t.query.trim().length > 0)
+  return currentStreamConfig.value?.source?.queries || []
 })
 
 const customQueriesCount = computed(() => customQueryTables.value.length)

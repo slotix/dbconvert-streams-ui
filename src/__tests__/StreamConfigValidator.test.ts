@@ -109,14 +109,16 @@ describe('StreamConfigValidator', () => {
       expect(result.errors.some((e) => e.path === 'source.id')).toBe(true)
     })
 
-    it('should require at least one table', () => {
+    it('should require at least one table or query', () => {
       const config = {
         ...validConfig,
         source: { id: 'conn-123', tables: [] }
       }
       const result = validateStreamConfig(config)
       expect(result.valid).toBe(false)
-      expect(result.errors.some((e) => e.message === 'At least one table is required')).toBe(true)
+      expect(
+        result.errors.some((e) => e.message === 'At least one table or query is required')
+      ).toBe(true)
     })
 
     it('should require table name', () => {
@@ -129,29 +131,29 @@ describe('StreamConfigValidator', () => {
       expect(result.errors.some((e) => e.message === 'Table name is required')).toBe(true)
     })
 
-    it('should accept tables with optional query', () => {
+    it('should accept tables with optional filter', () => {
       const config = {
         ...validConfig,
         source: {
           id: 'conn-123',
-          tables: [{ name: 'users', query: 'SELECT * FROM users WHERE active = 1' }]
+          tables: [{ name: 'users', filter: { limit: 100 } }]
         }
       }
       const result = validateStreamConfig(config)
       expect(result.valid).toBe(true)
     })
 
-    it('should reject query that is not a string', () => {
+    it('should reject filter that is not an object', () => {
       const config = {
         ...validConfig,
         source: {
           id: 'conn-123',
-          tables: [{ name: 'users', query: 123 }]
+          tables: [{ name: 'users', filter: 'invalid' }]
         }
       }
       const result = validateStreamConfig(config)
       expect(result.valid).toBe(false)
-      expect(result.errors.some((e) => e.message === 'Query must be a string')).toBe(true)
+      expect(result.errors.some((e) => e.message === 'Filter must be an object')).toBe(true)
     })
 
     it('should validate dataBundleSize > 0', () => {

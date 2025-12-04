@@ -54,7 +54,6 @@ export const defaultStreamConfigOptions: StreamConfig = {
 }
 
 const defaultTableOptions: Partial<Table> = {
-  query: '',
   selected: false
 }
 
@@ -85,10 +84,16 @@ export const buildStreamPayload = (stream: StreamConfig): Partial<StreamConfig> 
         tables: stream.source.tables.map((table) => {
           const filteredTable: Partial<Table> = { name: table.name }
 
-          // Only delete query if it's empty/default for convert mode
-          // For CDC mode, queries are not supported so always delete
-          if (stream.mode === 'convert' && table.query && table.query !== '') {
-            filteredTable.query = table.query
+          // Include structured filter if it has any meaningful data
+          if (stream.mode === 'convert' && table.filter) {
+            const hasContent =
+              (table.filter.selectedColumns && table.filter.selectedColumns.length > 0) ||
+              (table.filter.filters && table.filter.filters.length > 0) ||
+              (table.filter.sorts && table.filter.sorts.length > 0) ||
+              (table.filter.limit !== undefined && table.filter.limit !== null)
+            if (hasContent) {
+              filteredTable.filter = table.filter
+            }
           }
 
           return filteredTable as Table

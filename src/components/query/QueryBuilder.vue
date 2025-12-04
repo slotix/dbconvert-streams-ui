@@ -11,6 +11,20 @@
         <span class="text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wide"
           >Data Filter</span
         >
+        <!-- Preview button in header -->
+        <button
+          v-if="canPreview"
+          type="button"
+          class="inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-white dark:hover:bg-gray-800 rounded transition-colors ml-2"
+          :class="isLoadingPreview ? 'animate-pulse' : ''"
+          :disabled="isLoadingPreview"
+          title="Preview sample data"
+          @click="runPreview"
+        >
+          <PlayIcon v-if="!isLoadingPreview" class="w-3 h-3" />
+          <ArrowPathIcon v-else class="w-3 h-3 animate-spin" />
+          <span>Preview</span>
+        </button>
       </div>
       <!-- Quick action buttons -->
       <div class="flex items-center gap-1">
@@ -24,7 +38,7 @@
           <ViewColumnsIcon class="w-3 h-3" />
           <span>Columns</span>
           <span
-            v-if="selectedColumns.length > 0"
+            v-if="selectedColumns.length > 0 && selectedColumns.length < columns.length"
             class="px-1 py-0.5 text-[10px] bg-teal-500/30 rounded"
           >
             {{ selectedColumns.length }}
@@ -67,22 +81,7 @@
         :initial-limit="limit"
         @update="onBuilderUpdate"
         @columns-change="onColumnsChange"
-      >
-        <template #preview-actions>
-          <button
-            v-if="canPreview"
-            type="button"
-            class="p-1 text-gray-500 hover:text-teal-400 bg-gray-800/80 rounded transition-colors"
-            :class="isLoadingPreview ? 'animate-pulse' : ''"
-            :disabled="isLoadingPreview"
-            title="Preview sample data"
-            @click="runPreview"
-          >
-            <PlayIcon v-if="!isLoadingPreview" class="w-3.5 h-3.5" />
-            <ArrowPathIcon v-else class="w-3.5 h-3.5 animate-spin" />
-          </button>
-        </template>
-      </FilterBuilder>
+      />
 
       <!-- Preview Results Panel -->
       <div
@@ -188,13 +187,15 @@ import FilterBuilder from './FilterBuilder.vue'
 import type { ColumnInfo, FilterCondition, SortCondition, ColumnDef } from './types'
 import { UNARY_OPERATORS } from './types'
 import { operatorToSql } from './sql-utils'
+import type { TableFilterState } from '@/types/streamConfig'
 import connections from '@/api/connections'
 
 interface Props {
   tableName: string
-  modelValue: string
   dialect?: 'mysql' | 'pgsql' | 'sql'
   columns?: ColumnInfo[]
+  // Structured filter state for UI restoration
+  initialFilterState?: TableFilterState
   // Preview support
   connectionId?: string
   database?: string
@@ -204,13 +205,14 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   dialect: 'sql',
   columns: () => [],
+  initialFilterState: undefined,
   connectionId: '',
   database: '',
   schema: ''
 })
 
 const emit = defineEmits<{
-  (e: 'update:modelValue', value: string): void
+  (e: 'update:filterState', value: TableFilterState): void
 }>()
 
 // Reference to FilterBuilder
@@ -283,47 +285,30 @@ function toggleColumnSelector() {
   showColumnSelector.value = !showColumnSelector.value
 }
 
-// Emit update to parent - build the query string
+// Emit structured filter state whenever local state changes
+function emitFilterState() {
+  const filterState: TableFilterState = {
+    selectedColumns:
+      selectedColumns.value.length === props.columns.length ? [] : [...selectedColumns.value],
+    filters: filters.value.map((f) => ({
+      id: f.id,
+      column: f.column,
+      operator: f.operator,
+      value: f.value
+    })),
+    sorts: orderBy.value.map((s) => ({
+      column: s.column,
+      direction: s.direction
+    })),
+    limit: limit.value
+  }
+  emit('update:filterState', filterState)
+}
+
+// Emit update to parent - only emit filter state (backend generates SQL)
 function emitUpdate() {
-  const query = buildQuery()
-  emit('update:modelValue', query)
+  emitFilterState()
 }
-
-// Build query from current state
-function buildQuery(): string {
-  const parts: string[] = []
-
-  // SELECT columns
-  if (selectedColumns.value.length > 0 && selectedColumns.value.length < props.columns.length) {
-    parts.push(`SELECT ${selectedColumns.value.join(', ')}`)
-  }
-
-  // WHERE clause
-  const whereConditions = filters.value
-    .filter((f) => f.column && (UNARY_OPERATORS.includes(f.operator) || f.value))
-    .map((f) => buildCondition(f))
-
-  if (whereConditions.length > 0) {
-    parts.push(`WHERE ${whereConditions.join(' AND ')}`)
-  }
-
-  // ORDER BY
-  const validSorts = orderBy.value.filter((s) => s.column)
-  if (validSorts.length > 0) {
-    parts.push(`ORDER BY ${validSorts.map((s) => `${s.column} ${s.direction}`).join(', ')}`)
-  }
-
-  // LIMIT
-  if (limit.value !== null && limit.value > 0) {
-    parts.push(`LIMIT ${limit.value}`)
-  }
-
-  return parts.join('\n')
-}
-
-// Build SQL condition from filter - using shared utility
-const buildCondition = (f: FilterCondition): string =>
-  operatorToSql(f.column, f.operator, f.value, props.dialect, false)
 
 /**
  * Run a preview query to validate the filter
@@ -342,7 +327,7 @@ const runPreview = async () => {
     if (filters.value.length > 0) {
       const conditions = filters.value
         .filter((f) => f.column && (UNARY_OPERATORS.includes(f.operator) || f.value))
-        .map((f) => buildCondition(f))
+        .map((f) => operatorToSql(f.column, f.operator, f.value, props.dialect, false))
       whereClause = conditions.join(' AND ')
     }
 
@@ -419,12 +404,70 @@ const formatCellValue = (value: unknown): string => {
   return String(value)
 }
 
-// Initialize selectedColumns with all columns
+// Flag to track if we've initialized from filter state
+const hasInitialized = ref(false)
+
+// Reset initialization flag when initialFilterState prop changes (for re-editing)
 watch(
-  () => props.columns,
-  (newColumns) => {
-    if (selectedColumns.value.length === 0 && newColumns.length > 0) {
+  () => props.initialFilterState,
+  (newFilterState, oldFilterState) => {
+    // If filter state changed (not just from undefined to undefined), allow re-initialization
+    if (JSON.stringify(newFilterState) !== JSON.stringify(oldFilterState)) {
+      hasInitialized.value = false
+    }
+  }
+)
+
+// Initialize from structured filter state when component mounts
+watch(
+  [() => props.initialFilterState, () => props.columns],
+  ([filterState, newColumns]) => {
+    // Only initialize once when we have columns
+    if (hasInitialized.value) return
+    if (newColumns.length === 0) return
+
+    // Use structured filter state if available (preferred)
+    if (filterState) {
+      // Set columns - if empty or undefined, use all columns
+      if (filterState.selectedColumns && filterState.selectedColumns.length > 0) {
+        selectedColumns.value = [...filterState.selectedColumns]
+        // Auto-expand column selector if not all columns are selected
+        if (filterState.selectedColumns.length < newColumns.length) {
+          showColumnSelector.value = true
+        }
+      } else {
+        selectedColumns.value = newColumns.map((c) => c.name)
+      }
+
+      // Set filters
+      if (filterState.filters && filterState.filters.length > 0) {
+        filters.value = filterState.filters.map((f) => ({ ...f })) as FilterCondition[]
+      } else {
+        filters.value = []
+      }
+
+      // Set sorts
+      if (filterState.sorts && filterState.sorts.length > 0) {
+        orderBy.value = filterState.sorts.map((s) => ({ ...s }))
+      } else {
+        orderBy.value = []
+      }
+
+      // Set limit
+      if (filterState.limit !== undefined && filterState.limit !== null) {
+        limit.value = filterState.limit
+      } else {
+        limit.value = null
+      }
+
+      hasInitialized.value = true
+    } else {
+      // No filter state - just initialize with all columns
       selectedColumns.value = newColumns.map((c) => c.name)
+      filters.value = []
+      orderBy.value = []
+      limit.value = null
+      hasInitialized.value = true
     }
   },
   { immediate: true }

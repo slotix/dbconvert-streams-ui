@@ -1,9 +1,38 @@
 // src/types/streams.ts
 import type { TargetSpec, UIStructureOptions } from './specs'
 
+/**
+ * Filter condition for structured query building
+ */
+export interface TableFilter {
+  id: string
+  column: string
+  operator: string
+  value: string
+}
+
+/**
+ * Sort condition for structured query building
+ */
+export interface TableSort {
+  column: string
+  direction: 'ASC' | 'DESC'
+}
+
+/**
+ * Structured filter state for table configuration
+ * Backend generates SQL from this structure
+ */
+export interface TableFilterState {
+  selectedColumns?: string[] // Empty or undefined means all columns (*)
+  filters?: TableFilter[]
+  sorts?: TableSort[]
+  limit?: number | null
+}
+
 export interface Table {
   name: string
-  query?: string
+  filter?: TableFilterState // Structured filter state - backend generates SQL from this
   selected?: boolean
 }
 

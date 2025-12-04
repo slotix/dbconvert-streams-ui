@@ -184,7 +184,10 @@
                 v-if="selectedTableNames.includes(table.name) && !isCDCMode"
                 class="col-span-1 lg:col-span-2 px-4 py-3 bg-gray-50 dark:bg-gray-800/30 border-b border-gray-200 dark:border-gray-700"
               >
-                <TableSettings :table="table" />
+                <TableSettings
+                  :key="`${table.name}-${JSON.stringify(table.filter)}`"
+                  :table="table"
+                />
               </div>
             </template>
           </div>
@@ -236,7 +239,7 @@ const tables = ref<Table[]>(
   (currentStreamConfig._allTablesWithState || currentStreamConfig.source?.tables)?.map(
     (table: Table) => ({
       name: table.name,
-      query: table.query,
+      filter: table.filter,
       // If using _allTablesWithState, use the explicit selected property (default false if undefined)
       // If using currentStreamConfig.source.tables, mark as selected because backend only stores selected tables
       selected: currentStreamConfig._allTablesWithState ? (table.selected ?? false) : true
@@ -431,7 +434,13 @@ function toggleTableSettings(tableName: string) {
 }
 
 function hasTableFilter(table: Table): boolean {
-  return Boolean(table.query && table.query.trim().length > 0)
+  if (!table.filter) return false
+  const f = table.filter
+  const hasColumns = f.selectedColumns && f.selectedColumns.length > 0
+  const hasFilters = f.filters && f.filters.length > 0
+  const hasSorts = f.sorts && f.sorts.length > 0
+  const hasLimit = f.limit !== undefined && f.limit !== null
+  return hasColumns || hasFilters || hasSorts || hasLimit
 }
 
 function handleCheckboxChange(table: Table, checked: boolean) {
@@ -504,13 +513,13 @@ const refreshTables = async () => {
     // Create a map of existing selections to preserve state
     // Check both the component's tables ref AND the stream config
     const existingSelections = new Map<string, boolean>()
-    const existingQueries = new Map<string, string>()
+    const existingFilters = new Map<string, Table['filter']>()
 
     // First, get selections from component state (includes unselected tables)
     tables.value.forEach((table) => {
       existingSelections.set(table.name, table.selected ?? false)
-      if (table.query) {
-        existingQueries.set(table.name, table.query)
+      if (table.filter) {
+        existingFilters.set(table.name, table.filter)
       }
     })
 
@@ -519,8 +528,8 @@ const refreshTables = async () => {
     if (currentStreamConfig.source?.tables) {
       currentStreamConfig.source.tables.forEach((table) => {
         existingSelections.set(table.name, table.selected ?? true)
-        if (table.query) {
-          existingQueries.set(table.name, table.query)
+        if (table.filter) {
+          existingFilters.set(table.name, table.filter)
         }
       })
     }
@@ -537,18 +546,17 @@ const refreshTables = async () => {
       // In edit mode: new tables default to false; in create mode: new tables default to true
       const selected = hasExistingSelection ? existingSelections.get(name)! : !isEditMode
 
-      const query = existingQueries.get(name) || ''
+      const filter = existingFilters.get(name)
 
       if (currentStreamConfig.mode === 'cdc') {
         return {
           name,
-          query: '',
           selected
         }
       } else {
         return {
           name,
-          query,
+          filter,
           selected
         }
       }

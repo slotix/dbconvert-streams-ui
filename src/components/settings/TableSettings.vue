@@ -1,7 +1,6 @@
 <template>
   <div v-if="table && isConvertMode">
     <QueryBuilder
-      v-model="queryModel"
       :table-name="table.name"
       :dialect="connectionDialect"
       :columns="tableColumns"
@@ -9,7 +8,9 @@
       :connection-id="sourceConnectionId"
       :database="sourceDatabase"
       :schema="tableSchema"
+      :initial-filter-state="table.filter"
       height="120px"
+      @update:filter-state="onFilterStateUpdate"
     />
   </div>
 </template>
@@ -21,7 +22,7 @@ import { useConnectionsStore } from '@/stores/connections'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { QueryBuilder } from '@/components/query'
 import type { ColumnInfo } from '@/components/query'
-import { type StreamConfig, type Table } from '@/types/streamConfig'
+import { type StreamConfig, type Table, type TableFilterState } from '@/types/streamConfig'
 import type { SchemaContext } from '@/composables/useMonacoSqlProviders'
 
 interface Props {
@@ -79,16 +80,13 @@ const tableSchema = computed(() => {
   return parts.length > 1 ? parts[0] : ''
 })
 
-// Two-way binding for query
-const queryModel = computed({
-  get: () => props.table.query || '',
-  set: (value: string) => {
-    if (props.table) {
-      props.table.query = value
-      updateStreamSettings()
-    }
+// Handle filter state updates from QueryBuilder
+const onFilterStateUpdate = (filterState: TableFilterState) => {
+  if (props.table) {
+    props.table.filter = filterState
+    updateStreamSettings()
   }
-})
+}
 
 onMounted(async () => {
   // Fetch schema metadata for intelligent SQL autocomplete
