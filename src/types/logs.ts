@@ -37,6 +37,14 @@ export interface StandardLogEntry {
   durationMs?: number
   rowCount?: number
   error?: string
+
+  // S3 Upload
+  bucket?: string
+  filesTotal?: number
+  filesUploaded?: number
+  bytesTotal?: number
+  bytesUploaded?: number
+  writerId?: number
 }
 
 export interface LogFilter {

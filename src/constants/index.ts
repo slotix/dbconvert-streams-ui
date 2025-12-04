@@ -31,6 +31,8 @@ export {
   NODE_TYPE_DISPLAY
 } from './logTypes'
 
+export type { LogLevel, LogCategory, NodeType, QueryPurpose } from './logTypes'
+
 // Service-related
 export * from './serviceStatus'
 

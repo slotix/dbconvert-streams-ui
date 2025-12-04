@@ -813,6 +813,44 @@ export const useLogsStore = defineStore('logs', {
           estimatedSizeBytes: log.estimatedSizeBytes,
           streamId: log.streamId
         })
+      } else if (log.category === 's3_upload') {
+        // Handle S3 upload progress logs
+        const s3UploadLog = {
+          ...baseLog,
+          category: 's3_upload' as const,
+          table: log.table,
+          status: log.status,
+          bucket: log.bucket,
+          filesTotal: log.filesTotal,
+          filesUploaded: log.filesUploaded,
+          bytesTotal: log.bytesTotal,
+          bytesUploaded: log.bytesUploaded,
+          rate: log.rate,
+          elapsed: log.elapsed
+        }
+        this.addLog(s3UploadLog)
+
+        // Forward to monitoring store for S3 upload progress display
+        const monitoringStore = useMonitoringStore()
+        monitoringStore.addLog({
+          id: Date.now() + Math.random(),
+          type: log.type,
+          nodeID: log.nodeId || '',
+          msg: log.message,
+          level: 'info',
+          ts: new Date(log.timestamp).getTime(),
+          category: 's3_upload',
+          table: log.table,
+          status: log.status,
+          bucket: log.bucket,
+          filesTotal: log.filesTotal,
+          filesUploaded: log.filesUploaded,
+          bytesTotal: log.bytesTotal,
+          bytesUploaded: log.bytesUploaded,
+          rate: log.rate,
+          elapsed: log.elapsed,
+          streamId: log.streamId
+        })
       }
     }
   }

@@ -106,6 +106,7 @@ class SSELogsService {
       case 'stat':
       case 'progress':
       case 'table_metadata':
+      case 's3_upload':
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ;(logsStore as any).addStreamLog(log)
         break

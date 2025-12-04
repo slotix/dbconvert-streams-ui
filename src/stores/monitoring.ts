@@ -94,6 +94,13 @@ export const useMonitoringStore = defineStore('monitoring', {
       },
       {
         id: 4,
+        name: 's3Upload',
+        title: 'Uploading to S3',
+        description: 'Uploading staged files to cloud storage.',
+        timestamp: null
+      },
+      {
+        id: 5,
         name: 'finished',
         title: 'Finished',
         description: 'Completed the data transfer process.',
@@ -281,6 +288,226 @@ export const useMonitoringStore = defineStore('monitoring', {
         paused,
         total: allTableStats.length
       }
+    },
+
+    /**
+     * Check if target is an S3 connection
+     */
+    isS3Target(state: State): boolean {
+      const spec = state.streamConfig?.target?.spec
+      return !!(spec?.s3 || spec?.gcs || spec?.azure)
+    },
+
+    /**
+     * Extract S3 upload statistics from logs
+     * Groups by table name and returns latest stat per table
+     */
+    s3UploadStats(state: State): {
+      completed: Array<{
+        table: string
+        status: string
+        filesTotal: number
+        filesUploaded: number
+        bytesTotal: number
+        bytesUploaded: number
+        bucket: string
+        rate: number
+        elapsed: number
+        timestamp: number
+      }>
+      uploading: Array<{
+        table: string
+        status: string
+        filesTotal: number
+        filesUploaded: number
+        bytesTotal: number
+        bytesUploaded: number
+        bucket: string
+        rate: number
+        elapsed: number
+        timestamp: number
+      }>
+      failed: Array<{
+        table: string
+        status: string
+        filesTotal: number
+        filesUploaded: number
+        bytesTotal: number
+        bytesUploaded: number
+        bucket: string
+        rate: number
+        elapsed: number
+        timestamp: number
+      }>
+      total: number
+      aggregate: {
+        filesTotal: number
+        filesUploaded: number
+        bytesTotal: number
+        bytesUploaded: number
+        rate: number
+      }
+    } {
+      // Get current stream ID
+      let currentStreamID = state.streamID
+      if (!currentStreamID) {
+        const recentLog = state.logs.find((log) => log.streamId)
+        if (recentLog) {
+          currentStreamID = recentLog.streamId
+        }
+      }
+
+      // Filter to s3_upload logs for current stream
+      const uploadLogs = state.logs.filter(
+        (log) =>
+          log.category === 's3_upload' &&
+          log.table &&
+          (!currentStreamID || log.streamId === currentStreamID)
+      )
+
+      // S3 upload has its own status values: UPLOADING, FINISHED, FAILED
+      type S3UploadStatus = 'UPLOADING' | 'FINISHED' | 'FAILED'
+
+      // STEP 1: Deduplicate by table + writerId to get the final state per writer
+      // Each writer has a unique writerId, so we track each writer's upload separately
+      // This prevents multiple logs from the same writer being counted multiple times
+      const latestByWriter = new Map<
+        string,
+        {
+          table: string
+          writerId: number
+          status: S3UploadStatus
+          filesTotal: number
+          filesUploaded: number
+          bytesTotal: number
+          bytesUploaded: number
+          bucket: string
+          rate: number
+          elapsed: number
+          timestamp: number
+        }
+      >()
+
+      uploadLogs.forEach((log) => {
+        const tableName = log.table as string
+        const writerId = (log.writerId as number) || 0
+        const key = `${tableName}:${writerId}`
+        const existing = latestByWriter.get(key)
+
+        const logStatus = ((log.status as string) || 'UPLOADING') as S3UploadStatus
+        const logFilesTotal = (log.filesTotal as number) || 0
+        const logFilesUploaded = (log.filesUploaded as number) || 0
+        const logBytesTotal = (log.bytesTotal as number) || 0
+        const logBytesUploaded = (log.bytesUploaded as number) || 0
+        const logRate = (log.rate as number) || 0
+        const logElapsed = (log.elapsed as number) || 0
+        const logTimestamp = log.ts || Date.now()
+
+        const logEntry = {
+          table: tableName,
+          writerId,
+          status: logStatus,
+          filesTotal: logFilesTotal,
+          filesUploaded: logFilesUploaded,
+          bytesTotal: logBytesTotal,
+          bytesUploaded: logBytesUploaded,
+          bucket: (log.bucket as string) || '',
+          rate: logRate,
+          elapsed: logElapsed,
+          timestamp: logTimestamp
+        }
+
+        if (!existing) {
+          latestByWriter.set(key, logEntry)
+        } else {
+          // Prefer FINISHED status, otherwise take most recent
+          if (logStatus === 'FINISHED' && existing.status !== 'FINISHED') {
+            latestByWriter.set(key, logEntry)
+          } else if (existing.status === 'FINISHED' && logStatus !== 'FINISHED') {
+            // Keep existing finished entry
+          } else if (logTimestamp > existing.timestamp) {
+            latestByWriter.set(key, logEntry)
+          }
+        }
+      })
+
+      // STEP 2: Aggregate across writers for the same table
+      const aggregatedByTable = new Map<
+        string,
+        {
+          table: string
+          status: S3UploadStatus
+          filesTotal: number
+          filesUploaded: number
+          bytesTotal: number
+          bytesUploaded: number
+          bucket: string
+          rate: number
+          elapsed: number
+          timestamp: number
+        }
+      >()
+
+      latestByWriter.forEach((writerStat) => {
+        const existing = aggregatedByTable.get(writerStat.table)
+
+        if (!existing) {
+          // First writer for this table
+          aggregatedByTable.set(writerStat.table, {
+            table: writerStat.table,
+            status: writerStat.status,
+            filesTotal: writerStat.filesTotal,
+            filesUploaded: writerStat.filesUploaded,
+            bytesTotal: writerStat.bytesTotal,
+            bytesUploaded: writerStat.bytesUploaded,
+            bucket: writerStat.bucket,
+            rate: writerStat.rate,
+            elapsed: writerStat.elapsed,
+            timestamp: writerStat.timestamp
+          })
+        } else {
+          // Sum up stats from this writer
+          existing.filesTotal += writerStat.filesTotal
+          existing.filesUploaded += writerStat.filesUploaded
+          existing.bytesTotal += writerStat.bytesTotal
+          existing.bytesUploaded += writerStat.bytesUploaded
+          existing.rate += writerStat.rate
+          existing.elapsed = Math.max(existing.elapsed, writerStat.elapsed)
+          existing.timestamp = Math.max(existing.timestamp, writerStat.timestamp)
+          // Status: FINISHED only if all writers finished
+          if (writerStat.status !== 'FINISHED') {
+            existing.status = writerStat.status
+          }
+        }
+      })
+
+      // Convert to array
+      const allUploadStats = Array.from(aggregatedByTable.values())
+
+      // Group by status
+      const completed = allUploadStats.filter((t) => t.status === 'FINISHED')
+      const uploading = allUploadStats.filter((t) => t.status === 'UPLOADING')
+      const failed = allUploadStats.filter((t) => t.status === 'FAILED')
+
+      // Calculate aggregates
+      const aggregate = allUploadStats.reduce(
+        (acc, stat) => ({
+          filesTotal: acc.filesTotal + stat.filesTotal,
+          filesUploaded: acc.filesUploaded + stat.filesUploaded,
+          bytesTotal: acc.bytesTotal + stat.bytesTotal,
+          bytesUploaded: acc.bytesUploaded + stat.bytesUploaded,
+          rate: acc.rate + stat.rate
+        }),
+        { filesTotal: 0, filesUploaded: 0, bytesTotal: 0, bytesUploaded: 0, rate: 0 }
+      )
+
+      return {
+        completed,
+        uploading,
+        failed,
+        total: allUploadStats.length,
+        aggregate
+      }
     }
   },
   actions: {
@@ -348,6 +575,13 @@ export const useMonitoringStore = defineStore('monitoring', {
       // Handle progress messages
       if (log.category === 'progress' && log.stage !== undefined) {
         this.currentStageID = log.stage
+      }
+
+      // Handle S3 upload logs - transition to stage 4 (s3Upload)
+      // This triggers when the first s3_upload log arrives
+      if (log.category === 's3_upload' && this.currentStageID < 4) {
+        this.currentStageID = 4
+        this.setStageTimestamp(4)
       }
 
       // Handle table metadata logs (from SSE instead of API)

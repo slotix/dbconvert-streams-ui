@@ -219,6 +219,11 @@
   <div class="mt-4">
     <TableStatsCard @compare-table="(tableName) => $emit('compare-table', tableName)" />
   </div>
+
+  <!-- S3 Upload Section - Show for S3/GCS/Azure targets -->
+  <div v-if="isS3Target" class="mt-4">
+    <S3UploadStatsCard />
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -233,6 +238,7 @@ import {
 import StatusBadge from '@/components/common/StatusBadge.vue'
 import StatRow from './StatRow.vue'
 import TableStatsCard from './TableStatsCard.vue'
+import S3UploadStatsCard from './S3UploadStatsCard.vue'
 
 interface Props {
   isRunning: boolean
@@ -259,6 +265,12 @@ const sourceStats = computed(() => store.aggregatedSourceStats)
 const targetStats = computed(() => store.aggregatedTargetStats)
 
 const modeLabel = computed(() => (store.streamConfig?.mode === 'convert' ? 'rows' : 'events'))
+
+// Check if target is S3/GCS/Azure cloud storage
+const isS3Target = computed(() => {
+  const spec = store.streamConfig?.target?.spec
+  return !!(spec?.s3 || spec?.gcs || spec?.azure)
+})
 
 // Status message for completed/stopped/failed states
 const statusMessage = computed(() => {

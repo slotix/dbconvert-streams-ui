@@ -28,7 +28,8 @@ export const LOG_CATEGORIES = {
   TABLE_METADATA: 'table_metadata',
   SQL: 'sql',
   ERROR: 'error',
-  DEBUG: 'debug'
+  DEBUG: 'debug',
+  S3_UPLOAD: 's3_upload'
 } as const
 
 export type LogCategory = (typeof LOG_CATEGORIES)[keyof typeof LOG_CATEGORIES]
@@ -82,7 +83,8 @@ export const LOG_CATEGORY_LABELS: Record<LogCategory, string> = {
   [LOG_CATEGORIES.TABLE_METADATA]: 'Table Metadata',
   [LOG_CATEGORIES.SQL]: 'SQL',
   [LOG_CATEGORIES.ERROR]: 'Error',
-  [LOG_CATEGORIES.DEBUG]: 'Debug'
+  [LOG_CATEGORIES.DEBUG]: 'Debug',
+  [LOG_CATEGORIES.S3_UPLOAD]: 'S3 Upload'
 }
 
 /**
