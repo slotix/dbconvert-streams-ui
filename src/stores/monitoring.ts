@@ -201,32 +201,38 @@ export const useMonitoringStore = defineStore('monitoring', {
           (!currentStreamID || log.streamId === currentStreamID)
       )
 
-      // Group by table name to get latest stat per table
-      // During streaming: shows per-writer progress
-      // After completion: backend publishes aggregated stats with same timestamp
+      // Group by table name to get the worst status per table
+      // If ANY writer reports FAILED for a table, that table should show as FAILED
+      // Multiple writers may report different statuses for the same table
       const latestByTable = new Map<string, Log>()
       tableLogs.forEach((log) => {
         const existing = latestByTable.get(log.table!)
         if (!existing) {
           latestByTable.set(log.table!, log)
         } else {
-          // Prefer FINISHED status entries (they contain final aggregated counts from backend)
-          const logIsFinished = log.status === STATUS.FINISHED
-          const existingIsFinished = existing.status === STATUS.FINISHED
+          const logStatus = (log.status as Status) || STATUS.RUNNING
+          const existingStatus = (existing.status as Status) || STATUS.RUNNING
 
-          if (logIsFinished && !existingIsFinished) {
-            // New log is finished, existing is not - take new (aggregated)
+          // Use STATUS_PRIORITY to determine worst status
+          // FAILED=9, STOPPED=8, FINISHED=7, etc. - higher number = worse status
+          const logPriority = STATUS_PRIORITY[logStatus] || 0
+          const existingPriority = STATUS_PRIORITY[existingStatus] || 0
+
+          if (logPriority > existingPriority) {
+            // New log has worse status - use it (e.g., FAILED over FINISHED)
             latestByTable.set(log.table!, log)
-          } else if (!logIsFinished && existingIsFinished) {
-            // Existing is finished, new is not - keep existing (aggregated)
-          } else {
-            // Both same status - take most recent timestamp
-            // When multiple writers finish, they all log the same aggregated values
-            // So we just need the latest one
-            if (log.ts && existing.ts && log.ts > existing.ts) {
+          } else if (logPriority === existingPriority) {
+            // Same status priority - prefer the one with more events or more recent
+            const logEvents = (log.events as number) || 0
+            const existingEvents = (existing.events as number) || 0
+
+            if (logEvents > existingEvents) {
+              latestByTable.set(log.table!, log)
+            } else if (log.ts && existing.ts && log.ts > existing.ts) {
               latestByTable.set(log.table!, log)
             }
           }
+          // If existing has worse status, keep it
         }
       })
 
