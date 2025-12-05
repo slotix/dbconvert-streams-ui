@@ -30,7 +30,12 @@
         <TableList v-if="dataSourceMode === 'tables'" />
 
         <!-- Custom Query Mode - Only in Convert mode -->
-        <CustomQueryEditor v-else-if="dataSourceMode === 'queries' && currentMode === 'convert'" />
+        <div
+          v-else-if="dataSourceMode === 'queries' && currentMode === 'convert'"
+          class="h-[600px] min-h-[400px]"
+        >
+          <CustomQueryEditor />
+        </div>
       </template>
     </div>
 

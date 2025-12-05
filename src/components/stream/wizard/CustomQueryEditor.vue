@@ -1,7 +1,9 @@
 <template>
-  <div class="space-y-4">
-    <!-- Query List Header -->
-    <div class="flex items-center justify-between">
+  <div class="flex flex-col h-full bg-gray-50 dark:bg-gray-900">
+    <!-- Header -->
+    <div
+      class="flex items-center justify-between px-4 py-2.5 bg-white dark:bg-gray-850 border-b border-gray-200 dark:border-gray-700"
+    >
       <div class="flex items-center gap-2">
         <CodeBracketIcon class="w-5 h-5 text-teal-600 dark:text-teal-400" />
         <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100">Custom SQL Queries</h3>
@@ -12,30 +14,36 @@
           {{ queries.length }}
         </span>
       </div>
-      <button
-        type="button"
-        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 dark:bg-teal-700 dark:hover:bg-teal-600 rounded-md transition-colors"
-        @click="addQuery"
-      >
-        <PlusIcon class="w-4 h-4" />
-        Add Query
-      </button>
+      <div class="flex items-center gap-2">
+        <!-- Template Selector -->
+        <select
+          v-if="activeQuery"
+          class="text-xs px-2 py-1.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300 focus:ring-1 focus:ring-teal-500"
+          @change="applyTemplate($event, activeQuery)"
+        >
+          <option value="">Templates</option>
+          <option value="cte">CTE with aggregation</option>
+          <option value="join">Multi-table JOIN</option>
+          <option value="subquery">Subquery filter</option>
+          <option value="union">UNION query</option>
+        </select>
+      </div>
     </div>
 
     <!-- Empty State -->
     <div
       v-if="queries.length === 0"
-      class="flex flex-col items-center justify-center py-12 px-4 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800/50"
+      class="flex flex-col items-center justify-center flex-1 py-12 px-4"
     >
-      <DocumentTextIcon class="w-12 h-12 text-gray-400 dark:text-gray-500 mb-3" />
-      <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">No custom queries</h4>
-      <p class="text-sm text-gray-500 dark:text-gray-400 text-center max-w-md mb-4">
+      <DocumentTextIcon class="w-16 h-16 text-gray-400 dark:text-gray-500 mb-4" />
+      <h4 class="text-base font-medium text-gray-900 dark:text-gray-100 mb-2">No custom queries</h4>
+      <p class="text-sm text-gray-500 dark:text-gray-400 text-center max-w-md mb-6">
         Add complex SQL queries with JOINs, CTEs, and aggregations to create derived datasets on the
         target.
       </p>
       <button
         type="button"
-        class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-900/30 hover:bg-teal-100 dark:hover:bg-teal-900/50 border border-teal-200 dark:border-teal-700 rounded-md transition-colors"
+        class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 dark:bg-teal-700 dark:hover:bg-teal-600 rounded-md transition-colors"
         @click="addQuery"
       >
         <PlusIcon class="w-4 h-4" />
@@ -43,141 +51,188 @@
       </button>
     </div>
 
-    <!-- Query Cards -->
-    <div v-else class="space-y-4">
-      <div
-        v-for="(query, index) in queries"
-        :key="query.name + index"
-        class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden"
-      >
-        <!-- Query Header -->
+    <!-- Tabbed Query Editor -->
+    <div v-else class="flex flex-col flex-1 min-h-0">
+      <!-- Query Tabs -->
+      <SqlQueryTabs
+        :tabs="queryTabs"
+        :active-tab-id="activeTabId"
+        @select="setActiveTab"
+        @close="removeQuery"
+        @add="addQuery"
+        @rename="handleRenameTab"
+      />
+
+      <!-- Query Content -->
+      <div v-if="activeQuery" class="flex-1 flex flex-col min-h-0 bg-white dark:bg-gray-850">
+        <!-- Query Info Bar -->
         <div
-          class="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-850 border-b border-gray-200 dark:border-gray-700"
+          class="flex items-center justify-between px-4 py-2 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700"
         >
-          <div class="flex items-center gap-3 flex-1 min-w-0">
-            <!-- Expand/Collapse -->
-            <button
-              type="button"
-              class="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-              @click="toggleExpanded(index)"
-            >
-              <ChevronRightIcon
-                class="w-4 h-4 transition-transform"
-                :class="{ 'rotate-90': expandedQueries.has(index) }"
-              />
-            </button>
-
-            <!-- Virtual Table Name Input -->
-            <div class="flex-1 min-w-0">
-              <label class="sr-only">Target table name</label>
-              <input
-                v-model="query.name"
-                type="text"
-                placeholder="target_table_name"
-                class="w-full px-3 py-1.5 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                @blur="validateTableName(query, index)"
-              />
-            </div>
-
-            <!-- Validation Status -->
-            <div class="flex items-center gap-2">
-              <span
-                v-if="query.validated"
-                class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/30 rounded"
-              >
-                <CheckCircleIcon class="w-3.5 h-3.5" />
-                Valid
-              </span>
-              <span
-                v-else-if="query.query && query.query.trim().length > 0"
-                class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 rounded"
-              >
-                <ExclamationCircleIcon class="w-3.5 h-3.5" />
-                Unvalidated
-              </span>
-            </div>
+          <!-- Table Name Input -->
+          <div class="flex items-center gap-3 flex-1">
+            <span class="text-xs text-gray-500 dark:text-gray-400">Result table name:</span>
+            <input
+              v-model="activeQuery.name"
+              type="text"
+              placeholder="target_table_name"
+              class="px-3 py-1 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+              @blur="validateTableName(activeQuery, activeQueryIndex)"
+            />
           </div>
 
           <!-- Actions -->
-          <div class="flex items-center gap-1 ml-3">
+          <div class="flex items-center gap-2">
             <button
               type="button"
-              class="p-1.5 text-gray-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
-              title="Validate query"
-              :disabled="isValidating === index"
-              @click="validateQuery(query, index)"
+              class="inline-flex items-center gap-1.5 px-4 py-1.5 text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 dark:bg-teal-700 dark:hover:bg-teal-600 rounded-md transition-colors shadow-sm"
+              title="Run query and preview results"
+              :disabled="isRunning === activeQueryIndex || !activeQuery.query?.trim()"
+              @click="runPreview(activeQuery, activeQueryIndex)"
             >
-              <PlayIcon v-if="isValidating !== index" class="w-4 h-4" />
+              <PlayIcon v-if="isRunning !== activeQueryIndex" class="w-4 h-4" />
               <ArrowPathIcon v-else class="w-4 h-4 animate-spin" />
-            </button>
-            <button
-              type="button"
-              class="p-1.5 text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
-              title="Remove query"
-              @click="removeQuery(index)"
-            >
-              <TrashIcon class="w-4 h-4" />
+              <span>{{ isRunning === activeQueryIndex ? 'Running...' : 'Run' }}</span>
             </button>
           </div>
         </div>
 
-        <!-- Query Editor (Expanded) -->
-        <div v-show="expandedQueries.has(index)" class="p-4 space-y-3">
-          <!-- Template Selector -->
-          <div class="flex items-center gap-2">
-            <span class="text-xs text-gray-500 dark:text-gray-400">Template:</span>
-            <select
-              class="text-xs px-2 py-1 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300 focus:ring-1 focus:ring-teal-500"
-              @change="applyTemplate($event, query)"
+        <!-- Split View: Editor + Results -->
+        <div class="flex-1 flex overflow-hidden min-h-0">
+          <!-- SQL Editor Pane -->
+          <div
+            class="border-r border-gray-200 dark:border-gray-700 min-h-0"
+            :style="{ width: `${editorWidth}%` }"
+          >
+            <SqlEditor
+              v-model="activeQuery.query"
+              :dialect="connectionDialect"
+              :schema-context="schemaContext"
+              height="100%"
+              placeholder="Enter your SQL query (JOINs, CTEs, aggregations)..."
+              @change="handleQueryChange(activeQuery)"
+            />
+          </div>
+
+          <!-- Resizable Divider -->
+          <div
+            class="w-1 bg-gray-200 dark:bg-gray-700 hover:bg-teal-500 dark:hover:bg-teal-500 cursor-col-resize transition-colors"
+            @mousedown="startResize"
+          ></div>
+
+          <!-- Results Pane -->
+          <div class="min-h-0 flex flex-col" :style="{ width: `${100 - editorWidth}%` }">
+            <!-- Results Header -->
+            <div
+              class="flex items-center justify-between px-3 py-2 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700"
             >
-              <option value="">Select a template...</option>
-              <option value="cte">CTE with aggregation</option>
-              <option value="join">Multi-table JOIN</option>
-              <option value="subquery">Subquery filter</option>
-              <option value="union">UNION query</option>
-            </select>
-          </div>
-
-          <!-- SQL Editor -->
-          <SqlEditor
-            v-model="query.query"
-            :dialect="connectionDialect"
-            :schema-context="schemaContext"
-            height="200px"
-            placeholder="Enter your SQL query (JOINs, CTEs, aggregations)..."
-            @change="markAsUnvalidated(query)"
-          />
-
-          <!-- Detected Columns -->
-          <div
-            v-if="query.columns && query.columns.length > 0"
-            class="bg-gray-50 dark:bg-gray-900/50 rounded-md p-3"
-          >
-            <div class="flex items-center gap-2 mb-2">
-              <TableCellsIcon class="w-4 h-4 text-gray-500" />
-              <span class="text-xs font-medium text-gray-700 dark:text-gray-300"
-                >Detected Columns ({{ query.columns.length }})</span
-              >
+              <div class="flex items-center gap-2">
+                <TableCellsIcon class="w-4 h-4 text-teal-500" />
+                <span class="text-xs font-medium text-gray-600 dark:text-gray-300">
+                  Results
+                  <span v-if="previewData[activeQueryIndex]" class="text-gray-400">
+                    ({{ previewData[activeQueryIndex].rows.length }} rows)
+                  </span>
+                </span>
+              </div>
             </div>
-            <div class="flex flex-wrap gap-1.5">
-              <span
-                v-for="col in query.columns"
-                :key="col.name"
-                class="inline-flex items-center gap-1 px-2 py-0.5 text-xs bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded"
-              >
-                <span class="text-gray-900 dark:text-gray-100">{{ col.name }}</span>
-                <span class="text-gray-400 dark:text-gray-500">{{ col.type }}</span>
-              </span>
-            </div>
-          </div>
 
-          <!-- Validation Error -->
-          <div
-            v-if="validationErrors[index]"
-            class="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md"
-          >
-            <ExclamationTriangleIcon class="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
-            <div class="text-sm text-red-700 dark:text-red-300">{{ validationErrors[index] }}</div>
+            <!-- Results Content -->
+            <div class="flex-1 overflow-auto bg-white dark:bg-gray-900">
+              <!-- Preview Error -->
+              <div
+                v-if="previewErrors[activeQueryIndex]"
+                class="p-4 text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20"
+              >
+                <div class="flex items-start gap-2">
+                  <ExclamationTriangleIcon class="w-4 h-4 shrink-0 mt-0.5" />
+                  <div>
+                    <p class="font-medium">Query error</p>
+                    <p class="mt-1 text-red-500 dark:text-red-300">
+                      {{ previewErrors[activeQueryIndex] }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Preview Data Table -->
+              <div
+                v-else-if="
+                  previewData[activeQueryIndex] && previewData[activeQueryIndex].rows.length > 0
+                "
+              >
+                <table class="w-full text-xs">
+                  <thead class="bg-gray-50 dark:bg-gray-900 sticky top-0">
+                    <tr>
+                      <th
+                        v-for="col in previewData[activeQueryIndex].columns"
+                        :key="col"
+                        class="px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700 whitespace-nowrap"
+                      >
+                        {{ col }}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                    <tr
+                      v-for="(row, idx) in previewData[activeQueryIndex].rows"
+                      :key="idx"
+                      class="hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                    >
+                      <td
+                        v-for="col in previewData[activeQueryIndex].columns"
+                        :key="col"
+                        class="px-3 py-2 text-gray-900 dark:text-gray-100 whitespace-nowrap max-w-[200px] truncate"
+                        :title="formatCellValue(row[col])"
+                      >
+                        {{ formatCellValue(row[col]) }}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Empty Results -->
+              <div
+                v-else-if="
+                  previewData[activeQueryIndex] && previewData[activeQueryIndex].rows.length === 0
+                "
+                class="p-8 text-center text-xs text-gray-500 dark:text-gray-400"
+              >
+                Query returned no rows
+              </div>
+
+              <!-- No Results Yet -->
+              <div v-else class="flex flex-col items-center justify-center h-full p-8 text-center">
+                <PlayIcon class="w-12 h-12 text-gray-300 dark:text-gray-600 mb-3" />
+                <p class="text-sm text-gray-500 dark:text-gray-400">
+                  Run the query to preview results
+                </p>
+              </div>
+            </div>
+
+            <!-- Detected Schema Info (bottom section) -->
+            <div
+              v-if="activeQuery.columns && activeQuery.columns.length > 0"
+              class="border-t border-gray-200 dark:border-gray-700 p-3 bg-gray-50 dark:bg-gray-900/50"
+            >
+              <div class="flex items-center gap-2 mb-2">
+                <CheckCircleIcon class="w-4 h-4 text-green-500" />
+                <span class="text-xs font-medium text-gray-700 dark:text-gray-300"
+                  >Detected Schema ({{ activeQuery.columns.length }} columns)</span
+                >
+              </div>
+              <div class="flex flex-wrap gap-1.5">
+                <span
+                  v-for="col in activeQuery.columns"
+                  :key="col.name"
+                  class="inline-flex items-center gap-1 px-2 py-0.5 text-xs bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded"
+                >
+                  <span class="font-medium text-gray-900 dark:text-gray-100">{{ col.name }}</span>
+                  <span class="text-gray-500 dark:text-gray-400">{{ col.type }}</span>
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -186,21 +241,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onUnmounted } from 'vue'
 import {
   PlusIcon,
-  TrashIcon,
   PlayIcon,
   ArrowPathIcon,
-  ChevronRightIcon,
   CodeBracketIcon,
   DocumentTextIcon,
   CheckCircleIcon,
-  ExclamationCircleIcon,
   ExclamationTriangleIcon,
   TableCellsIcon
 } from '@heroicons/vue/24/outline'
 import SqlEditor from '@/components/monaco/SqlEditor.vue'
+import { SqlQueryTabs } from '@/components/database/sql-console'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
@@ -213,10 +266,14 @@ const connectionsStore = useConnectionsStore()
 const navigationStore = useExplorerNavigationStore()
 
 // Local state
-const expandedQueries = ref<Set<number>>(new Set([0])) // First query expanded by default
-const isValidating = ref<number | null>(null)
-const validationErrors = ref<Record<number, string>>({})
+const activeTabId = ref<string>('')
+const isRunning = ref<number | null>(null)
+const previewErrors = ref<Record<number, string>>({})
+const previewData = ref<Record<number, { columns: string[]; rows: Record<string, unknown>[] }>>({})
 const schemaContext = ref<SchemaContext | undefined>()
+const editorWidth = ref(50)
+const isResizing = ref(false)
+const previewLimit = 100
 
 // Get queries from store
 const queries = computed({
@@ -227,6 +284,53 @@ const queries = computed({
     }
   }
 })
+
+// Convert queries to tab format
+const queryTabs = computed(() =>
+  queries.value.map((query, index) => ({
+    id: `query-${index}`,
+    name: query.name || `Query ${index + 1}`,
+    query: query.query || '',
+    createdAt: Date.now(),
+    updatedAt: Date.now()
+  }))
+)
+
+// Active query management
+const activeQueryIndex = computed(() => {
+  if (!activeTabId.value) return 0
+  const index = parseInt(activeTabId.value.replace('query-', ''))
+  return isNaN(index) ? 0 : index
+})
+
+const activeQuery = computed(() => queries.value[activeQueryIndex.value] || null)
+
+// Initialize active tab
+watch(
+  queries,
+  (newQueries) => {
+    if (newQueries.length > 0 && !activeTabId.value) {
+      activeTabId.value = `query-0`
+    }
+    // Reset active tab if it's out of bounds
+    if (activeQueryIndex.value >= newQueries.length) {
+      activeTabId.value = newQueries.length > 0 ? `query-${newQueries.length - 1}` : ''
+    }
+  },
+  { immediate: true }
+)
+
+// Tab management
+function setActiveTab(tabId: string) {
+  activeTabId.value = tabId
+}
+
+function handleRenameTab(tabId: string, newName: string) {
+  const index = parseInt(tabId.replace('query-', ''))
+  if (!isNaN(index) && queries.value[index]) {
+    queries.value[index].name = newName
+  }
+}
 
 // Get connection dialect
 const connectionDialect = computed((): 'mysql' | 'pgsql' | 'sql' => {
@@ -300,24 +404,29 @@ const addQuery = () => {
       streamsStore.currentStreamConfig.source.queries = []
     }
     streamsStore.currentStreamConfig.source.queries.push(newQuery)
-    // Expand the new query
-    expandedQueries.value.add(queries.value.length - 1)
+    // Switch to the new query tab
+    activeTabId.value = `query-${queries.value.length - 1}`
   }
 }
 
-const removeQuery = (index: number) => {
+const removeQuery = (tabId: string) => {
+  const index = parseInt(tabId.replace('query-', ''))
+  if (isNaN(index)) return
+
   if (streamsStore.currentStreamConfig?.source?.queries) {
     streamsStore.currentStreamConfig.source.queries.splice(index, 1)
-    expandedQueries.value.delete(index)
-    delete validationErrors.value[index]
-  }
-}
+    delete previewErrors.value[index]
+    delete previewData.value[index]
 
-const toggleExpanded = (index: number) => {
-  if (expandedQueries.value.has(index)) {
-    expandedQueries.value.delete(index)
-  } else {
-    expandedQueries.value.add(index)
+    // If we deleted the active tab, switch to previous or next tab
+    if (activeTabId.value === tabId) {
+      if (queries.value.length > 0) {
+        const newIndex = Math.min(index, queries.value.length - 1)
+        activeTabId.value = `query-${newIndex}`
+      } else {
+        activeTabId.value = ''
+      }
+    }
   }
 }
 
@@ -332,67 +441,103 @@ const validateTableName = (query: QuerySource, index: number) => {
   }
 }
 
-const markAsUnvalidated = (query: QuerySource) => {
+const handleQueryChange = (query: QuerySource) => {
+  // When query changes, mark as needing re-run
   query.validated = false
   query.columns = undefined
 }
 
-const validateQuery = async (query: QuerySource, index: number) => {
+const runPreview = async (query: QuerySource, index: number) => {
   if (!query.query || query.query.trim().length === 0) {
-    validationErrors.value[index] = 'Query cannot be empty'
+    previewErrors.value[index] = 'Query cannot be empty'
     return
   }
 
-  // Check for forbidden statements
-  const forbiddenPatterns = [
-    /^\s*INSERT\s/i,
-    /^\s*UPDATE\s/i,
-    /^\s*DELETE\s/i,
-    /^\s*DROP\s/i,
-    /^\s*CREATE\s/i,
-    /^\s*ALTER\s/i,
-    /^\s*TRUNCATE\s/i,
-    /^\s*GRANT\s/i,
-    /^\s*REVOKE\s/i
-  ]
-
-  for (const pattern of forbiddenPatterns) {
-    if (pattern.test(query.query)) {
-      validationErrors.value[index] =
-        'Only SELECT queries are allowed. DDL/DML statements (INSERT, UPDATE, DELETE, DROP, CREATE, ALTER) are not permitted.'
-      return
-    }
-  }
-
-  isValidating.value = index
-  delete validationErrors.value[index]
+  isRunning.value = index
+  delete previewErrors.value[index]
+  delete previewData.value[index]
 
   try {
-    // Use discoverQueryColumns API to get column names and types
-    const result = await connections.discoverQueryColumns(
+    // Execute query with limit
+    const result = await connections.executeQuery(
       sourceConnectionId.value,
-      sourceDatabase.value,
-      query.query
+      query.query,
+      sourceDatabase.value
     )
 
-    if (result.columns && result.columns.length > 0) {
-      query.validated = true
-      // Store discovered columns with types for display
-      query.columns = result.columns.map((col) => ({
-        name: col.name,
-        type: col.type
-      }))
+    if (result.columns && result.rows) {
+      // Transform rows to object format
+      const rowObjects = result.rows.slice(0, previewLimit).map((row) => {
+        const obj: Record<string, unknown> = {}
+        result.columns.forEach((col, idx) => {
+          obj[col] = row[idx]
+        })
+        return obj
+      })
+
+      previewData.value[index] = {
+        columns: result.columns,
+        rows: rowObjects
+      }
+
+      // Auto-validate if not already validated
+      if (!query.validated) {
+        query.validated = true
+        query.columns = result.columns.map((col, idx) => ({
+          name: col,
+          type: typeof result.rows[0]?.[idx] === 'number' ? 'NUMBER' : 'VARCHAR'
+        }))
+      }
     } else {
-      validationErrors.value[index] = 'Query must return columns'
+      previewData.value[index] = { columns: [], rows: [] }
     }
   } catch (error: unknown) {
-    console.error('Validation error:', error)
-    const errorMessage = error instanceof Error ? error.message : String(error)
-    validationErrors.value[index] = `Validation failed: ${errorMessage}`
-    query.validated = false
+    const err = error as Error
+    previewErrors.value[index] = err.message || 'Failed to execute query'
+    console.error('Preview error:', error)
   } finally {
-    isValidating.value = null
+    isRunning.value = null
   }
+}
+
+const formatCellValue = (value: unknown): string => {
+  if (value === null) return 'NULL'
+  if (value === undefined) return ''
+  if (typeof value === 'object') {
+    try {
+      return JSON.stringify(value)
+    } catch {
+      return String(value)
+    }
+  }
+  return String(value)
+}
+
+// Resize handlers
+function startResize(e: MouseEvent) {
+  isResizing.value = true
+  document.addEventListener('mousemove', handleResize)
+  document.addEventListener('mouseup', stopResize)
+  e.preventDefault()
+}
+
+function handleResize(e: MouseEvent) {
+  if (!isResizing.value) return
+
+  const container = document.querySelector('.flex-1.flex.overflow-hidden.min-h-0')
+  if (!container) return
+
+  const containerRect = container.getBoundingClientRect()
+  const mouseX = e.clientX - containerRect.left
+  let newWidth = (mouseX / containerRect.width) * 100
+  newWidth = Math.max(30, Math.min(70, newWidth))
+  editorWidth.value = newWidth
+}
+
+function stopResize() {
+  isResizing.value = false
+  document.removeEventListener('mousemove', handleResize)
+  document.removeEventListener('mouseup', stopResize)
 }
 
 const applyTemplate = (event: Event, query: QuerySource) => {
@@ -486,4 +631,10 @@ WHERE last_login < '2024-01-01'`
   // Reset select
   select.value = ''
 }
+
+// Cleanup on unmount
+onUnmounted(() => {
+  document.removeEventListener('mousemove', handleResize)
+  document.removeEventListener('mouseup', stopResize)
+})
 </script>
