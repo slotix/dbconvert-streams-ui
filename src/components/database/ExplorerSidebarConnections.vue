@@ -803,49 +803,6 @@ watch(
   <div
     class="bg-linear-to-br from-white via-slate-50/50 to-white dark:from-gray-850 dark:via-gray-850 dark:to-gray-900 shadow-xl dark:shadow-gray-900/50 rounded-2xl overflow-hidden h-[calc(100vh-140px)] flex flex-col transition-all duration-300 hover:shadow-2xl dark:hover:shadow-gray-900/70 border border-slate-200/50 dark:border-gray-700"
   >
-    <!-- Sidebar Header -->
-    <div
-      class="px-4 py-3 border-b border-slate-200/50 dark:border-gray-700 flex items-center justify-between gap-4"
-    >
-      <div class="flex items-center gap-2">
-        <h2 class="text-sm font-semibold text-slate-700 dark:text-gray-300 uppercase tracking-wide">
-          Connections
-        </h2>
-        <!-- System Objects Toggle - compact icon button -->
-        <button
-          class="p-1 rounded transition-colors duration-150"
-          :class="[
-            navigationStore.showSystemObjects
-              ? 'text-amber-500 hover:text-amber-600 hover:bg-amber-500/10'
-              : 'text-slate-400 hover:text-slate-500 hover:bg-slate-500/10 dark:text-gray-500 dark:hover:text-gray-400'
-          ]"
-          :title="navigationStore.showSystemObjects ? 'Hide system objects' : 'Show system objects'"
-          @click="navigationStore.toggleShowSystemObjects()"
-        >
-          <EyeIcon v-if="navigationStore.showSystemObjects" class="w-4 h-4" />
-          <EyeSlashIcon v-else class="w-4 h-4" />
-        </button>
-      </div>
-      <div
-        v-if="isSearchExpanding"
-        class="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400"
-      >
-        <svg class="animate-spin h-4 w-4 text-slate-400" viewBox="0 0 24 24">
-          <circle
-            class="opacity-25"
-            cx="12"
-            cy="12"
-            r="10"
-            stroke="currentColor"
-            stroke-width="4"
-            fill="none"
-          ></circle>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-        </svg>
-        <span>Searching…</span>
-      </div>
-    </div>
-
     <!-- Scrollable tree content area with smooth scrolling and custom scrollbar -->
     <div class="flex-1 overflow-y-auto overscroll-contain p-3 scrollbar-thin">
       <!-- Loading state with centered spinner and blue-green gradient -->

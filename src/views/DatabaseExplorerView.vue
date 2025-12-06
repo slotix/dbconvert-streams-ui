@@ -245,6 +245,11 @@ function handleOpenFileConsole(payload: {
       class="sticky top-0 z-10 bg-linear-to-r from-slate-50 via-white to-slate-50 dark:from-gray-900 dark:via-gray-850 dark:to-gray-900 border-b border-slate-200 dark:border-gray-700 shadow-sm dark:shadow-gray-900/30"
     >
       <div class="px-6 py-4 flex items-center gap-4">
+        <!-- Connections Count Header -->
+        <h1 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          {{ connectionCountLabel }}
+        </h1>
+
         <!-- Connection Type Filter -->
         <div class="shrink-0">
           <ConnectionTypeFilter
@@ -266,28 +271,6 @@ function handleOpenFileConsole(payload: {
 
         <!-- Right side group -->
         <div class="flex items-center gap-4 ml-auto">
-          <!-- Elevated Badge showing count with icon -->
-          <div
-            class="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-850 rounded-lg border border-slate-200 dark:border-gray-700 shadow-sm dark:shadow-gray-900/30"
-          >
-            <svg
-              class="h-4 w-4 text-slate-400 dark:text-gray-400"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M5 12h14M12 5l7 7-7 7"
-              />
-            </svg>
-            <span class="text-sm font-semibold text-slate-700 dark:text-gray-300">{{
-              connectionCountLabel
-            }}</span>
-          </div>
-
           <!-- Primary CTA Button with vibrant blue-green gradient -->
           <BaseButton variant="primary" @click="onAddConnection">
             <PlusIcon class="h-5 w-5" />

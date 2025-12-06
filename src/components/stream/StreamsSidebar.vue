@@ -2,13 +2,6 @@
   <div
     class="flex flex-col h-full bg-linear-to-br from-white via-slate-50/50 to-white dark:from-gray-850 dark:via-gray-900/50 dark:to-gray-850 shadow-xl dark:shadow-gray-900/30 rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-2xl dark:hover:shadow-gray-900/50 border border-slate-200/50 dark:border-gray-700"
   >
-    <!-- Sidebar Header -->
-    <div class="px-4 py-3 border-b border-slate-200/50 dark:border-gray-700">
-      <h2 class="text-sm font-semibold text-slate-700 dark:text-gray-300 uppercase tracking-wide">
-        Stream configs
-      </h2>
-    </div>
-
     <!-- Streams List -->
     <div class="flex-1 overflow-y-auto p-2 scrollbar-thin">
       <!-- Enhanced loading state with gradient spinner -->
