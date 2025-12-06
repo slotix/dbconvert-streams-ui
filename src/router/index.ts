@@ -43,6 +43,12 @@ const routes = [
     props: true
   },
   {
+    path: '/federated',
+    name: 'FederatedConsole',
+    component: () => import('@/views/FederatedConsoleView.vue'),
+    meta: { title: 'Federated Query Console' }
+  },
+  {
     path: '/streams',
     name: 'Streams',
     component: StreamsView

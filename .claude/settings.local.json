@@ -15,7 +15,10 @@
       "Bash(curl:*)",
       "Bash(find:*)",
       "Bash(go test:*)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Bash(grep:*)",
+      "WebSearch",
+      "WebFetch(domain:duckdb.org)"
     ],
     "deny": [],
     "ask": []

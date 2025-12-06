@@ -447,7 +447,8 @@ import {
   XMarkIcon,
   DocumentTextIcon,
   UserCircleIcon,
-  TableCellsIcon
+  TableCellsIcon,
+  GlobeAltIcon
 } from '@heroicons/vue/24/outline'
 import { ExclamationCircleIcon } from '@heroicons/vue/24/solid'
 
@@ -466,6 +467,12 @@ const navigation = computed(() => {
       name: 'Data Explorer',
       href: '/explorer',
       icon: TableCellsIcon,
+      show: true
+    },
+    {
+      name: 'Federated Query',
+      href: '/federated',
+      icon: GlobeAltIcon,
       show: true
     },
     { name: 'Streams', href: '/streams', icon: ArrowPathIcon, show: true }
