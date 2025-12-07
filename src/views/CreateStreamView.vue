@@ -285,12 +285,12 @@ watch(
   }
 )
 
-// Sync federated mode state to store
+// Sync federated mode state to store (now in source)
 watch(
   () => wizard.federatedMode.value,
   (enabled) => {
     if (streamsStore.currentStreamConfig) {
-      ;(streamsStore.currentStreamConfig as Record<string, unknown>).federatedMode = enabled
+      streamsStore.currentStreamConfig.source.federatedMode = enabled
       // Force convert mode when federated mode is enabled
       if (enabled) {
         streamsStore.currentStreamConfig.mode = 'convert'
@@ -400,10 +400,9 @@ function handleFederatedConnectionsUpdate(
   connections: import('@/api/federated').ConnectionMapping[]
 ) {
   wizard.setFederatedConnections(connections)
-  // Store federated connections in the streams store for later use
+  // Store federated connections in the streams store for later use (now in source)
   if (streamsStore.currentStreamConfig) {
-    ;(streamsStore.currentStreamConfig as Record<string, unknown>).federatedConnections =
-      connections
+    streamsStore.currentStreamConfig.source.federatedConnections = connections
   }
 }
 
@@ -474,10 +473,11 @@ async function handleFinish() {
       foreignKeys: wizard.createForeignKeys.value
     }
 
-    // Set federated mode settings
+    // Set federated mode settings (now in source)
     if (isFederated) {
-      streamsStore.currentStreamConfig.federatedMode = true
-      streamsStore.currentStreamConfig.federatedConnections = wizard.federatedConnections.value
+      streamsStore.currentStreamConfig.source.federatedMode = true
+      streamsStore.currentStreamConfig.source.federatedConnections =
+        wizard.federatedConnections.value
       // Clear tables in federated mode - only queries are used
       streamsStore.currentStreamConfig.source.tables = []
     }
@@ -559,10 +559,11 @@ async function handleQuickSave() {
       foreignKeys: wizard.createForeignKeys.value
     }
 
-    // Set federated mode settings
+    // Set federated mode settings (now in source)
     if (isFederated) {
-      streamsStore.currentStreamConfig.federatedMode = true
-      streamsStore.currentStreamConfig.federatedConnections = wizard.federatedConnections.value
+      streamsStore.currentStreamConfig.source.federatedMode = true
+      streamsStore.currentStreamConfig.source.federatedConnections =
+        wizard.federatedConnections.value
       // Clear tables in federated mode - only queries are used
       streamsStore.currentStreamConfig.source.tables = []
     }

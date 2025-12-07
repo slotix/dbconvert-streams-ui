@@ -335,12 +335,12 @@ export function useStreamWizard() {
     const skipData = configWithSkipData?.skipData
     copyData.value = skipData === undefined ? true : !skipData
 
-    // Restore federated mode state
-    if (config.federatedMode) {
+    // Restore federated mode state (now in source)
+    if (config.source?.federatedMode) {
       federatedMode.value = true
       // Restore federated connections if present
-      if (config.federatedConnections && Array.isArray(config.federatedConnections)) {
-        federatedConnections.value = config.federatedConnections.map((fc) => ({
+      if (config.source.federatedConnections && Array.isArray(config.source.federatedConnections)) {
+        federatedConnections.value = config.source.federatedConnections.map((fc) => ({
           alias: fc.alias,
           connectionId: fc.connectionId
         }))

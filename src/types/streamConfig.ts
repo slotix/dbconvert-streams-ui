@@ -78,13 +78,17 @@ export interface SourceOptions {
 }
 
 export interface SourceConfig {
-  id: string
+  id?: string // Connection ID - required for non-federated mode
   // Database and schema selection (stream-specific)
   database?: string // Database name - required for database connections
   schema?: string // Schema name - optional, defaults to provider-specific default
   tables?: Table[]
   queries?: QuerySource[] // Virtual query sources - complex SQL for derived data (convert mode only)
   options?: SourceOptions
+
+  // Federated query mode - allows joining data across multiple sources
+  federatedMode?: boolean // When true, uses federatedConnections instead of single source
+  federatedConnections?: ConnectionMapping[] // Multiple source connections with aliases
 }
 
 /**
@@ -112,10 +116,6 @@ export interface StreamConfig {
   source: SourceConfig
   target: TargetConfig
   limits?: Limits
-
-  // Federated query mode - allows joining data across multiple sources
-  federatedMode?: boolean // When true, uses federatedConnections instead of single source
-  federatedConnections?: ConnectionMapping[] // Multiple source connections with aliases
 
   // Legacy file fields - for file browser component compatibility
   files?: FileEntry[]
