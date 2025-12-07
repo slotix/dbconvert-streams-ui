@@ -73,13 +73,23 @@ export const buildStreamPayload = (stream: StreamConfig): Partial<StreamConfig> 
     filteredStream.reportingInterval = stream.reportingInterval
   }
 
+  // Handle federated mode - multi-source queries
+  if (stream.federatedMode) {
+    filteredStream.federatedMode = true
+    if (stream.federatedConnections && stream.federatedConnections.length > 0) {
+      filteredStream.federatedConnections = stream.federatedConnections
+    }
+  }
+
   // Handle source configuration
   filteredStream.source = {
     id: stream.source.id,
-    // Include database and schema if specified
-    ...(stream.source.database && { database: stream.source.database }),
-    ...(stream.source.schema && { schema: stream.source.schema }),
-    ...(stream.source.tables &&
+    // Include database and schema if specified (not needed in federated mode)
+    ...(!stream.federatedMode && stream.source.database && { database: stream.source.database }),
+    ...(!stream.federatedMode && stream.source.schema && { schema: stream.source.schema }),
+    // Include tables only in non-federated mode
+    ...(!stream.federatedMode &&
+      stream.source.tables &&
       stream.source.tables.length > 0 && {
         tables: stream.source.tables.map((table) => {
           const filteredTable: Partial<Table> = { name: table.name }

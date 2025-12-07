@@ -47,6 +47,22 @@
         </div>
       </div>
 
+      <!-- S3/Cloud Credential Warning -->
+      <div
+        v-if="hasMultipleCloudConnections"
+        class="mb-3 flex items-start space-x-2 p-2 bg-amber-50 dark:bg-amber-900/20 rounded-md text-xs"
+      >
+        <ExclamationTriangleIcon
+          class="h-4 w-4 text-amber-500 dark:text-amber-400 shrink-0 mt-0.5"
+        />
+        <div class="text-amber-700 dark:text-amber-300">
+          <p>
+            <strong>Note:</strong> Multiple S3/GCS connections selected. Only the first connection's
+            credentials will be used for cloud storage access.
+          </p>
+        </div>
+      </div>
+
       <!-- Connection List -->
       <div class="space-y-2 max-h-60 overflow-y-auto">
         <div
@@ -88,10 +104,20 @@
             <p class="text-xs text-gray-500 dark:text-gray-400 truncate">
               {{ conn.type }} · {{ getConnectionHost(conn) }}
             </p>
+            <!-- File connection hint -->
+            <p
+              v-if="isFileConnection(conn.id) && isSelected(conn.id)"
+              class="text-xs text-emerald-600 dark:text-emerald-400 mt-0.5"
+            >
+              Use read_parquet() or read_csv_auto() with file paths
+            </p>
           </div>
 
-          <!-- Alias Input (shown when selected) -->
-          <div v-if="isSelected(conn.id)" class="flex items-center space-x-2 shrink-0">
+          <!-- Alias Input (shown when selected) - only for database connections -->
+          <div
+            v-if="isSelected(conn.id) && !isFileConnection(conn.id)"
+            class="flex items-center space-x-2 shrink-0"
+          >
             <span class="text-xs text-gray-500 dark:text-gray-400">as</span>
             <input
               type="text"
@@ -125,8 +151,10 @@
           class="py-6 text-center text-gray-500 dark:text-gray-400"
         >
           <CircleStackIcon class="h-8 w-8 mx-auto mb-2 text-gray-300 dark:text-gray-600" />
-          <p class="text-sm">No database connections found</p>
-          <p class="text-xs mt-1">Add PostgreSQL or MySQL connections to use federated queries.</p>
+          <p class="text-sm">No connections found</p>
+          <p class="text-xs mt-1">
+            Add PostgreSQL, MySQL, or file connections to use federated queries.
+          </p>
         </div>
       </div>
     </div>
@@ -135,7 +163,14 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { CircleStackIcon, ChevronDownIcon, InformationCircleIcon } from '@heroicons/vue/24/outline'
+import {
+  CircleStackIcon,
+  ChevronDownIcon,
+  InformationCircleIcon,
+  FolderIcon,
+  CloudIcon,
+  ExclamationTriangleIcon
+} from '@heroicons/vue/24/outline'
 import { useConnectionsStore } from '@/stores/connections'
 import type { Connection } from '@/types/connections'
 import type { ConnectionMapping } from '@/api/federated'
@@ -143,9 +178,13 @@ import type { ConnectionMapping } from '@/api/federated'
 // Props
 interface Props {
   modelValue: ConnectionMapping[]
+  /** Show file connections (Files, S3, GCS) in addition to database connections */
+  showFileConnections?: boolean
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  showFileConnections: false
+})
 
 // Emits
 const emit = defineEmits<{
@@ -158,12 +197,53 @@ const connectionsStore = useConnectionsStore()
 // Local State
 const isCollapsed = ref(false)
 
+// Helper to check if a connection type is a database
+function isDatabaseType(type: string): boolean {
+  const normalized = type?.toLowerCase() || ''
+  return (
+    normalized === 'postgresql' ||
+    normalized === 'postgres' ||
+    normalized === 'mysql' ||
+    normalized === 'mariadb'
+  )
+}
+
+// Helper to check if a connection type is a file/cloud storage
+function isFileType(type: string): boolean {
+  const normalized = type?.toLowerCase() || ''
+  return (
+    normalized === 'files' || normalized === 's3' || normalized === 'gcs' || normalized === 'azure'
+  )
+}
+
 // Computed
-const databaseConnections = computed(() => {
+const availableConnections = computed(() => {
   return connectionsStore.connections.filter((conn) => {
     const type = conn.type?.toLowerCase() || ''
-    return type === 'postgresql' || type === 'postgres' || type === 'mysql' || type === 'mariadb'
+    // Always include database connections
+    if (isDatabaseType(type)) {
+      return true
+    }
+    // Include file connections only if showFileConnections is true
+    if (props.showFileConnections && isFileType(type)) {
+      return true
+    }
+    return false
   })
+})
+
+// For backward compatibility, expose databaseConnections as alias
+const databaseConnections = availableConnections
+
+// Check if multiple S3/GCS connections are selected (credential limitation)
+const hasMultipleCloudConnections = computed(() => {
+  const cloudConnectionIds = props.modelValue
+    .map((m) => {
+      const conn = connectionsStore.connections.find((c) => c.id === m.connectionId)
+      return conn?.type?.toLowerCase()
+    })
+    .filter((type) => type === 's3' || type === 'gcs' || type === 'azure')
+  return cloudConnectionIds.length > 1
 })
 
 const selectedCount = computed(() => props.modelValue.length)
@@ -195,6 +275,14 @@ function generateAlias(conn: Connection): string {
     prefix = 'pg'
   } else if (type === 'mysql' || type === 'mariadb') {
     prefix = 'my'
+  } else if (type === 's3') {
+    prefix = 's3'
+  } else if (type === 'gcs') {
+    prefix = 'gcs'
+  } else if (type === 'azure') {
+    prefix = 'azure'
+  } else if (type === 'files') {
+    prefix = 'files'
   }
 
   // Find next available number
@@ -256,6 +344,26 @@ function updateDatabase(connectionId: string, database: string) {
 }
 
 function getConnectionHost(conn: Connection): string {
+  const type = conn.type?.toLowerCase() || ''
+
+  // For file connections, show the path/bucket
+  if (type === 'files') {
+    return conn.spec?.files?.basePath || 'local files'
+  }
+  if (type === 's3') {
+    const bucket = conn.spec?.s3?.scope?.bucket
+    return bucket ? `s3://${bucket}` : 'S3'
+  }
+  if (type === 'gcs') {
+    const bucket = conn.spec?.gcs?.scope?.bucket
+    return bucket ? `gs://${bucket}` : 'GCS'
+  }
+  if (type === 'azure') {
+    const container = conn.spec?.azure?.scope?.container
+    return container ? `azure://${container}` : 'Azure Blob'
+  }
+
+  // For database connections
   if (conn.spec?.database) {
     const { host, port } = conn.spec.database
     if (host) {
@@ -265,8 +373,14 @@ function getConnectionHost(conn: Connection): string {
   return 'localhost'
 }
 
-function getConnectionIcon(_type: string) {
-  // Return the CircleStackIcon for all - can be enhanced later
+function getConnectionIcon(type: string) {
+  const normalized = type?.toLowerCase() || ''
+  if (normalized === 'files') {
+    return FolderIcon
+  }
+  if (normalized === 's3' || normalized === 'gcs' || normalized === 'azure') {
+    return CloudIcon
+  }
   return CircleStackIcon
 }
 
@@ -278,7 +392,25 @@ function getConnectionIconColor(type: string): string {
   if (normalized === 'mysql' || normalized === 'mariadb') {
     return 'text-orange-500 dark:text-orange-400'
   }
+  if (normalized === 's3') {
+    return 'text-amber-500 dark:text-amber-400'
+  }
+  if (normalized === 'gcs') {
+    return 'text-red-500 dark:text-red-400'
+  }
+  if (normalized === 'azure') {
+    return 'text-sky-500 dark:text-sky-400'
+  }
+  if (normalized === 'files') {
+    return 'text-emerald-500 dark:text-emerald-400'
+  }
   return 'text-gray-500 dark:text-gray-400'
+}
+
+// Check if a connection is a file type (for showing file-specific UI hints)
+function isFileConnection(connectionId: string): boolean {
+  const conn = connectionsStore.connections.find((c) => c.id === connectionId)
+  return conn ? isFileType(conn.type || '') : false
 }
 
 // Load connections if not already loaded

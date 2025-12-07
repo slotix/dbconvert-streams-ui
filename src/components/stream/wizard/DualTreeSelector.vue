@@ -20,43 +20,91 @@
               </div>
               <div class="min-w-0">
                 <h3 class="text-base font-semibold text-blue-700 dark:text-blue-200 leading-tight">
-                  Source Connection
+                  {{ localFederatedMode ? 'Source Connections' : 'Source Connection' }}
                 </h3>
                 <p class="text-xs text-blue-700/80 dark:text-blue-100/80 font-medium truncate">
-                  Select where to read data from
+                  {{
+                    localFederatedMode
+                      ? 'Select multiple sources for federated query'
+                      : 'Select where to read data from'
+                  }}
                 </p>
               </div>
             </div>
-            <BaseButton
-              variant="secondary"
-              size="sm"
-              class="whitespace-nowrap"
-              @click="emit('add-connection', 'source')"
-            >
-              New Connection
-            </BaseButton>
+            <div class="flex items-center gap-2">
+              <!-- Federated Mode Toggle -->
+              <button
+                type="button"
+                class="px-2 py-1 text-xs font-medium rounded-md border transition-colors whitespace-nowrap"
+                :class="
+                  localFederatedMode
+                    ? 'bg-purple-100 dark:bg-purple-900/40 border-purple-300 dark:border-purple-600 text-purple-700 dark:text-purple-300'
+                    : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+                "
+                :title="
+                  localFederatedMode
+                    ? 'Disable multi-source mode'
+                    : 'Enable multi-source federated queries'
+                "
+                @click="toggleFederatedMode"
+              >
+                <span class="flex items-center gap-1">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
+                    />
+                  </svg>
+                  Multi-Source
+                </span>
+              </button>
+              <BaseButton
+                v-if="!localFederatedMode"
+                variant="secondary"
+                size="sm"
+                class="whitespace-nowrap"
+                @click="emit('add-connection', 'source')"
+              >
+                New Connection
+              </BaseButton>
+            </div>
           </div>
         </div>
 
-        <!-- Source Filters -->
-        <StreamConnectionFilter
-          :connection-search="sourceConnectionSearch"
-          @update:connection-search="sourceConnectionSearch = $event"
-          @update:selected-type="sourceConnectionType = $event"
-        />
-
-        <div class="flex-1 overflow-y-auto p-3 bg-white dark:bg-gray-900/60">
-          <ConnectionTreeSelector
-            :connections="filteredSourceConnections"
-            :selected-connection-id="sourceConnectionId"
-            :selected-database="sourceDatabase"
-            :selected-schema="sourceSchema"
-            :search-query="sourceConnectionSearch"
-            mode="source"
-            @select-connection="handleSourceConnectionSelect"
-            @select-database="handleSourceDatabaseSelect"
+        <!-- Source Content: Either single connection tree or federated panel -->
+        <template v-if="localFederatedMode">
+          <!-- Federated Mode: Show ConnectionAliasPanel -->
+          <div class="flex-1 overflow-y-auto">
+            <ConnectionAliasPanel
+              :model-value="localFederatedConnections"
+              :show-file-connections="true"
+              @update:model-value="handleFederatedConnectionsUpdate"
+            />
+          </div>
+        </template>
+        <template v-else>
+          <!-- Single Source Mode: Show filters and tree -->
+          <StreamConnectionFilter
+            :connection-search="sourceConnectionSearch"
+            @update:connection-search="sourceConnectionSearch = $event"
+            @update:selected-type="sourceConnectionType = $event"
           />
-        </div>
+
+          <div class="flex-1 overflow-y-auto p-3 bg-white dark:bg-gray-900/60">
+            <ConnectionTreeSelector
+              :connections="filteredSourceConnections"
+              :selected-connection-id="sourceConnectionId"
+              :selected-database="sourceDatabase"
+              :selected-schema="sourceSchema"
+              :search-query="sourceConnectionSearch"
+              mode="source"
+              @select-connection="handleSourceConnectionSelect"
+              @select-database="handleSourceDatabaseSelect"
+            />
+          </div>
+        </template>
       </div>
 
       <!-- Target Tree (Right) - Emerald Theme -->
@@ -125,7 +173,10 @@
     </div>
 
     <!-- Selection Summary - Enhanced Chips -->
-    <div v-if="sourceConnectionId || targetConnectionId" class="shrink-0 flex flex-col gap-2">
+    <div
+      v-if="sourceConnectionId || targetConnectionId || localFederatedConnections.length > 0"
+      class="shrink-0 flex flex-col gap-2"
+    >
       <!-- Source and Target Chips -->
       <div class="flex items-center justify-between gap-3">
         <div class="flex items-center gap-2 flex-1">
@@ -134,18 +185,31 @@
             class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-600/60 rounded-lg px-3 py-1.5 text-sm shadow-sm shadow-blue-900/10 dark:shadow-blue-900/40"
           >
             <span class="font-semibold text-blue-700 dark:text-blue-200">Source:</span>
-            <span
-              v-if="sourceConnectionId"
-              class="text-blue-900 dark:text-blue-100 ml-1 font-medium"
-            >
-              {{ getConnectionName(sourceConnectionId) }}
-              <span v-if="sourceDatabase" class="text-blue-600 dark:text-blue-300">
-                / {{ sourceDatabase }}
+            <template v-if="localFederatedMode">
+              <span
+                v-if="localFederatedConnections.length > 0"
+                class="text-blue-900 dark:text-blue-100 ml-1 font-medium"
+              >
+                {{ localFederatedConnections.length }} connections (federated)
               </span>
-            </span>
-            <span v-else class="text-blue-500/80 dark:text-blue-300/70 ml-1 italic"
-              >Not selected</span
-            >
+              <span v-else class="text-blue-500/80 dark:text-blue-300/70 ml-1 italic">
+                Select connections
+              </span>
+            </template>
+            <template v-else>
+              <span
+                v-if="sourceConnectionId"
+                class="text-blue-900 dark:text-blue-100 ml-1 font-medium"
+              >
+                {{ getConnectionName(sourceConnectionId) }}
+                <span v-if="sourceDatabase" class="text-blue-600 dark:text-blue-300">
+                  / {{ sourceDatabase }}
+                </span>
+              </span>
+              <span v-else class="text-blue-500/80 dark:text-blue-300/70 ml-1 italic"
+                >Not selected</span
+              >
+            </template>
           </div>
 
           <!-- Arrow - Sky Blue to Emerald Gradient -->
@@ -221,13 +285,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useConnectionsStore } from '@/stores/connections'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { getConnectionHost } from '@/utils/specBuilder'
 import BaseButton from '@/components/base/BaseButton.vue'
 import ConnectionTreeSelector from './ConnectionTreeSelector.vue'
 import StreamConnectionFilter from './StreamConnectionFilter.vue'
+import ConnectionAliasPanel from '@/components/console/ConnectionAliasPanel.vue'
+import type { ConnectionMapping } from '@/api/federated'
 
 interface Props {
   sourceConnectionId?: string | null
@@ -237,6 +303,10 @@ interface Props {
   sourceSchema?: string | null
   targetSchema?: string | null
   targetPath?: string | null
+  /** Enable federated (multi-source) mode */
+  federatedMode?: boolean
+  /** Connection mappings for federated mode */
+  federatedConnections?: ConnectionMapping[]
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -246,7 +316,9 @@ const props = withDefaults(defineProps<Props>(), {
   targetDatabase: null,
   sourceSchema: null,
   targetSchema: null,
-  targetPath: null
+  targetPath: null,
+  federatedMode: false,
+  federatedConnections: () => []
 })
 
 const emit = defineEmits<{
@@ -259,6 +331,8 @@ const emit = defineEmits<{
   ]
   'add-connection': [paneType: 'source' | 'target']
   'clear-all': []
+  'update:federated-mode': [enabled: boolean]
+  'update:federated-connections': [connections: ConnectionMapping[]]
 }>()
 
 const connectionsStore = useConnectionsStore()
@@ -267,6 +341,42 @@ const sourceConnectionSearch = ref('')
 const targetConnectionSearch = ref('')
 const sourceConnectionType = ref<string | null>(null)
 const targetConnectionType = ref<string | null>(null)
+
+// Local federated mode state (synced with prop)
+const localFederatedMode = ref(props.federatedMode)
+const localFederatedConnections = ref<ConnectionMapping[]>([...props.federatedConnections])
+
+// Sync prop changes to local state
+watch(
+  () => props.federatedMode,
+  (val) => {
+    localFederatedMode.value = val
+  }
+)
+
+watch(
+  () => props.federatedConnections,
+  (val) => {
+    localFederatedConnections.value = [...val]
+  },
+  { deep: true }
+)
+
+// Toggle federated mode
+function toggleFederatedMode() {
+  localFederatedMode.value = !localFederatedMode.value
+  emit('update:federated-mode', localFederatedMode.value)
+  // Clear single source selection when entering federated mode
+  if (localFederatedMode.value && props.sourceConnectionId) {
+    // Don't clear - let parent handle
+  }
+}
+
+// Handle federated connections update
+function handleFederatedConnectionsUpdate(connections: ConnectionMapping[]) {
+  localFederatedConnections.value = connections
+  emit('update:federated-connections', connections)
+}
 
 const connections = computed(() => connectionsStore.connections)
 

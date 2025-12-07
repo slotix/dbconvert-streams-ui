@@ -20,8 +20,12 @@
         :source-schema="sourceSchema"
         :target-schema="targetSchema"
         :target-path="targetPath"
+        :federated-mode="federatedMode"
+        :federated-connections="federatedConnections"
         @update:source-connection="handleSourceUpdate"
         @update:target-connection="handleTargetUpdate"
+        @update:federated-mode="handleFederatedModeUpdate"
+        @update:federated-connections="handleFederatedConnectionsUpdate"
         @clear-all="handleClearAll"
         @add-connection="(paneType) => $emit('add-connection', paneType)"
       />
@@ -33,6 +37,7 @@
 import { watch } from 'vue'
 import DualTreeSelector from '../DualTreeSelector.vue'
 import StreamNameField from '../StreamNameField.vue'
+import type { ConnectionMapping } from '@/api/federated'
 
 interface Props {
   sourceConnectionId?: string | null
@@ -42,6 +47,8 @@ interface Props {
   sourceSchema?: string | null
   targetSchema?: string | null
   targetPath?: string | null
+  federatedMode?: boolean
+  federatedConnections?: ConnectionMapping[]
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -51,7 +58,9 @@ const props = withDefaults(defineProps<Props>(), {
   targetDatabase: null,
   sourceSchema: null,
   targetSchema: null,
-  targetPath: null
+  targetPath: null,
+  federatedMode: false,
+  federatedConnections: () => []
 })
 
 // Watch for prop changes to update can-proceed state
@@ -60,7 +69,9 @@ watch(
     () => props.sourceConnectionId,
     () => props.targetConnectionId,
     () => props.sourceDatabase,
-    () => props.targetDatabase
+    () => props.targetDatabase,
+    () => props.federatedMode,
+    () => props.federatedConnections
   ],
   () => {
     updateCanProceed()
@@ -78,6 +89,8 @@ const emit = defineEmits<{
   'clear-all': []
   'add-connection': [paneType: 'source' | 'target']
   'update:can-proceed': [value: boolean]
+  'update:federated-mode': [enabled: boolean]
+  'update:federated-connections': [connections: ConnectionMapping[]]
 }>()
 
 function handleSourceUpdate(connectionId: string, database?: string, schema?: string) {
@@ -95,13 +108,34 @@ function handleTargetUpdate(
   updateCanProceed()
 }
 
+function handleFederatedModeUpdate(enabled: boolean) {
+  emit('update:federated-mode', enabled)
+  updateCanProceed()
+}
+
+function handleFederatedConnectionsUpdate(connections: ConnectionMapping[]) {
+  emit('update:federated-connections', connections)
+  updateCanProceed()
+}
+
 function handleClearAll() {
   emit('clear-all')
   updateCanProceed()
 }
 
 function updateCanProceed() {
-  // Emit can-proceed status based on validation
+  // For federated mode, check that we have at least one connection selected
+  if (props.federatedMode) {
+    const canProceed = Boolean(
+      props.federatedConnections &&
+        props.federatedConnections.length > 0 &&
+        props.targetConnectionId
+    )
+    emit('update:can-proceed', canProceed)
+    return
+  }
+
+  // For single-source mode, same logic as before
   // Source and target cannot be the same connection AND database combination
   const isSameConnectionAndDatabase =
     props.sourceConnectionId &&

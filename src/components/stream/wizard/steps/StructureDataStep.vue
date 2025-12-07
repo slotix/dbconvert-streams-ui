@@ -1,7 +1,38 @@
 <template>
   <div class="space-y-6">
-    <!-- Data Transfer Mode Section -->
+    <!-- Federated Mode Banner -->
     <div
+      v-if="federatedMode"
+      class="bg-linear-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 border border-purple-200 dark:border-purple-700/50 rounded-xl p-4 shadow-sm"
+    >
+      <div class="flex items-center gap-3">
+        <div
+          class="shrink-0 h-10 w-10 rounded-lg bg-linear-to-br from-purple-500 to-indigo-500 flex items-center justify-center"
+        >
+          <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M13 10V3L4 14h7v7l9-11h-7z"
+            />
+          </svg>
+        </div>
+        <div>
+          <h3 class="text-sm font-semibold text-purple-900 dark:text-purple-100">
+            Federated Query Mode
+          </h3>
+          <p class="text-sm text-purple-700 dark:text-purple-300">
+            Write a SQL query that can join data across {{ federatedConnections.length }} connected
+            sources. Tables are prefixed with connection aliases (e.g., db1.tablename).
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Data Transfer Mode Section - Hidden when federated mode -->
+    <div
+      v-if="!federatedMode"
       class="bg-linear-to-br from-slate-50 to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-850 border border-gray-100 dark:border-gray-700 rounded-xl p-6 shadow-sm dark:shadow-gray-900/30"
     >
       <ModeButtons />
@@ -16,7 +47,13 @@
     <div
       class="bg-linear-to-br from-slate-50 to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-850 border border-gray-100 dark:border-gray-700 rounded-xl p-6 shadow-sm dark:shadow-gray-900/30"
     >
-      <FilePreviewList v-if="isFileSourceConnection" :connection-id="sourceConnectionId" />
+      <!-- Federated Mode: Show SQL editor with federated connections -->
+      <template v-if="federatedMode">
+        <div class="h-[600px] min-h-[400px]">
+          <CustomQueryEditor :federated-mode="true" :federated-connections="federatedConnections" />
+        </div>
+      </template>
+      <FilePreviewList v-else-if="isFileSourceConnection" :connection-id="sourceConnectionId" />
       <template v-else>
         <!-- Data Source Mode Selector - Only show for Convert mode (not CDC) -->
         <DataSourceModeSelector
@@ -224,6 +261,7 @@ import Operations from '@/components/settings/Operations.vue'
 import DataSourceModeSelector from '@/components/stream/wizard/DataSourceModeSelector.vue'
 import CustomQueryEditor from '@/components/stream/wizard/CustomQueryEditor.vue'
 import type { DataSourceMode } from '@/components/stream/wizard/DataSourceModeSelector.vue'
+import type { ConnectionMapping } from '@/api/federated'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
 
@@ -233,6 +271,8 @@ interface Props {
   createIndexes?: boolean
   createForeignKeys?: boolean
   copyData?: boolean
+  federatedMode?: boolean
+  federatedConnections?: ConnectionMapping[]
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -240,7 +280,9 @@ const props = withDefaults(defineProps<Props>(), {
   createTables: true,
   createIndexes: true,
   createForeignKeys: true,
-  copyData: true
+  copyData: true,
+  federatedMode: false,
+  federatedConnections: () => []
 })
 
 const emit = defineEmits<{

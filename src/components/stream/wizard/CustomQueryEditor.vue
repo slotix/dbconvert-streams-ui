@@ -5,19 +5,33 @@
       class="flex items-center justify-between px-4 py-2.5 bg-white dark:bg-gray-850 border-b border-gray-200 dark:border-gray-700"
     >
       <div class="flex items-center gap-2">
-        <CodeBracketIcon class="w-5 h-5 text-teal-600 dark:text-teal-400" />
-        <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100">Custom SQL Queries</h3>
+        <CodeBracketIcon
+          class="w-5 h-5"
+          :class="
+            federatedMode
+              ? 'text-purple-600 dark:text-purple-400'
+              : 'text-teal-600 dark:text-teal-400'
+          "
+        />
+        <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100">
+          {{ federatedMode ? 'Federated SQL Queries' : 'Custom SQL Queries' }}
+        </h3>
         <span
           v-if="queries.length > 0"
-          class="px-2 py-0.5 text-xs bg-teal-100 dark:bg-teal-900/50 text-teal-700 dark:text-teal-300 rounded-full"
+          class="px-2 py-0.5 text-xs rounded-full"
+          :class="
+            federatedMode
+              ? 'bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300'
+              : 'bg-teal-100 dark:bg-teal-900/50 text-teal-700 dark:text-teal-300'
+          "
         >
           {{ queries.length }}
         </span>
       </div>
       <div class="flex items-center gap-2">
-        <!-- Template Selector -->
+        <!-- Template Selector - hide for federated mode since templates are different -->
         <select
-          v-if="activeQuery"
+          v-if="activeQuery && !federatedMode"
           class="text-xs px-2 py-1.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300 focus:ring-1 focus:ring-teal-500"
           @change="applyTemplate($event, activeQuery)"
         >
@@ -27,6 +41,13 @@
           <option value="subquery">Subquery filter</option>
           <option value="union">UNION query</option>
         </select>
+        <!-- Connection count for federated mode -->
+        <span
+          v-if="federatedMode"
+          class="text-xs px-2 py-1 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded"
+        >
+          {{ federatedConnections.length }} sources connected
+        </span>
       </div>
     </div>
 
@@ -36,18 +57,28 @@
       class="flex flex-col items-center justify-center flex-1 py-12 px-4"
     >
       <DocumentTextIcon class="w-16 h-16 text-gray-400 dark:text-gray-500 mb-4" />
-      <h4 class="text-base font-medium text-gray-900 dark:text-gray-100 mb-2">No custom queries</h4>
+      <h4 class="text-base font-medium text-gray-900 dark:text-gray-100 mb-2">
+        {{ federatedMode ? 'No federated queries' : 'No custom queries' }}
+      </h4>
       <p class="text-sm text-gray-500 dark:text-gray-400 text-center max-w-md mb-6">
-        Add complex SQL queries with JOINs, CTEs, and aggregations to create derived datasets on the
-        target.
+        {{
+          federatedMode
+            ? 'Write SQL queries that join data across multiple databases. Use connection aliases (e.g., db1.tablename) to reference tables from different sources.'
+            : 'Add complex SQL queries with JOINs, CTEs, and aggregations to create derived datasets on the target.'
+        }}
       </p>
       <button
         type="button"
-        class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 dark:bg-teal-700 dark:hover:bg-teal-600 rounded-md transition-colors"
+        class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white rounded-md transition-colors"
+        :class="
+          federatedMode
+            ? 'bg-purple-600 hover:bg-purple-700 dark:bg-purple-700 dark:hover:bg-purple-600'
+            : 'bg-teal-600 hover:bg-teal-700 dark:bg-teal-700 dark:hover:bg-teal-600'
+        "
         @click="addQuery"
       >
         <PlusIcon class="w-4 h-4" />
-        Add your first query
+        {{ federatedMode ? 'Add federated query' : 'Add your first query' }}
       </button>
     </div>
 
@@ -259,7 +290,19 @@ import { useConnectionsStore } from '@/stores/connections'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import type { QuerySource } from '@/types/streamConfig'
 import type { SchemaContext } from '@/composables/useMonacoSqlProviders'
+import type { ConnectionMapping } from '@/api/federated'
+import { executeFederatedQuery } from '@/api/federated'
 import connections from '@/api/connections'
+
+interface Props {
+  federatedMode?: boolean
+  federatedConnections?: ConnectionMapping[]
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  federatedMode: false,
+  federatedConnections: () => []
+})
 
 const streamsStore = useStreamsStore()
 const connectionsStore = useConnectionsStore()
@@ -458,12 +501,26 @@ const runPreview = async (query: QuerySource, index: number) => {
   delete previewData.value[index]
 
   try {
-    // Execute query with limit
-    const result = await connections.executeQuery(
-      sourceConnectionId.value,
-      query.query,
-      sourceDatabase.value
-    )
+    let result: { columns: string[]; rows: unknown[][] }
+
+    if (props.federatedMode && props.federatedConnections.length > 0) {
+      // Execute federated query across multiple sources
+      const federatedResult = await executeFederatedQuery({
+        query: query.query,
+        connections: props.federatedConnections
+      })
+      result = {
+        columns: federatedResult.columns || [],
+        rows: federatedResult.rows || []
+      }
+    } else {
+      // Execute regular single-source query
+      result = await connections.executeQuery(
+        sourceConnectionId.value,
+        query.query,
+        sourceDatabase.value
+      )
+    }
 
     if (result.columns && result.rows) {
       // Transform rows to object format

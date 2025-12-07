@@ -1,5 +1,6 @@
 import { ref, computed } from 'vue'
 import type { StreamConfig } from '@/types/streamConfig'
+import type { ConnectionMapping } from '@/api/federated'
 import { useStreamsStore } from '@/stores/streamConfig'
 
 export interface WizardStep {
@@ -50,6 +51,10 @@ export function useStreamWizard() {
     targetPath: null
   })
 
+  // Federated mode state
+  const federatedMode = ref(false)
+  const federatedConnections = ref<ConnectionMapping[]>([])
+
   // Transfer options - granular structure creation
   const createTables = ref(true)
   const createIndexes = ref(true)
@@ -63,7 +68,12 @@ export function useStreamWizard() {
 
   // Validation for each step
   const canProceedStep1 = computed(() => {
-    // Source and target cannot be the same connection AND database combination
+    // For federated mode, check at least one connection and a target
+    if (federatedMode.value) {
+      return Boolean(federatedConnections.value.length > 0 && selection.value.targetConnectionId)
+    }
+
+    // For single-source mode: Source and target cannot be the same connection AND database combination
     const isSameConnectionAndDatabase =
       selection.value.sourceConnectionId &&
       selection.value.targetConnectionId &&
@@ -180,6 +190,15 @@ export function useStreamWizard() {
     copyData.value = value
   }
 
+  // Federated mode setters
+  function setFederatedMode(value: boolean) {
+    federatedMode.value = value
+  }
+
+  function setFederatedConnections(connections: ConnectionMapping[]) {
+    federatedConnections.value = connections
+  }
+
   // Reset wizard state
   function reset() {
     currentStepIndex.value = 0
@@ -196,6 +215,9 @@ export function useStreamWizard() {
     createIndexes.value = true
     createForeignKeys.value = true
     copyData.value = true
+    // Reset federated state
+    federatedMode.value = false
+    federatedConnections.value = []
   }
 
   // Load wizard state from existing stream config (for edit mode)
@@ -312,6 +334,21 @@ export function useStreamWizard() {
     const configWithSkipData = config as StreamConfig & { skipData?: boolean }
     const skipData = configWithSkipData?.skipData
     copyData.value = skipData === undefined ? true : !skipData
+
+    // Restore federated mode state
+    if (config.federatedMode) {
+      federatedMode.value = true
+      // Restore federated connections if present
+      if (config.federatedConnections && Array.isArray(config.federatedConnections)) {
+        federatedConnections.value = config.federatedConnections.map((fc) => ({
+          alias: fc.alias,
+          connectionId: fc.connectionId
+        }))
+      }
+    } else {
+      federatedMode.value = false
+      federatedConnections.value = []
+    }
   }
 
   return {
@@ -324,6 +361,8 @@ export function useStreamWizard() {
     createIndexes,
     createForeignKeys,
     copyData,
+    federatedMode,
+    federatedConnections,
 
     // Computed
     isFirstStep,
@@ -345,6 +384,8 @@ export function useStreamWizard() {
     setCreateIndexes,
     setCreateForeignKeys,
     setCopyData,
+    setFederatedMode,
+    setFederatedConnections,
     reset,
     loadFromStreamConfig
   }

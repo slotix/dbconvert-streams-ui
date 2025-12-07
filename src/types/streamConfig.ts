@@ -1,5 +1,6 @@
 // src/types/streams.ts
 import type { TargetSpec, UIStructureOptions } from './specs'
+import type { ConnectionMapping } from '@/api/federated'
 
 /**
  * Filter condition for structured query building
@@ -111,6 +112,10 @@ export interface StreamConfig {
   source: SourceConfig
   target: TargetConfig
   limits?: Limits
+
+  // Federated query mode - allows joining data across multiple sources
+  federatedMode?: boolean // When true, uses federatedConnections instead of single source
+  federatedConnections?: ConnectionMapping[] // Multiple source connections with aliases
 
   // Legacy file fields - for file browser component compatibility
   files?: FileEntry[]
