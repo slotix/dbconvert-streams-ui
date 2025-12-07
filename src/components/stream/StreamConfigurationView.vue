@@ -15,10 +15,27 @@
           >
             {{ stream.mode.toUpperCase() }}
           </span>
+          <span
+            v-if="isFederatedMode"
+            class="inline-flex items-center rounded-md px-2.5 py-1 text-xs font-medium ring-1 ring-inset bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 ring-purple-600/20 dark:ring-purple-500/30"
+          >
+            FEDERATED
+          </span>
         </div>
       </div>
 
+      <!-- Federated Connections (shown when federated mode is enabled) -->
+      <FederatedConnectionsCard
+        v-if="isFederatedMode"
+        :connections="stream.source?.federatedConnections || []"
+        :all-connections="allConnections"
+        :db-types="dbTypes"
+        @navigate="handleFederatedNavigate"
+      />
+
+      <!-- Single Source Connection (shown when NOT federated mode) -->
       <ConnectionCard
+        v-else
         label="Source Connection"
         :connection="source"
         :logo-src="sourceLogo"
@@ -62,12 +79,14 @@ export default {
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { CalendarIcon } from '@heroicons/vue/24/outline'
 import { normalizeConnectionType } from '@/utils/connectionUtils'
 import { formatDateTime } from '@/utils/formats'
 import type { StreamConfig } from '@/types/streamConfig'
 import type { Connection, DbType } from '@/types/connections'
 import ConnectionCard from './configuration/ConnectionCard.vue'
+import FederatedConnectionsCard from './configuration/FederatedConnectionsCard.vue'
 import FileOutputSummary from './configuration/FileOutputSummary.vue'
 import TablesSummary from './configuration/TablesSummary.vue'
 import QuerySourcesSummary from './configuration/QuerySourcesSummary.vue'
@@ -77,9 +96,15 @@ const props = defineProps<{
   stream: StreamConfig
   source?: Connection
   target?: Connection
+  allConnections: Connection[]
   dbTypes: DbType[]
   isFileTarget: boolean
 }>()
+
+const router = useRouter()
+
+// Check if federated mode is enabled
+const isFederatedMode = computed(() => props.stream.source?.federatedMode === true)
 
 // Check if stream has file format in spec
 const hasFileFormat = computed(() => !!getFileSpec(props.stream.target?.spec)?.fileFormat)
@@ -106,6 +131,11 @@ function getLogo(connection?: Connection) {
     (dbType) => normalizeConnectionType(dbType.type.toLowerCase()) === normalizedInput
   )
   return match ? match.logo : '/images/db-logos/all.svg'
+}
+
+function handleFederatedNavigate(connectionId: string) {
+  // Navigate to the explorer with the selected connection
+  router.push({ name: 'Explorer', query: { connectionId } })
 }
 
 const sourceLogo = computed(() => getLogo(props.source))

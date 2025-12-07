@@ -99,7 +99,7 @@ describe('StreamConfigValidator', () => {
       expect(result.errors.some((e) => e.message === 'Source must be an object')).toBe(true)
     })
 
-    it('should require source.id', () => {
+    it('should require source.id in non-federated mode', () => {
       const config = {
         ...validConfig,
         source: { tables: [{ name: 'users' }] }
@@ -107,6 +107,55 @@ describe('StreamConfigValidator', () => {
       const result = validateStreamConfig(config)
       expect(result.valid).toBe(false)
       expect(result.errors.some((e) => e.path === 'source.id')).toBe(true)
+    })
+
+    it('should not require source.id in federated mode', () => {
+      const config = {
+        ...validConfig,
+        source: {
+          federatedMode: true,
+          federatedConnections: [
+            { alias: 'pg1', connectionId: 'conn-pg-123' },
+            { alias: 'my1', connectionId: 'conn-my-456' }
+          ],
+          queries: [{ name: 'test', query: 'SELECT * FROM pg1.users' }]
+        }
+      }
+      const result = validateStreamConfig(config)
+      expect(result.valid).toBe(true)
+      expect(result.errors.some((e) => e.path === 'source.id')).toBe(false)
+    })
+
+    it('should require federatedConnections when federatedMode is true', () => {
+      const config = {
+        ...validConfig,
+        source: {
+          federatedMode: true,
+          queries: [{ name: 'test', query: 'SELECT * FROM pg1.users' }]
+        }
+      }
+      const result = validateStreamConfig(config)
+      expect(result.valid).toBe(false)
+      expect(result.errors.some((e) => e.path === 'source.federatedConnections')).toBe(true)
+    })
+
+    it('should require alias and connectionId for each federated connection', () => {
+      const config = {
+        ...validConfig,
+        source: {
+          federatedMode: true,
+          federatedConnections: [{ alias: '' }, { connectionId: 'conn-123' }],
+          queries: [{ name: 'test', query: 'SELECT * FROM pg1.users' }]
+        }
+      }
+      const result = validateStreamConfig(config)
+      expect(result.valid).toBe(false)
+      expect(
+        result.errors.some((e) => e.message === 'Federated connection alias is required')
+      ).toBe(true)
+      expect(result.errors.some((e) => e.message === 'Federated connection ID is required')).toBe(
+        true
+      )
     })
 
     it('should require at least one table or query', () => {

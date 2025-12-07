@@ -137,9 +137,17 @@ function validateSource(source: unknown, errors: ValidationError[]): void {
 
   const src = source as Record<string, unknown>
 
-  // Required source fields - connection ID
-  if (!src.id || typeof src.id !== 'string') {
-    errors.push({ path: 'source.id', message: 'Source connection ID is required' })
+  // Check if federated mode is enabled
+  const isFederatedMode = src.federatedMode === true
+
+  if (isFederatedMode) {
+    // Federated mode: validate federatedConnections instead of source.id
+    validateFederatedConnections(src.federatedConnections, errors)
+  } else {
+    // Non-federated mode: connection ID is required
+    if (!src.id || typeof src.id !== 'string') {
+      errors.push({ path: 'source.id', message: 'Source connection ID is required' })
+    }
   }
 
   // Tables or Queries validation - at least one must be specified
@@ -162,6 +170,42 @@ function validateSource(source: unknown, errors: ValidationError[]): void {
   if (src.options) {
     validateSourceOptions(src.options, errors)
   }
+}
+
+function validateFederatedConnections(connections: unknown, errors: ValidationError[]): void {
+  if (!Array.isArray(connections) || connections.length === 0) {
+    errors.push({
+      path: 'source.federatedConnections',
+      message: 'At least one federated connection is required when federated mode is enabled'
+    })
+    return
+  }
+
+  connections.forEach((conn, index) => {
+    if (typeof conn !== 'object' || conn === null) {
+      errors.push({
+        path: `source.federatedConnections[${index}]`,
+        message: 'Federated connection must be an object'
+      })
+      return
+    }
+
+    const c = conn as Record<string, unknown>
+
+    if (!c.alias || typeof c.alias !== 'string' || c.alias.trim() === '') {
+      errors.push({
+        path: `source.federatedConnections[${index}].alias`,
+        message: 'Federated connection alias is required'
+      })
+    }
+
+    if (!c.connectionId || typeof c.connectionId !== 'string') {
+      errors.push({
+        path: `source.federatedConnections[${index}].connectionId`,
+        message: 'Federated connection ID is required'
+      })
+    }
+  })
 }
 
 function validateQueries(queries: unknown[], errors: ValidationError[]): void {

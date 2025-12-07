@@ -194,6 +194,7 @@
           :stream="stream"
           :source="source"
           :target="target"
+          :all-connections="allConnections"
           :db-types="dbTypes"
           :is-file-target="isFileTarget"
           @navigate-source="navigateToSourceExplorer"
@@ -350,6 +351,7 @@ const { historyRuns, handleDeleteRun, handleClearAll } = useStreamHistory({
 })
 
 const dbTypes = computed(() => connectionsStore.dbTypes)
+const allConnections = computed(() => connectionsStore.connections)
 
 interface StreamTab {
   id: StreamDetailsTab
