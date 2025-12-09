@@ -206,12 +206,31 @@
 
           <div v-else class="py-1">
             <div v-for="database in getDatabases(connection.id)" :key="database.name" class="px-2">
-              <button
-                type="button"
+              <div
                 class="relative flex w-full items-center gap-3 rounded-md px-2 py-1.5 text-sm transition-colors"
                 :class="databaseRowClass(connection.id, database.name)"
-                @click="handleDatabaseSelect(connection, database.name)"
               >
+                <!-- Checkbox for multi-select mode -->
+                <input
+                  v-if="props.enableMultiSelect && props.mode === 'source'"
+                  type="checkbox"
+                  :checked="isFederatedConnectionSelected(connection.id, database.name)"
+                  class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-teal-600 focus:ring-teal-500 bg-white dark:bg-gray-800 shrink-0"
+                  @click.stop
+                  @change="
+                    handleFederatedCheckbox(
+                      connection.id,
+                      database.name,
+                      ($event.target as HTMLInputElement).checked
+                    )
+                  "
+                />
+                <button
+                  v-else
+                  type="button"
+                  class="absolute inset-0"
+                  @click="handleDatabaseSelect(connection, database.name)"
+                />
                 <span class="h-4 w-4 shrink-0" />
                 <HighlightedText
                   class="truncate"
@@ -224,7 +243,7 @@
                 >
                   {{ getTableCount(connection.id, database.name) }} tables
                 </span>
-              </button>
+              </div>
             </div>
           </div>
         </template>
@@ -256,6 +275,8 @@ interface Props {
   selectedPath?: string | null
   mode: 'source' | 'target'
   searchQuery?: string
+  enableMultiSelect?: boolean
+  federatedConnections?: Array<{ connectionId: string; database?: string }>
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -263,7 +284,9 @@ const props = withDefaults(defineProps<Props>(), {
   selectedDatabase: null,
   selectedSchema: null,
   selectedPath: null,
-  searchQuery: ''
+  searchQuery: '',
+  enableMultiSelect: false,
+  federatedConnections: () => []
 })
 
 const emit = defineEmits<{
@@ -271,6 +294,7 @@ const emit = defineEmits<{
   'select-database': [payload: { connectionId: string; database: string; schema?: string }]
   'select-file': [payload: { connectionId: string; path: string }]
   'select-bucket': [payload: { connectionId: string; bucket: string }]
+  'toggle-federated': [payload: { connectionId: string; database?: string; checked: boolean }]
 }>()
 
 const navigationStore = useExplorerNavigationStore()
@@ -398,6 +422,18 @@ function handleS3BucketSelect(connection: Connection, bucket: string) {
   addToSet(expandedConnections, connection.id)
   emit('select-connection', { connectionId: connection.id, database: bucket })
   emit('select-bucket', { connectionId: connection.id, bucket })
+}
+
+// Multi-select federated helpers
+function isFederatedConnectionSelected(connectionId: string, database?: string): boolean {
+  if (!props.federatedConnections) return false
+  return props.federatedConnections.some(
+    (fc) => fc.connectionId === connectionId && (!database || fc.database === database)
+  )
+}
+
+function handleFederatedCheckbox(connectionId: string, database: string, checked: boolean) {
+  emit('toggle-federated', { connectionId, database, checked })
 }
 
 function s3BucketRowClass(connectionId: string, bucket: string): string {
@@ -672,6 +708,26 @@ watch(
     void loadDatabases(connectionId)
   },
   { immediate: true }
+)
+
+// Auto-expand and load databases for federated connections (for edit mode restoration)
+watch(
+  () => props.federatedConnections,
+  async (federatedConns) => {
+    if (!federatedConns || federatedConns.length === 0) {
+      return
+    }
+    // Expand all connections in federated mode and load their databases
+    for (const fc of federatedConns) {
+      if (!fc.connectionId) continue
+      addToSet(expandedConnections, fc.connectionId)
+      const connection = getConnectionById(fc.connectionId)
+      if (connection && !isFileConnection(connection)) {
+        await loadDatabases(fc.connectionId)
+      }
+    }
+  },
+  { immediate: true, deep: true }
 )
 
 watch(

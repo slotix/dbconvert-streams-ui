@@ -76,6 +76,13 @@ export const buildStreamPayload = (stream: StreamConfig): Partial<StreamConfig> 
   // Check if federated mode (now in source)
   const isFederatedMode = stream.source.federatedMode
 
+  // Debug: log tables before filtering
+  console.log('buildStreamPayload - federated mode:', isFederatedMode)
+  console.log('buildStreamPayload - source.tables length:', stream.source.tables?.length)
+  console.log('buildStreamPayload - source.tables:', JSON.stringify(stream.source.tables))
+  console.log('buildStreamPayload - source.queries:', stream.source.queries)
+  console.log('buildStreamPayload - federatedConnections:', stream.source.federatedConnections)
+
   // Handle source configuration
   filteredStream.source = {
     // Include id only in non-federated mode
@@ -83,9 +90,8 @@ export const buildStreamPayload = (stream: StreamConfig): Partial<StreamConfig> 
     // Include database and schema if specified (not needed in federated mode)
     ...(!isFederatedMode && stream.source.database && { database: stream.source.database }),
     ...(!isFederatedMode && stream.source.schema && { schema: stream.source.schema }),
-    // Include tables only in non-federated mode
-    ...(!isFederatedMode &&
-      stream.source.tables &&
+    // Include tables if any are specified (both federated and non-federated modes)
+    ...(stream.source.tables &&
       stream.source.tables.length > 0 && {
         tables: stream.source.tables.map((table) => {
           const filteredTable: Partial<Table> = { name: table.name }
@@ -244,7 +250,15 @@ export const useStreamsStore = defineStore('streams', {
     },
     async saveStream(isEditMode: boolean = false): Promise<string | undefined> {
       try {
+        console.log(
+          'saveStream - BEFORE prepareStreamData, tables:',
+          this.currentStreamConfig?.source.tables?.length
+        )
         this.prepareStreamData()
+        console.log(
+          'saveStream - AFTER prepareStreamData, tables:',
+          this.currentStreamConfig?.source.tables?.length
+        )
         if (!this.currentStreamConfig?.name) {
           this.currentStreamConfig!.name = this.generateDefaultStreamConfigName(
             this.currentStreamConfig?.source.id || '',
@@ -256,18 +270,27 @@ export const useStreamsStore = defineStore('streams', {
           )
         }
 
+        if (!this.currentStreamConfig) {
+          throw new Error('No stream configuration to save')
+        }
+
+        // Build the payload for API (filters out UI-only properties)
+        const streamPayload = buildStreamPayload(this.currentStreamConfig)
+
+        // Remove temporary UI-only state property before saving
+        delete (streamPayload as StreamConfig & { _allTablesWithState?: unknown })
+          ._allTablesWithState
+
         let stream: StreamConfig
         if (isEditMode && this.currentStreamConfig?.id) {
           // Update existing stream config
           stream = await api.updateStreamConfig(
             this.currentStreamConfig.id,
-            this.currentStreamConfig as StreamConfig
+            streamPayload as StreamConfig
           )
         } else {
           // Create new stream config
-          stream = await api.createStream(
-            this.currentStreamConfig as unknown as Record<string, unknown>
-          )
+          stream = await api.createStream(streamPayload as unknown as Record<string, unknown>)
         }
 
         const savedId = stream.id
@@ -434,13 +457,9 @@ export const useStreamsStore = defineStore('streams', {
 
         this.currentStreamConfig.target.spec = specBuilders[builderKey]()
 
-        const refinedStream = buildStreamPayload(this.currentStreamConfig)
-
-        // Remove temporary UI-only state property before saving
-        delete (refinedStream as StreamConfig & { _allTablesWithState?: unknown })
-          ._allTablesWithState
-
-        this.currentStreamConfig = refinedStream as StreamConfig
+        // Note: Do NOT call buildStreamPayload here and reassign to currentStreamConfig
+        // because it will filter out properties and lose the tables array.
+        // buildStreamPayload will be called in saveStream when creating the API payload.
       }
     },
     async refreshStreams() {

@@ -47,31 +47,73 @@
     <div
       class="bg-linear-to-br from-slate-50 to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-850 border border-gray-100 dark:border-gray-700 rounded-xl p-6 shadow-sm dark:shadow-gray-900/30"
     >
-      <!-- Federated Mode: Show SQL editor with federated connections -->
-      <template v-if="federatedMode">
-        <div class="h-[600px] min-h-[400px]">
-          <CustomQueryEditor :federated-mode="true" :federated-connections="federatedConnections" />
-        </div>
-      </template>
-      <FilePreviewList v-else-if="isFileSourceConnection" :connection-id="sourceConnectionId" />
+      <!-- File Source: Show file preview list -->
+      <FilePreviewList v-if="isFileSourceConnection" :connection-id="sourceConnectionId" />
       <template v-else>
-        <!-- Data Source Mode Selector - Only show for Convert mode (not CDC) -->
-        <DataSourceModeSelector
-          v-if="currentMode === 'convert'"
-          v-model="dataSourceMode"
-          :show-query-mode="currentMode === 'convert'"
-          class="mb-4"
-        />
+        <!-- Tab-based Data Source Selector -->
+        <div class="flex items-center gap-2 mb-4 border-b border-gray-200 dark:border-gray-700">
+          <!-- Tables Tab -->
+          <button
+            type="button"
+            class="px-4 py-2 text-sm font-medium transition-colors relative"
+            :class="[
+              activeDataTab === 'tables'
+                ? 'text-teal-600 dark:text-teal-400 border-b-2 border-teal-600 dark:border-teal-400'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+            ]"
+            @click="activeDataTab = 'tables'"
+          >
+            <span class="flex items-center gap-2">
+              <TableCellsIcon class="w-4 h-4" />
+              Tables
+              <span
+                v-if="selectedTablesCount > 0"
+                class="px-1.5 py-0.5 text-xs rounded-full bg-teal-100 dark:bg-teal-900/50 text-teal-700 dark:text-teal-300"
+              >
+                {{ selectedTablesCount }}
+              </span>
+            </span>
+          </button>
 
-        <!-- Table Selection Mode -->
-        <TableList v-if="dataSourceMode === 'tables'" />
+          <!-- Queries Tab - Hidden in CDC mode -->
+          <button
+            v-if="currentMode !== 'cdc'"
+            type="button"
+            class="px-4 py-2 text-sm font-medium transition-colors relative"
+            :class="[
+              activeDataTab === 'queries'
+                ? 'text-teal-600 dark:text-teal-400 border-b-2 border-teal-600 dark:border-teal-400'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+            ]"
+            @click="activeDataTab = 'queries'"
+          >
+            <span class="flex items-center gap-2">
+              <CodeBracketIcon class="w-4 h-4" />
+              Queries
+              <span
+                v-if="customQueriesCount > 0"
+                class="px-1.5 py-0.5 text-xs rounded-full bg-teal-100 dark:bg-teal-900/50 text-teal-700 dark:text-teal-300"
+              >
+                {{ customQueriesCount }}
+              </span>
+            </span>
+          </button>
+        </div>
 
-        <!-- Custom Query Mode - Only in Convert mode -->
-        <div
-          v-else-if="dataSourceMode === 'queries' && currentMode === 'convert'"
-          class="h-[600px] min-h-[400px]"
-        >
-          <CustomQueryEditor />
+        <!-- Tab Content -->
+        <div class="mt-4">
+          <!-- Tables Tab Content -->
+          <div v-if="activeDataTab === 'tables'">
+            <TableList />
+          </div>
+
+          <!-- Queries Tab Content - Only in Convert mode -->
+          <div
+            v-else-if="activeDataTab === 'queries' && currentMode === 'convert'"
+            class="h-[600px] min-h-[400px]"
+          >
+            <CustomQueryEditor :federated-connections="federatedConnections" />
+          </div>
         </div>
       </template>
     </div>
@@ -258,9 +300,8 @@ import TableList from '@/components/settings/TableList.vue'
 import FilePreviewList from '@/components/stream/wizard/FilePreviewList.vue'
 import ModeButtons from '@/components/settings/ModeButtons.vue'
 import Operations from '@/components/settings/Operations.vue'
-import DataSourceModeSelector from '@/components/stream/wizard/DataSourceModeSelector.vue'
 import CustomQueryEditor from '@/components/stream/wizard/CustomQueryEditor.vue'
-import type { DataSourceMode } from '@/components/stream/wizard/DataSourceModeSelector.vue'
+import { TableCellsIcon, CodeBracketIcon } from '@heroicons/vue/24/outline'
 import type { ConnectionMapping } from '@/api/federated'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
@@ -299,8 +340,8 @@ const createForeignKeys = ref(props.createForeignKeys)
 const copyData = ref(props.copyData)
 const showAdvanced = ref(false)
 
-// Data source mode: 'tables' for table selection, 'queries' for custom SQL
-const dataSourceMode = ref<DataSourceMode>('tables')
+// Active tab: 'tables' or 'queries'
+const activeDataTab = ref<'tables' | 'queries'>('tables')
 
 const streamsStore = useStreamsStore()
 const connectionsStore = useConnectionsStore()
@@ -308,11 +349,23 @@ const connectionsStore = useConnectionsStore()
 // Current mode from stream config
 const currentMode = computed(() => streamsStore.currentStreamConfig?.mode || 'convert')
 
-// Reset dataSourceMode to 'tables' when switching to CDC mode
+// Reset activeDataTab to 'tables' when switching to CDC mode
 watch(currentMode, (newMode) => {
   if (newMode === 'cdc') {
-    dataSourceMode.value = 'tables'
+    activeDataTab.value = 'tables'
   }
+})
+
+// Count selected tables
+const selectedTablesCount = computed(() => {
+  const tables = streamsStore.currentStreamConfig?.source?.tables || []
+  return tables.filter((t) => t.selected).length
+})
+
+// Count custom queries
+const customQueriesCount = computed(() => {
+  const queries = streamsStore.currentStreamConfig?.source?.queries || []
+  return queries.length
 })
 
 // CDC Operations

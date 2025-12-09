@@ -89,18 +89,24 @@ export function useStreamWizard() {
   })
 
   const canProceedStep2 = computed(() => {
-    // At least one option must be selected (structure or data)
-    const hasStructureOrDataOption =
-      createTables.value || createIndexes.value || createForeignKeys.value || copyData.value
-
-    // Check if tables or custom queries are selected
     const streamsStore = useStreamsStore()
     const config = streamsStore.currentStreamConfig
+
+    // Check if tables or custom queries are selected
     const selectedTables = config?.source?.tables?.filter((t) => t.selected) || []
     const customQueries = config?.source?.queries || []
 
     // Must have at least one table selected OR one custom query defined
     const hasDataSource = selectedTables.length > 0 || customQueries.length > 0
+
+    // In CDC mode, enforce tables-only (no custom queries allowed)
+    if (config?.mode === 'cdc' && customQueries.length > 0) {
+      return false
+    }
+
+    // At least one option must be selected (structure or data) for database targets
+    const hasStructureOrDataOption =
+      createTables.value || createIndexes.value || createForeignKeys.value || copyData.value
 
     return hasStructureOrDataOption && hasDataSource
   })
@@ -338,11 +344,12 @@ export function useStreamWizard() {
     // Restore federated mode state (now in source)
     if (config.source?.federatedMode) {
       federatedMode.value = true
-      // Restore federated connections if present
+      // Restore federated connections if present (including database selection)
       if (config.source.federatedConnections && Array.isArray(config.source.federatedConnections)) {
         federatedConnections.value = config.source.federatedConnections.map((fc) => ({
           alias: fc.alias,
-          connectionId: fc.connectionId
+          connectionId: fc.connectionId,
+          database: fc.database
         }))
       }
     } else {

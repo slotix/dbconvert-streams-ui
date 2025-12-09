@@ -295,18 +295,19 @@ import { executeFederatedQuery } from '@/api/federated'
 import connections from '@/api/connections'
 
 interface Props {
-  federatedMode?: boolean
   federatedConnections?: ConnectionMapping[]
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  federatedMode: false,
   federatedConnections: () => []
 })
 
 const streamsStore = useStreamsStore()
 const connectionsStore = useConnectionsStore()
 const navigationStore = useExplorerNavigationStore()
+
+// Compute federated mode from number of connections (2+ = federated)
+const federatedMode = computed(() => props.federatedConnections.length > 1)
 
 // Local state
 const activeTabId = ref<string>('')
@@ -503,7 +504,7 @@ const runPreview = async (query: QuerySource, index: number) => {
   try {
     let result: { columns: string[]; rows: unknown[][] }
 
-    if (props.federatedMode && props.federatedConnections.length > 0) {
+    if (federatedMode.value && props.federatedConnections.length > 0) {
       // Execute federated query across multiple sources
       const federatedResult = await executeFederatedQuery({
         query: query.query,

@@ -478,8 +478,7 @@ async function handleFinish() {
       streamsStore.currentStreamConfig.source.federatedMode = true
       streamsStore.currentStreamConfig.source.federatedConnections =
         wizard.federatedConnections.value
-      // Clear tables in federated mode - only queries are used
-      streamsStore.currentStreamConfig.source.tables = []
+      // Note: Do NOT clear tables - federated mode now supports both tables and queries
     }
 
     // Save the stream (use update if editing existing stream)
@@ -564,8 +563,7 @@ async function handleQuickSave() {
       streamsStore.currentStreamConfig.source.federatedMode = true
       streamsStore.currentStreamConfig.source.federatedConnections =
         wizard.federatedConnections.value
-      // Clear tables in federated mode - only queries are used
-      streamsStore.currentStreamConfig.source.tables = []
+      // Note: Do NOT clear tables - federated mode now supports both tables and queries
     }
 
     // Save the stream (use update if editing existing stream)
