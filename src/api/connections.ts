@@ -100,10 +100,16 @@ const deleteConnection = async (id: string): Promise<void> => {
   validateApiKey(commonStore.apiKey)
   try {
     await apiClient.delete(`/connections/${id}`, {
-      headers: { [API_HEADERS.API_KEY]: commonStore.apiKey },
+      headers: {
+        [API_HEADERS.API_KEY]: commonStore.apiKey,
+        'X-Confirm-Delete': 'true'
+      },
       timeout: OPERATION_TIMEOUTS.deleteConnection
     })
   } catch (error) {
+    console.error('[deleteConnection] Full error:', error)
+    console.error('[deleteConnection] Error response:', (error as any).response)
+    console.error('[deleteConnection] Error request:', (error as any).request)
     throw handleApiError(error)
   }
 }

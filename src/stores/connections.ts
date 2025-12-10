@@ -172,11 +172,14 @@ export const useConnectionsStore = defineStore('connections', {
     },
     async _deleteConnection(id: string) {
       try {
+        // Call API first - only update local state if successful
+        await api.deleteConnection(id)
+
+        // Remove from local state after successful API call
         const index = this.connections.findIndex((connection: Connection) => connection.id === id)
         if (index !== -1) {
           this.connections.splice(index, 1)
         }
-        await api.deleteConnection(id)
 
         // Cleanup stale connection references in explorerNavigation store
         const explorerNavigationStore = useExplorerNavigationStore()

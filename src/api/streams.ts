@@ -40,7 +40,10 @@ const deleteStreamConfig = async (id: string): Promise<void> => {
 
   try {
     await apiClient.delete(`/stream-configs/${id}`, {
-      headers: { [API_HEADERS.API_KEY]: commonStore.apiKey }
+      headers: {
+        [API_HEADERS.API_KEY]: commonStore.apiKey,
+        'X-Confirm-Delete': 'true'
+      }
     })
   } catch (error) {
     throw handleApiError(error)
