@@ -426,10 +426,19 @@ function handleS3BucketSelect(connection: Connection, bucket: string) {
 
 // Multi-select federated helpers
 function isFederatedConnectionSelected(connectionId: string, database?: string): boolean {
-  if (!props.federatedConnections) return false
-  return props.federatedConnections.some(
-    (fc) => fc.connectionId === connectionId && (!database || fc.database === database)
-  )
+  // First check federatedConnections array
+  if (props.federatedConnections && props.federatedConnections.length > 0) {
+    return props.federatedConnections.some(
+      (fc) => fc.connectionId === connectionId && (!database || fc.database === database)
+    )
+  }
+  // Fallback: check regular selection props (for non-federated edit mode)
+  // This ensures the checkbox is checked when editing a single-source stream
+  if (props.selectedConnectionId === connectionId) {
+    if (!database) return true
+    return props.selectedDatabase === database
+  }
+  return false
 }
 
 function handleFederatedCheckbox(connectionId: string, database: string, checked: boolean) {
