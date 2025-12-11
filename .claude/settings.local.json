@@ -18,7 +18,8 @@
       "Bash(python3:*)",
       "Bash(grep:*)",
       "WebSearch",
-      "WebFetch(domain:duckdb.org)"
+      "WebFetch(domain:duckdb.org)",
+      "Bash(git checkout:*)"
     ],
     "deny": [],
     "ask": []
