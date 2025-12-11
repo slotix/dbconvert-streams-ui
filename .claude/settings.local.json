@@ -19,7 +19,10 @@
       "Bash(grep:*)",
       "WebSearch",
       "WebFetch(domain:duckdb.org)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(wc:*)",
+      "Bash(for file in file_handlers stream_config_handlers database_handlers metadata_handlers)",
+      "Bash(done)"
     ],
     "deny": [],
     "ask": []
