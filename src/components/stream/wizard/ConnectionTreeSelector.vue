@@ -207,31 +207,18 @@
           <div v-else class="py-1">
             <div v-for="database in getDatabases(connection.id)" :key="database.name" class="px-2">
               <div
-                class="relative flex w-full items-center gap-3 rounded-md px-2 py-1.5 text-sm transition-colors"
+                class="relative flex w-full items-center gap-3 rounded-md px-2 py-1.5 text-sm transition-colors cursor-pointer"
                 :class="databaseRowClass(connection.id, database.name)"
+                @click="handleDatabaseRowClick(connection, database.name)"
               >
                 <!-- Checkbox for multi-select mode -->
                 <input
                   v-if="props.enableMultiSelect && props.mode === 'source'"
                   type="checkbox"
                   :checked="isFederatedConnectionSelected(connection.id, database.name)"
-                  class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-teal-600 focus:ring-teal-500 bg-white dark:bg-gray-800 shrink-0"
-                  @click.stop
-                  @change="
-                    handleFederatedCheckbox(
-                      connection.id,
-                      database.name,
-                      ($event.target as HTMLInputElement).checked
-                    )
-                  "
+                  class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-teal-600 focus:ring-teal-500 bg-white dark:bg-gray-800 shrink-0 pointer-events-none"
                 />
-                <button
-                  v-else
-                  type="button"
-                  class="absolute inset-0"
-                  @click="handleDatabaseSelect(connection, database.name)"
-                />
-                <span class="h-4 w-4 shrink-0" />
+                <span v-else class="h-4 w-4 shrink-0" />
                 <HighlightedText
                   class="truncate"
                   :text="database.name"
@@ -589,14 +576,18 @@ function filePathClass(connectionId: string): string {
 }
 
 function databaseRowClass(connectionId: string, database: string): string {
-  const isSelected =
+  // Check if selected via federated connections (multi-select) or single selection
+  const isInFederated = isFederatedConnectionSelected(connectionId, database)
+  const isSingleSelected =
     props.selectedConnectionId === connectionId && props.selectedDatabase === database
+
+  const isSelected = isInFederated || isSingleSelected
 
   if (!isSelected) {
     return 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800/50'
   }
 
-  // Selected database: border highlights source vs target without extra fills
+  // Selected database: same highlight style for both single and multi-select
   if (props.mode === 'source') {
     return 'bg-gradient-to-r from-blue-50 via-blue-100/60 to-transparent dark:from-blue-900/30 dark:via-blue-900/15 dark:to-transparent text-blue-900 dark:text-blue-100 font-semibold ring-1 ring-blue-200 dark:ring-blue-500/30 border border-blue-100/70 dark:border-blue-800/40 pl-2 shadow-inner shadow-blue-900/5'
   } else {
@@ -682,6 +673,26 @@ function handleDatabaseSelect(connection: Connection, database: string) {
   emit('select-connection', { connectionId: connection.id, database })
   emit('select-database', { connectionId: connection.id, database })
   void ensureMetadata(connection.id, database)
+}
+
+function handleDatabaseRowClick(connection: Connection, database: string) {
+  // Skip file connections
+  if (isFileConnection(connection)) {
+    return
+  }
+
+  // In multi-select mode for source, toggle the federated checkbox
+  if (props.enableMultiSelect && props.mode === 'source') {
+    const isCurrentlySelected = isFederatedConnectionSelected(connection.id, database)
+    handleFederatedCheckbox(connection.id, database, !isCurrentlySelected)
+    // Load metadata to show table count when selecting
+    if (!isCurrentlySelected) {
+      void ensureMetadata(connection.id, database)
+    }
+  } else {
+    // Single-select mode
+    handleDatabaseSelect(connection, database)
+  }
 }
 
 function getLogoSrc(connection: Connection): string {

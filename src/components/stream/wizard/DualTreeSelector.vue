@@ -20,17 +20,13 @@
               </div>
               <div class="min-w-0">
                 <h3 class="text-base font-semibold text-blue-700 dark:text-blue-200 leading-tight">
-                  {{
-                    localFederatedConnections.length > 1
-                      ? 'Source Connections'
-                      : 'Source Connection'
-                  }}
+                  Source Connections
                 </h3>
                 <p class="text-xs text-blue-700/80 dark:text-blue-100/80 font-medium truncate">
                   {{
                     localFederatedConnections.length > 1
                       ? 'Federated mode: combine data from multiple sources'
-                      : 'Select where to read data from'
+                      : 'Select one or more databases to read from'
                   }}
                 </p>
               </div>
@@ -350,9 +346,9 @@ function handleToggleFederatedConnection(payload: {
   if (isFileConn) return
 
   if (payload.checked) {
-    // Add to federated connections
+    // Add to federated connections - check both connectionId AND database
     const existing = localFederatedConnections.value.find(
-      (c) => c.connectionId === payload.connectionId
+      (c) => c.connectionId === payload.connectionId && c.database === payload.database
     )
     if (!existing) {
       const aliasIndex = localFederatedConnections.value.length + 1
@@ -366,9 +362,9 @@ function handleToggleFederatedConnection(payload: {
       emit('update:federated-connections', localFederatedConnections.value)
     }
   } else {
-    // Remove from federated connections
+    // Remove from federated connections - match both connectionId AND database
     localFederatedConnections.value = localFederatedConnections.value.filter(
-      (c) => c.connectionId !== payload.connectionId
+      (c) => !(c.connectionId === payload.connectionId && c.database === payload.database)
     )
     emit('update:federated-connections', localFederatedConnections.value)
   }
