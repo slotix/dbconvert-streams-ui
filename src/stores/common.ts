@@ -359,7 +359,7 @@ export const useCommonStore = defineStore('common', {
     async consumeLogsFromSSE() {
       // Only start SSE connection if backend is available
       if (!this.isBackendConnected) {
-        console.log('Backend not connected, skipping SSE connection')
+        // console.log('Backend not connected')
         return
       }
 
@@ -627,7 +627,7 @@ export const useCommonStore = defineStore('common', {
         return
       }
 
-      console.log('🚀 Starting health monitoring')
+      // console.log('🚀 Starting health monitoring')
 
       // Perform immediate health check
       this.performHealthCheck()

@@ -13,7 +13,27 @@ export function useStreamControls(stream: Ref<StreamConfig>) {
   const isStreamRunning = computed(() => {
     const configMatches = monitoringStore.streamConfig?.id === stream.value.id
     const hasStreamId = monitoringStore.streamID !== ''
-    return configMatches && hasStreamId
+
+    // No stream if config doesn't match or no stream ID
+    if (!configMatches || !hasStreamId) return false
+
+    // Check if stream has finished/failed/stopped - these are terminal states
+    // A failed stream is NOT running, even if it has a streamID
+    const terminalStates: Status[] = [
+      statusEnum.FINISHED,
+      statusEnum.STOPPED,
+      statusEnum.FAILED,
+      statusEnum.TIME_LIMIT_REACHED,
+      statusEnum.EVENT_LIMIT_REACHED
+    ]
+
+    const isTerminal = terminalStates.includes(monitoringStore.status as Status)
+
+    // If stream status is terminal, it's not running
+    if (isTerminal) return false
+
+    // Stream is running if it has ID, matches config, and is not in terminal state
+    return true
   })
 
   const isPaused = computed(() => {

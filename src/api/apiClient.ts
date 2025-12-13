@@ -24,7 +24,7 @@ interface ConfigWithRetry extends AxiosRequestConfig {
 }
 
 // Log environment configuration
-logEnvironment()
+// logEnvironment()
 
 export const apiClient: AxiosInstance = axios.create({
   baseURL: getBackendUrl(),

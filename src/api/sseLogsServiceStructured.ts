@@ -36,7 +36,7 @@ class SSELogsService {
     eventSource.addEventListener('open', () => {
       // Only log if this is a new connection or reconnection after failure
       if (!this.isConnected) {
-        console.log('SSE connection established')
+        // console.log('SSE connection established')
       }
       this.reconnectAttempts = 0
       this.isConnected = true

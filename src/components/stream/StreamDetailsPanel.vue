@@ -206,6 +206,7 @@
       <div v-else-if="activeTab === 'monitor'" class="p-6 space-y-6">
         <!-- Performance Stats -->
         <StatContainer
+          :stream="stream"
           :is-running="isStreamRunning"
           :is-stream-finished="isStreamFinished"
           :is-stopped="isStopped"

@@ -403,6 +403,9 @@
               Account
             </div>
           </a>
+
+          <!-- Version Display -->
+          <VersionDisplay />
         </div>
       </div>
     </div>
@@ -423,7 +426,6 @@
     </div>
 
     <LogsPanel />
-    <VersionDisplay />
   </div>
 </template>
 

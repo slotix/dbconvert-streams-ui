@@ -48,8 +48,8 @@
               <div class="text-xs text-gray-600 dark:text-gray-400 font-medium">Data Producer</div>
             </div>
           </div>
-          <div class="flex-shrink-0">
-            <StatusBadge v-if="isRunning && sourceStats" :status="sourceStats.status" />
+          <div class="shrink-0">
+            <StatusBadge v-if="sourceStats" :status="sourceStats.status" />
             <div
               v-else
               class="px-3 py-1.5 bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 text-xs font-medium rounded-full border border-gray-300 dark:border-gray-700"
@@ -65,12 +65,11 @@
       >
         <StatRow
           label="Produced"
-          :value="isRunning && sourceStats ? formatNumber(sourceStats.counter) : '—'"
-          :suffix="isRunning && sourceStats ? modeLabel : ''"
-          :class="{ 'opacity-50': !isRunning }"
+          :value="sourceStats ? formatNumber(sourceStats.counter) : '—'"
+          :suffix="sourceStats ? modeLabel : ''"
         />
         <StatRow
-          v-if="isRunning && sourceStats && sourceStats.failedEvents > 0"
+          v-if="sourceStats && sourceStats.failedEvents > 0"
           label="Failed"
           :value="formatNumber(sourceStats.failedEvents)"
           suffix="rows"
@@ -78,31 +77,18 @@
         />
         <StatRow
           label="Data Size"
-          :value="
-            isRunning && sourceStats ? formatDataSizeWithUnit(sourceStats.dataSize).value : '—'
-          "
-          :suffix="
-            isRunning && sourceStats ? formatDataSizeWithUnit(sourceStats.dataSize).unit : ''
-          "
-          :class="{ 'opacity-50': !isRunning }"
+          :value="sourceStats ? formatDataSizeWithUnit(sourceStats.dataSize).value : '—'"
+          :suffix="sourceStats ? formatDataSizeWithUnit(sourceStats.dataSize).unit : ''"
         />
         <StatRow
           label="Rate"
-          :value="
-            isRunning && sourceStats ? formatDataRateWithUnit(sourceStats.avgRate).value : '—'
-          "
-          :suffix="isRunning && sourceStats ? formatDataRateWithUnit(sourceStats.avgRate).unit : ''"
-          :class="{ 'opacity-50': !isRunning }"
+          :value="sourceStats ? formatDataRateWithUnit(sourceStats.avgRate).value : '—'"
+          :suffix="sourceStats ? formatDataRateWithUnit(sourceStats.avgRate).unit : ''"
         />
         <StatRow
           label="Elapsed"
-          :value="
-            isRunning && sourceStats ? formatElapsedTimeWithUnit(sourceStats.elapsed).value : '—'
-          "
-          :suffix="
-            isRunning && sourceStats ? formatElapsedTimeWithUnit(sourceStats.elapsed).unit : ''
-          "
-          :class="{ 'opacity-50': !isRunning }"
+          :value="sourceStats ? formatElapsedTimeWithUnit(sourceStats.elapsed).value : '—'"
+          :suffix="sourceStats ? formatElapsedTimeWithUnit(sourceStats.elapsed).unit : ''"
         />
       </dl>
     </div>
@@ -156,7 +142,7 @@
             </div>
           </div>
           <div class="flex-shrink-0">
-            <StatusBadge v-if="isRunning && targetStats" :status="targetStats.status" />
+            <StatusBadge v-if="targetStats" :status="targetStats.status" />
             <div
               v-else
               class="px-3 py-1.5 bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 text-xs font-medium rounded-full border border-gray-300 dark:border-gray-700"
@@ -172,12 +158,11 @@
       >
         <StatRow
           label="Consumed"
-          :value="isRunning && targetStats ? formatNumber(targetStats.counter) : '—'"
-          :suffix="isRunning && targetStats ? modeLabel : ''"
-          :class="{ 'opacity-50': !isRunning }"
+          :value="targetStats ? formatNumber(targetStats.counter) : '—'"
+          :suffix="targetStats ? modeLabel : ''"
         />
         <StatRow
-          v-if="isRunning && targetStats && targetStats.failedEvents > 0"
+          v-if="targetStats && targetStats.failedEvents > 0"
           label="Failed"
           :value="formatNumber(targetStats.failedEvents)"
           suffix="rows"
@@ -185,31 +170,18 @@
         />
         <StatRow
           label="Data Size"
-          :value="
-            isRunning && targetStats ? formatDataSizeWithUnit(targetStats.dataSize).value : '—'
-          "
-          :suffix="
-            isRunning && targetStats ? formatDataSizeWithUnit(targetStats.dataSize).unit : ''
-          "
-          :class="{ 'opacity-50': !isRunning }"
+          :value="targetStats ? formatDataSizeWithUnit(targetStats.dataSize).value : '—'"
+          :suffix="targetStats ? formatDataSizeWithUnit(targetStats.dataSize).unit : ''"
         />
         <StatRow
           label="Avg Rate"
-          :value="
-            isRunning && targetStats ? formatDataRateWithUnit(targetStats.avgRate).value : '—'
-          "
-          :suffix="isRunning && targetStats ? formatDataRateWithUnit(targetStats.avgRate).unit : ''"
-          :class="{ 'opacity-50': !isRunning }"
+          :value="targetStats ? formatDataRateWithUnit(targetStats.avgRate).value : '—'"
+          :suffix="targetStats ? formatDataRateWithUnit(targetStats.avgRate).unit : ''"
         />
         <StatRow
           label="Elapsed"
-          :value="
-            isRunning && targetStats ? formatElapsedTimeWithUnit(targetStats.elapsed).value : '—'
-          "
-          :suffix="
-            isRunning && targetStats ? formatElapsedTimeWithUnit(targetStats.elapsed).unit : ''
-          "
-          :class="{ 'opacity-50': !isRunning }"
+          :value="targetStats ? formatElapsedTimeWithUnit(targetStats.elapsed).value : '—'"
+          :suffix="targetStats ? formatElapsedTimeWithUnit(targetStats.elapsed).unit : ''"
         />
       </dl>
     </div>
@@ -229,6 +201,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useMonitoringStore } from '@/stores/monitoring'
+import type { StreamConfig } from '@/types/streamConfig'
 import {
   formatDataSizeWithUnit,
   formatDataRateWithUnit,
@@ -241,6 +214,7 @@ import TableStatsCard from './TableStatsCard.vue'
 import S3UploadStatsCard from './S3UploadStatsCard.vue'
 
 interface Props {
+  stream: StreamConfig
   isRunning: boolean
   isStreamFinished?: boolean
   isStopped?: boolean
@@ -261,8 +235,23 @@ const emit = defineEmits<{
 
 const store = useMonitoringStore()
 
-const sourceStats = computed(() => store.aggregatedSourceStats)
-const targetStats = computed(() => store.aggregatedTargetStats)
+// Only show stats if they belong to the currently viewed stream config
+// AND there is an active or recently finished stream
+const isCurrentStreamData = computed(() => {
+  const configMatches = store.streamConfig?.id === props.stream.id
+  const hasStreamId = store.streamID !== ''
+  return configMatches && hasStreamId
+})
+
+const sourceStats = computed(() => {
+  if (!isCurrentStreamData.value) return null
+  return store.aggregatedSourceStats
+})
+
+const targetStats = computed(() => {
+  if (!isCurrentStreamData.value) return null
+  return store.aggregatedTargetStats
+})
 
 const modeLabel = computed(() => (store.streamConfig?.mode === 'convert' ? 'rows' : 'events'))
 

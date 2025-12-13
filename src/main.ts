@@ -6,16 +6,28 @@ import 'vue-toastification/dist/index.css'
 import './assets/style.css'
 import App from './App.vue'
 import router from './router'
-import { logEnvironment } from '@/utils/environment'
+// import { logEnvironment } from '@/utils/environment'
 import { vTooltip } from '@/directives/tooltip'
 import { useThemeStore } from '@/stores/theme'
+
+// Display startup banner
+console.log(`
+┌────────────────────────────────┐
+│    DBConvert Streams UI        │
+└────────────────────────────────┘
+`)
+console.log(
+  `Version: v${import.meta.env.PACKAGE_VERSION || 'unknown'}${import.meta.env.DEV ? ' (DEV)' : ''}`
+)
+console.log(`API URL: ${window.ENV?.VITE_API_URL || import.meta.env.VITE_API_URL || '/api'}`)
+console.log('─'.repeat(34))
 
 // Monaco Editor is now lazy-loaded via src/utils/monaco-loader.ts
 // This reduces the initial bundle size by ~3.8MB (986KB gzipped)
 
 // Ensure window.ENV exists
 if (!window.ENV) {
-  console.warn('window.ENV is not defined. Using default environment variables.')
+  // console.warn('window.ENV is not defined. Using default environment variables.')
   window.ENV = {
     VITE_API_KEY: import.meta.env.VITE_API_KEY || '',
     VITE_PORT: import.meta.env.VITE_PORT || '80',
@@ -26,7 +38,7 @@ if (!window.ENV) {
 }
 
 // Log environment configuration at startup
-logEnvironment()
+// logEnvironment()
 
 const toastOptions: PluginOptions = {
   position: POSITION.BOTTOM_RIGHT,

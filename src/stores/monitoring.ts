@@ -682,6 +682,19 @@ export const useMonitoringStore = defineStore('monitoring', {
             this.status = newStatus
           }
         }
+      } else if (newAggregatedStats.source && !newAggregatedStats.target) {
+        // Only source stats exist - handle early failure case
+        // When source fails before target starts, we need to set stream status to FAILED
+        const sourceStatus = newAggregatedStats.source.status
+        // console.log('[Monitoring] Early failure check:', {
+        //   sourceStatus,
+        //   currentStatus: this.status,
+        //   willUpdate: sourceStatus === STATUS.FAILED
+        // })
+        if (sourceStatus === STATUS.FAILED) {
+          // console.log('[Monitoring] Setting stream status to FAILED (early source failure)')
+          this.status = STATUS.FAILED
+        }
       }
     },
     aggregateStats(stats: Log[], type: string): AggregatedNodeStats {
