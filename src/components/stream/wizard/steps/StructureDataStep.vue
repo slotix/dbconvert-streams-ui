@@ -1,8 +1,8 @@
 <template>
   <div class="space-y-6">
-    <!-- Federated Mode Banner -->
+    <!-- Multi-Source Query Mode Banner - only shown on Queries tab -->
     <div
-      v-if="isMultiSource"
+      v-if="isMultiSource && activeDataTab === 'queries'"
       class="bg-linear-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 border border-purple-200 dark:border-purple-700/50 rounded-xl p-4 shadow-sm"
     >
       <div class="flex items-center gap-3">
@@ -20,11 +20,12 @@
         </div>
         <div>
           <h3 class="text-sm font-semibold text-purple-900 dark:text-purple-100">
-            Federated Query Mode
+            Multi-Source Query Mode
           </h3>
           <p class="text-sm text-purple-700 dark:text-purple-300">
             Write a SQL query that can join data across {{ sourceConnections.length }} connected
-            sources. Tables are prefixed with connection aliases (e.g., db1.tablename).
+            sources. Database tables are prefixed with connection aliases (e.g., db1.tablename).
+            File sources can be read directly using DuckDB functions.
           </p>
         </div>
       </div>

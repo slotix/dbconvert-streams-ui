@@ -14,7 +14,7 @@
           "
         />
         <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100">
-          {{ isMultiSource ? 'Federated SQL Queries' : 'Custom SQL Queries' }}
+          {{ isMultiSource ? 'Multi-Source SQL Queries' : 'Custom SQL Queries' }}
         </h3>
         <span
           v-if="queries.length > 0"
@@ -29,7 +29,7 @@
         </span>
       </div>
       <div class="flex items-center gap-2">
-        <!-- Template Selector - hide for federated mode since templates are different -->
+        <!-- Template Selector - hide for multi-source mode since templates are different -->
         <select
           v-if="activeQuery && !isMultiSource"
           class="text-xs px-2 py-1.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300 focus:ring-1 focus:ring-teal-500"
@@ -41,7 +41,7 @@
           <option value="subquery">Subquery filter</option>
           <option value="union">UNION query</option>
         </select>
-        <!-- Connection count for federated mode -->
+        <!-- Connection count for multi-source mode -->
         <span
           v-if="isMultiSource"
           class="text-xs px-2 py-1 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded"
@@ -58,12 +58,12 @@
     >
       <DocumentTextIcon class="w-16 h-16 text-gray-400 dark:text-gray-500 mb-4" />
       <h4 class="text-base font-medium text-gray-900 dark:text-gray-100 mb-2">
-        {{ isMultiSource ? 'No federated queries' : 'No custom queries' }}
+        {{ isMultiSource ? 'No queries defined' : 'No custom queries' }}
       </h4>
       <p class="text-sm text-gray-500 dark:text-gray-400 text-center max-w-md mb-6">
         {{
           isMultiSource
-            ? 'Write SQL queries that join data across multiple databases. Use connection aliases (e.g., db1.tablename) to reference tables from different sources.'
+            ? 'Write SQL queries that join data across multiple sources. Use connection aliases to reference database tables (e.g., src.tablename). File sources can be read directly using DuckDB functions like read_csv_auto().'
             : 'Add complex SQL queries with JOINs, CTEs, and aggregations to create derived datasets on the target.'
         }}
       </p>
@@ -78,7 +78,7 @@
         @click="addQuery"
       >
         <PlusIcon class="w-4 h-4" />
-        {{ isMultiSource ? 'Add federated query' : 'Add your first query' }}
+        {{ isMultiSource ? 'Add query' : 'Add your first query' }}
       </button>
     </div>
 
@@ -125,6 +125,45 @@
               <ArrowPathIcon v-else class="w-4 h-4 animate-spin" />
               <span>{{ isRunning === activeQueryIndex ? 'Running...' : 'Run' }}</span>
             </button>
+          </div>
+        </div>
+
+        <!-- Connected Sources Reference Panel (multi-source mode only) -->
+        <div
+          v-if="isMultiSource && sourceConnections.length > 0"
+          class="px-4 py-2 bg-purple-50 dark:bg-purple-900/20 border-b border-purple-200 dark:border-purple-700/50"
+        >
+          <div class="flex items-start gap-3">
+            <span class="text-xs font-medium text-purple-700 dark:text-purple-300 shrink-0 pt-0.5"
+              >Connected Sources:</span
+            >
+            <div class="flex flex-wrap gap-2">
+              <div
+                v-for="conn in sourceConnections"
+                :key="conn.connectionId"
+                class="inline-flex items-center gap-1.5 px-2 py-1 text-xs bg-white dark:bg-gray-800 border border-purple-200 dark:border-purple-700 rounded"
+              >
+                <span class="font-mono font-semibold text-purple-700 dark:text-purple-300">{{
+                  conn.alias
+                }}</span>
+                <span class="text-gray-400 dark:text-gray-500">→</span>
+                <span class="text-gray-600 dark:text-gray-400">{{
+                  getConnectionLabel(conn.connectionId)
+                }}</span>
+                <span
+                  v-if="isFileConnection(conn.connectionId)"
+                  class="ml-1 px-1.5 py-0.5 text-[10px] bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 rounded"
+                  title="File sources are read directly using DuckDB functions (e.g., read_csv_auto())"
+                  >file</span
+                >
+                <span
+                  v-else
+                  class="ml-1 px-1.5 py-0.5 text-[10px] bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded"
+                  title="Use alias.table syntax to reference tables"
+                  >{{ conn.alias }}.table</span
+                >
+              </div>
+            </div>
           </div>
         </div>
 
@@ -308,6 +347,21 @@ const navigationStore = useExplorerNavigationStore()
 
 // Multi-source mode is enabled when 2+ source connections are selected
 const isMultiSource = computed(() => props.sourceConnections.length > 1)
+
+// Helper to get connection display label
+function getConnectionLabel(connectionId: string): string {
+  const conn = connectionsStore.connectionByID(connectionId)
+  if (!conn) return connectionId
+  return conn.name || conn.host || connectionId
+}
+
+// Helper to check if connection is file-based
+function isFileConnection(connectionId: string): boolean {
+  const conn = connectionsStore.connectionByID(connectionId)
+  if (!conn) return false
+  const fileTypes = ['files', 'csv', 'parquet', 'jsonl', 's3', 'gcs', 'azure']
+  return fileTypes.includes(conn.type?.toLowerCase() || '')
+}
 
 // Local state
 const activeTabId = ref<string>('')
@@ -505,7 +559,7 @@ const runPreview = async (query: QuerySource, index: number) => {
     let result: { columns: string[]; rows: unknown[][] }
 
     if (isMultiSource.value && props.sourceConnections.length > 0) {
-      // Execute federated query across multiple sources
+      // Execute multi-source query across multiple sources
       const federatedResult = await executeFederatedQuery({
         query: query.query,
         connections: props.sourceConnections
