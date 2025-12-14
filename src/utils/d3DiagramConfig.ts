@@ -6,26 +6,26 @@ import type * as d3 from 'd3'
 export const BRAND_COLORS = {
   primary: '#00B2D6', // Teal/Cyan blue (from logo)
   secondary: '#F26627', // Orange (from logo)
-  gray: '#94A3B8', // Slate gray for neutral elements
-  grayLight: '#E2E8F0', // Light gray for backgrounds
-  grayDark: '#334155', // Dark gray for text
-  background: '#F8FAFC', // Very light gray for backgrounds
+  gray: '#9ca3af', // Neutral gray for elements
+  grayLight: '#e5e7eb', // Light neutral gray for backgrounds
+  grayDark: '#374151', // Dark neutral gray for text
+  background: '#f9fafb', // Very light neutral gray for backgrounds
   white: '#FFFFFF',
   highlight: {
-    blue: '#DBEAFE', // Light blue highlight
+    blue: '#dbeafe', // Light blue highlight
     orange: '#FFEDD5' // Light orange highlight
   },
   // Dark theme colors
   dark: {
-    background: '#1e293b', // Dark slate background
-    cardBg: '#334155', // Card background
-    border: '#475569', // Border color
-    text: '#e2e8f0', // Light text
-    textMuted: '#94a3b8', // Muted text
-    tableBg: '#1e293b', // Table background
-    tableHeader: '#475569', // Table header
-    viewBg: '#1e293b', // View background
-    viewHeader: '#475569', // View header
+    background: '#1f2937', // Dark neutral background
+    cardBg: '#374151', // Card background
+    border: '#4b5563', // Border color
+    text: '#e5e7eb', // Light text
+    textMuted: '#9ca3af', // Muted text
+    tableBg: '#1f2937', // Table background
+    tableHeader: '#4b5563', // Table header
+    viewBg: '#1f2937', // View background
+    viewHeader: '#4b5563', // View header
     gridLine: '#374151' // Grid line
   }
 } as const
@@ -35,18 +35,25 @@ export const BRAND_COLORS = {
  */
 export function getDiagramColors(isDark: boolean) {
   return {
-    gridLine: isDark ? BRAND_COLORS.dark.gridLine : '#e5e7eb',
-    tableBg: isDark ? BRAND_COLORS.dark.tableBg : '#f8fafc',
-    viewBg: isDark ? BRAND_COLORS.dark.viewBg : '#f8fbfe',
-    tableBorder: isDark ? BRAND_COLORS.dark.border : '#cbd5e1',
-    viewBorder: isDark ? BRAND_COLORS.dark.border : '#94a3b8',
-    tableHeader: isDark ? BRAND_COLORS.dark.tableHeader : '#e2e8f0',
-    viewHeader: isDark ? BRAND_COLORS.dark.viewHeader : '#cbd5e1',
-    headerText: isDark ? BRAND_COLORS.dark.text : '#1e293b',
+    gridLine: isDark ? BRAND_COLORS.dark.gridLine : '#d1d5db',
+    tableBg: isDark ? BRAND_COLORS.dark.tableBg : '#f9fafb',
+    viewBg: isDark ? BRAND_COLORS.dark.viewBg : '#f9fafb',
+    tableBorder: isDark ? BRAND_COLORS.dark.border : '#d1d5db',
+    viewBorder: isDark ? BRAND_COLORS.dark.border : '#9ca3af',
+    tableHeader: isDark ? BRAND_COLORS.dark.tableHeader : '#e5e7eb',
+    viewHeader: isDark ? BRAND_COLORS.dark.viewHeader : '#d1d5db',
+    headerText: isDark ? BRAND_COLORS.dark.text : '#1f2937',
     columnText: isDark ? BRAND_COLORS.dark.text : BRAND_COLORS.grayDark,
-    alternateRowBg: isDark ? '#0f172a' : '#f1f5f9',
-    tooltipBg: isDark ? '#0f172a' : '#1f2937',
-    noDataText: isDark ? BRAND_COLORS.dark.textMuted : '#6b7280'
+    alternateRowBg: isDark ? '#111827' : '#f3f4f6',
+    tooltipBg: isDark ? '#111827' : '#1f2937',
+    noDataText: isDark ? BRAND_COLORS.dark.textMuted : '#6b7280',
+    // Selection highlight colors
+    selectedHeaderBg: isDark ? '#164e63' : '#dbeafe', // Cyan-900 / Blue-100
+    selectedBodyBg: isDark ? '#0e4a5c' : '#eff6ff', // Darker cyan / Blue-50
+    selectedBorder: isDark ? '#06b6d4' : '#3b82f6', // Cyan-500 / Blue-500
+    relatedHeaderBg: isDark ? '#7c2d12' : '#FFEDD5', // Orange-900 / Orange-100
+    relatedBodyBg: isDark ? '#5c2410' : '#fff7ed', // Darker orange / Orange-50
+    relatedBorder: isDark ? '#f97316' : '#f97316' // Orange-500
   }
 }
 

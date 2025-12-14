@@ -164,6 +164,7 @@ function createBackgroundGrid(
     .attr('class', 'grid-background')
 
   const majorGrid = container.append('g').attr('class', 'major-grid')
+  const majorGridColor = themeStore.isDark ? '#4b5563' : '#d1d5db'
   for (let i = 0; i < (width * 4) / majorGridSize; i++) {
     majorGrid
       .append('line')
@@ -171,8 +172,8 @@ function createBackgroundGrid(
       .attr('y1', -height)
       .attr('x2', i * majorGridSize - width)
       .attr('y2', height * 3)
-      .attr('stroke', '#d1d5db')
-      .attr('stroke-width', 1)
+      .attr('stroke', majorGridColor)
+      .attr('stroke-width', 0.8)
   }
   for (let i = 0; i < (height * 4) / majorGridSize; i++) {
     majorGrid
@@ -181,8 +182,8 @@ function createBackgroundGrid(
       .attr('y1', i * majorGridSize - height)
       .attr('x2', width * 3)
       .attr('y2', i * majorGridSize - height)
-      .attr('stroke', '#d1d5db')
-      .attr('stroke-width', 1)
+      .attr('stroke', majorGridColor)
+      .attr('stroke-width', 0.8)
   }
 }
 
@@ -478,7 +479,7 @@ function createNodes(
         .attr('x', 190)
         .attr('y', 14)
         .attr('text-anchor', 'end')
-        .attr('fill', '#64748b')
+        .attr('fill', colors.value.columnText)
         .style('font-size', '11px')
         .text(formatColumnType(col))
     })
@@ -552,24 +553,42 @@ function updateHighlighting() {
       .duration(300)
       .attr(
         'stroke',
-        isSelected ? BRAND_COLORS.primary : isRelated ? BRAND_COLORS.secondary : '#cbd5e1'
+        isSelected
+          ? colors.value.selectedBorder
+          : isRelated
+            ? colors.value.relatedBorder
+            : colors.value.tableBorder
       )
       .attr('stroke-width', isSelected || isRelated ? 2.5 : 1.5)
       .attr(
         'fill',
         isSelected
-          ? BRAND_COLORS.highlight.blue
+          ? colors.value.selectedHeaderBg
           : isRelated
-            ? BRAND_COLORS.highlight.orange
-            : BRAND_COLORS.grayLight
+            ? colors.value.relatedHeaderBg
+            : colors.value.tableHeader
       )
 
     element
       .select('rect.table-body')
       .transition()
       .duration(300)
-      .attr('fill', isSelected ? '#f1f5f9' : isRelated ? '#fff7ed' : BRAND_COLORS.background)
-      .attr('stroke', isSelected ? '#bfdbfe' : isRelated ? '#fed7aa' : '#cbd5e1')
+      .attr(
+        'fill',
+        isSelected
+          ? colors.value.selectedBodyBg
+          : isRelated
+            ? colors.value.relatedBodyBg
+            : colors.value.tableBg
+      )
+      .attr(
+        'stroke',
+        isSelected
+          ? colors.value.selectedBorder
+          : isRelated
+            ? colors.value.relatedBorder
+            : colors.value.tableBorder
+      )
       .attr('stroke-width', isSelected || isRelated ? 1.5 : 1)
 
     element
@@ -809,7 +828,7 @@ function handleExport() {
 
 <template>
   <div class="relative">
-    <div ref="svgContainer" class="w-full h-[2000px] bg-gray-50 dark:bg-slate-900 rounded-lg"></div>
+    <div ref="svgContainer" class="w-full h-[2000px] bg-gray-50 dark:bg-gray-900 rounded-lg"></div>
 
     <DiagramControls
       :current-zoom="zoomComposable.currentZoom.value"
