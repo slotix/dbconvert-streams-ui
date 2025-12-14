@@ -4,13 +4,13 @@ import { ViewfinderCircleIcon } from '@heroicons/vue/24/outline'
 
 <template>
   <div
-    class="absolute top-4 left-4 p-3 bg-white dark:bg-slate-800 bg-opacity-95 dark:bg-opacity-95 rounded-lg shadow-md border border-gray-200 dark:border-slate-600 z-10"
+    class="absolute top-4 left-4 p-3 rounded-lg border bg-white/95 dark:bg-gray-850/95 border-gray-200 dark:border-gray-700 shadow-lg dark:shadow-gray-900/40 backdrop-blur-sm z-10"
   >
     <h4 class="text-xs font-semibold text-gray-700 dark:text-gray-200 mb-1.5">Legend</h4>
     <div class="space-y-1.5">
       <div class="flex items-center">
         <div
-          class="w-4 h-4 mr-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-500 rounded"
+          class="w-4 h-4 mr-2 bg-white dark:bg-gray-850 border border-gray-300 dark:border-gray-700 rounded"
         ></div>
         <span class="text-xs text-gray-700 dark:text-gray-300">Table</span>
       </div>

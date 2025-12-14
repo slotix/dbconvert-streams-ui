@@ -164,7 +164,7 @@ function createBackgroundGrid(
     .attr('class', 'grid-background')
 
   const majorGrid = container.append('g').attr('class', 'major-grid')
-  const majorGridColor = themeStore.isDark ? '#4b5563' : '#d1d5db'
+  const majorGridColor = colors.value.gridLineMajor
   for (let i = 0; i < (width * 4) / majorGridSize; i++) {
     majorGrid
       .append('line')

@@ -1,5 +1,11 @@
 import type * as d3 from 'd3'
 
+function readCssVar(varName: string, fallback: string): string {
+  if (typeof window === 'undefined' || typeof document === 'undefined') return fallback
+  const value = getComputedStyle(document.documentElement).getPropertyValue(varName).trim()
+  return value || fallback
+}
+
 /**
  * Brand colors for the diagram (matches the main component colors)
  */
@@ -34,19 +40,33 @@ export const BRAND_COLORS = {
  * Creates theme-aware diagram colors based on dark mode state
  */
 export function getDiagramColors(isDark: boolean) {
+  const gray50 = readCssVar('--color-gray-50', '#f9fafb')
+  const gray100 = readCssVar('--color-gray-100', '#f3f4f6')
+  const gray200 = readCssVar('--color-gray-200', '#e5e7eb')
+  const gray300 = readCssVar('--color-gray-300', '#d1d5db')
+  const gray400 = readCssVar('--color-gray-400', '#9ca3af')
+  const gray500 = readCssVar('--color-gray-500', '#6b7280')
+  const gray600 = readCssVar('--color-gray-600', '#4b5563')
+  const gray700 = readCssVar('--color-gray-700', '#374151')
+  const gray800 = readCssVar('--color-gray-800', '#1f2937')
+  const gray850 = readCssVar('--color-gray-850', '#1e1e1e')
+  const gray900 = readCssVar('--color-gray-900', '#111827')
+  const gray950 = readCssVar('--color-gray-950', '#0b0f19')
+
   return {
-    gridLine: isDark ? BRAND_COLORS.dark.gridLine : '#d1d5db',
-    tableBg: isDark ? BRAND_COLORS.dark.tableBg : '#f9fafb',
-    viewBg: isDark ? BRAND_COLORS.dark.viewBg : '#f9fafb',
-    tableBorder: isDark ? BRAND_COLORS.dark.border : '#d1d5db',
-    viewBorder: isDark ? BRAND_COLORS.dark.border : '#9ca3af',
-    tableHeader: isDark ? BRAND_COLORS.dark.tableHeader : '#e5e7eb',
-    viewHeader: isDark ? BRAND_COLORS.dark.viewHeader : '#d1d5db',
-    headerText: isDark ? BRAND_COLORS.dark.text : '#1f2937',
-    columnText: isDark ? BRAND_COLORS.dark.text : BRAND_COLORS.grayDark,
-    alternateRowBg: isDark ? '#111827' : '#f3f4f6',
-    tooltipBg: isDark ? '#111827' : '#1f2937',
-    noDataText: isDark ? BRAND_COLORS.dark.textMuted : '#6b7280',
+    gridLine: isDark ? gray800 : gray200,
+    gridLineMajor: isDark ? gray700 : gray300,
+    tableBg: isDark ? gray850 : '#ffffff',
+    viewBg: isDark ? gray850 : '#ffffff',
+    tableBorder: isDark ? gray700 : gray200,
+    viewBorder: isDark ? gray600 : gray300,
+    tableHeader: isDark ? gray800 : gray50,
+    viewHeader: isDark ? gray800 : gray50,
+    headerText: isDark ? gray100 : gray900,
+    columnText: isDark ? gray200 : gray700,
+    alternateRowBg: isDark ? gray800 : gray100,
+    tooltipBg: isDark ? gray950 : gray900,
+    noDataText: isDark ? gray400 : gray500,
     // Selection highlight colors
     selectedHeaderBg: isDark ? '#164e63' : '#dbeafe', // Cyan-900 / Blue-100
     selectedBodyBg: isDark ? '#0e4a5c' : '#eff6ff', // Darker cyan / Blue-50
@@ -149,7 +169,6 @@ export type MarkerVariant = keyof typeof MARKER_VARIANTS
  * @param variants - Which variants to create (defaults to all)
  */
 export function createMarkerDefinitions(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   defs: d3.Selection<SVGDefsElement, unknown, null, undefined>,
   variants: MarkerVariant[] = ['primary', 'junction']
 ): void {
