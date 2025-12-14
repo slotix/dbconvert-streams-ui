@@ -24,8 +24,8 @@
                 </h3>
                 <p class="text-xs text-blue-700/80 dark:text-blue-100/80 font-medium truncate">
                   {{
-                    localFederatedConnections.length > 1
-                      ? 'Federated mode: combine data from multiple sources'
+                    localSourceConnections.length > 1
+                      ? 'Multi-source: combine data from multiple sources'
                       : 'Select one or more databases to read from'
                   }}
                 </p>
@@ -54,16 +54,16 @@
         <div class="flex-1 overflow-y-auto p-3 bg-white dark:bg-gray-900/60">
           <ConnectionTreeSelector
             :connections="filteredSourceConnections"
-            :selected-connection-id="sourceConnectionId"
-            :selected-database="sourceDatabase"
+            :selected-connection-id="primarySourceId"
+            :selected-database="primarySourceDatabase"
             :selected-schema="sourceSchema"
             :search-query="sourceConnectionSearch"
-            :federated-connections="localFederatedConnections"
+            :source-connections="localSourceConnections"
             mode="source"
             enable-multi-select
             @select-connection="handleSourceConnectionSelect"
             @select-database="handleSourceDatabaseSelect"
-            @toggle-federated="handleToggleFederatedConnection"
+            @toggle-source-connection="handleToggleSourceConnection"
           />
         </div>
       </div>
@@ -135,7 +135,7 @@
 
     <!-- Selection Summary - Enhanced Chips -->
     <div
-      v-if="sourceConnectionId || targetConnectionId || localFederatedConnections.length > 0"
+      v-if="primarySourceId || targetConnectionId || localSourceConnections.length > 0"
       class="shrink-0 flex flex-col gap-2"
     >
       <!-- Source and Target Chips -->
@@ -146,19 +146,19 @@
             class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-600/60 rounded-lg px-3 py-1.5 text-sm shadow-sm shadow-blue-900/10 dark:shadow-blue-900/40"
           >
             <span class="font-semibold text-blue-700 dark:text-blue-200">Source:</span>
-            <template v-if="localFederatedConnections.length > 1">
+            <template v-if="localSourceConnections.length > 1">
               <span class="text-blue-900 dark:text-blue-100 ml-1 font-medium">
-                {{ localFederatedConnections.length }} connections (federated)
+                {{ localSourceConnections.length }} connections (multi-source)
               </span>
             </template>
             <template v-else>
               <span
-                v-if="sourceConnectionId"
+                v-if="primarySourceId"
                 class="text-blue-900 dark:text-blue-100 ml-1 font-medium"
               >
-                {{ getConnectionName(sourceConnectionId) }}
-                <span v-if="sourceDatabase" class="text-blue-600 dark:text-blue-300">
-                  / {{ sourceDatabase }}
+                {{ getConnectionName(primarySourceId) }}
+                <span v-if="primarySourceDatabase" class="text-blue-600 dark:text-blue-300">
+                  / {{ primarySourceDatabase }}
                 </span>
               </span>
               <span v-else class="text-blue-500/80 dark:text-blue-300/70 ml-1 italic"
@@ -247,7 +247,6 @@ import { getConnectionHost } from '@/utils/specBuilder'
 import BaseButton from '@/components/base/BaseButton.vue'
 import ConnectionTreeSelector from './ConnectionTreeSelector.vue'
 import StreamConnectionFilter from './StreamConnectionFilter.vue'
-import ConnectionAliasPanel from '@/components/console/ConnectionAliasPanel.vue'
 import type { ConnectionMapping } from '@/api/federated'
 
 interface Props {
@@ -258,10 +257,8 @@ interface Props {
   sourceSchema?: string | null
   targetSchema?: string | null
   targetPath?: string | null
-  /** Enable federated (multi-source) mode */
-  federatedMode?: boolean
-  /** Connection mappings for federated mode */
-  federatedConnections?: ConnectionMapping[]
+  /** Source connections (multi-source supported) */
+  sourceConnections?: ConnectionMapping[]
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -272,10 +269,10 @@ const props = withDefaults(defineProps<Props>(), {
   sourceSchema: null,
   targetSchema: null,
   targetPath: null,
-  federatedMode: false,
-  federatedConnections: () => []
+  sourceConnections: () => []
 })
 
+const DEFAULT_ALIAS = 'src'
 const emit = defineEmits<{
   'update:source-connection': [connectionId: string, database?: string, schema?: string]
   'update:target-connection': [
@@ -286,8 +283,7 @@ const emit = defineEmits<{
   ]
   'add-connection': [paneType: 'source' | 'target']
   'clear-all': []
-  'update:federated-mode': [enabled: boolean]
-  'update:federated-connections': [connections: ConnectionMapping[]]
+  'update:source-connections': [connections: ConnectionMapping[]]
 }>()
 
 const connectionsStore = useConnectionsStore()
@@ -297,39 +293,52 @@ const targetConnectionSearch = ref('')
 const sourceConnectionType = ref<string | null>(null)
 const targetConnectionType = ref<string | null>(null)
 
-// Federated connections state (auto-detects federated mode when length > 1)
-const localFederatedConnections = ref<ConnectionMapping[]>([...props.federatedConnections])
+// Source connections state (auto-detects multi-source when length > 1)
+const localSourceConnections = ref<ConnectionMapping[]>([...props.sourceConnections])
 
 // Sync prop changes to local state
 watch(
-  () => props.federatedConnections,
+  () => props.sourceConnections,
   (val) => {
-    localFederatedConnections.value = [...val]
-    // Auto-emit federated mode based on connection count
-    const isFederated = val.length > 1
-    emit('update:federated-mode', isFederated)
+    localSourceConnections.value = [...val]
   },
   { deep: true, immediate: true }
 )
 
-// Auto-detect and emit federated mode when connections change
-watch(
-  localFederatedConnections,
-  (connections) => {
-    const isFederated = connections.length > 1
-    emit('update:federated-mode', isFederated)
-  },
-  { deep: true }
+const primarySourceId = computed(
+  () => localSourceConnections.value[0]?.connectionId || props.sourceConnectionId
 )
+const primarySourceDatabase = computed(
+  () => localSourceConnections.value[0]?.database || props.sourceDatabase
+)
+const isMultiSource = computed(() => localSourceConnections.value.length > 1)
 
-// Handle federated connections update
-function handleFederatedConnectionsUpdate(connections: ConnectionMapping[]) {
-  localFederatedConnections.value = connections
-  emit('update:federated-connections', connections)
+function generateAlias(): string {
+  const used = new Set(localSourceConnections.value.map((c) => (c.alias || '').trim()))
+  if (!used.size) {
+    used.add(DEFAULT_ALIAS)
+    return DEFAULT_ALIAS
+  }
+
+  let index = used.size + 1
+  let alias = `${DEFAULT_ALIAS}${index}`
+  while (used.has(alias)) {
+    index += 1
+    alias = `${DEFAULT_ALIAS}${index}`
+  }
+  used.add(alias)
+  return alias
 }
 
-// Handle checkbox toggle for federated multi-select
-function handleToggleFederatedConnection(payload: {
+function syncPrimarySelection() {
+  const primary = localSourceConnections.value[0]
+  // Only emit single-source updates; multi-source state is handled via update:source-connections
+  if (!primary || localSourceConnections.value.length !== 1) return
+  emit('update:source-connection', primary.connectionId, primary.database, undefined)
+}
+
+// Handle checkbox toggle for multi-source selection
+function handleToggleSourceConnection(payload: {
   connectionId: string
   database?: string
   checked: boolean
@@ -337,7 +346,7 @@ function handleToggleFederatedConnection(payload: {
   const connection = connectionsStore.connectionByID(payload.connectionId)
   if (!connection) return
 
-  // Filter out file connections - they don't go in federatedConnections
+  // Filter out file connections - they don't go in source connections for multi-source
   const isFileConn =
     connection.type?.toLowerCase()?.includes('file') ||
     connection.type?.toLowerCase() === 's3' ||
@@ -346,36 +355,28 @@ function handleToggleFederatedConnection(payload: {
   if (isFileConn) return
 
   if (payload.checked) {
-    // Add to federated connections - check both connectionId AND database
-    const existing = localFederatedConnections.value.find(
+    // Add to source connections - check both connectionId AND database
+    const existing = localSourceConnections.value.find(
       (c) => c.connectionId === payload.connectionId && c.database === payload.database
     )
     if (!existing) {
-      const aliasIndex = localFederatedConnections.value.length + 1
-      const alias = `db${aliasIndex}`
+      const alias = generateAlias()
       const mapping: ConnectionMapping = {
         connectionId: payload.connectionId,
         alias: alias,
         database: payload.database
       }
-      localFederatedConnections.value = [...localFederatedConnections.value, mapping]
-      emit('update:federated-connections', localFederatedConnections.value)
+      localSourceConnections.value = [...localSourceConnections.value, mapping]
     }
   } else {
-    // Remove from federated connections - match both connectionId AND database
-    localFederatedConnections.value = localFederatedConnections.value.filter(
+    // Remove from source connections - match both connectionId AND database
+    localSourceConnections.value = localSourceConnections.value.filter(
       (c) => !(c.connectionId === payload.connectionId && c.database === payload.database)
     )
-    emit('update:federated-connections', localFederatedConnections.value)
   }
 
-  // Update single-source selection for backward compatibility
-  if (localFederatedConnections.value.length === 1) {
-    const single = localFederatedConnections.value[0]
-    emit('update:source-connection', single.connectionId, single.database, undefined)
-  } else if (localFederatedConnections.value.length === 0) {
-    emit('update:source-connection', '', undefined, undefined)
-  }
+  emit('update:source-connections', localSourceConnections.value)
+  syncPrimarySelection()
 }
 
 const connections = computed(() => connectionsStore.connections)
@@ -478,11 +479,12 @@ const filteredTargetConnections = computed(() => {
 
 const isSameConnectionAndDatabase = computed(() => {
   return (
-    props.sourceConnectionId &&
+    !isMultiSource.value &&
+    primarySourceId.value &&
     props.targetConnectionId &&
-    props.sourceConnectionId === props.targetConnectionId &&
-    props.sourceDatabase === props.targetDatabase &&
-    props.sourceDatabase
+    primarySourceId.value === props.targetConnectionId &&
+    (primarySourceDatabase.value || props.sourceDatabase) === props.targetDatabase &&
+    (primarySourceDatabase.value || props.sourceDatabase)
   )
 })
 
@@ -496,6 +498,18 @@ function handleSourceConnectionSelect(payload: {
   database?: string
   schema?: string
 }) {
+  const alias =
+    localSourceConnections.value.find((c) => c.connectionId === payload.connectionId)?.alias ||
+    localSourceConnections.value[0]?.alias ||
+    DEFAULT_ALIAS
+  localSourceConnections.value = [
+    {
+      alias,
+      connectionId: payload.connectionId,
+      database: payload.database
+    }
+  ]
+  emit('update:source-connections', localSourceConnections.value)
   emit('update:source-connection', payload.connectionId, payload.database, payload.schema)
 }
 
@@ -504,6 +518,18 @@ function handleSourceDatabaseSelect(payload: {
   database: string
   schema?: string
 }) {
+  const alias =
+    localSourceConnections.value.find((c) => c.connectionId === payload.connectionId)?.alias ||
+    localSourceConnections.value[0]?.alias ||
+    DEFAULT_ALIAS
+  localSourceConnections.value = [
+    {
+      alias,
+      connectionId: payload.connectionId,
+      database: payload.database
+    }
+  ]
+  emit('update:source-connections', localSourceConnections.value)
   emit('update:source-connection', payload.connectionId, payload.database, payload.schema)
 }
 

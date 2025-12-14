@@ -54,19 +54,17 @@
             <!-- Step 1: Source & Target Selection -->
             <div v-if="currentStepIndex === 0">
               <SourceTargetSelectionStep
-                :source-connection-id="wizard.selection.value.sourceConnectionId"
+                :source-connection-id="wizard.primarySourceId.value"
                 :target-connection-id="wizard.selection.value.targetConnectionId"
                 :source-database="wizard.selection.value.sourceDatabase"
                 :target-database="wizard.selection.value.targetDatabase"
                 :source-schema="wizard.selection.value.sourceSchema"
                 :target-schema="wizard.selection.value.targetSchema"
                 :target-path="wizard.selection.value.targetPath"
-                :federated-mode="wizard.federatedMode.value"
-                :federated-connections="wizard.federatedConnections.value"
+                :source-connections="wizard.sourceConnections.value"
                 @update:source-connection="handleSourceUpdate"
                 @update:target-connection="handleTargetUpdate"
-                @update:federated-mode="handleFederatedModeUpdate"
-                @update:federated-connections="handleFederatedConnectionsUpdate"
+                @update:source-connections="handleSourceConnectionsUpdate"
                 @clear-all="handleClearAll"
                 @add-connection="(paneType) => goToAddConnection(paneType)"
                 @update:can-proceed="updateCanProceed"
@@ -81,8 +79,7 @@
                 :create-indexes="wizard.createIndexes.value"
                 :create-foreign-keys="wizard.createForeignKeys.value"
                 :copy-data="wizard.copyData.value"
-                :federated-mode="wizard.federatedMode.value"
-                :federated-connections="wizard.federatedConnections.value"
+                :source-connections="wizard.sourceConnections.value"
                 @update:create-tables="wizard.setCreateTables"
                 @update:create-indexes="wizard.setCreateIndexes"
                 @update:create-foreign-keys="wizard.setCreateForeignKeys"
@@ -94,7 +91,7 @@
             <!-- Step 3: Stream Configuration -->
             <div v-if="currentStepIndex === 2">
               <StreamConfigurationStep
-                :source-connection-id="wizard.selection.value.sourceConnectionId"
+                :source-connection-id="wizard.primarySourceId.value"
                 :target-connection-id="wizard.selection.value.targetConnectionId"
                 :source-database="wizard.selection.value.sourceDatabase"
                 :target-database="wizard.selection.value.targetDatabase"
@@ -126,6 +123,7 @@ import { useStreamWizard } from '@/composables/useStreamWizard'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
 import { useCommonStore } from '@/stores/common'
+import type { ConnectionMapping } from '@/api/federated'
 import WizardLayout from '@/components/connection/wizard/WizardLayout.vue'
 import SourceTargetSelectionStep from '@/components/stream/wizard/steps/SourceTargetSelectionStep.vue'
 import StructureDataStep from '@/components/stream/wizard/steps/StructureDataStep.vue'
@@ -251,19 +249,17 @@ async function loadStreamForEdit() {
 
 // Watch for source/target changes and auto-discover tables
 watch(
-  () => wizard.selection.value.sourceConnectionId,
-  async (newSourceId) => {
-    if (newSourceId && streamsStore.currentStreamConfig) {
-      // Update store with source connection and database
-      streamsStore.updateSource(newSourceId)
-      if (wizard.selection.value.sourceDatabase) {
-        streamsStore.currentStreamConfig.sourceDatabase = wizard.selection.value.sourceDatabase
-      }
-      if (wizard.selection.value.sourceSchema) {
-        streamsStore.currentStreamConfig.sourceSchema = wizard.selection.value.sourceSchema
-      }
+  () => wizard.sourceConnections.value,
+  (connections) => {
+    if (!streamsStore.currentStreamConfig) return
+    streamsStore.setSourceConnections(connections)
+    const primary = connections[0]
+    streamsStore.currentStreamConfig.sourceDatabase = primary?.database || undefined
+    if (!primary) {
+      streamsStore.currentStreamConfig.sourceSchema = undefined
     }
-  }
+  },
+  { deep: true, immediate: true }
 )
 
 watch(
@@ -285,16 +281,12 @@ watch(
   }
 )
 
-// Sync federated mode state to store (now in source)
+// Enforce convert mode when multiple sources are selected
 watch(
-  () => wizard.federatedMode.value,
-  (enabled) => {
-    if (streamsStore.currentStreamConfig) {
-      streamsStore.currentStreamConfig.source.federatedMode = enabled
-      // Force convert mode when federated mode is enabled
-      if (enabled) {
-        streamsStore.currentStreamConfig.mode = 'convert'
-      }
+  () => wizard.isMultiSource.value,
+  (isMultiSource) => {
+    if (isMultiSource && streamsStore.currentStreamConfig) {
+      streamsStore.currentStreamConfig.mode = 'convert'
     }
   }
 )
@@ -306,11 +298,7 @@ watch(
     if (newIndex === 1 && oldIndex === 0) {
       // Entering step 2 from step 1
       // Ensure source is set and trigger table refresh
-      if (wizard.selection.value.sourceConnectionId && streamsStore.currentStreamConfig) {
-        const sourceId = wizard.selection.value.sourceConnectionId
-
-        // Update source connection and database in the store
-        streamsStore.updateSource(sourceId)
+      if (wizard.primarySourceId.value && streamsStore.currentStreamConfig) {
         if (wizard.selection.value.sourceDatabase) {
           streamsStore.currentStreamConfig.sourceDatabase = wizard.selection.value.sourceDatabase
         }
@@ -332,13 +320,21 @@ function handleSourceUpdate(connectionId: string, database?: string, schema?: st
   wizard.setSourceConnection(connectionId, database, schema)
   // Update both the wizard state and the stream config
   if (streamsStore.currentStreamConfig) {
-    streamsStore.updateSource(connectionId)
-    if (database) {
-      streamsStore.currentStreamConfig.sourceDatabase = database
-    }
+    streamsStore.setSourceConnections(wizard.sourceConnections.value)
+    streamsStore.currentStreamConfig.sourceDatabase =
+      wizard.selection.value.sourceDatabase || database || undefined
     if (schema) {
       streamsStore.currentStreamConfig.sourceSchema = schema
     }
+  }
+}
+
+function handleSourceConnectionsUpdate(connections: ConnectionMapping[]) {
+  wizard.setSourceConnections(connections)
+  if (streamsStore.currentStreamConfig) {
+    streamsStore.setSourceConnections(connections)
+    const primary = connections[0]
+    streamsStore.currentStreamConfig.sourceDatabase = primary?.database || undefined
   }
 }
 
@@ -385,24 +381,14 @@ function handleTargetUpdate(
 function handleClearAll() {
   wizard.clearSourceSelection()
   wizard.clearTargetSelection()
-}
-
-function handleFederatedModeUpdate(enabled: boolean) {
-  wizard.setFederatedMode(enabled)
-  // When entering federated mode, clear the source selection since
-  // federated mode uses multiple sources via ConnectionAliasPanel
-  if (enabled) {
-    wizard.clearSourceSelection()
-  }
-}
-
-function handleFederatedConnectionsUpdate(
-  connections: import('@/api/federated').ConnectionMapping[]
-) {
-  wizard.setFederatedConnections(connections)
-  // Store federated connections in the streams store for later use (now in source)
   if (streamsStore.currentStreamConfig) {
-    streamsStore.currentStreamConfig.source.federatedConnections = connections
+    streamsStore.setSourceConnections([])
+    streamsStore.currentStreamConfig.sourceDatabase = undefined
+    streamsStore.currentStreamConfig.sourceSchema = undefined
+    streamsStore.currentStreamConfig.target.id = ''
+    streamsStore.currentStreamConfig.targetDatabase = undefined
+    streamsStore.currentStreamConfig.targetSchema = undefined
+    streamsStore.currentStreamConfig.targetPath = undefined
   }
 }
 
@@ -423,44 +409,34 @@ async function handleNextStep() {
 }
 
 async function handleFinish() {
-  // In federated mode, we need federatedConnections instead of sourceConnectionId
-  const isFederated = wizard.federatedMode.value
-  const hasValidSource = isFederated
-    ? wizard.federatedConnections.value.length > 0
-    : !!wizard.selection.value.sourceConnectionId
-
+  const hasValidSource = wizard.sourceConnections.value.length > 0
   if (!hasValidSource || !wizard.selection.value.targetConnectionId) {
-    const message = isFederated
-      ? 'At least one source connection and a target must be selected'
-      : 'Source and target must be selected'
-    commonStore.showNotification(message, 'error')
+    commonStore.showNotification('Source and target must be selected', 'error')
     return
   }
 
   isProcessing.value = true
   try {
-    // Ensure source and target are set in the store
-    // For federated mode, use the first connection as the "source" for compatibility
-    if (isFederated && wizard.federatedConnections.value.length > 0) {
-      streamsStore.updateSource(wizard.federatedConnections.value[0].connectionId)
-    } else if (wizard.selection.value.sourceConnectionId) {
-      streamsStore.updateSource(wizard.selection.value.sourceConnectionId)
-    }
-    if (wizard.selection.value.targetConnectionId) {
-      streamsStore.updateTarget(wizard.selection.value.targetConnectionId)
-    }
-
-    // Apply transfer options to the stream config
     if (!streamsStore.currentStreamConfig) {
       throw new Error('Stream configuration not initialized')
     }
 
-    // Set database/schema information for name generation
-    if (wizard.selection.value.sourceDatabase) {
-      streamsStore.currentStreamConfig.sourceDatabase = wizard.selection.value.sourceDatabase
+    streamsStore.setSourceConnections(wizard.sourceConnections.value)
+    const primarySource = wizard.sourceConnections.value[0]
+    streamsStore.currentStreamConfig.sourceDatabase =
+      primarySource?.database || wizard.selection.value.sourceDatabase || undefined
+    if (wizard.selection.value.sourceSchema) {
+      streamsStore.currentStreamConfig.sourceSchema = wizard.selection.value.sourceSchema
+    }
+
+    if (wizard.selection.value.targetConnectionId) {
+      streamsStore.updateTarget(wizard.selection.value.targetConnectionId)
     }
     if (wizard.selection.value.targetDatabase) {
       streamsStore.currentStreamConfig.targetDatabase = wizard.selection.value.targetDatabase
+    }
+    if (wizard.selection.value.targetSchema) {
+      streamsStore.currentStreamConfig.targetSchema = wizard.selection.value.targetSchema
     }
 
     // Set skipData based on the "Copy data" checkbox
@@ -473,12 +449,8 @@ async function handleFinish() {
       foreignKeys: wizard.createForeignKeys.value
     }
 
-    // Set federated mode settings (now in source)
-    if (isFederated) {
-      streamsStore.currentStreamConfig.source.federatedMode = true
-      streamsStore.currentStreamConfig.source.federatedConnections =
-        wizard.federatedConnections.value
-      // Note: Do NOT clear tables - federated mode now supports both tables and queries
+    if (wizard.isMultiSource.value) {
+      streamsStore.currentStreamConfig.mode = 'convert'
     }
 
     // Save the stream (use update if editing existing stream)
@@ -505,44 +477,34 @@ async function handleFinish() {
 }
 
 async function handleQuickSave() {
-  // In federated mode, we need federatedConnections instead of sourceConnectionId
-  const isFederated = wizard.federatedMode.value
-  const hasValidSource = isFederated
-    ? wizard.federatedConnections.value.length > 0
-    : !!wizard.selection.value.sourceConnectionId
-
+  const hasValidSource = wizard.sourceConnections.value.length > 0
   if (!hasValidSource || !wizard.selection.value.targetConnectionId) {
-    const message = isFederated
-      ? 'At least one source connection and a target must be selected'
-      : 'Source and target must be selected'
-    commonStore.showNotification(message, 'error')
+    commonStore.showNotification('Source and target must be selected', 'error')
     return
   }
 
   isProcessing.value = true
   try {
-    // Ensure source and target are set in the store
-    // For federated mode, use the first connection as the "source" for compatibility
-    if (isFederated && wizard.federatedConnections.value.length > 0) {
-      streamsStore.updateSource(wizard.federatedConnections.value[0].connectionId)
-    } else if (wizard.selection.value.sourceConnectionId) {
-      streamsStore.updateSource(wizard.selection.value.sourceConnectionId)
-    }
-    if (wizard.selection.value.targetConnectionId) {
-      streamsStore.updateTarget(wizard.selection.value.targetConnectionId)
-    }
-
-    // Apply transfer options to the stream config
     if (!streamsStore.currentStreamConfig) {
       throw new Error('Stream configuration not initialized')
     }
 
-    // Set database/schema information
-    if (wizard.selection.value.sourceDatabase) {
-      streamsStore.currentStreamConfig.sourceDatabase = wizard.selection.value.sourceDatabase
+    streamsStore.setSourceConnections(wizard.sourceConnections.value)
+    const primarySource = wizard.sourceConnections.value[0]
+    streamsStore.currentStreamConfig.sourceDatabase =
+      primarySource?.database || wizard.selection.value.sourceDatabase || undefined
+    if (wizard.selection.value.sourceSchema) {
+      streamsStore.currentStreamConfig.sourceSchema = wizard.selection.value.sourceSchema
+    }
+
+    if (wizard.selection.value.targetConnectionId) {
+      streamsStore.updateTarget(wizard.selection.value.targetConnectionId)
     }
     if (wizard.selection.value.targetDatabase) {
       streamsStore.currentStreamConfig.targetDatabase = wizard.selection.value.targetDatabase
+    }
+    if (wizard.selection.value.targetSchema) {
+      streamsStore.currentStreamConfig.targetSchema = wizard.selection.value.targetSchema
     }
     if (wizard.selection.value.targetPath) {
       streamsStore.currentStreamConfig.targetPath = wizard.selection.value.targetPath
@@ -558,12 +520,8 @@ async function handleQuickSave() {
       foreignKeys: wizard.createForeignKeys.value
     }
 
-    // Set federated mode settings (now in source)
-    if (isFederated) {
-      streamsStore.currentStreamConfig.source.federatedMode = true
-      streamsStore.currentStreamConfig.source.federatedConnections =
-        wizard.federatedConnections.value
-      // Note: Do NOT clear tables - federated mode now supports both tables and queries
+    if (wizard.isMultiSource.value) {
+      streamsStore.currentStreamConfig.mode = 'convert'
     }
 
     // Save the stream (use update if editing existing stream)

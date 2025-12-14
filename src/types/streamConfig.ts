@@ -78,17 +78,16 @@ export interface SourceOptions {
 }
 
 export interface SourceConfig {
-  id?: string // Connection ID - required for non-federated mode
+  // Unified connections list (required by backend)
+  connections?: ConnectionMapping[]
+  // Convenience fields for UI/state (derived from connections)
+  id?: string
   // Database and schema selection (stream-specific)
   database?: string // Database name - required for database connections
   schema?: string // Schema name - optional, defaults to provider-specific default
   tables?: Table[]
   queries?: QuerySource[] // Virtual query sources - complex SQL for derived data (convert mode only)
   options?: SourceOptions
-
-  // Federated query mode - allows joining data across multiple sources
-  federatedMode?: boolean // When true, uses federatedConnections instead of single source
-  federatedConnections?: ConnectionMapping[] // Multiple source connections with aliases
 }
 
 /**

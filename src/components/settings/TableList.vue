@@ -69,9 +69,12 @@
 
       <!-- Table Grid -->
       <div v-else>
-        <!-- Federated Mode: Group by connection -->
+        <!-- Multi-source Mode: Group by connection -->
         <template v-if="isFederatedMode">
-          <template v-for="connectionGroup in federatedGroupedTables" :key="connectionGroup.alias">
+          <template
+            v-for="connectionGroup in multiSourceGroupedTables"
+            :key="connectionGroup.alias"
+          >
             <!-- Connection Header -->
             <div
               class="sticky top-0 z-20 flex items-center justify-between px-4 py-3 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/30 dark:to-indigo-900/30 border-b-2 border-purple-200 dark:border-purple-700 cursor-pointer backdrop-blur-sm"
@@ -372,6 +375,7 @@ const streamsStore = useStreamsStore()
 const connectionStore = useConnectionsStore()
 const overviewStore = useDatabaseOverviewStore()
 const currentStreamConfig = computed(() => streamsStore.currentStreamConfig as StreamConfig)
+const sourceConnections = computed(() => currentStreamConfig.value.source?.connections || [])
 
 // Get the source connection to determine database type
 const sourceConnection = computed(() => {
@@ -502,12 +506,7 @@ const groupedTables = computed<SchemaGroup[]>(() => buildGroupedTables(filteredT
 const filteredTablesCount = computed(() => filteredTables.value.length)
 
 // Federated mode detection
-const isFederatedMode = computed(() => {
-  return (
-    currentStreamConfig.value.source?.federatedMode &&
-    (currentStreamConfig.value.source?.federatedConnections?.length ?? 0) > 1
-  )
-})
+const isFederatedMode = computed(() => sourceConnections.value.length > 1)
 
 // Federated connection grouping
 interface ConnectionGroup {
@@ -522,7 +521,7 @@ interface ConnectionGroup {
 
 const expandedConnectionGroups = ref(new Set<string>())
 
-const federatedGroupedTables = computed<ConnectionGroup[]>(() => {
+const multiSourceGroupedTables = computed<ConnectionGroup[]>(() => {
   if (!isFederatedMode.value) return []
 
   const connectionMap = new Map<string, ConnectionGroup>()
@@ -535,9 +534,7 @@ const federatedGroupedTables = computed<ConnectionGroup[]>(() => {
     const alias = parts[0]
 
     // Find the connection mapping for this alias
-    const fedConn = currentStreamConfig.value.source?.federatedConnections?.find(
-      (fc) => fc.alias === alias
-    )
+    const fedConn = sourceConnections.value.find((fc) => fc.alias === alias)
     if (!fedConn) return
 
     // Find the actual connection details
@@ -605,8 +602,8 @@ const federatedGroupedTables = computed<ConnectionGroup[]>(() => {
 function getTableSchema(tableName: string): string {
   const parts = tableName.split('.')
 
-  // Check if federated mode (table name format: alias.schema.table or alias.table)
-  const isFederated = currentStreamConfig.value.source?.federatedMode
+  // Check if multi-source mode (table name format: alias.schema.table or alias.table)
+  const isFederated = isFederatedMode.value
 
   if (isFederated && parts.length >= 2) {
     // Federated format: db1.public.users or db1.users
@@ -632,8 +629,8 @@ function getTableSchema(tableName: string): string {
 function getTableDisplayName(tableName: string): string {
   const parts = tableName.split('.')
 
-  // Check if federated mode
-  const isFederated = currentStreamConfig.value.source?.federatedMode
+  // Check if multi-source mode
+  const isFederated = isFederatedMode.value
 
   if (isFederated && parts.length >= 2) {
     // Federated format: db1.public.users -> users or db1.users -> users
@@ -740,7 +737,7 @@ function toggleConnectionGroup(alias: string) {
 }
 
 function selectAllInConnection(alias: string) {
-  const connGroup = federatedGroupedTables.value.find((g) => g.alias === alias)
+  const connGroup = multiSourceGroupedTables.value.find((g) => g.alias === alias)
   if (connGroup) {
     connGroup.schemas.forEach((schemaGroup) => {
       schemaGroup.tables.forEach((table) => {
@@ -751,7 +748,7 @@ function selectAllInConnection(alias: string) {
 }
 
 function clearAllInConnection(alias: string) {
-  const connGroup = federatedGroupedTables.value.find((g) => g.alias === alias)
+  const connGroup = multiSourceGroupedTables.value.find((g) => g.alias === alias)
   if (connGroup) {
     connGroup.schemas.forEach((schemaGroup) => {
       schemaGroup.tables.forEach((table) => {
@@ -796,13 +793,11 @@ const refreshTables = async () => {
   const connectionStore = useConnectionsStore()
   const navigationStore = useExplorerNavigationStore()
   try {
-    // Check if federated mode
-    const isFederated =
-      currentStreamConfig.value.source?.federatedMode &&
-      (currentStreamConfig.value.source?.federatedConnections?.length ?? 0) > 0
+    // Check if multi-source mode
+    const isFederated = isFederatedMode.value
 
-    if (isFederated && currentStreamConfig.value.source.federatedConnections) {
-      // Federated mode: Load tables from all connections
+    if (isFederated && sourceConnections.value.length > 0) {
+      // Multi-source mode: Load tables from all connections
       const allTableNames: string[] = []
 
       // Build maps of existing selections and filters to preserve state
@@ -827,7 +822,7 @@ const refreshTables = async () => {
         })
       }
 
-      for (const fedConn of currentStreamConfig.value.source.federatedConnections) {
+      for (const fedConn of sourceConnections.value) {
         const connectionId = fedConn.connectionId
         const database = fedConn.database
         const alias = fedConn.alias
@@ -855,7 +850,7 @@ const refreshTables = async () => {
               return
             }
 
-            // Prefix table name with alias for federated mode
+            // Prefix table name with alias for multi-source mode
             const tableName = `${alias}.${tableMeta.schema ? tableMeta.schema + '.' : ''}${tableMeta.name}`
             allTableNames.push(tableName)
           })
@@ -1032,29 +1027,7 @@ watch(
       currentStreamConfig.value.source.tables = []
     }
     const selectedTables = newTables.filter((table) => table.selected)
-    console.log('TableList watch - total tables:', newTables.length)
-    console.log('TableList watch - selected tables:', selectedTables.length)
-    console.log(
-      'TableList watch - selected table names:',
-      selectedTables.map((t) => t.name)
-    )
-    console.log(
-      'TableList watch - federated mode:',
-      currentStreamConfig.value.source?.federatedMode
-    )
-    console.log(
-      'TableList watch - BEFORE assign, store tables:',
-      streamsStore.currentStreamConfig?.source.tables?.length
-    )
     currentStreamConfig.value.source.tables = selectedTables
-    console.log(
-      'TableList watch - AFTER assign, store tables:',
-      streamsStore.currentStreamConfig?.source.tables?.length
-    )
-    console.log(
-      'TableList watch - AFTER assign, store table names:',
-      streamsStore.currentStreamConfig?.source.tables?.map((t) => t.name)
-    )
   },
   { deep: true }
 )

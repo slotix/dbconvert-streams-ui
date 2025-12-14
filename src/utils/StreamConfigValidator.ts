@@ -54,14 +54,24 @@ export function validateStreamConfig(
       }
     }
 
-    // Check source.id is immutable
+    // Check source.connections are immutable
     const cfgSource = cfg.source as Record<string, unknown> | undefined
-    if (cfgSource?.id && originalConfig.source?.id && cfgSource.id !== originalConfig.source.id) {
-      errors.push({
-        path: 'source.id',
-        message:
-          "Field 'source.id' cannot be modified. Create a new stream to change the source connection."
-      })
+    if (cfgSource && originalConfig.source) {
+      const cfgConnections = extractConnections(cfgSource)
+      const originalConnections = extractConnections(
+        originalConfig.source as unknown as Record<string, unknown>
+      )
+      if (originalConnections.length > 0 && cfgConnections.length > 0) {
+        const cfgKey = cfgConnections.map((c) => `${c.alias}:${c.connectionId}`).join('|')
+        const originalKey = originalConnections.map((c) => `${c.alias}:${c.connectionId}`).join('|')
+        if (cfgKey !== originalKey) {
+          errors.push({
+            path: 'source.connections',
+            message:
+              "Field 'source.connections' cannot be modified. Create a new stream to change source connections."
+          })
+        }
+      }
     }
 
     // Check target.id is immutable
@@ -137,18 +147,15 @@ function validateSource(source: unknown, errors: ValidationError[]): void {
 
   const src = source as Record<string, unknown>
 
-  // Check if federated mode is enabled
-  const isFederatedMode = src.federatedMode === true
-
-  if (isFederatedMode) {
-    // Federated mode: validate federatedConnections instead of source.id
-    validateFederatedConnections(src.federatedConnections, errors)
-  } else {
-    // Non-federated mode: connection ID is required
-    if (!src.id || typeof src.id !== 'string') {
-      errors.push({ path: 'source.id', message: 'Source connection ID is required' })
-    }
+  const connections = extractConnections(src)
+  if (connections.length === 0) {
+    errors.push({
+      path: 'source.connections',
+      message: 'At least one source connection is required'
+    })
+    return
   }
+  validateConnections(connections, errors)
 
   // Tables or Queries validation - at least one must be specified
   const hasTables = Array.isArray(src.tables) && src.tables.length > 0
@@ -159,7 +166,7 @@ function validateSource(source: unknown, errors: ValidationError[]): void {
   }
 
   if (hasTables) {
-    validateTables(src.tables as unknown[], errors)
+    validateTables(src.tables as unknown[], connections, errors)
   }
 
   if (hasQueries) {
@@ -172,37 +179,30 @@ function validateSource(source: unknown, errors: ValidationError[]): void {
   }
 }
 
-function validateFederatedConnections(connections: unknown, errors: ValidationError[]): void {
-  if (!Array.isArray(connections) || connections.length === 0) {
-    errors.push({
-      path: 'source.federatedConnections',
-      message: 'At least one federated connection is required when federated mode is enabled'
-    })
-    return
-  }
-
+function validateConnections(
+  connections: Array<{ alias?: string; connectionId?: string }>,
+  errors: ValidationError[]
+): void {
+  const seenAliases = new Set<string>()
   connections.forEach((conn, index) => {
-    if (typeof conn !== 'object' || conn === null) {
+    if (!conn.alias || typeof conn.alias !== 'string' || conn.alias.trim() === '') {
       errors.push({
-        path: `source.federatedConnections[${index}]`,
-        message: 'Federated connection must be an object'
+        path: `source.connections[${index}].alias`,
+        message: 'Connection alias is required'
       })
-      return
+    } else if (seenAliases.has(conn.alias)) {
+      errors.push({
+        path: `source.connections[${index}].alias`,
+        message: 'Connection alias must be unique'
+      })
+    } else {
+      seenAliases.add(conn.alias)
     }
 
-    const c = conn as Record<string, unknown>
-
-    if (!c.alias || typeof c.alias !== 'string' || c.alias.trim() === '') {
+    if (!conn.connectionId || typeof conn.connectionId !== 'string') {
       errors.push({
-        path: `source.federatedConnections[${index}].alias`,
-        message: 'Federated connection alias is required'
-      })
-    }
-
-    if (!c.connectionId || typeof c.connectionId !== 'string') {
-      errors.push({
-        path: `source.federatedConnections[${index}].connectionId`,
-        message: 'Federated connection ID is required'
+        path: `source.connections[${index}].connectionId`,
+        message: 'Connection ID is required'
       })
     }
   })
@@ -225,7 +225,16 @@ function validateQueries(queries: unknown[], errors: ValidationError[]): void {
   })
 }
 
-function validateTables(tables: unknown[], errors: ValidationError[]): void {
+function validateTables(
+  tables: unknown[],
+  connections: Array<{ alias?: string }>,
+  errors: ValidationError[]
+): void {
+  const aliasSet = new Set(
+    connections.filter((c) => c.alias).map((c) => (c.alias as string).trim())
+  )
+  const requiresAliasPrefix = connections.length > 1
+
   tables.forEach((table, index) => {
     if (typeof table !== 'object' || table === null) {
       errors.push({ path: `source.tables[${index}]`, message: 'Table must be an object' })
@@ -236,6 +245,14 @@ function validateTables(tables: unknown[], errors: ValidationError[]): void {
 
     if (!t.name || typeof t.name !== 'string' || t.name.trim() === '') {
       errors.push({ path: `source.tables[${index}].name`, message: 'Table name is required' })
+    } else if (requiresAliasPrefix) {
+      const alias = t.name.split('.')[0]
+      if (!aliasSet.has(alias)) {
+        errors.push({
+          path: `source.tables[${index}].name`,
+          message: 'Table name must be prefixed with a valid connection alias'
+        })
+      }
     }
 
     // Filter is optional but if present must be an object
@@ -304,6 +321,15 @@ function validateTarget(target: unknown, errors: ValidationError[]): void {
   if (tgt.spec) {
     validateTargetSpec(tgt.spec, errors)
   }
+}
+
+function extractConnections(
+  src: Record<string, unknown>
+): Array<{ alias: string; connectionId: string; database?: string }> {
+  if (Array.isArray(src.connections) && src.connections.length > 0) {
+    return src.connections as Array<{ alias: string; connectionId: string; database?: string }>
+  }
+  return []
 }
 
 function validateTargetSpec(spec: unknown, errors: ValidationError[]): void {

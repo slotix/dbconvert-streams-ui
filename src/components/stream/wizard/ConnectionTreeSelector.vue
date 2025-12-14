@@ -215,8 +215,15 @@
                 <input
                   v-if="props.enableMultiSelect && props.mode === 'source'"
                   type="checkbox"
-                  :checked="isFederatedConnectionSelected(connection.id, database.name)"
-                  class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-teal-600 focus:ring-teal-500 bg-white dark:bg-gray-800 shrink-0 pointer-events-none"
+                  :checked="isSourceConnectionSelected(connection.id, database.name)"
+                  class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-teal-600 focus:ring-teal-500 bg-white dark:bg-gray-800 shrink-0"
+                  @change="
+                    handleDatabaseCheckboxChange(
+                      connection.id,
+                      database.name,
+                      ($event.target as HTMLInputElement)?.checked || false
+                    )
+                  "
                 />
                 <span v-else class="h-4 w-4 shrink-0" />
                 <HighlightedText
@@ -263,7 +270,7 @@ interface Props {
   mode: 'source' | 'target'
   searchQuery?: string
   enableMultiSelect?: boolean
-  federatedConnections?: Array<{ connectionId: string; database?: string }>
+  sourceConnections?: Array<{ connectionId: string; database?: string; alias?: string }>
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -272,8 +279,9 @@ const props = withDefaults(defineProps<Props>(), {
   selectedSchema: null,
   selectedPath: null,
   searchQuery: '',
+  mode: 'source',
   enableMultiSelect: false,
-  federatedConnections: () => []
+  sourceConnections: () => []
 })
 
 const emit = defineEmits<{
@@ -281,7 +289,9 @@ const emit = defineEmits<{
   'select-database': [payload: { connectionId: string; database: string; schema?: string }]
   'select-file': [payload: { connectionId: string; path: string }]
   'select-bucket': [payload: { connectionId: string; bucket: string }]
-  'toggle-federated': [payload: { connectionId: string; database?: string; checked: boolean }]
+  'toggle-source-connection': [
+    payload: { connectionId: string; database?: string; checked: boolean }
+  ]
 }>()
 
 const navigationStore = useExplorerNavigationStore()
@@ -411,15 +421,15 @@ function handleS3BucketSelect(connection: Connection, bucket: string) {
   emit('select-bucket', { connectionId: connection.id, bucket })
 }
 
-// Multi-select federated helpers
-function isFederatedConnectionSelected(connectionId: string, database?: string): boolean {
-  // First check federatedConnections array
-  if (props.federatedConnections && props.federatedConnections.length > 0) {
-    return props.federatedConnections.some(
+// Multi-select helpers for source connections
+function isSourceConnectionSelected(connectionId: string, database?: string): boolean {
+  // First check sourceConnections array
+  if (props.sourceConnections && props.sourceConnections.length > 0) {
+    return props.sourceConnections.some(
       (fc) => fc.connectionId === connectionId && (!database || fc.database === database)
     )
   }
-  // Fallback: check regular selection props (for non-federated edit mode)
+  // Fallback: check regular selection props (single-source edit mode)
   // This ensures the checkbox is checked when editing a single-source stream
   if (props.selectedConnectionId === connectionId) {
     if (!database) return true
@@ -428,8 +438,20 @@ function isFederatedConnectionSelected(connectionId: string, database?: string):
   return false
 }
 
-function handleFederatedCheckbox(connectionId: string, database: string, checked: boolean) {
-  emit('toggle-federated', { connectionId, database, checked })
+function handleSourceCheckbox(connectionId: string, database: string, checked: boolean) {
+  emit('toggle-source-connection', { connectionId, database, checked })
+}
+
+function handleDatabaseCheckboxChange(connectionId: string, database: string, checked: boolean) {
+  handleSourceCheckbox(connectionId, database, checked)
+  if (checked) {
+    void ensureMetadata(connectionId, database)
+  }
+}
+
+function toggleSourceSelection(connectionId: string, database: string) {
+  const isCurrentlySelected = isSourceConnectionSelected(connectionId, database)
+  handleDatabaseCheckboxChange(connectionId, database, !isCurrentlySelected)
 }
 
 function s3BucketRowClass(connectionId: string, bucket: string): string {
@@ -576,8 +598,8 @@ function filePathClass(connectionId: string): string {
 }
 
 function databaseRowClass(connectionId: string, database: string): string {
-  // Check if selected via federated connections (multi-select) or single selection
-  const isInFederated = isFederatedConnectionSelected(connectionId, database)
+  // Check if selected via multi-source connections or single selection
+  const isInFederated = isSourceConnectionSelected(connectionId, database)
   const isSingleSelected =
     props.selectedConnectionId === connectionId && props.selectedDatabase === database
 
@@ -681,14 +703,9 @@ function handleDatabaseRowClick(connection: Connection, database: string) {
     return
   }
 
-  // In multi-select mode for source, toggle the federated checkbox
+  // In multi-select mode for source, toggle selection on row click
   if (props.enableMultiSelect && props.mode === 'source') {
-    const isCurrentlySelected = isFederatedConnectionSelected(connection.id, database)
-    handleFederatedCheckbox(connection.id, database, !isCurrentlySelected)
-    // Load metadata to show table count when selecting
-    if (!isCurrentlySelected) {
-      void ensureMetadata(connection.id, database)
-    }
+    toggleSourceSelection(connection.id, database)
   } else {
     // Single-select mode
     handleDatabaseSelect(connection, database)
@@ -730,15 +747,15 @@ watch(
   { immediate: true }
 )
 
-// Auto-expand and load databases for federated connections (for edit mode restoration)
+// Auto-expand and load databases for multi-source connections (for edit mode restoration)
 watch(
-  () => props.federatedConnections,
-  async (federatedConns) => {
-    if (!federatedConns || federatedConns.length === 0) {
+  () => props.sourceConnections,
+  async (sourceConns) => {
+    if (!sourceConns || sourceConns.length === 0) {
       return
     }
-    // Expand all connections in federated mode and load their databases
-    for (const fc of federatedConns) {
+    // Expand all connections in multi-source mode and load their databases
+    for (const fc of sourceConns) {
       if (!fc.connectionId) continue
       addToSet(expandedConnections, fc.connectionId)
       const connection = getConnectionById(fc.connectionId)

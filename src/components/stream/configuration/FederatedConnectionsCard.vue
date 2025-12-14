@@ -1,13 +1,13 @@
 <template>
   <div>
     <label class="block text-xs font-medium uppercase text-gray-500 dark:text-gray-400 mb-2">
-      Source Connections (Federated)
+      Source Connections (Multi-source)
     </label>
     <div
       class="bg-gray-50 dark:bg-gray-900/40 rounded-md p-4 border border-gray-300 dark:border-gray-700 space-y-3"
     >
       <div v-if="connections.length === 0" class="text-sm text-gray-500 dark:text-gray-400">
-        No federated connections configured
+        No source connections configured
       </div>
       <div
         v-for="(fedConn, index) in connections"

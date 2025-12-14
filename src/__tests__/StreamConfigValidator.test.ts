@@ -13,7 +13,7 @@ describe('StreamConfigValidator', () => {
     name: 'Test Stream',
     mode: 'convert',
     source: {
-      id: 'conn-source-123',
+      connections: [{ alias: 'src', connectionId: 'conn-source-123' }],
       tables: [{ name: 'users' }]
     },
     target: {
@@ -99,69 +99,50 @@ describe('StreamConfigValidator', () => {
       expect(result.errors.some((e) => e.message === 'Source must be an object')).toBe(true)
     })
 
-    it('should require source.id in non-federated mode', () => {
+    it('should require source.connections', () => {
       const config = {
         ...validConfig,
         source: { tables: [{ name: 'users' }] }
       }
       const result = validateStreamConfig(config)
       expect(result.valid).toBe(false)
-      expect(result.errors.some((e) => e.path === 'source.id')).toBe(true)
+      expect(result.errors.some((e) => e.path === 'source.connections')).toBe(true)
     })
 
-    it('should not require source.id in federated mode', () => {
+    it('should require alias and connectionId for each connection', () => {
       const config = {
         ...validConfig,
         source: {
-          federatedMode: true,
-          federatedConnections: [
-            { alias: 'pg1', connectionId: 'conn-pg-123' },
-            { alias: 'my1', connectionId: 'conn-my-456' }
+          connections: [{ alias: '', connectionId: 'conn-1' }, { alias: 'a' }],
+          tables: [{ name: 'users' }]
+        }
+      }
+      const result = validateStreamConfig(config)
+      expect(result.valid).toBe(false)
+      expect(result.errors.some((e) => e.message === 'Connection alias is required')).toBe(true)
+      expect(result.errors.some((e) => e.message === 'Connection ID is required')).toBe(true)
+    })
+
+    it('should require unique aliases', () => {
+      const config = {
+        ...validConfig,
+        source: {
+          connections: [
+            { alias: 'dup', connectionId: 'conn-1' },
+            { alias: 'dup', connectionId: 'conn-2' }
           ],
-          queries: [{ name: 'test', query: 'SELECT * FROM pg1.users' }]
-        }
-      }
-      const result = validateStreamConfig(config)
-      expect(result.valid).toBe(true)
-      expect(result.errors.some((e) => e.path === 'source.id')).toBe(false)
-    })
-
-    it('should require federatedConnections when federatedMode is true', () => {
-      const config = {
-        ...validConfig,
-        source: {
-          federatedMode: true,
-          queries: [{ name: 'test', query: 'SELECT * FROM pg1.users' }]
+          tables: [{ name: 'dup.users' }]
         }
       }
       const result = validateStreamConfig(config)
       expect(result.valid).toBe(false)
-      expect(result.errors.some((e) => e.path === 'source.federatedConnections')).toBe(true)
-    })
-
-    it('should require alias and connectionId for each federated connection', () => {
-      const config = {
-        ...validConfig,
-        source: {
-          federatedMode: true,
-          federatedConnections: [{ alias: '' }, { connectionId: 'conn-123' }],
-          queries: [{ name: 'test', query: 'SELECT * FROM pg1.users' }]
-        }
-      }
-      const result = validateStreamConfig(config)
-      expect(result.valid).toBe(false)
-      expect(
-        result.errors.some((e) => e.message === 'Federated connection alias is required')
-      ).toBe(true)
-      expect(result.errors.some((e) => e.message === 'Federated connection ID is required')).toBe(
-        true
-      )
+      expect(result.errors.some((e) => e.message === 'Connection alias must be unique')).toBe(true)
     })
 
     it('should require at least one table or query', () => {
       const config = {
         ...validConfig,
-        source: { id: 'conn-123', tables: [] }
+        source: { connections: [{ alias: 'src', connectionId: 'conn-123' }], tables: [] }
       }
       const result = validateStreamConfig(config)
       expect(result.valid).toBe(false)
@@ -173,7 +154,10 @@ describe('StreamConfigValidator', () => {
     it('should require table name', () => {
       const config = {
         ...validConfig,
-        source: { id: 'conn-123', tables: [{ name: '' }] }
+        source: {
+          connections: [{ alias: 'src', connectionId: 'conn-123' }],
+          tables: [{ name: '' }]
+        }
       }
       const result = validateStreamConfig(config)
       expect(result.valid).toBe(false)
@@ -184,7 +168,7 @@ describe('StreamConfigValidator', () => {
       const config = {
         ...validConfig,
         source: {
-          id: 'conn-123',
+          connections: [{ alias: 'src', connectionId: 'conn-123' }],
           tables: [{ name: 'users', filter: { limit: 100 } }]
         }
       }
@@ -196,7 +180,7 @@ describe('StreamConfigValidator', () => {
       const config = {
         ...validConfig,
         source: {
-          id: 'conn-123',
+          connections: [{ alias: 'src', connectionId: 'conn-123' }],
           tables: [{ name: 'users', filter: 'invalid' }]
         }
       }
@@ -209,7 +193,7 @@ describe('StreamConfigValidator', () => {
       const config = {
         ...validConfig,
         source: {
-          id: 'conn-123',
+          connections: [{ alias: 'src', connectionId: 'conn-123' }],
           tables: [{ name: 'users' }],
           options: { dataBundleSize: 0 }
         }
@@ -225,7 +209,7 @@ describe('StreamConfigValidator', () => {
       const config = {
         ...validConfig,
         source: {
-          id: 'conn-123',
+          connections: [{ alias: 'src', connectionId: 'conn-123' }],
           tables: [{ name: 'users' }],
           options: { operations: ['insert', 'invalid'] }
         }
@@ -239,13 +223,33 @@ describe('StreamConfigValidator', () => {
       const config = {
         ...validConfig,
         source: {
-          id: 'conn-123',
+          connections: [{ alias: 'src', connectionId: 'conn-123' }],
           tables: [{ name: 'users' }],
           options: { operations: ['insert', 'update', 'delete'] }
         }
       }
       const result = validateStreamConfig(config)
       expect(result.valid).toBe(true)
+    })
+
+    it('should require alias-prefixed table names for multi-source', () => {
+      const config = {
+        ...validConfig,
+        source: {
+          connections: [
+            { alias: 'a', connectionId: 'conn-a' },
+            { alias: 'b', connectionId: 'conn-b' }
+          ],
+          tables: [{ name: 'users' }]
+        }
+      }
+      const result = validateStreamConfig(config)
+      expect(result.valid).toBe(false)
+      expect(
+        result.errors.some(
+          (e) => e.message === 'Table name must be prefixed with a valid connection alias'
+        )
+      ).toBe(true)
     })
   })
 
@@ -354,11 +358,11 @@ describe('StreamConfigValidator', () => {
   describe('formatValidationErrors', () => {
     it('should format errors with path', () => {
       const errors = [
-        { path: 'source.id', message: 'Source connection ID is required' },
+        { path: 'source.connections', message: 'Source connections are required' },
         { path: 'target.id', message: 'Target connection ID is required' }
       ]
       const formatted = formatValidationErrors(errors)
-      expect(formatted).toContain('source.id: Source connection ID is required')
+      expect(formatted).toContain('source.connections: Source connections are required')
       expect(formatted).toContain('target.id: Target connection ID is required')
     })
 
@@ -374,7 +378,9 @@ describe('StreamConfigValidator', () => {
   "name": "Test Stream",
   "mode": "convert",
   "source": {
-    "id": "conn-123",
+    "connections": [
+      { "alias": "src", "connectionId": "conn-123" }
+    ],
     "tables": [
       { "name": "users" }
     ]
@@ -387,7 +393,7 @@ describe('StreamConfigValidator', () => {
     })
 
     it('should find line for nested path', () => {
-      const line = findLineForPath(json, 'source.id')
+      const line = findLineForPath(json, 'source.connections')
       expect(line).toBe(5)
     })
 
@@ -409,7 +415,7 @@ describe('StreamConfigValidator', () => {
       mode: 'convert',
       created: 1234567890,
       source: {
-        id: 'conn-source-original',
+        connections: [{ alias: 'src', connectionId: 'conn-source-original' }],
         tables: [{ name: 'users' }]
       },
       target: {
@@ -417,17 +423,17 @@ describe('StreamConfigValidator', () => {
       }
     }
 
-    it('should reject changes to source.id', () => {
+    it('should reject changes to source.connections', () => {
       const modifiedConfig = {
         ...originalConfig,
         source: {
           ...originalConfig.source,
-          id: 'conn-source-changed'
+          connections: [{ alias: 'src', connectionId: 'conn-source-changed' }]
         }
       }
       const result = validateStreamConfig(modifiedConfig, originalConfig)
       expect(result.valid).toBe(false)
-      expect(result.errors.some((e) => e.path === 'source.id')).toBe(true)
+      expect(result.errors.some((e) => e.path === 'source.connections')).toBe(true)
       expect(result.errors.some((e) => e.message.includes('cannot be modified'))).toBe(true)
     })
 
@@ -445,7 +451,7 @@ describe('StreamConfigValidator', () => {
       expect(result.errors.some((e) => e.message.includes('cannot be modified'))).toBe(true)
     })
 
-    it('should allow keeping same source.id and target.id', () => {
+    it('should allow keeping same source connections and target.id', () => {
       const result = validateStreamConfig(originalConfig, originalConfig)
       expect(result.valid).toBe(true)
     })

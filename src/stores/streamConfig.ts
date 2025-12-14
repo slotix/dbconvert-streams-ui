@@ -3,6 +3,7 @@ import api from '@/api/streams'
 import type { StreamConfig } from '@/types/streamConfig'
 import type { Table } from '@/types/streamConfig'
 import type { TargetSpec } from '@/types/specs'
+import type { ConnectionMapping } from '@/api/federated'
 import type { Step } from '@/stores/common'
 import { useConnectionsStore } from '@/stores/connections'
 import { useMonitoringStore } from '@/stores/monitoring'
@@ -32,13 +33,52 @@ interface State {
   currentFilter: string
 }
 
+const DEFAULT_ALIAS = 'src'
+
+function normalizeSource(source: StreamConfig['source']): StreamConfig['source'] {
+  const normalized = { ...source }
+  const usedAliases = new Set<string>()
+  let connections = normalized.connections ? [...normalized.connections] : []
+
+  // Ensure aliases are populated and stable
+  connections = connections.map((conn, idx) => {
+    let alias = (conn.alias || '').trim()
+    if (!alias) {
+      alias = `${DEFAULT_ALIAS}${idx ? idx + 1 : ''}`
+    }
+    let aliasIndex = idx + 1
+    while (usedAliases.has(alias)) {
+      aliasIndex += 1
+      alias = `${DEFAULT_ALIAS}${aliasIndex}`
+    }
+    usedAliases.add(alias)
+
+    return {
+      alias,
+      connectionId: conn.connectionId,
+      database: conn.database
+    }
+  })
+
+  normalized.connections = connections
+  normalized.id = connections[0]?.connectionId
+  return normalized
+}
+
+function normalizeStreamConfig(config: StreamConfig): StreamConfig {
+  return {
+    ...config,
+    source: normalizeSource(config.source)
+  }
+}
+
 export const defaultStreamConfigOptions: StreamConfig = {
   id: '',
   name: '',
   mode: 'convert',
   reportingInterval: 3,
   source: {
-    id: '',
+    connections: [],
     tables: [],
     options: {
       dataBundleSize: 500,
@@ -58,6 +98,7 @@ const defaultTableOptions: Partial<Table> = {
 }
 
 export const buildStreamPayload = (stream: StreamConfig): Partial<StreamConfig> => {
+  const normalizedSource = normalizeSource(stream.source)
   const filteredStream: Partial<StreamConfig> = {
     name: stream.name,
     mode: stream.mode
@@ -73,27 +114,23 @@ export const buildStreamPayload = (stream: StreamConfig): Partial<StreamConfig> 
     filteredStream.reportingInterval = stream.reportingInterval
   }
 
-  // Check if federated mode (now in source)
-  const isFederatedMode = stream.source.federatedMode
-
-  // Debug: log tables before filtering
-  console.log('buildStreamPayload - federated mode:', isFederatedMode)
-  console.log('buildStreamPayload - source.tables length:', stream.source.tables?.length)
-  console.log('buildStreamPayload - source.tables:', JSON.stringify(stream.source.tables))
-  console.log('buildStreamPayload - source.queries:', stream.source.queries)
-  console.log('buildStreamPayload - federatedConnections:', stream.source.federatedConnections)
-
   // Handle source configuration
+  const connections =
+    normalizedSource.connections && normalizedSource.connections.length > 0
+      ? normalizedSource.connections
+      : []
   filteredStream.source = {
-    // Include id only in non-federated mode
-    ...(!isFederatedMode && { id: stream.source.id }),
-    // Include database and schema if specified (not needed in federated mode)
-    ...(!isFederatedMode && stream.source.database && { database: stream.source.database }),
-    ...(!isFederatedMode && stream.source.schema && { schema: stream.source.schema }),
+    connections,
+    // Include database and schema if specified for single-source streams
+    ...(connections.length === 1 &&
+      normalizedSource.database && {
+        database: normalizedSource.database
+      }),
+    ...(connections.length === 1 && normalizedSource.schema && { schema: normalizedSource.schema }),
     // Include tables if any are specified (both federated and non-federated modes)
-    ...(stream.source.tables &&
-      stream.source.tables.length > 0 && {
-        tables: stream.source.tables.map((table) => {
+    ...(normalizedSource.tables &&
+      normalizedSource.tables.length > 0 && {
+        tables: normalizedSource.tables.map((table) => {
           const filteredTable: Partial<Table> = { name: table.name }
 
           // Include structured filter if it has any meaningful data
@@ -113,41 +150,34 @@ export const buildStreamPayload = (stream: StreamConfig): Partial<StreamConfig> 
       }),
     // Include custom queries (only for convert mode)
     ...(stream.mode === 'convert' &&
-      stream.source.queries &&
-      stream.source.queries.length > 0 && {
-        queries: stream.source.queries.map((q) => ({
+      normalizedSource.queries &&
+      normalizedSource.queries.length > 0 && {
+        queries: normalizedSource.queries.map((q) => ({
           name: q.name,
           query: q.query
         }))
-      }),
-    // Include federated mode settings in source
-    ...(isFederatedMode && { federatedMode: true }),
-    ...(isFederatedMode &&
-      stream.source.federatedConnections &&
-      stream.source.federatedConnections.length > 0 && {
-        federatedConnections: stream.source.federatedConnections
       })
   }
 
   // Handle source options
-  if (stream.source.options) {
+  if (normalizedSource.options) {
     const sourceOptions: any = {}
     const defaultSourceOptions = defaultStreamConfigOptions.source.options!
 
-    if (stream.source.options.dataBundleSize !== defaultSourceOptions.dataBundleSize) {
-      sourceOptions.dataBundleSize = stream.source.options.dataBundleSize
+    if (normalizedSource.options.dataBundleSize !== defaultSourceOptions.dataBundleSize) {
+      sourceOptions.dataBundleSize = normalizedSource.options.dataBundleSize
     }
-    if (stream.mode === 'cdc' && stream.source.options.operations) {
-      sourceOptions.operations = stream.source.options.operations
+    if (stream.mode === 'cdc' && normalizedSource.options.operations) {
+      sourceOptions.operations = normalizedSource.options.operations
     }
-    if (stream.source.options.replicationSlot) {
-      sourceOptions.replicationSlot = stream.source.options.replicationSlot
+    if (normalizedSource.options.replicationSlot) {
+      sourceOptions.replicationSlot = normalizedSource.options.replicationSlot
     }
-    if (stream.source.options.publicationName) {
-      sourceOptions.publicationName = stream.source.options.publicationName
+    if (normalizedSource.options.publicationName) {
+      sourceOptions.publicationName = normalizedSource.options.publicationName
     }
-    if (stream.source.options.binlogPosition) {
-      sourceOptions.binlogPosition = stream.source.options.binlogPosition
+    if (normalizedSource.options.binlogPosition) {
+      sourceOptions.binlogPosition = normalizedSource.options.binlogPosition
     }
 
     if (Object.keys(sourceOptions).length > 0) {
@@ -220,19 +250,43 @@ export const useStreamsStore = defineStore('streams', {
   actions: {
     setCurrentStream(id: string) {
       const curStream = this.streamConfigs.find((c) => c.id === id)
-      this.currentStreamConfig = curStream ? curStream : { ...defaultStreamConfigOptions }
+      this.currentStreamConfig = curStream
+        ? normalizeStreamConfig(curStream)
+        : normalizeStreamConfig({ ...defaultStreamConfigOptions })
 
       if (this.currentStreamConfig && !this.currentStreamConfig.name) {
         this.currentStreamConfig.name = this.generateDefaultStreamConfigName(
-          this.currentStreamConfig.source.id || '',
+          this.currentStreamConfig.source.id ||
+            this.currentStreamConfig.source.connections?.[0]?.connectionId ||
+            '',
           this.currentStreamConfig.target.id || '',
           this.currentStreamConfig.source.tables || []
         )
       }
     },
-    updateSource(sourceId: string) {
+    updateSource(sourceId: string, database?: string) {
       if (this.currentStreamConfig) {
-        this.currentStreamConfig.source.id = sourceId
+        const alias = this.currentStreamConfig.source.connections?.[0]?.alias || DEFAULT_ALIAS
+        this.currentStreamConfig.source = normalizeSource({
+          ...this.currentStreamConfig.source,
+          database: database ?? this.currentStreamConfig.source.database,
+          id: sourceId,
+          connections: [
+            {
+              alias,
+              connectionId: sourceId,
+              database: database ?? this.currentStreamConfig.source.database
+            }
+          ]
+        })
+      }
+    },
+    setSourceConnections(connections: ConnectionMapping[]) {
+      if (this.currentStreamConfig) {
+        this.currentStreamConfig.source = normalizeSource({
+          ...this.currentStreamConfig.source,
+          connections
+        })
       }
     },
     updateTarget(targetId: string) {
@@ -292,13 +346,12 @@ export const useStreamsStore = defineStore('streams', {
           // Create new stream config
           stream = await api.createStream(streamPayload as unknown as Record<string, unknown>)
         }
+        stream = normalizeStreamConfig(stream)
 
         const savedId = stream.id
         this.resetCurrentStream()
         await this.refreshStreams()
-        this.currentStreamConfig!.id = stream.id
-        this.currentStreamConfig!.created = stream.created
-        this.currentStreamConfig!.name = stream.name // The backend will return the updated name with uppended 5 last characters of the id
+        this.currentStreamConfig = normalizeStreamConfig(stream)
         return savedId
       } catch (err) {
         console.error('Failed to save stream:', err)
@@ -307,12 +360,18 @@ export const useStreamsStore = defineStore('streams', {
     },
     prepareStreamData() {
       if (this.currentStreamConfig) {
+        const connectionCount = this.currentStreamConfig.source.connections?.length || 0
+
         // Ensure database/schema are copied from root level to source/target objects
-        if (this.currentStreamConfig.sourceDatabase) {
+        if (connectionCount === 1 && this.currentStreamConfig.sourceDatabase) {
           this.currentStreamConfig.source.database = this.currentStreamConfig.sourceDatabase
+        } else if (connectionCount !== 1) {
+          this.currentStreamConfig.source.database = undefined
         }
-        if (this.currentStreamConfig.sourceSchema) {
+        if (connectionCount === 1 && this.currentStreamConfig.sourceSchema) {
           this.currentStreamConfig.source.schema = this.currentStreamConfig.sourceSchema
+        } else if (connectionCount !== 1) {
+          this.currentStreamConfig.source.schema = undefined
         }
 
         // Always rebuild target spec to ensure structureOptions and other settings are current
@@ -464,7 +523,8 @@ export const useStreamsStore = defineStore('streams', {
     },
     async refreshStreams() {
       try {
-        this.streamConfigs = await api.getStreams()
+        const streams = await api.getStreams()
+        this.streamConfigs = streams.map((cfg) => normalizeStreamConfig(cfg))
       } catch (err) {
         console.error('Failed to fetch streams:', err)
       }
@@ -490,15 +550,16 @@ export const useStreamsStore = defineStore('streams', {
     async updateStreamConfig(configID: string, config: StreamConfig) {
       try {
         const updatedConfig = await api.updateStreamConfig(configID, config)
+        const normalized = normalizeStreamConfig(updatedConfig)
         // Update local store
         const index = this.streamConfigs.findIndex((c) => c.id === configID)
         if (index !== -1) {
-          this.streamConfigs[index] = updatedConfig
+          this.streamConfigs[index] = normalized
         }
         if (this.currentStreamConfig?.id === configID) {
-          this.currentStreamConfig = updatedConfig
+          this.currentStreamConfig = normalized
         }
-        return updatedConfig
+        return normalized
       } catch (err) {
         console.error('Failed to update stream config:', err)
         throw err
@@ -550,23 +611,11 @@ export const useStreamsStore = defineStore('streams', {
       }
     },
     resetCurrentStream() {
-      this.currentStreamConfig = {
+      this.currentStreamConfig = normalizeStreamConfig({
         ...defaultStreamConfigOptions,
         id: '',
-        name: '',
-        source: {
-          id: '',
-          tables: [],
-          options: {
-            dataBundleSize: 500,
-            operations: ['insert', 'update', 'delete']
-          }
-        },
-        target: {
-          id: '',
-          spec: undefined
-        }
-      }
+        name: ''
+      })
     },
     async clearStreams() {
       this.streamConfigs = []
@@ -609,7 +658,8 @@ export const useStreamsStore = defineStore('streams', {
     async getStreamConfigById(configId: string): Promise<StreamConfig | null> {
       try {
         const streamConfigs = await api.getStreams()
-        return streamConfigs.find((config) => config.id === configId) || null
+        const normalized = streamConfigs.map((cfg) => normalizeStreamConfig(cfg))
+        return normalized.find((config) => config.id === configId) || null
       } catch (error) {
         console.error('Failed to get stream config by ID:', error)
         return null

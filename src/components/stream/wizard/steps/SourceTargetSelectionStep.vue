@@ -20,12 +20,10 @@
         :source-schema="sourceSchema"
         :target-schema="targetSchema"
         :target-path="targetPath"
-        :federated-mode="federatedMode"
-        :federated-connections="federatedConnections"
+        :source-connections="sourceConnections"
         @update:source-connection="handleSourceUpdate"
         @update:target-connection="handleTargetUpdate"
-        @update:federated-mode="handleFederatedModeUpdate"
-        @update:federated-connections="handleFederatedConnectionsUpdate"
+        @update:source-connections="handleSourceConnectionsUpdate"
         @clear-all="handleClearAll"
         @add-connection="(paneType) => $emit('add-connection', paneType)"
       />
@@ -34,7 +32,7 @@
 </template>
 
 <script setup lang="ts">
-import { watch } from 'vue'
+import { computed, watch } from 'vue'
 import DualTreeSelector from '../DualTreeSelector.vue'
 import StreamNameField from '../StreamNameField.vue'
 import type { ConnectionMapping } from '@/api/federated'
@@ -47,8 +45,7 @@ interface Props {
   sourceSchema?: string | null
   targetSchema?: string | null
   targetPath?: string | null
-  federatedMode?: boolean
-  federatedConnections?: ConnectionMapping[]
+  sourceConnections?: ConnectionMapping[]
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -59,8 +56,7 @@ const props = withDefaults(defineProps<Props>(), {
   sourceSchema: null,
   targetSchema: null,
   targetPath: null,
-  federatedMode: false,
-  federatedConnections: () => []
+  sourceConnections: () => []
 })
 
 // Watch for prop changes to update can-proceed state
@@ -70,8 +66,7 @@ watch(
     () => props.targetConnectionId,
     () => props.sourceDatabase,
     () => props.targetDatabase,
-    () => props.federatedMode,
-    () => props.federatedConnections
+    () => props.sourceConnections
   ],
   () => {
     updateCanProceed()
@@ -89,9 +84,16 @@ const emit = defineEmits<{
   'clear-all': []
   'add-connection': [paneType: 'source' | 'target']
   'update:can-proceed': [value: boolean]
-  'update:federated-mode': [enabled: boolean]
-  'update:federated-connections': [connections: ConnectionMapping[]]
+  'update:source-connections': [connections: ConnectionMapping[]]
 }>()
+
+const primarySourceId = computed(
+  () => props.sourceConnections[0]?.connectionId || props.sourceConnectionId
+)
+const primarySourceDatabase = computed(
+  () => props.sourceConnections[0]?.database || props.sourceDatabase
+)
+const isMultiSource = computed(() => props.sourceConnections.length > 1)
 
 function handleSourceUpdate(connectionId: string, database?: string, schema?: string) {
   emit('update:source-connection', connectionId, database, schema)
@@ -108,13 +110,8 @@ function handleTargetUpdate(
   updateCanProceed()
 }
 
-function handleFederatedModeUpdate(enabled: boolean) {
-  emit('update:federated-mode', enabled)
-  updateCanProceed()
-}
-
-function handleFederatedConnectionsUpdate(connections: ConnectionMapping[]) {
-  emit('update:federated-connections', connections)
+function handleSourceConnectionsUpdate(connections: ConnectionMapping[]) {
+  emit('update:source-connections', connections)
   updateCanProceed()
 }
 
@@ -124,28 +121,19 @@ function handleClearAll() {
 }
 
 function updateCanProceed() {
-  // For federated mode, check that we have at least one connection selected
-  if (props.federatedMode) {
-    const canProceed = Boolean(
-      props.federatedConnections &&
-        props.federatedConnections.length > 0 &&
-        props.targetConnectionId
-    )
-    emit('update:can-proceed', canProceed)
-    return
-  }
-
-  // For single-source mode, same logic as before
   // Source and target cannot be the same connection AND database combination
   const isSameConnectionAndDatabase =
-    props.sourceConnectionId &&
+    !isMultiSource.value &&
+    primarySourceId.value &&
     props.targetConnectionId &&
-    props.sourceConnectionId === props.targetConnectionId &&
-    props.sourceDatabase === props.targetDatabase &&
-    props.sourceDatabase
+    primarySourceId.value === props.targetConnectionId &&
+    (primarySourceDatabase.value || props.sourceDatabase) === props.targetDatabase &&
+    (primarySourceDatabase.value || props.sourceDatabase)
 
   const canProceed = Boolean(
-    props.sourceConnectionId && props.targetConnectionId && !isSameConnectionAndDatabase
+    (props.sourceConnections.length > 0 || primarySourceId.value) &&
+      props.targetConnectionId &&
+      !isSameConnectionAndDatabase
   )
   emit('update:can-proceed', canProceed)
 }

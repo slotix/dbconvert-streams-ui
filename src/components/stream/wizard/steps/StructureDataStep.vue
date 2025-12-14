@@ -2,7 +2,7 @@
   <div class="space-y-6">
     <!-- Federated Mode Banner -->
     <div
-      v-if="federatedMode"
+      v-if="isMultiSource"
       class="bg-linear-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 border border-purple-200 dark:border-purple-700/50 rounded-xl p-4 shadow-sm"
     >
       <div class="flex items-center gap-3">
@@ -23,16 +23,16 @@
             Federated Query Mode
           </h3>
           <p class="text-sm text-purple-700 dark:text-purple-300">
-            Write a SQL query that can join data across {{ federatedConnections.length }} connected
+            Write a SQL query that can join data across {{ sourceConnections.length }} connected
             sources. Tables are prefixed with connection aliases (e.g., db1.tablename).
           </p>
         </div>
       </div>
     </div>
 
-    <!-- Data Transfer Mode Section - Hidden when federated mode -->
+    <!-- Data Transfer Mode Section - Hidden for multi-source -->
     <div
-      v-if="!federatedMode"
+      v-if="!isMultiSource"
       class="bg-linear-to-br from-slate-50 to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-850 border border-gray-100 dark:border-gray-700 rounded-xl p-6 shadow-sm dark:shadow-gray-900/30"
     >
       <ModeButtons />
@@ -112,7 +112,7 @@
             v-else-if="activeDataTab === 'queries' && currentMode === 'convert'"
             class="h-[600px] min-h-[400px]"
           >
-            <CustomQueryEditor :federated-connections="federatedConnections" />
+            <CustomQueryEditor :source-connections="sourceConnections" />
           </div>
         </div>
       </template>
@@ -312,8 +312,7 @@ interface Props {
   createIndexes?: boolean
   createForeignKeys?: boolean
   copyData?: boolean
-  federatedMode?: boolean
-  federatedConnections?: ConnectionMapping[]
+  sourceConnections?: ConnectionMapping[]
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -322,8 +321,7 @@ const props = withDefaults(defineProps<Props>(), {
   createIndexes: true,
   createForeignKeys: true,
   copyData: true,
-  federatedMode: false,
-  federatedConnections: () => []
+  sourceConnections: () => []
 })
 
 const emit = defineEmits<{
@@ -348,6 +346,7 @@ const connectionsStore = useConnectionsStore()
 
 // Current mode from stream config
 const currentMode = computed(() => streamsStore.currentStreamConfig?.mode || 'convert')
+const isMultiSource = computed(() => props.sourceConnections.length > 1)
 
 // Reset activeDataTab to 'tables' when switching to CDC mode
 watch(currentMode, (newMode) => {

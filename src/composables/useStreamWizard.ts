@@ -19,6 +19,8 @@ export interface SelectionState {
   targetPath: string | null // For file connections
 }
 
+const DEFAULT_ALIAS = 'src'
+
 export function useStreamWizard() {
   // Step management
   const currentStepIndex = ref(0)
@@ -51,9 +53,10 @@ export function useStreamWizard() {
     targetPath: null
   })
 
-  // Federated mode state
-  const federatedMode = ref(false)
-  const federatedConnections = ref<ConnectionMapping[]>([])
+  const sourceConnections = ref<ConnectionMapping[]>([])
+  const primarySourceId = computed(() => sourceConnections.value[0]?.connectionId || null)
+  const primarySourceDatabase = computed(() => sourceConnections.value[0]?.database || null)
+  const isMultiSource = computed(() => sourceConnections.value.length > 1)
 
   // Transfer options - granular structure creation
   const createTables = ref(true)
@@ -68,21 +71,18 @@ export function useStreamWizard() {
 
   // Validation for each step
   const canProceedStep1 = computed(() => {
-    // For federated mode, check at least one connection and a target
-    if (federatedMode.value) {
-      return Boolean(federatedConnections.value.length > 0 && selection.value.targetConnectionId)
-    }
-
-    // For single-source mode: Source and target cannot be the same connection AND database combination
+    // Source and target cannot be the same connection AND database combination
     const isSameConnectionAndDatabase =
-      selection.value.sourceConnectionId &&
+      !isMultiSource.value &&
+      primarySourceId.value &&
       selection.value.targetConnectionId &&
-      selection.value.sourceConnectionId === selection.value.targetConnectionId &&
-      selection.value.sourceDatabase === selection.value.targetDatabase &&
-      selection.value.sourceDatabase
+      primarySourceId.value === selection.value.targetConnectionId &&
+      (primarySourceDatabase.value || selection.value.sourceDatabase) ===
+        selection.value.targetDatabase &&
+      (primarySourceDatabase.value || selection.value.sourceDatabase)
 
     return Boolean(
-      selection.value.sourceConnectionId &&
+      sourceConnections.value.length > 0 &&
         selection.value.targetConnectionId &&
         !isSameConnectionAndDatabase
     )
@@ -148,10 +148,53 @@ export function useStreamWizard() {
     }
   }
 
+  function normalizeSourceConnections(connections: ConnectionMapping[]): ConnectionMapping[] {
+    const usedAliases = new Set<string>()
+    return connections.map((conn, idx) => {
+      let alias = (conn.alias || '').trim()
+      if (!alias) {
+        alias = `${DEFAULT_ALIAS}${idx ? idx + 1 : ''}`
+      }
+      let aliasIndex = idx + 1
+      while (usedAliases.has(alias)) {
+        aliasIndex += 1
+        alias = `${DEFAULT_ALIAS}${aliasIndex}`
+      }
+      usedAliases.add(alias)
+      return {
+        alias,
+        connectionId: conn.connectionId,
+        database: conn.database
+      }
+    })
+  }
+
+  function syncPrimarySelection(schemaOverride?: string | null) {
+    const previousId = selection.value.sourceConnectionId
+    const primary = sourceConnections.value[0]
+    selection.value.sourceConnectionId = primary?.connectionId || null
+    selection.value.sourceDatabase = primary?.database || null
+
+    if (schemaOverride !== undefined) {
+      selection.value.sourceSchema = schemaOverride
+    } else if (!primary || previousId !== selection.value.sourceConnectionId) {
+      selection.value.sourceSchema = null
+    }
+  }
+
   // Selection methods
   function setSourceConnection(connectionId: string, database?: string, schema?: string) {
-    selection.value.sourceConnectionId = connectionId
-    selection.value.sourceDatabase = database || null
+    const alias =
+      sourceConnections.value.find((c) => c.connectionId === connectionId)?.alias ||
+      sourceConnections.value[0]?.alias ||
+      DEFAULT_ALIAS
+    setSourceConnections([
+      {
+        alias,
+        connectionId,
+        database
+      }
+    ])
     selection.value.sourceSchema = schema || null
   }
 
@@ -168,9 +211,7 @@ export function useStreamWizard() {
   }
 
   function clearSourceSelection() {
-    selection.value.sourceConnectionId = null
-    selection.value.sourceDatabase = null
-    selection.value.sourceSchema = null
+    setSourceConnections([])
   }
 
   function clearTargetSelection() {
@@ -196,13 +237,13 @@ export function useStreamWizard() {
     copyData.value = value
   }
 
-  // Federated mode setters
-  function setFederatedMode(value: boolean) {
-    federatedMode.value = value
-  }
-
-  function setFederatedConnections(connections: ConnectionMapping[]) {
-    federatedConnections.value = connections
+  function setSourceConnections(connections: ConnectionMapping[]) {
+    const previousPrimary = sourceConnections.value[0]?.connectionId
+    sourceConnections.value = normalizeSourceConnections(connections)
+    const newPrimary = sourceConnections.value[0]?.connectionId
+    const schemaOverride =
+      connections.length === 0 ? null : previousPrimary === newPrimary ? undefined : null
+    syncPrimarySelection(schemaOverride)
   }
 
   // Reset wizard state
@@ -221,9 +262,7 @@ export function useStreamWizard() {
     createIndexes.value = true
     createForeignKeys.value = true
     copyData.value = true
-    // Reset federated state
-    federatedMode.value = false
-    federatedConnections.value = []
+    setSourceConnections([])
   }
 
   // Load wizard state from existing stream config (for edit mode)
@@ -278,10 +317,9 @@ export function useStreamWizard() {
       return null
     }
 
-    // Populate source and target selection
-    selection.value.sourceConnectionId = resolveConnectionId(config.source)
-    selection.value.targetConnectionId = resolveConnectionId(config.target)
-    selection.value.sourceDatabase = resolveDatabase(config.sourceDatabase, config.source)
+    const resolvedSourceId = resolveConnectionId(config.source)
+    const resolvedTargetId = resolveConnectionId(config.target)
+    const resolvedSourceDatabase = resolveDatabase(config.sourceDatabase, config.source)
 
     // For S3 targets, get the bucket from spec
     const s3Bucket = config.target?.spec?.s3?.upload?.bucket
@@ -291,9 +329,10 @@ export function useStreamWizard() {
       selection.value.targetDatabase = resolveDatabase(config.targetDatabase, config.target)
     }
 
-    selection.value.sourceSchema = resolveSchema(config.sourceSchema, config.source)
+    selection.value.targetConnectionId = resolvedTargetId
     selection.value.targetSchema = resolveSchema(config.targetSchema, config.target)
     selection.value.targetPath = config.targetPath ?? null
+    const sourceSchema = resolveSchema(config.sourceSchema, config.source)
 
     // Populate structure options - check multiple possible locations
     // Priority: 1. target.spec.database.structureOptions (spec is source of truth)
@@ -341,21 +380,37 @@ export function useStreamWizard() {
     const skipData = configWithSkipData?.skipData
     copyData.value = skipData === undefined ? true : !skipData
 
-    // Restore federated mode state (now in source)
-    if (config.source?.federatedMode) {
-      federatedMode.value = true
-      // Restore federated connections if present (including database selection)
-      if (config.source.federatedConnections && Array.isArray(config.source.federatedConnections)) {
-        federatedConnections.value = config.source.federatedConnections.map((fc) => ({
+    const connectionsFromConfig = Array.isArray(config.source?.connections)
+      ? config.source.connections.map((fc) => ({
           alias: fc.alias,
           connectionId: fc.connectionId,
           database: fc.database
         }))
-      }
-    } else {
-      federatedMode.value = false
-      federatedConnections.value = []
+      : []
+
+    if (!connectionsFromConfig.length && resolvedSourceId) {
+      connectionsFromConfig.push({
+        alias: DEFAULT_ALIAS,
+        connectionId: resolvedSourceId,
+        database: resolvedSourceDatabase || undefined
+      })
+    } else if (
+      connectionsFromConfig.length === 1 &&
+      resolvedSourceDatabase &&
+      !connectionsFromConfig[0].database
+    ) {
+      connectionsFromConfig[0].database = resolvedSourceDatabase
     }
+
+    setSourceConnections(connectionsFromConfig)
+
+    if (resolvedSourceDatabase) {
+      selection.value.sourceDatabase = resolvedSourceDatabase
+      if (sourceConnections.value[0]) {
+        sourceConnections.value[0].database = resolvedSourceDatabase
+      }
+    }
+    selection.value.sourceSchema = sourceSchema
   }
 
   return {
@@ -368,8 +423,10 @@ export function useStreamWizard() {
     createIndexes,
     createForeignKeys,
     copyData,
-    federatedMode,
-    federatedConnections,
+    sourceConnections,
+    primarySourceId,
+    primarySourceDatabase,
+    isMultiSource,
 
     // Computed
     isFirstStep,
@@ -391,8 +448,7 @@ export function useStreamWizard() {
     setCreateIndexes,
     setCreateForeignKeys,
     setCopyData,
-    setFederatedMode,
-    setFederatedConnections,
+    setSourceConnections,
     reset,
     loadFromStreamConfig
   }

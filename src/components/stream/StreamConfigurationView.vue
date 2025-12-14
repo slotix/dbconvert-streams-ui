@@ -24,16 +24,16 @@
         </div>
       </div>
 
-      <!-- Federated Connections (shown when federated mode is enabled) -->
+      <!-- Multi-source Connections (shown when more than one source is configured) -->
       <FederatedConnectionsCard
         v-if="isFederatedMode"
-        :connections="stream.source?.federatedConnections || []"
+        :connections="stream.source?.connections || []"
         :all-connections="allConnections"
         :db-types="dbTypes"
         @navigate="handleFederatedNavigate"
       />
 
-      <!-- Single Source Connection (shown when NOT federated mode) -->
+      <!-- Single Source Connection (shown when only one source is configured) -->
       <ConnectionCard
         v-else
         label="Source Connection"
@@ -104,7 +104,7 @@ const props = defineProps<{
 const router = useRouter()
 
 // Check if federated mode is enabled
-const isFederatedMode = computed(() => props.stream.source?.federatedMode === true)
+const isFederatedMode = computed(() => (props.stream.source?.connections?.length ?? 0) > 1)
 
 // Check if stream has file format in spec
 const hasFileFormat = computed(() => !!getFileSpec(props.stream.target?.spec)?.fileFormat)

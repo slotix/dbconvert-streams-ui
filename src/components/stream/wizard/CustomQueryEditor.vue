@@ -8,19 +8,19 @@
         <CodeBracketIcon
           class="w-5 h-5"
           :class="
-            federatedMode
+            isMultiSource
               ? 'text-purple-600 dark:text-purple-400'
               : 'text-teal-600 dark:text-teal-400'
           "
         />
         <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100">
-          {{ federatedMode ? 'Federated SQL Queries' : 'Custom SQL Queries' }}
+          {{ isMultiSource ? 'Federated SQL Queries' : 'Custom SQL Queries' }}
         </h3>
         <span
           v-if="queries.length > 0"
           class="px-2 py-0.5 text-xs rounded-full"
           :class="
-            federatedMode
+            isMultiSource
               ? 'bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300'
               : 'bg-teal-100 dark:bg-teal-900/50 text-teal-700 dark:text-teal-300'
           "
@@ -31,7 +31,7 @@
       <div class="flex items-center gap-2">
         <!-- Template Selector - hide for federated mode since templates are different -->
         <select
-          v-if="activeQuery && !federatedMode"
+          v-if="activeQuery && !isMultiSource"
           class="text-xs px-2 py-1.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300 focus:ring-1 focus:ring-teal-500"
           @change="applyTemplate($event, activeQuery)"
         >
@@ -43,10 +43,10 @@
         </select>
         <!-- Connection count for federated mode -->
         <span
-          v-if="federatedMode"
+          v-if="isMultiSource"
           class="text-xs px-2 py-1 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded"
         >
-          {{ federatedConnections.length }} sources connected
+          {{ sourceConnections.length }} sources connected
         </span>
       </div>
     </div>
@@ -58,11 +58,11 @@
     >
       <DocumentTextIcon class="w-16 h-16 text-gray-400 dark:text-gray-500 mb-4" />
       <h4 class="text-base font-medium text-gray-900 dark:text-gray-100 mb-2">
-        {{ federatedMode ? 'No federated queries' : 'No custom queries' }}
+        {{ isMultiSource ? 'No federated queries' : 'No custom queries' }}
       </h4>
       <p class="text-sm text-gray-500 dark:text-gray-400 text-center max-w-md mb-6">
         {{
-          federatedMode
+          isMultiSource
             ? 'Write SQL queries that join data across multiple databases. Use connection aliases (e.g., db1.tablename) to reference tables from different sources.'
             : 'Add complex SQL queries with JOINs, CTEs, and aggregations to create derived datasets on the target.'
         }}
@@ -71,14 +71,14 @@
         type="button"
         class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white rounded-md transition-colors"
         :class="
-          federatedMode
+          isMultiSource
             ? 'bg-purple-600 hover:bg-purple-700 dark:bg-purple-700 dark:hover:bg-purple-600'
             : 'bg-teal-600 hover:bg-teal-700 dark:bg-teal-700 dark:hover:bg-teal-600'
         "
         @click="addQuery"
       >
         <PlusIcon class="w-4 h-4" />
-        {{ federatedMode ? 'Add federated query' : 'Add your first query' }}
+        {{ isMultiSource ? 'Add federated query' : 'Add your first query' }}
       </button>
     </div>
 
@@ -295,19 +295,19 @@ import { executeFederatedQuery } from '@/api/federated'
 import connections from '@/api/connections'
 
 interface Props {
-  federatedConnections?: ConnectionMapping[]
+  sourceConnections?: ConnectionMapping[]
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  federatedConnections: () => []
+  sourceConnections: () => []
 })
 
 const streamsStore = useStreamsStore()
 const connectionsStore = useConnectionsStore()
 const navigationStore = useExplorerNavigationStore()
 
-// Compute federated mode from number of connections (2+ = federated)
-const federatedMode = computed(() => props.federatedConnections.length > 1)
+// Multi-source mode is enabled when 2+ source connections are selected
+const isMultiSource = computed(() => props.sourceConnections.length > 1)
 
 // Local state
 const activeTabId = ref<string>('')
@@ -504,11 +504,11 @@ const runPreview = async (query: QuerySource, index: number) => {
   try {
     let result: { columns: string[]; rows: unknown[][] }
 
-    if (federatedMode.value && props.federatedConnections.length > 0) {
+    if (isMultiSource.value && props.sourceConnections.length > 0) {
       // Execute federated query across multiple sources
       const federatedResult = await executeFederatedQuery({
         query: query.query,
-        connections: props.federatedConnections
+        connections: props.sourceConnections
       })
       result = {
         columns: federatedResult.columns || [],
