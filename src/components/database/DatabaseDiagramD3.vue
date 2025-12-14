@@ -29,11 +29,12 @@ const props = withDefaults(
 const svgContainer = ref<HTMLElement>()
 
 // D3 selections (not reactive)
-let svg: d3.Selection<SVGSVGElement, unknown, null, undefined>
-let node: d3.Selection<SVGGElement, TableNode, SVGGElement, unknown>
-let linkGroup: d3.Selection<SVGGElement, TableLink, SVGGElement, unknown>
+let svg: d3.Selection<SVGSVGElement, unknown, null, undefined> | null = null
+let node: d3.Selection<SVGGElement, TableNode, SVGGElement, unknown> | null = null
+let linkGroup: d3.Selection<SVGGElement, TableLink, SVGGElement, unknown> | null = null
 let links: TableLink[] = []
 let currentNodes: TableNode[] = []
+let preservedZoomTransform: d3.ZoomTransform | null = null
 
 const nodePositionCache = new Map<
   string,
@@ -541,6 +542,8 @@ function dragended(event: d3.D3DragEvent<SVGGElement, TableNode, TableNode>) {
 
 // Update highlighting based on selection
 function updateHighlighting() {
+  if (!node) return
+
   const selectedTableName = highlightingComposable.selectedTable.value
   const relatedTables = selectedTableName
     ? highlightingComposable.findRelatedTables(selectedTableName, links)
@@ -660,6 +663,11 @@ function updateHighlighting() {
 function createVisualization(reason: 'init' | 'resize' | 'data' | 'theme' = 'data') {
   if (!svgContainer.value) return
 
+  if (svg && reason !== 'init') {
+    const svgNode = svg.node()
+    if (svgNode) preservedZoomTransform = d3.zoomTransform(svgNode)
+  }
+
   if (currentNodes.length) {
     currentNodes.forEach((n) => {
       if (typeof n.x !== 'number' || typeof n.y !== 'number') return
@@ -685,18 +693,22 @@ function createVisualization(reason: 'init' | 'resize' | 'data' | 'theme' = 'dat
 
   svg = d3.select(svgContainer.value).append('svg').attr('width', width).attr('height', height)
 
+  // Zoom group must exist before initializing zoom (so zoom handler can apply transforms)
+  const zoomContent = svg.append('g').attr('class', 'zoom-group')
+
   // Initialize zoom
   const zoomBehavior = zoomComposable.initializeZoom(svg)
-  svg.call(zoomBehavior)
   zoomComposable.setInitialTransform(width, height)
 
-  const zoomGroup = svg.append('g').attr('class', 'zoom-group')
+  if (preservedZoomTransform && reason !== 'init') {
+    svg.call(zoomBehavior.transform, preservedZoomTransform)
+  }
 
   // Background grid
-  createBackgroundGrid(zoomGroup, width, height)
+  createBackgroundGrid(zoomContent, width, height)
 
   // Create defs for markers and filters
-  const defs = zoomGroup.append('defs')
+  const defs = zoomContent.append('defs')
   createDropShadowFilter(defs)
   createMarkerDefinitions(defs)
 
@@ -755,7 +767,7 @@ function createVisualization(reason: 'init' | 'resize' | 'data' | 'theme' = 'dat
 
   // No data message
   if (nodes.length === 0) {
-    zoomGroup
+    zoomContent
       .append('text')
       .attr('x', width / 2)
       .attr('y', height / 2)
@@ -766,63 +778,83 @@ function createVisualization(reason: 'init' | 'resize' | 'data' | 'theme' = 'dat
   }
 
   // Create links first (so they render behind nodes)
-  createLinks(zoomGroup, links)
+  createLinks(zoomContent, links)
 
   // Create nodes
-  createNodes(zoomGroup, nodes)
+  createNodes(zoomContent, nodes)
+
+  const columnCountByName = new Map<string, number>()
+  for (const table of props.tables || []) {
+    columnCountByName.set(table.name, table.columns?.length ?? 0)
+  }
+  for (const view of props.views || []) {
+    columnCountByName.set(view.name, view.columns?.length ?? 0)
+  }
+
+  const nodeHeightById = new Map<string, number>()
+  nodes.forEach((n) => {
+    const columnCount = columnCountByName.get(n.name) ?? 0
+    nodeHeightById.set(n.id, 30 + columnCount * 20)
+  })
 
   function applyPositions() {
+    if (!linkGroup || !node) return
+
     linkGroup
       .selectAll<SVGLineElement, TableLink>('line')
       .attr('x1', (d: TableLink) => {
         const source = d.source as TableNode
         const target = d.target as TableNode
+        const sourceHeight = nodeHeightById.get(source.id) ?? 30
         const [offsetX] = calculateConnectionPoint(
           source.x || 0,
           source.y || 0,
           target.x || 0,
           target.y || 0,
           200,
-          getTableHeight(source)
+          sourceHeight
         )
         return (source.x || 0) + offsetX
       })
       .attr('y1', (d: TableLink) => {
         const source = d.source as TableNode
         const target = d.target as TableNode
+        const sourceHeight = nodeHeightById.get(source.id) ?? 30
         const [, offsetY] = calculateConnectionPoint(
           source.x || 0,
           source.y || 0,
           target.x || 0,
           target.y || 0,
           200,
-          getTableHeight(source)
+          sourceHeight
         )
         return (source.y || 0) + offsetY
       })
       .attr('x2', (d: TableLink) => {
         const source = d.source as TableNode
         const target = d.target as TableNode
+        const targetHeight = nodeHeightById.get(target.id) ?? 30
         const [offsetX] = calculateConnectionPoint(
           target.x || 0,
           target.y || 0,
           source.x || 0,
           source.y || 0,
           200,
-          getTableHeight(target)
+          targetHeight
         )
         return (target.x || 0) + offsetX
       })
       .attr('y2', (d: TableLink) => {
         const source = d.source as TableNode
         const target = d.target as TableNode
+        const targetHeight = nodeHeightById.get(target.id) ?? 30
         const [, offsetY] = calculateConnectionPoint(
           target.x || 0,
           target.y || 0,
           source.x || 0,
           source.y || 0,
           200,
-          getTableHeight(target)
+          targetHeight
         )
         return (target.y || 0) + offsetY
       })
@@ -830,8 +862,9 @@ function createVisualization(reason: 'init' | 'resize' | 'data' | 'theme' = 'dat
       .attr('marker-end', (d: TableLink) => (d.targetMarker ? `url(#${d.targetMarker})` : ''))
 
     node.attr('transform', (d: TableNode) => {
+      const height = nodeHeightById.get(d.id) ?? 30
       const x = (d.x || 0) - 100
-      const y = (d.y || 0) - getTableHeight(d) / 2
+      const y = (d.y || 0) - height / 2
       return `translate(${x},${y})`
     })
   }
@@ -865,6 +898,10 @@ function createVisualization(reason: 'init' | 'resize' | 'data' | 'theme' = 'dat
   })
 
   currentNodes = nodes
+
+  if (highlightingComposable.selectedTable.value) {
+    updateHighlighting()
+  }
 }
 
 // Handle window resize
@@ -907,6 +944,7 @@ watch(
 
 // Event handlers for controls
 function handleExport() {
+  if (!svg) return
   exportComposable.saveDiagram(svg, svgContainer.value || null)
 }
 </script>
