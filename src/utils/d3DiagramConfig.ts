@@ -14,8 +14,41 @@ export const BRAND_COLORS = {
   highlight: {
     blue: '#DBEAFE', // Light blue highlight
     orange: '#FFEDD5' // Light orange highlight
+  },
+  // Dark theme colors
+  dark: {
+    background: '#1e293b', // Dark slate background
+    cardBg: '#334155', // Card background
+    border: '#475569', // Border color
+    text: '#e2e8f0', // Light text
+    textMuted: '#94a3b8', // Muted text
+    tableBg: '#1e293b', // Table background
+    tableHeader: '#475569', // Table header
+    viewBg: '#1e293b', // View background
+    viewHeader: '#475569', // View header
+    gridLine: '#374151' // Grid line
   }
 } as const
+
+/**
+ * Creates theme-aware diagram colors based on dark mode state
+ */
+export function getDiagramColors(isDark: boolean) {
+  return {
+    gridLine: isDark ? BRAND_COLORS.dark.gridLine : '#e5e7eb',
+    tableBg: isDark ? BRAND_COLORS.dark.tableBg : '#f8fafc',
+    viewBg: isDark ? BRAND_COLORS.dark.viewBg : '#f8fbfe',
+    tableBorder: isDark ? BRAND_COLORS.dark.border : '#cbd5e1',
+    viewBorder: isDark ? BRAND_COLORS.dark.border : '#94a3b8',
+    tableHeader: isDark ? BRAND_COLORS.dark.tableHeader : '#e2e8f0',
+    viewHeader: isDark ? BRAND_COLORS.dark.viewHeader : '#cbd5e1',
+    headerText: isDark ? BRAND_COLORS.dark.text : '#1e293b',
+    columnText: isDark ? BRAND_COLORS.dark.text : BRAND_COLORS.grayDark,
+    alternateRowBg: isDark ? '#0f172a' : '#f1f5f9',
+    tooltipBg: isDark ? '#0f172a' : '#1f2937',
+    noDataText: isDark ? BRAND_COLORS.dark.textMuted : '#6b7280'
+  }
+}
 
 /**
  * Marker configuration for relationship lines

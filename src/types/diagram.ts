@@ -1,0 +1,37 @@
+import type * as d3 from 'd3'
+
+/**
+ * Represents a table or view node in the diagram
+ */
+export interface TableNode extends d3.SimulationNodeDatum {
+  id: string
+  name: string
+  schema: string
+  isView: boolean
+  x?: number
+  y?: number
+}
+
+/**
+ * Represents a relationship link between tables
+ */
+export interface TableLink extends d3.SimulationLinkDatum<TableNode> {
+  source: string | TableNode
+  target: string | TableNode
+  relationship: 'one-to-one' | 'one-to-many' | 'many-to-one' | 'many-to-many'
+  cardinality?: string
+  isViewDependency?: boolean
+  isJunctionRelation?: boolean
+  sourceMarker?: string
+  targetMarker?: string
+}
+
+/**
+ * Represents a field relationship for highlighting
+ */
+export interface RelatedField {
+  tableName: string
+  fieldName: string
+  relatedTableName: string
+  relatedFieldName: string
+}
