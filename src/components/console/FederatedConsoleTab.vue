@@ -186,89 +186,83 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import {
   GlobeAltIcon,
   QuestionMarkCircleIcon,
   InformationCircleIcon
 } from '@heroicons/vue/24/outline'
 import type { SchemaContext } from '@/composables/useMonacoSqlProviders'
-import { useSqlConsoleStore } from '@/stores/sqlConsole'
-import { useLogsStore, type QueryPurpose } from '@/stores/logs'
 import { useConnectionsStore } from '@/stores/connections'
+import { useLogsStore } from '@/stores/logs'
 import { executeFederatedQuery, type ConnectionMapping } from '@/api/federated'
-import { format as formatSQL } from 'sql-formatter'
 import { SqlQueryTabs, SqlEditorPane, SqlResultsPane } from '@/components/database/sql-console'
 import ConnectionAliasPanel from './ConnectionAliasPanel.vue'
-import { useSplitPaneResize } from '@/composables/useSplitPaneResize'
-
-// Helper to detect query purpose from SQL
-function detectQueryPurpose(query: string): QueryPurpose {
-  const normalized = query.trim().toUpperCase()
-  const firstWord = normalized.split(/\s+/)[0]
-
-  if (['CREATE', 'ALTER', 'DROP', 'TRUNCATE'].includes(firstWord)) {
-    return 'SCHEMA_CHANGE'
-  }
-  if (['INSERT', 'UPDATE', 'DELETE', 'MERGE', 'UPSERT'].includes(firstWord)) {
-    return 'DML_OPERATION'
-  }
-  if (
-    ['SHOW', 'DESCRIBE', 'DESC', 'EXPLAIN'].includes(firstWord) ||
-    normalized.includes('INFORMATION_SCHEMA')
-  ) {
-    return 'SCHEMA_INTROSPECTION'
-  }
-  if (normalized.includes('COUNT(') || normalized.includes('COUNT (')) {
-    return 'COUNT_QUERY'
-  }
-  return 'DATA_QUERY'
-}
+import { useConsoleTab, detectQueryPurpose } from '@/composables/useConsoleTab'
 
 // Stores
-const sqlConsoleStore = useSqlConsoleStore()
-const logsStore = useLogsStore()
 const connectionsStore = useConnectionsStore()
-
-// State
-const selectedConnections = ref<ConnectionMapping[]>([])
-const sqlQuery = ref('')
-const isExecuting = ref(false)
-const hasExecutedQuery = ref(false)
-const queryError = ref<string | null>(null)
-const queryResults = ref<Record<string, unknown>[]>([])
-const resultColumns = ref<string[]>([])
-const lastQueryStats = ref<{ rowCount: number; duration: number } | null>(null)
-const currentPage = ref(1)
-const pageSize = ref(100)
-const showHelp = ref(false)
-
-// Query history
-interface QueryHistoryItem {
-  query: string
-  timestamp: number
-}
-const queryHistory = ref<QueryHistoryItem[]>([])
-const MAX_HISTORY_ITEMS = 50
-
-// Resizable panel
-const {
-  splitGrow: editorWidth,
-  onDividerMouseDown: startResize,
-  splitContainerRef,
-  leftPaneRef
-} = useSplitPaneResize()
+const logsStore = useLogsStore()
 
 // Console key for tabs - unique for federated console
 const consoleKey = 'federated-console'
 const historyKey = 'federated-console-history'
 
-// Query tabs from store
-const queryTabs = computed(() => sqlConsoleStore.getTabs(consoleKey))
-const activeQueryTabId = computed(() => sqlConsoleStore.getActiveTabId(consoleKey))
-const activeQueryTab = computed(() => sqlConsoleStore.getActiveTab(consoleKey))
+// Use console tab composable
+const {
+  // State
+  sqlQuery,
+  isExecuting,
+  hasExecutedQuery,
+  queryError,
+  queryResults,
+  resultColumns,
+  lastQueryStats,
+  currentPage,
+  pageSize,
+  showHelp,
+  queryHistory,
 
-// Schema context for autocomplete (limited for federated - future enhancement)
+  // Split pane
+  editorWidth,
+  startResize,
+  splitContainerRef,
+  leftPaneRef,
+
+  // Tabs
+  queryTabs,
+  activeQueryTabId,
+  setActiveQueryTab,
+  addQueryTab,
+  closeQueryTab,
+  closeAllQueryTabs,
+  handleRenameTab,
+
+  // Query operations
+  formatQuery,
+  insertTemplate,
+  insertHistoryQuery,
+  saveToHistory,
+  setExecutionResult,
+  setExecutionError,
+
+  // Lifecycle
+  initialize,
+  cleanup
+} = useConsoleTab({
+  consoleKey,
+  historyKey,
+  getDefaultQuery: () => `-- Federated Query
+-- Select connections from Data Sources above, then use their aliases in your query
+-- Example: SELECT * FROM pg1.public.table JOIN my1.table ON ...
+
+`
+})
+
+// Federated-specific state
+const selectedConnections = ref<ConnectionMapping[]>([])
+
+// Schema context for autocomplete (limited for federated)
 const schemaContext = computed<SchemaContext>(() => ({
   tables: [],
   columns: {},
@@ -355,161 +349,21 @@ LIMIT 100;`
   ]
 })
 
-// ========== Tab Sync ==========
-watch(
-  activeQueryTab,
-  (tab) => {
-    if (tab) {
-      sqlQuery.value = tab.query
-
-      // Restore cached results
-      const cached = sqlConsoleStore.getResultCache(tab.id)
-      if (cached) {
-        hasExecutedQuery.value = true
-        queryError.value = cached.error
-        queryResults.value = cached.rows
-        resultColumns.value = cached.columns
-        lastQueryStats.value = cached.stats
-        currentPage.value = 1
-      } else {
-        hasExecutedQuery.value = false
-        queryError.value = null
-        queryResults.value = []
-        resultColumns.value = []
-        lastQueryStats.value = null
-        currentPage.value = 1
-      }
-    }
-  },
-  { immediate: true }
-)
-
-// Debounced save of query content
-let saveTimeout: ReturnType<typeof setTimeout> | null = null
-watch(sqlQuery, (newQuery) => {
-  const tabId = activeQueryTabId.value
-  if (tabId) {
-    if (saveTimeout) clearTimeout(saveTimeout)
-    saveTimeout = setTimeout(() => {
-      sqlConsoleStore.updateTabQuery(consoleKey, undefined, tabId, newQuery)
-    }, 500)
-  }
-})
-
-// ========== Tab Management ==========
-function setActiveQueryTab(tabId: string) {
-  const currentTabId = activeQueryTabId.value
-  if (currentTabId) {
-    sqlConsoleStore.updateTabQuery(consoleKey, undefined, currentTabId, sqlQuery.value)
-  }
-  sqlConsoleStore.setActiveTab(consoleKey, undefined, tabId)
-}
-
-function getDefaultQueryTemplate(): string {
-  return `-- Federated Query
--- Select connections from Data Sources above, then use their aliases in your query
--- Example: SELECT * FROM pg1.public.table JOIN my1.table ON ...
-
-`
-}
-
-function addQueryTab() {
-  const currentTabId = activeQueryTabId.value
-  if (currentTabId) {
-    sqlConsoleStore.updateTabQuery(consoleKey, undefined, currentTabId, sqlQuery.value)
-  }
-  const newTab = sqlConsoleStore.addTab(consoleKey, undefined)
-  sqlConsoleStore.updateTabQuery(consoleKey, undefined, newTab.id, getDefaultQueryTemplate())
-}
-
-function closeQueryTab(tabId: string) {
-  sqlConsoleStore.closeTab(consoleKey, undefined, tabId)
-}
-
-function closeAllQueryTabs() {
-  sqlConsoleStore.clearTabs(consoleKey, undefined)
-}
-
-function handleRenameTab(tabId: string, newName: string) {
-  sqlConsoleStore.renameTab(consoleKey, undefined, tabId, newName)
-}
-
-// ========== Templates & History ==========
-function insertTemplate(query: string) {
-  sqlQuery.value = query
-}
-
-function loadHistory() {
-  try {
-    const stored = localStorage.getItem(historyKey)
-    if (stored) {
-      queryHistory.value = JSON.parse(stored)
-    }
-  } catch (e) {
-    console.warn('Failed to load query history:', e)
-  }
-}
-
-function saveToHistory(query: string) {
-  const trimmed = query.trim()
-  if (!trimmed) return
-
-  // Remove duplicate if exists
-  queryHistory.value = queryHistory.value.filter((item) => item.query !== trimmed)
-
-  // Add new entry at the beginning
-  queryHistory.value.unshift({
-    query: trimmed,
-    timestamp: Date.now()
-  })
-
-  // Limit history size
-  if (queryHistory.value.length > MAX_HISTORY_ITEMS) {
-    queryHistory.value = queryHistory.value.slice(0, MAX_HISTORY_ITEMS)
-  }
-
-  // Persist to localStorage
-  try {
-    localStorage.setItem(historyKey, JSON.stringify(queryHistory.value))
-  } catch (e) {
-    console.warn('Failed to save query history:', e)
-  }
-}
-
-function insertHistoryQuery(item: QueryHistoryItem) {
-  sqlQuery.value = item.query
-}
-
 // ========== Query Execution ==========
-function formatQuery() {
-  if (!sqlQuery.value.trim()) return
-
-  try {
-    const formatted = formatSQL(sqlQuery.value, {
-      language: 'sql',
-      tabWidth: 2,
-      keywordCase: 'upper',
-      linesBetweenQueries: 2
-    })
-    sqlQuery.value = formatted
-  } catch (error) {
-    console.error('Failed to format SQL:', error)
-  }
-}
-
 async function executeQuery() {
   const query = sqlQuery.value.trim()
   if (!query) return
 
-  if (selectedConnections.value.length === 0) {
-    queryError.value = 'Please select at least one connection from Data Sources'
-    hasExecutedQuery.value = true
+  // Allow file queries without connections
+  const hasFileQuery =
+    query.includes('read_parquet') || query.includes('read_csv') || query.includes('read_json')
+
+  if (selectedConnections.value.length === 0 && !hasFileQuery) {
+    setExecutionError('Please select at least one connection from Data Sources')
     return
   }
 
   isExecuting.value = true
-  queryError.value = null
-  hasExecutedQuery.value = true
   const startTime = Date.now()
 
   try {
@@ -518,27 +372,31 @@ async function executeQuery() {
       connections: selectedConnections.value
     })
 
+    let columns: string[] = []
+    let rows: Record<string, unknown>[] = []
+
     if (result.columns && result.rows) {
-      resultColumns.value = result.columns
-      queryResults.value = result.rows.map((row) => {
+      columns = result.columns
+      rows = result.rows.map((row) => {
         const obj: Record<string, unknown> = {}
         result.columns.forEach((col, idx) => {
           obj[col] = row[idx]
         })
         return obj
       })
-    } else {
-      resultColumns.value = []
-      queryResults.value = []
     }
 
     const duration = result.duration || Date.now() - startTime
-    lastQueryStats.value = { rowCount: result.count || queryResults.value.length, duration }
-    currentPage.value = 1
+
+    setExecutionResult({
+      columns,
+      rows,
+      stats: { rowCount: result.count || rows.length, duration }
+    })
 
     // Log the SQL query
     logsStore.addSQLLog({
-      id: `federated-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: `federated-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
       connectionId: 'federated',
       tabId: activeQueryTabId.value || undefined,
       database: selectedConnections.value.map((c) => c.alias).join(', '),
@@ -546,34 +404,21 @@ async function executeQuery() {
       purpose: detectQueryPurpose(query),
       startedAt: new Date(startTime).toISOString(),
       durationMs: duration,
-      rowCount: queryResults.value.length
+      rowCount: rows.length
     })
 
     // Save successful query to history
     saveToHistory(query)
-
-    // Cache results
-    const tabId = activeQueryTabId.value
-    if (tabId) {
-      sqlConsoleStore.setResultCache(tabId, {
-        columns: resultColumns.value,
-        rows: queryResults.value,
-        error: null,
-        stats: lastQueryStats.value
-      })
-    }
   } catch (error: unknown) {
     const err = error as Error
-    queryError.value = err.message || 'Failed to execute federated query'
-    queryResults.value = []
-    resultColumns.value = []
-    lastQueryStats.value = null
-
+    const errorMsg = err.message || 'Failed to execute federated query'
     const duration = Date.now() - startTime
+
+    setExecutionError(errorMsg)
 
     // Log the failed query
     logsStore.addSQLLog({
-      id: `federated-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: `federated-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
       connectionId: 'federated',
       tabId: activeQueryTabId.value || undefined,
       database: selectedConnections.value.map((c) => c.alias).join(', '),
@@ -582,18 +427,8 @@ async function executeQuery() {
       startedAt: new Date(startTime).toISOString(),
       durationMs: duration,
       rowCount: 0,
-      error: queryError.value
+      error: errorMsg
     })
-
-    const tabId = activeQueryTabId.value
-    if (tabId) {
-      sqlConsoleStore.setResultCache(tabId, {
-        columns: [],
-        rows: [],
-        error: queryError.value,
-        stats: null
-      })
-    }
   } finally {
     isExecuting.value = false
   }
@@ -601,22 +436,15 @@ async function executeQuery() {
 
 // ========== Lifecycle ==========
 onMounted(async () => {
-  // Load query history
-  loadHistory()
+  initialize()
 
   // Ensure connections are loaded
   if (connectionsStore.connections.length === 0) {
     await connectionsStore.refreshConnections()
   }
-
-  // Initialize first tab if needed
-  if (queryTabs.value.length === 0) {
-    const newTab = sqlConsoleStore.addTab(consoleKey, undefined)
-    sqlConsoleStore.updateTabQuery(consoleKey, undefined, newTab.id, getDefaultQueryTemplate())
-  }
 })
 
 onUnmounted(() => {
-  if (saveTimeout) clearTimeout(saveTimeout)
+  cleanup()
 })
 </script>

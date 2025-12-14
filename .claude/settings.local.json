@@ -23,7 +23,8 @@
       "Bash(wc:*)",
       "Bash(for file in file_handlers stream_config_handlers database_handlers metadata_handlers)",
       "Bash(done)",
-      "Bash(staticcheck:*)"
+      "Bash(staticcheck:*)",
+      "Bash(yarn lint:check:*)"
     ],
     "deny": [],
     "ask": []
