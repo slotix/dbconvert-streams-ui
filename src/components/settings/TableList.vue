@@ -356,6 +356,7 @@ import { useCommonStore } from '@/stores/common'
 import { useConnectionsStore } from '@/stores/connections'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { useDatabaseOverviewStore } from '@/stores/databaseOverview'
+import { useSelectableList } from '@/composables/useSelectableList'
 import HighlightedText from '@/components/common/HighlightedText.vue'
 import TableSettings from './TableSettings.vue'
 import {
@@ -478,24 +479,12 @@ const filteredTables = computed(() => {
   )
 })
 
-const checkedTables = computed(() => {
-  return tables.value.filter((table) => table.selected)
-})
-
-const checkedTablesCount = computed(() => {
-  return checkedTables.value.length
-})
-
-const indeterminate = computed(() => {
-  const selectedCount = checkedTablesCount.value
-  return selectedCount > 0 && selectedCount < tables.value.length
-})
-
-const selectAllCheckboxState = computed(() => {
-  const allSelected = tables.value.every((table) => table.selected)
-  const noneSelected = tables.value.every((table) => !table.selected)
-  return allSelected || noneSelected ? allSelected : false
-})
+// Use selectable list composable for selection state
+const {
+  selectedCount: checkedTablesCount,
+  indeterminate,
+  selectAllState: selectAllCheckboxState
+} = useSelectableList(tables)
 
 // Check if current mode is CDC - table-level settings are not needed for CDC mode
 const isCDCMode = computed(() => {
