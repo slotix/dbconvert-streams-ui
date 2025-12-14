@@ -33,6 +33,14 @@ let svg: d3.Selection<SVGSVGElement, unknown, null, undefined>
 let node: d3.Selection<SVGGElement, TableNode, SVGGElement, unknown>
 let linkGroup: d3.Selection<SVGGElement, TableLink, SVGGElement, unknown>
 let links: TableLink[] = []
+let currentNodes: TableNode[] = []
+
+const nodePositionCache = new Map<
+  string,
+  { x: number; y: number; vx: number; vy: number; fx?: number | null; fy?: number | null }
+>()
+let resizeTimer: ReturnType<typeof setTimeout> | null = null
+let lastSize: { width: number; height: number } | null = null
 
 // Theme store
 const themeStore = useThemeStore()
@@ -649,14 +657,31 @@ function updateHighlighting() {
 }
 
 // Main visualization function
-function createVisualization() {
+function createVisualization(reason: 'init' | 'resize' | 'data' | 'theme' = 'data') {
   if (!svgContainer.value) return
+
+  if (currentNodes.length) {
+    currentNodes.forEach((n) => {
+      if (typeof n.x !== 'number' || typeof n.y !== 'number') return
+      nodePositionCache.set(n.id, {
+        x: n.x,
+        y: n.y,
+        vx: typeof n.vx === 'number' ? n.vx : 0,
+        vy: typeof n.vy === 'number' ? n.vy : 0,
+        fx: typeof n.fx === 'number' ? n.fx : (n.fx ?? null),
+        fy: typeof n.fy === 'number' ? n.fy : (n.fy ?? null)
+      })
+    })
+  }
+
+  forcesComposable.stopSimulation()
 
   // Clear previous visualization
   d3.select(svgContainer.value).selectAll('*').remove()
 
   const width = svgContainer.value.clientWidth
   const height = svgContainer.value.clientHeight || 1200
+  lastSize = { width, height }
 
   svg = d3.select(svgContainer.value).append('svg').attr('width', width).attr('height', height)
 
@@ -691,6 +716,40 @@ function createVisualization() {
     }))
   ]
 
+  nodes.sort((a, b) => {
+    if (a.isView !== b.isView) return Number(a.isView) - Number(b.isView)
+    const schemaCompare = a.schema.localeCompare(b.schema)
+    if (schemaCompare !== 0) return schemaCompare
+    return a.name.localeCompare(b.name)
+  })
+
+  const spacingX = 260
+  const spacingY = 130
+  const cols = Math.max(1, Math.floor(width / spacingX))
+  const rows = Math.max(1, Math.ceil(nodes.length / cols))
+  const originX = width / 2 - ((Math.min(cols, nodes.length) - 1) * spacingX) / 2
+  const originY = height / 2 - ((rows - 1) * spacingY) / 2
+
+  nodes.forEach((n, i) => {
+    const cached = nodePositionCache.get(n.id)
+    if (cached) {
+      n.x = cached.x
+      n.y = cached.y
+      n.vx = cached.vx
+      n.vy = cached.vy
+      n.fx = cached.fx ?? undefined
+      n.fy = cached.fy ?? undefined
+      return
+    }
+
+    const col = i % cols
+    const row = Math.floor(i / cols)
+    n.x = originX + col * spacingX
+    n.y = originY + row * spacingY
+    n.vx = 0
+    n.vy = 0
+  })
+
   // Process relationships
   links = processRelationships()
 
@@ -712,15 +771,7 @@ function createVisualization() {
   // Create nodes
   createNodes(zoomGroup, nodes)
 
-  // Initialize simulation
-  const simulation = forcesComposable.initializeSimulation(width, height)
-  simulation.nodes(nodes)
-
-  const linkForce = simulation.force('link') as d3.ForceLink<TableNode, TableLink>
-  linkForce.links(links).distance(forcesComposable.linkDistance.value)
-
-  // Update positions on tick
-  simulation.on('tick', () => {
+  function applyPositions() {
     linkGroup
       .selectAll<SVGLineElement, TableLink>('line')
       .attr('x1', (d: TableLink) => {
@@ -783,41 +834,75 @@ function createVisualization() {
       const y = (d.y || 0) - getTableHeight(d) / 2
       return `translate(${x},${y})`
     })
-  })
+  }
+
+  // Initialize simulation
+  const simulation = forcesComposable.initializeSimulation(width, height)
+  simulation.nodes(nodes)
+
+  const linkForce = simulation.force('link') as d3.ForceLink<TableNode, TableLink>
+  linkForce.links(links).distance(forcesComposable.linkDistance.value)
+
+  const preTicks = reason === 'init' ? 110 : reason === 'data' ? 70 : 0
+  if (preTicks > 0) {
+    simulation.stop()
+    for (let i = 0; i < preTicks; i++) simulation.tick()
+  }
+
+  applyPositions()
+
+  const startAlpha =
+    reason === 'resize' ? 0.03 : reason === 'theme' ? 0.02 : reason === 'data' ? 0.08 : 0.12
+  simulation.alpha(startAlpha).restart()
+
+  // Update positions on tick
+  simulation.on('tick', applyPositions)
 
   // Clear selection on background click
   svg.on('click', () => {
     highlightingComposable.clearSelection()
     updateHighlighting()
   })
+
+  currentNodes = nodes
 }
 
 // Handle window resize
 function handleResize() {
-  if (svgContainer.value) {
-    createVisualization()
-  }
+  if (!svgContainer.value) return
+
+  if (resizeTimer) clearTimeout(resizeTimer)
+  resizeTimer = setTimeout(() => {
+    if (!svgContainer.value) return
+    const width = svgContainer.value.clientWidth
+    const height = svgContainer.value.clientHeight || 1200
+    if (lastSize && lastSize.width === width && lastSize.height === height) return
+    createVisualization('resize')
+  }, 150)
 }
 
 // Lifecycle
 onMounted(() => {
-  createVisualization()
+  createVisualization('init')
   window.addEventListener('resize', handleResize)
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', handleResize)
+  if (resizeTimer) clearTimeout(resizeTimer)
   forcesComposable.stopSimulation()
 })
 
 // Watchers
-watch([() => props.tables, () => props.relations, () => props.views], () => createVisualization(), {
-  deep: true
-})
+watch(
+  [() => props.tables, () => props.relations, () => props.views],
+  () => createVisualization('data'),
+  { deep: true }
+)
 
 watch(
   () => themeStore.isDark,
-  () => createVisualization()
+  () => createVisualization('theme')
 )
 
 // Event handlers for controls
