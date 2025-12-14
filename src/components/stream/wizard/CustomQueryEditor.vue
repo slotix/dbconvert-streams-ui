@@ -168,9 +168,10 @@
         </div>
 
         <!-- Split View: Editor + Results -->
-        <div class="flex-1 flex overflow-hidden min-h-0">
+        <div ref="splitContainerRef" class="flex-1 flex overflow-hidden min-h-0">
           <!-- SQL Editor Pane -->
           <div
+            ref="leftPaneRef"
             class="border-r border-gray-200 dark:border-gray-700 min-h-0"
             :style="{ width: `${editorWidth}%` }"
           >
@@ -311,7 +312,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onUnmounted } from 'vue'
+import { ref, computed, watch } from 'vue'
 import {
   PlusIcon,
   PlayIcon,
@@ -332,6 +333,7 @@ import type { SchemaContext } from '@/composables/useMonacoSqlProviders'
 import type { ConnectionMapping } from '@/api/federated'
 import { executeFederatedQuery } from '@/api/federated'
 import connections from '@/api/connections'
+import { useSplitPaneResize } from '@/composables/useSplitPaneResize'
 
 interface Props {
   sourceConnections?: ConnectionMapping[]
@@ -369,8 +371,12 @@ const isRunning = ref<number | null>(null)
 const previewErrors = ref<Record<number, string>>({})
 const previewData = ref<Record<number, { columns: string[]; rows: Record<string, unknown>[] }>>({})
 const schemaContext = ref<SchemaContext | undefined>()
-const editorWidth = ref(50)
-const isResizing = ref(false)
+const {
+  splitGrow: editorWidth,
+  onDividerMouseDown: startResize,
+  splitContainerRef,
+  leftPaneRef
+} = useSplitPaneResize()
 const previewLimit = 100
 
 // Get queries from store
@@ -625,33 +631,6 @@ const formatCellValue = (value: unknown): string => {
   return String(value)
 }
 
-// Resize handlers
-function startResize(e: MouseEvent) {
-  isResizing.value = true
-  document.addEventListener('mousemove', handleResize)
-  document.addEventListener('mouseup', stopResize)
-  e.preventDefault()
-}
-
-function handleResize(e: MouseEvent) {
-  if (!isResizing.value) return
-
-  const container = document.querySelector('.flex-1.flex.overflow-hidden.min-h-0')
-  if (!container) return
-
-  const containerRect = container.getBoundingClientRect()
-  const mouseX = e.clientX - containerRect.left
-  let newWidth = (mouseX / containerRect.width) * 100
-  newWidth = Math.max(30, Math.min(70, newWidth))
-  editorWidth.value = newWidth
-}
-
-function stopResize() {
-  isResizing.value = false
-  document.removeEventListener('mousemove', handleResize)
-  document.removeEventListener('mouseup', stopResize)
-}
-
 const applyTemplate = (event: Event, query: QuerySource) => {
   const select = event.target as HTMLSelectElement
   const template = select.value
@@ -743,10 +722,4 @@ WHERE last_login < '2024-01-01'`
   // Reset select
   select.value = ''
 }
-
-// Cleanup on unmount
-onUnmounted(() => {
-  document.removeEventListener('mousemove', handleResize)
-  document.removeEventListener('mouseup', stopResize)
-})
 </script>

@@ -3,8 +3,8 @@ import { computed } from 'vue'
 import { type FileSystemEntry } from '@/api/fileSystem'
 import { type FileMetadata } from '@/types/files'
 import { getFileFormat } from '@/utils/fileFormat'
+import { useCopyToClipboard } from '@/composables/useCopyToClipboard'
 import UnsupportedFileMessage from './UnsupportedFileMessage.vue'
-import { ref } from 'vue'
 import {
   DocumentTextIcon,
   CircleStackIcon,
@@ -39,28 +39,7 @@ const formatNumber = (num: number): string => {
 }
 
 // Copy to clipboard functionality
-const isCopied = ref(false)
-const copyTimeout = ref<NodeJS.Timeout | null>(null)
-
-const copyToClipboard = async (text: string) => {
-  try {
-    await navigator.clipboard.writeText(text)
-    isCopied.value = true
-
-    // Clear existing timeout if any
-    if (copyTimeout.value) {
-      clearTimeout(copyTimeout.value)
-    }
-
-    // Reset after 2 seconds
-    copyTimeout.value = setTimeout(() => {
-      isCopied.value = false
-      copyTimeout.value = null
-    }, 2000)
-  } catch (err) {
-    console.error('Failed to copy:', err)
-  }
-}
+const { isCopied, copy: copyToClipboard } = useCopyToClipboard(2000)
 
 // Expose refresh method for parent container
 defineExpose({

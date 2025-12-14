@@ -8,6 +8,7 @@ import { generateConnectionString } from '@/utils/connectionStringGenerator'
 import { formatDateTime, formatDataSize } from '@/utils/formats'
 import { getConnectionHost, getConnectionPort, getConnectionDatabase } from '@/utils/specBuilder'
 import { useDatabaseCapabilities } from '@/composables/useDatabaseCapabilities'
+import { useCopyToClipboard } from '@/composables/useCopyToClipboard'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { useDatabaseOverviewStore } from '@/stores/databaseOverview'
 import {
@@ -45,8 +46,8 @@ const emit = defineEmits<{
 }>()
 
 const showPassword = ref(false)
-const isCopied = ref(false)
-const isPathCopied = ref(false)
+const { isCopied, copy: copyToClipboard } = useCopyToClipboard()
+const { isCopied: isPathCopied, copy: copyPathToClipboard } = useCopyToClipboard()
 
 // Database/Schema creation form state
 const newDatabaseName = ref('')
@@ -258,13 +259,10 @@ function copyConnectionString() {
   const text = showPassword.value
     ? connectionString.value
     : maskedConnectionString.value.replace(/(?<=:)[^@]+(?=@)/g, '****')
-  navigator.clipboard.writeText(text).then(() => {
-    isCopied.value = true
-    setTimeout(() => (isCopied.value = false), 1200)
-  })
+  copyToClipboard(text)
 }
 
-async function copyFolderPath() {
+function copyFolderPath() {
   // Use spec.files.basePath or build S3 URI from spec.s3
   let pathToCopy = basePath.value
 
@@ -283,13 +281,7 @@ async function copyFolderPath() {
     pathToCopy = isS3Connection.value ? displayS3URI.value || 's3://' : ''
   }
 
-  try {
-    await navigator.clipboard.writeText(pathToCopy)
-    isPathCopied.value = true
-    setTimeout(() => (isPathCopied.value = false), 1200)
-  } catch (fallbackError) {
-    console.error('Copy failed:', fallbackError)
-  }
+  copyPathToClipboard(pathToCopy)
 }
 
 const createdDisplay = computed(() => {

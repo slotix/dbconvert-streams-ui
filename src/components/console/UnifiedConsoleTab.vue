@@ -105,9 +105,10 @@
     />
 
     <!-- Main Content Area -->
-    <div class="flex-1 flex overflow-hidden min-h-0">
+    <div ref="splitContainerRef" class="flex-1 flex overflow-hidden min-h-0">
       <!-- Editor Pane -->
       <div
+        ref="leftPaneRef"
         class="border-r border-gray-200 dark:border-gray-700 min-h-0"
         :style="{ width: `${editorWidth}%` }"
       >
@@ -165,6 +166,7 @@ import connections from '@/api/connections'
 import { executeFileQuery } from '@/api/files'
 import { format as formatSQL } from 'sql-formatter'
 import { SqlQueryTabs, SqlEditorPane, SqlResultsPane } from '@/components/database/sql-console'
+import { useSplitPaneResize } from '@/composables/useSplitPaneResize'
 
 // Helper to detect query purpose from SQL
 function detectQueryPurpose(query: string): QueryPurpose {
@@ -247,8 +249,12 @@ const selectedDatabase = ref(props.database || '')
 const availableDatabases = ref<string[]>([])
 
 // Resizable panel
-const editorWidth = ref(50)
-const isResizing = ref(false)
+const {
+  splitGrow: editorWidth,
+  onDividerMouseDown: startResize,
+  splitContainerRef,
+  leftPaneRef
+} = useSplitPaneResize()
 
 // Schema context for autocomplete (database mode only)
 const tablesList = ref<Array<{ name: string; schema?: string }>>([])
@@ -811,30 +817,6 @@ async function executeQuery() {
   }
 }
 
-// ========== Resize Handling ==========
-function startResize(e: MouseEvent) {
-  isResizing.value = true
-  e.preventDefault()
-  document.addEventListener('mousemove', handleResize)
-  document.addEventListener('mouseup', stopResize)
-}
-
-function handleResize(e: MouseEvent) {
-  if (!isResizing.value) return
-  const container = document.querySelector('.console-tab')
-  if (!container) return
-
-  const rect = container.getBoundingClientRect()
-  const newWidth = ((e.clientX - rect.left) / rect.width) * 100
-  editorWidth.value = Math.min(Math.max(newWidth, 20), 80)
-}
-
-function stopResize() {
-  isResizing.value = false
-  document.removeEventListener('mousemove', handleResize)
-  document.removeEventListener('mouseup', stopResize)
-}
-
 // ========== Lifecycle ==========
 watch(() => selectedDatabase.value, loadTableSuggestions)
 
@@ -868,8 +850,6 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
-  document.removeEventListener('mousemove', handleResize)
-  document.removeEventListener('mouseup', stopResize)
   if (saveTimeout) clearTimeout(saveTimeout)
   const tabId = activeQueryTabId.value
   if (tabId) {
