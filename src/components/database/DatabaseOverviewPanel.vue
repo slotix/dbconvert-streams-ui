@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, watch, computed, ref, nextTick } from 'vue'
+import { onMounted, watch, computed, ref } from 'vue'
 import { useDatabaseOverviewStore } from '@/stores/databaseOverview'
 import { useConnectionsStore } from '@/stores/connections'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
@@ -15,7 +15,6 @@ import {
   InformationCircleIcon,
   CommandLineIcon,
   PlusIcon,
-  ChevronDownIcon,
   ServerIcon,
   ShareIcon
 } from '@heroicons/vue/24/outline'
@@ -39,8 +38,6 @@ const navigationStore = useExplorerNavigationStore()
 // Schema creation state
 const newSchemaName = ref('')
 const isCreatingSchema = ref(false)
-const showNewDropdown = ref(false)
-const schemaInputRef = ref<InstanceType<typeof FormInput> | null>(null)
 
 // Get connection type for capabilities
 const connectionType = computed(() => {
@@ -50,22 +47,6 @@ const connectionType = computed(() => {
 
 // Database capabilities
 const { canCreateSchema } = useDatabaseCapabilities(connectionType)
-
-// Toggle dropdown and focus input
-function toggleNewDropdown() {
-  showNewDropdown.value = !showNewDropdown.value
-  if (showNewDropdown.value) {
-    nextTick(() => {
-      schemaInputRef.value?.$el?.querySelector('input')?.focus()
-    })
-  }
-}
-
-// Close dropdown
-function closeDropdown() {
-  showNewDropdown.value = false
-  newSchemaName.value = ''
-}
 
 // Get overview and loading state for this specific connection + database
 const overview = computed(() => overviewStore.getOverview(props.connectionId, props.database))
@@ -235,6 +216,10 @@ const sizeDisplay = computed(() => {
   return typeof b === 'number' && Number.isFinite(b) ? formatDataSize(b) : '—'
 })
 
+const showCreateSchemaCard = computed(() => {
+  return Boolean(canCreateSchema.value && overview.value?.engine === 'postgres')
+})
+
 // Schema creation handler
 async function handleCreateSchema() {
   const schemaName = newSchemaName.value.trim()
@@ -244,7 +229,6 @@ async function handleCreateSchema() {
   try {
     emit('create-schema', schemaName)
     newSchemaName.value = '' // Clear input on success
-    showNewDropdown.value = false // Close dropdown on success
   } finally {
     isCreatingSchema.value = false
   }
@@ -257,44 +241,6 @@ async function handleCreateSchema() {
       <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">Database Overview</h3>
       <div class="flex items-center gap-2">
         <BaseButton variant="secondary" size="sm" @click="refresh()"> Refresh </BaseButton>
-
-        <!-- New Schema Dropdown -->
-        <div v-if="canCreateSchema" class="relative">
-          <BaseButton variant="secondary" size="sm" @click="toggleNewDropdown">
-            <PlusIcon class="w-4 h-4 mr-1" />
-            New Schema
-            <ChevronDownIcon class="w-3 h-3 ml-1" />
-          </BaseButton>
-
-          <!-- Dropdown Panel -->
-          <div
-            v-if="showNewDropdown"
-            class="absolute right-0 top-full mt-1 z-50 w-64 bg-white dark:bg-gray-850 rounded-lg shadow-lg dark:shadow-gray-900/50 border border-gray-200 dark:border-gray-700 p-3"
-          >
-            <!-- Click outside overlay -->
-            <div class="fixed inset-0 z-[-1]" @click="closeDropdown"></div>
-
-            <div class="flex gap-2">
-              <FormInput
-                ref="schemaInputRef"
-                v-model="newSchemaName"
-                placeholder="schema_name"
-                class="flex-1"
-                :disabled="isCreatingSchema"
-                @keyup.enter="handleCreateSchema"
-                @keyup.escape="closeDropdown"
-              />
-              <BaseButton
-                variant="primary"
-                size="sm"
-                :disabled="!newSchemaName.trim() || isCreatingSchema"
-                @click="handleCreateSchema"
-              >
-                Create
-              </BaseButton>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
 
@@ -710,7 +656,10 @@ async function handleCreateSchema() {
       </div>
 
       <!-- Utility Blocks Row -->
-      <div class="md:col-span-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div
+        class="md:col-span-6 grid grid-cols-1 gap-4"
+        :class="showCreateSchemaCard ? 'sm:grid-cols-2 xl:grid-cols-3' : 'sm:grid-cols-2'"
+      >
         <!-- SQL Console - Utility Block -->
         <div
           class="bg-linear-to-br from-indigo-50 to-slate-50 dark:from-indigo-950/30 dark:to-gray-800/50 rounded-xl p-4 ring-1 ring-indigo-200/70 dark:ring-indigo-800/50"
@@ -774,6 +723,46 @@ async function handleCreateSchema() {
             <ShareIcon class="w-4 h-4 mr-1.5" />
             Show Diagram
           </BaseButton>
+        </div>
+
+        <!-- Create Schema (PostgreSQL) - Utility Block -->
+        <div
+          v-if="showCreateSchemaCard"
+          class="bg-linear-to-br from-emerald-50 to-slate-50 dark:from-emerald-950/30 dark:to-gray-800/50 rounded-xl p-4 ring-1 ring-emerald-200/70 dark:ring-emerald-800/50"
+        >
+          <div class="flex items-start gap-4 mb-4">
+            <div
+              class="shrink-0 p-3 bg-emerald-100 dark:bg-emerald-900/50 rounded-xl ring-1 ring-emerald-200 dark:ring-emerald-700/50"
+            >
+              <PlusIcon class="h-7 w-7 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <div class="flex-1 min-w-0 pt-1">
+              <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200">Create Schema</h4>
+              <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                Create a new schema in this database
+              </p>
+            </div>
+          </div>
+
+          <div class="flex flex-col sm:flex-row gap-2">
+            <FormInput
+              v-model="newSchemaName"
+              placeholder="schema_name"
+              class="flex-1"
+              :disabled="isCreatingSchema"
+              @keyup.enter="handleCreateSchema"
+            />
+            <BaseButton
+              variant="primary"
+              size="sm"
+              class="shrink-0 w-full sm:w-auto"
+              :disabled="!newSchemaName.trim() || isCreatingSchema"
+              @click="handleCreateSchema"
+            >
+              <PlusIcon class="w-4 h-4 mr-1.5" />
+              Create Schema
+            </BaseButton>
+          </div>
         </div>
       </div>
     </div>

@@ -371,6 +371,9 @@ function onMenuAction(payload: {
     case 'refresh-databases':
       if (t.kind === 'connection') actions.refreshDatabases(t.connectionId)
       break
+    case 'toggle-system-databases':
+      if (t.kind === 'connection') navigationStore.toggleShowSystemDatabasesFor(t.connectionId)
+      break
     case 'create-database':
       if (t.kind === 'connection') actions.createDatabase(t.connectionId)
       break
@@ -386,6 +389,10 @@ function onMenuAction(payload: {
     case 'refresh-metadata':
       if (t.kind === 'database' || t.kind === 'schema')
         actions.refreshDatabase(t.connectionId, t.database)
+      break
+    case 'toggle-system-objects':
+      if (t.kind === 'database')
+        navigationStore.toggleShowSystemObjectsFor(t.connectionId, t.database)
       break
     case 'create-schema':
       if (t.kind === 'database') actions.createSchema(t.connectionId, t.database)

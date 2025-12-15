@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
+import { useConnectionTreeLogic } from '@/composables/useConnectionTreeLogic'
 
 type ContextTarget =
   | { kind: 'connection'; connectionId: string }
@@ -42,6 +44,23 @@ const emit = defineEmits<{
 }>()
 
 const target = computed(() => props.target as ContextTarget)
+const navigationStore = useExplorerNavigationStore()
+const treeLogic = useConnectionTreeLogic()
+
+const showSystemDatabases = computed(() => {
+  if (!props.target || props.target.kind !== 'connection') return false
+  return navigationStore.showSystemDatabasesFor(props.target.connectionId)
+})
+
+const showSystemObjectsForDatabase = computed(() => {
+  if (!props.target || props.target.kind !== 'database') return false
+  return navigationStore.showSystemObjectsFor(props.target.connectionId, props.target.database)
+})
+
+const canToggleSystemObjectsForDatabase = computed(() => {
+  if (!props.target || props.target.kind !== 'database') return false
+  return treeLogic.hasSchemas(props.target.connectionId)
+})
 const isTableOrView = computed(
   () => !!props.target && (props.target.kind === 'table' || props.target.kind === 'view')
 )
@@ -114,6 +133,13 @@ function click(action: string, openInRightSplit?: boolean) {
             Refresh
           </button>
           <button
+            v-if="!props.isFileConnection"
+            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+            @click="click('toggle-system-databases')"
+          >
+            {{ showSystemDatabases ? 'Hide system databases' : 'Show system databases' }}
+          </button>
+          <button
             v-if="canCreateDatabase"
             class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
             @click="click('create-database')"
@@ -157,6 +183,13 @@ function click(action: string, openInRightSplit?: boolean) {
             Refresh metadata
           </button>
           <button
+            v-if="canToggleSystemObjectsForDatabase"
+            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+            @click="click('toggle-system-objects')"
+          >
+            {{ showSystemObjectsForDatabase ? 'Hide system objects' : 'Show system objects' }}
+          </button>
+          <button
             v-if="canCreateSchema"
             class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
             @click="click('create-schema')"
@@ -164,7 +197,7 @@ function click(action: string, openInRightSplit?: boolean) {
             New Schema
           </button>
           <div
-            v-if="canCreateSchema"
+            v-if="canCreateSchema || canToggleSystemObjectsForDatabase"
             class="my-1 border-t border-gray-100 dark:border-gray-700"
           ></div>
           <button

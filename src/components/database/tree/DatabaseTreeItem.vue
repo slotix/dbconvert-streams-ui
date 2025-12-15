@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, watch, inject } from 'vue'
 import type { ComputedRef } from 'vue'
-import { ChevronRightIcon, ChevronDownIcon, EyeIcon, EyeSlashIcon } from '@heroicons/vue/24/outline'
+import { ChevronRightIcon, ChevronDownIcon } from '@heroicons/vue/24/outline'
 import SchemaTreeItem from './SchemaTreeItem.vue'
 import ObjectList from './ObjectList.vue'
 import HighlightedText from '@/components/common/HighlightedText.vue'
@@ -55,10 +55,6 @@ const isSelected = computed(() => {
     !treeSelection.value.schema &&
     !treeSelection.value.name
   )
-})
-
-const showSystemObjects = computed(() => {
-  return navigationStore.showSystemObjectsFor(props.connectionId, props.database.name)
 })
 
 const emit = defineEmits<{
@@ -133,10 +129,6 @@ function handleDatabaseContextMenu(event: MouseEvent) {
   })
 }
 
-function toggleSystemObjects() {
-  navigationStore.toggleShowSystemObjectsFor(props.connectionId, props.database.name)
-}
-
 function handleSchemaToggle(schemaName: string) {
   emit('toggle-schema', schemaName)
 }
@@ -203,16 +195,6 @@ function handleFlatObjectContextMenu(payload: {
         :text="database.name"
         :query="searchQuery"
       />
-      <button
-        v-if="hasSchemas"
-        type="button"
-        class="shrink-0 p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 opacity-70 hover:opacity-100 group-hover:opacity-100"
-        :title="showSystemObjects ? 'Hide system objects' : 'Show system objects'"
-        @click.stop.prevent="toggleSystemObjects"
-      >
-        <EyeIcon v-if="showSystemObjects" class="h-4 w-4" />
-        <EyeSlashIcon v-else class="h-4 w-4" />
-      </button>
     </div>
 
     <div
