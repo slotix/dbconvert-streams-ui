@@ -100,7 +100,6 @@ export function useDatabaseExplorerController({
 
   const lacksExplorerContent = computed(() => {
     if (showConnectionDetails.value) return false
-    if (explorerState.showDiagram.value) return false
     if (explorerState.selectedDatabaseName.value) return false
     if (explorerState.selectedFileEntry.value) return false
     return !hasPaneContent.value
@@ -255,18 +254,27 @@ export function useDatabaseExplorerController({
 
     explorerState.clearPanelStates()
     explorerState.setDatabaseSelection({ database: payload.database })
-    explorerState.showDiagram.value = true
 
     // Set viewType to 'table-data' so showDatabaseOverview becomes false
-    // This allows the showDiagram condition to take effect in ExplorerContentArea
     viewState.setViewType('table-data')
 
-    // Update URL with diagram=true to prevent URL sync from resetting to database-overview
-    router.replace({
-      path: `/explorer/${payload.connectionId}`,
-      query: { db: payload.database, diagram: 'true' }
-    })
+    // Create a diagram tab
+    const tabId = `diagram:${payload.connectionId}:${payload.database}`
 
+    paneTabsStore.addTab(
+      'left',
+      {
+        id: tabId,
+        connectionId: payload.connectionId,
+        database: payload.database,
+        name: `Diagram: ${payload.database}`,
+        tabType: 'diagram',
+        objectKey: tabId
+      },
+      'pinned'
+    )
+
+    // Pre-load schema data for the diagram
     schemaStore.setConnectionId(payload.connectionId)
     schemaStore.setDatabaseName(payload.database)
     schemaStore.fetchSchema(false)
@@ -312,7 +320,6 @@ export function useDatabaseExplorerController({
     explorerState.clearPanelStates()
     explorerState.setDatabaseSelection({ database: payload.database })
     explorerState.activePane.value = 'left'
-    explorerState.showDiagram.value = false
 
     schemaStore.setConnectionId(payload.connectionId)
     schemaStore.setDatabaseName(payload.database)

@@ -243,7 +243,6 @@ export const useExplorerViewStateStore = defineStore('explorerViewState', () => 
   function _updateFromUrl(params: {
     connId: string
     details?: boolean
-    diagram?: boolean
     database?: string
     schema?: string
     type?: 'table' | 'view'
@@ -254,16 +253,6 @@ export const useExplorerViewStateStore = defineStore('explorerViewState', () => 
       selectConnection(params.connId)
     } else if (params.file) {
       selectFile(params.connId, params.file)
-    } else if (params.diagram && params.database) {
-      // Diagram view - set table-data viewType to let explorerState.showDiagram control the view
-      viewType.value = 'table-data'
-      connectionId.value = params.connId
-      databaseName.value = params.database
-      schemaName.value = null
-      objectType.value = null
-      objectName.value = null
-      filePath.value = null
-      saveState()
     } else if (params.database && params.type && params.name) {
       selectTable(params.connId, params.database, params.type, params.name, params.schema)
     } else if (params.database) {

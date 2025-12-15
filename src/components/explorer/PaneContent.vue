@@ -40,16 +40,26 @@
       :connection-type="activeTab.fileConnectionType || 'files'"
       :base-path="activeTab.basePath"
     />
+    <DiagramTab
+      v-else-if="activeTab.tabType === 'diagram'"
+      :key="`${paneId}-diagram-${activeTab.connectionId}-${activeTab.database}`"
+      :connection-id="activeTab.connectionId"
+      :database="activeTab.database!"
+    />
   </div>
   <EmptyStateMessage v-else-if="showEmptyState" />
 </template>
 
 <script setup lang="ts">
+import { defineAsyncComponent } from 'vue'
 import ObjectContainer from '@/components/common/ObjectContainer.vue'
 import { UnifiedConsoleTab } from '@/components/console'
 import EmptyStateMessage from './EmptyStateMessage.vue'
 import type { PaneId } from '@/stores/paneTabs'
 import type { PaneTab } from '@/stores/paneTabs'
+
+// Lazy load DiagramTab since it includes heavy D3.js
+const DiagramTab = defineAsyncComponent(() => import('@/components/database/DiagramTab.vue'))
 
 interface Props {
   paneId: PaneId

@@ -101,7 +101,8 @@ import {
   EyeIcon,
   DocumentIcon,
   XMarkIcon,
-  CommandLineIcon
+  CommandLineIcon,
+  ShareIcon
 } from '@heroicons/vue/20/solid'
 import { usePaneTabsStore, type PaneId, type PaneTab } from '@/stores/paneTabs'
 
@@ -140,6 +141,7 @@ function getObjectIcon(tab: PaneTab) {
   if (tab.tabType === 'file') return DocumentIcon
   if (tab.tabType === 'sql-console') return CommandLineIcon
   if (tab.tabType === 'file-console') return CommandLineIcon
+  if (tab.tabType === 'diagram') return ShareIcon
   return tab.type === 'view' ? EyeIcon : TableCellsIcon
 }
 
@@ -154,6 +156,10 @@ function getIconColor(tab: PaneTab): string {
   // SQL Console tabs
   if (tab.tabType === 'sql-console') {
     return 'text-emerald-500 dark:text-emerald-400'
+  }
+  // Diagram tabs
+  if (tab.tabType === 'diagram') {
+    return 'text-purple-500 dark:text-purple-400'
   }
   // File tabs
   if (tab.tabType === 'file') {

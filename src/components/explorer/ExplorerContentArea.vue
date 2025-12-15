@@ -27,12 +27,6 @@
       @create-schema="handleCreateSchema"
     />
   </div>
-  <div
-    v-else-if="showDiagram"
-    class="rounded-2xl bg-white dark:bg-gray-900 shadow-lg dark:shadow-gray-900/40"
-  >
-    <DiagramView :tables="tables" :views="views" :relationships="relationships" />
-  </div>
   <div v-else>
     <div class="min-h-[480px] min-w-0 overflow-x-hidden">
       <ExplorerSplitPane
@@ -115,29 +109,22 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineAsyncComponent } from 'vue'
+import { computed } from 'vue'
 import { useConnectionsStore } from '@/stores/connections'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { usePaneTabsStore, type PaneId } from '@/stores/paneTabs'
 import { useExplorerViewStateStore } from '@/stores/explorerViewState'
 import ConnectionDetailsPanel from '@/components/database/ConnectionDetailsPanel.vue'
 import DatabaseOverviewPanel from '@/components/database/DatabaseOverviewPanel.vue'
-// Lazy load DiagramView since it includes heavy D3.js and export libraries
-const DiagramView = defineAsyncComponent(() => import('@/components/database/DiagramView.vue'))
 import ExplorerSplitPane from './ExplorerSplitPane.vue'
 import type { SplitPaneResizeController } from '@/composables/useSplitPaneResize'
 import PaneNavigationTabs from './PaneNavigationTabs.vue'
 import PaneBreadcrumb from './PaneBreadcrumb.vue'
 import PaneContent from './PaneContent.vue'
 import type { FileSystemEntry } from '@/api/fileSystem'
-import type { Table, Relationship } from '@/types/schema'
 
 interface Props {
   connectionId: string
-  showDiagram?: boolean
-  tables?: Table[]
-  views?: Table[]
-  relationships?: Relationship[]
   fileEntries?: FileSystemEntry[]
   activePane: 'left' | 'right'
   splitPaneResize?: SplitPaneResizeController
@@ -145,10 +132,6 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  showDiagram: false,
-  tables: () => [],
-  views: () => [],
-  relationships: () => [],
   fileEntries: () => [],
   activePane: 'left'
 })

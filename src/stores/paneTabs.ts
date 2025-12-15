@@ -18,7 +18,7 @@ export type PaneTab = {
   id: string
   connectionId: string
   name: string
-  tabType: 'database' | 'file' | 'sql-console' | 'file-console'
+  tabType: 'database' | 'file' | 'sql-console' | 'file-console' | 'diagram'
   pinned: boolean
   objectKey?: string
 
@@ -81,6 +81,9 @@ function buildObjectKey(paneId: PaneId, tab: PaneTab): string | null {
   if (tab.tabType === 'sql-console') {
     const dbPart = tab.database || '*'
     return `${paneId}:sql-${tab.connectionId}-${dbPart}`
+  }
+  if (tab.tabType === 'diagram' && tab.database) {
+    return `${paneId}:diagram-${tab.connectionId}-${tab.database}`
   }
   return null
 }
@@ -244,6 +247,9 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
     if (tab.tabType === 'sql-console') {
       const dbPart = tab.database || '*'
       return `sql:${tab.connectionId}:${dbPart}`
+    }
+    if (tab.tabType === 'diagram') {
+      return `diagram:${tab.connectionId}:${tab.database || ''}`
     }
     return `db:${tab.connectionId}:${tab.database || ''}:${tab.schema || ''}:${tab.name || ''}:${tab.type || ''}`
   }

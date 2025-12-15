@@ -37,9 +37,6 @@ export function useExplorerState() {
   const selectedFileEntry = ref<FileSystemEntry | null>(null)
   const selectedFileMetadata = ref<FileMetadata | null>(null)
 
-  // Panel states
-  const showDiagram = ref(false)
-
   // Active pane tracking
   const activePane = ref<'left' | 'right'>('left')
 
@@ -97,8 +94,10 @@ export function useExplorerState() {
     selectedFileMetadata.value = null
   }
 
+  // No-op - kept for backward compatibility with callers
+  // Previously cleared showDiagram state, but diagram is now handled via tabs
   function clearPanelStates() {
-    showDiagram.value = false
+    // No-op
   }
 
   function setDatabaseSelection(payload: {
@@ -131,7 +130,6 @@ export function useExplorerState() {
     selectedMeta,
     selectedFileEntry,
     selectedFileMetadata,
-    showDiagram,
     activePane,
 
     // Computed properties
