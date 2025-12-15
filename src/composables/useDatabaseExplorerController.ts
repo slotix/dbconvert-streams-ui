@@ -257,6 +257,16 @@ export function useDatabaseExplorerController({
     explorerState.setDatabaseSelection({ database: payload.database })
     explorerState.showDiagram.value = true
 
+    // Set viewType to 'table-data' so showDatabaseOverview becomes false
+    // This allows the showDiagram condition to take effect in ExplorerContentArea
+    viewState.setViewType('table-data')
+
+    // Update URL with diagram=true to prevent URL sync from resetting to database-overview
+    router.replace({
+      path: `/explorer/${payload.connectionId}`,
+      query: { db: payload.database, diagram: 'true' }
+    })
+
     schemaStore.setConnectionId(payload.connectionId)
     schemaStore.setDatabaseName(payload.database)
     schemaStore.fetchSchema(false)

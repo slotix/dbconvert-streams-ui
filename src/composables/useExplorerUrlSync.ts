@@ -30,6 +30,7 @@ export function useExplorerUrlSync() {
     viewState._updateFromUrl({
       connId,
       details: query.details === 'true',
+      diagram: query.diagram === 'true',
       database: query.db as string | undefined,
       schema: query.schema as string | undefined,
       type: query.type as 'table' | 'view' | undefined,
