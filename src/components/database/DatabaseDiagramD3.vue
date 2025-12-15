@@ -453,17 +453,47 @@ function createLinks(
 
 // Drag handlers
 function dragstarted(event: D3DragEvent<SVGGElement, TableNode, TableNode>) {
+  event.sourceEvent?.stopPropagation?.()
+  svg?.interrupt()
+  if (event.sourceEvent && 'pointerId' in event.sourceEvent) {
+    const target = (event.sourceEvent as PointerEvent).target as Element | null
+    if (target?.setPointerCapture) {
+      try {
+        target.setPointerCapture((event.sourceEvent as PointerEvent).pointerId)
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+
   if (!event.active) forcesComposable.restartSimulation(0.1)
   event.subject.fx = event.subject.x
   event.subject.fy = event.subject.y
 }
 
 function dragged(event: D3DragEvent<SVGGElement, TableNode, TableNode>) {
+  event.sourceEvent?.stopPropagation?.()
   event.subject.fx = event.x
   event.subject.fy = event.y
+  event.subject.x = event.x
+  event.subject.y = event.y
+  applyPositions()
 }
 
 function dragended(event: D3DragEvent<SVGGElement, TableNode, TableNode>) {
+  event.sourceEvent?.stopPropagation?.()
+  if (event.sourceEvent && 'pointerId' in event.sourceEvent) {
+    const pointerEvent = event.sourceEvent as PointerEvent
+    const target = pointerEvent.target as Element | null
+    if (target?.releasePointerCapture) {
+      try {
+        target.releasePointerCapture(pointerEvent.pointerId)
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+
   if (!event.active) forcesComposable.getSimulation()?.alphaTarget(0)
   event.subject.fx = event.x
   event.subject.fy = event.y
@@ -932,6 +962,16 @@ function createVisualization(reason: 'init' | 'resize' | 'data' | 'theme' = 'dat
 
   // Initialize zoom
   const zoomBehavior = zoomComposable.initializeZoom(svg)
+  const prevZoomFilter = zoomBehavior.filter()
+  zoomBehavior.filter(function (this: SVGSVGElement, event: any, datum: unknown) {
+    if (!prevZoomFilter.call(this, event, datum as any)) return false
+    const type = event?.type
+    if (type === 'mousedown' || type === 'pointerdown' || type === 'touchstart') {
+      const target = (event?.target as Element | null) ?? null
+      if (target?.closest?.('g.table-node, g.view-node')) return false
+    }
+    return true
+  })
   zoomComposable.setInitialTransform()
 
   if (preservedZoomTransform && reason !== 'init') {
