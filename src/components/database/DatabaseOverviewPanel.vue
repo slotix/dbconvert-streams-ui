@@ -5,6 +5,7 @@ import { useConnectionsStore } from '@/stores/connections'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { useDatabaseCapabilities } from '@/composables/useDatabaseCapabilities'
 import { formatDataSize } from '@/utils/formats'
+import type { ShowDiagramPayload } from '@/types/diagram'
 import BaseButton from '@/components/base/BaseButton.vue'
 import FormInput from '@/components/base/FormInput.vue'
 import {
@@ -25,7 +26,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'show-diagram', payload: { connectionId: string; database: string }): void
+  (e: 'show-diagram', payload: ShowDiagramPayload): void
   (e: 'open-table', payload: { name: string }): void
   (e: 'open-sql-console', payload: { connectionId: string; database: string }): void
   (e: 'create-schema', schemaName: string): void

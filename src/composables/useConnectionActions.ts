@@ -8,6 +8,7 @@ import connectionsApi from '@/api/connections'
 import { createS3Bucket } from '@/api/files'
 import type { FileSystemEntry } from '@/api/fileSystem'
 import type { SQLTableMeta, SQLViewMeta } from '@/types/metadata'
+import type { DiagramFocusTarget, ShowDiagramPayload } from '@/types/diagram'
 
 type DefaultTab = 'structure' | 'data'
 type ObjectType = 'table' | 'view'
@@ -57,7 +58,7 @@ function findFileEntryByPath(
 export function useConnectionActions(emits?: {
   open?: (payload: OpenObjectParams) => void
   openFile?: (payload: OpenFileParams) => void
-  showDiagram?: (payload: { connectionId: string; database: string }) => void
+  showDiagram?: (payload: ShowDiagramPayload) => void
 }) {
   const router = useRouter()
   const toast = useToast()
@@ -288,9 +289,9 @@ export function useConnectionActions(emits?: {
     }
   }
 
-  function showDiagram(connectionId: string, database: string) {
+  function showDiagram(connectionId: string, database: string, focus?: DiagramFocusTarget) {
     if (emits?.showDiagram) {
-      emits.showDiagram({ connectionId, database })
+      emits.showDiagram({ connectionId, database, focus })
     }
   }
 

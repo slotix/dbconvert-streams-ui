@@ -6,7 +6,7 @@ import { select } from 'd3-selection'
 import type { Selection } from 'd3-selection'
 import type { ForceLink } from 'd3-force'
 import 'd3-transition'
-import { zoomTransform } from 'd3-zoom'
+import { zoomIdentity, zoomTransform } from 'd3-zoom'
 import type { ZoomTransform } from 'd3-zoom'
 import type { Relationship, Table } from '@/types/schema'
 import type { TableNode, TableLink } from '@/types/diagram'
@@ -30,13 +30,19 @@ const props = withDefaults(
     tables: Table[]
     relations: Relationship[]
     views: Table[]
+    focusTable?: string | null
   }>(),
   {
     tables: () => [],
     relations: () => [],
-    views: () => []
+    views: () => [],
+    focusTable: null
   }
 )
+
+const emit = defineEmits<{
+  (e: 'focus-consumed'): void
+}>()
 
 // Template refs
 const svgContainer = ref<HTMLElement>()
@@ -63,6 +69,7 @@ const nodePositionCache = new Map<
 >()
 let resizeTimer: ReturnType<typeof setTimeout> | null = null
 let lastSize: { width: number; height: number } | null = null
+let pendingFocusTable: string | null = null
 
 // Theme store
 const themeStore = useThemeStore()
@@ -581,6 +588,103 @@ function updateHighlighting() {
   }
 }
 
+function resolveFocusName(focusTable: string): string | null {
+  const direct = currentNodes.find((n) => n.name === focusTable || n.id === focusTable)
+  if (direct) return direct.name
+
+  const dotIndex = focusTable.lastIndexOf('.')
+  if (dotIndex > 0) {
+    const schemaName = focusTable.slice(0, dotIndex)
+    const suffix = focusTable.slice(dotIndex + 1)
+    const qualified = `${schemaName}.${suffix}`
+    const qualifiedNode = currentNodes.find((n) => n.name === qualified || n.id === qualified)
+    if (qualifiedNode) return qualifiedNode.name
+
+    const schemaMatch = currentNodes.find((n) => n.schema === schemaName && n.name === suffix)
+    if (schemaMatch) return schemaMatch.name
+
+    const matches = currentNodes.filter((n) => n.name === suffix)
+    if (matches.length === 1) return matches[0].name
+  }
+
+  return null
+}
+
+function computeNodeBoundsByName(tableName: string): {
+  minX: number
+  minY: number
+  maxX: number
+  maxY: number
+} | null {
+  const nodeWidth = 200
+  const halfWidth = nodeWidth / 2
+  const n = currentNodes.find((node) => node.name === tableName)
+  if (!n || typeof n.x !== 'number' || typeof n.y !== 'number') return null
+
+  const height = nodeHeightById.get(n.id) ?? 30
+  return {
+    minX: n.x - halfWidth,
+    maxX: n.x + halfWidth,
+    minY: n.y - height / 2,
+    maxY: n.y + height / 2
+  }
+}
+
+function focusOnTable(tableName: string): boolean {
+  if (!svgContainer.value || !svg) return false
+
+  const resolvedName = resolveFocusName(tableName)
+  if (!resolvedName) return false
+
+  highlightingComposable.selectedTable.value = resolvedName
+  updateHighlighting()
+
+  const bounds = computeNodeBoundsByName(resolvedName)
+  if (!bounds) return false
+
+  const width = svgContainer.value.clientWidth || 1200
+  const height = svgContainer.value.clientHeight || 1200
+  const padding = 260
+  const duration = 550
+
+  const paddedWidth = Math.max(1, width - padding * 2)
+  const paddedHeight = Math.max(1, height - padding * 2)
+  const boundsWidth = Math.max(1, bounds.maxX - bounds.minX)
+  const boundsHeight = Math.max(1, bounds.maxY - bounds.minY)
+
+  const focusMaxZoom = 1.2
+  const scale = Math.max(
+    zoomComposable.minZoom,
+    Math.min(
+      Math.min(zoomComposable.maxZoom, focusMaxZoom),
+      Math.min(paddedWidth / boundsWidth, paddedHeight / boundsHeight)
+    )
+  )
+
+  const cx = (bounds.minX + bounds.maxX) / 2
+  const cy = (bounds.minY + bounds.maxY) / 2
+  const transform = zoomIdentity
+    .translate(width / 2 - scale * cx, height / 2 - scale * cy)
+    .scale(scale)
+
+  const zoomBehavior = zoomComposable.getZoomBehavior()
+  if (!zoomBehavior) return false
+
+  svg.transition().duration(duration).call(zoomBehavior.transform, transform)
+  return true
+}
+
+function flushPendingFocus() {
+  if (!pendingFocusTable) return
+  if (!currentNodes.length) return
+
+  const ok = focusOnTable(pendingFocusTable)
+  if (!ok) return
+
+  pendingFocusTable = null
+  emit('focus-consumed')
+}
+
 function applyPositions() {
   if (!linkPaths || !node) return
 
@@ -973,6 +1077,7 @@ function createVisualization(reason: 'init' | 'resize' | 'data' | 'theme' = 'dat
   }
 
   applyTheme()
+  flushPendingFocus()
 }
 
 function updateSize() {
@@ -1017,6 +1122,16 @@ watch(
   [() => props.tables, () => props.relations, () => props.views],
   () => createVisualization('data'),
   { deep: true }
+)
+
+watch(
+  () => props.focusTable,
+  (focusTable) => {
+    if (!focusTable) return
+    pendingFocusTable = focusTable
+    flushPendingFocus()
+  },
+  { immediate: true }
 )
 
 watch(

@@ -39,3 +39,15 @@ export interface RelatedField {
   relatedTableName: string
   relatedFieldName: string
 }
+
+export interface DiagramFocusTarget {
+  type: 'table' | 'view'
+  name: string
+  schema?: string
+}
+
+export interface ShowDiagramPayload {
+  connectionId: string
+  database: string
+  focus?: DiagramFocusTarget
+}

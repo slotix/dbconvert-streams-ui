@@ -4,6 +4,7 @@ import connections from '@/api/connections'
 import type { FileSystemEntry } from '@/api/fileSystem'
 import { getConnectionHost, getConnectionPort, getConnectionDatabase } from '@/utils/specBuilder'
 import type { SQLTableMeta, SQLViewMeta } from '@/types/metadata'
+import type { ShowDiagramPayload } from '@/types/diagram'
 import type { PaneId, PaneTab, PaneState } from '@/stores/paneTabs'
 import { useExplorerViewStateStore } from '@/stores/explorerViewState'
 import type SearchInput from '@/components/common/SearchInput.vue'
@@ -249,7 +250,7 @@ export function useDatabaseExplorerController({
       })
   }
 
-  function handleShowDiagram(payload: { connectionId: string; database: string }) {
+  function handleShowDiagram(payload: ShowDiagramPayload) {
     navigationStore.setActiveConnectionId(payload.connectionId)
 
     explorerState.clearPanelStates()
@@ -277,6 +278,12 @@ export function useDatabaseExplorerController({
     // Pre-load schema data for the diagram
     schemaStore.setConnectionId(payload.connectionId)
     schemaStore.setDatabaseName(payload.database)
+    if (payload.focus) {
+      const focusName = payload.focus.schema
+        ? `${payload.focus.schema}.${payload.focus.name}`
+        : payload.focus.name
+      schemaStore.setSelectedTable(focusName)
+    }
     schemaStore.fetchSchema(false)
   }
 

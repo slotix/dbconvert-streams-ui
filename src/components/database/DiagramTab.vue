@@ -75,6 +75,13 @@ const hasData = computed(() => {
     </div>
 
     <!-- Diagram -->
-    <DatabaseDiagramD3 v-else :tables="tables" :relations="relationships" :views="views" />
+    <DatabaseDiagramD3
+      v-else
+      :tables="tables"
+      :relations="relationships"
+      :views="views"
+      :focus-table="schemaStore.selectedTable"
+      @focus-consumed="schemaStore.setSelectedTable(null)"
+    />
   </div>
 </template>

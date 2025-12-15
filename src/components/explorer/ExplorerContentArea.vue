@@ -122,6 +122,7 @@ import PaneNavigationTabs from './PaneNavigationTabs.vue'
 import PaneBreadcrumb from './PaneBreadcrumb.vue'
 import PaneContent from './PaneContent.vue'
 import type { FileSystemEntry } from '@/api/fileSystem'
+import type { ShowDiagramPayload } from '@/types/diagram'
 
 interface Props {
   connectionId: string
@@ -145,7 +146,7 @@ const emit = defineEmits<{
   'create-database': [databaseName: string]
   'create-schema': [schemaName: string]
   'create-bucket': [payload: { bucket: string; region?: string }]
-  'show-diagram': [payload: { connectionId: string; database: string }]
+  'show-diagram': [payload: ShowDiagramPayload]
   'set-active-pane': [pane: 'left' | 'right']
   'left-tab-change': [tab: 'data' | 'structure']
   'right-tab-change': [tab: 'data' | 'structure']

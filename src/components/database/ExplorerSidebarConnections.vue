@@ -11,6 +11,7 @@ import { useConnectionActions } from '@/composables/useConnectionActions'
 import { useDatabaseCapabilities } from '@/composables/useDatabaseCapabilities'
 import { useTreeSearch } from '@/composables/useTreeSearch'
 import type { Connection } from '@/types/connections'
+import type { DiagramFocusTarget, ShowDiagramPayload } from '@/types/diagram'
 import type { SQLTableMeta, SQLViewMeta } from '@/types/metadata'
 import type { FileSystemEntry } from '@/api/fileSystem'
 import ExplorerContextMenu from './ExplorerContextMenu.vue'
@@ -77,7 +78,7 @@ const emit = defineEmits<{
     }
   ): void
   (e: 'expanded-connection', payload: { connectionId: string }): void
-  (e: 'show-diagram', payload: { connectionId: string; database: string }): void
+  (e: 'show-diagram', payload: ShowDiagramPayload): void
   (e: 'select-connection', payload: { connectionId: string }): void
   (e: 'select-database', payload: { connectionId: string; database: string }): void
   (e: 'select-file', payload: { connectionId: string; path: string; entry?: FileSystemEntry }): void
@@ -399,6 +400,10 @@ function onMenuAction(payload: {
       break
     case 'show-diagram':
       if (t.kind === 'database') actions.showDiagram(t.connectionId, t.database)
+      else if (t.kind === 'table' || t.kind === 'view') {
+        const focus: DiagramFocusTarget = { type: t.kind, name: t.name, schema: t.schema }
+        actions.showDiagram(t.connectionId, t.database, focus)
+      }
       break
     case 'copy-database-name':
       if (t.kind === 'database') actions.copyToClipboard(t.database, 'Database name copied')
