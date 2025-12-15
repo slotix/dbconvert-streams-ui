@@ -1,14 +1,15 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, onBeforeUnmount, computed } from 'vue'
 import * as d3 from 'd3'
-import type { Table } from '@/types/schema'
+import type { Relationship, Table } from '@/types/schema'
 import type { TableNode, TableLink } from '@/types/diagram'
 import { useThemeStore } from '@/stores/theme'
 import { BRAND_COLORS, getDiagramColors, createMarkerDefinitions } from '@/utils/d3DiagramConfig'
 import {
   buildDiagramLinks,
-  calculateConnectionPoint,
-  formatColumnType
+  buildRoundedOrthogonalPath,
+  formatColumnType,
+  getColumnAnchorY
 } from '@/utils/databaseDiagramD3'
 import { useDiagramZoom } from '@/composables/useDiagramZoom'
 import { useDiagramForces } from '@/composables/useDiagramForces'
@@ -20,7 +21,7 @@ import DiagramLegend from './DiagramLegend.vue'
 const props = withDefaults(
   defineProps<{
     tables: Table[]
-    relations: { sourceTable: string; targetTable: string; sourceColumn: string }[]
+    relations: Relationship[]
     views: Table[]
   }>(),
   {
@@ -38,7 +39,7 @@ let svg: d3.Selection<SVGSVGElement, unknown, null, undefined> | null = null
 let zoomGroup: d3.Selection<SVGGElement, unknown, null, undefined> | null = null
 let node: d3.Selection<SVGGElement, TableNode, SVGGElement, unknown> | null = null
 let linkGroup: d3.Selection<SVGGElement, TableLink, SVGGElement, unknown> | null = null
-let linkLines: d3.Selection<SVGLineElement, TableLink, SVGGElement, unknown> | null = null
+let linkPaths: d3.Selection<SVGPathElement, TableLink, SVGGElement, unknown> | null = null
 let gridLayer: d3.Selection<SVGGElement, unknown, null, undefined> | null = null
 let links: TableLink[] = []
 let currentNodes: TableNode[] = []
@@ -389,8 +390,9 @@ function createLinks(
     .attr('class', 'relationship')
 
   linkGroup
-    .append('line')
+    .append('path')
     .attr('class', 'relationship-line')
+    .attr('fill', 'none')
     .attr('stroke', (d: TableLink) => {
       if (d.isViewDependency) return BRAND_COLORS.gray
       if (d.isJunctionRelation) return BRAND_COLORS.secondary
@@ -398,7 +400,7 @@ function createLinks(
     })
     .attr('stroke-width', '1.5')
     .attr('stroke-dasharray', (d: TableLink) => (d.isViewDependency ? '3,3' : 'none'))
-    .attr('marker-start', '')
+    .attr('marker-start', (d: TableLink) => (d.sourceMarker ? `url(#${d.sourceMarker})` : ''))
     .attr('marker-end', (d: TableLink) => (d.targetMarker ? `url(#${d.targetMarker})` : ''))
 }
 
@@ -519,8 +521,8 @@ function updateHighlighting() {
   })
 
   // Update link highlighting
-  if (linkLines) {
-    linkLines
+  if (linkPaths) {
+    linkPaths
       .transition()
       .duration(300)
       .attr('stroke-width', function (d: TableLink) {
@@ -540,67 +542,68 @@ function updateHighlighting() {
 }
 
 function applyPositions() {
-  if (!linkLines || !node) return
+  if (!linkPaths || !node) return
 
-  linkLines
-    .attr('x1', (d: TableLink) => {
-      const source = d.source as TableNode
-      const target = d.target as TableNode
-      const sourceHeight = nodeHeightById.get(source.id) ?? 30
-      const [offsetX] = calculateConnectionPoint(
-        source.x || 0,
-        source.y || 0,
-        target.x || 0,
-        target.y || 0,
-        200,
-        sourceHeight
-      )
-      return (source.x || 0) + offsetX
+  const nodeWidth = 200
+  const halfWidth = nodeWidth / 2
+  const stub = 28
+  const cornerRadius = 10
+  const parallelSpacing = 14
+
+  linkPaths.attr('d', (d: TableLink) => {
+    const source = d.source as TableNode
+    const target = d.target as TableNode
+
+    const sourceX = source.x || 0
+    const targetX = target.x || 0
+    const sourceHeight = nodeHeightById.get(source.id) ?? 30
+    const targetHeight = nodeHeightById.get(target.id) ?? 30
+
+    const sourceTable = tableByName.get(source.name) || viewByName.get(source.name)
+    const targetTable = tableByName.get(target.name) || viewByName.get(target.name)
+
+    const startY = getColumnAnchorY({
+      table: sourceTable,
+      columnName: d.sourceColumn,
+      nodeCenterY: source.y || 0,
+      nodeHeight: sourceHeight,
+      headerHeight: 30,
+      rowHeight: 20
     })
-    .attr('y1', (d: TableLink) => {
-      const source = d.source as TableNode
-      const target = d.target as TableNode
-      const sourceHeight = nodeHeightById.get(source.id) ?? 30
-      const [, offsetY] = calculateConnectionPoint(
-        source.x || 0,
-        source.y || 0,
-        target.x || 0,
-        target.y || 0,
-        200,
-        sourceHeight
-      )
-      return (source.y || 0) + offsetY
+
+    const endY = getColumnAnchorY({
+      table: targetTable,
+      columnName: d.targetColumn,
+      nodeCenterY: target.y || 0,
+      nodeHeight: targetHeight,
+      headerHeight: 30,
+      rowHeight: 20
     })
-    .attr('x2', (d: TableLink) => {
-      const source = d.source as TableNode
-      const target = d.target as TableNode
-      const targetHeight = nodeHeightById.get(target.id) ?? 30
-      const [offsetX] = calculateConnectionPoint(
-        target.x || 0,
-        target.y || 0,
-        source.x || 0,
-        source.y || 0,
-        200,
-        targetHeight
-      )
-      return (target.x || 0) + offsetX
-    })
-    .attr('y2', (d: TableLink) => {
-      const source = d.source as TableNode
-      const target = d.target as TableNode
-      const targetHeight = nodeHeightById.get(target.id) ?? 30
-      const [, offsetY] = calculateConnectionPoint(
-        target.x || 0,
-        target.y || 0,
-        source.x || 0,
-        source.y || 0,
-        200,
-        targetHeight
-      )
-      return (target.y || 0) + offsetY
-    })
-    .attr('marker-start', '')
-    .attr('marker-end', (d: TableLink) => (d.targetMarker ? `url(#${d.targetMarker})` : ''))
+
+    const direction = targetX >= sourceX ? 1 : -1
+
+    const startEdge = { x: sourceX + direction * halfWidth, y: startY }
+    const startOut = { x: startEdge.x + direction * stub, y: startEdge.y }
+    const endEdge = { x: targetX - direction * halfWidth, y: endY }
+    const endOut = { x: endEdge.x - direction * stub, y: endEdge.y }
+
+    const index = d.parallelIndex ?? 0
+    const count = d.parallelCount ?? 1
+    const offset = (index - (count - 1) / 2) * parallelSpacing
+
+    const midX = (startOut.x + endOut.x) / 2 + offset
+
+    const points = [
+      startEdge,
+      startOut,
+      { x: midX, y: startOut.y },
+      { x: midX, y: endOut.y },
+      endOut,
+      endEdge
+    ]
+
+    return buildRoundedOrthogonalPath(points, cornerRadius)
+  })
 
   node.attr('transform', (d: TableNode) => {
     const height = nodeHeightById.get(d.id) ?? 30
@@ -749,7 +752,7 @@ function createVisualization(reason: 'init' | 'resize' | 'data' | 'theme' = 'dat
 
   // Create links first (so they render behind nodes)
   createLinks(zoomContent, links)
-  linkLines = linkGroup ? linkGroup.selectAll<SVGLineElement, TableLink>('line') : null
+  linkPaths = linkGroup ? linkGroup.selectAll<SVGPathElement, TableLink>('path') : null
 
   // Create nodes
   createNodes(zoomContent, nodes)

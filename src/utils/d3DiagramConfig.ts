@@ -186,7 +186,7 @@ export function createMarkerDefinitions(
         .attr('refY', config.refY)
         .attr('markerWidth', config.markerWidth)
         .attr('markerHeight', config.markerHeight)
-        .attr('orient', 'auto')
+        .attr('orient', 'auto-start-reverse')
 
       const path = marker
         .append('path')

@@ -24,6 +24,10 @@ export interface TableLink extends d3.SimulationLinkDatum<TableNode> {
   isJunctionRelation?: boolean
   sourceMarker?: string
   targetMarker?: string
+  sourceColumn?: string
+  targetColumn?: string
+  parallelIndex?: number
+  parallelCount?: number
 }
 
 /**
