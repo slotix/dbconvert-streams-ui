@@ -1039,23 +1039,26 @@ const isLoadingDatabases = computed(() => {
           </div>
         </div>
 
-        <!-- Database Console Card (for database connections only) -->
+        <!-- Database Console Card (for database connections only) - Utility Block -->
         <div
           v-if="!isFileConnection"
-          class="bg-slate-50 dark:bg-gray-800/50 rounded-xl p-4 ring-1 ring-slate-200/70 dark:ring-gray-700"
+          class="bg-linear-to-br from-indigo-50 to-slate-50 dark:from-indigo-950/30 dark:to-gray-800/50 rounded-xl p-4 ring-1 ring-indigo-200/70 dark:ring-indigo-800/50"
         >
-          <div class="flex items-center gap-2 mb-3">
-            <div class="p-1.5 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
-              <CommandLineIcon class="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-            </div>
-            <span class="text-sm font-semibold text-gray-700 dark:text-gray-300"
-              >Database Console</span
+          <div class="flex items-start gap-4 mb-4">
+            <div
+              class="shrink-0 p-3 bg-indigo-100 dark:bg-indigo-900/50 rounded-xl ring-1 ring-indigo-200 dark:ring-indigo-700/50"
             >
+              <CommandLineIcon class="h-7 w-7 text-indigo-600 dark:text-indigo-400" />
+            </div>
+            <div class="flex-1 min-w-0 pt-1">
+              <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                Database Console
+              </h4>
+              <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                Execute SQL commands directly on this server (CREATE DATABASE, DROP, etc.)
+              </p>
+            </div>
           </div>
-
-          <p class="text-xs text-gray-600 dark:text-gray-400 mb-3">
-            Execute SQL commands directly on this server (CREATE DATABASE, DROP, etc.)
-          </p>
 
           <BaseButton
             variant="secondary"
@@ -1068,35 +1071,39 @@ const isLoadingDatabases = computed(() => {
           </BaseButton>
         </div>
 
-        <!-- Create Database Card -->
+        <!-- Create Database Card - Utility Block -->
         <div
           v-if="canCreateDatabase"
-          class="bg-slate-50 dark:bg-gray-800/50 rounded-xl p-4 ring-1 ring-slate-200/70 dark:ring-gray-700"
+          class="bg-linear-to-br from-emerald-50 to-slate-50 dark:from-emerald-950/30 dark:to-gray-800/50 rounded-xl p-4 ring-1 ring-emerald-200/70 dark:ring-emerald-800/50"
         >
-          <div class="flex items-center gap-2 mb-3">
-            <div class="p-1.5 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
-              <CircleStackIcon class="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-            </div>
-            <span class="text-sm font-semibold text-gray-700 dark:text-gray-300"
-              >Create Database</span
+          <div class="flex items-start gap-4 mb-4">
+            <div
+              class="shrink-0 p-3 bg-emerald-100 dark:bg-emerald-900/50 rounded-xl ring-1 ring-emerald-200 dark:ring-emerald-700/50"
             >
+              <CircleStackIcon class="h-7 w-7 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <div class="flex-1 min-w-0 pt-1">
+              <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                Create Database
+              </h4>
+              <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                Create a new database on this server
+              </p>
+            </div>
           </div>
 
-          <p class="text-xs text-gray-600 dark:text-gray-400 mb-3">
-            Create a new database on this server
-          </p>
-
-          <div class="space-y-2">
+          <div class="flex gap-2">
             <FormInput
               v-model="newDatabaseName"
               placeholder="database_name"
+              class="flex-1"
               :disabled="isCreatingDatabase"
               @keyup.enter="handleCreateDatabase"
             />
             <BaseButton
               variant="primary"
               size="sm"
-              class="w-full justify-center"
+              class="shrink-0"
               :disabled="!newDatabaseName.trim() || isCreatingDatabase"
               @click="handleCreateDatabase"
             >
@@ -1108,16 +1115,21 @@ const isLoadingDatabases = computed(() => {
           <!-- Schema creation for non-PostgreSQL databases -->
           <div
             v-if="showSchemaCreationAtConnectionLevel"
-            class="mt-4 pt-4 border-t border-slate-200 dark:border-gray-700"
+            class="mt-4 pt-4 border-t border-emerald-200 dark:border-emerald-800/50"
           >
-            <div class="flex items-center gap-2 mb-2">
-              <span class="text-sm font-semibold text-gray-700 dark:text-gray-300"
-                >Create Schema</span
-              >
+            <div class="flex items-start gap-4 mb-3">
+              <div class="shrink-0 p-2 bg-emerald-100 dark:bg-emerald-900/50 rounded-lg">
+                <PlusIcon class="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <div class="flex-1 min-w-0">
+                <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                  Create Schema
+                </h4>
+                <p class="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+                  In database: <span class="font-medium">{{ defaultDatabase }}</span>
+                </p>
+              </div>
             </div>
-            <p class="text-xs text-gray-600 dark:text-gray-400 mb-2">
-              In database: <span class="font-medium">{{ defaultDatabase }}</span>
-            </p>
             <div class="space-y-2">
               <FormInput
                 v-model="newSchemaName"

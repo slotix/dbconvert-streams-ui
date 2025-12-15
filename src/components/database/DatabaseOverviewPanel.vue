@@ -16,7 +16,8 @@ import {
   CommandLineIcon,
   PlusIcon,
   ChevronDownIcon,
-  ServerIcon
+  ServerIcon,
+  ShareIcon
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps<{
@@ -271,32 +272,7 @@ async function handleCreateSchema() {
     <div class="flex items-center justify-between mb-4">
       <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">Database Overview</h3>
       <div class="flex items-center gap-2">
-        <BaseButton
-          variant="primary"
-          size="sm"
-          @click="
-            emit('open-sql-console', {
-              connectionId: props.connectionId,
-              database: props.database
-            })
-          "
-        >
-          <CommandLineIcon class="w-4 h-4 mr-1.5" />
-          SQL Console
-        </BaseButton>
         <BaseButton variant="secondary" size="sm" @click="refresh()"> Refresh </BaseButton>
-        <BaseButton
-          variant="secondary"
-          size="sm"
-          @click="
-            emit('show-diagram', {
-              connectionId: props.connectionId,
-              database: props.database
-            })
-          "
-        >
-          Show diagram
-        </BaseButton>
 
         <!-- New Schema Dropdown -->
         <div v-if="canCreateSchema" class="relative">
@@ -357,21 +333,6 @@ async function handleCreateSchema() {
         </div>
 
         <div class="space-y-3">
-          <!-- Engine/Version Badge -->
-          <div class="flex items-center gap-2">
-            <span
-              class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize"
-              :class="
-                overview.engine === 'postgres'
-                  ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
-                  : 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300'
-              "
-            >
-              {{ overview.engine === 'postgres' ? 'PostgreSQL' : 'MySQL' }}
-            </span>
-            <span class="text-xs text-gray-500 dark:text-gray-400">{{ overview.version }}</span>
-          </div>
-
           <!-- Stats Grid -->
           <div class="grid grid-cols-2 gap-2">
             <div v-if="overview.encoding">
@@ -762,6 +723,74 @@ async function handleCreateSchema() {
             </div>
           </li>
         </ul>
+      </div>
+
+      <!-- Utility Blocks Row -->
+      <div class="md:col-span-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- SQL Console - Utility Block -->
+        <div
+          class="bg-linear-to-br from-indigo-50 to-slate-50 dark:from-indigo-950/30 dark:to-gray-800/50 rounded-xl p-4 ring-1 ring-indigo-200/70 dark:ring-indigo-800/50"
+        >
+          <div class="flex items-start gap-4 mb-4">
+            <div
+              class="shrink-0 p-3 bg-indigo-100 dark:bg-indigo-900/50 rounded-xl ring-1 ring-indigo-200 dark:ring-indigo-700/50"
+            >
+              <CommandLineIcon class="h-7 w-7 text-indigo-600 dark:text-indigo-400" />
+            </div>
+            <div class="flex-1 min-w-0 pt-1">
+              <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200">SQL Console</h4>
+              <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                Execute SQL queries on this database
+              </p>
+            </div>
+          </div>
+
+          <BaseButton
+            variant="secondary"
+            size="sm"
+            class="w-full justify-center"
+            @click="
+              emit('open-sql-console', {
+                connectionId: props.connectionId,
+                database: props.database
+              })
+            "
+          >
+            <CommandLineIcon class="w-4 h-4 mr-1.5" />
+            Open SQL Console
+          </BaseButton>
+        </div>
+
+        <!-- Show Diagram - Utility Block -->
+        <div
+          class="bg-linear-to-br from-purple-50 to-slate-50 dark:from-purple-950/30 dark:to-gray-800/50 rounded-xl p-4 ring-1 ring-purple-200/70 dark:ring-purple-800/50"
+        >
+          <div class="flex items-start gap-4 mb-4">
+            <div
+              class="shrink-0 p-3 bg-purple-100 dark:bg-purple-900/50 rounded-xl ring-1 ring-purple-200 dark:ring-purple-700/50"
+            >
+              <ShareIcon class="h-7 w-7 text-purple-600 dark:text-purple-400" />
+            </div>
+            <div class="flex-1 min-w-0 pt-1">
+              <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200">Schema Diagram</h4>
+              <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                Visualize table relationships and structure
+              </p>
+            </div>
+          </div>
+
+          <BaseButton
+            variant="secondary"
+            size="sm"
+            class="w-full justify-center"
+            @click="
+              emit('show-diagram', { connectionId: props.connectionId, database: props.database })
+            "
+          >
+            <ShareIcon class="w-4 h-4 mr-1.5" />
+            Show Diagram
+          </BaseButton>
+        </div>
       </div>
     </div>
   </div>
