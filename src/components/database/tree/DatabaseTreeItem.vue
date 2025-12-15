@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, watch, inject } from 'vue'
 import type { ComputedRef } from 'vue'
-import { ChevronRightIcon, ChevronDownIcon } from '@heroicons/vue/24/outline'
+import { ChevronRightIcon, ChevronDownIcon, EyeIcon, EyeSlashIcon } from '@heroicons/vue/24/outline'
 import SchemaTreeItem from './SchemaTreeItem.vue'
 import ObjectList from './ObjectList.vue'
 import HighlightedText from '@/components/common/HighlightedText.vue'
@@ -55,6 +55,10 @@ const isSelected = computed(() => {
     !treeSelection.value.schema &&
     !treeSelection.value.name
   )
+})
+
+const showSystemObjects = computed(() => {
+  return navigationStore.showSystemObjectsFor(props.connectionId, props.database.name)
 })
 
 const emit = defineEmits<{
@@ -129,6 +133,10 @@ function handleDatabaseContextMenu(event: MouseEvent) {
   })
 }
 
+function toggleSystemObjects() {
+  navigationStore.toggleShowSystemObjectsFor(props.connectionId, props.database.name)
+}
+
 function handleSchemaToggle(schemaName: string) {
   emit('toggle-schema', schemaName)
 }
@@ -182,7 +190,7 @@ function handleFlatObjectContextMenu(payload: {
   <div>
     <div
       :class="[
-        'flex items-center px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer select-none',
+        'group flex items-center gap-2 px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer select-none',
         isSelected ? 'bg-gray-100 dark:bg-gray-800 ring-1 ring-gray-300 dark:ring-gray-600' : ''
       ]"
       :data-explorer-db="`${connectionId}:${database.name}`"
@@ -190,7 +198,21 @@ function handleFlatObjectContextMenu(payload: {
       @contextmenu.stop.prevent="handleDatabaseContextMenu"
     >
       <component :is="isExpanded ? ChevronDownIcon : ChevronRightIcon" :class="caretClass" />
-      <HighlightedText class="font-medium" :text="database.name" :query="searchQuery" />
+      <HighlightedText
+        class="font-medium flex-1 min-w-0 truncate"
+        :text="database.name"
+        :query="searchQuery"
+      />
+      <button
+        v-if="hasSchemas"
+        type="button"
+        class="shrink-0 p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 opacity-70 hover:opacity-100 group-hover:opacity-100"
+        :title="showSystemObjects ? 'Hide system objects' : 'Show system objects'"
+        @click.stop.prevent="toggleSystemObjects"
+      >
+        <EyeIcon v-if="showSystemObjects" class="h-4 w-4" />
+        <EyeSlashIcon v-else class="h-4 w-4" />
+      </button>
     </div>
 
     <div

@@ -92,8 +92,13 @@ export const useSchemaStore = defineStore('schema', {
           schemaSystemInfo.set(s.name.toLowerCase(), Boolean(s.isSystem))
         })
 
+        const showSystemObjects = navigationStore.showSystemObjectsFor(
+          this.connectionId,
+          this.databaseName
+        )
+
         const includeSchema = (schemaName: string | undefined | null) => {
-          if (navigationStore.showSystemObjects) return true
+          if (showSystemObjects) return true
           return !isSystemSchema(schemaName, schemaSystemInfo)
         }
 

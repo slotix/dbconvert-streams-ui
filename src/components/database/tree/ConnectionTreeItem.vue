@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import { computed, inject } from 'vue'
 import type { ComputedRef } from 'vue'
-import { ChevronRightIcon, ChevronDownIcon } from '@heroicons/vue/24/outline'
+import {
+  ChevronRightIcon,
+  ChevronDownIcon,
+  EyeIcon,
+  EyeSlashIcon
+} from '@heroicons/vue/24/outline'
 import DatabaseTreeItem from './DatabaseTreeItem.vue'
 import FileEntry from '../FileEntry.vue'
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
@@ -65,6 +70,10 @@ const databaseError = computed(() => navigationStore.getDatabasesError(props.con
 
 // Get file connection error state
 const fileConnectionError = computed(() => fileExplorerStore.getError(props.connection.id))
+
+const showSystemDatabases = computed(() => {
+  return navigationStore.showSystemDatabasesFor(props.connection.id)
+})
 
 const emit = defineEmits<{
   (e: 'toggle-connection'): void
@@ -148,6 +157,10 @@ function handleConnectionContextMenu(event: MouseEvent) {
     event,
     connectionId: props.connection.id
   })
+}
+
+function toggleSystemDatabases() {
+  navigationStore.toggleShowSystemDatabasesFor(props.connection.id)
 }
 
 function handleDatabaseToggle(dbName: string) {
@@ -294,6 +307,16 @@ const connectionPort = computed(() => getConnectionPort(props.connection))
           {{ connectionHost }}:{{ connectionPort }}
         </div>
       </div>
+      <button
+        v-if="!isFileConnection"
+        type="button"
+        class="shrink-0 p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 opacity-70 hover:opacity-100 group-hover:opacity-100"
+        :title="showSystemDatabases ? 'Hide system databases' : 'Show system databases'"
+        @click.stop.prevent="toggleSystemDatabases"
+      >
+        <EyeIcon v-if="showSystemDatabases" class="h-4 w-4" />
+        <EyeSlashIcon v-else class="h-4 w-4" />
+      </button>
     </div>
 
     <!-- Databases or Files under connection -->

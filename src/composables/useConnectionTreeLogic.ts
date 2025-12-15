@@ -71,7 +71,7 @@ export function useConnectionTreeLogic() {
     const schemaSystemInfo = new Map<string, boolean>()
     if (dbInfo?.schemas) {
       dbInfo.schemas.forEach((s) => {
-        schemaSystemInfo.set(s.name, s.isSystem || false)
+        schemaSystemInfo.set(s.name.toLowerCase(), s.isSystem || false)
       })
     }
 
@@ -104,8 +104,8 @@ export function useConnectionTreeLogic() {
     }))
 
     // Filter out system schemas when showSystemObjects is false
-    if (!navigationStore.showSystemObjects) {
-      arr = arr.filter((schema) => !schemaSystemInfo.get(schema.name))
+    if (!navigationStore.showSystemObjectsFor(connId, db)) {
+      arr = arr.filter((schema) => !schemaSystemInfo.get(schema.name.toLowerCase()))
     }
 
     return arr.sort((a, b) => {

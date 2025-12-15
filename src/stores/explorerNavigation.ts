@@ -45,6 +45,10 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
     // UI Filter: Show/hide system objects (databases, schemas, tables)
     // Default: OFF - hide system objects for cleaner UI
     showSystemObjects: false,
+    // Per-connection override for system databases: `connectionId` -> boolean
+    showSystemDatabasesByConnection: {} as Record<string, boolean>,
+    // Per-database override: `${connectionId}:${database}` -> boolean
+    showSystemObjectsByDatabase: {} as Record<string, boolean>,
 
     // Expansion state
     expandedConnections: new Set<string>(),
@@ -95,7 +99,8 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
     getDatabases: (state) => (connectionId: string) => {
       const databases = state.databasesState[connectionId]
       if (!databases) return null
-      if (state.showSystemObjects) return databases
+      const show = state.showSystemDatabasesByConnection[connectionId] ?? state.showSystemObjects
+      if (show) return databases
       // Filter out system databases when showSystemObjects is false
       return databases.filter((db) => !db.isSystem)
     },
@@ -106,9 +111,22 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
       if (!databases) return null
       const database = databases.find((db) => db.name === databaseName)
       if (!database?.schemas) return null
-      if (state.showSystemObjects) return database.schemas
+      const key = `${connectionId}:${databaseName}`
+      const show = state.showSystemObjectsByDatabase[key] ?? state.showSystemObjects
+      if (show) return database.schemas
       // Filter out system schemas when showSystemObjects is false
       return database.schemas.filter((schema) => !schema.isSystem)
+    },
+
+    // Get show/hide system objects setting for a specific database (falls back to global default).
+    showSystemObjectsFor: (state) => (connectionId: string, database: string) => {
+      const key = `${connectionId}:${database}`
+      return state.showSystemObjectsByDatabase[key] ?? state.showSystemObjects
+    },
+
+    // Get show/hide system databases for a connection (falls back to global default).
+    showSystemDatabasesFor: (state) => (connectionId: string) => {
+      return state.showSystemDatabasesByConnection[connectionId] ?? state.showSystemObjects
     },
 
     getMetadata: (state) => (connectionId: string, database: string) => {
@@ -142,6 +160,26 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
       this.showSystemObjects = show
     },
 
+    toggleShowSystemDatabasesFor(connectionId: string) {
+      const current = this.showSystemDatabasesByConnection[connectionId] ?? this.showSystemObjects
+      this.showSystemDatabasesByConnection[connectionId] = !current
+    },
+
+    setShowSystemDatabasesFor(connectionId: string, show: boolean) {
+      this.showSystemDatabasesByConnection[connectionId] = show
+    },
+
+    toggleShowSystemObjectsFor(connectionId: string, database: string) {
+      const key = `${connectionId}:${database}`
+      const current = this.showSystemObjectsByDatabase[key] ?? this.showSystemObjects
+      this.showSystemObjectsByDatabase[key] = !current
+    },
+
+    setShowSystemObjectsFor(connectionId: string, database: string, show: boolean) {
+      const key = `${connectionId}:${database}`
+      this.showSystemObjectsByDatabase[key] = show
+    },
+
     // Cleanup stale connection references
     cleanupStaleConnections(validConnectionIds: string[]) {
       const validIdSet = new Set(validConnectionIds)
@@ -150,6 +188,21 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
       for (const connId of this.expandedConnections) {
         if (!validIdSet.has(connId)) {
           this.expandedConnections.delete(connId)
+        }
+      }
+
+      // Clean up per-database system-object settings
+      for (const key of Object.keys(this.showSystemObjectsByDatabase)) {
+        const connId = key.split(':')[0]
+        if (!validIdSet.has(connId)) {
+          delete this.showSystemObjectsByDatabase[key]
+        }
+      }
+
+      // Clean up per-connection system database settings
+      for (const connId of Object.keys(this.showSystemDatabasesByConnection)) {
+        if (!validIdSet.has(connId)) {
+          delete this.showSystemDatabasesByConnection[connId]
         }
       }
 

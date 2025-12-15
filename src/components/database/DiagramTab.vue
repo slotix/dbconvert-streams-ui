@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, watch } from 'vue'
 import { useSchemaStore } from '@/stores/schema'
+import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import DatabaseDiagramD3 from './DatabaseDiagramD3.vue'
 
 const props = defineProps<{
@@ -9,6 +10,7 @@ const props = defineProps<{
 }>()
 
 const schemaStore = useSchemaStore()
+const navigationStore = useExplorerNavigationStore()
 
 // Ensure schema is loaded for this database
 onMounted(() => {
@@ -29,6 +31,19 @@ watch(
     if (schemaStore.connectionId !== newConnId || schemaStore.databaseName !== newDb) {
       schemaStore.setConnectionId(newConnId)
       schemaStore.setDatabaseName(newDb)
+      schemaStore.fetchSchema(false)
+    }
+  }
+)
+
+// Recompute diagram schema when system-object visibility changes for this database.
+watch(
+  () => navigationStore.showSystemObjectsFor(props.connectionId, props.database),
+  () => {
+    if (
+      schemaStore.connectionId === props.connectionId &&
+      schemaStore.databaseName === props.database
+    ) {
       schemaStore.fetchSchema(false)
     }
   }

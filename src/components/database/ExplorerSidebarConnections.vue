@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, nextTick, provide } from 'vue'
 import { useDebounceFn } from '@vueuse/core'
-import { CubeIcon, EyeIcon, EyeSlashIcon } from '@heroicons/vue/24/outline'
+import { CubeIcon } from '@heroicons/vue/24/outline'
 import { useConnectionsStore } from '@/stores/connections'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { useSqlConsoleStore } from '@/stores/sqlConsole'

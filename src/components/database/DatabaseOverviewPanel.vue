@@ -121,55 +121,11 @@ watch(
   { deep: true }
 )
 
-// Get set of system schema names for filtering
-const systemSchemaNames = computed(() => {
-  const schemas = navigationStore.getFilteredSchemas(props.connectionId, props.database)
-  const allSchemas = navigationStore
-    .getDatabasesRaw(props.connectionId)
-    ?.find((db) => db.name === props.database)?.schemas
-  if (!schemas || !allSchemas) return new Set<string>()
-
-  // Find schemas that are in allSchemas but NOT in filtered schemas (those are system)
-  const filteredNames = new Set(schemas.map((s) => s.name))
-  const systemNames = new Set<string>()
-  for (const schema of allSchemas) {
-    if (!filteredNames.has(schema.name)) {
-      systemNames.add(schema.name)
-    }
-  }
-  return systemNames
+const showSystemObjects = computed(() => {
+  return navigationStore.showSystemObjectsFor(props.connectionId, props.database)
 })
 
-// Filter function for tables - checks if table belongs to a system schema
-function isSystemTable(tableName: string): boolean {
-  // Table names can be "schema.table" or just "table"
-  const dotIndex = tableName.indexOf('.')
-  if (dotIndex > 0) {
-    const schemaName = tableName.substring(0, dotIndex)
-    return systemSchemaNames.value.has(schemaName)
-  }
-  return false
-}
-
-// Filter tables based on showSystemObjects setting
-const topSize = computed(() => {
-  const allTables = overview.value?.allTablesBySize || []
-  const filtered = navigationStore.showSystemObjects
-    ? allTables
-    : allTables.filter((t) => !isSystemTable(t.name))
-  return filtered.slice(0, 10)
-})
-
-const topRows = computed(() => {
-  const allTables = overview.value?.allTablesByRows || []
-  const filtered = navigationStore.showSystemObjects
-    ? allTables
-    : allTables.filter((t) => !isSystemTable(t.name))
-  return filtered.slice(0, 10)
-})
-
-// Get filtered schema count based on showSystemObjects setting
-// Uses the same logic as the sidebar tree for consistency
+// Map schema name -> isSystem (from backend)
 const schemaSystemInfo = computed(() => {
   const dbInfo = navigationStore
     .getDatabasesRaw(props.connectionId)
@@ -177,10 +133,37 @@ const schemaSystemInfo = computed(() => {
   const info = new Map<string, boolean>()
   if (dbInfo?.schemas) {
     dbInfo.schemas.forEach((s) => {
-      info.set(s.name, s.isSystem || false)
+      info.set(s.name.toLowerCase(), s.isSystem || false)
     })
   }
   return info
+})
+
+function isSystemTableName(tableName: string): boolean {
+  // Table names can be "schema.table" or just "table"
+  const dotIndex = tableName.indexOf('.')
+  if (dotIndex > 0) {
+    const schemaName = tableName.substring(0, dotIndex).toLowerCase()
+    return schemaSystemInfo.value.get(schemaName) === true
+  }
+  return false
+}
+
+// Filter tables based on showSystemObjects setting
+const topSize = computed(() => {
+  const allTables = overview.value?.allTablesBySize || []
+  const filtered = showSystemObjects.value
+    ? allTables
+    : allTables.filter((t) => !isSystemTableName(t.name))
+  return filtered.slice(0, 10)
+})
+
+const topRows = computed(() => {
+  const allTables = overview.value?.allTablesByRows || []
+  const filtered = showSystemObjects.value
+    ? allTables
+    : allTables.filter((t) => !isSystemTableName(t.name))
+  return filtered.slice(0, 10)
 })
 
 const filteredSchemaCount = computed(() => {
@@ -188,10 +171,11 @@ const filteredSchemaCount = computed(() => {
   if (!meta?.schemas) return overview.value?.counts?.schemas
 
   // Count schemas, filtering out system ones if needed
-  if (navigationStore.showSystemObjects) {
+  if (showSystemObjects.value) {
     return meta.schemas.length
   }
-  return meta.schemas.filter((schemaName) => !schemaSystemInfo.value.get(schemaName)).length
+  return meta.schemas.filter((schemaName) => !schemaSystemInfo.value.get(schemaName.toLowerCase()))
+    .length
 })
 
 // Get filtered table count based on showSystemObjects setting
@@ -200,11 +184,11 @@ const filteredTableCount = computed(() => {
   if (!meta?.tables) return overview.value?.counts?.tables
 
   const tables = Object.values(meta.tables)
-  if (navigationStore.showSystemObjects) {
+  if (showSystemObjects.value) {
     return tables.length
   }
   // Filter out tables in system schemas
-  return tables.filter((t) => !schemaSystemInfo.value.get(t.schema)).length
+  return tables.filter((t) => !schemaSystemInfo.value.get(t.schema.toLowerCase())).length
 })
 
 // Get filtered view count based on showSystemObjects setting
@@ -213,11 +197,11 @@ const filteredViewCount = computed(() => {
   if (!meta?.views) return overview.value?.counts?.views
 
   const views = Object.values(meta.views)
-  if (navigationStore.showSystemObjects) {
+  if (showSystemObjects.value) {
     return views.length
   }
   // Filter out views in system schemas
-  return views.filter((v) => !schemaSystemInfo.value.get(v.schema)).length
+  return views.filter((v) => !schemaSystemInfo.value.get(v.schema.toLowerCase())).length
 })
 
 // Counts with filtered schema, table, and view counts
@@ -236,11 +220,11 @@ const activity = computed(() => overview.value?.activity)
 // Calculate filtered database size based on showSystemObjects setting
 const filteredSizeBytes = computed(() => {
   const allTables = overview.value?.allTablesBySize || []
-  if (navigationStore.showSystemObjects) {
+  if (showSystemObjects.value) {
     return overview.value?.sizeBytes
   }
   // Sum sizes of non-system tables only
-  const filtered = allTables.filter((t) => !isSystemTable(t.name))
+  const filtered = allTables.filter((t) => !isSystemTableName(t.name))
   return filtered.reduce((sum, t) => sum + (t.sizeBytes || 0), 0)
 })
 
