@@ -1,4 +1,4 @@
-import { ref, watch } from 'vue'
+import { ref } from 'vue'
 import * as d3 from 'd3'
 import type { TableNode, TableLink } from '@/types/diagram'
 
@@ -14,6 +14,19 @@ export function useDiagramForces(options: DiagramForceOptions = {}) {
   const collisionRadius = ref(options.collisionRadius ?? 150)
 
   let simulation: d3.Simulation<TableNode, TableLink> | null = null
+
+  function setCenter(width: number, height: number) {
+    if (!simulation) return
+
+    const centerForce = simulation.force('center') as d3.ForceCenter<TableNode> | undefined
+    centerForce?.x(width / 2).y(height / 2)
+
+    const xForce = simulation.force('x') as d3.ForceX<TableNode> | undefined
+    xForce?.x(width / 2)
+
+    const yForce = simulation.force('y') as d3.ForceY<TableNode> | undefined
+    yForce?.y(height / 2)
+  }
 
   /**
    * Initialize the force simulation
@@ -82,11 +95,6 @@ export function useDiagramForces(options: DiagramForceOptions = {}) {
     simulation?.alpha(alpha).restart()
   }
 
-  // Auto-update forces when parameters change
-  watch([linkDistance, chargeStrength, collisionRadius], () => {
-    updateForces()
-  })
-
   return {
     // State (reactive)
     linkDistance,
@@ -95,6 +103,7 @@ export function useDiagramForces(options: DiagramForceOptions = {}) {
 
     // Methods
     initializeSimulation,
+    setCenter,
     updateForces,
     stopSimulation,
     restartSimulation,

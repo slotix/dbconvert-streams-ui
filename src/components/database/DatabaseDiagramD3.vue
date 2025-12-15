@@ -5,6 +5,11 @@ import type { Table } from '@/types/schema'
 import type { TableNode, TableLink } from '@/types/diagram'
 import { useThemeStore } from '@/stores/theme'
 import { BRAND_COLORS, getDiagramColors, createMarkerDefinitions } from '@/utils/d3DiagramConfig'
+import {
+  buildDiagramLinks,
+  calculateConnectionPoint,
+  formatColumnType
+} from '@/utils/databaseDiagramD3'
 import { useDiagramZoom } from '@/composables/useDiagramZoom'
 import { useDiagramForces } from '@/composables/useDiagramForces'
 import { useDiagramExport } from '@/composables/useDiagramExport'
@@ -30,11 +35,19 @@ const svgContainer = ref<HTMLElement>()
 
 // D3 selections (not reactive)
 let svg: d3.Selection<SVGSVGElement, unknown, null, undefined> | null = null
+let zoomGroup: d3.Selection<SVGGElement, unknown, null, undefined> | null = null
 let node: d3.Selection<SVGGElement, TableNode, SVGGElement, unknown> | null = null
 let linkGroup: d3.Selection<SVGGElement, TableLink, SVGGElement, unknown> | null = null
+let linkLines: d3.Selection<SVGLineElement, TableLink, SVGGElement, unknown> | null = null
+let gridLayer: d3.Selection<SVGGElement, unknown, null, undefined> | null = null
 let links: TableLink[] = []
 let currentNodes: TableNode[] = []
 let preservedZoomTransform: d3.ZoomTransform | null = null
+let resizeObserver: ResizeObserver | null = null
+
+let nodeHeightById = new Map<string, number>()
+let tableByName = new Map<string, Table>()
+let viewByName = new Map<string, Table>()
 
 const nodePositionCache = new Map<
   string,
@@ -57,87 +70,9 @@ const colors = computed(() => getDiagramColors(themeStore.isDark))
 
 // Grid size for background
 const gridSize = ref(10)
+const staticLayout = ref(true)
 
-// Helper: Check if table is a junction table
-function isJunctionTable(tableName: string): boolean {
-  const table = props.tables.find((t) => t.name === tableName)
-  if (!table?.foreignKeys) return false
-  return (
-    table.foreignKeys.length === 2 &&
-    table.primaryKeys?.length === 2 &&
-    table.foreignKeys.every((fk) => table.primaryKeys?.includes(fk.sourceColumn))
-  )
-}
-
-// Helper: Format column type
-function formatColumnType(column: { type?: string }): string {
-  let type = column.type || ''
-  const typeShortcuts: { [key: string]: string } = {
-    'timestamp without time zone': 'timestamp',
-    'timestamp with time zone': 'timestamptz',
-    'character varying': 'varchar',
-    character: 'char',
-    'double precision': 'double',
-    bigint: 'bigint',
-    smallint: 'smallint',
-    boolean: 'bool',
-    text: 'text',
-    integer: 'int'
-  }
-  for (const [longForm, shortForm] of Object.entries(typeShortcuts)) {
-    if (type.toLowerCase().startsWith(longForm)) {
-      const sizeMatch = type.match(/\(.*\)$/)
-      type = shortForm + (sizeMatch ? sizeMatch[0] : '')
-      break
-    }
-  }
-  return type
-}
-
-// Helper: Get table height based on columns
-function getTableHeight(table: TableNode): number {
-  const baseHeight = 30
-  const rowHeight = 20
-  const numColumns =
-    props.tables.find((t) => t.name === table.name)?.columns.length ||
-    props.views.find((v) => v.name === table.name)?.columns.length ||
-    0
-  return baseHeight + numColumns * rowHeight
-}
-
-// Helper: Calculate connection point on table border
-function calculateConnectionPoint(
-  sourceX: number,
-  sourceY: number,
-  targetX: number,
-  targetY: number,
-  tableWidth: number,
-  tableHeight: number
-): [number, number] {
-  const angle = Math.atan2(targetY - sourceY, targetX - sourceX)
-  const width = tableWidth || 200
-  const height = tableHeight || 30
-  const halfWidth = width / 2
-  const halfHeight = height / 2
-
-  let x, y
-  if (Math.abs(Math.cos(angle)) > Math.abs(Math.sin(angle))) {
-    x = Math.cos(angle) > 0 ? halfWidth : -halfWidth
-    y = Math.tan(angle) * x
-    if (Math.abs(y) > halfHeight) {
-      y = Math.sign(y) * halfHeight
-      x = y / Math.tan(angle)
-    }
-  } else {
-    y = Math.sin(angle) > 0 ? halfHeight : -halfHeight
-    x = y / Math.tan(angle)
-    if (Math.abs(x) > halfWidth) {
-      x = Math.sign(x) * halfWidth
-      y = Math.tan(angle) * x
-    }
-  }
-  return [x, y]
-}
+// Helper functions moved to `src/utils/databaseDiagramD3.ts`
 
 // Create background grid
 function createBackgroundGrid(
@@ -196,6 +131,65 @@ function createBackgroundGrid(
   }
 }
 
+function recreateGrid(width: number, height: number) {
+  if (!zoomGroup) return
+
+  gridLayer?.remove()
+  gridLayer = zoomGroup.insert('g', ':first-child').attr('class', 'grid-layer')
+  createBackgroundGrid(gridLayer, width, height)
+}
+
+function applyTheme() {
+  if (!zoomGroup) return
+
+  if (gridLayer) {
+    gridLayer.select('pattern#grid path').attr('stroke', colors.value.gridLine)
+    gridLayer
+      .selectAll<SVGLineElement, unknown>('.major-grid line')
+      .attr('stroke', colors.value.gridLineMajor)
+  }
+
+  if (node) {
+    node
+      .selectAll<SVGRectElement, TableNode>('rect.table-background')
+      .attr('fill', (d) => (d.isView ? colors.value.viewBg : colors.value.tableBg))
+      .attr('stroke', (d) => (d.isView ? colors.value.viewBorder : colors.value.tableBorder))
+
+    node
+      .selectAll<SVGRectElement, TableNode>('.table-header rect')
+      .attr('fill', (d) => (d.isView ? colors.value.viewHeader : colors.value.tableHeader))
+      .attr('stroke', (d) => (d.isView ? colors.value.viewBorder : colors.value.tableBorder))
+
+    node
+      .selectAll<SVGTextElement, TableNode>('.table-header text')
+      .attr('fill', colors.value.headerText)
+
+    node
+      .selectAll<SVGRectElement, TableNode>('rect.table-body')
+      .attr('fill', (d) => (d.isView ? colors.value.viewBg : colors.value.tableBg))
+      .attr('stroke', (d) => (d.isView ? colors.value.viewBorder : colors.value.tableBorder))
+
+    node
+      .selectAll<SVGTextElement, unknown>('text.column-type')
+      .attr('fill', colors.value.columnText)
+
+    node
+      .selectAll<SVGRectElement, unknown>('rect.alternate-row')
+      .attr('fill', colors.value.alternateRowBg)
+
+    node.selectAll<SVGTextElement, unknown>('text.column-name').each(function () {
+      const text = d3.select(this)
+      const currentFill = text.attr('fill')
+      if (currentFill === BRAND_COLORS.primary || currentFill === BRAND_COLORS.secondary) return
+      text.attr('fill', colors.value.columnText)
+    })
+  }
+
+  zoomGroup.selectAll<SVGTextElement, unknown>('text.no-data').attr('fill', colors.value.noDataText)
+
+  if (highlightingComposable.selectedTable.value) updateHighlighting()
+}
+
 // Create drop shadow filter
 function createDropShadowFilter(defs: d3.Selection<SVGDefsElement, unknown, null, undefined>) {
   const filter = defs.append('filter').attr('id', 'drop-shadow').attr('height', '130%')
@@ -213,114 +207,6 @@ function createDropShadowFilter(defs: d3.Selection<SVGDefsElement, unknown, null
     .enter()
     .append('feMergeNode')
     .attr('in', (d: string) => d)
-}
-
-// Process relationships into links
-function processRelationships(): TableLink[] {
-  const processedLinks: TableLink[] = []
-
-  function hasManyToManyRelationship(table1Name: string, table2Name: string): boolean {
-    const junctionTables = props.tables.filter((table) => isJunctionTable(table.name))
-    return junctionTables.some((junctionTable) => {
-      if (!junctionTable.foreignKeys || junctionTable.foreignKeys.length !== 2) return false
-      const referencedTables = junctionTable.foreignKeys.map((fk) => fk.referencedTable)
-      return referencedTables.includes(table1Name) && referencedTables.includes(table2Name)
-    })
-  }
-
-  // Process regular relationships
-  props.relations?.forEach((relation) => {
-    if (isJunctionTable(relation.sourceTable)) {
-      const junctionTable = props.tables.find((t) => t.name === relation.sourceTable)
-      const otherForeignKey = junctionTable?.foreignKeys?.find(
-        (fk) =>
-          fk.sourceColumn !== relation.sourceColumn && fk.referencedTable !== relation.targetTable
-      )
-      if (otherForeignKey) {
-        processedLinks.push({
-          source: otherForeignKey.referencedTable,
-          target: relation.sourceTable,
-          relationship: 'one-to-many',
-          targetMarker: 'junction-mandatory-many',
-          isJunctionRelation: true
-        })
-        processedLinks.push({
-          source: relation.sourceTable,
-          target: relation.targetTable,
-          relationship: 'many-to-one',
-          targetMarker: 'junction-mandatory-one-to-one',
-          isJunctionRelation: true
-        })
-      }
-    } else if (!isJunctionTable(relation.targetTable)) {
-      processedLinks.push({
-        source: relation.sourceTable,
-        target: relation.targetTable,
-        relationship: 'many-to-one',
-        targetMarker: 'mandatory-one-to-one',
-        isJunctionRelation: false
-      })
-      processedLinks.push({
-        source: relation.targetTable,
-        target: relation.sourceTable,
-        relationship: 'one-to-many',
-        targetMarker: 'mandatory-many',
-        isJunctionRelation: false
-      })
-    }
-  })
-
-  // Process many-to-many relationships
-  const processedJunctionRelations = new Set<string>()
-  props.tables.forEach((table) => {
-    if (isJunctionTable(table.name) && table.foreignKeys && table.foreignKeys.length === 2) {
-      const [fk1, fk2] = table.foreignKeys
-      const relationKey = [fk1.referencedTable, fk2.referencedTable].sort().join('-')
-      if (!processedJunctionRelations.has(relationKey)) {
-        processedJunctionRelations.add(relationKey)
-        processedLinks.push({
-          source: fk1.referencedTable,
-          target: table.name,
-          relationship: 'one-to-many',
-          targetMarker: 'junction-mandatory-many',
-          isJunctionRelation: true
-        })
-        processedLinks.push({
-          source: table.name,
-          target: fk2.referencedTable,
-          relationship: 'many-to-one',
-          targetMarker: 'junction-mandatory-one',
-          isJunctionRelation: true
-        })
-      }
-    }
-  })
-
-  // Add view dependencies
-  if (props.views?.length) {
-    props.views.forEach((view) => {
-      props.tables
-        .filter((table) => view.name.toLowerCase().includes(table.name.toLowerCase()))
-        .forEach((table) => {
-          processedLinks.push({
-            source: view.name,
-            target: table.name,
-            relationship: 'one-to-one',
-            sourceMarker: 'mandatory-one',
-            targetMarker: 'mandatory-one',
-            isViewDependency: true
-          })
-        })
-    })
-  }
-
-  // Filter out incorrect direct relationships
-  return processedLinks.filter((link) => {
-    const source = typeof link.source === 'string' ? link.source : link.source.id
-    const target = typeof link.target === 'string' ? link.target : link.target.id
-    if (isJunctionTable(source) || isJunctionTable(target)) return true
-    return !hasManyToManyRelationship(source, target)
-  })
 }
 
 // Create table/view nodes
@@ -353,10 +239,7 @@ function createNodes(
     .attr('class', 'table-background')
     .attr('width', 200)
     .attr('height', (d: TableNode) => {
-      const columnCount =
-        props.tables.find((t) => t.name === d.name)?.columns.length ||
-        props.views.find((v) => v.name === d.name)?.columns.length ||
-        0
+      const columnCount = (tableByName.get(d.name) || viewByName.get(d.name))?.columns.length || 0
       return 30 + columnCount * 20
     })
     .attr('rx', 8)
@@ -407,10 +290,7 @@ function createNodes(
     .attr('class', 'table-body')
     .attr('width', 200)
     .attr('height', (d: TableNode) => {
-      const columnCount =
-        props.tables.find((t) => t.name === d.name)?.columns.length ||
-        props.views.find((v) => v.name === d.name)?.columns.length ||
-        0
+      const columnCount = (tableByName.get(d.name) || viewByName.get(d.name))?.columns.length || 0
       return columnCount * 20
     })
     .attr('y', 30)
@@ -445,8 +325,7 @@ function createNodes(
 
   columnGroup.each(function (this: SVGGElement, d: TableNode) {
     const group = d3.select(this)
-    const table =
-      props.tables.find((t) => t.name === d.name) || props.views.find((v) => v.name === d.name)
+    const table = tableByName.get(d.name) || viewByName.get(d.name)
     if (!table) return
 
     table.columns.forEach((col, i) => {
@@ -458,6 +337,7 @@ function createNodes(
       if (i % 2 === 1) {
         row
           .append('rect')
+          .attr('class', 'alternate-row')
           .attr('width', 200)
           .attr('height', 20)
           .attr('fill', colors.value.alternateRowBg)
@@ -485,6 +365,7 @@ function createNodes(
 
       row
         .append('text')
+        .attr('class', 'column-type')
         .attr('x', 190)
         .attr('y', 14)
         .attr('text-anchor', 'end')
@@ -632,15 +513,14 @@ function updateHighlighting() {
           .transition()
           .duration(300)
           .style('font-weight', '400')
-          .attr('fill', BRAND_COLORS.grayDark)
+          .attr('fill', colors.value.columnText)
       }
     })
   })
 
   // Update link highlighting
-  if (linkGroup) {
-    linkGroup
-      .selectAll<SVGLineElement, TableLink>('line')
+  if (linkLines) {
+    linkLines
       .transition()
       .duration(300)
       .attr('stroke-width', function (d: TableLink) {
@@ -657,6 +537,87 @@ function updateHighlighting() {
         return source === selectedTableName || target === selectedTableName ? 1 : 0.15
       })
   }
+}
+
+function applyPositions() {
+  if (!linkLines || !node) return
+
+  linkLines
+    .attr('x1', (d: TableLink) => {
+      const source = d.source as TableNode
+      const target = d.target as TableNode
+      const sourceHeight = nodeHeightById.get(source.id) ?? 30
+      const [offsetX] = calculateConnectionPoint(
+        source.x || 0,
+        source.y || 0,
+        target.x || 0,
+        target.y || 0,
+        200,
+        sourceHeight
+      )
+      return (source.x || 0) + offsetX
+    })
+    .attr('y1', (d: TableLink) => {
+      const source = d.source as TableNode
+      const target = d.target as TableNode
+      const sourceHeight = nodeHeightById.get(source.id) ?? 30
+      const [, offsetY] = calculateConnectionPoint(
+        source.x || 0,
+        source.y || 0,
+        target.x || 0,
+        target.y || 0,
+        200,
+        sourceHeight
+      )
+      return (source.y || 0) + offsetY
+    })
+    .attr('x2', (d: TableLink) => {
+      const source = d.source as TableNode
+      const target = d.target as TableNode
+      const targetHeight = nodeHeightById.get(target.id) ?? 30
+      const [offsetX] = calculateConnectionPoint(
+        target.x || 0,
+        target.y || 0,
+        source.x || 0,
+        source.y || 0,
+        200,
+        targetHeight
+      )
+      return (target.x || 0) + offsetX
+    })
+    .attr('y2', (d: TableLink) => {
+      const source = d.source as TableNode
+      const target = d.target as TableNode
+      const targetHeight = nodeHeightById.get(target.id) ?? 30
+      const [, offsetY] = calculateConnectionPoint(
+        target.x || 0,
+        target.y || 0,
+        source.x || 0,
+        source.y || 0,
+        200,
+        targetHeight
+      )
+      return (target.y || 0) + offsetY
+    })
+    .attr('marker-start', '')
+    .attr('marker-end', (d: TableLink) => (d.targetMarker ? `url(#${d.targetMarker})` : ''))
+
+  node.attr('transform', (d: TableNode) => {
+    const height = nodeHeightById.get(d.id) ?? 30
+    const x = (d.x || 0) - 100
+    const y = (d.y || 0) - height / 2
+    return `translate(${x},${y})`
+  })
+}
+
+function settleSimulation(ticks: number) {
+  const simulation = forcesComposable.getSimulation()
+  if (!simulation) return
+
+  simulation.stop()
+  for (let i = 0; i < ticks; i++) simulation.tick()
+  applyPositions()
+  simulation.stop()
 }
 
 // Main visualization function
@@ -695,6 +656,7 @@ function createVisualization(reason: 'init' | 'resize' | 'data' | 'theme' = 'dat
 
   // Zoom group must exist before initializing zoom (so zoom handler can apply transforms)
   const zoomContent = svg.append('g').attr('class', 'zoom-group')
+  zoomGroup = zoomContent
 
   // Initialize zoom
   const zoomBehavior = zoomComposable.initializeZoom(svg)
@@ -705,12 +667,15 @@ function createVisualization(reason: 'init' | 'resize' | 'data' | 'theme' = 'dat
   }
 
   // Background grid
-  createBackgroundGrid(zoomContent, width, height)
+  recreateGrid(width, height)
 
   // Create defs for markers and filters
   const defs = zoomContent.append('defs')
   createDropShadowFilter(defs)
   createMarkerDefinitions(defs)
+
+  tableByName = new Map((props.tables || []).map((t) => [t.name, t]))
+  viewByName = new Map((props.views || []).map((v) => [v.name, v]))
 
   // Prepare nodes
   const nodes: TableNode[] = [
@@ -763,12 +728,17 @@ function createVisualization(reason: 'init' | 'resize' | 'data' | 'theme' = 'dat
   })
 
   // Process relationships
-  links = processRelationships()
+  links = buildDiagramLinks({
+    tables: props.tables,
+    views: props.views,
+    relations: props.relations
+  })
 
   // No data message
   if (nodes.length === 0) {
     zoomContent
       .append('text')
+      .attr('class', 'no-data')
       .attr('x', width / 2)
       .attr('y', height / 2)
       .attr('text-anchor', 'middle')
@@ -779,6 +749,7 @@ function createVisualization(reason: 'init' | 'resize' | 'data' | 'theme' = 'dat
 
   // Create links first (so they render behind nodes)
   createLinks(zoomContent, links)
+  linkLines = linkGroup ? linkGroup.selectAll<SVGLineElement, TableLink>('line') : null
 
   // Create nodes
   createNodes(zoomContent, nodes)
@@ -791,83 +762,11 @@ function createVisualization(reason: 'init' | 'resize' | 'data' | 'theme' = 'dat
     columnCountByName.set(view.name, view.columns?.length ?? 0)
   }
 
-  const nodeHeightById = new Map<string, number>()
+  nodeHeightById = new Map<string, number>()
   nodes.forEach((n) => {
     const columnCount = columnCountByName.get(n.name) ?? 0
     nodeHeightById.set(n.id, 30 + columnCount * 20)
   })
-
-  function applyPositions() {
-    if (!linkGroup || !node) return
-
-    linkGroup
-      .selectAll<SVGLineElement, TableLink>('line')
-      .attr('x1', (d: TableLink) => {
-        const source = d.source as TableNode
-        const target = d.target as TableNode
-        const sourceHeight = nodeHeightById.get(source.id) ?? 30
-        const [offsetX] = calculateConnectionPoint(
-          source.x || 0,
-          source.y || 0,
-          target.x || 0,
-          target.y || 0,
-          200,
-          sourceHeight
-        )
-        return (source.x || 0) + offsetX
-      })
-      .attr('y1', (d: TableLink) => {
-        const source = d.source as TableNode
-        const target = d.target as TableNode
-        const sourceHeight = nodeHeightById.get(source.id) ?? 30
-        const [, offsetY] = calculateConnectionPoint(
-          source.x || 0,
-          source.y || 0,
-          target.x || 0,
-          target.y || 0,
-          200,
-          sourceHeight
-        )
-        return (source.y || 0) + offsetY
-      })
-      .attr('x2', (d: TableLink) => {
-        const source = d.source as TableNode
-        const target = d.target as TableNode
-        const targetHeight = nodeHeightById.get(target.id) ?? 30
-        const [offsetX] = calculateConnectionPoint(
-          target.x || 0,
-          target.y || 0,
-          source.x || 0,
-          source.y || 0,
-          200,
-          targetHeight
-        )
-        return (target.x || 0) + offsetX
-      })
-      .attr('y2', (d: TableLink) => {
-        const source = d.source as TableNode
-        const target = d.target as TableNode
-        const targetHeight = nodeHeightById.get(target.id) ?? 30
-        const [, offsetY] = calculateConnectionPoint(
-          target.x || 0,
-          target.y || 0,
-          source.x || 0,
-          source.y || 0,
-          200,
-          targetHeight
-        )
-        return (target.y || 0) + offsetY
-      })
-      .attr('marker-start', '')
-      .attr('marker-end', (d: TableLink) => (d.targetMarker ? `url(#${d.targetMarker})` : ''))
-
-    node.attr('transform', (d: TableNode) => {
-      const height = nodeHeightById.get(d.id) ?? 30
-      const x = (d.x || 0) - 100
-      const y = (d.y || 0) - height / 2
-      return `translate(${x},${y})`
-    })
-  }
 
   // Initialize simulation
   const simulation = forcesComposable.initializeSimulation(width, height)
@@ -877,19 +776,14 @@ function createVisualization(reason: 'init' | 'resize' | 'data' | 'theme' = 'dat
   linkForce.links(links).distance(forcesComposable.linkDistance.value)
 
   const preTicks = reason === 'init' ? 110 : reason === 'data' ? 70 : 0
-  if (preTicks > 0) {
-    simulation.stop()
-    for (let i = 0; i < preTicks; i++) simulation.tick()
-  }
+  if (preTicks > 0) settleSimulation(preTicks)
 
   applyPositions()
 
-  const startAlpha =
-    reason === 'resize' ? 0.03 : reason === 'theme' ? 0.02 : reason === 'data' ? 0.08 : 0.12
-  simulation.alpha(startAlpha).restart()
-
-  // Update positions on tick
   simulation.on('tick', applyPositions)
+  if (!staticLayout.value) {
+    simulation.alpha(reason === 'data' ? 0.08 : 0.12).restart()
+  }
 
   // Clear selection on background click
   svg.on('click', () => {
@@ -902,30 +796,43 @@ function createVisualization(reason: 'init' | 'resize' | 'data' | 'theme' = 'dat
   if (highlightingComposable.selectedTable.value) {
     updateHighlighting()
   }
+
+  applyTheme()
 }
 
-// Handle window resize
-function handleResize() {
-  if (!svgContainer.value) return
+function updateSize() {
+  if (!svgContainer.value || !svg || !zoomGroup) return
+  const width = svgContainer.value.clientWidth
+  const height = svgContainer.value.clientHeight || 1200
+  if (lastSize && lastSize.width === width && lastSize.height === height) return
 
+  lastSize = { width, height }
+  svg.attr('width', width).attr('height', height)
+  zoomComposable.setInitialTransform(width, height)
+  forcesComposable.setCenter(width, height)
+  recreateGrid(width, height)
+  applyTheme()
+  applyPositions()
+}
+
+function handleContainerResize() {
   if (resizeTimer) clearTimeout(resizeTimer)
-  resizeTimer = setTimeout(() => {
-    if (!svgContainer.value) return
-    const width = svgContainer.value.clientWidth
-    const height = svgContainer.value.clientHeight || 1200
-    if (lastSize && lastSize.width === width && lastSize.height === height) return
-    createVisualization('resize')
-  }, 150)
+  resizeTimer = setTimeout(() => updateSize(), 120)
 }
 
 // Lifecycle
 onMounted(() => {
   createVisualization('init')
-  window.addEventListener('resize', handleResize)
+
+  if (svgContainer.value) {
+    resizeObserver = new ResizeObserver(() => handleContainerResize())
+    resizeObserver.observe(svgContainer.value)
+  }
 })
 
 onBeforeUnmount(() => {
-  window.removeEventListener('resize', handleResize)
+  resizeObserver?.disconnect()
+  resizeObserver = null
   if (resizeTimer) clearTimeout(resizeTimer)
   forcesComposable.stopSimulation()
 })
@@ -939,7 +846,27 @@ watch(
 
 watch(
   () => themeStore.isDark,
-  () => createVisualization('theme')
+  () => applyTheme()
+)
+
+watch(
+  [
+    forcesComposable.linkDistance,
+    forcesComposable.chargeStrength,
+    forcesComposable.collisionRadius
+  ],
+  () => {
+    const simulation = forcesComposable.getSimulation()
+    if (!simulation) return
+
+    forcesComposable.updateForces()
+    if (staticLayout.value) {
+      settleSimulation(35)
+      if (highlightingComposable.selectedTable.value) updateHighlighting()
+    } else {
+      forcesComposable.restartSimulation(0.2)
+    }
+  }
 )
 
 // Event handlers for controls
