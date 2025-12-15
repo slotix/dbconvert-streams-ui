@@ -1,5 +1,22 @@
 import { ref } from 'vue'
-import * as d3 from 'd3'
+import {
+  forceCenter,
+  forceCollide,
+  forceLink,
+  forceManyBody,
+  forceSimulation,
+  forceX,
+  forceY
+} from 'd3-force'
+import type {
+  ForceCenter,
+  ForceCollide,
+  ForceLink,
+  ForceManyBody,
+  ForceX,
+  ForceY,
+  Simulation
+} from 'd3-force'
 import type { TableNode, TableLink } from '@/types/diagram'
 
 export interface DiagramForceOptions {
@@ -13,43 +30,38 @@ export function useDiagramForces(options: DiagramForceOptions = {}) {
   const chargeStrength = ref(options.chargeStrength ?? -600)
   const collisionRadius = ref(options.collisionRadius ?? 150)
 
-  let simulation: d3.Simulation<TableNode, TableLink> | null = null
+  let simulation: Simulation<TableNode, TableLink> | null = null
 
   function setCenter(width: number, height: number) {
     if (!simulation) return
 
-    const centerForce = simulation.force('center') as d3.ForceCenter<TableNode> | undefined
+    const centerForce = simulation.force('center') as ForceCenter<TableNode> | undefined
     centerForce?.x(width / 2).y(height / 2)
 
-    const xForce = simulation.force('x') as d3.ForceX<TableNode> | undefined
+    const xForce = simulation.force('x') as ForceX<TableNode> | undefined
     xForce?.x(width / 2)
 
-    const yForce = simulation.force('y') as d3.ForceY<TableNode> | undefined
+    const yForce = simulation.force('y') as ForceY<TableNode> | undefined
     yForce?.y(height / 2)
   }
 
   /**
    * Initialize the force simulation
    */
-  function initializeSimulation(
-    width: number,
-    height: number
-  ): d3.Simulation<TableNode, TableLink> {
-    simulation = d3
-      .forceSimulation<TableNode>()
+  function initializeSimulation(width: number, height: number): Simulation<TableNode, TableLink> {
+    simulation = forceSimulation<TableNode, TableLink>()
       .force(
         'link',
-        d3
-          .forceLink<TableNode, TableLink>()
+        forceLink<TableNode, TableLink>()
           .id((d: TableNode) => d.id)
           .distance(linkDistance.value)
           .strength(0.8)
       )
-      .force('charge', d3.forceManyBody().strength(chargeStrength.value))
-      .force('center', d3.forceCenter(width / 2, height / 2))
-      .force('collision', d3.forceCollide().radius(collisionRadius.value))
-      .force('x', d3.forceX(width / 2).strength(0.05))
-      .force('y', d3.forceY(height / 2).strength(0.05))
+      .force('charge', forceManyBody<TableNode>().strength(chargeStrength.value))
+      .force('center', forceCenter<TableNode>(width / 2, height / 2))
+      .force('collision', forceCollide<TableNode>().radius(collisionRadius.value))
+      .force('x', forceX<TableNode>(width / 2).strength(0.05))
+      .force('y', forceY<TableNode>(height / 2).strength(0.05))
       .velocityDecay(0.6)
       .alphaMin(0.002)
       .alphaDecay(0.03)
@@ -63,17 +75,17 @@ export function useDiagramForces(options: DiagramForceOptions = {}) {
   function updateForces() {
     if (!simulation) return
 
-    const linkForce = simulation.force('link') as d3.ForceLink<TableNode, TableLink> | undefined
+    const linkForce = simulation.force('link') as ForceLink<TableNode, TableLink> | undefined
     if (linkForce) {
       linkForce.distance(linkDistance.value)
     }
 
-    const chargeForce = simulation.force('charge') as d3.ForceManyBody<TableNode> | undefined
+    const chargeForce = simulation.force('charge') as ForceManyBody<TableNode> | undefined
     if (chargeForce) {
       chargeForce.strength(chargeStrength.value)
     }
 
-    const collisionForce = simulation.force('collision') as d3.ForceCollide<TableNode> | undefined
+    const collisionForce = simulation.force('collision') as ForceCollide<TableNode> | undefined
     if (collisionForce) {
       collisionForce.radius(collisionRadius.value)
     }

@@ -1,5 +1,5 @@
 import { ref } from 'vue'
-import type * as d3 from 'd3'
+import type { Selection } from 'd3-selection'
 
 export type ExportFormat = 'svg' | 'png' | 'pdf'
 
@@ -11,7 +11,7 @@ export function useDiagramExport() {
   /**
    * Export diagram as SVG
    */
-  function exportAsSVG(svg: d3.Selection<SVGSVGElement, unknown, null, undefined>) {
+  function exportAsSVG(svg: Selection<SVGSVGElement, unknown, null, undefined>) {
     const svgCopy = svg.node()?.cloneNode(true) as SVGElement
     if (!svgCopy) return
 
@@ -124,7 +124,7 @@ export function useDiagramExport() {
    * Main export function that delegates to appropriate format handler
    */
   async function saveDiagram(
-    svg: d3.Selection<SVGSVGElement, unknown, null, undefined> | null,
+    svg: Selection<SVGSVGElement, unknown, null, undefined> | null,
     container: HTMLElement | null
   ) {
     if (!svg || !container) return

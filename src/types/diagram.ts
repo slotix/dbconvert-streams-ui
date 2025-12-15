@@ -1,9 +1,9 @@
-import type * as d3 from 'd3'
+import type { SimulationLinkDatum, SimulationNodeDatum } from 'd3-force'
 
 /**
  * Represents a table or view node in the diagram
  */
-export interface TableNode extends d3.SimulationNodeDatum {
+export interface TableNode extends SimulationNodeDatum {
   id: string
   name: string
   schema: string
@@ -15,7 +15,7 @@ export interface TableNode extends d3.SimulationNodeDatum {
 /**
  * Represents a relationship link between tables
  */
-export interface TableLink extends d3.SimulationLinkDatum<TableNode> {
+export interface TableLink extends SimulationLinkDatum<TableNode> {
   source: string | TableNode
   target: string | TableNode
   relationship: 'one-to-one' | 'one-to-many' | 'many-to-one' | 'many-to-many'

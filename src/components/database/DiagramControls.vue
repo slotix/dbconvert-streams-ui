@@ -16,7 +16,7 @@ defineProps<Props>()
 
 const emit = defineEmits<{
   (e: 'zoom', direction: 'in' | 'out'): void
-  (e: 'reset'): void
+  (e: 'auto'): void
   (e: 'toggle-export'): void
   (e: 'export'): void
   (e: 'update:linkDistance', value: number): void
@@ -30,7 +30,7 @@ const emit = defineEmits<{
   <div
     class="absolute top-4 right-4 p-3 min-w-[220px] rounded-lg border bg-white/95 dark:bg-gray-850/95 border-gray-200 dark:border-gray-700 shadow-lg dark:shadow-gray-900/40 backdrop-blur-sm space-y-2.5 z-10"
   >
-    <!-- Zoom Controls with Reset Button and Export Button -->
+    <!-- Zoom Controls -->
     <div class="flex items-center justify-between mb-1">
       <span class="text-xs font-medium text-gray-700 dark:text-gray-200">Zoom</span>
       <div class="flex items-center gap-1">
@@ -53,8 +53,8 @@ const emit = defineEmits<{
         </button>
         <button
           class="p-1 ml-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors focus:outline-none focus:ring-1 focus:ring-cyan-500 focus:ring-offset-1 dark:focus:ring-offset-gray-850"
-          title="Reset view"
-          @click="emit('reset')"
+          title="Auto layout (recenter + retune)"
+          @click="emit('auto')"
         >
           <ArrowPathIcon class="w-3.5 h-3.5" />
         </button>
@@ -133,7 +133,7 @@ const emit = defineEmits<{
           :value="linkDistance"
           type="range"
           min="100"
-          max="500"
+          max="800"
           step="20"
           class="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer slider-gray"
           @input="emit('update:linkDistance', Number(($event.target as HTMLInputElement).value))"
@@ -152,7 +152,7 @@ const emit = defineEmits<{
         <input
           :value="chargeStrength"
           type="range"
-          min="-3000"
+          min="-6000"
           max="-200"
           step="100"
           class="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer slider-gray"
@@ -173,7 +173,7 @@ const emit = defineEmits<{
           :value="collisionRadius"
           type="range"
           min="60"
-          max="200"
+          max="320"
           step="10"
           class="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer slider-gray"
           @input="emit('update:collisionRadius', Number(($event.target as HTMLInputElement).value))"

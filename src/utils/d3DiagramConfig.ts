@@ -1,4 +1,4 @@
-import type * as d3 from 'd3'
+import type { Selection } from 'd3-selection'
 
 function readCssVar(varName: string, fallback: string): string {
   if (typeof window === 'undefined' || typeof document === 'undefined') return fallback
@@ -169,7 +169,7 @@ export type MarkerVariant = keyof typeof MARKER_VARIANTS
  * @param variants - Which variants to create (defaults to all)
  */
 export function createMarkerDefinitions(
-  defs: d3.Selection<SVGDefsElement, unknown, null, undefined>,
+  defs: Selection<SVGDefsElement, unknown, null, undefined>,
   variants: MarkerVariant[] = ['primary', 'junction']
 ): void {
   variants.forEach((variant) => {

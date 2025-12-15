@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, onBeforeUnmount, computed } from 'vue'
-import * as d3 from 'd3'
+import { drag } from 'd3-drag'
+import type { D3DragEvent } from 'd3-drag'
+import { select } from 'd3-selection'
+import type { Selection } from 'd3-selection'
+import type { ForceLink } from 'd3-force'
+import 'd3-transition'
+import { zoomTransform } from 'd3-zoom'
+import type { ZoomTransform } from 'd3-zoom'
 import type { Relationship, Table } from '@/types/schema'
 import type { TableNode, TableLink } from '@/types/diagram'
 import { useThemeStore } from '@/stores/theme'
@@ -35,15 +42,15 @@ const props = withDefaults(
 const svgContainer = ref<HTMLElement>()
 
 // D3 selections (not reactive)
-let svg: d3.Selection<SVGSVGElement, unknown, null, undefined> | null = null
-let zoomGroup: d3.Selection<SVGGElement, unknown, null, undefined> | null = null
-let node: d3.Selection<SVGGElement, TableNode, SVGGElement, unknown> | null = null
-let linkGroup: d3.Selection<SVGGElement, TableLink, SVGGElement, unknown> | null = null
-let linkPaths: d3.Selection<SVGPathElement, TableLink, SVGGElement, unknown> | null = null
-let gridLayer: d3.Selection<SVGGElement, unknown, null, undefined> | null = null
+let svg: Selection<SVGSVGElement, unknown, null, undefined> | null = null
+let zoomGroup: Selection<SVGGElement, unknown, null, undefined> | null = null
+let node: Selection<SVGGElement, TableNode, SVGGElement, unknown> | null = null
+let linkGroup: Selection<SVGGElement, TableLink, SVGGElement, unknown> | null = null
+let linkPaths: Selection<SVGPathElement, TableLink, SVGGElement, unknown> | null = null
+let gridLayer: Selection<SVGGElement, unknown, null, undefined> | null = null
 let links: TableLink[] = []
 let currentNodes: TableNode[] = []
-let preservedZoomTransform: d3.ZoomTransform | null = null
+let preservedZoomTransform: ZoomTransform | null = null
 let resizeObserver: ResizeObserver | null = null
 
 let nodeHeightById = new Map<string, number>()
@@ -72,12 +79,13 @@ const colors = computed(() => getDiagramColors(themeStore.isDark))
 // Grid size for background
 const gridSize = ref(10)
 const staticLayout = ref(true)
+const hasUserAdjustedForces = ref(false)
 
 // Helper functions moved to `src/utils/databaseDiagramD3.ts`
 
 // Create background grid
 function createBackgroundGrid(
-  container: d3.Selection<SVGGElement, unknown, null, undefined>,
+  container: Selection<SVGGElement, unknown, null, undefined>,
   width: number,
   height: number
 ) {
@@ -179,7 +187,7 @@ function applyTheme() {
       .attr('fill', colors.value.alternateRowBg)
 
     node.selectAll<SVGTextElement, unknown>('text.column-name').each(function () {
-      const text = d3.select(this)
+      const text = select(this)
       const currentFill = text.attr('fill')
       if (currentFill === BRAND_COLORS.primary || currentFill === BRAND_COLORS.secondary) return
       text.attr('fill', colors.value.columnText)
@@ -192,7 +200,7 @@ function applyTheme() {
 }
 
 // Create drop shadow filter
-function createDropShadowFilter(defs: d3.Selection<SVGDefsElement, unknown, null, undefined>) {
+function createDropShadowFilter(defs: Selection<SVGDefsElement, unknown, null, undefined>) {
   const filter = defs.append('filter').attr('id', 'drop-shadow').attr('height', '130%')
   filter.append('feOffset').attr('dx', 0).attr('dy', 3).attr('result', 'offsetBlur')
   filter
@@ -212,7 +220,7 @@ function createDropShadowFilter(defs: d3.Selection<SVGDefsElement, unknown, null
 
 // Create table/view nodes
 function createNodes(
-  zoomGroup: d3.Selection<SVGGElement, unknown, null, undefined>,
+  zoomGroup: Selection<SVGGElement, unknown, null, undefined>,
   nodes: TableNode[]
 ) {
   node = zoomGroup
@@ -222,8 +230,7 @@ function createNodes(
     .join('g')
     .attr('class', (d: TableNode) => (d.isView ? 'view-node' : 'table-node'))
     .call(
-      d3
-        .drag<SVGGElement, TableNode>()
+      drag<SVGGElement, TableNode>()
         .on('start', dragstarted)
         .on('drag', dragged)
         .on('end', dragended)
@@ -325,7 +332,7 @@ function createNodes(
     .attr('transform', 'translate(0, 30)')
 
   columnGroup.each(function (this: SVGGElement, d: TableNode) {
-    const group = d3.select(this)
+    const group = select(this)
     const table = tableByName.get(d.name) || viewByName.get(d.name)
     if (!table) return
 
@@ -379,7 +386,7 @@ function createNodes(
 
 // Create relationship lines
 function createLinks(
-  zoomGroup: d3.Selection<SVGGElement, unknown, null, undefined>,
+  zoomGroup: Selection<SVGGElement, unknown, null, undefined>,
   linksData: TableLink[]
 ) {
   linkGroup = zoomGroup
@@ -405,18 +412,18 @@ function createLinks(
 }
 
 // Drag handlers
-function dragstarted(event: d3.D3DragEvent<SVGGElement, TableNode, TableNode>) {
+function dragstarted(event: D3DragEvent<SVGGElement, TableNode, TableNode>) {
   if (!event.active) forcesComposable.restartSimulation(0.1)
   event.subject.fx = event.subject.x
   event.subject.fy = event.subject.y
 }
 
-function dragged(event: d3.D3DragEvent<SVGGElement, TableNode, TableNode>) {
+function dragged(event: D3DragEvent<SVGGElement, TableNode, TableNode>) {
   event.subject.fx = event.x
   event.subject.fy = event.y
 }
 
-function dragended(event: d3.D3DragEvent<SVGGElement, TableNode, TableNode>) {
+function dragended(event: D3DragEvent<SVGGElement, TableNode, TableNode>) {
   if (!event.active) forcesComposable.getSimulation()?.alphaTarget(0)
   event.subject.fx = event.x
   event.subject.fy = event.y
@@ -437,7 +444,7 @@ function updateHighlighting() {
 
   // Update table highlighting
   node.each(function (d: TableNode) {
-    const element = d3.select(this as SVGGElement)
+    const element = select(this as SVGGElement)
     const isSelected = d.name === selectedTableName
     const isRelated = relatedTables.has(d.name)
 
@@ -493,7 +500,7 @@ function updateHighlighting() {
     element.selectAll<SVGTextElement, unknown>('.column-name').each(function (
       this: SVGTextElement
     ) {
-      const text = d3.select<SVGTextElement, unknown>(this)
+      const text = select<SVGTextElement, unknown>(this)
       const fieldName = this.getAttribute('data-column-name') || ''
       const fieldRelationships = relationships.filter(
         (r) =>
@@ -623,13 +630,138 @@ function settleSimulation(ticks: number) {
   simulation.stop()
 }
 
+function clampNumber(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value))
+}
+
+function median(values: number[]): number {
+  if (!values.length) return 0
+  const sorted = [...values].sort((a, b) => a - b)
+  const mid = Math.floor(sorted.length / 2)
+  return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid]
+}
+
+function computeRecommendedForces(params: {
+  nodeHeightById: Map<string, number>
+  nodes: TableNode[]
+  links: TableLink[]
+}): { linkDistance: number; chargeStrength: number; collisionRadius: number } {
+  const nodeWidth = 200
+  const heights = Array.from(params.nodeHeightById.values()).filter((h) => Number.isFinite(h))
+  const typicalHeight = median(heights) || 150
+  const baseSize = Math.max(nodeWidth, typicalHeight)
+
+  const nodeCount = Math.max(1, params.nodes.length)
+  const linkCount = params.links.length
+  const avgDegree = nodeCount > 0 ? (2 * linkCount) / nodeCount : 0
+  const densityFactor = 1 + clampNumber(avgDegree / 10, 0, 1) * 0.25
+
+  const collisionRadius = clampNumber(
+    Math.round((Math.hypot(nodeWidth, typicalHeight) / 2 + 24) * densityFactor),
+    60,
+    320
+  )
+
+  const linkDistance = clampNumber(Math.round((baseSize + 110) * densityFactor), 100, 800)
+
+  const chargeStrengthRaw = -Math.round(
+    ((collisionRadius * 4 + linkDistance) * Math.log2(nodeCount + 1)) / 2
+  )
+  const chargeStrength = clampNumber(chargeStrengthRaw, -6000, -200)
+
+  return { linkDistance, chargeStrength, collisionRadius }
+}
+
+let suppressForcesWatcher = false
+
+function applyForceParams(params: {
+  linkDistance: number
+  chargeStrength: number
+  collisionRadius: number
+  userInitiated?: boolean
+}) {
+  suppressForcesWatcher = true
+  forcesComposable.linkDistance.value = params.linkDistance
+  forcesComposable.chargeStrength.value = params.chargeStrength
+  forcesComposable.collisionRadius.value = params.collisionRadius
+  suppressForcesWatcher = false
+
+  if (params.userInitiated) hasUserAdjustedForces.value = true
+
+  const simulation = forcesComposable.getSimulation()
+  if (!simulation) return
+
+  forcesComposable.updateForces()
+  if (staticLayout.value) {
+    settleSimulation(35)
+    if (highlightingComposable.selectedTable.value) updateHighlighting()
+  } else {
+    forcesComposable.restartSimulation(0.2)
+  }
+}
+
+function autoTuneForces() {
+  if (!currentNodes.length) return
+  const recommended = computeRecommendedForces({
+    nodeHeightById,
+    nodes: currentNodes,
+    links
+  })
+  applyForceParams({ ...recommended, userInitiated: true })
+}
+
+function computeDiagramBounds(params: {
+  nodes: TableNode[]
+  nodeHeightById: Map<string, number>
+}): { minX: number; minY: number; maxX: number; maxY: number } | null {
+  const nodeWidth = 200
+  const halfWidth = nodeWidth / 2
+
+  let minX = Number.POSITIVE_INFINITY
+  let maxX = Number.NEGATIVE_INFINITY
+  let minY = Number.POSITIVE_INFINITY
+  let maxY = Number.NEGATIVE_INFINITY
+
+  for (const n of params.nodes) {
+    if (typeof n.x !== 'number' || typeof n.y !== 'number') continue
+    const height = params.nodeHeightById.get(n.id) ?? 30
+    minX = Math.min(minX, n.x - halfWidth)
+    maxX = Math.max(maxX, n.x + halfWidth)
+    minY = Math.min(minY, n.y - height / 2)
+    maxY = Math.max(maxY, n.y + height / 2)
+  }
+
+  if (
+    !Number.isFinite(minX) ||
+    !Number.isFinite(minY) ||
+    !Number.isFinite(maxX) ||
+    !Number.isFinite(maxY)
+  ) {
+    return null
+  }
+
+  return { minX, minY, maxX, maxY }
+}
+
+function autoLayout() {
+  autoTuneForces()
+
+  if (!svgContainer.value) return
+  const bounds = computeDiagramBounds({ nodes: currentNodes, nodeHeightById })
+  if (!bounds) return
+
+  const width = svgContainer.value.clientWidth
+  const height = svgContainer.value.clientHeight || 1200
+  zoomComposable.fitToBounds(bounds, width, height)
+}
+
 // Main visualization function
 function createVisualization(reason: 'init' | 'resize' | 'data' | 'theme' = 'data') {
   if (!svgContainer.value) return
 
   if (svg && reason !== 'init') {
     const svgNode = svg.node()
-    if (svgNode) preservedZoomTransform = d3.zoomTransform(svgNode)
+    if (svgNode) preservedZoomTransform = zoomTransform(svgNode)
   }
 
   if (currentNodes.length) {
@@ -649,13 +781,13 @@ function createVisualization(reason: 'init' | 'resize' | 'data' | 'theme' = 'dat
   forcesComposable.stopSimulation()
 
   // Clear previous visualization
-  d3.select(svgContainer.value).selectAll('*').remove()
+  select(svgContainer.value).selectAll('*').remove()
 
   const width = svgContainer.value.clientWidth
   const height = svgContainer.value.clientHeight || 1200
   lastSize = { width, height }
 
-  svg = d3.select(svgContainer.value).append('svg').attr('width', width).attr('height', height)
+  svg = select(svgContainer.value).append('svg').attr('width', width).attr('height', height)
 
   // Zoom group must exist before initializing zoom (so zoom handler can apply transforms)
   const zoomContent = svg.append('g').attr('class', 'zoom-group')
@@ -663,7 +795,7 @@ function createVisualization(reason: 'init' | 'resize' | 'data' | 'theme' = 'dat
 
   // Initialize zoom
   const zoomBehavior = zoomComposable.initializeZoom(svg)
-  zoomComposable.setInitialTransform(width, height)
+  zoomComposable.setInitialTransform()
 
   if (preservedZoomTransform && reason !== 'init') {
     svg.call(zoomBehavior.transform, preservedZoomTransform)
@@ -771,11 +903,18 @@ function createVisualization(reason: 'init' | 'resize' | 'data' | 'theme' = 'dat
     nodeHeightById.set(n.id, 30 + columnCount * 20)
   })
 
+  if (!hasUserAdjustedForces.value && (reason === 'init' || reason === 'data')) {
+    const recommended = computeRecommendedForces({ nodeHeightById, nodes, links })
+    forcesComposable.linkDistance.value = recommended.linkDistance
+    forcesComposable.chargeStrength.value = recommended.chargeStrength
+    forcesComposable.collisionRadius.value = recommended.collisionRadius
+  }
+
   // Initialize simulation
   const simulation = forcesComposable.initializeSimulation(width, height)
   simulation.nodes(nodes)
 
-  const linkForce = simulation.force('link') as d3.ForceLink<TableNode, TableLink>
+  const linkForce = simulation.force('link') as ForceLink<TableNode, TableLink>
   linkForce.links(links).distance(forcesComposable.linkDistance.value)
 
   const preTicks = reason === 'init' ? 110 : reason === 'data' ? 70 : 0
@@ -811,7 +950,7 @@ function updateSize() {
 
   lastSize = { width, height }
   svg.attr('width', width).attr('height', height)
-  zoomComposable.setInitialTransform(width, height)
+  zoomComposable.setInitialTransform()
   forcesComposable.setCenter(width, height)
   recreateGrid(width, height)
   applyTheme()
@@ -859,6 +998,7 @@ watch(
     forcesComposable.collisionRadius
   ],
   () => {
+    if (suppressForcesWatcher) return
     const simulation = forcesComposable.getSimulation()
     if (!simulation) return
 
@@ -877,6 +1017,21 @@ function handleExport() {
   if (!svg) return
   exportComposable.saveDiagram(svg, svgContainer.value || null)
 }
+
+function handleUpdateLinkDistance(value: number) {
+  hasUserAdjustedForces.value = true
+  forcesComposable.linkDistance.value = value
+}
+
+function handleUpdateChargeStrength(value: number) {
+  hasUserAdjustedForces.value = true
+  forcesComposable.chargeStrength.value = value
+}
+
+function handleUpdateCollisionRadius(value: number) {
+  hasUserAdjustedForces.value = true
+  forcesComposable.collisionRadius.value = value
+}
 </script>
 
 <template>
@@ -892,12 +1047,12 @@ function handleExport() {
       :export-progress="exportComposable.exportProgress.value"
       :export-type="exportComposable.exportType.value"
       @zoom="zoomComposable.handleZoom"
-      @reset="zoomComposable.resetView"
+      @auto="autoLayout"
       @toggle-export="exportComposable.toggleExportOptions"
       @export="handleExport"
-      @update:link-distance="forcesComposable.linkDistance.value = $event"
-      @update:charge-strength="forcesComposable.chargeStrength.value = $event"
-      @update:collision-radius="forcesComposable.collisionRadius.value = $event"
+      @update:link-distance="handleUpdateLinkDistance"
+      @update:charge-strength="handleUpdateChargeStrength"
+      @update:collision-radius="handleUpdateCollisionRadius"
       @update:export-type="exportComposable.exportType.value = $event"
     />
 

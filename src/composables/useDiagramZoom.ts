@@ -1,5 +1,8 @@
 import { ref } from 'vue'
-import * as d3 from 'd3'
+import type { Selection } from 'd3-selection'
+import { zoom as createZoom, zoomIdentity } from 'd3-zoom'
+import type { D3ZoomEvent, ZoomBehavior, ZoomTransform } from 'd3-zoom'
+import 'd3-transition'
 
 export interface DiagramZoomOptions {
   minZoom?: number
@@ -11,23 +14,22 @@ export function useDiagramZoom(options: DiagramZoomOptions = {}) {
   const { minZoom = 0.2, maxZoom = 3, initialZoom = 1 } = options
 
   const currentZoom = ref(initialZoom)
-  let zoom: d3.ZoomBehavior<SVGSVGElement, unknown> | null = null
-  let svg: d3.Selection<SVGSVGElement, unknown, null, undefined> | null = null
-  let initialTransform: d3.ZoomTransform | null = null
+  let zoom: ZoomBehavior<SVGSVGElement, unknown> | null = null
+  let svg: Selection<SVGSVGElement, unknown, null, undefined> | null = null
+  let initialTransform: ZoomTransform | null = null
 
   /**
    * Initialize zoom behavior for the SVG
    */
   function initializeZoom(
-    svgElement: d3.Selection<SVGSVGElement, unknown, null, undefined>,
+    svgElement: Selection<SVGSVGElement, unknown, null, undefined>,
     zoomGroupSelector: string = 'g.zoom-group'
   ) {
     svg = svgElement
 
-    zoom = d3
-      .zoom<SVGSVGElement, unknown>()
+    zoom = createZoom<SVGSVGElement, unknown>()
       .scaleExtent([minZoom, maxZoom])
-      .on('zoom', (event: d3.D3ZoomEvent<SVGSVGElement, unknown>) => {
+      .on('zoom', (event: D3ZoomEvent<SVGSVGElement, unknown>) => {
         currentZoom.value = event.transform.k
         svg?.select(zoomGroupSelector).attr('transform', event.transform.toString())
       })
@@ -51,8 +53,8 @@ export function useDiagramZoom(options: DiagramZoomOptions = {}) {
   /**
    * Set initial transform for reset functionality
    */
-  function setInitialTransform(width: number, height: number) {
-    initialTransform = d3.zoomIdentity.translate(width / 2, height / 2).scale(initialZoom)
+  function setInitialTransform() {
+    initialTransform = zoomIdentity.scale(initialZoom)
   }
 
   /**
@@ -62,6 +64,37 @@ export function useDiagramZoom(options: DiagramZoomOptions = {}) {
     if (svg && zoom && initialTransform) {
       svg.transition().duration(750).call(zoom.transform, initialTransform)
     }
+  }
+
+  function fitToBounds(
+    bounds: { minX: number; minY: number; maxX: number; maxY: number },
+    viewportWidth: number,
+    viewportHeight: number,
+    padding: number = 120,
+    duration: number = 550
+  ) {
+    if (!svg || !zoom) return
+
+    const width = Math.max(1, viewportWidth)
+    const height = Math.max(1, viewportHeight)
+    const paddedWidth = Math.max(1, width - padding * 2)
+    const paddedHeight = Math.max(1, height - padding * 2)
+
+    const boundsWidth = Math.max(1, bounds.maxX - bounds.minX)
+    const boundsHeight = Math.max(1, bounds.maxY - bounds.minY)
+
+    const scale = Math.max(
+      minZoom,
+      Math.min(maxZoom, Math.min(paddedWidth / boundsWidth, paddedHeight / boundsHeight))
+    )
+
+    const cx = (bounds.minX + bounds.maxX) / 2
+    const cy = (bounds.minY + bounds.maxY) / 2
+    const transform = zoomIdentity
+      .translate(width / 2 - scale * cx, height / 2 - scale * cy)
+      .scale(scale)
+
+    svg.transition().duration(duration).call(zoom.transform, transform)
   }
 
   /**
@@ -85,6 +118,7 @@ export function useDiagramZoom(options: DiagramZoomOptions = {}) {
     handleZoom,
     setInitialTransform,
     resetView,
+    fitToBounds,
     setZoom,
 
     // Access to D3 zoom behavior if needed
