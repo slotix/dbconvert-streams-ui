@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import type { Table, Position, Relationship } from '@/types/schema'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import type { SQLTableMeta, SQLViewMeta, SQLColumnMeta, SQLForeignKeyMeta } from '@/types/metadata'
+import { isSystemSchema } from '@/utils/systemSchema'
 
 export const useSchemaStore = defineStore('schema', {
   state: () => ({
@@ -80,6 +81,22 @@ export const useSchemaStore = defineStore('schema', {
 
       try {
         const navigationStore = useExplorerNavigationStore()
+        // Ensure we have schema/system info available for filtering.
+        await navigationStore.ensureDatabases(this.connectionId)
+
+        const schemaSystemInfo = new Map<string, boolean>()
+        const dbInfo = navigationStore
+          .getDatabasesRaw(this.connectionId)
+          ?.find((db) => db.name === this.databaseName)
+        dbInfo?.schemas?.forEach((s) => {
+          schemaSystemInfo.set(s.name.toLowerCase(), Boolean(s.isSystem))
+        })
+
+        const includeSchema = (schemaName: string | undefined | null) => {
+          if (navigationStore.showSystemObjects) return true
+          return !isSystemSchema(schemaName, schemaSystemInfo)
+        }
+
         const metadata = await navigationStore.ensureMetadata(
           this.connectionId,
           this.databaseName,
@@ -98,6 +115,7 @@ export const useSchemaStore = defineStore('schema', {
         // Convert metadata tables to tables array
         const tables: Table[] = Object.entries(metadataTables)
           .filter(([_, value]) => value && typeof value === 'object')
+          .filter(([_, tableMeta]) => includeSchema((tableMeta as SQLTableMeta).schema))
           .map(([_, tableMeta]: [string, unknown]) => {
             const tm = tableMeta as SQLTableMeta
             // Process columns
@@ -147,6 +165,7 @@ export const useSchemaStore = defineStore('schema', {
         // Convert metadata views to views array
         const views: Table[] = Object.entries(metadataViews)
           .filter(([_, value]) => value && typeof value === 'object')
+          .filter(([_, viewMeta]) => includeSchema((viewMeta as SQLViewMeta).schema))
           .map(([_, viewMeta]: [string, unknown]) => {
             const vm = viewMeta as SQLViewMeta
             // Process columns
