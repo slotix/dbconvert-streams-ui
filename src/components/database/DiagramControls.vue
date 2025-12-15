@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { PlusIcon, MinusIcon, ArrowPathIcon, ArrowDownTrayIcon } from '@heroicons/vue/24/outline'
+import { PlusIcon, MinusIcon, SparklesIcon, ArrowDownTrayIcon } from '@heroicons/vue/24/outline'
 import type { ExportFormat } from '@/composables/useDiagramExport'
 
 interface Props {
@@ -56,7 +56,7 @@ const emit = defineEmits<{
           title="Auto layout (recenter + retune)"
           @click="emit('auto')"
         >
-          <ArrowPathIcon class="w-3.5 h-3.5" />
+          <SparklesIcon class="w-3.5 h-3.5" />
         </button>
         <button
           class="p-1 ml-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors focus:outline-none focus:ring-1 focus:ring-cyan-500 focus:ring-offset-1 dark:focus:ring-offset-gray-850"

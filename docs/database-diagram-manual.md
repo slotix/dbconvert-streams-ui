@@ -4,140 +4,91 @@ The interactive database diagram provides a visual representation of your databa
 
 ## Overview
 
-The database diagram displays tables, views, and their relationships in an intuitive, interactive format. Tables are represented as boxes containing column information, while relationships between tables are shown as connecting lines with crow's foot notation indicating the relationship type.
-
-![Database Diagram Overview](diagram-overview.png)
+The database diagram displays tables, views, and their relationships in an interactive ERD-style format. Relationships are drawn as orthogonal (right-angle) connectors with crow's-foot markers indicating cardinality, anchored to the specific columns involved (FK column → referenced PK/UK column).
 
 ## Understanding the Diagram Elements
 
 ### Tables and Views
 
-- **Tables**: Rectangular boxes displaying table name and columns
-- **Views**: Similar to tables but with a slightly different header shade
-- **Primary Keys**: Indicated with a 🔑 icon and highlighted in teal blue
-- **Foreign Keys**: Indicated with a 🔗 icon and highlighted in orange
+- **Tables**: Rectangular boxes with table name and columns
+- **Views**: Similar to tables, shown with an icon and italic styling
+- **Primary Keys**: 🔑 icon, highlighted in teal blue
+- **Foreign Keys**: 🔗 icon, highlighted in orange
 
-### Relationship Lines
+### Relationships
 
-The diagram uses standard Entity-Relationship Diagram (ERD) notation with crow's foot symbols:
+Lines connect related tables with different styles:
 
-- **Teal Blue Lines**: Regular foreign key relationships between tables
-- **Orange Lines**: Relationships through junction tables (many-to-many)
+- **Teal Blue Lines**: Foreign key relationships between tables
+- **Orange Lines**: Many-to-many relationships through junction tables
 - **Gray Dashed Lines**: View dependencies
 
-### Relationship Markers
-
-The diagram uses the following notation at the end of relationship lines:
-
-- **Crow's Foot** (<--): Represents the "many" side of a relationship (looks like branching lines)
-- **Vertical Bar** (|): Represents the "one" side of a relationship
-- **Double Vertical Bar** (||): Represents the "one" side with a stronger constraint
+Markers indicate cardinality:
+- **Crow's Foot**: "Many" side of a relationship
+- **Double Bar** (||): "One" side (e.g., FK → PK/UK)
 
 ## Interacting with the Diagram
 
 ### Navigation
 
-- **Pan**: Click and drag on empty space to move around the diagram
-- **Zoom**: Use the zoom controls in the top right, or use mouse wheel/trackpad
-  - Click the `+` button to zoom in
-  - Click the `-` button to zoom out
-  - Current zoom level is displayed as a percentage
-  - Click the reset button (↻) to return to the original view
+- **Pan**: Drag the background to move around
+- **Zoom**: Use controls in top right or mouse wheel/trackpad
+- **Move Tables**: Click and drag any table to reposition
 
-### Table Interaction
+### Selection and Highlighting
 
-- **Move Tables**: Click and drag any table to reposition it
-- **Select Table**: Click on a table to select it
-  - Selected tables are highlighted with a teal blue border
-  - Related tables are highlighted with an orange border
-  - Related fields are also highlighted
-- **Deselect**: Click on empty space to deselect all tables
-
-### Relationship Highlighting
-
-When you select a table:
-1. All directly connected tables are highlighted
-2. The relationship lines connecting these tables are emphasized
-3. Fields participating in the relationships are highlighted
-4. Unrelated tables and relationships are dimmed
-
-### Hover Information
-
-- **Field Relationships**: Hover over a highlighted field to see its relationships
-- **Relationship Lines**: Hover over a line to see details about the relationship
+Click on a table to select it:
+- Selected table: Teal/cyan theme (tinted background + border)
+- Related tables: Orange theme (tinted background + border)
+- Relationship lines: Emphasized
+- Participating fields: Highlighted (FK/PK columns)
+- Unrelated elements: Dimmed
+- Click empty space to deselect
 
 ## Controls Panel
 
-The controls panel in the top right corner provides tools to customize the diagram:
+The controls panel in the top right provides zoom (`+` / `-`), auto layout (✨), export, and layout sliders.
 
-### Zoom Controls
+**Auto layout (✨)**: Recomputes layout parameters and recenters the diagram. Use this as your "reset" button.
 
-- **Zoom In**: Increase the diagram size
-- **Zoom Out**: Decrease the diagram size
-- **Zoom Level**: Shows the current zoom percentage
-- **Reset View**: Return to the original view and zoom level
+### Layout Controls (Force-Directed)
 
-### Force Layout Controls
+The diagram uses a force-directed layout. Adjust it using the sliders:
 
-The diagram uses a force-directed layout that can be adjusted using the slate-gray sliders:
-
-- **Link Distance**: Controls the length of connections between tables
+- **Collision Radius**: Prevents overlap by enforcing spacing between tables
+  - Increase first if tables overlap or feel cramped
+  - Rule of thumb: roughly "half the node diagonal + padding"
+- **Link Distance**: Controls the preferred length of connections between tables
   - Increase for more spread out tables
   - Decrease for more compact layout
-- **Charge Strength**: Controls how strongly tables repel each other
+- **Charge Strength** (negative): Controls how strongly tables repel each other
   - More negative values push tables further apart
   - Less negative values allow tables to be closer together
-- **Collision Radius**: Controls minimum distance between tables
-  - Larger values prevent tables from overlapping
-  - Smaller values allow tighter packing
+  - More negative is usually needed for larger/denser schemas
+
+Suggested tuning order:
+1. Set **Collision Radius** to eliminate overlap
+2. Adjust **Link Distance** for readability vs. whitespace
+3. Adjust **Charge Strength** to reduce clumping (more negative) or tighten layout (less negative)
 
 ## Understanding Database Relationships
 
-### One-to-Many Relationships
+### One-to-Many
+One record references many records. Example: One `customer` → many `orders`.
+- "One" side: Vertical bar (|)
+- "Many" side: Crow's foot (<--)
 
-The most common relationship type, where one record in the first table can be referenced by multiple records in the second table.
-
-Example: One `customer` can have many `orders`.
-
-- The "one" side shows a vertical bar (|)
-- The "many" side shows a crow's foot (<--)
-
-### Many-to-Many Relationships
-
-Relationships where records in both tables can reference multiple records in each other, implemented using a junction table.
-
-Example: Many `films` can have many `actors` through the `film_actor` junction table.
-
-- Both tables connect to a junction table
-- Orange lines indicate a many-to-many relationship
-
-### Junction Tables
-
-Tables that connect two other tables in a many-to-many relationship.
-
-Identifying characteristics:
-- Usually has a composite primary key
-- Contains at least two foreign keys
-- Often named as a combination of the two tables it connects
-
-## Best Practices
-
-1. **Adjust Layout**: Use the slider controls to find the optimal layout for your schema
-2. **Focus on Subsets**: Select specific tables to focus on particular relationships
-3. **Arrange Related Tables**: Position related tables close to each other for clarity
-4. **Explore Dependencies**: Select views to understand their dependencies on base tables
+### Many-to-Many
+Multiple records reference multiple records via a junction table. Example: Many `films` ↔ many `actors` through `film_actor`.
+- Orange lines indicate this relationship
+- Junction tables typically have composite primary keys and multiple foreign keys
 
 ## Troubleshooting
 
-| Issue | Solution |
-|-------|----------|
-| Diagram is too cluttered | Increase Link Distance and Charge Strength |
-| Tables are too spread out | Decrease Link Distance and Charge Strength |
-| Tables overlap | Increase Collision Radius |
-| Need to focus on specific relationships | Click on a table to highlight its relationships |
-| Can't see the whole diagram | Click the reset view button or zoom out |
-| Lost the original view | Click the reset view button to return to the starting position |
-
----
-
-The database diagram is a powerful tool for understanding your database structure. Use it to explore relationships, plan changes, and document your database schema. 
+| Issue                                         | Solution                                                    |
+| --------------------------------------------- | ----------------------------------------------------------- |
+| Diagram is too cluttered                      | Increase Link Distance and Charge Strength                  |
+| Tables are too spread out                     | Decrease Link Distance and Charge Strength                  |
+| Tables overlap                                | Increase Collision Radius                                   |
+| Need to focus on specific relationships       | Click on a table to highlight its relationships             |
+| Can't see whole diagram or layout looks messy | Click **Auto layout (✨)**, then fine-tune sliders if needed |
