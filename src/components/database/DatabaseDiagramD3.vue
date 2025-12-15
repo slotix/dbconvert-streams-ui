@@ -355,8 +355,9 @@ function createNodes(
       const isPK = table.primaryKeys?.includes(col.name)
       const isFK = table.foreignKeys?.some((fk) => fk.sourceColumn === col.name)
       const prefix = isPK ? '🔑 ' : isFK ? '🔗 ' : ''
+      const formattedType = formatColumnType(col)
 
-      row
+      const columnNameText = row
         .append('text')
         .attr('x', 10)
         .attr('y', 14)
@@ -371,6 +372,38 @@ function createNodes(
         .text(prefix + col.name)
         .style('cursor', isPK || isFK ? 'help' : 'default')
 
+      if (isPK || isFK) {
+        const tooltipLines: string[] = []
+        tooltipLines.push(`${d.name}.${col.name}`)
+        tooltipLines.push(
+          `Type: ${formattedType}${isPK ? ', Primary Key' : ''}${isFK ? ', Foreign Key' : ''}`
+        )
+
+        if (isFK) {
+          table.foreignKeys
+            ?.filter((fk) => fk.sourceColumn === col.name)
+            .forEach((fk) => {
+              const actions =
+                fk.onUpdate || fk.onDelete
+                  ? ` (ON UPDATE ${fk.onUpdate || 'NO ACTION'}, ON DELETE ${fk.onDelete || 'NO ACTION'})`
+                  : ''
+              tooltipLines.push(`References ${fk.referencedTable}.${fk.referencedColumn}${actions}`)
+            })
+        }
+
+        if (isPK) {
+          props.tables.forEach((t) => {
+            t.foreignKeys?.forEach((fk) => {
+              if (fk.referencedTable === d.name && fk.referencedColumn === col.name) {
+                tooltipLines.push(`Referenced by ${t.name}.${fk.sourceColumn}`)
+              }
+            })
+          })
+        }
+
+        columnNameText.append('title').text(tooltipLines.join('\n'))
+      }
+
       row
         .append('text')
         .attr('class', 'column-type')
@@ -379,7 +412,7 @@ function createNodes(
         .attr('text-anchor', 'end')
         .attr('fill', colors.value.columnText)
         .style('font-size', '11px')
-        .text(formatColumnType(col))
+        .text(formattedType)
     })
   })
 }
