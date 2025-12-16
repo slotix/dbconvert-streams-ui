@@ -1,5 +1,5 @@
 import { watch, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { useExplorerViewStateStore } from '@/stores/explorerViewState'
 
 /**
@@ -16,7 +16,6 @@ import { useExplorerViewStateStore } from '@/stores/explorerViewState'
  */
 export function useExplorerUrlSync() {
   const route = useRoute()
-  const router = useRouter()
   const viewState = useExplorerViewStateStore()
 
   // Helper to parse URL and update store
@@ -31,6 +30,7 @@ export function useExplorerUrlSync() {
       connId,
       details: query.details === 'true',
       database: query.db as string | undefined,
+      diagram: query.diagram === 'true',
       schema: query.schema as string | undefined,
       type: query.type as 'table' | 'view' | undefined,
       name: query.name as string | undefined,
@@ -48,70 +48,10 @@ export function useExplorerUrlSync() {
     }
   })
 
-  // Watcher 1: Store → URL (when user navigates via UI)
-  // This updates the URL to reflect the current store state
-  watch(
-    () => ({
-      viewType: viewState.viewType,
-      connectionId: viewState.connectionId,
-      database: viewState.databaseName,
-      schema: viewState.schemaName,
-      type: viewState.objectType,
-      name: viewState.objectName,
-      file: viewState.filePath
-    }),
-    (state) => {
-      // Don't sync if no connection selected
-      if (!state.connectionId) return
-
-      // Build query params based on view type
-      const query: Record<string, string> = {}
-
-      switch (state.viewType) {
-        case 'connection-details':
-          query.details = 'true'
-          break
-
-        case 'database-overview':
-          if (state.database) query.db = state.database
-          break
-
-        case 'table-data':
-          if (state.database) query.db = state.database
-          if (state.schema) query.schema = state.schema
-          if (state.type) query.type = state.type
-          if (state.name) query.name = state.name
-          break
-
-        case 'file-browser':
-          if (state.file) query.file = state.file
-          break
-
-        default:
-          // Default to connection details if viewType is null
-          query.details = 'true'
-      }
-
-      // Only update if different from current URL to avoid infinite loops
-      const currentQuery = JSON.stringify(route.query)
-      const newQuery = JSON.stringify(query)
-      const currentPath = route.path
-      const newPath = `/explorer/${state.connectionId}`
-
-      if (currentQuery !== newQuery || currentPath !== newPath) {
-        router.replace({
-          path: newPath,
-          query
-        })
-      }
-    },
-    { deep: true }
-  )
-
-  // Watcher 2: URL → Store (when user uses back/forward buttons)
+  // URL → Store (when user uses back/forward buttons or loads a shared URL)
   watch(
     [() => route.params.id, () => route.query] as const,
-    ([connId, query], [oldConnId, oldQuery]) => {
+    ([connId, _query], [oldConnId, oldQuery]) => {
       if (!connId) return
 
       // Skip if this is the initial trigger (handled by onMounted)

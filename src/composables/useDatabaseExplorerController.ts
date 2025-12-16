@@ -62,6 +62,116 @@ export function useDatabaseExplorerController({
   // Use the new view state store as the single source of truth
   const viewState = useExplorerViewStateStore()
 
+  function pushExplorerRoute(connectionId: string, query: Record<string, string>) {
+    const nextPath = `/explorer/${connectionId}`
+    const currentQuery = JSON.stringify(route.query)
+    const nextQuery = JSON.stringify(query)
+    if (route.path === nextPath && currentQuery === nextQuery) return
+    void router.push({ path: nextPath, query })
+  }
+
+  const restoreToken = ref(0)
+
+  async function ensureLeftPaneMatchesViewState(payload: {
+    connectionId: string
+    database: string
+    schema?: string | null
+    type: 'table' | 'view'
+    name: string
+  }) {
+    const token = ++restoreToken.value
+
+    const leftState = paneTabsStore.getPaneState('left')
+    const schema = payload.schema || undefined
+    const matchesSelection = (tab: PaneTab | null | undefined) =>
+      Boolean(
+        tab &&
+          tab.tabType === 'database' &&
+          tab.connectionId === payload.connectionId &&
+          tab.database === payload.database &&
+          tab.type === payload.type &&
+          tab.name === payload.name &&
+          (tab.schema || undefined) === (schema || undefined)
+      )
+
+    // If the matching tab already exists, just activate it.
+    const pinnedIndex = leftState.pinnedTabs.findIndex((t) => matchesSelection(t))
+    if (pinnedIndex >= 0) {
+      paneTabsStore.activateTab('left', pinnedIndex)
+      return
+    }
+    if (matchesSelection(leftState.previewTab)) {
+      paneTabsStore.activatePreviewTab('left')
+      return
+    }
+
+    // Otherwise restore by fetching metadata and creating a preview tab.
+    let obj: SQLTableMeta | SQLViewMeta | undefined
+    try {
+      const meta = await connections.getMetadata(payload.connectionId, payload.database)
+      if (token !== restoreToken.value) return
+
+      if (payload.type === 'table') {
+        obj = Object.values(meta.tables || {}).find(
+          (t) => t.name === payload.name && (!schema || t.schema === schema)
+        )
+      } else {
+        obj = Object.values(meta.views || {}).find(
+          (v) => v.name === payload.name && (!schema || v.schema === schema)
+        )
+      }
+    } catch (error) {
+      console.warn('Failed to restore left pane tab from URL/viewState:', error)
+      return
+    }
+
+    if (!obj) {
+      console.warn('Could not restore left pane tab (object not found):', payload)
+      return
+    }
+
+    paneTabsStore.addTab(
+      'left',
+      {
+        id: `${payload.connectionId}:${payload.database || ''}:${schema || ''}:${payload.name}:${payload.type || ''}`,
+        connectionId: payload.connectionId,
+        database: payload.database,
+        schema: schema || undefined,
+        name: payload.name,
+        type: payload.type,
+        meta: obj,
+        tabType: 'database'
+      },
+      'preview'
+    )
+  }
+
+  function ensureDiagramTabMatchesRoute(connectionId: string, database: string) {
+    const leftState = paneTabsStore.getPaneState('left')
+    const tabId = `diagram:${connectionId}:${database}`
+
+    const existingIndex = leftState.pinnedTabs.findIndex(
+      (t) => t.tabType === 'diagram' && t.id === tabId
+    )
+    if (existingIndex >= 0) {
+      paneTabsStore.activateTab('left', existingIndex)
+      return
+    }
+
+    paneTabsStore.addTab(
+      'left',
+      {
+        id: tabId,
+        connectionId,
+        database,
+        name: `Diagram: ${database}`,
+        tabType: 'diagram',
+        objectKey: tabId
+      },
+      'pinned'
+    )
+  }
+
   // Loading state to prevent multiple file clicks during loading
   const isLoadingFile = ref(false)
 
@@ -129,10 +239,11 @@ export function useDatabaseExplorerController({
     mode: 'preview' | 'pinned'
     defaultTab?: 'structure' | 'data'
     openInRightSplit?: boolean
+    skipUrlUpdate?: boolean
   }) {
     const previousConnectionId = explorerState.currentConnectionId.value
 
-    // Update store - URL will sync automatically via useExplorerUrlSync
+    // Update store
     viewState.selectTable(
       payload.connectionId,
       payload.database,
@@ -140,6 +251,16 @@ export function useDatabaseExplorerController({
       payload.name,
       payload.schema
     )
+
+    if (!payload.skipUrlUpdate) {
+      const query: Record<string, string> = {
+        db: payload.database,
+        type: payload.type,
+        name: payload.name
+      }
+      if (payload.schema) query.schema = payload.schema
+      pushExplorerRoute(payload.connectionId, query)
+    }
 
     navigationStore.setActiveConnectionId(payload.connectionId)
     connectionsStore.setCurrentConnection(payload.connectionId)
@@ -179,6 +300,7 @@ export function useDatabaseExplorerController({
     mode: 'preview' | 'pinned'
     defaultTab?: 'structure' | 'data'
     openInRightSplit?: boolean
+    skipUrlUpdate?: boolean
   }) {
     // Prevent multiple clicks while loading
     if (isLoadingFile.value) {
@@ -193,8 +315,12 @@ export function useDatabaseExplorerController({
       return
     }
 
-    // Update viewState - URL will sync automatically via useExplorerUrlSync
+    // Update viewState
     viewState.selectFile(payload.connectionId, payload.path)
+
+    if (!payload.skipUrlUpdate) {
+      pushExplorerRoute(payload.connectionId, { file: payload.path })
+    }
 
     navigationStore.setActiveConnectionId(payload.connectionId)
     connectionsStore.setCurrentConnection(payload.connectionId)
@@ -250,7 +376,7 @@ export function useDatabaseExplorerController({
       })
   }
 
-  function handleShowDiagram(payload: ShowDiagramPayload) {
+  function handleShowDiagram(payload: ShowDiagramPayload & { skipUrlUpdate?: boolean }) {
     navigationStore.setActiveConnectionId(payload.connectionId)
 
     explorerState.clearPanelStates()
@@ -258,6 +384,19 @@ export function useDatabaseExplorerController({
 
     // Set viewType to 'table-data' so showDatabaseOverview becomes false
     viewState.setViewType('table-data')
+
+    if (!payload.skipUrlUpdate) {
+      const query: Record<string, string> = {
+        db: payload.database,
+        diagram: 'true'
+      }
+      if (payload.focus) {
+        query.focusType = payload.focus.type
+        query.focusName = payload.focus.name
+        if (payload.focus.schema) query.focusSchema = payload.focus.schema
+      }
+      pushExplorerRoute(payload.connectionId, query)
+    }
 
     // Create a diagram tab
     const tabId = `diagram:${payload.connectionId}:${payload.database}`
@@ -292,8 +431,10 @@ export function useDatabaseExplorerController({
   }
 
   function handleSelectConnection(payload: { connectionId: string }) {
-    // Update store - URL will sync automatically via useExplorerUrlSync
+    // Update store
     viewState.selectConnection(payload.connectionId)
+
+    pushExplorerRoute(payload.connectionId, { details: 'true' })
 
     navigationStore.setActiveConnectionId(payload.connectionId)
     connectionsStore.setCurrentConnection(payload.connectionId)
@@ -318,8 +459,10 @@ export function useDatabaseExplorerController({
   }
 
   function handleSelectDatabase(payload: { connectionId: string; database: string }) {
-    // Update store - URL will sync automatically via useExplorerUrlSync
+    // Update store
     viewState.selectDatabase(payload.connectionId, payload.database)
+
+    pushExplorerRoute(payload.connectionId, { db: payload.database })
 
     navigationStore.setActiveConnectionId(payload.connectionId)
     connectionsStore.setCurrentConnection(payload.connectionId)
@@ -337,6 +480,7 @@ export function useDatabaseExplorerController({
     connectionId: string
     path: string
     entry?: FileSystemEntry
+    skipUrlUpdate?: boolean
   }) {
     // Prevent multiple clicks while loading
     if (isLoadingFile.value) {
@@ -409,7 +553,8 @@ export function useDatabaseExplorerController({
       path: payload.path,
       entry: entry,
       mode: 'preview',
-      defaultTab: 'data'
+      defaultTab: 'data',
+      skipUrlUpdate: payload.skipUrlUpdate
     })
   }
 
@@ -658,7 +803,8 @@ export function useDatabaseExplorerController({
               name: rightName as string,
               meta: obj,
               mode: 'preview',
-              openInRightSplit: true
+              openInRightSplit: true,
+              skipUrlUpdate: true
             })
           } else {
             clearRightPaneQueryParams()
@@ -725,7 +871,47 @@ export function useDatabaseExplorerController({
         explorerState.clearDatabaseSelection()
       }
 
-      // Sync file selection without forcing a reload that would remount the tree
+      // Ensure the visible content matches URL/viewState when navigating with browser back/forward.
+      if (
+        state.viewType === 'table-data' &&
+        state.databaseName &&
+        state.objectType &&
+        state.objectName
+      ) {
+        void ensureLeftPaneMatchesViewState({
+          connectionId: state.connectionId,
+          database: state.databaseName,
+          schema: state.schemaName,
+          type: state.objectType,
+          name: state.objectName
+        })
+      }
+
+      // Restore/activate diagram tab from URL
+      if (state.viewType === 'table-data' && state.databaseName && route.query.diagram === 'true') {
+        ensureDiagramTabMatchesRoute(state.connectionId, state.databaseName)
+
+        // Apply optional focus from URL
+        schemaStore.setConnectionId(state.connectionId)
+        schemaStore.setDatabaseName(state.databaseName)
+        const focusType = route.query.focusType
+        const focusName = route.query.focusName
+        const focusSchema = route.query.focusSchema
+        if (
+          (focusType === 'table' || focusType === 'view') &&
+          typeof focusName === 'string' &&
+          focusName
+        ) {
+          const fullName =
+            typeof focusSchema === 'string' && focusSchema
+              ? `${focusSchema}.${focusName}`
+              : focusName
+          schemaStore.setSelectedTable(fullName)
+        }
+        schemaStore.fetchSchema(false)
+      }
+
+      // Sync file selection (and content) when URL/viewState changes
       if (state.viewType === 'file-browser' && state.filePath) {
         const targetConnectionId = state.connectionId
         const targetFilePath = state.filePath
@@ -733,9 +919,14 @@ export function useDatabaseExplorerController({
         if (targetConnectionId && fileExplorerStore.isFilesConnectionType(targetConnectionId)) {
           void (async () => {
             await fileExplorerStore.loadEntries(targetConnectionId)
-            if (targetFilePath) {
-              fileExplorerStore.setSelectedPath(targetConnectionId, targetFilePath)
-            }
+            if (!targetFilePath) return
+
+            // Open/activate the tab for this file so the right-side content matches the URL
+            await handleFileSelect({
+              connectionId: targetConnectionId,
+              path: targetFilePath,
+              skipUrlUpdate: true
+            })
           })()
         }
       }

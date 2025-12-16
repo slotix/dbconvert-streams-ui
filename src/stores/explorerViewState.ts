@@ -223,6 +223,20 @@ export const useExplorerViewStateStore = defineStore('explorerViewState', () => 
   }
 
   /**
+   * Select a database context for tab-based views (e.g. diagram) without selecting a table/view.
+   */
+  function selectDatabaseTabView(connId: string, database: string) {
+    viewType.value = 'table-data'
+    connectionId.value = connId
+    databaseName.value = database
+    schemaName.value = null
+    objectType.value = null
+    objectName.value = null
+    filePath.value = null
+    saveState()
+  }
+
+  /**
    * Reset to empty state
    */
   function reset() {
@@ -244,6 +258,7 @@ export const useExplorerViewStateStore = defineStore('explorerViewState', () => 
     connId: string
     details?: boolean
     database?: string
+    diagram?: boolean
     schema?: string
     type?: 'table' | 'view'
     name?: string
@@ -253,6 +268,8 @@ export const useExplorerViewStateStore = defineStore('explorerViewState', () => 
       selectConnection(params.connId)
     } else if (params.file) {
       selectFile(params.connId, params.file)
+    } else if (params.diagram && params.database) {
+      selectDatabaseTabView(params.connId, params.database)
     } else if (params.database && params.type && params.name) {
       selectTable(params.connId, params.database, params.type, params.name, params.schema)
     } else if (params.database) {
@@ -295,6 +312,7 @@ export const useExplorerViewStateStore = defineStore('explorerViewState', () => 
     selectTable,
     selectFile,
     reset,
+    selectDatabaseTabView,
     setViewType: (type: ViewType) => {
       viewType.value = type
       saveState()
