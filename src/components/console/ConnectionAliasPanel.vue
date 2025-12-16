@@ -11,6 +11,29 @@
       <div class="flex items-center space-x-2">
         <CircleStackIcon class="h-4 w-4 text-teal-600 dark:text-teal-400" />
         <span class="text-sm font-medium text-gray-900 dark:text-gray-100"> Data Sources </span>
+
+        <!-- Collapsed preview of selected sources -->
+        <div
+          v-if="isCollapsed && selectedPreview.length > 0"
+          class="hidden sm:flex items-center gap-1 max-w-[55vw] overflow-hidden"
+        >
+          <span
+            v-for="item in selectedPreview"
+            :key="item.connectionId"
+            class="inline-flex items-center gap-1 px-1.5 py-0.5 text-[11px] rounded bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 truncate"
+          >
+            <span class="font-mono text-gray-600 dark:text-gray-300">{{ item.alias }}</span>
+            <span class="text-gray-400 dark:text-gray-500">·</span>
+            <span class="truncate max-w-40">{{ item.name }}</span>
+          </span>
+          <span
+            v-if="selectedOverflowCount > 0"
+            class="inline-flex items-center px-1.5 py-0.5 text-[11px] rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300"
+          >
+            +{{ selectedOverflowCount }}
+          </span>
+        </div>
+
         <span
           v-if="selectedCount > 0"
           class="px-1.5 py-0.5 text-xs font-medium rounded-full bg-teal-100 dark:bg-teal-900 text-teal-700 dark:text-teal-300"
@@ -26,6 +49,16 @@
 
     <!-- Collapsible Content -->
     <div v-show="!isCollapsed" class="px-4 pb-3 border-t border-gray-100 dark:border-gray-700/50">
+      <div v-if="showCreateConnectionLink" class="pt-3 flex justify-end">
+        <RouterLink
+          :to="createConnectionTo"
+          class="text-xs font-medium text-teal-700 dark:text-teal-300 hover:text-teal-800 dark:hover:text-teal-200 transition-colors"
+          @click.stop
+        >
+          + New connection
+        </RouterLink>
+      </div>
+
       <!-- Info Banner -->
       <div
         class="mt-3 mb-3 flex items-start space-x-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-md text-xs"
@@ -163,6 +196,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import { RouterLink } from 'vue-router'
 import {
   CircleStackIcon,
   ChevronDownIcon,
@@ -180,10 +214,19 @@ interface Props {
   modelValue: ConnectionMapping[]
   /** Show file connections (Files, S3, GCS) in addition to database connections */
   showFileConnections?: boolean
+  /** Whether the panel is collapsed initially */
+  defaultCollapsed?: boolean
+  /** Show a shortcut to the New Connection flow */
+  showCreateConnectionLink?: boolean
+  /** Route to the New Connection flow */
+  createConnectionTo?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  showFileConnections: false
+  showFileConnections: false,
+  defaultCollapsed: false,
+  showCreateConnectionLink: false,
+  createConnectionTo: '/explorer/add'
 })
 
 // Emits
@@ -195,7 +238,7 @@ const emit = defineEmits<{
 const connectionsStore = useConnectionsStore()
 
 // Local State
-const isCollapsed = ref(false)
+const isCollapsed = ref(props.defaultCollapsed)
 
 // Helper to check if a connection type is a database
 function isDatabaseType(type: string): boolean {
@@ -247,6 +290,20 @@ const hasMultipleCloudConnections = computed(() => {
 })
 
 const selectedCount = computed(() => props.modelValue.length)
+
+const selectedPreview = computed(() => {
+  const previewLimit = 2
+  return props.modelValue.slice(0, previewLimit).map((m) => {
+    const conn = connectionsStore.connectionByID(m.connectionId)
+    return {
+      connectionId: m.connectionId,
+      alias: m.alias,
+      name: conn?.name || conn?.host || 'Connection'
+    }
+  })
+})
+
+const selectedOverflowCount = computed(() => Math.max(0, props.modelValue.length - 2))
 
 // Methods
 function toggleCollapse() {

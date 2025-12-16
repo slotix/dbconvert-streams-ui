@@ -2,6 +2,7 @@
   <div class="console-tab h-full flex flex-col bg-gray-50 dark:bg-gray-900 pb-2">
     <!-- Header -->
     <div
+      v-if="showConsoleHeader"
       class="flex items-center justify-between px-4 py-3 bg-white dark:bg-gray-850 border-b border-gray-200 dark:border-gray-700"
     >
       <div class="flex items-center space-x-2">
@@ -9,7 +10,7 @@
         <span class="text-sm font-medium text-gray-900 dark:text-gray-100">
           {{ consoleTitle }}
         </span>
-        <span class="text-xs text-gray-500 dark:text-gray-400">
+        <span v-if="mode === 'file'" class="text-xs text-gray-500 dark:text-gray-400">
           {{ scopeLabel }}
         </span>
       </div>
@@ -93,6 +94,15 @@
       </div>
     </div>
 
+    <!-- Data Sources (collapsed by default) -->
+    <ConnectionAliasPanel
+      :model-value="selectedConnections"
+      :show-file-connections="true"
+      :default-collapsed="true"
+      :show-create-connection-link="true"
+      @update:modelValue="handleUpdateSelectedConnections"
+    />
+
     <!-- Query Tabs -->
     <SqlQueryTabs
       :tabs="queryTabs"
@@ -163,7 +173,9 @@ import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { useLogsStore } from '@/stores/logs'
 import connections from '@/api/connections'
 import { executeFileQuery } from '@/api/files'
+import { executeFederatedQuery, type ConnectionMapping } from '@/api/federated'
 import { SqlQueryTabs, SqlEditorPane, SqlResultsPane } from '@/components/database/sql-console'
+import ConnectionAliasPanel from './ConnectionAliasPanel.vue'
 import { useConsoleTab, detectQueryPurpose } from '@/composables/useConsoleTab'
 
 // ========== Props ==========
@@ -186,6 +198,46 @@ const connectionsStore = useConnectionsStore()
 const navigationStore = useExplorerNavigationStore()
 const logsStore = useLogsStore()
 
+const showConsoleHeader = computed(() => props.mode === 'file')
+
+// ========== Persistence (Data Sources) ==========
+interface PersistedConsoleSourcesEntry {
+  touched: boolean
+  connections: ConnectionMapping[]
+}
+
+type PersistedConsoleSourcesState = Record<string, PersistedConsoleSourcesEntry>
+
+const SOURCES_STORAGE_KEY = 'explorer.sqlConsoleSources'
+
+function hasBrowserStorage(): boolean {
+  return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined'
+}
+
+function loadPersistedSources(): PersistedConsoleSourcesState {
+  if (!hasBrowserStorage()) return {}
+  try {
+    const raw = window.localStorage.getItem(SOURCES_STORAGE_KEY)
+    if (!raw) return {}
+    const parsed = JSON.parse(raw) as PersistedConsoleSourcesState
+    return parsed && typeof parsed === 'object' ? parsed : {}
+  } catch {
+    return {}
+  }
+}
+
+function persistSources(state: PersistedConsoleSourcesState) {
+  if (!hasBrowserStorage()) return
+  try {
+    window.localStorage.setItem(SOURCES_STORAGE_KEY, JSON.stringify(state))
+  } catch {
+    // ignore
+  }
+}
+
+// ========== Base Connection ==========
+const connection = computed(() => connectionsStore.connectionByID(props.connectionId))
+
 // ========== Console Key Computation ==========
 const consoleKey = computed(() => {
   if (props.mode === 'file') {
@@ -193,6 +245,154 @@ const consoleKey = computed(() => {
   }
   return props.database ? `${props.connectionId}:${props.database}` : props.connectionId
 })
+
+// ========== Mode-Specific State ==========
+// Schema context for autocomplete (database mode only)
+const tablesList = ref<Array<{ name: string; schema?: string }>>([])
+const columnsMap = ref<Record<string, Array<{ name: string; type: string; nullable: boolean }>>>({})
+
+// ========== Federated Data Sources ==========
+const selectedConnections = ref<ConnectionMapping[]>([])
+const userModifiedSources = ref(false)
+
+const sourcesKey = computed(() => `${props.mode}:${consoleKey.value}`)
+
+function sanitizeMappings(mappings: ConnectionMapping[]): ConnectionMapping[] {
+  const existingIds =
+    connectionsStore.connections.length > 0
+      ? new Set(connectionsStore.connections.map((c) => c.id))
+      : null
+
+  const seen = new Set<string>()
+  const cleaned: ConnectionMapping[] = []
+
+  for (const m of mappings) {
+    if (!m || typeof m !== 'object') continue
+    if (typeof m.connectionId !== 'string' || typeof m.alias !== 'string') continue
+    if (existingIds && !existingIds.has(m.connectionId)) continue
+    if (seen.has(m.connectionId)) continue
+    seen.add(m.connectionId)
+    cleaned.push({
+      connectionId: m.connectionId,
+      alias: m.alias,
+      database: typeof m.database === 'string' ? m.database : undefined
+    })
+  }
+
+  return cleaned
+}
+
+function defaultAliasForConnection(type?: string): string {
+  const normalized = type?.toLowerCase() || ''
+  if (normalized === 'postgresql' || normalized === 'postgres') return 'pg1'
+  if (normalized === 'mysql' || normalized === 'mariadb') return 'my1'
+  if (normalized === 's3') return 's31'
+  if (normalized === 'gcs') return 'gcs1'
+  if (normalized === 'azure') return 'azure1'
+  if (normalized === 'files') return 'files1'
+  return 'db1'
+}
+
+const primaryDefaultDatabase = computed(() => {
+  if (props.mode !== 'database') return ''
+  return props.database || ''
+})
+
+const primaryMapping = computed<ConnectionMapping>(() => {
+  const conn = connection.value
+  const mapping: ConnectionMapping = {
+    connectionId: props.connectionId,
+    alias: defaultAliasForConnection(conn?.type)
+  }
+  if (props.mode === 'database') {
+    const db = primaryDefaultDatabase.value
+    if (db) mapping.database = db
+  }
+  return mapping
+})
+
+function handleUpdateSelectedConnections(value: ConnectionMapping[]) {
+  userModifiedSources.value = true
+  selectedConnections.value = value
+}
+
+function restoreSelectedConnections() {
+  const saved = loadPersistedSources()
+  const entry = saved[sourcesKey.value]
+  if (!entry || !entry.touched) return
+
+  selectedConnections.value = sanitizeMappings(entry.connections || [])
+  userModifiedSources.value = true
+}
+
+function persistSelectedConnections() {
+  if (!userModifiedSources.value) return
+
+  const saved = loadPersistedSources()
+  saved[sourcesKey.value] = {
+    touched: true,
+    connections: selectedConnections.value
+  }
+  persistSources(saved)
+}
+
+function initializeDefaultSources() {
+  if (userModifiedSources.value) return
+  if (selectedConnections.value.length > 0) return
+  selectedConnections.value = [primaryMapping.value]
+}
+
+function syncPrimarySource() {
+  if (userModifiedSources.value) return
+
+  const primary = primaryMapping.value
+  const existingIndex = selectedConnections.value.findIndex(
+    (m) => m.connectionId === primary.connectionId
+  )
+
+  if (existingIndex === -1) {
+    selectedConnections.value = [primary]
+    return
+  }
+
+  const existing = selectedConnections.value[existingIndex]
+  const shouldReplaceAlias = existing.alias === 'db1' && primary.alias !== 'db1'
+  selectedConnections.value.splice(existingIndex, 1, {
+    ...existing,
+    alias: shouldReplaceAlias ? primary.alias : existing.alias || primary.alias,
+    database: existing.database || primary.database
+  })
+}
+
+function isDuckDbFileQuery(query: string): boolean {
+  const lowered = query.toLowerCase()
+  return (
+    lowered.includes('read_parquet') ||
+    lowered.includes('read_csv') ||
+    lowered.includes('read_csv_auto') ||
+    lowered.includes('read_json') ||
+    lowered.includes('read_json_auto')
+  )
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+const useFederatedEngine = computed(() => {
+  // If user cleared all sources, allow running DuckDB file queries via federated endpoint
+  if (selectedConnections.value.length === 0) return true
+
+  // Single source: keep the current behavior when it matches the console's root connection
+  if (selectedConnections.value.length === 1) {
+    return selectedConnections.value[0].connectionId !== props.connectionId
+  }
+
+  // Multiple sources => federated
+  return true
+})
+
+watch([primaryMapping, () => props.connectionId], syncPrimarySource, { immediate: true })
 
 const historyKey = computed(() => {
   if (props.mode === 'file') {
@@ -249,19 +449,11 @@ const {
   getDefaultQuery: () => `-- Write your query here or select a template from the dropdown above\n`
 })
 
-// ========== Mode-Specific State ==========
-// Database selection (for connection-scoped database console)
-const selectedDatabase = ref(props.database || '')
-const availableDatabases = ref<string[]>([])
-
-// Schema context for autocomplete (database mode only)
-const tablesList = ref<Array<{ name: string; schema?: string }>>([])
-const columnsMap = ref<Record<string, Array<{ name: string; type: string; nullable: boolean }>>>({})
-
 // ========== Computed ==========
-const connection = computed(() => connectionsStore.connectionByID(props.connectionId))
-
 const currentDialect = computed(() => {
+  if (useFederatedEngine.value) {
+    return 'sql'
+  }
   if (props.mode === 'file') {
     return 'sql' // DuckDB uses standard SQL
   }
@@ -276,11 +468,7 @@ const consoleTitle = computed(() => {
   if (props.mode === 'file') {
     return 'File Console'
   }
-  // Database mode
-  if (props.database) {
-    return 'SQL Console'
-  }
-  return 'Database Console'
+  return 'SQL Console'
 })
 
 const scopeLabel = computed(() => {
@@ -300,11 +488,93 @@ const scopeLabel = computed(() => {
 
 // Query templates based on mode and dialect
 const queryTemplates = computed(() => {
+  if (useFederatedEngine.value) {
+    return getFederatedTemplates()
+  }
   if (props.mode === 'file') {
     return getFileTemplates()
   }
   return getDatabaseTemplates()
 })
+
+function getFederatedTemplates() {
+  const aliases = selectedConnections.value.map((c) => c.alias)
+  const pg1 = aliases.find((a) => a.startsWith('pg')) || 'pg1'
+  const my1 = aliases.find((a) => a.startsWith('my')) || 'my1'
+
+  return [
+    {
+      name: 'Cross-database JOIN',
+      query: `-- Join tables from different databases
+SELECT a.*, b.*
+FROM ${pg1}.public.table1 a
+JOIN ${my1}.table2 b ON a.id = b.id
+LIMIT 100;`
+    },
+    {
+      name: 'PostgreSQL query',
+      query: `-- Query PostgreSQL connection
+SELECT * FROM ${pg1}.public.table_name LIMIT 100;`
+    },
+    {
+      name: 'MySQL query',
+      query: `-- Query MySQL connection
+SELECT * FROM ${my1}.database.table_name LIMIT 100;`
+    },
+    {
+      name: 'Aggregate across databases',
+      query: `-- Aggregate data from multiple sources
+SELECT
+  a.category,
+  COUNT(DISTINCT b.id) as count,
+  SUM(b.amount) as total
+FROM ${pg1}.public.categories a
+JOIN ${my1}.orders b ON a.id = b.category_id
+GROUP BY a.category
+ORDER BY total DESC;`
+    },
+    {
+      name: 'UNION from multiple sources',
+      query: `-- Combine results from different databases
+SELECT 'postgres' as source, name, created_at
+FROM ${pg1}.public.users
+UNION ALL
+SELECT 'mysql' as source, name, created_at
+FROM ${my1}.users
+ORDER BY created_at DESC
+LIMIT 100;`
+    },
+    {
+      name: 'List attached schemas',
+      query: `-- Show all schemas in an attached database
+SELECT schema_name
+FROM ${pg1}.information_schema.schemata;`
+    },
+    {
+      name: 'Query Parquet file',
+      query: `-- Query local Parquet file (no connection needed)
+SELECT * FROM read_parquet('/path/to/file.parquet') LIMIT 100;`
+    },
+    {
+      name: 'Query CSV file',
+      query: `-- Query local CSV file (no connection needed)
+SELECT * FROM read_csv('/path/to/file.csv', header=true) LIMIT 100;`
+    },
+    {
+      name: 'Query S3 Parquet',
+      query: `-- Query Parquet file from S3 (credentials require an S3 connection)
+SELECT * FROM read_parquet('s3://bucket-name/path/to/file.parquet') LIMIT 100;`
+    },
+    {
+      name: 'JOIN database + file',
+      query: `-- Join database table with Parquet file
+SELECT db.*, f.*
+FROM ${pg1}.public.table_name db
+JOIN read_parquet('/path/to/file.parquet') f ON db.id = f.id
+LIMIT 100;`
+    }
+  ]
+}
 
 function getFileTemplates() {
   // Get file context from active tab if available
@@ -478,6 +748,9 @@ function getDatabaseTemplates() {
 
 // Schema context for autocomplete
 const schemaContext = computed<SchemaContext>(() => {
+  if (useFederatedEngine.value) {
+    return { tables: [], columns: {}, dialect: 'sql' }
+  }
   if (props.mode === 'file') {
     // No table autocomplete for file mode - users use DuckDB functions
     return {
@@ -500,21 +773,11 @@ const schemaContext = computed<SchemaContext>(() => {
   }
 })
 
-// ========== Data Loading (Database Mode) ==========
-async function loadDatabases() {
-  if (props.mode !== 'database' || props.database) return
-  try {
-    const dbs = await connections.getDatabases(props.connectionId)
-    availableDatabases.value = dbs.map((d) => d.name)
-  } catch (error) {
-    console.error('Failed to load databases:', error)
-  }
-}
-
 async function loadTableSuggestions() {
   if (props.mode !== 'database') return
+  if (useFederatedEngine.value) return
 
-  const db = props.database || selectedDatabase.value
+  const db = props.database?.trim()
   if (!db) {
     tablesList.value = []
     columnsMap.value = {}
@@ -546,6 +809,98 @@ async function executeQuery() {
   const query = sqlQuery.value.trim()
   if (!query) return
 
+  if (useFederatedEngine.value) {
+    // Allow file queries without connections
+    if (selectedConnections.value.length === 0 && !isDuckDbFileQuery(query)) {
+      setExecutionError(
+        'Select at least one data source (or query files with read_parquet/read_csv)'
+      )
+      return
+    }
+
+    // Help catch a common confusion when users add data sources but keep unqualified table names
+    if (
+      selectedConnections.value.length > 0 &&
+      !isDuckDbFileQuery(query) &&
+      /\b(from|join|update|into|delete)\b/i.test(query)
+    ) {
+      const hasAliasReference = selectedConnections.value.some((c) => {
+        if (!c.alias) return false
+        return new RegExp(`\\b${escapeRegExp(c.alias)}\\.`, 'i').test(query)
+      })
+      if (!hasAliasReference) {
+        setExecutionError(
+          'Federated queries must reference tables using aliases (e.g. pg1.public.table, my1.db.table)'
+        )
+        return
+      }
+    }
+
+    isExecuting.value = true
+    const startTime = Date.now()
+
+    try {
+      const result = await executeFederatedQuery({
+        query,
+        connections: selectedConnections.value
+      })
+
+      const columns = result.columns || []
+      const rows = (result.rows || []).map((row) => {
+        const obj: Record<string, unknown> = {}
+        columns.forEach((col, idx) => {
+          obj[col] = row[idx]
+        })
+        return obj
+      })
+
+      const duration = result.duration || Date.now() - startTime
+
+      setExecutionResult({
+        columns,
+        rows,
+        stats: { rowCount: result.count || rows.length, duration }
+      })
+
+      logsStore.addSQLLog({
+        id: `federated-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+        connectionId: 'federated',
+        tabId: activeQueryTabId.value || undefined,
+        database: selectedConnections.value.map((c) => c.alias).join(', '),
+        query,
+        purpose: detectQueryPurpose(query),
+        startedAt: new Date(startTime).toISOString(),
+        durationMs: duration,
+        rowCount: rows.length
+      })
+
+      saveToHistory(query)
+    } catch (error: unknown) {
+      const err = error as Error
+      const errorMsg = err.message || 'Failed to execute federated query'
+      const duration = Date.now() - startTime
+
+      setExecutionError(errorMsg)
+
+      logsStore.addSQLLog({
+        id: `federated-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+        connectionId: 'federated',
+        tabId: activeQueryTabId.value || undefined,
+        database: selectedConnections.value.map((c) => c.alias).join(', '),
+        query,
+        purpose: detectQueryPurpose(query),
+        startedAt: new Date(startTime).toISOString(),
+        durationMs: duration,
+        rowCount: 0,
+        error: errorMsg
+      })
+    } finally {
+      isExecuting.value = false
+    }
+
+    return
+  }
+
   isExecuting.value = true
   const startTime = Date.now()
 
@@ -557,8 +912,8 @@ async function executeQuery() {
       result = await executeFileQuery(query, props.connectionId)
     } else {
       // Database mode - use database connection API
-      const db = props.database || selectedDatabase.value
-      result = await connections.executeQuery(props.connectionId, query, db || undefined)
+      const db = props.database?.trim() || undefined
+      result = await connections.executeQuery(props.connectionId, query, db)
     }
 
     let columns: string[] = []
@@ -588,7 +943,7 @@ async function executeQuery() {
       id: `sql-console-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
       connectionId: props.connectionId,
       tabId: activeQueryTabId.value || undefined,
-      database: props.mode === 'file' ? '' : props.database || selectedDatabase.value || '',
+      database: props.mode === 'file' ? '' : props.database || '',
       query: query,
       purpose: detectQueryPurpose(query),
       startedAt: new Date(startTime).toISOString(),
@@ -601,7 +956,7 @@ async function executeQuery() {
 
     // Database mode: refresh sidebar if DDL query succeeded
     if (props.mode === 'database' && result.affectedObject) {
-      const db = props.database || selectedDatabase.value
+      const db = props.database?.trim()
       if (result.affectedObject === 'database' || result.affectedObject === 'schema') {
         navigationStore.invalidateDatabases(props.connectionId)
         await navigationStore.ensureDatabases(props.connectionId, true)
@@ -622,7 +977,7 @@ async function executeQuery() {
       id: `sql-console-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
       connectionId: props.connectionId,
       tabId: activeQueryTabId.value || undefined,
-      database: props.mode === 'file' ? '' : props.database || selectedDatabase.value || '',
+      database: props.mode === 'file' ? '' : props.database || '',
       query: query,
       purpose: detectQueryPurpose(query),
       startedAt: new Date(startTime).toISOString(),
@@ -636,17 +991,26 @@ async function executeQuery() {
 }
 
 // ========== Lifecycle ==========
-watch(() => selectedDatabase.value, loadTableSuggestions)
+watch(selectedConnections, persistSelectedConnections, { deep: true })
 
 onMounted(async () => {
   // Initialize composable (loads history, sets up tabs)
   initialize()
 
-  // Database mode: load databases and table suggestions
-  if (props.mode === 'database') {
-    await loadDatabases()
-    await loadTableSuggestions()
+  // Ensure base connections are loaded (needed for Data Sources panel)
+  if (connectionsStore.connections.length === 0) {
+    await connectionsStore.refreshConnections()
   }
+
+  // Restore persisted data sources first (if any)
+  restoreSelectedConnections()
+
+  // Preselect current connection as a default data source (unless the user already changed it)
+  initializeDefaultSources()
+  syncPrimarySource()
+
+  // Database mode: load table suggestions
+  if (props.mode === 'database') await loadTableSuggestions()
 })
 
 onUnmounted(() => {

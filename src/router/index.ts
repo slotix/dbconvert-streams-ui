@@ -44,9 +44,7 @@ const routes = [
   },
   {
     path: '/federated',
-    name: 'FederatedConsole',
-    component: () => import('@/views/FederatedConsoleView.vue'),
-    meta: { title: 'Federated Query Console' }
+    redirect: '/explorer'
   },
   {
     path: '/streams',
