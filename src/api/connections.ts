@@ -254,13 +254,14 @@ const createSchema = async (
 const getTables = async (
   id: string,
   database: string,
-  options?: { schemas?: string[] }
+  options?: { schemas?: string[]; includeSystem?: boolean }
 ): Promise<string[]> => {
   const commonStore = useCommonStore()
   validateApiKey(commonStore.apiKey)
   try {
     const qp = new URLSearchParams()
     options?.schemas?.forEach((s) => qp.append('schemas', s))
+    if (options?.includeSystem) qp.set('include_system', 'true')
     const url = `/connections/${id}/databases/${encodeURIComponent(database)}/tables${qp.toString() ? `?${qp.toString()}` : ''}`
     const response: AxiosResponse<string[]> = await apiClient.get(url, {
       headers: { [API_HEADERS.API_KEY]: commonStore.apiKey }
@@ -277,7 +278,7 @@ const getMetadata = async (
   id: string,
   database: string,
   forceRefresh = false,
-  options?: { schemas?: string[] }
+  options?: { schemas?: string[]; includeSystem?: boolean }
 ): Promise<DatabaseMetadata> => {
   const commonStore = useCommonStore()
   validateApiKey(commonStore.apiKey)
@@ -286,6 +287,7 @@ const getMetadata = async (
     const qp = new URLSearchParams()
     if (forceRefresh) qp.set('refresh', 'true')
     options?.schemas?.forEach((s) => qp.append('schemas', s))
+    if (options?.includeSystem) qp.set('include_system', 'true')
     const url = `/connections/${id}/databases/${encodeURIComponent(database)}/meta${qp.toString() ? `?${qp.toString()}` : ''}`
     const response: AxiosResponse<DatabaseMetadata> = await apiClient.get(url, {
       headers: { [API_HEADERS.API_KEY]: commonStore.apiKey }
@@ -408,13 +410,14 @@ const getTableData = async (
 const getViews = async (
   id: string,
   database: string,
-  options?: { schemas?: string[] }
+  options?: { schemas?: string[]; includeSystem?: boolean }
 ): Promise<string[]> => {
   const commonStore = useCommonStore()
   validateApiKey(commonStore.apiKey)
   try {
     const qp = new URLSearchParams()
     options?.schemas?.forEach((s) => qp.append('schemas', s))
+    if (options?.includeSystem) qp.set('include_system', 'true')
     const url = `/connections/${id}/databases/${encodeURIComponent(database)}/views${qp.toString() ? `?${qp.toString()}` : ''}`
     const response: AxiosResponse<string[]> = await apiClient.get(url, {
       headers: { [API_HEADERS.API_KEY]: commonStore.apiKey }

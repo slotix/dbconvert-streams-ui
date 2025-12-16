@@ -58,6 +58,9 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
     // Metadata state - stores fetched data for UI reactivity only (NOT HTTP caching)
     // Backend handles HTTP caching with 30s TTL
     metadataState: {} as Record<string, Record<string, DatabaseMetadata>>,
+    // Tracks whether the cached metadata includes system schemas/objects for a database.
+    // Key: connectionId:database -> boolean
+    metadataIncludesSystem: {} as Record<string, boolean>,
 
     // Database list state - stores fetched lists for UI reactivity only (NOT HTTP caching)
     // Now includes isSystem flag from API for native database detection
@@ -69,7 +72,10 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
     // Loading states
     loadingDatabases: {} as Record<string, boolean>,
     loadingMetadata: {} as Record<string, boolean>, // key: connectionId:database
-    pendingMetadataRequests: {} as Record<string, Promise<DatabaseMetadata | null>>, // key: connectionId:database
+    pendingMetadataRequests: {} as Record<
+      string,
+      { includeSystem: boolean; promise: Promise<DatabaseMetadata | null> }
+    >, // key: connectionId:database
 
     // Error states
     databasesErrors: {} as Record<string, string | null> // connectionId -> error message
@@ -121,7 +127,13 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
     // Get show/hide system objects setting for a specific database (falls back to global default).
     showSystemObjectsFor: (state) => (connectionId: string, database: string) => {
       const key = `${connectionId}:${database}`
-      return state.showSystemObjectsByDatabase[key] ?? state.showSystemObjects
+      // If a per-database override isn't set, fall back to per-connection (used by the
+      // connection-level "Show system objects" toggle) and then to the global default.
+      return (
+        state.showSystemObjectsByDatabase[key] ??
+        state.showSystemDatabasesByConnection[connectionId] ??
+        state.showSystemObjects
+      )
     },
 
     // Get show/hide system databases for a connection (falls back to global default).
@@ -415,22 +427,30 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
 
     async ensureMetadata(connectionId: string, database: string, forceRefresh = false) {
       const cacheKey = `${connectionId}:${database}`
+      const includeSystem = this.showSystemObjectsFor(connectionId, database)
 
       // Return cached if available (for UI reactivity only, not HTTP caching)
-      if (!forceRefresh && this.metadataState[connectionId]?.[database]) {
+      if (
+        !forceRefresh &&
+        this.metadataState[connectionId]?.[database] &&
+        (!includeSystem || this.metadataIncludesSystem[cacheKey])
+      ) {
         return this.metadataState[connectionId][database]
       }
 
       // Await pending request if one exists
-      if (cacheKey in this.pendingMetadataRequests) {
-        return this.pendingMetadataRequests[cacheKey]
+      const pending = this.pendingMetadataRequests[cacheKey]
+      if (pending && (!includeSystem || pending.includeSystem)) {
+        return pending.promise
       }
 
       this.loadingMetadata[cacheKey] = true
 
       const fetchPromise = (async (): Promise<DatabaseMetadata | null> => {
         try {
-          const meta = await connectionsApi.getMetadata(connectionId, database, forceRefresh)
+          const meta = await connectionsApi.getMetadata(connectionId, database, forceRefresh, {
+            includeSystem
+          })
 
           // Initialize connection cache if needed
           if (!this.metadataState[connectionId]) {
@@ -438,6 +458,7 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
           }
 
           this.metadataState[connectionId][database] = meta
+          this.metadataIncludesSystem[cacheKey] = includeSystem
           return meta
         } catch (error) {
           // Silently fail for metadata - component will handle empty state
@@ -448,19 +469,23 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
           return null
         } finally {
           this.loadingMetadata[cacheKey] = false
-          delete this.pendingMetadataRequests[cacheKey]
+          if (this.pendingMetadataRequests[cacheKey]?.promise === fetchPromise) {
+            delete this.pendingMetadataRequests[cacheKey]
+          }
         }
       })()
 
-      this.pendingMetadataRequests[cacheKey] = fetchPromise
+      this.pendingMetadataRequests[cacheKey] = { includeSystem, promise: fetchPromise }
       return fetchPromise
     },
 
     // Cache management (UI state only - not HTTP caching)
     invalidateMetadata(connectionId: string, database: string) {
+      const cacheKey = `${connectionId}:${database}`
       if (this.metadataState[connectionId]) {
         delete this.metadataState[connectionId][database]
       }
+      delete this.metadataIncludesSystem[cacheKey]
     },
 
     invalidateDatabases(connectionId: string) {

@@ -373,7 +373,19 @@ function onMenuAction(payload: {
       if (t.kind === 'connection') actions.refreshDatabases(t.connectionId)
       break
     case 'toggle-system-databases':
-      if (t.kind === 'connection') navigationStore.toggleShowSystemDatabasesFor(t.connectionId)
+      if (t.kind === 'connection') {
+        navigationStore.toggleShowSystemDatabasesFor(t.connectionId)
+        // Connection-level toggle should affect database-level system objects too.
+        // Refresh metadata for any expanded databases under this connection.
+        const prefix = `${t.connectionId}:`
+        for (const dbKey of navigationStore.expandedDatabases) {
+          if (!dbKey.startsWith(prefix)) continue
+          const dbName = dbKey.slice(prefix.length)
+          if (!dbName) continue
+          navigationStore.invalidateMetadata(t.connectionId, dbName)
+          navigationStore.ensureMetadata(t.connectionId, dbName).catch(() => {})
+        }
+      }
       break
     case 'create-database':
       if (t.kind === 'connection') actions.createDatabase(t.connectionId)
@@ -392,8 +404,14 @@ function onMenuAction(payload: {
         actions.refreshDatabase(t.connectionId, t.database)
       break
     case 'toggle-system-objects':
-      if (t.kind === 'database')
+      if (t.kind === 'database') {
         navigationStore.toggleShowSystemObjectsFor(t.connectionId, t.database)
+        navigationStore.invalidateMetadata(t.connectionId, t.database)
+        const dbKey = `${t.connectionId}:${t.database}`
+        if (navigationStore.isDatabaseExpanded(dbKey)) {
+          navigationStore.ensureMetadata(t.connectionId, t.database).catch(() => {})
+        }
+      }
       break
     case 'create-schema':
       if (t.kind === 'database') actions.createSchema(t.connectionId, t.database)
