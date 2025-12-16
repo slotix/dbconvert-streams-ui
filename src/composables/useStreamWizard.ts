@@ -2,6 +2,7 @@ import { ref, computed } from 'vue'
 import type { StreamConfig } from '@/types/streamConfig'
 import type { ConnectionMapping } from '@/api/federated'
 import { useStreamsStore } from '@/stores/streamConfig'
+import { useConnectionsStore } from '@/stores/connections'
 
 export interface WizardStep {
   name: string
@@ -90,14 +91,23 @@ export function useStreamWizard() {
 
   const canProceedStep2 = computed(() => {
     const streamsStore = useStreamsStore()
+    const connectionsStore = useConnectionsStore()
     const config = streamsStore.currentStreamConfig
+
+    const primarySourceType =
+      (primarySourceId.value && connectionsStore.connectionByID(primarySourceId.value)?.type) || ''
+    const isFileSource =
+      primarySourceType.toLowerCase() === 'files' || primarySourceType.toLowerCase() === 's3'
 
     // Check if tables or custom queries are selected
     const selectedTables = config?.source?.tables?.filter((t) => t.selected) || []
     const customQueries = config?.source?.queries || []
+    const selectedFiles = config?.files?.filter((f) => f.selected) || []
 
     // Must have at least one table selected OR one custom query defined
-    const hasDataSource = selectedTables.length > 0 || customQueries.length > 0
+    const hasDataSource = isFileSource
+      ? selectedFiles.length > 0 || selectedTables.length > 0
+      : selectedTables.length > 0 || customQueries.length > 0
 
     // In CDC mode, enforce tables-only (no custom queries allowed)
     if (config?.mode === 'cdc' && customQueries.length > 0) {

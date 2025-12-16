@@ -159,7 +159,6 @@
               v-model="createStructure"
               type="checkbox"
               class="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
-              :disabled="isFileSourceConnection"
               @change="handleStructureToggle"
             />
           </div>
@@ -170,6 +169,13 @@
             >
               Create structure
             </label>
+            <!-- Helper text for file sources -->
+            <p
+              v-if="isFileSourceConnection"
+              class="text-xs text-gray-500 dark:text-gray-400 mt-0.5"
+            >
+              Table structure will be inferred from file schema
+            </p>
           </div>
         </div>
 
@@ -380,7 +386,8 @@ const cdcOperations = computed({
 
 const sourceConnectionId = computed(() => {
   const source = streamsStore.currentStreamConfig?.source
-  return source?.id || null
+  // Use id first, fallback to first connection's connectionId
+  return source?.id || source?.connections?.[0]?.connectionId || null
 })
 
 const sourceConnection = computed(() => {
@@ -420,13 +427,12 @@ watch(
   isFileSourceConnection,
   (isFile) => {
     if (isFile) {
-      createTables.value = false
-      createIndexes.value = false
-      createForeignKeys.value = false
-      showAdvanced.value = false
+      // For file sources, initialize the files array and emit can-proceed
       if (streamsStore.currentStreamConfig) {
         streamsStore.currentStreamConfig.files = streamsStore.currentStreamConfig.files || []
       }
+      // File sources can proceed - structure will be inferred from file schema
+      emit('update:can-proceed', true)
     } else if (streamsStore.currentStreamConfig) {
       streamsStore.currentStreamConfig.files = []
     }
@@ -462,8 +468,8 @@ function handleOptionsChange() {
   emit('update:create-foreign-keys', createForeignKeys.value)
   emit('update:copy-data', copyData.value)
 
-  // Can proceed as long as at least one option is selected (for database targets)
-  // For file targets, structure options are not applicable, so always allow proceeding
+  // For database targets, require at least one option (structure or data)
+  // For file targets, always allow proceeding (no structure options needed)
   const canProceed = !isTargetDatabase.value || anyStructureEnabled.value || copyData.value
   emit('update:can-proceed', canProceed)
 }

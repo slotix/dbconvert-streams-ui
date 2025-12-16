@@ -124,7 +124,7 @@
                     }}</span>
                   </div>
                   <div class="flex items-center justify-between">
-                    <span>Tables:</span>
+                    <span>{{ isFileSource || isS3Source ? 'Files:' : 'Tables:' }}</span>
                     <span class="font-medium text-gray-900 dark:text-gray-100"
                       >{{ tableCount }} selected</span
                     >
@@ -296,7 +296,18 @@ const sourceDisplay = computed(() => {
   const conn = connectionsStore.connectionByID(props.sourceConnectionId)
   if (!conn) return props.sourceConnectionId
   let display = conn.name
-  if (props.sourceDatabase) display += ` / ${props.sourceDatabase}`
+  // For file sources, show path/bucket; for databases, show database name
+  if (conn.type?.toLowerCase() === 'files') {
+    if (conn.spec?.s3) {
+      // S3 source - show bucket
+      if (props.sourceDatabase) display += ` / ${props.sourceDatabase}`
+    } else if (conn.spec?.files?.basePath) {
+      // Local file source - show base path
+      display += ` • ${conn.spec.files.basePath}`
+    }
+  } else if (props.sourceDatabase) {
+    display += ` / ${props.sourceDatabase}`
+  }
   return display
 })
 
@@ -316,8 +327,26 @@ const targetDisplay = computed(() => {
 })
 
 const tableCount = computed(() => {
+  // For file sources, count selected files
+  const files = currentStreamConfig.value?.files || []
+  if (files.length > 0) {
+    return files.filter((f) => f.selected).length
+  }
+  // For database sources, count selected tables
   const tables = currentStreamConfig.value?.source?.tables || []
   return tables.filter((t) => t.selected).length
+})
+
+const isFileSource = computed(() => {
+  if (!props.sourceConnectionId) return false
+  const conn = connectionsStore.connectionByID(props.sourceConnectionId)
+  return conn?.type?.toLowerCase() === 'files' && !!conn.spec?.files
+})
+
+const isS3Source = computed(() => {
+  if (!props.sourceConnectionId) return false
+  const conn = connectionsStore.connectionByID(props.sourceConnectionId)
+  return conn?.type?.toLowerCase() === 'files' && !!conn.spec?.s3
 })
 
 const isFileTarget = computed(() => {

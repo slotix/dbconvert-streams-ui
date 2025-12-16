@@ -83,8 +83,12 @@ export interface SourceConfig {
   // Convenience fields for UI/state (derived from connections)
   id?: string
   // Database and schema selection (stream-specific)
-  database?: string // Database name - required for database connections
+  // For database sources: database name (required)
+  // For file sources: local path or S3 bucket name
+  database?: string
   schema?: string // Schema name - optional, defaults to provider-specific default
+  // For database sources: list of tables to stream
+  // For file sources: list of files to stream (each file becomes a "table")
   tables?: Table[]
   queries?: QuerySource[] // Virtual query sources - complex SQL for derived data (convert mode only)
   options?: SourceOptions

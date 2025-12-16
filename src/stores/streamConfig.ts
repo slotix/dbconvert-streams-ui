@@ -119,6 +119,22 @@ export const buildStreamPayload = (stream: StreamConfig): Partial<StreamConfig> 
     normalizedSource.connections && normalizedSource.connections.length > 0
       ? normalizedSource.connections
       : []
+
+  // For file sources, convert selected files to table entries
+  // Files are stored in stream.files, and each file becomes a table
+  let sourceTables = normalizedSource.tables || []
+  if (stream.files && stream.files.length > 0) {
+    const selectedFiles = stream.files.filter((f) => f.selected)
+    if (selectedFiles.length > 0) {
+      // Convert files to tables (file name without extension = table name)
+      sourceTables = selectedFiles.map((file) => {
+        // Extract table name from file name (remove extension)
+        const tableName = file.name.replace(/\.(parquet|csv|json|jsonl|gz|zst)$/gi, '')
+        return { name: tableName, selected: true }
+      })
+    }
+  }
+
   filteredStream.source = {
     connections,
     // Include database and schema if specified for single-source streams
@@ -128,26 +144,25 @@ export const buildStreamPayload = (stream: StreamConfig): Partial<StreamConfig> 
       }),
     ...(connections.length === 1 && normalizedSource.schema && { schema: normalizedSource.schema }),
     // Include tables if any are specified (both federated and non-federated modes)
-    ...(normalizedSource.tables &&
-      normalizedSource.tables.length > 0 && {
-        tables: normalizedSource.tables.map((table) => {
-          const filteredTable: Partial<Table> = { name: table.name }
+    ...(sourceTables.length > 0 && {
+      tables: sourceTables.map((table) => {
+        const filteredTable: Partial<Table> = { name: table.name }
 
-          // Include structured filter if it has any meaningful data
-          if (stream.mode === 'convert' && table.filter) {
-            const hasContent =
-              (table.filter.selectedColumns && table.filter.selectedColumns.length > 0) ||
-              (table.filter.filters && table.filter.filters.length > 0) ||
-              (table.filter.sorts && table.filter.sorts.length > 0) ||
-              (table.filter.limit !== undefined && table.filter.limit !== null)
-            if (hasContent) {
-              filteredTable.filter = table.filter
-            }
+        // Include structured filter if it has any meaningful data
+        if (stream.mode === 'convert' && table.filter) {
+          const hasContent =
+            (table.filter.selectedColumns && table.filter.selectedColumns.length > 0) ||
+            (table.filter.filters && table.filter.filters.length > 0) ||
+            (table.filter.sorts && table.filter.sorts.length > 0) ||
+            (table.filter.limit !== undefined && table.filter.limit !== null)
+          if (hasContent) {
+            filteredTable.filter = table.filter
           }
+        }
 
-          return filteredTable as Table
-        })
-      }),
+        return filteredTable as Table
+      })
+    }),
     // Include custom queries (only for convert mode)
     ...(stream.mode === 'convert' &&
       normalizedSource.queries &&

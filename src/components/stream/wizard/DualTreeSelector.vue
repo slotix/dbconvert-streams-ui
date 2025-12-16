@@ -63,6 +63,8 @@
             enable-multi-select
             @select-connection="handleSourceConnectionSelect"
             @select-database="handleSourceDatabaseSelect"
+            @select-file="handleSourceFileSelect"
+            @select-bucket="handleSourceBucketSelect"
             @toggle-source-connection="handleToggleSourceConnection"
           />
         </div>
@@ -346,14 +348,6 @@ function handleToggleSourceConnection(payload: {
   const connection = connectionsStore.connectionByID(payload.connectionId)
   if (!connection) return
 
-  // Filter out file connections - they don't go in source connections for multi-source
-  const isFileConn =
-    connection.type?.toLowerCase()?.includes('file') ||
-    connection.type?.toLowerCase() === 's3' ||
-    connection.type?.toLowerCase() === 'gcs'
-
-  if (isFileConn) return
-
   if (payload.checked) {
     // Add to source connections - check both connectionId AND database
     const existing = localSourceConnections.value.find(
@@ -547,6 +541,40 @@ function handleTargetDatabaseSelect(payload: {
   schema?: string
 }) {
   emit('update:target-connection', payload.connectionId, payload.database, payload.schema)
+}
+
+function handleSourceFileSelect(payload: { connectionId: string; path: string }) {
+  // For local file sources, treat the path as the "database" equivalent
+  const alias =
+    localSourceConnections.value.find((c) => c.connectionId === payload.connectionId)?.alias ||
+    localSourceConnections.value[0]?.alias ||
+    DEFAULT_ALIAS
+  localSourceConnections.value = [
+    {
+      alias,
+      connectionId: payload.connectionId,
+      database: payload.path // Use path as database for file sources
+    }
+  ]
+  emit('update:source-connections', localSourceConnections.value)
+  emit('update:source-connection', payload.connectionId, payload.path, undefined)
+}
+
+function handleSourceBucketSelect(payload: { connectionId: string; bucket: string }) {
+  // For S3 sources, treat the bucket as the "database" equivalent
+  const alias =
+    localSourceConnections.value.find((c) => c.connectionId === payload.connectionId)?.alias ||
+    localSourceConnections.value[0]?.alias ||
+    DEFAULT_ALIAS
+  localSourceConnections.value = [
+    {
+      alias,
+      connectionId: payload.connectionId,
+      database: payload.bucket // Use bucket as database for S3 sources
+    }
+  ]
+  emit('update:source-connections', localSourceConnections.value)
+  emit('update:source-connection', payload.connectionId, payload.bucket, undefined)
 }
 
 function handleTargetFileSelect(payload: { connectionId: string; path: string }) {

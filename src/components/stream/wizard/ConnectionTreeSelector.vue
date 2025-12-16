@@ -16,16 +16,8 @@
       <button
         type="button"
         class="flex w-full items-start gap-2.5 px-3 py-2 text-left transition-colors rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:focus-visible:ring-emerald-400"
-        :class="[
-          connectionHeaderClass(connection.id),
-          isFileConnection(connection) && mode === 'source' ? 'opacity-50 cursor-not-allowed' : ''
-        ]"
-        :title="
-          isFileConnection(connection) && mode === 'source'
-            ? 'File connections cannot be used as source. Only database connections are supported.'
-            : connectionTooltip(connection)
-        "
-        :disabled="isFileConnection(connection) && mode === 'source'"
+        :class="[connectionHeaderClass(connection.id)]"
+        :title="connectionTooltip(connection)"
         @click="toggleConnectionExpansion(connection)"
       >
         <component
@@ -52,12 +44,6 @@
               size="sm"
               class="shrink-0"
             />
-            <span
-              v-if="isFileConnection(connection) && mode === 'source'"
-              class="inline-flex items-center px-2 py-0.5 text-[10px] font-medium text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded-full shrink-0"
-            >
-              Not supported as source
-            </span>
           </div>
           <div
             v-if="connectionSubtitle(connection)"
@@ -627,12 +613,6 @@ async function toggleConnectionExpansion(connection: Connection) {
     return
   }
 
-  // Prevent file connections from being selected as source
-  if (isFileConnection(connection) && props.mode === 'source') {
-    // Don't expand, but show a visual indicator (handled in template)
-    return
-  }
-
   addToSet(expandedConnections, connection.id)
 
   // Handle S3 connections - load buckets
@@ -645,7 +625,12 @@ async function toggleConnectionExpansion(connection: Connection) {
   // Handle local file connections - load file entries
   if (isLocalFileConnection(connection)) {
     await fileExplorerStore.loadEntries(connection.id)
+    const basePath = connection.spec?.files?.basePath || ''
     emit('select-connection', { connectionId: connection.id })
+    // For source mode, also emit select-file with the base path
+    if (props.mode === 'source' && basePath) {
+      emit('select-file', { connectionId: connection.id, path: basePath })
+    }
     return
   }
 
