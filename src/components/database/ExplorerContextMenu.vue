@@ -137,7 +137,7 @@ function click(action: string, openInRightSplit?: boolean) {
             class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
             @click="click('toggle-system-databases')"
           >
-            {{ showSystemDatabases ? 'Hide system databases' : 'Show system databases' }}
+            {{ showSystemDatabases ? 'Hide system objects' : 'Show system objects' }}
           </button>
           <button
             v-if="canCreateDatabase"
