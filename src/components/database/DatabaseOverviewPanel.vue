@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, watch, computed, ref } from 'vue'
 import { useToast } from 'vue-toastification'
+import { format as formatSql } from 'sql-formatter'
 import { useDatabaseOverviewStore } from '@/stores/databaseOverview'
 import { useConnectionsStore } from '@/stores/connections'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
@@ -114,6 +115,32 @@ const showSystemObjects = computed(() => {
 
 const isExportingSchemaSql = ref(false)
 const lastGeneratedSchemaSql = ref<string>('')
+
+function formatSqlForExport(rawSql: string): string {
+  const raw = (rawSql || '').trim()
+  if (!raw) return ''
+
+  // Avoid re-formatting already multi-line SQL.
+  if (raw.includes('\n')) return raw
+
+  const normalized = connectionType.value.toLowerCase()
+  const dialect = normalized.includes('mysql')
+    ? 'mysql'
+    : normalized.includes('postgre')
+      ? 'postgresql'
+      : normalized.includes('snowflake')
+        ? 'snowflake'
+        : 'sql'
+
+  try {
+    return formatSql(raw, {
+      language: dialect as never,
+      keywordCase: 'upper'
+    })
+  } catch {
+    return raw
+  }
+}
 
 function tableSortKey(t: SQLTableMeta) {
   // Stable, deterministic ordering for export
@@ -248,7 +275,7 @@ function buildSchemaSql(meta: DatabaseMetadata) {
     }
 
     // Many backends already include a trailing semicolon; don’t force one.
-    lines.push(ddl)
+    lines.push(formatSqlForExport(ddl))
     lines.push('')
   }
 
