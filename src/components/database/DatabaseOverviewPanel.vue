@@ -898,12 +898,7 @@ async function handleCreateSchema() {
       </div>
 
       <!-- Utility Blocks Row -->
-      <div
-        class="md:col-span-6 grid grid-cols-1 gap-4"
-        :class="
-          showCreateSchemaCard ? 'sm:grid-cols-2 xl:grid-cols-4' : 'sm:grid-cols-2 xl:grid-cols-3'
-        "
-      >
+      <div class="md:col-span-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <!-- SQL Console - Utility Block -->
         <div
           class="bg-linear-to-br from-indigo-50 to-slate-50 dark:from-indigo-950/30 dark:to-gray-800/50 rounded-xl p-4 ring-1 ring-indigo-200/70 dark:ring-indigo-800/50"
