@@ -84,7 +84,7 @@
     <div v-else>
       <div class="grid gap-3">
         <div
-          v-for="service in services"
+          v-for="service in visibleServices"
           :key="service.id"
           class="flex items-center justify-between p-4 rounded-lg bg-slate-50 dark:bg-gray-800/50"
         >
@@ -101,9 +101,9 @@
           </div>
           <span
             class="px-3 py-1 rounded-full text-xs font-medium"
-            :class="getStatusClasses(getServiceStatus(service.id))"
+            :class="getStatusClasses(getServiceStatus(service.backendName))"
           >
-            {{ getStatusDisplayText(getServiceStatus(service.id)) }}
+            {{ getStatusDisplayText(getServiceStatus(service.backendName)) }}
           </span>
         </div>
       </div>
@@ -126,6 +126,7 @@ import {
 interface Service {
   id: string
   name: string
+  backendName: string
   description: string
   icon: typeof CloudIcon
   bgColor: string
@@ -136,6 +137,7 @@ const services: Service[] = [
   {
     id: 'api',
     name: 'stream-api',
+    backendName: 'stream-api',
     description: 'API Service',
     icon: CloudIcon,
     bgColor: 'bg-blue-50 dark:bg-blue-900/30',
@@ -144,6 +146,7 @@ const services: Service[] = [
   {
     id: 'reader',
     name: 'stream-reader',
+    backendName: 'stream-reader',
     description: 'Source Reader',
     icon: ArrowDownTrayIcon,
     bgColor: 'bg-teal-50 dark:bg-teal-900/30',
@@ -152,6 +155,7 @@ const services: Service[] = [
   {
     id: 'writer',
     name: 'stream-writer',
+    backendName: 'stream-writer',
     description: 'Target Writer',
     icon: ArrowUpTrayIcon,
     bgColor: 'bg-teal-50 dark:bg-teal-900/30',
@@ -160,6 +164,7 @@ const services: Service[] = [
   {
     id: 'nats',
     name: 'nats',
+    backendName: 'nats',
     description: 'Message Queue',
     icon: QueueListIcon,
     bgColor: 'bg-blue-50 dark:bg-blue-900/30',
@@ -168,6 +173,7 @@ const services: Service[] = [
   {
     id: 'vault',
     name: 'vault',
+    backendName: 'vault',
     description: 'Secrets Management',
     icon: KeyIcon,
     bgColor: 'bg-slate-50 dark:bg-slate-800/30',
@@ -176,6 +182,7 @@ const services: Service[] = [
   {
     id: 'sentry',
     name: 'sentry',
+    backendName: 'sentry',
     description: 'Usage Tracking & Limits',
     icon: ChartBarIcon,
     bgColor: 'bg-blue-50 dark:bg-blue-900/30',
@@ -185,20 +192,32 @@ const services: Service[] = [
 
 const commonStore = useCommonStore()
 const pollingInterval = ref<number | null>(null)
-const serviceStatuses = computed(() => commonStore.serviceStatuses)
 const isInitialLoading = ref(true)
 
-const getServiceStatus = (serviceId: string): string => {
+const visibleServices = computed(() => {
+  // Keep core services visible even if they haven't registered yet; hide optional services
+  // unless the backend reports them as relevant.
+  const reported = new Set(commonStore.serviceStatuses.map((s) => s.name.toLowerCase()))
+  return services.filter((service) => {
+    if (service.id === 'sentry') return true
+    if (service.id === 'vault') return reported.has('vault')
+    return true
+  })
+})
+
+const getServiceStatus = (backendName: string): string => {
   // If backend is disconnected, all services are unavailable
   if (!commonStore.isBackendConnected) {
     return 'unavailable'
   }
 
-  if (serviceId === 'sentry') {
+  if (backendName === 'sentry') {
     return commonStore.sentryHealthy ? 'passing' : 'critical'
   }
 
-  const status = commonStore.serviceStatuses.find((s) => s.name.toLowerCase().includes(serviceId))
+  const status = commonStore.serviceStatuses.find(
+    (s) => s.name.toLowerCase() === backendName.toLowerCase()
+  )
   return status?.status || 'unknown'
 }
 
@@ -212,7 +231,9 @@ const hasMixedServiceStatuses = (): boolean => {
 }
 
 const hasInitializingServices = (): boolean => {
-  return services.some((service) => getServiceStatus(service.id) === 'initializing')
+  return visibleServices.value.some(
+    (service) => getServiceStatus(service.backendName) === 'initializing'
+  )
 }
 
 const getStatusClasses = (status: string) => ({
