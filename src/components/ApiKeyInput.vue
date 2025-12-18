@@ -79,13 +79,13 @@ const shouldShowApiKeyPrompt = computed(() => store.needsApiKey)
 const isKeyExpired = computed(() => store.apiKeyInvalidated)
 
 async function submitApiKey() {
-  if (!apiKeyInput.value) return
+  const key = apiKeyInput.value.trim()
+  if (!key) return
 
   try {
-    await store.setApiKey(apiKeyInput.value)
+    await store.setApiKey(key)
     await store.initApp()
-  } catch (error) {
-    store.showNotification('Invalid API key', 'error')
+  } catch {
     apiKeyInput.value = ''
   }
 }

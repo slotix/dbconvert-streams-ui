@@ -4,10 +4,10 @@ import api, { configureApiClient } from '@/api/apiClient'
 import type { UserData } from '@/types/user'
 import type { ServiceStatus } from '@/types/common'
 import { useToast } from 'vue-toastification'
-import { useMonitoringStore } from './monitoring'
 import { sseLogsService } from '@/api/sseLogsServiceStructured'
 import { useLocalStorage } from '@vueuse/core'
 import { SERVICE_STATUS, STORAGE_KEYS } from '@/constants'
+import axios from 'axios'
 
 export interface Step {
   id: number
@@ -249,7 +249,9 @@ export const useCommonStore = defineStore('common', {
     },
 
     async setApiKey(apiKey: string): Promise<void> {
+      const toast = useToast()
       try {
+        apiKey = apiKey.trim()
         // Validate the API key before storing
         await api.validateApiKey(apiKey)
         this.apiKey = apiKey
@@ -258,16 +260,37 @@ export const useCommonStore = defineStore('common', {
         // Configure the API client with the new API key
         configureApiClient(apiKey)
       } catch (error) {
-        const toast = useToast()
-        toast.error('Invalid API key provided')
-        throw error
+        const errMsg = error instanceof Error ? error.message : ''
+        const invalidKey =
+          errMsg.toLowerCase().includes('invalid api key') ||
+          (axios.isAxiosError(error) && error.response?.status === 401)
+        if (invalidKey) {
+          toast.error('Invalid API key provided')
+          throw error
+        }
+
+        if (axios.isAxiosError(error)) {
+          if (error.response?.status === 503) {
+            toast.warning('Unable to validate API key right now. Please try again in a moment.')
+          } else {
+            toast.warning('Unable to connect to backend. Please try again.')
+          }
+        } else {
+          toast.warning('Unable to validate API key right now. Please try again in a moment.')
+        }
+
+        // Keep the key locally so the user doesn't have to re-enter it.
+        this.apiKey = apiKey
+        this.apiKeyInvalidated = false
+        localStorage.setItem(STORAGE_KEYS.API_KEY, apiKey)
+        configureApiClient(apiKey)
       }
     },
 
     async clearApiKey(): Promise<void> {
       this.apiKey = null
       this.apiKeyInvalidated = true
-      localStorage.removeItem('apiKey')
+      localStorage.removeItem(STORAGE_KEYS.API_KEY)
       // Clear the API key header from axios instance
       configureApiClient('')
     },
