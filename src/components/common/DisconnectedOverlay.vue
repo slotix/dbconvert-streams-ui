@@ -5,7 +5,7 @@ import { XCircleIcon, ArrowPathIcon } from '@heroicons/vue/24/solid'
 import { getBackendUrl } from '@/utils/environment'
 
 const commonStore = useCommonStore()
-const { isBackendConnected } = storeToRefs(commonStore)
+const { isBackendConnected, needsApiKey } = storeToRefs(commonStore)
 const backendUrl = getBackendUrl()
 
 async function handleRetry() {
@@ -16,7 +16,7 @@ async function handleRetry() {
 
 <template>
   <div
-    v-if="!isBackendConnected"
+    v-if="!isBackendConnected && !needsApiKey"
     class="fixed inset-0 z-50 flex items-center justify-center bg-white dark:bg-gray-900 bg-opacity-95 dark:bg-opacity-95"
   >
     <div class="text-center max-w-md px-6">
