@@ -1,14 +1,13 @@
 <script setup lang="ts">
 import { useThemeStore } from '@/stores/theme'
-import { SunIcon, MoonIcon, ComputerDesktopIcon } from '@heroicons/vue/24/outline'
+import { SunIcon, MoonIcon } from '@heroicons/vue/24/outline'
 import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/vue'
 
 const themeStore = useThemeStore()
 
 const themes = [
   { value: 'light', label: 'Light', icon: SunIcon },
-  { value: 'dark', label: 'Dark', icon: MoonIcon },
-  { value: 'system', label: 'System', icon: ComputerDesktopIcon }
+  { value: 'dark', label: 'Dark', icon: MoonIcon }
 ] as const
 </script>
 

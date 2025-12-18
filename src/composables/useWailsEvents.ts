@@ -8,7 +8,6 @@
 import { onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useLogsStore } from '@/stores/logs'
-import { useThemeStore } from '@/stores/theme'
 
 // Type declaration for Wails runtime (injected by Wails at runtime)
 declare global {
@@ -50,15 +49,12 @@ function eventsOn(eventName: string, callback: (...data: unknown[]) => void): ()
  * Sets up listeners for menu actions emitted from the Go backend:
  * - menu:navigate - Navigate to a route
  * - menu:toggle-logs - Toggle the logs panel
- * - menu:toggle-theme - Toggle dark/light theme
  * - menu:refresh - Refresh the current view
  * - menu:show-about - Show about dialog
  */
 export function useWailsMenuEvents() {
   const router = useRouter()
   const logsStore = useLogsStore()
-  const themeStore = useThemeStore()
-
   const cleanupFns: (() => void)[] = []
 
   onMounted(() => {
@@ -79,13 +75,6 @@ export function useWailsMenuEvents() {
     cleanupFns.push(
       eventsOn('menu:toggle-logs', () => {
         logsStore.toggleLogsPanel()
-      })
-    )
-
-    // Toggle theme
-    cleanupFns.push(
-      eventsOn('menu:toggle-theme', () => {
-        themeStore.toggleTheme()
       })
     )
 

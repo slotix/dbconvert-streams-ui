@@ -1,19 +1,22 @@
 import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
 
-export type ThemeMode = 'light' | 'dark' | 'system'
+export type ThemeMode = 'light' | 'dark'
 
 export const useThemeStore = defineStore('theme', () => {
   // State
-  const mode = ref<ThemeMode>('system')
+  const mode = ref<ThemeMode>('dark')
   const isDark = ref(false)
 
   // Initialize theme from localStorage or system preference
   function initializeTheme() {
-    const stored = localStorage.getItem('theme-mode') as ThemeMode | null
+    const stored = localStorage.getItem('theme-mode')
 
-    if (stored && ['light', 'dark', 'system'].includes(stored)) {
+    if (stored === 'light' || stored === 'dark') {
       mode.value = stored
+    } else if (stored === 'system') {
+      mode.value = 'dark'
+      localStorage.setItem('theme-mode', mode.value)
     }
 
     updateTheme()
@@ -23,18 +26,15 @@ export const useThemeStore = defineStore('theme', () => {
   function updateTheme() {
     const root = document.documentElement
 
-    if (mode.value === 'system') {
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-      isDark.value = prefersDark
-    } else {
-      isDark.value = mode.value === 'dark'
-    }
+    isDark.value = mode.value === 'dark'
 
     if (isDark.value) {
       root.classList.add('dark')
     } else {
       root.classList.remove('dark')
     }
+
+    emitNativeTheme(mode.value, isDark.value)
   }
 
   // Set theme mode
@@ -49,22 +49,6 @@ export const useThemeStore = defineStore('theme', () => {
     setTheme(isDark.value ? 'light' : 'dark')
   }
 
-  // Listen to system theme changes when in system mode
-  function setupSystemThemeListener() {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-
-    const listener = () => {
-      if (mode.value === 'system') {
-        updateTheme()
-      }
-    }
-
-    mediaQuery.addEventListener('change', listener)
-
-    // Cleanup (call this on app unmount if needed)
-    return () => mediaQuery.removeEventListener('change', listener)
-  }
-
   // Watch mode changes
   watch(mode, () => {
     updateTheme()
@@ -76,6 +60,19 @@ export const useThemeStore = defineStore('theme', () => {
     initializeTheme,
     setTheme,
     toggleTheme,
-    setupSystemThemeListener
   }
 })
+
+function emitNativeTheme(mode: ThemeMode, isDark: boolean) {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  const runtime = (window as typeof window & { runtime?: { EventsEmit?: (...args: unknown[]) => void } })
+    .runtime
+  if (!runtime?.EventsEmit) {
+    return
+  }
+
+  runtime.EventsEmit('theme:mode', mode, isDark)
+}

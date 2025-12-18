@@ -103,7 +103,7 @@
               </TransitionChild>
 
               <div
-                class="flex grow flex-col gap-y-5 overflow-y-auto bg-gray-850 dark:bg-gray-900 px-6 pb-2 ring-1 ring-white/10 dark:ring-white/5 border-r border-gray-700/80 dark:border-gray-800/80"
+                class="flex grow flex-col gap-y-5 overflow-y-auto bg-gray-50 dark:bg-gray-900 px-6 pb-2 ring-1 ring-gray-200/80 dark:ring-white/5 border-r border-gray-200 dark:border-gray-800/80"
               >
                 <div class="flex h-16 shrink-0 items-center">
                   <RouterLink to="/">
@@ -118,8 +118,8 @@
                         :to="item.href"
                         :class="[
                           $route.path.startsWith(item.href.split('/:')[0])
-                            ? 'bg-gray-800 dark:bg-teal-900 text-white'
-                            : 'text-gray-400 hover:text-white hover:bg-gray-800 dark:hover:bg-gray-700',
+                            ? 'bg-white dark:bg-teal-900 text-gray-900 dark:text-white shadow-sm ring-1 ring-gray-200 dark:ring-0'
+                            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700',
                           'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold'
                         ]"
                         @click="sidebarOpen = false"
@@ -135,10 +135,10 @@
                   </ul>
 
                   <!-- System Logs Button -->
-                  <div class="pt-4 border-t border-gray-700 dark:border-gray-600">
+                  <div class="pt-4 border-t border-gray-200 dark:border-gray-600">
                     <button
                       type="button"
-                      class="w-full group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold text-gray-400 hover:text-white hover:bg-gray-800 dark:hover:bg-gray-700"
+                      class="w-full group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700"
                       @click="handleLogsClick"
                     >
                       <ExclamationCircleIcon
@@ -153,14 +153,14 @@
                       />
                       <span class="flex-1 text-left">System Logs</span>
                       <span
-                        class="ml-auto bg-gray-700 dark:bg-gray-600 px-1.5 py-0.5 text-xs rounded-full"
+                        class="ml-auto bg-gray-200 text-gray-700 dark:bg-gray-600 dark:text-white px-1.5 py-0.5 text-xs rounded-full"
                         >{{ logsStore.logs.length }}</span
                       >
                     </button>
                   </div>
 
                   <!-- Theme Toggle for Mobile -->
-                  <div class="mt-auto pt-4 border-t border-gray-700 dark:border-gray-600">
+                  <div class="mt-auto pt-4 border-t border-gray-200 dark:border-gray-600">
                     <div class="flex items-center justify-between px-2 py-2">
                       <span class="text-sm text-gray-400">Theme</span>
                       <ThemeToggle />
@@ -168,14 +168,14 @@
                   </div>
 
                   <!-- External Links for Mobile -->
-                  <div class="pt-4 border-t border-gray-700 dark:border-gray-600">
+                  <div class="pt-4 border-t border-gray-200 dark:border-gray-600">
                     <ul role="list" class="-mx-2 space-y-1">
                       <li>
                         <a
                           href="https://discord.gg/3CACYYKSAb"
                           target="_blank"
                           rel="noopener noreferrer"
-                          class="group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold text-gray-400 hover:text-white hover:bg-gray-800 dark:hover:bg-gray-700"
+                          class="group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700"
                           @click="sidebarOpen = false"
                         >
                           <svg
@@ -195,7 +195,7 @@
                           href="https://docs.dbconvert.com"
                           target="_blank"
                           rel="noopener noreferrer"
-                          class="group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold text-gray-400 hover:text-white hover:bg-gray-800 dark:hover:bg-gray-700"
+                          class="group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700"
                           @click="sidebarOpen = false"
                         >
                           <DocumentTextIcon
@@ -210,7 +210,7 @@
                           href="https://streams.dbconvert.com/account"
                           target="_blank"
                           rel="noopener noreferrer"
-                          class="group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold text-gray-400 hover:text-white hover:bg-gray-800 dark:hover:bg-gray-700"
+                          class="group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700"
                           @click="sidebarOpen = false"
                         >
                           <UserCircleIcon
@@ -232,7 +232,7 @@
 
     <!-- Static sidebar for desktop -->
     <div
-      class="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-100 lg:block lg:w-20 lg:bg-gray-850 dark:lg:bg-gray-900 lg:pb-10 lg:border-r lg:border-gray-700/80 dark:lg:border-gray-800/80"
+      class="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-100 lg:block lg:w-20 lg:bg-gray-50 dark:lg:bg-gray-900 lg:pb-10 lg:border-r lg:border-gray-200 dark:lg:border-gray-800/80"
     >
       <div class="flex h-20 shrink-0 items-center justify-center pt-6">
         <RouterLink to="/">
@@ -246,8 +246,8 @@
               :to="item.href"
               :class="[
                 $route.path.startsWith(item.href.split('/:')[0])
-                  ? 'bg-gray-800 dark:bg-teal-900 text-white'
-                  : 'text-gray-400 hover:text-white hover:bg-gray-800 dark:hover:bg-gray-700',
+                  ? 'bg-white dark:bg-teal-900 text-gray-900 dark:text-white shadow-sm ring-1 ring-gray-200 dark:ring-0'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700',
                 'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold relative overflow-visible'
               ]"
             >
@@ -270,10 +270,10 @@
 
           <!-- System Logs Button -->
           <!-- System Logs Button -->
-          <li class="mt-4 pt-4 border-t border-gray-700 dark:border-gray-600 overflow-visible">
+          <li class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600 overflow-visible">
             <button
               type="button"
-              class="group flex items-center justify-center p-2 text-gray-400 hover:text-white hover:bg-gray-800 dark:hover:bg-gray-700 rounded-md relative w-full overflow-visible"
+              class="group flex items-center justify-center p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700 rounded-md relative w-full overflow-visible"
               @click="logsStore.toggleLogsPanel"
             >
               <ExclamationCircleIcon
@@ -291,7 +291,7 @@
               <!-- Log count badge -->
               <span
                 v-if="logsStore.logs.length > 0"
-                class="absolute -top-1 -right-1 bg-gray-600 dark:bg-gray-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center"
+                class="absolute -top-1 -right-1 bg-gray-200 text-gray-700 dark:bg-gray-500 dark:text-white text-xs rounded-full h-5 w-5 flex items-center justify-center"
               >
                 {{ logsStore.logs.length > 99 ? '99+' : logsStore.logs.length }}
               </span>
@@ -307,15 +307,15 @@
           </li>
 
           <!-- Connection Status in Navigation -->
-          <li class="mt-4 pt-4 border-t border-gray-700 dark:border-gray-600 overflow-visible">
+          <li class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600 overflow-visible">
             <div
               :class="[
                 'group flex items-center justify-center p-2 rounded-md relative overflow-visible',
                 commonStore.isBackendConnected
-                  ? 'text-green-400 bg-green-900/20'
+                  ? 'text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-900/20'
                   : commonStore.error
-                    ? 'text-red-400 bg-red-900/20'
-                    : 'text-red-400 bg-red-900/20'
+                    ? 'text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/20'
+                    : 'text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/20'
               ]"
               :title="getConnectionStatusText()"
             >
@@ -323,10 +323,10 @@
                 :class="[
                   'h-4 w-4 rounded-full border-2',
                   commonStore.isBackendConnected
-                    ? 'bg-green-400 border-green-400 animate-pulse'
+                    ? 'bg-green-500 border-green-500 animate-pulse dark:bg-green-400 dark:border-green-400'
                     : commonStore.error
-                      ? 'bg-red-400 border-red-400'
-                      : 'bg-red-400 border-red-400'
+                      ? 'bg-red-500 border-red-500 dark:bg-red-400 dark:border-red-400'
+                      : 'bg-red-500 border-red-500 dark:bg-red-400 dark:border-red-400'
                 ]"
               ></div>
               <!-- Show tooltip on hover -->
@@ -342,7 +342,7 @@
       </nav>
 
       <!-- External Links -->
-      <div class="fixed bottom-0 w-20 pb-5 bg-gray-850 dark:bg-gray-900">
+      <div class="fixed bottom-0 w-20 pb-5 bg-gray-50 dark:bg-gray-900">
         <div class="flex flex-col items-center space-y-1">
           <!-- Theme Toggle -->
           <div class="relative group">
@@ -358,7 +358,7 @@
             href="https://discord.gg/3CACYYKSAb"
             target="_blank"
             rel="noopener noreferrer"
-            class="group flex items-center justify-center p-2 text-gray-400 hover:text-white hover:bg-gray-800 dark:hover:bg-gray-700 rounded-md relative"
+            class="group flex items-center justify-center p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700 rounded-md relative"
           >
             <svg :class="iconSizes.sidebarMenu" viewBox="0 0 24 24" fill="currentColor">
               <path
@@ -377,7 +377,7 @@
             href="https://docs.dbconvert.com"
             target="_blank"
             rel="noopener noreferrer"
-            class="group flex items-center justify-center p-2 text-gray-400 hover:text-white hover:bg-gray-800 dark:hover:bg-gray-700 rounded-md relative"
+            class="group flex items-center justify-center p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700 rounded-md relative"
           >
             <DocumentTextIcon :class="iconSizes.sidebarMenu" aria-hidden="true" />
             <span class="sr-only">Documentation</span>
@@ -392,7 +392,7 @@
             href="https://streams.dbconvert.com/account"
             target="_blank"
             rel="noopener noreferrer"
-            class="group flex items-center justify-center p-2 text-gray-400 hover:text-white hover:bg-gray-800 dark:hover:bg-gray-700 rounded-md relative"
+            class="group flex items-center justify-center p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700 rounded-md relative"
           >
             <UserCircleIcon :class="iconSizes.sidebarMenu" aria-hidden="true" />
             <span class="sr-only">Account</span>

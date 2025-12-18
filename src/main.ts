@@ -65,7 +65,6 @@ app.directive('tooltip', vTooltip)
 // Initialize theme before mounting
 const themeStore = useThemeStore()
 themeStore.initializeTheme()
-themeStore.setupSystemThemeListener()
 
 // Global error handler for uncaught errors
 app.config.errorHandler = (err, _instance, info) => {
