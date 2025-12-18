@@ -441,6 +441,7 @@ import RouteGuard from '@/components/common/RouteGuard.vue'
 import ThemeToggle from '@/components/ThemeToggle.vue'
 import { initializeApiClient } from '@/api/apiClient'
 import { useContextualIconSizes } from '@/composables/useIconSizes'
+import { useWailsMenuEvents } from '@/composables/useWailsEvents'
 
 import { Dialog, DialogPanel, TransitionChild, TransitionRoot } from '@headlessui/vue'
 import {
@@ -460,6 +461,9 @@ const isInitializing = ref(true)
 
 // Icon sizes
 const iconSizes = useContextualIconSizes()
+
+// Initialize Wails menu event listeners (no-op when running as web app)
+useWailsMenuEvents()
 
 // All navigation items
 const navigation = computed(() => {
