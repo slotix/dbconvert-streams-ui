@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { ref, type Ref } from 'vue'
 import storage from '@/api/storageService'
 import api, { configureApiClient } from '@/api/apiClient'
 import type { UserData } from '@/types/user'
@@ -7,7 +8,13 @@ import { useToast } from 'vue-toastification'
 import { sseLogsService } from '@/api/sseLogsServiceStructured'
 import { useLocalStorage } from '@vueuse/core'
 import { SERVICE_STATUS, STORAGE_KEYS } from '@/constants'
-import axios from 'axios'
+import axios, { type AxiosError } from 'axios'
+
+// Health check and retry configuration
+const HEALTH_CHECK_INTERVAL_MS = 10000
+const HEALTH_CHECK_RETRY_DELAY_MS = 1000
+const HEALTH_CHECK_MAX_RETRIES = 2
+const CONNECTION_GRACE_PERIOD_MS = 5000
 
 export interface Step {
   id: number
@@ -28,12 +35,14 @@ interface ErrorState {
   retryCount?: number
 }
 
+// Create apiKey ref outside the store to properly type useLocalStorage
+const apiKeyStorage: Ref<string> = useLocalStorage(STORAGE_KEYS.API_KEY, '')
+
 interface State {
   currentViewType: string
   userData: UserData | null
   sentryHealthy: boolean
   apiHealthy: boolean
-  apiKey: string | null
   apiKeyInvalidated: boolean
   serviceStatuses: ServiceStatus[]
   steps: Step[]
@@ -60,7 +69,6 @@ export const useCommonStore = defineStore('common', {
     userData: null as UserData | null,
     sentryHealthy: false,
     apiHealthy: false,
-    apiKey: useLocalStorage('dbconvert-api-key', '') as unknown as string | null,
     apiKeyInvalidated: false,
     serviceStatuses: [] as ServiceStatus[],
     steps: [
@@ -171,7 +179,6 @@ export const useCommonStore = defineStore('common', {
       }
     },
     async checkSentryHealth() {
-      // Use shorter retry delays for faster initialization
       try {
         await this.retryOperation(
           async () => {
@@ -183,20 +190,19 @@ export const useCommonStore = defineStore('common', {
               throw error
             }
           },
-          2,
-          1000
-        ) // 2 retries with 1 second delay instead of 3 retries with 5 second delay
+          HEALTH_CHECK_MAX_RETRIES,
+          HEALTH_CHECK_RETRY_DELAY_MS
+        )
       } catch (error) {
         // Silently catch health check failures - the health monitor will handle reconnection
         const errorMessage = error instanceof Error ? error.message : String(error)
         if (!errorMessage.includes('Network Error')) {
-          console.log('Sentry health check failed:', errorMessage)
+          console.warn('Sentry health check failed:', errorMessage)
         }
       }
     },
 
     async checkAPIHealth() {
-      // Use shorter retry delays for faster initialization
       try {
         await this.retryOperation(
           async () => {
@@ -208,34 +214,25 @@ export const useCommonStore = defineStore('common', {
               throw error
             }
           },
-          2,
-          1000
-        ) // 2 retries with 1 second delay instead of 3 retries with 5 second delay
+          HEALTH_CHECK_MAX_RETRIES,
+          HEALTH_CHECK_RETRY_DELAY_MS
+        )
       } catch (error) {
         // Silently catch health check failures - the health monitor will handle reconnection
         const errorMessage = error instanceof Error ? error.message : String(error)
         if (!errorMessage.includes('Network Error')) {
-          console.log('Backend health check failed:', errorMessage)
+          console.warn('Backend health check failed:', errorMessage)
         }
       }
     },
 
     async getApiKey(): Promise<string | null> {
       try {
-        // If we have an API key in memory and it's not marked as invalidated, use it
-        if (this.apiKey && !this.apiKeyInvalidated) {
-          configureApiClient(this.apiKey)
-          return this.apiKey
-        }
-
-        // Check localStorage for stored API key
-        const storedApiKey = localStorage.getItem(STORAGE_KEYS.API_KEY)
-        if (storedApiKey) {
-          this.apiKey = storedApiKey
-          // Don't validate immediately - let the first API call handle validation
-          // This prevents the "expired" popup when just loading from localStorage
-          configureApiClient(storedApiKey)
-          return storedApiKey
+        const storedKey = apiKeyStorage.value
+        // If we have an API key and it's not marked as invalidated, use it
+        if (storedKey && !this.apiKeyInvalidated) {
+          configureApiClient(storedKey)
+          return storedKey
         }
 
         // No API key found
@@ -248,17 +245,16 @@ export const useCommonStore = defineStore('common', {
       }
     },
 
-    async setApiKey(apiKey: string): Promise<void> {
+    async setApiKey(newApiKey: string): Promise<void> {
       const toast = useToast()
+      const trimmedKey = newApiKey.trim()
       try {
-        apiKey = apiKey.trim()
         // Validate the API key before storing
-        await api.validateApiKey(apiKey)
-        this.apiKey = apiKey
+        await api.validateApiKey(trimmedKey)
+        apiKeyStorage.value = trimmedKey
         this.apiKeyInvalidated = false
-        localStorage.setItem(STORAGE_KEYS.API_KEY, apiKey)
         // Configure the API client with the new API key
-        configureApiClient(apiKey)
+        configureApiClient(trimmedKey)
       } catch (error) {
         const errMsg = error instanceof Error ? error.message : ''
         const invalidKey =
@@ -280,33 +276,32 @@ export const useCommonStore = defineStore('common', {
         }
 
         // Keep the key locally so the user doesn't have to re-enter it.
-        this.apiKey = apiKey
+        apiKeyStorage.value = trimmedKey
         this.apiKeyInvalidated = false
-        localStorage.setItem(STORAGE_KEYS.API_KEY, apiKey)
-        configureApiClient(apiKey)
+        configureApiClient(trimmedKey)
       }
     },
 
     async clearApiKey(): Promise<void> {
-      this.apiKey = null
+      apiKeyStorage.value = ''
       this.apiKeyInvalidated = true
-      localStorage.removeItem(STORAGE_KEYS.API_KEY)
       // Clear the API key header from axios instance
       configureApiClient('')
     },
 
     // Method to refresh API key validation without clearing localStorage
     async refreshApiKey(): Promise<boolean> {
-      if (!this.apiKey) {
+      const currentKey = apiKeyStorage.value
+      if (!currentKey) {
         return false
       }
 
       try {
-        await api.validateApiKey(this.apiKey)
+        await api.validateApiKey(currentKey)
         this.apiKeyInvalidated = false
-        configureApiClient(this.apiKey)
+        configureApiClient(currentKey)
         return true
-      } catch (error) {
+      } catch {
         this.apiKeyInvalidated = true
         return false
       }
@@ -316,29 +311,32 @@ export const useCommonStore = defineStore('common', {
       try {
         const response = await api.getUserDataFromSentry(apiKey)
         this.userData = response
-      } catch (error: any) {
+      } catch (error: unknown) {
         const toast = useToast()
+        const axiosErr = axios.isAxiosError(error) ? error : null
+        const errMsg = error instanceof Error ? error.message : String(error)
 
         // Only clear API key for authentication errors (401)
-        if (error.response?.status === 401 || error.message === 'Invalid API key') {
-          console.log('API key is invalid, clearing from storage')
+        if (axiosErr?.response?.status === 401 || errMsg === 'Invalid API key') {
+          console.warn('API key is invalid, clearing from storage')
           await this.clearApiKey()
           toast.error('Invalid API key. Please enter a valid key to continue.')
           this.userData = null
         } else {
           // For network errors, keep the API key and show appropriate message
-          console.log('Network error during user data fetch, keeping API key:', error.message)
+          console.warn('Network error during user data fetch, keeping API key:', errMsg)
           toast.error('Unable to connect to server. Please check your connection and try again.')
         }
         throw error
       }
     },
     async loadUserConfigs() {
+      const currentKey = apiKeyStorage.value
       try {
-        if (!this.apiKey) {
+        if (!currentKey) {
           throw new Error('API key is not available')
         }
-        await api.loadUserConfigs(this.apiKey)
+        await api.loadUserConfigs(currentKey)
       } catch (error) {
         // Don't show toast for network errors - the connection monitor handles that
         const errorMessage = error instanceof Error ? error.message : String(error)
@@ -379,10 +377,9 @@ export const useCommonStore = defineStore('common', {
     setCurrentPage(page: string) {
       this.currentPage = page
     },
-    async consumeLogsFromSSE() {
+    consumeLogsFromSSE() {
       // Only start SSE connection if backend is available
       if (!this.isBackendConnected) {
-        // console.log('Backend not connected')
         return
       }
 
@@ -391,9 +388,9 @@ export const useCommonStore = defineStore('common', {
       // - Category-aware deduplication (progress, stat, sql, error logs)
       // - Structured fields (stage, description, table, status, etc.)
       // - Validation that allows empty messages for structured logs
-      setTimeout(async () => {
+      setTimeout(() => {
         sseLogsService.setBackendAvailable(true)
-        await sseLogsService.connect()
+        sseLogsService.connect()
       }, 0)
     },
 
@@ -437,13 +434,15 @@ export const useCommonStore = defineStore('common', {
 
               return 'success'
             }
-          } catch (error: any) {
+          } catch (error: unknown) {
             // If authentication fails, let it bubble up
-            if (error.response?.status === 401 || error.message === 'Invalid API key') {
+            const axiosErr = axios.isAxiosError(error) ? error : null
+            const errMsg = error instanceof Error ? error.message : String(error)
+            if (axiosErr?.response?.status === 401 || errMsg === 'Invalid API key') {
               throw error
             }
             // For other errors, backend is unavailable
-            console.log('Failed to fetch user data, backend unavailable:', error.message)
+            console.warn('Failed to fetch user data, backend unavailable:', errMsg)
             // Don't show toast - let health monitor handle it
             return 'failed'
           }
@@ -461,8 +460,9 @@ export const useCommonStore = defineStore('common', {
             this.startHealthMonitoring()
 
             return 'success'
-          } catch (error: any) {
-            console.log('Failed to initialize with API only:', error)
+          } catch (error: unknown) {
+            const errMsg = error instanceof Error ? error.message : String(error)
+            console.warn('Failed to initialize with API only:', errMsg)
             // Don't show toast - error already handled in loadUserConfigs
             // Backend unavailable
           }
@@ -481,26 +481,28 @@ export const useCommonStore = defineStore('common', {
 
         // Fallback return - should not reach here normally
         return 'failed'
-      } catch (error: any) {
-        console.error('App initialization failed:', error)
+      } catch (error: unknown) {
+        const axiosErr = axios.isAxiosError(error) ? error : null
+        const errMsg = error instanceof Error ? error.message : String(error)
+        console.error('App initialization failed:', errMsg)
 
         // Clear API key only for authentication errors
-        if (error.response?.status === 401 || error.message === 'Invalid API key') {
+        if (axiosErr?.response?.status === 401 || errMsg === 'Invalid API key') {
           await this.clearApiKey()
           toast.error('Invalid API key. Please enter a valid key to continue.')
         } else {
           // Don't show generic error toast - specific errors are already handled
-          console.log('Initialization error handled by specific error handlers')
+          console.warn('Initialization error handled by specific error handlers')
         }
 
         this.setBackendConnected(false)
         return 'failed'
       }
     },
-    setSelectedPlan(planId: string) {
+    setSelectedPlan(_planId: string) {
       if (this.userData) {
         //todo: implement this
-        // this.userData.subscription = planId
+        // this.userData.subscription = _planId
       }
     },
     setBackendConnected(status: boolean) {
@@ -578,8 +580,8 @@ export const useCommonStore = defineStore('common', {
             break
         }
         return true
-      } catch (error: any) {
-        this.routeLoadError = error.message
+      } catch (error: unknown) {
+        this.routeLoadError = error instanceof Error ? error.message : String(error)
         return false
       } finally {
         this.isLoadingRoute = false
@@ -602,22 +604,28 @@ export const useCommonStore = defineStore('common', {
           this.apiHealthy = true
           this.sentryHealthy = true
           this.clearError()
+          try {
+            await this.fetchServiceStatus()
+          } catch (error) {
+            console.warn('⚠️ Failed to refresh service status after reconnection:', error)
+          }
 
           // Re-initialize user configs when backend comes back online
           // This ensures the /user/configs call is made and connections are available
           // Do this in the background without failing the health check
           setTimeout(async () => {
             try {
-              if (this.apiKey) {
-                await api.loadUserConfigs(this.apiKey)
+              const currentKey = apiKeyStorage.value
+              if (currentKey) {
+                await api.loadUserConfigs(currentKey)
                 console.log('✅ User configs reloaded after reconnection')
 
                 // Explicitly trigger connections reload after user configs are loaded
                 // Emit a custom event that connections components can listen to
                 window.dispatchEvent(new CustomEvent('backend-reconnected'))
               }
-            } catch (error) {
-              console.warn('⚠️ Failed to reload user configs after reconnection:', error)
+            } catch {
+              console.warn('⚠️ Failed to reload user configs after reconnection')
               // This is non-critical - the main health check should still succeed
             }
           }, 1000) // Small delay to let the connection stabilize
@@ -625,18 +633,17 @@ export const useCommonStore = defineStore('common', {
           const toast = useToast()
           toast.success('Connection restored!')
         }
-      } catch (error) {
+      } catch {
         // Backend or Sentry is down
         if (this.isBackendConnected) {
-          console.log('🔌 Backend connection lost')
+          console.warn('🔌 Backend connection lost')
           this.setBackendConnected(false)
           this.apiHealthy = false
           this.sentryHealthy = false
 
           // Only show toast if we've been connected for a while (not during initial startup)
           const timeSinceInit = Date.now() - this.initializationStartTime
-          if (timeSinceInit > 5000) {
-            // Only show toast if it's been more than 5 seconds since initialization
+          if (timeSinceInit > CONNECTION_GRACE_PERIOD_MS) {
             const toast = useToast()
             toast.warning('Backend connection lost. Reconnecting...')
           }
@@ -650,15 +657,13 @@ export const useCommonStore = defineStore('common', {
         return
       }
 
-      // console.log('🚀 Starting health monitoring')
-
       // Perform immediate health check
       this.performHealthCheck()
 
-      // Check every 10 seconds
+      // Check periodically
       this.healthCheckInterval = window.setInterval(() => {
         this.performHealthCheck()
-      }, 10000)
+      }, HEALTH_CHECK_INTERVAL_MS)
     },
 
     stopHealthMonitoring() {
@@ -669,6 +674,8 @@ export const useCommonStore = defineStore('common', {
     }
   },
   getters: {
+    // Expose apiKey from the external ref for backward compatibility
+    apiKey: () => apiKeyStorage.value || null,
     isStreamsPage: (state) => state.currentPage === 'Streams',
     userApiKey: (state) => state.userData?.apiKey || null,
     userID: (state) => state.userData?.userID || null,
@@ -694,7 +701,7 @@ export const useCommonStore = defineStore('common', {
         ) || null
       )
     },
-    hasValidApiKey: (state) => !!state.apiKey && !state.apiKeyInvalidated,
-    needsApiKey: (state) => !state.apiKey || state.apiKeyInvalidated
+    hasValidApiKey: (state) => !!apiKeyStorage.value && !state.apiKeyInvalidated,
+    needsApiKey: (state) => !apiKeyStorage.value || state.apiKeyInvalidated
   }
 })

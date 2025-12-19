@@ -6,33 +6,6 @@
       >
         System Status
       </h2>
-      <!-- Show initialization notice during grace period -->
-      <div
-        v-if="isWithinGracePeriod() && !isInitialLoading"
-        class="flex items-center text-sm text-blue-600 dark:text-blue-400"
-      >
-        <svg
-          class="animate-spin -ml-1 mr-2 h-4 w-4 text-blue-600 dark:text-blue-400"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-        >
-          <circle
-            class="opacity-25"
-            cx="12"
-            cy="12"
-            r="10"
-            stroke="currentColor"
-            stroke-width="4"
-          ></circle>
-          <path
-            class="opacity-75"
-            fill="currentColor"
-            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-          ></path>
-        </svg>
-        Services are starting up...
-      </div>
     </div>
 
     <!-- Loading state -->
@@ -42,42 +15,6 @@
         :key="i"
         class="h-16 bg-linear-to-r from-slate-100 to-slate-50 dark:from-gray-800 dark:to-gray-850 rounded-xl"
       ></div>
-    </div>
-
-    <!-- Initialization Help Text -->
-    <div
-      v-else-if="isWithinGracePeriod() && hasInitializingServices()"
-      class="mb-4 p-4 bg-linear-to-br from-blue-50 to-teal-50 dark:from-blue-900/30 dark:to-teal-900/30 border border-blue-200 dark:border-blue-700 rounded-xl shadow-sm dark:shadow-gray-900/50"
-    >
-      <div class="flex items-start">
-        <svg
-          class="shrink-0 h-5 w-5 text-blue-400 dark:text-blue-500 mt-0.5"
-          fill="currentColor"
-          viewBox="0 0 20 20"
-        >
-          <path
-            fill-rule="evenodd"
-            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-            clip-rule="evenodd"
-          ></path>
-        </svg>
-        <div class="ml-3">
-          <h3 class="text-sm font-medium text-blue-800 dark:text-blue-300">
-            Services are starting up
-          </h3>
-          <p class="mt-1 text-sm text-blue-700 dark:text-blue-400">
-            DBConvert Streams services are initializing. Health checks need time to verify that all
-            components are ready. This typically takes 10-30 seconds. Services showing "starting..."
-            will automatically change to "healthy" once they're fully operational.
-          </p>
-          <div class="mt-2 text-xs text-blue-600 dark:text-blue-400">
-            <strong>Status meanings:</strong>
-            <span class="inline-block mr-3">🔵 starting... = initializing</span>
-            <span class="inline-block mr-3">🟢 healthy = working normally</span>
-            <span class="inline-block">🟠 offline = not working</span>
-          </div>
-        </div>
-      </div>
     </div>
 
     <!-- Service Status Cards -->
@@ -191,8 +128,14 @@ const services: Service[] = [
 ]
 
 const commonStore = useCommonStore()
-const pollingInterval = ref<number | null>(null)
+const pollingInterval = ref<ReturnType<typeof setInterval> | null>(null)
+const pollStartAt = Date.now()
 const isInitialLoading = ref(true)
+
+// Polling intervals
+const FAST_POLL_MS = 2000
+const SLOW_POLL_MS = 10000
+const FAST_POLL_WINDOW_MS = 30000
 
 const visibleServices = computed(() => {
   // Keep core services visible even if they haven't registered yet; hide optional services
@@ -221,19 +164,54 @@ const getServiceStatus = (backendName: string): string => {
   return status?.status || 'unknown'
 }
 
-// Remove the grace period logic entirely - show actual service status
-const isWithinGracePeriod = (): boolean => {
-  return false // Always false - no more fake "starting" status
+const coreServiceNames = ['stream-api', 'stream-reader', 'stream-writer', 'nats']
+
+const coreServicesHealthy = (): boolean => {
+  return coreServiceNames.every((name) => {
+    const status = commonStore.serviceStatuses.find(
+      (service) => service.name.toLowerCase() === name.toLowerCase()
+    )
+    return status?.status === 'passing'
+  })
 }
 
-const hasMixedServiceStatuses = (): boolean => {
-  return false // Not needed anymore
+const shouldSlowPoll = (): boolean => {
+  if (!commonStore.isBackendConnected) {
+    return false
+  }
+  if (coreServicesHealthy()) {
+    return true
+  }
+  return Date.now() - pollStartAt >= FAST_POLL_WINDOW_MS
 }
 
-const hasInitializingServices = (): boolean => {
-  return visibleServices.value.some(
-    (service) => getServiceStatus(service.backendName) === 'initializing'
-  )
+// Track current polling speed to know when to switch
+let currentPollMs = FAST_POLL_MS
+
+const startPolling = (intervalMs: number) => {
+  if (pollingInterval.value) {
+    clearInterval(pollingInterval.value)
+  }
+  currentPollMs = intervalMs
+  pollingInterval.value = setInterval(async () => {
+    if (!commonStore.isBackendConnected) {
+      return
+    }
+    try {
+      await commonStore.fetchServiceStatus()
+      commonStore.clearError()
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      if (!errorMessage.includes('Network Error') && !errorMessage.includes('connection')) {
+        console.warn('Service status polling failed:', errorMessage)
+      }
+    }
+
+    // Switch to slow polling once services are healthy or grace period ends
+    if (currentPollMs !== SLOW_POLL_MS && shouldSlowPoll()) {
+      startPolling(SLOW_POLL_MS)
+    }
+  }, intervalMs)
 }
 
 const getStatusClasses = (status: string) => ({
@@ -258,35 +236,17 @@ onMounted(async () => {
   try {
     await commonStore.fetchServiceStatus()
     commonStore.clearError()
-    isInitialLoading.value = false
   } catch (error) {
     // Silently handle initial fetch failure - backend might not be available yet
     const errorMessage = error instanceof Error ? error.message : String(error)
     if (!errorMessage.includes('Network Error') && !errorMessage.includes('connection')) {
-      console.log('Failed to fetch initial service status:', errorMessage)
+      console.warn('Failed to fetch initial service status:', errorMessage)
     }
   } finally {
     isInitialLoading.value = false
   }
 
-  // Start polling after initial load - reduced to 10 seconds for more responsive updates
-  pollingInterval.value = window.setInterval(() => {
-    // Only poll if backend is connected
-    if (commonStore.isBackendConnected) {
-      commonStore
-        .fetchServiceStatus()
-        .then(() => {
-          commonStore.clearError()
-        })
-        .catch((error) => {
-          // Silently handle polling failures - backend connection monitor handles this
-          const errorMessage = error instanceof Error ? error.message : String(error)
-          if (!errorMessage.includes('Network Error') && !errorMessage.includes('connection')) {
-            console.log('Service status polling failed:', errorMessage)
-          }
-        })
-    }
-  }, 10000)
+  startPolling(FAST_POLL_MS)
 })
 
 onUnmounted(() => {

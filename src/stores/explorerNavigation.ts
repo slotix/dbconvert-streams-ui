@@ -446,7 +446,7 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
 
       this.loadingMetadata[cacheKey] = true
 
-      const fetchPromise = (async (): Promise<DatabaseMetadata | null> => {
+      const doFetch = async (): Promise<DatabaseMetadata | null> => {
         try {
           const meta = await connectionsApi.getMetadata(connectionId, database, forceRefresh, {
             includeSystem
@@ -469,11 +469,17 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
           return null
         } finally {
           this.loadingMetadata[cacheKey] = false
-          if (this.pendingMetadataRequests[cacheKey]?.promise === fetchPromise) {
-            delete this.pendingMetadataRequests[cacheKey]
-          }
         }
-      })()
+      }
+
+      const fetchPromise = doFetch()
+
+      // Clean up pending request when done
+      fetchPromise.finally(() => {
+        if (this.pendingMetadataRequests[cacheKey]?.promise === fetchPromise) {
+          delete this.pendingMetadataRequests[cacheKey]
+        }
+      })
 
       this.pendingMetadataRequests[cacheKey] = { includeSystem, promise: fetchPromise }
       return fetchPromise

@@ -59,7 +59,7 @@ export const useThemeStore = defineStore('theme', () => {
     isDark,
     initializeTheme,
     setTheme,
-    toggleTheme,
+    toggleTheme
   }
 })
 
@@ -68,8 +68,9 @@ function emitNativeTheme(mode: ThemeMode, isDark: boolean) {
     return
   }
 
-  const runtime = (window as typeof window & { runtime?: { EventsEmit?: (...args: unknown[]) => void } })
-    .runtime
+  const runtime = (
+    window as typeof window & { runtime?: { EventsEmit?: (...args: unknown[]) => void } }
+  ).runtime
   if (!runtime?.EventsEmit) {
     return
   }
