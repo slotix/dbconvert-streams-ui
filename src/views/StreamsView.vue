@@ -197,7 +197,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { PlusIcon, ArrowPathIcon } from '@heroicons/vue/24/solid'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
@@ -218,6 +218,7 @@ const connectionsStore = useConnectionsStore()
 const monitoringStore = useMonitoringStore()
 const commonStore = useCommonStore()
 const route = useRoute()
+const router = useRouter()
 
 // Use sidebar composable for resize and toggle functionality
 const sidebar = useSidebar()
@@ -324,6 +325,23 @@ watch(
     if (newSelected && typeof newSelected === 'string') {
       selectedStreamId.value = newSelected
     }
+  }
+)
+
+watch(
+  () => selectedStreamId.value,
+  (newSelected) => {
+    const currentSelected = typeof route.query.selected === 'string' ? route.query.selected : ''
+    if (newSelected === currentSelected) {
+      return
+    }
+    const nextQuery = { ...route.query }
+    if (newSelected) {
+      nextQuery.selected = newSelected
+    } else {
+      delete nextQuery.selected
+    }
+    router.replace({ query: nextQuery })
   }
 )
 

@@ -268,7 +268,7 @@ export default {
 
 <script setup lang="ts">
 import { ref, computed, watch, defineAsyncComponent, toRef } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { PlayIcon, PauseIcon, StopIcon } from '@heroicons/vue/24/outline'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
@@ -302,6 +302,7 @@ const emit = defineEmits<{
 }>()
 
 const router = useRouter()
+const route = useRoute()
 const streamsStore = useStreamsStore()
 const connectionsStore = useConnectionsStore()
 const commonStore = useCommonStore()
@@ -317,6 +318,24 @@ watch(
     if (newTab) {
       activeTab.value = newTab
     }
+  }
+)
+
+watch(
+  () => activeTab.value,
+  (newTab) => {
+    const currentTab = typeof route.query.tab === 'string' ? route.query.tab : ''
+    const nextTab = newTab === 'configuration' ? '' : newTab
+    if (nextTab === currentTab) {
+      return
+    }
+    const nextQuery = { ...route.query }
+    if (nextTab) {
+      nextQuery.tab = nextTab
+    } else {
+      delete nextQuery.tab
+    }
+    router.replace({ query: nextQuery })
   }
 )
 

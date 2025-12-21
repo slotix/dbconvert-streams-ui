@@ -9,6 +9,19 @@ import router from './router'
 // import { logEnvironment } from '@/utils/environment'
 import { vTooltip } from '@/directives/tooltip'
 import { useThemeStore } from '@/stores/theme'
+import { getStorageValue, STORAGE_KEYS } from '@/constants/storageKeys'
+
+type ExplorerViewState = {
+  viewType: 'connection-details' | 'database-overview' | 'table-data' | 'file-browser' | null
+  connectionId: string | null
+  databaseName: string | null
+  schemaName: string | null
+  objectType: 'table' | 'view' | null
+  objectName: string | null
+  filePath: string | null
+}
+
+const EXPLORER_VIEW_STATE_KEY = 'explorer.viewState'
 
 // Display startup banner
 console.log(`
@@ -110,4 +123,91 @@ document.addEventListener('contextmenu', (event) => {
   event.preventDefault()
 })
 
-app.mount('#app')
+const loadExplorerViewState = (): ExplorerViewState | null => {
+  try {
+    const raw = window.localStorage.getItem(EXPLORER_VIEW_STATE_KEY)
+    if (!raw) {
+      return null
+    }
+    return JSON.parse(raw) as ExplorerViewState
+  } catch (error) {
+    console.warn('Failed to load explorer view state:', error)
+    return null
+  }
+}
+
+const buildExplorerRestoreRoute = (): string => {
+  const state = loadExplorerViewState()
+  if (!state?.connectionId) {
+    return ''
+  }
+
+  const params = new URLSearchParams()
+
+  switch (state.viewType) {
+    case 'connection-details':
+      params.set('details', 'true')
+      break
+    case 'database-overview':
+      if (state.databaseName) {
+        params.set('db', state.databaseName)
+      }
+      break
+    case 'table-data':
+      if (state.databaseName && state.objectType && state.objectName) {
+        params.set('db', state.databaseName)
+        params.set('type', state.objectType)
+        params.set('name', state.objectName)
+        if (state.schemaName) {
+          params.set('schema', state.schemaName)
+        }
+      } else if (state.databaseName) {
+        params.set('db', state.databaseName)
+      }
+      break
+    case 'file-browser':
+      if (state.filePath) {
+        params.set('file', state.filePath)
+      }
+      break
+    default:
+      break
+  }
+
+  const query = params.toString()
+  return `/explorer/${state.connectionId}${query ? `?${query}` : ''}`
+}
+
+const restoreDesktopRoute = async () => {
+  const currentRoute = router.currentRoute.value
+  if (currentRoute.name && currentRoute.name !== 'Home' && currentRoute.path !== '/') {
+    return
+  }
+  const storedRoute = getStorageValue<string>(STORAGE_KEYS.DESKTOP_LAST_ROUTE, '')
+  let targetRoute = storedRoute
+
+  const explorerRestoreRoute = buildExplorerRestoreRoute()
+  if (
+    explorerRestoreRoute &&
+    (!storedRoute ||
+      storedRoute === '/explorer' ||
+      storedRoute.startsWith('/explorer?') ||
+      storedRoute.startsWith('/explorer/'))
+  ) {
+    targetRoute = explorerRestoreRoute
+  }
+
+  if (!targetRoute) {
+    return
+  }
+  const resolved = router.resolve(targetRoute)
+  if (!resolved.name || resolved.name === 'Home') {
+    return
+  }
+  await router.replace(resolved.fullPath)
+}
+
+router.isReady().then(async () => {
+  await restoreDesktopRoute()
+  app.mount('#app')
+})

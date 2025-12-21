@@ -442,6 +442,7 @@ import ThemeToggle from '@/components/ThemeToggle.vue'
 import { initializeApiClient } from '@/api/apiClient'
 import { useContextualIconSizes } from '@/composables/useIconSizes'
 import { useWailsMenuEvents } from '@/composables/useWailsEvents'
+import { setStorageValue, STORAGE_KEYS } from '@/constants/storageKeys'
 
 import { Dialog, DialogPanel, TransitionChild, TransitionRoot } from '@headlessui/vue'
 import {
@@ -622,6 +623,10 @@ onMounted(async () => {
 // Watch for changes in route and update the current page in the common store
 watch(router.currentRoute, (to) => {
   commonStore.setCurrentPage(to.name as string)
+  if (!to.name || to.name === 'Home' || to.path === '/') {
+    return
+  }
+  setStorageValue(STORAGE_KEYS.DESKTOP_LAST_ROUTE, to.fullPath)
 })
 
 const showExpiredBanner = ref(false)

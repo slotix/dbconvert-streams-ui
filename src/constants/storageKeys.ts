@@ -38,7 +38,10 @@ export const STORAGE_KEYS = {
   OBJECT_TAB_STATES: 'object-tab-states',
 
   /** Always open new tab preference */
-  ALWAYS_OPEN_NEW_TAB: 'explorer.alwaysOpenNewTab'
+  ALWAYS_OPEN_NEW_TAB: 'explorer.alwaysOpenNewTab',
+
+  /** Last opened route in desktop app */
+  DESKTOP_LAST_ROUTE: 'desktop-last-route'
 } as const
 
 /**

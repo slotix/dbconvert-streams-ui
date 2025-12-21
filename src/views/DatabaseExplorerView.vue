@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { PlusIcon } from '@heroicons/vue/24/outline'
 import { useCommonStore } from '@/stores/common'
@@ -92,6 +92,20 @@ const connectionCountLabel = computed(() => {
 })
 
 const selectedDatabase = computed(() => explorerState.selectedDatabaseName.value)
+
+const activeConnectionId = computed(
+  () =>
+    navigationStore.activeConnectionId ||
+    viewStateStore.connectionId ||
+    explorerState.currentConnectionId.value
+)
+
+onMounted(() => {
+  if (!navigationStore.activeConnectionId && viewStateStore.connectionId) {
+    navigationStore.setActiveConnectionId(viewStateStore.connectionId)
+    connectionsStore.setCurrentConnection(viewStateStore.connectionId)
+  }
+})
 
 const {
   showDeleteConfirm,
@@ -427,8 +441,8 @@ function handleOpenFileConsole(payload: {
           >
             <!-- Content area with dual pane tabs -->
             <ExplorerContentArea
-              v-if="navigationStore.activeConnectionId"
-              :connection-id="navigationStore.activeConnectionId"
+              v-if="activeConnectionId"
+              :connection-id="activeConnectionId"
               :selected-database="selectedDatabase || undefined"
               :file-entries="currentFileEntries"
               :active-pane="paneTabsStore.activePane"
