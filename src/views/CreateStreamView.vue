@@ -7,24 +7,41 @@
       <div class="max-w-[1600px] mx-auto py-4 px-4 sm:px-6 lg:px-8">
         <div class="flex items-center">
           <button
+            v-if="sidebarMenuToggle"
+            type="button"
+            class="mr-2 p-2 rounded-lg text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50 dark:hover:from-blue-900/20 dark:hover:to-teal-900/20 transition-all duration-200 lg:hidden"
+            @click="sidebarMenuToggle.openSidebar"
+          >
+            <Bars3Icon class="h-5 w-5" />
+            <span class="sr-only">Open sidebar</span>
+          </button>
+          <button
             class="mr-4 p-2 rounded-lg text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50 dark:hover:from-blue-900/20 dark:hover:to-teal-900/20 transition-all duration-200"
             @click="goBack"
           >
             <ArrowLeftIcon class="h-5 w-5" />
           </button>
-          <div>
-            <h1
-              class="text-2xl font-bold bg-linear-to-r from-slate-900 to-slate-700 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent"
-            >
-              {{ isEditMode ? 'Edit Stream Configuration' : 'New Stream Configuration' }}
-            </h1>
-            <p class="text-sm text-gray-600 dark:text-gray-400">
-              {{
-                isEditMode
-                  ? 'Update your stream configuration'
-                  : 'Configure a new data stream from source to target'
-              }}
-            </p>
+          <div class="flex items-start gap-3">
+            <img
+              v-if="!isDesktop"
+              class="h-5 w-5 shrink-0 mt-1"
+              src="/images/logo.svg"
+              alt="DBConvert Streams"
+            />
+            <div>
+              <h1
+                class="text-2xl font-bold bg-linear-to-r from-slate-900 to-slate-700 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent"
+              >
+                {{ isEditMode ? 'Edit Stream Configuration' : 'New Stream Configuration' }}
+              </h1>
+              <p class="text-sm text-gray-600 dark:text-gray-400">
+                {{
+                  isEditMode
+                    ? 'Update your stream configuration'
+                    : 'Configure a new data stream from source to target'
+                }}
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -116,9 +133,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, watch, nextTick, inject } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { ArrowLeftIcon } from '@heroicons/vue/24/outline'
+import { ArrowLeftIcon, Bars3Icon } from '@heroicons/vue/24/outline'
+import { useDesktopMode } from '@/composables/useDesktopMode'
 import { useStreamWizard } from '@/composables/useStreamWizard'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
@@ -142,6 +160,8 @@ const wizard = useStreamWizard()
 const streamsStore = useStreamsStore()
 const connectionsStore = useConnectionsStore()
 const commonStore = useCommonStore()
+const { isDesktop } = useDesktopMode()
+const sidebarMenuToggle = inject<{ openSidebar: () => void }>('sidebarMenuToggle')
 
 const isProcessing = ref(false)
 const canProceedOverride = ref(true)

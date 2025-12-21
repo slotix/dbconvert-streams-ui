@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, inject } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { PlusIcon } from '@heroicons/vue/24/outline'
+import { Bars3Icon, PlusIcon } from '@heroicons/vue/24/outline'
 import { useCommonStore } from '@/stores/common'
 import { useConnectionsStore } from '@/stores/connections'
 import { useSchemaStore } from '@/stores/schema'
@@ -25,6 +25,7 @@ import { useExplorerRouter } from '@/composables/useExplorerRouter'
 import { useTreeSearch } from '@/composables/useTreeSearch'
 import { useExplorerUrlSync } from '@/composables/useExplorerUrlSync'
 import { useConnectionActions } from '@/composables/useConnectionActions'
+import { useDesktopMode } from '@/composables/useDesktopMode'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import DisconnectedOverlay from '@/components/common/DisconnectedOverlay.vue'
 import EmptyStateMessage from '@/components/explorer/EmptyStateMessage.vue'
@@ -38,6 +39,12 @@ const schemaStore = useSchemaStore()
 const paneTabsStore = usePaneTabsStore()
 const navigationStore = useExplorerNavigationStore()
 const viewStateStore = useExplorerViewStateStore()
+const { isDesktop } = useDesktopMode()
+const sidebarWidthToggle = inject<{
+  isSidebarExpanded: { value: boolean }
+  toggleSidebarWidth: () => void
+}>('sidebarWidthToggle')
+const sidebarMenuToggle = inject<{ openSidebar: () => void }>('sidebarMenuToggle')
 
 // Set up two-way URL sync (Store ↔ URL)
 useExplorerUrlSync()
@@ -250,19 +257,45 @@ function handleOpenFileConsole(payload: {
 </script>
 
 <template>
-  <div class="min-h-full overflow-x-hidden">
+  <div class="min-h-full">
     <!-- Disconnected Overlay -->
     <DisconnectedOverlay />
 
     <!-- Enhanced Functional Toolbar with gradient background -->
     <header
-      class="sticky top-0 z-10 bg-linear-to-r from-slate-50 via-white to-slate-50 dark:from-gray-900 dark:via-gray-850 dark:to-gray-900 border-b border-slate-200 dark:border-gray-700 shadow-sm dark:shadow-gray-900/30"
+      class="sticky top-0 z-30 bg-linear-to-r from-slate-50 via-white to-slate-50 dark:from-gray-900 dark:via-gray-850 dark:to-gray-900 border-b border-slate-200 dark:border-gray-700 shadow-sm dark:shadow-gray-900/30 lg:-ml-[var(--sidebar-width)] lg:w-[calc(100%+var(--sidebar-width))]"
     >
       <div class="px-6 py-4 flex items-center gap-4">
-        <!-- Connections Count Header -->
-        <h1 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
-          {{ connectionCountLabel }}
-        </h1>
+        <div class="flex items-center gap-3">
+          <button
+            v-if="sidebarMenuToggle"
+            type="button"
+            class="group flex items-center justify-center p-2 -ml-1 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700 lg:hidden"
+            @click="sidebarMenuToggle.openSidebar"
+          >
+            <Bars3Icon class="h-5 w-5" aria-hidden="true" />
+            <span class="sr-only">Open sidebar</span>
+          </button>
+          <button
+            v-if="sidebarWidthToggle"
+            type="button"
+            class="group hidden lg:flex items-center justify-center p-2 -ml-1 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700"
+            @click="sidebarWidthToggle.toggleSidebarWidth"
+          >
+            <Bars3Icon class="h-5 w-5" aria-hidden="true" />
+            <span class="sr-only">Toggle sidebar width</span>
+          </button>
+          <img
+            v-if="!isDesktop"
+            class="h-5 w-5 shrink-0"
+            src="/images/logo.svg"
+            alt="DBConvert Streams"
+          />
+          <!-- Connections Count Header -->
+          <h1 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            {{ connectionCountLabel }}
+          </h1>
+        </div>
 
         <!-- Connection Type Filter -->
         <div class="shrink-0">

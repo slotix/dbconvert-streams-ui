@@ -10,6 +10,8 @@ import router from './router'
 import { vTooltip } from '@/directives/tooltip'
 import { useThemeStore } from '@/stores/theme'
 import { getStorageValue, STORAGE_KEYS } from '@/constants/storageKeys'
+import { DESKTOP_NAVIGATION } from '@/constants/desktopNavigation'
+import { isWailsContext } from '@/composables/useWailsEvents'
 
 type ExplorerViewState = {
   viewType: 'connection-details' | 'database-overview' | 'table-data' | 'file-browser' | null
@@ -180,12 +182,16 @@ const buildExplorerRestoreRoute = (): string => {
 
 const restoreDesktopRoute = async () => {
   const currentRoute = router.currentRoute.value
-  if (currentRoute.name && currentRoute.name !== 'Home' && currentRoute.path !== '/') {
+  // Skip if already on a non-overview route (e.g., navigated via URL)
+  if (currentRoute.name && currentRoute.name !== 'Overview' && currentRoute.path !== '/') {
     return
   }
+
+  const isDesktop = isWailsContext()
   const storedRoute = getStorageValue<string>(STORAGE_KEYS.DESKTOP_LAST_ROUTE, '')
   let targetRoute = storedRoute
 
+  // Try to restore explorer view state for more specific navigation
   const explorerRestoreRoute = buildExplorerRestoreRoute()
   if (
     explorerRestoreRoute &&
@@ -197,11 +203,22 @@ const restoreDesktopRoute = async () => {
     targetRoute = explorerRestoreRoute
   }
 
+  // In desktop mode, default to workspace view if no stored route
+  if (!targetRoute && isDesktop) {
+    targetRoute = DESKTOP_NAVIGATION.defaultRoute
+  }
+
   if (!targetRoute) {
     return
   }
+
   const resolved = router.resolve(targetRoute)
-  if (!resolved.name || resolved.name === 'Home') {
+  // Only navigate if resolved to a valid non-overview route
+  if (!resolved.name || resolved.name === 'Overview') {
+    // In desktop mode, still navigate to default workspace even if resolved to overview
+    if (isDesktop) {
+      await router.replace(DESKTOP_NAVIGATION.defaultRoute)
+    }
     return
   }
   await router.replace(resolved.fullPath)

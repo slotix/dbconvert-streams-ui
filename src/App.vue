@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div :style="{ '--sidebar-width': sidebarWidth }">
     <ApiKeyInput v-if="commonStore.needsApiKey && !isInitializing" />
 
     <!-- API Key Expired Notification Banner -->
@@ -105,12 +105,6 @@
               <div
                 class="flex grow flex-col gap-y-5 overflow-y-auto bg-gray-50 dark:bg-gray-900 px-6 pb-2 ring-1 ring-gray-200/80 dark:ring-white/5 border-r border-gray-200 dark:border-gray-800/80"
               >
-                <div class="flex h-16 shrink-0 items-center">
-                  <RouterLink to="/">
-                    <img class="h-8 w-auto" src="/images/logo.svg" alt="DBConvert Streams" />
-                  </RouterLink>
-                </div>
-
                 <nav class="flex flex-1 flex-col">
                   <ul role="list" class="-mx-2 flex-1 space-y-1">
                     <li v-for="item in navigation" :key="item.name">
@@ -133,6 +127,21 @@
                       </RouterLink>
                     </li>
                   </ul>
+
+                  <!-- Overview Link (web only - desktop has native menu) -->
+                  <div class="pt-4 border-t border-gray-200 dark:border-gray-600">
+                    <RouterLink
+                      to="/"
+                      class="w-full group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700"
+                      @click="sidebarOpen = false"
+                    >
+                      <ChartBarIcon
+                        :class="[iconSizes.sidebarMenu, 'shrink-0']"
+                        aria-hidden="true"
+                      />
+                      <span class="flex-1 text-left">Overview</span>
+                    </RouterLink>
+                  </div>
 
                   <!-- System Logs Button -->
                   <div class="pt-4 border-t border-gray-200 dark:border-gray-600">
@@ -172,7 +181,7 @@
                     <ul role="list" class="-mx-2 space-y-1">
                       <li>
                         <a
-                          href="https://discord.gg/3CACYYKSAb"
+                          href="https://github.com/slotix/dbconvert-streams-public/discussions"
                           target="_blank"
                           rel="noopener noreferrer"
                           class="group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700"
@@ -182,12 +191,13 @@
                             :class="[iconSizes.sidebarMenu, 'shrink-0']"
                             viewBox="0 0 24 24"
                             fill="currentColor"
+                            aria-hidden="true"
                           >
                             <path
-                              d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515a.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0a12.64 12.64 0 0 0-.617-1.25a.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057a19.9 19.9 0 0 0 5.993 3.03a.078.078 0 0 0 .084-.028a14.09 14.09 0 0 0 1.226-1.994a.076.076 0 0 0-.041-.106a13.107 13.107 0 0 1-1.872-.892a.077.077 0 0 1-.008-.128a10.2 10.2 0 0 0 .372-.292a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127a12.299 12.299 0 0 1-1.873.892a.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028a19.839 19.839 0 0 0 6.002-3.03a.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.956-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.955-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.946 2.418-2.157 2.418z"
+                              d="M12 2C6.477 2 2 6.58 2 12.234c0 4.516 2.865 8.34 6.839 9.693c.5.096.682-.22.682-.493c0-.244-.009-.89-.014-1.747c-2.782.62-3.369-1.374-3.369-1.374c-.455-1.185-1.11-1.5-1.11-1.5c-.908-.641.069-.628.069-.628c1.004.072 1.532 1.056 1.532 1.056c.892 1.565 2.341 1.113 2.91.85c.091-.665.349-1.113.635-1.368c-2.22-.261-4.555-1.137-4.555-5.056c0-1.117.39-2.03 1.029-2.747c-.103-.261-.446-1.31.098-2.728c0 0 .84-.275 2.75 1.05c.798-.226 1.655-.339 2.506-.343c.85.004 1.707.117 2.506.343c1.909-1.325 2.748-1.05 2.748-1.05c.546 1.418.203 2.467.1 2.728c.64.717 1.028 1.63 1.028 2.747c0 3.93-2.339 4.792-4.566 5.047c.359.316.678.94.678 1.894c0 1.368-.012 2.471-.012 2.807c0 .275.18.595.688.494c3.971-1.356 6.832-5.178 6.832-9.692C22 6.58 17.523 2 12 2z"
                             />
                           </svg>
-                          Discord
+                          GitHub Discussions
                         </a>
                       </li>
                       <li>
@@ -205,21 +215,6 @@
                           Documentation
                         </a>
                       </li>
-                      <li>
-                        <a
-                          href="https://streams.dbconvert.com/account"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          class="group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700"
-                          @click="sidebarOpen = false"
-                        >
-                          <UserCircleIcon
-                            :class="[iconSizes.sidebarMenu, 'shrink-0']"
-                            aria-hidden="true"
-                          />
-                          Account
-                        </a>
-                      </li>
                     </ul>
                   </div>
                 </nav>
@@ -232,15 +227,19 @@
 
     <!-- Static sidebar for desktop -->
     <div
-      class="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-100 lg:block lg:w-20 lg:bg-gray-50 dark:lg:bg-gray-900 lg:pb-10 lg:border-r lg:border-gray-200 dark:lg:border-gray-800/80"
+      :class="[
+        'hidden lg:fixed lg:top-16 lg:bottom-0 lg:left-0 lg:z-20 lg:block lg:bg-gray-50 dark:lg:bg-gray-900 lg:pb-10 lg:border-r lg:border-gray-200 dark:lg:border-gray-800/80',
+        isSidebarExpanded ? 'lg:w-64' : 'lg:w-20'
+      ]"
     >
-      <div class="flex h-20 shrink-0 items-center justify-center pt-6">
-        <RouterLink to="/">
-          <img class="h-8 w-auto" src="/images/logo.svg" alt="DBConvert Streams" />
-        </RouterLink>
-      </div>
       <nav class="mt-8 overflow-visible">
-        <ul role="list" class="flex flex-col items-center space-y-1 overflow-visible">
+        <ul
+          role="list"
+          :class="[
+            'flex flex-col space-y-1 overflow-visible',
+            isSidebarExpanded ? 'items-stretch px-2' : 'items-center'
+          ]"
+        >
           <li v-for="item in navigation" :key="item.name" class="overflow-visible">
             <RouterLink
               :to="item.href"
@@ -248,7 +247,8 @@
                 $route.path.startsWith(item.href.split('/:')[0])
                   ? 'bg-white dark:bg-teal-900 text-gray-900 dark:text-white shadow-sm ring-1 ring-gray-200 dark:ring-0'
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700',
-                'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold relative overflow-visible'
+                'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold relative overflow-visible',
+                isSidebarExpanded ? 'w-full justify-start px-3' : 'justify-center'
               ]"
             >
               <component
@@ -256,10 +256,12 @@
                 :class="[iconSizes.sidebarMenu, 'shrink-0']"
                 aria-hidden="true"
               />
-              <span class="sr-only">{{ item.name }}</span>
+              <span v-if="isSidebarExpanded" class="truncate">{{ item.name }}</span>
+              <span v-else class="sr-only">{{ item.name }}</span>
 
               <!-- Show tooltip on hover -->
               <div
+                v-if="!isSidebarExpanded"
                 class="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 hidden group-hover:block bg-gray-900 dark:bg-gray-800 text-white px-2 py-1 rounded text-sm whitespace-nowrap pointer-events-none"
                 style="z-index: 99999"
               >
@@ -269,11 +271,13 @@
           </li>
 
           <!-- System Logs Button -->
-          <!-- System Logs Button -->
           <li class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600 overflow-visible">
             <button
               type="button"
-              class="group flex items-center justify-center p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700 rounded-md relative w-full overflow-visible"
+              :class="[
+                'group flex items-center p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700 rounded-md relative w-full overflow-visible',
+                isSidebarExpanded ? 'justify-start px-3 gap-3' : 'justify-center'
+              ]"
               @click="logsStore.toggleLogsPanel"
             >
               <ExclamationCircleIcon
@@ -286,18 +290,23 @@
                 :class="[iconSizes.sidebarMenu, 'shrink-0']"
                 aria-hidden="true"
               />
-              <span class="sr-only">System Logs</span>
+              <span v-if="isSidebarExpanded" class="truncate">System Logs</span>
+              <span v-else class="sr-only">System Logs</span>
 
               <!-- Log count badge -->
               <span
                 v-if="logsStore.logs.length > 0"
-                class="absolute -top-1 -right-1 bg-gray-200 text-gray-700 dark:bg-gray-500 dark:text-white text-xs rounded-full h-5 w-5 flex items-center justify-center"
+                :class="[
+                  'bg-gray-200 text-gray-700 dark:bg-gray-500 dark:text-white text-xs rounded-full h-5 w-5 flex items-center justify-center',
+                  isSidebarExpanded ? 'ml-auto' : 'absolute -top-1 -right-1'
+                ]"
               >
                 {{ logsStore.logs.length > 99 ? '99+' : logsStore.logs.length }}
               </span>
 
               <!-- Show tooltip on hover -->
               <div
+                v-if="!isSidebarExpanded"
                 class="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 hidden group-hover:block bg-gray-900 dark:bg-gray-800 text-white px-2 py-1 rounded text-sm whitespace-nowrap pointer-events-none"
                 style="z-index: 99999"
               >
@@ -310,12 +319,14 @@
           <li class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600 overflow-visible">
             <div
               :class="[
-                'group flex items-center justify-center p-2 rounded-md relative overflow-visible',
+                'group flex items-center p-2 rounded-md relative overflow-visible',
                 commonStore.isBackendConnected
                   ? 'text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-900/20'
                   : commonStore.error
                     ? 'text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/20'
                     : 'text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/20'
+                ,
+                isSidebarExpanded ? 'justify-start px-3 gap-3' : 'justify-center'
               ]"
               :title="getConnectionStatusText()"
             >
@@ -326,11 +337,13 @@
                     ? 'bg-green-500 border-green-500 animate-pulse dark:bg-green-400 dark:border-green-400'
                     : commonStore.error
                       ? 'bg-red-500 border-red-500 dark:bg-red-400 dark:border-red-400'
-                      : 'bg-red-500 border-red-500 dark:bg-red-400 dark:border-red-400'
+                  : 'bg-red-500 border-red-500 dark:bg-red-400 dark:border-red-400'
                 ]"
               ></div>
+              <span v-if="isSidebarExpanded" class="truncate">Status</span>
               <!-- Show tooltip on hover -->
               <div
+                v-if="!isSidebarExpanded"
                 class="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 hidden group-hover:block bg-gray-900 dark:bg-gray-800 text-white px-2 py-1 rounded text-sm whitespace-nowrap pointer-events-none"
                 style="z-index: 99999"
               >
@@ -342,65 +355,108 @@
       </nav>
 
       <!-- External Links -->
-      <div class="fixed bottom-0 w-20 pb-5 bg-gray-50 dark:bg-gray-900">
-        <div class="flex flex-col items-center space-y-1">
-          <!-- Theme Toggle -->
-          <div class="relative group">
-            <ThemeToggle />
+      <div
+        :class="[
+          'fixed bottom-0 left-0 pb-5 bg-gray-50 dark:bg-gray-900',
+          isSidebarExpanded ? 'w-64' : 'w-20'
+        ]"
+      >
+        <div
+          :class="[
+            'flex flex-col space-y-1',
+            isSidebarExpanded ? 'items-stretch px-2' : 'items-center'
+          ]"
+        >
+          <!-- Overview Link (web only - desktop has native menu) -->
+          <RouterLink
+            to="/"
+            :class="[
+              'group flex items-center p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700 rounded-md relative',
+              isSidebarExpanded ? 'justify-start gap-3 px-3 w-full' : 'justify-center'
+            ]"
+          >
+            <ChartBarIcon :class="iconSizes.sidebarMenu" aria-hidden="true" />
+            <span v-if="isSidebarExpanded" class="truncate">Overview</span>
+            <span v-else class="sr-only">Overview</span>
             <!-- Tooltip -->
             <div
+              v-if="!isSidebarExpanded"
+              class="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 hidden group-hover:block bg-gray-900 dark:bg-gray-800 text-white px-2 py-1 rounded text-sm whitespace-nowrap z-[9999] pointer-events-none"
+            >
+              Overview
+            </div>
+          </RouterLink>
+          <!-- Theme Toggle -->
+          <div
+            :class="[
+              'relative group flex items-center p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700',
+              isSidebarExpanded ? 'justify-start gap-3 px-3' : 'justify-center'
+            ]"
+          >
+            <ThemeToggle ref="desktopThemeToggleRef" />
+            <button
+              v-if="isSidebarExpanded"
+              type="button"
+              class="truncate text-sm font-semibold text-gray-600 dark:text-gray-400 bg-transparent p-0 text-left"
+              @click="openDesktopThemeMenu"
+            >
+              Theme
+            </button>
+            <!-- Tooltip -->
+            <div
+              v-if="!isSidebarExpanded"
               class="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 hidden group-hover:block bg-gray-900 dark:bg-gray-800 text-white px-2 py-1 rounded text-sm whitespace-nowrap z-[9999] pointer-events-none"
             >
               Theme
             </div>
           </div>
           <a
-            href="https://discord.gg/3CACYYKSAb"
+            href="https://github.com/slotix/dbconvert-streams-public/discussions"
             target="_blank"
             rel="noopener noreferrer"
-            class="group flex items-center justify-center p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700 rounded-md relative"
+            :class="[
+              'group flex items-center p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700 rounded-md relative',
+              isSidebarExpanded ? 'justify-start gap-3 px-3 w-full' : 'justify-center'
+            ]"
           >
-            <svg :class="iconSizes.sidebarMenu" viewBox="0 0 24 24" fill="currentColor">
+            <svg
+              :class="iconSizes.sidebarMenu"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              aria-hidden="true"
+            >
               <path
-                d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515a.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0a12.64 12.64 0 0 0-.617-1.25a.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057a19.9 19.9 0 0 0 5.993 3.03a.078.078 0 0 0 .084-.028a14.09 14.09 0 0 0 1.226-1.994a.076.076 0 0 0-.041-.106a13.107 13.107 0 0 1-1.872-.892a.077.077 0 0 1-.008-.128a10.2 10.2 0 0 0 .372-.292a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127a12.299 12.299 0 0 1-1.873.892a.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028a19.839 19.839 0 0 0 6.002-3.03a.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.956-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.955-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.946 2.418-2.157 2.418z"
+                d="M12 2C6.477 2 2 6.58 2 12.234c0 4.516 2.865 8.34 6.839 9.693c.5.096.682-.22.682-.493c0-.244-.009-.89-.014-1.747c-2.782.62-3.369-1.374-3.369-1.374c-.455-1.185-1.11-1.5-1.11-1.5c-.908-.641.069-.628.069-.628c1.004.072 1.532 1.056 1.532 1.056c.892 1.565 2.341 1.113 2.91.85c.091-.665.349-1.113.635-1.368c-2.22-.261-4.555-1.137-4.555-5.056c0-1.117.39-2.03 1.029-2.747c-.103-.261-.446-1.31.098-2.728c0 0 .84-.275 2.75 1.05c.798-.226 1.655-.339 2.506-.343c.85.004 1.707.117 2.506.343c1.909-1.325 2.748-1.05 2.748-1.05c.546 1.418.203 2.467.1 2.728c.64.717 1.028 1.63 1.028 2.747c0 3.93-2.339 4.792-4.566 5.047c.359.316.678.94.678 1.894c0 1.368-.012 2.471-.012 2.807c0 .275.18.595.688.494c3.971-1.356 6.832-5.178 6.832-9.692C22 6.58 17.523 2 12 2z"
               />
             </svg>
-            <span class="sr-only">Discord</span>
+            <span v-if="isSidebarExpanded" class="truncate">GitHub Discussions</span>
+            <span v-else class="sr-only">GitHub Discussions</span>
             <!-- Tooltip -->
             <div
+              v-if="!isSidebarExpanded"
               class="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 hidden group-hover:block bg-gray-900 dark:bg-gray-800 text-white px-2 py-1 rounded text-sm whitespace-nowrap z-[9999] pointer-events-none"
             >
-              Discord
+              GitHub Discussions
             </div>
           </a>
           <a
             href="https://docs.dbconvert.com"
             target="_blank"
             rel="noopener noreferrer"
-            class="group flex items-center justify-center p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700 rounded-md relative"
+            :class="[
+              'group flex items-center p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700 rounded-md relative',
+              isSidebarExpanded ? 'justify-start gap-3 px-3 w-full' : 'justify-center'
+            ]"
           >
             <DocumentTextIcon :class="iconSizes.sidebarMenu" aria-hidden="true" />
-            <span class="sr-only">Documentation</span>
+            <span v-if="isSidebarExpanded" class="truncate">Documentation</span>
+            <span v-else class="sr-only">Documentation</span>
             <!-- Tooltip -->
             <div
+              v-if="!isSidebarExpanded"
               class="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 hidden group-hover:block bg-gray-900 dark:bg-gray-800 text-white px-2 py-1 rounded text-sm whitespace-nowrap z-[9999] pointer-events-none"
             >
               Documentation
-            </div>
-          </a>
-          <a
-            href="https://streams.dbconvert.com/account"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="group flex items-center justify-center p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700 rounded-md relative"
-          >
-            <UserCircleIcon :class="iconSizes.sidebarMenu" aria-hidden="true" />
-            <span class="sr-only">Account</span>
-            <!-- Tooltip -->
-            <div
-              class="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 hidden group-hover:block bg-gray-900 dark:bg-gray-800 text-white px-2 py-1 rounded text-sm whitespace-nowrap z-[9999] pointer-events-none"
-            >
-              Account
             </div>
           </a>
 
@@ -410,16 +466,7 @@
       </div>
     </div>
 
-    <div class="lg:pl-20">
-      <button
-        type="button"
-        class="fixed top-0 left-3 p-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors lg:hidden"
-        @click="sidebarOpen = true"
-      >
-        <span class="sr-only">Open sidebar</span>
-        <Bars3Icon :class="iconSizes.navigationHeader" aria-hidden="true" />
-      </button>
-
+    <div class="lg:pl-[var(--sidebar-width)]">
       <RouteGuard v-if="!isInitializing">
         <RouterView />
       </RouteGuard>
@@ -430,7 +477,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted, computed, watchEffect } from 'vue'
+import { ref, watch, onMounted, onUnmounted, computed, watchEffect, provide } from 'vue'
 import { RouterLink, RouterView, useRouter } from 'vue-router'
 import { useCommonStore } from '@/stores/common'
 import { useLogsStore } from '@/stores/logs'
@@ -446,12 +493,11 @@ import { setStorageValue, STORAGE_KEYS } from '@/constants/storageKeys'
 
 import { Dialog, DialogPanel, TransitionChild, TransitionRoot } from '@headlessui/vue'
 import {
-  Bars3Icon,
   ArrowPathIcon,
   XMarkIcon,
   DocumentTextIcon,
-  UserCircleIcon,
-  TableCellsIcon
+  TableCellsIcon,
+  ChartBarIcon
 } from '@heroicons/vue/24/outline'
 import { ExclamationCircleIcon } from '@heroicons/vue/24/solid'
 
@@ -459,6 +505,20 @@ const commonStore = useCommonStore()
 const logsStore = useLogsStore()
 const router = useRouter()
 const isInitializing = ref(true)
+const isSidebarExpanded = ref(false)
+const sidebarWidth = computed(() => (isSidebarExpanded.value ? '16rem' : '5rem'))
+const toggleSidebarWidth = () => {
+  isSidebarExpanded.value = !isSidebarExpanded.value
+}
+const desktopThemeToggleRef = ref<InstanceType<typeof ThemeToggle> | null>(null)
+const openDesktopThemeMenu = () => {
+  desktopThemeToggleRef.value?.click()
+}
+
+provide('sidebarWidthToggle', {
+  isSidebarExpanded,
+  toggleSidebarWidth
+})
 
 // Icon sizes
 const iconSizes = useContextualIconSizes()
@@ -480,6 +540,13 @@ const navigation = computed(() => {
 })
 
 const sidebarOpen = ref(false)
+const openSidebar = () => {
+  sidebarOpen.value = true
+}
+
+provide('sidebarMenuToggle', {
+  openSidebar
+})
 
 const getConnectionStatusText = () => {
   if (commonStore.isBackendConnected) {

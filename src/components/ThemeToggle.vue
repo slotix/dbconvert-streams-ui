@@ -1,9 +1,21 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import { useThemeStore } from '@/stores/theme'
 import { SunIcon, MoonIcon } from '@heroicons/vue/24/outline'
 import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/vue'
 
 const themeStore = useThemeStore()
+const menuButtonRef = ref<HTMLElement | { $el?: HTMLElement } | null>(null)
+const clickMenuButton = () => {
+  const target = (menuButtonRef.value as { $el?: HTMLElement })?.$el ?? menuButtonRef.value
+  if (target instanceof HTMLElement) {
+    target.click()
+  }
+}
+
+defineExpose({
+  click: clickMenuButton
+})
 
 const themes = [
   { value: 'light', label: 'Light', icon: SunIcon },
@@ -14,6 +26,7 @@ const themes = [
 <template>
   <Menu as="div" class="relative inline-block text-left">
     <MenuButton
+      ref="menuButtonRef"
       class="inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:bg-gray-800 hover:text-white dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-teal-500 dark:focus:ring-teal-400"
       title="Toggle theme"
     >

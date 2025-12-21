@@ -8,19 +8,38 @@
         <div class="flex items-center justify-between">
           <div class="flex items-center">
             <button
+              v-if="sidebarMenuToggle"
+              type="button"
+              class="mr-2 p-2 rounded-md text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 lg:hidden"
+              @click="sidebarMenuToggle.openSidebar"
+            >
+              <Bars3Icon class="h-5 w-5" />
+              <span class="sr-only">Open sidebar</span>
+            </button>
+            <button
               class="mr-4 p-2 rounded-md text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
               @click="goBack"
             >
               <ArrowLeftIcon class="h-5 w-5" />
             </button>
-            <div>
-              <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                Edit Connection JSON
-              </h1>
-              <p v-if="connection" class="text-sm text-gray-600 dark:text-gray-400">
-                {{ connection.name }}
-              </p>
-              <p v-else class="text-sm text-gray-600 dark:text-gray-400">Loading connection...</p>
+            <div class="flex items-start gap-3">
+              <img
+                v-if="!isDesktop"
+                class="h-5 w-5 shrink-0 mt-1"
+                src="/images/logo.svg"
+                alt="DBConvert Streams"
+              />
+              <div>
+                <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                  Edit Connection JSON
+                </h1>
+                <p v-if="connection" class="text-sm text-gray-600 dark:text-gray-400">
+                  {{ connection.name }}
+                </p>
+                <p v-else class="text-sm text-gray-600 dark:text-gray-400">
+                  Loading connection...
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -46,9 +65,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, inject } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { ArrowLeftIcon } from '@heroicons/vue/24/outline'
+import { ArrowLeftIcon, Bars3Icon } from '@heroicons/vue/24/outline'
+import { useDesktopMode } from '@/composables/useDesktopMode'
 import ConnectionConfigJsonEditor from '@/components/connection/ConnectionConfigJsonEditor.vue'
 import { useConnectionsStore } from '@/stores/connections'
 import { useCommonStore } from '@/stores/common'
@@ -64,6 +84,8 @@ const router = useRouter()
 const route = useRoute()
 const connectionsStore = useConnectionsStore()
 const commonStore = useCommonStore()
+const { isDesktop } = useDesktopMode()
+const sidebarMenuToggle = inject<{ openSidebar: () => void }>('sidebarMenuToggle')
 
 const jsonEditorRef = ref<InstanceType<typeof ConnectionConfigJsonEditor>>()
 

@@ -10,7 +10,7 @@ import NotFound from '@/views/NotFound.vue'
 const routes = [
   {
     path: '/',
-    name: 'Home',
+    name: 'Overview',
     component: HomeView
   },
   {

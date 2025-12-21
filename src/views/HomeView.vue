@@ -3,50 +3,46 @@
     <!-- Disconnected Overlay -->
     <DisconnectedOverlay />
 
-    <!-- Enhanced header with gradient background -->
-    <div
-      class="bg-linear-to-r from-slate-50 via-white to-slate-50 dark:from-gray-900 dark:via-gray-850 dark:to-gray-900 border-b border-slate-200 dark:border-gray-700 shadow-sm dark:shadow-gray-900/30"
+    <!-- Header -->
+    <header
+      class="sticky top-0 z-30 bg-linear-to-r from-slate-50 via-white to-slate-50 dark:from-gray-900 dark:via-gray-850 dark:to-gray-900 border-b border-slate-200 dark:border-gray-700 shadow-sm dark:shadow-gray-900/30 lg:-ml-[var(--sidebar-width)] lg:w-[calc(100%+var(--sidebar-width))]"
     >
-      <div class="max-w-7xl mx-auto py-5 px-4 sm:px-6 lg:px-8">
-        <h1
-          class="text-3xl font-bold bg-linear-to-r from-slate-900 to-slate-700 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent"
+      <div class="px-6 py-4 flex items-center gap-4">
+        <button
+          v-if="sidebarMenuToggle"
+          type="button"
+          class="group flex items-center justify-center p-2 -ml-1 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700 lg:hidden"
+          @click="sidebarMenuToggle.openSidebar"
         >
-          Dashboard
-        </h1>
+          <Bars3Icon class="h-5 w-5" aria-hidden="true" />
+          <span class="sr-only">Open sidebar</span>
+        </button>
+        <button
+          v-if="sidebarWidthToggle"
+          type="button"
+          class="group hidden lg:flex items-center justify-center p-2 -ml-1 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700"
+          @click="sidebarWidthToggle.toggleSidebarWidth"
+        >
+          <Bars3Icon class="h-5 w-5" aria-hidden="true" />
+          <span class="sr-only">Toggle sidebar width</span>
+        </button>
+        <img
+          v-if="!isDesktop"
+          class="h-5 w-5 shrink-0"
+          src="/images/logo.svg"
+          alt="DBConvert Streams"
+        />
+        <h1 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Overview</h1>
       </div>
-    </div>
+    </header>
 
     <!-- Content area with gradient background -->
     <div
-      class="min-h-screen bg-linear-to-br from-slate-50 via-white to-slate-50 dark:from-gray-900 dark:via-gray-850 dark:to-gray-900"
+      class="min-h-[calc(100vh-64px)] bg-linear-to-br from-slate-50 via-white to-slate-50 dark:from-gray-900 dark:via-gray-850 dark:to-gray-900"
     >
       <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Cards Grid -->
         <div class="py-6">
-          <!-- Priority 1: Quick Actions - Most Important for Active Users -->
-          <div class="mb-6">
-            <div
-              class="bg-white dark:bg-gray-850 overflow-hidden rounded-2xl shadow-lg dark:shadow-gray-900/50 border border-slate-200/50 dark:border-gray-700/50 hover:shadow-xl dark:hover:shadow-gray-900/60 transition-all duration-300"
-            >
-              <QuickActions v-if="!isLoadingConnections" />
-              <div v-else class="p-6">
-                <h2
-                  class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6 flex items-center gap-2"
-                >
-                  Quick Actions
-                </h2>
-                <div class="flex items-center justify-center py-12">
-                  <div
-                    class="relative w-12 h-12 animate-spin rounded-full bg-linear-to-tr from-blue-500 to-teal-500 p-1"
-                  >
-                    <div class="bg-white dark:bg-gray-850 rounded-full w-full h-full"></div>
-                  </div>
-                  <span class="ml-3 text-gray-700 dark:text-gray-300">Loading connections...</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
           <!-- Priority 2: Account & System Status - Side by Side -->
           <div class="grid grid-cols-1 gap-6 lg:grid-cols-2 mb-6">
             <!-- Account Overview Card -->
@@ -64,43 +60,31 @@
             </div>
           </div>
         </div>
-
-        <!-- Priority 3: Getting Started - For New Users -->
-        <div class="pb-6">
-          <div
-            class="bg-white dark:bg-gray-850 rounded-2xl shadow-lg dark:shadow-gray-900/50 border border-slate-200/50 dark:border-gray-700/50 hover:shadow-xl dark:hover:shadow-gray-900/60 transition-all duration-300"
-          >
-            <div class="p-6">
-              <h2
-                class="text-xl font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2"
-              >
-                Getting Started
-              </h2>
-              <StepDisplay :steps="allSteps" />
-            </div>
-          </div>
-        </div>
       </main>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, watch } from 'vue'
+import { computed, onMounted, watch, inject } from 'vue'
 import { useCommonStore } from '@/stores/common'
 import { useConnectionsStore } from '@/stores/connections'
-import StepDisplay from '@/components/home/StepDisplay.vue'
-import QuickActions from '@/components/home/QuickActions.vue'
+import { useDesktopMode } from '@/composables/useDesktopMode'
+import { Bars3Icon } from '@heroicons/vue/24/outline'
 import AccountOverview from '@/components/home/AccountOverview.vue'
 import SystemStatus from '@/components/home/SystemStatus.vue'
 import DisconnectedOverlay from '@/components/common/DisconnectedOverlay.vue'
 
 const commonStore = useCommonStore()
 const connectionsStore = useConnectionsStore()
+const { isDesktop } = useDesktopMode()
+const sidebarWidthToggle = inject<{
+  isSidebarExpanded: { value: boolean }
+  toggleSidebarWidth: () => void
+}>('sidebarWidthToggle')
+const sidebarMenuToggle = inject<{ openSidebar: () => void }>('sidebarMenuToggle')
 
-const allSteps = computed(() => commonStore.steps)
 const isBackendConnected = computed(() => commonStore.isBackendConnected)
-const isLoadingConnections = computed(() => connectionsStore.isLoadingConnections)
 
 onMounted(async () => {
   // Try to load fresh connections from API if backend is connected
