@@ -41,7 +41,10 @@ export const STORAGE_KEYS = {
   ALWAYS_OPEN_NEW_TAB: 'explorer.alwaysOpenNewTab',
 
   /** Last opened route in desktop app */
-  DESKTOP_LAST_ROUTE: 'desktop-last-route'
+  DESKTOP_LAST_ROUTE: 'desktop-last-route',
+
+  /** UI zoom level for desktop app */
+  DESKTOP_UI_ZOOM: 'desktop-ui-zoom'
 } as const
 
 /**

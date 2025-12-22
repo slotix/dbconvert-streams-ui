@@ -12,6 +12,7 @@ import { useThemeStore } from '@/stores/theme'
 import { getStorageValue, STORAGE_KEYS } from '@/constants/storageKeys'
 import { DESKTOP_NAVIGATION } from '@/constants/desktopNavigation'
 import { isWailsContext } from '@/composables/useWailsEvents'
+import { setupDesktopZoom } from '@/utils/desktopZoom'
 
 type ExplorerViewState = {
   viewType: 'connection-details' | 'database-overview' | 'table-data' | 'file-browser' | null
@@ -80,6 +81,7 @@ app.directive('tooltip', vTooltip)
 // Initialize theme before mounting
 const themeStore = useThemeStore()
 themeStore.initializeTheme()
+setupDesktopZoom()
 
 // Global error handler for uncaught errors
 app.config.errorHandler = (err, _instance, info) => {

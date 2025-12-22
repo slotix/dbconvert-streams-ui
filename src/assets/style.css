@@ -52,6 +52,7 @@
 @layer base {
   :root {
     color-scheme: light;
+    --app-zoom: 1;
   }
 
   .dark {
@@ -82,6 +83,10 @@
   #app {
     width: 100%;
     min-height: 100vh;
+  }
+
+  html.desktop-zoom {
+    font-size: calc(16px * var(--app-zoom));
   }
 
   h1,
