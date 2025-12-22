@@ -40,6 +40,15 @@
         >
           {{ selectedCount }} selected
         </span>
+
+        <span
+          v-if="isCollapsed"
+          class="inline-flex items-center gap-1 px-1.5 py-0.5 text-[11px] rounded bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800"
+          :title="collapsedCtaTitle"
+        >
+          <PlusIcon class="h-3 w-3" />
+          {{ collapsedCtaLabel }}
+        </span>
       </div>
       <ChevronDownIcon
         class="h-4 w-4 text-gray-400 transition-transform duration-200"
@@ -203,7 +212,8 @@ import {
   InformationCircleIcon,
   FolderIcon,
   CloudIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  PlusIcon
 } from '@heroicons/vue/24/outline'
 import { useConnectionsStore } from '@/stores/connections'
 import type { Connection } from '@/types/connections'
@@ -290,6 +300,12 @@ const hasMultipleCloudConnections = computed(() => {
 })
 
 const selectedCount = computed(() => props.modelValue.length)
+const collapsedCtaLabel = computed(() =>
+  selectedCount.value > 0 ? 'Add sources' : 'Select sources'
+)
+const collapsedCtaTitle = computed(() =>
+  selectedCount.value > 0 ? 'Expand to add more sources' : 'Expand to select one or more sources'
+)
 
 const selectedPreview = computed(() => {
   const previewLimit = 2
