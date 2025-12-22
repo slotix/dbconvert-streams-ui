@@ -1,10 +1,11 @@
+import { computed, ref } from 'vue'
 import { isWailsContext } from '@/composables/useWailsEvents'
 import { getStorageValue, setStorageValue, STORAGE_KEYS } from '@/constants/storageKeys'
 
 const DEFAULT_ZOOM = 1
 const ZOOM_STEP = 0.1
 const MIN_ZOOM = 0.7
-const MAX_ZOOM = 1.6
+const MAX_ZOOM = 2
 
 const clampZoom = (value: number) => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, value))
 
@@ -17,35 +18,51 @@ const normalizeZoom = (value: number) => {
 
 const roundZoom = (value: number) => Math.round(value * 100) / 100
 
-export const setupDesktopZoom = () => {
+const zoomLevel = ref(DEFAULT_ZOOM)
+const isDesktopZoom = ref(false)
+let initialized = false
+let root: HTMLElement | null = null
+
+const updateRootZoom = (value: number) => {
+  if (!root) {
+    return
+  }
+
+  if (value === DEFAULT_ZOOM) {
+    root.classList.remove('desktop-zoom')
+    root.style.removeProperty('--app-zoom')
+    return
+  }
+
+  root.classList.add('desktop-zoom')
+  root.style.setProperty('--app-zoom', value.toString())
+}
+
+const applyZoom = (value: number) => {
+  const clamped = roundZoom(clampZoom(value))
+  zoomLevel.value = clamped
+  updateRootZoom(clamped)
+  setStorageValue(STORAGE_KEYS.DESKTOP_UI_ZOOM, clamped)
+}
+
+const initDesktopZoom = () => {
+  if (initialized) {
+    return
+  }
+
   if (!isWailsContext()) {
     return
   }
 
-  const root = document.documentElement
+  initialized = true
+  isDesktopZoom.value = true
+  root = document.documentElement
 
-  let currentZoom = normalizeZoom(
+  const storedZoom = normalizeZoom(
     getStorageValue<number>(STORAGE_KEYS.DESKTOP_UI_ZOOM, DEFAULT_ZOOM)
   )
 
-  const updateRootZoom = (value: number) => {
-    if (value === DEFAULT_ZOOM) {
-      root.classList.remove('desktop-zoom')
-      root.style.removeProperty('--app-zoom')
-      return
-    }
-    root.classList.add('desktop-zoom')
-    root.style.setProperty('--app-zoom', value.toString())
-  }
-
-  const applyZoom = (value: number) => {
-    const clamped = roundZoom(clampZoom(value))
-    currentZoom = clamped
-    updateRootZoom(clamped)
-    setStorageValue(STORAGE_KEYS.DESKTOP_UI_ZOOM, clamped)
-  }
-
-  applyZoom(currentZoom)
+  applyZoom(storedZoom)
 
   const handleKeydown = (event: KeyboardEvent) => {
     if (!(event.ctrlKey || event.metaKey) || event.altKey) {
@@ -69,8 +86,52 @@ export const setupDesktopZoom = () => {
       return
     }
 
-    applyZoom(currentZoom + (isZoomIn ? ZOOM_STEP : -ZOOM_STEP))
+    applyZoom(zoomLevel.value + (isZoomIn ? ZOOM_STEP : -ZOOM_STEP))
   }
 
   window.addEventListener('keydown', handleKeydown)
+}
+
+export const setupDesktopZoom = () => {
+  initDesktopZoom()
+}
+
+export const useDesktopZoom = () => {
+  initDesktopZoom()
+
+  const zoomPercent = computed(() => `${Math.round(zoomLevel.value * 100)}%`)
+  const canZoomIn = computed(() => zoomLevel.value < MAX_ZOOM - 0.001)
+  const canZoomOut = computed(() => zoomLevel.value > MIN_ZOOM + 0.001)
+
+  const zoomIn = () => {
+    if (!isDesktopZoom.value) return
+    applyZoom(zoomLevel.value + ZOOM_STEP)
+  }
+
+  const zoomOut = () => {
+    if (!isDesktopZoom.value) return
+    applyZoom(zoomLevel.value - ZOOM_STEP)
+  }
+
+  const resetZoom = () => {
+    if (!isDesktopZoom.value) return
+    applyZoom(DEFAULT_ZOOM)
+  }
+
+  const setZoom = (value: number) => {
+    if (!isDesktopZoom.value) return
+    applyZoom(value)
+  }
+
+  return {
+    isDesktopZoom,
+    zoomLevel,
+    zoomPercent,
+    canZoomIn,
+    canZoomOut,
+    zoomIn,
+    zoomOut,
+    resetZoom,
+    setZoom
+  }
 }

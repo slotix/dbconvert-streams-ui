@@ -22,6 +22,17 @@ interface Window {
     VITE_SENTRY_DSN: string
     [key: string]: any
   }
+  runtime?: {
+    EventsOnMultiple: (
+      eventName: string,
+      callback: (...data: unknown[]) => void,
+      maxCallbacks: number
+    ) => () => void
+    EventsOff: (eventName: string, ...additionalEventNames: string[]) => void
+    EventsOffAll: () => void
+    EventsEmit?: (...args: unknown[]) => void
+    BrowserOpenURL?: (url: string) => void
+  }
   MonacoEnvironment?: {
     getWorker?: (workerId: string, label: string) => Worker
   }

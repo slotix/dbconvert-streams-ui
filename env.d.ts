@@ -22,4 +22,15 @@ interface Window {
     VITE_SENTRY_DSN: string
     [key: string]: any // Allow additional properties
   }
+  runtime?: {
+    EventsOnMultiple: (
+      eventName: string,
+      callback: (...data: unknown[]) => void,
+      maxCallbacks: number
+    ) => () => void
+    EventsOff: (eventName: string, ...additionalEventNames: string[]) => void
+    EventsOffAll: () => void
+    EventsEmit?: (...args: unknown[]) => void
+    BrowserOpenURL?: (url: string) => void
+  }
 }

@@ -8,21 +8,7 @@
 import { onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useLogsStore } from '@/stores/logs'
-
-// Type declaration for Wails runtime (injected by Wails at runtime)
-declare global {
-  interface Window {
-    runtime?: {
-      EventsOnMultiple: (
-        eventName: string,
-        callback: (...data: unknown[]) => void,
-        maxCallbacks: number
-      ) => () => void
-      EventsOff: (eventName: string, ...additionalEventNames: string[]) => void
-      EventsOffAll: () => void
-    }
-  }
-}
+import { useDesktopZoom } from '@/utils/desktopZoom'
 
 /**
  * Check if running in Wails desktop context
@@ -50,11 +36,13 @@ function eventsOn(eventName: string, callback: (...data: unknown[]) => void): ()
  * - menu:navigate - Navigate to a route
  * - menu:toggle-logs - Toggle the logs panel
  * - menu:refresh - Refresh the current view
+ * - menu:zoom-in / menu:zoom-out / menu:zoom-reset - Adjust UI zoom (desktop only)
  * - menu:show-about - Show about dialog
  */
 export function useWailsMenuEvents() {
   const router = useRouter()
   const logsStore = useLogsStore()
+  const { zoomIn, zoomOut, resetZoom } = useDesktopZoom()
   const cleanupFns: (() => void)[] = []
 
   onMounted(() => {
@@ -82,6 +70,23 @@ export function useWailsMenuEvents() {
     cleanupFns.push(
       eventsOn('menu:refresh', () => {
         router.go(0)
+      })
+    )
+
+    // Zoom controls
+    cleanupFns.push(
+      eventsOn('menu:zoom-in', () => {
+        zoomIn()
+      })
+    )
+    cleanupFns.push(
+      eventsOn('menu:zoom-out', () => {
+        zoomOut()
+      })
+    )
+    cleanupFns.push(
+      eventsOn('menu:zoom-reset', () => {
+        resetZoom()
       })
     )
 

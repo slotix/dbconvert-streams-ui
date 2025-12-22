@@ -420,28 +420,93 @@
               Overview
             </div>
           </RouterLink>
-          <!-- Theme Toggle -->
-          <div
-            :class="[
-              'relative group flex items-center p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700',
-              isSidebarExpanded ? 'justify-start gap-3 px-3' : 'justify-center'
-            ]"
-          >
-            <ThemeToggle ref="desktopThemeToggleRef" />
+          <!-- Settings -->
+          <div ref="settingsPopoverRef" class="relative">
             <button
-              v-if="isSidebarExpanded"
               type="button"
-              class="truncate text-sm font-semibold text-gray-600 dark:text-gray-400 bg-transparent p-0 text-left"
-              @click="openDesktopThemeMenu"
+              :class="[
+                'group flex items-center p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700 relative',
+                isSidebarExpanded ? 'justify-start gap-3 px-3 w-full' : 'justify-center'
+              ]"
+              @click="toggleSettings"
             >
-              Theme
+              <Cog6ToothIcon :class="iconSizes.sidebarMenu" aria-hidden="true" />
+              <span v-if="isSidebarExpanded" class="truncate">Settings</span>
+              <span v-else class="sr-only">Settings</span>
+              <!-- Tooltip -->
+              <div
+                v-if="!isSidebarExpanded"
+                class="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 hidden group-hover:block bg-gray-900 dark:bg-gray-800 text-white px-2 py-1 rounded text-sm whitespace-nowrap z-[9999] pointer-events-none"
+              >
+                Settings
+              </div>
             </button>
-            <!-- Tooltip -->
             <div
-              v-if="!isSidebarExpanded"
-              class="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 hidden group-hover:block bg-gray-900 dark:bg-gray-800 text-white px-2 py-1 rounded text-sm whitespace-nowrap z-[9999] pointer-events-none"
+              v-if="settingsOpen"
+              class="absolute left-full ml-2 bottom-0 w-64 rounded-lg bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black/10 dark:ring-gray-700 z-[9999] p-3"
             >
-              Theme
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-semibold text-gray-700 dark:text-gray-200">Theme</span>
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-2 rounded-md px-2 py-1 text-sm font-semibold text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700"
+                  title="Toggle theme"
+                  @click="themeStore.toggleTheme"
+                >
+                  <component
+                    :is="themeStore.isDark ? MoonIcon : SunIcon"
+                    :class="iconSizes.tableAction"
+                    aria-hidden="true"
+                  />
+                  <span>{{ themeStore.isDark ? 'Dark' : 'Light' }}</span>
+                </button>
+              </div>
+              <div v-if="isDesktop" class="mt-3 flex items-center justify-between">
+                <span class="text-sm font-semibold text-gray-700 dark:text-gray-200">Zoom</span>
+                <div class="flex items-center gap-2">
+                  <div class="relative w-28">
+                    <input
+                      type="range"
+                      :min="zoomMin"
+                      :max="zoomMax"
+                      :step="zoomStep"
+                      class="h-2 w-full accent-teal-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500/60"
+                      aria-label="Zoom"
+                      :aria-valuetext="zoomPendingPercent"
+                      v-model.number="zoomSlider"
+                      @focus="isZoomActive = true"
+                      @blur="isZoomActive = false"
+                      @pointerdown="isZoomActive = true"
+                      @pointerup="isZoomActive = false"
+                      @pointercancel="isZoomActive = false"
+                      @change="setZoom(zoomSlider / 100)"
+                      @keydown.enter.prevent="setZoom(zoomSlider / 100)"
+                    />
+                    <div
+                      v-if="isZoomActive"
+                      class="absolute -top-6 -translate-x-1/2 text-[11px] font-semibold text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-900 px-2 py-0.5 rounded shadow"
+                      :style="zoomTooltipStyle"
+                    >
+                      {{ zoomPendingPercent }}
+                    </div>
+                    <div
+                      class="mt-1 flex justify-between text-[0.625rem] text-gray-500 dark:text-gray-400"
+                    >
+                      <span>{{ zoomMin }}%</span>
+                      <span>{{ zoomMax }}%</span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    class="px-2 py-1 text-xs font-semibold rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                    title="Reset zoom"
+                    :disabled="isZoomDefault"
+                    @click="resetZoom"
+                  >
+                    {{ zoomPendingPercent }}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
           <!-- External links (hidden in desktop mode - available in Help menu) -->
@@ -532,6 +597,8 @@ import { useContextualIconSizes } from '@/composables/useIconSizes'
 import { useWailsMenuEvents } from '@/composables/useWailsEvents'
 import { useDesktopMode } from '@/composables/useDesktopMode'
 import { setStorageValue, STORAGE_KEYS } from '@/constants/storageKeys'
+import { useDesktopZoom } from '@/utils/desktopZoom'
+import { useThemeStore } from '@/stores/theme'
 
 import { Dialog, DialogPanel, TransitionChild, TransitionRoot } from '@headlessui/vue'
 import {
@@ -540,12 +607,16 @@ import {
   DocumentTextIcon,
   BookOpenIcon,
   TableCellsIcon,
-  ChartBarIcon
+  ChartBarIcon,
+  Cog6ToothIcon,
+  SunIcon,
+  MoonIcon
 } from '@heroicons/vue/24/outline'
 import { ExclamationCircleIcon } from '@heroicons/vue/24/solid'
 
 const commonStore = useCommonStore()
 const logsStore = useLogsStore()
+const themeStore = useThemeStore()
 const router = useRouter()
 const isInitializing = ref(true)
 const isSidebarExpanded = ref(false)
@@ -553,9 +624,26 @@ const sidebarWidth = computed(() => (isSidebarExpanded.value ? '16rem' : '5rem')
 const toggleSidebarWidth = () => {
   isSidebarExpanded.value = !isSidebarExpanded.value
 }
-const desktopThemeToggleRef = ref<InstanceType<typeof ThemeToggle> | null>(null)
-const openDesktopThemeMenu = () => {
-  desktopThemeToggleRef.value?.click()
+const settingsOpen = ref(false)
+const settingsPopoverRef = ref<HTMLElement | null>(null)
+const toggleSettings = () => {
+  settingsOpen.value = !settingsOpen.value
+}
+
+const handleSettingsClickOutside = (event: MouseEvent) => {
+  if (!settingsOpen.value) {
+    return
+  }
+  const target = event.target as Node
+  if (settingsPopoverRef.value && !settingsPopoverRef.value.contains(target)) {
+    settingsOpen.value = false
+  }
+}
+
+const handleSettingsKeydown = (event: KeyboardEvent) => {
+  if (event.key === 'Escape') {
+    settingsOpen.value = false
+  }
 }
 
 provide('sidebarWidthToggle', {
@@ -571,6 +659,25 @@ useWailsMenuEvents()
 
 // Desktop mode detection
 const { isDesktop } = useDesktopMode()
+const { zoomLevel, resetZoom, setZoom } = useDesktopZoom()
+const zoomMin = 70
+const zoomMax = 200
+const zoomStep = 5
+const zoomSlider = ref(Math.round(zoomLevel.value * 100))
+const isZoomActive = ref(false)
+
+const zoomPendingPercent = computed(() => `${zoomSlider.value}%`)
+const isZoomDefault = computed(() => zoomSlider.value === 100)
+const zoomTooltipStyle = computed(() => {
+  const range = zoomMax - zoomMin
+  const ratio = range > 0 ? (zoomSlider.value - zoomMin) / range : 0
+  const clamped = Math.min(1, Math.max(0, ratio))
+  return { left: `${clamped * 100}%` }
+})
+
+watch(zoomLevel, (value) => {
+  zoomSlider.value = Math.round(value * 100)
+})
 
 // All navigation items
 const navigation = computed(() => {
@@ -695,6 +802,8 @@ onUnmounted(() => {
 
   // Remove About dialog event listener
   window.removeEventListener('wails:show-about', handleShowAbout)
+  window.removeEventListener('keydown', handleSettingsKeydown)
+  document.removeEventListener('mousedown', handleSettingsClickOutside)
 })
 
 const initializeApp = async () => {
@@ -723,6 +832,8 @@ const initializeApp = async () => {
 onMounted(async () => {
   // Add About dialog event listener
   window.addEventListener('wails:show-about', handleShowAbout)
+  window.addEventListener('keydown', handleSettingsKeydown)
+  document.addEventListener('mousedown', handleSettingsClickOutside)
 
   try {
     isInitializing.value = true
