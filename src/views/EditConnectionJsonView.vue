@@ -36,9 +36,7 @@
                 <p v-if="connection" class="text-sm text-gray-600 dark:text-gray-400">
                   {{ connection.name }}
                 </p>
-                <p v-else class="text-sm text-gray-600 dark:text-gray-400">
-                  Loading connection...
-                </p>
+                <p v-else class="text-sm text-gray-600 dark:text-gray-400">Loading connection...</p>
               </div>
             </div>
           </div>

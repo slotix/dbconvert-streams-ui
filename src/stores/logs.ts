@@ -255,6 +255,11 @@ export const useLogsStore = defineStore('logs', {
       return state.logs.some((log) => log.level === 'error')
     },
 
+    // Total SQL logs count (for sidebar badge)
+    sqlLogsCount: (state) => {
+      return state.flatLogs.size
+    },
+
     // Phase 2: SQL Logs Getters
     visibleLogs(): SQLQueryLog[] {
       const filtered: SQLQueryLog[] = []

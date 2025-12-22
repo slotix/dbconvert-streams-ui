@@ -143,7 +143,7 @@
                     </RouterLink>
                   </div>
 
-                  <!-- System Logs Button -->
+                  <!-- Logs Button -->
                   <div class="pt-4 border-t border-gray-200 dark:border-gray-600">
                     <button
                       type="button"
@@ -160,11 +160,23 @@
                         :class="[iconSizes.sidebarMenu, 'shrink-0']"
                         aria-hidden="true"
                       />
-                      <span class="flex-1 text-left">System Logs</span>
-                      <span
-                        class="ml-auto bg-gray-200 text-gray-700 dark:bg-gray-600 dark:text-white px-1.5 py-0.5 text-xs rounded-full"
-                        >{{ logsStore.logs.length }}</span
-                      >
+                      <span class="flex-1 text-left">Logs</span>
+                      <div class="ml-auto flex items-center gap-1">
+                        <span
+                          v-if="logsStore.logs.length > 0"
+                          class="bg-gray-200 text-gray-700 dark:bg-gray-600 dark:text-gray-200 px-1.5 py-0.5 text-xs rounded-full"
+                          title="System Logs"
+                        >
+                          {{ logsStore.logs.length > 99 ? '99+' : logsStore.logs.length }}
+                        </span>
+                        <span
+                          v-if="logsStore.sqlLogsCount > 0"
+                          class="bg-teal-100 text-teal-700 dark:bg-teal-900/50 dark:text-teal-300 px-1.5 py-0.5 text-xs rounded-full"
+                          title="SQL Logs"
+                        >
+                          {{ logsStore.sqlLogsCount > 99 ? '99+' : logsStore.sqlLogsCount }}
+                        </span>
+                      </div>
                     </button>
                   </div>
 
@@ -176,8 +188,8 @@
                     </div>
                   </div>
 
-                  <!-- External Links for Mobile -->
-                  <div class="pt-4 border-t border-gray-200 dark:border-gray-600">
+                  <!-- External Links for Mobile (hidden in desktop mode - available in Help menu) -->
+                  <div v-if="!isDesktop" class="pt-4 border-t border-gray-200 dark:border-gray-600">
                     <ul role="list" class="-mx-2 space-y-1">
                       <li>
                         <a
@@ -270,7 +282,7 @@
             </RouterLink>
           </li>
 
-          <!-- System Logs Button -->
+          <!-- Logs Button -->
           <li class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600 overflow-visible">
             <button
               type="button"
@@ -290,18 +302,41 @@
                 :class="[iconSizes.sidebarMenu, 'shrink-0']"
                 aria-hidden="true"
               />
-              <span v-if="isSidebarExpanded" class="truncate">System Logs</span>
-              <span v-else class="sr-only">System Logs</span>
+              <span v-if="isSidebarExpanded" class="truncate">Logs</span>
+              <span v-else class="sr-only">Logs</span>
 
-              <!-- Log count badge -->
+              <!-- Log count badges (expanded) -->
+              <div v-if="isSidebarExpanded" class="ml-auto flex items-center gap-1">
+                <!-- System logs badge -->
+                <span
+                  v-if="logsStore.logs.length > 0"
+                  class="bg-gray-200 text-gray-700 dark:bg-gray-600 dark:text-gray-200 text-xs rounded-full px-1.5 py-0.5 min-w-[20px] text-center"
+                  title="System Logs"
+                >
+                  {{ logsStore.logs.length > 99 ? '99+' : logsStore.logs.length }}
+                </span>
+                <!-- SQL logs badge -->
+                <span
+                  v-if="logsStore.sqlLogsCount > 0"
+                  class="bg-teal-100 text-teal-700 dark:bg-teal-900/50 dark:text-teal-300 text-xs rounded-full px-1.5 py-0.5 min-w-[20px] text-center"
+                  title="SQL Logs"
+                >
+                  {{ logsStore.sqlLogsCount > 99 ? '99+' : logsStore.sqlLogsCount }}
+                </span>
+              </div>
+
+              <!-- Log count badge (collapsed) - show total -->
               <span
-                v-if="logsStore.logs.length > 0"
-                :class="[
-                  'bg-gray-200 text-gray-700 dark:bg-gray-500 dark:text-white text-xs rounded-full h-5 w-5 flex items-center justify-center',
-                  isSidebarExpanded ? 'ml-auto' : 'absolute -top-1 -right-1'
-                ]"
+                v-if="
+                  !isSidebarExpanded && (logsStore.logs.length > 0 || logsStore.sqlLogsCount > 0)
+                "
+                class="absolute -top-1 -right-1 bg-gray-200 text-gray-700 dark:bg-gray-500 dark:text-white text-xs rounded-full h-5 w-5 flex items-center justify-center"
               >
-                {{ logsStore.logs.length > 99 ? '99+' : logsStore.logs.length }}
+                {{
+                  logsStore.logs.length + logsStore.sqlLogsCount > 99
+                    ? '99+'
+                    : logsStore.logs.length + logsStore.sqlLogsCount
+                }}
               </span>
 
               <!-- Show tooltip on hover -->
@@ -310,7 +345,7 @@
                 class="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 hidden group-hover:block bg-gray-900 dark:bg-gray-800 text-white px-2 py-1 rounded text-sm whitespace-nowrap pointer-events-none"
                 style="z-index: 99999"
               >
-                System Logs ({{ logsStore.logs.length }})
+                Logs ({{ logsStore.logs.length }} system, {{ logsStore.sqlLogsCount }} SQL)
               </div>
             </button>
           </li>
@@ -324,8 +359,7 @@
                   ? 'text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-900/20'
                   : commonStore.error
                     ? 'text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/20'
-                    : 'text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/20'
-                ,
+                    : 'text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/20',
                 isSidebarExpanded ? 'justify-start px-3 gap-3' : 'justify-center'
               ]"
               :title="getConnectionStatusText()"
@@ -337,7 +371,7 @@
                     ? 'bg-green-500 border-green-500 animate-pulse dark:bg-green-400 dark:border-green-400'
                     : commonStore.error
                       ? 'bg-red-500 border-red-500 dark:bg-red-400 dark:border-red-400'
-                  : 'bg-red-500 border-red-500 dark:bg-red-400 dark:border-red-400'
+                      : 'bg-red-500 border-red-500 dark:bg-red-400 dark:border-red-400'
                 ]"
               ></div>
               <span v-if="isSidebarExpanded" class="truncate">Status</span>
@@ -410,7 +444,9 @@
               Theme
             </div>
           </div>
+          <!-- External links (hidden in desktop mode - available in Help menu) -->
           <a
+            v-if="!isDesktop"
             href="https://github.com/slotix/dbconvert-streams-public/discussions"
             target="_blank"
             rel="noopener noreferrer"
@@ -440,6 +476,7 @@
             </div>
           </a>
           <a
+            v-if="!isDesktop"
             href="https://docs.dbconvert.com"
             target="_blank"
             rel="noopener noreferrer"
@@ -473,6 +510,9 @@
     </div>
 
     <LogsPanel />
+
+    <!-- About Dialog -->
+    <AboutDialog v-model:isOpen="showAboutDialog" />
   </div>
 </template>
 
@@ -484,11 +524,13 @@ import { useLogsStore } from '@/stores/logs'
 import ApiKeyInput from '@/components/ApiKeyInput.vue'
 import LogsPanel from '@/components/logs/LogsPanel.vue'
 import VersionDisplay from '@/components/common/VersionDisplay.vue'
+import AboutDialog from '@/components/common/AboutDialog.vue'
 import RouteGuard from '@/components/common/RouteGuard.vue'
 import ThemeToggle from '@/components/ThemeToggle.vue'
 import { initializeApiClient } from '@/api/apiClient'
 import { useContextualIconSizes } from '@/composables/useIconSizes'
 import { useWailsMenuEvents } from '@/composables/useWailsEvents'
+import { useDesktopMode } from '@/composables/useDesktopMode'
 import { setStorageValue, STORAGE_KEYS } from '@/constants/storageKeys'
 
 import { Dialog, DialogPanel, TransitionChild, TransitionRoot } from '@headlessui/vue'
@@ -525,6 +567,9 @@ const iconSizes = useContextualIconSizes()
 
 // Initialize Wails menu event listeners (no-op when running as web app)
 useWailsMenuEvents()
+
+// Desktop mode detection
+const { isDesktop } = useDesktopMode()
 
 // All navigation items
 const navigation = computed(() => {
@@ -646,6 +691,9 @@ onUnmounted(() => {
 
   // Stop health monitoring
   commonStore.stopHealthMonitoring()
+
+  // Remove About dialog event listener
+  window.removeEventListener('wails:show-about', handleShowAbout)
 })
 
 const initializeApp = async () => {
@@ -672,6 +720,9 @@ const initializeApp = async () => {
 }
 
 onMounted(async () => {
+  // Add About dialog event listener
+  window.addEventListener('wails:show-about', handleShowAbout)
+
   try {
     isInitializing.value = true
 
@@ -697,6 +748,12 @@ watch(router.currentRoute, (to) => {
 })
 
 const showExpiredBanner = ref(false)
+const showAboutDialog = ref(false)
+
+// Listen for About dialog event from Wails menu
+const handleShowAbout = () => {
+  showAboutDialog.value = true
+}
 
 // Watch for API key invalidation
 watch(

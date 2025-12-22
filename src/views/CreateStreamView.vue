@@ -1,55 +1,62 @@
 <template>
-  <div>
-    <!-- Header -->
+  <div class="min-h-full">
+    <!-- Header - matches DatabaseExplorerView/StreamsView style -->
     <header
-      class="bg-white dark:bg-gray-850 shadow-sm dark:shadow-gray-900/30 border-b border-gray-100 dark:border-gray-700"
+      class="sticky top-0 z-30 bg-linear-to-r from-slate-50 via-white to-slate-50 dark:from-gray-900 dark:via-gray-850 dark:to-gray-900 border-b border-slate-200 dark:border-gray-700 shadow-sm dark:shadow-gray-900/30 lg:-ml-[var(--sidebar-width)] lg:w-[calc(100%+var(--sidebar-width))]"
     >
-      <div class="max-w-[1600px] mx-auto py-4 px-4 sm:px-6 lg:px-8">
-        <div class="flex items-center">
+      <div class="px-6 py-4 flex items-center gap-4">
+        <div class="flex items-center gap-3">
+          <!-- Mobile sidebar toggle -->
           <button
             v-if="sidebarMenuToggle"
             type="button"
-            class="mr-2 p-2 rounded-lg text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50 dark:hover:from-blue-900/20 dark:hover:to-teal-900/20 transition-all duration-200 lg:hidden"
+            class="group flex items-center justify-center p-2 -ml-1 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700 lg:hidden"
             @click="sidebarMenuToggle.openSidebar"
           >
-            <Bars3Icon class="h-5 w-5" />
+            <Bars3Icon class="h-5 w-5" aria-hidden="true" />
             <span class="sr-only">Open sidebar</span>
           </button>
+          <!-- Desktop sidebar toggle -->
           <button
-            class="mr-4 p-2 rounded-lg text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-linear-to-r hover:from-blue-50 hover:to-teal-50 dark:hover:from-blue-900/20 dark:hover:to-teal-900/20 transition-all duration-200"
+            v-if="sidebarWidthToggle"
+            type="button"
+            class="group hidden lg:flex items-center justify-center p-2 -ml-1 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700"
+            @click="sidebarWidthToggle.toggleSidebarWidth"
+          >
+            <Bars3Icon class="h-5 w-5" aria-hidden="true" />
+            <span class="sr-only">Toggle sidebar width</span>
+          </button>
+          <img
+            v-if="!isDesktop"
+            class="h-5 w-5 shrink-0"
+            src="/images/logo.svg"
+            alt="DBConvert Streams"
+          />
+          <!-- Title -->
+          <h1 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            {{ isEditMode ? 'Edit Stream' : 'New Stream' }}
+          </h1>
+        </div>
+
+        <!-- Spacer -->
+        <div class="flex-1"></div>
+
+        <!-- Right side - Cancel button -->
+        <div class="flex items-center gap-4">
+          <button
+            type="button"
+            class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
             @click="goBack"
           >
-            <ArrowLeftIcon class="h-5 w-5" />
+            Cancel
           </button>
-          <div class="flex items-start gap-3">
-            <img
-              v-if="!isDesktop"
-              class="h-5 w-5 shrink-0 mt-1"
-              src="/images/logo.svg"
-              alt="DBConvert Streams"
-            />
-            <div>
-              <h1
-                class="text-2xl font-bold bg-linear-to-r from-slate-900 to-slate-700 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent"
-              >
-                {{ isEditMode ? 'Edit Stream Configuration' : 'New Stream Configuration' }}
-              </h1>
-              <p class="text-sm text-gray-600 dark:text-gray-400">
-                {{
-                  isEditMode
-                    ? 'Update your stream configuration'
-                    : 'Configure a new data stream from source to target'
-                }}
-              </p>
-            </div>
-          </div>
         </div>
       </div>
     </header>
 
-    <!-- Main Content -->
+    <!-- Main Content - full dark background -->
     <div
-      class="bg-linear-to-br from-slate-50 via-white to-slate-50 dark:from-gray-900 dark:via-gray-850 dark:to-gray-900 flex flex-col pb-6"
+      class="bg-linear-to-br from-slate-50 via-white to-slate-50 dark:from-gray-900 dark:via-gray-850 dark:to-gray-900 flex flex-col min-h-[calc(100vh-65px)]"
     >
       <div
         class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-6 flex-1 flex flex-col min-h-0 w-full"
@@ -135,7 +142,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, nextTick, inject } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { ArrowLeftIcon, Bars3Icon } from '@heroicons/vue/24/outline'
+import { Bars3Icon } from '@heroicons/vue/24/outline'
 import { useDesktopMode } from '@/composables/useDesktopMode'
 import { useStreamWizard } from '@/composables/useStreamWizard'
 import { useStreamsStore } from '@/stores/streamConfig'
@@ -147,6 +154,7 @@ import SourceTargetSelectionStep from '@/components/stream/wizard/steps/SourceTa
 import StructureDataStep from '@/components/stream/wizard/steps/StructureDataStep.vue'
 import StreamConfigurationStep from '@/components/stream/wizard/steps/StreamConfigurationStep.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
+
 // Props for stream ID (when in edit mode)
 interface Props {
   id?: string
@@ -162,6 +170,10 @@ const connectionsStore = useConnectionsStore()
 const commonStore = useCommonStore()
 const { isDesktop } = useDesktopMode()
 const sidebarMenuToggle = inject<{ openSidebar: () => void }>('sidebarMenuToggle')
+const sidebarWidthToggle = inject<{
+  isSidebarExpanded: { value: boolean }
+  toggleSidebarWidth: () => void
+}>('sidebarWidthToggle')
 
 const isProcessing = ref(false)
 const canProceedOverride = ref(true)

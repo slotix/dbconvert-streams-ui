@@ -282,9 +282,9 @@ const streamCountLabel = computed(() => {
   const filtered = filteredStreamsCount.value
   const total = streamsStore.countStreams
   if (searchQuery.value && filtered !== total) {
-    return `${filtered} of ${total} configs`
+    return `${filtered} of ${total} stream configs`
   }
-  return `${total} config${total === 1 ? '' : 's'}`
+  return `${total} stream config${total === 1 ? '' : 's'}`
 })
 
 function streamsCount() {

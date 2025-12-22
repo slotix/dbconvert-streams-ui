@@ -377,7 +377,7 @@ onBeforeUnmount(() => {
           leave-to="translate-y-full"
         >
           <div
-            class="w-full h-full bg-white dark:bg-gray-850 shadow-xl dark:shadow-gray-900/50 rounded-t-lg overflow-hidden border border-gray-200 dark:border-gray-700 lg:pl-20"
+            class="w-full h-full bg-white dark:bg-gray-850 shadow-xl dark:shadow-gray-900/50 rounded-t-lg overflow-hidden border border-gray-200 dark:border-gray-700 lg:px-20"
           >
             <!-- Resize Handle -->
             <div

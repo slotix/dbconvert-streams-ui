@@ -36,9 +36,7 @@
                 <p v-if="stream" class="text-sm text-gray-600 dark:text-gray-400">
                   {{ stream.name }}
                 </p>
-                <p v-else class="text-sm text-gray-600 dark:text-gray-400">
-                  Loading stream...
-                </p>
+                <p v-else class="text-sm text-gray-600 dark:text-gray-400">Loading stream...</p>
               </div>
             </div>
           </div>

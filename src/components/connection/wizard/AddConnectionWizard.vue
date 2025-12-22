@@ -1,5 +1,7 @@
 <template>
-  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+  <div
+    class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-linear-to-br from-slate-50 via-white to-slate-50 dark:from-gray-900 dark:via-gray-850 dark:to-gray-900 min-h-[calc(100vh-65px)]"
+  >
     <!-- Database Type Selection -->
     <div v-if="currentStep === 'type'" class="space-y-6">
       <DatabaseTypeStep
