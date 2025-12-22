@@ -220,7 +220,7 @@
                           class="group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700"
                           @click="sidebarOpen = false"
                         >
-                          <DocumentTextIcon
+                          <BookOpenIcon
                             :class="[iconSizes.sidebarMenu, 'shrink-0']"
                             aria-hidden="true"
                           />
@@ -485,7 +485,7 @@
               isSidebarExpanded ? 'justify-start gap-3 px-3 w-full' : 'justify-center'
             ]"
           >
-            <DocumentTextIcon :class="iconSizes.sidebarMenu" aria-hidden="true" />
+            <BookOpenIcon :class="iconSizes.sidebarMenu" aria-hidden="true" />
             <span v-if="isSidebarExpanded" class="truncate">Documentation</span>
             <span v-else class="sr-only">Documentation</span>
             <!-- Tooltip -->
@@ -538,6 +538,7 @@ import {
   ArrowPathIcon,
   XMarkIcon,
   DocumentTextIcon,
+  BookOpenIcon,
   TableCellsIcon,
   ChartBarIcon
 } from '@heroicons/vue/24/outline'
