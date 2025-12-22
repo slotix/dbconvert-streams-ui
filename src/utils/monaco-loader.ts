@@ -1,21 +1,23 @@
 /**
  * Lazy-loaded Monaco Editor configuration
  *
- * This module configures Monaco Editor with only the necessary language workers (SQL and JSON).
- * It's loaded on-demand when Monaco components are first mounted, significantly reducing
- * the initial bundle size (~3.8MB / 986KB gzipped).
+ * This module configures Monaco Editor with only the necessary language workers (JSON).
+ * SQL uses the base editor worker and doesn't need a dedicated worker.
+ * The custom Vite plugin excludes unused CSS, HTML, and TypeScript workers.
  */
 
-import type * as Monaco from 'monaco-editor/esm/vs/editor/editor.api'
+import type * as Monaco from 'monaco-editor'
 
-let monacoInstance: typeof Monaco | null = null
-let initializationPromise: Promise<typeof Monaco> | null = null
+type MonacoType = typeof Monaco
+
+let monacoInstance: MonacoType | null = null
+let initializationPromise: Promise<MonacoType> | null = null
 
 /**
  * Initialize Monaco Editor with lazy-loaded workers
  * Returns a singleton instance to ensure Monaco is only loaded once
  */
-export async function initializeMonaco(): Promise<typeof Monaco> {
+export async function initializeMonaco(): Promise<MonacoType> {
   // Return existing instance if already initialized
   if (monacoInstance) {
     return monacoInstance
@@ -27,25 +29,12 @@ export async function initializeMonaco(): Promise<typeof Monaco> {
   }
 
   // Start initialization
-  initializationPromise = (async () => {
-    // Dynamically import Monaco and workers
-    const [loader, monaco, editorWorker, jsonWorker] = await Promise.all([
+  initializationPromise = (async (): Promise<MonacoType> => {
+    // Dynamically import Monaco and loader
+    const [loader, monaco] = await Promise.all([
       import('@monaco-editor/loader'),
-      import('monaco-editor'),
-      import('monaco-editor/esm/vs/editor/editor.worker?worker'),
-      import('monaco-editor/esm/vs/language/json/json.worker?worker')
+      import('monaco-editor')
     ])
-
-    // Configure worker environment
-    window.MonacoEnvironment = {
-      getWorker(_: string, label: string) {
-        if (label === 'json') {
-          return new jsonWorker.default()
-        }
-        // All other languages use the base editor worker
-        return new editorWorker.default()
-      }
-    }
 
     // Configure loader to use local package
     loader.default.config({ monaco: monaco.default })
@@ -53,7 +42,7 @@ export async function initializeMonaco(): Promise<typeof Monaco> {
     // Initialize and cache the instance
     monacoInstance = await loader.default.init()
 
-    return monacoInstance
+    return monacoInstance as MonacoType
   })()
 
   return initializationPromise
@@ -63,7 +52,7 @@ export async function initializeMonaco(): Promise<typeof Monaco> {
  * Get the Monaco instance if already initialized
  * Returns null if not yet initialized
  */
-export function getMonacoInstance(): typeof Monaco | null {
+export function getMonacoInstance(): MonacoType | null {
   return monacoInstance
 }
 

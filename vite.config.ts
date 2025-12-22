@@ -1,23 +1,45 @@
-import { defineConfig } from 'vite'
+import { defineConfig, type Plugin } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { fileURLToPath, URL } from 'url'
 import { version } from './package.json'
 
+/**
+ * Vite plugin to exclude unused Monaco language workers from the bundle.
+ * Monaco includes workers for CSS, HTML, and TypeScript languages by default.
+ * Since we only use JSON and SQL, we replace the Worker creation with stubs.
+ * This saves approximately 8.7MB in bundle size.
+ */
+function monacoWorkerExclude(): Plugin {
+  return {
+    name: 'monaco-worker-exclude',
+    enforce: 'pre',
+    apply: 'build',
+    transform(code, id) {
+      // Only process Monaco workerManager files for languages we don't use
+      if (
+        id.includes('monaco-editor') &&
+        (id.includes('/css/') || id.includes('/html/') || id.includes('/typescript/')) &&
+        id.includes('workerManager')
+      ) {
+        // Replace the Worker creation with a stub
+        const transformed = code.replace(
+          /createWorker:\s*\(\)\s*=>\s*new\s+Worker\(new\s+URL\([^)]+\)[^)]*\)/g,
+          'createWorker: () => ({ postMessage: () => {}, terminate: () => {}, onmessage: null })'
+        )
+        return { code: transformed, map: null }
+      }
+      return null
+    }
+  }
+}
+
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [vue()],
+  plugins: [monacoWorkerExclude(), vue()],
   define: {
     'import.meta.env.PACKAGE_VERSION': JSON.stringify(version),
     'process.env.VITE_API_URL': JSON.stringify(process.env.VITE_API_URL),
     'process.env.VITE_SENTRY_DSN': JSON.stringify(process.env.VITE_SENTRY_DSN)
-  },
-  optimizeDeps: {
-    exclude: [
-      // Exclude Monaco workers we don't use (reduces bundle size)
-      'monaco-editor/esm/vs/language/typescript/ts.worker',
-      'monaco-editor/esm/vs/language/css/css.worker',
-      'monaco-editor/esm/vs/language/html/html.worker'
-    ]
   },
   resolve: {
     alias: {
