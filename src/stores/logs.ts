@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { getStreamLogs } from '@/api/apiClient'
 import type { StandardLogEntry } from '@/types/logs'
 import { useMonitoringStore } from '@/stores/monitoring'
 import type { LogLevel, LogCategory, NodeType, Status } from '@/constants'
@@ -472,9 +473,6 @@ export const useLogsStore = defineStore('logs', {
       this.historicalLogs = []
 
       try {
-        // Import the API client function
-        const { getStreamLogs } = await import('@/api/apiClient')
-
         // Fetch logs from the API
         const rawLogs = await getStreamLogs(streamId)
 
