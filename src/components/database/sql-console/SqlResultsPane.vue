@@ -20,7 +20,7 @@
         class="h-full flex items-center justify-center text-gray-400 dark:text-gray-500"
       >
         <div class="text-center">
-          <CommandLineIcon class="h-12 w-12 mx-auto mb-3 text-gray-300 dark:text-gray-600" />
+          <Terminal class="h-12 w-12 mx-auto mb-3 text-gray-300 dark:text-gray-600" />
           <p class="text-sm font-medium">Ready to execute</p>
           <p class="text-xs mt-1">Write a query and press Run or Ctrl+Enter</p>
         </div>
@@ -32,7 +32,7 @@
         class="m-3 rounded-md bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3"
       >
         <div class="flex">
-          <XCircleIcon class="h-4 w-4 text-red-400 dark:text-red-500 shrink-0" />
+          <XCircle class="h-4 w-4 text-red-400 dark:text-red-500 shrink-0" />
           <div class="ml-2">
             <h3 class="text-xs font-medium text-red-800 dark:text-red-200">Query Error</h3>
             <pre
@@ -109,7 +109,7 @@
       <!-- No Results -->
       <div v-else class="h-full flex items-center justify-center text-gray-400 dark:text-gray-500">
         <div class="text-center">
-          <CheckCircleIcon class="h-12 w-12 mx-auto mb-3 text-green-300 dark:text-green-600" />
+          <CheckCircle class="h-12 w-12 mx-auto mb-3 text-green-300 dark:text-green-600" />
           <p class="text-sm font-medium">Query executed successfully</p>
           <p class="text-xs mt-1">No rows returned</p>
         </div>
@@ -120,7 +120,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { CommandLineIcon, XCircleIcon, CheckCircleIcon } from '@heroicons/vue/24/outline'
+import { CheckCircle, Terminal, XCircle } from 'lucide-vue-next'
 import { useDataExport, type ExportFormat } from '@/composables/useDataExport'
 import ExportToolbar from '@/components/common/ExportToolbar.vue'
 

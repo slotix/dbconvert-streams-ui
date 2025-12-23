@@ -23,8 +23,8 @@
             class="absolute inset-y-0 right-0 flex items-center pr-2"
             :class="{ 'opacity-50 cursor-not-allowed': loading }"
           >
-            <ChevronUpDownIcon v-if="!loading" class="h-5 w-5 text-gray-400" aria-hidden="true" />
-            <ArrowPathIcon v-else class="h-5 w-5 text-gray-400 animate-spin" aria-hidden="true" />
+            <ChevronsUpDown v-if="!loading" class="h-5 w-5 text-gray-400" aria-hidden="true" />
+            <RefreshCw v-else class="h-5 w-5 text-gray-400 animate-spin" aria-hidden="true" />
           </ComboboxButton>
         </div>
 
@@ -79,10 +79,7 @@
                 ]"
               >
                 <div class="flex items-center">
-                  <ServerIcon
-                    class="h-4 w-4 mr-2"
-                    :class="active ? 'text-white' : 'text-gray-400'"
-                  />
+                  <Server class="h-4 w-4 mr-2" :class="active ? 'text-white' : 'text-gray-400'" />
                   <span :class="[selected ? 'font-semibold' : 'font-normal', 'block truncate']">
                     {{ bucket }}
                   </span>
@@ -95,7 +92,7 @@
                     'absolute inset-y-0 right-0 flex items-center pr-4'
                   ]"
                 >
-                  <CheckIcon class="h-5 w-5" aria-hidden="true" />
+                  <Check class="h-5 w-5" aria-hidden="true" />
                 </span>
               </li>
             </ComboboxOption>
@@ -121,7 +118,7 @@ import {
   ComboboxOption,
   TransitionRoot
 } from '@headlessui/vue'
-import { CheckIcon, ChevronUpDownIcon, ServerIcon, ArrowPathIcon } from '@heroicons/vue/24/outline'
+import { Check, ChevronsUpDown, RefreshCw, Server } from 'lucide-vue-next'
 
 interface Props {
   modelValue: string

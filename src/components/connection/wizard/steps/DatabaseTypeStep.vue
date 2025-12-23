@@ -31,7 +31,7 @@
             v-if="selectedDBType?.id === dbType.id"
             class="absolute top-2 right-2 w-5 h-5 bg-teal-600 dark:bg-teal-400 rounded-full flex items-center justify-center shadow-sm"
           >
-            <CheckIcon class="w-3 h-3 text-white dark:text-gray-900" />
+            <Check class="w-3 h-3 text-white dark:text-gray-900" />
           </div>
         </button>
       </div>
@@ -85,7 +85,7 @@
               v-if="selectedDBType?.id === dbType.id"
               class="absolute top-3 right-3 w-5 h-5 bg-teal-600 dark:bg-teal-400 rounded-full flex items-center justify-center shadow-sm"
             >
-              <CheckIcon class="w-3 h-3 text-white dark:text-gray-900" />
+              <Check class="w-3 h-3 text-white dark:text-gray-900" />
             </div>
           </button>
         </div>
@@ -169,7 +169,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
-import { CheckIcon } from '@heroicons/vue/24/outline'
+import { Check } from 'lucide-vue-next'
 import ConnectionStringInput from '../../ConnectionStringInput.vue'
 import { useConnectionsStore } from '@/stores/connections'
 import type { DbType, Connection } from '@/types/connections'

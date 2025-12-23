@@ -25,7 +25,7 @@ It provides a responsive web interface with real-time monitoring, connection man
 
 * **Tailwind CSS** (utility-first)
 * **Headless UI Vue** (accessible primitives)
-* **Heroicons** — always use these; don’t invent custom SVGs
+* **Lucide** — use `lucide-vue-next`; don’t invent custom SVGs
 * **Vue Toastification** (notifications)
 
 ### Data & Visualization
@@ -272,6 +272,6 @@ Refer to **`DESIGN_SYSTEM.md` → Section 6** for all design and implementation 
 2. Make minimal, atomic commits with clear messages.
 3. Ensure `yarn lint` and `yarn test:unit` pass before suggesting a PR.
 4. Do not modify backend references or credentials.
-5. Use Heroicons only.
+5. Use `lucide-vue-next` only.
 6. Follow Vue 3 + Tailwind best practices strictly.
 7. Follow `DESIGN_SYSTEM.md` (Section 6) whenever adjusting colors or adding new visual elements.

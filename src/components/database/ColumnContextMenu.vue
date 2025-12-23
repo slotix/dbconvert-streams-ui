@@ -2,12 +2,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import type { GridApi, Column } from 'ag-grid-community'
 import { useContextualIconSizes } from '@/composables/useIconSizes'
-import {
-  ArrowsPointingOutIcon,
-  ArrowPathIcon,
-  MapPinIcon,
-  NoSymbolIcon
-} from '@heroicons/vue/24/outline'
+import { Ban, MapPin, Maximize2, RefreshCw } from 'lucide-vue-next'
 
 // Get current zoom factor for position adjustment
 const getZoomFactor = () => {
@@ -125,25 +120,21 @@ const resetColumns = () => {
         class="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
         @click="pinLeft"
       >
-        <MapPinIcon
-          :class="[iconSizes.contextMenu, 'text-gray-500 dark:text-gray-400 -rotate-45']"
-        />
+        <MapPin :class="[iconSizes.contextMenu, 'text-gray-500 dark:text-gray-400 -rotate-45']" />
         <span>Pin Left</span>
       </button>
       <button
         class="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
         @click="pinRight"
       >
-        <MapPinIcon
-          :class="[iconSizes.contextMenu, 'text-gray-500 dark:text-gray-400 rotate-45']"
-        />
+        <MapPin :class="[iconSizes.contextMenu, 'text-gray-500 dark:text-gray-400 rotate-45']" />
         <span>Pin Right</span>
       </button>
       <button
         class="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
         @click="unpinColumn"
       >
-        <NoSymbolIcon :class="[iconSizes.contextMenu, 'text-gray-500 dark:text-gray-400']" />
+        <Ban :class="[iconSizes.contextMenu, 'text-gray-500 dark:text-gray-400']" />
         <span>Unpin</span>
       </button>
     </div>
@@ -156,18 +147,14 @@ const resetColumns = () => {
         class="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
         @click="autoSizeColumn"
       >
-        <ArrowsPointingOutIcon
-          :class="[iconSizes.contextMenu, 'text-gray-500 dark:text-gray-400']"
-        />
+        <Maximize2 :class="[iconSizes.contextMenu, 'text-gray-500 dark:text-gray-400']" />
         <span>Autosize This Column</span>
       </button>
       <button
         class="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
         @click="autoSizeAllColumns"
       >
-        <ArrowsPointingOutIcon
-          :class="[iconSizes.contextMenu, 'text-gray-500 dark:text-gray-400']"
-        />
+        <Maximize2 :class="[iconSizes.contextMenu, 'text-gray-500 dark:text-gray-400']" />
         <span>Autosize All Columns</span>
       </button>
     </div>
@@ -180,7 +167,7 @@ const resetColumns = () => {
         class="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
         @click="resetColumns"
       >
-        <ArrowPathIcon :class="[iconSizes.contextMenu, 'text-gray-500 dark:text-gray-400']" />
+        <RefreshCw :class="[iconSizes.contextMenu, 'text-gray-500 dark:text-gray-400']" />
         <span>Reset Columns</span>
       </button>
     </div>

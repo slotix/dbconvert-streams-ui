@@ -9,15 +9,15 @@
       :title="showPassword ? 'Hide password' : 'Show password'"
       @click.stop="togglePassword"
     >
-      <EyeIcon v-if="!showPassword" class="h-4 w-4" />
-      <EyeSlashIcon v-else class="h-4 w-4" />
+      <Eye v-if="!showPassword" class="h-4 w-4" />
+      <EyeOff v-else class="h-4 w-4" />
     </button>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { EyeIcon, EyeSlashIcon } from '@heroicons/vue/24/outline'
+import { Eye, EyeOff } from 'lucide-vue-next'
 import { generateConnectionString } from '@/utils/connectionStringGenerator'
 import type { Connection } from '@/types/connections'
 

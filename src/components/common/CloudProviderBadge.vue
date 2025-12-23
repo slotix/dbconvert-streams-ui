@@ -14,7 +14,7 @@
         'object-contain shrink-0 transition dark:invert dark:brightness-200'
       ]"
     />
-    <CloudIcon v-else :class="logoSizeClasses" class="shrink-0" />
+    <Cloud v-else :class="logoSizeClasses" class="shrink-0" />
     <span class="whitespace-nowrap">{{ displayName }}</span>
     <button
       v-if="documentationUrl"
@@ -22,14 +22,14 @@
       class="shrink-0 hover:opacity-70 transition-opacity text-current"
       @click.stop="openDocumentation"
     >
-      <QuestionMarkCircleIcon :class="helpIconSizeClasses" />
+      <CircleHelp :class="helpIconSizeClasses" />
     </button>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { CloudIcon, QuestionMarkCircleIcon } from '@heroicons/vue/24/outline'
+import { CircleHelp, Cloud } from 'lucide-vue-next'
 import {
   isCloudConnection,
   getCloudProviderDisplayName,

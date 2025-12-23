@@ -4,7 +4,7 @@
       class="mx-4 md:mx-6 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-5 shadow-sm dark:shadow-gray-900/20"
     >
       <div class="flex items-start">
-        <InformationCircleIcon class="h-5 w-5 text-blue-500 dark:text-blue-400 shrink-0 mt-0.5" />
+        <Info class="h-5 w-5 text-blue-500 dark:text-blue-400 shrink-0 mt-0.5" />
         <div class="ml-3">
           <h3 class="text-sm font-semibold text-blue-900 dark:text-blue-100">
             Database Access Configuration
@@ -36,7 +36,7 @@
             class="mt-3 inline-flex items-center text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium"
           >
             View setup guide
-            <ArrowTopRightOnSquareIcon class="ml-1 h-4 w-4" />
+            <ExternalLink class="ml-1 h-4 w-4" />
           </a>
         </div>
       </div>
@@ -45,8 +45,7 @@
 </template>
 
 <script setup lang="ts">
-import { InformationCircleIcon } from '@heroicons/vue/24/outline'
-import { ArrowTopRightOnSquareIcon } from '@heroicons/vue/20/solid'
+import { ExternalLink, Info } from 'lucide-vue-next'
 
 interface Props {
   publicIp: string

@@ -6,7 +6,7 @@
     >
       <span class="sr-only">Open actions</span>
       <div class="flex items-center gap-1">
-        <EllipsisHorizontalIcon :class="iconSizes.sidebarMenu" aria-hidden="true" />
+        <MoreHorizontal :class="iconSizes.sidebarMenu" aria-hidden="true" />
         <span v-show="viewType === 'cards'" class="ml-1">More</span>
       </div>
     </MenuButton>
@@ -38,7 +38,7 @@
               ]"
               @click="$emit('deleteRow')"
             >
-              <TrashIcon
+              <Trash
                 :class="[
                   iconSizes.navigationHeader,
                   'mr-3 text-red-600 dark:text-red-400 group-hover:text-red-500 dark:group-hover:text-red-300'
@@ -79,7 +79,7 @@
               ]"
               @click="$emit('cloneRow')"
             >
-              <Square2StackIcon
+              <SquareStack
                 :class="[
                   iconSizes.navigationHeader,
                   'mr-3 text-gray-400 dark:text-gray-500 group-hover:text-gray-500 dark:group-hover:text-gray-400'
@@ -97,7 +97,7 @@
 
 <script setup lang="ts">
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue'
-import { Square2StackIcon, TrashIcon, EllipsisHorizontalIcon } from '@heroicons/vue/24/solid'
+import { MoreHorizontal, SquareStack, Trash } from 'lucide-vue-next'
 import { useCommonStore } from '@/stores/common'
 import { computed } from 'vue'
 import { vTooltip } from '@/directives/tooltip'

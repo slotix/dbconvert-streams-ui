@@ -2,12 +2,7 @@
 import { computed, ref } from 'vue'
 import type { SQLQueryLog } from '@/stores/logs'
 import { useLogsStore } from '@/stores/logs'
-import {
-  ClipboardIcon,
-  CheckIcon,
-  ChevronDownIcon,
-  ChevronRightIcon
-} from '@heroicons/vue/24/outline'
+import { Check, ChevronDown, ChevronRight, Clipboard } from 'lucide-vue-next'
 import {
   getPurposePillClass,
   getDurationClass,
@@ -98,7 +93,7 @@ function toggleExpanded() {
     >
       <!-- Expand/Collapse Icon -->
       <component
-        :is="isLocationCollapsed ? ChevronRightIcon : ChevronDownIcon"
+        :is="isLocationCollapsed ? ChevronRight : ChevronDown"
         class="w-4 h-4 text-gray-700 dark:text-gray-300 flex-shrink-0"
       />
 
@@ -180,8 +175,8 @@ function toggleExpanded() {
           title="Copy query"
           @click.stop="copyQuery"
         >
-          <CheckIcon v-if="copied" class="w-4 h-4 text-green-600 dark:text-green-400" />
-          <ClipboardIcon v-else class="w-4 h-4" />
+          <Check v-if="copied" class="w-4 h-4 text-green-600 dark:text-green-400" />
+          <Clipboard v-else class="w-4 h-4" />
         </button>
       </div>
 

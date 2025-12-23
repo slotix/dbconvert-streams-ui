@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, nextTick, provide } from 'vue'
 import { useDebounceFn } from '@vueuse/core'
-import { CubeIcon } from '@heroicons/vue/24/outline'
+import { Boxes } from 'lucide-vue-next'
 import { useConnectionsStore } from '@/stores/connections'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { useSqlConsoleStore } from '@/stores/sqlConsole'
@@ -882,7 +882,7 @@ watch(
             <div
               class="bg-linear-to-br from-slate-100 to-slate-50 dark:from-gray-800 dark:to-gray-700 rounded-full p-6 mb-5 shadow-inner border border-slate-200 dark:border-gray-700"
             >
-              <CubeIcon class="h-10 w-10 text-slate-400 dark:text-gray-500" />
+              <Boxes class="h-10 w-10 text-slate-400 dark:text-gray-500" />
             </div>
             <p class="text-base font-semibold text-slate-700 dark:text-slate-300 mb-2">
               No connections found

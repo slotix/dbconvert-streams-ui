@@ -34,12 +34,7 @@
 </template>
 
 <script setup lang="ts">
-import {
-  CheckCircleIcon,
-  ExclamationTriangleIcon,
-  MinusCircleIcon,
-  PlusCircleIcon
-} from '@heroicons/vue/24/solid'
+import { AlertTriangle, CheckCircle, MinusCircle, PlusCircle } from 'lucide-vue-next'
 import type { SQLColumnMeta } from '@/types/metadata'
 
 interface SchemaDifference {
@@ -70,10 +65,10 @@ function getDiffIcon(col: SQLColumnMeta) {
   if (!diff) return null
 
   const iconMap = {
-    match: CheckCircleIcon,
-    'type-diff': ExclamationTriangleIcon,
-    missing: MinusCircleIcon,
-    new: PlusCircleIcon
+    match: CheckCircle,
+    'type-diff': AlertTriangle,
+    missing: MinusCircle,
+    new: PlusCircle
   }
 
   return iconMap[diff.type] || null

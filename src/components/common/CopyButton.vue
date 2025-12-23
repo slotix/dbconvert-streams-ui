@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ClipboardIcon } from '@heroicons/vue/24/outline'
+import { Clipboard } from 'lucide-vue-next'
 import { useCommonStore } from '@/stores/common'
 import { useContextualIconSizes } from '@/composables/useIconSizes'
 
@@ -31,9 +31,7 @@ async function handleCopy() {
     ]"
     @click.stop="handleCopy"
   >
-    <ClipboardIcon
-      :class="[iconSizes.tableAction, iconClass || 'text-gray-500 dark:text-gray-400']"
-    />
+    <Clipboard :class="[iconSizes.tableAction, iconClass || 'text-gray-500 dark:text-gray-400']" />
     <slot>Copy</slot>
   </button>
 </template>

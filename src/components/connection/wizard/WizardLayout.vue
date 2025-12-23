@@ -14,7 +14,7 @@
                 <span
                   class="flex size-10 shrink-0 items-center justify-center rounded-full bg-teal-600 shadow-sm"
                 >
-                  <CheckIcon class="size-6 text-white" aria-hidden="true" />
+                  <Check class="size-6 text-white" aria-hidden="true" />
                 </span>
                 <span class="ml-4 text-sm font-medium text-gray-900 dark:text-gray-100">{{
                   step.title
@@ -91,7 +91,7 @@
       <!-- Wizard Navigation -->
       <div class="flex justify-between shrink-0">
         <BaseButton v-if="canGoBack" variant="secondary" @click="goToPreviousStep">
-          <ArrowLeftIcon class="w-4 h-4 mr-2" />
+          <ArrowLeft class="w-4 h-4 mr-2" />
           Back
         </BaseButton>
         <div v-else></div>
@@ -108,7 +108,7 @@
               Testing...
             </span>
             <span v-else class="flex items-center">
-              <BeakerIcon class="w-4 h-4 mr-2" />
+              <Beaker class="w-4 h-4 mr-2" />
               Test Connection
             </span>
           </BaseButton>
@@ -148,7 +148,7 @@
                       : 'Create Connection'
                   : 'Next'
               }}
-              <ArrowRightIcon v-if="!isLastStep" class="w-4 h-4 ml-2" />
+              <ArrowRight v-if="!isLastStep" class="w-4 h-4 ml-2" />
             </span>
           </BaseButton>
 
@@ -161,7 +161,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { CheckIcon, ArrowLeftIcon, ArrowRightIcon, BeakerIcon } from '@heroicons/vue/24/outline'
+import { ArrowLeft, ArrowRight, Beaker, Check } from 'lucide-vue-next'
 import BaseButton from '@/components/base/BaseButton.vue'
 import Spinner from '@/components/common/Spinner.vue'
 

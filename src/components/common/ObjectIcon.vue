@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { TableCellsIcon, ViewfinderCircleIcon } from '@heroicons/vue/24/outline'
+import { Focus, Sheet } from 'lucide-vue-next'
 import { useIconSizes } from '@/composables/useIconSizes'
 import type { IconSizeKey } from '@/constants'
 
@@ -32,7 +32,7 @@ const iconColor = computed(() => {
 
 <template>
   <component
-    :is="props.objectType === 'table' ? TableCellsIcon : ViewfinderCircleIcon"
+    :is="props.objectType === 'table' ? Sheet : Focus"
     :class="[iconClass, iconColor, 'shrink-0 flex-none']"
   />
 </template>

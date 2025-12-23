@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { CloudArrowUpIcon } from '@heroicons/vue/24/outline'
+import { CloudUpload } from 'lucide-vue-next'
 import { useMonitoringStore } from '@/stores/monitoring'
 import { STATUS } from '@/constants'
 import StatusBadge from '@/components/common/StatusBadge.vue'
@@ -74,7 +74,7 @@ function getUploadStatus(status: string) {
           <div
             class="p-2 bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-amber-200 dark:border-amber-700/50"
           >
-            <CloudArrowUpIcon class="h-5 w-5 text-amber-600 dark:text-amber-400" />
+            <CloudUpload class="h-5 w-5 text-amber-600 dark:text-amber-400" />
           </div>
           <div>
             <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">S3 Upload</h3>

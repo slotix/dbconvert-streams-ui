@@ -83,7 +83,7 @@
         class="p-1 text-gray-400 hover:text-red-500 transition-colors shrink-0 ml-auto"
         @click="clearLimit"
       >
-        <XMarkIcon class="w-3.5 h-3.5" />
+        <X class="w-3.5 h-3.5" />
       </button>
     </div>
 
@@ -129,7 +129,7 @@
           class="p-1 text-gray-400 hover:text-red-500 transition-colors shrink-0"
           @click="removeFilter(filter.id)"
         >
-          <XMarkIcon class="w-3.5 h-3.5" />
+          <X class="w-3.5 h-3.5" />
         </button>
       </div>
     </div>
@@ -166,8 +166,8 @@
           "
           @click="toggleSortDirection(index)"
         >
-          <ArrowUpIcon v-if="sort.direction === 'ASC'" class="w-3 h-3" />
-          <ArrowDownIcon v-else class="w-3 h-3" />
+          <ArrowUp v-if="sort.direction === 'ASC'" class="w-3 h-3" />
+          <ArrowDown v-else class="w-3 h-3" />
           {{ sort.direction }}
         </button>
         <button
@@ -175,7 +175,7 @@
           class="p-1 text-gray-400 hover:text-red-500 transition-colors shrink-0"
           @click="removeSort(index)"
         >
-          <XMarkIcon class="w-3.5 h-3.5" />
+          <X class="w-3.5 h-3.5" />
         </button>
       </div>
     </div>
@@ -187,7 +187,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { XMarkIcon, ArrowUpIcon, ArrowDownIcon } from '@heroicons/vue/24/outline'
+import { ArrowDown, ArrowUp, X } from 'lucide-vue-next'
 import type { ColumnDef, SortCondition, FilterCondition } from './types'
 import {
   operatorToSql as sharedOperatorToSql,

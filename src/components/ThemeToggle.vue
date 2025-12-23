@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useThemeStore } from '@/stores/theme'
-import { SunIcon, MoonIcon } from '@heroicons/vue/24/outline'
+import { Moon, Sun } from 'lucide-vue-next'
 import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/vue'
 
 const themeStore = useThemeStore()
@@ -18,8 +18,8 @@ defineExpose({
 })
 
 const themes = [
-  { value: 'light', label: 'Light', icon: SunIcon },
-  { value: 'dark', label: 'Dark', icon: MoonIcon }
+  { value: 'light', label: 'Light', icon: Sun },
+  { value: 'dark', label: 'Dark', icon: Moon }
 ] as const
 </script>
 
@@ -30,8 +30,8 @@ const themes = [
       class="inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:bg-gray-800 hover:text-white dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-teal-500 dark:focus:ring-teal-400"
       title="Toggle theme"
     >
-      <SunIcon v-if="!themeStore.isDark" class="h-5 w-5" />
-      <MoonIcon v-else class="h-5 w-5" />
+      <Sun v-if="!themeStore.isDark" class="h-5 w-5" />
+      <Moon v-else class="h-5 w-5" />
     </MenuButton>
 
     <transition

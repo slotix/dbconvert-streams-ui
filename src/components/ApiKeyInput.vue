@@ -12,7 +12,7 @@
             <div
               class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-700"
             >
-              <key-icon class="h-6 w-6 text-gray-600 dark:text-gray-300" aria-hidden="true" />
+              <Key class="h-6 w-6 text-gray-600 dark:text-gray-300" aria-hidden="true" />
             </div>
             <div class="mt-3 text-center sm:mt-5">
               <h3 class="text-base font-semibold leading-6 text-gray-900 dark:text-gray-100">
@@ -65,7 +65,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useCommonStore } from '@/stores/common'
-import { KeyIcon } from '@heroicons/vue/24/outline'
+import { Key } from 'lucide-vue-next'
 import FormInput from '@/components/base/FormInput.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
 

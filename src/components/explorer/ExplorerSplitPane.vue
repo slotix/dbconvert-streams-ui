@@ -89,7 +89,7 @@
         title="Close right pane"
         @click="$emit('close-right-pane')"
       >
-        <XMarkIcon class="h-4 w-4 text-gray-500 dark:text-gray-400" />
+        <X class="h-4 w-4 text-gray-500 dark:text-gray-400" />
       </button>
 
       <!-- Right pane tabs -->
@@ -127,7 +127,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { XMarkIcon } from '@heroicons/vue/20/solid'
+import { X } from 'lucide-vue-next'
 import {
   useSplitPaneResize,
   type SplitPaneResizeController

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useCommonStore } from '@/stores/common'
 import { storeToRefs } from 'pinia'
-import { XCircleIcon, ArrowPathIcon } from '@heroicons/vue/24/solid'
+import { RefreshCw, XCircle } from 'lucide-vue-next'
 import { getBackendUrl } from '@/utils/environment'
 
 const commonStore = useCommonStore()
@@ -22,7 +22,7 @@ async function handleRetry() {
     <div class="text-center max-w-md px-6">
       <!-- Icon -->
       <div class="mx-auto w-24 h-24 mb-6 flex items-center justify-center">
-        <XCircleIcon class="w-20 h-20 text-red-500 dark:text-red-400" />
+        <XCircle class="w-20 h-20 text-red-500 dark:text-red-400" />
       </div>
 
       <!-- Title -->
@@ -42,7 +42,7 @@ async function handleRetry() {
         class="inline-flex items-center gap-2 px-6 py-3 text-base font-semibold text-white bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 rounded-lg transition-all duration-200 shadow-lg dark:shadow-gray-900/30 hover:shadow-xl transform hover:scale-105"
         @click="handleRetry"
       >
-        <ArrowPathIcon class="h-5 w-5" />
+        <RefreshCw class="h-5 w-5" />
         <span>Retry Connection</span>
       </button>
 

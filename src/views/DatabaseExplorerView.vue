@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, inject } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Bars3Icon, PlusIcon } from '@heroicons/vue/24/solid'
+import { useLucideIcons } from '@/composables/useLucideIcons'
+import { Menu, Plus } from 'lucide-vue-next'
 import { useCommonStore } from '@/stores/common'
 import { useConnectionsStore } from '@/stores/connections'
 import { useSchemaStore } from '@/stores/schema'
@@ -30,6 +31,8 @@ import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import DisconnectedOverlay from '@/components/common/DisconnectedOverlay.vue'
 import EmptyStateMessage from '@/components/explorer/EmptyStateMessage.vue'
 import { useDatabaseExplorerController } from '@/composables/useDatabaseExplorerController'
+
+const { strokeWidth: iconStroke } = useLucideIcons()
 
 const route = useRoute()
 const router = useRouter()
@@ -273,7 +276,7 @@ function handleOpenFileConsole(payload: {
             class="group flex items-center justify-center p-2 -ml-1 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700 lg:hidden"
             @click="sidebarMenuToggle.openSidebar"
           >
-            <Bars3Icon class="h-5 w-5" aria-hidden="true" />
+            <Menu class="h-5 w-5" :stroke-width="iconStroke" aria-hidden="true" />
             <span class="sr-only">Open sidebar</span>
           </button>
           <button
@@ -282,7 +285,7 @@ function handleOpenFileConsole(payload: {
             class="group hidden lg:flex items-center justify-center p-2 -ml-1 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700"
             @click="sidebarWidthToggle.toggleSidebarWidth"
           >
-            <Bars3Icon class="h-5 w-5" aria-hidden="true" />
+            <Menu class="h-5 w-5" :stroke-width="iconStroke" aria-hidden="true" />
             <span class="sr-only">Toggle sidebar width</span>
           </button>
           <img
@@ -320,7 +323,7 @@ function handleOpenFileConsole(payload: {
         <div class="flex items-center gap-4 ml-auto">
           <!-- Primary CTA Button with vibrant blue-green gradient -->
           <BaseButton variant="primary" @click="onAddConnection">
-            <PlusIcon class="h-5 w-5" />
+            <Plus class="h-5 w-5" :stroke-width="iconStroke" />
             <span>New Connection</span>
           </BaseButton>
         </div>
@@ -361,7 +364,7 @@ function handleOpenFileConsole(payload: {
           to="/explorer/add"
           class="inline-flex items-center gap-2 px-6 py-3 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-linear-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 dark:from-blue-500 dark:to-teal-500 dark:hover:from-blue-600 dark:hover:to-teal-600 transition-all duration-200 hover:shadow-md hover:scale-105"
         >
-          <PlusIcon class="h-5 w-5" />
+          <Plus class="h-5 w-5" :stroke-width="iconStroke" />
           Create Your First Connection
         </RouterLink>
       </div>

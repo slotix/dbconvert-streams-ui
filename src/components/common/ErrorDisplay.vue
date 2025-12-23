@@ -2,7 +2,7 @@
 import { useCommonStore } from '@/stores/common'
 import { storeToRefs } from 'pinia'
 import { TransitionRoot } from '@headlessui/vue'
-import { XCircleIcon, ArrowPathIcon } from '@heroicons/vue/24/solid'
+import { RefreshCw, XCircle } from 'lucide-vue-next'
 
 const commonStore = useCommonStore()
 const { error } = storeToRefs(commonStore)
@@ -24,11 +24,8 @@ const { error } = storeToRefs(commonStore)
       <div class="rounded-md bg-red-50 dark:bg-red-900/20 p-4">
         <div class="flex">
           <div class="shrink-0">
-            <XCircleIcon v-if="!error.isRetrying" class="h-5 w-5 text-red-400 dark:text-red-500" />
-            <ArrowPathIcon
-              v-else
-              class="h-5 w-5 text-yellow-400 dark:text-yellow-500 animate-spin"
-            />
+            <XCircle v-if="!error.isRetrying" class="h-5 w-5 text-red-400 dark:text-red-500" />
+            <RefreshCw v-else class="h-5 w-5 text-yellow-400 dark:text-yellow-500 animate-spin" />
           </div>
           <div class="ml-3">
             <h3

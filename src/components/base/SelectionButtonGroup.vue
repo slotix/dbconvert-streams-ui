@@ -34,7 +34,7 @@ import {
   RadioGroupOption,
   RadioGroupDescription
 } from '@headlessui/vue'
-import { CheckCircleIcon } from '@heroicons/vue/20/solid'
+import { CheckCircle } from 'lucide-vue-next'
 
 export interface SelectionOption {
   value: string | number
@@ -144,7 +144,7 @@ const activeDescription = computed(() => {
               >
                 {{ option.label }}
               </RadioGroupLabel>
-              <CheckCircleIcon
+              <CheckCircle
                 v-if="showCheckIcon && checked"
                 class="h-5 w-5 text-teal-600 dark:text-teal-400"
                 aria-hidden="true"

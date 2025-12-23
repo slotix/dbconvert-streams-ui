@@ -29,7 +29,7 @@
                     : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
                 ]"
               >
-                <ViewColumnsIcon class="w-4 h-4" />
+                <Columns2 class="w-4 h-4" />
                 Visual
               </button>
             </Tab>
@@ -42,7 +42,7 @@
                     : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
                 ]"
               >
-                <CodeBracketIcon class="w-4 h-4" />
+                <Code class="w-4 h-4" />
                 JSON
               </button>
             </Tab>
@@ -264,7 +264,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/vue'
-import { ViewColumnsIcon, CodeBracketIcon } from '@heroicons/vue/24/outline'
+import { Code, Columns2 } from 'lucide-vue-next'
 import { useStreamsStore, buildStreamPayload } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
 import { JsonViewer } from '@/components/monaco'

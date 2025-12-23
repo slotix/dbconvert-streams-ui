@@ -1,14 +1,15 @@
 import {
-  CalendarIcon,
-  CheckCircleIcon,
-  ChevronRightIcon,
-  PencilIcon,
-  PlayIcon,
-  Square2StackIcon,
-  TrashIcon,
-  ExclamationCircleIcon
-} from '@heroicons/vue/24/solid'
-import { ClipboardIcon, QuestionMarkCircleIcon } from '@heroicons/vue/24/outline'
+  AlertCircle,
+  Calendar,
+  CheckCircle,
+  ChevronRight,
+  Clipboard,
+  Pencil,
+  Play,
+  SquareStack,
+  Trash,
+  CircleHelp
+} from 'lucide-vue-next'
 import { mapActions, mapState } from 'pinia'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
@@ -41,20 +42,20 @@ export default defineComponent({
     }
   },
   components: {
-    PencilIcon,
-    Square2StackIcon,
-    TrashIcon,
-    CalendarIcon,
-    CheckCircleIcon,
-    ChevronRightIcon,
-    PlayIcon,
+    Pencil,
+    SquareStack,
+    Trash,
+    Calendar,
+    CheckCircle,
+    ChevronRight,
+    Play,
     ActionsMenu,
-    ClipboardIcon,
+    Clipboard,
     Switch,
     ConnectionStringDisplay,
-    ExclamationCircleIcon,
+    AlertCircle,
     CloudProviderBadge,
-    QuestionMarkCircleIcon,
+    CircleHelp,
     ConfirmDialog
   },
   setup(props) {

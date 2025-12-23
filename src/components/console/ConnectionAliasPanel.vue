@@ -9,7 +9,7 @@
       @click="toggleCollapse"
     >
       <div class="flex items-center space-x-2">
-        <CircleStackIcon class="h-4 w-4 text-teal-600 dark:text-teal-400" />
+        <Database class="h-4 w-4 text-teal-600 dark:text-teal-400" />
         <span class="text-sm font-medium text-gray-900 dark:text-gray-100"> Data Sources </span>
 
         <!-- Collapsed preview of selected sources -->
@@ -46,11 +46,11 @@
           class="inline-flex items-center gap-1 px-1.5 py-0.5 text-[11px] rounded bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800"
           :title="collapsedCtaTitle"
         >
-          <PlusIcon class="h-3 w-3" />
+          <Plus class="h-3 w-3" />
           {{ collapsedCtaLabel }}
         </span>
       </div>
-      <ChevronDownIcon
+      <ChevronDown
         class="h-4 w-4 text-gray-400 transition-transform duration-200"
         :class="{ '-rotate-180': !isCollapsed }"
       />
@@ -72,7 +72,7 @@
       <div
         class="mt-3 mb-3 flex items-start space-x-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-md text-xs"
       >
-        <InformationCircleIcon class="h-4 w-4 text-blue-500 dark:text-blue-400 shrink-0 mt-0.5" />
+        <Info class="h-4 w-4 text-blue-500 dark:text-blue-400 shrink-0 mt-0.5" />
         <div class="text-blue-700 dark:text-blue-300">
           <p>
             Select database connections to query. Use aliases in your SQL:
@@ -94,9 +94,7 @@
         v-if="hasMultipleCloudConnections"
         class="mb-3 flex items-start space-x-2 p-2 bg-amber-50 dark:bg-amber-900/20 rounded-md text-xs"
       >
-        <ExclamationTriangleIcon
-          class="h-4 w-4 text-amber-500 dark:text-amber-400 shrink-0 mt-0.5"
-        />
+        <AlertTriangle class="h-4 w-4 text-amber-500 dark:text-amber-400 shrink-0 mt-0.5" />
         <div class="text-amber-700 dark:text-amber-300">
           <p>
             <strong>Note:</strong> Multiple S3/GCS connections selected. Only the first connection's
@@ -192,7 +190,7 @@
           v-if="databaseConnections.length === 0"
           class="py-6 text-center text-gray-500 dark:text-gray-400"
         >
-          <CircleStackIcon class="h-8 w-8 mx-auto mb-2 text-gray-300 dark:text-gray-600" />
+          <Database class="h-8 w-8 mx-auto mb-2 text-gray-300 dark:text-gray-600" />
           <p class="text-sm">No connections found</p>
           <p class="text-xs mt-1">
             Add PostgreSQL, MySQL, or file connections to use federated queries.
@@ -206,15 +204,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { RouterLink } from 'vue-router'
-import {
-  CircleStackIcon,
-  ChevronDownIcon,
-  InformationCircleIcon,
-  FolderIcon,
-  CloudIcon,
-  ExclamationTriangleIcon,
-  PlusIcon
-} from '@heroicons/vue/24/outline'
+import { AlertTriangle, ChevronDown, Cloud, Database, Folder, Info, Plus } from 'lucide-vue-next'
 import { useConnectionsStore } from '@/stores/connections'
 import type { Connection } from '@/types/connections'
 import type { ConnectionMapping } from '@/api/federated'
@@ -449,12 +439,12 @@ function getConnectionHost(conn: Connection): string {
 function getConnectionIcon(type: string) {
   const normalized = type?.toLowerCase() || ''
   if (normalized === 'files') {
-    return FolderIcon
+    return Folder
   }
   if (normalized === 's3' || normalized === 'gcs' || normalized === 'azure') {
-    return CloudIcon
+    return Cloud
   }
-  return CircleStackIcon
+  return Database
 }
 
 function getConnectionIconColor(type: string): string {

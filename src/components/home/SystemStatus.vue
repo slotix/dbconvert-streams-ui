@@ -51,21 +51,14 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useCommonStore } from '@/stores/common'
-import {
-  CloudIcon,
-  QueueListIcon,
-  ArrowDownTrayIcon,
-  ArrowUpTrayIcon,
-  KeyIcon,
-  ChartBarIcon
-} from '@heroicons/vue/24/solid'
+import { ChartBar, Cloud, Download, Key, List, Upload } from 'lucide-vue-next'
 
 interface Service {
   id: string
   name: string
   backendName: string
   description: string
-  icon: typeof CloudIcon
+  icon: typeof Cloud
   bgColor: string
   iconColor: string
 }
@@ -76,7 +69,7 @@ const services: Service[] = [
     name: 'stream-api',
     backendName: 'stream-api',
     description: 'API Service',
-    icon: CloudIcon,
+    icon: Cloud,
     bgColor: 'bg-blue-50 dark:bg-blue-900/30',
     iconColor: 'text-blue-600 dark:text-blue-400'
   },
@@ -85,7 +78,7 @@ const services: Service[] = [
     name: 'stream-reader',
     backendName: 'stream-reader',
     description: 'Source Reader',
-    icon: ArrowDownTrayIcon,
+    icon: Download,
     bgColor: 'bg-teal-50 dark:bg-teal-900/30',
     iconColor: 'text-teal-600 dark:text-teal-400'
   },
@@ -94,7 +87,7 @@ const services: Service[] = [
     name: 'stream-writer',
     backendName: 'stream-writer',
     description: 'Target Writer',
-    icon: ArrowUpTrayIcon,
+    icon: Upload,
     bgColor: 'bg-teal-50 dark:bg-teal-900/30',
     iconColor: 'text-teal-600 dark:text-teal-400'
   },
@@ -103,7 +96,7 @@ const services: Service[] = [
     name: 'nats',
     backendName: 'nats',
     description: 'Message Queue',
-    icon: QueueListIcon,
+    icon: List,
     bgColor: 'bg-blue-50 dark:bg-blue-900/30',
     iconColor: 'text-blue-600 dark:text-blue-400'
   },
@@ -112,7 +105,7 @@ const services: Service[] = [
     name: 'vault',
     backendName: 'vault',
     description: 'Secrets Management',
-    icon: KeyIcon,
+    icon: Key,
     bgColor: 'bg-slate-50 dark:bg-slate-800/30',
     iconColor: 'text-slate-600 dark:text-slate-400'
   },
@@ -121,7 +114,7 @@ const services: Service[] = [
     name: 'sentry',
     backendName: 'sentry',
     description: 'Usage Tracking & Limits',
-    icon: ChartBarIcon,
+    icon: ChartBar,
     bgColor: 'bg-blue-50 dark:bg-blue-900/30',
     iconColor: 'text-blue-600 dark:text-blue-400'
   }

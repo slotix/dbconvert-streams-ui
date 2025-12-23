@@ -6,7 +6,7 @@
       <div class="flex items-start p-3 rounded-lg bg-slate-50 dark:bg-gray-800/50">
         <div class="shrink-0">
           <div class="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-3">
-            <UserIcon class="h-6 w-6 text-blue-600 dark:text-blue-400" />
+            <User class="h-6 w-6 text-blue-600 dark:text-blue-400" :stroke-width="iconStroke" />
           </div>
         </div>
         <div class="ml-4 flex-1">
@@ -24,8 +24,9 @@
       <div class="flex items-start p-3 rounded-lg bg-slate-50 dark:bg-gray-800/50">
         <div class="shrink-0">
           <div class="bg-teal-50 dark:bg-teal-900/30 rounded-lg p-3">
-            <CreditCardIcon
+            <CreditCard
               class="h-6 w-6"
+              :stroke-width="iconStroke"
               :class="{
                 'text-teal-600 dark:text-teal-400':
                   subscriptionStatus !== 'canceled' && subscriptionStatus !== 'paused',
@@ -175,7 +176,10 @@
       <div class="flex items-start p-3 rounded-lg bg-slate-50 dark:bg-gray-800/50">
         <div class="shrink-0">
           <div class="bg-teal-50 dark:bg-teal-900/30 rounded-lg p-3">
-            <ChartBarIcon class="h-6 w-6 text-teal-600 dark:text-teal-400" />
+            <BarChart3
+              class="h-6 w-6 text-teal-600 dark:text-teal-400"
+              :stroke-width="iconStroke"
+            />
           </div>
         </div>
         <div class="ml-4 flex-1">
@@ -230,7 +234,7 @@
       <div class="flex items-start p-3 rounded-lg bg-slate-50 dark:bg-gray-800/50">
         <div class="shrink-0">
           <div class="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-3">
-            <KeyIcon class="h-6 w-6 text-blue-600 dark:text-blue-400" />
+            <Key class="h-6 w-6 text-blue-600 dark:text-blue-400" :stroke-width="iconStroke" />
           </div>
         </div>
         <div class="ml-4 flex-1">
@@ -255,8 +259,9 @@
                 title="Copy API Key"
                 @click="copyApiKey"
               >
-                <DocumentDuplicateIcon
+                <Copy
                   class="h-4 w-4 text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300"
+                  :stroke-width="iconStroke"
                 />
               </button>
             </div>
@@ -291,18 +296,16 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useCommonStore } from '@/stores/common'
-import {
-  CreditCardIcon,
-  ChartBarIcon,
-  KeyIcon,
-  UserIcon,
-  DocumentDuplicateIcon
-} from '@heroicons/vue/24/outline'
+import { useDesktopMode } from '@/composables/useDesktopMode'
+import { BarChart3, Copy, CreditCard, Key, User } from 'lucide-vue-next'
 import { formatDateTime, formatDataSize } from '@/utils/formats'
 
 const commonStore = useCommonStore()
+const { isDesktop } = useDesktopMode()
 
 const userData = computed(() => commonStore.userData)
+// Thinner stroke for desktop to compensate for CSS zoom scaling
+const iconStroke = computed(() => (isDesktop.value ? 1.0 : 2))
 
 // Add status computation
 const subscriptionStatus = computed(() => commonStore.userData?.subscriptionStatus || 'active')

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, inject } from 'vue'
 import type { ComputedRef } from 'vue'
-import { ChevronRightIcon, ChevronDownIcon } from '@heroicons/vue/24/outline'
+import { ChevronDown, ChevronRight } from 'lucide-vue-next'
 import DatabaseTreeItem from './DatabaseTreeItem.vue'
 import FileEntry from '../FileEntry.vue'
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
@@ -260,7 +260,7 @@ const connectionPort = computed(() => getConnectionPort(props.connection))
       @contextmenu.stop.prevent="handleConnectionContextMenu"
     >
       <component
-        :is="isExpanded ? ChevronDownIcon : ChevronRightIcon"
+        :is="isExpanded ? ChevronDown : ChevronRight"
         :class="[
           caretClass,
           'transition-transform duration-200 group-hover:text-teal-600 dark:group-hover:text-teal-400'

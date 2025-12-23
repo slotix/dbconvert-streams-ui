@@ -23,7 +23,7 @@
         <div
           class="bg-linear-to-br from-slate-100 to-slate-50 dark:from-gray-800 dark:to-gray-850 rounded-full p-6 mb-5 shadow-inner border border-slate-200 dark:border-gray-700"
         >
-          <ArrowPathIcon class="h-10 w-10 text-slate-400 dark:text-gray-600" />
+          <RefreshCw class="h-10 w-10 text-slate-400 dark:text-gray-600" />
         </div>
         <p class="text-base font-semibold text-slate-700 dark:text-gray-300 mb-2">
           {{ searchQuery ? 'No streams found' : 'No stream configurations yet' }}
@@ -90,7 +90,7 @@ export default {
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowPathIcon } from '@heroicons/vue/24/outline'
+import { RefreshCw } from 'lucide-vue-next'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
 import { useMonitoringStore } from '@/stores/monitoring'

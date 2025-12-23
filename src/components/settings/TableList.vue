@@ -16,9 +16,7 @@
       <!-- Filter input - grows to fill space -->
       <div class="flex-1 min-w-[180px]">
         <div class="relative">
-          <MagnifyingGlassIcon
-            class="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
-          />
+          <Search class="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             v-model="searchQuery"
             type="text"
@@ -50,7 +48,7 @@
         title="Refresh tables"
         @click="debouncedRefreshTables"
       >
-        <ArrowPathIcon class="w-4 h-4" />
+        <RefreshCw class="w-4 h-4" />
         <span class="hidden sm:inline">Refresh</span>
       </button>
     </div>
@@ -83,9 +81,7 @@
               <div class="flex items-center gap-3">
                 <component
                   :is="
-                    isConnectionGroupExpanded(connectionGroup.alias)
-                      ? ChevronDownIcon
-                      : ChevronRightIcon
+                    isConnectionGroupExpanded(connectionGroup.alias) ? ChevronDown : ChevronRight
                   "
                   class="h-4 w-4 text-purple-600 dark:text-purple-400"
                 />
@@ -148,12 +144,12 @@
                     <component
                       :is="
                         isSchemaExpanded(`${connectionGroup.alias}-${schemaGroup.schema}`)
-                          ? ChevronDownIcon
-                          : ChevronRightIcon
+                          ? ChevronDown
+                          : ChevronRight
                       "
                       class="h-4 w-4 text-gray-400"
                     />
-                    <Squares2X2Icon class="w-4 h-4 text-teal-500 dark:text-teal-400 shrink-0" />
+                    <Grid2X2 class="w-4 h-4 text-teal-500 dark:text-teal-400 shrink-0" />
                     <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">
                       {{ schemaGroup.schema }}
                     </span>
@@ -201,7 +197,7 @@
                           )
                         "
                       />
-                      <TableCellsIcon class="h-4 w-4 text-gray-400 dark:text-gray-500 shrink-0" />
+                      <TableIcon class="h-4 w-4 text-gray-400 dark:text-gray-500 shrink-0" />
                       <label
                         :for="`table-${table.name}`"
                         class="flex-1 min-w-0 cursor-pointer text-sm text-gray-900 dark:text-gray-100 truncate"
@@ -230,10 +226,10 @@
             >
               <div class="flex items-center gap-2">
                 <component
-                  :is="isSchemaExpanded(schemaGroup.schema) ? ChevronDownIcon : ChevronRightIcon"
+                  :is="isSchemaExpanded(schemaGroup.schema) ? ChevronDown : ChevronRight"
                   class="h-4 w-4 text-gray-400"
                 />
-                <Squares2X2Icon class="w-4 h-4 text-purple-500 dark:text-purple-400 shrink-0" />
+                <Grid2X2 class="w-4 h-4 text-purple-500 dark:text-purple-400 shrink-0" />
                 <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">{{
                   schemaGroup.schema
                 }}</span>
@@ -294,7 +290,7 @@
                   />
 
                   <!-- Table Icon -->
-                  <TableCellsIcon class="h-4 w-4 text-gray-400 dark:text-gray-500 shrink-0" />
+                  <TableIcon class="h-4 w-4 text-gray-400 dark:text-gray-500 shrink-0" />
 
                   <!-- Table Name -->
                   <label
@@ -327,9 +323,9 @@
                     :title="hasTableFilter(table) ? 'Edit filter' : 'Add filter'"
                     @click="toggleTableSettings(table.name)"
                   >
-                    <FunnelIcon class="w-3.5 h-3.5" />
+                    <Filter class="w-3.5 h-3.5" />
                     <span v-if="hasTableFilter(table)" class="hidden sm:inline">filtered</span>
-                    <ChevronUpIcon v-if="selectedTableNames.includes(table.name)" class="w-3 h-3" />
+                    <ChevronUp v-if="selectedTableNames.includes(table.name)" class="w-3 h-3" />
                   </button>
                 </div>
 
@@ -360,15 +356,15 @@ import { useSelectableList } from '@/composables/useSelectableList'
 import HighlightedText from '@/components/common/HighlightedText.vue'
 import TableSettings from './TableSettings.vue'
 import {
-  ChevronRightIcon,
-  ChevronDownIcon,
-  ChevronUpIcon,
-  TableCellsIcon,
-  FunnelIcon,
-  MagnifyingGlassIcon,
-  ArrowPathIcon,
-  Squares2X2Icon
-} from '@heroicons/vue/24/outline'
+  ChevronDown,
+  ChevronRight,
+  ChevronUp,
+  Filter,
+  Grid2X2,
+  RefreshCw,
+  Search,
+  Sheet as TableIcon
+} from 'lucide-vue-next'
 import { debounce } from '@/utils/debounce'
 import { type StreamConfig, type Table } from '@/types/streamConfig'
 
@@ -689,16 +685,16 @@ function clearAllInSchema(schema: string) {
 
 // Federated connection group helpers
 function getConnectionIcon(connectionType: string) {
-  // Map database types to heroicons
-  type IconComponent = typeof TableCellsIcon
+  // Map database types to Lucide icons
+  type IconComponent = typeof TableIcon
   const iconMap: Record<string, IconComponent> = {
-    mysql: TableCellsIcon,
-    postgresql: TableCellsIcon,
-    postgres: TableCellsIcon,
-    snowflake: TableCellsIcon,
-    sqlite: TableCellsIcon
+    mysql: TableIcon,
+    postgresql: TableIcon,
+    postgres: TableIcon,
+    snowflake: TableIcon,
+    sqlite: TableIcon
   }
-  return iconMap[connectionType.toLowerCase()] || TableCellsIcon
+  return iconMap[connectionType.toLowerCase()] || TableIcon
 }
 
 function getConnectionIconColor(connectionType: string) {

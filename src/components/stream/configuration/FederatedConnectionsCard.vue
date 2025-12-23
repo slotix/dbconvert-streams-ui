@@ -41,7 +41,7 @@
                 :cloud-provider="getConnection(fedConn.connectionId)!.cloud_provider"
                 :db-type="getConnection(fedConn.connectionId)!.type"
               />
-              <ExclamationCircleIcon
+              <AlertCircle
                 v-if="!getConnection(fedConn.connectionId)"
                 class="h-4 w-4 text-red-500 dark:text-red-400 shrink-0"
                 aria-hidden="true"
@@ -65,7 +65,7 @@
           class="shrink-0 inline-flex items-center px-2.5 py-1.5 text-xs font-medium text-teal-600 dark:text-teal-300 bg-white dark:bg-gray-900 border border-teal-200 dark:border-teal-700 rounded-md hover:bg-teal-50 dark:hover:bg-gray-800 transition-colors"
           @click="emit('navigate', fedConn.connectionId)"
         >
-          <ArrowTopRightOnSquareIcon class="w-3.5 h-3.5 mr-1" />
+          <ExternalLink class="w-3.5 h-3.5 mr-1" />
           Explore
         </button>
       </div>
@@ -87,7 +87,7 @@ export default {
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
 import ConnectionStringDisplay from '@/components/common/ConnectionStringDisplay.vue'
 import DatabaseIcon from '@/components/base/DatabaseIcon.vue'
-import { ArrowTopRightOnSquareIcon, ExclamationCircleIcon } from '@heroicons/vue/24/outline'
+import { AlertCircle, ExternalLink } from 'lucide-vue-next'
 import type { Connection, DbType } from '@/types/connections'
 import type { ConnectionMapping } from '@/api/federated'
 import { normalizeConnectionType } from '@/utils/connectionUtils'

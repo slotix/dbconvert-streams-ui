@@ -43,7 +43,7 @@
           source.name
         }}</span>
         <span v-else class="text-gray-400 dark:text-gray-600 shrink-0 text-xs">Unknown</span>
-        <ArrowRightIcon class="h-3 w-3 shrink-0 text-gray-400 dark:text-gray-600" />
+        <ArrowRight class="h-3 w-3 shrink-0 text-gray-400 dark:text-gray-600" />
         <span v-if="target" class="truncate font-medium" :title="target.name">{{
           target.name
         }}</span>
@@ -86,7 +86,7 @@
         class="p-1.5 rounded-md hover:bg-teal-100 dark:hover:bg-teal-900/30 text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 transition-colors"
         @click.stop="resumeStream"
       >
-        <PlayIcon class="h-4 w-4" />
+        <Play class="h-4 w-4" />
       </button>
       <!-- Show Pause button when running (not paused, not finished) -->
       <button
@@ -96,7 +96,7 @@
         class="p-1.5 rounded-md hover:bg-yellow-100 dark:hover:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 hover:text-yellow-700 dark:hover:text-yellow-300 transition-colors"
         @click.stop="pauseStream"
       >
-        <PauseIcon class="h-4 w-4" />
+        <Pause class="h-4 w-4" />
       </button>
       <!-- Show Play button when not running or finished -->
       <button
@@ -106,7 +106,7 @@
         class="p-1.5 rounded-md hover:bg-teal-100 dark:hover:bg-teal-900/30 text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 transition-colors"
         @click.stop="startStream"
       >
-        <PlayIcon class="h-4 w-4" />
+        <Play class="h-4 w-4" />
       </button>
 
       <!-- Edit Button -->
@@ -116,7 +116,7 @@
           type="button"
           class="p-1.5 rounded-md hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
         >
-          <PencilIcon class="h-4 w-4" />
+          <Pencil class="h-4 w-4" />
         </button>
       </router-link>
 
@@ -127,7 +127,7 @@
         class="p-1.5 rounded-md hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
         @click.stop="cloneStream"
       >
-        <DocumentDuplicateIcon class="h-4 w-4" />
+        <Copy class="h-4 w-4" />
       </button>
 
       <!-- Delete Button -->
@@ -137,7 +137,7 @@
         class="p-1.5 rounded-md hover:bg-red-100 dark:hover:bg-red-900/30 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
         @click.stop="deleteStream"
       >
-        <TrashIcon class="h-4 w-4" />
+        <Trash class="h-4 w-4" />
       </button>
     </div>
   </div>
@@ -155,14 +155,7 @@ export default {
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import {
-  PencilIcon,
-  TrashIcon,
-  ArrowRightIcon,
-  DocumentDuplicateIcon,
-  PlayIcon,
-  PauseIcon
-} from '@heroicons/vue/24/outline'
+import { ArrowRight, Copy, Pause, Pencil, Play, Trash } from 'lucide-vue-next'
 import { useMonitoringStore, statusEnum } from '@/stores/monitoring'
 import type { StreamConfig } from '@/types/streamConfig'
 import type { Connection } from '@/types/connections'

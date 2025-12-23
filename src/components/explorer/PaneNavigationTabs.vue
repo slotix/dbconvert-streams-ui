@@ -52,7 +52,7 @@
           @keydown.enter.stop.prevent="$emit('close-tab', i)"
           @keydown.space.stop.prevent="$emit('close-tab', i)"
         >
-          <XMarkIcon
+          <X
             class="h-3.5 w-3.5 text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300"
             aria-hidden="true"
           />
@@ -72,21 +72,21 @@
           class="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
           @click="handleContextMenuAction('close')"
         >
-          <XMarkIcon class="h-4 w-4 text-gray-500 dark:text-gray-400" />
+          <X class="h-4 w-4 text-gray-500 dark:text-gray-400" />
           <span>Close</span>
         </button>
         <button
           class="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
           @click="handleContextMenuAction('close-others')"
         >
-          <XMarkIcon class="h-4 w-4 text-gray-500 dark:text-gray-400" />
+          <X class="h-4 w-4 text-gray-500 dark:text-gray-400" />
           <span>Close Others</span>
         </button>
         <button
           class="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
           @click="handleContextMenuAction('close-all')"
         >
-          <XMarkIcon class="h-4 w-4 text-gray-500 dark:text-gray-400" />
+          <X class="h-4 w-4 text-gray-500 dark:text-gray-400" />
           <span>Close All</span>
         </button>
       </div>
@@ -96,14 +96,7 @@
 
 <script setup lang="ts">
 import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
-import {
-  TableCellsIcon,
-  EyeIcon,
-  DocumentIcon,
-  XMarkIcon,
-  CommandLineIcon,
-  ShareIcon
-} from '@heroicons/vue/20/solid'
+import { Eye, File, Share2, Sheet, Terminal, X } from 'lucide-vue-next'
 import { usePaneTabsStore, type PaneId, type PaneTab } from '@/stores/paneTabs'
 
 const props = defineProps<{
@@ -138,11 +131,11 @@ function isActiveTab(index: number): boolean {
 }
 
 function getObjectIcon(tab: PaneTab) {
-  if (tab.tabType === 'file') return DocumentIcon
-  if (tab.tabType === 'sql-console') return CommandLineIcon
-  if (tab.tabType === 'file-console') return CommandLineIcon
-  if (tab.tabType === 'diagram') return ShareIcon
-  return tab.type === 'view' ? EyeIcon : TableCellsIcon
+  if (tab.tabType === 'file') return File
+  if (tab.tabType === 'sql-console') return Terminal
+  if (tab.tabType === 'file-console') return Terminal
+  if (tab.tabType === 'diagram') return Share2
+  return tab.type === 'view' ? Eye : Sheet
 }
 
 function getIconColor(tab: PaneTab): string {

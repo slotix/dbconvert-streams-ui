@@ -1,13 +1,5 @@
 <script setup lang="ts">
-import {
-  DocumentTextIcon,
-  CodeBracketIcon,
-  TableCellsIcon,
-  DocumentIcon,
-  FolderIcon,
-  RectangleStackIcon,
-  ArchiveBoxIcon
-} from '@heroicons/vue/24/outline'
+import { Archive, Code, File, FileText, Folder, Layers, Sheet } from 'lucide-vue-next'
 import { useIconSizes } from '@/composables/useIconSizes'
 import type { IconSizeKey } from '@/constants'
 import type { FileFormat } from '@/utils/fileFormat'
@@ -29,33 +21,33 @@ const props = withDefaults(defineProps<Props>(), {
 
 const { iconClass } = useIconSizes(props.size)
 
-// Map file formats to Heroicons
+// Map file formats to Lucide icons
 const iconComponent = computed(() => {
   // S3 bucket - distinct from regular folders
   if (props.isBucket) {
-    return ArchiveBoxIcon
+    return Archive
   }
 
   // Table folder - a special folder that DuckDB can treat as a table
   if (props.isTableFolder) {
-    return RectangleStackIcon // Stacked rectangles - represents partitioned data
+    return Layers // Stacked rectangles - represents partitioned data
   }
 
   // Regular directory
   if (props.isDirectory) {
-    return FolderIcon
+    return Folder
   }
 
   switch (props.fileFormat) {
     case 'csv':
-      return DocumentTextIcon // CSV files - document with lines
+      return FileText // CSV files - document with lines
     case 'json':
     case 'jsonl':
-      return CodeBracketIcon // JSON files - code brackets
+      return Code // JSON files - code brackets
     case 'parquet':
-      return TableCellsIcon // Parquet files - table/structured data
+      return Sheet // Parquet files - table/structured data
     default:
-      return DocumentIcon // Generic file
+      return File // Generic file
   }
 })
 

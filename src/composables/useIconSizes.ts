@@ -20,7 +20,7 @@ import {
  * const { iconClass } = useIconSizes('MD')
  * </script>
  * <template>
- *   <ChevronRightIcon :class="iconClass" />
+ *   <ChevronRight :class="iconClass" />
  * </template>
  * ```
  *
@@ -30,7 +30,7 @@ import {
  * const { iconWithTextClass } = useIconSizes('BASE', 'DEFAULT')
  * </script>
  * <template>
- *   <PlusIcon :class="iconWithTextClass" />
+ *   <Plus :class="iconWithTextClass" />
  *   <span>Add Item</span>
  * </template>
  * ```
@@ -98,9 +98,9 @@ export function useIconSizes(
  * const sizes = useAllIconSizes()
  * </script>
  * <template>
- *   <SpinnerIcon :class="sizes.xs" /> <!-- Small spinner -->
- *   <TrashIcon :class="sizes.base" />  <!-- Normal icon -->
- *   <MenuIcon :class="sizes.lg" />     <!-- Large icon -->
+ *   <Loader2 :class="sizes.xs" /> <!-- Small spinner -->
+ *   <Trash :class="sizes.base" />  <!-- Normal icon -->
+ *   <Menu :class="sizes.lg" />     <!-- Large icon -->
  * </template>
  * ```
  */
@@ -127,10 +127,10 @@ export function useAllIconSizes() {
  * const { tableAction, primaryButton, sidebarMenu } = useContextualIconSizes()
  * </script>
  * <template>
- *   <button><PlusIcon :class="primaryButton" /> Create</button>
- *   <nav><HomeIcon :class="sidebarMenu" /> Home</nav>
+ *   <button><Plus :class="primaryButton" /> Create</button>
+ *   <nav><Home :class="sidebarMenu" /> Home</nav>
  *   <table>
- *     <td><SortIcon :class="tableAction" /></td>
+ *     <td><ArrowUpDown :class="tableAction" /></td>
  *   </table>
  * </template>
  * ```

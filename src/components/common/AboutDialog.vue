@@ -32,7 +32,7 @@
               class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
               @click="closeDialog"
             >
-              <XMarkIcon class="h-5 w-5" />
+              <X class="h-5 w-5" :stroke-width="iconStroke" />
               <span class="sr-only">Close</span>
             </button>
 
@@ -107,7 +107,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue'
-import { XMarkIcon } from '@heroicons/vue/24/outline'
+import { X } from 'lucide-vue-next'
+import { useLucideIcons } from '@/composables/useLucideIcons'
 
 interface Props {
   isOpen: boolean
@@ -119,6 +120,7 @@ const emit = defineEmits<{
   (e: 'update:isOpen', value: boolean): void
 }>()
 
+const { strokeWidth: iconStroke } = useLucideIcons()
 const version = import.meta.env.PACKAGE_VERSION || 'unknown'
 const isDev = computed(() => import.meta.env.DEV)
 const currentYear = new Date().getFullYear()

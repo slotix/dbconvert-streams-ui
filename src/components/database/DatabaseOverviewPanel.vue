@@ -12,18 +12,18 @@ import type { DatabaseMetadata, SQLTableMeta, SQLViewMeta } from '@/types/metada
 import BaseButton from '@/components/base/BaseButton.vue'
 import FormInput from '@/components/base/FormInput.vue'
 import {
-  CircleStackIcon,
-  SignalIcon,
-  ChartBarIcon,
-  TableCellsIcon,
-  InformationCircleIcon,
-  CommandLineIcon,
-  PlusIcon,
-  ServerIcon,
-  ShareIcon,
-  ClipboardDocumentIcon,
-  ArrowDownTrayIcon
-} from '@heroicons/vue/24/solid'
+  ChartBar,
+  Clipboard,
+  Database,
+  Download,
+  Info,
+  Plus,
+  Server,
+  Share2,
+  Signal,
+  Sheet,
+  Terminal
+} from 'lucide-vue-next'
 
 const props = defineProps<{
   connectionId: string
@@ -499,7 +499,7 @@ async function handleCreateSchema() {
       >
         <div class="flex items-center gap-2 mb-3">
           <div class="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-            <CircleStackIcon class="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            <Database class="h-4 w-4 text-blue-600 dark:text-blue-400" />
           </div>
           <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Essentials</span>
         </div>
@@ -576,7 +576,7 @@ async function handleCreateSchema() {
         <div class="flex items-center justify-between mb-3">
           <div class="flex items-center gap-2">
             <div class="p-1.5 bg-teal-100 dark:bg-teal-900/30 rounded-lg">
-              <SignalIcon class="h-4 w-4 text-teal-600 dark:text-teal-400" />
+              <Signal class="h-4 w-4 text-teal-600 dark:text-teal-400" />
             </div>
             <span class="text-sm font-semibold text-gray-700 dark:text-gray-300"
               >CDC readiness</span
@@ -693,7 +693,7 @@ async function handleCreateSchema() {
       >
         <div class="flex items-center gap-2 mb-3">
           <div class="p-1.5 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
-            <ChartBarIcon class="h-4 w-4 text-orange-600 dark:text-orange-400" />
+            <ChartBar class="h-4 w-4 text-orange-600 dark:text-orange-400" />
           </div>
           <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Activity</span>
         </div>
@@ -757,7 +757,7 @@ async function handleCreateSchema() {
       >
         <div class="flex items-center gap-2 mb-3">
           <div class="p-1.5 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-            <ServerIcon class="h-4 w-4 text-purple-600 dark:text-purple-400" />
+            <Server class="h-4 w-4 text-purple-600 dark:text-purple-400" />
           </div>
           <span class="text-sm font-semibold text-gray-700 dark:text-gray-300"
             >Top tables by size</span
@@ -802,7 +802,7 @@ async function handleCreateSchema() {
       >
         <div class="flex items-center gap-2 mb-3">
           <div class="p-1.5 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
-            <TableCellsIcon class="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+            <Sheet class="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
           </div>
           <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">
             Top tables by rows
@@ -847,7 +847,7 @@ async function handleCreateSchema() {
       >
         <div class="flex items-center gap-2 mb-3">
           <div class="p-1.5 bg-sky-100 dark:bg-sky-900/30 rounded-lg">
-            <InformationCircleIcon class="h-4 w-4 text-sky-600 dark:text-sky-400" />
+            <Info class="h-4 w-4 text-sky-600 dark:text-sky-400" />
           </div>
           <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Notes</span>
         </div>
@@ -907,7 +907,7 @@ async function handleCreateSchema() {
             <div
               class="shrink-0 p-3 bg-indigo-100 dark:bg-indigo-900/50 rounded-xl ring-1 ring-indigo-200 dark:ring-indigo-700/50"
             >
-              <CommandLineIcon class="h-7 w-7 text-indigo-600 dark:text-indigo-400" />
+              <Terminal class="h-7 w-7 text-indigo-600 dark:text-indigo-400" />
             </div>
             <div class="flex-1 min-w-0 pt-1">
               <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200">SQL Console</h4>
@@ -928,7 +928,7 @@ async function handleCreateSchema() {
               })
             "
           >
-            <CommandLineIcon class="w-4 h-4 mr-1.5" />
+            <Terminal class="w-4 h-4 mr-1.5" />
             Open SQL Console
           </BaseButton>
         </div>
@@ -941,7 +941,7 @@ async function handleCreateSchema() {
             <div
               class="shrink-0 p-3 bg-purple-100 dark:bg-purple-900/50 rounded-xl ring-1 ring-purple-200 dark:ring-purple-700/50"
             >
-              <ShareIcon class="h-7 w-7 text-purple-600 dark:text-purple-400" />
+              <Share2 class="h-7 w-7 text-purple-600 dark:text-purple-400" />
             </div>
             <div class="flex-1 min-w-0 pt-1">
               <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200">Schema Diagram</h4>
@@ -959,7 +959,7 @@ async function handleCreateSchema() {
               emit('show-diagram', { connectionId: props.connectionId, database: props.database })
             "
           >
-            <ShareIcon class="w-4 h-4 mr-1.5" />
+            <Share2 class="w-4 h-4 mr-1.5" />
             Show Diagram
           </BaseButton>
         </div>
@@ -972,7 +972,7 @@ async function handleCreateSchema() {
             <div
               class="shrink-0 p-3 bg-teal-100 dark:bg-teal-900/50 rounded-xl ring-1 ring-teal-200 dark:ring-teal-700/50"
             >
-              <ClipboardDocumentIcon class="h-7 w-7 text-teal-600 dark:text-teal-400" />
+              <Clipboard class="h-7 w-7 text-teal-600 dark:text-teal-400" />
             </div>
             <div class="flex-1 min-w-0 pt-1">
               <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200">
@@ -992,7 +992,7 @@ async function handleCreateSchema() {
               :loading="isExportingSchemaSql"
               @click="handleExportSchemaSql"
             >
-              <ClipboardDocumentIcon class="w-4 h-4 mr-1.5" />
+              <Clipboard class="w-4 h-4 mr-1.5" />
               Copy SQL
             </BaseButton>
 
@@ -1003,7 +1003,7 @@ async function handleCreateSchema() {
               :loading="isExportingSchemaSql"
               @click="handleDownloadSchemaSql"
             >
-              <ArrowDownTrayIcon class="w-4 h-4 mr-1.5" />
+              <Download class="w-4 h-4 mr-1.5" />
               Download .sql
             </BaseButton>
           </div>
@@ -1018,7 +1018,7 @@ async function handleCreateSchema() {
             <div
               class="shrink-0 p-3 bg-emerald-100 dark:bg-emerald-900/50 rounded-xl ring-1 ring-emerald-200 dark:ring-emerald-700/50"
             >
-              <PlusIcon class="h-7 w-7 text-emerald-600 dark:text-emerald-400" />
+              <Plus class="h-7 w-7 text-emerald-600 dark:text-emerald-400" />
             </div>
             <div class="flex-1 min-w-0 pt-1">
               <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200">Create Schema</h4>
@@ -1043,7 +1043,7 @@ async function handleCreateSchema() {
               :disabled="!newSchemaName.trim() || isCreatingSchema"
               @click="handleCreateSchema"
             >
-              <PlusIcon class="w-4 h-4 mr-1.5" />
+              <Plus class="w-4 h-4 mr-1.5" />
               Create Schema
             </BaseButton>
           </div>

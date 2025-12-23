@@ -13,7 +13,7 @@
  */
 
 import { ref } from 'vue'
-import { ChevronDownIcon, ChevronRightIcon } from '@heroicons/vue/24/outline'
+import { ChevronDown, ChevronRight } from 'lucide-vue-next'
 
 interface Props {
   title?: string
@@ -49,7 +49,7 @@ function toggleExpand() {
       @click="toggleExpand"
     >
       <component
-        :is="isExpanded ? ChevronDownIcon : ChevronRightIcon"
+        :is="isExpanded ? ChevronDown : ChevronRight"
         class="w-4 h-4 text-gray-500 dark:text-gray-400 flex-shrink-0"
       />
       <span

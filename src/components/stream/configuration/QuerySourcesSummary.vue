@@ -12,7 +12,7 @@
           :key="query.name"
           class="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded border border-purple-200 dark:border-purple-700"
         >
-          <CodeBracketIcon class="w-3.5 h-3.5" />
+          <Code class="w-3.5 h-3.5" />
           {{ query.name }}
         </span>
       </div>
@@ -21,7 +21,7 @@
 </template>
 
 <script setup lang="ts">
-import { CodeBracketIcon } from '@heroicons/vue/24/outline'
+import { Code } from 'lucide-vue-next'
 import type { QuerySource } from '@/types/streamConfig'
 
 defineProps<{

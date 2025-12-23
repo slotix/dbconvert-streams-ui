@@ -2,14 +2,7 @@
 import { computed, ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useLogsStore, type SystemLog } from '@/stores/logs'
 import { TransitionRoot, TransitionChild } from '@headlessui/vue'
-import {
-  XMarkIcon,
-  FunnelIcon,
-  ChevronDownIcon,
-  TrashIcon,
-  ArrowDownIcon,
-  ArrowUpIcon
-} from '@heroicons/vue/24/outline'
+import { ArrowDown, ArrowUp, ChevronDown, Filter, Trash, X } from 'lucide-vue-next'
 import { LOG_LEVELS, STREAM_PROGRESS_CATEGORIES } from '@/constants'
 import SqlConsoleView from './SqlConsoleView.vue'
 import LogRow from './LogRow.vue'
@@ -439,7 +432,7 @@ onBeforeUnmount(() => {
                 class="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                 @click="store.toggleLogsPanel"
               >
-                <XMarkIcon class="h-6 w-6" />
+                <X class="h-6 w-6" />
               </button>
             </div>
 
@@ -455,7 +448,7 @@ onBeforeUnmount(() => {
                   :title="`Filter by message type`"
                   @click="showMessageTypeMenu = !showMessageTypeMenu"
                 >
-                  <FunnelIcon class="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                  <Filter class="w-4 h-4 text-gray-600 dark:text-gray-400" />
                   <span class="text-gray-700 dark:text-gray-200 font-medium">
                     {{
                       selectedMessageTypes.size === messageTypeOptions.length
@@ -465,7 +458,7 @@ onBeforeUnmount(() => {
                           : `${selectedMessageTypes.size} Selected`
                     }}
                   </span>
-                  <ChevronDownIcon class="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
+                  <ChevronDown class="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
                 </button>
 
                 <transition
@@ -557,7 +550,7 @@ onBeforeUnmount(() => {
                 @click="toggleSystemLogsSortOrder"
               >
                 <component
-                  :is="systemLogsSortOrder === 'newest' ? ArrowDownIcon : ArrowUpIcon"
+                  :is="systemLogsSortOrder === 'newest' ? ArrowDown : ArrowUp"
                   class="w-3.5 h-3.5 text-gray-600 dark:text-gray-400"
                 />
                 <span class="text-gray-700 dark:text-gray-200 font-medium">{{
@@ -598,7 +591,7 @@ onBeforeUnmount(() => {
                 class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-white bg-orange-600 dark:bg-orange-500 rounded hover:bg-orange-700 dark:hover:bg-orange-600 transition-colors shadow-sm"
                 @click="store.clearLogs()"
               >
-                <TrashIcon class="w-3.5 h-3.5" />
+                <Trash class="w-3.5 h-3.5" />
                 <span>Clear Logs</span>
               </button>
             </div>

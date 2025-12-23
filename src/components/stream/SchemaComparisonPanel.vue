@@ -9,7 +9,7 @@
       @click="expanded = !expanded"
     >
       <div class="flex items-center gap-3 flex-1">
-        <ChevronDownIcon
+        <ChevronDown
           :class="[
             'w-6 h-6 transition-transform shrink-0',
             expanded
@@ -17,7 +17,7 @@
               : 'text-gray-500 dark:text-gray-400'
           ]"
         />
-        <Squares2X2Icon class="w-5 h-5 text-gray-500 dark:text-gray-400" />
+        <Grid2X2 class="w-5 h-5 text-gray-500 dark:text-gray-400" />
         <span class="text-sm font-medium text-gray-900 dark:text-gray-100">Schema Comparison</span>
 
         <!-- Summary Badges -->
@@ -26,28 +26,28 @@
             v-if="comparison.matching > 0"
             class="inline-flex items-center gap-1 px-2 py-1 text-xs bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300 rounded-md font-medium"
           >
-            <CheckCircleIcon class="w-3.5 h-3.5" />
+            <CheckCircle class="w-3.5 h-3.5" />
             {{ comparison.matching }} match
           </span>
           <span
             v-if="comparison.typeDiff > 0"
             class="inline-flex items-center gap-1 px-2 py-1 text-xs bg-yellow-50 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300 rounded-md font-medium"
           >
-            <ExclamationTriangleIcon class="w-3.5 h-3.5" />
+            <AlertTriangle class="w-3.5 h-3.5" />
             {{ comparison.typeDiff }} type diff
           </span>
           <span
             v-if="comparison.missingInTarget > 0"
             class="inline-flex items-center gap-1 px-2 py-1 text-xs bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300 rounded-md font-medium"
           >
-            <MinusCircleIcon class="w-3.5 h-3.5" />
+            <MinusCircle class="w-3.5 h-3.5" />
             {{ comparison.missingInTarget }} removed
           </span>
           <span
             v-if="comparison.newInTarget > 0"
             class="inline-flex items-center gap-1 px-2 py-1 text-xs bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 rounded-md font-medium"
           >
-            <PlusCircleIcon class="w-3.5 h-3.5" />
+            <PlusCircle class="w-3.5 h-3.5" />
             {{ comparison.newInTarget }} added
           </span>
         </div>
@@ -249,13 +249,13 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import {
-  ChevronDownIcon,
-  CheckCircleIcon,
-  ExclamationTriangleIcon,
-  MinusCircleIcon,
-  PlusCircleIcon,
-  Squares2X2Icon
-} from '@heroicons/vue/24/outline'
+  AlertTriangle,
+  CheckCircle,
+  ChevronDown,
+  Grid2X2,
+  MinusCircle,
+  PlusCircle
+} from 'lucide-vue-next'
 import DdlView from '@/components/database/DdlView.vue'
 import type { SQLColumnMeta } from '@/types/metadata'
 
@@ -369,11 +369,11 @@ function getRowClass(col: MergedColumn) {
 }
 
 function getDiffIcon(type: string) {
-  const iconMap: Record<string, typeof CheckCircleIcon> = {
-    match: CheckCircleIcon,
-    'type-diff': ExclamationTriangleIcon,
-    missing: MinusCircleIcon,
-    new: PlusCircleIcon
+  const iconMap: Record<string, typeof CheckCircle> = {
+    match: CheckCircle,
+    'type-diff': AlertTriangle,
+    missing: MinusCircle,
+    new: PlusCircle
   }
   return iconMap[type] || null
 }

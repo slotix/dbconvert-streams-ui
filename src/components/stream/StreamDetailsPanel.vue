@@ -67,7 +67,7 @@
             variant="primary"
             @click="startStream"
           >
-            <PlayIcon class="h-4 w-4" />
+            <Play class="h-4 w-4" :stroke-width="iconStroke" />
             {{ historyRuns.length > 0 ? 'Run New Stream' : 'Start' }}
           </BaseButton>
           <BaseButton
@@ -98,7 +98,7 @@
               variant="primary"
               @click="startStream"
             >
-              <PlayIcon class="h-4 w-4" />
+              <Play class="h-4 w-4" :stroke-width="iconStroke" />
               Run Stream
             </BaseButton>
 
@@ -109,7 +109,7 @@
               variant="primary"
               @click="startStream"
             >
-              <PlayIcon class="h-4 w-4" />
+              <Play class="h-4 w-4" :stroke-width="iconStroke" />
               Run Again
             </BaseButton>
 
@@ -120,8 +120,8 @@
               variant="secondary"
               @click="isPaused ? resumeStream() : pauseStream()"
             >
-              <PlayIcon v-if="isPaused" class="h-4 w-4" />
-              <PauseIcon v-else class="h-4 w-4" />
+              <Play v-if="isPaused" class="h-4 w-4" :stroke-width="iconStroke" />
+              <Pause v-else class="h-4 w-4" :stroke-width="iconStroke" />
               {{ isPaused ? 'Resume' : 'Pause' }}
             </BaseButton>
 
@@ -132,7 +132,7 @@
               variant="danger"
               @click="stopStream"
             >
-              <StopIcon class="h-4 w-4" />
+              <Square class="h-4 w-4" :stroke-width="iconStroke" />
               Stop
             </BaseButton>
           </div>
@@ -269,7 +269,8 @@ export default {
 <script setup lang="ts">
 import { ref, computed, watch, defineAsyncComponent, toRef } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { PlayIcon, PauseIcon, StopIcon } from '@heroicons/vue/24/outline'
+import { Play, Pause, Square } from 'lucide-vue-next'
+import { useLucideIcons } from '@/composables/useLucideIcons'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
 import { useCommonStore } from '@/stores/common'
@@ -307,6 +308,7 @@ const streamsStore = useStreamsStore()
 const connectionsStore = useConnectionsStore()
 const commonStore = useCommonStore()
 const monitoringStore = useMonitoringStore()
+const { strokeWidth: iconStroke } = useLucideIcons()
 
 const showDeleteConfirm = ref(false)
 const activeTab = ref<StreamDetailsTab>(props.initialTab || 'configuration')

@@ -63,7 +63,7 @@ export default defineConfig({
           'vue-vendor': ['vue', 'vue-router', 'pinia'],
 
           // UI libraries
-          'ui-libs': ['@headlessui/vue', '@heroicons/vue', 'vue-toastification'],
+          'ui-libs': ['@headlessui/vue', 'lucide-vue-next', 'vue-toastification'],
 
           // Utilities
           utils: ['@vueuse/core', 'axios'],

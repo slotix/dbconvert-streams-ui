@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, nextTick, watch } from 'vue'
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/vue'
-import { KeyIcon, LinkIcon } from '@heroicons/vue/24/outline'
+import { Key, Link } from 'lucide-vue-next'
 import { type SQLTableMeta, type SQLColumnMeta } from '@/types/metadata'
 import { useObjectTabStateStore } from '@/stores/objectTabState'
 import { formatDataSize } from '@/utils/formats'
@@ -271,13 +271,13 @@ function getColumnCheckConstraints(column: SQLColumnMeta): string {
                       <td class="whitespace-nowrap px-3 py-2 text-sm">
                         <div class="flex items-center">
                           <div class="mr-2 flex items-center space-x-1">
-                            <KeyIcon
+                            <Key
                               v-if="column.isPrimaryKey"
                               :style="`color: ${BRAND_COLORS.primary}`"
                               class="h-4 w-4"
                               title="Primary Key"
                             />
-                            <LinkIcon
+                            <Link
                               v-if="column.isForeignKey"
                               :style="`color: ${BRAND_COLORS.secondary}`"
                               class="h-4 w-4"
@@ -333,7 +333,7 @@ function getColumnCheckConstraints(column: SQLColumnMeta): string {
                   class="flex items-center justify-between gap-x-6 py-3"
                 >
                   <div class="flex min-w-0 gap-x-4">
-                    <KeyIcon :style="`color: ${BRAND_COLORS.primary}`" class="h-5 w-5" />
+                    <Key :style="`color: ${BRAND_COLORS.primary}`" class="h-5 w-5" />
                     <div class="min-w-0 flex-auto">
                       <p class="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">
                         {{ key }}
@@ -356,7 +356,7 @@ function getColumnCheckConstraints(column: SQLColumnMeta): string {
                   class="flex items-center justify-between gap-x-6 py-3"
                 >
                   <div class="flex min-w-0 gap-x-4">
-                    <LinkIcon :style="`color: ${BRAND_COLORS.secondary}`" class="h-5 w-5" />
+                    <Link :style="`color: ${BRAND_COLORS.secondary}`" class="h-5 w-5" />
                     <div class="min-w-0 flex-auto">
                       <p class="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">
                         {{ key.name }}

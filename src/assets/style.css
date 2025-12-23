@@ -92,10 +92,15 @@
     zoom: var(--app-zoom, 1);
   }
 
-  /* Improve SVG icon rendering at non-100% zoom levels.
-     Heroicons use stroke-based outlines that can look blurry when zoomed. */
+  /* Improve SVG icon rendering at non-100% zoom levels in WebKitGTK. */
   html.desktop-zoom svg {
-    shape-rendering: crispEdges;
+    shape-rendering: geometricPrecision;
+    stroke-rendering: geometricPrecision;
+  }
+
+  /* Keep Lucide stroke width consistent in desktop mode. */
+  html.desktop-mode svg.lucide {
+    stroke-width: 1;
   }
 
   h1,

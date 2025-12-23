@@ -126,12 +126,12 @@
                   class="absolute right-0 top-0 h-full px-3 flex items-center"
                   @click="togglePasswordVisibility"
                 >
-                  <EyeIcon
+                  <Eye
                     v-if="passwordFieldType === 'password'"
                     class="h-5 w-5 text-gray-400 dark:text-gray-500"
                     aria-hidden="true"
                   />
-                  <EyeSlashIcon
+                  <EyeOff
                     v-else
                     class="h-5 w-5 text-gray-400 dark:text-gray-500"
                     aria-hidden="true"
@@ -172,7 +172,7 @@ import { normalizeConnectionType } from '@/utils/connectionUtils'
 import ConnectionName from './ConnectionName.vue'
 import Spinner from '@/components/common/Spinner.vue'
 import { useConnectionsStore } from '@/stores/connections'
-import { EyeIcon, EyeSlashIcon } from '@heroicons/vue/24/outline'
+import { Eye, EyeOff } from 'lucide-vue-next'
 
 interface Props {
   connectionType: string

@@ -12,14 +12,14 @@
             class="mr-2 p-2 rounded-md text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 lg:hidden"
             @click="sidebarMenuToggle.openSidebar"
           >
-            <Bars3Icon class="h-5 w-5" />
+            <Menu class="h-5 w-5" :stroke-width="iconStroke" />
             <span class="sr-only">Open sidebar</span>
           </button>
           <button
             class="mr-4 p-2 rounded-md text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
             @click="goBack"
           >
-            <ArrowLeftIcon class="h-5 w-5" />
+            <ArrowLeft class="h-5 w-5" :stroke-width="iconStroke" />
           </button>
           <div class="flex items-start gap-3">
             <img
@@ -50,10 +50,13 @@
 <script setup lang="ts">
 import { computed, inject } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowLeftIcon, Bars3Icon } from '@heroicons/vue/24/solid'
+import { useLucideIcons } from '@/composables/useLucideIcons'
+import { ArrowLeft, Menu } from 'lucide-vue-next'
 import { useDesktopMode } from '@/composables/useDesktopMode'
 import EditConnectionWizard from '@/components/connection/wizard/EditConnectionWizard.vue'
 import { useConnectionsStore } from '@/stores/connections'
+
+const { strokeWidth: iconStroke } = useLucideIcons()
 
 interface Props {
   id: string

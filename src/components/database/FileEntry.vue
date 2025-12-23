@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, inject, watch } from 'vue'
 import type { ComputedRef } from 'vue'
-import { ChevronRightIcon } from '@heroicons/vue/24/outline'
+import { ChevronRight } from 'lucide-vue-next'
 import type { FileSystemEntry } from '@/api/fileSystem'
 import { getFileFormat, isSupportedFile } from '@/utils/fileFormat'
 import FileIcon from '@/components/common/FileIcon.vue'
@@ -164,7 +164,7 @@ const handleChildExpandFolder = (payload: { entry: FileSystemEntry }) => {
         :class="{ 'rotate-90': isExpanded }"
         @click.stop="handleChevronClick"
       >
-        <ChevronRightIcon :class="caretClass" />
+        <ChevronRight :class="caretClass" />
       </button>
 
       <!-- Spacer for files to align with folders -->

@@ -7,19 +7,16 @@
       :title="buttonTooltip"
       @click="isOpen = !isOpen"
     >
-      <RectangleStackIcon
-        v-if="selectedTypes.length === 0"
-        class="h-5 w-5 text-gray-500 dark:text-gray-300"
-      />
+      <Layers v-if="selectedTypes.length === 0" class="h-5 w-5 text-gray-500 dark:text-gray-300" />
       <img
         v-else-if="selectedTypes.length === 1"
         :src="getSingleTypeLogo()"
         :alt="selectedTypes[0]"
         class="h-5 w-5 dark:brightness-0 dark:invert dark:opacity-70"
       />
-      <RectangleStackIcon v-else class="h-5 w-5 text-gray-600 dark:text-gray-400" />
+      <Layers v-else class="h-5 w-5 text-gray-600 dark:text-gray-400" />
       <span class="truncate">{{ buttonLabel }}</span>
-      <ChevronDownIcon class="h-4 w-4 text-gray-400 dark:text-gray-300" />
+      <ChevronDown class="h-4 w-4 text-gray-400 dark:text-gray-300" />
     </button>
 
     <!-- Dropdown -->
@@ -66,7 +63,7 @@
                     : 'bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-600'
                 ]"
               >
-                <CheckIcon v-if="isTypeSelected(option.type)" class="h-3 w-3 text-white" />
+                <Check v-if="isTypeSelected(option.type)" class="h-3 w-3 text-white" />
               </div>
 
               <!-- Icon -->
@@ -89,7 +86,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useConnectionsStore } from '@/stores/connections'
-import { ChevronDownIcon, CheckIcon, RectangleStackIcon } from '@heroicons/vue/24/solid'
+import { Check, ChevronDown, Layers } from 'lucide-vue-next'
 import type { DbType } from '@/types/connections'
 
 interface Props {

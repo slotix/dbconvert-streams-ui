@@ -16,7 +16,7 @@
           title="Clear recent connections"
           @click="clearRecentConnections"
         >
-          <TrashIcon class="h-3 w-3" />
+          <Trash class="h-3 w-3" />
           Clear Recent
         </button>
       </div>
@@ -37,7 +37,7 @@
                   v-if="isFileConnection(connection.id)"
                   class="bg-slate-100 dark:bg-slate-800 rounded-lg p-2 transition-all duration-200 hover:shadow-md hover:scale-105"
                 >
-                  <FolderIcon class="h-6 w-6 text-slate-500 dark:text-slate-400" />
+                  <Folder class="h-6 w-6 text-slate-500 dark:text-slate-400" />
                 </div>
                 <!-- Database connections: show database logo -->
                 <DatabaseIcon
@@ -93,7 +93,7 @@
               </div>
             </div>
             <div class="shrink-0 ml-2">
-              <ArrowRightIcon
+              <ArrowRight
                 class="h-5 w-5 text-gray-400 dark:text-gray-500 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-all duration-200 group-hover:translate-x-1"
               />
             </div>
@@ -116,7 +116,7 @@
                 <div
                   class="bg-blue-50 dark:bg-blue-900/50 rounded-lg p-3 group-hover:bg-linear-to-br group-hover:from-blue-100 group-hover:to-teal-100 dark:group-hover:from-blue-800/50 dark:group-hover:to-teal-800/50 transition-all duration-200"
                 >
-                  <CircleStackIcon class="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                  <Database class="h-6 w-6 text-blue-600 dark:text-blue-400" />
                 </div>
               </div>
               <div class="ml-4">
@@ -126,7 +126,7 @@
                 <p class="text-sm text-gray-500 dark:text-gray-400">Connect a new database</p>
               </div>
             </div>
-            <ArrowRightIcon
+            <ArrowRight
               class="h-5 w-5 text-gray-400 dark:text-gray-500 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-all duration-200 group-hover:translate-x-1"
             />
           </div>
@@ -142,7 +142,7 @@
                 <div
                   class="bg-teal-50 dark:bg-teal-900/50 rounded-lg p-3 group-hover:bg-linear-to-br group-hover:from-teal-100 group-hover:to-green-100 dark:group-hover:from-teal-800/50 dark:group-hover:to-green-800/50 transition-all duration-200"
                 >
-                  <ArrowPathIcon class="h-6 w-6 text-teal-600 dark:text-teal-400" />
+                  <RefreshCw class="h-6 w-6 text-teal-600 dark:text-teal-400" />
                 </div>
               </div>
               <div class="ml-4">
@@ -152,7 +152,7 @@
                 <p class="text-sm text-gray-500 dark:text-gray-400">Set up a new data stream</p>
               </div>
             </div>
-            <ArrowRightIcon
+            <ArrowRight
               class="h-5 w-5 text-gray-400 dark:text-gray-500 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-all duration-200 group-hover:translate-x-1"
             />
           </div>
@@ -169,15 +169,7 @@ import { useCommonStore } from '@/stores/common'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
 import { usePersistedState } from '@/composables/usePersistedState'
-import {
-  ArrowPathIcon,
-  CircleStackIcon,
-  ClockIcon,
-  PlusIcon,
-  ArrowRightIcon,
-  TrashIcon,
-  FolderIcon
-} from '@heroicons/vue/24/outline'
+import { ArrowRight, Database, Folder, RefreshCw, Trash } from 'lucide-vue-next'
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
 import {
   getConnectionHost as getHostFromSpec,

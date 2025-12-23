@@ -23,7 +23,7 @@
           title="Query Help"
           @click="showHelp = !showHelp"
         >
-          <QuestionMarkCircleIcon class="h-5 w-5" />
+          <CircleHelp class="h-5 w-5" />
         </button>
       </div>
     </div>
@@ -34,7 +34,7 @@
       class="px-4 py-3 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-800 text-xs max-h-64 overflow-y-auto"
     >
       <div class="flex items-start space-x-2">
-        <InformationCircleIcon class="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
+        <Info class="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
         <div class="text-blue-700 dark:text-blue-300 space-y-2">
           <p class="font-medium">File Console - Query Files with SQL</p>
 
@@ -161,12 +161,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, type Component } from 'vue'
-import {
-  CommandLineIcon,
-  CircleStackIcon,
-  QuestionMarkCircleIcon,
-  InformationCircleIcon
-} from '@heroicons/vue/24/outline'
+import { CircleHelp, Database, Info, Terminal } from 'lucide-vue-next'
 import type { SchemaContext } from '@/composables/useMonacoSqlProviders'
 import { useConnectionsStore } from '@/stores/connections'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
@@ -461,7 +456,7 @@ const currentDialect = computed(() => {
 })
 
 const headerIcon = computed<Component>(() => {
-  return props.mode === 'file' ? CommandLineIcon : CircleStackIcon
+  return props.mode === 'file' ? Terminal : Database
 })
 
 const consoleTitle = computed(() => {

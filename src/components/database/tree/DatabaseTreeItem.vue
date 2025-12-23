@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, watch, inject } from 'vue'
 import type { ComputedRef } from 'vue'
-import { ChevronRightIcon, ChevronDownIcon } from '@heroicons/vue/24/outline'
+import { ChevronDown, ChevronRight } from 'lucide-vue-next'
 import SchemaTreeItem from './SchemaTreeItem.vue'
 import ObjectList from './ObjectList.vue'
 import HighlightedText from '@/components/common/HighlightedText.vue'
@@ -189,7 +189,7 @@ function handleFlatObjectContextMenu(payload: {
       @click="handleDatabaseClick"
       @contextmenu.stop.prevent="handleDatabaseContextMenu"
     >
-      <component :is="isExpanded ? ChevronDownIcon : ChevronRightIcon" :class="caretClass" />
+      <component :is="isExpanded ? ChevronDown : ChevronRight" :class="caretClass" />
       <HighlightedText
         class="font-medium flex-1 min-w-0 truncate"
         :text="database.name"

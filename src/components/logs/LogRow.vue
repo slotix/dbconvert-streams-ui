@@ -15,12 +15,7 @@
  */
 
 import { ref, computed } from 'vue'
-import {
-  ChevronDownIcon,
-  ChevronRightIcon,
-  ClipboardIcon,
-  CheckIcon
-} from '@heroicons/vue/24/outline'
+import { Check, ChevronDown, ChevronRight, Clipboard } from 'lucide-vue-next'
 
 interface Props {
   timestamp: string
@@ -84,7 +79,7 @@ function toggleExpand() {
         @click.stop="toggleExpand"
       >
         <component
-          :is="isExpanded ? ChevronDownIcon : ChevronRightIcon"
+          :is="isExpanded ? ChevronDown : ChevronRight"
           class="w-4 h-4 text-gray-500 dark:text-gray-400"
         />
       </button>
@@ -116,8 +111,8 @@ function toggleExpand() {
         title="Copy"
         @click.stop="copyToClipboard"
       >
-        <CheckIcon v-if="copied" class="w-4 h-4 text-green-600 dark:text-green-400" />
-        <ClipboardIcon v-else class="w-4 h-4" />
+        <Check v-if="copied" class="w-4 h-4 text-green-600 dark:text-green-400" />
+        <Clipboard v-else class="w-4 h-4" />
       </button>
     </div>
 

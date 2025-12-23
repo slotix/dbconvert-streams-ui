@@ -32,7 +32,7 @@ import {
   ListboxOption,
   ListboxLabel
 } from '@headlessui/vue'
-import { ChevronDownIcon, CheckIcon } from '@heroicons/vue/24/outline'
+import { Check, ChevronDown } from 'lucide-vue-next'
 
 export interface SelectOption {
   value: string | number
@@ -113,7 +113,7 @@ const handleChange = (option: SelectOption | null) => {
           {{ placeholder }}
         </span>
         <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
-          <ChevronDownIcon class="h-5 w-5 text-gray-400 dark:text-gray-500" aria-hidden="true" />
+          <ChevronDown class="h-5 w-5 text-gray-400 dark:text-gray-500" aria-hidden="true" />
         </span>
       </ListboxButton>
 
@@ -154,7 +154,7 @@ const handleChange = (option: SelectOption | null) => {
                   'absolute inset-y-0 right-0 flex items-center pr-3'
                 ]"
               >
-                <CheckIcon class="h-5 w-5" aria-hidden="true" />
+                <Check class="h-5 w-5" aria-hidden="true" />
               </span>
             </li>
           </ListboxOption>

@@ -115,7 +115,7 @@ Generic tab bar component that works for any pane.
         <!-- Object type icon only (no data/structure indicator) -->
         <component :is="getObjectIcon(tab)" class="h-4 w-4 text-slate-500" />
         <span class="truncate font-medium text-gray-900">{{ tab.name }}</span>
-        <XMarkIcon
+        <X
           class="h-4 w-4 text-gray-500 hover:text-gray-700 cursor-pointer"
           @click.stop="$emit('close-tab', i)"
         />
@@ -126,7 +126,7 @@ Generic tab bar component that works for any pane.
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { TableCellsIcon, EyeIcon, DocumentIcon, XMarkIcon } from '@heroicons/vue/20/solid'
+import { Eye, File, Sheet, X } from 'lucide-vue-next'
 import { usePaneTabsStore } from '@/stores/paneTabs'
 import type { PaneId } from '@/stores/paneTabs'
 
@@ -151,8 +151,8 @@ function isActive(index: number) {
 }
 
 function getObjectIcon(tab: PaneTab) {
-  if (tab.tabType === 'file') return DocumentIcon
-  return tab.type === 'view' ? EyeIcon : TableCellsIcon
+  if (tab.tabType === 'file') return File
+  return tab.type === 'view' ? Eye : Sheet
 }
 
 function showContextMenu(event: MouseEvent, index: number) {

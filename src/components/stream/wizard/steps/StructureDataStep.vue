@@ -65,7 +65,7 @@
             @click="activeDataTab = 'tables'"
           >
             <span class="flex items-center gap-2">
-              <TableCellsIcon class="w-4 h-4" />
+              <Sheet class="w-4 h-4" />
               Tables
               <span
                 v-if="selectedTablesCount > 0"
@@ -89,7 +89,7 @@
             @click="activeDataTab = 'queries'"
           >
             <span class="flex items-center gap-2">
-              <CodeBracketIcon class="w-4 h-4" />
+              <Code class="w-4 h-4" />
               Queries
               <span
                 v-if="customQueriesCount > 0"
@@ -308,7 +308,7 @@ import FilePreviewList from '@/components/stream/wizard/FilePreviewList.vue'
 import ModeButtons from '@/components/settings/ModeButtons.vue'
 import Operations from '@/components/settings/Operations.vue'
 import CustomQueryEditor from '@/components/stream/wizard/CustomQueryEditor.vue'
-import { TableCellsIcon, CodeBracketIcon } from '@heroicons/vue/24/outline'
+import { Code, Sheet } from 'lucide-vue-next'
 import type { ConnectionMapping } from '@/api/federated'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'

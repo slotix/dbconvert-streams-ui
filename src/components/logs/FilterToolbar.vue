@@ -13,7 +13,7 @@
  */
 
 import { ref, onMounted, onBeforeUnmount } from 'vue'
-import { TrashIcon, ArrowDownTrayIcon, QuestionMarkCircleIcon } from '@heroicons/vue/24/outline'
+import { CircleHelp, Download, Trash } from 'lucide-vue-next'
 
 const props = defineProps<{
   onClear?: () => void
@@ -98,7 +98,7 @@ onBeforeUnmount(() => {
           class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-white bg-gray-600 rounded hover:bg-gray-500 transition-colors shadow-sm"
           @click.stop="toggleExportMenu"
         >
-          <ArrowDownTrayIcon class="w-3.5 h-3.5" />
+          <Download class="w-3.5 h-3.5" />
           <span>Export</span>
         </button>
 
@@ -134,7 +134,7 @@ onBeforeUnmount(() => {
         class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-white bg-orange-600 rounded hover:bg-orange-700 transition-colors shadow-sm"
         @click="onClear"
       >
-        <TrashIcon class="w-3.5 h-3.5" />
+        <Trash class="w-3.5 h-3.5" />
         <span>Clear</span>
       </button>
 
@@ -145,7 +145,7 @@ onBeforeUnmount(() => {
           title="Keyboard shortcuts"
           @click="showShortcuts = !showShortcuts"
         >
-          <QuestionMarkCircleIcon class="w-5 h-5" />
+          <CircleHelp class="w-5 h-5" />
         </button>
 
         <!-- Help Tooltip -->

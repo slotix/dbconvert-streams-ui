@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, computed } from 'vue'
-import { FunnelIcon } from '@heroicons/vue/24/outline'
+import { Filter } from 'lucide-vue-next'
 import { ICON_SIZES } from '@/constants'
 
 const props = defineProps<{
@@ -51,7 +51,7 @@ defineExpose({
 <template>
   <div class="relative w-full">
     <div class="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
-      <FunnelIcon :class="[iconClass, 'text-gray-400 dark:text-gray-500']" />
+      <Filter :class="[iconClass, 'text-gray-400 dark:text-gray-500']" />
     </div>
     <input
       ref="inputRef"

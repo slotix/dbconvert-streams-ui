@@ -13,7 +13,7 @@
             class="group flex items-center justify-center p-2 -ml-1 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700 lg:hidden"
             @click="sidebarMenuToggle.openSidebar"
           >
-            <Bars3Icon class="h-5 w-5" aria-hidden="true" />
+            <Menu class="h-5 w-5" :stroke-width="iconStroke" aria-hidden="true" />
             <span class="sr-only">Open sidebar</span>
           </button>
           <!-- Desktop sidebar toggle -->
@@ -23,7 +23,7 @@
             class="group hidden lg:flex items-center justify-center p-2 -ml-1 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700"
             @click="sidebarWidthToggle.toggleSidebarWidth"
           >
-            <Bars3Icon class="h-5 w-5" aria-hidden="true" />
+            <Menu class="h-5 w-5" :stroke-width="iconStroke" aria-hidden="true" />
             <span class="sr-only">Toggle sidebar width</span>
           </button>
           <img
@@ -62,9 +62,12 @@
 <script setup lang="ts">
 import { inject } from 'vue'
 import { useRouter } from 'vue-router'
-import { Bars3Icon } from '@heroicons/vue/24/solid'
+import { useLucideIcons } from '@/composables/useLucideIcons'
+import { Menu } from 'lucide-vue-next'
 import { useDesktopMode } from '@/composables/useDesktopMode'
 import AddConnectionWizard from '@/components/connection/wizard/AddConnectionWizard.vue'
+
+const { strokeWidth: iconStroke } = useLucideIcons()
 
 const router = useRouter()
 const { isDesktop } = useDesktopMode()

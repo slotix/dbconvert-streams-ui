@@ -18,7 +18,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { DocumentTextIcon, CursorArrowRaysIcon } from '@heroicons/vue/24/outline'
+import { FileText, MousePointer2 } from 'lucide-vue-next'
 
 interface Props {
   variant?: 'no-object' | 'no-connection'
@@ -29,7 +29,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const icon = computed(() => {
-  return props.variant === 'no-connection' ? CursorArrowRaysIcon : DocumentTextIcon
+  return props.variant === 'no-connection' ? MousePointer2 : FileText
 })
 
 const title = computed(() => {

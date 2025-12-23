@@ -7,14 +7,14 @@
           v-tooltip="description"
           class="ml-2 text-gray-400 dark:text-gray-500 hover:text-gray-500 dark:hover:text-gray-400 cursor-help inline-block"
         >
-          <QuestionMarkCircleIcon class="h-4 w-4" />
+          <CircleHelp class="h-4 w-4" />
         </span>
       </label>
     </div>
 
     <div class="flex items-center justify-between">
       <div class="flex items-center text-sm text-gray-600 dark:text-gray-400">
-        <CheckCircleIcon
+        <CheckCircle
           v-if="value && !error"
           class="h-5 w-5 text-green-500 dark:text-green-400 mr-2"
         />
@@ -37,7 +37,7 @@
           class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
           @click="triggerFileInput"
         >
-          <ArrowPathIcon v-if="isLoading" class="animate-spin h-4 w-4 mr-2" />
+          <RefreshCw v-if="isLoading" class="animate-spin h-4 w-4 mr-2" />
           {{ value ? 'Replace' : 'Upload' }}
         </button>
 
@@ -47,7 +47,7 @@
           class="text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
           @click="$emit('clear')"
         >
-          <TrashIcon class="h-5 w-5" />
+          <Trash class="h-5 w-5" />
         </button>
       </div>
     </div>
@@ -61,12 +61,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import {
-  TrashIcon,
-  QuestionMarkCircleIcon,
-  ArrowPathIcon,
-  CheckCircleIcon
-} from '@heroicons/vue/24/outline'
+import { CheckCircle, CircleHelp, RefreshCw, Trash } from 'lucide-vue-next'
 
 import { vTooltip } from '@/directives/tooltip'
 const props = withDefaults(

@@ -44,8 +44,8 @@
                 d="M5 13l4 4L19 7"
               />
             </svg>
-            <StopIcon v-else-if="isStopped" class="h-6 w-6" :class="stopIconColor" />
-            <PauseIcon v-else-if="isPaused" class="h-6 w-6 text-yellow-600 dark:text-yellow-300" />
+            <Square v-else-if="isStopped" class="h-6 w-6" :class="stopIconColor" />
+            <Pause v-else-if="isPaused" class="h-6 w-6 text-yellow-600 dark:text-yellow-300" />
             <svg
               v-else
               class="h-6 w-6 text-gray-400 dark:text-gray-500"
@@ -144,7 +144,7 @@
 </template>
 
 <script setup lang="ts">
-import { PauseIcon, StopIcon } from '@heroicons/vue/24/outline'
+import { Pause, Square } from 'lucide-vue-next'
 import { useMonitoringStore } from '@/stores/monitoring'
 import type { StreamConfig } from '@/types/streamConfig'
 import { STOP_STATUS_COLORS } from '@/constants'

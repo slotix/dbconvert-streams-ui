@@ -34,14 +34,14 @@
               >
                 <div class="flex items-center justify-between">
                   <div class="flex items-center">
-                    <FolderOpenIcon class="h-6 w-6 text-teal-600 dark:text-teal-400 mr-2" />
+                    <FolderOpen class="h-6 w-6 text-teal-600 dark:text-teal-400 mr-2" />
                     <span>Select Folder</span>
                   </div>
                   <button
                     class="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none transition-colors"
                     @click="closeModal"
                   >
-                    <XMarkIcon class="h-6 w-6" />
+                    <X class="h-6 w-6" />
                   </button>
                 </div>
               </DialogTitle>
@@ -90,7 +90,7 @@
                       <span v-else class="text-gray-700 dark:text-gray-300 font-medium">{{
                         segment.name
                       }}</span>
-                      <ChevronRightIcon
+                      <ChevronRight
                         v-if="index < pathSegments.length - 1"
                         class="h-4 w-4 text-gray-400 dark:text-gray-500 mx-2"
                       />
@@ -124,11 +124,11 @@
                   >
                     <!-- Icon -->
                     <div class="shrink-0 mr-3">
-                      <FolderIcon
+                      <Folder
                         v-if="entry.type === 'dir'"
                         class="h-5 w-5 text-teal-500 dark:text-teal-400"
                       />
-                      <DocumentIcon v-else class="h-5 w-5 text-gray-400 dark:text-gray-500" />
+                      <File v-else class="h-5 w-5 text-gray-400 dark:text-gray-500" />
                     </div>
 
                     <!-- Name and Size -->
@@ -146,7 +146,7 @@
 
                     <!-- Selection indicator -->
                     <div v-if="selectedPath === entry.path" class="shrink-0 ml-2">
-                      <CheckCircleIcon class="h-5 w-5 text-blue-500 dark:text-blue-400" />
+                      <CheckCircle class="h-5 w-5 text-blue-500 dark:text-blue-400" />
                     </div>
                   </div>
                 </div>
@@ -170,8 +170,8 @@
                     class="absolute right-2 top-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none"
                     @click="toggleManualPathEdit"
                   >
-                    <CheckIcon v-if="manualPathEdit" class="h-4 w-4" />
-                    <PencilIcon v-else class="h-4 w-4" />
+                    <Check v-if="manualPathEdit" class="h-4 w-4" />
+                    <Pencil v-else class="h-4 w-4" />
                   </button>
                 </div>
               </div>
@@ -183,7 +183,7 @@
                   class="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-700 shadow-sm dark:shadow-gray-900/30 text-sm leading-4 font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-850 hover:bg-gray-50 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-850 focus:ring-blue-500 dark:focus:ring-blue-400 transition-colors"
                   @click="goUp"
                 >
-                  <ArrowLeftIcon class="h-4 w-4 mr-1" />
+                  <ArrowLeft class="h-4 w-4 mr-1" />
                   Go Up
                 </button>
                 <div v-else></div>
@@ -212,16 +212,16 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue'
 import {
-  FolderOpenIcon,
-  XMarkIcon,
-  FolderIcon,
-  DocumentIcon,
-  CheckCircleIcon,
-  ChevronRightIcon,
-  CheckIcon,
-  PencilIcon,
-  ArrowLeftIcon
-} from '@heroicons/vue/24/outline'
+  ArrowLeft,
+  Check,
+  CheckCircle,
+  ChevronRight,
+  File,
+  Folder,
+  FolderOpen,
+  Pencil,
+  X
+} from 'lucide-vue-next'
 import { listDirectory, checkWritable, getRoots, type FileSystemEntry } from '@/api/fileSystem'
 import BaseButton from '@/components/base/BaseButton.vue'
 import Spinner from './Spinner.vue'

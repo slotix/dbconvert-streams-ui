@@ -3,8 +3,8 @@ import { isWailsContext } from '@/composables/useWailsEvents'
 import { getStorageValue, setStorageValue, STORAGE_KEYS } from '@/constants/storageKeys'
 
 const DEFAULT_ZOOM = 1
-const ZOOM_STEP = 0.1
-const MIN_ZOOM = 0.7
+const ZOOM_STEP = 0.25
+const MIN_ZOOM = 0.75
 const MAX_ZOOM = 2
 
 const clampZoom = (value: number) => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, value))
@@ -16,7 +16,10 @@ const normalizeZoom = (value: number) => {
   return clampZoom(value)
 }
 
-const roundZoom = (value: number) => Math.round(value * 100) / 100
+const roundZoom = (value: number) => {
+  const snapped = Math.round(value / ZOOM_STEP) * ZOOM_STEP
+  return Math.round(snapped * 1000) / 1000
+}
 
 const zoomLevel = ref(DEFAULT_ZOOM)
 const isDesktopZoom = ref(false)

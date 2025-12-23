@@ -5,7 +5,7 @@
       class="flex items-center justify-between px-4 py-2.5 bg-white dark:bg-gray-850 border-b border-gray-200 dark:border-gray-700"
     >
       <div class="flex items-center gap-2">
-        <CodeBracketIcon
+        <Code
           class="w-5 h-5"
           :class="
             isMultiSource
@@ -56,7 +56,7 @@
       v-if="queries.length === 0"
       class="flex flex-col items-center justify-center flex-1 py-12 px-4"
     >
-      <DocumentTextIcon class="w-16 h-16 text-gray-400 dark:text-gray-500 mb-4" />
+      <FileText class="w-16 h-16 text-gray-400 dark:text-gray-500 mb-4" />
       <h4 class="text-base font-medium text-gray-900 dark:text-gray-100 mb-2">
         {{ isMultiSource ? 'No queries defined' : 'No custom queries' }}
       </h4>
@@ -77,7 +77,7 @@
         "
         @click="addQuery"
       >
-        <PlusIcon class="w-4 h-4" />
+        <Plus class="w-4 h-4" />
         {{ isMultiSource ? 'Add query' : 'Add your first query' }}
       </button>
     </div>
@@ -121,8 +121,8 @@
               :disabled="isRunning === activeQueryIndex || !activeQuery.query?.trim()"
               @click="runPreview(activeQuery, activeQueryIndex)"
             >
-              <PlayIcon v-if="isRunning !== activeQueryIndex" class="w-4 h-4" />
-              <ArrowPathIcon v-else class="w-4 h-4 animate-spin" />
+              <Play v-if="isRunning !== activeQueryIndex" class="w-4 h-4" />
+              <RefreshCw v-else class="w-4 h-4 animate-spin" />
               <span>{{ isRunning === activeQueryIndex ? 'Running...' : 'Run' }}</span>
             </button>
           </div>
@@ -198,7 +198,7 @@
               class="flex items-center justify-between px-3 py-2 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700"
             >
               <div class="flex items-center gap-2">
-                <TableCellsIcon class="w-4 h-4 text-teal-500" />
+                <Sheet class="w-4 h-4 text-teal-500" />
                 <span class="text-xs font-medium text-gray-600 dark:text-gray-300">
                   Results
                   <span v-if="previewData[activeQueryIndex]" class="text-gray-400">
@@ -216,7 +216,7 @@
                 class="p-4 text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20"
               >
                 <div class="flex items-start gap-2">
-                  <ExclamationTriangleIcon class="w-4 h-4 shrink-0 mt-0.5" />
+                  <AlertTriangle class="w-4 h-4 shrink-0 mt-0.5" />
                   <div>
                     <p class="font-medium">Query error</p>
                     <p class="mt-1 text-red-500 dark:text-red-300">
@@ -275,7 +275,7 @@
 
               <!-- No Results Yet -->
               <div v-else class="flex flex-col items-center justify-center h-full p-8 text-center">
-                <PlayIcon class="w-12 h-12 text-gray-300 dark:text-gray-600 mb-3" />
+                <Play class="w-12 h-12 text-gray-300 dark:text-gray-600 mb-3" />
                 <p class="text-sm text-gray-500 dark:text-gray-400">
                   Run the query to preview results
                 </p>
@@ -288,7 +288,7 @@
               class="border-t border-gray-200 dark:border-gray-700 p-3 bg-gray-50 dark:bg-gray-900/50"
             >
               <div class="flex items-center gap-2 mb-2">
-                <CheckCircleIcon class="w-4 h-4 text-green-500" />
+                <CheckCircle class="w-4 h-4 text-green-500" />
                 <span class="text-xs font-medium text-gray-700 dark:text-gray-300"
                   >Detected Schema ({{ activeQuery.columns.length }} columns)</span
                 >
@@ -314,15 +314,15 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import {
-  PlusIcon,
-  PlayIcon,
-  ArrowPathIcon,
-  CodeBracketIcon,
-  DocumentTextIcon,
-  CheckCircleIcon,
-  ExclamationTriangleIcon,
-  TableCellsIcon
-} from '@heroicons/vue/24/outline'
+  AlertTriangle,
+  CheckCircle,
+  Code,
+  FileText,
+  Play,
+  Plus,
+  RefreshCw,
+  Sheet
+} from 'lucide-vue-next'
 import SqlEditor from '@/components/monaco/SqlEditor.vue'
 import { SqlQueryTabs } from '@/components/database/sql-console'
 import { useStreamsStore } from '@/stores/streamConfig'

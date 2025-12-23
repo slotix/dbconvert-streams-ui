@@ -59,7 +59,7 @@
 
       <div class="pt-4 border-t border-gray-100 dark:border-gray-800">
         <div class="flex items-center gap-2">
-          <CalendarIcon class="h-4 w-4 text-gray-500 dark:text-gray-400" />
+          <Calendar class="h-4 w-4 text-gray-500 dark:text-gray-400" />
           <span class="text-sm text-gray-500 dark:text-gray-400">Created: {{ streamCreated }}</span>
         </div>
       </div>
@@ -80,7 +80,7 @@ export default {
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { CalendarIcon } from '@heroicons/vue/24/outline'
+import { Calendar } from 'lucide-vue-next'
 import { normalizeConnectionType } from '@/utils/connectionUtils'
 import { formatDateTime } from '@/utils/formats'
 import type { StreamConfig } from '@/types/streamConfig'

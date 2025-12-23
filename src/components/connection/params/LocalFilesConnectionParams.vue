@@ -53,7 +53,7 @@
             alt="Connection type logo"
             class="h-6 w-6 mr-2.5 object-contain dark:brightness-0 dark:invert dark:opacity-70"
           />
-          <FolderOpenIcon v-else class="h-6 w-6 mr-2.5 text-teal-600 dark:text-teal-400" />
+          <FolderOpen v-else class="h-6 w-6 mr-2.5 text-teal-600 dark:text-teal-400" />
           {{ connectionType }} Connection Details
         </h3>
 
@@ -77,7 +77,7 @@
         class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-5 shadow-sm dark:shadow-gray-900/20"
       >
         <div class="flex items-start">
-          <DocumentTextIcon class="h-5 w-5 text-blue-600 dark:text-blue-400 mr-3 mt-0.5 shrink-0" />
+          <FileText class="h-5 w-5 text-blue-600 dark:text-blue-400 mr-3 mt-0.5 shrink-0" />
           <div>
             <h4 class="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-2">
               Supported File Formats
@@ -98,7 +98,7 @@
 
 <script setup lang="ts">
 import { computed, watch } from 'vue'
-import { FolderOpenIcon, DocumentTextIcon } from '@heroicons/vue/24/outline'
+import { FileText, FolderOpen } from 'lucide-vue-next'
 import Spinner from '@/components/common/Spinner.vue'
 import FolderSelector from '@/components/common/FolderSelector.vue'
 import { useConnectionsStore } from '@/stores/connections'

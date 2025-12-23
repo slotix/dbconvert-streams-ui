@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { inject, computed } from 'vue'
 import type { ComputedRef } from 'vue'
-import { ChevronRightIcon, ChevronDownIcon, Squares2X2Icon } from '@heroicons/vue/24/outline'
+import { ChevronDown, ChevronRight, Grid2X2 } from 'lucide-vue-next'
 import ObjectList from './ObjectList.vue'
 import HighlightedText from '@/components/common/HighlightedText.vue'
 
@@ -118,8 +118,8 @@ function handleObjectContextMenu(payload: {
       @click="$emit('toggle')"
       @contextmenu.stop.prevent="handleSchemaContextMenu"
     >
-      <component :is="isExpanded ? ChevronDownIcon : ChevronRightIcon" :class="caretClass" />
-      <Squares2X2Icon class="w-4 h-4 mr-1.5 text-purple-500 dark:text-purple-400 shrink-0" />
+      <component :is="isExpanded ? ChevronDown : ChevronRight" :class="caretClass" />
+      <Grid2X2 class="w-4 h-4 mr-1.5 text-purple-500 dark:text-purple-400 shrink-0" />
       <HighlightedText class="font-medium" :text="schema.name || 'default'" :query="searchQuery" />
     </div>
     <div v-if="isExpanded" class="ml-4 border-l border-gray-200 dark:border-gray-700 pl-2">

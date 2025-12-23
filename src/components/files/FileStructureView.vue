@@ -5,14 +5,7 @@ import { type FileMetadata } from '@/types/files'
 import { getFileFormat } from '@/utils/fileFormat'
 import { useCopyToClipboard } from '@/composables/useCopyToClipboard'
 import UnsupportedFileMessage from './UnsupportedFileMessage.vue'
-import {
-  DocumentTextIcon,
-  CircleStackIcon,
-  InformationCircleIcon,
-  TableCellsIcon,
-  ClipboardDocumentIcon,
-  CheckIcon
-} from '@heroicons/vue/24/outline'
+import { Check, Clipboard, Database, FileText, Info, Sheet } from 'lucide-vue-next'
 
 const props = defineProps<{
   entry: FileSystemEntry
@@ -63,7 +56,7 @@ defineExpose({
             <div
               class="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg group-hover:bg-gradient-to-br group-hover:from-blue-100 group-hover:to-teal-100 dark:group-hover:from-blue-900/30 dark:group-hover:to-teal-900/30 transition-all duration-200"
             >
-              <DocumentTextIcon class="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              <FileText class="h-4 w-4 text-blue-600 dark:text-blue-400" />
             </div>
             <span class="text-sm font-semibold text-gray-700 dark:text-gray-300"
               >File Information</span
@@ -92,8 +85,8 @@ defineExpose({
                 :title="isCopied ? 'Copied!' : 'Copy path'"
                 @click="copyToClipboard(entry.path)"
               >
-                <CheckIcon v-if="isCopied" class="h-3.5 w-3.5" />
-                <ClipboardDocumentIcon v-else class="h-3.5 w-3.5" />
+                <Check v-if="isCopied" class="h-3.5 w-3.5" />
+                <Clipboard v-else class="h-3.5 w-3.5" />
                 {{ isCopied ? 'Copied' : 'Copy' }}
               </button>
             </div>
@@ -124,7 +117,7 @@ defineExpose({
             <div
               class="p-2 bg-teal-50 dark:bg-teal-900/20 rounded-lg group-hover:bg-gradient-to-br group-hover:from-teal-100 group-hover:to-blue-100 dark:group-hover:from-teal-900/30 dark:group-hover:to-blue-900/30 transition-all duration-200"
             >
-              <CircleStackIcon class="h-4 w-4 text-teal-600 dark:text-teal-400" />
+              <Database class="h-4 w-4 text-teal-600 dark:text-teal-400" />
             </div>
             <span class="text-sm font-semibold text-gray-700 dark:text-gray-300"
               >Data Statistics</span
@@ -156,7 +149,7 @@ defineExpose({
           <div
             class="p-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg group-hover:bg-gradient-to-br group-hover:from-purple-100 group-hover:to-pink-100 dark:group-hover:from-purple-900/30 dark:group-hover:to-pink-900/30 transition-all duration-200"
           >
-            <TableCellsIcon class="h-4 w-4 text-purple-600 dark:text-purple-400" />
+            <Sheet class="h-4 w-4 text-purple-600 dark:text-purple-400" />
           </div>
           <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Columns</span>
         </div>
@@ -211,7 +204,7 @@ defineExpose({
           <div
             class="p-2 bg-orange-50 dark:bg-orange-900/20 rounded-lg group-hover:bg-gradient-to-br group-hover:from-orange-100 group-hover:to-amber-100 dark:group-hover:from-orange-900/30 dark:group-hover:to-amber-900/30 transition-all duration-200"
           >
-            <InformationCircleIcon class="h-4 w-4 text-orange-600 dark:text-orange-400" />
+            <Info class="h-4 w-4 text-orange-600 dark:text-orange-400" />
           </div>
           <span class="text-sm font-semibold text-gray-700 dark:text-gray-300"
             >CSV Configuration</span
@@ -258,7 +251,7 @@ defineExpose({
           <div
             class="p-2 bg-sky-50 dark:bg-sky-900/20 rounded-lg group-hover:bg-gradient-to-br group-hover:from-sky-100 group-hover:to-blue-100 dark:group-hover:from-sky-900/30 dark:group-hover:to-blue-900/30 transition-all duration-200"
           >
-            <InformationCircleIcon class="h-4 w-4 text-sky-600 dark:text-sky-400" />
+            <Info class="h-4 w-4 text-sky-600 dark:text-sky-400" />
           </div>
           <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">JSON Structure</span>
         </div>

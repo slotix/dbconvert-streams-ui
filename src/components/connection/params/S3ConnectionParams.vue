@@ -47,7 +47,7 @@
         class="bg-white dark:bg-gray-850 rounded-xl border border-gray-100 dark:border-gray-700 p-6 mb-6 shadow-sm dark:shadow-gray-900/30"
       >
         <h3 class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-6 flex items-center">
-          <CloudIcon class="h-5 w-5 mr-2 text-teal-600 dark:text-teal-400" />
+          <Cloud class="h-5 w-5 mr-2 text-teal-600 dark:text-teal-400" />
           S3 Configuration
         </h3>
 
@@ -237,7 +237,7 @@
         class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-5 shadow-sm dark:shadow-gray-900/20"
       >
         <div class="flex items-start">
-          <DocumentTextIcon class="h-5 w-5 text-blue-600 dark:text-blue-400 mr-3 mt-0.5 shrink-0" />
+          <FileText class="h-5 w-5 text-blue-600 dark:text-blue-400 mr-3 mt-0.5 shrink-0" />
           <div>
             <h4 class="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-2">
               Supported File Formats
@@ -259,7 +259,7 @@
 
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
-import { CloudIcon, DocumentTextIcon } from '@heroicons/vue/24/outline'
+import { Cloud, FileText } from 'lucide-vue-next'
 import Spinner from '@/components/common/Spinner.vue'
 import { useConnectionsStore } from '@/stores/connections'
 import { S3_PROVIDER_PRESETS } from '@/types/s3'

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import { ChevronDownIcon, LinkIcon, LinkSlashIcon } from '@heroicons/vue/24/outline'
+import { ChevronDown, Link, Link2Off } from 'lucide-vue-next'
 import { Menu, MenuButton, MenuItems, MenuItem, Switch } from '@headlessui/vue'
 import type { SortModelItem } from 'ag-grid-community'
 import AGGridDataView from '@/components/database/AGGridDataView.vue'
@@ -576,7 +576,7 @@ async function selectTable(tableName: string) {
               class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
             >
               {{ selectedTable || 'Select a table' }}
-              <ChevronDownIcon class="h-4 w-4 text-gray-500 dark:text-gray-400" />
+              <ChevronDown class="h-4 w-4 text-gray-500 dark:text-gray-400" />
             </MenuButton>
             <MenuItems
               class="absolute left-0 z-10 mt-1 w-56 origin-top-left rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-lg ring-1 ring-black ring-opacity-5 dark:ring-white/10 border border-gray-200 dark:border-gray-700 focus:outline-none"
@@ -623,7 +623,7 @@ async function selectTable(tableName: string) {
               />
             </Switch>
             <component
-              :is="syncEnabled ? LinkIcon : LinkSlashIcon"
+              :is="syncEnabled ? Link : Link2Off"
               class="h-4 w-4"
               :class="{
                 'text-gray-600 dark:text-gray-200': syncEnabled,

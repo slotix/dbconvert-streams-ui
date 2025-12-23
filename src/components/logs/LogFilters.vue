@@ -4,20 +4,20 @@ import { useLogsStore } from '@/stores/logs'
 import type { ExportFormat, QueryPurpose } from '@/stores/logs'
 import FormCheckbox from '@/components/base/FormCheckbox.vue'
 import {
-  MagnifyingGlassIcon,
-  ExclamationTriangleIcon,
-  TrashIcon,
-  QuestionMarkCircleIcon,
-  Squares2X2Icon,
-  ListBulletIcon,
-  ArrowDownTrayIcon,
-  ArrowUpIcon,
-  ArrowDownIcon,
-  ChevronDownIcon,
-  ArrowsPointingInIcon,
-  ArrowsPointingOutIcon,
-  FunnelIcon
-} from '@heroicons/vue/24/outline'
+  AlertTriangle,
+  ArrowDown,
+  ArrowUp,
+  ChevronDown,
+  CircleHelp,
+  Download,
+  Filter,
+  Grid2X2,
+  List,
+  Maximize2,
+  Minimize2,
+  Search,
+  Trash
+} from 'lucide-vue-next'
 
 const logsStore = useLogsStore()
 const showShortcuts = ref(false)
@@ -238,7 +238,7 @@ onBeforeUnmount(() => {
         :title="visuallyGrouped ? 'Hide location headers (G)' : 'Show location headers (G)'"
         @click="toggleVisualGrouping"
       >
-        <component :is="visuallyGrouped ? Squares2X2Icon : ListBulletIcon" class="w-4 h-4" />
+        <component :is="visuallyGrouped ? Grid2X2 : List" class="w-4 h-4" />
         <span class="font-medium">{{ visuallyGrouped ? 'Grouped' : 'Ungrouped' }}</span>
       </button>
 
@@ -254,10 +254,7 @@ onBeforeUnmount(() => {
         :title="`${expandCollapseLabel} all location groups (X)`"
         @click="toggleExpandCollapse"
       >
-        <component
-          :is="isAllExpanded ? ArrowsPointingInIcon : ArrowsPointingOutIcon"
-          class="w-4 h-4"
-        />
+        <component :is="isAllExpanded ? Minimize2 : Maximize2" class="w-4 h-4" />
         <span class="font-medium">{{ expandCollapseLabel }}</span>
       </button>
 
@@ -268,9 +265,9 @@ onBeforeUnmount(() => {
           :title="`Filter by query type (${selectedPurposes.size}/${queryPurposeOptions.length})`"
           @click="showQueryTypeMenu = !showQueryTypeMenu"
         >
-          <FunnelIcon class="w-4 h-4 text-gray-600 dark:text-gray-400" />
+          <Filter class="w-4 h-4 text-gray-600 dark:text-gray-400" />
           <span class="text-gray-700 dark:text-gray-200 font-medium">{{ queryTypeLabel }}</span>
-          <ChevronDownIcon class="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
+          <ChevronDown class="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
         </button>
 
         <transition
@@ -333,7 +330,7 @@ onBeforeUnmount(() => {
         @click="toggleSortOrder"
       >
         <component
-          :is="sortOrder === 'newest' ? ArrowDownIcon : ArrowUpIcon"
+          :is="sortOrder === 'newest' ? ArrowDown : ArrowUp"
           class="w-3.5 h-3.5 text-gray-600 dark:text-gray-400"
         />
         <span class="text-gray-700 dark:text-gray-200 font-medium">{{
@@ -352,7 +349,7 @@ onBeforeUnmount(() => {
             timeWindowOptions.find((o) => o.value === timeWindow)?.label
           }}</span>
           <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-1">
-            <ChevronDownIcon class="h-3 w-3 text-gray-400" aria-hidden="true" />
+            <ChevronDown class="h-3 w-3 text-gray-400" aria-hidden="true" />
           </span>
         </ListboxButton>
         <transition
@@ -386,7 +383,7 @@ onBeforeUnmount(() => {
                     'absolute inset-y-0 right-0 flex items-center pr-2'
                   ]"
                 >
-                  <CheckIcon class="h-3.5 w-3.5" aria-hidden="true" />
+                  <Check class="h-3.5 w-3.5" aria-hidden="true" />
                 </span>
               </li>
             </ListboxOption>
@@ -400,7 +397,7 @@ onBeforeUnmount(() => {
     <div class="flex items-center gap-2 flex-1 min-w-0">
       <!-- Search -->
       <div class="flex-1 relative">
-        <MagnifyingGlassIcon
+        <Search
           class="w-4 h-4 text-gray-400 dark:text-gray-500 absolute left-3 top-1/2 -translate-y-1/2"
         />
         <input
@@ -416,7 +413,7 @@ onBeforeUnmount(() => {
       <div class="flex items-center gap-1" :title="'Show only errors (E)'">
         <FormCheckbox v-model="errorsOnly">
           <span class="flex items-center gap-1.5">
-            <ExclamationTriangleIcon class="w-4 h-4 text-red-600 dark:text-red-400" />
+            <AlertTriangle class="w-4 h-4 text-red-600 dark:text-red-400" />
             <span class="text-xs font-semibold text-red-600 dark:text-red-400">Errors Only</span>
           </span>
         </FormCheckbox>
@@ -433,7 +430,7 @@ onBeforeUnmount(() => {
           class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-white bg-gray-600 dark:bg-gray-700 rounded hover:bg-gray-500 dark:hover:bg-gray-600 transition-colors shadow-sm"
           @click.stop="toggleExportMenu"
         >
-          <ArrowDownTrayIcon class="w-3.5 h-3.5" />
+          <Download class="w-3.5 h-3.5" />
           <span>Export</span>
         </button>
 
@@ -468,7 +465,7 @@ onBeforeUnmount(() => {
         class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-white bg-orange-600 dark:bg-orange-500 rounded hover:bg-orange-700 dark:hover:bg-orange-600 transition-colors shadow-sm"
         @click="clearLogs"
       >
-        <TrashIcon class="w-3.5 h-3.5" />
+        <Trash class="w-3.5 h-3.5" />
         <span>Clear Logs</span>
       </button>
 
@@ -479,7 +476,7 @@ onBeforeUnmount(() => {
           title="Keyboard shortcuts"
           @click="showShortcuts = !showShortcuts"
         >
-          <QuestionMarkCircleIcon class="w-5 h-5" />
+          <CircleHelp class="w-5 h-5" />
         </button>
 
         <!-- Shortcuts Tooltip -->

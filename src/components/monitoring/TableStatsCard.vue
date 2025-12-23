@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { TableCellsIcon, ChevronRightIcon } from '@heroicons/vue/24/outline'
+import { ChevronRight, Sheet } from 'lucide-vue-next'
 import { useMonitoringStore } from '@/stores/monitoring'
 import { STATUS } from '@/constants'
 import StatusBadge from '@/components/common/StatusBadge.vue'
@@ -65,7 +65,7 @@ function formatDuration(seconds: number) {
           <div
             class="p-2 bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700"
           >
-            <TableCellsIcon class="h-5 w-5 text-gray-600 dark:text-gray-300" />
+            <Sheet class="h-5 w-5 text-gray-600 dark:text-gray-300" />
           </div>
           <div>
             <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">Tables</h3>
@@ -182,7 +182,7 @@ function formatDuration(seconds: number) {
                   @click="handleCompareTable(table.table)"
                 >
                   Compare
-                  <ChevronRightIcon class="h-3.5 w-3.5" />
+                  <ChevronRight class="h-3.5 w-3.5" />
                 </button>
                 <span v-else class="text-xs text-gray-400 dark:text-gray-500">—</span>
               </td>
@@ -195,7 +195,7 @@ function formatDuration(seconds: number) {
     <!-- Empty State -->
     <div v-else class="px-6 py-12 text-center bg-gray-50 dark:bg-gray-900/30">
       <div class="inline-flex p-4 bg-gray-100 dark:bg-gray-800 rounded-full mb-4">
-        <TableCellsIcon class="h-8 w-8 text-gray-400 dark:text-gray-500" />
+        <Sheet class="h-8 w-8 text-gray-400 dark:text-gray-500" />
       </div>
       <h4 class="text-base font-medium text-gray-900 dark:text-gray-100 mb-1">No tables yet</h4>
       <p class="text-sm text-gray-500 dark:text-gray-400">

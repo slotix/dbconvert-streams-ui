@@ -18,14 +18,14 @@
         class="inline-flex items-center px-4 py-2.5 border border-gray-300 dark:border-gray-600 shadow-sm text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-900 focus:ring-teal-500 dark:focus:ring-teal-400 transition-colors"
         @click="openModal"
       >
-        <FolderOpenIcon class="h-4 w-4 mr-2" />
+        <FolderOpen class="h-4 w-4 mr-2" />
         Browse
       </button>
     </div>
 
     <!-- Help text -->
     <p v-if="helpText" class="text-xs text-gray-500 dark:text-gray-400 flex items-center">
-      <InformationCircleIcon class="h-4 w-4 mr-1 text-gray-400 dark:text-gray-500" />
+      <Info class="h-4 w-4 mr-1 text-gray-400 dark:text-gray-500" />
       {{ helpText }}
     </p>
 
@@ -40,7 +40,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { FolderOpenIcon, InformationCircleIcon } from '@heroicons/vue/24/outline'
+import { FolderOpen, Info } from 'lucide-vue-next'
 import FolderSelectionModal from './FolderSelectionModal.vue'
 
 interface Props {

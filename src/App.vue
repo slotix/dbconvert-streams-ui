@@ -25,7 +25,7 @@
           class="text-red-200 hover:text-white transition-colors"
           @click="showExpiredBanner = false"
         >
-          <XMarkIcon :class="iconSizes.modalClose" />
+          <X :class="iconSizes.modalClose" :stroke-width="iconStroke" />
         </button>
       </div>
     </div>
@@ -97,7 +97,11 @@
                 <div class="absolute left-full top-0 flex w-16 justify-center pt-5">
                   <button type="button" class="-m-2.5 p-2.5" @click="sidebarOpen = false">
                     <span class="sr-only">Close sidebar</span>
-                    <XMarkIcon :class="[iconSizes.sidebarMenu, 'text-white']" aria-hidden="true" />
+                    <X
+                      :class="[iconSizes.sidebarMenu, 'text-white']"
+                      :stroke-width="iconStroke"
+                      aria-hidden="true"
+                    />
                   </button>
                 </div>
               </TransitionChild>
@@ -121,6 +125,7 @@
                         <component
                           :is="item.icon"
                           :class="[iconSizes.sidebarMenu, 'shrink-0']"
+                          :stroke-width="iconStroke"
                           aria-hidden="true"
                         />
                         {{ item.name }}
@@ -135,8 +140,9 @@
                       class="w-full group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700"
                       @click="sidebarOpen = false"
                     >
-                      <ChartBarIcon
+                      <BarChart3
                         :class="[iconSizes.sidebarMenu, 'shrink-0']"
+                        :stroke-width="iconStroke"
                         aria-hidden="true"
                       />
                       <span class="flex-1 text-left">Overview</span>
@@ -150,14 +156,16 @@
                       class="w-full group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700"
                       @click="handleLogsClick"
                     >
-                      <ExclamationCircleIcon
+                      <AlertCircle
                         v-if="logsStore.hasErrors"
                         :class="[iconSizes.sidebarMenu, 'shrink-0 animate-pulse text-gray-300']"
+                        :stroke-width="iconStroke"
                         aria-hidden="true"
                       />
-                      <DocumentTextIconSolid
+                      <FileText
                         v-else
                         :class="[iconSizes.sidebarMenu, 'shrink-0']"
+                        :stroke-width="iconStroke"
                         aria-hidden="true"
                       />
                       <span class="flex-1 text-left">Logs</span>
@@ -220,8 +228,9 @@
                           class="group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700"
                           @click="sidebarOpen = false"
                         >
-                          <BookOpenIcon
+                          <BookOpen
                             :class="[iconSizes.sidebarMenu, 'shrink-0']"
+                            :stroke-width="iconStroke"
                             aria-hidden="true"
                           />
                           Documentation
@@ -266,6 +275,7 @@
               <component
                 :is="item.icon"
                 :class="[iconSizes.sidebarMenu, 'shrink-0']"
+                :stroke-width="iconStroke"
                 aria-hidden="true"
               />
               <span v-if="isSidebarExpanded" class="truncate">{{ item.name }}</span>
@@ -292,14 +302,16 @@
               ]"
               @click="logsStore.toggleLogsPanel"
             >
-              <ExclamationCircleIcon
+              <AlertCircle
                 v-if="logsStore.hasErrors"
                 :class="[iconSizes.sidebarMenu, 'shrink-0 animate-pulse text-gray-300']"
+                :stroke-width="iconStroke"
                 aria-hidden="true"
               />
-              <DocumentTextIconSolid
+              <FileText
                 v-else
                 :class="[iconSizes.sidebarMenu, 'shrink-0']"
+                :stroke-width="iconStroke"
                 aria-hidden="true"
               />
               <span v-if="isSidebarExpanded" class="truncate">Logs</span>
@@ -409,7 +421,11 @@
               isSidebarExpanded ? 'justify-start gap-3 px-3 w-full' : 'justify-center'
             ]"
           >
-            <ChartBarIconSolid :class="iconSizes.sidebarMenu" aria-hidden="true" />
+            <BarChart3
+              :class="iconSizes.sidebarMenu"
+              :stroke-width="iconStroke"
+              aria-hidden="true"
+            />
             <span v-if="isSidebarExpanded" class="truncate">Overview</span>
             <span v-else class="sr-only">Overview</span>
             <!-- Tooltip -->
@@ -430,7 +446,11 @@
               ]"
               @click="toggleSettings"
             >
-              <Cog6ToothIconSolid :class="iconSizes.sidebarMenu" aria-hidden="true" />
+              <Settings
+                :class="iconSizes.sidebarMenu"
+                :stroke-width="iconStroke"
+                aria-hidden="true"
+              />
               <span v-if="isSidebarExpanded" class="truncate">Settings</span>
               <span v-else class="sr-only">Settings</span>
               <!-- Tooltip -->
@@ -454,8 +474,9 @@
                   @click="themeStore.toggleTheme"
                 >
                   <component
-                    :is="themeStore.isDark ? MoonIcon : SunIcon"
+                    :is="themeStore.isDark ? Moon : Sun"
                     :class="iconSizes.tableAction"
+                    :stroke-width="iconStroke"
                     aria-hidden="true"
                   />
                   <span>{{ themeStore.isDark ? 'Dark' : 'Light' }}</span>
@@ -550,7 +571,11 @@
               isSidebarExpanded ? 'justify-start gap-3 px-3 w-full' : 'justify-center'
             ]"
           >
-            <BookOpenIconSolid :class="iconSizes.sidebarMenu" aria-hidden="true" />
+            <BookOpen
+              :class="iconSizes.sidebarMenu"
+              :stroke-width="iconStroke"
+              aria-hidden="true"
+            />
             <span v-if="isSidebarExpanded" class="truncate">Documentation</span>
             <span v-else class="sr-only">Documentation</span>
             <!-- Tooltip -->
@@ -602,30 +627,24 @@ import { useThemeStore } from '@/stores/theme'
 
 import { Dialog, DialogPanel, TransitionChild, TransitionRoot } from '@headlessui/vue'
 import {
-  ArrowPathIcon,
-  XMarkIcon,
-  DocumentTextIcon,
-  BookOpenIcon,
-  TableCellsIcon,
-  ChartBarIcon,
-  Cog6ToothIcon,
-  SunIcon,
-  MoonIcon
-} from '@heroicons/vue/24/outline'
-import {
-  ExclamationCircleIcon,
-  TableCellsIcon as TableCellsIconSolid,
-  ArrowPathIcon as ArrowPathIconSolid,
-  DocumentTextIcon as DocumentTextIconSolid,
-  BookOpenIcon as BookOpenIconSolid,
-  ChartBarIcon as ChartBarIconSolid,
-  Cog6ToothIcon as Cog6ToothIconSolid
-} from '@heroicons/vue/24/solid'
+  RefreshCw,
+  X,
+  FileText,
+  BookOpen,
+  Sheet,
+  BarChart3,
+  Settings,
+  Sun,
+  Moon,
+  AlertCircle
+} from 'lucide-vue-next'
+import { useLucideIcons } from '@/composables/useLucideIcons'
 
 const commonStore = useCommonStore()
 const logsStore = useLogsStore()
 const themeStore = useThemeStore()
 const router = useRouter()
+const { strokeWidth: iconStroke } = useLucideIcons()
 const isInitializing = ref(true)
 const isSidebarExpanded = ref(false)
 const sidebarWidth = computed(() => (isSidebarExpanded.value ? '16rem' : '5rem'))
@@ -668,13 +687,17 @@ useWailsMenuEvents()
 // Desktop mode detection
 const { isDesktop } = useDesktopMode()
 const { zoomLevel, resetZoom, setZoom } = useDesktopZoom()
-const zoomMin = 70
+const zoomMin = 75
 const zoomMax = 200
-const zoomStep = 5
-const zoomSlider = ref(Math.round(zoomLevel.value * 100))
+const zoomStep = 25
+const snapZoomPercent = (value: number) => Math.round(value / zoomStep) * zoomStep
+const zoomSlider = ref(snapZoomPercent(zoomLevel.value * 100))
 const isZoomActive = ref(false)
 
-const zoomPendingPercent = computed(() => `${zoomSlider.value}%`)
+const zoomPendingPercent = computed(() => {
+  const value = zoomSlider.value
+  return `${Number.isInteger(value) ? value : value.toFixed(1)}%`
+})
 const isZoomDefault = computed(() => zoomSlider.value === 100)
 const zoomTooltipStyle = computed(() => {
   const range = zoomMax - zoomMin
@@ -683,8 +706,13 @@ const zoomTooltipStyle = computed(() => {
   return { left: `${clamped * 100}%` }
 })
 
+watchEffect(() => {
+  if (typeof document === 'undefined') return
+  document.documentElement.classList.toggle('desktop-mode', isDesktop.value)
+})
+
 watch(zoomLevel, (value) => {
-  zoomSlider.value = Math.round(value * 100)
+  zoomSlider.value = snapZoomPercent(value * 100)
 })
 
 // All navigation items
@@ -693,10 +721,10 @@ const navigation = computed(() => {
     {
       name: 'Data Explorer',
       href: '/explorer',
-      icon: TableCellsIconSolid,
+      icon: Sheet,
       show: true
     },
-    { name: 'Streams', href: '/streams', icon: ArrowPathIconSolid, show: true }
+    { name: 'Streams', href: '/streams', icon: RefreshCw, show: true }
   ].filter((item) => item.show)
 })
 

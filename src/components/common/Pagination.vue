@@ -6,7 +6,7 @@
       :disabled="previousPageDisabled"
       @click="previousPage"
     >
-      <ChevronLeftIcon class="h-6 w-6" aria-hidden="true" />
+      <ChevronLeft class="h-6 w-6" aria-hidden="true" />
       Prev
     </button>
     <span class="mx-3 text-gray-900 dark:text-gray-100"
@@ -19,14 +19,14 @@
       @click="nextPage"
     >
       Next
-      <ChevronRightIcon class="h-6 w-6" aria-hidden="true" />
+      <ChevronRight class="h-6 w-6" aria-hidden="true" />
     </button>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/vue/20/solid'
+import { ChevronLeft, ChevronRight } from 'lucide-vue-next'
 
 interface Props {
   totalItems: number

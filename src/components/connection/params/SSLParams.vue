@@ -12,7 +12,7 @@
                 v-tooltip="'Choose the SSL verification mode for your connection'"
                 class="ml-2 text-gray-400 dark:text-gray-500 hover:text-gray-500 dark:hover:text-gray-400 cursor-help inline-block"
               >
-                <QuestionMarkCircleIcon class="h-4 w-4" />
+                <CircleHelp class="h-4 w-4" />
               </span>
             </label>
           </div>
@@ -56,7 +56,7 @@
 
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
-import { QuestionMarkCircleIcon } from '@heroicons/vue/24/outline'
+import { CircleHelp } from 'lucide-vue-next'
 import { useConnectionsStore } from '@/stores/connections'
 import type { SSLConfig } from '@/types/connections'
 import { vTooltip } from '@/directives/tooltip'

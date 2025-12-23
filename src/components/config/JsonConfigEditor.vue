@@ -2,7 +2,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { JsonEditor } from '@/components/monaco'
-import { CheckIcon, XMarkIcon, ArrowPathIcon } from '@heroicons/vue/24/outline'
+import { Check, RefreshCw, X } from 'lucide-vue-next'
 
 interface Props {
   modelValue: string | object
@@ -117,21 +117,21 @@ defineExpose({
           v-if="!isValid"
           class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200"
         >
-          <XMarkIcon class="h-3 w-3 mr-1" />
+          <X class="h-3 w-3 mr-1" />
           Invalid JSON
         </span>
         <span
           v-else-if="isDirty"
           class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200"
         >
-          <ArrowPathIcon class="h-3 w-3 mr-1" />
+          <RefreshCw class="h-3 w-3 mr-1" />
           Modified
         </span>
         <span
           v-else
           class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200"
         >
-          <CheckIcon class="h-3 w-3 mr-1" />
+          <Check class="h-3 w-3 mr-1" />
           Valid
         </span>
       </div>

@@ -1,7 +1,7 @@
 /**
  * Icon Size Constants
  * Defines standardized icon sizes using Tailwind CSS classes
- * Used with Heroicons throughout the application
+ * Used with Lucide icons throughout the application
  */
 
 /**

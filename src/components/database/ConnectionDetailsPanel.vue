@@ -11,20 +11,21 @@ import { useDatabaseCapabilities } from '@/composables/useDatabaseCapabilities'
 import { useCopyToClipboard } from '@/composables/useCopyToClipboard'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { useDatabaseOverviewStore } from '@/stores/databaseOverview'
+import { useLucideIcons } from '@/composables/useLucideIcons'
 import {
-  CalendarIcon,
-  ClipboardIcon,
-  CheckIcon,
-  EyeIcon,
-  EyeSlashIcon,
-  PlusIcon,
-  ServerIcon,
-  CircleStackIcon,
-  ChartBarIcon,
-  CommandLineIcon,
-  CloudIcon,
-  FolderIcon
-} from '@heroicons/vue/24/solid'
+  Calendar,
+  Clipboard,
+  Check,
+  Eye,
+  EyeOff,
+  Plus,
+  Server,
+  Database,
+  BarChart3,
+  Terminal,
+  Cloud,
+  Folder
+} from 'lucide-vue-next'
 
 const navigationStore = useExplorerNavigationStore()
 const overviewStore = useDatabaseOverviewStore()
@@ -528,7 +529,7 @@ const isLoadingDatabases = computed(() => {
             >
               <div class="flex items-center gap-2 mb-3">
                 <div class="p-1.5 bg-sky-100 dark:bg-sky-900/30 rounded-lg">
-                  <CloudIcon class="h-4 w-4 text-sky-600 dark:text-sky-400" />
+                  <Cloud class="h-4 w-4 text-sky-600 dark:text-sky-400" />
                 </div>
                 <span class="text-sm font-semibold text-gray-700 dark:text-gray-300"
                   >Storage Info</span
@@ -557,7 +558,7 @@ const isLoadingDatabases = computed(() => {
                       @click.stop="copyFolderPath"
                     >
                       <ClipboardIcon v-if="!isPathCopied" class="h-4 w-4" />
-                      <CheckIcon v-else class="h-4 w-4" />
+                      <Check v-else class="h-4 w-4" />
                     </button>
                   </div>
                 </div>
@@ -664,7 +665,7 @@ const isLoadingDatabases = computed(() => {
             >
               <div class="flex items-center gap-2 mb-3">
                 <div class="p-1.5 bg-teal-100 dark:bg-teal-900/30 rounded-lg">
-                  <CommandLineIcon class="h-4 w-4 text-teal-600 dark:text-teal-400" />
+                  <Terminal class="h-4 w-4 text-teal-600 dark:text-teal-400" />
                 </div>
                 <span class="text-sm font-semibold text-gray-700 dark:text-gray-300"
                   >File Console</span
@@ -679,7 +680,7 @@ const isLoadingDatabases = computed(() => {
                 class="w-full justify-center"
                 @click="emit('open-file-console')"
               >
-                <CommandLineIcon class="w-4 h-4 mr-1.5" />
+                <Terminal class="w-4 h-4 mr-1.5" />
                 Open File Console
               </BaseButton>
             </div>
@@ -689,7 +690,7 @@ const isLoadingDatabases = computed(() => {
             >
               <div class="flex items-center gap-2 mb-3">
                 <div class="p-1.5 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
-                  <CircleStackIcon class="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                  <Database class="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                 </div>
                 <span class="text-sm font-semibold text-gray-700 dark:text-gray-300"
                   >Create Bucket</span
@@ -724,7 +725,7 @@ const isLoadingDatabases = computed(() => {
                   :disabled="!canCreateBucket || isCreatingBucket"
                   @click="handleCreateBucket"
                 >
-                  <PlusIcon class="w-4 h-4 mr-1.5" />
+                  <Plus class="w-4 h-4 mr-1.5" />
                   Create Bucket
                 </BaseButton>
               </div>
@@ -763,7 +764,7 @@ const isLoadingDatabases = computed(() => {
                   @click.stop="copyFolderPath"
                 >
                   <ClipboardIcon v-if="!isPathCopied" class="h-4 w-4" />
-                  <CheckIcon v-else class="h-4 w-4" />
+                  <Check v-else class="h-4 w-4" />
                 </button>
               </div>
             </div>
@@ -790,7 +791,7 @@ const isLoadingDatabases = computed(() => {
           >
             <div class="flex items-center gap-2 mb-3">
               <div class="p-1.5 bg-teal-100 dark:bg-teal-900/30 rounded-lg">
-                <CommandLineIcon class="h-4 w-4 text-teal-600 dark:text-teal-400" />
+                <Terminal class="h-4 w-4 text-teal-600 dark:text-teal-400" />
               </div>
               <span class="text-sm font-semibold text-gray-700 dark:text-gray-300"
                 >File Console</span
@@ -805,7 +806,7 @@ const isLoadingDatabases = computed(() => {
               class="w-full justify-center"
               @click="emit('open-file-console')"
             >
-              <CommandLineIcon class="w-4 h-4 mr-1.5" />
+              <Terminal class="w-4 h-4 mr-1.5" />
               Open File Console
             </BaseButton>
           </div>
@@ -885,7 +886,7 @@ const isLoadingDatabases = computed(() => {
                     @click="copyConnectionString"
                   >
                     <ClipboardIcon v-if="!isCopied" class="h-3.5 w-3.5" />
-                    <CheckIcon v-else class="h-3.5 w-3.5" />
+                    <Check v-else class="h-3.5 w-3.5" />
                   </button>
                 </div>
               </div>
@@ -1048,7 +1049,7 @@ const isLoadingDatabases = computed(() => {
             <div
               class="shrink-0 p-3 bg-indigo-100 dark:bg-indigo-900/50 rounded-xl ring-1 ring-indigo-200 dark:ring-indigo-700/50"
             >
-              <CommandLineIcon class="h-7 w-7 text-indigo-600 dark:text-indigo-400" />
+              <Terminal class="h-7 w-7 text-indigo-600 dark:text-indigo-400" />
             </div>
             <div class="flex-1 min-w-0 pt-1">
               <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200">
@@ -1066,7 +1067,7 @@ const isLoadingDatabases = computed(() => {
             class="w-full justify-center"
             @click="emit('open-sql-console')"
           >
-            <CommandLineIcon class="w-4 h-4 mr-1.5" />
+            <Terminal class="w-4 h-4 mr-1.5" />
             Open Database Console
           </BaseButton>
         </div>
@@ -1080,7 +1081,7 @@ const isLoadingDatabases = computed(() => {
             <div
               class="shrink-0 p-3 bg-emerald-100 dark:bg-emerald-900/50 rounded-xl ring-1 ring-emerald-200 dark:ring-emerald-700/50"
             >
-              <CircleStackIcon class="h-7 w-7 text-emerald-600 dark:text-emerald-400" />
+              <Database class="h-7 w-7 text-emerald-600 dark:text-emerald-400" />
             </div>
             <div class="flex-1 min-w-0 pt-1">
               <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200">
@@ -1107,7 +1108,7 @@ const isLoadingDatabases = computed(() => {
               :disabled="!newDatabaseName.trim() || isCreatingDatabase"
               @click="handleCreateDatabase"
             >
-              <PlusIcon class="w-4 h-4 mr-1.5" />
+              <Plus class="w-4 h-4 mr-1.5" />
               Create Database
             </BaseButton>
           </div>
@@ -1119,7 +1120,7 @@ const isLoadingDatabases = computed(() => {
           >
             <div class="flex items-start gap-4 mb-3">
               <div class="shrink-0 p-2 bg-emerald-100 dark:bg-emerald-900/50 rounded-lg">
-                <PlusIcon class="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                <Plus class="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
               </div>
               <div class="flex-1 min-w-0">
                 <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300">
@@ -1144,7 +1145,7 @@ const isLoadingDatabases = computed(() => {
                 :disabled="!newSchemaName.trim() || isCreatingSchema"
                 @click="handleCreateSchema"
               >
-                <PlusIcon class="w-4 h-4 mr-1.5" />
+                <Plus class="w-4 h-4 mr-1.5" />
                 Create Schema
               </BaseButton>
             </div>

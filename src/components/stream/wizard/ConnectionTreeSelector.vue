@@ -21,7 +21,7 @@
         @click="toggleConnectionExpansion(connection)"
       >
         <component
-          :is="isConnectionExpanded(connection.id) ? ChevronDownIcon : ChevronRightIcon"
+          :is="isConnectionExpanded(connection.id) ? ChevronDown : ChevronRight"
           class="h-4 w-4 shrink-0 text-gray-400 dark:text-gray-500 mt-3"
         />
         <DatabaseIcon
@@ -234,7 +234,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, type Ref } from 'vue'
-import { ChevronRightIcon, ChevronDownIcon } from '@heroicons/vue/24/outline'
+import { ChevronDown, ChevronRight } from 'lucide-vue-next'
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
 import HighlightedText from '@/components/common/HighlightedText.vue'
 import DatabaseIcon from '@/components/base/DatabaseIcon.vue'

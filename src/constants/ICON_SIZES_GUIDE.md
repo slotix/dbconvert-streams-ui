@@ -36,12 +36,12 @@ Best for static icons where the size won't change:
 ```vue
 <script setup lang="ts">
 import { ICON_SIZES } from '@/constants'
-import { PlusIcon } from '@heroicons/vue/24/outline'
+import { Plus } from 'lucide-vue-next'
 </script>
 
 <template>
   <button>
-    <PlusIcon :class="ICON_SIZES.MD" />
+    <Plus :class="ICON_SIZES.MD" />
     Create New
   </button>
 </template>
@@ -54,14 +54,14 @@ Best for components that need a consistent icon size:
 ```vue
 <script setup lang="ts">
 import { useIconSizes } from '@/composables/useIconSizes'
-import { TrashIcon } from '@heroicons/vue/24/outline'
+import { Trash } from 'lucide-vue-next'
 
 const { iconClass } = useIconSizes('BASE')
 </script>
 
 <template>
   <button>
-    <TrashIcon :class="iconClass" />
+    <Trash :class="iconClass" />
   </button>
 </template>
 ```
@@ -73,7 +73,7 @@ Use this when icons appear next to text:
 ```vue
 <script setup lang="ts">
 import { useIconSizes } from '@/composables/useIconSizes'
-import { CheckIcon } from '@heroicons/vue/24/outline'
+import { Check } from 'lucide-vue-next'
 
 // Icon will have h-5 w-5 mr-2 (20px icon with 8px margin)
 const { iconWithTextClass } = useIconSizes('MD', 'DEFAULT')
@@ -81,7 +81,7 @@ const { iconWithTextClass } = useIconSizes('MD', 'DEFAULT')
 
 <template>
   <button class="flex items-center">
-    <CheckIcon :class="iconWithTextClass" />
+    <Check :class="iconWithTextClass" />
     <span>Save</span>
   </button>
 </template>
@@ -94,7 +94,7 @@ Best for reusable components that need flexible sizing:
 ```vue
 <script setup lang="ts">
 import { useIconSizes } from '@/composables/useIconSizes'
-import { XMarkIcon } from '@heroicons/vue/24/outline'
+import { X } from 'lucide-vue-next'
 import type { IconSizeKey } from '@/constants'
 
 interface Props {
@@ -110,7 +110,7 @@ const { iconClass } = useIconSizes(props.size)
 
 <template>
   <button>
-    <XMarkIcon :class="iconClass" />
+    <X :class="iconClass" />
   </button>
 </template>
 
@@ -128,7 +128,7 @@ Best when you need multiple purpose-specific sizes in one component:
 ```vue
 <script setup lang="ts">
 import { useContextualIconSizes } from '@/composables/useIconSizes'
-import { HomeIcon, SortIcon, PlusIcon, Cog6ToothIcon } from '@heroicons/vue/24/outline'
+import { Home, ArrowUpDown, Plus, Settings } from 'lucide-vue-next'
 
 const sizes = useContextualIconSizes()
 </script>
@@ -137,24 +137,24 @@ const sizes = useContextualIconSizes()
   <div>
     <!-- Sidebar navigation (24px) -->
     <nav>
-      <HomeIcon :class="sizes.sidebarMenu" />
+      <Home :class="sizes.sidebarMenu" />
     </nav>
 
     <!-- Primary action button (20px) -->
     <button>
-      <PlusIcon :class="sizes.primaryButton" />
+      <Plus :class="sizes.primaryButton" />
       Create
     </button>
 
     <!-- Table action (16px) -->
     <table>
       <td>
-        <SortIcon :class="sizes.tableAction" />
+        <ArrowUpDown :class="sizes.tableAction" />
       </td>
     </table>
 
     <!-- Settings icon (16px) -->
-    <Cog6ToothIcon :class="sizes.formInput" />
+    <Settings :class="sizes.formInput" />
   </div>
 </template>
 ```
@@ -164,20 +164,20 @@ const sizes = useContextualIconSizes()
 ```vue
 <script setup lang="ts">
 import { useContextualIconSizes } from '@/composables/useIconSizes'
-import { ArrowPathIcon } from '@heroicons/vue/24/outline'
+import { RefreshCw } from 'lucide-vue-next'
 
 const sizes = useContextualIconSizes()
 </script>
 
 <template>
   <!-- Small spinner (12px) for inline use -->
-  <ArrowPathIcon :class="[sizes.spinnerSmall, 'animate-spin']" />
+  <RefreshCw :class="[sizes.spinnerSmall, 'animate-spin']" />
 
   <!-- Default spinner (16px) for buttons -->
-  <ArrowPathIcon :class="[sizes.spinner, 'animate-spin']" />
+  <RefreshCw :class="[sizes.spinner, 'animate-spin']" />
 
   <!-- Large spinner (32px) for full-page loading -->
-  <ArrowPathIcon :class="[sizes.spinnerLarge, 'animate-spin']" />
+  <RefreshCw :class="[sizes.spinnerLarge, 'animate-spin']" />
 </template>
 ```
 
@@ -188,18 +188,18 @@ When you need access to all sizes:
 ```vue
 <script setup lang="ts">
 import { useAllIconSizes } from '@/composables/useIconSizes'
-import { StarIcon } from '@heroicons/vue/24/outline'
+import { Star } from 'lucide-vue-next'
 
 const sizes = useAllIconSizes()
 </script>
 
 <template>
   <div class="flex items-center gap-2">
-    <StarIcon :class="sizes.xs" />
-    <StarIcon :class="sizes.sm" />
-    <StarIcon :class="sizes.base" />
-    <StarIcon :class="sizes.md" />
-    <StarIcon :class="sizes.lg" />
+    <Star :class="sizes.xs" />
+    <Star :class="sizes.sm" />
+    <Star :class="sizes.base" />
+    <Star :class="sizes.md" />
+    <Star :class="sizes.lg" />
   </div>
 </template>
 ```
@@ -210,12 +210,12 @@ const sizes = useAllIconSizes()
 
 ```vue
 <script setup lang="ts">
-import { PlusIcon } from '@heroicons/vue/24/outline'
+import { Plus } from 'lucide-vue-next'
 </script>
 
 <template>
   <button>
-    <PlusIcon class="h-5 w-5 mr-2" />
+    <Plus class="h-5 w-5 mr-2" />
     Create
   </button>
 </template>
@@ -226,14 +226,14 @@ import { PlusIcon } from '@heroicons/vue/24/outline'
 ```vue
 <script setup lang="ts">
 import { useIconSizes } from '@/composables/useIconSizes'
-import { PlusIcon } from '@heroicons/vue/24/outline'
+import { Plus } from 'lucide-vue-next'
 
 const { iconWithTextClass } = useIconSizes('MD', 'DEFAULT')
 </script>
 
 <template>
   <button>
-    <PlusIcon :class="iconWithTextClass" />
+    <Plus :class="iconWithTextClass" />
     Create
   </button>
 </template>

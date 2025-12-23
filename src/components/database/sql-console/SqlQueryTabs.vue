@@ -33,7 +33,7 @@
         title="Close tab"
         @click.stop="$emit('close', tab.id)"
       >
-        <XMarkIcon class="h-3 w-3" />
+        <X class="h-3 w-3" />
       </button>
     </div>
     <!-- Add Tab Button - positioned right after the last tab -->
@@ -42,7 +42,7 @@
       title="New Query Tab"
       @click="$emit('add')"
     >
-      <PlusIcon class="h-4 w-4" />
+      <Plus class="h-4 w-4" />
     </button>
     <!-- Close All Tabs Button -->
     <button
@@ -51,14 +51,14 @@
       title="Close All Tabs"
       @click="$emit('closeAll')"
     >
-      <XMarkIcon class="h-4 w-4" />
+      <X class="h-4 w-4" />
     </button>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, nextTick } from 'vue'
-import { PlusIcon, XMarkIcon } from '@heroicons/vue/24/outline'
+import { Plus, X } from 'lucide-vue-next'
 import type { SqlQueryTab } from '@/stores/sqlConsole'
 
 defineProps<{

@@ -9,7 +9,7 @@
       class="flex items-center gap-2 px-3 py-1.5 bg-gray-50 dark:bg-gray-800/50 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
       @click="toggleExpanded"
     >
-      <ChevronRightIcon class="w-4 h-4 text-gray-400 shrink-0" />
+      <ChevronRight class="w-4 h-4 text-gray-400 shrink-0" />
       <code
         class="flex-1 text-xs text-gray-600 dark:text-gray-300 font-mono truncate"
         :title="collapsedSqlPreview"
@@ -22,7 +22,7 @@
         title="Clear all filters"
         @click.stop="clearAll"
       >
-        <XMarkIcon class="w-3.5 h-3.5" />
+        <X class="w-3.5 h-3.5" />
       </button>
     </div>
 
@@ -36,7 +36,7 @@
         class="flex items-center gap-2 px-3 py-1.5 cursor-pointer hover:bg-white/50 dark:hover:bg-gray-800/50 transition-colors border-b border-gray-200 dark:border-gray-700"
         @click="toggleExpanded"
       >
-        <ChevronDownIcon class="w-4 h-4 text-gray-400" />
+        <ChevronDown class="w-4 h-4 text-gray-400" />
         <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Filter Builder</span>
       </div>
 
@@ -79,7 +79,7 @@
                 :disabled="!dirty"
                 @click="applyFilters"
               >
-                <PlayIcon class="w-3.5 h-3.5" />
+                <Play class="w-3.5 h-3.5" />
                 Apply
               </button>
             </div>
@@ -92,7 +92,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue'
-import { XMarkIcon, PlayIcon, ChevronRightIcon, ChevronDownIcon } from '@heroicons/vue/24/outline'
+import { ChevronDown, ChevronRight, Play, X } from 'lucide-vue-next'
 import type { ColDef } from 'ag-grid-community'
 import { useObjectTabStateStore, type FilterConfig, type SortConfig } from '@/stores/objectTabState'
 import {

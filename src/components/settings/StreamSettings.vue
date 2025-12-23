@@ -44,7 +44,7 @@
       class="bg-white dark:bg-gray-850 rounded-xl border border-gray-100 dark:border-gray-700 p-6 shadow-sm dark:shadow-gray-900/30"
     >
       <div class="flex items-center mb-4">
-        <CloudIcon class="h-5 w-5 mr-2 text-teal-600 dark:text-teal-400" />
+        <Cloud class="h-5 w-5 mr-2 text-teal-600 dark:text-teal-400" />
         <h4 class="text-base font-medium text-gray-900 dark:text-gray-100">
           S3 Upload Configuration
         </h4>
@@ -62,7 +62,7 @@
             </p>
           </div>
           <div class="text-teal-600 dark:text-teal-400">
-            <CloudIcon class="h-8 w-8" />
+            <Cloud class="h-8 w-8" />
           </div>
         </div>
       </div>
@@ -242,7 +242,7 @@
 
 <script setup lang="ts">
 import { computed, watch } from 'vue'
-import { CloudIcon } from '@heroicons/vue/24/outline'
+import { Cloud } from 'lucide-vue-next'
 import { useStreamsStore, defaultStreamConfigOptions } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
 import { type StreamConfig } from '@/types/streamConfig'

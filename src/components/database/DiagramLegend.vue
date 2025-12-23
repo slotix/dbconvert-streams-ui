@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ViewfinderCircleIcon } from '@heroicons/vue/24/outline'
+import { Focus } from 'lucide-vue-next'
 </script>
 
 <template>
@@ -15,7 +15,7 @@ import { ViewfinderCircleIcon } from '@heroicons/vue/24/outline'
         <span class="text-xs text-gray-700 dark:text-gray-300">Table</span>
       </div>
       <div class="flex items-center">
-        <ViewfinderCircleIcon class="w-4 h-4 mr-2 text-purple-600 dark:text-purple-400" />
+        <Focus class="w-4 h-4 mr-2 text-purple-600 dark:text-purple-400" />
         <span class="text-xs text-gray-700 dark:text-gray-300 italic font-medium">View</span>
       </div>
       <div class="flex items-center">

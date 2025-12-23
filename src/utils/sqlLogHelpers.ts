@@ -9,14 +9,7 @@
 // Icon Imports
 // ============================================================================
 
-import {
-  CheckCircleIcon,
-  ExclamationTriangleIcon,
-  ExclamationCircleIcon,
-  InformationCircleIcon,
-  Cog6ToothIcon,
-  EyeIcon
-} from '@heroicons/vue/24/outline'
+import { AlertCircle, AlertTriangle, CheckCircle, Eye, Info, Settings } from 'lucide-vue-next'
 
 // ============================================================================
 // SQL Query Purpose Presentation
@@ -37,18 +30,18 @@ const PURPOSE_PRESENTATION: Record<string, { label: string; classes: string }> =
 // System Log Category Presentation (icons instead of badges)
 // ============================================================================
 
-type IconComponent = typeof CheckCircleIcon
+type IconComponent = typeof CheckCircle
 
 const CATEGORY_PRESENTATION: Record<
   string,
   { label: string; icon: IconComponent; iconColorClass: string }
 > = {
-  progress: { label: 'Progress', icon: CheckCircleIcon, iconColorClass: 'text-blue-600' },
-  stat: { label: 'Statistics', icon: EyeIcon, iconColorClass: 'text-indigo-600' },
-  error: { label: 'Error', icon: ExclamationCircleIcon, iconColorClass: 'text-red-600' },
-  warn: { label: 'Warning', icon: ExclamationTriangleIcon, iconColorClass: 'text-yellow-600' },
-  debug: { label: 'Debug', icon: Cog6ToothIcon, iconColorClass: 'text-purple-600' },
-  info: { label: 'Info', icon: InformationCircleIcon, iconColorClass: 'text-gray-600' }
+  progress: { label: 'Progress', icon: CheckCircle, iconColorClass: 'text-blue-600' },
+  stat: { label: 'Statistics', icon: Eye, iconColorClass: 'text-indigo-600' },
+  error: { label: 'Error', icon: AlertCircle, iconColorClass: 'text-red-600' },
+  warn: { label: 'Warning', icon: AlertTriangle, iconColorClass: 'text-yellow-600' },
+  debug: { label: 'Debug', icon: Settings, iconColorClass: 'text-purple-600' },
+  info: { label: 'Info', icon: Info, iconColorClass: 'text-gray-600' }
 }
 
 /**
@@ -125,7 +118,7 @@ export function getCategoryIcon(
   }
 
   return {
-    icon: InformationCircleIcon,
+    icon: Info,
     colorClass: 'text-gray-600'
   }
 }

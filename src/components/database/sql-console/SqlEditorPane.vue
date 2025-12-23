@@ -9,7 +9,7 @@
         class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed"
         @click="$emit('execute')"
       >
-        <PlayIcon class="h-3.5 w-3.5 mr-1.5" />
+        <Play class="h-3.5 w-3.5 mr-1.5" />
         {{ isExecuting ? 'Running...' : 'Run' }}
       </button>
 
@@ -18,7 +18,7 @@
         title="Format SQL (Shift+Alt+F)"
         @click="$emit('format')"
       >
-        <CodeBracketIcon class="h-3.5 w-3.5" />
+        <Code class="h-3.5 w-3.5" />
       </button>
 
       <!-- Divider -->
@@ -30,9 +30,9 @@
           class="inline-flex items-center px-2 py-1.5 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded shadow-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
           @click="showTemplates = !showTemplates"
         >
-          <DocumentTextIcon class="h-3.5 w-3.5 mr-1" />
+          <FileText class="h-3.5 w-3.5 mr-1" />
           Templates
-          <ChevronDownIcon class="h-3 w-3 ml-1" />
+          <ChevronDown class="h-3 w-3 ml-1" />
         </button>
         <div
           v-if="showTemplates"
@@ -62,7 +62,7 @@
           :class="{ 'opacity-50 cursor-not-allowed': history.length === 0 }"
           @click="showHistory = !showHistory"
         >
-          <ClockIcon class="h-3.5 w-3.5 mr-1" />
+          <Clock class="h-3.5 w-3.5 mr-1" />
           History
           <span v-if="history.length > 0" class="ml-1 text-gray-400"> ({{ history.length }}) </span>
         </button>
@@ -123,13 +123,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { SqlEditor } from '@/components/monaco'
 import type { SchemaContext } from '@/composables/useMonacoSqlProviders'
-import {
-  PlayIcon,
-  CodeBracketIcon,
-  DocumentTextIcon,
-  ChevronDownIcon,
-  ClockIcon
-} from '@heroicons/vue/24/outline'
+import { ChevronDown, Clock, Code, FileText, Play } from 'lucide-vue-next'
 
 interface HistoryItem {
   query: string

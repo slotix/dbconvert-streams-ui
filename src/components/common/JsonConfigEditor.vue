@@ -6,7 +6,7 @@
         <span
           class="inline-flex items-center gap-1.5 text-sm font-medium text-teal-600 dark:text-teal-400"
         >
-          <PencilSquareIcon class="h-4 w-4" />
+          <SquarePen class="h-4 w-4" />
           {{ title }}
           <span v-if="isDirty" class="text-amber-500">*</span>
         </span>
@@ -18,7 +18,7 @@
           class="p-1.5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           @click="copyConfig"
         >
-          <ClipboardIcon class="h-4 w-4" />
+          <Clipboard class="h-4 w-4" />
         </button>
         <button
           v-tooltip="'Revert changes'"
@@ -27,7 +27,7 @@
           :class="{ 'opacity-50 cursor-not-allowed': !isDirty }"
           @click="handleRevert"
         >
-          <ArrowUturnLeftIcon class="h-4 w-4" />
+          <Undo class="h-4 w-4" />
           Revert
         </button>
         <button
@@ -35,7 +35,7 @@
           class="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors"
           @click="formatJson"
         >
-          <CodeBracketIcon class="h-4 w-4" />
+          <Code class="h-4 w-4" />
           Format
         </button>
         <button
@@ -66,7 +66,7 @@
             Saving...
           </template>
           <template v-else>
-            <CheckIcon class="h-4 w-4" />
+            <Check class="h-4 w-4" />
             Save
           </template>
         </button>
@@ -94,7 +94,7 @@
       class="mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg"
     >
       <h4 class="text-sm font-medium text-red-800 dark:text-red-300 mb-2 flex items-center gap-1.5">
-        <ExclamationTriangleIcon class="h-4 w-4" />
+        <AlertTriangle class="h-4 w-4" />
         Validation Errors ({{ validationErrors.length }})
       </h4>
       <ul class="space-y-1">
@@ -124,14 +124,7 @@ export default {
 
 <script setup lang="ts">
 import { ref, computed, watch, onBeforeUnmount, onMounted } from 'vue'
-import {
-  ClipboardIcon,
-  PencilSquareIcon,
-  ArrowUturnLeftIcon,
-  CodeBracketIcon,
-  CheckIcon,
-  ExclamationTriangleIcon
-} from '@heroicons/vue/24/outline'
+import { AlertTriangle, Check, Clipboard, Code, SquarePen, Undo } from 'lucide-vue-next'
 import MonacoEditor from '@/components/monaco/MonacoEditor.vue'
 import { useCommonStore } from '@/stores/common'
 import { debounce } from '@/utils/debounce'

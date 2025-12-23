@@ -45,7 +45,7 @@
               class="p-1 text-gray-500 hover:text-gray-700 rounded-md hover:bg-gray-100"
               @click.stop="copyConfig"
             >
-              <ClipboardIcon class="h-4 w-4" />
+              <Clipboard class="h-4 w-4" />
             </button>
           </div>
         </div>
@@ -89,7 +89,7 @@
                     :cloud-provider="source.cloud_provider"
                     :db-type="source.type"
                   />
-                  <ExclamationCircleIcon
+                  <AlertCircle
                     v-if="!source || !source.name"
                     class="h-4 w-4 text-red-500 flex-shrink-0"
                     aria-hidden="true"
@@ -132,7 +132,7 @@
                     :cloud-provider="target.cloud_provider"
                     :db-type="target.type"
                   />
-                  <ExclamationCircleIcon
+                  <AlertCircle
                     v-if="!target || !target.name"
                     class="h-4 w-4 text-red-500 flex-shrink-0"
                     aria-hidden="true"
@@ -162,7 +162,7 @@
           <!-- Creation Date -->
           <div class="mt-auto pt-4 border-t border-gray-100">
             <div class="flex items-center gap-2">
-              <CalendarIcon class="h-4 w-4 text-gray-500" />
+              <Calendar class="h-4 w-4 text-gray-500" />
               <span class="text-sm text-gray-500">Created: {{ streamCreated }}</span>
             </div>
           </div>
@@ -177,7 +177,7 @@
           class="flex-1 rounded-none border-0 py-3"
           @click.stop="editStream"
         >
-          <PencilIcon class="h-4 w-4" />
+          <Pencil class="h-4 w-4" />
           Edit
         </BaseButton>
         <ActionsMenu
@@ -196,7 +196,7 @@
           class="flex-1 rounded-none border-0 py-3"
           @click.stop="startStream"
         >
-          <PlayIcon class="h-4 w-4" />
+          <Play class="h-4 w-4" />
           Start
         </BaseButton>
       </div>

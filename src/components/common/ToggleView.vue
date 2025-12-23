@@ -54,12 +54,12 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { TableCellsIcon, Squares2X2Icon } from '@heroicons/vue/24/outline'
+import { Grid2X2, Sheet } from 'lucide-vue-next'
 import { useCommonStore } from '@/stores/common'
 const store = useCommonStore()
 const tabs = ref([
-  { name: 'cards', icon: Squares2X2Icon, current: true },
-  { name: 'table', icon: TableCellsIcon, current: false }
+  { name: 'cards', icon: Grid2X2, current: true },
+  { name: 'table', icon: Sheet, current: false }
 ])
 onMounted(() => {
   tabs.value.forEach((tab) => {

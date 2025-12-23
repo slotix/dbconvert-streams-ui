@@ -2,7 +2,7 @@
   <div class="flex items-center gap-4 mb-4">
     <!-- Label with Icon -->
     <div class="flex items-center gap-2 shrink-0">
-      <CircleStackIcon class="h-5 w-5 text-teal-600 dark:text-teal-400" />
+      <Database class="h-5 w-5 text-teal-600 dark:text-teal-400" />
       <label class="text-sm font-semibold text-gray-900 dark:text-gray-100">
         Data Source Type
       </label>
@@ -33,14 +33,14 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { TableCellsIcon, CodeBracketIcon, CircleStackIcon } from '@heroicons/vue/24/outline'
+import { Code, Database, Sheet } from 'lucide-vue-next'
 
 export type DataSourceMode = 'tables' | 'queries'
 
 interface ModeOption {
   id: DataSourceMode
   title: string
-  icon: typeof TableCellsIcon
+  icon: typeof Sheet
 }
 
 interface Props {
@@ -57,8 +57,8 @@ defineEmits<{
 }>()
 
 const allOptions: ModeOption[] = [
-  { id: 'tables', title: 'Select Tables', icon: TableCellsIcon },
-  { id: 'queries', title: 'Custom SQL Queries', icon: CodeBracketIcon }
+  { id: 'tables', title: 'Select Tables', icon: Sheet },
+  { id: 'queries', title: 'Custom SQL Queries', icon: Code }
 ]
 
 const availableOptions = computed(() => {

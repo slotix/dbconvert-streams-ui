@@ -1,11 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch, defineAsyncComponent, type Component } from 'vue'
-import {
-  ArrowPathIcon,
-  ViewColumnsIcon,
-  FunnelIcon,
-  ArrowsUpDownIcon
-} from '@heroicons/vue/24/outline'
+import { ArrowUpDown, Columns2, Filter, RefreshCw } from 'lucide-vue-next'
 import { type SQLTableMeta, type SQLViewMeta } from '@/types/metadata'
 import { type FileSystemEntry } from '@/api/fileSystem'
 import { type FileMetadata } from '@/types/files'
@@ -337,7 +332,7 @@ async function onRefreshClick() {
               title="Select columns to display"
               @click="toggleColumnSelector"
             >
-              <ViewColumnsIcon class="w-4 h-4" />
+              <Columns2 class="w-4 h-4" />
               <span class="hidden sm:inline">Columns</span>
               <span
                 v-if="selectedColumnsCount > 0"
@@ -358,7 +353,7 @@ async function onRefreshClick() {
               title="Add filter condition"
               @click="addFilter"
             >
-              <FunnelIcon class="w-4 h-4" />
+              <Filter class="w-4 h-4" />
               <span class="hidden sm:inline">Filter</span>
             </button>
 
@@ -374,7 +369,7 @@ async function onRefreshClick() {
               title="Add sort column"
               @click="addSort"
             >
-              <ArrowsUpDownIcon class="w-4 h-4" />
+              <ArrowUpDown class="w-4 h-4" />
               <span class="hidden sm:inline">Sort</span>
             </button>
           </div>
@@ -388,7 +383,7 @@ async function onRefreshClick() {
             :disabled="isRefreshing"
             @click="onRefreshClick"
           >
-            <ArrowPathIcon
+            <RefreshCw
               :class="[
                 'h-4 w-4 mr-1.5',
                 isRefreshing ? 'animate-spin' : 'text-gray-400 dark:text-gray-500'

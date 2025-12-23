@@ -7,7 +7,7 @@
       title="Export current page as CSV"
       @click="handleExport('csv')"
     >
-      <ArrowDownTrayIcon class="h-3.5 w-3.5 mr-1" />
+      <Download class="h-3.5 w-3.5 mr-1" />
       CSV
     </button>
 
@@ -18,7 +18,7 @@
       title="Export current page as JSON"
       @click="handleExport('json')"
     >
-      <ArrowDownTrayIcon class="h-3.5 w-3.5 mr-1" />
+      <Download class="h-3.5 w-3.5 mr-1" />
       JSON
     </button>
 
@@ -29,7 +29,7 @@
       title="Export current page as Excel"
       @click="handleExport('excel')"
     >
-      <ArrowDownTrayIcon class="h-3.5 w-3.5 mr-1" />
+      <Download class="h-3.5 w-3.5 mr-1" />
       Excel
     </button>
 
@@ -41,7 +41,7 @@
         title="More export formats"
         @click="showExportMenu = !showExportMenu"
       >
-        <EllipsisHorizontalIcon class="h-3.5 w-3.5" />
+        <MoreHorizontal class="h-3.5 w-3.5" />
       </button>
 
       <!-- Dropdown Menu -->
@@ -79,7 +79,7 @@
             :disabled="isExporting"
             @click="handleStreamExport(format.id)"
           >
-            <CloudArrowUpIcon v-if="!isExporting" class="h-3.5 w-3.5 text-teal-500" />
+            <CloudUpload v-if="!isExporting" class="h-3.5 w-3.5 text-teal-500" />
             <svg
               v-else
               class="animate-spin h-3.5 w-3.5 text-teal-500"
@@ -110,11 +110,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import {
-  ArrowDownTrayIcon,
-  EllipsisHorizontalIcon,
-  CloudArrowUpIcon
-} from '@heroicons/vue/24/outline'
+import { CloudUpload, Download, MoreHorizontal } from 'lucide-vue-next'
 import { secondaryExportFormats, type ExportFormat } from '@/composables/useDataExport'
 import type { StreamExportFormat } from '@/composables/useStreamExport'
 
