@@ -9,109 +9,103 @@ This document describes the complete flow for adding and editing database connec
 ### Core Components Structure
 
 ```
+src/views/
+├── DatabaseExplorerView.vue      # Connection list + explorer entrypoint
+├── AddConnectionView.vue         # "New Connection" wizard wrapper
+├── EditConnectionView.vue        # Edit wizard wrapper
+├── EditConnectionJsonView.vue    # JSON editor route
+
 src/components/connection/
-├── Modal.vue                    # Main modal container
-├── Add.vue                      # Add connection workflow
-├── Edit.vue                     # Edit connection workflow
-├── Connections.vue              # Main connections list view
-├── ActionBtns.vue              # Modal action buttons (Add/Update/Test/Cancel)
-├── CardItem.vue                # Connection card display
-├── Table.vue                   # Table view for connections
-├── TableRow.vue                # Table row component
-├── NewCard.vue                 # Empty state new connection card
-├── DBTypesListBox.vue          # Database type selector dropdown
-├── DBTypesCombo.vue            # Database type filter combo
-├── ConnectionStringInput.vue    # Connection string input
-├── AccessNotice.vue            # Database access notice
-├── shared.ts                   # Shared utilities and types
-└── params/                     # Parameter input components
-    ├── ConnectionParams.vue     # Tab container for connection parameters
+├── wizard/
+│   ├── AddConnectionWizard.vue   # 2-step create flow
+│   ├── EditConnectionWizard.vue  # Edit flow
+│   ├── WizardLayout.vue          # Shared wizard layout
+│   └── steps/
+│       ├── DatabaseTypeStep.vue      # DB/file type or connection string
+│       └── ConnectionDetailsStep.vue # Params + validation
+├── ConnectionStringInput.vue     # Connection string input
+├── ConnectionConfigJsonEditor.vue # JSON editor wrapper
+├── AccessNotice.vue              # Database access notice
+└── params/                       # Parameter input components
+    ├── ConnectionParams.vue      # Tab container for connection parameters
     ├── UnifiedConnectionParams.vue  # Direct connection parameters
-    ├── SSLParams.vue           # SSL/TLS connection parameters
-    ├── ConnectionName.vue      # Connection name input
-    └── CertificateInput.vue    # SSL certificate input
+    ├── SSLParams.vue             # SSL/TLS connection parameters
+    ├── ConnectionName.vue        # Connection name input
+    ├── CertificateInput.vue      # SSL certificate input
+    ├── LocalFilesConnectionParams.vue # Local file params
+    └── S3ConnectionParams.vue    # S3 params
 ```
 
 ## Add Connection Flow
 
 ### 1. Initiation
-- **Trigger**: User clicks "New connection" button in `Connections.vue`
-- **Action**: `addConnection()` method calls `commonStore.openModal('Add')`
-- **State**: Sets `showModal: true` and `dlgType: 'Add'` in common store
+- **Trigger**: User clicks "New Connection" button in `DatabaseExplorerView.vue`
+- **Action**: `onAddConnection()` navigates to `/explorer/add`
 
-### 2. Modal Display
-- **Component**: `Modal.vue` renders with conditional content based on `dlgType`
-- **Title**: Dynamic title shows "Add database connection"
-- **Content**: Shows database type selector and connection parameters sections
+### 2. Page Display
+- **Component**: `AddConnectionView.vue` renders the wizard layout
+- **Content**: `AddConnectionWizard.vue` handles step navigation and actions
 
 ### 3. Database Type Selection
-- **Component**: `DBTypesListBox.vue` displays available database types
-- **Options**: PostgreSQL, MySQL (from `connectionsStore.dbTypes`)
-- **Selection**: `selectDBType(dbType)` updates `connectionDBType` in Add.vue
-- **Effect**: Enables connection parameters form
+- **Component**: `DatabaseTypeStep.vue` displays available database and file types
+- **Options**: `connectionsStore.dbTypes` (PostgreSQL, MySQL, Snowflake, Files, S3)
+- **Selection**: Updates the selected DB type and initializes specs via the connections store
+- **Effect**: Enables the details step
 
 ### 4. Connection Parameters
-- **Component**: `ConnectionParams.vue` with tab-based interface
-- **Tabs**: "Direct" and "SSL" connection options
-- **Direct Tab**: `UnifiedConnectionParams.vue` for basic connection details
-- **SSL Tab**: `SSLParams.vue` for SSL/TLS configuration
-- **Fields**: Host, port, username, password, database name, connection name
+- **Component**: `ConnectionDetailsStep.vue`
+- **Params**: `ConnectionParams.vue` with Direct/SSL tabs plus file/S3 inputs as needed
+- **Optional**: `ConnectionStringInput.vue` for connection string parsing
 
 ### 5. Form Submission
-- **Trigger**: User clicks "Add Connection" button
-- **Component**: `ActionBtns.vue` emits `confirm` event
-- **Handler**: `Add.vue` `ok()` method processes the submission
-- **Validation**: Checks if database type is selected and connection details are complete
+- **Trigger**: User clicks "Create Connection"
+- **Handler**: `AddConnectionWizard.vue` validates details and calls the store
 
 ### 6. API Call & Completion
-- **Action**: `connectionsStore.createConnection()` sends POST request to API
-- **Success**: Shows success notification, closes modal, refreshes connections list
-- **Error**: Shows error notification, keeps modal open for corrections
+- **Action**: `connectionsStore.createConnection()` sends the POST request
+- **Success**: Refreshes connections and navigates back to explorer (or stream wizard)
+- **Error**: Shows a toast notification, stays on the wizard step
 
 ## Edit Connection Flow
 
 ### 1. Initiation
-- **Trigger**: User clicks edit button on connection card or table row
-- **Component**: `CardItem.vue` or `TableRow.vue` calls edit method
-- **Action**: Sets current connection in store and opens modal with 'Update' type
+- **Trigger**: User clicks "Edit" from the explorer connection actions
+- **Action**: `onEditConnection()` navigates to `/explorer/edit/:id`
 
-### 2. Modal Display
-- **Component**: `Modal.vue` renders with edit-specific content
-- **Title**: Shows "Edit database connection"
-- **Pre-fill**: Connection parameters are pre-populated from `currentConnection`
+### 2. Page Display
+- **Component**: `EditConnectionView.vue` renders the edit wizard
+- **Pre-fill**: `EditConnectionWizard.vue` loads the selected connection into the store
 
 ### 3. Parameter Editing
-- **Component**: `Edit.vue` uses same `ConnectionParams.vue` structure
+- **Component**: `ConnectionDetailsStep.vue`
 - **Pre-populated**: All fields show existing connection values
-- **Database Type**: Not changeable in edit mode (no DB type selector shown)
-- **Modification**: User can modify any connection parameters
+- **Database Type**: Fixed in edit mode (`hideTypeDisplay`)
 
 ### 4. Form Submission
-- **Trigger**: User clicks "Update Connection" button
-- **Handler**: `Edit.vue` `ok()` method processes the update
-- **API Call**: `connectionsStore.updateConnection()` sends PUT request
+- **Trigger**: User clicks "Update Connection"
+- **Handler**: `EditConnectionWizard.vue` calls `connectionsStore.updateConnection()`
 
 ### 5. Completion
-- **Success**: Shows success notification, closes modal, refreshes connections list
-- **Error**: Shows error notification, keeps modal open for corrections
+- **Success**: Refreshes connections and navigates back to the explorer detail view
+- **Error**: Shows a toast notification and stays on the edit page
 
 ## Key State Management
 
 ### Common Store (`useCommonStore`)
 ```typescript
 {
-  showModal: boolean           // Controls modal visibility
-  dlgType: 'Add' | 'Update'   // Determines modal content and behavior
+  isBackendConnected: boolean      // API health/connection state
+  showNotification: (msg, type) => void
 }
 ```
 
 ### Connections Store (`useConnectionsStore`)
 ```typescript
 {
-  currentConnection: Connection | null    // Connection being edited
-  connectionDBType: DbType | null        // Selected database type for new connections
-  isUpdatingConnection: boolean          // Loading state for updates
-  isTestingConnection: boolean           // Loading state for connection tests
+  dbTypes: DbType[]                 // Available connection types
+  currentConnection: Connection | null
+  isUpdatingConnection: boolean     // Loading state for updates/creates
+  isTestingConnection: boolean      // Loading state for connection tests
 }
 ```
 
@@ -125,7 +119,7 @@ src/components/connection/
 ### 2. Store-Based State Management
 - Connection data managed in Pinia stores
 - Reactive computed properties for UI updates
-- Centralized state for modal visibility and current connection
+- Centralized state for current connection and loading flags
 
 ### 3. Event-Driven Updates
 - Backend reconnection events trigger connection list refresh
@@ -134,12 +128,12 @@ src/components/connection/
 ## Connection Testing Flow
 
 ### 1. Test Connection Feature
-- **Available**: Both Add and Edit modals have "Test Connection" button
-- **Component**: `ActionBtns.vue` handles test button click
-- **State**: `isTestingConnection` shows loading spinner during test
+- **Available**: Both add and edit wizards include a "Test Connection" button
+- **Component**: `AddConnectionWizard.vue` and `EditConnectionWizard.vue`
+- **State**: `isTestingConnection` shows loading feedback during test
 
 ### 2. Test Process
-- **Trigger**: `Modal.vue` calls `connectionsStore.testConnection()`
+- **Trigger**: Wizards call `connectionsStore.testConnection()`
 - **API**: Sends test request to backend with connection parameters
 - **Feedback**: Success/error notifications inform user of test results
 
@@ -153,36 +147,26 @@ src/components/connection/
 ### 2. API Error Handling
 - Network errors show user-friendly messages
 - Validation errors from backend displayed in notifications
-- Modal remains open on errors for user correction
+- Wizard stays on the current step for user correction
 
 ### 3. Offline Mode
 - Fallback to cached connection data when backend unavailable
 - Limited functionality with clear user messaging
 - Automatic retry when connection restored
 
-## Connection Display Modes
+## Connection Navigation
 
-### 1. Card View (Default)
-- **Component**: `CardItem.vue`
-- **Layout**: Grid of connection cards with details
-- **Features**: Click to select, edit/delete actions, visual status indicators
-
-### 2. Table View
-- **Component**: `Table.vue` with `TableRow.vue`
-- **Layout**: Compact tabular format
-- **Features**: Sortable columns, bulk actions, efficient for many connections
-
-### 3. View Toggle
-- **Component**: `ToggleView.vue` in `Connections.vue`
-- **Persistence**: View preference saved in localStorage
-- **Responsive**: Adapts to screen size
+### Explorer Sidebar
+- **Component**: `ExplorerSidebarConnections.vue`
+- **Layout**: Tree view of connections → databases → schemas → objects/files
+- **Features**: Search, type filters, context menus, and quick actions
 
 ## Advanced Features
 
 ### 1. Connection Filtering
-- **Component**: `DBTypesCombo.vue` with filter functionality
-- **Options**: Filter by database type (All, PostgreSQL, MySQL)
-- **Real-time**: Instant filtering of connection list
+- **Component**: `ConnectionTypeFilter.vue`
+- **Options**: Filter by connection type (All, database, file)
+- **Real-time**: Instant filtering in the explorer sidebar
 
 ### 2. Connection Cloning
 - **Feature**: Clone existing connections for quick setup
