@@ -471,6 +471,71 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
   }
 
   /**
+   * Move a pinned tab from one pane to another.
+   * - Pinned-only (does not touch preview tabs)
+   * - If destination already has the same tab (same generateTabKey),
+   *   activate destination and close source (no duplicates)
+   * - Migrates per-tab UI state by moving objectTabStateStore key
+   */
+  function movePinnedTab(fromPaneId: PaneId, fromIndex: number, toPaneId: PaneId) {
+    if (fromPaneId === toPaneId) return
+
+    const fromState = getPaneState(fromPaneId)
+    const toState = getPaneState(toPaneId)
+    if (fromIndex < 0 || fromIndex >= fromState.pinnedTabs.length) return
+
+    const sourceTab = fromState.pinnedTabs[fromIndex]
+    const tabKey = generateTabKey(sourceTab)
+
+    const existingDestIndex = toState.pinnedTabs.findIndex((t) => generateTabKey(t) === tabKey)
+    if (existingDestIndex >= 0) {
+      // Destination already has this tab; just activate it and close the source.
+      toState.activePinnedIndex = existingDestIndex
+      setActivePane(toPaneId)
+      // Close source tab (clears old pane-scoped object state)
+      closeTab(fromPaneId, fromIndex)
+      persistState()
+      return
+    }
+
+    // Prepare object key migration
+    const fromObjectKey = ensureObjectKey(fromPaneId, sourceTab)
+
+    // Remove from source without clearing its object state (we migrate it)
+    const wasSourceActive = fromState.activePinnedIndex === fromIndex
+    const [removedTab] = fromState.pinnedTabs.splice(fromIndex, 1)
+
+    if (fromState.pinnedTabs.length === 0) {
+      fromState.activePinnedIndex = null
+      if (!fromState.previewTab && fromPaneId !== 'left') {
+        hidePane(fromPaneId)
+      }
+    } else {
+      if (wasSourceActive) {
+        const newIndex = Math.min(fromIndex, fromState.pinnedTabs.length - 1)
+        fromState.activePinnedIndex = newIndex
+      } else if (fromState.activePinnedIndex !== null && fromState.activePinnedIndex > fromIndex) {
+        fromState.activePinnedIndex--
+      }
+    }
+
+    // Rebuild objectKey for the destination pane (pane-scoped)
+    const movedTab: PaneTab = { ...removedTab, pinned: true }
+    delete movedTab.objectKey
+    const toObjectKey = ensureObjectKey(toPaneId, movedTab)
+    if (fromObjectKey && toObjectKey) {
+      objectTabStateStore.moveTabState(fromObjectKey, toObjectKey, true)
+    }
+
+    // Insert into destination
+    showPane(toPaneId)
+    toState.pinnedTabs.push(movedTab)
+    toState.activePinnedIndex = toState.pinnedTabs.length - 1
+    setActivePane(toPaneId)
+    persistState()
+  }
+
+  /**
    * Activate a pinned tab by index
    */
   function activateTab(paneId: PaneId, index: number) {
@@ -576,6 +641,7 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
     closeOtherTabs,
     closeAllTabs,
     closePreviewTab,
+    movePinnedTab,
     activateTab,
     activatePreviewTab,
     updateTabFileMetadata,

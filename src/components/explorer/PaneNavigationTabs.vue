@@ -1,5 +1,5 @@
 <template>
-  <div class="mb-2" :data-pane-id="paneId">
+  <div class="mb-2" :data-pane-id="paneId" @dragover.prevent="onDragOver" @drop.prevent="onDrop">
     <div class="flex items-center gap-1 flex-wrap">
       <!-- Preview tab (dashed border) -->
       <button
@@ -17,6 +17,7 @@
         v-for="(tab, i) in pinnedTabs"
         :key="tab.id"
         type="button"
+        draggable="true"
         :class="[
           'group flex items-center gap-2 rounded border bg-white dark:bg-gray-850 px-2 py-1 text-xs transition',
           'focus:outline-none focus:ring-1 focus:ring-slate-400 dark:focus:ring-slate-500',
@@ -26,6 +27,7 @@
         ]"
         @click="$emit('activate-tab', i)"
         @contextmenu.prevent="showContextMenu($event, i)"
+        @dragstart="onDragStart($event, i)"
       >
         <!-- Object type icon only (no data/structure indicator) -->
         <component
@@ -122,6 +124,49 @@ const store = usePaneTabsStore()
 const paneState = computed(() => store.getPaneState(props.paneId))
 const pinnedTabs = computed(() => paneState.value.pinnedTabs)
 const currentPreview = computed(() => paneState.value.previewTab)
+
+const DRAG_MIME = 'application/x-dbconvert-pane-tab'
+
+function onDragStart(event: DragEvent, index: number) {
+  // Pinned-only: index is always a pinned tab index.
+  const payload = { fromPaneId: props.paneId, fromPinnedIndex: index }
+  try {
+    event.dataTransfer?.setData(DRAG_MIME, JSON.stringify(payload))
+    event.dataTransfer?.setData('text/plain', JSON.stringify(payload))
+  } catch {
+    // ignore
+  }
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = 'move'
+  }
+}
+
+function onDragOver(event: DragEvent) {
+  if (!event.dataTransfer) return
+  const hasPayload =
+    Array.from(event.dataTransfer.types || []).includes(DRAG_MIME) ||
+    Array.from(event.dataTransfer.types || []).includes('text/plain')
+  if (hasPayload) {
+    event.dataTransfer.dropEffect = 'move'
+  }
+}
+
+function onDrop(event: DragEvent) {
+  if (!event.dataTransfer) return
+
+  const raw = event.dataTransfer.getData(DRAG_MIME) || event.dataTransfer.getData('text/plain')
+  if (!raw) return
+
+  try {
+    const parsed = JSON.parse(raw) as { fromPaneId: PaneId; fromPinnedIndex: number }
+    if (parsed.fromPaneId !== 'left' && parsed.fromPaneId !== 'right') return
+    if (!Number.isInteger(parsed.fromPinnedIndex) || parsed.fromPinnedIndex < 0) return
+    if (parsed.fromPaneId === props.paneId) return
+    store.movePinnedTab(parsed.fromPaneId, parsed.fromPinnedIndex, props.paneId)
+  } catch {
+    // ignore invalid payloads
+  }
+}
 
 // Context menu state
 const contextMenu = ref({

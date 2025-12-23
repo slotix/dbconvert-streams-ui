@@ -3,7 +3,7 @@ import type { SortModelItem, ColumnState } from 'ag-grid-community'
 
 type AGGridDataState = {
   sortModel: SortModelItem[]
-  filterModel: Record<string, any>
+  filterModel: Record<string, unknown>
   // Panel-driven WHERE clause (Query Filter Panel is the single source of truth)
   panelWhereSQL?: string
   // Panel-driven LIMIT (user-specified row limit)
@@ -174,6 +174,25 @@ export const useObjectTabStateStore = defineStore('objectTabState', {
         delete this.tabStates[objectKey].filterPanelState
         this.persistState()
       }
+    },
+
+    /**
+     * Move (rename) a stored tab state entry from one objectKey to another.
+     * Used when a tab is moved between panes (objectKey is pane-scoped).
+     */
+    moveTabState(fromObjectKey: string, toObjectKey: string, overwrite: boolean = true) {
+      if (!fromObjectKey || !toObjectKey || fromObjectKey === toObjectKey) return
+
+      const state = this.tabStates[fromObjectKey]
+      if (!state) return
+
+      if (!overwrite && this.tabStates[toObjectKey]) {
+        return
+      }
+
+      this.tabStates[toObjectKey] = state
+      delete this.tabStates[fromObjectKey]
+      this.persistState()
     }
   }
 })
