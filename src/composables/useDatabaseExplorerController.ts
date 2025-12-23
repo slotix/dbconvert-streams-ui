@@ -70,6 +70,15 @@ export function useDatabaseExplorerController({
     void router.push({ path: nextPath, query })
   }
 
+  function pushRightPaneRoute(connectionId: string, query: Record<string, string>) {
+    const nextPath = `/explorer/${connectionId}`
+    const mergedQuery = { ...route.query, ...query }
+    const currentQuery = JSON.stringify(route.query)
+    const nextQuery = JSON.stringify(mergedQuery)
+    if (route.path === nextPath && currentQuery === nextQuery) return
+    void router.push({ path: nextPath, query: mergedQuery })
+  }
+
   const restoreToken = ref(0)
 
   async function ensureLeftPaneMatchesViewState(payload: {
@@ -243,23 +252,49 @@ export function useDatabaseExplorerController({
   }) {
     const previousConnectionId = explorerState.currentConnectionId.value
 
-    // Update store
-    viewState.selectTable(
-      payload.connectionId,
-      payload.database,
-      payload.type,
-      payload.name,
-      payload.schema
-    )
+    const targetPane: PaneId = payload.openInRightSplit
+      ? 'right'
+      : paneTabsStore.activePane || 'left'
 
-    if (!payload.skipUrlUpdate) {
-      const query: Record<string, string> = {
-        db: payload.database,
-        type: payload.type,
-        name: payload.name
+    // For right-pane opens, do NOT update the global (left) selection.
+    // The viewState watcher restores the selected object into the left pane;
+    // updating it here would cause the left pane to change even when the user
+    // intended to open in the active/right pane.
+    if (targetPane === 'left') {
+      viewState.selectTable(
+        payload.connectionId,
+        payload.database,
+        payload.type,
+        payload.name,
+        payload.schema
+      )
+
+      if (!payload.skipUrlUpdate) {
+        const query: Record<string, string> = {
+          db: payload.database,
+          type: payload.type,
+          name: payload.name
+        }
+        if (payload.schema) query.schema = payload.schema
+        pushExplorerRoute(payload.connectionId, query)
       }
-      if (payload.schema) query.schema = payload.schema
-      pushExplorerRoute(payload.connectionId, query)
+    } else {
+      // Ensure we are in the tab view (not connection details / overview), but
+      // avoid selecting a left-pane object.
+      if (viewState.viewType !== 'table-data') {
+        viewState.selectDatabaseTabView(payload.connectionId, payload.database)
+      }
+
+      if (!payload.skipUrlUpdate) {
+        const query: Record<string, string> = {
+          rightDb: payload.database,
+          rightType: payload.type,
+          rightName: payload.name,
+          pane: 'right'
+        }
+        if (payload.schema) query.rightSchema = payload.schema
+        pushRightPaneRoute(payload.connectionId, query)
+      }
     }
 
     navigationStore.setActiveConnectionId(payload.connectionId)
@@ -272,10 +307,6 @@ export function useDatabaseExplorerController({
     if (payload.connectionId !== previousConnectionId && previousConnectionId) {
       fileExplorerStore.clearSelection(previousConnectionId)
     }
-
-    const targetPane: PaneId = payload.openInRightSplit
-      ? 'right'
-      : paneTabsStore.activePane || 'left'
 
     paneTabsStore.addTab(
       targetPane,
