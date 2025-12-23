@@ -332,6 +332,25 @@ export function useDatabaseExplorerController({
       ? 'right'
       : paneTabsStore.activePane || 'left'
 
+    const effectiveMode: 'preview' | 'pinned' = alwaysOpenNewTab.value ? 'pinned' : payload.mode
+
+    // Double-click on a file triggers both:
+    // 1) single-click -> handleFileSelect -> preview open
+    // 2) dblclick -> pinned open
+    // If we add a pinned tab while the same file is already the preview tab, we end up
+    // with duplicate tabs (and often duplicate Vue keys/ids), which can cause the file
+    // grid to render empty. Instead, pin the existing preview tab.
+    if (effectiveMode === 'pinned') {
+      const paneState = paneTabsStore.getPaneState(targetPane)
+      if (
+        paneState.previewTab?.tabType === 'file' &&
+        paneState.previewTab.filePath === payload.path
+      ) {
+        paneTabsStore.pinPreviewTab(targetPane)
+        return
+      }
+    }
+
     if (!payload.openInRightSplit) {
       explorerState.setFileSelection(payload.entry)
       // Clear selections from other connections to avoid double highlights
@@ -358,7 +377,7 @@ export function useDatabaseExplorerController({
         fileType: payload.entry.type,
         tabType: 'file'
       },
-      alwaysOpenNewTab.value ? 'pinned' : payload.mode
+      effectiveMode
     )
 
     // Clear loading state immediately - let the data grid handle its own loading

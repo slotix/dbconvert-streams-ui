@@ -318,6 +318,15 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
         state.activePinnedIndex = state.pinnedTabs.length - 1
       }
     } else {
+      // If the requested preview is already open, don't clear object state.
+      // Double-clicking fires two rapid opens; clearing here would wipe the tab's
+      // persisted object state (e.g., file grid rowData) and can render an empty grid.
+      if (state.previewTab && generateTabKey(state.previewTab) === key) {
+        state.activePinnedIndex = null
+        setActivePane(paneId)
+        persistState()
+        return
+      }
       // Set as preview tab (replaces current preview)
       if (state.previewTab) {
         clearObjectState(paneId, state.previewTab)
