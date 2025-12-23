@@ -14,7 +14,20 @@ import { useDesktopZoom } from '@/utils/desktopZoom'
  * Check if running in Wails desktop context
  */
 export function isWailsContext(): boolean {
-  return typeof window !== 'undefined' && window.runtime !== undefined
+  if (typeof window === 'undefined') {
+    return false
+  }
+  if (window.runtime !== undefined) {
+    return true
+  }
+  const desktopFlag = window.ENV?.VITE_DESKTOP_MODE
+  if (typeof desktopFlag === 'string') {
+    return desktopFlag.toLowerCase() === 'true'
+  }
+  if (desktopFlag === true) {
+    return true
+  }
+  return typeof navigator !== 'undefined' && navigator.userAgent.toLowerCase().includes('wails')
 }
 
 /**
@@ -69,6 +82,14 @@ export function useWailsMenuEvents() {
     // Refresh current view
     cleanupFns.push(
       eventsOn('menu:refresh', () => {
+        if (window.runtime?.WindowReloadApp) {
+          window.runtime.WindowReloadApp()
+          return
+        }
+        if (window.runtime?.WindowReload) {
+          window.runtime.WindowReload()
+          return
+        }
         router.go(0)
       })
     )

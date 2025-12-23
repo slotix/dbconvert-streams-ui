@@ -20,6 +20,7 @@ interface Window {
     VITE_API_URL: string
     VITE_BACKEND_URL: string
     VITE_SENTRY_DSN: string
+    VITE_DESKTOP_MODE?: string
     [key: string]: any
   }
   runtime?: {
@@ -32,6 +33,8 @@ interface Window {
     EventsOffAll: () => void
     EventsEmit?: (...args: unknown[]) => void
     BrowserOpenURL?: (url: string) => void
+    WindowReload?: () => void
+    WindowReloadApp?: () => void
   }
   MonacoEnvironment?: {
     getWorker?: (workerId: string, label: string) => Worker
