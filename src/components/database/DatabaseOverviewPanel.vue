@@ -23,7 +23,7 @@ import {
   ShareIcon,
   ClipboardDocumentIcon,
   ArrowDownTrayIcon
-} from '@heroicons/vue/24/outline'
+} from '@heroicons/vue/24/solid'
 
 const props = defineProps<{
   connectionId: string

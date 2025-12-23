@@ -58,7 +58,7 @@ import {
   ArrowUpTrayIcon,
   KeyIcon,
   ChartBarIcon
-} from '@heroicons/vue/24/outline'
+} from '@heroicons/vue/24/solid'
 
 interface Service {
   id: string

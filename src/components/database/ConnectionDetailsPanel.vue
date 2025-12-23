@@ -24,7 +24,7 @@ import {
   CommandLineIcon,
   CloudIcon,
   FolderIcon
-} from '@heroicons/vue/24/outline'
+} from '@heroicons/vue/24/solid'
 
 const navigationStore = useExplorerNavigationStore()
 const overviewStore = useDatabaseOverviewStore()
