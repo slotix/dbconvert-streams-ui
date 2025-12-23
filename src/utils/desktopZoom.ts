@@ -36,6 +36,8 @@ const updateRootZoom = (value: number) => {
 
   root.classList.add('desktop-zoom')
   root.style.setProperty('--app-zoom', value.toString())
+  // CSS zoom is applied via CSS rules in style.css based on .desktop-zoom class
+  // and --app-zoom variable. This ensures both html and fixed elements are zoomed.
 }
 
 const applyZoom = (value: number) => {
