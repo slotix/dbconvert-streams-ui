@@ -66,7 +66,7 @@
         v-if="contextMenu.visible"
         ref="contextMenuRef"
         class="fixed z-50 bg-white dark:bg-gray-850 shadow-lg dark:shadow-gray-900/30 border border-gray-200 dark:border-gray-700 rounded-md py-1 min-w-40"
-        :style="{ left: `${contextMenu.x}px`, top: `${contextMenu.y}px` }"
+        :style="{ left: `${adjustedMenuX}px`, top: `${adjustedMenuY}px` }"
       >
         <button
           class="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
@@ -99,6 +99,12 @@ import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
 import { Eye, File, Share2, Sheet, Terminal, X } from 'lucide-vue-next'
 import { usePaneTabsStore, type PaneId, type PaneTab } from '@/stores/paneTabs'
 
+// Get current zoom factor for position adjustment
+const getZoomFactor = () => {
+  const zoomValue = getComputedStyle(document.documentElement).getPropertyValue('--app-zoom')
+  return parseFloat(zoomValue) || 1
+}
+
 const props = defineProps<{
   paneId: PaneId
   isActive: boolean // Visual indicator for active pane
@@ -125,6 +131,8 @@ const contextMenu = ref({
   tabIndex: -1
 })
 const contextMenuRef = ref<HTMLElement | null>(null)
+const adjustedMenuX = computed(() => contextMenu.value.x / getZoomFactor())
+const adjustedMenuY = computed(() => contextMenu.value.y / getZoomFactor())
 
 function isActiveTab(index: number): boolean {
   return paneState.value.activePinnedIndex === index
