@@ -224,8 +224,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, inject } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowPathIcon, PlusIcon } from '@heroicons/vue/24/solid'
-import { Bars3Icon } from '@heroicons/vue/24/outline'
+import { ArrowPathIcon, PlusIcon, Bars3Icon } from '@heroicons/vue/24/solid'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
 import { useMonitoringStore } from '@/stores/monitoring'

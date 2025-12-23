@@ -142,7 +142,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, nextTick, inject } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { Bars3Icon } from '@heroicons/vue/24/outline'
+import { Bars3Icon } from '@heroicons/vue/24/solid'
 import { useDesktopMode } from '@/composables/useDesktopMode'
 import { useStreamWizard } from '@/composables/useStreamWizard'
 import { useStreamsStore } from '@/stores/streamConfig'

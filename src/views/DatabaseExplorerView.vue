@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, inject } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Bars3Icon, PlusIcon } from '@heroicons/vue/24/outline'
+import { Bars3Icon, PlusIcon } from '@heroicons/vue/24/solid'
 import { useCommonStore } from '@/stores/common'
 import { useConnectionsStore } from '@/stores/connections'
 import { useSchemaStore } from '@/stores/schema'

@@ -96,7 +96,8 @@ import type {
   ColDef,
   GridReadyEvent,
   GridOptions,
-  ICellRendererParams
+  ICellRendererParams,
+  PostProcessPopupParams
 } from 'ag-grid-community'
 import { formatDateTime, formatDuration, formatNumberCompact } from '@/utils/formats'
 import { useLogsStore } from '@/stores/logs'
@@ -261,6 +262,16 @@ const columnDefs = ref<ColDef[]>([
   }
 ])
 
+// Adjust popup position for CSS zoom (desktop app)
+const postProcessPopup = (params: PostProcessPopupParams) => {
+  const zoomValue = getComputedStyle(document.documentElement).getPropertyValue('--app-zoom')
+  const zoom = parseFloat(zoomValue) || 1
+  if (zoom === 1 || !params.ePopup) return
+
+  // Apply inverse zoom to the popup to counteract the CSS zoom effect on positioning
+  params.ePopup.style.zoom = `${1 / zoom}`
+}
+
 const gridOptions = computed<GridOptions>(() => ({
   theme: 'legacy',
   rowHeight: 48,
@@ -273,6 +284,7 @@ const gridOptions = computed<GridOptions>(() => ({
   pagination: true,
   paginationPageSize: 20,
   paginationPageSizeSelector: [20, 50, 100],
+  postProcessPopup,
   defaultColDef: {
     sortable: true,
     filter: false,

@@ -3,6 +3,12 @@ import { computed } from 'vue'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { useConnectionTreeLogic } from '@/composables/useConnectionTreeLogic'
 
+// Get current zoom factor for position adjustment
+const getZoomFactor = () => {
+  const zoomValue = getComputedStyle(document.documentElement).getPropertyValue('--app-zoom')
+  return parseFloat(zoomValue) || 1
+}
+
 type ContextTarget =
   | { kind: 'connection'; connectionId: string }
   | { kind: 'database'; connectionId: string; database: string }
@@ -44,6 +50,10 @@ const emit = defineEmits<{
 }>()
 
 const target = computed(() => props.target as ContextTarget)
+
+// Adjust position for CSS zoom
+const adjustedX = computed(() => props.x / getZoomFactor())
+const adjustedY = computed(() => props.y / getZoomFactor())
 const navigationStore = useExplorerNavigationStore()
 const treeLogic = useConnectionTreeLogic()
 
@@ -94,7 +104,7 @@ function click(action: string, openInRightSplit?: boolean) {
       <div class="fixed inset-0 z-40" @click="emit('close')"></div>
       <div
         class="fixed z-50 bg-white dark:bg-gray-850 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg dark:shadow-gray-900/50 py-1 text-sm"
-        :style="{ left: x + 'px', top: y + 'px', minWidth: '200px' }"
+        :style="{ left: adjustedX + 'px', top: adjustedY + 'px', minWidth: '200px' }"
       >
         <template v-if="target.kind === 'connection'">
           <!-- Connection menu -->

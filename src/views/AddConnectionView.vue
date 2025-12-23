@@ -62,7 +62,7 @@
 <script setup lang="ts">
 import { inject } from 'vue'
 import { useRouter } from 'vue-router'
-import { Bars3Icon } from '@heroicons/vue/24/outline'
+import { Bars3Icon } from '@heroicons/vue/24/solid'
 import { useDesktopMode } from '@/composables/useDesktopMode'
 import AddConnectionWizard from '@/components/connection/wizard/AddConnectionWizard.vue'
 

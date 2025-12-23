@@ -15,7 +15,8 @@ import type {
   IGetRowsParams,
   GridReadyEvent,
   SortModelItem,
-  Column
+  Column,
+  PostProcessPopupParams
 } from 'ag-grid-community'
 import { useAGGridFiltering } from '@/composables/useAGGridFiltering'
 import { useObjectTabStateStore } from '@/stores/objectTabState'
@@ -179,6 +180,18 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
 
   // AG Grid options for Infinite Row Model
   // Note: sortable and filter are disabled - Query Filter Panel is the single source of truth
+  // Adjust popup position for CSS zoom (desktop app)
+  // CSS zoom causes popups to be positioned incorrectly because coordinates are calculated
+  // in zoomed space but applied to elements that get zoomed again
+  const postProcessPopup = (params: PostProcessPopupParams) => {
+    const zoomValue = getComputedStyle(document.documentElement).getPropertyValue('--app-zoom')
+    const zoom = parseFloat(zoomValue) || 1
+    if (zoom === 1 || !params.ePopup) return
+
+    // Apply inverse zoom to the popup to counteract the CSS zoom effect on positioning
+    params.ePopup.style.zoom = `${1 / zoom}`
+  }
+
   const gridOptions = computed<GridOptions>(() => ({
     theme: 'legacy',
     rowModelType: 'infinite',
@@ -197,6 +210,7 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
     infiniteInitialRowCount: 100,
     maxBlocksInCache: 20,
     suppressMenuHide: true,
+    postProcessPopup,
     defaultColDef: {
       // Disable native sorting/filtering - Query Filter Panel controls these
       sortable: false,

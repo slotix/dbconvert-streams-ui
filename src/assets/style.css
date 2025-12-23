@@ -87,22 +87,15 @@
 
   /* Desktop zoom scaling using CSS zoom property
      Applied via --app-zoom CSS variable set by desktopZoom.ts
-     CSS zoom renders text sharply unlike transform:scale().
-     In WebKitGTK, fixed elements don't inherit zoom from html,
-     so we apply zoom explicitly to elements marked with desktop-zoom-target class. */
+     CSS zoom renders text sharply unlike transform:scale(). */
   html.desktop-zoom {
     zoom: var(--app-zoom, 1);
   }
 
-  /* Apply zoom to elements explicitly marked as needing zoom in Wails */
-  html.desktop-zoom .desktop-zoom-target {
-    zoom: var(--app-zoom, 1);
-  }
-
-  /* Nested non-fixed elements inside zoom targets should reset to avoid double-zoom.
-     Fixed elements position independently and don't inherit zoom, so they still need it. */
-  html.desktop-zoom .desktop-zoom-target .desktop-zoom-target:not(.fixed) {
-    zoom: 1;
+  /* Improve SVG icon rendering at non-100% zoom levels.
+     Heroicons use stroke-based outlines that can look blurry when zoomed. */
+  html.desktop-zoom svg {
+    shape-rendering: crispEdges;
   }
 
   h1,

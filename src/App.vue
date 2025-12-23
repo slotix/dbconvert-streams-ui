@@ -155,7 +155,7 @@
                         :class="[iconSizes.sidebarMenu, 'shrink-0 animate-pulse text-gray-300']"
                         aria-hidden="true"
                       />
-                      <DocumentTextIcon
+                      <DocumentTextIconSolid
                         v-else
                         :class="[iconSizes.sidebarMenu, 'shrink-0']"
                         aria-hidden="true"
@@ -297,7 +297,7 @@
                 :class="[iconSizes.sidebarMenu, 'shrink-0 animate-pulse text-gray-300']"
                 aria-hidden="true"
               />
-              <DocumentTextIcon
+              <DocumentTextIconSolid
                 v-else
                 :class="[iconSizes.sidebarMenu, 'shrink-0']"
                 aria-hidden="true"
@@ -409,7 +409,7 @@
               isSidebarExpanded ? 'justify-start gap-3 px-3 w-full' : 'justify-center'
             ]"
           >
-            <ChartBarIcon :class="iconSizes.sidebarMenu" aria-hidden="true" />
+            <ChartBarIconSolid :class="iconSizes.sidebarMenu" aria-hidden="true" />
             <span v-if="isSidebarExpanded" class="truncate">Overview</span>
             <span v-else class="sr-only">Overview</span>
             <!-- Tooltip -->
@@ -430,7 +430,7 @@
               ]"
               @click="toggleSettings"
             >
-              <Cog6ToothIcon :class="iconSizes.sidebarMenu" aria-hidden="true" />
+              <Cog6ToothIconSolid :class="iconSizes.sidebarMenu" aria-hidden="true" />
               <span v-if="isSidebarExpanded" class="truncate">Settings</span>
               <span v-else class="sr-only">Settings</span>
               <!-- Tooltip -->
@@ -550,7 +550,7 @@
               isSidebarExpanded ? 'justify-start gap-3 px-3 w-full' : 'justify-center'
             ]"
           >
-            <BookOpenIcon :class="iconSizes.sidebarMenu" aria-hidden="true" />
+            <BookOpenIconSolid :class="iconSizes.sidebarMenu" aria-hidden="true" />
             <span v-if="isSidebarExpanded" class="truncate">Documentation</span>
             <span v-else class="sr-only">Documentation</span>
             <!-- Tooltip -->
@@ -612,7 +612,15 @@ import {
   SunIcon,
   MoonIcon
 } from '@heroicons/vue/24/outline'
-import { ExclamationCircleIcon } from '@heroicons/vue/24/solid'
+import {
+  ExclamationCircleIcon,
+  TableCellsIcon as TableCellsIconSolid,
+  ArrowPathIcon as ArrowPathIconSolid,
+  DocumentTextIcon as DocumentTextIconSolid,
+  BookOpenIcon as BookOpenIconSolid,
+  ChartBarIcon as ChartBarIconSolid,
+  Cog6ToothIcon as Cog6ToothIconSolid
+} from '@heroicons/vue/24/solid'
 
 const commonStore = useCommonStore()
 const logsStore = useLogsStore()
@@ -685,10 +693,10 @@ const navigation = computed(() => {
     {
       name: 'Data Explorer',
       href: '/explorer',
-      icon: TableCellsIcon,
+      icon: TableCellsIconSolid,
       show: true
     },
-    { name: 'Streams', href: '/streams', icon: ArrowPathIcon, show: true }
+    { name: 'Streams', href: '/streams', icon: ArrowPathIconSolid, show: true }
   ].filter((item) => item.show)
 })
 

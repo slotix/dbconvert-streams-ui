@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
+// Get current zoom factor for position adjustment
+const getZoomFactor = () => {
+  const zoomValue = getComputedStyle(document.documentElement).getPropertyValue('--app-zoom')
+  return parseFloat(zoomValue) || 1
+}
+
 type ContextTarget = {
   kind: 'stream'
   streamId: string
@@ -24,6 +30,10 @@ const emit = defineEmits<{
 
 const hasMenu = computed(() => props.visible && !!props.target)
 const target = computed(() => props.target as ContextTarget)
+
+// Adjust position for CSS zoom
+const adjustedX = computed(() => props.x / getZoomFactor())
+const adjustedY = computed(() => props.y / getZoomFactor())
 
 // Determine which actions are available based on stream state
 const canStart = computed(() => {
@@ -55,7 +65,7 @@ function click(action: string) {
       <!-- Menu -->
       <div
         class="fixed z-50 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg dark:shadow-gray-900/40 py-1 text-sm text-gray-900 dark:text-gray-100"
-        :style="{ left: x + 'px', top: y + 'px', minWidth: '180px' }"
+        :style="{ left: adjustedX + 'px', top: adjustedY + 'px', minWidth: '180px' }"
       >
         <!-- Start/Run Again -->
         <button

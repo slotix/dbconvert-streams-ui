@@ -9,6 +9,12 @@ import {
   NoSymbolIcon
 } from '@heroicons/vue/24/outline'
 
+// Get current zoom factor for position adjustment
+const getZoomFactor = () => {
+  const zoomValue = getComputedStyle(document.documentElement).getPropertyValue('--app-zoom')
+  return parseFloat(zoomValue) || 1
+}
+
 const props = defineProps<{
   x: number
   y: number
@@ -25,12 +31,13 @@ const menuRef = ref<HTMLElement | null>(null)
 // Icon sizes
 const iconSizes = useContextualIconSizes()
 
-// Adjust menu position if it goes off-screen
+// Adjust menu position if it goes off-screen (and for CSS zoom)
 const menuStyle = computed(() => {
-  const style: any = {
+  const zoom = getZoomFactor()
+  const style: Record<string, string> = {
     position: 'fixed',
-    left: `${props.x}px`,
-    top: `${props.y}px`
+    left: `${props.x / zoom}px`,
+    top: `${props.y / zoom}px`
   }
 
   return style

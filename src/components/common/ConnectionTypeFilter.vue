@@ -89,7 +89,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useConnectionsStore } from '@/stores/connections'
-import { ChevronDownIcon, CheckIcon, RectangleStackIcon } from '@heroicons/vue/24/outline'
+import { ChevronDownIcon, CheckIcon, RectangleStackIcon } from '@heroicons/vue/24/solid'
 import type { DbType } from '@/types/connections'
 
 interface Props {

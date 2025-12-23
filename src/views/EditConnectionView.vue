@@ -50,7 +50,7 @@
 <script setup lang="ts">
 import { computed, inject } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowLeftIcon, Bars3Icon } from '@heroicons/vue/24/outline'
+import { ArrowLeftIcon, Bars3Icon } from '@heroicons/vue/24/solid'
 import { useDesktopMode } from '@/composables/useDesktopMode'
 import EditConnectionWizard from '@/components/connection/wizard/EditConnectionWizard.vue'
 import { useConnectionsStore } from '@/stores/connections'
