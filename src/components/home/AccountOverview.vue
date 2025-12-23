@@ -296,16 +296,14 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useCommonStore } from '@/stores/common'
-import { useDesktopMode } from '@/composables/useDesktopMode'
+import { useLucideIcons } from '@/composables/useLucideIcons'
 import { BarChart3, Copy, CreditCard, Key, User } from 'lucide-vue-next'
 import { formatDateTime, formatDataSize } from '@/utils/formats'
 
 const commonStore = useCommonStore()
-const { isDesktop } = useDesktopMode()
+const { strokeWidth: iconStroke } = useLucideIcons()
 
 const userData = computed(() => commonStore.userData)
-// Thinner stroke for desktop to compensate for CSS zoom scaling
-const iconStroke = computed(() => (isDesktop.value ? 1.0 : 2))
 
 // Add status computation
 const subscriptionStatus = computed(() => commonStore.userData?.subscriptionStatus || 'active')
