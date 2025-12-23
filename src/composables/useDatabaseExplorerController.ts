@@ -291,6 +291,12 @@ export function useDatabaseExplorerController({
       },
       alwaysOpenNewTab.value ? 'pinned' : payload.mode
     )
+
+    // Opening in the right split should always make the right pane active,
+    // even if other watchers also open/restore left-pane content in the same flow.
+    if (payload.openInRightSplit) {
+      paneTabsStore.setActivePane('right')
+    }
   }
 
   async function handleOpenFile(payload: {
@@ -379,6 +385,11 @@ export function useDatabaseExplorerController({
       },
       effectiveMode
     )
+
+    // Ensure right-split opens actually focus the right pane.
+    if (payload.openInRightSplit) {
+      paneTabsStore.setActivePane('right')
+    }
 
     // Clear loading state immediately - let the data grid handle its own loading
     isLoadingFile.value = false
@@ -488,7 +499,7 @@ export function useDatabaseExplorerController({
 
     explorerState.clearPanelStates()
     explorerState.setDatabaseSelection({ database: payload.database })
-    explorerState.activePane.value = 'left'
+    paneTabsStore.setActivePane('left')
 
     schemaStore.setConnectionId(payload.connectionId)
     schemaStore.setDatabaseName(payload.database)

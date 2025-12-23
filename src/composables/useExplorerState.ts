@@ -37,9 +37,6 @@ export function useExplorerState() {
   const selectedFileEntry = ref<FileSystemEntry | null>(null)
   const selectedFileMetadata = ref<FileMetadata | null>(null)
 
-  // Active pane tracking
-  const activePane = ref<'left' | 'right'>('left')
-
   // REMOVED: URL update watcher - URL is now set directly by action handlers in controller
 
   // Computed properties for active connection details
@@ -130,7 +127,6 @@ export function useExplorerState() {
     selectedMeta,
     selectedFileEntry,
     selectedFileMetadata,
-    activePane,
 
     // Computed properties
     activeConnectionId,
