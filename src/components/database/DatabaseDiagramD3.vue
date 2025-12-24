@@ -58,6 +58,8 @@ let links: TableLink[] = []
 let currentNodes: TableNode[] = []
 let preservedZoomTransform: ZoomTransform | null = null
 let resizeObserver: ResizeObserver | null = null
+let appZoomObserver: MutationObserver | null = null
+let lastAppZoomFactor = 1
 
 let nodeHeightById = new Map<string, number>()
 let tableByName = new Map<string, Table>()
@@ -667,6 +669,22 @@ function computeNodeBoundsByName(tableName: string): {
   }
 }
 
+function getAppZoomFactor(): number {
+  const zoomValue = getComputedStyle(document.documentElement).getPropertyValue('--app-zoom')
+  const zoom = parseFloat(zoomValue)
+  return Number.isFinite(zoom) && zoom > 0 ? zoom : 1
+}
+
+function getRawViewportSize(fallback: number = 1200): { width: number; height: number } {
+  const el = svgContainer.value
+  const width = el?.clientWidth || fallback
+  const height = el?.clientHeight || fallback
+  return {
+    width: Number.isFinite(width) && width > 0 ? width : fallback,
+    height: Number.isFinite(height) && height > 0 ? height : fallback
+  }
+}
+
 function focusOnTable(tableName: string): boolean {
   if (!svgContainer.value || !svg) return false
 
@@ -679,8 +697,7 @@ function focusOnTable(tableName: string): boolean {
   const bounds = computeNodeBoundsByName(resolvedName)
   if (!bounds) return false
 
-  const width = svgContainer.value.clientWidth || 1200
-  const height = svgContainer.value.clientHeight || 1200
+  const { width, height } = getRawViewportSize(1200)
   const padding = 260
   const duration = 550
 
@@ -924,8 +941,7 @@ function autoLayout() {
   const bounds = computeDiagramBounds({ nodes: currentNodes, nodeHeightById })
   if (!bounds) return
 
-  const width = svgContainer.value.clientWidth
-  const height = svgContainer.value.clientHeight || 1200
+  const { width, height } = getRawViewportSize(1200)
   zoomComposable.fitToBounds(bounds, width, height)
 }
 
@@ -957,8 +973,9 @@ function createVisualization(reason: 'init' | 'resize' | 'data' | 'theme' = 'dat
   // Clear previous visualization
   select(svgContainer.value).selectAll('*').remove()
 
-  const width = svgContainer.value.clientWidth
-  const height = svgContainer.value.clientHeight || 1200
+  // SVG should always fill the container in raw layout pixels.
+  // Zoom-adjusted sizing is used only for centering/fit math.
+  const { width, height } = getRawViewportSize(1200)
   lastSize = { width, height }
 
   svg = select(svgContainer.value).append('svg').attr('width', width).attr('height', height)
@@ -1134,8 +1151,7 @@ function createVisualization(reason: 'init' | 'resize' | 'data' | 'theme' = 'dat
 
 function updateSize() {
   if (!svgContainer.value || !svg || !zoomGroup) return
-  const width = svgContainer.value.clientWidth
-  const height = svgContainer.value.clientHeight || 1200
+  const { width, height } = getRawViewportSize(1200)
   if (lastSize && lastSize.width === width && lastSize.height === height) return
 
   lastSize = { width, height }
@@ -1152,9 +1168,25 @@ function handleContainerResize() {
   resizeTimer = setTimeout(() => updateSize(), 120)
 }
 
+function handleAppZoomMaybeChanged() {
+  const zoom = getAppZoomFactor()
+  if (Math.abs(zoom - lastAppZoomFactor) < 0.0001) return
+  lastAppZoomFactor = zoom
+  // CSS zoom can affect coordinate math and rendering without triggering ResizeObserver.
+  // Rebuild the visualization (preserving current transform) so subsequent fit/center works.
+  createVisualization('resize')
+}
+
 // Lifecycle
 onMounted(() => {
   createVisualization('init')
+
+  lastAppZoomFactor = getAppZoomFactor()
+  appZoomObserver = new MutationObserver(() => handleAppZoomMaybeChanged())
+  appZoomObserver.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ['style', 'class']
+  })
 
   if (svgContainer.value) {
     resizeObserver = new ResizeObserver(() => handleContainerResize())
@@ -1165,6 +1197,8 @@ onMounted(() => {
 onBeforeUnmount(() => {
   resizeObserver?.disconnect()
   resizeObserver = null
+  appZoomObserver?.disconnect()
+  appZoomObserver = null
   if (resizeTimer) clearTimeout(resizeTimer)
   forcesComposable.stopSimulation()
 })
@@ -1235,8 +1269,11 @@ function handleUpdateCollisionRadius(value: number) {
 </script>
 
 <template>
-  <div class="relative">
-    <div ref="svgContainer" class="w-full h-[2000px] bg-gray-50 dark:bg-gray-900 rounded-lg"></div>
+  <div class="relative h-full">
+    <div
+      ref="svgContainer"
+      class="w-full h-full min-h-[480px] bg-gray-50 dark:bg-gray-900 rounded-lg"
+    ></div>
 
     <DiagramControls
       :current-zoom="zoomComposable.currentZoom.value"
