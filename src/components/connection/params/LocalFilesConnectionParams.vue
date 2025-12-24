@@ -179,7 +179,13 @@ const buildConnectionName = computed(() => {
   if (!connection.value?.type || !folderPath.value) {
     return ''
   }
-  const folderName = folderPath.value.split('/').pop() || 'files'
+  // Support both Unix and Windows paths
+  if (/^[A-Za-z]:\\?$/.test(folderPath.value)) {
+    const drive = folderPath.value.substring(0, 1)
+    return `Files-${drive}`
+  }
+
+  const folderName = folderPath.value.split(/[\\/]/).filter(Boolean).pop() || 'files'
   return `Files-${folderName}`
 })
 
