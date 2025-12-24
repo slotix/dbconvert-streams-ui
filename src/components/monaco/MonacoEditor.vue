@@ -5,7 +5,7 @@
       class="monaco-editor-container"
       :style="{ height: containerHeight }"
     ></div>
-    <div class="resize-handle" @mousedown="startResize" title="Drag to resize">
+    <div class="resize-handle" title="Drag to resize" @mousedown="startResize">
       <svg width="10" height="10" viewBox="0 0 10 10">
         <path
           d="M9 1L1 9M9 5L5 9M9 9L9 9"
