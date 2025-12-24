@@ -1,5 +1,21 @@
 <template>
-  <div ref="editorContainer" class="monaco-editor-container" :style="{ height: height }"></div>
+  <div class="monaco-editor-wrapper">
+    <div
+      ref="editorContainer"
+      class="monaco-editor-container"
+      :style="{ height: containerHeight }"
+    ></div>
+    <div class="resize-handle" @mousedown="startResize" title="Drag to resize">
+      <svg width="10" height="10" viewBox="0 0 10 10">
+        <path
+          d="M9 1L1 9M9 5L5 9M9 9L9 9"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+        />
+      </svg>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -44,6 +60,39 @@ const editor = shallowRef<MonacoTypes.editor.IStandaloneCodeEditor>()
 const monaco = shallowRef<MonacoApi>()
 const themeStore = useThemeStore()
 const { isDesktopZoom, zoomLevel } = useDesktopZoom()
+
+// Resize handle state
+const containerHeight = ref(props.height)
+const isResizing = ref(false)
+const startY = ref(0)
+const startHeight = ref(0)
+
+const startResize = (e: MouseEvent) => {
+  isResizing.value = true
+  startY.value = e.clientY
+  const container = editorContainer.value
+  if (container) {
+    startHeight.value = container.offsetHeight
+  }
+  document.addEventListener('mousemove', onResize)
+  document.addEventListener('mouseup', stopResize)
+  e.preventDefault()
+}
+
+const onResize = (e: MouseEvent) => {
+  if (!isResizing.value) return
+  // Account for CSS zoom when calculating resize delta
+  const zoom = getZoomFactor()
+  const deltaY = (e.clientY - startY.value) / zoom
+  const newHeight = Math.max(100, startHeight.value + deltaY)
+  containerHeight.value = `${newHeight}px`
+}
+
+const stopResize = () => {
+  isResizing.value = false
+  document.removeEventListener('mousemove', onResize)
+  document.removeEventListener('mouseup', stopResize)
+}
 
 // Base font size that gets scaled by zoom level
 const BASE_FONT_SIZE = 14
@@ -220,6 +269,9 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   editor.value?.dispose()
+  // Clean up resize event listeners
+  document.removeEventListener('mousemove', onResize)
+  document.removeEventListener('mouseup', stopResize)
 })
 
 // Expose editor instance for parent components
@@ -230,9 +282,36 @@ defineExpose({
 </script>
 
 <style scoped>
+.monaco-editor-wrapper {
+  position: relative;
+  width: 100%;
+}
+
 .monaco-editor-container {
   width: 100%;
   height: 100%;
   overflow: hidden;
+  min-height: 100px;
+}
+
+.resize-handle {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 16px;
+  height: 16px;
+  cursor: nwse-resize;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-gray-500);
+  opacity: 0.5;
+  transition: opacity 0.15s;
+  z-index: 10;
+}
+
+.resize-handle:hover {
+  opacity: 1;
+  color: var(--color-gray-400);
 }
 </style>
