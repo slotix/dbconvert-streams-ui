@@ -580,7 +580,13 @@ async function handleQuickSave() {
 }
 
 function goBack() {
-  showExitConfirm.value = true
+  // Only show confirmation if there are unsaved changes
+  if (wizard.hasChanges.value) {
+    showExitConfirm.value = true
+  } else {
+    // No changes, navigate directly without confirmation
+    confirmExit()
+  }
 }
 
 function cancelWizard() {

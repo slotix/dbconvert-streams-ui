@@ -22,6 +22,18 @@ export interface SelectionState {
 
 const DEFAULT_ALIAS = 'src'
 
+// Snapshot for tracking changes
+interface WizardSnapshot {
+  selection: SelectionState
+  sourceConnections: ConnectionMapping[]
+  createTables: boolean
+  createIndexes: boolean
+  createForeignKeys: boolean
+  copyData: boolean
+  // Serialized stream config for deep comparison
+  streamConfigJson: string
+}
+
 export function useStreamWizard() {
   // Step management
   const currentStepIndex = ref(0)
@@ -64,6 +76,115 @@ export function useStreamWizard() {
   const createIndexes = ref(true)
   const createForeignKeys = ref(true)
   const copyData = ref(true)
+
+  // Initial state snapshot for change detection (edit mode only)
+  const initialSnapshot = ref<WizardSnapshot | null>(null)
+
+  // Helper to serialize stream config for comparison (excludes volatile fields)
+  function serializeStreamConfig(): string {
+    const streamsStore = useStreamsStore()
+    const config = streamsStore.currentStreamConfig
+    if (!config) return ''
+
+    // Create a normalized copy excluding volatile/UI-only fields
+    const normalized = {
+      mode: config.mode,
+      name: config.name,
+      source: {
+        tables: config.source?.tables?.map((t) => ({
+          name: t.name,
+          selected: t.selected,
+          filter: t.filter
+        })),
+        queries: config.source?.queries?.map((q) => ({
+          name: q.name,
+          query: q.query
+        })),
+        options: config.source?.options
+      },
+      files: config.files?.map((f) => ({
+        name: f.name,
+        path: f.path,
+        selected: f.selected
+      })),
+      limits: config.limits,
+      reportingInterval: config.reportingInterval,
+      skipData: config.skipData,
+      structureOptions: config.structureOptions
+    }
+    return JSON.stringify(normalized)
+  }
+
+  // Helper to create a snapshot of current state
+  function createSnapshot(): WizardSnapshot {
+    return {
+      selection: { ...selection.value },
+      sourceConnections: sourceConnections.value.map((c) => ({ ...c })),
+      createTables: createTables.value,
+      createIndexes: createIndexes.value,
+      createForeignKeys: createForeignKeys.value,
+      copyData: copyData.value,
+      streamConfigJson: serializeStreamConfig()
+    }
+  }
+
+  // Check if current state differs from initial snapshot
+  const hasChanges = computed(() => {
+    // If no initial snapshot, we're in create mode - always consider as having changes
+    if (!initialSnapshot.value) {
+      // In create mode, check if any meaningful selection has been made
+      return sourceConnections.value.length > 0 || selection.value.targetConnectionId !== null
+    }
+
+    const initial = initialSnapshot.value
+
+    // Compare selection state
+    if (
+      selection.value.sourceConnectionId !== initial.selection.sourceConnectionId ||
+      selection.value.targetConnectionId !== initial.selection.targetConnectionId ||
+      selection.value.sourceDatabase !== initial.selection.sourceDatabase ||
+      selection.value.targetDatabase !== initial.selection.targetDatabase ||
+      selection.value.sourceSchema !== initial.selection.sourceSchema ||
+      selection.value.targetSchema !== initial.selection.targetSchema ||
+      selection.value.targetPath !== initial.selection.targetPath
+    ) {
+      return true
+    }
+
+    // Compare source connections
+    if (sourceConnections.value.length !== initial.sourceConnections.length) {
+      return true
+    }
+    for (let i = 0; i < sourceConnections.value.length; i++) {
+      const current = sourceConnections.value[i]
+      const orig = initial.sourceConnections[i]
+      if (
+        current.connectionId !== orig.connectionId ||
+        current.database !== orig.database ||
+        current.alias !== orig.alias
+      ) {
+        return true
+      }
+    }
+
+    // Compare transfer options
+    if (
+      createTables.value !== initial.createTables ||
+      createIndexes.value !== initial.createIndexes ||
+      createForeignKeys.value !== initial.createForeignKeys ||
+      copyData.value !== initial.copyData
+    ) {
+      return true
+    }
+
+    // Compare stream config (tables, filters, queries, limits, etc.)
+    const currentConfigJson = serializeStreamConfig()
+    if (currentConfigJson !== initial.streamConfigJson) {
+      return true
+    }
+
+    return false
+  })
 
   // Computed properties
   const currentStep = computed(() => steps[currentStepIndex.value])
@@ -273,6 +394,7 @@ export function useStreamWizard() {
     createForeignKeys.value = true
     copyData.value = true
     setSourceConnections([])
+    initialSnapshot.value = null
   }
 
   // Load wizard state from existing stream config (for edit mode)
@@ -421,6 +543,9 @@ export function useStreamWizard() {
       }
     }
     selection.value.sourceSchema = sourceSchema
+
+    // Save initial snapshot for change detection
+    initialSnapshot.value = createSnapshot()
   }
 
   return {
@@ -445,6 +570,7 @@ export function useStreamWizard() {
     canProceedStep1,
     canProceedStep2,
     canProceedStep3,
+    hasChanges,
 
     // Methods
     nextStep,
