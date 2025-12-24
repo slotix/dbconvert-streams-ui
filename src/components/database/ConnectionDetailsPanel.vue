@@ -11,7 +11,20 @@ import { useDatabaseCapabilities } from '@/composables/useDatabaseCapabilities'
 import { useCopyToClipboard } from '@/composables/useCopyToClipboard'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { useDatabaseOverviewStore } from '@/stores/databaseOverview'
-import { Check, Plus, Database, Terminal, Cloud } from 'lucide-vue-next'
+import {
+  BarChart3,
+  Calendar,
+  Check,
+  Clipboard,
+  Cloud,
+  Database,
+  Eye,
+  EyeOff,
+  Folder,
+  Plus,
+  Server,
+  Terminal
+} from 'lucide-vue-next'
 
 const navigationStore = useExplorerNavigationStore()
 const overviewStore = useDatabaseOverviewStore()
@@ -543,7 +556,7 @@ const isLoadingDatabases = computed(() => {
                       :title="isPathCopied ? 'Copied!' : 'Copy storage URI to clipboard'"
                       @click.stop="copyFolderPath"
                     >
-                      <ClipboardIcon v-if="!isPathCopied" class="h-4 w-4" />
+                      <Clipboard v-if="!isPathCopied" class="h-4 w-4" />
                       <Check v-else class="h-4 w-4" />
                     </button>
                   </div>
@@ -582,7 +595,7 @@ const isLoadingDatabases = computed(() => {
             >
               <div class="flex items-center gap-2 mb-3">
                 <div class="p-1.5 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
-                  <FolderIcon class="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                  <Folder class="h-4 w-4 text-amber-600 dark:text-amber-400" />
                 </div>
                 <span class="text-sm font-semibold text-gray-700 dark:text-gray-300"
                   >Scope & Files</span
@@ -724,7 +737,7 @@ const isLoadingDatabases = computed(() => {
           >
             <div class="flex items-center gap-2">
               <div class="p-1.5 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
-                <FolderIcon class="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                <Folder class="h-4 w-4 text-amber-600 dark:text-amber-400" />
               </div>
               <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Local Path</span>
             </div>
@@ -749,7 +762,7 @@ const isLoadingDatabases = computed(() => {
                   :title="isPathCopied ? 'Copied!' : 'Copy folder path to clipboard'"
                   @click.stop="copyFolderPath"
                 >
-                  <ClipboardIcon v-if="!isPathCopied" class="h-4 w-4" />
+                  <Clipboard v-if="!isPathCopied" class="h-4 w-4" />
                   <Check v-else class="h-4 w-4" />
                 </button>
               </div>
@@ -807,7 +820,7 @@ const isLoadingDatabases = computed(() => {
         >
           <div class="flex items-center gap-2 mb-3">
             <div class="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-              <ServerIcon class="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              <Server class="h-4 w-4 text-blue-600 dark:text-blue-400" />
             </div>
             <span class="text-sm font-semibold text-gray-700 dark:text-gray-300"
               >Connection Info</span
@@ -858,8 +871,8 @@ const isLoadingDatabases = computed(() => {
                     "
                     @click="showPassword = !showPassword"
                   >
-                    <EyeIcon v-if="!showPassword" class="h-3.5 w-3.5" />
-                    <EyeSlashIcon v-else class="h-3.5 w-3.5" />
+                    <Eye v-if="!showPassword" class="h-3.5 w-3.5" />
+                    <EyeOff v-else class="h-3.5 w-3.5" />
                   </button>
                   <button
                     class="shrink-0 transition-colors"
@@ -871,7 +884,7 @@ const isLoadingDatabases = computed(() => {
                     :title="isCopied ? 'Copied!' : 'Copy connection string to clipboard'"
                     @click="copyConnectionString"
                   >
-                    <ClipboardIcon v-if="!isCopied" class="h-3.5 w-3.5" />
+                    <Clipboard v-if="!isCopied" class="h-3.5 w-3.5" />
                     <Check v-else class="h-3.5 w-3.5" />
                   </button>
                 </div>
@@ -886,7 +899,7 @@ const isLoadingDatabases = computed(() => {
         >
           <div class="flex items-center gap-2 mb-3">
             <div class="p-1.5 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-              <ChartBarIcon class="h-4 w-4 text-purple-600 dark:text-purple-400" />
+              <BarChart3 class="h-4 w-4 text-purple-600 dark:text-purple-400" />
             </div>
             <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Server Stats</span>
           </div>
@@ -1140,7 +1153,7 @@ const isLoadingDatabases = computed(() => {
       </div>
 
       <div class="flex items-center gap-2 pt-2 border-t border-gray-100 dark:border-gray-800">
-        <CalendarIcon class="h-4 w-4 text-gray-500 dark:text-gray-400" />
+        <Calendar class="h-4 w-4 text-gray-500 dark:text-gray-400" />
         <span class="text-sm text-gray-500 dark:text-gray-400 truncate"
           >Created: {{ createdDisplay }}</span
         >
