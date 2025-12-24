@@ -64,7 +64,7 @@
             <div class="md:col-span-2">
               <FolderSelector
                 v-model="folderPath"
-                placeholder="/home/user/Documents/my-data-folder"
+                :placeholder="folderPathPlaceholder"
                 help-text="Select the folder containing your data files"
               />
             </div>
@@ -115,6 +115,21 @@ const connectionsStore = useConnectionsStore()
 // Direct store access - single source of truth
 const connection = computed(() => connectionsStore.currentConnection)
 
+const folderPathPlaceholder = computed(() => {
+  if (typeof navigator === 'undefined') {
+    return '/home/user/Documents/my-data-folder'
+  }
+
+  const userAgent = navigator.userAgent || ''
+  if (/windows/i.test(userAgent)) {
+    return 'C:\\Users\\user\\Documents\\my-data-folder'
+  }
+  if (/macintosh|mac os x/i.test(userAgent)) {
+    return '/Users/user/Documents/my-data-folder'
+  }
+  return '/home/user/Documents/my-data-folder'
+})
+
 // Computed property for folder path that uses spec.files.basePath
 const folderPath = computed({
   get: () => connection.value?.spec?.files?.basePath || '',
@@ -138,7 +153,6 @@ const applyConnectionDefaults = (connectionType: string) => {
     connection.value.port = 0 // Not used for local files
     connection.value.username = 'local' // Default username for local files
     connection.value.password = '' // Not needed for local files
-    connection.value.database = '' // Not used for local files
 
     // Initialize spec.files for new connections
     if (!connection.value.spec && !isEdit.value) {
