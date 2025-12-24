@@ -4,6 +4,7 @@ import { useDebounceFn } from '@vueuse/core'
 import { Boxes } from 'lucide-vue-next'
 import { useConnectionsStore } from '@/stores/connections'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
+import { useFileExplorerStore } from '@/stores/fileExplorer'
 import { useSqlConsoleStore } from '@/stores/sqlConsole'
 import { useConnectionTreeLogic } from '@/composables/useConnectionTreeLogic'
 import { useTreeContextMenu, type ContextTarget } from '@/composables/useTreeContextMenu'
@@ -89,6 +90,7 @@ const MIN_SEARCH_LENGTH = 2
 
 const connectionsStore = useConnectionsStore()
 const navigationStore = useExplorerNavigationStore()
+const fileExplorerStore = useFileExplorerStore()
 const sqlConsoleStore = useSqlConsoleStore()
 const treeLogic = useConnectionTreeLogic()
 
@@ -168,6 +170,31 @@ const treeSearch = computed(() => {
 const searchTooShort = computed(() => {
   const len = searchQuery.value.trim().length
   return len > 0 && len < MIN_SEARCH_LENGTH
+})
+
+// Load file entries for all file-type connections when search is active
+// This ensures S3/file connections are searchable
+const loadFileEntriesForSearch = useDebounceFn(async () => {
+  const query = searchQuery.value.trim()
+  if (query.length < MIN_SEARCH_LENGTH) return
+
+  // Get all file-type connections
+  const fileConnections = connectionsStore.connections.filter((conn) =>
+    treeLogic.isFileConnection(conn.id)
+  )
+
+  // Load entries for each file connection that hasn't been loaded yet
+  for (const conn of fileConnections) {
+    const entries = fileExplorerStore.getEntries(conn.id)
+    if (entries.length === 0 && !fileExplorerStore.isLoading(conn.id)) {
+      void fileExplorerStore.loadEntries(conn.id)
+    }
+  }
+}, 300)
+
+// Trigger file entry loading when search query changes
+watch(searchQuery, () => {
+  void loadFileEntriesForSearch()
 })
 
 // Computed for filtered connections using composable

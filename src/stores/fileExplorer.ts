@@ -438,18 +438,29 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
     expandedFoldersByConnection.value[connectionId].add(folderPath)
   }
 
-  // Helper to find and update a folder entry in the nested structure
-  function findFolderEntry(entries: FileSystemEntry[], folderPath: string): FileSystemEntry | null {
-    for (const entry of entries) {
+  // Immutable helper to update a folder's children in the tree
+  // Returns a new array with the updated entry (no mutation)
+  function updateFolderChildren(
+    entries: FileSystemEntry[],
+    folderPath: string,
+    children: FileSystemEntry[]
+  ): FileSystemEntry[] {
+    return entries.map((entry) => {
       if (entry.path === folderPath) {
-        return entry
+        // Found the folder - return new object with updated children
+        return { ...entry, children, isLoaded: true }
       }
       if (entry.children) {
-        const found = findFolderEntry(entry.children, folderPath)
-        if (found) return found
+        // Recurse into children
+        const updatedChildren = updateFolderChildren(entry.children, folderPath, children)
+        if (updatedChildren !== entry.children) {
+          // Children were updated - return new object
+          return { ...entry, children: updatedChildren }
+        }
       }
-    }
-    return null
+      // No change - return same object
+      return entry
+    })
   }
 
   // Load contents of a specific folder
@@ -482,27 +493,23 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
         // Group S3 objects into folders and files
         const folderContents = groupS3ObjectsIntoTree(response.objects, bucket, prefix)
 
-        // Find the folder entry and update its children
-        const allEntries = entriesByConnection.value[connectionId] || []
-        const folderEntry = findFolderEntry(allEntries, folderPath)
-        if (folderEntry) {
-          folderEntry.children = folderContents
-          folderEntry.isLoaded = true
-          // Trigger reactivity
-          entriesByConnection.value = { ...entriesByConnection.value }
+        // Update folder children immutably (single source of truth)
+        const currentEntries = entriesByConnection.value[connectionId] || []
+        const updatedEntries = updateFolderChildren(currentEntries, folderPath, folderContents)
+        entriesByConnection.value = {
+          ...entriesByConnection.value,
+          [connectionId]: updatedEntries
         }
       } else {
         // Local filesystem
         const response = await listDirectory(folderPath, connection.type)
 
-        // Find the folder entry and update its children
-        const allEntries = entriesByConnection.value[connectionId] || []
-        const folderEntry = findFolderEntry(allEntries, folderPath)
-        if (folderEntry) {
-          folderEntry.children = response.entries
-          folderEntry.isLoaded = true
-          // Trigger reactivity
-          entriesByConnection.value = { ...entriesByConnection.value }
+        // Update folder children immutably (single source of truth)
+        const currentEntries = entriesByConnection.value[connectionId] || []
+        const updatedEntries = updateFolderChildren(currentEntries, folderPath, response.entries)
+        entriesByConnection.value = {
+          ...entriesByConnection.value,
+          [connectionId]: updatedEntries
         }
       }
 

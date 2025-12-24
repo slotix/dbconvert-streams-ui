@@ -1,5 +1,6 @@
 import { computed } from 'vue'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
+import { useFileExplorerStore } from '@/stores/fileExplorer'
 import { useConnectionTreeLogic } from '@/composables/useConnectionTreeLogic'
 import type { Connection } from '@/types/connections'
 import type { FileSystemEntry } from '@/api/fileSystem'
@@ -15,6 +16,7 @@ export interface UseTreeSearchOptions {
  */
 export function useTreeSearch(searchQuery: string, options: UseTreeSearchOptions = {}) {
   const navigationStore = useExplorerNavigationStore()
+  const fileExplorerStore = useFileExplorerStore()
   const treeLogic = useConnectionTreeLogic()
 
   /**
@@ -37,6 +39,20 @@ export function useTreeSearch(searchQuery: string, options: UseTreeSearchOptions
     if (!query.trim()) return true
     const normalizedQuery = normalize(query.trim())
     return texts.some((text) => normalize(text).includes(normalizedQuery))
+  }
+
+  /**
+   * Recursively search through file entries (for S3/file connections)
+   */
+  const searchFileEntries = (entries: FileSystemEntry[], query: string): boolean => {
+    const normalizedQuery = normalize(query)
+    for (const entry of entries) {
+      // Check entry name
+      if (normalize(entry.name).includes(normalizedQuery)) return true
+      // Recursively check children
+      if (entry.children && searchFileEntries(entry.children, query)) return true
+    }
+    return false
   }
 
   /**
@@ -97,6 +113,12 @@ export function useTreeSearch(searchQuery: string, options: UseTreeSearchOptions
             (view.schema && normalize(view.schema).includes(normalizedQuery))
         )
         if (hasViewMatch) return true
+      }
+
+      // Search in file entries (for S3/file connections)
+      const fileEntries = fileExplorerStore.getEntries(connection.id)
+      if (fileEntries.length > 0 && searchFileEntries(fileEntries, normalizedQuery)) {
+        return true
       }
 
       return false
