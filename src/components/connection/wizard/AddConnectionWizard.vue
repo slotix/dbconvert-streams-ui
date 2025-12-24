@@ -7,6 +7,7 @@
       <DatabaseTypeStep
         @update:selected-db-type="handleDBTypeUpdate"
         @update:can-proceed="updateCanProceed"
+        @proceed="goToDetails"
       />
 
       <!-- Action Buttons -->

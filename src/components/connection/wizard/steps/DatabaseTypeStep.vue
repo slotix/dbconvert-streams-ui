@@ -16,6 +16,7 @@
             'relative p-4 border rounded-xl flex flex-col items-center text-center bg-white dark:bg-gray-850 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-900 focus:ring-teal-500 dark:focus:ring-teal-400 transition-all duration-200'
           ]"
           @click="selectDBType(dbType)"
+          @dblclick.prevent="selectDBTypeAndProceed(dbType)"
         >
           <img
             :src="dbType.logo"
@@ -67,6 +68,7 @@
               'relative p-6 border rounded-xl flex flex-col items-center text-center bg-white dark:bg-gray-850 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-900 focus:ring-teal-500 dark:focus:ring-teal-400 transition-all duration-200 min-w-[160px]'
             ]"
             @click="selectDBType(dbType)"
+            @dblclick.prevent="selectDBTypeAndProceed(dbType)"
           >
             <img
               :src="dbType.logo"
@@ -209,12 +211,20 @@ const fileTypes = computed(() =>
 const emit = defineEmits<{
   'update:selected-db-type': [dbType: DbType | null]
   'update:can-proceed': [canProceed: boolean]
+  proceed: []
 }>()
 
 function selectDBType(dbType: DbType) {
   selectedDBType.value = dbType
   emit('update:selected-db-type', dbType)
   updateCanProceed()
+}
+
+function selectDBTypeAndProceed(dbType: DbType) {
+  selectedDBType.value = dbType
+  emit('update:selected-db-type', dbType)
+  updateCanProceed()
+  emit('proceed')
 }
 
 function updateCanProceed() {
