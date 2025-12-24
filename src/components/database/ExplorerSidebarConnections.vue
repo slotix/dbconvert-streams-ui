@@ -121,8 +121,15 @@ const isLoadingConnections = ref(false)
 const loadError = ref<string | null>(null)
 const searchQuery = computed(() => props.searchQuery || '')
 
+// Only apply filtering/highlighting when query meets minimum length.
+// Keeps UX consistent with the "Type at least N characters" hint.
+const effectiveSearchQuery = computed(() => {
+  const trimmed = searchQuery.value.trim()
+  return trimmed.length >= MIN_SEARCH_LENGTH ? searchQuery.value : ''
+})
+
 // Provide search query, caret class, and selection info to child components (avoid prop drilling)
-provide('treeSearchQuery', searchQuery)
+provide('treeSearchQuery', effectiveSearchQuery)
 provide('treeCaretClass', 'w-[16px] h-[16px] shrink-0 flex-none text-gray-400 mr-1.5')
 provide(
   'treeSelection',
@@ -164,7 +171,7 @@ const isFileConnection = computed(() => {
 
 // Use tree search composable (reactive to searchQuery and typeFilters)
 const treeSearch = computed(() => {
-  return useTreeSearch(searchQuery.value, { typeFilters: props.typeFilters })
+  return useTreeSearch(effectiveSearchQuery.value, { typeFilters: props.typeFilters })
 })
 
 const searchTooShort = computed(() => {
@@ -199,7 +206,16 @@ watch(searchQuery, () => {
 
 // Computed for filtered connections using composable
 const filteredConnections = computed<Connection[]>(() => {
-  return treeSearch.value.filterConnections(connectionsStore.connections)
+  const base = connectionsStore.connections
+  const typeFiltered =
+    props.typeFilters && props.typeFilters.length
+      ? base.filter((conn) => treeLogic.matchesTypeFilters(conn, props.typeFilters!))
+      : base
+
+  // If query is below minimum length, treat as "no search"
+  if (!effectiveSearchQuery.value.trim()) return typeFiltered
+
+  return treeSearch.value.filterConnections(typeFiltered)
 })
 
 async function loadConnections() {
@@ -812,6 +828,7 @@ function shouldExpandSearch(query: string): boolean {
 }
 
 function matchesDbFilter(connId: string, dbName: string): boolean {
+  if (!effectiveSearchQuery.value.trim()) return true
   return treeSearch.value.matchesDatabaseFilter(connId, dbName)
 }
 
