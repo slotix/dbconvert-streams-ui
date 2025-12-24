@@ -58,18 +58,7 @@
               >Provider Preset</label
             >
             <div class="md:col-span-2">
-              <select
-                v-model="selectedProvider"
-                class="w-full rounded-lg border border-gray-300 dark:border-gray-600 py-2.5 px-4 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 dark:focus:ring-teal-400 focus:border-teal-500 dark:focus:border-teal-400 transition-colors"
-              >
-                <option value="AWS S3">AWS S3</option>
-                <option value="Google Cloud Storage">Google Cloud Storage</option>
-                <option value="Cloudflare R2">Cloudflare R2</option>
-                <option value="DigitalOcean Spaces">DigitalOcean Spaces</option>
-                <option value="Backblaze B2">Backblaze B2</option>
-                <option value="MinIO">MinIO</option>
-                <option value="Custom">Custom</option>
-              </select>
+              <FormSelect v-model="selectedProvider" :options="providerOptions" />
             </div>
           </div>
 
@@ -157,12 +146,25 @@
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
             <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Region</label>
             <div class="md:col-span-2">
-              <input
-                v-model="region"
-                type="text"
-                class="w-full rounded-lg border border-gray-300 dark:border-gray-600 py-2.5 px-4 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 dark:focus:ring-teal-400 focus:border-teal-500 dark:focus:border-teal-400 transition-colors"
-                placeholder="us-east-1"
-              />
+              <div class="relative">
+                <input
+                  v-model="region"
+                  type="text"
+                  class="w-full rounded-lg border border-gray-300 dark:border-gray-600 py-2.5 px-4 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 dark:focus:ring-teal-400 focus:border-teal-500 dark:focus:border-teal-400 transition-colors"
+                  :class="{ 'pr-24': regionAutoDetected }"
+                  placeholder="us-east-1"
+                  @input="regionAutoDetected = false"
+                />
+                <span
+                  v-if="regionAutoDetected"
+                  class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-900/30 px-2 py-0.5 rounded"
+                >
+                  auto-detected
+                </span>
+              </div>
+              <p v-if="regionAutoDetected" class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                Region extracted from endpoint. You can override it if needed.
+              </p>
             </div>
           </div>
 
@@ -261,6 +263,7 @@
 import { computed, nextTick, ref, watch } from 'vue'
 import { Cloud, FileText } from 'lucide-vue-next'
 import Spinner from '@/components/common/Spinner.vue'
+import FormSelect from '@/components/base/FormSelect.vue'
 import { useConnectionsStore } from '@/stores/connections'
 import { S3_PROVIDER_PRESETS } from '@/types/s3'
 
@@ -276,6 +279,11 @@ const connectionsStore = useConnectionsStore()
 // Direct store access - single source of truth
 const connection = computed(() => connectionsStore.currentConnection)
 
+const providerOptions = Object.keys(S3_PROVIDER_PRESETS).map((name) => ({
+  value: name,
+  label: name
+}))
+
 // S3-specific reactive state
 const selectedProvider = ref<string>('AWS S3')
 const credentialSource = ref<'aws' | 'static'>('aws')
@@ -286,6 +294,30 @@ const region = ref<string>('us-east-1')
 const endpoint = ref<string>('')
 const bucket = ref<string>('')
 const prefix = ref<string>('')
+const regionAutoDetected = ref<boolean>(false)
+
+// Extract region from endpoint for known S3-compatible providers
+const extractRegionFromEndpoint = (endpointValue: string): string | null => {
+  if (!endpointValue) return null
+
+  // DigitalOcean Spaces: {region}.digitaloceanspaces.com
+  const doMatch = endpointValue.match(/^([a-z]{3}\d)\.digitaloceanspaces\.com$/i)
+  if (doMatch) return doMatch[1].toLowerCase()
+
+  // Backblaze B2: s3.{region}.backblazeb2.com
+  const b2Match = endpointValue.match(/^s3\.([a-z]+-[a-z]+-\d+)\.backblazeb2\.com$/i)
+  if (b2Match) return b2Match[1].toLowerCase()
+
+  // Linode Object Storage: {region}.linodeobjects.com
+  const linodeMatch = endpointValue.match(/^([a-z]+-[a-z]+-\d+)\.linodeobjects\.com$/i)
+  if (linodeMatch) return linodeMatch[1].toLowerCase()
+
+  // Wasabi: s3.{region}.wasabisys.com
+  const wasabiMatch = endpointValue.match(/^s3\.([a-z]+-[a-z]+-\d+)\.wasabisys\.com$/i)
+  if (wasabiMatch) return wasabiMatch[1].toLowerCase()
+
+  return null
+}
 
 // Check if we're in edit mode (connection has an ID)
 const isEdit = computed(() => !!connection.value?.id)
@@ -300,6 +332,8 @@ watch(selectedProvider, (provider) => {
   if (preset) {
     endpoint.value = preset.endpoint
     region.value = preset.region
+    // Reset auto-detected flag since values came from preset
+    regionAutoDetected.value = false
   }
   // Set appropriate credential source based on provider
   if (provider === 'AWS S3') {
@@ -507,6 +541,19 @@ watch(
 watch([bucket, selectedProvider], () => {
   if (!isEdit.value) {
     updateConnectionName()
+  }
+})
+
+// Watch endpoint changes to auto-extract region (skip during edit mode load)
+watch(endpoint, (newEndpoint) => {
+  if (isLoadingEditData.value) return
+
+  const extractedRegion = extractRegionFromEndpoint(newEndpoint)
+  if (extractedRegion) {
+    region.value = extractedRegion
+    regionAutoDetected.value = true
+  } else {
+    regionAutoDetected.value = false
   }
 })
 </script>
