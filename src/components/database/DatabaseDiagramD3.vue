@@ -270,18 +270,15 @@ function createNodes(
   // Header
   const header = node.append('g').attr('class', 'table-header')
   header
-    .append('rect')
-    .attr('width', 200)
-    .attr('height', 30)
-    .attr('rx', 8)
-    .attr('ry', 8)
+    .append('path')
+    // Top-rounded header with square bottom corners
+    .attr('d', 'M0,30 L0,8 Q0,0 8,0 L192,0 Q200,0 200,8 L200,30 Z')
     .attr('fill', (d: TableNode) => (d.isView ? colors.value.viewHeader : colors.value.tableHeader))
     .attr('stroke', (d: TableNode) =>
       d.isView ? colors.value.viewBorder : colors.value.tableBorder
     )
     .attr('stroke-width', 1.5)
     .attr('stroke-dasharray', (d: TableNode) => (d.isView ? '5,2' : 'none'))
-    .attr('clip-path', 'path("M0,30 L0,8 Q0,0 8,0 L192,0 Q200,0 200,8 L200,30 Z")')
 
   // View icon
   header
@@ -301,14 +298,23 @@ function createNodes(
 
   // Table body
   node
-    .append('rect')
+    .append('path')
     .attr('class', 'table-body')
-    .attr('width', 200)
-    .attr('height', (d: TableNode) => {
+    .attr('d', (d: TableNode) => {
       const columnCount = (tableByName.get(d.name) || viewByName.get(d.name))?.columns.length || 0
-      return columnCount * 20
+      const width = 200
+      const height = columnCount * 20
+      const radius = 8
+
+      if (height <= 0) {
+        return `M0,0 H${width} V0 H0 Z`
+      }
+
+      const r = Math.min(radius, height)
+      // Square top, rounded bottom corners
+      return `M0,0 H${width} V${height - r} Q${width},${height} ${width - r},${height} H${r} Q0,${height} 0,${height - r} Z`
     })
-    .attr('y', 30)
+    .attr('transform', 'translate(0, 30)')
     .attr('fill', (d: TableNode) => (d.isView ? colors.value.viewBg : colors.value.tableBg))
     .attr('stroke', (d: TableNode) =>
       d.isView ? colors.value.viewBorder : colors.value.tableBorder
@@ -519,7 +525,8 @@ function updateHighlighting() {
     const isRelated = relatedTables.has(d.name)
 
     element
-      .select('.table-header rect')
+      .select('.table-header')
+      .select('path, rect')
       .transition()
       .duration(300)
       .attr(
@@ -541,7 +548,7 @@ function updateHighlighting() {
       )
 
     element
-      .select('rect.table-body')
+      .select('.table-body')
       .transition()
       .duration(300)
       .attr(
