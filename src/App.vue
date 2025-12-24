@@ -487,6 +487,7 @@
                 <div class="flex items-center gap-2">
                   <div class="relative w-28">
                     <input
+                      v-model.number="zoomSlider"
                       type="range"
                       :min="zoomMin"
                       :max="zoomMax"
@@ -494,7 +495,6 @@
                       class="h-2 w-full accent-teal-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500/60"
                       aria-label="Zoom"
                       :aria-valuetext="zoomPendingPercent"
-                      v-model.number="zoomSlider"
                       @focus="isZoomActive = true"
                       @blur="isZoomActive = false"
                       @pointerdown="isZoomActive = true"

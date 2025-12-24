@@ -962,12 +962,17 @@ function createVisualization(reason: 'init' | 'resize' | 'data' | 'theme' = 'dat
 
   // Initialize zoom
   const zoomBehavior = zoomComposable.initializeZoom(svg)
-  const prevZoomFilter = zoomBehavior.filter()
-  zoomBehavior.filter(function (this: SVGSVGElement, event: any, datum: unknown) {
-    if (!prevZoomFilter.call(this, event, datum as any)) return false
-    const type = event?.type
+  const prevZoomFilter = zoomBehavior.filter() as unknown as (
+    this: SVGSVGElement,
+    event: unknown,
+    datum: unknown
+  ) => boolean
+  zoomBehavior.filter(function (this: SVGSVGElement, event: unknown, datum: unknown) {
+    if (!prevZoomFilter.call(this, event, datum)) return false
+    const maybeEvent = event as { type?: unknown; target?: unknown } | null
+    const type = typeof maybeEvent?.type === 'string' ? maybeEvent.type : undefined
     if (type === 'mousedown' || type === 'pointerdown' || type === 'touchstart') {
-      const target = (event?.target as Element | null) ?? null
+      const target = maybeEvent?.target instanceof Element ? maybeEvent.target : null
       if (target?.closest?.('g.table-node, g.view-node')) return false
     }
     return true

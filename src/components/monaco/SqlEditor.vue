@@ -4,6 +4,10 @@ import { ref, computed, watch } from 'vue'
 import MonacoEditor from './MonacoEditor.vue'
 import { useMonacoSqlProviders, type SchemaContext } from '@/composables/useMonacoSqlProviders'
 
+import type * as MonacoTypes from 'monaco-editor'
+
+type MonacoApi = typeof import('monaco-editor')
+
 interface Props {
   modelValue: string
   dialect?: string
@@ -28,7 +32,7 @@ const emit = defineEmits<{
 
 const editorRef = ref<InstanceType<typeof MonacoEditor>>()
 const localValue = ref(props.modelValue)
-const monacoInstance = ref<any>()
+const monacoInstance = ref<MonacoApi>()
 
 // Sync local value with prop changes
 watch(
@@ -77,7 +81,7 @@ const sqlDialect = computed<'mysql' | 'pgsql' | 'sql'>(() => {
 })
 
 // Monaco editor options for editable SQL
-const editorOptions = computed<Record<string, any>>(() => ({
+const editorOptions = computed<MonacoTypes.editor.IEditorOptions>(() => ({
   readOnly: false,
   minimap: { enabled: false },
   scrollBeyondLastLine: false,
@@ -114,7 +118,7 @@ const editorOptions = computed<Record<string, any>>(() => ({
   }
 }))
 
-const handleEditorMount = (editor: any, monaco: any) => {
+const handleEditorMount = (editor: MonacoTypes.editor.IStandaloneCodeEditor, monaco: MonacoApi) => {
   // Store monaco instance for later use (when schema updates)
   monacoInstance.value = monaco
 

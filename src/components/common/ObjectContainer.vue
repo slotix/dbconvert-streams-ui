@@ -228,18 +228,6 @@ const selectedColumnsCount = computed(() => {
   return state?.selectedColumns?.length ?? 0
 })
 
-const totalColumnsCount = computed(() => {
-  // Access panelRefs.value to ensure reactivity
-  const dataView = panelRefs.value[0] as DataViewComponent | undefined
-  if (!dataView?.filterPanelRef) return 0
-  const panel =
-    'value' in dataView.filterPanelRef && dataView.filterPanelRef.value !== undefined
-      ? (dataView.filterPanelRef.value as FilterPanelMethods)
-      : (dataView.filterPanelRef as FilterPanelMethods)
-  const columns = panel?.columns?.()
-  return columns?.length ?? 0
-})
-
 // Filter control methods that delegate to child component
 function toggleColumnSelector() {
   const panel = getFilterPanel()

@@ -2,7 +2,6 @@ import { computed, type ComputedRef } from 'vue'
 import {
   ICON_SIZES,
   ICON_SPACING,
-  getIconSize,
   getIconClasses,
   type IconSizeKey,
   type IconSize,

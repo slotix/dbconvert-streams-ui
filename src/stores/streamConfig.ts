@@ -93,10 +93,6 @@ export const defaultStreamConfigOptions: StreamConfig = {
   files: []
 }
 
-const defaultTableOptions: Partial<Table> = {
-  selected: false
-}
-
 export const buildStreamPayload = (stream: StreamConfig): Partial<StreamConfig> => {
   const normalizedSource = normalizeSource(stream.source)
   const filteredStream: Partial<StreamConfig> = {
@@ -176,7 +172,7 @@ export const buildStreamPayload = (stream: StreamConfig): Partial<StreamConfig> 
 
   // Handle source options
   if (normalizedSource.options) {
-    const sourceOptions: any = {}
+    const sourceOptions: NonNullable<StreamConfig['source']['options']> = {}
     const defaultSourceOptions = defaultStreamConfigOptions.source.options!
 
     if (normalizedSource.options.dataBundleSize !== defaultSourceOptions.dataBundleSize) {
@@ -333,8 +329,8 @@ export const useStreamsStore = defineStore('streams', {
             this.currentStreamConfig?.source.id || '',
             this.currentStreamConfig?.target.id || '',
             this.currentStreamConfig?.source.tables || [],
-            (this.currentStreamConfig as any)?.sourceDatabase,
-            (this.currentStreamConfig as any)?.targetDatabase,
+            this.currentStreamConfig?.sourceDatabase,
+            this.currentStreamConfig?.targetDatabase,
             getFileSpec(this.currentStreamConfig?.target.spec)?.fileFormat
           )
         }

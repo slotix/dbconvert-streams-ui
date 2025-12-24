@@ -74,20 +74,6 @@ const handleChange = (value: string | number) => {
   emit('change', value)
 }
 
-const sizeClasses = {
-  sm: 'px-3 py-1.5 text-xs',
-  md: 'px-4 py-2 text-sm',
-  lg: 'px-6 py-3 text-base'
-}
-
-const gridColsClass = {
-  2: 'grid-cols-2',
-  3: 'grid-cols-3',
-  4: 'grid-cols-4',
-  5: 'grid-cols-5',
-  6: 'grid-cols-6'
-}
-
 // Find active option's description
 const activeDescription = computed(() => {
   const activeOption = props.options.find((opt) => opt.value === props.modelValue)

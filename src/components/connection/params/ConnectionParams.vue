@@ -45,7 +45,6 @@ import UnifiedConnectionParams from './UnifiedConnectionParams.vue'
 import LocalFilesConnectionParams from './LocalFilesConnectionParams.vue'
 import S3ConnectionParams from './S3ConnectionParams.vue'
 import SSLParams from './SSLParams.vue'
-import { normalizeConnectionType } from '@/utils/connectionUtils'
 import { useConnectionsStore } from '@/stores/connections'
 
 interface Props {

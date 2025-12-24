@@ -11,21 +11,7 @@ import { useDatabaseCapabilities } from '@/composables/useDatabaseCapabilities'
 import { useCopyToClipboard } from '@/composables/useCopyToClipboard'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { useDatabaseOverviewStore } from '@/stores/databaseOverview'
-import { useLucideIcons } from '@/composables/useLucideIcons'
-import {
-  Calendar,
-  Clipboard,
-  Check,
-  Eye,
-  EyeOff,
-  Plus,
-  Server,
-  Database,
-  BarChart3,
-  Terminal,
-  Cloud,
-  Folder
-} from 'lucide-vue-next'
+import { Check, Plus, Database, Terminal, Cloud } from 'lucide-vue-next'
 
 const navigationStore = useExplorerNavigationStore()
 const overviewStore = useDatabaseOverviewStore()

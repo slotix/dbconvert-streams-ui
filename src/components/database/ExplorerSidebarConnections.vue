@@ -806,7 +806,7 @@ let previousTypeFilters: string[] = []
 
 watch(
   () => props.typeFilters,
-  (filters, oldFilters) => {
+  (filters, _oldFilters) => {
     // Skip if filters haven't actually changed
     if (
       JSON.stringify(filters?.slice().sort()) ===

@@ -63,7 +63,6 @@ import ConnectionDetailsStep from './steps/ConnectionDetailsStep.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
 import { useConnectionsStore } from '@/stores/connections'
 import { useCommonStore } from '@/stores/common'
-import type { Connection } from '@/types/connections'
 
 const router = useRouter()
 const route = useRoute()
@@ -115,8 +114,9 @@ async function loadConnectionForEdit() {
     // Set the current connection for editing
     connectionsStore.setCurrentConnection(id)
     canProceed.value = true // Enable proceed since we have valid connection data
-  } catch (error: any) {
-    commonStore.showNotification(`Failed to load connection: ${error.message}`, 'error')
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'An unknown error occurred'
+    commonStore.showNotification(`Failed to load connection: ${message}`, 'error')
     router.push('/explorer')
   }
 }
@@ -124,12 +124,6 @@ async function loadConnectionForEdit() {
 // Event handlers
 function updateCanProceed(canProceedValue: boolean) {
   canProceed.value = canProceedValue
-}
-
-function getDBTypeLogo(type?: string): string {
-  if (!type) return '/images/db-logos/default.svg'
-  const dbType = connectionsStore.dbTypes.find((db) => db.type === type)
-  return dbType?.logo || '/images/db-logos/default.svg'
 }
 
 async function testConnection() {
@@ -140,10 +134,11 @@ async function testConnection() {
       success: true,
       message: 'Connection established successfully!'
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Failed to establish connection'
     testResult.value = {
       success: false,
-      message: error.message || 'Failed to establish connection'
+      message
     }
   }
 }
@@ -165,7 +160,7 @@ async function updateConnection() {
     } else {
       router.push('/explorer')
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred'
     commonStore.showNotification(errorMessage, 'error')
   }

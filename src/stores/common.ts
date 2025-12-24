@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, type Ref } from 'vue'
+import type { Ref } from 'vue'
 import storage from '@/api/storageService'
 import api, { configureApiClient } from '@/api/apiClient'
 import type { UserData } from '@/types/user'
@@ -8,7 +8,7 @@ import { useToast } from 'vue-toastification'
 import { sseLogsService } from '@/api/sseLogsServiceStructured'
 import { useLocalStorage } from '@vueuse/core'
 import { SERVICE_STATUS, STORAGE_KEYS } from '@/constants'
-import axios, { type AxiosError } from 'axios'
+import axios from 'axios'
 
 // Health check and retry configuration
 const HEALTH_CHECK_INTERVAL_MS = 10000
@@ -37,31 +37,6 @@ interface ErrorState {
 
 // Create apiKey ref outside the store to properly type useLocalStorage
 const apiKeyStorage: Ref<string> = useLocalStorage(STORAGE_KEYS.API_KEY, '')
-
-interface State {
-  currentViewType: string
-  userData: UserData | null
-  sentryHealthy: boolean
-  apiHealthy: boolean
-  apiKeyInvalidated: boolean
-  serviceStatuses: ServiceStatus[]
-  steps: Step[]
-  homeSteps: Step[]
-  operationMap: {
-    insert: string
-    update: string
-    delete: string
-  }
-  modes: ModeOption[]
-  currentPage: string
-  isBackendConnected: boolean
-  error: ErrorState | null
-  isLoading: boolean
-  isLoadingRoute: boolean
-  routeLoadError: string | null
-  healthCheckInterval: number | null
-  initializationStartTime: number
-}
 
 export const useCommonStore = defineStore('common', {
   state: () => ({

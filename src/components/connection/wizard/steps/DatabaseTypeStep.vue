@@ -168,7 +168,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { Check } from 'lucide-vue-next'
 import ConnectionStringInput from '../../ConnectionStringInput.vue'
 import { useConnectionsStore } from '@/stores/connections'

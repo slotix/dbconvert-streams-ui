@@ -4,13 +4,7 @@ import { NodeTypes, type NodeType } from '@/types/common'
 import type { AggregatedStatResponse, AggregatedNodeStats } from '@/types/streamStats'
 import type { TableStat, TableStatsGroup, TableMetadata } from '@/types/tableStats'
 import { STATUS, STATUS_PRIORITY, TERMINAL_STATUSES, type Status } from '@/constants'
-import {
-  parseDataSize,
-  parseDuration,
-  parseNumber,
-  formatDataSize,
-  formatDataRate
-} from '@/utils/formats'
+import { parseDataSize, formatDataSize, formatDataRate } from '@/utils/formats'
 
 // Define types for the state
 interface Node {
@@ -33,7 +27,26 @@ interface Log {
   status?: string
   level: keyof LogLevel
   ts: number
-  [key: string]: any
+
+  // Dynamic fields emitted by different log categories
+  category?: string
+  streamId?: string
+  table?: string
+  stage?: number
+  events?: number
+  elapsed?: number
+  rate?: number | string
+  size?: number | string
+  writerId?: number
+  filesTotal?: number
+  filesUploaded?: number
+  bytesTotal?: number
+  bytesUploaded?: number
+  bucket?: string
+  estimatedRows?: number
+  estimatedSizeBytes?: number
+
+  [key: string]: unknown
 }
 
 interface Stage {
@@ -357,10 +370,11 @@ export const useMonitoringStore = defineStore('monitoring', {
       // Get current stream ID
       let currentStreamID = state.streamID
       if (!currentStreamID) {
-        const recentLog = state.logs.find((log) => log.streamId)
-        if (recentLog) {
-          currentStreamID = recentLog.streamId
-        }
+        const recentStreamId = state.logs.find(
+          (log): log is Log & { streamId: string } =>
+            typeof log.streamId === 'string' && log.streamId.length > 0
+        )?.streamId
+        if (recentStreamId) currentStreamID = recentStreamId
       }
 
       // Filter to s3_upload logs for current stream
@@ -735,8 +749,7 @@ export const useMonitoringStore = defineStore('monitoring', {
           return true
         }
         // Otherwise require events data
-        const hasValues = stat.events && stat.events !== '0'
-        return hasValues
+        return typeof stat.events === 'number' && stat.events > 0
       })
 
       // If no stats with values yet, use the latest status but zero values
@@ -764,26 +777,15 @@ export const useMonitoringStore = defineStore('monitoring', {
       })
       const latestStat = sortedStats[0]
 
-      // For structured logs, fields are already correct types (numbers, not strings)
-      // For old format logs, fields are strings that need parsing
-      const isStructured = latestStat.category === 'stat'
-
       const aggregated = {
         type,
         status: this.getWorstStatus(nodeStats),
-        counter: isStructured
-          ? (latestStat.events as number)
-          : parseNumber(latestStat.events as string),
-        failedEvents: isStructured
-          ? (latestStat.failed as number) || 0
-          : parseNumber(latestStat.failed as string),
+        counter: latestStat.events ?? 0,
+        failedEvents: (latestStat.failed as number) || 0,
         dataSize: parseDataSize(latestStat.size),
         avgRate: parseDataSize(latestStat.rate),
-        // For structured logs, elapsed is already a number in seconds
-        // For old format, elapsed is a string like "0.909s" that needs parsing to ms, then convert to ns
-        elapsed: isStructured
-          ? (latestStat.elapsed as number) * 1e9 // Convert seconds to nanoseconds
-          : parseDuration((latestStat.elapsed as string) || '0s') * 1e6, // Convert ms to ns
+        // elapsed is in seconds; convert to nanoseconds
+        elapsed: (latestStat.elapsed ?? 0) * 1e9,
         activeNodes: nodeStats.length // Count of unique nodes that reported stats
       }
 

@@ -178,10 +178,11 @@ async function testConnection() {
       success: true,
       message: 'Connection established successfully!'
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Failed to establish connection'
     testResult.value = {
       success: false,
-      message: error.message || 'Failed to establish connection'
+      message
     }
   }
 }
@@ -225,7 +226,7 @@ async function createConnection() {
         router.push('/explorer')
       }
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred'
     commonStore.showNotification(`Failed to create connection: ${errorMessage}`, 'error')
   } finally {

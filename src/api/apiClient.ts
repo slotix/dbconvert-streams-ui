@@ -3,7 +3,7 @@ import { handleApiError } from '@/utils/errorHandler'
 import { type UserData } from '@/types/user'
 import { type ServiceStatusResponse } from '@/types/common'
 import { useCommonStore } from '@/stores/common'
-import { getBackendUrl, getSentryDsn, logEnvironment } from '@/utils/environment'
+import { getBackendUrl, getSentryDsn } from '@/utils/environment'
 import { DEFAULT_API_TIMEOUT, API_RETRY, API_HEADERS, CONTENT_TYPES } from '@/constants'
 
 interface ApiResponse<T> {

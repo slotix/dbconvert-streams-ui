@@ -4,6 +4,8 @@ import { ref, computed } from 'vue'
 import MonacoEditor from './MonacoEditor.vue'
 import CopyButton from '@/components/common/CopyButton.vue'
 
+import type * as MonacoTypes from 'monaco-editor'
+
 interface Props {
   json: string | object
   title?: string
@@ -35,7 +37,7 @@ const jsonString = computed(() => {
 })
 
 // Monaco editor options for read-only JSON viewing
-const editorOptions = computed<Record<string, any>>(() => ({
+const editorOptions = computed<MonacoTypes.editor.IEditorOptions>(() => ({
   readOnly: true,
   minimap: { enabled: false },
   scrollBeyondLastLine: false,
@@ -58,7 +60,7 @@ const editorOptions = computed<Record<string, any>>(() => ({
   contextmenu: false
 }))
 
-const handleEditorMount = (editor: any) => {
+const handleEditorMount = (editor: MonacoTypes.editor.IStandaloneCodeEditor) => {
   // Auto-fold to level 1 for compact view
   if (props.compact) {
     setTimeout(() => {

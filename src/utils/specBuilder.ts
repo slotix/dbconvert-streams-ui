@@ -17,7 +17,6 @@ import type {
   FileFormatSpec,
   ParquetConfig,
   CSVConfig,
-  StructureOptions,
   UIStructureOptions
 } from '../types/specs'
 import type { Connection } from '../types/connections'

@@ -9,7 +9,7 @@ export function useExplorerRouter(options: {
   recentConnections: Ref<Array<{ id: string }>>
   lastViewedConnectionId: Ref<string>
   currentConnectionId: Ref<string | null>
-  currentFileEntries: Ref<any[]>
+  currentFileEntries: Ref<unknown[]>
   onSelectConnection: (payload: { connectionId: string }) => void
   onFileSelect: (payload: { connectionId: string; path: string }) => void
 }) {

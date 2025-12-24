@@ -3,6 +3,10 @@
 import { ref, computed, watch } from 'vue'
 import MonacoEditor from './MonacoEditor.vue'
 
+import type * as MonacoTypes from 'monaco-editor'
+
+type MonacoApi = typeof import('monaco-editor')
+
 interface Props {
   modelValue: string | object
   schema?: object
@@ -61,7 +65,7 @@ watch(localValue, (newValue) => {
 })
 
 // Monaco editor options for editable JSON
-const editorOptions = computed<Record<string, any>>(() => ({
+const editorOptions = computed<MonacoTypes.editor.IEditorOptions>(() => ({
   readOnly: false,
   minimap: { enabled: false },
   scrollBeyondLastLine: false,
@@ -89,19 +93,48 @@ const editorOptions = computed<Record<string, any>>(() => ({
   autoClosingQuotes: 'always'
 }))
 
-const handleEditorMount = (editor: any, monaco: any) => {
+const handleEditorMount = (editor: MonacoTypes.editor.IStandaloneCodeEditor, monaco: MonacoApi) => {
   // Configure JSON language options with schema if provided
   if (props.schema) {
-    monaco.languages.json.jsonDefaults.setDiagnosticsOptions({
-      validate: true,
-      schemas: [
-        {
-          uri: 'http://internal/schema.json',
-          fileMatch: ['*'],
-          schema: props.schema
+    type JsonDiagnosticsOptions = {
+      validate: boolean
+      schemas: Array<{
+        uri: string
+        fileMatch: string[]
+        schema: object
+      }>
+    }
+
+    type JsonDefaults = {
+      setDiagnosticsOptions: (options: JsonDiagnosticsOptions) => void
+    }
+
+    const jsonDefaults = (
+      monaco.languages as unknown as {
+        json?: {
+          jsonDefaults?: {
+            setDiagnosticsOptions?: JsonDefaults['setDiagnosticsOptions']
+          }
         }
-      ]
-    })
+      }
+    ).json?.jsonDefaults
+
+    const setDiagnosticsOptions = jsonDefaults?.setDiagnosticsOptions
+    if (typeof setDiagnosticsOptions === 'function') {
+      setDiagnosticsOptions({
+        validate: true,
+        schemas: [
+          {
+            uri: 'http://internal/schema.json',
+            fileMatch: ['*'],
+            schema: props.schema
+          }
+        ]
+      })
+    } else {
+      // Monaco JSON language support may not be loaded in minimal bundles
+      console.warn('Monaco JSON diagnostics API is not available')
+    }
   }
 
   // Add keyboard shortcut for format (Ctrl+Shift+F)

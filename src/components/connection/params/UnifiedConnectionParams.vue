@@ -166,10 +166,8 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { type Connection } from '@/types/connections'
 import { useDatabaseCapabilities } from '@/composables/useDatabaseCapabilities'
 import { normalizeConnectionType } from '@/utils/connectionUtils'
-import ConnectionName from './ConnectionName.vue'
 import Spinner from '@/components/common/Spinner.vue'
 import { useConnectionsStore } from '@/stores/connections'
 import { Eye, EyeOff } from 'lucide-vue-next'

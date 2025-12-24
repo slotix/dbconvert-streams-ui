@@ -141,7 +141,7 @@ const props = defineProps<{
 }>()
 
 // Define emits
-const emit = defineEmits<{
+defineEmits<{
   'set-active-pane': [pane: 'left' | 'right']
   'close-right-pane': []
 }>()

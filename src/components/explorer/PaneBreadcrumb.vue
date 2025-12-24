@@ -43,7 +43,7 @@ const props = defineProps<{
   metadata?: DatabaseMetadata | null // For building objects list in breadcrumb
 }>()
 
-const emit = defineEmits<{
+defineEmits<{
   navigate: [payload: { level: 'database' | 'schema' | 'type' | 'name' }]
   'pick-name': [payload: { name: string; type: 'table' | 'view'; schema?: string }]
 }>()

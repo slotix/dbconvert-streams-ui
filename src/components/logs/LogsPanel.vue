@@ -6,7 +6,7 @@ import { ArrowDown, ArrowUp, ChevronDown, Filter, Trash, X } from 'lucide-vue-ne
 import { LOG_LEVELS, STREAM_PROGRESS_CATEGORIES } from '@/constants'
 import SqlConsoleView from './SqlConsoleView.vue'
 import LogRow from './LogRow.vue'
-import { getCategoryIcon, getCategoryLabel, formatLogTimestamp } from '@/utils/sqlLogHelpers'
+import { getCategoryIcon, formatLogTimestamp } from '@/utils/sqlLogHelpers'
 import {
   formatDataSizeWithUnit,
   formatDataRateWithUnit,
@@ -188,16 +188,6 @@ function startResize(e: MouseEvent) {
   document.addEventListener('mouseup', onMouseUp)
 }
 
-function getShortStreamId(streamId: string): string {
-  if (!streamId) return ''
-  // Extract the last part after underscore
-  if (streamId.includes('_')) {
-    const parts = streamId.split('_')
-    return parts[parts.length - 1].slice(0, 8)
-  }
-  return streamId.slice(0, 12)
-}
-
 function getStatLogDisplay(log: SystemLog): string {
   // For progress logs with structured data, build a polished display string
   if (log.category === 'progress') {
@@ -225,8 +215,8 @@ function getStatLogDisplay(log: SystemLog): string {
     const parts: string[] = []
 
     // Header: source/target (use type field instead of nodeType)
-    if ((log as any).type) {
-      parts.push(`${(log as any).type.toUpperCase()}`)
+    if (log.type) {
+      parts.push(`${String(log.type).toUpperCase()}`)
     }
 
     // Table name

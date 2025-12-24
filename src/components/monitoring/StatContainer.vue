@@ -229,7 +229,7 @@ const props = withDefaults(defineProps<Props>(), {
   streamStatus: ''
 })
 
-const emit = defineEmits<{
+defineEmits<{
   (e: 'compare-table', tableName: string): void
 }>()
 

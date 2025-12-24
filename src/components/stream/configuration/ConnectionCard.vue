@@ -68,7 +68,7 @@ import DatabaseIcon from '@/components/base/DatabaseIcon.vue'
 import { AlertCircle, ExternalLink } from 'lucide-vue-next'
 import type { Connection } from '@/types/connections'
 
-const props = defineProps<{
+defineProps<{
   label: string
   connection?: Connection
   logoSrc?: string

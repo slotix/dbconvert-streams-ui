@@ -21,7 +21,7 @@ interface Window {
     VITE_BACKEND_URL: string
     VITE_SENTRY_DSN: string
     VITE_DESKTOP_MODE?: string
-    [key: string]: any
+    [key: string]: unknown
   }
   runtime?: {
     EventsOnMultiple: (

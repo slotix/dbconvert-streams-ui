@@ -4,8 +4,7 @@ import {
   supportsSchemas,
   supportsSchemaFiltering,
   canCreateSchemas,
-  getDefaultPort,
-  type DatabaseCapabilities
+  getDefaultPort
 } from '@/types/databaseCapabilities'
 
 export function useDatabaseCapabilities(databaseType: Ref<string> | string) {
@@ -107,13 +106,25 @@ export function useDatabaseCapabilities(databaseType: Ref<string> | string) {
   const shouldShowCreateSchemaButton = computed(() => false) // Schema creation moved to explorer/stream
 
   // Validation helpers
-  const validateConnection = (connection: any) => {
+  const validateConnection = (connection: unknown) => {
     const errors: string[] = []
 
+    type ConnectionLike = {
+      spec?: {
+        database?: {
+          host?: string
+          port?: number
+          username?: string
+        }
+      }
+    }
+
+    const connectionLike = connection as ConnectionLike | null | undefined
+
     // Validate based on spec.database fields
-    const host = connection?.spec?.database?.host
-    const port = connection?.spec?.database?.port
-    const username = connection?.spec?.database?.username
+    const host = connectionLike?.spec?.database?.host
+    const port = connectionLike?.spec?.database?.port
+    const username = connectionLike?.spec?.database?.username
 
     if (!host) errors.push('Host is required')
     if (!port) errors.push('Port is required')

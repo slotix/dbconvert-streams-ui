@@ -9,10 +9,6 @@
     typeof window.go !== 'undefined' ||
     navigator.userAgent.includes('wails')
 
-  // Check if we're on localhost
-  var isLocalhost =
-    window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-
   if (
     isWails ||
     (window.location.port && window.location.port !== '80' && window.location.port !== '443')

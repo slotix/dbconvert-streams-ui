@@ -14,13 +14,13 @@
  * - Hover effects and transitions
  */
 
-import { ref, computed } from 'vue'
+import { ref, computed, type Component } from 'vue'
 import { Check, ChevronDown, ChevronRight, Clipboard } from 'lucide-vue-next'
 
 interface Props {
   timestamp: string
   badge?: {
-    icon: any
+    icon: Component
     colorClass: string
   }
   message: string

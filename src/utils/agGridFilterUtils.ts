@@ -21,11 +21,15 @@ function quoteIdentifier(identifier: string, dbType: string): string {
 /**
  * Escape single quotes in string values to prevent SQL injection
  */
-function escapeValue(val: any): string {
+function escapeValue(val: unknown): string {
   if (typeof val === 'string') {
     return val.replace(/'/g, "''")
   }
   return String(val)
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
 }
 
 /**
@@ -37,16 +41,21 @@ function escapeValue(val: any): string {
  * @param dbType - Database type for proper identifier quoting
  * @returns SQL clause string or null if invalid
  */
-export function buildFilterClause(column: string, filter: any, dbType: string): string | null {
+export function buildFilterClause(column: string, filter: unknown, dbType: string): string | null {
+  if (!isRecord(filter)) {
+    return null
+  }
+
   // Handle combined conditions (AND/OR)
-  if (filter.operator) {
+  const operator = filter.operator
+  if (typeof operator === 'string' && operator.length > 0) {
     console.log(`Building compound filter for ${column}:`, filter)
 
     // AG Grid uses 'conditions' array (newer versions) or 'condition1'/'condition2' (older versions)
     let condition1: string | null = null
     let condition2: string | null = null
 
-    if (filter.conditions && Array.isArray(filter.conditions)) {
+    if (Array.isArray(filter.conditions)) {
       // New format: conditions array
       condition1 = filter.conditions[0]
         ? buildFilterClause(column, filter.conditions[0], dbType)
@@ -63,7 +72,7 @@ export function buildFilterClause(column: string, filter: any, dbType: string): 
     console.log(`  Condition1: ${condition1}, Condition2: ${condition2}`)
 
     if (condition1 && condition2) {
-      return `(${condition1} ${filter.operator} ${condition2})`
+      return `(${condition1} ${operator} ${condition2})`
     }
     return condition1 || condition2
   }
@@ -86,7 +95,12 @@ export function buildFilterClause(column: string, filter: any, dbType: string): 
   const notLikeOperator = usesILike ? 'NOT ILIKE' : 'NOT LIKE'
 
   // Build SQL based on filter type
-  switch (filter.type) {
+  const filterType = filter.type
+  if (typeof filterType !== 'string') {
+    return null
+  }
+
+  switch (filterType) {
     case 'equals':
       return `${quotedColumn} = '${escapeValue(filterValue)}'`
     case 'notEqual':
@@ -108,7 +122,7 @@ export function buildFilterClause(column: string, filter: any, dbType: string): 
     case 'greaterThanOrEqual':
       return `${quotedColumn} >= ${filterValue}`
     case 'inRange':
-      return `${quotedColumn} BETWEEN ${filter.filter} AND ${filter.filterTo}`
+      return `${quotedColumn} BETWEEN ${String(filter.filter)} AND ${String(filter.filterTo)}`
     case 'blank':
       return `(${quotedColumn} IS NULL OR ${quotedColumn} = '')`
     case 'notBlank':
@@ -126,7 +140,7 @@ export function buildFilterClause(column: string, filter: any, dbType: string): 
  * @returns SQL WHERE clause string (without WHERE keyword)
  */
 export function convertFilterModelToSQL(
-  filterModel: Record<string, any>,
+  filterModel: Record<string, unknown>,
   dbType: string = 'mysql'
 ): string {
   const whereClauses: string[] = []

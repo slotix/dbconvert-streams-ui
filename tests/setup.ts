@@ -3,19 +3,40 @@ import { readFileSync, existsSync } from 'fs'
 
 const authFile = 'tests/.auth/user.json'
 
+function getStringProp(value: unknown, key: string): string | undefined {
+  if (!value || typeof value !== 'object') {
+    return undefined
+  }
+  const record = value as Record<string, unknown>
+  return typeof record[key] === 'string' ? record[key] : undefined
+}
+
+function getArrayProp(value: unknown, key: string): unknown[] | undefined {
+  if (!value || typeof value !== 'object') {
+    return undefined
+  }
+  const record = value as Record<string, unknown>
+  return Array.isArray(record[key]) ? (record[key] as unknown[]) : undefined
+}
+
 // Try to read API key from existing auth file
 let TEST_API_KEY = 'your-api-key-here'
 
 if (existsSync(authFile)) {
   try {
-    const authData = JSON.parse(readFileSync(authFile, 'utf8'))
-    const origin = authData.origins?.find((o: any) => o.origin === 'http://localhost:5173')
-    const apiKeyItem = origin?.localStorage?.find((item: any) => item.name === 'dbconvert-api-key')
-    if (apiKeyItem?.value) {
-      TEST_API_KEY = apiKeyItem.value
+    const authData: unknown = JSON.parse(readFileSync(authFile, 'utf8'))
+    const origins = getArrayProp(authData, 'origins')
+    const origin = origins?.find((o) => getStringProp(o, 'origin') === 'http://localhost:5173')
+    const localStorageItems = origin ? getArrayProp(origin, 'localStorage') : undefined
+    const apiKeyItem = localStorageItems?.find(
+      (item) => getStringProp(item, 'name') === 'dbconvert-api-key'
+    )
+    const apiKeyValue = apiKeyItem ? getStringProp(apiKeyItem, 'value') : undefined
+    if (apiKeyValue) {
+      TEST_API_KEY = apiKeyValue
       console.log('✅ Using API key from existing auth file')
     }
-  } catch (error) {
+  } catch {
     console.log('⚠️ Could not read API key from auth file, using placeholder')
   }
 }

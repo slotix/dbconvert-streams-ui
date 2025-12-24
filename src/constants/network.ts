@@ -38,7 +38,8 @@ export const COMMON_PORTS = {
  * Check if a host is localhost
  */
 export function isLocalhost(host: string): boolean {
-  return LOCALHOST_ADDRESSES.includes(host.toLowerCase() as any)
+  const normalizedHost = host.toLowerCase()
+  return LOCALHOST_ADDRESSES.some((address) => address === normalizedHost)
 }
 
 /**

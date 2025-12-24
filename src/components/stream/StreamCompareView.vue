@@ -104,21 +104,15 @@ const targetFileFormat = computed<FileFormat | undefined>(() => {
 const targetRootPath = computed(() => {
   const connSpec = props.target.spec
   const streamTargetSpec = props.stream.target?.spec
-  const s3UploadConfig = props.stream.target?.options?.s3UploadConfig
 
   // Stream references connection via target.id (props.target).
   // - Connection stores: credentials, region, default scope
   // - Stream target spec stores: stream-specific bucket/prefix override
-  // Priority: stream spec > legacy options > connection defaults
-  const s3Bucket =
-    streamTargetSpec?.s3?.upload?.bucket || s3UploadConfig?.bucket || connSpec?.s3?.scope?.bucket
+  // Priority: stream spec > connection defaults
+  const s3Bucket = streamTargetSpec?.s3?.upload?.bucket || connSpec?.s3?.scope?.bucket
 
   if (s3Bucket) {
-    const prefix =
-      streamTargetSpec?.s3?.upload?.prefix ||
-      s3UploadConfig?.prefix ||
-      connSpec?.s3?.scope?.prefix ||
-      ''
+    const prefix = streamTargetSpec?.s3?.upload?.prefix || connSpec?.s3?.scope?.prefix || ''
     return buildS3BasePath(s3Bucket, prefix)
   }
 
@@ -408,18 +402,6 @@ function buildS3BasePath(bucket?: string, prefix?: string): string {
   if (!bucket) return ''
   const normalizedPrefix = prefix ? prefix.replace(/^\/+|\/+$/g, '') : ''
   return normalizedPrefix ? `s3://${bucket}/${normalizedPrefix}` : `s3://${bucket}`
-}
-
-function parseS3Uri(uri?: string | null): { bucket?: string; prefix?: string } {
-  if (!uri || !uri.startsWith('s3://')) {
-    return {}
-  }
-  const withoutScheme = uri.slice(5)
-  const [bucket, ...rest] = withoutScheme.split('/')
-  return {
-    bucket: bucket || undefined,
-    prefix: rest.join('/') || undefined
-  }
 }
 
 function getBaseExtensionForFormat(format?: FileFormat | null): string | null {

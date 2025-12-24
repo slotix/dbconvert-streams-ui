@@ -108,8 +108,10 @@ const deleteConnection = async (id: string): Promise<void> => {
     })
   } catch (error) {
     console.error('[deleteConnection] Full error:', error)
-    console.error('[deleteConnection] Error response:', (error as any).response)
-    console.error('[deleteConnection] Error request:', (error as any).request)
+    const errRecord =
+      typeof error === 'object' && error !== null ? (error as Record<string, unknown>) : null
+    console.error('[deleteConnection] Error response:', errRecord?.response)
+    console.error('[deleteConnection] Error request:', errRecord?.request)
     throw handleApiError(error)
   }
 }

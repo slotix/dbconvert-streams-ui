@@ -8,7 +8,9 @@ import { useThemeStore } from '@/stores/theme'
 import { initializeMonaco } from '@/utils/monaco-loader'
 
 // Import Monaco types
-import type * as Monaco from 'monaco-editor/esm/vs/editor/editor.api'
+import type * as MonacoTypes from 'monaco-editor'
+
+type MonacoApi = typeof import('monaco-editor')
 
 interface Props {
   modelValue?: string
@@ -16,7 +18,7 @@ interface Props {
   theme?: 'vs' | 'vs-dark' | 'hc-black' | 'hc-light'
   height?: string
   readOnly?: boolean
-  options?: Record<string, any>
+  options?: MonacoTypes.editor.IEditorOptions
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -30,15 +32,15 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: string): void
-  (e: 'mount', editor: any, monaco: any): void
+  (e: 'mount', editor: MonacoTypes.editor.IStandaloneCodeEditor, monaco: MonacoApi): void
   (e: 'change', value: string): void
   (e: 'blur'): void
   (e: 'focus'): void
 }>()
 
 const editorContainer = ref<HTMLElement>()
-const editor = shallowRef<Monaco.editor.IStandaloneCodeEditor>()
-const monaco = shallowRef<typeof Monaco>()
+const editor = shallowRef<MonacoTypes.editor.IStandaloneCodeEditor>()
+const monaco = shallowRef<MonacoApi>()
 const themeStore = useThemeStore()
 
 // Get theme from props or theme store
@@ -122,7 +124,7 @@ onMounted(async () => {
 
   try {
     // Load Monaco using lazy loader (only loads workers on first use)
-    const monacoInstance = await initializeMonaco()
+    const monacoInstance = (await initializeMonaco()) as MonacoApi
     monaco.value = monacoInstance
 
     // Check again after async operation - container might be gone if component unmounted
@@ -132,7 +134,7 @@ onMounted(async () => {
     }
 
     // Default editor options
-    const defaultOptions: Record<string, any> = {
+    const defaultOptions: MonacoTypes.editor.IStandaloneEditorConstructionOptions = {
       value: props.modelValue,
       language: props.language,
       theme: currentTheme.value,

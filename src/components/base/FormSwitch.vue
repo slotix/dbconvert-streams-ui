@@ -34,7 +34,7 @@ interface Props {
   labelPosition?: 'left' | 'right'
 }
 
-const props = withDefaults(defineProps<Props>(), {
+withDefaults(defineProps<Props>(), {
   modelValue: false,
   disabled: false,
   required: false,

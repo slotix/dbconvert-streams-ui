@@ -4,6 +4,10 @@ import { ref, computed, watch } from 'vue'
 import MonacoEditor from './MonacoEditor.vue'
 import CopyButton from '@/components/common/CopyButton.vue'
 
+import type * as MonacoTypes from 'monaco-editor'
+
+type MonacoApi = typeof import('monaco-editor')
+
 interface Props {
   code: string
   title?: string
@@ -54,7 +58,7 @@ const monacoLanguage = computed(() => {
 })
 
 // Monaco editor options for read-only SQL viewing
-const editorOptions = computed<Record<string, any>>(() => ({
+const editorOptions = computed<MonacoTypes.editor.IEditorOptions>(() => ({
   readOnly: true,
   minimap: { enabled: false },
   scrollBeyondLastLine: false,
@@ -83,17 +87,17 @@ const clampHeight = (rawHeight: number, lineHeight = 20, lineCount = 1) => {
   editorHeight.value = `${clamped}px`
 }
 
-const handleEditorMount = (editor: any, monacoInstance?: any) => {
+const handleEditorMount = (
+  editor: MonacoTypes.editor.IStandaloneCodeEditor,
+  monacoInstance?: MonacoApi
+) => {
   const updateHeight = (contentHeight?: number) => {
     if (!props.autoResize) return
 
     const model = editor.getModel()
     const editorOptions = monacoInstance?.editor?.EditorOption
-    const defaultLineHeight =
-      monacoInstance?.editor?.BareFontInfo?.createFromRawSettings?.({ fontSize: 14 }).lineHeight ||
-      20
-    const lineHeight =
-      (editorOptions ? editor.getOption(editorOptions.lineHeight) : null) || defaultLineHeight
+    const optionValue = editorOptions ? editor.getOption(editorOptions.lineHeight) : null
+    const lineHeight = typeof optionValue === 'number' && optionValue > 0 ? optionValue : 20
     const lineCount = model?.getLineCount() || 1
     const measuredHeight =
       typeof contentHeight === 'number' ? contentHeight : lineCount * lineHeight
@@ -114,7 +118,9 @@ const handleEditorMount = (editor: any, monacoInstance?: any) => {
   }, 50)
 
   // Keep height in sync with content size (word wrap, formatting, etc.)
-  editor.onDidContentSizeChange((event: any) => updateHeight(event.contentHeight))
+  editor.onDidContentSizeChange((event: MonacoTypes.editor.IContentSizeChangedEvent) =>
+    updateHeight(event.contentHeight)
+  )
   updateHeight()
 }
 </script>

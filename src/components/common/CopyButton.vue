@@ -16,7 +16,7 @@ async function handleCopy() {
   try {
     await navigator.clipboard.writeText(props.text)
     commonStore.showNotification('Copied to clipboard', 'success')
-  } catch (error) {
+  } catch {
     commonStore.showNotification('Failed to copy to clipboard', 'error')
   }
 }

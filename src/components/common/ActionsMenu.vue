@@ -100,14 +100,13 @@ import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue'
 import { MoreHorizontal, SquareStack, Trash } from 'lucide-vue-next'
 import { useCommonStore } from '@/stores/common'
 import { computed } from 'vue'
-import { vTooltip } from '@/directives/tooltip'
 import { useContextualIconSizes } from '@/composables/useIconSizes'
 
 interface Props {
   position?: 'bottom' | 'card'
 }
 
-const props = defineProps<Props>()
+defineProps<Props>()
 const viewType = computed(() => {
   return useCommonStore().currentViewType
 })

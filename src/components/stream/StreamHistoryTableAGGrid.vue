@@ -111,7 +111,7 @@ import type { StreamRun } from '@/types/streamHistory'
 // Register AG Grid modules
 ModuleRegistry.registerModules([AllCommunityModule])
 
-const props = defineProps<{
+defineProps<{
   configId: string
   runs: StreamRun[]
 }>()

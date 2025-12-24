@@ -81,7 +81,7 @@ class SSELogsService {
       }
     })
 
-    eventSource.addEventListener('error', (error) => {
+    eventSource.addEventListener('error', (_error) => {
       // Only log errors if we think backend should be available
       // This prevents console spam when backend is known to be down
       if (this.backendAvailable && this.isConnected) {

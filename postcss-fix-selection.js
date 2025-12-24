@@ -2,7 +2,7 @@
  * PostCSS plugin to fix invalid :is() usage with ::selection pseudo-elements
  * Tailwind CSS v4 generates invalid CSS like ::selection:is() which violates CSS spec
  */
-const plugin = (opts = {}) => {
+const plugin = (_opts = {}) => {
   return {
     postcssPlugin: 'postcss-fix-selection',
     Once(root) {

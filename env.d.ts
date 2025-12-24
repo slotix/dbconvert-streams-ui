@@ -20,7 +20,7 @@ interface Window {
     VITE_API_URL: string
     VITE_BACKEND_URL: string
     VITE_SENTRY_DSN: string
-    [key: string]: any // Allow additional properties
+    [key: string]: unknown // Allow additional properties
   }
   runtime?: {
     EventsOnMultiple: (

@@ -245,7 +245,6 @@
 import { ref, computed, watch } from 'vue'
 import { useConnectionsStore } from '@/stores/connections'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
-import { getConnectionHost } from '@/utils/specBuilder'
 import BaseButton from '@/components/base/BaseButton.vue'
 import ConnectionTreeSelector from './ConnectionTreeSelector.vue'
 import StreamConnectionFilter from './StreamConnectionFilter.vue'
@@ -394,7 +393,7 @@ function normalize(text: string): string {
 
 // Deep search function - searches through connection, databases, tables, views
 function connectionMatchesDeepSearch(
-  connection: { id: string; name?: string; type?: string; spec?: any },
+  connection: { id: string; name?: string; type?: string; spec?: unknown },
   query: string
 ): boolean {
   if (!query.trim()) return true
@@ -402,7 +401,13 @@ function connectionMatchesDeepSearch(
   const normalizedQuery = normalize(query)
 
   // Search in connection basic info
-  const host = connection.spec?.database?.host || connection.spec?.snowflake?.account || ''
+  type ConnectionSpecLike = {
+    database?: { host?: string }
+    snowflake?: { account?: string }
+  }
+
+  const spec = (connection.spec ?? undefined) as ConnectionSpecLike | undefined
+  const host = spec?.database?.host || spec?.snowflake?.account || ''
   const connectionLabel = `${connection.name || ''} ${host} ${connection.type || ''}`
   if (normalize(connectionLabel).includes(normalizedQuery)) return true
 

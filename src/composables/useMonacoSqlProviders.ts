@@ -15,6 +15,10 @@ import {
   type SqlSnippet
 } from '@/constants/sqlKeywords'
 
+import type * as MonacoTypes from 'monaco-editor'
+
+export type MonacoApi = typeof import('monaco-editor')
+
 /**
  * Schema context for database-aware autocomplete
  */
@@ -23,11 +27,6 @@ export interface SchemaContext {
   columns: Record<string, Array<{ name: string; type: string; nullable: boolean }>>
   dialect: 'mysql' | 'pgsql' | 'sql'
 }
-
-/**
- * Monaco instance type
- */
-type Monaco = any
 
 // Store disposables globally to allow disposal on re-registration
 let disposables: Array<{ dispose: () => void }> = []
@@ -41,7 +40,7 @@ let disposables: Array<{ dispose: () => void }> = []
  * @param schemaContext - Optional schema information for table/column autocomplete
  */
 export function useMonacoSqlProviders(
-  monaco: Monaco,
+  monaco: MonacoApi,
   language: string,
   dialect: 'mysql' | 'pgsql' | 'sql',
   schemaContext?: SchemaContext
@@ -76,7 +75,7 @@ export function useMonacoSqlProviders(
  * Completion Provider - Provides autocomplete suggestions
  */
 function registerCompletionProvider(
-  monaco: Monaco,
+  monaco: MonacoApi,
   language: string,
   dialect: 'mysql' | 'pgsql' | 'sql',
   schemaContext?: SchemaContext
@@ -87,8 +86,11 @@ function registerCompletionProvider(
 
   return monaco.languages.registerCompletionItemProvider(language, {
     triggerCharacters: [' ', '.', '('],
-    provideCompletionItems: (model: any, position: any) => {
-      const suggestions: any[] = []
+    provideCompletionItems: (
+      model: MonacoTypes.editor.ITextModel,
+      position: MonacoTypes.Position
+    ) => {
+      const suggestions: MonacoTypes.languages.CompletionItem[] = []
 
       // Get text before cursor to understand context
       const textUntilPosition = model.getValueInRange({
@@ -208,9 +210,12 @@ function registerCompletionProvider(
 /**
  * Hover Provider - Shows information when hovering over text
  */
-function registerHoverProvider(monaco: Monaco, language: string, schemaContext?: SchemaContext) {
+function registerHoverProvider(monaco: MonacoApi, language: string, schemaContext?: SchemaContext) {
   return monaco.languages.registerHoverProvider(language, {
-    provideHover: (model: any, position: any): any => {
+    provideHover: (
+      model: MonacoTypes.editor.ITextModel,
+      position: MonacoTypes.Position
+    ): MonacoTypes.languages.Hover | null => {
       const word = model.getWordAtPosition(position)
       if (!word) return null
 
@@ -297,7 +302,7 @@ function getFunctionDocumentation(funcName: string): string {
  * Validation Provider - Monaco has built-in SQL validation
  * Custom validation can be added here in the future if needed
  */
-function registerValidationProvider(_monaco: Monaco, _language: string) {
+function registerValidationProvider(_monaco: MonacoApi, _language: string) {
   // Monaco provides built-in SQL syntax validation
   // Custom validation rules can be added here in the future
 }

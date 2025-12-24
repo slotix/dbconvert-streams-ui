@@ -123,6 +123,10 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
 
   // Page size options and state
   const PAGE_SIZE_OPTIONS = [20, 50, 100, 200, 500] as const
+  type PageSizeOption = (typeof PAGE_SIZE_OPTIONS)[number]
+  function isPageSizeOption(value: number): value is PageSizeOption {
+    return (PAGE_SIZE_OPTIONS as readonly number[]).includes(value)
+  }
   const pageSize = ref<number>(100) // Default page size
 
   // Context menu state (local to each instance)
@@ -441,6 +445,24 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
     }
   }
 
+  // Notify consumers when panel filters/sort change
+  watch(
+    () => panelWhereSQL.value,
+    () => {
+      onFilterChanged?.()
+      refresh()
+    }
+  )
+
+  watch(
+    () => panelSortModel.value,
+    () => {
+      onSortChanged?.()
+      refresh()
+    },
+    { deep: true }
+  )
+
   /**
    * Get current grid state for sync purposes
    */
@@ -497,7 +519,7 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
 
     if (savedState) {
       // Restore page size from saved state
-      if (savedState.pageSize && PAGE_SIZE_OPTIONS.includes(savedState.pageSize as any)) {
+      if (typeof savedState.pageSize === 'number' && isPageSizeOption(savedState.pageSize)) {
         pageSize.value = savedState.pageSize
       }
 
