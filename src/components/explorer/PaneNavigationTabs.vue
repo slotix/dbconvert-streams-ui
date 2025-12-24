@@ -1,5 +1,5 @@
 <template>
-  <div class="mb-2" :data-pane-id="paneId" @dragover.prevent="onDragOver" @drop.prevent="onDrop">
+  <div class="mb-2" :data-pane-id="paneId">
     <div class="flex items-center gap-1 flex-wrap">
       <!-- Preview tab (dashed border) -->
       <button
@@ -138,33 +138,6 @@ function onDragStart(event: DragEvent, index: number) {
   }
   if (event.dataTransfer) {
     event.dataTransfer.effectAllowed = 'move'
-  }
-}
-
-function onDragOver(event: DragEvent) {
-  if (!event.dataTransfer) return
-  const hasPayload =
-    Array.from(event.dataTransfer.types || []).includes(DRAG_MIME) ||
-    Array.from(event.dataTransfer.types || []).includes('text/plain')
-  if (hasPayload) {
-    event.dataTransfer.dropEffect = 'move'
-  }
-}
-
-function onDrop(event: DragEvent) {
-  if (!event.dataTransfer) return
-
-  const raw = event.dataTransfer.getData(DRAG_MIME) || event.dataTransfer.getData('text/plain')
-  if (!raw) return
-
-  try {
-    const parsed = JSON.parse(raw) as { fromPaneId: PaneId; fromPinnedIndex: number }
-    if (parsed.fromPaneId !== 'left' && parsed.fromPaneId !== 'right') return
-    if (!Number.isInteger(parsed.fromPinnedIndex) || parsed.fromPinnedIndex < 0) return
-    if (parsed.fromPaneId === props.paneId) return
-    store.movePinnedTab(parsed.fromPaneId, parsed.fromPinnedIndex, props.paneId)
-  } catch {
-    // ignore invalid payloads
   }
 }
 
