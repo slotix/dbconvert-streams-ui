@@ -3,9 +3,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, watch, shallowRef, nextTick } from 'vue'
+import { ref, onMounted, onBeforeUnmount, watch, shallowRef, nextTick, computed } from 'vue'
 import { useThemeStore } from '@/stores/theme'
 import { initializeMonaco } from '@/utils/monaco-loader'
+import { useDesktopZoom } from '@/utils/desktopZoom'
 
 // Import Monaco types
 import type * as MonacoTypes from 'monaco-editor'
@@ -42,6 +43,22 @@ const editorContainer = ref<HTMLElement>()
 const editor = shallowRef<MonacoTypes.editor.IStandaloneCodeEditor>()
 const monaco = shallowRef<MonacoApi>()
 const themeStore = useThemeStore()
+const { isDesktopZoom, zoomLevel } = useDesktopZoom()
+
+// Base font size that gets scaled by zoom level
+const BASE_FONT_SIZE = 14
+
+// Get current zoom factor from CSS variable (more reliable than reactive ref on startup)
+const getZoomFactor = (): number => {
+  const zoomValue = getComputedStyle(document.documentElement).getPropertyValue('--app-zoom')
+  return parseFloat(zoomValue) || 1
+}
+
+// Computed font size that scales with zoom to compensate for CSS zoom exclusion
+const scaledFontSize = computed(() => {
+  if (!isDesktopZoom.value) return BASE_FONT_SIZE
+  return Math.round(BASE_FONT_SIZE * zoomLevel.value)
+})
 
 // Get theme from props or theme store
 const currentTheme = ref<string>(props.theme || (themeStore.isDark ? 'vs-dark' : 'vs'))
@@ -116,6 +133,18 @@ watch(
   }
 )
 
+// Watch zoom level changes to update font size (compensates for CSS zoom exclusion)
+// Use immediate: true to apply correct font size when zoom is restored from storage on startup
+watch(
+  scaledFontSize,
+  (newFontSize) => {
+    if (editor.value) {
+      editor.value.updateOptions({ fontSize: newFontSize })
+    }
+  },
+  { immediate: true }
+)
+
 onMounted(async () => {
   // Wait for next tick to ensure DOM is fully rendered
   await nextTick()
@@ -142,13 +171,16 @@ onMounted(async () => {
       automaticLayout: true,
       minimap: { enabled: false },
       scrollBeyondLastLine: false,
-      fontSize: 14,
+      // Font size is scaled by zoom level to compensate for CSS zoom exclusion
+      fontSize: scaledFontSize.value,
       lineNumbers: 'on',
       renderLineHighlight: 'line',
       scrollbar: {
         verticalScrollbarSize: 10,
         horizontalScrollbarSize: 10
       },
+      // Fix for CSS zoom coordinate issues in desktop app
+      fixedOverflowWidgets: true,
       ...props.options
     }
 
@@ -173,6 +205,14 @@ onMounted(async () => {
 
     // Emit mount event with editor instance
     emit('mount', editor.value, monaco.value)
+
+    // Ensure correct font size is applied after editor creation
+    // Read directly from CSS variable to handle app startup timing
+    const currentZoom = getZoomFactor()
+    if (currentZoom !== 1) {
+      const correctFontSize = Math.round(BASE_FONT_SIZE * currentZoom)
+      editor.value.updateOptions({ fontSize: correctFontSize })
+    }
   } catch (error) {
     console.error('Failed to initialize Monaco Editor:', error)
   }

@@ -92,6 +92,13 @@
     zoom: var(--app-zoom, 1);
   }
 
+  /* Monaco editor zoom compensation - exclude from CSS zoom to fix cursor positioning.
+     Monaco has known issues with CSS zoom affecting mouse coordinate calculations.
+     Apply inverse zoom to container and use fontSize scaling for visual consistency. */
+  html.desktop-zoom .monaco-editor-container {
+    zoom: calc(1 / var(--app-zoom, 1));
+  }
+
   /* Improve SVG icon rendering at non-100% zoom levels in WebKitGTK. */
   html.desktop-zoom svg {
     shape-rendering: geometricPrecision;
