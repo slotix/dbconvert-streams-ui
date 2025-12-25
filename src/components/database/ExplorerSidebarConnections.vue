@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, nextTick, provide } from 'vue'
-import { useDebounceFn } from '@vueuse/core'
+import { useDebounceFn, useResizeObserver } from '@vueuse/core'
 import { Boxes } from 'lucide-vue-next'
 import { useConnectionsStore } from '@/stores/connections'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
@@ -118,6 +118,27 @@ const deleteConfirmMessage = computed(() => {
 })
 
 const isLoadingConnections = ref(false)
+
+// Hide table size labels when the sidebar is narrow so table names stay readable.
+// Measured on the outer sidebar card element (includes padding).
+const sidebarCardRef = ref<HTMLElement | null>(null)
+const sidebarCardWidth = ref(0)
+
+useResizeObserver(sidebarCardRef, (entries) => {
+  const entry = entries[0]
+  if (!entry) return
+  sidebarCardWidth.value = entry.contentRect.width
+})
+
+const MIN_WIDTH_FOR_TABLE_SIZES = 260
+
+const treeShowTableSizes = computed(() => {
+  // If not measured yet, default to showing sizes.
+  if (!sidebarCardWidth.value) return true
+  return sidebarCardWidth.value >= MIN_WIDTH_FOR_TABLE_SIZES
+})
+
+provide('treeShowTableSizes', treeShowTableSizes)
 const loadError = ref<string | null>(null)
 const searchQuery = computed(() => props.searchQuery || '')
 
@@ -927,6 +948,7 @@ watch(
   <!-- Enhanced sidebar with gradient background and floating effect -->
   <div
     class="bg-linear-to-br from-white via-slate-50/50 to-white dark:from-gray-850 dark:via-gray-850 dark:to-gray-900 shadow-xl dark:shadow-gray-900/50 rounded-2xl overflow-hidden h-[calc(100vh-140px)] flex flex-col transition-all duration-300 hover:shadow-2xl dark:hover:shadow-gray-900/70 border border-slate-200/50 dark:border-gray-700"
+    ref="sidebarCardRef"
   >
     <!-- Scrollable tree content area with smooth scrolling and custom scrollbar -->
     <div class="flex-1 overflow-y-auto overscroll-contain p-3 scrollbar-thin">

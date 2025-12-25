@@ -300,7 +300,6 @@ function handleOpenFileConsole(payload: {
           </h1>
         </div>
 
-        <!-- Connection Type Filter -->
         <div class="shrink-0">
           <ConnectionTypeFilter
             :selected-types="selectedConnectionTypes"
@@ -310,12 +309,12 @@ function handleOpenFileConsole(payload: {
         </div>
 
         <!-- Search Input with enhanced styling -->
-        <div class="flex-1 max-w-xl">
+        <div class="flex-1 max-w-sm md:max-w-md">
           <SearchInput
             ref="searchInputRef"
             v-model="connectionSearch"
             placeholder="Filter connections... (Press / to focus)"
-            size="sm"
+            size="xs"
           />
         </div>
 

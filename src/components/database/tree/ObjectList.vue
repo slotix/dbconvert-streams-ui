@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { inject } from 'vue'
+import { inject, computed } from 'vue'
 import type { ComputedRef } from 'vue'
 import ObjectIcon from '@/components/common/ObjectIcon.vue'
 import HighlightedText from '@/components/common/HighlightedText.vue'
@@ -28,6 +28,12 @@ const treeSelection = inject<
     name?: string | null
   }>
 >('treeSelection')!
+
+// Provided by ExplorerSidebarConnections; when false, hide sizes to preserve name space.
+const showTableSizesInTree = inject<ComputedRef<boolean>>(
+  'treeShowTableSizes',
+  computed(() => true)
+)
 
 // Check if an item is currently selected (active pane)
 const isItemSelected = (itemName: string) => {
@@ -105,7 +111,7 @@ function getTableSize(tableName: string): string | null {
       <HighlightedText class="truncate" :text="item" :query="searchQuery" />
     </div>
     <span
-      v-if="getTableSize(item)"
+      v-if="showTableSizesInTree && getTableSize(item)"
       class="ml-2 text-xs text-gray-400 dark:text-gray-500 group-hover:text-gray-500 dark:group-hover:text-gray-400 flex-shrink-0"
       >{{ getTableSize(item) }}</span
     >
