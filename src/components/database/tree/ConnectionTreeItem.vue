@@ -13,7 +13,6 @@ import { getConnectionHost, getConnectionPort } from '@/utils/specBuilder'
 import { useConnectionTreeLogic } from '@/composables/useConnectionTreeLogic'
 import { useFileExplorerStore } from '@/stores/fileExplorer'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
-import { useTreeSearch } from '@/composables/useTreeSearch'
 import type { Connection } from '@/types/connections'
 import type { FileSystemEntry } from '@/api/fileSystem'
 
@@ -30,7 +29,7 @@ const props = defineProps<{
   databases: DatabaseInfo[]
 }>()
 
-// Inject search query, caret class, and selection from parent
+// Inject search query, caret class, selection, and treeSearch from parent (single source of truth)
 const searchQuery = inject<ComputedRef<string>>('treeSearchQuery')!
 const caretClass = inject<string>('treeCaretClass')!
 const treeSelection = inject<
@@ -43,6 +42,9 @@ const treeSelection = inject<
     filePath?: string
   }>
 >('treeSelection')!
+// Inject treeSearch from ExplorerSidebarConnections - single source of truth for filtering
+const treeSearch =
+  inject<ReturnType<typeof import('@/composables/useTreeSearch').useTreeSearch>>('treeSearch')!
 
 // Check if this connection is selected (connection selected but no database/table/file)
 const isSelected = computed(() => {
@@ -54,7 +56,6 @@ const isSelected = computed(() => {
 const treeLogic = useConnectionTreeLogic()
 const fileExplorerStore = useFileExplorerStore()
 const navigationStore = useExplorerNavigationStore()
-const treeSearch = computed(() => useTreeSearch(searchQuery.value))
 
 // Get file entries and selected path from store
 const fileEntries = computed(() => fileExplorerStore.getEntries(props.connection.id))
@@ -227,7 +228,7 @@ async function handleExpandFolder(payload: { entry: FileSystemEntry }) {
 }
 
 const visibleFileEntries = computed(() => {
-  return treeSearch.value.filterFileEntries(fileEntries.value)
+  return treeSearch.filterFileEntries(fileEntries.value)
 })
 
 function expandMatchingFolders(entries: FileSystemEntry[]) {

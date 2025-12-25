@@ -791,7 +791,9 @@ export function useDatabaseExplorerController({
         cloud_provider: conn.cloud_provider || ''
       })
       if (fileExplorerStore.isFilesConnectionType(newId)) {
-        await fileExplorerStore.loadEntries(newId, true)
+        // Don't force reload - preserves existing entries and prevents search results from disappearing
+        // if the reload fails. Force reload wipes expanded folder children and breaks deep search.
+        await fileExplorerStore.loadEntries(newId, false)
         const fileParam = route.query.file as string
         if (fileParam && currentFileEntries.value.length > 0) {
           // handleFileSelect will find the entry if needed (runs async)

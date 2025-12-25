@@ -157,6 +157,13 @@ provide(
   computed(() => props.selected || {})
 )
 
+// Single source of truth for tree search - used by ExplorerSidebarConnections
+// and provided to children (ConnectionTreeItem) via inject
+const treeSearch = useTreeSearch(() => effectiveSearchQuery.value, {
+  typeFilters: () => props.typeFilters
+})
+provide('treeSearch', treeSearch)
+
 // Computed for context menu
 const canCopyDDL = computed(() => {
   const mo = contextMenu.menuObj.value
@@ -188,11 +195,6 @@ const isFileConnection = computed(() => {
   const target = contextMenu.contextTarget.value
   if (!target || target.kind !== 'connection') return false
   return treeLogic.isFileConnection(target.connectionId)
-})
-
-// Use tree search composable (reactive to searchQuery and typeFilters)
-const treeSearch = computed(() => {
-  return useTreeSearch(effectiveSearchQuery.value, { typeFilters: props.typeFilters })
 })
 
 const searchTooShort = computed(() => {
@@ -236,7 +238,7 @@ const filteredConnections = computed<Connection[]>(() => {
   // If query is below minimum length, treat as "no search"
   if (!effectiveSearchQuery.value.trim()) return typeFiltered
 
-  return treeSearch.value.filterConnections(typeFiltered)
+  return treeSearch.filterConnections(typeFiltered)
 })
 
 async function loadConnections() {
@@ -901,7 +903,7 @@ function shouldExpandSearch(query: string): boolean {
 
 function matchesDbFilter(connId: string, dbName: string): boolean {
   if (!effectiveSearchQuery.value.trim()) return true
-  return treeSearch.value.matchesDatabaseFilter(connId, dbName)
+  return treeSearch.matchesDatabaseFilter(connId, dbName)
 }
 
 watch(
@@ -947,8 +949,8 @@ watch(
 <template>
   <!-- Enhanced sidebar with gradient background and floating effect -->
   <div
-    class="bg-linear-to-br from-white via-slate-50/50 to-white dark:from-gray-850 dark:via-gray-850 dark:to-gray-900 shadow-xl dark:shadow-gray-900/50 rounded-2xl overflow-hidden h-[calc(100vh-140px)] flex flex-col transition-all duration-300 hover:shadow-2xl dark:hover:shadow-gray-900/70 border border-slate-200/50 dark:border-gray-700"
     ref="sidebarCardRef"
+    class="bg-linear-to-br from-white via-slate-50/50 to-white dark:from-gray-850 dark:via-gray-850 dark:to-gray-900 shadow-xl dark:shadow-gray-900/50 rounded-2xl overflow-hidden h-[calc(100vh-140px)] flex flex-col transition-all duration-300 hover:shadow-2xl dark:hover:shadow-gray-900/70 border border-slate-200/50 dark:border-gray-700"
   >
     <!-- Scrollable tree content area with smooth scrolling and custom scrollbar -->
     <div class="flex-1 overflow-y-auto overscroll-contain p-3 scrollbar-thin">

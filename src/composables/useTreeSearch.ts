@@ -1,4 +1,4 @@
-import { computed } from 'vue'
+import { computed, toValue, type MaybeRefOrGetter } from 'vue'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { useFileExplorerStore } from '@/stores/fileExplorer'
 import { useConnectionTreeLogic } from '@/composables/useConnectionTreeLogic'
@@ -7,17 +7,27 @@ import type { FileSystemEntry } from '@/api/fileSystem'
 import { getConnectionHost } from '@/utils/specBuilder'
 
 export interface UseTreeSearchOptions {
-  typeFilters?: string[]
+  typeFilters?: MaybeRefOrGetter<string[] | undefined>
 }
 
 /**
  * Reusable composable for tree search functionality
  * Provides normalized search, connection filtering, and file filtering
+ *
+ * @param searchQuery - Search query string or reactive ref/getter
+ * @param options - Options including typeFilters (can be reactive)
  */
-export function useTreeSearch(searchQuery: string, options: UseTreeSearchOptions = {}) {
+export function useTreeSearch(
+  searchQuery: MaybeRefOrGetter<string>,
+  options: UseTreeSearchOptions = {}
+) {
   const navigationStore = useExplorerNavigationStore()
   const fileExplorerStore = useFileExplorerStore()
   const treeLogic = useConnectionTreeLogic()
+
+  // Resolve reactive values once per access
+  const getQuery = () => toValue(searchQuery)
+  const getTypeFilters = () => toValue(options.typeFilters)
 
   /**
    * Normalize text for case-insensitive search
@@ -42,17 +52,30 @@ export function useTreeSearch(searchQuery: string, options: UseTreeSearchOptions
   }
 
   /**
-   * Recursively search through file entries (for S3/file connections)
+   * Recursively search through file entries with pre-normalized query
+   * More efficient for internal use where query is already normalized
    */
-  const searchFileEntries = (entries: FileSystemEntry[], query: string): boolean => {
-    const normalizedQuery = normalize(query)
+  const searchFileEntriesNormalized = (
+    entries: FileSystemEntry[],
+    normalizedQuery: string
+  ): boolean => {
     for (const entry of entries) {
       // Check entry name
       if (normalize(entry.name).includes(normalizedQuery)) return true
       // Recursively check children
-      if (entry.children && searchFileEntries(entry.children, query)) return true
+      if (entry.children && searchFileEntriesNormalized(entry.children, normalizedQuery))
+        return true
     }
     return false
+  }
+
+  /**
+   * Recursively search through file entries (for S3/file connections)
+   * Public API that normalizes the query
+   */
+  const searchFileEntries = (entries: FileSystemEntry[], query: string): boolean => {
+    const normalizedQuery = normalize(query)
+    return searchFileEntriesNormalized(entries, normalizedQuery)
   }
 
   /**
@@ -60,14 +83,13 @@ export function useTreeSearch(searchQuery: string, options: UseTreeSearchOptions
    * Searches connection names, hosts, types, databases, schemas, tables, and views
    */
   const filterConnections = (connections: Connection[]): Connection[] => {
-    const query = searchQuery.trim()
+    const query = getQuery().trim()
+    const typeFilters = getTypeFilters()
 
     // Apply type filters first
     let filtered = connections
-    if (options.typeFilters && options.typeFilters.length > 0) {
-      filtered = connections.filter((conn) =>
-        treeLogic.matchesTypeFilters(conn, options.typeFilters!)
-      )
+    if (typeFilters && typeFilters.length > 0) {
+      filtered = connections.filter((conn) => treeLogic.matchesTypeFilters(conn, typeFilters))
     }
 
     // Sort by creation date (newest first) then by name
@@ -81,13 +103,16 @@ export function useTreeSearch(searchQuery: string, options: UseTreeSearchOptions
     // If no search query, return sorted connections
     if (!query) return filtered
 
+    // Normalize query once for all comparisons
     const normalizedQuery = normalize(query)
 
     return filtered.filter((connection) => {
       // Search in connection basic info
       const host = getConnectionHost(connection)
-      const connectionLabel = `${connection.name || ''} ${host || ''} ${connection.type || ''}`
-      if (normalize(connectionLabel).includes(normalizedQuery)) return true
+      const connectionLabel = normalize(
+        `${connection.name || ''} ${host || ''} ${connection.type || ''}`
+      )
+      if (connectionLabel.includes(normalizedQuery)) return true
 
       // Search in database names (use filtered getter to respect showSystemObjects)
       const databases = navigationStore.getDatabases(connection.id) || []
@@ -117,7 +142,7 @@ export function useTreeSearch(searchQuery: string, options: UseTreeSearchOptions
 
       // Search in file entries (for S3/file connections)
       const fileEntries = fileExplorerStore.getEntries(connection.id)
-      if (fileEntries.length > 0 && searchFileEntries(fileEntries, normalizedQuery)) {
+      if (fileEntries.length > 0 && searchFileEntriesNormalized(fileEntries, normalizedQuery)) {
         return true
       }
 
@@ -130,7 +155,7 @@ export function useTreeSearch(searchQuery: string, options: UseTreeSearchOptions
    * Includes both files and directories for nested folder browsing
    */
   const filterFileEntries = (entries: FileSystemEntry[]): FileSystemEntry[] => {
-    const query = searchQuery.trim()
+    const query = getQuery().trim()
 
     // If no query, return as-is
     if (!query) return entries
@@ -164,7 +189,7 @@ export function useTreeSearch(searchQuery: string, options: UseTreeSearchOptions
    * Searches database name, table names, view names, and schema names
    */
   const matchesDatabaseFilter = (connectionId: string, databaseName: string): boolean => {
-    const query = searchQuery.trim()
+    const query = getQuery().trim()
     if (!query) return true
 
     const normalizedQuery = normalize(query)
@@ -200,7 +225,7 @@ export function useTreeSearch(searchQuery: string, options: UseTreeSearchOptions
    */
   const getHighlightParts = (text: string) => {
     // This returns the raw text and query for use with existing highlight functions
-    return { text, query: searchQuery }
+    return { text, query: getQuery() }
   }
 
   return {
@@ -213,12 +238,13 @@ export function useTreeSearch(searchQuery: string, options: UseTreeSearchOptions
     filterConnections,
     filterFileEntries,
     matchesDatabaseFilter,
+    searchFileEntries,
 
     // Utility functions
     getHighlightParts,
 
-    // Computed properties
-    hasQuery: computed(() => searchQuery.trim().length > 0),
-    normalizedQuery: computed(() => normalize(searchQuery.trim()))
+    // Computed properties (reactive to input refs)
+    hasQuery: computed(() => getQuery().trim().length > 0),
+    normalizedQuery: computed(() => normalize(getQuery().trim()))
   }
 }

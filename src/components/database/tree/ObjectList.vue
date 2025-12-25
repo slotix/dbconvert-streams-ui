@@ -77,10 +77,12 @@ function handleContextMenu(event: MouseEvent, name: string) {
   })
 }
 
-const filteredItems = () => {
+// Memoized filter using computed - avoids recalculating on every render
+const filteredItems = computed(() => {
   if (!searchQuery.value) return props.items
-  return props.items.filter((n) => n.toLowerCase().includes(searchQuery.value.toLowerCase()))
-}
+  const query = searchQuery.value.toLowerCase()
+  return props.items.filter((n) => n.toLowerCase().includes(query))
+})
 
 function getTableSize(tableName: string): string | null {
   if (props.objectType !== 'table' || !props.tableSizes) return null
@@ -92,7 +94,7 @@ function getTableSize(tableName: string): string | null {
 
 <template>
   <div
-    v-for="item in filteredItems()"
+    v-for="item in filteredItems"
     :key="item"
     :class="[
       'flex items-center justify-between px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer select-none group',
