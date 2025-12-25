@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, inject } from 'vue'
+import { computed, inject, watch } from 'vue'
 import type { ComputedRef } from 'vue'
 import { ChevronDown, ChevronRight } from 'lucide-vue-next'
 import DatabaseTreeItem from './DatabaseTreeItem.vue'
@@ -229,6 +229,30 @@ async function handleExpandFolder(payload: { entry: FileSystemEntry }) {
 const visibleFileEntries = computed(() => {
   return treeSearch.value.filterFileEntries(fileEntries.value)
 })
+
+function expandMatchingFolders(entries: FileSystemEntry[]) {
+  for (const entry of entries) {
+    if (entry.type === 'dir') {
+      fileExplorerStore.expandFolder(props.connection.id, entry.path)
+      if (entry.children && entry.children.length > 0) {
+        expandMatchingFolders(entry.children)
+      }
+    }
+  }
+}
+
+// When searching, auto-expand the matching subtree so deep matches are visible.
+watch(
+  [() => searchQuery.value, () => visibleFileEntries.value],
+  ([query, entries]) => {
+    if (!props.isFileConnection) return
+    if (!query) return
+    if (!entries || entries.length === 0) return
+
+    expandMatchingFolders(entries)
+  },
+  { immediate: true }
+)
 
 // Generate tooltip with full connection details
 const connectionTooltip = computed(() => {

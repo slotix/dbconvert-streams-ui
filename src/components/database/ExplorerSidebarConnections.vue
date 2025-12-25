@@ -791,14 +791,65 @@ async function expandForSearch(query: string, runId: number) {
       const dbs = navigationStore.databasesState[c.id] || []
       for (const d of dbs) {
         if (runId !== searchRunId.value) return
+
+        // IMPORTANT: Make search complete for DB objects.
+        // If metadata isn't loaded yet, table/view name searches cannot match.
+        // We load metadata best-effort for each database during an active search run.
+        if (
+          !navigationStore.isMetadataLoading(c.id, d.name) &&
+          !navigationStore.getMetadata(c.id, d.name)
+        ) {
+          try {
+            await navigationStore.ensureMetadata(c.id, d.name)
+          } catch {
+            // ignore; best-effort preloading for search
+          }
+        }
+        if (runId !== searchRunId.value) return
+
         if (matchesDbFilter(c.id, d.name)) {
           navigationStore.expandDatabase(`${c.id}:${d.name}`)
-          // Only fetch if not already loading or loaded (prevent duplicate requests)
-          if (
-            !navigationStore.isMetadataLoading(c.id, d.name) &&
-            !navigationStore.getMetadata(c.id, d.name)
-          ) {
-            navigationStore.ensureMetadata(c.id, d.name).catch(() => {})
+
+          // For schema-based DBs (Postgres/Snowflake), expand schemas that contain matches
+          if (runId !== searchRunId.value) return
+          if (treeLogic.hasSchemas(c.id)) {
+            const meta = navigationStore.getMetadata(c.id, d.name)
+            const q = effectiveSearchQuery.value.trim().toLowerCase()
+            if (meta && q) {
+              const schemasToExpand = new Set<string>()
+
+              for (const table of Object.values(meta.tables || {})) {
+                if (
+                  (table.name || '').toLowerCase().includes(q) ||
+                  (table.schema || '').toLowerCase().includes(q)
+                ) {
+                  if (table.schema) schemasToExpand.add(table.schema)
+                }
+              }
+
+              for (const view of Object.values(meta.views || {})) {
+                if (
+                  (view.name || '').toLowerCase().includes(q) ||
+                  (view.schema || '').toLowerCase().includes(q)
+                ) {
+                  if (view.schema) schemasToExpand.add(view.schema)
+                }
+              }
+
+              const schemasUnknown = (meta as { schemas?: unknown }).schemas
+              if (Array.isArray(schemasUnknown)) {
+                for (const s of schemasUnknown) {
+                  if (typeof s === 'string' && (s || '').toLowerCase().includes(q)) {
+                    schemasToExpand.add(s)
+                  }
+                }
+              }
+
+              for (const schema of schemasToExpand) {
+                if (runId !== searchRunId.value) return
+                navigationStore.expandSchema(`${c.id}:${d.name}:${schema}`)
+              }
+            }
           }
         }
       }

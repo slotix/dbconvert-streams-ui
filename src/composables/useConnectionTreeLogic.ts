@@ -14,7 +14,8 @@ export function useConnectionTreeLogic() {
 
   function isFileConnection(connId: string): boolean {
     const conn = connectionsStore.connections.find((c) => c.id === connId)
-    return (conn?.type || '').toLowerCase().includes('file')
+    const t = (conn?.type || '').toLowerCase().trim()
+    return t.includes('file') || t === 'files' || t === 's3' || !!conn?.spec?.s3
   }
 
   function isS3Connection(conn: Connection): boolean {
@@ -24,10 +25,11 @@ export function useConnectionTreeLogic() {
 
   function getEffectiveType(conn: Connection): string {
     // For file connections, distinguish between S3 and local files
-    const baseType = (conn.type || '').toLowerCase()
-    if (baseType.includes('file')) {
-      return isS3Connection(conn) ? 's3' : 'files'
-    }
+    const baseType = (conn.type || '').toLowerCase().trim()
+    if (baseType === 's3') return 's3'
+    if (baseType === 'files') return 'files'
+    if (baseType.includes('file')) return isS3Connection(conn) ? 's3' : 'files'
+    if (isS3Connection(conn)) return 's3'
     return baseType
   }
 
@@ -143,15 +145,24 @@ export function useConnectionTreeLogic() {
     // If no filters selected, show all
     if (!typeFilters || typeFilters.length === 0) return true
 
-    const connType = (conn.type || '').toLowerCase().trim()
-    if (!connType) return false
+    const effectiveType = getEffectiveType(conn)
+    if (!effectiveType) return false
 
     // Check if connection matches any of the selected type filters (case-insensitive)
     return typeFilters.some((filter) => {
       const filterLower = filter.toLowerCase().trim()
-      // Match if the filter is contained in the connection type or vice versa
-      // This handles 'PostgreSQL' matching 'postgresql', 'Files' matching 'files', etc.
-      return connType.includes(filterLower) || filterLower.includes(connType)
+
+      // Treat "Files" filter as including both local files + S3.
+      if (filterLower === 'files') {
+        return effectiveType === 'files' || effectiveType === 's3'
+      }
+
+      if (filterLower === 's3') {
+        return effectiveType === 's3'
+      }
+
+      // Fallback: match by substring for DB types (postgresql, mysql, snowflake, etc.)
+      return effectiveType.includes(filterLower) || filterLower.includes(effectiveType)
     })
   }
 

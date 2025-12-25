@@ -620,7 +620,9 @@ export function useDatabaseExplorerController({
   }
 
   function handleRequestFileEntries(payload: { connectionId: string }) {
-    void fileExplorerStore.loadEntries(payload.connectionId, true)
+    // Do not force refresh on expand; force-refresh wipes expanded folder children,
+    // which breaks deep search for S3/file trees and makes the UI feel "forgetful".
+    void fileExplorerStore.loadEntries(payload.connectionId, false)
   }
 
   async function handlePickFromBreadcrumb(

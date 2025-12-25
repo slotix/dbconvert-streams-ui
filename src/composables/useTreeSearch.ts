@@ -132,8 +132,31 @@ export function useTreeSearch(searchQuery: string, options: UseTreeSearchOptions
   const filterFileEntries = (entries: FileSystemEntry[]): FileSystemEntry[] => {
     const query = searchQuery.trim()
 
-    // Include both files and directories, filter by name if query exists
-    return entries.filter((item) => !query || matchesQuery(item.name, query))
+    // If no query, return as-is
+    if (!query) return entries
+
+    // Recursive filter: include a folder if it (or any descendant) matches.
+    const normalizedQuery = normalize(query)
+
+    const filterTree = (items: FileSystemEntry[]): FileSystemEntry[] => {
+      const out: FileSystemEntry[] = []
+      for (const item of items) {
+        const nameMatches = normalize(item.name).includes(normalizedQuery)
+        const filteredChildren = item.children ? filterTree(item.children) : undefined
+        const hasMatchingChildren = !!filteredChildren && filteredChildren.length > 0
+
+        if (nameMatches || hasMatchingChildren) {
+          // Keep only the matching subtree to avoid dumping the whole bucket on search.
+          out.push({
+            ...item,
+            ...(item.children ? { children: filteredChildren } : {})
+          })
+        }
+      }
+      return out
+    }
+
+    return filterTree(entries)
   }
 
   /**

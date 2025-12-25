@@ -65,7 +65,9 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
     const connectionsStore = useConnectionsStore()
     const conn = connectionsStore.connections.find((c) => c.id === connId)
     const connType = (conn?.type || '').toLowerCase()
-    return connType === 'files'
+    // Treat S3 connections as file connections for explorer purposes.
+    // Some environments use conn.type = 's3' while others use conn.type = 'files' with spec.s3.
+    return connType === 'files' || !!conn?.spec?.s3
   }
 
   function isS3ConnectionType(connId: string | null | undefined): boolean {
@@ -120,6 +122,7 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
   async function loadEntries(connectionId: string, force = false) {
     if (!connectionId) return
     if (!force && entriesByConnection.value[connectionId]) return
+    // Support both local files and S3 connections.
     if (!isFilesConnectionType(connectionId)) return
 
     const connectionsStore = useConnectionsStore()
