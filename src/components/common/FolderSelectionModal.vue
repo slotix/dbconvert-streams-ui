@@ -46,14 +46,6 @@
                 </div>
               </DialogTitle>
 
-              <!-- Error Display -->
-              <div
-                v-if="error"
-                class="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md"
-              >
-                <p class="text-sm text-red-800 dark:text-red-300">{{ error }}</p>
-              </div>
-
               <!-- Quick Access Shortcuts -->
               <div v-if="roots.length > 0" class="mb-6">
                 <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
@@ -199,6 +191,14 @@
                     {{ validating ? 'Validating...' : 'Select Folder' }}
                   </BaseButton>
                 </div>
+              </div>
+
+              <!-- Error Display -->
+              <div
+                v-if="error"
+                class="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md"
+              >
+                <p class="text-sm text-red-800 dark:text-red-300">{{ error }}</p>
               </div>
             </DialogPanel>
           </TransitionChild>
