@@ -21,9 +21,11 @@
           'border-b-2 border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600':
             currentTab !== tab
         }"
-        class="py-4 px-6 flex-1 focus:outline-none transition-all duration-200"
+        class="py-4 px-6 flex-1 focus:outline-none transition-all duration-200 flex items-center justify-center gap-2"
         @click="changeTab(tab)"
       >
+        <Plug v-if="tab === 'Direct'" class="w-4 h-4" />
+        <ShieldCheck v-else-if="tab === 'SSL'" class="w-4 h-4" />
         {{ tab }}
       </button>
     </nav>
@@ -41,6 +43,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
+import { Plug, ShieldCheck } from 'lucide-vue-next'
 import UnifiedConnectionParams from './UnifiedConnectionParams.vue'
 import LocalFilesConnectionParams from './LocalFilesConnectionParams.vue'
 import S3ConnectionParams from './S3ConnectionParams.vue'

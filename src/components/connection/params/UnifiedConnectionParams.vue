@@ -99,7 +99,7 @@
 
           <!-- Username -->
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">User ID</label>
+            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Username</label>
             <div class="md:col-span-2">
               <input
                 v-model="connection.spec.database!.username"

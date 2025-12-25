@@ -183,7 +183,7 @@
                   class="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-700 shadow-sm dark:shadow-gray-900/30 text-sm leading-4 font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-850 hover:bg-gray-50 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-850 focus:ring-blue-500 dark:focus:ring-blue-400 transition-colors"
                   @click="goUp"
                 >
-                  <ArrowLeft class="h-4 w-4 mr-1" />
+                  <ArrowUp class="h-4 w-4 mr-1" />
                   Go Up
                 </button>
                 <div v-else></div>
@@ -212,7 +212,7 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue'
 import {
-  ArrowLeft,
+  ArrowUp,
   Check,
   CheckCircle,
   ChevronRight,

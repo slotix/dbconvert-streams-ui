@@ -3,7 +3,6 @@ import api from '@/api/connections'
 import { debounce } from '@/utils/debounce'
 
 import type { Connection, DbType } from '@/types/connections'
-import { useCommonStore } from './common'
 import { useExplorerNavigationStore } from './explorerNavigation'
 import { getConnectionDatabase } from '@/utils/specBuilder'
 
@@ -214,9 +213,12 @@ export const useConnectionsStore = defineStore('connections', {
             status: status
           }
         }
-        useCommonStore().showNotification(status, 'success')
+        // Check if the test actually failed (API returns string status, not error)
+        if (status.includes('Failed')) {
+          throw new Error(status)
+        }
+        // Success is shown inline in the wizard components
       } catch (error) {
-        useCommonStore().showNotification((error as Error).message, 'error')
         console.error('Failed to test connection:', error)
         throw error
       } finally {
@@ -231,10 +233,9 @@ export const useConnectionsStore = defineStore('connections', {
     cloneConnection: debounce(function (this: any, id: string) {
       return this._cloneConnection(id)
     }, 500),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    testConnection: debounce(function (this: any) {
+    async testConnection() {
       return this._testConnection()
-    }, 500),
+    },
     resetCurrentConnection() {
       this.currentConnection = null
     },

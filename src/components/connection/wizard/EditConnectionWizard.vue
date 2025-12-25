@@ -33,22 +33,43 @@
         </div>
       </div>
 
-      <!-- Test Result (only show error messages) -->
+      <!-- Test Result -->
       <div
-        v-if="testResult && !testResult.success"
-        class="border border-red-200 rounded-lg p-4 bg-red-50"
+        v-if="testResult"
+        :class="[
+          'border rounded-lg p-4',
+          testResult.success
+            ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20'
+            : 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20'
+        ]"
       >
         <div class="flex items-center">
-          <svg class="h-5 w-5 text-red-600 mr-3" fill="currentColor" viewBox="0 0 20 20">
-            <path
-              fill-rule="evenodd"
-              d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-              clip-rule="evenodd"
-            />
-          </svg>
+          <CheckCircle
+            v-if="testResult.success"
+            class="h-5 w-5 text-green-600 dark:text-green-400 mr-3"
+          />
+          <XCircle v-else class="h-5 w-5 text-red-600 dark:text-red-400 mr-3" />
           <div>
-            <p class="font-medium text-red-800">Connection Failed</p>
-            <p class="text-sm text-red-700">{{ testResult.message }}</p>
+            <p
+              :class="[
+                'font-medium',
+                testResult.success
+                  ? 'text-green-800 dark:text-green-300'
+                  : 'text-red-800 dark:text-red-300'
+              ]"
+            >
+              {{ testResult.success ? 'Connection Successful' : 'Connection Failed' }}
+            </p>
+            <p
+              :class="[
+                'text-sm',
+                testResult.success
+                  ? 'text-green-700 dark:text-green-400'
+                  : 'text-red-700 dark:text-red-400'
+              ]"
+            >
+              {{ testResult.message }}
+            </p>
           </div>
         </div>
       </div>
@@ -57,8 +78,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { CheckCircle, XCircle } from 'lucide-vue-next'
 import ConnectionDetailsStep from './steps/ConnectionDetailsStep.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
 import { useConnectionsStore } from '@/stores/connections'
@@ -177,8 +199,20 @@ function cancelWizard() {
   }
 }
 
+// Keyboard event handler
+function handleKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape') {
+    cancelWizard()
+  }
+}
+
 // Initialize when component mounts
 onMounted(async () => {
+  window.addEventListener('keydown', handleKeydown)
   await loadConnectionForEdit()
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeydown)
 })
 </script>
