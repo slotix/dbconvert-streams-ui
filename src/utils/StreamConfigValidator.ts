@@ -159,13 +159,13 @@ function validateSource(source: unknown, errors: ValidationError[]): void {
 
   // Validate per-connection S3 configs (source.connections[i].s3)
   const hasAnyS3 = connections.some((c) => typeof c.s3 === 'object' && c.s3 !== null)
-  const hasAnyS3Selections = connections.some(
-    (c) =>
-      typeof c.s3 === 'object' &&
-      c.s3 !== null &&
-      Array.isArray((c.s3 as Record<string, unknown>).selections) &&
-      ((c.s3 as Record<string, unknown>).selections as unknown[]).length > 0
-  )
+  const hasAnyS3Selections = connections.some((c) => {
+    if (typeof c.s3 !== 'object' || c.s3 === null) return false
+    const s3 = c.s3 as Record<string, unknown>
+    const hasPrefixes = Array.isArray(s3.prefixes) && s3.prefixes.length > 0
+    const hasObjects = Array.isArray(s3.objects) && s3.objects.length > 0
+    return hasPrefixes || hasObjects
+  })
 
   if (hasAnyS3) {
     validateS3Connections(connections, src, errors)
@@ -244,69 +244,65 @@ function validateS3Connections(
       })
     }
 
-    if (!Array.isArray(s3.selections) || s3.selections.length === 0) {
+    // Validate prefixes and objects arrays (at least one must have entries)
+    const prefixes = Array.isArray(s3.prefixes) ? s3.prefixes : []
+    const objects = Array.isArray(s3.objects) ? s3.objects : []
+
+    if (prefixes.length === 0 && objects.length === 0) {
       errors.push({
-        path: `source.connections[${connIndex}].s3.selections`,
-        message: 'at least one S3 selection is required'
+        path: `source.connections[${connIndex}].s3`,
+        message: 'at least one prefix or object is required'
       })
       return
     }
 
-    ;(s3.selections as unknown[]).forEach((sel, index) => {
-      if (typeof sel !== 'object' || sel === null) {
+    // Validate prefixes: must end with '/'
+    prefixes.forEach((prefix, index) => {
+      if (typeof prefix !== 'string') {
         errors.push({
-          path: `source.connections[${connIndex}].s3.selections[${index}]`,
-          message: 'S3 selection must be an object'
+          path: `source.connections[${connIndex}].s3.prefixes[${index}]`,
+          message: 'prefix must be a string'
         })
         return
       }
-      const s = sel as Record<string, unknown>
-      const kind = typeof s.kind === 'string' ? s.kind.trim().toLowerCase() : ''
-      const prefix = typeof s.prefix === 'string' ? s.prefix : ''
-      const key = typeof s.key === 'string' ? s.key : ''
-
-      if (kind !== 'prefix' && kind !== 'object') {
+      const trimmed = prefix.trim()
+      if (!trimmed) {
         errors.push({
-          path: `source.connections[${connIndex}].s3.selections[${index}].kind`,
-          message: "kind must be 'prefix' or 'object'"
+          path: `source.connections[${connIndex}].s3.prefixes[${index}]`,
+          message: 'prefix cannot be empty'
         })
         return
       }
-
-      if (kind === 'prefix') {
-        if (key) {
-          errors.push({
-            path: `source.connections[${connIndex}].s3.selections[${index}]`,
-            message: 'key must be empty for prefix selections'
-          })
-        }
-        if (prefix && !prefix.endsWith('/')) {
-          errors.push({
-            path: `source.connections[${connIndex}].s3.selections[${index}]`,
-            message: "prefix must end with '/'"
-          })
-        }
+      if (!trimmed.endsWith('/')) {
+        errors.push({
+          path: `source.connections[${connIndex}].s3.prefixes[${index}]`,
+          message: `prefix '${trimmed}' must end with '/'`
+        })
       }
+    })
 
-      if (kind === 'object') {
-        if (!key.trim()) {
-          errors.push({
-            path: `source.connections[${connIndex}].s3.selections[${index}].key`,
-            message: 'key is required for object selections'
-          })
-        }
-        if (key.endsWith('/')) {
-          errors.push({
-            path: `source.connections[${connIndex}].s3.selections[${index}].key`,
-            message: "key must not end with '/'"
-          })
-        }
-        if (prefix) {
-          errors.push({
-            path: `source.connections[${connIndex}].s3.selections[${index}]`,
-            message: 'prefix must be empty for object selections'
-          })
-        }
+    // Validate objects: must NOT end with '/'
+    objects.forEach((obj, index) => {
+      if (typeof obj !== 'string') {
+        errors.push({
+          path: `source.connections[${connIndex}].s3.objects[${index}]`,
+          message: 'object must be a string'
+        })
+        return
+      }
+      const trimmed = obj.trim()
+      if (!trimmed) {
+        errors.push({
+          path: `source.connections[${connIndex}].s3.objects[${index}]`,
+          message: 'object key cannot be empty'
+        })
+        return
+      }
+      if (trimmed.endsWith('/')) {
+        errors.push({
+          path: `source.connections[${connIndex}].s3.objects[${index}]`,
+          message: `object '${trimmed}' must not end with '/'`
+        })
       }
     })
   })

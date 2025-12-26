@@ -89,7 +89,8 @@
               <!-- Checkbox (files always; folders only for S3 prefixes) -->
               <input
                 :id="`file-${row.entry.path}`"
-                :checked="isSelected(row.entry.path)"
+                :checked="getCheckboxState(row.entry).checked"
+                :indeterminate="getCheckboxState(row.entry).indeterminate"
                 :disabled="!isSelectable(row.entry)"
                 type="checkbox"
                 class="h-4 w-4 text-teal-600 dark:text-teal-500 focus:ring-teal-500 dark:focus:ring-teal-400 border-gray-300 dark:border-gray-600 rounded mr-3 bg-white dark:bg-gray-800"
@@ -241,8 +242,68 @@ function isSelectable(entry: FileSystemEntry): boolean {
   return false
 }
 
-function isSelected(path: string): boolean {
+/**
+ * Check if item is explicitly selected in the store
+ */
+function isExplicitlySelected(path: string): boolean {
   return !!configFiles.value.find((f) => f.path === path)?.selected
+}
+
+/**
+ * Check if any ancestor folder of the given path is explicitly selected.
+ * If ancestor is selected, the item is implicitly included.
+ */
+function isAncestorSelected(path: string): boolean {
+  // Find all explicitly selected folders
+  const selectedFolders = configFiles.value
+    .filter((f) => f.selected && f.type === 'dir')
+    .map((f) => (f.path.endsWith('/') ? f.path : `${f.path}/`))
+
+  // Check if path falls under any selected folder
+  return selectedFolders.some((folder) => path.startsWith(folder) && path !== folder.slice(0, -1))
+}
+
+/**
+ * Computes checkbox state for an entry:
+ * - Checked: explicitly selected OR ancestor folder is selected
+ * - Indeterminate (folders only): has explicitly selected descendants but folder itself not selected
+ */
+function getCheckboxState(entry: FileSystemEntry): { checked: boolean; indeterminate: boolean } {
+  const explicitlySelected = isExplicitlySelected(entry.path)
+  const ancestorSelected = isAncestorSelected(entry.path)
+
+  // If explicitly selected or ancestor is selected, show as checked
+  if (explicitlySelected || ancestorSelected) {
+    return { checked: true, indeterminate: false }
+  }
+
+  // For folders: check if any descendants are explicitly selected (indeterminate state)
+  if (entry.type === 'dir') {
+    const hasSelectedDescendants = hasExplicitlySelectedDescendants(entry)
+    if (hasSelectedDescendants) {
+      return { checked: false, indeterminate: true }
+    }
+  }
+
+  return { checked: false, indeterminate: false }
+}
+
+/**
+ * Check if any descendant is explicitly selected
+ */
+function hasExplicitlySelectedDescendants(entry: FileSystemEntry): boolean {
+  if (!entry.children) return false
+
+  for (const child of entry.children) {
+    if (isExplicitlySelected(child.path)) {
+      return true
+    }
+    if (child.type === 'dir' && hasExplicitlySelectedDescendants(child)) {
+      return true
+    }
+  }
+
+  return false
 }
 
 function upsertConfigFile(entry: FileSystemEntry, selected: boolean) {
@@ -266,34 +327,65 @@ function upsertConfigFile(entry: FileSystemEntry, selected: boolean) {
 
 function onToggle(entry: FileSystemEntry, checked: boolean) {
   if (!isSelectable(entry)) return
+
+  if (checked && entry.type === 'dir') {
+    // When selecting a folder, remove explicit selections of descendants
+    // (they're now implicitly included via the folder prefix)
+    removeDescendantSelections(entry)
+  }
+
   upsertConfigFile(entry, checked)
+}
+
+/**
+ * Remove explicit selections for all descendants of a folder
+ * (called when folder is selected, making descendants implicit)
+ */
+function removeDescendantSelections(entry: FileSystemEntry) {
+  if (!entry.children || !streamsStore.currentStreamConfig) return
+
+  const files = streamsStore.currentStreamConfig.files || []
+  const pathsToRemove = new Set<string>()
+
+  function collectDescendantPaths(e: FileSystemEntry) {
+    if (e.children) {
+      for (const child of e.children) {
+        pathsToRemove.add(child.path)
+        if (child.type === 'dir') {
+          collectDescendantPaths(child)
+        }
+      }
+    }
+  }
+
+  collectDescendantPaths(entry)
+
+  // Remove or deselect descendants
+  streamsStore.currentStreamConfig.files = files.filter((f) => !pathsToRemove.has(f.path))
 }
 
 function syncConfigFilesWithLoadedTree(entries: FileSystemEntry[]) {
   if (!streamsStore.currentStreamConfig) return
 
+  // Only sync metadata for existing entries, don't auto-select anything
   const existing = new Map<string, FileEntry>()
   for (const f of streamsStore.currentStreamConfig.files || []) {
     existing.set(f.path, f)
   }
 
-  // Preserve the old behavior where the initial root list is selected by default,
-  // but avoid auto-selecting newly loaded child entries when expanding folders.
-  const isFirstSync = existing.size === 0
-
   const all = flattenAllLoaded(entries, 0).map((r) => r.entry)
   for (const e of all) {
     const prev = existing.get(e.path)
-    const selected = prev ? !!prev.selected : isFirstSync && isSelectable(e)
-    // Never auto-select non-selectable folders (e.g. local navigation dirs)
-    const safeSelected = isSelectable(e) ? selected : false
-    existing.set(e.path, {
-      name: e.name,
-      path: e.path,
-      type: e.type,
-      size: e.size,
-      selected: safeSelected
-    })
+    if (prev) {
+      // Update metadata but keep selection state
+      existing.set(e.path, {
+        ...prev,
+        name: e.name,
+        size: e.size,
+        type: e.type
+      })
+    }
+    // Don't create new entries - user must explicitly select
   }
 
   streamsStore.currentStreamConfig.files = Array.from(existing.values())
@@ -303,8 +395,16 @@ const selectableCount = computed(() => {
   return flattenAllLoaded(rawFiles.value, 0).filter((r) => isSelectable(r.entry)).length
 })
 
+/**
+ * Count items that are effectively selected (explicitly or via ancestor)
+ */
 const selectedCount = computed(() => {
-  return (streamsStore.currentStreamConfig?.files || []).filter((f) => f.selected).length
+  const allRows = flattenAllLoaded(rawFiles.value, 0)
+  return allRows.filter((r) => {
+    if (!isSelectable(r.entry)) return false
+    const state = getCheckboxState(r.entry)
+    return state.checked
+  }).length
 })
 
 const indeterminate = computed(() => {

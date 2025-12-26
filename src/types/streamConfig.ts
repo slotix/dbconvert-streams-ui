@@ -77,16 +77,10 @@ export interface SourceOptions {
   operations?: string[] // CDC operation filter: 'insert', 'update', 'delete'
 }
 
-export interface S3Selection {
-  kind: 'prefix' | 'object'
-  prefix?: string
-  key?: string
-  tableName?: string
-}
-
 export interface S3SourceConfig {
   bucket: string
-  selections: S3Selection[]
+  prefixes?: string[]
+  objects?: string[]
 }
 
 // StreamConnectionMapping extends the federated ConnectionMapping with

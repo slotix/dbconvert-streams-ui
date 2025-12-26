@@ -163,7 +163,7 @@ describe('StreamConfigValidator', () => {
               connectionId: 'conn-123',
               s3: {
                 bucket: 'my-bucket',
-                selections: [{ kind: 'prefix', prefix: 'sakila/actor/' }]
+                prefixes: ['sakila/actor/']
               }
             }
           ]
@@ -183,7 +183,7 @@ describe('StreamConfigValidator', () => {
               connectionId: 'conn-123',
               s3: {
                 bucket: 'my-bucket',
-                selections: [{ kind: 'prefix', prefix: 'sakila/actor/' }]
+                prefixes: ['sakila/actor/']
               }
             }
           ],
@@ -199,6 +199,89 @@ describe('StreamConfigValidator', () => {
             e.message.includes('Single-source S3 streams must not set')
         )
       ).toBe(true)
+    })
+
+    it('should validate S3 prefixes end with /', () => {
+      const config = {
+        ...validConfig,
+        source: {
+          connections: [
+            {
+              alias: 'src',
+              connectionId: 'conn-123',
+              s3: {
+                bucket: 'my-bucket',
+                prefixes: ['sakila/actor'] // missing trailing /
+              }
+            }
+          ]
+        }
+      }
+      const result = validateStreamConfig(config)
+      expect(result.valid).toBe(false)
+      expect(result.errors.some((e) => e.message.includes("must end with '/'"))).toBe(true)
+    })
+
+    it('should validate S3 objects do not end with /', () => {
+      const config = {
+        ...validConfig,
+        source: {
+          connections: [
+            {
+              alias: 'src',
+              connectionId: 'conn-123',
+              s3: {
+                bucket: 'my-bucket',
+                objects: ['sakila/actor.parquet/'] // should not end with /
+              }
+            }
+          ]
+        }
+      }
+      const result = validateStreamConfig(config)
+      expect(result.valid).toBe(false)
+      expect(result.errors.some((e) => e.message.includes("must not end with '/'"))).toBe(true)
+    })
+
+    it('should allow S3 sources with objects', () => {
+      const config = {
+        ...validConfig,
+        source: {
+          connections: [
+            {
+              alias: 'src',
+              connectionId: 'conn-123',
+              s3: {
+                bucket: 'my-bucket',
+                objects: ['data/file1.parquet', 'data/file2.parquet']
+              }
+            }
+          ]
+        }
+      }
+      const result = validateStreamConfig(config)
+      expect(result.valid).toBe(true)
+    })
+
+    it('should allow S3 sources with both prefixes and objects', () => {
+      const config = {
+        ...validConfig,
+        source: {
+          connections: [
+            {
+              alias: 'src',
+              connectionId: 'conn-123',
+              s3: {
+                bucket: 'my-bucket',
+                prefixes: ['sakila/actor/', 'sakila/film/'],
+                objects: ['standalone.parquet']
+              }
+            }
+          ]
+        }
+      }
+      const result = validateStreamConfig(config)
+      expect(result.valid).toBe(true)
     })
 
     it('should require table name', () => {

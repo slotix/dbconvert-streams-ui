@@ -2,8 +2,8 @@ import { defineStore } from 'pinia'
 import api from '@/api/streams'
 import type { StreamConfig } from '@/types/streamConfig'
 import type { Table } from '@/types/streamConfig'
-import type { S3Selection } from '@/types/streamConfig'
 import type { StreamConnectionMapping } from '@/types/streamConfig'
+import type { S3SourceConfig } from '@/types/streamConfig'
 import type { TargetSpec } from '@/types/specs'
 import type { Step } from '@/stores/common'
 import { useConnectionsStore } from '@/stores/connections'
@@ -132,44 +132,90 @@ export const buildStreamPayload = (stream: StreamConfig): Partial<StreamConfig> 
     return { bucket, keyOrPrefix: rest }
   }
 
-  function selectionsFromFiles(files: NonNullable<StreamConfig['files']>): S3Selection[] {
-    const selections: S3Selection[] = []
+  /**
+   * Build S3 config from explicitly selected files.
+   * - Selected folders → prefixes (all contents included)
+   * - Selected files (not under a selected folder) → objects
+   */
+  function s3ConfigFromFiles(files: NonNullable<StreamConfig['files']>): {
+    prefixes: string[]
+    objects: string[]
+  } {
+    const prefixes: string[] = []
+    const objects: string[] = []
+
+    // First pass: collect all selected folders as prefixes
     for (const f of files) {
       if (!f.selected) continue
+      if (f.type !== 'dir') continue
+
       const parsed = parseS3Path(f.path)
-      if (!parsed) continue
-      // We intentionally ignore bucket from path and use the wizard-selected bucket.
-      const keyOrPrefix = parsed.keyOrPrefix
-      if (!keyOrPrefix) continue
-      if (f.type === 'dir' || f.path.endsWith('/')) {
-        const prefix = keyOrPrefix.endsWith('/') ? keyOrPrefix : `${keyOrPrefix}/`
-        selections.push({ kind: 'prefix', prefix })
-      } else {
-        selections.push({ kind: 'object', key: keyOrPrefix })
+      if (!parsed?.keyOrPrefix) continue
+
+      const prefix = parsed.keyOrPrefix.endsWith('/')
+        ? parsed.keyOrPrefix
+        : `${parsed.keyOrPrefix}/`
+      prefixes.push(prefix)
+    }
+
+    // Deduplicate prefixes (remove child prefixes when parent is selected)
+    const dedupedPrefixes = deduplicatePrefixes(prefixes)
+
+    // Second pass: collect selected files not covered by any prefix
+    for (const f of files) {
+      if (!f.selected) continue
+      if (f.type === 'dir') continue // folders already handled
+
+      const parsed = parseS3Path(f.path)
+      if (!parsed?.keyOrPrefix) continue
+
+      // Only include if not covered by a selected prefix
+      const coveredByPrefix = dedupedPrefixes.some((prefix) =>
+        parsed.keyOrPrefix.startsWith(prefix)
+      )
+      if (!coveredByPrefix) {
+        objects.push(parsed.keyOrPrefix)
       }
     }
-    return selections
+
+    return { prefixes: dedupedPrefixes, objects }
+  }
+
+  function deduplicatePrefixes(prefixes: string[]): string[] {
+    const sorted = [...prefixes].sort((a, b) => a.length - b.length)
+    return sorted.filter((prefix, i) => !sorted.slice(0, i).some((p) => prefix.startsWith(p)))
   }
 
   if (isS3Source) {
     const bucket = connections[0]?.s3?.bucket || stream.sourceDatabase || ''
 
-    const selections =
-      (connections[0]?.s3?.selections && connections[0].s3.selections.length > 0
-        ? connections[0].s3.selections
-        : stream.files
-          ? selectionsFromFiles(stream.files)
-          : []) || []
+    // Get existing prefixes/objects or derive from selected files
+    const existingS3 = connections[0]?.s3
+    const hasExistingSelections =
+      (existingS3?.prefixes && existingS3.prefixes.length > 0) ||
+      (existingS3?.objects && existingS3.objects.length > 0)
+
+    const s3Config: S3SourceConfig = hasExistingSelections
+      ? { bucket, prefixes: existingS3?.prefixes, objects: existingS3?.objects }
+      : stream.files
+        ? { bucket, ...s3ConfigFromFiles(stream.files) }
+        : { bucket, prefixes: [], objects: [] }
+
+    // Clean up empty arrays before sending
+    const s3Payload: S3SourceConfig = { bucket: s3Config.bucket }
+    if (s3Config.prefixes && s3Config.prefixes.length > 0) {
+      s3Payload.prefixes = s3Config.prefixes
+    }
+    if (s3Config.objects && s3Config.objects.length > 0) {
+      s3Payload.objects = s3Config.objects
+    }
 
     filteredStream.source = {
       connections: [
         {
           alias: connections[0].alias,
           connectionId: connections[0].connectionId,
-          s3: {
-            bucket,
-            selections
-          }
+          s3: s3Payload
         }
       ]
     }
@@ -496,7 +542,8 @@ export const useStreamsStore = defineStore('streams', {
                   ...first,
                   s3: {
                     bucket,
-                    selections: first.s3?.selections || []
+                    prefixes: first.s3?.prefixes,
+                    objects: first.s3?.objects
                   }
                 },
                 ...rest
