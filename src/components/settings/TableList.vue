@@ -806,12 +806,23 @@ const refreshTables = async () => {
 
       // Then overlay with stream config (only selected tables, but has authoritative state)
       // Tables are now per-connection, so collect from all connections
+      // In federated mode, saved table names don't have alias prefix (e.g., "public.actor")
+      // but displayed names do (e.g., "src.public.actor"), so add both versions
       for (const conn of currentStreamConfig.value.source?.connections || []) {
         if (conn.tables) {
           conn.tables.forEach((table) => {
+            // Store with original saved name
             existingSelections.set(table.name, table.selected ?? true)
             if (table.filter) {
               existingFilters.set(table.name, table.filter)
+            }
+            // Also store with alias prefix for federated mode matching
+            if (conn.alias) {
+              const aliasedName = `${conn.alias}.${table.name}`
+              existingSelections.set(aliasedName, table.selected ?? true)
+              if (table.filter) {
+                existingFilters.set(aliasedName, table.filter)
+              }
             }
           })
         }
@@ -1021,11 +1032,49 @@ watch(
     currentStreamConfig.value._allTablesWithState = newTables
 
     // Only store selected tables in stream config (for saving/execution)
-    // Tables are now per-connection - update the first connection for single-source wizard
     const selectedTables = newTables.filter((table) => table.selected)
-    const firstConn = currentStreamConfig.value.source?.connections?.[0]
-    if (firstConn) {
-      firstConn.tables = selectedTables
+    const connections = currentStreamConfig.value.source?.connections || []
+
+    if (connections.length <= 1) {
+      // Single-source: all tables go to the first connection
+      const firstConn = connections[0]
+      if (firstConn) {
+        firstConn.tables = selectedTables
+      }
+    } else {
+      // Multi-source (federated): distribute tables to their respective connections by alias
+      // Table names are prefixed with alias: "src.tablename" or "src2.schema.tablename"
+      // We need to strip the alias prefix when storing, as backend knows which connection to use
+      // Clear all connection tables first
+      for (const conn of connections) {
+        conn.tables = []
+      }
+
+      for (const table of selectedTables) {
+        // Extract alias from table name (first segment before the dot)
+        // e.g., "src.actor" -> alias="src", rest="actor"
+        // e.g., "src2.public.actor" -> alias="src2", rest="public.actor"
+        const aliasMatch = table.name.match(/^([^.]+)\.(.+)$/)
+        const tableAlias = aliasMatch ? aliasMatch[1] : null
+        // Get the table name without the alias prefix
+        const tableNameWithoutAlias = aliasMatch ? aliasMatch[2] : table.name
+
+        // Find matching connection by alias
+        const targetConn = tableAlias
+          ? connections.find((c) => c.alias === tableAlias)
+          : connections[0]
+
+        if (targetConn) {
+          if (!targetConn.tables) {
+            targetConn.tables = []
+          }
+          // Store table with name stripped of alias prefix
+          targetConn.tables.push({
+            ...table,
+            name: tableNameWithoutAlias
+          })
+        }
+      }
     }
   },
   { deep: true }

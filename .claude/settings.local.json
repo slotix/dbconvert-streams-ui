@@ -30,7 +30,8 @@
       "Bash(yarn add:*)",
       "Bash(yarn remove:*)",
       "Bash(ls:*)",
-      "Bash(sort:*)"
+      "Bash(sort:*)",
+      "Bash(yarn type-check:*)"
     ],
     "deny": [],
     "ask": []
