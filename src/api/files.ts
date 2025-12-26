@@ -116,6 +116,7 @@ export async function listS3Objects(params: S3ListRequest): Promise<S3ListRespon
     if (params.maxKeys) query.set('maxKeys', String(params.maxKeys))
     if (params.continuationToken) query.set('continuationToken', params.continuationToken)
     if (params.connectionId) query.set('connectionId', params.connectionId)
+    if (params.recursive !== undefined) query.set('recursive', params.recursive ? 'true' : 'false')
 
     const response = await apiClient.get<S3ListResponse>(`/files/s3/list?${query.toString()}`, {
       ...withAuthHeaders()

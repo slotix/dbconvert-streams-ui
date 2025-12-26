@@ -44,6 +44,8 @@ export interface S3ListRequest {
   maxKeys?: number
   continuationToken?: string
   connectionId?: string
+  /** If false, list only immediate children and return folder prefixes (common prefixes). */
+  recursive?: boolean
 }
 
 // S3 Object
@@ -58,6 +60,7 @@ export interface S3Object {
 // S3 List Response
 export interface S3ListResponse {
   objects: S3Object[]
+  prefixes?: string[]
   bucket: string
   prefix: string
   count: number

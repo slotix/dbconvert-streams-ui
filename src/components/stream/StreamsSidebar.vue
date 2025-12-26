@@ -40,7 +40,7 @@
           :key="stream.id"
           :stream="stream"
           :is-selected="selectedStreamId === stream.id"
-          :source="connectionByID(stream.source?.id)"
+          :source="connectionByID(stream.source?.connections?.[0]?.connectionId)"
           :target="connectionByID(stream.target?.id)"
           @select="handleSelectStream"
           @start="handleStartStream"

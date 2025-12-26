@@ -386,8 +386,7 @@ const cdcOperations = computed({
 
 const sourceConnectionId = computed(() => {
   const source = streamsStore.currentStreamConfig?.source
-  // Use id first, fallback to first connection's connectionId
-  return source?.id || source?.connections?.[0]?.connectionId || null
+  return source?.connections?.[0]?.connectionId || null
 })
 
 const sourceConnection = computed(() => {

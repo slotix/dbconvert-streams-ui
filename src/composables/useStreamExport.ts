@@ -211,7 +211,7 @@ export function useStreamExport() {
       name: streamName,
       mode: 'convert',
       source: {
-        id: connectionId,
+        connections: [{ alias: 'src', connectionId }],
         database: database,
         schema: schema,
         tables: [tableSpec]

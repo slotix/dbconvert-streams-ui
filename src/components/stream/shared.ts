@@ -265,9 +265,8 @@ export default defineComponent({
       return 0
     },
     sourceConnectionString(): string {
-      const sourceConnection = useConnectionsStore().connectionByID(
-        this.streamConfig?.source?.id || ''
-      )
+      const sourceConnectionId = this.streamConfig?.source?.connections?.[0]?.connectionId || ''
+      const sourceConnection = useConnectionsStore().connectionByID(sourceConnectionId)
       if (!sourceConnection) return ''
       return generateConnectionString(sourceConnection)
     },

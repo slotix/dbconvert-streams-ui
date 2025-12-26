@@ -147,7 +147,57 @@ describe('StreamConfigValidator', () => {
       const result = validateStreamConfig(config)
       expect(result.valid).toBe(false)
       expect(
-        result.errors.some((e) => e.message === 'At least one table or query is required')
+        result.errors.some(
+          (e) => e.message === 'At least one table, query, or S3 selection is required'
+        )
+      ).toBe(true)
+    })
+
+    it('should allow S3 sources without tables or queries', () => {
+      const config = {
+        ...validConfig,
+        source: {
+          connections: [
+            {
+              alias: 'src',
+              connectionId: 'conn-123',
+              s3: {
+                bucket: 'my-bucket',
+                selections: [{ kind: 'prefix', prefix: 'sakila/actor/' }]
+              }
+            }
+          ]
+        }
+      }
+      const result = validateStreamConfig(config)
+      expect(result.valid).toBe(true)
+    })
+
+    it('should reject mixing S3 sources with tables', () => {
+      const config = {
+        ...validConfig,
+        source: {
+          connections: [
+            {
+              alias: 'src',
+              connectionId: 'conn-123',
+              s3: {
+                bucket: 'my-bucket',
+                selections: [{ kind: 'prefix', prefix: 'sakila/actor/' }]
+              }
+            }
+          ],
+          tables: [{ name: 'users' }]
+        }
+      }
+      const result = validateStreamConfig(config)
+      expect(result.valid).toBe(false)
+      expect(
+        result.errors.some(
+          (e) =>
+            e.path === 'source.connections[0].s3' &&
+            e.message.includes('Single-source S3 streams must not set')
+        )
       ).toBe(true)
     })
 

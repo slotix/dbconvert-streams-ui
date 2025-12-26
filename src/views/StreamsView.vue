@@ -193,7 +193,7 @@
             <div v-if="selectedStreamId && selectedStream" class="h-full">
               <StreamDetailsPanel
                 :stream="selectedStream"
-                :source="connectionByID(selectedStream.source?.id)"
+                :source="connectionByID(selectedStream.source?.connections?.[0]?.connectionId)"
                 :target="connectionByID(selectedStream.target?.id)"
                 :initial-tab="initialTab"
                 @stream-deleted="handleStreamDeletedFromPanel"

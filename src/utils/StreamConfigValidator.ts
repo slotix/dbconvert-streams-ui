@@ -157,12 +157,29 @@ function validateSource(source: unknown, errors: ValidationError[]): void {
   }
   validateConnections(connections, errors)
 
+  // Validate per-connection S3 configs (source.connections[i].s3)
+  const hasAnyS3 = connections.some((c) => typeof c.s3 === 'object' && c.s3 !== null)
+  const hasAnyS3Selections = connections.some(
+    (c) =>
+      typeof c.s3 === 'object' &&
+      c.s3 !== null &&
+      Array.isArray((c.s3 as Record<string, unknown>).selections) &&
+      ((c.s3 as Record<string, unknown>).selections as unknown[]).length > 0
+  )
+
+  if (hasAnyS3) {
+    validateS3Connections(connections, src, errors)
+  }
+
   // Tables or Queries validation - at least one must be specified
   const hasTables = Array.isArray(src.tables) && src.tables.length > 0
   const hasQueries = Array.isArray(src.queries) && src.queries.length > 0
 
-  if (!hasTables && !hasQueries) {
-    errors.push({ path: 'source.tables', message: 'At least one table or query is required' })
+  if (!hasTables && !hasQueries && !hasAnyS3Selections) {
+    errors.push({
+      path: 'source.tables',
+      message: 'At least one table, query, or S3 selection is required'
+    })
   }
 
   if (hasTables) {
@@ -177,6 +194,122 @@ function validateSource(source: unknown, errors: ValidationError[]): void {
   if (src.options) {
     validateSourceOptions(src.options, errors)
   }
+}
+
+function validateS3Connections(
+  connections: Array<{ alias?: string; connectionId?: string; database?: string; s3?: unknown }>,
+  src: Record<string, unknown>,
+  errors: ValidationError[]
+): void {
+  const hasTables = Array.isArray(src.tables) && src.tables.length > 0
+  const hasQueries = Array.isArray(src.queries) && src.queries.length > 0
+  const hasDatabase = typeof src.database === 'string' && src.database.trim() !== ''
+  const hasSchema = typeof src.schema === 'string' && src.schema.trim() !== ''
+
+  // In single-source mode, S3 must not be mixed with DB-like fields at the top-level.
+  if (connections.length === 1) {
+    const onlyConnHasS3 = typeof connections[0].s3 === 'object' && connections[0].s3 !== null
+    if (onlyConnHasS3 && (hasDatabase || hasSchema || hasTables || hasQueries)) {
+      errors.push({
+        path: 'source.connections[0].s3',
+        message:
+          'Single-source S3 streams must not set source.database/source.schema/source.tables/source.queries'
+      })
+    }
+  }
+
+  connections.forEach((conn, connIndex) => {
+    if (conn.s3 === undefined) return
+    if (typeof conn.s3 !== 'object' || conn.s3 === null) {
+      errors.push({
+        path: `source.connections[${connIndex}].s3`,
+        message: 'source.connections[].s3 must be an object'
+      })
+      return
+    }
+
+    if (typeof conn.database === 'string' && conn.database.trim() !== '') {
+      errors.push({
+        path: `source.connections[${connIndex}].database`,
+        message: 'database must be empty for S3 connections'
+      })
+    }
+
+    const s3 = conn.s3 as Record<string, unknown>
+    const bucket = typeof s3.bucket === 'string' ? s3.bucket.trim() : ''
+    if (!bucket) {
+      errors.push({
+        path: `source.connections[${connIndex}].s3.bucket`,
+        message: 'bucket is required for S3 sources'
+      })
+    }
+
+    if (!Array.isArray(s3.selections) || s3.selections.length === 0) {
+      errors.push({
+        path: `source.connections[${connIndex}].s3.selections`,
+        message: 'at least one S3 selection is required'
+      })
+      return
+    }
+
+    ;(s3.selections as unknown[]).forEach((sel, index) => {
+      if (typeof sel !== 'object' || sel === null) {
+        errors.push({
+          path: `source.connections[${connIndex}].s3.selections[${index}]`,
+          message: 'S3 selection must be an object'
+        })
+        return
+      }
+      const s = sel as Record<string, unknown>
+      const kind = typeof s.kind === 'string' ? s.kind.trim().toLowerCase() : ''
+      const prefix = typeof s.prefix === 'string' ? s.prefix : ''
+      const key = typeof s.key === 'string' ? s.key : ''
+
+      if (kind !== 'prefix' && kind !== 'object') {
+        errors.push({
+          path: `source.connections[${connIndex}].s3.selections[${index}].kind`,
+          message: "kind must be 'prefix' or 'object'"
+        })
+        return
+      }
+
+      if (kind === 'prefix') {
+        if (key) {
+          errors.push({
+            path: `source.connections[${connIndex}].s3.selections[${index}]`,
+            message: 'key must be empty for prefix selections'
+          })
+        }
+        if (prefix && !prefix.endsWith('/')) {
+          errors.push({
+            path: `source.connections[${connIndex}].s3.selections[${index}]`,
+            message: "prefix must end with '/'"
+          })
+        }
+      }
+
+      if (kind === 'object') {
+        if (!key.trim()) {
+          errors.push({
+            path: `source.connections[${connIndex}].s3.selections[${index}].key`,
+            message: 'key is required for object selections'
+          })
+        }
+        if (key.endsWith('/')) {
+          errors.push({
+            path: `source.connections[${connIndex}].s3.selections[${index}].key`,
+            message: "key must not end with '/'"
+          })
+        }
+        if (prefix) {
+          errors.push({
+            path: `source.connections[${connIndex}].s3.selections[${index}]`,
+            message: 'prefix must be empty for object selections'
+          })
+        }
+      }
+    })
+  })
 }
 
 function validateConnections(
@@ -325,9 +458,14 @@ function validateTarget(target: unknown, errors: ValidationError[]): void {
 
 function extractConnections(
   src: Record<string, unknown>
-): Array<{ alias: string; connectionId: string; database?: string }> {
+): Array<{ alias: string; connectionId: string; database?: string; s3?: unknown }> {
   if (Array.isArray(src.connections) && src.connections.length > 0) {
-    return src.connections as Array<{ alias: string; connectionId: string; database?: string }>
+    return src.connections as Array<{
+      alias: string
+      connectionId: string
+      database?: string
+      s3?: unknown
+    }>
   }
   return []
 }

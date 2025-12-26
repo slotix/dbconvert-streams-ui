@@ -374,11 +374,17 @@ const overviewStore = useDatabaseOverviewStore()
 const currentStreamConfig = computed(() => streamsStore.currentStreamConfig as StreamConfig)
 const sourceConnections = computed(() => currentStreamConfig.value.source?.connections || [])
 
+// Non-federated streams behave as single-source in this view.
+// We treat connections[0] as the default/only source connection for metadata lookups.
+const firstSourceConnectionId = computed(
+  () => currentStreamConfig.value.source?.connections?.[0]?.connectionId
+)
+
 // Get the source connection to determine database type
 const sourceConnection = computed(() => {
-  return connectionStore.connections.find(
-    (conn) => conn.id === currentStreamConfig.value.source?.id
-  )
+  const connId = firstSourceConnectionId.value
+  if (!connId) return undefined
+  return connectionStore.connections.find((conn) => conn.id === connId)
 })
 
 const sourceConnectionType = computed(() => {
@@ -628,7 +634,7 @@ function getTableDisplayName(tableName: string): string {
 
 // Get the row count for a table from the overview store (cached data only)
 function getTableRowCount(tableName: string): number | undefined {
-  const connId = currentStreamConfig.value.source?.id
+  const connId = firstSourceConnectionId.value
   const database = currentStreamConfig.value.sourceDatabase
   if (!connId || !database) return undefined
   // Only returns data if overview was already loaded (no API call)
@@ -873,12 +879,12 @@ const refreshTables = async () => {
     }
 
     // Single source mode (existing logic)
-    if (!currentStreamConfig.value.source?.id) {
+    const connectionId = firstSourceConnectionId.value
+    if (!connectionId) {
       tables.value = []
       return
     }
     const database = currentStreamConfig.value.sourceDatabase || undefined
-    const connectionId = currentStreamConfig.value.source.id
 
     if (!database) {
       tables.value = []
@@ -989,7 +995,7 @@ const refreshTables = async () => {
 }
 
 watch(
-  () => currentStreamConfig.value.source?.id,
+  () => firstSourceConnectionId.value,
   async (newSourceId, oldSourceId) => {
     // Refresh tables if source ID changed
     if (newSourceId && newSourceId !== oldSourceId) {

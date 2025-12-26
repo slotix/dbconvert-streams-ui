@@ -119,9 +119,9 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
   }
 
   // Actions
-  async function loadEntries(connectionId: string, force = false) {
+  async function loadEntries(connectionId: string, force = false, overridePath?: string) {
     if (!connectionId) return
-    if (!force && entriesByConnection.value[connectionId]) return
+    if (!force && entriesByConnection.value[connectionId] && !overridePath) return
     // Support both local files and S3 connections.
     if (!isFilesConnectionType(connectionId)) return
 
@@ -130,7 +130,7 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
     if (!connection) return
 
     // Handle missing path
-    const folderPath = resolveConnectionFolderPath(connection)
+    const folderPath = overridePath || resolveConnectionFolderPath(connection)
     if (!folderPath) {
       entriesByConnection.value = {
         ...entriesByConnection.value,
@@ -207,16 +207,18 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
         const prefix = parsed.prefix
         const requestPrefix = buildS3RequestPrefix(prefix)
 
-        // List S3 objects
+        // List S3 objects recursively, then group into a tree.
+        // This is required to detect "table folders" (folders containing uniform data files)
+        // so the Explorer can open a consolidated DuckDB view for a folder.
         const response = await listS3Objects({
           bucket,
           prefix: requestPrefix,
           maxKeys: 1000,
-          connectionId
+          connectionId,
+          recursive: true
         })
 
-        // Group S3 objects into folders and files at the root level
-        const entries = groupS3ObjectsIntoTree(response.objects, bucket, prefix)
+        const entries = groupS3ObjectsIntoTree(response.objects || [], bucket, requestPrefix || '')
 
         entriesByConnection.value = {
           ...entriesByConnection.value,
@@ -291,9 +293,6 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
           console.warn('Unable to determine file format for:', fileEntry.name)
           return null
         }
-
-        // Debug: log connectionId to verify it's being passed
-        console.log('[loadFileMetadata] path:', fileEntry.path, 'connectionId:', connectionId)
 
         const metadata = await getFileMetadata(
           fileEntry.path,
@@ -485,16 +484,23 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
 
         await configureS3SessionForConnection(connection)
 
-        // List objects under this prefix
+        const requestPrefix = prefix ? buildS3RequestPrefix(prefix) : undefined
+
+        // Recursive list + grouping is required to mark table folders (entry.isTable)
+        // so clicking a folder can open a consolidated DuckDB view.
         const response = await listS3Objects({
           bucket,
-          prefix: prefix ? buildS3RequestPrefix(prefix) : undefined,
+          prefix: requestPrefix,
           maxKeys: 1000,
-          connectionId
+          connectionId,
+          recursive: true
         })
 
-        // Group S3 objects into folders and files
-        const folderContents = groupS3ObjectsIntoTree(response.objects, bucket, prefix)
+        const folderContents = groupS3ObjectsIntoTree(
+          response.objects || [],
+          bucket,
+          requestPrefix || ''
+        )
 
         // Update folder children immutably (single source of truth)
         const currentEntries = entriesByConnection.value[connectionId] || []
@@ -561,7 +567,7 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
           seen.add(folderName)
           entries.push({
             name: folderName,
-            path: `s3://${bucket}/${normalizedPrefix ? normalizedPrefix + '/' : ''}${folderName}`,
+            path: `s3://${bucket}/${normalizedPrefix ? normalizedPrefix + '/' : ''}${folderName}/`,
             type: 'dir',
             children: [],
             isLoaded: false
@@ -611,6 +617,14 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
         }
       }
     }
+
+    // Stable UX: folders first, then files, alpha
+    entries.sort((a, b) => {
+      const at = a.type === 'dir' ? 0 : 1
+      const bt = b.type === 'dir' ? 0 : 1
+      if (at !== bt) return at - bt
+      return (a.name || '').localeCompare(b.name || '')
+    })
 
     return entries
   }

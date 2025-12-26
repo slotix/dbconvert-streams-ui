@@ -43,7 +43,7 @@ const schemaContext = ref<SchemaContext | undefined>()
 
 // Get connection dialect for SQL syntax highlighting
 const connectionDialect = computed((): 'mysql' | 'pgsql' | 'sql' => {
-  const sourceConnectionId = currentStreamConfig?.source?.id
+  const sourceConnectionId = currentStreamConfig?.source?.connections?.[0]?.connectionId
   if (sourceConnectionId) {
     const connection = connectionsStore.connectionByID(sourceConnectionId)
     const type = connection?.type?.toLowerCase() || 'sql'
@@ -69,7 +69,9 @@ const tableColumns = computed((): ColumnInfo[] => {
 })
 
 // Get source connection info for preview
-const sourceConnectionId = computed(() => currentStreamConfig?.source?.id || '')
+const sourceConnectionId = computed(
+  () => currentStreamConfig?.source?.connections?.[0]?.connectionId || ''
+)
 const sourceDatabase = computed(
   () => currentStreamConfig?.sourceDatabase || currentStreamConfig?.source?.database || ''
 )
@@ -90,7 +92,7 @@ const onFilterStateUpdate = (filterState: TableFilterState) => {
 
 onMounted(async () => {
   // Fetch schema metadata for intelligent SQL autocomplete
-  const connectionId = currentStreamConfig?.source?.id
+  const connectionId = currentStreamConfig?.source?.connections?.[0]?.connectionId
   // Database can be at source.database or at root level sourceDatabase (wizard stores it at root)
   const database =
     currentStreamConfig?.source?.database || currentStreamConfig?.sourceDatabase || ''

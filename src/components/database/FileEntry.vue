@@ -92,6 +92,11 @@ const handleChevronClick = (event: MouseEvent) => {
 const handleSelect = () => {
   if (isTableFolder.value) {
     emit('select', { path: props.entry.path, entry: props.entry })
+    // Table folders are selectable (open consolidated preview) but should also be expandable
+    // so users can drill into individual part files.
+    if (!isExpanded.value) {
+      emit('expand-folder', { entry: props.entry })
+    }
   } else if (isFolder.value) {
     // Single-click on folder: expand/collapse it
     emit('expand-folder', { entry: props.entry })

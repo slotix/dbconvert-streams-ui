@@ -335,15 +335,24 @@ function generateDuckDBReadFunction(
 ): string {
   // For directories, use /*.* glob pattern with appropriate read function
   if (isDir) {
-    const fullPath = `${path}/*.*`
+    const joinPath = (prefix: string, suffix: string) => {
+      const cleanedSuffix = suffix.replace(/^\/+/, '')
+      if (prefix === '') return cleanedSuffix
+      return prefix.endsWith('/') ? `${prefix}${cleanedSuffix}` : `${prefix}/${cleanedSuffix}`
+    }
+
     // Use format from folder metadata if available
     const fmt = format?.toLowerCase()
     if (fmt === 'parquet') {
+      const fullPath = joinPath(path, '*.parquet')
       return `SELECT * FROM read_parquet('${fullPath}') LIMIT 100;`
     } else if (fmt === 'json' || fmt === 'jsonl') {
+      const fullPath = joinPath(path, '*.json*')
       return `SELECT * FROM read_json_auto('${fullPath}') LIMIT 100;`
     }
-    // Default to csv_auto which handles most formats
+
+    // Default to csv_auto which handles most formats (incl. compressed CSV)
+    const fullPath = joinPath(path, '*.*')
     return `SELECT * FROM read_csv_auto('${fullPath}') LIMIT 100;`
   }
 

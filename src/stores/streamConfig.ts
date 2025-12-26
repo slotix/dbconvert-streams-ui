@@ -2,8 +2,9 @@ import { defineStore } from 'pinia'
 import api from '@/api/streams'
 import type { StreamConfig } from '@/types/streamConfig'
 import type { Table } from '@/types/streamConfig'
+import type { S3Selection } from '@/types/streamConfig'
+import type { StreamConnectionMapping } from '@/types/streamConfig'
 import type { TargetSpec } from '@/types/specs'
-import type { ConnectionMapping } from '@/api/federated'
 import type { Step } from '@/stores/common'
 import { useConnectionsStore } from '@/stores/connections'
 import { useMonitoringStore } from '@/stores/monitoring'
@@ -56,12 +57,12 @@ function normalizeSource(source: StreamConfig['source']): StreamConfig['source']
     return {
       alias,
       connectionId: conn.connectionId,
-      database: conn.database
+      database: conn.database,
+      s3: conn.s3
     }
   })
 
   normalized.connections = connections
-  normalized.id = connections[0]?.connectionId
   return normalized
 }
 
@@ -95,6 +96,7 @@ export const defaultStreamConfigOptions: StreamConfig = {
 
 export const buildStreamPayload = (stream: StreamConfig): Partial<StreamConfig> => {
   const normalizedSource = normalizeSource(stream.source)
+  const connectionsStore = useConnectionsStore()
   const filteredStream: Partial<StreamConfig> = {
     name: stream.name,
     mode: stream.mode
@@ -115,6 +117,102 @@ export const buildStreamPayload = (stream: StreamConfig): Partial<StreamConfig> 
     normalizedSource.connections && normalizedSource.connections.length > 0
       ? normalizedSource.connections
       : []
+
+  const primarySourceConnId = connections[0]?.connectionId
+  const primarySourceConn = primarySourceConnId
+    ? connectionsStore.connectionByID(primarySourceConnId)
+    : undefined
+  const isS3Source = !!primarySourceConn?.spec?.s3 && connections.length === 1
+
+  function parseS3Path(path: string): { bucket: string; keyOrPrefix: string } | null {
+    const match = path.match(/^s3:\/\/([^/]+)\/?(.*)$/)
+    if (!match) return null
+    const bucket = match[1]
+    const rest = (match[2] || '').replace(/^\/+/, '')
+    return { bucket, keyOrPrefix: rest }
+  }
+
+  function selectionsFromFiles(files: NonNullable<StreamConfig['files']>): S3Selection[] {
+    const selections: S3Selection[] = []
+    for (const f of files) {
+      if (!f.selected) continue
+      const parsed = parseS3Path(f.path)
+      if (!parsed) continue
+      // We intentionally ignore bucket from path and use the wizard-selected bucket.
+      const keyOrPrefix = parsed.keyOrPrefix
+      if (!keyOrPrefix) continue
+      if (f.type === 'dir' || f.path.endsWith('/')) {
+        const prefix = keyOrPrefix.endsWith('/') ? keyOrPrefix : `${keyOrPrefix}/`
+        selections.push({ kind: 'prefix', prefix })
+      } else {
+        selections.push({ kind: 'object', key: keyOrPrefix })
+      }
+    }
+    return selections
+  }
+
+  if (isS3Source) {
+    const bucket = connections[0]?.s3?.bucket || stream.sourceDatabase || ''
+
+    const selections =
+      (connections[0]?.s3?.selections && connections[0].s3.selections.length > 0
+        ? connections[0].s3.selections
+        : stream.files
+          ? selectionsFromFiles(stream.files)
+          : []) || []
+
+    filteredStream.source = {
+      connections: [
+        {
+          alias: connections[0].alias,
+          connectionId: connections[0].connectionId,
+          s3: {
+            bucket,
+            selections
+          }
+        }
+      ]
+    }
+
+    // Handle source options (same behavior as non-S3)
+    if (normalizedSource.options) {
+      const sourceOptions: NonNullable<StreamConfig['source']['options']> = {}
+      const defaultSourceOptions = defaultStreamConfigOptions.source.options!
+
+      if (normalizedSource.options.dataBundleSize !== defaultSourceOptions.dataBundleSize) {
+        sourceOptions.dataBundleSize = normalizedSource.options.dataBundleSize
+      }
+      if (stream.mode === 'cdc' && normalizedSource.options.operations) {
+        sourceOptions.operations = normalizedSource.options.operations
+      }
+      if (normalizedSource.options.replicationSlot) {
+        sourceOptions.replicationSlot = normalizedSource.options.replicationSlot
+      }
+      if (normalizedSource.options.publicationName) {
+        sourceOptions.publicationName = normalizedSource.options.publicationName
+      }
+      if (normalizedSource.options.binlogPosition) {
+        sourceOptions.binlogPosition = normalizedSource.options.binlogPosition
+      }
+
+      if (Object.keys(sourceOptions).length > 0) {
+        filteredStream.source.options = sourceOptions
+      }
+    }
+
+    // Handle target configuration
+    filteredStream.target = {
+      id: stream.target.id,
+      spec: stream.target.spec
+    }
+
+    // Handle limits
+    if (stream.limits && (stream.limits.numberOfEvents || stream.limits.elapsedTime)) {
+      filteredStream.limits = stream.limits
+    }
+
+    return filteredStream
+  }
 
   // For file sources, convert selected files to table entries
   // Files are stored in stream.files, and each file becomes a table
@@ -266,10 +364,10 @@ export const useStreamsStore = defineStore('streams', {
         : normalizeStreamConfig({ ...defaultStreamConfigOptions })
 
       if (this.currentStreamConfig && !this.currentStreamConfig.name) {
+        const primarySourceConnectionId =
+          this.currentStreamConfig.source.connections?.[0]?.connectionId || ''
         this.currentStreamConfig.name = this.generateDefaultStreamConfigName(
-          this.currentStreamConfig.source.id ||
-            this.currentStreamConfig.source.connections?.[0]?.connectionId ||
-            '',
+          primarySourceConnectionId,
           this.currentStreamConfig.target.id || '',
           this.currentStreamConfig.source.tables || []
         )
@@ -281,7 +379,6 @@ export const useStreamsStore = defineStore('streams', {
         this.currentStreamConfig.source = normalizeSource({
           ...this.currentStreamConfig.source,
           database: database ?? this.currentStreamConfig.source.database,
-          id: sourceId,
           connections: [
             {
               alias,
@@ -292,7 +389,7 @@ export const useStreamsStore = defineStore('streams', {
         })
       }
     },
-    setSourceConnections(connections: ConnectionMapping[]) {
+    setSourceConnections(connections: StreamConnectionMapping[]) {
       if (this.currentStreamConfig) {
         this.currentStreamConfig.source = normalizeSource({
           ...this.currentStreamConfig.source,
@@ -315,18 +412,12 @@ export const useStreamsStore = defineStore('streams', {
     },
     async saveStream(isEditMode: boolean = false): Promise<string | undefined> {
       try {
-        console.log(
-          'saveStream - BEFORE prepareStreamData, tables:',
-          this.currentStreamConfig?.source.tables?.length
-        )
         this.prepareStreamData()
-        console.log(
-          'saveStream - AFTER prepareStreamData, tables:',
-          this.currentStreamConfig?.source.tables?.length
-        )
         if (!this.currentStreamConfig?.name) {
+          const primarySourceConnectionId =
+            this.currentStreamConfig?.source.connections?.[0]?.connectionId || ''
           this.currentStreamConfig!.name = this.generateDefaultStreamConfigName(
-            this.currentStreamConfig?.source.id || '',
+            primarySourceConnectionId,
             this.currentStreamConfig?.target.id || '',
             this.currentStreamConfig?.source.tables || [],
             this.currentStreamConfig?.sourceDatabase,
@@ -373,20 +464,66 @@ export const useStreamsStore = defineStore('streams', {
       if (this.currentStreamConfig) {
         const connectionCount = this.currentStreamConfig.source.connections?.length || 0
 
+        const connectionsStore = useConnectionsStore()
+        const primarySourceConnId = this.currentStreamConfig.source.connections?.[0]?.connectionId
+        const primarySourceConn = primarySourceConnId
+          ? connectionsStore.connectionByID(primarySourceConnId)
+          : null
+        const isS3Source = !!primarySourceConn?.spec?.s3 && connectionCount === 1
+
         // Ensure database/schema are copied from root level to source/target objects
-        if (connectionCount === 1 && this.currentStreamConfig.sourceDatabase) {
-          this.currentStreamConfig.source.database = this.currentStreamConfig.sourceDatabase
-        } else if (connectionCount !== 1) {
+        if (isS3Source) {
+          // S3 selections are stream-level; connection.database is not meaningful for S3.
+          // Clear it to avoid DB-like fields leaking into S3 configs.
+          if (this.currentStreamConfig.source.connections?.length) {
+            this.currentStreamConfig.source.connections =
+              this.currentStreamConfig.source.connections.map((c) => ({
+                ...c,
+                database: undefined
+              }))
+          }
+
+          const bucket =
+            this.currentStreamConfig.sourceDatabase ||
+            this.currentStreamConfig.source.database ||
+            ''
+
+          if (bucket) {
+            if (this.currentStreamConfig.source.connections?.length) {
+              const [first, ...rest] = this.currentStreamConfig.source.connections
+              this.currentStreamConfig.source.connections = [
+                {
+                  ...first,
+                  s3: {
+                    bucket,
+                    selections: first.s3?.selections || []
+                  }
+                },
+                ...rest
+              ]
+            }
+          }
+
+          // Remove any legacy top-level S3 config if present.
+          delete (this.currentStreamConfig.source as unknown as { s3?: unknown }).s3
+
+          // S3 has no database/schema.
           this.currentStreamConfig.source.database = undefined
-        }
-        if (connectionCount === 1 && this.currentStreamConfig.sourceSchema) {
-          this.currentStreamConfig.source.schema = this.currentStreamConfig.sourceSchema
-        } else if (connectionCount !== 1) {
           this.currentStreamConfig.source.schema = undefined
+        } else {
+          if (connectionCount === 1 && this.currentStreamConfig.sourceDatabase) {
+            this.currentStreamConfig.source.database = this.currentStreamConfig.sourceDatabase
+          } else if (connectionCount !== 1) {
+            this.currentStreamConfig.source.database = undefined
+          }
+          if (connectionCount === 1 && this.currentStreamConfig.sourceSchema) {
+            this.currentStreamConfig.source.schema = this.currentStreamConfig.sourceSchema
+          } else if (connectionCount !== 1) {
+            this.currentStreamConfig.source.schema = undefined
+          }
         }
 
         // Always rebuild target spec to ensure structureOptions and other settings are current
-        const connectionsStore = useConnectionsStore()
         const targetConnection = connectionsStore.connectionByID(this.currentStreamConfig.target.id)
 
         if (!targetConnection) {

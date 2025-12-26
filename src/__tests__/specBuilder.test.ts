@@ -41,7 +41,7 @@ describe('Connection Spec Builders', () => {
 describe('Target Spec Builders', () => {
   it('builds database target spec', () => {
     const spec = buildDatabaseTargetSpec('targetdb', 'public', {
-      tables: 'create',
+      tables: true,
       indexes: true,
       foreignKeys: false
     })

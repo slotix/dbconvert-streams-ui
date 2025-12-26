@@ -77,16 +77,34 @@ export interface SourceOptions {
   operations?: string[] // CDC operation filter: 'insert', 'update', 'delete'
 }
 
+export interface S3Selection {
+  kind: 'prefix' | 'object'
+  prefix?: string
+  key?: string
+  tableName?: string
+}
+
+export interface S3SourceConfig {
+  bucket: string
+  selections: S3Selection[]
+}
+
+// StreamConnectionMapping extends the federated ConnectionMapping with
+// optional per-connection S3 selection config for stream sources.
+export interface StreamConnectionMapping extends ConnectionMapping {
+  /** S3 selection config for S3-backed file connections only */
+  s3?: S3SourceConfig
+}
+
 export interface SourceConfig {
   // Unified connections list (required by backend)
-  connections?: ConnectionMapping[]
-  // Convenience fields for UI/state (derived from connections)
-  id?: string
+  connections?: StreamConnectionMapping[]
   // Database and schema selection (stream-specific)
   // For database sources: database name (required)
   // For file sources: local path or S3 bucket name
   database?: string
   schema?: string // Schema name - optional, defaults to provider-specific default
+
   // For database sources: list of tables to stream
   // For file sources: list of files to stream (each file becomes a "table")
   tables?: Table[]
@@ -138,5 +156,6 @@ export interface FileEntry {
   name: string
   path: string
   size?: number
+  type?: 'file' | 'dir'
   selected: boolean
 }

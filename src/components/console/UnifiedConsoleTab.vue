@@ -583,9 +583,10 @@ function getFileTemplates() {
   if (fileCtx?.path) {
     actualPath = fileCtx.path
     // For directory paths, keep as-is; for file paths, extract directory
-    if (actualPath.includes('/*')) {
-      // Already a glob pattern
-      prefix = actualPath.replace(/\/\*\.\*$/, '')
+    if (actualPath.includes('*')) {
+      // Already a glob pattern - use the parent directory as the prefix
+      const lastSlash = actualPath.lastIndexOf('/')
+      prefix = lastSlash >= 0 ? actualPath.substring(0, lastSlash) : ''
     } else if (actualPath.match(/\.(csv|parquet|json|jsonl)$/i)) {
       // Single file - extract directory
       prefix = actualPath.substring(0, actualPath.lastIndexOf('/'))
@@ -599,49 +600,56 @@ function getFileTemplates() {
     prefix = isS3 ? 's3://bucket/path' : basePath
   }
 
+  const joinPath = (prefixPath: string, suffix: string) => {
+    const cleanedPrefix = prefixPath.replace(/\/+$/, '')
+    const cleanedSuffix = suffix.replace(/^\/+/, '')
+    if (cleanedPrefix === '') return cleanedSuffix
+    return `${cleanedPrefix}/${cleanedSuffix}`
+  }
+
   return [
     {
       name: 'Select all files',
-      query: `SELECT * FROM read_parquet('${prefix}/*.*') LIMIT 100;`
+      query: `SELECT * FROM read_parquet('${joinPath(prefix, '*.parquet')}') LIMIT 100;`
     },
     {
       name: 'Select from CSV',
-      query: `SELECT * FROM read_csv_auto('${prefix}/*.csv') LIMIT 100;`
+      query: `SELECT * FROM read_csv_auto('${joinPath(prefix, '*.csv')}') LIMIT 100;`
     },
     {
       name: 'Select from Parquet',
-      query: `SELECT * FROM read_parquet('${prefix}/*.parquet') LIMIT 100;`
+      query: `SELECT * FROM read_parquet('${joinPath(prefix, '*.parquet')}') LIMIT 100;`
     },
     {
       name: 'Select from JSON/JSONL',
-      query: `SELECT * FROM read_json_auto('${prefix}/*.json*') LIMIT 100;`
+      query: `SELECT * FROM read_json_auto('${joinPath(prefix, '*.json*')}') LIMIT 100;`
     },
     {
       name: 'Join two tables',
       query: `SELECT a.*, b.*
-FROM read_parquet('${prefix}/table1.*') a
-JOIN read_parquet('${prefix}/table2.*') b
+FROM read_parquet('${joinPath(prefix, 'table1.*')}') a
+JOIN read_parquet('${joinPath(prefix, 'table2.*')}') b
   ON a.id = b.id
 LIMIT 100;`
     },
     {
       name: 'Aggregate with GROUP BY',
       query: `SELECT column_name, COUNT(*) as count
-FROM read_parquet('${prefix}/*.*')
+FROM read_parquet('${joinPath(prefix, '*.parquet')}')
 GROUP BY column_name
 ORDER BY count DESC;`
     },
     {
       name: 'Count rows',
-      query: `SELECT COUNT(*) as total_rows FROM read_parquet('${prefix}/*.*');`
+      query: `SELECT COUNT(*) as total_rows FROM read_parquet('${joinPath(prefix, '*.parquet')}');`
     },
     {
       name: 'Schema inspection',
-      query: `DESCRIBE SELECT * FROM read_parquet('${prefix}/*.*');`
+      query: `DESCRIBE SELECT * FROM read_parquet('${joinPath(prefix, '*.parquet')}');`
     },
     {
       name: 'File metadata (Parquet)',
-      query: `SELECT * FROM parquet_metadata('${prefix}/*.parquet');`
+      query: `SELECT * FROM parquet_metadata('${joinPath(prefix, '*.parquet')}');`
     }
   ]
 }

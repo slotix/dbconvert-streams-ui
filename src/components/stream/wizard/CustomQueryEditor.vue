@@ -438,7 +438,8 @@ function handleRenameTab(tabId: string, newName: string) {
 
 // Get connection dialect
 const connectionDialect = computed((): 'mysql' | 'pgsql' | 'sql' => {
-  const sourceConnectionId = streamsStore.currentStreamConfig?.source?.id
+  const sourceConnectionId =
+    streamsStore.currentStreamConfig?.source?.connections?.[0]?.connectionId
   if (sourceConnectionId) {
     const connection = connectionsStore.connectionByID(sourceConnectionId)
     const type = connection?.type?.toLowerCase() || 'sql'
@@ -450,7 +451,9 @@ const connectionDialect = computed((): 'mysql' | 'pgsql' | 'sql' => {
 })
 
 // Source connection info
-const sourceConnectionId = computed(() => streamsStore.currentStreamConfig?.source?.id || '')
+const sourceConnectionId = computed(
+  () => streamsStore.currentStreamConfig?.source?.connections?.[0]?.connectionId || ''
+)
 const sourceDatabase = computed(
   () =>
     streamsStore.currentStreamConfig?.sourceDatabase ||
