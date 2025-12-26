@@ -275,3 +275,12 @@ Refer to **`DESIGN_SYSTEM.md` → Section 6** for all design and implementation 
 5. Use `lucide-vue-next` only.
 6. Follow Vue 3 + Tailwind best practices strictly.
 7. Follow `DESIGN_SYSTEM.md` (Section 6) whenever adjusting colors or adding new visual elements.
+
+
+## General Instructions
+- Prefer using ripgrep (rg) for searching the codebase
+- Avoid regex unless explicitly requested
+- Assume Go for backend, Vue + TypeScript for frontend
+- Follow existing project structure and naming
+- Do not invent files or APIs
+- Keep changes minimal and focused

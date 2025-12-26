@@ -79,3 +79,11 @@ Never run `yarn dev` automatically; the maintainer starts the dev server manuall
 - Do not commit secrets; use `.env.local` for local overrides
 - Use Yarn only; Node >= 22 is required
 - Do not modify backend references or credentials
+
+## General Instructions
+- Prefer using ripgrep (rg) for searching the codebase
+- Avoid regex unless explicitly requested
+- Assume Go for backend, Vue + TypeScript for frontend
+- Follow existing project structure and naming
+- Do not invent files or APIs
+- Keep changes minimal and focused
