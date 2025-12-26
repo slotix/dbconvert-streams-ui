@@ -207,6 +207,33 @@
                           :query="searchQuery"
                         />
                       </label>
+
+                      <!-- Filter indicator/toggle - only when selected and not CDC -->
+                      <button
+                        v-if="table.selected && !isCDCMode"
+                        class="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-all"
+                        :class="
+                          selectedTableNames.includes(table.name)
+                            ? 'bg-teal-500/20 text-teal-600 dark:text-teal-400'
+                            : hasTableFilter(table)
+                              ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
+                              : 'text-gray-400 opacity-0 group-hover:opacity-100 hover:bg-gray-200 dark:hover:bg-gray-700'
+                        "
+                        :title="hasTableFilter(table) ? 'Edit filter' : 'Add filter'"
+                        @click="toggleTableSettings(table.name)"
+                      >
+                        <Filter class="w-3.5 h-3.5" />
+                        <span v-if="hasTableFilter(table)" class="hidden sm:inline">filtered</span>
+                        <ChevronUp v-if="selectedTableNames.includes(table.name)" class="w-3 h-3" />
+                      </button>
+                    </div>
+
+                    <!-- Table Settings Panel - Full width below row -->
+                    <div
+                      v-if="selectedTableNames.includes(table.name) && !isCDCMode"
+                      class="col-span-1 lg:col-span-2 px-4 py-3 bg-gray-50 dark:bg-gray-800/30 border-b border-gray-200 dark:border-gray-700"
+                    >
+                      <TableSettings :key="table.name" :table="table" />
                     </div>
                   </template>
                 </div>
