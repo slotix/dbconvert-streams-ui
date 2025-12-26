@@ -55,7 +55,7 @@
 
       <TablesSummary :displayed-tables="displayedTables" :remaining-count="remainingTablesCount" />
 
-      <QuerySourcesSummary :queries="stream.source?.queries || []" />
+      <QuerySourcesSummary :queries="allQueries" />
 
       <div class="pt-4 border-t border-gray-100 dark:border-gray-800">
         <div class="flex items-center gap-2">
@@ -115,12 +115,37 @@ const emit = defineEmits<{
 }>()
 
 const displayedTables = computed(() => {
-  if (!props.stream?.source?.tables?.length) return []
-  return props.stream.source.tables.slice(0, 5).map((table) => table.name)
+  if (!props.stream?.source?.connections?.length) return []
+  // Collect tables from all connections
+  const allTables: string[] = []
+  for (const conn of props.stream.source.connections) {
+    if (conn.tables) {
+      allTables.push(...conn.tables.map((t) => t.name))
+    }
+  }
+  return allTables.slice(0, 5)
 })
 const remainingTablesCount = computed(() => {
-  if (!props.stream?.source?.tables?.length) return 0
-  return Math.max(0, props.stream.source.tables.length - displayedTables.value.length)
+  if (!props.stream?.source?.connections?.length) return 0
+  // Count tables from all connections
+  let totalTables = 0
+  for (const conn of props.stream.source.connections) {
+    if (conn.tables) {
+      totalTables += conn.tables.length
+    }
+  }
+  return Math.max(0, totalTables - displayedTables.value.length)
+})
+// Collect queries from all connections
+const allQueries = computed(() => {
+  if (!props.stream?.source?.connections?.length) return []
+  const queries: Array<{ name: string; query: string }> = []
+  for (const conn of props.stream.source.connections) {
+    if (conn.queries) {
+      queries.push(...conn.queries)
+    }
+  }
+  return queries
 })
 const streamCreated = computed(() => formatDateTime(props.stream?.created || 0))
 

@@ -135,19 +135,20 @@ const targetFileDisplayName = computed(() => {
   return ext ? `${selectedTable.value}${ext}` : selectedTable.value
 })
 
-// Get list of tables from stream config
+// Get list of tables from stream config (tables are now per-connection)
 const tablesList = computed(() => {
-  return (props.stream.source?.tables || []).map((t) => t.name)
+  const firstConn = props.stream.source?.connections?.[0]
+  return (firstConn?.tables || []).map((t) => t.name)
 })
 
-const sourceDatabase = computed(() => props.stream.source?.database || undefined)
+const sourceDatabase = computed(() => props.stream.source?.connections?.[0]?.database || undefined)
 const targetDatabase = computed(() => {
   const spec = props.stream.target?.spec
   if (spec?.database?.database) return spec.database.database
   if (spec?.snowflake?.database) return spec.snowflake.database
   return undefined
 })
-const sourceSchema = computed(() => props.stream.source?.schema || undefined)
+const sourceSchema = computed(() => props.stream.source?.connections?.[0]?.schema || undefined)
 const targetSchema = computed(() => {
   const spec = props.stream.target?.spec
   if (spec?.database?.schema) return spec.database.schema

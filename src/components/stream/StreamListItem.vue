@@ -52,22 +52,12 @@
 
       <!-- Table/Query count -->
       <div class="text-xs text-gray-400 dark:text-gray-600">
-        <span v-if="stream.source?.tables && stream.source.tables.length > 0">
-          {{ stream.source.tables.length }} table{{ stream.source.tables.length !== 1 ? 's' : '' }}
+        <span v-if="totalTablesCount > 0">
+          {{ totalTablesCount }} table{{ totalTablesCount !== 1 ? 's' : '' }}
         </span>
-        <span
-          v-if="
-            stream.source?.tables?.length &&
-            stream.source?.queries?.length &&
-            stream.source.queries.length > 0
-          "
-        >
-          ,
-        </span>
-        <span v-if="stream.source?.queries && stream.source.queries.length > 0">
-          {{ stream.source.queries.length }} quer{{
-            stream.source.queries.length !== 1 ? 'ies' : 'y'
-          }}
+        <span v-if="totalTablesCount > 0 && totalQueriesCount > 0">, </span>
+        <span v-if="totalQueriesCount > 0">
+          {{ totalQueriesCount }} quer{{ totalQueriesCount !== 1 ? 'ies' : 'y' }}
         </span>
       </div>
     </div>
@@ -210,16 +200,14 @@ const isFinished = computed(() => {
     monitoringStore.stats.length > 0 &&
     monitoringStore.stats.every((stat) => stat.status === 'FINISHED')
 
-  const finishedStates: number[] = [
+  const finishedStates: string[] = [
     statusEnum.FINISHED,
     statusEnum.STOPPED,
     statusEnum.FAILED,
     statusEnum.TIME_LIMIT_REACHED,
     statusEnum.EVENT_LIMIT_REACHED
   ]
-  const isStreamStatusFinished = finishedStates.includes(
-    monitoringStore.status as unknown as number
-  )
+  const isStreamStatusFinished = finishedStates.includes(monitoringStore.status)
 
   return areAllNodesFinished || isStreamStatusFinished
 })
@@ -228,6 +216,18 @@ const isFinished = computed(() => {
 // Always allow starting the stream (users can run it multiple times)
 const hasHistory = computed(() => {
   return true // Always show "Run the stream again" option
+})
+
+// Count tables from all connections
+const totalTablesCount = computed(() => {
+  if (!props.stream.source?.connections?.length) return 0
+  return props.stream.source.connections.reduce((sum, conn) => sum + (conn.tables?.length || 0), 0)
+})
+
+// Count queries from all connections
+const totalQueriesCount = computed(() => {
+  if (!props.stream.source?.connections?.length) return 0
+  return props.stream.source.connections.reduce((sum, conn) => sum + (conn.queries?.length || 0), 0)
 })
 
 function selectStream() {

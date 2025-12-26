@@ -247,22 +247,28 @@ export default defineComponent({
     },
     displayedTables(): string[] {
       const maxDisplayedTables = 5 // Adjust this number as needed
-      if (
-        this.streamConfig &&
-        this.streamConfig.source?.tables &&
-        this.streamConfig.source.tables.length
-      ) {
-        return this.streamConfig.source.tables
-          .slice(0, maxDisplayedTables)
-          .map((table) => table.name)
+      if (!this.streamConfig?.source?.connections) return []
+
+      // Collect tables from all connections
+      const allTables: string[] = []
+      for (const conn of this.streamConfig.source.connections) {
+        if (conn.tables) {
+          allTables.push(...conn.tables.map((t) => t.name))
+        }
       }
-      return []
+      return allTables.slice(0, maxDisplayedTables)
     },
     remainingTablesCount(): number {
-      if (this.streamConfig && this.streamConfig.source?.tables) {
-        return Math.max(0, this.streamConfig.source.tables.length - this.displayedTables.length)
+      if (!this.streamConfig?.source?.connections) return 0
+
+      // Count tables from all connections
+      let totalTables = 0
+      for (const conn of this.streamConfig.source.connections) {
+        if (conn.tables) {
+          totalTables += conn.tables.length
+        }
       }
-      return 0
+      return Math.max(0, totalTables - this.displayedTables.length)
     },
     sourceConnectionString(): string {
       const sourceConnectionId = this.streamConfig?.source?.connections?.[0]?.connectionId || ''

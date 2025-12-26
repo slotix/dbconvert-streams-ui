@@ -30,8 +30,13 @@ export function useStreamExplorerNavigation({
     return type === FILE_CONNECTION_TYPE
   })
 
-  const sourceDatabase = computed(() => stream.value?.source?.database || undefined)
-  const targetDatabase = computed(() => stream.value?.target?.database || undefined)
+  const sourceDatabase = computed(
+    () => stream.value?.source?.connections?.[0]?.database || undefined
+  )
+  const targetDatabase = computed(
+    () =>
+      stream.value?.targetDatabase || stream.value?.target?.spec?.database?.database || undefined
+  )
 
   async function navigateToSourceExplorer() {
     if (!source.value?.id) return

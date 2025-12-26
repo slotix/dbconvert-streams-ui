@@ -54,10 +54,14 @@ function normalizeSource(source: StreamConfig['source']): StreamConfig['source']
     }
     usedAliases.add(alias)
 
+    // Preserve all per-connection fields
     return {
       alias,
       connectionId: conn.connectionId,
       database: conn.database,
+      schema: conn.schema,
+      tables: conn.tables,
+      queries: conn.queries,
       s3: conn.s3
     }
   })
@@ -80,7 +84,6 @@ export const defaultStreamConfigOptions: StreamConfig = {
   reportingInterval: 3,
   source: {
     connections: [],
-    tables: [],
     options: {
       dataBundleSize: 500,
       operations: ['insert', 'update', 'delete']
@@ -262,7 +265,7 @@ export const buildStreamPayload = (stream: StreamConfig): Partial<StreamConfig> 
 
   // For file sources, convert selected files to table entries
   // Files are stored in stream.files, and each file becomes a table
-  let sourceTables = normalizedSource.tables || []
+  let sourceTables: Table[] = []
   if (stream.files && stream.files.length > 0) {
     const selectedFiles = stream.files.filter((f) => f.selected)
     if (selectedFiles.length > 0) {
@@ -275,43 +278,68 @@ export const buildStreamPayload = (stream: StreamConfig): Partial<StreamConfig> 
     }
   }
 
-  filteredStream.source = {
-    connections,
-    // Include database and schema if specified for single-source streams
-    ...(connections.length === 1 &&
-      normalizedSource.database && {
-        database: normalizedSource.database
-      }),
-    ...(connections.length === 1 && normalizedSource.schema && { schema: normalizedSource.schema }),
-    // Include tables if any are specified (both federated and non-federated modes)
-    ...(sourceTables.length > 0 && {
-      tables: sourceTables.map((table) => {
-        const filteredTable: Partial<Table> = { name: table.name }
+  // Helper to filter tables with their filters
+  function filterTables(tables: Table[]): Table[] {
+    return tables.map((table) => {
+      const filteredTable: Partial<Table> = { name: table.name }
 
-        // Include structured filter if it has any meaningful data
-        if (stream.mode === 'convert' && table.filter) {
-          const hasContent =
-            (table.filter.selectedColumns && table.filter.selectedColumns.length > 0) ||
-            (table.filter.filters && table.filter.filters.length > 0) ||
-            (table.filter.sorts && table.filter.sorts.length > 0) ||
-            (table.filter.limit !== undefined && table.filter.limit !== null)
-          if (hasContent) {
-            filteredTable.filter = table.filter
-          }
+      // Include structured filter if it has any meaningful data
+      if (stream.mode === 'convert' && table.filter) {
+        const hasContent =
+          (table.filter.selectedColumns && table.filter.selectedColumns.length > 0) ||
+          (table.filter.filters && table.filter.filters.length > 0) ||
+          (table.filter.sorts && table.filter.sorts.length > 0) ||
+          (table.filter.limit !== undefined && table.filter.limit !== null)
+        if (hasContent) {
+          filteredTable.filter = table.filter
         }
+      }
 
-        return filteredTable as Table
-      })
-    }),
+      return filteredTable as Table
+    })
+  }
+
+  // Build connections with their per-connection database/schema/tables/queries
+  const builtConnections: StreamConnectionMapping[] = connections.map((conn) => {
+    const result: StreamConnectionMapping = {
+      alias: conn.alias,
+      connectionId: conn.connectionId
+    }
+
+    // Include database if specified
+    if (conn.database) {
+      result.database = conn.database
+    }
+
+    // Include schema if specified
+    if (conn.schema) {
+      result.schema = conn.schema
+    }
+
+    // Get tables from connection or use converted file tables (for single-source file streams)
+    const connTables = conn.tables && conn.tables.length > 0 ? conn.tables : sourceTables
+    if (connTables.length > 0) {
+      result.tables = filterTables(connTables)
+    }
+
     // Include custom queries (only for convert mode)
-    ...(stream.mode === 'convert' &&
-      normalizedSource.queries &&
-      normalizedSource.queries.length > 0 && {
-        queries: normalizedSource.queries.map((q) => ({
-          name: q.name,
-          query: q.query
-        }))
-      })
+    if (stream.mode === 'convert' && conn.queries && conn.queries.length > 0) {
+      result.queries = conn.queries.map((q) => ({
+        name: q.name,
+        query: q.query
+      }))
+    }
+
+    // Include S3 config if present
+    if (conn.s3) {
+      result.s3 = conn.s3
+    }
+
+    return result
+  })
+
+  filteredStream.source = {
+    connections: builtConnections
   }
 
   // Handle source options
@@ -410,26 +438,30 @@ export const useStreamsStore = defineStore('streams', {
         : normalizeStreamConfig({ ...defaultStreamConfigOptions })
 
       if (this.currentStreamConfig && !this.currentStreamConfig.name) {
-        const primarySourceConnectionId =
-          this.currentStreamConfig.source.connections?.[0]?.connectionId || ''
+        const primarySourceConn = this.currentStreamConfig.source.connections?.[0]
+        const primarySourceConnectionId = primarySourceConn?.connectionId || ''
         this.currentStreamConfig.name = this.generateDefaultStreamConfigName(
           primarySourceConnectionId,
           this.currentStreamConfig.target.id || '',
-          this.currentStreamConfig.source.tables || []
+          primarySourceConn?.tables || []
         )
       }
     },
     updateSource(sourceId: string, database?: string) {
       if (this.currentStreamConfig) {
-        const alias = this.currentStreamConfig.source.connections?.[0]?.alias || DEFAULT_ALIAS
+        const existingConn = this.currentStreamConfig.source.connections?.[0]
+        const alias = existingConn?.alias || DEFAULT_ALIAS
         this.currentStreamConfig.source = normalizeSource({
           ...this.currentStreamConfig.source,
-          database: database ?? this.currentStreamConfig.source.database,
           connections: [
             {
               alias,
               connectionId: sourceId,
-              database: database ?? this.currentStreamConfig.source.database
+              database: database ?? existingConn?.database,
+              schema: existingConn?.schema,
+              tables: existingConn?.tables,
+              queries: existingConn?.queries,
+              s3: existingConn?.s3
             }
           ]
         })
@@ -460,13 +492,13 @@ export const useStreamsStore = defineStore('streams', {
       try {
         this.prepareStreamData()
         if (!this.currentStreamConfig?.name) {
-          const primarySourceConnectionId =
-            this.currentStreamConfig?.source.connections?.[0]?.connectionId || ''
+          const primarySourceConn = this.currentStreamConfig?.source.connections?.[0]
+          const primarySourceConnectionId = primarySourceConn?.connectionId || ''
           this.currentStreamConfig!.name = this.generateDefaultStreamConfigName(
             primarySourceConnectionId,
             this.currentStreamConfig?.target.id || '',
-            this.currentStreamConfig?.source.tables || [],
-            this.currentStreamConfig?.sourceDatabase,
+            primarySourceConn?.tables || [],
+            primarySourceConn?.database,
             this.currentStreamConfig?.targetDatabase,
             getFileSpec(this.currentStreamConfig?.target.spec)?.fileFormat
           )
@@ -517,56 +549,44 @@ export const useStreamsStore = defineStore('streams', {
           : null
         const isS3Source = !!primarySourceConn?.spec?.s3 && connectionCount === 1
 
-        // Ensure database/schema are copied from root level to source/target objects
+        // Copy database/schema from root level to per-connection fields
         if (isS3Source) {
-          // S3 selections are stream-level; connection.database is not meaningful for S3.
-          // Clear it to avoid DB-like fields leaking into S3 configs.
-          if (this.currentStreamConfig.source.connections?.length) {
-            this.currentStreamConfig.source.connections =
-              this.currentStreamConfig.source.connections.map((c) => ({
-                ...c,
-                database: undefined
-              }))
-          }
-
+          // S3 sources: set bucket in s3 config, clear database fields
           const bucket =
             this.currentStreamConfig.sourceDatabase ||
-            this.currentStreamConfig.source.database ||
+            this.currentStreamConfig.source.connections?.[0]?.s3?.bucket ||
             ''
 
-          if (bucket) {
-            if (this.currentStreamConfig.source.connections?.length) {
-              const [first, ...rest] = this.currentStreamConfig.source.connections
-              this.currentStreamConfig.source.connections = [
-                {
-                  ...first,
-                  s3: {
-                    bucket,
-                    prefixes: first.s3?.prefixes,
-                    objects: first.s3?.objects
-                  }
-                },
-                ...rest
-              ]
-            }
+          if (this.currentStreamConfig.source.connections?.length) {
+            const [first, ...rest] = this.currentStreamConfig.source.connections
+            this.currentStreamConfig.source.connections = [
+              {
+                ...first,
+                database: undefined,
+                schema: undefined,
+                s3: bucket
+                  ? {
+                      bucket,
+                      prefixes: first.s3?.prefixes,
+                      objects: first.s3?.objects
+                    }
+                  : first.s3
+              },
+              ...rest
+            ]
           }
-
-          // Remove any legacy top-level S3 config if present.
-          delete (this.currentStreamConfig.source as unknown as { s3?: unknown }).s3
-
-          // S3 has no database/schema.
-          this.currentStreamConfig.source.database = undefined
-          this.currentStreamConfig.source.schema = undefined
         } else {
-          if (connectionCount === 1 && this.currentStreamConfig.sourceDatabase) {
-            this.currentStreamConfig.source.database = this.currentStreamConfig.sourceDatabase
-          } else if (connectionCount !== 1) {
-            this.currentStreamConfig.source.database = undefined
-          }
-          if (connectionCount === 1 && this.currentStreamConfig.sourceSchema) {
-            this.currentStreamConfig.source.schema = this.currentStreamConfig.sourceSchema
-          } else if (connectionCount !== 1) {
-            this.currentStreamConfig.source.schema = undefined
+          // Database sources: copy database/schema from root to connection
+          if (connectionCount === 1 && this.currentStreamConfig.source.connections?.length) {
+            const [first, ...rest] = this.currentStreamConfig.source.connections
+            this.currentStreamConfig.source.connections = [
+              {
+                ...first,
+                database: this.currentStreamConfig.sourceDatabase || first.database,
+                schema: this.currentStreamConfig.sourceSchema || first.schema
+              },
+              ...rest
+            ]
           }
         }
 

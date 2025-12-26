@@ -392,17 +392,18 @@ const sourceConnectionType = computed(() => {
 })
 
 // Initialize tables from _allTablesWithState if available (preserves unselected tables during navigation)
-// Otherwise, fall back to currentStreamConfig.value.source.tables (only selected tables from saved config)
+// Otherwise, fall back to first connection's tables (only selected tables from saved config)
+const initTables =
+  currentStreamConfig.value._allTablesWithState ||
+  currentStreamConfig.value.source?.connections?.[0]?.tables
 const tables = ref<Table[]>(
-  (currentStreamConfig.value._allTablesWithState || currentStreamConfig.value.source?.tables)?.map(
-    (table: Table) => ({
-      name: table.name,
-      filter: table.filter,
-      // If using _allTablesWithState, use the explicit selected property (default false if undefined)
-      // If using currentStreamConfig.value.source.tables, mark as selected because backend only stores selected tables
-      selected: currentStreamConfig.value._allTablesWithState ? (table.selected ?? false) : true
-    })
-  ) || []
+  initTables?.map((table: Table) => ({
+    name: table.name,
+    filter: table.filter,
+    // If using _allTablesWithState, use the explicit selected property (default false if undefined)
+    // If using connection tables, mark as selected because backend only stores selected tables
+    selected: currentStreamConfig.value._allTablesWithState ? (table.selected ?? false) : true
+  })) || []
 )
 
 const searchQuery = ref('')
@@ -804,13 +805,16 @@ const refreshTables = async () => {
       })
 
       // Then overlay with stream config (only selected tables, but has authoritative state)
-      if (currentStreamConfig.value.source?.tables) {
-        currentStreamConfig.value.source.tables.forEach((table) => {
-          existingSelections.set(table.name, table.selected ?? true)
-          if (table.filter) {
-            existingFilters.set(table.name, table.filter)
-          }
-        })
+      // Tables are now per-connection, so collect from all connections
+      for (const conn of currentStreamConfig.value.source?.connections || []) {
+        if (conn.tables) {
+          conn.tables.forEach((table) => {
+            existingSelections.set(table.name, table.selected ?? true)
+            if (table.filter) {
+              existingFilters.set(table.name, table.filter)
+            }
+          })
+        }
       }
 
       for (const fedConn of sourceConnections.value) {
@@ -944,13 +948,16 @@ const refreshTables = async () => {
 
     // Then overlay with stream config (only selected tables, but has authoritative state)
     // Backend only stores selected tables, so mark them as selected
-    if (currentStreamConfig.value.source?.tables) {
-      currentStreamConfig.value.source.tables.forEach((table) => {
-        existingSelections.set(table.name, table.selected ?? true)
-        if (table.filter) {
-          existingFilters.set(table.name, table.filter)
-        }
-      })
+    // Tables are now per-connection, so collect from all connections
+    for (const conn of currentStreamConfig.value.source?.connections || []) {
+      if (conn.tables) {
+        conn.tables.forEach((table) => {
+          existingSelections.set(table.name, table.selected ?? true)
+          if (table.filter) {
+            existingFilters.set(table.name, table.filter)
+          }
+        })
+      }
     }
 
     // Map the response and preserve existing selections
@@ -1014,11 +1021,12 @@ watch(
     currentStreamConfig.value._allTablesWithState = newTables
 
     // Only store selected tables in stream config (for saving/execution)
-    if (!currentStreamConfig.value.source.tables) {
-      currentStreamConfig.value.source.tables = []
-    }
+    // Tables are now per-connection - update the first connection for single-source wizard
     const selectedTables = newTables.filter((table) => table.selected)
-    currentStreamConfig.value.source.tables = selectedTables
+    const firstConn = currentStreamConfig.value.source?.connections?.[0]
+    if (firstConn) {
+      firstConn.tables = selectedTables
+    }
   },
   { deep: true }
 )

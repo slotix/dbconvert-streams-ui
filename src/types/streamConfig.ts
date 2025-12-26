@@ -84,25 +84,24 @@ export interface S3SourceConfig {
 }
 
 // StreamConnectionMapping extends the federated ConnectionMapping with
-// optional per-connection S3 selection config for stream sources.
+// per-connection database/tables/queries/S3 config for stream sources.
+// Each connection owns its own selection of what to stream.
 export interface StreamConnectionMapping extends ConnectionMapping {
+  /** Schema name - optional, defaults to provider-specific default */
+  schema?: string
+  /** Tables to stream from this connection (database sources) */
+  tables?: Table[]
+  /** Virtual query sources - complex SQL for derived data (convert mode only) */
+  queries?: QuerySource[]
   /** S3 selection config for S3-backed file connections only */
   s3?: S3SourceConfig
 }
 
 export interface SourceConfig {
   // Unified connections list (required by backend)
+  // Each connection contains its own database, schema, tables, queries, or S3 config
   connections?: StreamConnectionMapping[]
-  // Database and schema selection (stream-specific)
-  // For database sources: database name (required)
-  // For file sources: local path or S3 bucket name
-  database?: string
-  schema?: string // Schema name - optional, defaults to provider-specific default
-
-  // For database sources: list of tables to stream
-  // For file sources: list of files to stream (each file becomes a "table")
-  tables?: Table[]
-  queries?: QuerySource[] // Virtual query sources - complex SQL for derived data (convert mode only)
+  // Source-level options (CDC settings, data bundle size, etc.)
   options?: SourceOptions
 }
 

@@ -157,37 +157,72 @@ function validateSource(source: unknown, errors: ValidationError[]): void {
   }
   validateConnections(connections, errors)
 
-  // Validate per-connection S3 configs (source.connections[i].s3)
-  const hasAnyS3 = connections.some((c) => typeof c.s3 === 'object' && c.s3 !== null)
-  const hasAnyS3Selections = connections.some((c) => {
-    if (typeof c.s3 !== 'object' || c.s3 === null) return false
-    const s3 = c.s3 as Record<string, unknown>
-    const hasPrefixes = Array.isArray(s3.prefixes) && s3.prefixes.length > 0
-    const hasObjects = Array.isArray(s3.objects) && s3.objects.length > 0
-    return hasPrefixes || hasObjects
+  // Validate per-connection fields (database, tables, queries, S3)
+  let hasAnySelection = false
+
+  connections.forEach((conn, index) => {
+    const connPath = `source.connections[${index}]`
+
+    // S3 validation
+    if (conn.s3 !== undefined) {
+      if (typeof conn.s3 !== 'object' || conn.s3 === null) {
+        errors.push({
+          path: `${connPath}.s3`,
+          message: 's3 must be an object'
+        })
+      } else {
+        // S3 connections must not have database/schema/tables/queries
+        if (conn.database && typeof conn.database === 'string' && conn.database.trim() !== '') {
+          errors.push({
+            path: `${connPath}.database`,
+            message: 'database must be empty for S3 connections'
+          })
+        }
+        if (conn.schema && typeof conn.schema === 'string' && conn.schema.trim() !== '') {
+          errors.push({
+            path: `${connPath}.schema`,
+            message: 'schema must be empty for S3 connections'
+          })
+        }
+        if (Array.isArray(conn.tables) && conn.tables.length > 0) {
+          errors.push({
+            path: `${connPath}.tables`,
+            message: 'tables must be empty for S3 connections'
+          })
+        }
+        if (Array.isArray(conn.queries) && conn.queries.length > 0) {
+          errors.push({
+            path: `${connPath}.queries`,
+            message: 'queries must be empty for S3 connections'
+          })
+        }
+
+        validateS3Config(conn.s3 as Record<string, unknown>, connPath, errors)
+        const s3 = conn.s3 as Record<string, unknown>
+        const hasPrefixes = Array.isArray(s3.prefixes) && s3.prefixes.length > 0
+        const hasObjects = Array.isArray(s3.objects) && s3.objects.length > 0
+        if (hasPrefixes || hasObjects) {
+          hasAnySelection = true
+        }
+      }
+    } else {
+      // Database connection - validate tables/queries
+      if (Array.isArray(conn.tables) && conn.tables.length > 0) {
+        hasAnySelection = true
+        validateConnectionTables(conn.tables as unknown[], connPath, errors)
+      }
+      if (Array.isArray(conn.queries) && conn.queries.length > 0) {
+        hasAnySelection = true
+        validateConnectionQueries(conn.queries as unknown[], connPath, errors)
+      }
+    }
   })
 
-  if (hasAnyS3) {
-    validateS3Connections(connections, src, errors)
-  }
-
-  // Tables or Queries validation - at least one must be specified
-  const hasTables = Array.isArray(src.tables) && src.tables.length > 0
-  const hasQueries = Array.isArray(src.queries) && src.queries.length > 0
-
-  if (!hasTables && !hasQueries && !hasAnyS3Selections) {
+  if (!hasAnySelection) {
     errors.push({
-      path: 'source.tables',
-      message: 'At least one table, query, or S3 selection is required'
+      path: 'source.connections',
+      message: 'At least one connection must have tables, queries, or S3 selections'
     })
-  }
-
-  if (hasTables) {
-    validateTables(src.tables as unknown[], connections, errors)
-  }
-
-  if (hasQueries) {
-    validateQueries(src.queries as unknown[], errors)
   }
 
   // Source options validation
@@ -196,115 +231,130 @@ function validateSource(source: unknown, errors: ValidationError[]): void {
   }
 }
 
-function validateS3Connections(
-  connections: Array<{ alias?: string; connectionId?: string; database?: string; s3?: unknown }>,
-  src: Record<string, unknown>,
+function validateS3Config(
+  s3: Record<string, unknown>,
+  connPath: string,
   errors: ValidationError[]
 ): void {
-  const hasTables = Array.isArray(src.tables) && src.tables.length > 0
-  const hasQueries = Array.isArray(src.queries) && src.queries.length > 0
-  const hasDatabase = typeof src.database === 'string' && src.database.trim() !== ''
-  const hasSchema = typeof src.schema === 'string' && src.schema.trim() !== ''
-
-  // In single-source mode, S3 must not be mixed with DB-like fields at the top-level.
-  if (connections.length === 1) {
-    const onlyConnHasS3 = typeof connections[0].s3 === 'object' && connections[0].s3 !== null
-    if (onlyConnHasS3 && (hasDatabase || hasSchema || hasTables || hasQueries)) {
-      errors.push({
-        path: 'source.connections[0].s3',
-        message:
-          'Single-source S3 streams must not set source.database/source.schema/source.tables/source.queries'
-      })
-    }
+  const bucket = typeof s3.bucket === 'string' ? s3.bucket.trim() : ''
+  if (!bucket) {
+    errors.push({
+      path: `${connPath}.s3.bucket`,
+      message: 'bucket is required for S3 sources'
+    })
   }
 
-  connections.forEach((conn, connIndex) => {
-    if (conn.s3 === undefined) return
-    if (typeof conn.s3 !== 'object' || conn.s3 === null) {
+  // Validate prefixes and objects arrays (at least one must have entries)
+  const prefixes = Array.isArray(s3.prefixes) ? s3.prefixes : []
+  const objects = Array.isArray(s3.objects) ? s3.objects : []
+
+  if (prefixes.length === 0 && objects.length === 0) {
+    errors.push({
+      path: `${connPath}.s3`,
+      message: 'at least one prefix or object is required'
+    })
+    return
+  }
+
+  // Validate prefixes: must end with '/'
+  prefixes.forEach((prefix, index) => {
+    if (typeof prefix !== 'string') {
       errors.push({
-        path: `source.connections[${connIndex}].s3`,
-        message: 'source.connections[].s3 must be an object'
+        path: `${connPath}.s3.prefixes[${index}]`,
+        message: 'prefix must be a string'
       })
       return
     }
-
-    if (typeof conn.database === 'string' && conn.database.trim() !== '') {
+    const trimmed = prefix.trim()
+    if (!trimmed) {
       errors.push({
-        path: `source.connections[${connIndex}].database`,
-        message: 'database must be empty for S3 connections'
-      })
-    }
-
-    const s3 = conn.s3 as Record<string, unknown>
-    const bucket = typeof s3.bucket === 'string' ? s3.bucket.trim() : ''
-    if (!bucket) {
-      errors.push({
-        path: `source.connections[${connIndex}].s3.bucket`,
-        message: 'bucket is required for S3 sources'
-      })
-    }
-
-    // Validate prefixes and objects arrays (at least one must have entries)
-    const prefixes = Array.isArray(s3.prefixes) ? s3.prefixes : []
-    const objects = Array.isArray(s3.objects) ? s3.objects : []
-
-    if (prefixes.length === 0 && objects.length === 0) {
-      errors.push({
-        path: `source.connections[${connIndex}].s3`,
-        message: 'at least one prefix or object is required'
+        path: `${connPath}.s3.prefixes[${index}]`,
+        message: 'prefix cannot be empty'
       })
       return
     }
+    if (!trimmed.endsWith('/')) {
+      errors.push({
+        path: `${connPath}.s3.prefixes[${index}]`,
+        message: `prefix '${trimmed}' must end with '/'`
+      })
+    }
+  })
 
-    // Validate prefixes: must end with '/'
-    prefixes.forEach((prefix, index) => {
-      if (typeof prefix !== 'string') {
-        errors.push({
-          path: `source.connections[${connIndex}].s3.prefixes[${index}]`,
-          message: 'prefix must be a string'
-        })
-        return
-      }
-      const trimmed = prefix.trim()
-      if (!trimmed) {
-        errors.push({
-          path: `source.connections[${connIndex}].s3.prefixes[${index}]`,
-          message: 'prefix cannot be empty'
-        })
-        return
-      }
-      if (!trimmed.endsWith('/')) {
-        errors.push({
-          path: `source.connections[${connIndex}].s3.prefixes[${index}]`,
-          message: `prefix '${trimmed}' must end with '/'`
-        })
-      }
-    })
+  // Validate objects: must NOT end with '/'
+  objects.forEach((obj, index) => {
+    if (typeof obj !== 'string') {
+      errors.push({
+        path: `${connPath}.s3.objects[${index}]`,
+        message: 'object must be a string'
+      })
+      return
+    }
+    const trimmed = obj.trim()
+    if (!trimmed) {
+      errors.push({
+        path: `${connPath}.s3.objects[${index}]`,
+        message: 'object key cannot be empty'
+      })
+      return
+    }
+    if (trimmed.endsWith('/')) {
+      errors.push({
+        path: `${connPath}.s3.objects[${index}]`,
+        message: `object '${trimmed}' must not end with '/'`
+      })
+    }
+  })
+}
 
-    // Validate objects: must NOT end with '/'
-    objects.forEach((obj, index) => {
-      if (typeof obj !== 'string') {
-        errors.push({
-          path: `source.connections[${connIndex}].s3.objects[${index}]`,
-          message: 'object must be a string'
-        })
-        return
-      }
-      const trimmed = obj.trim()
-      if (!trimmed) {
-        errors.push({
-          path: `source.connections[${connIndex}].s3.objects[${index}]`,
-          message: 'object key cannot be empty'
-        })
-        return
-      }
-      if (trimmed.endsWith('/')) {
-        errors.push({
-          path: `source.connections[${connIndex}].s3.objects[${index}]`,
-          message: `object '${trimmed}' must not end with '/'`
-        })
-      }
-    })
+function validateConnectionTables(
+  tables: unknown[],
+  connPath: string,
+  errors: ValidationError[]
+): void {
+  tables.forEach((table, index) => {
+    if (typeof table !== 'object' || table === null) {
+      errors.push({ path: `${connPath}.tables[${index}]`, message: 'Table must be an object' })
+      return
+    }
+
+    const t = table as Record<string, unknown>
+
+    if (!t.name || typeof t.name !== 'string' || t.name.trim() === '') {
+      errors.push({ path: `${connPath}.tables[${index}].name`, message: 'Table name is required' })
+    }
+
+    // Filter is optional but if present must be an object
+    if (t.filter !== undefined && (typeof t.filter !== 'object' || t.filter === null)) {
+      errors.push({
+        path: `${connPath}.tables[${index}].filter`,
+        message: 'Filter must be an object'
+      })
+    }
+  })
+}
+
+function validateConnectionQueries(
+  queries: unknown[],
+  connPath: string,
+  errors: ValidationError[]
+): void {
+  queries.forEach((query, index) => {
+    if (typeof query !== 'object' || query === null) {
+      errors.push({ path: `${connPath}.queries[${index}]`, message: 'Query must be an object' })
+      return
+    }
+
+    const q = query as Record<string, unknown>
+    if (!q.name || typeof q.name !== 'string') {
+      errors.push({ path: `${connPath}.queries[${index}].name`, message: 'Query name is required' })
+    }
+    if (!q.query || typeof q.query !== 'string') {
+      errors.push({
+        path: `${connPath}.queries[${index}].query`,
+        message: 'Query SQL is required'
+      })
+    }
   })
 }
 
@@ -333,60 +383,6 @@ function validateConnections(
         path: `source.connections[${index}].connectionId`,
         message: 'Connection ID is required'
       })
-    }
-  })
-}
-
-function validateQueries(queries: unknown[], errors: ValidationError[]): void {
-  queries.forEach((query, index) => {
-    if (typeof query !== 'object' || query === null) {
-      errors.push({ path: `source.queries[${index}]`, message: 'Query must be an object' })
-      return
-    }
-
-    const q = query as Record<string, unknown>
-    if (!q.name || typeof q.name !== 'string') {
-      errors.push({ path: `source.queries[${index}].name`, message: 'Query name is required' })
-    }
-    if (!q.query || typeof q.query !== 'string') {
-      errors.push({ path: `source.queries[${index}].query`, message: 'Query SQL is required' })
-    }
-  })
-}
-
-function validateTables(
-  tables: unknown[],
-  connections: Array<{ alias?: string }>,
-  errors: ValidationError[]
-): void {
-  const aliasSet = new Set(
-    connections.filter((c) => c.alias).map((c) => (c.alias as string).trim())
-  )
-  const requiresAliasPrefix = connections.length > 1
-
-  tables.forEach((table, index) => {
-    if (typeof table !== 'object' || table === null) {
-      errors.push({ path: `source.tables[${index}]`, message: 'Table must be an object' })
-      return
-    }
-
-    const t = table as Record<string, unknown>
-
-    if (!t.name || typeof t.name !== 'string' || t.name.trim() === '') {
-      errors.push({ path: `source.tables[${index}].name`, message: 'Table name is required' })
-    } else if (requiresAliasPrefix) {
-      const alias = t.name.split('.')[0]
-      if (!aliasSet.has(alias)) {
-        errors.push({
-          path: `source.tables[${index}].name`,
-          message: 'Table name must be prefixed with a valid connection alias'
-        })
-      }
-    }
-
-    // Filter is optional but if present must be an object
-    if (t.filter !== undefined && (typeof t.filter !== 'object' || t.filter === null)) {
-      errors.push({ path: `source.tables[${index}].filter`, message: 'Filter must be an object' })
     }
   })
 }
@@ -452,14 +448,23 @@ function validateTarget(target: unknown, errors: ValidationError[]): void {
   }
 }
 
-function extractConnections(
-  src: Record<string, unknown>
-): Array<{ alias: string; connectionId: string; database?: string; s3?: unknown }> {
+function extractConnections(src: Record<string, unknown>): Array<{
+  alias: string
+  connectionId: string
+  database?: string
+  schema?: string
+  tables?: unknown[]
+  queries?: unknown[]
+  s3?: unknown
+}> {
   if (Array.isArray(src.connections) && src.connections.length > 0) {
     return src.connections as Array<{
       alias: string
       connectionId: string
       database?: string
+      schema?: string
+      tables?: unknown[]
+      queries?: unknown[]
       s3?: unknown
     }>
   }

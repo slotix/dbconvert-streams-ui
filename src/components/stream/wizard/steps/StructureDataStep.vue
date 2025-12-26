@@ -362,16 +362,29 @@ watch(currentMode, (newMode) => {
   }
 })
 
-// Count selected tables
+// Count selected tables (now per-connection)
+// Note: connection.tables only contains selected tables (filtered in TableList.vue)
 const selectedTablesCount = computed(() => {
-  const tables = streamsStore.currentStreamConfig?.source?.tables || []
-  return tables.filter((t) => t.selected).length
+  const connections = streamsStore.currentStreamConfig?.source?.connections || []
+  let count = 0
+  for (const conn of connections) {
+    if (conn.tables) {
+      count += conn.tables.length
+    }
+  }
+  return count
 })
 
-// Count custom queries
+// Count custom queries (now per-connection)
 const customQueriesCount = computed(() => {
-  const queries = streamsStore.currentStreamConfig?.source?.queries || []
-  return queries.length
+  const connections = streamsStore.currentStreamConfig?.source?.connections || []
+  let count = 0
+  for (const conn of connections) {
+    if (conn.queries) {
+      count += conn.queries.length
+    }
+  }
+  return count
 })
 
 // CDC Operations

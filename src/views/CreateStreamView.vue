@@ -287,7 +287,23 @@ watch(
   () => wizard.sourceConnections.value,
   (connections) => {
     if (!streamsStore.currentStreamConfig) return
-    streamsStore.setSourceConnections(connections)
+    // Preserve existing per-connection data (tables, queries, s3) when syncing wizard state
+    const existingConnections = streamsStore.currentStreamConfig.source?.connections || []
+    const mergedConnections = connections.map((wizardConn) => {
+      const existing = existingConnections.find(
+        (ec) => ec.connectionId === wizardConn.connectionId || ec.alias === wizardConn.alias
+      )
+      return {
+        alias: wizardConn.alias,
+        connectionId: wizardConn.connectionId,
+        database: wizardConn.database,
+        schema: existing?.schema,
+        tables: existing?.tables,
+        queries: existing?.queries,
+        s3: existing?.s3
+      }
+    })
+    streamsStore.setSourceConnections(mergedConnections)
     const primary = connections[0]
     streamsStore.currentStreamConfig.sourceDatabase = primary?.database || undefined
     if (!primary) {
@@ -456,7 +472,25 @@ async function handleFinish() {
       throw new Error('Stream configuration not initialized')
     }
 
-    streamsStore.setSourceConnections(wizard.sourceConnections.value)
+    // Merge wizard connection metadata with existing store connections to preserve tables/queries/s3
+    const existingConnections = streamsStore.currentStreamConfig.source?.connections || []
+    const mergedConnections = wizard.sourceConnections.value.map((wizardConn) => {
+      // Find matching existing connection by connectionId or alias
+      const existing = existingConnections.find(
+        (ec) => ec.connectionId === wizardConn.connectionId || ec.alias === wizardConn.alias
+      )
+      return {
+        alias: wizardConn.alias,
+        connectionId: wizardConn.connectionId,
+        database: wizardConn.database,
+        // Preserve existing per-connection data (tables, queries, s3, schema)
+        schema: existing?.schema,
+        tables: existing?.tables,
+        queries: existing?.queries,
+        s3: existing?.s3
+      }
+    })
+    streamsStore.setSourceConnections(mergedConnections)
     const primarySource = wizard.sourceConnections.value[0]
     streamsStore.currentStreamConfig.sourceDatabase =
       primarySource?.database || wizard.selection.value.sourceDatabase || undefined
@@ -524,7 +558,23 @@ async function handleQuickSave() {
       throw new Error('Stream configuration not initialized')
     }
 
-    streamsStore.setSourceConnections(wizard.sourceConnections.value)
+    // Merge wizard connection metadata with existing store connections to preserve tables/queries/s3
+    const existingConnections = streamsStore.currentStreamConfig.source?.connections || []
+    const mergedConnections = wizard.sourceConnections.value.map((wizardConn) => {
+      const existing = existingConnections.find(
+        (ec) => ec.connectionId === wizardConn.connectionId || ec.alias === wizardConn.alias
+      )
+      return {
+        alias: wizardConn.alias,
+        connectionId: wizardConn.connectionId,
+        database: wizardConn.database,
+        schema: existing?.schema,
+        tables: existing?.tables,
+        queries: existing?.queries,
+        s3: existing?.s3
+      }
+    })
+    streamsStore.setSourceConnections(mergedConnections)
     const primarySource = wizard.sourceConnections.value[0]
     streamsStore.currentStreamConfig.sourceDatabase =
       primarySource?.database || wizard.selection.value.sourceDatabase || undefined

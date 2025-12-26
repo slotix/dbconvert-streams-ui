@@ -73,7 +73,10 @@ const sourceConnectionId = computed(
   () => currentStreamConfig?.source?.connections?.[0]?.connectionId || ''
 )
 const sourceDatabase = computed(
-  () => currentStreamConfig?.sourceDatabase || currentStreamConfig?.source?.database || ''
+  () =>
+    currentStreamConfig?.sourceDatabase ||
+    currentStreamConfig?.source?.connections?.[0]?.database ||
+    ''
 )
 
 // Extract schema from table name (for PostgreSQL: schema.table format)
@@ -92,10 +95,10 @@ const onFilterStateUpdate = (filterState: TableFilterState) => {
 
 onMounted(async () => {
   // Fetch schema metadata for intelligent SQL autocomplete
-  const connectionId = currentStreamConfig?.source?.connections?.[0]?.connectionId
-  // Database can be at source.database or at root level sourceDatabase (wizard stores it at root)
-  const database =
-    currentStreamConfig?.source?.database || currentStreamConfig?.sourceDatabase || ''
+  const firstConn = currentStreamConfig?.source?.connections?.[0]
+  const connectionId = firstConn?.connectionId
+  // Database is now per-connection, fall back to root level sourceDatabase (wizard stores it at root)
+  const database = firstConn?.database || currentStreamConfig?.sourceDatabase || ''
 
   if (connectionId && database) {
     try {
@@ -150,12 +153,12 @@ onMounted(async () => {
     watch(
       () => props.table,
       (newTable) => {
-        if (currentStreamConfig && currentStreamConfig.source?.tables) {
-          const tableIndex = currentStreamConfig.source.tables.findIndex(
-            (t) => t.name === newTable.name
-          )
+        // Tables are now per-connection
+        const conn = currentStreamConfig?.source?.connections?.[0]
+        if (conn?.tables) {
+          const tableIndex = conn.tables.findIndex((t) => t.name === newTable.name)
           if (tableIndex !== -1) {
-            currentStreamConfig.source.tables[tableIndex] = { ...newTable }
+            conn.tables[tableIndex] = { ...newTable }
           }
         }
       },
@@ -167,10 +170,12 @@ onMounted(async () => {
 const updateStreamSettings = () => {
   if (streamsStore.currentStreamConfig) {
     const stream = streamsStore.currentStreamConfig
-    if (stream.source?.tables) {
-      const tableIndex = stream.source.tables.findIndex((t) => t.name === props.table.name)
+    // Tables are now per-connection
+    const conn = stream.source?.connections?.[0]
+    if (conn?.tables) {
+      const tableIndex = conn.tables.findIndex((t) => t.name === props.table.name)
       if (tableIndex !== -1) {
-        stream.source.tables[tableIndex] = { ...props.table }
+        conn.tables[tableIndex] = { ...props.table }
         streamsStore.currentStreamConfig = { ...stream }
       }
     }

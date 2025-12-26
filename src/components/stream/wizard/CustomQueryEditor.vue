@@ -379,12 +379,12 @@ const {
 } = useSplitPaneResize()
 const previewLimit = 100
 
-// Get queries from store
+// Get queries from the first connection (wizard uses single-source)
 const queries = computed({
-  get: () => streamsStore.currentStreamConfig?.source?.queries || [],
+  get: () => streamsStore.currentStreamConfig?.source?.connections?.[0]?.queries || [],
   set: (value: QuerySource[]) => {
-    if (streamsStore.currentStreamConfig?.source) {
-      streamsStore.currentStreamConfig.source.queries = value
+    if (streamsStore.currentStreamConfig?.source?.connections?.[0]) {
+      streamsStore.currentStreamConfig.source.connections[0].queries = value
     }
   }
 })
@@ -457,7 +457,7 @@ const sourceConnectionId = computed(
 const sourceDatabase = computed(
   () =>
     streamsStore.currentStreamConfig?.sourceDatabase ||
-    streamsStore.currentStreamConfig?.source?.database ||
+    streamsStore.currentStreamConfig?.source?.connections?.[0]?.database ||
     ''
 )
 
@@ -506,11 +506,12 @@ const addQuery = () => {
     validated: false
   }
 
-  if (streamsStore.currentStreamConfig?.source) {
-    if (!streamsStore.currentStreamConfig.source.queries) {
-      streamsStore.currentStreamConfig.source.queries = []
+  const conn = streamsStore.currentStreamConfig?.source?.connections?.[0]
+  if (conn) {
+    if (!conn.queries) {
+      conn.queries = []
     }
-    streamsStore.currentStreamConfig.source.queries.push(newQuery)
+    conn.queries.push(newQuery)
     // Switch to the new query tab
     activeTabId.value = `query-${queries.value.length - 1}`
   }
@@ -520,8 +521,9 @@ const removeQuery = (tabId: string) => {
   const index = parseInt(tabId.replace('query-', ''))
   if (isNaN(index)) return
 
-  if (streamsStore.currentStreamConfig?.source?.queries) {
-    streamsStore.currentStreamConfig.source.queries.splice(index, 1)
+  const conn = streamsStore.currentStreamConfig?.source?.connections?.[0]
+  if (conn?.queries) {
+    conn.queries.splice(index, 1)
     delete previewErrors.value[index]
     delete previewData.value[index]
 

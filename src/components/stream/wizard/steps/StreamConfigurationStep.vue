@@ -332,8 +332,8 @@ const tableCount = computed(() => {
   if (files.length > 0) {
     return files.filter((f) => f.selected).length
   }
-  // For database sources, count selected tables
-  const tables = currentStreamConfig.value?.source?.tables || []
+  // For database sources, count selected tables (now per-connection)
+  const tables = currentStreamConfig.value?.source?.connections?.[0]?.tables || []
   return tables.filter((t) => t.selected).length
 })
 
@@ -385,9 +385,16 @@ const useDuckDBDisplay = computed(() => {
   return format?.useDuckDB ?? true
 })
 
-// Custom queries (from source.queries, not from table filters)
+// Custom queries (from connection queries, not from table filters)
 const customQueryTables = computed(() => {
-  return currentStreamConfig.value?.source?.queries || []
+  const connections = currentStreamConfig.value?.source?.connections || []
+  const queries: Array<{ name: string; query: string }> = []
+  for (const conn of connections) {
+    if (conn.queries) {
+      queries.push(...conn.queries)
+    }
+  }
+  return queries
 })
 
 const customQueriesCount = computed(() => customQueryTables.value.length)

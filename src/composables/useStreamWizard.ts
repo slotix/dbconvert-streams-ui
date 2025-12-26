@@ -87,18 +87,24 @@ export function useStreamWizard() {
     if (!config) return ''
 
     // Create a normalized copy excluding volatile/UI-only fields
+    // Tables and queries are now per-connection
     const normalized = {
       mode: config.mode,
       name: config.name,
       source: {
-        tables: config.source?.tables?.map((t) => ({
-          name: t.name,
-          selected: t.selected,
-          filter: t.filter
-        })),
-        queries: config.source?.queries?.map((q) => ({
-          name: q.name,
-          query: q.query
+        connections: config.source?.connections?.map((c) => ({
+          alias: c.alias,
+          connectionId: c.connectionId,
+          database: c.database,
+          tables: c.tables?.map((t) => ({
+            name: t.name,
+            selected: t.selected,
+            filter: t.filter
+          })),
+          queries: c.queries?.map((q) => ({
+            name: q.name,
+            query: q.query
+          }))
         })),
         options: config.source?.options
       },
@@ -220,18 +226,27 @@ export function useStreamWizard() {
     const isFileSource =
       primarySourceType.toLowerCase() === 'files' || primarySourceType.toLowerCase() === 's3'
 
-    // Check if tables or custom queries are selected
-    const selectedTables = config?.source?.tables?.filter((t) => t.selected) || []
-    const customQueries = config?.source?.queries || []
+    // Check if tables or custom queries are selected (now per-connection)
+    // Note: connection.tables only contains selected tables (filtered in TableList.vue)
+    let selectedTablesCount = 0
+    let customQueriesCount = 0
+    for (const conn of config?.source?.connections || []) {
+      if (conn.tables) {
+        selectedTablesCount += conn.tables.length
+      }
+      if (conn.queries) {
+        customQueriesCount += conn.queries.length
+      }
+    }
     const selectedFiles = config?.files?.filter((f) => f.selected) || []
 
     // Must have at least one table selected OR one custom query defined
     const hasDataSource = isFileSource
-      ? selectedFiles.length > 0 || selectedTables.length > 0
-      : selectedTables.length > 0 || customQueries.length > 0
+      ? selectedFiles.length > 0 || selectedTablesCount > 0
+      : selectedTablesCount > 0 || customQueriesCount > 0
 
     // In CDC mode, enforce tables-only (no custom queries allowed)
-    if (config?.mode === 'cdc' && customQueries.length > 0) {
+    if (config?.mode === 'cdc' && customQueriesCount > 0) {
       return false
     }
 
