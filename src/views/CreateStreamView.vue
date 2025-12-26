@@ -34,7 +34,7 @@
           />
           <!-- Title -->
           <h1 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
-            {{ isEditMode ? 'Edit Stream' : 'New Stream' }}
+            {{ isEditMode ? 'Edit Stream Configuration ' : 'New Stream Configuration' }}
           </h1>
         </div>
 
