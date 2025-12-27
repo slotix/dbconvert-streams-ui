@@ -115,10 +115,10 @@ export const buildStreamPayload = (stream: StreamConfig): Partial<StreamConfig> 
     filteredStream.reportingInterval = stream.reportingInterval
   }
 
-  // Handle source configuration
+  // Handle source configuration - filter out any deleted connections
   const connections =
     normalizedSource.connections && normalizedSource.connections.length > 0
-      ? normalizedSource.connections
+      ? normalizedSource.connections.filter((c) => connectionsStore.connectionByID(c.connectionId))
       : []
 
   const primarySourceConnId = connections[0]?.connectionId
@@ -436,6 +436,18 @@ export const useStreamsStore = defineStore('streams', {
       this.currentStreamConfig = curStream
         ? normalizeStreamConfig(curStream)
         : normalizeStreamConfig({ ...defaultStreamConfigOptions })
+
+      // Clear source connections that reference deleted connections
+      if (this.currentStreamConfig?.source?.connections) {
+        const connectionsStore = useConnectionsStore()
+        const hasInvalidConnection = this.currentStreamConfig.source.connections.some(
+          (c) => !connectionsStore.connectionByID(c.connectionId)
+        )
+        if (hasInvalidConnection) {
+          // Clear ALL source connections - user must select new ones
+          this.currentStreamConfig.source.connections = []
+        }
+      }
 
       if (this.currentStreamConfig && !this.currentStreamConfig.name) {
         const primarySourceConn = this.currentStreamConfig.source.connections?.[0]

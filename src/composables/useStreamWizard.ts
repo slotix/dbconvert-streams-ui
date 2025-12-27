@@ -80,6 +80,9 @@ export function useStreamWizard() {
   // Initial state snapshot for change detection (edit mode only)
   const initialSnapshot = ref<WizardSnapshot | null>(null)
 
+  // Track removed connections during load (deleted connections that were filtered out)
+  const removedConnectionsCount = ref(0)
+
   // Helper to serialize stream config for comparison (excludes volatile fields)
   function serializeStreamConfig(): string {
     const streamsStore = useStreamsStore()
@@ -410,6 +413,7 @@ export function useStreamWizard() {
     copyData.value = true
     setSourceConnections([])
     initialSnapshot.value = null
+    removedConnectionsCount.value = 0
   }
 
   // Load wizard state from existing stream config (for edit mode)
@@ -464,21 +468,35 @@ export function useStreamWizard() {
       return null
     }
 
-    const resolvedSourceId = resolveConnectionId(config.source)
     const resolvedTargetId = resolveConnectionId(config.target)
     const resolvedSourceDatabase = resolveDatabase(config.sourceDatabase, config.source)
 
+    // Check if target connection still exists
+    const targetExists = resolvedTargetId
+      ? !!useConnectionsStore().connectionByID(resolvedTargetId)
+      : false
+
     // For S3 targets, get the bucket from spec
     const s3Bucket = config.target?.spec?.s3?.upload?.bucket
-    if (s3Bucket) {
+    if (targetExists && s3Bucket) {
       selection.value.targetDatabase = s3Bucket
-    } else {
+    } else if (targetExists) {
       selection.value.targetDatabase = resolveDatabase(config.targetDatabase, config.target)
+    } else {
+      selection.value.targetDatabase = null
     }
 
-    selection.value.targetConnectionId = resolvedTargetId
-    selection.value.targetSchema = resolveSchema(config.targetSchema, config.target)
-    selection.value.targetPath = config.targetPath ?? null
+    // Only set target connection ID if it still exists
+    selection.value.targetConnectionId = targetExists ? resolvedTargetId : null
+
+    // Track if target was removed
+    if (resolvedTargetId && !targetExists) {
+      removedConnectionsCount.value += 1
+    }
+    selection.value.targetSchema = targetExists
+      ? resolveSchema(config.targetSchema, config.target)
+      : null
+    selection.value.targetPath = targetExists ? (config.targetPath ?? null) : null
     const sourceSchema = resolveSchema(config.sourceSchema, config.source)
 
     // Populate structure options - check multiple possible locations
@@ -527,27 +545,25 @@ export function useStreamWizard() {
     const skipData = configWithSkipData?.skipData
     copyData.value = skipData === undefined ? true : !skipData
 
-    const connectionsFromConfig = Array.isArray(config.source?.connections)
-      ? config.source.connections.map((fc) => ({
+    const connectionsStore = useConnectionsStore()
+
+    // Check if any source connections are invalid (deleted)
+    const originalConnections = config.source?.connections || []
+    const hasInvalidConnection = originalConnections.some(
+      (fc) => !connectionsStore.connectionByID(fc.connectionId)
+    )
+
+    // Track how many connections were removed (for user notification)
+    removedConnectionsCount.value = hasInvalidConnection ? originalConnections.length : 0
+
+    // If ANY connection is invalid, clear ALL - user must select new ones
+    const connectionsFromConfig: ConnectionMapping[] = hasInvalidConnection
+      ? []
+      : originalConnections.map((fc) => ({
           alias: fc.alias,
           connectionId: fc.connectionId,
           database: fc.database
         }))
-      : []
-
-    if (!connectionsFromConfig.length && resolvedSourceId) {
-      connectionsFromConfig.push({
-        alias: DEFAULT_ALIAS,
-        connectionId: resolvedSourceId,
-        database: resolvedSourceDatabase || undefined
-      })
-    } else if (
-      connectionsFromConfig.length === 1 &&
-      resolvedSourceDatabase &&
-      !connectionsFromConfig[0].database
-    ) {
-      connectionsFromConfig[0].database = resolvedSourceDatabase
-    }
 
     setSourceConnections(connectionsFromConfig)
 
@@ -577,6 +593,7 @@ export function useStreamWizard() {
     primarySourceId,
     primarySourceDatabase,
     isMultiSource,
+    removedConnectionsCount,
 
     // Computed
     isFirstStep,
