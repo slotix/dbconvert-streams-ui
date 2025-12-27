@@ -227,6 +227,16 @@ watch(searchQuery, () => {
   void loadFileEntriesForSearch()
 })
 
+// Sort connections by creation date (newest first), with name as tiebreaker
+const sortConnections = (connections: Connection[]): Connection[] => {
+  return [...connections].sort((a, b) => {
+    const ac = Number(a.created || 0)
+    const bc = Number(b.created || 0)
+    if (bc !== ac) return bc - ac
+    return (a.name || '').localeCompare(b.name || '')
+  })
+}
+
 // Computed for filtered connections using composable
 const filteredConnections = computed<Connection[]>(() => {
   const base = connectionsStore.connections
@@ -235,8 +245,8 @@ const filteredConnections = computed<Connection[]>(() => {
       ? base.filter((conn) => treeLogic.matchesTypeFilters(conn, props.typeFilters!))
       : base
 
-  // If query is below minimum length, treat as "no search"
-  if (!effectiveSearchQuery.value.trim()) return typeFiltered
+  // If query is below minimum length, treat as "no search" but still sort
+  if (!effectiveSearchQuery.value.trim()) return sortConnections(typeFiltered)
 
   return treeSearch.filterConnections(typeFiltered)
 })
