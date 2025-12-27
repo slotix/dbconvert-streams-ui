@@ -80,6 +80,8 @@ export function useDatabaseExplorerController({
   }
 
   const restoreToken = ref(0)
+  // Skip tab restoration on initial load - let the persisted paneTabs state take precedence
+  const isInitialLoad = ref(true)
 
   async function ensureLeftPaneMatchesViewState(payload: {
     connectionId: string
@@ -937,7 +939,9 @@ export function useDatabaseExplorerController({
       }
 
       // Ensure the visible content matches URL/viewState when navigating with browser back/forward.
+      // Skip on initial load to let persisted paneTabs state take precedence.
       if (
+        !isInitialLoad.value &&
         state.viewType === 'table-data' &&
         state.databaseName &&
         state.objectType &&
@@ -952,8 +956,13 @@ export function useDatabaseExplorerController({
         })
       }
 
-      // Restore/activate diagram tab from URL
-      if (state.viewType === 'table-data' && state.databaseName && route.query.diagram === 'true') {
+      // Restore/activate diagram tab from URL (skip on initial load)
+      if (
+        !isInitialLoad.value &&
+        state.viewType === 'table-data' &&
+        state.databaseName &&
+        route.query.diagram === 'true'
+      ) {
         ensureDiagramTabMatchesRoute(state.connectionId, state.databaseName)
 
         // Apply optional focus from URL
@@ -974,6 +983,11 @@ export function useDatabaseExplorerController({
           schemaStore.setSelectedTable(fullName)
         }
         schemaStore.fetchSchema(false)
+      }
+
+      // Mark initial load as complete after first watcher run
+      if (isInitialLoad.value) {
+        isInitialLoad.value = false
       }
 
       // Sync file selection (and content) when URL/viewState changes
