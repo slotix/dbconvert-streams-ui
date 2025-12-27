@@ -41,9 +41,26 @@ const isConvertMode = computed(() => currentStreamConfig?.mode === 'convert' || 
 // Schema context for advanced SQL autocomplete
 const schemaContext = ref<SchemaContext | undefined>()
 
+// Find the connection that owns this table based on alias prefix
+const tableConnection = computed(() => {
+  const connections = currentStreamConfig?.source?.connections || []
+  if (connections.length <= 1) {
+    return connections[0] || null
+  }
+  // In federated mode, table names are prefixed with alias (e.g., "src2.public.actor")
+  const tableName = props.table?.name || ''
+  const parts = tableName.split('.')
+  if (parts.length >= 2) {
+    const alias = parts[0]
+    const found = connections.find((c) => c.alias === alias)
+    if (found) return found
+  }
+  return connections[0] || null
+})
+
 // Get connection dialect for SQL syntax highlighting
 const connectionDialect = computed((): 'mysql' | 'pgsql' | 'sql' => {
-  const sourceConnectionId = currentStreamConfig?.source?.connections?.[0]?.connectionId
+  const sourceConnectionId = tableConnection.value?.connectionId
   if (sourceConnectionId) {
     const connection = connectionsStore.connectionByID(sourceConnectionId)
     const type = connection?.type?.toLowerCase() || 'sql'
@@ -58,30 +75,42 @@ const connectionDialect = computed((): 'mysql' | 'pgsql' | 'sql' => {
 const tableColumns = computed((): ColumnInfo[] => {
   if (!schemaContext.value || !props.table) return []
 
+  const connections = currentStreamConfig?.source?.connections || []
+  let fullName = props.table.name
+
+  // In federated mode, strip the alias prefix (e.g., "src2.public.actor" -> "public.actor")
+  if (connections.length > 1) {
+    const parts = fullName.split('.')
+    if (parts.length >= 3) {
+      fullName = parts.slice(1).join('.')
+    }
+  }
+
   // For PostgreSQL, table name might be "schema.table" format
   // Try both the full name and just the table name part
-  const fullName = props.table.name
-  const shortName = fullName.includes('.') ? fullName.split('.')[1] : fullName
+  const shortName = fullName.includes('.') ? fullName.split('.').pop() || fullName : fullName
 
   // Try full name first (for consistency), then fall back to short name
   const columns = schemaContext.value.columns[fullName] || schemaContext.value.columns[shortName]
   return columns || []
 })
 
-// Get source connection info for preview
-const sourceConnectionId = computed(
-  () => currentStreamConfig?.source?.connections?.[0]?.connectionId || ''
-)
+// Get source connection info for preview (uses the connection that owns this table)
+const sourceConnectionId = computed(() => tableConnection.value?.connectionId || '')
 const sourceDatabase = computed(
-  () =>
-    currentStreamConfig?.sourceDatabase ||
-    currentStreamConfig?.source?.connections?.[0]?.database ||
-    ''
+  () => tableConnection.value?.database || currentStreamConfig?.sourceDatabase || ''
 )
 
 // Extract schema from table name (for PostgreSQL: schema.table format)
+// In federated mode, table name is "alias.schema.table" (e.g., "src2.public.actor")
 const tableSchema = computed(() => {
   const parts = props.table?.name?.split('.') || []
+  const connections = currentStreamConfig?.source?.connections || []
+  // In federated mode (multiple connections), first part is alias, second is schema
+  if (connections.length > 1 && parts.length >= 3) {
+    return parts[1]
+  }
+  // Single connection: first part is schema if present
   return parts.length > 1 ? parts[0] : ''
 })
 
@@ -95,10 +124,10 @@ const onFilterStateUpdate = (filterState: TableFilterState) => {
 
 onMounted(async () => {
   // Fetch schema metadata for intelligent SQL autocomplete
-  const firstConn = currentStreamConfig?.source?.connections?.[0]
-  const connectionId = firstConn?.connectionId
-  // Database is now per-connection, fall back to root level sourceDatabase (wizard stores it at root)
-  const database = firstConn?.database || currentStreamConfig?.sourceDatabase || ''
+  // Use the connection that owns this table (important for federated mode)
+  const conn = tableConnection.value
+  const connectionId = conn?.connectionId
+  const database = conn?.database || currentStreamConfig?.sourceDatabase || ''
 
   if (connectionId && database) {
     try {
@@ -153,8 +182,8 @@ onMounted(async () => {
     watch(
       () => props.table,
       (newTable) => {
-        // Tables are now per-connection
-        const conn = currentStreamConfig?.source?.connections?.[0]
+        // Find the connection that owns this table
+        const conn = tableConnection.value
         if (conn?.tables) {
           const tableIndex = conn.tables.findIndex((t) => t.name === newTable.name)
           if (tableIndex !== -1) {
@@ -170,8 +199,8 @@ onMounted(async () => {
 const updateStreamSettings = () => {
   if (streamsStore.currentStreamConfig) {
     const stream = streamsStore.currentStreamConfig
-    // Tables are now per-connection
-    const conn = stream.source?.connections?.[0]
+    // Find the connection that owns this table
+    const conn = tableConnection.value
     if (conn?.tables) {
       const tableIndex = conn.tables.findIndex((t) => t.name === props.table.name)
       if (tableIndex !== -1) {

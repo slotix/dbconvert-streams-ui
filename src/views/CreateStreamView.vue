@@ -273,13 +273,12 @@ async function loadStreamForEdit() {
     // Populate wizard state from the loaded stream config
     wizard.loadFromStreamConfig(existingStream)
 
-    // Sync filtered connections back to store (removes deleted connections)
-    if (streamsStore.currentStreamConfig) {
-      streamsStore.setSourceConnections(wizard.sourceConnections.value)
-    }
-
-    // Show notification if some source connections were removed (deleted)
+    // Show notification and sync if some connections were removed (deleted)
     if (wizard.removedConnectionsCount.value > 0) {
+      // Only sync to store when connections were removed - otherwise store has full data with tables
+      if (streamsStore.currentStreamConfig) {
+        streamsStore.setSourceConnections(wizard.sourceConnections.value)
+      }
       const count = wizard.removedConnectionsCount.value
       commonStore.showNotification(
         `${count} connection${count > 1 ? 's were' : ' was'} removed (no longer exist). Please select new ones.`,
