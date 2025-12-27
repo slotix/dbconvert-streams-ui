@@ -159,7 +159,7 @@
             :disabled="isStreamRunning && !isStreamFinished"
             @click="startStream"
           >
-            <PlayIcon class="h-4 w-4" />
+            <Play class="h-4 w-4" :stroke-width="iconStroke" />
             Run New Stream
           </BaseButton>
         </div>
@@ -179,7 +179,7 @@
             :disabled="isStreamRunning && !isStreamFinished"
             @click="startStream"
           >
-            <PlayIcon class="h-4 w-4" />
+            <Play class="h-4 w-4" :stroke-width="iconStroke" />
             Run New Stream
           </BaseButton>
         </div>
