@@ -24,6 +24,12 @@ import { QueryBuilder } from '@/components/query'
 import type { ColumnInfo } from '@/components/query'
 import { type StreamConfig, type Table, type TableFilterState } from '@/types/streamConfig'
 import type { SchemaContext } from '@/composables/useMonacoSqlProviders'
+import {
+  getConnectionForTable,
+  isFederatedMode,
+  stripAliasPrefix,
+  extractSchema
+} from '@/utils/federatedUtils'
 
 interface Props {
   table: Table
@@ -42,21 +48,10 @@ const isConvertMode = computed(() => currentStreamConfig?.mode === 'convert' || 
 const schemaContext = ref<SchemaContext | undefined>()
 
 // Find the connection that owns this table based on alias prefix
-const tableConnection = computed(() => {
-  const connections = currentStreamConfig?.source?.connections || []
-  if (connections.length <= 1) {
-    return connections[0] || null
-  }
-  // In federated mode, table names are prefixed with alias (e.g., "src2.public.actor")
-  const tableName = props.table?.name || ''
-  const parts = tableName.split('.')
-  if (parts.length >= 2) {
-    const alias = parts[0]
-    const found = connections.find((c) => c.alias === alias)
-    if (found) return found
-  }
-  return connections[0] || null
-})
+const connections = computed(() => currentStreamConfig?.source?.connections || [])
+const tableConnection = computed(() =>
+  getConnectionForTable(props.table?.name || '', connections.value)
+)
 
 // Get connection dialect for SQL syntax highlighting
 const connectionDialect = computed((): 'mysql' | 'pgsql' | 'sql' => {
@@ -75,16 +70,9 @@ const connectionDialect = computed((): 'mysql' | 'pgsql' | 'sql' => {
 const tableColumns = computed((): ColumnInfo[] => {
   if (!schemaContext.value || !props.table) return []
 
-  const connections = currentStreamConfig?.source?.connections || []
-  let fullName = props.table.name
-
-  // In federated mode, strip the alias prefix (e.g., "src2.public.actor" -> "public.actor")
-  if (connections.length > 1) {
-    const parts = fullName.split('.')
-    if (parts.length >= 3) {
-      fullName = parts.slice(1).join('.')
-    }
-  }
+  const isFederated = isFederatedMode(connections.value)
+  // Strip alias prefix in federated mode (e.g., "src2.public.actor" -> "public.actor")
+  const fullName = stripAliasPrefix(props.table.name, isFederated)
 
   // For PostgreSQL, table name might be "schema.table" format
   // Try both the full name and just the table name part
@@ -104,14 +92,8 @@ const sourceDatabase = computed(
 // Extract schema from table name (for PostgreSQL: schema.table format)
 // In federated mode, table name is "alias.schema.table" (e.g., "src2.public.actor")
 const tableSchema = computed(() => {
-  const parts = props.table?.name?.split('.') || []
-  const connections = currentStreamConfig?.source?.connections || []
-  // In federated mode (multiple connections), first part is alias, second is schema
-  if (connections.length > 1 && parts.length >= 3) {
-    return parts[1]
-  }
-  // Single connection: first part is schema if present
-  return parts.length > 1 ? parts[0] : ''
+  const isFederated = isFederatedMode(connections.value)
+  return extractSchema(props.table?.name || '', isFederated)
 })
 
 // Handle filter state updates from QueryBuilder

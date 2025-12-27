@@ -18,6 +18,7 @@ import {
   buildSnowflakeTargetSpec
 } from '@/utils/specBuilder'
 import { getFileSpec } from '@/composables/useTargetSpec'
+import { normalizeStreamConnections, DEFAULT_ALIAS } from '@/utils/federatedUtils'
 
 interface State {
   generateDefaultStreamConfigName(
@@ -34,39 +35,12 @@ interface State {
   currentFilter: string
 }
 
-const DEFAULT_ALIAS = 'src'
-
 function normalizeSource(source: StreamConfig['source']): StreamConfig['source'] {
   const normalized = { ...source }
-  const usedAliases = new Set<string>()
-  let connections = normalized.connections ? [...normalized.connections] : []
+  const connections = normalized.connections ? [...normalized.connections] : []
 
-  // Ensure aliases are populated and stable
-  connections = connections.map((conn, idx) => {
-    let alias = (conn.alias || '').trim()
-    if (!alias) {
-      alias = `${DEFAULT_ALIAS}${idx ? idx + 1 : ''}`
-    }
-    let aliasIndex = idx + 1
-    while (usedAliases.has(alias)) {
-      aliasIndex += 1
-      alias = `${DEFAULT_ALIAS}${aliasIndex}`
-    }
-    usedAliases.add(alias)
-
-    // Preserve all per-connection fields
-    return {
-      alias,
-      connectionId: conn.connectionId,
-      database: conn.database,
-      schema: conn.schema,
-      tables: conn.tables,
-      queries: conn.queries,
-      s3: conn.s3
-    }
-  })
-
-  normalized.connections = connections
+  // Use shared utility for alias normalization
+  normalized.connections = normalizeStreamConnections(connections)
   return normalized
 }
 
@@ -216,8 +190,8 @@ export const buildStreamPayload = (stream: StreamConfig): Partial<StreamConfig> 
     filteredStream.source = {
       connections: [
         {
-          alias: connections[0].alias,
-          connectionId: connections[0].connectionId,
+          alias: connections[0]?.alias || 'src',
+          connectionId: connections[0]?.connectionId || '',
           s3: s3Payload
         }
       ]

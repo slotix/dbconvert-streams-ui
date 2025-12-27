@@ -379,12 +379,14 @@ const {
 } = useSplitPaneResize()
 const previewLimit = 100
 
-// Get queries from the first connection (wizard uses single-source)
+// Queries are stored on the first connection.
+// In federated mode, queries span multiple connections using aliases (e.g., src.table, src2.table)
 const queries = computed({
   get: () => streamsStore.currentStreamConfig?.source?.connections?.[0]?.queries || [],
   set: (value: QuerySource[]) => {
-    if (streamsStore.currentStreamConfig?.source?.connections?.[0]) {
-      streamsStore.currentStreamConfig.source.connections[0].queries = value
+    const conn = streamsStore.currentStreamConfig?.source?.connections?.[0]
+    if (conn) {
+      conn.queries = value
     }
   }
 })
@@ -436,8 +438,12 @@ function handleRenameTab(tabId: string, newName: string) {
   }
 }
 
-// Get connection dialect
+// Get connection dialect for SQL syntax highlighting
+// In federated mode, use generic SQL since DuckDB uses its own dialect
 const connectionDialect = computed((): 'mysql' | 'pgsql' | 'sql' => {
+  if (isMultiSource.value) {
+    return 'sql' // Federated queries use DuckDB's SQL dialect
+  }
   const sourceConnectionId =
     streamsStore.currentStreamConfig?.source?.connections?.[0]?.connectionId
   if (sourceConnectionId) {

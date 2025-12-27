@@ -394,6 +394,7 @@ import {
 } from 'lucide-vue-next'
 import { debounce } from '@/utils/debounce'
 import { type StreamConfig, type Table } from '@/types/streamConfig'
+import { isFederatedMode as checkFederatedMode, parseTableName } from '@/utils/federatedUtils'
 
 const streamsStore = useStreamsStore()
 const connectionStore = useConnectionsStore()
@@ -525,7 +526,7 @@ const groupedTables = computed<SchemaGroup[]>(() => buildGroupedTables(filteredT
 const filteredTablesCount = computed(() => filteredTables.value.length)
 
 // Federated mode detection
-const isFederatedMode = computed(() => sourceConnections.value.length > 1)
+const isFederatedMode = computed(() => checkFederatedMode(sourceConnections.value))
 
 // Federated connection grouping
 interface ConnectionGroup {
@@ -617,27 +618,19 @@ const multiSourceGroupedTables = computed<ConnectionGroup[]>(() => {
   return Array.from(connectionMap.values())
 })
 
-// Helper functions
+// Helper functions - use shared utilities for parsing
 function getTableSchema(tableName: string): string {
-  const parts = tableName.split('.')
-
-  // Check if multi-source mode (table name format: alias.schema.table or alias.table)
   const isFederated = isFederatedMode.value
+  const parsed = parseTableName(tableName, isFederated)
 
-  if (isFederated && parts.length >= 2) {
-    // Federated format: db1.public.users or db1.users
-    if (parts.length === 3) {
-      // db1.public.users -> return "db1 (public)"
-      return `${parts[0]} (${parts[1]})`
-    } else {
-      // db1.users -> return "db1"
-      return parts[0]
-    }
+  if (isFederated && parsed.alias) {
+    // Federated format: show "alias (schema)" or just "alias"
+    return parsed.schema ? `${parsed.alias} (${parsed.schema})` : parsed.alias
   }
 
-  // Non-federated: standard schema parsing
-  if (parts.length > 1) {
-    return parts[0]
+  // Non-federated: return schema if present
+  if (parsed.schema) {
+    return parsed.schema
   }
 
   // For PostgreSQL, default to 'public' schema
@@ -646,18 +639,9 @@ function getTableSchema(tableName: string): string {
 }
 
 function getTableDisplayName(tableName: string): string {
-  const parts = tableName.split('.')
-
-  // Check if multi-source mode
   const isFederated = isFederatedMode.value
-
-  if (isFederated && parts.length >= 2) {
-    // Federated format: db1.public.users -> users or db1.users -> users
-    return parts[parts.length - 1]
-  }
-
-  // Non-federated: standard parsing
-  return parts.length > 1 ? parts[1] : tableName
+  const parsed = parseTableName(tableName, isFederated)
+  return parsed.table
 }
 
 // Get the row count for a table from the overview store (cached data only)

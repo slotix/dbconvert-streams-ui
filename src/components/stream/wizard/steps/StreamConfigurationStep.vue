@@ -332,9 +332,15 @@ const tableCount = computed(() => {
   if (files.length > 0) {
     return files.filter((f) => f.selected).length
   }
-  // For database sources, count selected tables (now per-connection)
-  const tables = currentStreamConfig.value?.source?.connections?.[0]?.tables || []
-  return tables.filter((t) => t.selected).length
+  // For database sources, count selected tables from ALL connections (federated mode support)
+  const connections = currentStreamConfig.value?.source?.connections || []
+  let count = 0
+  for (const conn of connections) {
+    if (conn.tables) {
+      count += conn.tables.filter((t) => t.selected).length
+    }
+  }
+  return count
 })
 
 const isFileSource = computed(() => {

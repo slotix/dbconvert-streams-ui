@@ -3,6 +3,7 @@ import type { StreamConfig } from '@/types/streamConfig'
 import type { ConnectionMapping } from '@/api/federated'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
+import { normalizeConnectionAliases, DEFAULT_ALIAS } from '@/utils/federatedUtils'
 
 export interface WizardStep {
   name: string
@@ -19,8 +20,6 @@ export interface SelectionState {
   targetSchema: string | null
   targetPath: string | null // For file connections
 }
-
-const DEFAULT_ALIAS = 'src'
 
 // Snapshot for tracking changes
 interface WizardSnapshot {
@@ -297,25 +296,9 @@ export function useStreamWizard() {
     }
   }
 
+  // Use shared utility for alias normalization
   function normalizeSourceConnections(connections: ConnectionMapping[]): ConnectionMapping[] {
-    const usedAliases = new Set<string>()
-    return connections.map((conn, idx) => {
-      let alias = (conn.alias || '').trim()
-      if (!alias) {
-        alias = `${DEFAULT_ALIAS}${idx ? idx + 1 : ''}`
-      }
-      let aliasIndex = idx + 1
-      while (usedAliases.has(alias)) {
-        aliasIndex += 1
-        alias = `${DEFAULT_ALIAS}${aliasIndex}`
-      }
-      usedAliases.add(alias)
-      return {
-        alias,
-        connectionId: conn.connectionId,
-        database: conn.database
-      }
-    })
+    return normalizeConnectionAliases(connections)
   }
 
   function syncPrimarySelection(schemaOverride?: string | null) {
