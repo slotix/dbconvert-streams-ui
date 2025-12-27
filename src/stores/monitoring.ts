@@ -5,6 +5,7 @@ import type { AggregatedStatResponse, AggregatedNodeStats } from '@/types/stream
 import type { TableStat, TableStatsGroup, TableMetadata } from '@/types/tableStats'
 import { STATUS, STATUS_PRIORITY, TERMINAL_STATUSES, type Status } from '@/constants'
 import { parseDataSize, formatDataSize, formatDataRate } from '@/utils/formats'
+import { useFileExplorerStore } from '@/stores/fileExplorer'
 
 // Define types for the state
 interface Node {
@@ -693,7 +694,12 @@ export const useMonitoringStore = defineStore('monitoring', {
           const [statusKey] = statusWithPriority
           const newStatus = statusKey as Status
           if (this.status !== newStatus) {
+            const previousStatus = this.status
             this.status = newStatus
+            // Refresh file explorer when stream finishes with file target
+            if (newStatus === STATUS.FINISHED && previousStatus !== STATUS.FINISHED) {
+              this.refreshTargetFileExplorer()
+            }
           }
         }
       } else if (newAggregatedStats.source && !newAggregatedStats.target) {
@@ -856,6 +862,22 @@ export const useMonitoringStore = defineStore('monitoring', {
           level: 'error',
           ts: Date.now()
         })
+      }
+    },
+    /**
+     * Refresh file explorer for target connection when stream finishes
+     * This ensures newly written files appear without requiring page refresh
+     */
+    refreshTargetFileExplorer() {
+      const targetId = this.streamConfig?.target?.id
+      if (!targetId) return
+
+      const fileExplorerStore = useFileExplorerStore()
+
+      // Check if target is a file-type connection
+      if (fileExplorerStore.isFilesConnectionType(targetId)) {
+        // Force refresh the file list for the target connection
+        fileExplorerStore.loadEntries(targetId, true)
       }
     }
   }
