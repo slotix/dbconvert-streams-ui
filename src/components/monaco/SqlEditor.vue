@@ -162,8 +162,8 @@ defineExpose({
 
 <template>
   <div
-    class="rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden focus-within:ring-2 focus-within:ring-slate-600 dark:focus-within:ring-emerald-400 focus-within:border-transparent"
-    :style="{ height: height }"
+    class="rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden focus-within:ring-2 focus-within:ring-slate-600 dark:focus-within:ring-emerald-400 focus-within:border-transparent h-full"
+    :style="{ height: height, minHeight: '300px' }"
   >
     <MonacoEditor
       ref="editorRef"

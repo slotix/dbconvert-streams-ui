@@ -4,9 +4,9 @@ import { ref, onUnmounted } from 'vue'
  * Pure UI mechanics for split pane resizing
  * Handles drag interactions, mouse events, and pane sizing
  */
-export function useSplitPaneResize() {
+export function useSplitPaneResize(initialPercent = 50) {
   // Split sizing/resizer state
-  const splitGrow = ref(50) // percentage width for left pane (0..100)
+  const splitGrow = ref(initialPercent) // percentage width for left pane (0..100)
   const isResizing = ref(false)
   const splitContainerRef = ref<HTMLElement | null>(null)
   const leftPaneRef = ref<HTMLElement | null>(null)
@@ -61,17 +61,17 @@ export function useSplitPaneResize() {
   }
 
   /**
-   * Handle double click on divider to reset to 50/50
+   * Handle double click on divider to reset to initial size
    */
   function onDividerDoubleClick() {
-    splitGrow.value = 50
+    splitGrow.value = initialPercent
   }
 
   /**
-   * Reset split to 50/50 (used when content is set)
+   * Reset split to initial size (used when content is set)
    */
   function resetSplitSize() {
-    splitGrow.value = 50
+    splitGrow.value = initialPercent
   }
 
   // Cleanup on unmount

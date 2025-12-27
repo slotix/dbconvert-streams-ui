@@ -285,13 +285,14 @@ defineExpose({
 .monaco-editor-wrapper {
   position: relative;
   width: 100%;
+  height: 100%;
 }
 
 .monaco-editor-container {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  min-height: 100px;
+  min-height: 300px;
 }
 
 .resize-handle {

@@ -27,7 +27,8 @@ export function useConnectionTreeLogic() {
     // For file connections, distinguish between S3 and local files
     const baseType = (conn.type || '').toLowerCase().trim()
     if (baseType === 's3') return 's3'
-    if (baseType === 'files') return 'files'
+    // Check for S3 spec even when type is 'files' - S3 connections may have type='files' with spec.s3 set
+    if (baseType === 'files') return isS3Connection(conn) ? 's3' : 'files'
     if (baseType.includes('file')) return isS3Connection(conn) ? 's3' : 'files'
     if (isS3Connection(conn)) return 's3'
     return baseType

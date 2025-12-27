@@ -105,7 +105,7 @@
     </div>
 
     <!-- SQL Editor -->
-    <div class="flex-1 overflow-hidden bg-white dark:bg-gray-900">
+    <div class="flex-1 overflow-hidden bg-white dark:bg-gray-900 h-full">
       <SqlEditor
         ref="sqlEditorRef"
         :model-value="modelValue"
