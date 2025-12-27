@@ -1,36 +1,5 @@
 <template>
   <div class="space-y-6">
-    <!-- Multi-Source Query Mode Banner - only shown on Queries tab -->
-    <div
-      v-if="isMultiSource && activeDataTab === 'queries'"
-      class="bg-linear-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 border border-purple-200 dark:border-purple-700/50 rounded-xl p-4 shadow-sm"
-    >
-      <div class="flex items-center gap-3">
-        <div
-          class="shrink-0 h-10 w-10 rounded-lg bg-linear-to-br from-purple-500 to-indigo-500 flex items-center justify-center"
-        >
-          <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M13 10V3L4 14h7v7l9-11h-7z"
-            />
-          </svg>
-        </div>
-        <div>
-          <h3 class="text-sm font-semibold text-purple-900 dark:text-purple-100">
-            Multi-Source Query Mode
-          </h3>
-          <p class="text-sm text-purple-700 dark:text-purple-300">
-            Write a SQL query that can join data across {{ sourceConnections.length }} connected
-            sources. Database tables are prefixed with connection aliases (e.g., db1.tablename).
-            File sources can be read directly using DuckDB functions.
-          </p>
-        </div>
-      </div>
-    </div>
-
     <!-- Data Transfer Mode Section - Hidden for multi-source -->
     <div
       v-if="!isMultiSource"

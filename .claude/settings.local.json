@@ -31,7 +31,8 @@
       "Bash(yarn remove:*)",
       "Bash(ls:*)",
       "Bash(sort:*)",
-      "Bash(yarn type-check:*)"
+      "Bash(yarn type-check:*)",
+      "Bash(yarn vue-tsc:*)"
     ],
     "deny": [],
     "ask": []

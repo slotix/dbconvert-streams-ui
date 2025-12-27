@@ -9,7 +9,7 @@
           class="w-5 h-5"
           :class="
             isMultiSource
-              ? 'text-purple-600 dark:text-purple-400'
+              ? 'text-amber-600 dark:text-amber-400'
               : 'text-teal-600 dark:text-teal-400'
           "
         />
@@ -21,7 +21,7 @@
           class="px-2 py-0.5 text-xs rounded-full"
           :class="
             isMultiSource
-              ? 'bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300'
+              ? 'bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300'
               : 'bg-teal-100 dark:bg-teal-900/50 text-teal-700 dark:text-teal-300'
           "
         >
@@ -44,7 +44,7 @@
         <!-- Connection count for multi-source mode -->
         <span
           v-if="isMultiSource"
-          class="text-xs px-2 py-1 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded"
+          class="text-xs px-2 py-1 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded"
         >
           {{ sourceConnections.length }} sources connected
         </span>
@@ -72,7 +72,7 @@
         class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white rounded-md transition-colors"
         :class="
           isMultiSource
-            ? 'bg-purple-600 hover:bg-purple-700 dark:bg-purple-700 dark:hover:bg-purple-600'
+            ? 'bg-amber-600 hover:bg-amber-700 dark:bg-amber-700 dark:hover:bg-amber-600'
             : 'bg-teal-600 hover:bg-teal-700 dark:bg-teal-700 dark:hover:bg-teal-600'
         "
         @click="addQuery"
@@ -131,19 +131,19 @@
         <!-- Connected Sources Reference Panel (multi-source mode only) -->
         <div
           v-if="isMultiSource && sourceConnections.length > 0"
-          class="px-4 py-2 bg-purple-50 dark:bg-purple-900/20 border-b border-purple-200 dark:border-purple-700/50"
+          class="px-4 py-2 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-700/50"
         >
           <div class="flex items-start gap-3">
-            <span class="text-xs font-medium text-purple-700 dark:text-purple-300 shrink-0 pt-0.5"
+            <span class="text-xs font-medium text-amber-700 dark:text-amber-300 shrink-0 pt-0.5"
               >Connected Sources:</span
             >
             <div class="flex flex-wrap gap-2">
               <div
                 v-for="conn in sourceConnections"
                 :key="conn.connectionId"
-                class="inline-flex items-center gap-1.5 px-2 py-1 text-xs bg-white dark:bg-gray-800 border border-purple-200 dark:border-purple-700 rounded"
+                class="inline-flex items-center gap-1.5 px-2 py-1 text-xs bg-white dark:bg-gray-800 border border-amber-200 dark:border-amber-700 rounded"
               >
-                <span class="font-mono font-semibold text-purple-700 dark:text-purple-300">{{
+                <span class="font-mono font-semibold text-amber-700 dark:text-amber-300">{{
                   conn.alias
                 }}</span>
                 <span class="text-gray-400 dark:text-gray-500">→</span>
@@ -312,7 +312,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import {
   AlertTriangle,
   CheckCircle,
@@ -425,6 +425,13 @@ watch(
   },
   { immediate: true }
 )
+
+// Auto-create first query in multi-source mode
+onMounted(() => {
+  if (isMultiSource.value && queries.value.length === 0) {
+    addQuery()
+  }
+})
 
 // Tab management
 function setActiveTab(tabId: string) {

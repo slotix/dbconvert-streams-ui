@@ -138,7 +138,7 @@
     <!-- Selection Summary - Enhanced Chips -->
     <div
       v-if="primarySourceId || targetConnectionId || localSourceConnections.length > 0"
-      class="shrink-0 flex flex-col gap-2"
+      class="shrink-0 flex flex-col gap-3"
     >
       <!-- Source and Target Chips -->
       <div class="flex items-center justify-between gap-3">
@@ -214,6 +214,53 @@
           Clear All
         </button>
       </div>
+
+      <!-- Multi-Source Connection List with Editable Aliases -->
+      <div
+        v-if="isMultiSource"
+        class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/60 rounded-lg p-3"
+      >
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-xs font-semibold uppercase text-amber-700 dark:text-amber-300"
+            >Source Aliases</span
+          >
+          <span class="text-xs text-amber-600 dark:text-amber-400">(used in SQL queries)</span>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <div
+            v-for="conn in localSourceConnections"
+            :key="`${conn.connectionId}-${conn.database}`"
+            class="flex items-center gap-2 bg-white dark:bg-gray-800 border border-amber-300 dark:border-amber-600 rounded-md px-2 py-1.5"
+          >
+            <input
+              type="text"
+              :value="conn.alias"
+              class="w-16 px-1.5 py-0.5 text-xs font-mono font-semibold bg-amber-100 dark:bg-amber-900/40 border border-amber-300 dark:border-amber-600 rounded text-amber-800 dark:text-amber-200 focus:outline-none focus:ring-1 focus:ring-amber-500"
+              @input="
+                updateConnectionAlias(
+                  conn.connectionId,
+                  conn.database,
+                  ($event.target as HTMLInputElement).value
+                )
+              "
+            />
+            <span class="text-xs text-gray-600 dark:text-gray-300">
+              {{ getConnectionName(conn.connectionId) }}
+              <span v-if="conn.database" class="text-gray-500 dark:text-gray-400">
+                / {{ conn.database }}
+              </span>
+            </span>
+            <button
+              type="button"
+              class="p-0.5 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+              title="Remove source"
+              @click="removeSourceConnection(conn.connectionId, conn.database)"
+            >
+              <X class="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Validation Error -->
@@ -245,10 +292,12 @@
 import { ref, computed, watch } from 'vue'
 import { useConnectionsStore } from '@/stores/connections'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
+import { X } from 'lucide-vue-next'
 import BaseButton from '@/components/base/BaseButton.vue'
 import ConnectionTreeSelector from './ConnectionTreeSelector.vue'
 import StreamConnectionFilter from './StreamConnectionFilter.vue'
 import type { ConnectionMapping } from '@/api/federated'
+import { generateTypeBasedAlias } from '@/utils/federatedUtils'
 
 interface Props {
   sourceConnectionId?: string | null
@@ -273,7 +322,6 @@ const props = withDefaults(defineProps<Props>(), {
   sourceConnections: () => []
 })
 
-const DEFAULT_ALIAS = 'src'
 const emit = defineEmits<{
   'update:source-connection': [connectionId: string, database?: string, schema?: string]
   'update:target-connection': [
@@ -314,21 +362,43 @@ const primarySourceDatabase = computed(
 )
 const isMultiSource = computed(() => localSourceConnections.value.length > 1)
 
-function generateAlias(): string {
-  const used = new Set(localSourceConnections.value.map((c) => (c.alias || '').trim()))
-  if (!used.size) {
-    used.add(DEFAULT_ALIAS)
-    return DEFAULT_ALIAS
-  }
+// Generate type-based alias for a connection (e.g., pg1, my1, s31)
+function generateAlias(connectionId: string): string {
+  const connection = connectionsStore.connectionByID(connectionId)
+  const connectionType = connection?.type
+  const existingAliases = localSourceConnections.value.map((c) => c.alias || '')
+  return generateTypeBasedAlias(connectionType, existingAliases)
+}
 
-  let index = used.size + 1
-  let alias = `${DEFAULT_ALIAS}${index}`
-  while (used.has(alias)) {
-    index += 1
-    alias = `${DEFAULT_ALIAS}${index}`
-  }
-  used.add(alias)
-  return alias
+// Update alias for a connection
+function updateConnectionAlias(
+  connectionId: string,
+  database: string | undefined,
+  newAlias: string
+) {
+  // Sanitize: lowercase, alphanumeric + underscore only
+  const sanitized = newAlias.toLowerCase().replace(/[^a-z0-9_]/g, '')
+  if (!sanitized) return
+
+  // Check for uniqueness (excluding the current connection)
+  const isDuplicate = localSourceConnections.value.some(
+    (c) => c.alias === sanitized && !(c.connectionId === connectionId && c.database === database)
+  )
+  if (isDuplicate) return
+
+  localSourceConnections.value = localSourceConnections.value.map((c) =>
+    c.connectionId === connectionId && c.database === database ? { ...c, alias: sanitized } : c
+  )
+  emit('update:source-connections', localSourceConnections.value)
+}
+
+// Remove a single source connection
+function removeSourceConnection(connectionId: string, database: string | undefined) {
+  localSourceConnections.value = localSourceConnections.value.filter(
+    (c) => !(c.connectionId === connectionId && c.database === database)
+  )
+  emit('update:source-connections', localSourceConnections.value)
+  syncPrimarySelection()
 }
 
 function syncPrimarySelection() {
@@ -353,7 +423,7 @@ function handleToggleSourceConnection(payload: {
       (c) => c.connectionId === payload.connectionId && c.database === payload.database
     )
     if (!existing) {
-      const alias = generateAlias()
+      const alias = generateAlias(payload.connectionId)
       const mapping: ConnectionMapping = {
         connectionId: payload.connectionId,
         alias: alias,
@@ -499,8 +569,7 @@ function handleSourceConnectionSelect(payload: {
 }) {
   const alias =
     localSourceConnections.value.find((c) => c.connectionId === payload.connectionId)?.alias ||
-    localSourceConnections.value[0]?.alias ||
-    DEFAULT_ALIAS
+    generateAlias(payload.connectionId)
   localSourceConnections.value = [
     {
       alias,
@@ -519,8 +588,7 @@ function handleSourceDatabaseSelect(payload: {
 }) {
   const alias =
     localSourceConnections.value.find((c) => c.connectionId === payload.connectionId)?.alias ||
-    localSourceConnections.value[0]?.alias ||
-    DEFAULT_ALIAS
+    generateAlias(payload.connectionId)
   localSourceConnections.value = [
     {
       alias,
@@ -552,8 +620,7 @@ function handleSourceFileSelect(payload: { connectionId: string; path: string })
   // For local file sources, treat the path as the "database" equivalent
   const alias =
     localSourceConnections.value.find((c) => c.connectionId === payload.connectionId)?.alias ||
-    localSourceConnections.value[0]?.alias ||
-    DEFAULT_ALIAS
+    generateAlias(payload.connectionId)
   localSourceConnections.value = [
     {
       alias,
@@ -569,8 +636,7 @@ function handleSourceBucketSelect(payload: { connectionId: string; bucket: strin
   // For S3 sources, treat the bucket as the "database" equivalent
   const alias =
     localSourceConnections.value.find((c) => c.connectionId === payload.connectionId)?.alias ||
-    localSourceConnections.value[0]?.alias ||
-    DEFAULT_ALIAS
+    generateAlias(payload.connectionId)
   localSourceConnections.value = [
     {
       alias,

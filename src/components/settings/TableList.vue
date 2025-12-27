@@ -75,7 +75,7 @@
           >
             <!-- Connection Header -->
             <div
-              class="sticky top-0 z-20 flex items-center justify-between px-4 py-3 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/30 dark:to-indigo-900/30 border-b-2 border-purple-200 dark:border-purple-700 cursor-pointer backdrop-blur-sm"
+              class="sticky top-0 z-20 flex items-center justify-between px-4 py-3 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/30 dark:to-orange-900/30 border-b-2 border-amber-200 dark:border-amber-700 cursor-pointer backdrop-blur-sm"
               @click="toggleConnectionGroup(connectionGroup.alias)"
             >
               <div class="flex items-center gap-3">
@@ -83,7 +83,7 @@
                   :is="
                     isConnectionGroupExpanded(connectionGroup.alias) ? ChevronDown : ChevronRight
                   "
-                  class="h-4 w-4 text-purple-600 dark:text-purple-400"
+                  class="h-4 w-4 text-amber-600 dark:text-amber-400"
                 />
                 <component
                   :is="getConnectionIcon(connectionGroup.connectionType)"
@@ -92,35 +92,35 @@
                 />
                 <div>
                   <div class="flex items-center gap-2">
-                    <span class="text-sm font-bold text-purple-900 dark:text-purple-100">
+                    <span class="text-sm font-bold text-amber-900 dark:text-amber-100">
                       {{ connectionGroup.alias }}
                     </span>
-                    <span class="text-xs text-purple-600 dark:text-purple-400 font-medium">
+                    <span class="text-xs text-amber-600 dark:text-amber-400 font-medium">
                       {{ connectionGroup.connectionName }}
                     </span>
                     <span
                       v-if="connectionGroup.database"
-                      class="text-xs text-purple-500 dark:text-purple-400"
+                      class="text-xs text-amber-500 dark:text-amber-400"
                     >
                       / {{ connectionGroup.database }}
                     </span>
                   </div>
                 </div>
                 <span
-                  class="text-xs text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/50 rounded px-2 py-0.5 font-medium"
+                  class="text-xs text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/50 rounded px-2 py-0.5 font-medium"
                 >
                   {{ connectionGroup.tableCount }} tables
                 </span>
               </div>
               <div class="flex items-center gap-3">
                 <button
-                  class="text-xs text-purple-600 dark:text-purple-400 hover:underline font-medium"
+                  class="text-xs text-amber-600 dark:text-amber-400 hover:underline font-medium"
                   @click.stop="selectAllInConnection(connectionGroup.alias)"
                 >
                   Select All
                 </button>
                 <button
-                  class="text-xs text-purple-500 dark:text-purple-400 hover:underline"
+                  class="text-xs text-amber-500 dark:text-amber-400 hover:underline"
                   @click.stop="clearAllInConnection(connectionGroup.alias)"
                 >
                   Clear
@@ -170,7 +170,7 @@
                   class="grid grid-cols-1 lg:grid-cols-2"
                   :class="
                     schemaGroup.schema
-                      ? 'border-l-2 border-purple-200 dark:border-purple-700 ml-9'
+                      ? 'border-l-2 border-amber-200 dark:border-amber-700 ml-9'
                       : 'ml-6'
                   "
                 >
@@ -256,7 +256,7 @@
                   :is="isSchemaExpanded(schemaGroup.schema) ? ChevronDown : ChevronRight"
                   class="h-4 w-4 text-gray-400"
                 />
-                <Grid2X2 class="w-4 h-4 text-purple-500 dark:text-purple-400 shrink-0" />
+                <Grid2X2 class="w-4 h-4 text-amber-500 dark:text-amber-400 shrink-0" />
                 <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">{{
                   schemaGroup.schema
                 }}</span>
@@ -724,7 +724,7 @@ function getConnectionIconColor(connectionType: string) {
     snowflake: 'text-cyan-500',
     sqlite: 'text-gray-500'
   }
-  return colorMap[connectionType.toLowerCase()] || 'text-purple-500'
+  return colorMap[connectionType.toLowerCase()] || 'text-gray-500'
 }
 
 function isConnectionGroupExpanded(alias: string): boolean {

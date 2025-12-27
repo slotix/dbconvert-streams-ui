@@ -7,8 +7,56 @@
 
 import type { StreamConnectionMapping } from '@/types/streamConfig'
 
-/** Default alias prefix for source connections */
-export const DEFAULT_ALIAS = 'src'
+/** Default alias prefix for source connections (fallback) */
+export const DEFAULT_ALIAS = 'db'
+
+/**
+ * Alias prefix mapping based on connection/database type.
+ * Used to generate meaningful aliases like `pg1`, `my1` instead of generic `src1`, `src2`.
+ */
+export const ALIAS_PREFIX_MAP: Record<string, string> = {
+  postgresql: 'pg',
+  postgres: 'pg',
+  mysql: 'my',
+  mariadb: 'my',
+  s3: 's3',
+  gcs: 'gcs',
+  azure: 'azure',
+  files: 'files',
+  csv: 'csv',
+  parquet: 'pq',
+  jsonl: 'json'
+}
+
+/**
+ * Get the alias prefix for a given connection type.
+ *
+ * @param connectionType - The type of connection (e.g., 'postgresql', 'mysql', 's3')
+ * @returns The prefix to use for aliases (e.g., 'pg', 'my', 's3')
+ */
+export function getAliasPrefix(connectionType?: string): string {
+  const normalized = connectionType?.toLowerCase() || ''
+  return ALIAS_PREFIX_MAP[normalized] || DEFAULT_ALIAS
+}
+
+/**
+ * Generate a unique alias for a connection based on its type.
+ *
+ * @param connectionType - The type of connection (e.g., 'postgresql', 'mysql')
+ * @param existingAliases - Array of already-used aliases to avoid conflicts
+ * @returns A unique alias like 'pg1', 'pg2', 'my1', etc.
+ */
+export function generateTypeBasedAlias(
+  connectionType?: string,
+  existingAliases: string[] = []
+): string {
+  const prefix = getAliasPrefix(connectionType)
+  let counter = 1
+  while (existingAliases.includes(`${prefix}${counter}`)) {
+    counter++
+  }
+  return `${prefix}${counter}`
+}
 
 /**
  * Parsed table name components for federated mode
@@ -26,29 +74,32 @@ export interface ParsedTableName {
 
 /**
  * Normalize source connections to ensure unique, non-empty aliases.
- * Generates aliases like "src", "src2", "src3" for connections without aliases.
+ * Generates type-based aliases like "pg1", "my1" when connection type is provided,
+ * or falls back to "db1", "db2" for generic aliases.
  *
  * @param connections - Array of connection mappings to normalize
+ * @param getConnectionType - Optional function to get connection type for type-based alias generation
  * @returns Normalized connections with guaranteed unique aliases
  */
 export function normalizeConnectionAliases<T extends { alias?: string; connectionId: string }>(
-  connections: T[]
+  connections: T[],
+  getConnectionType?: (connectionId: string) => string | undefined
 ): T[] {
   const usedAliases = new Set<string>()
 
-  return connections.map((conn, idx) => {
+  return connections.map((conn) => {
     let alias = (conn.alias || '').trim()
 
-    // Generate default alias if empty
+    // Generate type-based alias if empty
     if (!alias) {
-      alias = idx === 0 ? DEFAULT_ALIAS : `${DEFAULT_ALIAS}${idx + 1}`
+      const connectionType = getConnectionType?.(conn.connectionId)
+      alias = generateTypeBasedAlias(connectionType, Array.from(usedAliases))
     }
 
-    // Ensure uniqueness
-    let aliasIndex = idx + 1
-    while (usedAliases.has(alias)) {
-      aliasIndex += 1
-      alias = `${DEFAULT_ALIAS}${aliasIndex}`
+    // Ensure uniqueness even for user-provided aliases
+    if (usedAliases.has(alias)) {
+      const connectionType = getConnectionType?.(conn.connectionId)
+      alias = generateTypeBasedAlias(connectionType, Array.from(usedAliases))
     }
 
     usedAliases.add(alias)

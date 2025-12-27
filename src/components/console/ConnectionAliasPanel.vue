@@ -208,6 +208,7 @@ import { AlertTriangle, ChevronDown, Cloud, Database, Folder, Info, Plus } from 
 import { useConnectionsStore } from '@/stores/connections'
 import type { Connection } from '@/types/connections'
 import type { ConnectionMapping } from '@/api/federated'
+import { generateTypeBasedAlias } from '@/utils/federatedUtils'
 
 // Props
 interface Props {
@@ -331,31 +332,8 @@ function getDatabase(connectionId: string): string {
 }
 
 function generateAlias(conn: Connection): string {
-  const type = conn.type?.toLowerCase() || 'db'
-  let prefix = 'db'
-
-  if (type === 'postgresql' || type === 'postgres') {
-    prefix = 'pg'
-  } else if (type === 'mysql' || type === 'mariadb') {
-    prefix = 'my'
-  } else if (type === 's3') {
-    prefix = 's3'
-  } else if (type === 'gcs') {
-    prefix = 'gcs'
-  } else if (type === 'azure') {
-    prefix = 'azure'
-  } else if (type === 'files') {
-    prefix = 'files'
-  }
-
-  // Find next available number
   const existingAliases = props.modelValue.map((m) => m.alias)
-  let counter = 1
-  while (existingAliases.includes(`${prefix}${counter}`)) {
-    counter++
-  }
-
-  return `${prefix}${counter}`
+  return generateTypeBasedAlias(conn.type, existingAliases)
 }
 
 function toggleConnection(conn: Connection) {
