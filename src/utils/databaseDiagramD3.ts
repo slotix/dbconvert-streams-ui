@@ -25,40 +25,6 @@ export function formatColumnType(column: { type?: string }): string {
   return type
 }
 
-export function calculateConnectionPoint(
-  sourceX: number,
-  sourceY: number,
-  targetX: number,
-  targetY: number,
-  tableWidth: number,
-  tableHeight: number
-): [number, number] {
-  const angle = Math.atan2(targetY - sourceY, targetX - sourceX)
-  const width = tableWidth || 200
-  const height = tableHeight || 30
-  const halfWidth = width / 2
-  const halfHeight = height / 2
-
-  let x: number
-  let y: number
-  if (Math.abs(Math.cos(angle)) > Math.abs(Math.sin(angle))) {
-    x = Math.cos(angle) > 0 ? halfWidth : -halfWidth
-    y = Math.tan(angle) * x
-    if (Math.abs(y) > halfHeight) {
-      y = Math.sign(y) * halfHeight
-      x = y / Math.tan(angle)
-    }
-  } else {
-    y = Math.sin(angle) > 0 ? halfHeight : -halfHeight
-    x = y / Math.tan(angle)
-    if (Math.abs(x) > halfWidth) {
-      x = Math.sign(x) * halfWidth
-      y = Math.tan(angle) * x
-    }
-  }
-  return [x, y]
-}
-
 function isJunctionTable(table: Table | undefined): boolean {
   if (!table?.foreignKeys?.length) return false
   return (

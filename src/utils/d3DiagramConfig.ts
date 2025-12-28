@@ -202,21 +202,6 @@ export function createMarkerDefinitions(
 }
 
 /**
- * Get marker ID for a relationship
- *
- * @param type - Marker type (mandatory-one, mandatory-many, etc.)
- * @param variant - Color variant
- * @returns Marker ID string for use in marker-end/marker-start attributes
- */
-export function getMarkerId(
-  type: keyof typeof MARKER_DEFINITIONS,
-  variant: MarkerVariant = 'primary'
-): string {
-  const { prefix } = MARKER_VARIANTS[variant]
-  return `url(#${prefix}${type})`
-}
-
-/**
  * Diagram layout constants
  */
 export const DIAGRAM_LAYOUT = {

@@ -1,12 +1,10 @@
 import { describe, it, expect } from 'vitest'
 import {
   getConnectionKindFromSpec,
-  getTargetKindFromSpec,
   isFileBasedKind,
   isCloudStorageKind,
   isDatabaseKind,
-  type ConnectionSpec,
-  type TargetSpec
+  type ConnectionSpec
 } from '../types/specs'
 
 describe('getConnectionKindFromSpec', () => {
@@ -58,47 +56,6 @@ describe('getConnectionKindFromSpec', () => {
       files: { basePath: '/data/files' }
     }
     expect(getConnectionKindFromSpec(spec)).toBe('files')
-  })
-})
-
-describe('getTargetKindFromSpec', () => {
-  it('returns null for undefined spec', () => {
-    expect(getTargetKindFromSpec(undefined)).toBeNull()
-  })
-
-  it('returns "database" for database target spec', () => {
-    const spec: TargetSpec = {
-      database: { database: 'mydb' }
-    }
-    expect(getTargetKindFromSpec(spec)).toBe('database')
-  })
-
-  it('returns "files" for files target spec', () => {
-    const spec: TargetSpec = {
-      files: { fileFormat: 'csv' }
-    }
-    expect(getTargetKindFromSpec(spec)).toBe('files')
-  })
-
-  it('returns "s3" for S3 target spec', () => {
-    const spec: TargetSpec = {
-      s3: {
-        outputDirectory: '/tmp',
-        fileFormat: 'parquet',
-        upload: { bucket: 'my-bucket' }
-      }
-    }
-    expect(getTargetKindFromSpec(spec)).toBe('s3')
-  })
-
-  it('returns "snowflake" for Snowflake target spec', () => {
-    const spec: TargetSpec = {
-      snowflake: {
-        database: 'mydb',
-        staging: { outputDirectory: '/tmp', fileFormat: 'csv' }
-      }
-    }
-    expect(getTargetKindFromSpec(spec)).toBe('snowflake')
   })
 })
 

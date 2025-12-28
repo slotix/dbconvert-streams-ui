@@ -6,10 +6,6 @@ export function normalizeConnectionType(type: string): string {
   return type.toLowerCase()
 }
 
-export function isSameConnectionType(type1: string, type2: string): boolean {
-  return normalizeConnectionType(type1) === normalizeConnectionType(type2)
-}
-
 /**
  * Generates a tooltip string with full connection details
  * @param connection - The connection object

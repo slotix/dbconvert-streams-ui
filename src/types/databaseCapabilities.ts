@@ -164,19 +164,9 @@ export function supportsSchemas(dbType: string): boolean {
   return capabilities?.hasSchemas || false
 }
 
-export function supportsMultipleSchemas(dbType: string): boolean {
-  const capabilities = getDatabaseCapabilities(dbType)
-  return capabilities?.hasMultipleSchemas || false
-}
-
 export function supportsSchemaFiltering(dbType: string): boolean {
   const capabilities = getDatabaseCapabilities(dbType)
   return capabilities?.supportsSchemaFiltering || false
-}
-
-export function getHierarchyLevels(dbType: string): string[] {
-  const capabilities = getDatabaseCapabilities(dbType)
-  return capabilities?.hierarchyLevels || ['database', 'table']
 }
 
 export function getDefaultPort(dbType: string): number {

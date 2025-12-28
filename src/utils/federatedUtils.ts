@@ -189,21 +189,6 @@ export function getTableDisplayName(tableName: string, isFederated: boolean): st
 }
 
 /**
- * Format a table name with alias prefix for federated mode.
- *
- * @param alias - Connection alias
- * @param schema - Schema name (optional)
- * @param table - Base table name
- * @returns Formatted table name
- */
-export function formatTableName(alias: string, schema: string | undefined, table: string): string {
-  if (schema) {
-    return `${alias}.${schema}.${table}`
-  }
-  return `${alias}.${table}`
-}
-
-/**
  * Find a connection by its alias in a connections array.
  *
  * @param alias - Alias to search for
@@ -251,27 +236,6 @@ export function getConnectionForTable<T extends { alias?: string }>(
  */
 export function isFederatedMode(connections: unknown[] | undefined): boolean {
   return (connections?.length || 0) > 1
-}
-
-/**
- * Extract alias from a federated table name.
- *
- * @param tableName - Table name to parse
- * @param connections - Connections to validate alias against
- * @returns Alias if found and valid, null otherwise
- */
-export function extractAlias<T extends { alias?: string }>(
-  tableName: string,
-  connections: T[]
-): string | null {
-  const parts = tableName.split('.')
-  if (parts.length >= 2) {
-    const potentialAlias = parts[0]
-    if (getConnectionByAlias(potentialAlias, connections)) {
-      return potentialAlias
-    }
-  }
-  return null
 }
 
 /**

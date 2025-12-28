@@ -258,20 +258,6 @@ export function getConnectionKindFromSpec(spec: ConnectionSpec | undefined): Con
 }
 
 /**
- * Get the kind from a TargetSpec - spec is the ONLY source of truth.
- */
-export function getTargetKindFromSpec(spec: TargetSpec | undefined): TargetKind | null {
-  if (!spec) return null
-  if (spec.database) return 'database'
-  if (spec.files) return 'files'
-  if (spec.s3) return 's3'
-  if (spec.gcs) return 'gcs'
-  if (spec.azure) return 'azure'
-  if (spec.snowflake) return 'snowflake'
-  return null
-}
-
-/**
  * Check if a connection kind represents a file-based source/target.
  * File-based kinds include local files and all cloud storage types.
  */
@@ -374,43 +360,4 @@ export function matchesConnectionTypeFilter(
     return typeLabel.includes('postgres')
   }
   return typeLabel.includes(normalizedFilter) || normalizedFilter.includes(typeLabel)
-}
-
-// Get the active spec type from a ConnectionSpec
-// @deprecated Use getConnectionKindFromSpec instead for type-safe kind detection
-export function getConnectionSpecType(spec: ConnectionSpec | undefined): string | null {
-  if (!spec) return null
-  if (spec.database) return 'database'
-  if (spec.s3) return 's3'
-  if (spec.gcs) return 'gcs'
-  if (spec.azure) return 'azure'
-  if (spec.snowflake) return 'snowflake'
-  if (spec.files) return 'files'
-  return null
-}
-
-// Get the active spec type from a TargetSpec
-export function getTargetSpecType(spec: TargetSpec | undefined): string | null {
-  if (!spec) return null
-  if (spec.database) return 'database'
-  if (spec.files) return 'files'
-  if (spec.s3) return 's3'
-  if (spec.gcs) return 'gcs'
-  if (spec.azure) return 'azure'
-  if (spec.snowflake) return 'snowflake'
-  return null
-}
-
-// Validate that only one spec type is present
-export function validateConnectionSpec(spec: ConnectionSpec): boolean {
-  const types = [spec.database, spec.s3, spec.gcs, spec.azure, spec.snowflake, spec.files]
-  const nonNullCount = types.filter((t) => t !== undefined).length
-  return nonNullCount === 1
-}
-
-// Validate that only one spec type is present
-export function validateTargetSpec(spec: TargetSpec): boolean {
-  const types = [spec.database, spec.files, spec.s3, spec.gcs, spec.azure, spec.snowflake]
-  const nonNullCount = types.filter((t) => t !== undefined).length
-  return nonNullCount === 1
 }

@@ -47,18 +47,3 @@ export async function initializeMonaco(): Promise<MonacoType> {
 
   return initializationPromise
 }
-
-/**
- * Get the Monaco instance if already initialized
- * Returns null if not yet initialized
- */
-export function getMonacoInstance(): MonacoType | null {
-  return monacoInstance
-}
-
-/**
- * Check if Monaco is currently initialized
- */
-export function isMonacoInitialized(): boolean {
-  return monacoInstance !== null
-}

@@ -110,32 +110,3 @@ export function usePersistedNumber(key: string, defaultValue: number): Ref<numbe
     deserializer: (value) => Number(value)
   })
 }
-
-/**
- * Remove a persisted state from localStorage
- */
-export function removePersistedState(key: string): void {
-  try {
-    localStorage.removeItem(key)
-  } catch (error) {
-    console.error(`[usePersistedState] Failed to remove key "${key}":`, error)
-  }
-}
-
-/**
- * Clear all persisted state with a given prefix
- */
-export function clearPersistedStates(prefix: string): void {
-  try {
-    const keysToRemove: string[] = []
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i)
-      if (key && key.startsWith(prefix)) {
-        keysToRemove.push(key)
-      }
-    }
-    keysToRemove.forEach((key) => localStorage.removeItem(key))
-  } catch (error) {
-    console.error(`[usePersistedState] Failed to clear keys with prefix "${prefix}":`, error)
-  }
-}

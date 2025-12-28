@@ -45,13 +45,7 @@ async function fetchPublicIp(): Promise<string> {
 
   for (const source of sources) {
     try {
-      const response = await fetch(source, {
-        method: 'GET',
-        timeout: 5000,
-        headers: {
-          Accept: 'text/plain'
-        }
-      })
+      const response = await fetchWithTimeout(source, 5000)
 
       if (response.ok) {
         const ip = (await response.text()).trim()
@@ -66,6 +60,22 @@ async function fetchPublicIp(): Promise<string> {
   }
 
   throw new Error('Unable to determine public IP address')
+}
+
+async function fetchWithTimeout(url: string, timeoutMs: number): Promise<Response> {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    return await fetch(url, {
+      method: 'GET',
+      headers: {
+        Accept: 'text/plain'
+      },
+      signal: controller.signal
+    })
+  } finally {
+    clearTimeout(timeoutId)
+  }
 }
 
 /**
@@ -95,12 +105,4 @@ export function isLocalIp(ip: string): boolean {
   ]
 
   return localPatterns.some((pattern) => pattern.test(ip))
-}
-
-/**
- * Clear the cached public IP (useful for testing or forcing refresh)
- */
-export function clearCachedIp(): void {
-  cachedPublicIp = null
-  ipFetchPromise = null
 }

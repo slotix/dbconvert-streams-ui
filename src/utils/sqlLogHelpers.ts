@@ -124,16 +124,6 @@ export function getCategoryIcon(
 }
 
 /**
- * Get human-readable label for system log category or level
- */
-export function getCategoryLabel(type: 'category' | 'level', value: string): string {
-  if (type === 'category') {
-    return CATEGORY_PRESENTATION[value]?.label ?? value.toUpperCase()
-  }
-  return CATEGORY_PRESENTATION[value.toLowerCase()]?.label ?? value.toUpperCase()
-}
-
-/**
  * Format log timestamp from Unix timestamp (seconds or milliseconds)
  * Returns format: HH:MM:SS.mmm for millisecond precision
  */
@@ -148,23 +138,6 @@ export function formatLogTimestamp(timestamp: number): string {
   })
   const milliseconds = date.getMilliseconds().toString().padStart(3, '0')
   return `${timeString}.${milliseconds}`
-}
-
-/**
- * Truncate text to a maximum length with ellipsis
- */
-export function truncateText(text: string, maxLength: number = 100): string {
-  if (text.length <= maxLength) return text
-  return text.substring(0, maxLength) + '…'
-}
-
-/**
- * Get appropriate CSS class for error/warning states
- */
-export function getErrorStateClass(hasError: boolean, isWarning: boolean = false): string {
-  if (hasError) return 'bg-red-50 border-red-200'
-  if (isWarning) return 'bg-yellow-50 border-yellow-200'
-  return 'bg-white'
 }
 
 /**

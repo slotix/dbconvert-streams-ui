@@ -33,16 +33,3 @@ export function isSupportedFile(filename: string): boolean {
 }
 
 // Get logo image path for file format
-export function getFileFormatLogoPath(format: FileFormat | null): string {
-  switch (format) {
-    case 'csv':
-      return '/images/db-logos/csv.svg'
-    case 'json':
-    case 'jsonl':
-      return '/images/db-logos/json.svg'
-    case 'parquet':
-      return '/images/db-logos/parquet.svg'
-    default:
-      return '/images/db-logos/file.svg'
-  }
-}

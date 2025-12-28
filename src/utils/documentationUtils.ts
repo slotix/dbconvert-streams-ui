@@ -58,7 +58,3 @@ export function getDocumentationUrl(cloudProvider?: string, dbType?: string): st
 
   return null
 }
-
-export function hasDocumentation(cloudProvider?: string, dbType?: string): boolean {
-  return getDocumentationUrl(cloudProvider, dbType) !== null
-}

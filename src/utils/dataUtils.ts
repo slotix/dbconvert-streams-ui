@@ -103,29 +103,3 @@ export function formatTableValue(value: unknown, dataType?: string): string {
   // Convert to string for non-binary fields
   return String(value)
 }
-
-/**
- * Formats an entire row of table data
- */
-export function formatTableRow(row: unknown[], columnTypes?: string[]): string[] {
-  return row.map((value, index) => {
-    const dataType = columnTypes?.[index]
-    return formatTableValue(value, dataType)
-  })
-}
-
-/**
- * Formats table data for display
- */
-export function formatTableData(
-  data: { columns: string[]; rows: unknown[][] },
-  columnTypes?: string[]
-): {
-  columns: string[]
-  rows: string[][]
-} {
-  return {
-    columns: data.columns,
-    rows: data.rows.map((row) => formatTableRow(row, columnTypes))
-  }
-}

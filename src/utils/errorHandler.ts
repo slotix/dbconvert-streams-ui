@@ -1,5 +1,4 @@
 import { AxiosError, type AxiosResponse } from 'axios'
-import { useCommonStore } from '@/stores/common'
 
 // Define an interface for the expected error response data structure
 interface ErrorResponseData {
@@ -31,16 +30,4 @@ export function handleApiError(error: unknown): Error {
         'An unknown error occurred'
 
   return new Error(message as string)
-}
-
-export const handleUnauthorizedError = async (error: AxiosError) => {
-  if (error.response?.status === 401) {
-    const commonStore = useCommonStore()
-    const initResult = await commonStore.initApp()
-    if (initResult === 'failed') {
-      throw error
-    }
-    throw new Error('UNAUTHORIZED')
-  }
-  throw error
 }

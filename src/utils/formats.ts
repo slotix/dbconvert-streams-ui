@@ -72,16 +72,6 @@ export function formatDataRateWithUnit(bytesPerSecond: number): { value: string;
   }
 }
 
-export function formatDateShort(date: string): string {
-  const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' }
-  return new Date(date).toLocaleDateString(undefined, options)
-}
-
-export function formatMonth(month: string): string {
-  const options: Intl.DateTimeFormatOptions = { month: 'short', year: 'numeric' }
-  return new Date(month).toLocaleDateString(undefined, options)
-}
-
 export function formatDuration(nanoseconds: number): string {
   // Convert nanoseconds to different units
   const totalSeconds = Math.floor(nanoseconds / 1e9)
@@ -196,31 +186,3 @@ export function parseDataSize(size: string | number | undefined): number {
  * @param durationStr Duration string with unit
  * @returns Duration in milliseconds
  */
-export function parseDuration(durationStr: string | undefined): number {
-  if (!durationStr) return 0
-  const match = durationStr.match(/^([\d.]+)(\w+)$/)
-  if (!match) return 0
-  const num = parseFloat(match[1])
-  const unit = match[2].toLowerCase()
-  if (unit === 'ms') return num
-  if (unit === 's') return num * 1000
-  if (unit === 'm') return num * 60000
-  if (unit === 'h') return num * 3600000
-  return num
-}
-
-/**
- * Parse a numeric string (plain number or with K/M/B suffix) to number
- * @param numStr Numeric string (e.g., "200", "1.5K", "2M")
- * @returns Parsed number
- */
-export function parseNumber(numStr: string | undefined): number {
-  if (!numStr) return 0
-  const cleaned = numStr.replace(/[^0-9.KMB]/gi, '')
-  const num = parseFloat(cleaned.replace(/[KMB]/gi, '')) || 0
-  const upper = cleaned.toUpperCase()
-  if (upper.includes('B')) return num * 1000000000
-  if (upper.includes('M')) return num * 1000000
-  if (upper.includes('K')) return num * 1000
-  return num
-}

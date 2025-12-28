@@ -3,10 +3,6 @@ import type {
   ConnectionSpec,
   DatabaseConnectionSpec,
   S3ConnectionSpec,
-  GCSConnectionSpec,
-  AzureConnectionSpec,
-  FileConnectionSpec,
-  SnowflakeConnectionSpec,
   TargetSpec,
   DatabaseTargetSpec,
   FileSpec,
@@ -69,86 +65,6 @@ export function buildS3ConnectionSpec(
         : undefined
   }
   return { s3: spec }
-}
-
-export function buildGCSConnectionSpec(
-  region?: string,
-  serviceAccountJSON?: string,
-  endpoint?: string,
-  bucket?: string,
-  prefix?: string
-): ConnectionSpec {
-  const spec: GCSConnectionSpec = {
-    region,
-    serviceAccountJSON,
-    endpoint,
-    scope:
-      bucket || prefix
-        ? {
-            bucket,
-            prefix
-          }
-        : undefined
-  }
-  return { gcs: spec }
-}
-
-export function buildAzureConnectionSpec(
-  accountName: string,
-  accountKey?: string,
-  sasToken?: string,
-  clientID?: string,
-  clientSecret?: string,
-  tenantID?: string,
-  endpoint?: string,
-  container?: string,
-  prefix?: string
-): ConnectionSpec {
-  const spec: AzureConnectionSpec = {
-    accountName,
-    accountKey,
-    sasToken,
-    clientID,
-    clientSecret,
-    tenantID,
-    endpoint,
-    scope:
-      container || prefix
-        ? {
-            container,
-            prefix
-          }
-        : undefined
-  }
-  return { azure: spec }
-}
-
-export function buildFileConnectionSpec(basePath: string): ConnectionSpec {
-  const spec: FileConnectionSpec = {
-    basePath
-  }
-  return { files: spec }
-}
-
-export function buildSnowflakeConnectionSpec(
-  account: string,
-  username: string,
-  password?: string,
-  database?: string,
-  schema?: string,
-  warehouse?: string,
-  role?: string
-): ConnectionSpec {
-  const spec: SnowflakeConnectionSpec = {
-    account,
-    username,
-    password,
-    database,
-    schema,
-    warehouse,
-    role
-  }
-  return { snowflake: spec }
 }
 
 // ===== Target Spec Builders =====
