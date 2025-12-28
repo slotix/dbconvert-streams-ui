@@ -95,15 +95,29 @@
 
           <div v-else class="py-1">
             <div v-for="bucket in getS3Buckets(connection.id)" :key="bucket" class="px-2">
-              <button
-                type="button"
-                class="relative flex w-full items-center gap-3 rounded-md px-2 py-1.5 text-sm transition-colors"
+              <div
+                class="relative flex w-full items-center gap-3 rounded-md px-2 py-1.5 text-sm transition-colors cursor-pointer"
                 :class="s3BucketRowClass(connection.id, bucket)"
-                @click="handleS3BucketSelect(connection, bucket)"
+                @click="handleS3BucketRowClick(connection, bucket)"
               >
-                <span class="h-4 w-4 shrink-0" />
+                <!-- Checkbox for multi-select mode (source only) -->
+                <input
+                  v-if="props.enableMultiSelect && props.mode === 'source'"
+                  type="checkbox"
+                  :checked="isSourceConnectionSelected(connection.id, bucket)"
+                  class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-teal-600 focus:ring-teal-500 bg-white dark:bg-gray-800 shrink-0"
+                  @click.stop
+                  @change="
+                    handleS3BucketCheckboxChange(
+                      connection.id,
+                      bucket,
+                      ($event.target as HTMLInputElement)?.checked || false
+                    )
+                  "
+                />
+                <span v-else class="h-4 w-4 shrink-0" />
                 <HighlightedText class="truncate" :text="bucket" :query="props.searchQuery" />
-              </button>
+              </div>
             </div>
           </div>
         </div>
@@ -112,10 +126,25 @@
         <div v-else-if="isLocalFileConnection(connection)" class="space-y-2 py-2">
           <div class="px-2">
             <div
-              class="flex w-full items-start gap-3 rounded-md px-2 py-2 text-sm transition-all duration-200"
+              class="flex w-full items-start gap-3 rounded-md px-2 py-2 text-sm transition-all duration-200 cursor-pointer"
               :class="filePathClass(connection.id)"
+              @click="handleFilePathRowClick(connection)"
             >
-              <span class="h-4 w-4 shrink-0" />
+              <!-- Checkbox for multi-select mode (source only) -->
+              <input
+                v-if="props.enableMultiSelect && props.mode === 'source'"
+                type="checkbox"
+                :checked="isFileConnectionSelected(connection.id)"
+                class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-teal-600 focus:ring-teal-500 bg-white dark:bg-gray-800 shrink-0 mt-0.5"
+                @click.stop
+                @change="
+                  handleFilePathCheckboxChange(
+                    connection.id,
+                    ($event.target as HTMLInputElement)?.checked || false
+                  )
+                "
+              />
+              <span v-else class="h-4 w-4 shrink-0" />
               <span class="flex-1 min-w-0">
                 <div
                   class="truncate text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400"
@@ -407,6 +436,51 @@ function handleS3BucketSelect(connection: Connection, bucket: string) {
   emit('select-bucket', { connectionId: connection.id, bucket })
 }
 
+function handleS3BucketCheckboxChange(connectionId: string, bucket: string, checked: boolean) {
+  emit('toggle-source-connection', { connectionId, database: bucket, checked })
+}
+
+function handleS3BucketRowClick(connection: Connection, bucket: string) {
+  // In multi-select mode for source, toggle selection on row click
+  if (props.enableMultiSelect && props.mode === 'source') {
+    const isCurrentlySelected = isSourceConnectionSelected(connection.id, bucket)
+    handleS3BucketCheckboxChange(connection.id, bucket, !isCurrentlySelected)
+  } else {
+    // Single-select mode (target pane or non-multi-select)
+    handleS3BucketSelect(connection, bucket)
+  }
+}
+
+// Local file connection helpers
+function isFileConnectionSelected(connectionId: string): boolean {
+  // For local files, the basePath is used as the "database" equivalent
+  const connection = getConnectionById(connectionId)
+  const basePath = connection?.spec?.files?.basePath || ''
+  return isSourceConnectionSelected(connectionId, basePath)
+}
+
+function handleFilePathCheckboxChange(connectionId: string, checked: boolean) {
+  const connection = getConnectionById(connectionId)
+  const basePath = connection?.spec?.files?.basePath || ''
+  emit('toggle-source-connection', { connectionId, database: basePath, checked })
+}
+
+function handleFilePathRowClick(connection: Connection) {
+  const basePath = connection.spec?.files?.basePath || ''
+
+  // In multi-select mode for source, toggle selection on row click
+  if (props.enableMultiSelect && props.mode === 'source') {
+    const isCurrentlySelected = isFileConnectionSelected(connection.id)
+    handleFilePathCheckboxChange(connection.id, !isCurrentlySelected)
+  } else {
+    // Single-select mode (target pane or non-multi-select)
+    emit('select-connection', { connectionId: connection.id })
+    if (basePath) {
+      emit('select-file', { connectionId: connection.id, path: basePath })
+    }
+  }
+}
+
 // Multi-select helpers for source connections
 function isSourceConnectionSelected(connectionId: string, database?: string): boolean {
   // First check sourceConnections array
@@ -441,8 +515,12 @@ function toggleSourceSelection(connectionId: string, database: string) {
 }
 
 function s3BucketRowClass(connectionId: string, bucket: string): string {
-  const isSelected =
+  // Check if selected via multi-source connections or single selection
+  const isInMultiSource = isSourceConnectionSelected(connectionId, bucket)
+  const isSingleSelected =
     props.selectedConnectionId === connectionId && props.selectedDatabase === bucket
+
+  const isSelected = isInMultiSource || isSingleSelected
 
   if (!isSelected) {
     return 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800/50'
@@ -569,17 +647,21 @@ function connectionHeaderClass(connectionId: string): string {
 }
 
 function filePathClass(connectionId: string): string {
-  const isSelected = props.selectedConnectionId === connectionId
+  // Check if selected via multi-source connections or single selection
+  const isInMultiSource = isFileConnectionSelected(connectionId)
+  const isSingleSelected = props.selectedConnectionId === connectionId
+
+  const isSelected = isInMultiSource || isSingleSelected
 
   if (!isSelected) {
     return 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800/50 bg-transparent'
   }
 
-  // Selected file path: border-only accent to keep list tidy
+  // Selected file path styling (same as database row for consistency)
   if (props.mode === 'source') {
-    return 'bg-transparent text-sky-900 dark:text-sky-100 font-medium ring-1 ring-sky-400/30 border border-sky-400/40'
+    return 'bg-gradient-to-r from-blue-50 via-blue-100/60 to-transparent dark:from-blue-900/30 dark:via-blue-900/15 dark:to-transparent text-blue-900 dark:text-blue-100 font-semibold ring-1 ring-blue-200 dark:ring-blue-500/30 border border-blue-100/70 dark:border-blue-800/40 pl-2 shadow-inner shadow-blue-900/5'
   } else {
-    return 'bg-transparent text-emerald-900 dark:text-emerald-100 font-medium ring-1 ring-emerald-400/30 border border-emerald-400/40'
+    return 'bg-gradient-to-r from-emerald-50 via-emerald-100/60 to-transparent dark:from-emerald-900/30 dark:via-emerald-900/15 dark:to-transparent text-emerald-900 dark:text-emerald-100 font-semibold ring-1 ring-emerald-200 dark:ring-emerald-500/30 border border-emerald-100/70 dark:border-emerald-800/40 pl-2 shadow-inner shadow-emerald-900/5'
   }
 }
 
@@ -615,22 +697,15 @@ async function toggleConnectionExpansion(connection: Connection) {
 
   addToSet(expandedConnections, connection.id)
 
-  // Handle S3 connections - load buckets
+  // Handle S3 connections - load buckets (don't auto-select, let user choose via checkbox)
   if (isS3Connection(connection)) {
     await loadS3Buckets(connection)
-    emit('select-connection', { connectionId: connection.id })
     return
   }
 
-  // Handle local file connections - load file entries
+  // Handle local file connections - load file entries (don't auto-select, let user choose via checkbox)
   if (isLocalFileConnection(connection)) {
     await fileExplorerStore.loadEntries(connection.id)
-    const basePath = connection.spec?.files?.basePath || ''
-    emit('select-connection', { connectionId: connection.id })
-    // For source mode, also emit select-file with the base path
-    if (props.mode === 'source' && basePath) {
-      emit('select-file', { connectionId: connection.id, path: basePath })
-    }
     return
   }
 
@@ -698,6 +773,12 @@ function handleDatabaseRowClick(connection: Connection, database: string) {
 }
 
 function getLogoSrc(connection: Connection): string {
+  // S3 connections have type='files' but should show S3 bucket icon
+  if (isS3Connection(connection)) {
+    const s3Type = connectionsStore.dbTypes.find((f) => normalizeConnectionType(f.type) === 's3')
+    return s3Type ? s3Type.logo : '/images/db-logos/s3.svg'
+  }
+
   const normalizedType = normalizeConnectionType(connection?.type || '')
   const dbType = connectionsStore.dbTypes.find(
     (f) => normalizeConnectionType(f.type) === normalizedType

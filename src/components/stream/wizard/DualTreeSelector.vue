@@ -365,7 +365,9 @@ const isMultiSource = computed(() => localSourceConnections.value.length > 1)
 // Generate type-based alias for a connection (e.g., pg1, my1, s31)
 function generateAlias(connectionId: string): string {
   const connection = connectionsStore.connectionByID(connectionId)
-  const connectionType = connection?.type
+  // S3 connections have type='files' but should use 's3' for alias generation
+  const isS3 = connection?.type?.toLowerCase() === 'files' && !!connection?.spec?.s3
+  const connectionType = isS3 ? 's3' : connection?.type
   const existingAliases = localSourceConnections.value.map((c) => c.alias || '')
   return generateTypeBasedAlias(connectionType, existingAliases)
 }
