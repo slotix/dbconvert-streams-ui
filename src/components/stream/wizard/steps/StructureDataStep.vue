@@ -17,8 +17,10 @@
     <div
       class="bg-linear-to-br from-slate-50 to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-850 border border-gray-100 dark:border-gray-700 rounded-xl p-6 shadow-sm dark:shadow-gray-900/30"
     >
-      <!-- File Source: Show file preview list -->
+      <!-- Pure File Source: Show file preview list only -->
       <FilePreviewList v-if="isFileSourceConnection" :connection-id="sourceConnectionId" />
+
+      <!-- Mixed or Pure Database Sources -->
       <template v-else>
         <!-- Tab-based Data Source Selector -->
         <div class="flex items-center gap-2 mb-4 border-b border-gray-200 dark:border-gray-700">
@@ -75,6 +77,44 @@
           <!-- Tables Tab Content -->
           <div v-if="activeDataTab === 'tables'">
             <TableList />
+
+            <!-- File/S3 Sources Section (in mixed mode) -->
+            <div v-if="hasMixedSourceTypes" class="mt-6 space-y-4">
+              <div
+                v-for="fileConn in fileSourceConnections"
+                :key="fileConn.connectionId"
+                class="border-t border-gray-200 dark:border-gray-700 pt-4"
+              >
+                <!-- File source header -->
+                <div
+                  class="flex items-center gap-3 mb-3 px-4 py-2 bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-teal-900/30 dark:to-cyan-900/30 rounded-lg border border-teal-200 dark:border-teal-700"
+                >
+                  <component
+                    :is="isS3Type(fileConn.connectionId) ? Cloud : FolderOpen"
+                    class="w-5 h-5 text-teal-600 dark:text-teal-400"
+                  />
+                  <div class="flex items-center gap-2">
+                    <span class="text-sm font-bold text-teal-900 dark:text-teal-100">
+                      {{ fileConn.alias }}
+                    </span>
+                    <span class="text-xs text-teal-600 dark:text-teal-400">
+                      {{ getConnectionName(fileConn.connectionId) }}
+                    </span>
+                    <span
+                      v-if="fileConn.s3?.bucket"
+                      class="text-xs text-teal-500 dark:text-teal-400"
+                    >
+                      / {{ fileConn.s3.bucket }}
+                    </span>
+                  </div>
+                </div>
+                <!-- File preview for this connection -->
+                <FilePreviewList
+                  :connection-id="fileConn.connectionId"
+                  :bucket="fileConn.s3?.bucket"
+                />
+              </div>
+            </div>
           </div>
 
           <!-- Queries Tab Content - Only in Convert mode -->
@@ -277,7 +317,7 @@ import FilePreviewList from '@/components/stream/wizard/FilePreviewList.vue'
 import ModeButtons from '@/components/settings/ModeButtons.vue'
 import Operations from '@/components/settings/Operations.vue'
 import CustomQueryEditor from '@/components/stream/wizard/CustomQueryEditor.vue'
-import { Code, Sheet } from 'lucide-vue-next'
+import { Code, Sheet, Cloud, FolderOpen } from 'lucide-vue-next'
 import type { ConnectionMapping } from '@/api/federated'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
@@ -371,17 +411,48 @@ const sourceConnectionId = computed(() => {
   return source?.connections?.[0]?.connectionId || null
 })
 
-const sourceConnection = computed(() => {
-  if (!sourceConnectionId.value) {
-    return null
-  }
-  return connectionsStore.connectionByID(sourceConnectionId.value)
+// Helper to check if a connection is a file/S3 type
+function isFileType(connectionId: string): boolean {
+  const conn = connectionsStore.connectionByID(connectionId)
+  const type = conn?.type?.toLowerCase() || ''
+  return type.includes('file')
+}
+
+// Helper to check if a connection is S3 (file type with spec.s3)
+function isS3Type(connectionId: string): boolean {
+  const conn = connectionsStore.connectionByID(connectionId)
+  return isFileType(connectionId) && !!conn?.spec?.s3
+}
+
+// Get all file/S3 source connections
+const fileSourceConnections = computed(() => {
+  const connections = streamsStore.currentStreamConfig?.source?.connections || []
+  return connections.filter((conn) => isFileType(conn.connectionId))
 })
 
-const isFileSourceConnection = computed(() => {
-  const type = sourceConnection.value?.type?.toLowerCase() || ''
-  return type.includes('file')
+// Get all database source connections
+const databaseSourceConnections = computed(() => {
+  const connections = streamsStore.currentStreamConfig?.source?.connections || []
+  return connections.filter((conn) => !isFileType(conn.connectionId))
 })
+
+// Check if ALL sources are file connections (pure file mode)
+const isFileSourceConnection = computed(() => {
+  const connections = streamsStore.currentStreamConfig?.source?.connections || []
+  if (connections.length === 0) return false
+  return connections.every((conn) => isFileType(conn.connectionId))
+})
+
+// Check if we have a mix of database and file sources
+const hasMixedSourceTypes = computed(() => {
+  return fileSourceConnections.value.length > 0 && databaseSourceConnections.value.length > 0
+})
+
+// Get connection name by ID
+function getConnectionName(connectionId: string): string {
+  const conn = connectionsStore.connectionByID(connectionId)
+  return conn?.name || connectionId
+}
 
 // Check if target is a database type that supports structure options
 const targetConnection = computed(() => {

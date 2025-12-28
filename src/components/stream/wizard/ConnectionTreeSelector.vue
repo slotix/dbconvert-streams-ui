@@ -104,7 +104,7 @@
                 <input
                   v-if="props.enableMultiSelect && props.mode === 'source'"
                   type="checkbox"
-                  :checked="isSourceConnectionSelected(connection.id, bucket)"
+                  :checked="isS3BucketSelected(connection.id, bucket)"
                   class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-teal-600 focus:ring-teal-500 bg-white dark:bg-gray-800 shrink-0"
                   @click.stop
                   @change="
@@ -230,7 +230,7 @@
                 <input
                   v-if="props.enableMultiSelect && props.mode === 'source'"
                   type="checkbox"
-                  :checked="isSourceConnectionSelected(connection.id, database.name)"
+                  :checked="isDatabaseSelected(connection.id, database.name)"
                   class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-teal-600 focus:ring-teal-500 bg-white dark:bg-gray-800 shrink-0"
                   @change="
                     handleDatabaseCheckboxChange(
@@ -443,7 +443,7 @@ function handleS3BucketCheckboxChange(connectionId: string, bucket: string, chec
 function handleS3BucketRowClick(connection: Connection, bucket: string) {
   // In multi-select mode for source, toggle selection on row click
   if (props.enableMultiSelect && props.mode === 'source') {
-    const isCurrentlySelected = isSourceConnectionSelected(connection.id, bucket)
+    const isCurrentlySelected = isS3BucketSelected(connection.id, bucket)
     handleS3BucketCheckboxChange(connection.id, bucket, !isCurrentlySelected)
   } else {
     // Single-select mode (target pane or non-multi-select)
@@ -453,10 +453,14 @@ function handleS3BucketRowClick(connection: Connection, bucket: string) {
 
 // Local file connection helpers
 function isFileConnectionSelected(connectionId: string): boolean {
-  // For local files, the basePath is used as the "database" equivalent
   const connection = getConnectionById(connectionId)
   const basePath = connection?.spec?.files?.basePath || ''
-  return isSourceConnectionSelected(connectionId, basePath)
+  if (props.sourceConnections && props.sourceConnections.length > 0) {
+    return props.sourceConnections.some(
+      (fc) => fc.connectionId === connectionId && fc.database === basePath
+    )
+  }
+  return props.selectedConnectionId === connectionId && props.selectedDatabase === basePath
 }
 
 function handleFilePathCheckboxChange(connectionId: string, checked: boolean) {
@@ -481,42 +485,42 @@ function handleFilePathRowClick(connection: Connection) {
   }
 }
 
-// Multi-select helpers for source connections
-function isSourceConnectionSelected(connectionId: string, database?: string): boolean {
-  // First check sourceConnections array
+// Database connection helpers
+function isDatabaseSelected(connectionId: string, database: string): boolean {
   if (props.sourceConnections && props.sourceConnections.length > 0) {
     return props.sourceConnections.some(
-      (fc) => fc.connectionId === connectionId && (!database || fc.database === database)
+      (fc) => fc.connectionId === connectionId && fc.database === database
     )
   }
-  // Fallback: check regular selection props (single-source edit mode)
-  // This ensures the checkbox is checked when editing a single-source stream
-  if (props.selectedConnectionId === connectionId) {
-    if (!database) return true
-    return props.selectedDatabase === database
-  }
-  return false
-}
-
-function handleSourceCheckbox(connectionId: string, database: string, checked: boolean) {
-  emit('toggle-source-connection', { connectionId, database, checked })
+  // Fallback for single-source edit mode
+  return props.selectedConnectionId === connectionId && props.selectedDatabase === database
 }
 
 function handleDatabaseCheckboxChange(connectionId: string, database: string, checked: boolean) {
-  handleSourceCheckbox(connectionId, database, checked)
+  emit('toggle-source-connection', { connectionId, database, checked })
   if (checked) {
     void ensureMetadata(connectionId, database)
   }
 }
 
-function toggleSourceSelection(connectionId: string, database: string) {
-  const isCurrentlySelected = isSourceConnectionSelected(connectionId, database)
+function toggleDatabaseSelection(connectionId: string, database: string) {
+  const isCurrentlySelected = isDatabaseSelected(connectionId, database)
   handleDatabaseCheckboxChange(connectionId, database, !isCurrentlySelected)
 }
 
+// S3 connection helpers
+function isS3BucketSelected(connectionId: string, bucket: string): boolean {
+  if (props.sourceConnections && props.sourceConnections.length > 0) {
+    return props.sourceConnections.some(
+      (fc) => fc.connectionId === connectionId && fc.s3?.bucket === bucket
+    )
+  }
+  // Fallback for single-source edit mode
+  return props.selectedConnectionId === connectionId && props.selectedDatabase === bucket
+}
+
 function s3BucketRowClass(connectionId: string, bucket: string): string {
-  // Check if selected via multi-source connections or single selection
-  const isInMultiSource = isSourceConnectionSelected(connectionId, bucket)
+  const isInMultiSource = isS3BucketSelected(connectionId, bucket)
   const isSingleSelected =
     props.selectedConnectionId === connectionId && props.selectedDatabase === bucket
 
@@ -526,7 +530,6 @@ function s3BucketRowClass(connectionId: string, bucket: string): string {
     return 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800/50'
   }
 
-  // Selected bucket styling (same as database row)
   if (props.mode === 'source') {
     return 'bg-gradient-to-r from-blue-50 via-blue-100/60 to-transparent dark:from-blue-900/30 dark:via-blue-900/15 dark:to-transparent text-blue-900 dark:text-blue-100 font-semibold ring-1 ring-blue-200 dark:ring-blue-500/30 border border-blue-100/70 dark:border-blue-800/40 pl-2 shadow-inner shadow-blue-900/5'
   } else {
@@ -666,18 +669,16 @@ function filePathClass(connectionId: string): string {
 }
 
 function databaseRowClass(connectionId: string, database: string): string {
-  // Check if selected via multi-source connections or single selection
-  const isInFederated = isSourceConnectionSelected(connectionId, database)
+  const isInMultiSource = isDatabaseSelected(connectionId, database)
   const isSingleSelected =
     props.selectedConnectionId === connectionId && props.selectedDatabase === database
 
-  const isSelected = isInFederated || isSingleSelected
+  const isSelected = isInMultiSource || isSingleSelected
 
   if (!isSelected) {
     return 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800/50'
   }
 
-  // Selected database: same highlight style for both single and multi-select
   if (props.mode === 'source') {
     return 'bg-gradient-to-r from-blue-50 via-blue-100/60 to-transparent dark:from-blue-900/30 dark:via-blue-900/15 dark:to-transparent text-blue-900 dark:text-blue-100 font-semibold ring-1 ring-blue-200 dark:ring-blue-500/30 border border-blue-100/70 dark:border-blue-800/40 pl-2 shadow-inner shadow-blue-900/5'
   } else {
@@ -765,7 +766,7 @@ function handleDatabaseRowClick(connection: Connection, database: string) {
 
   // In multi-select mode for source, toggle selection on row click
   if (props.enableMultiSelect && props.mode === 'source') {
-    toggleSourceSelection(connection.id, database)
+    toggleDatabaseSelection(connection.id, database)
   } else {
     // Single-select mode
     handleDatabaseSelect(connection, database)

@@ -1,6 +1,5 @@
 import { ref, computed } from 'vue'
-import type { StreamConfig } from '@/types/streamConfig'
-import type { ConnectionMapping } from '@/api/federated'
+import type { StreamConfig, StreamConnectionMapping } from '@/types/streamConfig'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
 import { normalizeConnectionAliases, DEFAULT_ALIAS } from '@/utils/federatedUtils'
@@ -24,7 +23,7 @@ export interface SelectionState {
 // Snapshot for tracking changes
 interface WizardSnapshot {
   selection: SelectionState
-  sourceConnections: ConnectionMapping[]
+  sourceConnections: StreamConnectionMapping[]
   createTables: boolean
   createIndexes: boolean
   createForeignKeys: boolean
@@ -65,7 +64,7 @@ export function useStreamWizard() {
     targetPath: null
   })
 
-  const sourceConnections = ref<ConnectionMapping[]>([])
+  const sourceConnections = ref<StreamConnectionMapping[]>([])
   const primarySourceId = computed(() => sourceConnections.value[0]?.connectionId || null)
   const primarySourceDatabase = computed(() => sourceConnections.value[0]?.database || null)
   const isMultiSource = computed(() => sourceConnections.value.length > 1)
@@ -297,8 +296,10 @@ export function useStreamWizard() {
   }
 
   // Use shared utility for alias normalization
-  function normalizeSourceConnections(connections: ConnectionMapping[]): ConnectionMapping[] {
-    return normalizeConnectionAliases(connections)
+  function normalizeSourceConnections(
+    connections: StreamConnectionMapping[]
+  ): StreamConnectionMapping[] {
+    return normalizeConnectionAliases(connections) as StreamConnectionMapping[]
   }
 
   function syncPrimarySelection(schemaOverride?: string | null) {
@@ -369,7 +370,7 @@ export function useStreamWizard() {
     copyData.value = value
   }
 
-  function setSourceConnections(connections: ConnectionMapping[]) {
+  function setSourceConnections(connections: StreamConnectionMapping[]) {
     const previousPrimary = sourceConnections.value[0]?.connectionId
     sourceConnections.value = normalizeSourceConnections(connections)
     const newPrimary = sourceConnections.value[0]?.connectionId
@@ -540,12 +541,16 @@ export function useStreamWizard() {
     removedConnectionsCount.value = hasInvalidConnection ? originalConnections.length : 0
 
     // If ANY connection is invalid, clear ALL - user must select new ones
-    const connectionsFromConfig: ConnectionMapping[] = hasInvalidConnection
+    const connectionsFromConfig: StreamConnectionMapping[] = hasInvalidConnection
       ? []
       : originalConnections.map((fc) => ({
           alias: fc.alias,
           connectionId: fc.connectionId,
-          database: fc.database
+          database: fc.database,
+          schema: fc.schema,
+          tables: fc.tables,
+          queries: fc.queries,
+          s3: fc.s3
         }))
 
     setSourceConnections(connectionsFromConfig)

@@ -296,7 +296,7 @@ import { X } from 'lucide-vue-next'
 import BaseButton from '@/components/base/BaseButton.vue'
 import ConnectionTreeSelector from './ConnectionTreeSelector.vue'
 import StreamConnectionFilter from './StreamConnectionFilter.vue'
-import type { ConnectionMapping } from '@/api/federated'
+import type { StreamConnectionMapping } from '@/types/streamConfig'
 import { generateTypeBasedAlias } from '@/utils/federatedUtils'
 
 interface Props {
@@ -308,7 +308,7 @@ interface Props {
   targetSchema?: string | null
   targetPath?: string | null
   /** Source connections (multi-source supported) */
-  sourceConnections?: ConnectionMapping[]
+  sourceConnections?: StreamConnectionMapping[]
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -332,7 +332,7 @@ const emit = defineEmits<{
   ]
   'add-connection': [paneType: 'source' | 'target']
   'clear-all': []
-  'update:source-connections': [connections: ConnectionMapping[]]
+  'update:source-connections': [connections: StreamConnectionMapping[]]
 }>()
 
 const connectionsStore = useConnectionsStore()
@@ -343,7 +343,7 @@ const sourceConnectionType = ref<string | null>(null)
 const targetConnectionType = ref<string | null>(null)
 
 // Source connections state (auto-detects multi-source when length > 1)
-const localSourceConnections = ref<ConnectionMapping[]>([...props.sourceConnections])
+const localSourceConnections = ref<StreamConnectionMapping[]>([...props.sourceConnections])
 
 // Sync prop changes to local state
 watch(
@@ -419,6 +419,9 @@ function handleToggleSourceConnection(payload: {
   const connection = connectionsStore.connectionByID(payload.connectionId)
   if (!connection) return
 
+  // Check if this is an S3 connection
+  const isS3Connection = connection.type?.toLowerCase() === 'files' && !!connection.spec?.s3
+
   if (payload.checked) {
     // Add to source connections - check both connectionId AND database
     const existing = localSourceConnections.value.find(
@@ -426,10 +429,12 @@ function handleToggleSourceConnection(payload: {
     )
     if (!existing) {
       const alias = generateAlias(payload.connectionId)
-      const mapping: ConnectionMapping = {
+      const mapping: StreamConnectionMapping = {
         connectionId: payload.connectionId,
         alias: alias,
-        database: payload.database
+        database: payload.database,
+        // For S3 connections, set the s3 config with bucket (database holds the bucket name)
+        ...(isS3Connection && payload.database ? { s3: { bucket: payload.database } } : {})
       }
       localSourceConnections.value = [...localSourceConnections.value, mapping]
     }
@@ -635,7 +640,7 @@ function handleSourceFileSelect(payload: { connectionId: string; path: string })
 }
 
 function handleSourceBucketSelect(payload: { connectionId: string; bucket: string }) {
-  // For S3 sources, treat the bucket as the "database" equivalent
+  // For S3 sources, set both database (for display) and s3.bucket (for backend)
   const alias =
     localSourceConnections.value.find((c) => c.connectionId === payload.connectionId)?.alias ||
     generateAlias(payload.connectionId)
@@ -643,7 +648,8 @@ function handleSourceBucketSelect(payload: { connectionId: string; bucket: strin
     {
       alias,
       connectionId: payload.connectionId,
-      database: payload.bucket // Use bucket as database for S3 sources
+      database: payload.bucket, // For display purposes
+      s3: { bucket: payload.bucket } // Required by backend for S3 sources
     }
   ]
   emit('update:source-connections', localSourceConnections.value)

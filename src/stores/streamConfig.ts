@@ -1,9 +1,12 @@
 import { defineStore } from 'pinia'
 import api from '@/api/streams'
-import type { StreamConfig } from '@/types/streamConfig'
-import type { Table } from '@/types/streamConfig'
-import type { StreamConnectionMapping } from '@/types/streamConfig'
-import type { S3SourceConfig } from '@/types/streamConfig'
+import type {
+  StreamConfig,
+  Table,
+  StreamConnectionMapping,
+  S3SourceConfig,
+  FileEntry
+} from '@/types/streamConfig'
 import type { TargetSpec } from '@/types/specs'
 import type { Step } from '@/stores/common'
 import { useConnectionsStore } from '@/stores/connections'
@@ -280,33 +283,62 @@ export const buildStreamPayload = (stream: StreamConfig): Partial<StreamConfig> 
       connectionId: conn.connectionId
     }
 
-    // Include database if specified
-    if (conn.database) {
-      result.database = conn.database
+    // For S3 connections, do NOT include database/schema/tables/queries (backend requires them empty)
+    // Only include these fields for non-S3 connections
+    if (!conn.s3) {
+      if (conn.database) {
+        result.database = conn.database
+      }
+      if (conn.schema) {
+        result.schema = conn.schema
+      }
+
+      // Get tables from connection or use converted file tables (for single-source file streams)
+      const connTables = conn.tables && conn.tables.length > 0 ? conn.tables : sourceTables
+      if (connTables.length > 0) {
+        result.tables = filterTables(connTables)
+      }
+
+      // Include custom queries (only for convert mode)
+      if (stream.mode === 'convert' && conn.queries && conn.queries.length > 0) {
+        result.queries = conn.queries.map((q) => ({
+          name: q.name,
+          query: q.query
+        }))
+      }
     }
 
-    // Include schema if specified
-    if (conn.schema) {
-      result.schema = conn.schema
-    }
-
-    // Get tables from connection or use converted file tables (for single-source file streams)
-    const connTables = conn.tables && conn.tables.length > 0 ? conn.tables : sourceTables
-    if (connTables.length > 0) {
-      result.tables = filterTables(connTables)
-    }
-
-    // Include custom queries (only for convert mode)
-    if (stream.mode === 'convert' && conn.queries && conn.queries.length > 0) {
-      result.queries = conn.queries.map((q) => ({
-        name: q.name,
-        query: q.query
-      }))
-    }
-
-    // Include S3 config if present
+    // Include S3 config if present (for S3-backed connections)
     if (conn.s3) {
-      result.s3 = conn.s3
+      const bucket = conn.s3.bucket || conn.database || ''
+
+      // If s3 already has prefixes/objects, use them directly
+      if (
+        (conn.s3.prefixes && conn.s3.prefixes.length > 0) ||
+        (conn.s3.objects && conn.s3.objects.length > 0)
+      ) {
+        result.s3 = conn.s3
+      } else if (stream.files && stream.files.length > 0) {
+        // Otherwise, build from selected files matching this bucket
+        const filesForBucket = stream.files.filter((f) => {
+          const parsed = parseS3Path(f.path)
+          return parsed?.bucket === bucket
+        })
+        if (filesForBucket.length > 0) {
+          const s3FromFiles = s3ConfigFromFiles(filesForBucket)
+          result.s3 = {
+            bucket,
+            ...(s3FromFiles.prefixes.length > 0 ? { prefixes: s3FromFiles.prefixes } : {}),
+            ...(s3FromFiles.objects.length > 0 ? { objects: s3FromFiles.objects } : {})
+          }
+        } else {
+          // No files selected, just set bucket (will fail backend validation)
+          result.s3 = { bucket }
+        }
+      } else {
+        // No files array, just preserve the s3 config as-is
+        result.s3 = conn.s3
+      }
     }
 
     return result
@@ -410,6 +442,39 @@ export const useStreamsStore = defineStore('streams', {
       this.currentStreamConfig = curStream
         ? normalizeStreamConfig(curStream)
         : normalizeStreamConfig({ ...defaultStreamConfigOptions })
+
+      // Restore S3 prefixes/objects to stream.files[] for FilePreviewList
+      if (this.currentStreamConfig?.source?.connections) {
+        const files: FileEntry[] = this.currentStreamConfig.files || []
+        for (const conn of this.currentStreamConfig.source.connections) {
+          if (conn.s3?.bucket) {
+            const bucket = conn.s3.bucket
+            // Convert prefixes to directory entries (paths must have trailing slash to match file explorer)
+            if (conn.s3.prefixes) {
+              for (const prefix of conn.s3.prefixes) {
+                // Ensure trailing slash for directory paths
+                const normalizedPrefix = prefix.endsWith('/') ? prefix : `${prefix}/`
+                const path = `s3://${bucket}/${normalizedPrefix}`
+                const name = prefix.split('/').filter(Boolean).pop() || prefix
+                if (!files.find((f) => f.path === path)) {
+                  files.push({ name, path, type: 'dir', selected: true })
+                }
+              }
+            }
+            // Convert objects to file entries
+            if (conn.s3.objects) {
+              for (const obj of conn.s3.objects) {
+                const path = `s3://${bucket}/${obj}`
+                const name = obj.split('/').pop() || obj
+                if (!files.find((f) => f.path === path)) {
+                  files.push({ name, path, type: 'file', selected: true })
+                }
+              }
+            }
+          }
+        }
+        this.currentStreamConfig.files = files
+      }
 
       // Clear source connections that reference deleted connections
       if (this.currentStreamConfig?.source?.connections) {

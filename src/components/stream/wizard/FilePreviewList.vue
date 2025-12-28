@@ -150,10 +150,13 @@ import FileIcon from '@/components/common/FileIcon.vue'
 
 interface Props {
   connectionId?: string | null
+  /** S3 bucket name - for multi-source mode where each connection has its own bucket */
+  bucket?: string | null
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  connectionId: null
+  connectionId: null,
+  bucket: null
 })
 
 const fileExplorerStore = useFileExplorerStore()
@@ -169,8 +172,12 @@ const isS3Connection = computed(() => {
 
 const s3Bucket = computed(() => {
   if (!isS3Connection.value) return ''
-  // In the wizard, bucket is currently stored as sourceDatabase.
-  return streamsStore.currentStreamConfig?.sourceDatabase || ''
+  // Explicit prop (multi-source mode) or from source connection's s3 config
+  if (props.bucket) return props.bucket
+  const sourceConn = streamsStore.currentStreamConfig?.source?.connections?.find(
+    (c) => c.connectionId === props.connectionId
+  )
+  return sourceConn?.s3?.bucket || ''
 })
 
 const rawFiles = computed<FileSystemEntry[]>(() => {
