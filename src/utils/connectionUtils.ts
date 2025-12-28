@@ -1,4 +1,5 @@
 import type { Connection } from '@/types/connections'
+import { getConnectionTypeLabel } from '@/types/specs'
 import { getConnectionHost, getConnectionPort } from '@/utils/specBuilder'
 
 export function normalizeConnectionType(type: string): string {
@@ -21,8 +22,9 @@ export function getConnectionTooltip(connection: Connection): string {
   if (host && port) {
     parts.push(`${host}:${port}`)
   }
-  if (connection.type) {
-    parts.push(`Type: ${connection.type}`)
+  const typeLabel = getConnectionTypeLabel(connection.spec, connection.type)
+  if (typeLabel) {
+    parts.push(`Type: ${typeLabel}`)
   }
   if (connection.cloud_provider) {
     parts.push(`Cloud: ${connection.cloud_provider}`)

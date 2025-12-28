@@ -4,14 +4,14 @@
  * @param wait Delay in milliseconds
  * @param immediate Execute on leading edge instead of trailing
  */
-export function debounce<T extends (this: unknown, ...args: unknown[]) => unknown>(
-  func: T,
+export function debounce<This, Args extends unknown[], R>(
+  func: (this: This, ...args: Args) => R,
   wait: number,
   immediate = false
-): (...args: Parameters<T>) => void {
+): (this: This, ...args: Args) => void {
   let timeout: ReturnType<typeof setTimeout> | null = null
 
-  return function executedFunction(this: ThisParameterType<T>, ...args: Parameters<T>) {
+  return function executedFunction(this: This, ...args: Args) {
     const context = this
     const later = () => {
       timeout = null

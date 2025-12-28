@@ -307,7 +307,7 @@ const connectionPort = computed(() => getConnectionPort(props.connection))
           <CloudProviderBadge
             v-if="connection.cloud_provider"
             :cloud-provider="connection.cloud_provider"
-            :db-type="connection.type"
+            :db-type="treeLogic.getEffectiveType(connection)"
             size="sm"
             class="shrink-0"
           />

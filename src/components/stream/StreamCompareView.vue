@@ -17,6 +17,12 @@ import type { FileSystemEntry } from '@/api/fileSystem'
 import type { FileMetadata } from '@/types/files'
 import * as files from '@/api/files'
 import type { FileFormat } from '@/utils/fileFormat'
+import {
+  getConnectionKindFromSpec,
+  getConnectionTypeLabel,
+  getSqlDialectFromConnection,
+  isFileBasedKind
+} from '@/types/specs'
 
 interface GridState {
   sortModel?: SortModelItem[]
@@ -82,11 +88,22 @@ const targetApproxRows = computed(() => {
   return overviewStore.getTableRowCount(selectedTable.value, props.target.id, targetDatabase.value)
 })
 
-// Check if target is file-based
-// Only 'files' is a valid file connection type now (legacy csv/jsonl/parquet removed)
-const isFileTarget = computed(() => {
-  return props.target.type?.toLowerCase() === 'files'
-})
+const sourceTypeLabel = computed(
+  () => getConnectionTypeLabel(props.source.spec, props.source.type) || ''
+)
+const targetTypeLabel = computed(
+  () => getConnectionTypeLabel(props.target.spec, props.target.type) || ''
+)
+const sourceDialect = computed(() =>
+  getSqlDialectFromConnection(props.source.spec, props.source.type)
+)
+const targetDialect = computed(() =>
+  getSqlDialectFromConnection(props.target.spec, props.target.type)
+)
+
+// Check if target is file-based - spec is the ONLY source of truth
+const targetKind = computed(() => getConnectionKindFromSpec(props.target.spec))
+const isFileTarget = computed(() => isFileBasedKind(targetKind.value))
 
 const targetFileFormat = computed<FileFormat | undefined>(() => {
   const spec = props.stream.target?.spec
@@ -270,7 +287,8 @@ async function loadSourceTable() {
     // For MySQL, don't pass schema (database IS the schema)
     // For PostgreSQL, use schema if provided, otherwise default to 'public'
     let schema: string | undefined
-    if (props.source.type === 'mysql') {
+    const sourceKind = getConnectionKindFromSpec(props.source.spec)
+    if (sourceKind === 'database' && sourceTypeLabel.value === 'mysql') {
       schema = undefined // MySQL doesn't use separate schemas
     } else {
       schema = sourceSchema.value || 'public'
@@ -290,6 +308,10 @@ async function loadSourceTable() {
 
 async function loadTargetTable() {
   try {
+    targetFileError.value = null
+    targetFileEntry.value = null
+    targetFileMetadata.value = null
+
     if (!targetDatabase.value) return
 
     // Force refresh metadata to ensure we get latest tables after stream completion
@@ -306,7 +328,8 @@ async function loadTargetTable() {
     // For MySQL, don't pass schema (database IS the schema)
     // For PostgreSQL, use schema if provided, otherwise default to 'public'
     let schema: string | undefined
-    if (props.target.type === 'mysql') {
+    const targetKind = getConnectionKindFromSpec(props.target.spec)
+    if (targetKind === 'database' && targetTypeLabel.value === 'mysql') {
       schema = undefined // MySQL doesn't use separate schemas
     } else {
       schema = targetSchema.value || 'public'
@@ -330,6 +353,12 @@ async function loadTargetFile() {
     targetFileError.value = null
     targetFileEntry.value = null
     targetFileMetadata.value = null
+    targetTableMeta.value = null
+
+    if (targetKind.value === 'gcs' || targetKind.value === 'azure') {
+      targetFileError.value = 'Target compare view does not support GCS or Azure yet.'
+      return
+    }
 
     if (!targetRootPath.value) {
       targetFileError.value = 'Target connection has no output directory configured'
@@ -632,10 +661,10 @@ async function selectTable(tableName: string) {
       :comparison="schemaComparison"
       :source-ddl="sourceTableMeta.ddl"
       :target-ddl="targetTableMeta.ddl"
-      :source-connection-type="source.type"
-      :target-connection-type="target.type"
-      :source-dialect="source.type"
-      :target-dialect="target.type"
+      :source-connection-type="sourceTypeLabel"
+      :target-connection-type="targetTypeLabel"
+      :source-dialect="sourceDialect"
+      :target-dialect="targetDialect"
     />
 
     <!-- Split View -->

@@ -5,6 +5,11 @@ import { debounce } from '@/utils/debounce'
 import type { Connection, DbType } from '@/types/connections'
 import { useExplorerNavigationStore } from './explorerNavigation'
 import { getConnectionDatabase } from '@/utils/specBuilder'
+import {
+  getConnectionKindFromSpec,
+  isDatabaseKind,
+  matchesConnectionTypeFilter
+} from '@/types/specs'
 
 type ConnectionSpecFactory = () => Connection['spec']
 
@@ -113,7 +118,8 @@ export const useConnectionsStore = defineStore('connections', {
     },
     countConnections(state: State): number {
       return state.connections.filter((el) => {
-        return el.type && el.type.toLowerCase().indexOf(state.currentFilter.toLowerCase()) > -1
+        const filter = state.currentFilter.toLowerCase()
+        return matchesConnectionTypeFilter(el.spec, el.type, filter)
       }).length
     },
     currentConnectionIndexInArray(state: State): number {
@@ -122,7 +128,8 @@ export const useConnectionsStore = defineStore('connections', {
     connectionsByType(state: State): Connection[] {
       return state.connections
         .filter((el) => {
-          return el.type && el.type.toLowerCase().indexOf(state.currentFilter.toLowerCase()) > -1
+          const filter = state.currentFilter.toLowerCase()
+          return matchesConnectionTypeFilter(el.spec, el.type, filter)
         })
         .sort((a, b) => (b.created as number) - (a.created as number))
     }
@@ -359,6 +366,8 @@ export const useConnectionsStore = defineStore('connections', {
     // Helper to check if a connection supports multi-schema operations
     supportsMultiSchema(connectionId: string): boolean {
       const connection = this.connections.find((conn) => conn.id === connectionId)
+      const kind = getConnectionKindFromSpec(connection?.spec)
+      if (!isDatabaseKind(kind)) return false
       const type = connection?.type?.toLowerCase()
       return type === 'postgresql' || type === 'sqlserver' || type === 'oracle'
     },

@@ -127,9 +127,9 @@
           <!-- Connection Icon -->
           <div class="shrink-0">
             <component
-              :is="getConnectionIcon(conn.type)"
+              :is="getConnectionIcon(getConnectionTypeLabelForUI(conn))"
               class="h-5 w-5"
-              :class="getConnectionIconColor(conn.type)"
+              :class="getConnectionIconColor(getConnectionTypeLabelForUI(conn))"
             />
           </div>
 
@@ -142,7 +142,7 @@
               {{ conn.name }}
             </label>
             <p class="text-xs text-gray-500 dark:text-gray-400 truncate">
-              {{ conn.type }} · {{ getConnectionHost(conn) }}
+              {{ getConnectionTypeLabelForUI(conn) }} · {{ getConnectionHost(conn) }}
             </p>
             <!-- File connection hint -->
             <p
@@ -209,6 +209,13 @@ import { useConnectionsStore } from '@/stores/connections'
 import type { Connection } from '@/types/connections'
 import type { ConnectionMapping } from '@/api/federated'
 import { generateTypeBasedAlias } from '@/utils/federatedUtils'
+import {
+  getConnectionKindFromSpec,
+  getConnectionTypeLabel,
+  isCloudStorageKind,
+  isDatabaseKind,
+  isFileBasedKind
+} from '@/types/specs'
 
 // Props
 interface Props {
@@ -241,35 +248,29 @@ const connectionsStore = useConnectionsStore()
 // Local State
 const isCollapsed = ref(props.defaultCollapsed)
 
-// Helper to check if a connection type is a database
-function isDatabaseType(type: string): boolean {
-  const normalized = type?.toLowerCase() || ''
-  return (
-    normalized === 'postgresql' ||
-    normalized === 'postgres' ||
-    normalized === 'mysql' ||
-    normalized === 'mariadb'
-  )
+function isDatabaseConnection(conn: Connection): boolean {
+  const kind = getConnectionKindFromSpec(conn.spec)
+  return isDatabaseKind(kind)
 }
 
-// Helper to check if a connection type is a file/cloud storage
-function isFileType(type: string): boolean {
-  const normalized = type?.toLowerCase() || ''
-  return (
-    normalized === 'files' || normalized === 's3' || normalized === 'gcs' || normalized === 'azure'
-  )
+function isFileConnectionKind(conn: Connection): boolean {
+  const kind = getConnectionKindFromSpec(conn.spec)
+  return isFileBasedKind(kind)
+}
+
+function getConnectionTypeLabelForUI(conn: Connection): string {
+  return getConnectionTypeLabel(conn.spec, conn.type) || ''
 }
 
 // Computed
 const availableConnections = computed(() => {
   return connectionsStore.connections.filter((conn) => {
-    const type = conn.type?.toLowerCase() || ''
     // Always include database connections
-    if (isDatabaseType(type)) {
+    if (isDatabaseConnection(conn)) {
       return true
     }
     // Include file connections only if showFileConnections is true
-    if (props.showFileConnections && isFileType(type)) {
+    if (props.showFileConnections && isFileConnectionKind(conn)) {
       return true
     }
     return false
@@ -284,9 +285,10 @@ const hasMultipleCloudConnections = computed(() => {
   const cloudConnectionIds = props.modelValue
     .map((m) => {
       const conn = connectionsStore.connections.find((c) => c.id === m.connectionId)
-      return conn?.type?.toLowerCase()
+      const kind = getConnectionKindFromSpec(conn?.spec)
+      return kind && isCloudStorageKind(kind) ? kind : null
     })
-    .filter((type) => type === 's3' || type === 'gcs' || type === 'azure')
+    .filter((type) => type !== null)
   return cloudConnectionIds.length > 1
 })
 
@@ -333,7 +335,8 @@ function getDatabase(connectionId: string): string {
 
 function generateAlias(conn: Connection): string {
   const existingAliases = props.modelValue.map((m) => m.alias)
-  return generateTypeBasedAlias(conn.type, existingAliases)
+  const typeLabel = getConnectionTypeLabelForUI(conn) || undefined
+  return generateTypeBasedAlias(typeLabel, existingAliases)
 }
 
 function toggleConnection(conn: Connection) {
@@ -385,21 +388,21 @@ function updateDatabase(connectionId: string, database: string) {
 }
 
 function getConnectionHost(conn: Connection): string {
-  const type = conn.type?.toLowerCase() || ''
+  const kind = getConnectionKindFromSpec(conn.spec)
 
   // For file connections, show the path/bucket
-  if (type === 'files') {
+  if (kind === 'files') {
     return conn.spec?.files?.basePath || 'local files'
   }
-  if (type === 's3') {
+  if (kind === 's3') {
     const bucket = conn.spec?.s3?.scope?.bucket
     return bucket ? `s3://${bucket}` : 'S3'
   }
-  if (type === 'gcs') {
+  if (kind === 'gcs') {
     const bucket = conn.spec?.gcs?.scope?.bucket
     return bucket ? `gs://${bucket}` : 'GCS'
   }
-  if (type === 'azure') {
+  if (kind === 'azure') {
     const container = conn.spec?.azure?.scope?.container
     return container ? `azure://${container}` : 'Azure Blob'
   }
@@ -451,7 +454,7 @@ function getConnectionIconColor(type: string): string {
 // Check if a connection is a file type (for showing file-specific UI hints)
 function isFileConnection(connectionId: string): boolean {
   const conn = connectionsStore.connections.find((c) => c.id === connectionId)
-  return conn ? isFileType(conn.type || '') : false
+  return conn ? isFileConnectionKind(conn) : false
 }
 
 // Load connections if not already loaded

@@ -12,6 +12,7 @@ import DataFilterPanel from './DataFilterPanel.vue'
 import ExportToolbar from '@/components/common/ExportToolbar.vue'
 import { exportData, type ExportFormat } from '@/composables/useDataExport'
 import { useStreamExport, type StreamExportFormat } from '@/composables/useStreamExport'
+import { getConnectionTypeLabel, getSqlDialectFromConnection } from '@/types/specs'
 import {
   useBaseAGGridView,
   type FetchDataParams,
@@ -33,11 +34,13 @@ const tabStateStore = useObjectTabStateStore()
 // Connections store to get database type
 const connectionsStore = useConnectionsStore()
 
-// Get connection type for proper SQL identifier quoting
-const connectionType = computed(() => {
-  const conn = connectionsStore.connectionByID(props.connectionId)
-  return conn?.type || 'mysql' // Default to mysql if not found
-})
+const connection = computed(() => connectionsStore.connectionByID(props.connectionId))
+const connectionType = computed(
+  () => getConnectionTypeLabel(connection.value?.spec, connection.value?.type) || ''
+)
+const connectionDialect = computed(() =>
+  getSqlDialectFromConnection(connection.value?.spec, connection.value?.type)
+)
 
 // Exact row count state for views
 const isCountingRows = ref(false)
@@ -515,8 +518,7 @@ async function handleStreamExport(format: StreamExportFormat) {
     table: objectName,
     format,
     objectKey: props.objectKey,
-    dialect:
-      connectionType.value === 'pgsql' || connectionType.value === 'postgresql' ? 'pgsql' : 'mysql'
+    dialect: connectionDialect.value
   })
 }
 
@@ -544,7 +546,7 @@ defineExpose({
       <DataFilterPanel
         ref="filterPanelRef"
         :columns="columnDefs"
-        :dialect="connectionType === 'pgsql' || connectionType === 'postgresql' ? 'pgsql' : 'mysql'"
+        :dialect="connectionDialect"
         :table-name="getObjectName(tableMeta)"
         :object-key="objectKey"
         @apply="onFilterPanelApply"

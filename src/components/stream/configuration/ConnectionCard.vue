@@ -9,8 +9,8 @@
       <div class="flex items-center justify-between gap-3 mb-2">
         <div class="flex items-center gap-2 min-w-0 flex-1">
           <DatabaseIcon
-            v-if="connection && connection.type && logoSrc"
-            :db-type="connection.type"
+            v-if="connection && connectionType && logoSrc"
+            :db-type="connectionType"
             :logo-src="logoSrc"
             size="SM"
             container-class="hover:shadow-md"
@@ -24,7 +24,7 @@
           <CloudProviderBadge
             v-if="connection"
             :cloud-provider="connection.cloud_provider"
-            :db-type="connection.type"
+            :db-type="connectionType"
           />
           <AlertCircle
             v-if="!hasConnection"
@@ -62,18 +62,24 @@ export default {
 </script>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
 import ConnectionStringDisplay from '@/components/common/ConnectionStringDisplay.vue'
 import DatabaseIcon from '@/components/base/DatabaseIcon.vue'
 import { AlertCircle, ExternalLink } from 'lucide-vue-next'
 import type { Connection } from '@/types/connections'
+import { getConnectionTypeLabel } from '@/types/specs'
 
-defineProps<{
+const props = defineProps<{
   label: string
   connection?: Connection
   logoSrc?: string
   hasConnection: boolean
 }>()
+
+const connectionType = computed(
+  () => getConnectionTypeLabel(props.connection?.spec, props.connection?.type) || ''
+)
 
 const emit = defineEmits<{
   (e: 'navigate'): void

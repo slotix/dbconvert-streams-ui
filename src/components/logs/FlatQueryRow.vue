@@ -11,6 +11,7 @@ import {
 } from '@/utils/sqlLogHelpers'
 import { useConnectionsStore } from '@/stores/connections'
 import SqlCodeBlock from '@/components/database/SqlCodeBlock.vue'
+import { getSqlDialectFromConnection } from '@/types/specs'
 
 const props = defineProps<{
   log: SQLQueryLog
@@ -63,7 +64,7 @@ const oneLineQuery = computed(() => {
 // Get dialect from connection type
 const dialect = computed(() => {
   const connection = connectionsStore.connectionByID(props.log.connectionId)
-  return connection?.type?.toLowerCase() || 'sql'
+  return getSqlDialectFromConnection(connection?.spec, connection?.type)
 })
 
 async function copyQuery() {

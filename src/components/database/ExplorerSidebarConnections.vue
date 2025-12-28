@@ -15,6 +15,12 @@ import type { Connection } from '@/types/connections'
 import type { DiagramFocusTarget, ShowDiagramPayload } from '@/types/diagram'
 import type { SQLTableMeta, SQLViewMeta } from '@/types/metadata'
 import type { FileSystemEntry } from '@/api/fileSystem'
+import {
+  getConnectionKindFromSpec,
+  getConnectionTypeLabel,
+  getSqlDialectFromConnection,
+  isDatabaseKind
+} from '@/types/specs'
 import ExplorerContextMenu from './ExplorerContextMenu.vue'
 import ConnectionTreeItem from './tree/ConnectionTreeItem.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
@@ -177,7 +183,11 @@ const canCreateDatabase = computed(() => {
   if (!target || target.kind !== 'connection') return false
   const conn = connectionsStore.connections.find((c) => c.id === target.connectionId)
   if (!conn) return false
-  const capabilities = useDatabaseCapabilities(conn.type)
+  const kind = getConnectionKindFromSpec(conn.spec)
+  if (!isDatabaseKind(kind)) return false
+  const dbType = getConnectionTypeLabel(conn.spec, conn.type)
+  if (!dbType) return false
+  const capabilities = useDatabaseCapabilities(dbType)
   return capabilities.canCreateDatabase.value
 })
 
@@ -186,7 +196,11 @@ const canCreateSchema = computed(() => {
   if (!target || target.kind !== 'database') return false
   const conn = connectionsStore.connections.find((c) => c.id === target.connectionId)
   if (!conn) return false
-  const capabilities = useDatabaseCapabilities(conn.type)
+  const kind = getConnectionKindFromSpec(conn.spec)
+  if (!isDatabaseKind(kind)) return false
+  const dbType = getConnectionTypeLabel(conn.spec, conn.type)
+  if (!dbType) return false
+  const capabilities = useDatabaseCapabilities(dbType)
   return capabilities.canCreateSchema.value
 })
 
@@ -441,9 +455,12 @@ function onMenuAction(payload: {
       // Open DuckDB console for file/S3 connections
       if (t.kind === 'connection') {
         const conn = connectionsStore.connectionByID(t.connectionId)
-        const connType = conn?.type?.toLowerCase()
-        const isS3 = connType === 's3' || conn?.spec?.s3 !== undefined
-        const basePath = conn?.spec?.files?.basePath || conn?.spec?.s3?.scope?.bucket
+        const kind = getConnectionKindFromSpec(conn?.spec)
+        if (kind !== 'files' && kind !== 's3') {
+          return
+        }
+        const isS3 = kind === 's3'
+        const basePath = isS3 ? conn?.spec?.s3?.scope?.bucket : conn?.spec?.files?.basePath
         emit('open-file-console', {
           connectionId: t.connectionId,
           connectionType: isS3 ? 's3' : 'files',
@@ -550,9 +567,9 @@ function onMenuAction(payload: {
 
         // Get connection to determine dialect for proper quoting
         const conn = connectionsStore.connectionByID(t.connectionId)
-        const dialect = conn?.type?.toLowerCase() || 'sql'
-        const isMysql = dialect.includes('mysql')
-        const isPostgres = dialect.includes('postgres') || dialect.includes('pgsql')
+        const dialect = getSqlDialectFromConnection(conn?.spec, conn?.type)
+        const isMysql = dialect === 'mysql'
+        const isPostgres = dialect === 'pgsql'
 
         // Helper to quote identifiers based on dialect
         const quoteId = (name: string) => {
@@ -588,8 +605,11 @@ function onMenuAction(payload: {
     case 'insert-into-console':
       if (t.kind === 'file') {
         const conn = connectionsStore.connectionByID(t.connectionId)
-        const connType = conn?.type?.toLowerCase()
-        const isS3 = connType === 's3' || conn?.spec?.s3 !== undefined
+        const kind = getConnectionKindFromSpec(conn?.spec)
+        if (kind !== 'files' && kind !== 's3') {
+          return
+        }
+        const isS3 = kind === 's3'
         const consoleKey = `file:${t.connectionId}`
         const duckdbQuery = generateDuckDBReadFunction(t.path, t.name, isS3, t.isDir, t.format)
 
@@ -611,7 +631,7 @@ function onMenuAction(payload: {
         )
 
         // Open the file console if not already visible
-        const basePath = conn?.spec?.files?.basePath || conn?.spec?.s3?.scope?.bucket
+        const basePath = isS3 ? conn?.spec?.s3?.scope?.bucket : conn?.spec?.files?.basePath
         emit('open-file-console', {
           connectionId: t.connectionId,
           connectionType: isS3 ? 's3' : 'files',

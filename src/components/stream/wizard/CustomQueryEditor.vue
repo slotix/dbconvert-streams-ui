@@ -334,6 +334,11 @@ import type { ConnectionMapping } from '@/api/federated'
 import { executeFederatedQuery } from '@/api/federated'
 import connections from '@/api/connections'
 import { useSplitPaneResize } from '@/composables/useSplitPaneResize'
+import {
+  getConnectionKindFromSpec,
+  getSqlDialectFromConnection,
+  isFileBasedKind
+} from '@/types/specs'
 
 interface Props {
   sourceConnections?: ConnectionMapping[]
@@ -357,12 +362,12 @@ function getConnectionLabel(connectionId: string): string {
   return conn.name || conn.host || connectionId
 }
 
-// Helper to check if connection is file-based
+// Helper to check if connection is file-based - spec is the ONLY source of truth
 function isFileConnection(connectionId: string): boolean {
   const conn = connectionsStore.connectionByID(connectionId)
   if (!conn) return false
-  const fileTypes = ['files', 'csv', 'parquet', 'jsonl', 's3', 'gcs', 'azure']
-  return fileTypes.includes(conn.type?.toLowerCase() || '')
+  const kind = getConnectionKindFromSpec(conn.spec)
+  return isFileBasedKind(kind)
 }
 
 // Local state
@@ -455,10 +460,7 @@ const connectionDialect = computed((): 'mysql' | 'pgsql' | 'sql' => {
     streamsStore.currentStreamConfig?.source?.connections?.[0]?.connectionId
   if (sourceConnectionId) {
     const connection = connectionsStore.connectionByID(sourceConnectionId)
-    const type = connection?.type?.toLowerCase() || 'sql'
-    if (type === 'mysql' || type === 'pgsql' || type === 'postgresql') {
-      return type === 'postgresql' ? 'pgsql' : (type as 'mysql' | 'pgsql')
-    }
+    return getSqlDialectFromConnection(connection?.spec, connection?.type)
   }
   return 'sql'
 })

@@ -1,4 +1,5 @@
 import type { Connection } from '@/types/connections'
+import { getConnectionKindFromSpec } from '@/types/specs'
 import {
   getConnectionHost,
   getConnectionPort,
@@ -11,48 +12,53 @@ export function generateConnectionString(
   connection: Partial<Connection>,
   showPassword: boolean = false
 ): string {
-  if (!connection?.type) return ''
-
-  const type = connection.type.toLowerCase()
-
-  // Detect cloud storage type by checking spec (more reliable than type string)
   const spec = (connection as Connection).spec
+  const kind = getConnectionKindFromSpec(spec)
+  if (!kind) return ''
 
   // Handle S3 connections - show s3://endpoint format
-  if (spec?.s3 || type === 's3') {
+  if (kind === 's3') {
     const host = getConnectionHost(connection as Connection)
     return host ? `s3://${host}` : ''
   }
 
   // Handle GCS connections - show gs://endpoint format
-  if (spec?.gcs || type === 'gcs') {
+  if (kind === 'gcs') {
     const host = getConnectionHost(connection as Connection)
     return host ? `gs://${host}` : ''
   }
 
   // Handle Azure connections - show azure://endpoint format
-  if (spec?.azure || type === 'azure') {
+  if (kind === 'azure') {
     const host = getConnectionHost(connection as Connection)
     return host ? `azure://${host}` : ''
   }
 
   // Handle local file connections
-  if (spec?.files || type === 'files') {
+  if (kind === 'files') {
     const host = getConnectionHost(connection as Connection)
     return host ? `file://${host}` : ''
   }
 
   // Database connections - traditional connection string format
-  const protocolMap: Record<string, string> = {
-    PostgreSQL: 'postgresql',
-    MySQL: 'mysql',
-    Oracle: 'oracle',
-    SQLServer: 'sqlserver',
-    DB2: 'db2',
-    Snowflake: 'snowflake'
+  if (kind !== 'database' && kind !== 'snowflake') {
+    return ''
   }
 
-  const protocol = protocolMap[connection.type] || type
+  const protocolMap: Record<string, string> = {
+    postgresql: 'postgresql',
+    postgres: 'postgresql',
+    mysql: 'mysql',
+    mariadb: 'mysql',
+    oracle: 'oracle',
+    sqlserver: 'sqlserver',
+    mssql: 'sqlserver',
+    db2: 'db2',
+    snowflake: 'snowflake'
+  }
+
+  const type = (connection.type || '').toLowerCase()
+  const protocol = protocolMap[type] || type
 
   const host = getConnectionHost(connection as Connection)
   const port = getConnectionPort(connection as Connection)
@@ -60,7 +66,7 @@ export function generateConnectionString(
   const password = getConnectionPassword(connection as Connection)
   const defaultDatabase = getConnectionDatabase(connection as Connection)
 
-  if (!host) {
+  if (!protocol || !host) {
     return ''
   }
 

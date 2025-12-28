@@ -2,7 +2,7 @@
   <div class="space-y-8">
     <!-- Output Configuration Section (for file and S3 targets) -->
     <div
-      v-if="isFileTarget || isS3Target"
+      v-if="isFileBasedTarget"
       class="bg-white dark:bg-gray-850 rounded-xl border border-gray-100 dark:border-gray-700 p-6 shadow-sm dark:shadow-gray-900/30"
     >
       <h4 class="text-base font-medium text-gray-900 dark:text-gray-100 mb-4">
@@ -251,6 +251,7 @@ import { buildFileTargetSpec, buildS3TargetSpec } from '@/utils/specBuilder'
 import SelectionButtonGroup from '@/components/base/SelectionButtonGroup.vue'
 import FormSelect from '@/components/base/FormSelect.vue'
 import FormSwitch from '@/components/base/FormSwitch.vue'
+import { getConnectionKindFromSpec, isFileBasedKind } from '@/types/specs'
 
 const streamsStore = useStreamsStore()
 const connectionsStore = useConnectionsStore()
@@ -326,22 +327,13 @@ const targetConnection = computed(() => {
   return connectionsStore.connectionByID(targetId)
 })
 
+const targetKind = computed(() => getConnectionKindFromSpec(targetConnection.value?.spec))
+const isFileBasedTarget = computed(() => isFileBasedKind(targetKind.value))
 // Check if target is a file connection (local files)
-const isFileTarget = computed(() => {
-  const conn = targetConnection.value
-  if (!conn) return false
-  // Check if it's a local file connection via spec.files
-  // FileConnectionSpec is only for local files - cloud storage uses dedicated specs
-  return conn.type?.toLowerCase() === 'files' && !!conn.spec?.files
-})
+const isFileTarget = computed(() => targetKind.value === 'files')
 
 // Check if target is an S3 connection
-const isS3Target = computed(() => {
-  const conn = targetConnection.value
-  if (!conn) return false
-  // Check if spec.s3 is present - S3 connections use dedicated spec
-  return !!conn.spec?.s3
-})
+const isS3Target = computed(() => targetKind.value === 's3')
 
 // Ensure target spec is properly initialized for file/S3 targets
 // This is critical for create mode where spec may not exist yet

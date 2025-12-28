@@ -297,7 +297,13 @@ import BaseButton from '@/components/base/BaseButton.vue'
 import ConnectionTreeSelector from './ConnectionTreeSelector.vue'
 import StreamConnectionFilter from './StreamConnectionFilter.vue'
 import type { StreamConnectionMapping } from '@/types/streamConfig'
+import type { Connection } from '@/types/connections'
 import { generateTypeBasedAlias } from '@/utils/federatedUtils'
+import {
+  getConnectionKindFromSpec,
+  getConnectionTypeLabel,
+  matchesConnectionTypeFilter
+} from '@/types/specs'
 
 interface Props {
   sourceConnectionId?: string | null
@@ -365,9 +371,7 @@ const isMultiSource = computed(() => localSourceConnections.value.length > 1)
 // Generate type-based alias for a connection (e.g., pg1, my1, s31)
 function generateAlias(connectionId: string): string {
   const connection = connectionsStore.connectionByID(connectionId)
-  // S3 connections have type='files' but should use 's3' for alias generation
-  const isS3 = connection?.type?.toLowerCase() === 'files' && !!connection?.spec?.s3
-  const connectionType = isS3 ? 's3' : connection?.type
+  const connectionType = getConnectionTypeLabel(connection?.spec, connection?.type) || undefined
   const existingAliases = localSourceConnections.value.map((c) => c.alias || '')
   return generateTypeBasedAlias(connectionType, existingAliases)
 }
@@ -420,7 +424,7 @@ function handleToggleSourceConnection(payload: {
   if (!connection) return
 
   // Check if this is an S3 connection
-  const isS3Connection = connection.type?.toLowerCase() === 'files' && !!connection.spec?.s3
+  const isS3Connection = getConnectionKindFromSpec(connection.spec) === 's3'
 
   if (payload.checked) {
     // Add to source connections - check both connectionId AND database
@@ -452,15 +456,8 @@ function handleToggleSourceConnection(payload: {
 const connections = computed(() => connectionsStore.connections)
 
 // Helper function to match type filter
-function matchesTypeFilter(conn: { type?: string }, typeFilter: string | null): boolean {
-  const filterLabel = typeFilter || 'All'
-  const filter = filterLabel.toLowerCase()
-  if (!filter || filter === 'all') return true
-  const connType = (conn.type || '').toLowerCase()
-  if (!connType) return false
-  if (filter === 'postgresql') return connType.includes('postgres')
-  if (filter === 'files') return connType.includes('file')
-  return connType.includes(filter)
+function matchesTypeFilter(conn: Connection, typeFilter: string | null): boolean {
+  return matchesConnectionTypeFilter(conn.spec, conn.type, typeFilter)
 }
 
 // Helper function to normalize text for case-insensitive search
@@ -485,7 +482,8 @@ function connectionMatchesDeepSearch(
 
   const spec = (connection.spec ?? undefined) as ConnectionSpecLike | undefined
   const host = spec?.database?.host || spec?.snowflake?.account || ''
-  const connectionLabel = `${connection.name || ''} ${host} ${connection.type || ''}`
+  const typeLabel = getConnectionTypeLabel(connection.spec, connection.type) || ''
+  const connectionLabel = `${connection.name || ''} ${host} ${typeLabel}`
   if (normalize(connectionLabel).includes(normalizedQuery)) return true
 
   // Search in database names

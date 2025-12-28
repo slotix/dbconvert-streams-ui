@@ -37,6 +37,7 @@ import ExplorerBreadcrumb from '@/components/database/ExplorerBreadcrumb.vue'
 import { usePaneTabsStore, type PaneId } from '@/stores/paneTabs'
 import { useConnectionsStore } from '@/stores/connections'
 import type { DatabaseMetadata } from '@/types/metadata'
+import { getConnectionKindFromSpec, isFileBasedKind } from '@/types/specs'
 
 const props = defineProps<{
   paneId: PaneId
@@ -56,7 +57,8 @@ function formatConnectionLabel(connectionId: string | undefined) {
   const conn = connectionsStore.connections.find((c) => c.id === connectionId)
   if (!conn) return null
 
-  if (conn.type === 'files') {
+  const kind = getConnectionKindFromSpec(conn.spec)
+  if (isFileBasedKind(kind)) {
     return conn.name || conn.id
   }
 

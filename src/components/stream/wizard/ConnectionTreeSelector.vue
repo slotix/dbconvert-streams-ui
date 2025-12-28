@@ -25,7 +25,7 @@
           class="h-4 w-4 shrink-0 text-gray-400 dark:text-gray-500 mt-3"
         />
         <DatabaseIcon
-          :db-type="connection.type || ''"
+          :db-type="getConnectionTypeDisplay(connection)"
           :logo-src="getLogoSrc(connection)"
           size="LG"
           container-class="!p-1.5"
@@ -40,7 +40,7 @@
             <CloudProviderBadge
               v-if="connection.cloud_provider"
               :cloud-provider="connection.cloud_provider"
-              :db-type="connection.type"
+              :db-type="getConnectionTypeDisplay(connection)"
               size="sm"
               class="shrink-0"
             />
@@ -274,7 +274,14 @@ import { useConnectionsStore } from '@/stores/connections'
 import { normalizeConnectionType, getConnectionTooltip } from '@/utils/connectionUtils'
 import { getConnectionHost, getConnectionPort } from '@/utils/specBuilder'
 import { listS3Buckets, configureS3Session } from '@/api/files'
+import {
+  getConnectionKindFromSpec,
+  getConnectionTypeLabel,
+  isDatabaseKind,
+  isFileBasedKind
+} from '@/types/specs'
 import type { Connection } from '@/types/connections'
+import type { StreamConnectionMapping } from '@/types/streamConfig'
 
 interface Props {
   connections: Connection[]
@@ -285,7 +292,7 @@ interface Props {
   mode: 'source' | 'target'
   searchQuery?: string
   enableMultiSelect?: boolean
-  sourceConnections?: Array<{ connectionId: string; database?: string; alias?: string }>
+  sourceConnections?: StreamConnectionMapping[]
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -353,20 +360,18 @@ function getConnectionById(connectionId?: string | null) {
   return connectionsMap.value.get(connectionId)
 }
 
+// Connection type helpers - spec is the ONLY source of truth
 function isFileConnection(connection: Connection): boolean {
-  // Only 'files' is a valid file connection type now (legacy csv/json/jsonl/parquet removed)
-  // File format is now specified in stream config, not connection type
-  return (connection.type || '').toLowerCase() === 'files'
+  const kind = getConnectionKindFromSpec(connection.spec)
+  return isFileBasedKind(kind)
 }
 
 function isS3Connection(connection: Connection): boolean {
-  // S3 connections have type='files' and spec.s3 present
-  return isFileConnection(connection) && !!connection.spec?.s3
+  return getConnectionKindFromSpec(connection.spec) === 's3'
 }
 
 function isLocalFileConnection(connection: Connection): boolean {
-  // Local file connections have type='files' and spec.files present (not S3)
-  return isFileConnection(connection) && !!connection.spec?.files && !connection.spec?.s3
+  return getConnectionKindFromSpec(connection.spec) === 'files'
 }
 
 // S3 bucket functions
@@ -454,13 +459,19 @@ function handleS3BucketRowClick(connection: Connection, bucket: string) {
 // Local file connection helpers
 function isFileConnectionSelected(connectionId: string): boolean {
   const connection = getConnectionById(connectionId)
+  const kind = getConnectionKindFromSpec(connection?.spec)
+  if (kind !== 'files') {
+    return false
+  }
   const basePath = connection?.spec?.files?.basePath || ''
-  if (props.sourceConnections && props.sourceConnections.length > 0) {
+  // Source mode: check sourceConnections array (multi-select)
+  // Target mode: check selectedPath (single-select)
+  if (props.mode === 'source') {
     return props.sourceConnections.some(
       (fc) => fc.connectionId === connectionId && fc.database === basePath
     )
   }
-  return props.selectedConnectionId === connectionId && props.selectedDatabase === basePath
+  return props.selectedConnectionId === connectionId && props.selectedPath === basePath
 }
 
 function handleFilePathCheckboxChange(connectionId: string, checked: boolean) {
@@ -487,12 +498,18 @@ function handleFilePathRowClick(connection: Connection) {
 
 // Database connection helpers
 function isDatabaseSelected(connectionId: string, database: string): boolean {
-  if (props.sourceConnections && props.sourceConnections.length > 0) {
+  const connection = getConnectionById(connectionId)
+  const kind = getConnectionKindFromSpec(connection?.spec)
+  if (!isDatabaseKind(kind)) {
+    return false
+  }
+  // Source mode: check sourceConnections array (multi-select)
+  // Target mode: check selectedConnectionId/selectedDatabase (single-select)
+  if (props.mode === 'source') {
     return props.sourceConnections.some(
       (fc) => fc.connectionId === connectionId && fc.database === database
     )
   }
-  // Fallback for single-source edit mode
   return props.selectedConnectionId === connectionId && props.selectedDatabase === database
 }
 
@@ -510,21 +527,23 @@ function toggleDatabaseSelection(connectionId: string, database: string) {
 
 // S3 connection helpers
 function isS3BucketSelected(connectionId: string, bucket: string): boolean {
-  if (props.sourceConnections && props.sourceConnections.length > 0) {
+  const connection = getConnectionById(connectionId)
+  const kind = getConnectionKindFromSpec(connection?.spec)
+  if (kind !== 's3') {
+    return false
+  }
+  // Source mode: check sourceConnections array (multi-select)
+  // Target mode: check selectedConnectionId/selectedDatabase (single-select)
+  if (props.mode === 'source') {
     return props.sourceConnections.some(
       (fc) => fc.connectionId === connectionId && fc.s3?.bucket === bucket
     )
   }
-  // Fallback for single-source edit mode
   return props.selectedConnectionId === connectionId && props.selectedDatabase === bucket
 }
 
 function s3BucketRowClass(connectionId: string, bucket: string): string {
-  const isInMultiSource = isS3BucketSelected(connectionId, bucket)
-  const isSingleSelected =
-    props.selectedConnectionId === connectionId && props.selectedDatabase === bucket
-
-  const isSelected = isInMultiSource || isSingleSelected
+  const isSelected = isS3BucketSelected(connectionId, bucket)
 
   if (!isSelected) {
     return 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800/50'
@@ -650,11 +669,7 @@ function connectionHeaderClass(connectionId: string): string {
 }
 
 function filePathClass(connectionId: string): string {
-  // Check if selected via multi-source connections or single selection
-  const isInMultiSource = isFileConnectionSelected(connectionId)
-  const isSingleSelected = props.selectedConnectionId === connectionId
-
-  const isSelected = isInMultiSource || isSingleSelected
+  const isSelected = isFileConnectionSelected(connectionId)
 
   if (!isSelected) {
     return 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800/50 bg-transparent'
@@ -669,11 +684,7 @@ function filePathClass(connectionId: string): string {
 }
 
 function databaseRowClass(connectionId: string, database: string): string {
-  const isInMultiSource = isDatabaseSelected(connectionId, database)
-  const isSingleSelected =
-    props.selectedConnectionId === connectionId && props.selectedDatabase === database
-
-  const isSelected = isInMultiSource || isSingleSelected
+  const isSelected = isDatabaseSelected(connectionId, database)
 
   if (!isSelected) {
     return 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800/50'
@@ -774,17 +785,17 @@ function handleDatabaseRowClick(connection: Connection, database: string) {
 }
 
 function getLogoSrc(connection: Connection): string {
-  // S3 connections have type='files' but should show S3 bucket icon
-  if (isS3Connection(connection)) {
-    const s3Type = connectionsStore.dbTypes.find((f) => normalizeConnectionType(f.type) === 's3')
-    return s3Type ? s3Type.logo : '/images/db-logos/s3.svg'
-  }
-
-  const normalizedType = normalizeConnectionType(connection?.type || '')
+  const typeLabel = getConnectionTypeLabel(connection.spec, connection.type)
+  if (!typeLabel) return ''
+  const normalizedType = normalizeConnectionType(typeLabel)
   const dbType = connectionsStore.dbTypes.find(
     (f) => normalizeConnectionType(f.type) === normalizedType
   )
   return dbType ? dbType.logo : ''
+}
+
+function getConnectionTypeDisplay(connection: Connection): string {
+  return getConnectionTypeLabel(connection.spec, connection.type) || ''
 }
 
 watch(

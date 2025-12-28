@@ -17,6 +17,7 @@ import type { useSchemaStore } from '@/stores/schema'
 import type { usePaneTabsStore } from '@/stores/paneTabs'
 import type { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import type { useFileExplorerStore } from '@/stores/fileExplorer'
+import { getConnectionTypeLabel } from '@/types/specs'
 
 type ExplorerState = ReturnType<typeof useExplorerState>
 type SidebarManager = ReturnType<typeof useSidebar>
@@ -786,7 +787,7 @@ export function useDatabaseExplorerController({
       recentConnectionsManager.addToRecent({
         id: conn.id,
         name: conn.name,
-        type: conn.type,
+        type: getConnectionTypeLabel(conn.spec, conn.type) || '',
         host: getConnectionHost(conn),
         port: getConnectionPort(conn)?.toString(),
         defaultDatabase: getConnectionDatabase(conn),
@@ -1044,7 +1045,7 @@ export function useDatabaseExplorerController({
       recentConnectionsManager.addToRecent({
         id: conn.id,
         name: conn.name,
-        type: conn.type,
+        type: getConnectionTypeLabel(conn.spec, conn.type) || '',
         host: getConnectionHost(conn),
         port: getConnectionPort(conn)?.toString(),
         defaultDatabase: getConnectionDatabase(conn),

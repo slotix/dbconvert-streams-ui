@@ -20,6 +20,7 @@ import type {
 } from 'ag-grid-community'
 import { useAGGridFiltering } from '@/composables/useAGGridFiltering'
 import { useObjectTabStateStore } from '@/stores/objectTabState'
+import { getSqlDialectFromType } from '@/types/specs'
 import 'ag-grid-community/styles/ag-grid.css'
 import 'ag-grid-community/styles/ag-theme-alpine.css'
 import '@/styles/agGridTheme.css'
@@ -147,10 +148,8 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
   const monacoLanguage = computed(() => {
     if (!connectionType?.value) return 'sql'
     const type = connectionType.value.toLowerCase()
-    if (type.includes('mysql')) return 'mysql'
-    if (type.includes('postgres')) return 'pgsql'
     if (type.includes('duckdb')) return 'sql'
-    return 'sql'
+    return getSqlDialectFromType(type)
   })
 
   // Monaco editor options for inline SQL banner

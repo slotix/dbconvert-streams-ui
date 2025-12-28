@@ -17,8 +17,8 @@
       >
         <div class="flex items-center gap-2 min-w-0 flex-1">
           <DatabaseIcon
-            v-if="getConnection(fedConn.connectionId)?.type"
-            :db-type="getConnection(fedConn.connectionId)!.type"
+            v-if="getConnectionTypeDisplay(getConnection(fedConn.connectionId))"
+            :db-type="getConnectionTypeDisplay(getConnection(fedConn.connectionId))"
             :logo-src="getLogo(getConnection(fedConn.connectionId))"
             size="SM"
             container-class="hover:shadow-md"
@@ -39,7 +39,7 @@
               <CloudProviderBadge
                 v-if="getConnection(fedConn.connectionId)"
                 :cloud-provider="getConnection(fedConn.connectionId)!.cloud_provider"
-                :db-type="getConnection(fedConn.connectionId)!.type"
+                :db-type="getConnectionTypeDisplay(getConnection(fedConn.connectionId))"
               />
               <AlertCircle
                 v-if="!getConnection(fedConn.connectionId)"
@@ -89,6 +89,7 @@ import ConnectionStringDisplay from '@/components/common/ConnectionStringDisplay
 import DatabaseIcon from '@/components/base/DatabaseIcon.vue'
 import { AlertCircle, ExternalLink } from 'lucide-vue-next'
 import type { Connection, DbType } from '@/types/connections'
+import { getConnectionTypeLabel } from '@/types/specs'
 import type { ConnectionMapping } from '@/api/federated'
 import { normalizeConnectionType } from '@/utils/connectionUtils'
 
@@ -107,11 +108,16 @@ function getConnection(connectionId: string): Connection | undefined {
 }
 
 function getLogo(connection?: Connection): string {
-  if (!connection?.type) return '/images/db-logos/all.svg'
-  const normalizedInput = normalizeConnectionType(connection.type.toLowerCase())
+  const typeLabel = getConnectionTypeDisplay(connection)
+  if (!typeLabel) return '/images/db-logos/all.svg'
+  const normalizedInput = normalizeConnectionType(typeLabel)
   const match = props.dbTypes.find(
     (dbType) => normalizeConnectionType(dbType.type.toLowerCase()) === normalizedInput
   )
   return match ? match.logo : '/images/db-logos/all.svg'
+}
+
+function getConnectionTypeDisplay(connection?: Connection): string {
+  return getConnectionTypeLabel(connection?.spec, connection?.type) || ''
 }
 </script>

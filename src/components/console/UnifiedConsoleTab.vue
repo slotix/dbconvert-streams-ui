@@ -163,6 +163,7 @@
 import { ref, computed, onMounted, onUnmounted, watch, type Component } from 'vue'
 import { CircleHelp, Database, Info, Terminal } from 'lucide-vue-next'
 import type { SchemaContext } from '@/composables/useMonacoSqlProviders'
+import type { Connection } from '@/types/connections'
 import { useConnectionsStore } from '@/stores/connections'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { useLogsStore } from '@/stores/logs'
@@ -172,6 +173,7 @@ import { executeFederatedQuery, type ConnectionMapping } from '@/api/federated'
 import { SqlQueryTabs, SqlEditorPane, SqlResultsPane } from '@/components/database/sql-console'
 import ConnectionAliasPanel from './ConnectionAliasPanel.vue'
 import { useConsoleTab, detectQueryPurpose } from '@/composables/useConsoleTab'
+import { getConnectionTypeLabel, getSqlDialectFromConnection } from '@/types/specs'
 
 // ========== Props ==========
 export type ConsoleMode = 'database' | 'file'
@@ -277,8 +279,8 @@ function sanitizeMappings(mappings: ConnectionMapping[]): ConnectionMapping[] {
   return cleaned
 }
 
-function defaultAliasForConnection(type?: string): string {
-  const normalized = type?.toLowerCase() || ''
+function defaultAliasForConnection(connection?: Connection | null): string {
+  const normalized = getConnectionTypeLabel(connection?.spec, connection?.type) || ''
   if (normalized === 'postgresql' || normalized === 'postgres') return 'pg1'
   if (normalized === 'mysql' || normalized === 'mariadb') return 'my1'
   if (normalized === 's3') return 's31'
@@ -297,7 +299,7 @@ const primaryMapping = computed<ConnectionMapping>(() => {
   const conn = connection.value
   const mapping: ConnectionMapping = {
     connectionId: props.connectionId,
-    alias: defaultAliasForConnection(conn?.type)
+    alias: defaultAliasForConnection(conn)
   }
   if (props.mode === 'database') {
     const db = primaryDefaultDatabase.value
@@ -452,7 +454,7 @@ const currentDialect = computed(() => {
   if (props.mode === 'file') {
     return 'sql' // DuckDB uses standard SQL
   }
-  return connection.value?.type?.toLowerCase() || 'sql'
+  return getSqlDialectFromConnection(connection.value?.spec, connection.value?.type)
 })
 
 const headerIcon = computed<Component>(() => {
@@ -656,8 +658,8 @@ ORDER BY count DESC;`
 
 function getDatabaseTemplates() {
   const dialect = currentDialect.value
-  const isPostgres = dialect.includes('postgres') || dialect.includes('pgsql')
-  const isMysql = dialect.includes('mysql')
+  const isPostgres = dialect === 'pgsql'
+  const isMysql = dialect === 'mysql'
 
   // Helper to quote identifiers based on dialect
   const quoteId = (name: string) => {
@@ -764,10 +766,7 @@ const schemaContext = computed<SchemaContext>(() => {
   }
 
   // Database mode - provide table/column suggestions
-  const dialect = currentDialect.value
-  let sqlDialect: 'mysql' | 'pgsql' | 'sql' = 'sql'
-  if (dialect.includes('mysql')) sqlDialect = 'mysql'
-  else if (dialect.includes('postgres') || dialect.includes('pgsql')) sqlDialect = 'pgsql'
+  const sqlDialect = currentDialect.value
 
   return {
     tables: tablesList.value,

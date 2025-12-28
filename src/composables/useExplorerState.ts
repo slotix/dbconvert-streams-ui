@@ -7,6 +7,7 @@ import { getConnectionHost, getConnectionPort } from '@/utils/specBuilder'
 import type { SQLTableMeta, SQLViewMeta } from '@/types/metadata'
 import type { FileSystemEntry } from '@/api/fileSystem'
 import type { FileMetadata } from '@/types/files'
+import { getConnectionKindFromSpec, getConnectionTypeLabel, isFileBasedKind } from '@/types/specs'
 
 type ObjectType = 'table' | 'view'
 
@@ -55,7 +56,8 @@ export function useExplorerState() {
     if (!c) return null
 
     // For file connections, show connection name instead of host:port
-    if (c.type === 'files') {
+    const kind = getConnectionKindFromSpec(c.spec)
+    if (isFileBasedKind(kind)) {
       return c.name
     }
 
@@ -66,7 +68,9 @@ export function useExplorerState() {
     return `${host}:${port}`
   })
 
-  const activeDisplayType = computed(() => activeConnection.value?.type || '')
+  const activeDisplayType = computed(
+    () => getConnectionTypeLabel(activeConnection.value?.spec, activeConnection.value?.type) || ''
+  )
   const activeDisplayCloudProvider = computed(() => activeConnection.value?.cloud_provider || '')
 
   // Breadcrumb objects from schema store

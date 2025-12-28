@@ -63,7 +63,7 @@
           <PaneContent
             pane-id="left"
             :active-tab="leftActiveTab"
-            :connection-type="currentConnection?.type || 'sql'"
+            :connection-type="connectionType"
             @tab-change="$emit('left-tab-change', $event)"
             @refresh-metadata="$emit('refresh-metadata')"
           />
@@ -97,7 +97,7 @@
           <PaneContent
             pane-id="right"
             :active-tab="rightActiveTab"
-            :connection-type="currentConnection?.type || 'sql'"
+            :connection-type="connectionType"
             :show-empty-state="false"
             @tab-change="$emit('right-tab-change', $event)"
             @refresh-metadata="$emit('refresh-metadata')"
@@ -123,6 +123,7 @@ import PaneBreadcrumb from './PaneBreadcrumb.vue'
 import PaneContent from './PaneContent.vue'
 import type { FileSystemEntry } from '@/api/fileSystem'
 import type { ShowDiagramPayload } from '@/types/diagram'
+import { getConnectionKindFromSpec, getConnectionTypeLabel } from '@/types/specs'
 
 interface Props {
   connectionId: string
@@ -179,6 +180,9 @@ const showDatabaseOverview = computed(
 
 const currentConnection = computed(
   () => connectionsStore.connections.find((c) => c.id === props.connectionId) || null
+)
+const connectionType = computed(
+  () => getConnectionTypeLabel(currentConnection.value?.spec, currentConnection.value?.type) || ''
 )
 
 // Get metadata for breadcrumb
@@ -294,9 +298,12 @@ function handleOpenFileConsole() {
   viewStateStore.setViewType('table-data')
 
   const conn = currentConnection.value
-  const connType = conn?.type?.toLowerCase()
-  const isS3 = connType === 's3' || conn?.spec?.s3 !== undefined
-  const basePath = conn?.spec?.files?.basePath || conn?.spec?.s3?.scope?.bucket
+  const kind = getConnectionKindFromSpec(conn?.spec)
+  if (kind !== 'files' && kind !== 's3') {
+    return
+  }
+  const isS3 = kind === 's3'
+  const basePath = isS3 ? conn?.spec?.s3?.scope?.bucket : conn?.spec?.files?.basePath
 
   const tabId = `file-console:${props.connectionId}`
 

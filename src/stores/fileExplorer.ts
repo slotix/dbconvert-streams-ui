@@ -4,6 +4,7 @@ import { listDirectory, type FileSystemEntry } from '@/api/fileSystem'
 import { getFileMetadata, configureS3Session, listS3Objects, listS3Buckets } from '@/api/files'
 import { getFileFormat, type FileFormat } from '@/utils/fileFormat'
 import { useConnectionsStore } from '@/stores/connections'
+import { getConnectionKindFromSpec, isFileBasedKind } from '@/types/specs'
 import type { FileMetadata } from '@/types/files'
 import type { Connection } from '@/types/connections'
 import type { S3ConfigRequest } from '@/types/s3'
@@ -59,23 +60,21 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
     }
   })
 
-  // Helper functions
+  // Helper functions - use spec-only detection (no connection.type fallback)
   function isFilesConnectionType(connId: string | null | undefined): boolean {
     if (!connId) return false
     const connectionsStore = useConnectionsStore()
     const conn = connectionsStore.connections.find((c) => c.id === connId)
-    const connType = (conn?.type || '').toLowerCase()
-    // Treat S3 connections as file connections for explorer purposes.
-    // Some environments use conn.type = 's3' while others use conn.type = 'files' with spec.s3.
-    return connType === 'files' || !!conn?.spec?.s3
+    if (!conn) return false
+    const kind = getConnectionKindFromSpec(conn.spec)
+    return isFileBasedKind(kind)
   }
 
   function isS3ConnectionType(connId: string | null | undefined): boolean {
     if (!connId) return false
     const connectionsStore = useConnectionsStore()
     const conn = connectionsStore.connections.find((c) => c.id === connId)
-    // Check spec.s3 - S3 connections use dedicated spec
-    return !!conn?.spec?.s3
+    return getConnectionKindFromSpec(conn?.spec) === 's3'
   }
 
   function parseS3Uri(uri: string): { bucket: string; prefix: string } | null {
@@ -128,6 +127,26 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
     const connectionsStore = useConnectionsStore()
     const connection = connectionsStore.connections.find((c) => c.id === connectionId)
     if (!connection) return
+    const kind = getConnectionKindFromSpec(connection.spec)
+    if (kind === 'gcs' || kind === 'azure') {
+      entriesByConnection.value = {
+        ...entriesByConnection.value,
+        [connectionId]: []
+      }
+      directoryPathsByConnection.value = {
+        ...directoryPathsByConnection.value,
+        [connectionId]: ''
+      }
+      errorsByConnection.value = {
+        ...errorsByConnection.value,
+        [connectionId]: 'GCS/Azure browsing is not supported yet.'
+      }
+      selectedPathsByConnection.value = {
+        ...selectedPathsByConnection.value,
+        [connectionId]: null
+      }
+      return
+    }
 
     // Handle missing path
     const folderPath = overridePath || resolveConnectionFolderPath(connection)
@@ -234,7 +253,11 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
         }
       } else {
         // Local filesystem - use existing logic
-        const response = await listDirectory(folderPath, connection.type)
+        const kind = getConnectionKindFromSpec(connection.spec)
+        if (kind !== 'files') {
+          throw new Error('Unsupported file explorer connection type')
+        }
+        const response = await listDirectory(folderPath, kind)
         // Keep both files AND directories for nested browsing
         const entries = response.entries
 
@@ -470,6 +493,14 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
     const connectionsStore = useConnectionsStore()
     const connection = connectionsStore.connections.find((c) => c.id === connectionId)
     if (!connection) return
+    const kind = getConnectionKindFromSpec(connection.spec)
+    if (kind === 'gcs' || kind === 'azure') {
+      errorsByConnection.value = {
+        ...errorsByConnection.value,
+        [connectionId]: 'GCS/Azure browsing is not supported yet.'
+      }
+      return
+    }
 
     try {
       const isS3 = folderPath.startsWith('s3://')
@@ -511,7 +542,10 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
         }
       } else {
         // Local filesystem
-        const response = await listDirectory(folderPath, connection.type)
+        if (kind !== 'files') {
+          throw new Error('Unsupported file explorer connection type')
+        }
+        const response = await listDirectory(folderPath, kind)
 
         // Update folder children immutably (single source of truth)
         const currentEntries = entriesByConnection.value[connectionId] || []

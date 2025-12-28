@@ -1,6 +1,13 @@
 import { useConnectionsStore } from '@/stores/connections'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import type { Connection } from '@/types/connections'
+import {
+  getConnectionKindFromSpec,
+  getConnectionTypeLabel,
+  isDatabaseKind,
+  isFileBasedKind,
+  matchesConnectionTypeFilter
+} from '@/types/specs'
 
 interface SchemaInfo {
   name: string
@@ -14,24 +21,16 @@ export function useConnectionTreeLogic() {
 
   function isFileConnection(connId: string): boolean {
     const conn = connectionsStore.connections.find((c) => c.id === connId)
-    const t = (conn?.type || '').toLowerCase().trim()
-    return t.includes('file') || t === 'files' || t === 's3' || !!conn?.spec?.s3
+    const kind = getConnectionKindFromSpec(conn?.spec)
+    return isFileBasedKind(kind)
   }
 
   function isS3Connection(conn: Connection): boolean {
-    // Check if connection has S3 spec
-    return !!conn.spec?.s3
+    return getConnectionKindFromSpec(conn.spec) === 's3'
   }
 
   function getEffectiveType(conn: Connection): string {
-    // For file connections, distinguish between S3 and local files
-    const baseType = (conn.type || '').toLowerCase().trim()
-    if (baseType === 's3') return 's3'
-    // Check for S3 spec even when type is 'files' - S3 connections may have type='files' with spec.s3 set
-    if (baseType === 'files') return isS3Connection(conn) ? 's3' : 'files'
-    if (baseType.includes('file')) return isS3Connection(conn) ? 's3' : 'files'
-    if (isS3Connection(conn)) return 's3'
-    return baseType
+    return getConnectionTypeLabel(conn.spec, conn.type) || ''
   }
 
   function getDbLogoForType(dbType?: string): string {
@@ -47,17 +46,21 @@ export function useConnectionTreeLogic() {
 
   function isMySQL(connId: string): boolean {
     const conn = connectionsStore.connections.find((c) => c.id === connId)
+    const kind = getConnectionKindFromSpec(conn?.spec)
+    if (!isDatabaseKind(kind)) return false
     return (conn?.type || '').toLowerCase() === 'mysql'
   }
 
   function isPostgres(connId: string): boolean {
     const conn = connectionsStore.connections.find((c) => c.id === connId)
+    const kind = getConnectionKindFromSpec(conn?.spec)
+    if (!isDatabaseKind(kind)) return false
     return (conn?.type || '').toLowerCase() === 'postgresql'
   }
 
   function isSnowflake(connId: string): boolean {
     const conn = connectionsStore.connections.find((c) => c.id === connId)
-    return (conn?.type || '').toLowerCase() === 'snowflake'
+    return getConnectionKindFromSpec(conn?.spec) === 'snowflake'
   }
 
   function hasSchemas(connId: string): boolean {
@@ -145,26 +148,7 @@ export function useConnectionTreeLogic() {
   function matchesTypeFilters(conn: Connection, typeFilters: string[]): boolean {
     // If no filters selected, show all
     if (!typeFilters || typeFilters.length === 0) return true
-
-    const effectiveType = getEffectiveType(conn)
-    if (!effectiveType) return false
-
-    // Check if connection matches any of the selected type filters (case-insensitive)
-    return typeFilters.some((filter) => {
-      const filterLower = filter.toLowerCase().trim()
-
-      // Treat "Files" filter as including both local files + S3.
-      if (filterLower === 'files') {
-        return effectiveType === 'files' || effectiveType === 's3'
-      }
-
-      if (filterLower === 's3') {
-        return effectiveType === 's3'
-      }
-
-      // Fallback: match by substring for DB types (postgresql, mysql, snowflake, etc.)
-      return effectiveType.includes(filterLower) || filterLower.includes(effectiveType)
-    })
+    return typeFilters.some((filter) => matchesConnectionTypeFilter(conn.spec, conn.type, filter))
   }
 
   return {

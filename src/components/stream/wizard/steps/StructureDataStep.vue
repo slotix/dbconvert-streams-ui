@@ -318,9 +318,10 @@ import ModeButtons from '@/components/settings/ModeButtons.vue'
 import Operations from '@/components/settings/Operations.vue'
 import CustomQueryEditor from '@/components/stream/wizard/CustomQueryEditor.vue'
 import { Code, Sheet, Cloud, FolderOpen } from 'lucide-vue-next'
-import type { ConnectionMapping } from '@/api/federated'
+import type { StreamConnectionMapping } from '@/types/streamConfig'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
+import { getConnectionKindFromSpec, isDatabaseKind, isFileBasedKind } from '@/types/specs'
 
 interface Props {
   targetConnectionId?: string | null
@@ -328,7 +329,7 @@ interface Props {
   createIndexes?: boolean
   createForeignKeys?: boolean
   copyData?: boolean
-  sourceConnections?: ConnectionMapping[]
+  sourceConnections?: StreamConnectionMapping[]
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -411,17 +412,17 @@ const sourceConnectionId = computed(() => {
   return source?.connections?.[0]?.connectionId || null
 })
 
-// Helper to check if a connection is a file/S3 type
+// Helper to check if a connection is a file/S3 type - spec is the ONLY source of truth
 function isFileType(connectionId: string): boolean {
   const conn = connectionsStore.connectionByID(connectionId)
-  const type = conn?.type?.toLowerCase() || ''
-  return type.includes('file')
+  const kind = getConnectionKindFromSpec(conn?.spec)
+  return isFileBasedKind(kind)
 }
 
-// Helper to check if a connection is S3 (file type with spec.s3)
+// Helper to check if a connection is S3 (spec.s3)
 function isS3Type(connectionId: string): boolean {
   const conn = connectionsStore.connectionByID(connectionId)
-  return isFileType(connectionId) && !!conn?.spec?.s3
+  return getConnectionKindFromSpec(conn?.spec) === 's3'
 }
 
 // Get all file/S3 source connections
@@ -463,16 +464,9 @@ const targetConnection = computed(() => {
 })
 
 const isTargetDatabase = computed(() => {
-  const type = targetConnection.value?.type?.toLowerCase() || ''
-  // Structure options only apply to database targets (not S3, GCS, Azure, or local files)
-  // Snowflake is a database type that also supports structure options
-  return (
-    type === 'mysql' ||
-    type === 'postgresql' ||
-    type === 'clickhouse' ||
-    type === 'duckdb' ||
-    type === 'snowflake'
-  )
+  const kind = getConnectionKindFromSpec(targetConnection.value?.spec)
+  // Structure options only apply to database targets (not file-based)
+  return isDatabaseKind(kind)
 })
 
 watch(

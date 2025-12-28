@@ -235,7 +235,149 @@ export interface TargetSpec {
 
 // ===== Helper Functions =====
 
+// Connection kind type - all possible connection types
+export type ConnectionKind = 'database' | 's3' | 'gcs' | 'azure' | 'snowflake' | 'files'
+
+// Target kind type - all possible target types
+export type TargetKind = 'database' | 's3' | 'gcs' | 'azure' | 'snowflake' | 'files'
+
+/**
+ * Get the kind from a ConnectionSpec - spec is the ONLY source of truth.
+ * This is the canonical way to determine connection type.
+ * DO NOT use connection.type for routing decisions.
+ */
+export function getConnectionKindFromSpec(spec: ConnectionSpec | undefined): ConnectionKind | null {
+  if (!spec) return null
+  if (spec.database) return 'database'
+  if (spec.s3) return 's3'
+  if (spec.gcs) return 'gcs'
+  if (spec.azure) return 'azure'
+  if (spec.snowflake) return 'snowflake'
+  if (spec.files) return 'files'
+  return null
+}
+
+/**
+ * Get the kind from a TargetSpec - spec is the ONLY source of truth.
+ */
+export function getTargetKindFromSpec(spec: TargetSpec | undefined): TargetKind | null {
+  if (!spec) return null
+  if (spec.database) return 'database'
+  if (spec.files) return 'files'
+  if (spec.s3) return 's3'
+  if (spec.gcs) return 'gcs'
+  if (spec.azure) return 'azure'
+  if (spec.snowflake) return 'snowflake'
+  return null
+}
+
+/**
+ * Check if a connection kind represents a file-based source/target.
+ * File-based kinds include local files and all cloud storage types.
+ */
+export function isFileBasedKind(kind: ConnectionKind | TargetKind | null): boolean {
+  return kind === 's3' || kind === 'gcs' || kind === 'azure' || kind === 'files'
+}
+
+/**
+ * Check if a connection kind represents cloud storage (not local files).
+ */
+export function isCloudStorageKind(kind: ConnectionKind | TargetKind | null): boolean {
+  return kind === 's3' || kind === 'gcs' || kind === 'azure'
+}
+
+/**
+ * Check if a connection kind is a database type.
+ */
+export function isDatabaseKind(kind: ConnectionKind | TargetKind | null): boolean {
+  return kind === 'database' || kind === 'snowflake'
+}
+
+/**
+ * Get a normalized type label for UI usage based on spec kind.
+ * - Database kind uses connection.type (engine)
+ * - Snowflake kind returns "snowflake"
+ * - File kinds return their explicit kind (files/s3/gcs/azure)
+ */
+export function getConnectionTypeLabel(
+  spec: ConnectionSpec | undefined,
+  connectionType?: string
+): string | null {
+  const kind = getConnectionKindFromSpec(spec)
+  if (!kind) return null
+  if (kind === 'database') {
+    return connectionType ? connectionType.toLowerCase() : null
+  }
+  if (kind === 'snowflake') {
+    return 'snowflake'
+  }
+  return kind
+}
+
+// SQL dialect type (used for editors, formatters, and query builders).
+export type SqlDialect = 'mysql' | 'pgsql' | 'sql'
+
+/**
+ * Get SQL dialect from a connection engine label (not spec kind).
+ */
+export function getSqlDialectFromType(connectionType?: string): SqlDialect {
+  const normalized = connectionType?.toLowerCase() || ''
+  if (!normalized) return 'sql'
+  if (normalized === 'postgresql' || normalized === 'postgres' || normalized === 'pgsql') {
+    return 'pgsql'
+  }
+  if (normalized === 'mysql' || normalized === 'mariadb') {
+    return 'mysql'
+  }
+  return 'sql'
+}
+
+/**
+ * Get SQL dialect from a ConnectionSpec + engine label.
+ * Non-database kinds always return 'sql'.
+ */
+export function getSqlDialectFromConnection(
+  spec: ConnectionSpec | undefined,
+  connectionType?: string
+): SqlDialect {
+  const kind = getConnectionKindFromSpec(spec)
+  if (!isDatabaseKind(kind)) return 'sql'
+  return getSqlDialectFromType(connectionType)
+}
+
+/**
+ * Match a single connection against a type filter string.
+ * Uses spec kind as the source of truth for file vs database.
+ */
+export function matchesConnectionTypeFilter(
+  spec: ConnectionSpec | undefined,
+  connectionType: string | undefined,
+  filter: string | null | undefined
+): boolean {
+  const normalizedFilter = (filter || '').toLowerCase().trim()
+  if (!normalizedFilter || normalizedFilter === 'all') return true
+
+  const kind = getConnectionKindFromSpec(spec)
+  if (!kind) return false
+
+  if (normalizedFilter === 'files') {
+    return isFileBasedKind(kind)
+  }
+  if (normalizedFilter === 's3') {
+    return kind === 's3'
+  }
+
+  const typeLabel = getConnectionTypeLabel(spec, connectionType)
+  if (!typeLabel) return false
+
+  if (normalizedFilter === 'postgresql') {
+    return typeLabel.includes('postgres')
+  }
+  return typeLabel.includes(normalizedFilter) || normalizedFilter.includes(typeLabel)
+}
+
 // Get the active spec type from a ConnectionSpec
+// @deprecated Use getConnectionKindFromSpec instead for type-safe kind detection
 export function getConnectionSpecType(spec: ConnectionSpec | undefined): string | null {
   if (!spec) return null
   if (spec.database) return 'database'

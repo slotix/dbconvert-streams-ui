@@ -5,6 +5,7 @@ import { useConnectionTreeLogic } from '@/composables/useConnectionTreeLogic'
 import type { Connection } from '@/types/connections'
 import type { FileSystemEntry } from '@/api/fileSystem'
 import { getConnectionHost } from '@/utils/specBuilder'
+import { getConnectionTypeLabel } from '@/types/specs'
 
 export interface UseTreeSearchOptions {
   typeFilters?: MaybeRefOrGetter<string[] | undefined>
@@ -109,9 +110,8 @@ export function useTreeSearch(
     return filtered.filter((connection) => {
       // Search in connection basic info
       const host = getConnectionHost(connection)
-      const connectionLabel = normalize(
-        `${connection.name || ''} ${host || ''} ${connection.type || ''}`
-      )
+      const typeLabel = getConnectionTypeLabel(connection.spec, connection.type) || ''
+      const connectionLabel = normalize(`${connection.name || ''} ${host || ''} ${typeLabel}`)
       if (connectionLabel.includes(normalizedQuery)) return true
 
       // Search in database names (use filtered getter to respect showSystemObjects)

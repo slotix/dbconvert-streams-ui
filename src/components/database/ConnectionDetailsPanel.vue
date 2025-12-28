@@ -8,6 +8,7 @@ import { generateConnectionString } from '@/utils/connectionStringGenerator'
 import { formatDateTime, formatDataSize } from '@/utils/formats'
 import { getConnectionHost, getConnectionPort, getConnectionDatabase } from '@/utils/specBuilder'
 import { useDatabaseCapabilities } from '@/composables/useDatabaseCapabilities'
+import { getConnectionKindFromSpec, getConnectionTypeLabel, isFileBasedKind } from '@/types/specs'
 import { useCopyToClipboard } from '@/composables/useCopyToClipboard'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { useDatabaseOverviewStore } from '@/stores/databaseOverview'
@@ -58,9 +59,24 @@ const newBucketName = ref('')
 const newBucketRegion = ref('')
 const isCreatingBucket = ref(false)
 
-// Database capabilities - computed based on connection type
-const databaseType = computed(() => props.connection?.type || '')
+const connectionKind = computed(() => getConnectionKindFromSpec(props.connection?.spec))
+// Database capabilities - computed based on connection kind
+const databaseType = computed(() => {
+  if (connectionKind.value === 'database') {
+    return props.connection?.type || ''
+  }
+  if (connectionKind.value === 'snowflake') {
+    return 'snowflake'
+  }
+  if (isFileBasedKind(connectionKind.value)) {
+    return 'files'
+  }
+  return ''
+})
 const { canCreateDatabase, canCreateSchema, isPostgreSQL } = useDatabaseCapabilities(databaseType)
+const connectionTypeLabel = computed(
+  () => getConnectionTypeLabel(props.connection?.spec, props.connection?.type) || ''
+)
 
 // For PostgreSQL, schema creation is available at database level (DatabaseOverviewPanel)
 // so we hide it from connection level to avoid confusion
@@ -83,11 +99,8 @@ const isS3Connection = computed(() => {
   return storageProvider.value === 's3'
 })
 
-// Check if this is a file connection (files type or cloud storage)
-const isFileConnection = computed(() => {
-  const type = props.connection?.type?.toLowerCase()
-  return type === 'files' || !!storageProvider.value
-})
+// Check if this is a file connection (local files or cloud storage)
+const isFileConnection = computed(() => isFileBasedKind(connectionKind.value))
 
 // Get base path from spec
 const basePath = computed(() => {
@@ -507,7 +520,7 @@ const isLoadingDatabases = computed(() => {
         </h3>
         <CloudProviderBadge
           :cloud-provider="connection.cloud_provider || ''"
-          :db-type="connection.type"
+          :db-type="connectionTypeLabel"
         />
       </div>
       <div class="hidden sm:flex items-center gap-2">

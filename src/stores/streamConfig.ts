@@ -8,6 +8,7 @@ import type {
   FileEntry
 } from '@/types/streamConfig'
 import type { TargetSpec } from '@/types/specs'
+import { getConnectionKindFromSpec, getConnectionTypeLabel, isFileBasedKind } from '@/types/specs'
 import type { Step } from '@/stores/common'
 import { useConnectionsStore } from '@/stores/connections'
 import { useMonitoringStore } from '@/stores/monitoring'
@@ -93,7 +94,7 @@ export const buildStreamPayload = (stream: StreamConfig): Partial<StreamConfig> 
   }
 
   // Handle source configuration - filter out any deleted connections
-  const connections =
+  const connections: StreamConnectionMapping[] =
     normalizedSource.connections && normalizedSource.connections.length > 0
       ? normalizedSource.connections.filter((c) => connectionsStore.connectionByID(c.connectionId))
       : []
@@ -102,7 +103,8 @@ export const buildStreamPayload = (stream: StreamConfig): Partial<StreamConfig> 
   const primarySourceConn = primarySourceConnId
     ? connectionsStore.connectionByID(primarySourceConnId)
     : undefined
-  const isS3Source = !!primarySourceConn?.spec?.s3 && connections.length === 1
+  const sourceKind = getConnectionKindFromSpec(primarySourceConn?.spec)
+  const isS3Source = sourceKind === 's3' && connections.length === 1
 
   function parseS3Path(path: string): { bucket: string; keyOrPrefix: string } | null {
     const match = path.match(/^s3:\/\/([^/]+)\/?(.*)$/)
@@ -598,7 +600,8 @@ export const useStreamsStore = defineStore('streams', {
         const primarySourceConn = primarySourceConnId
           ? connectionsStore.connectionByID(primarySourceConnId)
           : null
-        const isS3Source = !!primarySourceConn?.spec?.s3 && connectionCount === 1
+        const primarySourceKind = getConnectionKindFromSpec(primarySourceConn?.spec)
+        const isS3Source = primarySourceKind === 's3' && connectionCount === 1
 
         // Copy database/schema from root level to per-connection fields
         if (isS3Source) {
@@ -648,14 +651,11 @@ export const useStreamsStore = defineStore('streams', {
           throw new Error('Target connection not found')
         }
 
-        // Use connection metadata to determine what kind of target spec to build
-        const connectionType = targetConnection.type?.toLowerCase() || ''
-        // Check for S3/GCS/Azure by spec presence (new format)
-        const isS3Target = !!targetConnection.spec?.s3
-        const isGCSTarget = !!targetConnection.spec?.gcs
-        const isAzureTarget = !!targetConnection.spec?.azure
-        const isLocalFileTarget = !!targetConnection.spec?.files
-        const isFileConnectionType = connectionType.includes('file')
+        // Use spec to determine target kind - spec is the ONLY source of truth
+        const targetKind = getConnectionKindFromSpec(targetConnection.spec)
+        if (!targetKind) {
+          throw new Error('Target connection has no valid spec - cannot determine type')
+        }
 
         // Get existing spec values (spec is the source of truth)
         const existingSpec = this.currentStreamConfig.target.spec
@@ -677,10 +677,13 @@ export const useStreamsStore = defineStore('streams', {
         const targetDatabase = this.currentStreamConfig.targetDatabase || ''
         const targetSchema = this.currentStreamConfig.targetSchema
         const targetPath = this.currentStreamConfig.targetPath || '/tmp/dbconvert'
-        const fileFormat =
-          isS3Target || isGCSTarget || isAzureTarget || isLocalFileTarget || isFileConnectionType
-            ? getFileSpec(this.currentStreamConfig.target.spec)?.fileFormat || 'csv'
-            : 'parquet'
+        const fileFormat = isFileBasedKind(targetKind)
+          ? getFileSpec(this.currentStreamConfig.target.spec)?.fileFormat
+          : 'parquet'
+        if (isFileBasedKind(targetKind) && !fileFormat) {
+          throw new Error('Target file format is required for file-based targets')
+        }
+        const resolvedFileFormat = fileFormat || 'parquet'
 
         // Read format settings from existing spec (spec is source of truth)
         const compressionType = existingFormat?.compression || 'zstd'
@@ -695,7 +698,7 @@ export const useStreamsStore = defineStore('streams', {
             buildSnowflakeTargetSpec(
               targetDatabase,
               targetPath,
-              fileFormat,
+              resolvedFileFormat,
               targetSchema,
               structureOptions,
               compressionType,
@@ -712,7 +715,7 @@ export const useStreamsStore = defineStore('streams', {
             const s3ConnSpec = targetConnection.spec?.s3
             return buildS3TargetSpec(
               targetPath,
-              fileFormat,
+              resolvedFileFormat,
               existingUpload?.bucket || s3ConnSpec?.scope?.bucket || '',
               existingUpload?.prefix || s3ConnSpec?.scope?.prefix,
               existingUpload?.storageClass,
@@ -731,7 +734,7 @@ export const useStreamsStore = defineStore('streams', {
             const gcsConnSpec = targetConnection.spec?.gcs
             return buildGCSTargetSpec(
               targetPath,
-              fileFormat,
+              resolvedFileFormat,
               existingUpload?.bucket || gcsConnSpec?.scope?.bucket || '',
               existingUpload?.prefix || gcsConnSpec?.scope?.prefix,
               existingUpload?.storageClass,
@@ -748,7 +751,7 @@ export const useStreamsStore = defineStore('streams', {
             const azureConnSpec = targetConnection.spec?.azure
             return buildAzureTargetSpec(
               targetPath,
-              fileFormat,
+              resolvedFileFormat,
               existingUpload?.container || azureConnSpec?.scope?.container || '',
               existingUpload?.prefix || azureConnSpec?.scope?.prefix,
               existingUpload?.keepLocalFiles,
@@ -759,25 +762,40 @@ export const useStreamsStore = defineStore('streams', {
             )
           },
           file: () =>
-            buildFileTargetSpec(fileFormat, compressionType, parquetConfig, csvConfig, useDuckDB),
+            buildFileTargetSpec(
+              resolvedFileFormat,
+              compressionType,
+              parquetConfig,
+              csvConfig,
+              useDuckDB
+            ),
           database: () =>
             buildDatabaseTargetSpec(targetDatabase, targetSchema, structureOptions, skipData)
         }
 
-        // Determine which builder to use
+        // Determine which builder to use based on spec-derived kind
         let builderKey: string
-        if (connectionType === 'snowflake') {
-          builderKey = 'snowflake'
-        } else if (isS3Target) {
-          builderKey = 's3'
-        } else if (isGCSTarget) {
-          builderKey = 'gcs'
-        } else if (isAzureTarget) {
-          builderKey = 'azure'
-        } else if (isLocalFileTarget || isFileConnectionType) {
-          builderKey = 'file'
-        } else {
-          builderKey = 'database'
+        switch (targetKind) {
+          case 'snowflake':
+            builderKey = 'snowflake'
+            break
+          case 's3':
+            builderKey = 's3'
+            break
+          case 'gcs':
+            builderKey = 'gcs'
+            break
+          case 'azure':
+            builderKey = 'azure'
+            break
+          case 'files':
+            builderKey = 'file'
+            break
+          case 'database':
+            builderKey = 'database'
+            break
+          default:
+            throw new Error(`Unknown target kind: ${targetKind}`)
         }
 
         this.currentStreamConfig.target.spec = specBuilders[builderKey]()
@@ -898,17 +916,20 @@ export const useStreamsStore = defineStore('streams', {
       const sourceConnection = connectionsStore.connectionByID(source)
       const targetConnection = connectionsStore.connectionByID(target)
 
-      // Get connection types (e.g., 'mysql', 'postgresql')
-      const sourceType = sourceConnection?.type?.toLowerCase() || 'unknown'
-      const targetType = targetConnection?.type?.toLowerCase() || 'unknown'
+      const targetKind = getConnectionKindFromSpec(targetConnection?.spec)
+
+      const sourceType =
+        getConnectionTypeLabel(sourceConnection?.spec, sourceConnection?.type) || ''
+      const targetType =
+        getConnectionTypeLabel(targetConnection?.spec, targetConnection?.type) || ''
 
       // Determine target format/type
       let targetPart: string
-      const isFileTarget = targetType.includes('file')
+      const isFileTarget = isFileBasedKind(targetKind)
 
       if (isFileTarget) {
         // For file targets, use the format (e.g., 'parquet', 'csv')
-        targetPart = targetFileFormat || 'files'
+        targetPart = targetFileFormat || targetKind || ''
       } else {
         // For database targets, use the target connection type
         targetPart = targetType

@@ -5,6 +5,7 @@ import { Key, Link } from 'lucide-vue-next'
 import { type SQLTableMeta, type SQLColumnMeta } from '@/types/metadata'
 import { useObjectTabStateStore } from '@/stores/objectTabState'
 import { formatDataSize } from '@/utils/formats'
+import { getSqlDialectFromType } from '@/types/specs'
 import DdlView from './DdlView.vue'
 
 // Define brand colors as constants for consistency (matching DatabaseDiagramD3.vue)
@@ -52,9 +53,7 @@ function handleRefresh() {
 defineExpose({ refresh: handleRefresh })
 
 // Determine the SQL dialect based on connection type
-const sqlDialect = computed(() => {
-  return props.connectionType.toLowerCase()
-})
+const sqlDialect = computed(() => getSqlDialectFromType(props.connectionType))
 
 const columns = computed(() => {
   const primaryKeys = new Set(props.tableMeta?.primaryKeys || [])

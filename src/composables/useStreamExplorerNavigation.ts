@@ -5,15 +5,13 @@ import { useFileExplorerStore } from '@/stores/fileExplorer'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import type { StreamConfig } from '@/types/streamConfig'
 import type { Connection } from '@/types/connections'
+import { getConnectionKindFromSpec, isFileBasedKind } from '@/types/specs'
 
 interface UseStreamExplorerNavigationOptions {
   stream: Ref<StreamConfig>
   source: Ref<Connection | undefined>
   target: Ref<Connection | undefined>
 }
-
-// Only 'files' is a valid file connection type now (legacy csv/jsonl/parquet removed)
-const FILE_CONNECTION_TYPE = 'files'
 
 export function useStreamExplorerNavigation({
   stream,
@@ -26,8 +24,8 @@ export function useStreamExplorerNavigation({
   const explorerNavigationStore = useExplorerNavigationStore()
 
   const isFileTarget = computed(() => {
-    const type = target.value?.type?.toLowerCase() || ''
-    return type === FILE_CONNECTION_TYPE
+    const kind = getConnectionKindFromSpec(target.value?.spec)
+    return isFileBasedKind(kind)
   })
 
   const sourceDatabase = computed(
@@ -44,8 +42,8 @@ export function useStreamExplorerNavigation({
     explorerNavigationStore.setActiveConnectionId(source.value.id)
     connectionsStore.setCurrentConnection(source.value.id)
 
-    const sourceType = source.value.type?.toLowerCase() || ''
-    const isSourceFile = sourceType === FILE_CONNECTION_TYPE
+    const sourceKind = getConnectionKindFromSpec(source.value.spec)
+    const isSourceFile = isFileBasedKind(sourceKind)
 
     if (isSourceFile) {
       await fileExplorerStore.loadEntries(source.value.id, true)

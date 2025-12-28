@@ -82,6 +82,7 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { Calendar } from 'lucide-vue-next'
 import { normalizeConnectionType } from '@/utils/connectionUtils'
+import { getConnectionTypeLabel } from '@/types/specs'
 import { formatDateTime } from '@/utils/formats'
 import type { StreamConfig } from '@/types/streamConfig'
 import type { Connection, DbType } from '@/types/connections'
@@ -150,8 +151,9 @@ const allQueries = computed(() => {
 const streamCreated = computed(() => formatDateTime(props.stream?.created || 0))
 
 function getLogo(connection?: Connection) {
-  if (!connection?.type) return '/images/db-logos/all.svg'
-  const normalizedInput = normalizeConnectionType(connection.type.toLowerCase())
+  const typeLabel = getConnectionTypeLabel(connection?.spec, connection?.type)
+  if (!typeLabel) return '/images/db-logos/all.svg'
+  const normalizedInput = normalizeConnectionType(typeLabel)
   const match = props.dbTypes.find(
     (dbType) => normalizeConnectionType(dbType.type.toLowerCase()) === normalizedInput
   )

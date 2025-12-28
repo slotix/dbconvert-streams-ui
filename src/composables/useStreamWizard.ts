@@ -2,6 +2,7 @@ import { ref, computed } from 'vue'
 import type { StreamConfig, StreamConnectionMapping } from '@/types/streamConfig'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
+import { getConnectionKindFromSpec, isFileBasedKind } from '@/types/specs'
 import { normalizeConnectionAliases, DEFAULT_ALIAS } from '@/utils/federatedUtils'
 
 export interface WizardStep {
@@ -222,10 +223,11 @@ export function useStreamWizard() {
     const connectionsStore = useConnectionsStore()
     const config = streamsStore.currentStreamConfig
 
-    const primarySourceType =
-      (primarySourceId.value && connectionsStore.connectionByID(primarySourceId.value)?.type) || ''
-    const isFileSource =
-      primarySourceType.toLowerCase() === 'files' || primarySourceType.toLowerCase() === 's3'
+    const primarySourceConnection = primarySourceId.value
+      ? connectionsStore.connectionByID(primarySourceId.value)
+      : null
+    const primarySourceKind = getConnectionKindFromSpec(primarySourceConnection?.spec)
+    const isFileSource = isFileBasedKind(primarySourceKind)
 
     // Check if tables or custom queries are selected (now per-connection)
     // Note: connection.tables only contains selected tables (filtered in TableList.vue)

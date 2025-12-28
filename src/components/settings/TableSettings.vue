@@ -30,6 +30,7 @@ import {
   stripAliasPrefix,
   extractSchema
 } from '@/utils/federatedUtils'
+import { getSqlDialectFromConnection } from '@/types/specs'
 
 interface Props {
   table: Table
@@ -58,10 +59,7 @@ const connectionDialect = computed((): 'mysql' | 'pgsql' | 'sql' => {
   const sourceConnectionId = tableConnection.value?.connectionId
   if (sourceConnectionId) {
     const connection = connectionsStore.connectionByID(sourceConnectionId)
-    const type = connection?.type?.toLowerCase() || 'sql'
-    if (type === 'mysql' || type === 'pgsql' || type === 'postgresql') {
-      return type === 'postgresql' ? 'pgsql' : (type as 'mysql' | 'pgsql')
-    }
+    return getSqlDialectFromConnection(connection?.spec, connection?.type)
   }
   return 'sql'
 })

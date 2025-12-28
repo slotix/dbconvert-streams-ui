@@ -269,6 +269,7 @@ import { useStreamsStore, buildStreamPayload } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
 import { JsonViewer } from '@/components/monaco'
 import { getFileSpec, getFormatSpec } from '@/composables/useTargetSpec'
+import { getConnectionKindFromSpec, isFileBasedKind } from '@/types/specs'
 import StreamSettings from '@/components/settings/StreamSettings.vue'
 
 interface Props {
@@ -296,13 +297,14 @@ const sourceDisplay = computed(() => {
   const conn = connectionsStore.connectionByID(props.sourceConnectionId)
   if (!conn) return props.sourceConnectionId
   let display = conn.name
-  // For file sources, show path/bucket; for databases, show database name
-  if (conn.type?.toLowerCase() === 'files') {
-    if (conn.spec?.s3) {
-      // S3 source - show bucket
-      if (props.sourceDatabase) display += ` / ${props.sourceDatabase}`
-    } else if (conn.spec?.files?.basePath) {
-      // Local file source - show base path
+  // Use spec-based kind detection for display logic
+  const kind = getConnectionKindFromSpec(conn.spec)
+  if (kind === 's3') {
+    // S3 source - show bucket
+    if (props.sourceDatabase) display += ` / ${props.sourceDatabase}`
+  } else if (kind === 'files') {
+    // Local file source - show base path
+    if (conn.spec?.files?.basePath) {
       display += ` • ${conn.spec.files.basePath}`
     }
   } else if (props.sourceDatabase) {
@@ -317,7 +319,9 @@ const targetDisplay = computed(() => {
   if (!conn) return props.targetConnectionId
   let display = conn.name
   if (props.targetDatabase) display += ` / ${props.targetDatabase}`
-  if (conn.type?.toLowerCase().includes('file')) {
+  // Use spec-based kind detection
+  const kind = getConnectionKindFromSpec(conn.spec)
+  if (isFileBasedKind(kind)) {
     const format = getFileSpec(currentStreamConfig.value?.target?.spec)?.fileFormat
     if (format) {
       display += ` • ${format.toUpperCase()}`
@@ -343,33 +347,26 @@ const tableCount = computed(() => {
   return count
 })
 
-const isFileSource = computed(() => {
-  if (!props.sourceConnectionId) return false
+// Source kind detection - spec is the ONLY source of truth
+const sourceKind = computed(() => {
+  if (!props.sourceConnectionId) return null
   const conn = connectionsStore.connectionByID(props.sourceConnectionId)
-  return conn?.type?.toLowerCase() === 'files' && !!conn.spec?.files
+  return getConnectionKindFromSpec(conn?.spec)
 })
 
-const isS3Source = computed(() => {
-  if (!props.sourceConnectionId) return false
-  const conn = connectionsStore.connectionByID(props.sourceConnectionId)
-  return conn?.type?.toLowerCase() === 'files' && !!conn.spec?.s3
-})
+const isFileSource = computed(() => sourceKind.value === 'files')
+const isS3Source = computed(() => sourceKind.value === 's3')
 
-const isFileTarget = computed(() => {
+// Target kind detection - spec is the ONLY source of truth
+const targetKind = computed(() => {
   const targetId = currentStreamConfig.value?.target?.id
-  if (!targetId) return false
-  // Check connection type (local files via spec.files)
+  if (!targetId) return null
   const conn = connectionsStore.connectionByID(targetId)
-  return conn?.type?.toLowerCase() === 'files' && !!conn.spec?.files
+  return getConnectionKindFromSpec(conn?.spec)
 })
 
-const isS3Target = computed(() => {
-  const targetId = currentStreamConfig.value?.target?.id
-  if (!targetId) return false
-  // Check if storage is S3 (via spec.s3)
-  const conn = connectionsStore.connectionByID(targetId)
-  return conn?.type?.toLowerCase() === 'files' && !!conn.spec?.s3
-})
+const isFileTarget = computed(() => targetKind.value === 'files')
+const isS3Target = computed(() => targetKind.value === 's3')
 
 // Get compression display from target.spec
 // Get file format from target.spec (spec is the source of truth)

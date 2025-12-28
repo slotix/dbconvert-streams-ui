@@ -395,6 +395,7 @@ import {
 import { debounce } from '@/utils/debounce'
 import { type StreamConfig, type Table } from '@/types/streamConfig'
 import { isFederatedMode as checkFederatedMode, parseTableName } from '@/utils/federatedUtils'
+import { getConnectionTypeLabel } from '@/types/specs'
 
 const streamsStore = useStreamsStore()
 const connectionStore = useConnectionsStore()
@@ -415,9 +416,9 @@ const sourceConnection = computed(() => {
   return connectionStore.connections.find((conn) => conn.id === connId)
 })
 
-const sourceConnectionType = computed(() => {
-  return sourceConnection.value?.type?.toLowerCase() || ''
-})
+const sourceConnectionType = computed(
+  () => getConnectionTypeLabel(sourceConnection.value?.spec, sourceConnection.value?.type) || ''
+)
 
 // Initialize tables from _allTablesWithState if available (preserves unselected tables during navigation)
 // Otherwise, fall back to first connection's tables (only selected tables from saved config)
@@ -567,7 +568,7 @@ const multiSourceGroupedTables = computed<ConnectionGroup[]>(() => {
         alias,
         connectionId: fedConn.connectionId,
         connectionName: connection.name,
-        connectionType: connection.type?.toLowerCase() || 'unknown',
+        connectionType: getConnectionTypeLabel(connection.spec, connection.type) || '',
         database: fedConn.database || '',
         schemas: [],
         tableCount: 0
