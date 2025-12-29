@@ -93,7 +93,8 @@ const primarySourceId = computed(
 const primarySourceDatabase = computed(
   () => props.sourceConnections[0]?.database || props.sourceDatabase
 )
-const isMultiSource = computed(() => props.sourceConnections.length > 1)
+// Multiple sources = 2+ connections selected
+const hasMultipleSources = computed(() => props.sourceConnections.length > 1)
 
 function handleSourceUpdate(connectionId: string, database?: string, schema?: string) {
   emit('update:source-connection', connectionId, database, schema)
@@ -121,9 +122,10 @@ function handleClearAll() {
 }
 
 function updateCanProceed() {
-  // Source and target cannot be the same connection AND database combination
+  // Source and target cannot be same connection+database (only checked for single source)
+  // With multiple sources, at least one differs from target
   const isSameConnectionAndDatabase =
-    !isMultiSource.value &&
+    !hasMultipleSources.value &&
     primarySourceId.value &&
     props.targetConnectionId &&
     primarySourceId.value === props.targetConnectionId &&

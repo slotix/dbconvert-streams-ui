@@ -23,11 +23,7 @@
                   Source Connections
                 </h3>
                 <p class="text-xs text-blue-700/80 dark:text-blue-100/80 font-medium truncate">
-                  {{
-                    localSourceConnections.length > 1
-                      ? 'Multi-source: combine data from multiple sources'
-                      : 'Select one or more databases to read from'
-                  }}
+                  Select one or more sources to read from
                 </p>
               </div>
             </div>
@@ -148,25 +144,26 @@
             class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-600/60 rounded-lg px-3 py-1.5 text-sm shadow-sm shadow-blue-900/10 dark:shadow-blue-900/40"
           >
             <span class="font-semibold text-blue-700 dark:text-blue-200">Source:</span>
-            <template v-if="localSourceConnections.length > 1">
-              <span class="text-blue-900 dark:text-blue-100 ml-1 font-medium">
-                {{ localSourceConnections.length }} connections (multi-source)
-              </span>
-            </template>
-            <template v-else>
-              <span
-                v-if="primarySourceId"
-                class="text-blue-900 dark:text-blue-100 ml-1 font-medium"
-              >
-                {{ getConnectionName(primarySourceId) }}
-                <span v-if="primarySourceDatabase" class="text-blue-600 dark:text-blue-300">
-                  / {{ primarySourceDatabase }}
+            <span
+              v-if="localSourceConnections.length > 0"
+              class="text-blue-900 dark:text-blue-100 ml-1 font-medium"
+            >
+              <template v-if="localSourceConnections.length === 1">
+                {{ getConnectionName(localSourceConnections[0].connectionId) }}
+                <span
+                  v-if="localSourceConnections[0].database"
+                  class="text-blue-600 dark:text-blue-300"
+                >
+                  / {{ localSourceConnections[0].database }}
                 </span>
-              </span>
-              <span v-else class="text-blue-500/80 dark:text-blue-300/70 ml-1 italic"
-                >Not selected</span
-              >
-            </template>
+              </template>
+              <template v-else>
+                {{ localSourceConnections.length }} sources
+              </template>
+            </span>
+            <span v-else class="text-blue-500/80 dark:text-blue-300/70 ml-1 italic"
+              >Not selected</span
+            >
           </div>
 
           <!-- Arrow - Sky Blue to Emerald Gradient -->
@@ -215,9 +212,9 @@
         </button>
       </div>
 
-      <!-- Multi-Source Connection List with Editable Aliases -->
+      <!-- Source Aliases - shown when multiple sources selected -->
       <div
-        v-if="isMultiSource"
+        v-if="showAliasUI"
         class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/60 rounded-lg p-3"
       >
         <div class="flex items-center gap-2 mb-2">
@@ -366,7 +363,8 @@ const primarySourceId = computed(
 const primarySourceDatabase = computed(
   () => localSourceConnections.value[0]?.database || props.sourceDatabase
 )
-const isMultiSource = computed(() => localSourceConnections.value.length > 1)
+// Show alias UI when 2+ sources selected (for disambiguation in queries)
+const showAliasUI = computed(() => localSourceConnections.value.length > 1)
 
 // Generate type-based alias for a connection (e.g., pg1, my1, s31)
 function generateAlias(connectionId: string): string {
@@ -551,9 +549,11 @@ const filteredTargetConnections = computed(() => {
   return filtered.filter((conn) => connectionMatchesDeepSearch(conn, query))
 })
 
+// Conflict check: source and target cannot be same connection + database (for single source)
+// With multiple sources, at least one differs from target, so this check is skipped
 const isSameConnectionAndDatabase = computed(() => {
   return (
-    !isMultiSource.value &&
+    !showAliasUI.value &&
     primarySourceId.value &&
     props.targetConnectionId &&
     primarySourceId.value === props.targetConnectionId &&

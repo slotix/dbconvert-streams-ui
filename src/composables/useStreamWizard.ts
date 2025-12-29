@@ -2,7 +2,7 @@ import { ref, computed } from 'vue'
 import type { StreamConfig, StreamConnectionMapping } from '@/types/streamConfig'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
-import { getConnectionKindFromSpec, isFileBasedKind } from '@/types/specs'
+import { getConnectionKindFromSpec, isFileBasedKind, isDatabaseKind } from '@/types/specs'
 import { normalizeConnectionAliases, DEFAULT_ALIAS } from '@/utils/federatedUtils'
 
 export interface WizardStep {
@@ -66,9 +66,62 @@ export function useStreamWizard() {
   })
 
   const sourceConnections = ref<StreamConnectionMapping[]>([])
+
+  // For display purposes only (e.g., showing first connection in UI summary)
+  // All sources are equal - there's no true "primary"
   const primarySourceId = computed(() => sourceConnections.value[0]?.connectionId || null)
   const primarySourceDatabase = computed(() => sourceConnections.value[0]?.database || null)
-  const isMultiSource = computed(() => sourceConnections.value.length > 1)
+
+  // Type-aware helpers - organize by connection TYPE not COUNT
+  const hasFileSource = computed(() => {
+    const connectionsStore = useConnectionsStore()
+    return sourceConnections.value.some((conn) => {
+      const connection = connectionsStore.connectionByID(conn.connectionId)
+      const kind = getConnectionKindFromSpec(connection?.spec)
+      return isFileBasedKind(kind)
+    })
+  })
+
+  const hasDatabaseSource = computed(() => {
+    const connectionsStore = useConnectionsStore()
+    return sourceConnections.value.some((conn) => {
+      const connection = connectionsStore.connectionByID(conn.connectionId)
+      const kind = getConnectionKindFromSpec(connection?.spec)
+      return isDatabaseKind(kind)
+    })
+  })
+
+  // Check if ALL sources are file-based (no database sources)
+  const isAllFileSources = computed(() => {
+    if (sourceConnections.value.length === 0) return false
+    const connectionsStore = useConnectionsStore()
+    return sourceConnections.value.every((conn) => {
+      const connection = connectionsStore.connectionByID(conn.connectionId)
+      const kind = getConnectionKindFromSpec(connection?.spec)
+      return isFileBasedKind(kind)
+    })
+  })
+
+  // Count of database sources (not file sources)
+  const databaseSourceCount = computed(() => {
+    const connectionsStore = useConnectionsStore()
+    return sourceConnections.value.filter((conn) => {
+      const connection = connectionsStore.connectionByID(conn.connectionId)
+      const kind = getConnectionKindFromSpec(connection?.spec)
+      return isDatabaseKind(kind)
+    }).length
+  })
+
+  // True if federated query execution is needed (multiple DB sources or mixed DB + file)
+  const needsFederatedExecution = computed(
+    () => databaseSourceCount.value > 1 || (hasDatabaseSource.value && hasFileSource.value)
+  )
+
+  // CDC only allowed with exactly 1 database source and no file sources
+  const canUseCDCMode = computed(() => databaseSourceCount.value === 1 && !hasFileSource.value)
+
+  // Alias UI needed when 2+ sources (for disambiguation in queries)
+  const showAliasUI = computed(() => sourceConnections.value.length > 1)
 
   // Transfer options - granular structure creation
   const createTables = ref(true)
@@ -201,36 +254,28 @@ export function useStreamWizard() {
 
   // Validation for each step
   const canProceedStep1 = computed(() => {
-    // Source and target cannot be the same connection AND database combination
-    const isSameConnectionAndDatabase =
-      !isMultiSource.value &&
-      primarySourceId.value &&
-      selection.value.targetConnectionId &&
-      primarySourceId.value === selection.value.targetConnectionId &&
-      (primarySourceDatabase.value || selection.value.sourceDatabase) ===
-        selection.value.targetDatabase &&
-      (primarySourceDatabase.value || selection.value.sourceDatabase)
+    // Check if ANY source matches the target (connection + database/bucket)
+    // In multi-source, all sources must be different from target
+    const hasSourceTargetConflict = sourceConnections.value.some((conn) => {
+      if (conn.connectionId !== selection.value.targetConnectionId) return false
+      // Same connection - check if database/bucket also matches
+      const sourceDb = conn.database || conn.s3?.bucket
+      const targetDb = selection.value.targetDatabase
+      return sourceDb && targetDb && sourceDb === targetDb
+    })
 
     return Boolean(
       sourceConnections.value.length > 0 &&
         selection.value.targetConnectionId &&
-        !isSameConnectionAndDatabase
+        !hasSourceTargetConflict
     )
   })
 
   const canProceedStep2 = computed(() => {
     const streamsStore = useStreamsStore()
-    const connectionsStore = useConnectionsStore()
     const config = streamsStore.currentStreamConfig
 
-    const primarySourceConnection = primarySourceId.value
-      ? connectionsStore.connectionByID(primarySourceId.value)
-      : null
-    const primarySourceKind = getConnectionKindFromSpec(primarySourceConnection?.spec)
-    const isFileSource = isFileBasedKind(primarySourceKind)
-
-    // Check if tables or custom queries are selected (now per-connection)
-    // Note: connection.tables only contains selected tables (filtered in TableList.vue)
+    // Check if tables or custom queries are selected (per-connection)
     let selectedTablesCount = 0
     let customQueriesCount = 0
     for (const conn of config?.source?.connections || []) {
@@ -243,10 +288,19 @@ export function useStreamWizard() {
     }
     const selectedFiles = config?.files?.filter((f) => f.selected) || []
 
-    // Must have at least one table selected OR one custom query defined
-    const hasDataSource = isFileSource
-      ? selectedFiles.length > 0 || selectedTablesCount > 0
-      : selectedTablesCount > 0 || customQueriesCount > 0
+    // Multi-source aware validation:
+    // - If we have file sources, we need file selections
+    // - If we have database sources, we need table/query selections
+    let hasRequiredDataSources = true
+
+    if (hasFileSource.value && selectedFiles.length === 0) {
+      // Has file sources but no files selected
+      hasRequiredDataSources = false
+    }
+    if (hasDatabaseSource.value && selectedTablesCount === 0 && customQueriesCount === 0) {
+      // Has database sources but no tables/queries selected
+      hasRequiredDataSources = false
+    }
 
     // In CDC mode, enforce tables-only (no custom queries allowed)
     if (config?.mode === 'cdc' && customQueriesCount > 0) {
@@ -257,7 +311,7 @@ export function useStreamWizard() {
     const hasStructureOrDataOption =
       createTables.value || createIndexes.value || createForeignKeys.value || copyData.value
 
-    return hasStructureOrDataOption && hasDataSource
+    return hasStructureOrDataOption && hasRequiredDataSources
   })
 
   const canProceedStep3 = computed(() => {
@@ -597,7 +651,13 @@ export function useStreamWizard() {
     sourceConnections,
     primarySourceId,
     primarySourceDatabase,
-    isMultiSource,
+    hasFileSource,
+    hasDatabaseSource,
+    isAllFileSources,
+    databaseSourceCount,
+    needsFederatedExecution,
+    canUseCDCMode,
+    showAliasUI,
     removedConnectionsCount,
 
     // Computed

@@ -1,8 +1,8 @@
 <template>
   <div class="space-y-6">
-    <!-- Data Transfer Mode Section - Hidden for multi-source -->
+    <!-- Data Transfer Mode Section - Only show when CDC mode is possible -->
     <div
-      v-if="!isMultiSource"
+      v-if="canUseCDCMode"
       class="bg-linear-to-br from-slate-50 to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-850 border border-gray-100 dark:border-gray-700 rounded-xl p-6 shadow-sm dark:shadow-gray-900/30"
     >
       <ModeButtons />
@@ -360,7 +360,16 @@ const connectionsStore = useConnectionsStore()
 
 // Current mode from stream config
 const currentMode = computed(() => streamsStore.currentStreamConfig?.mode || 'convert')
-const isMultiSource = computed(() => props.sourceConnections.length > 1)
+
+// CDC only allowed with exactly 1 database source and no file sources
+// This must be computed here since we need access to the connections from the store
+const canUseCDCMode = computed(() => {
+  const connections = streamsStore.currentStreamConfig?.source?.connections || []
+  if (connections.length === 0) return false
+  const dbConnections = connections.filter((conn) => !isFileType(conn.connectionId))
+  const fileConnections = connections.filter((conn) => isFileType(conn.connectionId))
+  return dbConnections.length === 1 && fileConnections.length === 0
+})
 
 // Reset activeDataTab to 'tables' when switching to CDC mode
 watch(currentMode, (newMode) => {

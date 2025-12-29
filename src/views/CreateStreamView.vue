@@ -346,11 +346,11 @@ watch(
   }
 )
 
-// Enforce convert mode when multiple sources are selected
+// Enforce convert mode when CDC is not allowed (multiple DB sources or file sources)
 watch(
-  () => wizard.isMultiSource.value,
-  (isMultiSource) => {
-    if (isMultiSource && streamsStore.currentStreamConfig) {
+  () => wizard.canUseCDCMode.value,
+  (canCDC) => {
+    if (!canCDC && streamsStore.currentStreamConfig) {
       streamsStore.currentStreamConfig.mode = 'convert'
     }
   }
@@ -533,7 +533,7 @@ async function handleFinish() {
       foreignKeys: wizard.createForeignKeys.value
     }
 
-    if (wizard.isMultiSource.value) {
+    if (!wizard.canUseCDCMode.value) {
       streamsStore.currentStreamConfig.mode = 'convert'
     }
 
@@ -621,7 +621,7 @@ async function handleQuickSave() {
       foreignKeys: wizard.createForeignKeys.value
     }
 
-    if (wizard.isMultiSource.value) {
+    if (!wizard.canUseCDCMode.value) {
       streamsStore.currentStreamConfig.mode = 'convert'
     }
 
