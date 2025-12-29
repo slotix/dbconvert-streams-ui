@@ -15,6 +15,7 @@ const props = defineProps<{
   schema?: string
   explorerObjPrefix: string
   tableSizes?: Record<string, number> // Map of table name -> size in bytes
+  parentMatchesSearch?: boolean // When true, skip item filtering (show all items)
 }>()
 
 // Inject search query and selection from parent
@@ -78,8 +79,10 @@ function handleContextMenu(event: MouseEvent, name: string) {
 }
 
 // Memoized filter using computed - avoids recalculating on every render
+// When parentMatchesSearch is true, show all items without filtering
+// (user is browsing a database that matched their search)
 const filteredItems = computed(() => {
-  if (!searchQuery.value) return props.items
+  if (!searchQuery.value || props.parentMatchesSearch) return props.items
   const query = searchQuery.value.toLowerCase()
   return props.items.filter((n) => n.toLowerCase().includes(query))
 })

@@ -57,6 +57,14 @@ const isSelected = computed(() => {
   )
 })
 
+// Check if the database name matches the search query
+// When true, we show all tables/views without filtering them by search
+const databaseNameMatchesSearch = computed(() => {
+  const query = searchQuery.value?.trim().toLowerCase()
+  if (!query) return false
+  return props.database.name.toLowerCase().includes(query)
+})
+
 const emit = defineEmits<{
   (e: 'toggle-database'): void
   (e: 'toggle-schema', schemaName: string): void
@@ -212,6 +220,7 @@ function handleFlatObjectContextMenu(payload: {
             :database="database.name"
             :is-expanded="isSchemaExpanded(schema.name)"
             :table-sizes="tableSizes"
+            :database-name-matches-search="databaseNameMatchesSearch"
             @toggle="handleSchemaToggle(schema.name)"
             @open-object="handleObjectOpen"
             @contextmenu-schema="handleSchemaContextMenu"
@@ -235,6 +244,7 @@ function handleFlatObjectContextMenu(payload: {
             :database="database.name"
             :explorer-obj-prefix="`${connectionId}:${database.name}:`"
             :table-sizes="tableSizes"
+            :parent-matches-search="databaseNameMatchesSearch"
             @click="(p) => handleObjectOpen({ type: 'table', ...p })"
             @dblclick="(p) => handleObjectOpen({ type: 'table', ...p })"
             @middleclick="(p) => handleObjectOpen({ type: 'table', ...p })"
@@ -254,6 +264,7 @@ function handleFlatObjectContextMenu(payload: {
             :connection-id="connectionId"
             :database="database.name"
             :explorer-obj-prefix="`${connectionId}:${database.name}:`"
+            :parent-matches-search="databaseNameMatchesSearch"
             @click="(p) => handleObjectOpen({ type: 'view', ...p })"
             @dblclick="(p) => handleObjectOpen({ type: 'view', ...p })"
             @middleclick="(p) => handleObjectOpen({ type: 'view', ...p })"

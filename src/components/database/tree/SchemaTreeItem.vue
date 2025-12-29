@@ -19,6 +19,7 @@ const props = defineProps<{
   database: string
   isExpanded: boolean
   tableSizes?: Record<string, number>
+  databaseNameMatchesSearch?: boolean // When database name matches search
 }>()
 
 // Inject search query, caret class, and selection from parent
@@ -42,6 +43,18 @@ const isSelected = computed(() => {
     treeSelection.value.schema === props.schema.name &&
     !treeSelection.value.name
   )
+})
+
+// Check if the schema name matches the search query
+const schemaNameMatchesSearch = computed(() => {
+  const query = searchQuery.value?.trim().toLowerCase()
+  if (!query) return false
+  return (props.schema.name || '').toLowerCase().includes(query)
+})
+
+// Parent matches search if database name or schema name matches
+const parentMatchesSearch = computed(() => {
+  return props.databaseNameMatchesSearch || schemaNameMatchesSearch.value
 })
 
 const emit = defineEmits<{
@@ -139,6 +152,7 @@ function handleObjectContextMenu(payload: {
         :schema="schema.name"
         :explorer-obj-prefix="`${connectionId}:${database}:${schema.name || ''}`"
         :table-sizes="tableSizes"
+        :parent-matches-search="parentMatchesSearch"
         @click="(p) => handleObjectOpen('table', p)"
         @dblclick="(p) => handleObjectOpen('table', p)"
         @middleclick="(p) => handleObjectOpen('table', p)"
@@ -159,6 +173,7 @@ function handleObjectContextMenu(payload: {
         :database="database"
         :schema="schema.name"
         :explorer-obj-prefix="`${connectionId}:${database}:${schema.name || ''}`"
+        :parent-matches-search="parentMatchesSearch"
         @click="(p) => handleObjectOpen('view', p)"
         @dblclick="(p) => handleObjectOpen('view', p)"
         @middleclick="(p) => handleObjectOpen('view', p)"
