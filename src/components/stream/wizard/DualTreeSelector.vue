@@ -157,9 +157,7 @@
                   / {{ localSourceConnections[0].database }}
                 </span>
               </template>
-              <template v-else>
-                {{ localSourceConnections.length }} sources
-              </template>
+              <template v-else> {{ localSourceConnections.length }} sources </template>
             </span>
             <span v-else class="text-blue-500/80 dark:text-blue-300/70 ml-1 italic"
               >Not selected</span
@@ -299,7 +297,8 @@ import { generateTypeBasedAlias } from '@/utils/federatedUtils'
 import {
   getConnectionKindFromSpec,
   getConnectionTypeLabel,
-  matchesConnectionTypeFilter
+  matchesConnectionTypeFilter,
+  type ConnectionSpec
 } from '@/types/specs'
 
 interface Props {
@@ -480,7 +479,8 @@ function connectionMatchesDeepSearch(
 
   const spec = (connection.spec ?? undefined) as ConnectionSpecLike | undefined
   const host = spec?.database?.host || spec?.snowflake?.account || ''
-  const typeLabel = getConnectionTypeLabel(connection.spec, connection.type) || ''
+  const typeLabel =
+    getConnectionTypeLabel(spec as ConnectionSpec | undefined, connection.type) || ''
   const connectionLabel = `${connection.name || ''} ${host} ${typeLabel}`
   if (normalize(connectionLabel).includes(normalizedQuery)) return true
 
