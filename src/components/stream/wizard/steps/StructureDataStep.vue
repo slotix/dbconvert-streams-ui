@@ -108,11 +108,8 @@
                     </span>
                   </div>
                 </div>
-                <!-- File preview for this connection -->
-                <FilePreviewList
-                  :connection-id="fileConn.connectionId"
-                  :bucket="fileConn.s3?.bucket"
-                />
+                <!-- File preview for this connection - bucket looked up from stream config -->
+                <FilePreviewList :connection-id="fileConn.connectionId" />
               </div>
             </div>
           </div>
@@ -479,9 +476,9 @@ watch(
       }
       // File sources can proceed - structure will be inferred from file schema
       emit('update:can-proceed', true)
-    } else if (streamsStore.currentStreamConfig) {
-      streamsStore.currentStreamConfig.files = []
     }
+    // Note: Don't clear files when isFileSourceConnection is false - multi-source streams
+    // can have both database AND file sources, and we need to preserve the file selections
   },
   { immediate: true }
 )

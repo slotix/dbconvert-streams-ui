@@ -825,19 +825,25 @@ watch(
   { immediate: true }
 )
 
-// Auto-expand and load databases for multi-source connections (for edit mode restoration)
+// Auto-expand and load databases/buckets for multi-source connections (for edit mode restoration)
 watch(
   () => props.sourceConnections,
   async (sourceConns) => {
     if (!sourceConns || sourceConns.length === 0) {
       return
     }
-    // Expand all connections in multi-source mode and load their databases
+    // Expand all connections in multi-source mode and load their data
     for (const fc of sourceConns) {
       if (!fc.connectionId) continue
       addToSet(expandedConnections, fc.connectionId)
       const connection = getConnectionById(fc.connectionId)
-      if (connection && !isFileConnection(connection)) {
+      if (!connection) continue
+
+      if (isS3Connection(connection)) {
+        // Load S3 buckets
+        await loadS3Buckets(connection)
+      } else if (!isFileConnection(connection)) {
+        // Load databases for non-file connections
         await loadDatabases(fc.connectionId)
       }
     }

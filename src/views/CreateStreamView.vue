@@ -313,7 +313,8 @@ watch(
         schema: existing?.schema,
         tables: existing?.tables,
         queries: existing?.queries,
-        s3: existing?.s3
+        // Prefer wizard's s3 config (from bucket selection) over existing (for edit mode fallback)
+        s3: wizardConn.s3 || existing?.s3
       }
     })
     streamsStore.setSourceConnections(mergedConnections)
@@ -496,11 +497,12 @@ async function handleFinish() {
         alias: wizardConn.alias,
         connectionId: wizardConn.connectionId,
         database: wizardConn.database,
-        // Preserve existing per-connection data (tables, queries, s3, schema)
+        // Preserve existing per-connection data (tables, queries, schema)
         schema: existing?.schema,
         tables: existing?.tables,
         queries: existing?.queries,
-        s3: existing?.s3
+        // Prefer wizard's s3 config (from bucket selection) over existing (for edit mode fallback)
+        s3: wizardConn.s3 || existing?.s3
       }
     })
     streamsStore.setSourceConnections(mergedConnections)
@@ -584,7 +586,8 @@ async function handleQuickSave() {
         schema: existing?.schema,
         tables: existing?.tables,
         queries: existing?.queries,
-        s3: existing?.s3
+        // Prefer wizard's s3 config (from bucket selection) over existing (for edit mode fallback)
+        s3: wizardConn.s3 || existing?.s3
       }
     })
     streamsStore.setSourceConnections(mergedConnections)

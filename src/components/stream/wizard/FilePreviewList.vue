@@ -150,13 +150,10 @@ import FileIcon from '@/components/common/FileIcon.vue'
 
 interface Props {
   connectionId?: string | null
-  /** S3 bucket name - for multi-source mode where each connection has its own bucket */
-  bucket?: string | null
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  connectionId: null,
-  bucket: null
+  connectionId: null
 })
 
 const fileExplorerStore = useFileExplorerStore()
@@ -170,10 +167,8 @@ const isS3Connection = computed(() => {
   return !!conn?.spec?.s3
 })
 
+// Get bucket directly from stream config - doesn't depend on connectionsStore being loaded
 const s3Bucket = computed(() => {
-  if (!isS3Connection.value) return ''
-  // Explicit prop (multi-source mode) or from source connection's s3 config
-  if (props.bucket) return props.bucket
   const sourceConn = streamsStore.currentStreamConfig?.source?.connections?.find(
     (c) => c.connectionId === props.connectionId
   )
@@ -240,7 +235,14 @@ const paginatedRows = computed(() => {
   return filteredRows.value.slice(start, start + itemsPerPage)
 })
 
-const configFiles = computed<FileEntry[]>(() => streamsStore.currentStreamConfig?.files || [])
+// Filter files by current bucket for multi-source mode
+const configFiles = computed<FileEntry[]>(() => {
+  const allFiles = streamsStore.currentStreamConfig?.files || []
+  if (!s3Bucket.value) return allFiles
+  // Filter to only files in this bucket
+  const bucketPrefix = `s3://${s3Bucket.value}/`
+  return allFiles.filter((f) => f.path.startsWith(bucketPrefix))
+})
 
 function isSelectable(entry: FileSystemEntry): boolean {
   if (entry.type === 'file') return true
@@ -534,14 +536,13 @@ async function autoExpandSelectedParents() {
   hasAutoExpanded.value = true
 }
 
-// Load files when connection changes
+// Load files when connection or bucket changes
 watch(
-  () => props.connectionId,
-  async (connectionId) => {
+  [() => props.connectionId, s3Bucket],
+  async ([connectionId, bucket]) => {
     hasAutoExpanded.value = false
     if (connectionId) {
-      const overridePath =
-        isS3Connection.value && s3Bucket.value ? `s3://${s3Bucket.value}/` : undefined
+      const overridePath = bucket ? `s3://${bucket}/` : undefined
       await fileExplorerStore.loadEntries(connectionId, false, overridePath)
     }
   },
