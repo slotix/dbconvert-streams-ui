@@ -296,21 +296,29 @@ function getCheckboxState(entry: FileSystemEntry): { checked: boolean; indetermi
 }
 
 /**
- * Check if any descendant is explicitly selected
+ * Check if any descendant is explicitly selected.
+ * Also checks configFiles for selected paths that are descendants,
+ * even if children aren't loaded yet (for edit mode).
  */
 function hasExplicitlySelectedDescendants(entry: FileSystemEntry): boolean {
-  if (!entry.children) return false
-
-  for (const child of entry.children) {
-    if (isExplicitlySelected(child.path)) {
-      return true
-    }
-    if (child.type === 'dir' && hasExplicitlySelectedDescendants(child)) {
-      return true
+  // First check loaded children
+  if (entry.children && entry.children.length > 0) {
+    for (const child of entry.children) {
+      if (isExplicitlySelected(child.path)) {
+        return true
+      }
+      if (child.type === 'dir' && hasExplicitlySelectedDescendants(child)) {
+        return true
+      }
     }
   }
 
-  return false
+  // Also check configFiles for selected descendants (handles unloaded children in edit mode)
+  // A path is a descendant if it starts with the folder path (which ends with /)
+  const folderPrefix = entry.path.endsWith('/') ? entry.path : `${entry.path}/`
+  return configFiles.value.some(
+    (f) => f.selected && f.path.startsWith(folderPrefix) && f.path !== entry.path
+  )
 }
 
 function upsertConfigFile(entry: FileSystemEntry, selected: boolean) {
@@ -403,15 +411,24 @@ const selectableCount = computed(() => {
 })
 
 /**
- * Count items that are effectively selected (explicitly or via ancestor)
+ * Count items that are effectively selected (explicitly or via ancestor).
+ * Also counts selected items from configFiles that may not be visible in tree yet.
  */
 const selectedCount = computed(() => {
   const allRows = flattenAllLoaded(rawFiles.value, 0)
-  return allRows.filter((r) => {
+  const visibleSelected = allRows.filter((r) => {
     if (!isSelectable(r.entry)) return false
     const state = getCheckboxState(r.entry)
     return state.checked
   }).length
+
+  // Also count selected items from configFiles that aren't in the visible tree
+  const visiblePaths = new Set(allRows.map((r) => r.entry.path))
+  const hiddenSelected = configFiles.value.filter(
+    (f) => f.selected && !visiblePaths.has(f.path)
+  ).length
+
+  return visibleSelected + hiddenSelected
 })
 
 const indeterminate = computed(() => {
@@ -459,9 +476,69 @@ watch(searchQuery, () => {
   currentPage.value = 1
 })
 
+/**
+ * Get all parent folder paths for a given file/folder path.
+ * For example, 's3://bucket/sakila/actor/' returns ['s3://bucket/sakila/']
+ * For 's3://bucket/sakila/address/file.parquet' returns ['s3://bucket/sakila/', 's3://bucket/sakila/address/']
+ */
+function getParentPaths(filePath: string): string[] {
+  const parents: string[] = []
+
+  // Handle S3 paths: s3://bucket/folder1/folder2/...
+  const s3Match = filePath.match(/^(s3:\/\/[^/]+\/)(.*)$/)
+  if (!s3Match) return parents
+
+  const bucketPrefix = s3Match[1] // 's3://bucket/'
+  const relativePath = s3Match[2] // 'folder1/folder2/file.parquet' or 'folder1/folder2/'
+
+  // Split path and build parent paths
+  const segments = relativePath.split('/').filter(Boolean)
+  // For 'sakila/actor/' we get ['sakila', 'actor']
+  // For 'sakila/address/file.parquet' we get ['sakila', 'address', 'file.parquet']
+
+  // Build parent paths (all ancestors except the item itself)
+  for (let i = 0; i < segments.length - 1; i++) {
+    const parentPath = bucketPrefix + segments.slice(0, i + 1).join('/') + '/'
+    parents.push(parentPath)
+  }
+
+  return parents
+}
+
+// Track if we've already auto-expanded for current connection
+const hasAutoExpanded = ref(false)
+
+/**
+ * Auto-expand parent folders of selected items when editing a stream config.
+ */
+async function autoExpandSelectedParents() {
+  if (!props.connectionId || hasAutoExpanded.value) return
+
+  const selectedFiles = configFiles.value.filter((f) => f.selected)
+  if (selectedFiles.length === 0 || rawFiles.value.length === 0) return
+
+  // Collect unique parent paths and sort by depth (shortest first)
+  const parentsToExpand = new Set<string>()
+  for (const file of selectedFiles) {
+    getParentPaths(file.path).forEach((p) => parentsToExpand.add(p))
+  }
+  if (parentsToExpand.size === 0) return
+
+  const sortedParents = Array.from(parentsToExpand).sort((a, b) => a.length - b.length)
+
+  // Load and expand each parent folder
+  for (const parentPath of sortedParents) {
+    await fileExplorerStore.loadFolderContents(props.connectionId, parentPath)
+  }
+
+  hasAutoExpanded.value = true
+}
+
+// Load files when connection changes
 watch(
   () => props.connectionId,
   async (connectionId) => {
+    hasAutoExpanded.value = false
     if (connectionId) {
       const overridePath =
         isS3Connection.value && s3Bucket.value ? `s3://${s3Bucket.value}/` : undefined
@@ -471,11 +548,13 @@ watch(
   { immediate: true }
 )
 
+// Sync config files and auto-expand when tree loads
 watch(
   rawFiles,
-  (entries) => {
+  async (entries) => {
     if (!streamsStore.currentStreamConfig || !props.connectionId) return
     syncConfigFilesWithLoadedTree(entries)
+    await autoExpandSelectedParents()
   },
   { immediate: true }
 )

@@ -482,7 +482,22 @@ export function useStreamWizard() {
     selection.value.targetSchema = targetExists
       ? resolveSchema(config.targetSchema, config.target)
       : null
-    selection.value.targetPath = targetExists ? (config.targetPath ?? null) : null
+
+    // For file targets, resolve targetPath from the connection's basePath
+    if (targetExists && resolvedTargetId) {
+      const targetConnection = useConnectionsStore().connectionByID(resolvedTargetId)
+      const targetKind = getConnectionKindFromSpec(targetConnection?.spec)
+      if (targetKind === 'files') {
+        // Local file connection - use basePath from connection spec
+        selection.value.targetPath = targetConnection?.spec?.files?.basePath ?? null
+      } else {
+        // Non-file connection - use config.targetPath (may be null)
+        selection.value.targetPath = config.targetPath ?? null
+      }
+    } else {
+      selection.value.targetPath = null
+    }
+
     const sourceSchema = resolveSchema(config.sourceSchema, config.source)
 
     // Populate structure options - check multiple possible locations
