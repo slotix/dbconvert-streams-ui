@@ -72,6 +72,14 @@
       >
         <button
           class="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+          @click="handleMoveToOtherPane"
+        >
+          <ArrowRightLeft class="h-4 w-4 text-gray-500 dark:text-gray-400" />
+          <span>{{ moveToOtherPaneLabel }}</span>
+        </button>
+        <div class="border-t border-gray-100 dark:border-gray-700 my-1" />
+        <button
+          class="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
           @click="handleContextMenuAction('close')"
         >
           <X class="h-4 w-4 text-gray-500 dark:text-gray-400" />
@@ -98,7 +106,7 @@
 
 <script setup lang="ts">
 import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
-import { Eye, File, Share2, Sheet, Terminal, X } from 'lucide-vue-next'
+import { ArrowRightLeft, Eye, File, Share2, Sheet, Terminal, X } from 'lucide-vue-next'
 import { usePaneTabsStore, type PaneId, type PaneTab } from '@/stores/paneTabs'
 
 // Get current zoom factor for position adjustment
@@ -154,6 +162,20 @@ const adjustedMenuY = computed(() => contextMenu.value.y / getZoomFactor())
 
 function isActiveTab(index: number): boolean {
   return paneState.value.activePinnedIndex === index
+}
+
+// Compute the target pane for move action
+const targetPaneId = computed<PaneId>(() => (props.paneId === 'left' ? 'right' : 'left'))
+const moveToOtherPaneLabel = computed(() =>
+  props.paneId === 'left' ? 'Move to Right Pane' : 'Move to Left Pane'
+)
+
+function handleMoveToOtherPane() {
+  const index = contextMenu.value.tabIndex
+  if (index >= 0) {
+    store.movePinnedTab(props.paneId, index, targetPaneId.value)
+  }
+  hideContextMenu()
 }
 
 function getObjectIcon(tab: PaneTab) {
