@@ -133,7 +133,6 @@ const {
   handleFileSelect,
   handleRequestFileEntries,
   handlePickFromBreadcrumb,
-  handleBreadcrumbNavigate,
   onAddConnection,
   onEditConnection,
   onEditConnectionJson,
@@ -496,7 +495,6 @@ function handleOpenFileConsole(payload: {
               @left-tab-change="onLeftTabChange"
               @right-tab-change="onRightTabChange"
               @refresh-metadata="handleRefreshMetadata"
-              @breadcrumb-navigate="handleBreadcrumbNavigate"
               @breadcrumb-pick-name="handlePickFromBreadcrumb"
             />
 

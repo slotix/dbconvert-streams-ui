@@ -6,11 +6,9 @@
       :connection-label="breadcrumbData.connectionLabel"
       :database="breadcrumbData.database"
       :schema="breadcrumbData.schema"
-      :type="breadcrumbData.type"
       :name="breadcrumbData.name"
       :objects="breadcrumbData.objects"
-      @navigate="$emit('navigate', $event)"
-      @pick-name="$emit('pick-name', $event)"
+      @pick-name="(payload) => $emit('pick-name', payload)"
     />
 
     <!-- File breadcrumb -->
@@ -45,7 +43,6 @@ const props = defineProps<{
 }>()
 
 defineEmits<{
-  navigate: [payload: { level: 'database' | 'schema' | 'type' | 'name' }]
   'pick-name': [payload: { name: string; type: 'table' | 'view'; schema?: string }]
 }>()
 
@@ -79,7 +76,6 @@ const breadcrumbData = computed(() => {
       connectionLabel: null,
       database: null,
       schema: null,
-      type: null,
       name: null,
       objects: [],
       filePath: null,
@@ -92,7 +88,6 @@ const breadcrumbData = computed(() => {
       connectionLabel: formatConnectionLabel(activeTab.connectionId),
       database: null,
       schema: null,
-      type: null,
       name: null,
       objects: [],
       filePath: activeTab.filePath || null,
@@ -100,7 +95,7 @@ const breadcrumbData = computed(() => {
     }
   }
 
-  // Database object
+  // Database object - build objects list for picker
   const objects: Array<{ name: string; type: 'table' | 'view'; schema?: string }> = []
 
   // Build objects list from metadata for picker dropdown
@@ -132,7 +127,6 @@ const breadcrumbData = computed(() => {
     connectionLabel: formatConnectionLabel(activeTab.connectionId),
     database: activeTab.database || null,
     schema: activeTab.schema || null,
-    type: activeTab.type || null,
     name: activeTab.name || null,
     objects,
     filePath: null,

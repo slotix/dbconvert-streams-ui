@@ -672,26 +672,6 @@ export function useDatabaseExplorerController({
     }
   }
 
-  function handleBreadcrumbNavigate(
-    paneId: PaneId,
-    payload: { level: 'database' | 'schema' | 'type' | 'name' }
-  ) {
-    const paneState = paneTabsStore.getPaneState(paneId)
-
-    if (payload.level === 'database') {
-      paneTabsStore.closeAllTabs(paneId)
-      if (paneState.previewTab) {
-        paneTabsStore.closePreviewTab(paneId)
-      }
-    } else if (payload.level === 'schema' || payload.level === 'type') {
-      if (paneState.activePinnedIndex !== null) {
-        paneTabsStore.closeTab(paneId, paneState.activePinnedIndex)
-      } else if (paneState.previewTab) {
-        paneTabsStore.closePreviewTab(paneId)
-      }
-    }
-  }
-
   const onAddConnection = () => router.push('/explorer/add')
 
   const onEditConnection = () => {
@@ -1084,7 +1064,6 @@ export function useDatabaseExplorerController({
     handleFileSelect,
     handleRequestFileEntries,
     handlePickFromBreadcrumb,
-    handleBreadcrumbNavigate,
     onAddConnection,
     onEditConnection,
     onEditConnectionJson,

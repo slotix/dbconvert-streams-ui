@@ -53,7 +53,6 @@
           <PaneBreadcrumb
             pane-id="left"
             :metadata="metadata"
-            @navigate="(payload) => $emit('breadcrumb-navigate', 'left', payload)"
             @pick-name="(payload) => $emit('breadcrumb-pick-name', 'left', payload)"
           />
         </template>
@@ -87,7 +86,6 @@
           <PaneBreadcrumb
             pane-id="right"
             :metadata="metadata"
-            @navigate="(payload) => $emit('breadcrumb-navigate', 'right', payload)"
             @pick-name="(payload) => $emit('breadcrumb-pick-name', 'right', payload)"
           />
         </template>
@@ -152,10 +150,6 @@ const emit = defineEmits<{
   'left-tab-change': [tab: 'data' | 'structure']
   'right-tab-change': [tab: 'data' | 'structure']
   'refresh-metadata': []
-  'breadcrumb-navigate': [
-    paneId: PaneId,
-    payload: { level: 'database' | 'schema' | 'type' | 'name' }
-  ]
   'breadcrumb-pick-name': [
     paneId: PaneId,
     payload: { name: string; type: 'table' | 'view'; schema?: string }
