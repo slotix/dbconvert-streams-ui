@@ -11,19 +11,15 @@
       @pick-name="(payload) => $emit('pick-name', payload)"
     />
 
-    <!-- File breadcrumb -->
-    <div v-else-if="breadcrumbData.filePath" class="flex items-center gap-1 text-sm text-gray-600">
-      <template v-if="breadcrumbData.connectionLabel">
-        <span class="font-medium text-gray-700">{{ breadcrumbData.connectionLabel }}</span>
-        <span class="text-gray-400">/</span>
-      </template>
-      <span class="text-gray-500">File:</span>
-      <span class="font-medium text-gray-900">{{ breadcrumbData.fileName }}</span>
-      <span class="text-gray-400">•</span>
-      <span class="text-gray-500 text-xs truncate max-w-[400px]" :title="breadcrumbData.filePath">
-        {{ breadcrumbData.filePath }}
-      </span>
-    </div>
+    <!-- File breadcrumb (using unified component) -->
+    <ExplorerBreadcrumb
+      v-else-if="breadcrumbData.pathSegments.length > 0"
+      :connection-label="breadcrumbData.connectionLabel"
+      :path-segments="breadcrumbData.pathSegments"
+      :name="breadcrumbData.fileName"
+      :files="breadcrumbData.siblingFiles"
+      @pick-file="(payload) => $emit('pick-file', payload)"
+    />
 
     <!-- Empty state removed - now handled by PaneContent component -->
   </div>
@@ -34,8 +30,11 @@ import { computed } from 'vue'
 import ExplorerBreadcrumb from '@/components/database/ExplorerBreadcrumb.vue'
 import { usePaneTabsStore, type PaneId } from '@/stores/paneTabs'
 import { useConnectionsStore } from '@/stores/connections'
+import { useFileExplorerStore } from '@/stores/fileExplorer'
 import type { DatabaseMetadata } from '@/types/metadata'
+import type { FileSystemEntry } from '@/api/fileSystem'
 import { getConnectionKindFromSpec, isFileBasedKind } from '@/types/specs'
+import { parsePathToSegments, getParentPath, type PathSegment } from '@/utils/pathUtils'
 
 const props = defineProps<{
   paneId: PaneId
@@ -44,10 +43,12 @@ const props = defineProps<{
 
 defineEmits<{
   'pick-name': [payload: { name: string; type: 'table' | 'view'; schema?: string }]
+  'pick-file': [payload: { name: string; path: string }]
 }>()
 
 const store = usePaneTabsStore()
 const connectionsStore = useConnectionsStore()
+const fileExplorerStore = useFileExplorerStore()
 
 function formatConnectionLabel(connectionId: string | undefined) {
   if (!connectionId) return null
@@ -67,6 +68,64 @@ function formatConnectionLabel(connectionId: string | undefined) {
   return conn.name || null
 }
 
+/**
+ * Find sibling files in the same directory as the given file path.
+ * Searches the file explorer store entries recursively.
+ */
+function findSiblingFiles(
+  connectionId: string,
+  filePath: string
+): Array<{ name: string; path: string; format?: string }> {
+  const parentPath = getParentPath(filePath)
+  if (!parentPath) return []
+
+  const entries = fileExplorerStore.getEntries(connectionId)
+  if (!entries.length) return []
+
+  // Helper to search entries recursively
+  function findFilesInDirectory(items: FileSystemEntry[], targetParent: string): FileSystemEntry[] {
+    for (const item of items) {
+      // Check if this directory matches the parent path
+      if (item.type === 'dir') {
+        const itemPath = item.path.replace(/\/$/, '') // Remove trailing slash
+        if (itemPath === targetParent || itemPath + '/' === targetParent) {
+          // Found the parent directory, return its file children
+          return (item.children || []).filter((c) => c.type === 'file')
+        }
+        // Recurse into children
+        if (item.children?.length) {
+          const found = findFilesInDirectory(item.children, targetParent)
+          if (found.length) return found
+        }
+      }
+    }
+    return []
+  }
+
+  // First, check if files are at the root level (matching parent path)
+  const rootFiles = entries.filter((e) => {
+    if (e.type !== 'file') return false
+    const entryParent = getParentPath(e.path)
+    return entryParent === parentPath
+  })
+
+  if (rootFiles.length > 0) {
+    return rootFiles.map((f) => ({
+      name: f.name,
+      path: f.path,
+      format: f.format
+    }))
+  }
+
+  // Search in nested directories
+  const foundFiles = findFilesInDirectory(entries, parentPath)
+  return foundFiles.map((f) => ({
+    name: f.name,
+    path: f.path,
+    format: f.format
+  }))
+}
+
 // Get breadcrumb data from active tab in this pane
 const breadcrumbData = computed(() => {
   const activeTab = store.getActiveTab(props.paneId)
@@ -78,20 +137,35 @@ const breadcrumbData = computed(() => {
       schema: null,
       name: null,
       objects: [],
-      filePath: null,
-      fileName: null
+      pathSegments: [] as PathSegment[],
+      fileName: null,
+      siblingFiles: [] as Array<{ name: string; path: string; format?: string }>
     }
   }
 
   if (activeTab.tabType === 'file') {
+    const filePath = activeTab.filePath || ''
+    // Get base path from connection spec for proper segment parsing
+    const conn = connectionsStore.connections.find((c) => c.id === activeTab.connectionId)
+    const basePath = conn?.spec?.files?.basePath
+
+    // Build path segments (excluding the file name itself)
+    const allSegments = parsePathToSegments(filePath, basePath)
+    // Remove the last segment (the file name) since we display it separately
+    const pathSegments = allSegments.slice(0, -1)
+
+    // Find sibling files for the picker
+    const siblingFiles = findSiblingFiles(activeTab.connectionId, filePath)
+
     return {
       connectionLabel: formatConnectionLabel(activeTab.connectionId),
       database: null,
       schema: null,
       name: null,
       objects: [],
-      filePath: activeTab.filePath || null,
-      fileName: activeTab.name || null
+      pathSegments,
+      fileName: activeTab.name || null,
+      siblingFiles
     }
   }
 
@@ -129,8 +203,9 @@ const breadcrumbData = computed(() => {
     schema: activeTab.schema || null,
     name: activeTab.name || null,
     objects,
-    filePath: null,
-    fileName: null
+    pathSegments: [] as PathSegment[],
+    fileName: null,
+    siblingFiles: [] as Array<{ name: string; path: string; format?: string }>
   }
 })
 </script>

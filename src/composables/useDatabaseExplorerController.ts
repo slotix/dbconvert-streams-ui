@@ -672,6 +672,50 @@ export function useDatabaseExplorerController({
     }
   }
 
+  /**
+   * Handle picking a file from the breadcrumb file picker.
+   * Opens the selected file in the same pane.
+   */
+  async function handlePickFileFromBreadcrumb(
+    paneId: PaneId,
+    payload: { name: string; path: string }
+  ) {
+    const activeTab = paneTabsStore.getActiveTab(paneId)
+    if (!activeTab || activeTab.tabType !== 'file') return
+
+    const targetConnId = activeTab.connectionId
+
+    // Find the file entry in the file explorer store
+    const findEntry = (entries: FileSystemEntry[], targetPath: string): FileSystemEntry | null => {
+      for (const e of entries) {
+        if (e.path === targetPath) return e
+        if (e.children) {
+          const found = findEntry(e.children, targetPath)
+          if (found) return found
+        }
+      }
+      return null
+    }
+
+    const entries = fileExplorerStore.getEntries(targetConnId)
+    const entry = findEntry(entries, payload.path)
+
+    if (!entry) {
+      console.warn('handlePickFileFromBreadcrumb: Could not find entry for path:', payload.path)
+      return
+    }
+
+    // Open the file in the same pane
+    void handleOpenFile({
+      connectionId: targetConnId,
+      path: payload.path,
+      entry,
+      mode: 'preview',
+      defaultTab: 'data',
+      openInRightSplit: paneId === 'right'
+    })
+  }
+
   const onAddConnection = () => router.push('/explorer/add')
 
   const onEditConnection = () => {
@@ -1064,6 +1108,7 @@ export function useDatabaseExplorerController({
     handleFileSelect,
     handleRequestFileEntries,
     handlePickFromBreadcrumb,
+    handlePickFileFromBreadcrumb,
     onAddConnection,
     onEditConnection,
     onEditConnectionJson,

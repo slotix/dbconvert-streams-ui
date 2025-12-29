@@ -54,6 +54,7 @@
             pane-id="left"
             :metadata="metadata"
             @pick-name="(payload) => $emit('breadcrumb-pick-name', 'left', payload)"
+            @pick-file="(payload) => $emit('breadcrumb-pick-file', 'left', payload)"
           />
         </template>
 
@@ -87,6 +88,7 @@
             pane-id="right"
             :metadata="metadata"
             @pick-name="(payload) => $emit('breadcrumb-pick-name', 'right', payload)"
+            @pick-file="(payload) => $emit('breadcrumb-pick-file', 'right', payload)"
           />
         </template>
 
@@ -154,6 +156,7 @@ const emit = defineEmits<{
     paneId: PaneId,
     payload: { name: string; type: 'table' | 'view'; schema?: string }
   ]
+  'breadcrumb-pick-file': [paneId: PaneId, payload: { name: string; path: string }]
 }>()
 
 const connectionsStore = useConnectionsStore()

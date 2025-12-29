@@ -133,6 +133,7 @@ const {
   handleFileSelect,
   handleRequestFileEntries,
   handlePickFromBreadcrumb,
+  handlePickFileFromBreadcrumb,
   onAddConnection,
   onEditConnection,
   onEditConnectionJson,
@@ -496,6 +497,7 @@ function handleOpenFileConsole(payload: {
               @right-tab-change="onRightTabChange"
               @refresh-metadata="handleRefreshMetadata"
               @breadcrumb-pick-name="handlePickFromBreadcrumb"
+              @breadcrumb-pick-file="handlePickFileFromBreadcrumb"
             />
 
             <!-- Show empty state when no connection is selected -->
