@@ -19,7 +19,7 @@ import { useQueryFilterStore } from '@/stores/queryFilterStore'
 import connectionsApi from '@/api/connections'
 import streamsApi from '@/api/streams'
 import type { Connection } from '@/types/connections'
-import type { StreamConfig, Table } from '@/types/streamConfig'
+import type { StreamConfig, QuerySource } from '@/types/streamConfig'
 import { buildFileTargetSpec } from '@/utils/specBuilder'
 
 // Local storage key for the shared export connection ID
@@ -196,15 +196,14 @@ export function useStreamExport() {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
     const streamName = `Export ${table} to ${format.toUpperCase()} - ${timestamp}`
 
-    // Table spec with custom query
-    const tableSpec: Table = {
+    // Use QuerySource for custom SQL queries (convert mode)
+    const querySource: QuerySource = {
       name: table,
-      query: query,
-      selected: true
+      query: query
     }
 
     // Build target spec for file output
-    // Output goes to the connection's basePath (/tmp/dbconvert-exports)
+    // Output goes to the connection's basePath
     // The backend handles file organization within that directory
     const targetSpec = buildFileTargetSpec(format)
 
@@ -212,10 +211,15 @@ export function useStreamExport() {
       name: streamName,
       mode: 'convert',
       source: {
-        connections: [{ alias: 'src', connectionId }],
-        database: database,
-        schema: schema,
-        tables: [tableSpec]
+        connections: [
+          {
+            alias: 'src',
+            connectionId,
+            database: database,
+            schema: schema,
+            queries: [querySource]
+          }
+        ]
       },
       target: {
         id: targetConnectionId,
