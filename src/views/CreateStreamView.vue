@@ -432,8 +432,9 @@ function handleTargetUpdate(
         streamsStore.currentStreamConfig.target.spec = {}
       }
       if (!streamsStore.currentStreamConfig.target.spec.s3) {
+        // Empty outputDirectory lets backend use platform-appropriate temp directory
         streamsStore.currentStreamConfig.target.spec.s3 = {
-          outputDirectory: '/tmp/dbconvert',
+          outputDirectory: '',
           fileFormat: 'csv',
           upload: { bucket: '' }
         }

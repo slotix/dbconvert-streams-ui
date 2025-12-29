@@ -354,9 +354,10 @@ function ensureTargetSpec() {
     config.target.spec = buildFileTargetSpec('csv', 'zstd', undefined, undefined, true)
   } else if (conn.spec?.s3) {
     // S3 target - get bucket from connection scope if available
+    // Empty outputDirectory lets backend use platform-appropriate temp directory
     const bucket = conn.spec.s3.scope?.bucket || ''
     config.target.spec = buildS3TargetSpec(
-      '/tmp/dbconvert',
+      '',
       'csv',
       bucket,
       conn.spec.s3.scope?.prefix,

@@ -51,8 +51,9 @@ export function isDatabaseTarget(spec: TargetSpec | undefined): boolean {
 }
 
 // Default S3 spec with required fields
+// Empty outputDirectory lets backend use platform-appropriate temp directory
 const defaultS3Spec = (): S3Spec => ({
-  outputDirectory: '/tmp/dbconvert',
+  outputDirectory: '',
   fileFormat: 'csv',
   upload: { bucket: '' }
 })

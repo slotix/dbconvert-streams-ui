@@ -676,7 +676,8 @@ export const useStreamsStore = defineStore('streams', {
 
         const targetDatabase = this.currentStreamConfig.targetDatabase || ''
         const targetSchema = this.currentStreamConfig.targetSchema
-        const targetPath = this.currentStreamConfig.targetPath || '/tmp/dbconvert'
+        // Empty string lets backend use platform-appropriate temp directory
+        const targetPath = this.currentStreamConfig.targetPath || ''
         const fileFormat = isFileBasedKind(targetKind)
           ? getFileSpec(this.currentStreamConfig.target.spec)?.fileFormat
           : 'parquet'

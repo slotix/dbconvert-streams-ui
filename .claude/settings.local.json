@@ -33,7 +33,8 @@
       "Bash(sort:*)",
       "Bash(yarn type-check:*)",
       "Bash(yarn vue-tsc:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(xargs:*)"
     ],
     "deny": [],
     "ask": []
