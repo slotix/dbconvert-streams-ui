@@ -5,12 +5,10 @@
       ref="leftPaneRef"
       :style="{ flexBasis: `${splitGrow}%`, flexGrow: 0, flexShrink: 0 }"
       :class="[
-        'relative min-w-[300px] pr-2 min-h-[480px] transition-all rounded-lg',
-        hasRightPane && isLeftActive
-          ? 'bg-white dark:bg-gray-900 shadow-[0_0_0_0.5px_rgb(20_184_166),0_0_2px_rgba(20_184_166,0.1)] dark:shadow-[0_0_0_0.5px_rgb(20_184_166),0_0_3px_rgba(20_184_166,0.15)]'
-          : hasRightPane
-            ? 'bg-white dark:bg-gray-900 opacity-60'
-            : 'bg-white dark:bg-gray-900'
+        'relative min-w-[300px] pr-2 min-h-[480px] transition-all rounded-lg bg-white dark:bg-gray-900',
+        hasRightPane &&
+          isLeftActive &&
+          'shadow-[0_0_0_0.5px_rgb(20_184_166),0_0_2px_rgba(20_184_166,0.1)] dark:shadow-[0_0_0_0.5px_rgb(20_184_166),0_0_3px_rgba(20_184_166,0.15)]'
       ]"
       @mousedown="$emit('set-active-pane', 'left')"
       @dragenter="onPaneDragEnter($event, 'left')"
@@ -76,10 +74,9 @@
     <div
       :style="{ flexBasis: '0px' }"
       :class="[
-        'relative grow pl-2 min-h-[480px] min-w-[300px] transition-all rounded-lg',
-        isRightActive
-          ? 'bg-white dark:bg-gray-900 shadow-[0_0_0_0.5px_rgb(20_184_166),0_0_2px_rgba(20_184_166,0.1)] dark:shadow-[0_0_0_0.5px_rgb(20_184_166),0_0_3px_rgba(20_184_166,0.15)]'
-          : 'bg-white dark:bg-gray-900 opacity-60'
+        'relative grow pl-2 min-h-[480px] min-w-[300px] transition-all rounded-lg bg-white dark:bg-gray-900',
+        isRightActive &&
+          'shadow-[0_0_0_0.5px_rgb(20_184_166),0_0_2px_rgba(20_184_166,0.1)] dark:shadow-[0_0_0_0.5px_rgb(20_184_166),0_0_3px_rgba(20_184_166,0.15)]'
       ]"
       @mousedown="$emit('set-active-pane', 'right')"
       @dragenter="onPaneDragEnter($event, 'right')"
