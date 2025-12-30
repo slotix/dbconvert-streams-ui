@@ -69,7 +69,7 @@ const fileConnectionError = computed(() => fileExplorerStore.getError(props.conn
 
 const emit = defineEmits<{
   (e: 'toggle-connection'): void
-  (e: 'select-connection', payload: { connectionId: string }): void
+  (e: 'select-connection', payload: { connectionId: string; mode?: 'preview' | 'pinned' }): void
   (e: 'toggle-database', dbName: string): void
   (e: 'toggle-schema', payload: { dbName: string; schemaName: string }): void
   (e: 'select-database', payload: { connectionId: string; database: string }): void
@@ -141,6 +141,13 @@ function handleConnectionClick() {
   emit('toggle-connection')
   emit('select-connection', {
     connectionId: props.connection.id
+  })
+}
+
+function handleConnectionDoubleClick() {
+  emit('select-connection', {
+    connectionId: props.connection.id,
+    mode: 'pinned'
   })
 }
 
@@ -282,6 +289,7 @@ const connectionPort = computed(() => getConnectionPort(props.connection))
       ]"
       :title="connectionTooltip"
       @click="handleConnectionClick"
+      @dblclick.stop="handleConnectionDoubleClick"
       @contextmenu.stop.prevent="handleConnectionContextMenu"
     >
       <component

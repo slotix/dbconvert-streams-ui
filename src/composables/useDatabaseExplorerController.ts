@@ -184,12 +184,84 @@ export function useDatabaseExplorerController({
     )
   }
 
+  function getConnectionTabName(connectionId: string): string {
+    const conn = connectionsStore.connectionByID(connectionId) || undefined
+    const label =
+      conn?.name?.trim() ||
+      getConnectionHost(conn) ||
+      getConnectionTypeLabel(conn?.spec, conn?.type) ||
+      'Connection'
+    return label
+  }
+
+  function openConnectionDetailsTab(
+    connectionId: string,
+    mode: 'preview' | 'pinned',
+    paneId: PaneId = 'left'
+  ) {
+    const tabId = `connection-details:${connectionId}`
+    const tabName = getConnectionTabName(connectionId)
+
+    if (mode === 'pinned') {
+      const paneState = paneTabsStore.getPaneState(paneId)
+      if (
+        paneState.previewTab?.tabType === 'connection-details' &&
+        paneState.previewTab.connectionId === connectionId
+      ) {
+        paneTabsStore.pinPreviewTab(paneId)
+        return
+      }
+    }
+
+    paneTabsStore.addTab(
+      paneId,
+      {
+        id: tabId,
+        connectionId,
+        name: tabName,
+        tabType: 'connection-details'
+      },
+      mode
+    )
+  }
+
+  function openDatabaseOverviewTab(
+    connectionId: string,
+    database: string,
+    mode: 'preview' | 'pinned',
+    paneId: PaneId = 'left'
+  ) {
+    const tabId = `db-overview:${connectionId}:${database}`
+    const tabName = `DB: ${database}`
+
+    if (mode === 'pinned') {
+      const paneState = paneTabsStore.getPaneState(paneId)
+      if (
+        paneState.previewTab?.tabType === 'database-overview' &&
+        paneState.previewTab.connectionId === connectionId &&
+        paneState.previewTab.database === database
+      ) {
+        paneTabsStore.pinPreviewTab(paneId)
+        return
+      }
+    }
+
+    paneTabsStore.addTab(
+      paneId,
+      {
+        id: tabId,
+        connectionId,
+        database,
+        name: tabName,
+        tabType: 'database-overview'
+      },
+      mode
+    )
+  }
+
   // Loading state to prevent multiple file clicks during loading
   const isLoadingFile = ref(false)
 
-  // Derived from store (no longer from URL)
-  // Use computed to maintain reactivity when store values change
-  const showConnectionDetails = computed(() => viewState.showConnectionDetails)
   const showDeleteConfirm = ref(false)
   const pendingDeleteConnectionId = ref<string | null>(null)
   const pendingDeleteName = ref('')
@@ -221,12 +293,7 @@ export function useDatabaseExplorerController({
     )
   })
 
-  const lacksExplorerContent = computed(() => {
-    if (showConnectionDetails.value) return false
-    if (explorerState.selectedDatabaseName.value) return false
-    if (explorerState.selectedFileEntry.value) return false
-    return !hasPaneContent.value
-  })
+  const lacksExplorerContent = computed(() => !hasPaneContent.value)
 
   function clearRightPaneQueryParams() {
     const nextQuery = { ...route.query }
@@ -494,7 +561,7 @@ export function useDatabaseExplorerController({
     schemaStore.fetchSchema(true)
   }
 
-  function handleSelectConnection(payload: { connectionId: string }) {
+  function handleSelectConnection(payload: { connectionId: string; mode?: 'preview' | 'pinned' }) {
     // Update store
     viewState.selectConnection(payload.connectionId)
 
@@ -503,18 +570,14 @@ export function useDatabaseExplorerController({
     navigationStore.setActiveConnectionId(payload.connectionId)
     connectionsStore.setCurrentConnection(payload.connectionId)
 
-    // Only close preview tabs, not pinned tabs - preserve user's open tabs
-    if (paneTabsStore.leftPaneState.previewTab) {
-      paneTabsStore.closePreviewTab('left')
-    }
-    if (paneTabsStore.rightPaneState.previewTab) {
-      paneTabsStore.closePreviewTab('right')
-    }
-
     explorerState.clearPanelStates()
     explorerState.clearDatabaseSelection()
 
     fileExplorerStore.clearSelection(payload.connectionId)
+
+    const effectiveMode: 'preview' | 'pinned' =
+      payload.mode || (alwaysOpenNewTab.value ? 'pinned' : 'preview')
+    openConnectionDetailsTab(payload.connectionId, effectiveMode, 'left')
 
     if (fileExplorerStore.isFilesConnectionType(payload.connectionId)) {
       // Load entries if not already cached - don't force reload to preserve expanded folders
@@ -522,7 +585,11 @@ export function useDatabaseExplorerController({
     }
   }
 
-  function handleSelectDatabase(payload: { connectionId: string; database: string }) {
+  function handleSelectDatabase(payload: {
+    connectionId: string
+    database: string
+    mode?: 'preview' | 'pinned'
+  }) {
     // Update store
     viewState.selectDatabase(payload.connectionId, payload.database)
 
@@ -534,6 +601,10 @@ export function useDatabaseExplorerController({
     explorerState.clearPanelStates()
     explorerState.setDatabaseSelection({ database: payload.database })
     paneTabsStore.setActivePane('left')
+
+    const effectiveMode: 'preview' | 'pinned' =
+      payload.mode || (alwaysOpenNewTab.value ? 'pinned' : 'preview')
+    openDatabaseOverviewTab(payload.connectionId, payload.database, effectiveMode, 'left')
 
     schemaStore.setConnectionId(payload.connectionId)
     schemaStore.setDatabaseName(payload.database)
@@ -718,18 +789,20 @@ export function useDatabaseExplorerController({
 
   const onAddConnection = () => router.push('/explorer/add')
 
-  const onEditConnection = () => {
-    if (!explorerState.activeConnectionId.value) return
-    router.push(`/explorer/edit/${explorerState.activeConnectionId.value}`)
+  const onEditConnection = (connectionId?: string) => {
+    const id = connectionId || explorerState.activeConnectionId.value
+    if (!id) return
+    router.push(`/explorer/edit/${id}`)
   }
 
-  const onEditConnectionJson = () => {
-    if (!explorerState.activeConnectionId.value) return
-    router.push(`/explorer/edit-json/${explorerState.activeConnectionId.value}`)
+  const onEditConnectionJson = (connectionId?: string) => {
+    const id = connectionId || explorerState.activeConnectionId.value
+    if (!id) return
+    router.push(`/explorer/edit-json/${id}`)
   }
 
-  const onDeleteConnection = () => {
-    const id = explorerState.activeConnectionId.value
+  const onDeleteConnection = (connectionId?: string) => {
+    const id = connectionId || explorerState.activeConnectionId.value
     if (!id) return
     const conn = connectionsStore.connections.find((c) => c.id === id)
     pendingDeleteConnectionId.value = id
@@ -759,8 +832,8 @@ export function useDatabaseExplorerController({
     showDeleteConfirm.value = false
   }
 
-  async function onCloneConnection() {
-    const id = explorerState.activeConnectionId.value
+  async function onCloneConnection(connectionId?: string) {
+    const id = connectionId || explorerState.activeConnectionId.value
     if (!id) return
     try {
       connectionsStore.setCurrentConnection(id)
@@ -963,6 +1036,16 @@ export function useDatabaseExplorerController({
         explorerState.clearDatabaseSelection()
       }
 
+      if (state.viewType === 'connection-details') {
+        const effectiveMode: 'preview' | 'pinned' = alwaysOpenNewTab.value ? 'pinned' : 'preview'
+        openConnectionDetailsTab(state.connectionId, effectiveMode, 'left')
+      }
+
+      if (state.viewType === 'database-overview' && state.databaseName) {
+        const effectiveMode: 'preview' | 'pinned' = alwaysOpenNewTab.value ? 'pinned' : 'preview'
+        openDatabaseOverviewTab(state.connectionId, state.databaseName, effectiveMode, 'left')
+      }
+
       // Ensure the visible content matches URL/viewState when navigating with browser back/forward.
       // Skip on initial load to let persisted paneTabs state take precedence.
       if (
@@ -1092,7 +1175,6 @@ export function useDatabaseExplorerController({
   })
 
   return {
-    showConnectionDetails,
     showDeleteConfirm,
     pendingDeleteName,
     deleteConnectionMessage,

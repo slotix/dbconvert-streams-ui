@@ -18,7 +18,14 @@ export type PaneTab = {
   id: string
   connectionId: string
   name: string
-  tabType: 'database' | 'file' | 'sql-console' | 'file-console' | 'diagram'
+  tabType:
+    | 'database'
+    | 'file'
+    | 'sql-console'
+    | 'file-console'
+    | 'diagram'
+    | 'connection-details'
+    | 'database-overview'
   pinned: boolean
   objectKey?: string
 
@@ -250,6 +257,12 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
     }
     if (tab.tabType === 'diagram') {
       return `diagram:${tab.connectionId}:${tab.database || ''}`
+    }
+    if (tab.tabType === 'connection-details') {
+      return `connection:${tab.connectionId}`
+    }
+    if (tab.tabType === 'database-overview') {
+      return `db-overview:${tab.connectionId}:${tab.database || ''}`
     }
     return `db:${tab.connectionId}:${tab.database || ''}:${tab.schema || ''}:${tab.name || ''}:${tab.type || ''}`
   }

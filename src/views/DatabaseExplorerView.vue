@@ -178,31 +178,29 @@ function onRightTabChange(_tab: 'data' | 'structure') {
 // Database/Schema creation handlers
 const connectionActions = useConnectionActions()
 
-function handleCreateDatabase(databaseName: string) {
-  const connectionId = explorerState.currentConnectionId.value
-  if (connectionId) {
-    connectionActions.createDatabase(connectionId, databaseName)
+function handleCreateDatabase(payload: { connectionId: string; name: string }) {
+  if (payload.connectionId) {
+    connectionActions.createDatabase(payload.connectionId, payload.name)
   }
 }
 
-function handleCreateSchema(schemaName: string) {
-  const connectionId = explorerState.currentConnectionId.value
-  // Use the selected database from explorer (database-level schema creation)
-  // or fall back to the default database from connection spec (connection-level schema creation)
+function handleCreateSchema(payload: { connectionId: string; name: string; database?: string }) {
+  if (!payload.connectionId) return
+  const connectionId = payload.connectionId
   const targetDatabase =
+    payload.database ||
     selectedDatabase.value ||
     connectionsStore.connections.find((c) => c.id === connectionId)?.spec?.database?.database ||
     connectionsStore.connections.find((c) => c.id === connectionId)?.spec?.snowflake?.database
 
-  if (connectionId && targetDatabase) {
-    connectionActions.createSchema(connectionId, targetDatabase, schemaName)
+  if (targetDatabase) {
+    connectionActions.createSchema(connectionId, targetDatabase, payload.name)
   }
 }
 
-function handleCreateBucket(payload: { bucket: string; region?: string }) {
-  const connectionId = explorerState.currentConnectionId.value
-  if (connectionId) {
-    connectionActions.createBucket(connectionId, payload.bucket, { region: payload.region })
+function handleCreateBucket(payload: { connectionId: string; bucket: string; region?: string }) {
+  if (payload.connectionId) {
+    connectionActions.createBucket(payload.connectionId, payload.bucket, { region: payload.region })
   }
 }
 
@@ -479,9 +477,6 @@ function handleOpenFileConsole(payload: {
             <!-- Content area with dual pane tabs -->
             <ExplorerContentArea
               v-if="activeConnectionId"
-              :connection-id="activeConnectionId"
-              :selected-database="selectedDatabase || undefined"
-              :file-entries="currentFileEntries"
               :active-pane="paneTabsStore.activePane"
               :split-pane-resize="splitPaneResize"
               @edit-connection-wizard="onEditConnection"

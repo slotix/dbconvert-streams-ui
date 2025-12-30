@@ -68,7 +68,14 @@ const databaseNameMatchesSearch = computed(() => {
 const emit = defineEmits<{
   (e: 'toggle-database'): void
   (e: 'toggle-schema', schemaName: string): void
-  (e: 'select-database', payload: { connectionId: string; database: string }): void
+  (
+    e: 'select-database',
+    payload: {
+      connectionId: string
+      database: string
+      mode?: 'preview' | 'pinned'
+    }
+  ): void
   (
     e: 'open-object',
     payload: {
@@ -126,6 +133,14 @@ function handleDatabaseClick() {
   emit('select-database', {
     connectionId: props.connectionId,
     database: props.database.name
+  })
+}
+
+function handleDatabaseDoubleClick() {
+  emit('select-database', {
+    connectionId: props.connectionId,
+    database: props.database.name,
+    mode: 'pinned'
   })
 }
 
@@ -195,6 +210,7 @@ function handleFlatObjectContextMenu(payload: {
       ]"
       :data-explorer-db="`${connectionId}:${database.name}`"
       @click="handleDatabaseClick"
+      @dblclick.stop="handleDatabaseDoubleClick"
       @contextmenu.stop.prevent="handleDatabaseContextMenu"
     >
       <component :is="isExpanded ? ChevronDown : ChevronRight" :class="caretClass" />

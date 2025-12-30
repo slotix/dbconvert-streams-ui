@@ -106,7 +106,17 @@
 
 <script setup lang="ts">
 import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
-import { ArrowRightLeft, Eye, File, Share2, Sheet, Terminal, X } from 'lucide-vue-next'
+import {
+  ArrowRightLeft,
+  Database,
+  Eye,
+  File,
+  Server,
+  Share2,
+  Sheet,
+  Terminal,
+  X
+} from 'lucide-vue-next'
 import { usePaneTabsStore, type PaneId, type PaneTab } from '@/stores/paneTabs'
 
 // Get current zoom factor for position adjustment
@@ -179,6 +189,8 @@ function handleMoveToOtherPane() {
 }
 
 function getObjectIcon(tab: PaneTab) {
+  if (tab.tabType === 'connection-details') return Server
+  if (tab.tabType === 'database-overview') return Database
   if (tab.tabType === 'file') return File
   if (tab.tabType === 'sql-console') return Terminal
   if (tab.tabType === 'file-console') return Terminal
@@ -187,6 +199,12 @@ function getObjectIcon(tab: PaneTab) {
 }
 
 function getIconColor(tab: PaneTab): string {
+  if (tab.tabType === 'connection-details') {
+    return 'text-indigo-500 dark:text-indigo-400'
+  }
+  if (tab.tabType === 'database-overview') {
+    return 'text-teal-500 dark:text-teal-400'
+  }
   // Database tabs: tables and views
   if (tab.tabType === 'database') {
     if (tab.type === 'view') {

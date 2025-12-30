@@ -1,114 +1,106 @@
 <template>
-  <div v-if="showConnectionDetails && currentConnection" class="rounded-2xl">
-    <ConnectionDetailsPanel
-      :connection="currentConnection"
-      :file-entries="fileEntries"
-      @edit-wizard="$emit('edit-connection-wizard')"
-      @edit-json="$emit('edit-connection-json')"
-      @clone="$emit('clone-connection')"
-      @delete="$emit('delete-connection')"
-      @create-database="$emit('create-database', $event)"
-      @create-schema="$emit('create-schema', $event)"
-      @create-bucket="$emit('create-bucket', $event)"
-      @open-sql-console="handleOpenConnectionSqlConsole"
-      @open-file-console="handleOpenFileConsole"
-    />
-  </div>
-  <div
-    v-else-if="showDatabaseOverview && selectedDatabase"
-    class="rounded-2xl bg-white dark:bg-gray-900 shadow-lg dark:shadow-gray-900/40"
-  >
-    <DatabaseOverviewPanel
-      :key="`overview-${connectionId}-${selectedDatabase}`"
-      :connection-id="connectionId"
-      :database="selectedDatabase"
-      @show-diagram="$emit('show-diagram', $event)"
-      @open-sql-console="handleOpenSqlConsole"
-      @create-schema="handleCreateSchema"
-    />
-  </div>
-  <div v-else>
-    <div class="min-h-[480px] min-w-0 overflow-x-hidden">
-      <ExplorerSplitPane
-        :active-pane="activePane"
-        :split-pane-resize="props.splitPaneResize"
-        @set-active-pane="handleSetActivePane"
-        @close-right-pane="handleCloseRightPane"
-      >
-        <!-- Left pane tabs -->
-        <template #left-tabs>
-          <PaneNavigationTabs
-            pane-id="left"
-            :is-active="activePane === 'left'"
-            @activate-preview="handleActivatePreview('left')"
-            @activate-tab="(index) => handleActivateTab('left', index)"
-            @close-tab="(index) => handleCloseTab('left', index)"
-            @close-other-tabs="(index) => handleCloseOtherTabs('left', index)"
-            @close-all-tabs="handleCloseAllTabs('left')"
-          />
-        </template>
+  <div class="min-h-[480px] min-w-0 overflow-x-hidden">
+    <ExplorerSplitPane
+      :active-pane="activePane"
+      :split-pane-resize="props.splitPaneResize"
+      @set-active-pane="handleSetActivePane"
+      @close-right-pane="handleCloseRightPane"
+    >
+      <!-- Left pane tabs -->
+      <template #left-tabs>
+        <PaneNavigationTabs
+          pane-id="left"
+          :is-active="activePane === 'left'"
+          @activate-preview="handleActivatePreview('left')"
+          @activate-tab="(index) => handleActivateTab('left', index)"
+          @close-tab="(index) => handleCloseTab('left', index)"
+          @close-other-tabs="(index) => handleCloseOtherTabs('left', index)"
+          @close-all-tabs="handleCloseAllTabs('left')"
+        />
+      </template>
 
-        <!-- Left pane breadcrumb -->
-        <template #left-breadcrumb>
-          <PaneBreadcrumb
-            pane-id="left"
-            :metadata="metadata"
-            @pick-name="(payload) => $emit('breadcrumb-pick-name', 'left', payload)"
-            @pick-file="(payload) => $emit('breadcrumb-pick-file', 'left', payload)"
-          />
-        </template>
+      <!-- Left pane breadcrumb -->
+      <template #left-breadcrumb>
+        <PaneBreadcrumb
+          pane-id="left"
+          :metadata="metadata"
+          @pick-name="(payload) => $emit('breadcrumb-pick-name', 'left', payload)"
+          @pick-file="(payload) => $emit('breadcrumb-pick-file', 'left', payload)"
+        />
+      </template>
 
-        <!-- Left pane content -->
-        <template #left-content>
-          <PaneContent
-            pane-id="left"
-            :active-tab="leftActiveTab"
-            :connection-type="connectionType"
-            @tab-change="$emit('left-tab-change', $event)"
-            @refresh-metadata="$emit('refresh-metadata')"
-            @open-sql-console="openTableInSqlConsole"
-            @open-file-console="openFileInDuckDbConsole"
-          />
-        </template>
+      <!-- Left pane content -->
+      <template #left-content>
+        <PaneContent
+          pane-id="left"
+          :active-tab="leftActiveTab"
+          :connection-type="leftConnectionType"
+          @tab-change="$emit('left-tab-change', $event)"
+          @refresh-metadata="$emit('refresh-metadata')"
+          @open-sql-console="openTableInSqlConsole"
+          @open-file-console="openFileInDuckDbConsole"
+          @open-connection-sql-console="handleOpenConnectionSqlConsole"
+          @open-connection-file-console="handleOpenFileConsole"
+          @open-database-sql-console="handleOpenSqlConsole"
+          @show-diagram="$emit('show-diagram', $event)"
+          @edit-connection-wizard="$emit('edit-connection-wizard', $event)"
+          @edit-connection-json="$emit('edit-connection-json', $event)"
+          @clone-connection="$emit('clone-connection', $event)"
+          @delete-connection="$emit('delete-connection', $event)"
+          @create-database="$emit('create-database', $event)"
+          @create-schema="$emit('create-schema', $event)"
+          @create-bucket="$emit('create-bucket', $event)"
+        />
+      </template>
 
-        <!-- Right pane tabs -->
-        <template #right-tabs>
-          <PaneNavigationTabs
-            pane-id="right"
-            :is-active="activePane === 'right'"
-            @activate-preview="handleActivatePreview('right')"
-            @activate-tab="(index) => handleActivateTab('right', index)"
-            @close-tab="(index) => handleCloseTab('right', index)"
-            @close-other-tabs="(index) => handleCloseOtherTabs('right', index)"
-            @close-all-tabs="handleCloseAllTabs('right')"
-          />
-        </template>
+      <!-- Right pane tabs -->
+      <template #right-tabs>
+        <PaneNavigationTabs
+          pane-id="right"
+          :is-active="activePane === 'right'"
+          @activate-preview="handleActivatePreview('right')"
+          @activate-tab="(index) => handleActivateTab('right', index)"
+          @close-tab="(index) => handleCloseTab('right', index)"
+          @close-other-tabs="(index) => handleCloseOtherTabs('right', index)"
+          @close-all-tabs="handleCloseAllTabs('right')"
+        />
+      </template>
 
-        <!-- Right pane breadcrumb -->
-        <template #right-breadcrumb>
-          <PaneBreadcrumb
-            pane-id="right"
-            :metadata="metadata"
-            @pick-name="(payload) => $emit('breadcrumb-pick-name', 'right', payload)"
-            @pick-file="(payload) => $emit('breadcrumb-pick-file', 'right', payload)"
-          />
-        </template>
+      <!-- Right pane breadcrumb -->
+      <template #right-breadcrumb>
+        <PaneBreadcrumb
+          pane-id="right"
+          :metadata="metadata"
+          @pick-name="(payload) => $emit('breadcrumb-pick-name', 'right', payload)"
+          @pick-file="(payload) => $emit('breadcrumb-pick-file', 'right', payload)"
+        />
+      </template>
 
-        <!-- Right pane content -->
-        <template #right-content>
-          <PaneContent
-            pane-id="right"
-            :active-tab="rightActiveTab"
-            :connection-type="connectionType"
-            :show-empty-state="false"
-            @tab-change="$emit('right-tab-change', $event)"
-            @refresh-metadata="$emit('refresh-metadata')"
-            @open-sql-console="openTableInSqlConsole"
-            @open-file-console="openFileInDuckDbConsole"
-          />
-        </template>
-      </ExplorerSplitPane>
-    </div>
+      <!-- Right pane content -->
+      <template #right-content>
+        <PaneContent
+          pane-id="right"
+          :active-tab="rightActiveTab"
+          :connection-type="rightConnectionType"
+          :show-empty-state="false"
+          @tab-change="$emit('right-tab-change', $event)"
+          @refresh-metadata="$emit('refresh-metadata')"
+          @open-sql-console="openTableInSqlConsole"
+          @open-file-console="openFileInDuckDbConsole"
+          @open-connection-sql-console="handleOpenConnectionSqlConsole"
+          @open-connection-file-console="handleOpenFileConsole"
+          @open-database-sql-console="handleOpenSqlConsole"
+          @show-diagram="$emit('show-diagram', $event)"
+          @edit-connection-wizard="$emit('edit-connection-wizard', $event)"
+          @edit-connection-json="$emit('edit-connection-json', $event)"
+          @clone-connection="$emit('clone-connection', $event)"
+          @delete-connection="$emit('delete-connection', $event)"
+          @create-database="$emit('create-database', $event)"
+          @create-schema="$emit('create-schema', $event)"
+          @create-bucket="$emit('create-bucket', $event)"
+        />
+      </template>
+    </ExplorerSplitPane>
   </div>
 </template>
 
@@ -118,40 +110,33 @@ import { useConnectionsStore } from '@/stores/connections'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { usePaneTabsStore, type PaneId } from '@/stores/paneTabs'
 import { useExplorerViewStateStore } from '@/stores/explorerViewState'
-import ConnectionDetailsPanel from '@/components/database/ConnectionDetailsPanel.vue'
-import DatabaseOverviewPanel from '@/components/database/DatabaseOverviewPanel.vue'
 import ExplorerSplitPane from './ExplorerSplitPane.vue'
 import type { SplitPaneResizeController } from '@/composables/useSplitPaneResize'
 import PaneNavigationTabs from './PaneNavigationTabs.vue'
 import PaneBreadcrumb from './PaneBreadcrumb.vue'
 import PaneContent from './PaneContent.vue'
-import type { FileSystemEntry } from '@/api/fileSystem'
 import type { ShowDiagramPayload } from '@/types/diagram'
 import { getConnectionKindFromSpec, getConnectionTypeLabel } from '@/types/specs'
 import { useSqlConsoleActions } from '@/composables/useSqlConsoleActions'
 
 interface Props {
-  connectionId: string
-  fileEntries?: FileSystemEntry[]
   activePane: 'left' | 'right'
   splitPaneResize?: SplitPaneResizeController
-  selectedDatabase?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  fileEntries: () => [],
   activePane: 'left'
 })
 
 // Define emits
 const emit = defineEmits<{
-  'edit-connection-wizard': []
-  'edit-connection-json': []
-  'clone-connection': []
-  'delete-connection': []
-  'create-database': [databaseName: string]
-  'create-schema': [schemaName: string]
-  'create-bucket': [payload: { bucket: string; region?: string }]
+  'edit-connection-wizard': [connectionId: string]
+  'edit-connection-json': [connectionId: string]
+  'clone-connection': [connectionId: string]
+  'delete-connection': [connectionId: string]
+  'create-database': [payload: { connectionId: string; name: string }]
+  'create-schema': [payload: { connectionId: string; name: string; database?: string }]
+  'create-bucket': [payload: { connectionId: string; bucket: string; region?: string }]
   'show-diagram': [payload: ShowDiagramPayload]
   'set-active-pane': [pane: 'left' | 'right']
   'left-tab-change': [tab: 'data' | 'structure']
@@ -170,24 +155,6 @@ const paneTabsStore = usePaneTabsStore()
 const viewStateStore = useExplorerViewStateStore()
 const { openTableInSqlConsole, openFileInDuckDbConsole } = useSqlConsoleActions()
 
-// Computed properties - derive view mode from store (single source of truth)
-const selectedDatabase = computed(() => props.selectedDatabase)
-const showConnectionDetails = computed(
-  () => viewStateStore.showConnectionDetails && currentConnection.value !== null
-)
-// Use store's showDatabaseOverview which checks viewType === 'database-overview'
-// This ensures table-data view type shows tabs, not the overview panel
-const showDatabaseOverview = computed(
-  () => viewStateStore.showDatabaseOverview && !!selectedDatabase.value
-)
-
-const currentConnection = computed(
-  () => connectionsStore.connections.find((c) => c.id === props.connectionId) || null
-)
-const connectionType = computed(
-  () => getConnectionTypeLabel(currentConnection.value?.spec, currentConnection.value?.type) || ''
-)
-
 // Get metadata for breadcrumb
 const metadata = computed(() => {
   const activeTab = leftActiveTab.value || rightActiveTab.value
@@ -199,6 +166,18 @@ const metadata = computed(() => {
 // Get active tabs for each pane
 const leftActiveTab = computed(() => paneTabsStore.getActiveTab('left'))
 const rightActiveTab = computed(() => paneTabsStore.getActiveTab('right'))
+const leftConnectionType = computed(() => {
+  const connectionId = leftActiveTab.value?.connectionId
+  if (!connectionId) return ''
+  const connection = connectionsStore.connectionByID(connectionId)
+  return getConnectionTypeLabel(connection?.spec, connection?.type) || ''
+})
+const rightConnectionType = computed(() => {
+  const connectionId = rightActiveTab.value?.connectionId
+  if (!connectionId) return ''
+  const connection = connectionsStore.connectionByID(connectionId)
+  return getConnectionTypeLabel(connection?.spec, connection?.type) || ''
+})
 
 // Event handlers
 function handleSetActivePane(pane: 'left' | 'right') {
@@ -257,32 +236,24 @@ function handleOpenSqlConsole(payload: { connectionId: string; database: string 
 }
 
 /**
- * Handle creating a schema from Database Overview panel
- * Emits the create-schema event with the database context
- */
-function handleCreateSchema(schemaName: string) {
-  emit('create-schema', schemaName)
-}
-
-/**
  * Handle opening SQL Console from Connection Details panel
  * Opens a connection-scoped SQL console (no USE database; prefix)
  */
-function handleOpenConnectionSqlConsole() {
-  if (!props.connectionId) return
+function handleOpenConnectionSqlConsole(connectionId: string) {
+  if (!connectionId) return
 
   // Switch view state FIRST to show tabs instead of connection details
   viewStateStore.setViewType('table-data')
 
-  const tabId = `sql-console:${props.connectionId}:*`
+  const tabId = `sql-console:${connectionId}:*`
 
   paneTabsStore.addTab(
     'left',
     {
       id: tabId,
-      connectionId: props.connectionId,
+      connectionId: connectionId,
       database: '',
-      name: `${currentConnection.value?.name || 'SQL'} (Admin)`,
+      name: `${connectionsStore.connectionByID(connectionId)?.name || 'SQL'} (Admin)`,
       tabType: 'sql-console',
       sqlScope: 'connection',
       objectKey: tabId
@@ -294,13 +265,13 @@ function handleOpenConnectionSqlConsole() {
 /**
  * Handle opening DuckDB Console from Connection Details panel (for file/S3 connections)
  */
-function handleOpenFileConsole() {
-  if (!props.connectionId) return
+function handleOpenFileConsole(connectionId: string) {
+  if (!connectionId) return
 
   // Switch view state FIRST to show tabs instead of connection details
   viewStateStore.setViewType('table-data')
 
-  const conn = currentConnection.value
+  const conn = connectionsStore.connectionByID(connectionId)
   const kind = getConnectionKindFromSpec(conn?.spec)
   if (kind !== 'files' && kind !== 's3') {
     return
@@ -308,13 +279,13 @@ function handleOpenFileConsole() {
   const isS3 = kind === 's3'
   const basePath = isS3 ? conn?.spec?.s3?.scope?.bucket : conn?.spec?.files?.basePath
 
-  const tabId = `file-console:${props.connectionId}`
+  const tabId = `file-console:${connectionId}`
 
   paneTabsStore.addTab(
     'left',
     {
       id: tabId,
-      connectionId: props.connectionId,
+      connectionId: connectionId,
       name: `${conn?.name || 'Files'} (DuckDB)`,
       tabType: 'file-console',
       fileConnectionType: isS3 ? 's3' : 'files',

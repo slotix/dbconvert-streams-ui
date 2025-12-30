@@ -1,7 +1,51 @@
 <template>
   <div v-if="activeTab" class="h-[calc(100vh-220px)] overflow-hidden">
+    <ConnectionDetailsPanel
+      v-if="activeTab.tabType === 'connection-details' && currentConnection"
+      :key="`${paneId}-connection-${activeTab.connectionId}`"
+      :connection="currentConnection"
+      :file-entries="connectionFileEntries"
+      @edit-wizard="$emit('edit-connection-wizard', activeTab.connectionId)"
+      @edit-json="$emit('edit-connection-json', activeTab.connectionId)"
+      @clone="$emit('clone-connection', activeTab.connectionId)"
+      @delete="$emit('delete-connection', activeTab.connectionId)"
+      @create-database="
+        $emit('create-database', { connectionId: activeTab.connectionId, name: $event })
+      "
+      @create-schema="
+        $emit('create-schema', { connectionId: activeTab.connectionId, name: $event })
+      "
+      @create-bucket="$emit('create-bucket', { connectionId: activeTab.connectionId, ...$event })"
+      @open-sql-console="$emit('open-connection-sql-console', activeTab.connectionId)"
+      @open-file-console="$emit('open-connection-file-console', activeTab.connectionId)"
+    />
+    <div
+      v-else-if="activeTab.tabType === 'connection-details'"
+      class="flex h-full items-center justify-center text-sm text-gray-500 dark:text-gray-400"
+    >
+      Connection no longer available. Close this tab to remove it.
+    </div>
+    <div
+      v-else-if="activeTab.tabType === 'database-overview' && activeTab.database"
+      class="rounded-2xl bg-white dark:bg-gray-900 shadow-lg dark:shadow-gray-900/40"
+    >
+      <DatabaseOverviewPanel
+        :key="`overview-${activeTab.connectionId}-${activeTab.database}`"
+        :connection-id="activeTab.connectionId"
+        :database="activeTab.database"
+        @show-diagram="$emit('show-diagram', $event)"
+        @open-sql-console="$emit('open-database-sql-console', $event)"
+        @create-schema="
+          $emit('create-schema', {
+            connectionId: activeTab.connectionId,
+            name: $event,
+            database: activeTab.database
+          })
+        "
+      />
+    </div>
     <ObjectContainer
-      v-if="activeTab.tabType === 'database'"
+      v-else-if="activeTab.tabType === 'database'"
       :key="`${paneId}-${activeTab.database}.${activeTab.schema || 'default'}.${activeTab.name}`"
       object-type="database"
       :pane-id="paneId"
@@ -53,12 +97,17 @@
 </template>
 
 <script setup lang="ts">
-import { defineAsyncComponent } from 'vue'
+import { computed, defineAsyncComponent } from 'vue'
 import ObjectContainer from '@/components/common/ObjectContainer.vue'
+import ConnectionDetailsPanel from '@/components/database/ConnectionDetailsPanel.vue'
+import DatabaseOverviewPanel from '@/components/database/DatabaseOverviewPanel.vue'
 import { UnifiedConsoleTab } from '@/components/console'
 import EmptyStateMessage from './EmptyStateMessage.vue'
+import { useConnectionsStore } from '@/stores/connections'
+import { useFileExplorerStore } from '@/stores/fileExplorer'
 import type { PaneId } from '@/stores/paneTabs'
 import type { PaneTab } from '@/stores/paneTabs'
+import type { ShowDiagramPayload } from '@/types/diagram'
 
 // Lazy load DiagramTab since it includes heavy D3.js
 const DiagramTab = defineAsyncComponent(() => import('@/components/database/DiagramTab.vue'))
@@ -70,7 +119,7 @@ interface Props {
   showEmptyState?: boolean
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   showEmptyState: true
 })
 
@@ -89,5 +138,29 @@ defineEmits<{
       format?: string
     }
   ]
+  'open-connection-sql-console': [connectionId: string]
+  'open-connection-file-console': [connectionId: string]
+  'open-database-sql-console': [payload: { connectionId: string; database: string }]
+  'show-diagram': [payload: ShowDiagramPayload]
+  'edit-connection-wizard': [connectionId: string]
+  'edit-connection-json': [connectionId: string]
+  'clone-connection': [connectionId: string]
+  'delete-connection': [connectionId: string]
+  'create-database': [payload: { connectionId: string; name: string }]
+  'create-schema': [payload: { connectionId: string; name: string; database?: string }]
+  'create-bucket': [payload: { connectionId: string; bucket: string; region?: string }]
 }>()
+
+const connectionsStore = useConnectionsStore()
+const fileExplorerStore = useFileExplorerStore()
+
+const currentConnection = computed(() => {
+  if (!props.activeTab || props.activeTab.tabType !== 'connection-details') return null
+  return connectionsStore.connectionByID(props.activeTab.connectionId)
+})
+
+const connectionFileEntries = computed(() => {
+  if (!props.activeTab || props.activeTab.tabType !== 'connection-details') return []
+  return fileExplorerStore.getEntries(props.activeTab.connectionId)
+})
 </script>
