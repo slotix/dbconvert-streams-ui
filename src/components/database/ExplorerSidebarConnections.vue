@@ -5,22 +5,17 @@ import { Boxes } from 'lucide-vue-next'
 import { useConnectionsStore } from '@/stores/connections'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { useFileExplorerStore } from '@/stores/fileExplorer'
-import { useSqlConsoleStore } from '@/stores/sqlConsole'
 import { useConnectionTreeLogic } from '@/composables/useConnectionTreeLogic'
 import { useTreeContextMenu, type ContextTarget } from '@/composables/useTreeContextMenu'
 import { useConnectionActions } from '@/composables/useConnectionActions'
 import { useDatabaseCapabilities } from '@/composables/useDatabaseCapabilities'
 import { useTreeSearch } from '@/composables/useTreeSearch'
+import { useSqlConsoleActions } from '@/composables/useSqlConsoleActions'
 import type { Connection } from '@/types/connections'
 import type { DiagramFocusTarget, ShowDiagramPayload } from '@/types/diagram'
 import type { SQLTableMeta, SQLViewMeta } from '@/types/metadata'
 import type { FileSystemEntry } from '@/api/fileSystem'
-import {
-  getConnectionKindFromSpec,
-  getConnectionTypeLabel,
-  getSqlDialectFromConnection,
-  isDatabaseKind
-} from '@/types/specs'
+import { getConnectionKindFromSpec, getConnectionTypeLabel, isDatabaseKind } from '@/types/specs'
 import ExplorerContextMenu from './ExplorerContextMenu.vue'
 import ConnectionTreeItem from './tree/ConnectionTreeItem.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
@@ -97,7 +92,7 @@ const MIN_SEARCH_LENGTH = 2
 const connectionsStore = useConnectionsStore()
 const navigationStore = useExplorerNavigationStore()
 const fileExplorerStore = useFileExplorerStore()
-const sqlConsoleStore = useSqlConsoleStore()
+const { openTableInSqlConsole, openFileInDuckDbConsole } = useSqlConsoleActions()
 const treeLogic = useConnectionTreeLogic()
 
 // Use composables for context menu and actions
@@ -346,87 +341,6 @@ function onOpen(
   })
 }
 
-/**
- * Generate DuckDB read function call based on file extension
- * For directories, uses /*.* glob pattern to read all files
- */
-function generateDuckDBReadFunction(
-  path: string,
-  fileName: string,
-  _isS3: boolean,
-  isDir: boolean = false,
-  format?: string
-): string {
-  // For directories, use /*.* glob pattern with appropriate read function
-  if (isDir) {
-    const joinPath = (prefix: string, suffix: string) => {
-      const cleanedSuffix = suffix.replace(/^\/+/, '')
-      if (prefix === '') return cleanedSuffix
-      return prefix.endsWith('/') ? `${prefix}${cleanedSuffix}` : `${prefix}/${cleanedSuffix}`
-    }
-
-    // Use format from folder metadata if available
-    const fmt = format?.toLowerCase()
-    if (fmt === 'parquet') {
-      const fullPath = joinPath(path, '*.parquet')
-      return `SELECT * FROM read_parquet('${fullPath}') LIMIT 100;`
-    } else if (fmt === 'json' || fmt === 'jsonl') {
-      const fullPath = joinPath(path, '*.json*')
-      return `SELECT * FROM read_json_auto('${fullPath}') LIMIT 100;`
-    }
-
-    // Default to csv_auto which handles most formats (incl. compressed CSV)
-    const fullPath = joinPath(path, '*.*')
-    return `SELECT * FROM read_csv_auto('${fullPath}') LIMIT 100;`
-  }
-
-  // Get file extension (handle compressed files like .csv.gz)
-  const lowerName = fileName.toLowerCase()
-  let ext = ''
-
-  if (
-    lowerName.endsWith('.csv') ||
-    lowerName.endsWith('.csv.gz') ||
-    lowerName.endsWith('.csv.zst')
-  ) {
-    ext = 'csv'
-  } else if (
-    lowerName.endsWith('.json') ||
-    lowerName.endsWith('.json.gz') ||
-    lowerName.endsWith('.json.zst')
-  ) {
-    ext = 'json'
-  } else if (
-    lowerName.endsWith('.jsonl') ||
-    lowerName.endsWith('.jsonl.gz') ||
-    lowerName.endsWith('.jsonl.zst')
-  ) {
-    ext = 'jsonl'
-  } else if (lowerName.endsWith('.parquet')) {
-    ext = 'parquet'
-  }
-
-  // Generate the appropriate read function
-  let funcCall: string
-  switch (ext) {
-    case 'csv':
-      funcCall = `read_csv_auto('${path}')`
-      break
-    case 'json':
-    case 'jsonl':
-      funcCall = `read_json_auto('${path}')`
-      break
-    case 'parquet':
-      funcCall = `read_parquet('${path}')`
-      break
-    default:
-      // Default to csv_auto as fallback
-      funcCall = `read_csv_auto('${path}')`
-  }
-
-  return `SELECT * FROM ${funcCall} LIMIT 100;`
-}
-
 // Simplified menu action handler using composables
 function onMenuAction(payload: {
   action: string
@@ -562,80 +476,22 @@ function onMenuAction(payload: {
       break
     case 'open-in-sql-console':
       if (t.kind === 'table' || t.kind === 'view') {
-        // Generate console key (must match UnifiedConsoleTab's consoleKey computed)
-        const consoleKey = `${t.connectionId}:${t.database}`
-
-        // Get connection to determine dialect for proper quoting
-        const conn = connectionsStore.connectionByID(t.connectionId)
-        const dialect = getSqlDialectFromConnection(conn?.spec, conn?.type)
-        const isMysql = dialect === 'mysql'
-        const isPostgres = dialect === 'pgsql'
-
-        // Helper to quote identifiers based on dialect
-        const quoteId = (name: string) => {
-          if (isMysql) return `\`${name}\``
-          if (isPostgres) return `"${name}"`
-          return name
-        }
-
-        // Generate qualified table name with proper quoting
-        const tableName = t.schema ? `${quoteId(t.schema)}.${quoteId(t.name)}` : quoteId(t.name)
-
-        // Generate SELECT query
-        const query = `SELECT * FROM ${tableName} LIMIT 100;`
-
-        // Create table context for customizing templates
-        const tableContext = {
-          tableName: t.name,
-          schema: t.schema
-        }
-
-        // Create a new tab with the query (use table name as tab name)
-        // Pass consoleKey as first param to match how UnifiedConsoleTab calls getTabs
-        sqlConsoleStore.addTabWithQuery(consoleKey, undefined, query, t.name, tableContext)
-
-        // Open the SQL console if not already visible
-        emit('open-sql-console', {
+        openTableInSqlConsole({
           connectionId: t.connectionId,
           database: t.database,
-          sqlScope: 'database'
+          tableName: t.name,
+          schema: t.schema
         })
       }
       break
     case 'insert-into-console':
       if (t.kind === 'file') {
-        const conn = connectionsStore.connectionByID(t.connectionId)
-        const kind = getConnectionKindFromSpec(conn?.spec)
-        if (kind !== 'files' && kind !== 's3') {
-          return
-        }
-        const isS3 = kind === 's3'
-        const consoleKey = `file:${t.connectionId}`
-        const duckdbQuery = generateDuckDBReadFunction(t.path, t.name, isS3, t.isDir, t.format)
-
-        // Create file context for customizing templates
-        const fileContext = {
-          path: t.path,
-          format: t.format,
-          isS3: isS3
-        }
-
-        // Create a new tab with the query (use file/folder name as tab name)
-        sqlConsoleStore.addTabWithQuery(
-          consoleKey,
-          undefined,
-          duckdbQuery,
-          t.name,
-          undefined,
-          fileContext
-        )
-
-        // Open the file console if not already visible
-        const basePath = isS3 ? conn?.spec?.s3?.scope?.bucket : conn?.spec?.files?.basePath
-        emit('open-file-console', {
+        openFileInDuckDbConsole({
           connectionId: t.connectionId,
-          connectionType: isS3 ? 's3' : 'files',
-          basePath: basePath
+          filePath: t.path,
+          fileName: t.name,
+          isDir: t.isDir,
+          format: t.format
         })
       }
       break

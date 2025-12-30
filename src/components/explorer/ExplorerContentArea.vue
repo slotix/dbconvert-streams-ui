@@ -66,6 +66,8 @@
             :connection-type="connectionType"
             @tab-change="$emit('left-tab-change', $event)"
             @refresh-metadata="$emit('refresh-metadata')"
+            @open-sql-console="openTableInSqlConsole"
+            @open-file-console="openFileInDuckDbConsole"
           />
         </template>
 
@@ -101,6 +103,8 @@
             :show-empty-state="false"
             @tab-change="$emit('right-tab-change', $event)"
             @refresh-metadata="$emit('refresh-metadata')"
+            @open-sql-console="openTableInSqlConsole"
+            @open-file-console="openFileInDuckDbConsole"
           />
         </template>
       </ExplorerSplitPane>
@@ -124,6 +128,7 @@ import PaneContent from './PaneContent.vue'
 import type { FileSystemEntry } from '@/api/fileSystem'
 import type { ShowDiagramPayload } from '@/types/diagram'
 import { getConnectionKindFromSpec, getConnectionTypeLabel } from '@/types/specs'
+import { useSqlConsoleActions } from '@/composables/useSqlConsoleActions'
 
 interface Props {
   connectionId: string
@@ -163,6 +168,7 @@ const connectionsStore = useConnectionsStore()
 const navigationStore = useExplorerNavigationStore()
 const paneTabsStore = usePaneTabsStore()
 const viewStateStore = useExplorerViewStateStore()
+const { openTableInSqlConsole, openFileInDuckDbConsole } = useSqlConsoleActions()
 
 // Computed properties - derive view mode from store (single source of truth)
 const selectedDatabase = computed(() => props.selectedDatabase)

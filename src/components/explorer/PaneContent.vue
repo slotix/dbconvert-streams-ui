@@ -12,6 +12,7 @@
       :database="activeTab.database!"
       @tab-change="$emit('tab-change', $event)"
       @refresh-metadata="$emit('refresh-metadata')"
+      @open-sql-console="$emit('open-sql-console', $event)"
     />
     <ObjectContainer
       v-else-if="activeTab.tabType === 'file'"
@@ -23,6 +24,7 @@
       :connection-id="activeTab.connectionId"
       @tab-change="$emit('tab-change', $event)"
       @refresh-metadata="$emit('refresh-metadata')"
+      @open-file-console="$emit('open-file-console', $event)"
     />
     <UnifiedConsoleTab
       v-else-if="activeTab.tabType === 'sql-console'"
@@ -75,5 +77,17 @@ withDefaults(defineProps<Props>(), {
 defineEmits<{
   'tab-change': [tab: 'data' | 'structure']
   'refresh-metadata': []
+  'open-sql-console': [
+    payload: { connectionId: string; database: string; tableName: string; schema?: string }
+  ]
+  'open-file-console': [
+    payload: {
+      connectionId: string
+      filePath: string
+      fileName: string
+      isDir?: boolean
+      format?: string
+    }
+  ]
 }>()
 </script>

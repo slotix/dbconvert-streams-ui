@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch, defineAsyncComponent, type Component } from 'vue'
-import { ArrowUpDown, Columns2, Filter, RefreshCw } from 'lucide-vue-next'
+import { ArrowUpDown, Columns2, Filter, RefreshCw, Terminal } from 'lucide-vue-next'
 import { type SQLTableMeta, type SQLViewMeta } from '@/types/metadata'
 import { type FileSystemEntry } from '@/api/fileSystem'
 import { type FileMetadata } from '@/types/files'
@@ -50,6 +50,20 @@ const emit = defineEmits<{
   (e: 'refresh-metadata'): void
   (e: 'close'): void
   (e: 'tab-change', tab: 'data' | 'structure'): void
+  (
+    e: 'open-sql-console',
+    payload: { connectionId: string; database: string; tableName: string; schema?: string }
+  ): void
+  (
+    e: 'open-file-console',
+    payload: {
+      connectionId: string
+      filePath: string
+      fileName: string
+      isDir?: boolean
+      format?: string
+    }
+  ): void
 }>()
 
 type TabItem = {
@@ -269,6 +283,29 @@ async function onRefreshClick() {
     )
   }
 }
+
+function onOpenSqlConsole() {
+  if (props.objectType === 'database' && props.tableMeta && props.database) {
+    emit('open-sql-console', {
+      connectionId: props.connectionId,
+      database: props.database,
+      tableName: props.tableMeta.name,
+      schema: props.tableMeta.schema
+    })
+  }
+}
+
+function onOpenFileConsole() {
+  if (props.objectType === 'file' && props.fileEntry) {
+    emit('open-file-console', {
+      connectionId: props.connectionId,
+      filePath: props.fileEntry.path,
+      fileName: props.fileEntry.name,
+      isDir: props.fileEntry.type === 'dir',
+      format: props.fileEntry.format
+    })
+  }
+}
 </script>
 
 <template>
@@ -363,8 +400,28 @@ async function onRefreshClick() {
           </div>
         </div>
 
-        <!-- Right: Refresh button -->
-        <div>
+        <!-- Right: SQL/DuckDB Console + Refresh buttons -->
+        <div class="flex items-center gap-2">
+          <!-- SQL Console button (only for database objects on Data tab) -->
+          <button
+            v-if="objectType === 'database' && selectedIndex === 0"
+            type="button"
+            class="inline-flex items-center rounded-md bg-white dark:bg-gray-800 px-2.5 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 shadow-sm dark:shadow-gray-900/30 border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
+            title="Open in SQL Console"
+            @click="onOpenSqlConsole"
+          >
+            <Terminal class="h-4 w-4" />
+          </button>
+          <!-- DuckDB Console button (only for file objects on Data tab) -->
+          <button
+            v-if="objectType === 'file' && selectedIndex === 0"
+            type="button"
+            class="inline-flex items-center rounded-md bg-white dark:bg-gray-800 px-2.5 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 shadow-sm dark:shadow-gray-900/30 border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
+            title="Open in DuckDB Console"
+            @click="onOpenFileConsole"
+          >
+            <Terminal class="h-4 w-4" />
+          </button>
           <button
             type="button"
             class="inline-flex items-center rounded-md bg-white dark:bg-gray-800 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 shadow-sm dark:shadow-gray-900/30 border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
