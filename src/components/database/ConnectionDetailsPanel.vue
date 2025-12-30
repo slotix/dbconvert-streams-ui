@@ -523,11 +523,13 @@ const isLoadingDatabases = computed(() => {
           :db-type="connectionTypeLabel"
         />
       </div>
-      <div class="hidden sm:flex items-center gap-2">
-        <BaseButton variant="secondary" @click="emit('edit-wizard')">Edit Wizard</BaseButton>
-        <BaseButton variant="secondary" @click="emit('edit-json')">Edit JSON</BaseButton>
-        <BaseButton variant="secondary" @click="emit('clone')">Clone</BaseButton>
-        <BaseButton variant="danger" @click="emit('delete')">Delete</BaseButton>
+      <div class="hidden sm:flex flex-wrap items-center justify-end gap-2">
+        <BaseButton variant="secondary" size="sm" @click="emit('edit-wizard')"
+          >Edit Wizard</BaseButton
+        >
+        <BaseButton variant="secondary" size="sm" @click="emit('edit-json')">Edit JSON</BaseButton>
+        <BaseButton variant="secondary" size="sm" @click="emit('clone')">Clone</BaseButton>
+        <BaseButton variant="danger" size="sm" @click="emit('delete')">Delete</BaseButton>
       </div>
     </div>
 
@@ -535,7 +537,7 @@ const isLoadingDatabases = computed(() => {
       <!-- File Connection Details -->
       <div v-if="isFileConnection" class="space-y-6">
         <template v-if="isS3Connection">
-          <div class="grid gap-4 md:grid-cols-2">
+          <div class="grid gap-4 grid-cols-[repeat(auto-fit,minmax(260px,1fr))]">
             <div
               class="bg-slate-50 dark:bg-gray-800/50 rounded-xl p-4 ring-1 ring-slate-200/70 dark:ring-gray-700"
             >
@@ -671,7 +673,7 @@ const isLoadingDatabases = computed(() => {
             </div>
           </div>
 
-          <div class="grid gap-4 md:grid-cols-2">
+          <div class="grid gap-4 grid-cols-[repeat(auto-fit,minmax(260px,1fr))]">
             <div
               class="bg-slate-50 dark:bg-gray-800/50 rounded-xl p-4 ring-1 ring-slate-200/70 dark:ring-gray-700"
             >
@@ -826,7 +828,7 @@ const isLoadingDatabases = computed(() => {
       </div>
 
       <!-- Database Connection Details - Card Layout -->
-      <div v-else class="grid gap-4 md:grid-cols-2">
+      <div v-else class="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(260px,1fr))]">
         <!-- Connection Info Card -->
         <div
           class="bg-slate-50 dark:bg-gray-800/50 rounded-xl p-4 ring-1 ring-slate-200/70 dark:ring-gray-700"

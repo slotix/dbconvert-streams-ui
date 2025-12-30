@@ -1,5 +1,5 @@
 <template>
-  <div v-if="activeTab" class="h-[calc(100vh-220px)] overflow-hidden">
+  <div v-if="activeTab" :class="wrapperClass">
     <ConnectionDetailsPanel
       v-if="activeTab.tabType === 'connection-details' && currentConnection"
       :key="`${paneId}-connection-${activeTab.connectionId}`"
@@ -153,6 +153,15 @@ defineEmits<{
 
 const connectionsStore = useConnectionsStore()
 const fileExplorerStore = useFileExplorerStore()
+
+const wrapperClass = computed(() => {
+  const base = 'h-[calc(100vh-220px)]'
+  const tabType = props.activeTab?.tabType
+  if (tabType === 'connection-details' || tabType === 'database-overview') {
+    return `${base} overflow-y-auto overflow-x-hidden`
+  }
+  return `${base} overflow-hidden`
+})
 
 const currentConnection = computed(() => {
   if (!props.activeTab || props.activeTab.tabType !== 'connection-details') return null

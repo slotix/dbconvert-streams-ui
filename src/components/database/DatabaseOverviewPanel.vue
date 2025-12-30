@@ -479,9 +479,11 @@ async function handleCreateSchema() {
 
 <template>
   <div class="p-4">
-    <div class="flex items-center justify-between mb-4">
-      <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">Database Overview</h3>
-      <div class="flex items-center gap-2">
+    <div class="flex flex-wrap items-center gap-3 mb-4">
+      <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100 min-w-0">
+        Database Overview
+      </h3>
+      <div class="ml-auto flex items-center gap-2">
         <BaseButton variant="secondary" size="sm" @click="refresh()"> Refresh </BaseButton>
       </div>
     </div>
@@ -492,10 +494,13 @@ async function handleCreateSchema() {
     <div v-else-if="error" class="text-sm text-red-600 dark:text-red-400 py-8 text-center">
       {{ error }}
     </div>
-    <div v-else-if="overview" class="grid grid-cols-1 md:grid-cols-6 gap-4">
+    <div
+      v-else-if="overview"
+      class="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(240px,1fr))]"
+    >
       <!-- Essentials -->
       <div
-        class="bg-slate-50 dark:bg-gray-800/50 rounded-xl p-4 ring-1 ring-slate-200/70 dark:ring-gray-700 md:col-span-2"
+        class="bg-slate-50 dark:bg-gray-800/50 rounded-xl p-4 ring-1 ring-slate-200/70 dark:ring-gray-700"
       >
         <div class="flex items-center gap-2 mb-3">
           <div class="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
@@ -506,7 +511,7 @@ async function handleCreateSchema() {
 
         <div class="space-y-3">
           <!-- Stats Grid -->
-          <div class="grid grid-cols-2 gap-2">
+          <div class="grid gap-2 [grid-template-columns:repeat(auto-fit,minmax(140px,1fr))]">
             <div v-if="overview.encoding">
               <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
                 >Encoding</label
@@ -571,7 +576,7 @@ async function handleCreateSchema() {
 
       <!-- CDC readiness -->
       <div
-        class="bg-slate-50 dark:bg-gray-800/50 rounded-xl p-4 ring-1 ring-slate-200/70 dark:ring-gray-700 md:col-span-2"
+        class="bg-slate-50 dark:bg-gray-800/50 rounded-xl p-4 ring-1 ring-slate-200/70 dark:ring-gray-700"
       >
         <div class="flex items-center justify-between mb-3">
           <div class="flex items-center gap-2">
@@ -615,7 +620,7 @@ async function handleCreateSchema() {
           </span>
         </div>
 
-        <div class="grid grid-cols-2 gap-2">
+        <div class="grid gap-2 [grid-template-columns:repeat(auto-fit,minmax(140px,1fr))]">
           <template v-if="overview.engine === 'mysql'">
             <div>
               <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
@@ -689,7 +694,7 @@ async function handleCreateSchema() {
 
       <!-- Activity -->
       <div
-        class="bg-slate-50 dark:bg-gray-800/50 rounded-xl p-4 ring-1 ring-slate-200/70 dark:ring-gray-700 md:col-span-2"
+        class="bg-slate-50 dark:bg-gray-800/50 rounded-xl p-4 ring-1 ring-slate-200/70 dark:ring-gray-700"
       >
         <div class="flex items-center gap-2 mb-3">
           <div class="p-1.5 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
@@ -698,7 +703,7 @@ async function handleCreateSchema() {
           <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Activity</span>
         </div>
 
-        <div class="grid grid-cols-2 gap-2">
+        <div class="grid gap-2 [grid-template-columns:repeat(auto-fit,minmax(140px,1fr))]">
           <div>
             <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
               >Connections</label
@@ -753,7 +758,7 @@ async function handleCreateSchema() {
 
       <!-- Top by size -->
       <div
-        class="bg-slate-50 dark:bg-gray-800/50 rounded-xl p-4 ring-1 ring-slate-200/70 dark:ring-gray-700 md:col-span-3"
+        class="bg-slate-50 dark:bg-gray-800/50 rounded-xl p-4 ring-1 ring-slate-200/70 dark:ring-gray-700"
       >
         <div class="flex items-center gap-2 mb-3">
           <div class="p-1.5 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
@@ -798,7 +803,7 @@ async function handleCreateSchema() {
 
       <!-- Top by rows -->
       <div
-        class="bg-slate-50 dark:bg-gray-800/50 rounded-xl p-4 ring-1 ring-slate-200/70 dark:ring-gray-700 md:col-span-3"
+        class="bg-slate-50 dark:bg-gray-800/50 rounded-xl p-4 ring-1 ring-slate-200/70 dark:ring-gray-700"
       >
         <div class="flex items-center gap-2 mb-3">
           <div class="p-1.5 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
@@ -843,7 +848,7 @@ async function handleCreateSchema() {
       <!-- Notes -->
       <div
         v-if="overview.notes?.length"
-        class="bg-slate-50 dark:bg-gray-800/50 rounded-xl p-4 ring-1 ring-slate-200/70 dark:ring-gray-700 md:col-span-6"
+        class="col-span-full bg-slate-50 dark:bg-gray-800/50 rounded-xl p-4 ring-1 ring-slate-200/70 dark:ring-gray-700"
       >
         <div class="flex items-center gap-2 mb-3">
           <div class="p-1.5 bg-sky-100 dark:bg-sky-900/30 rounded-lg">
@@ -898,7 +903,9 @@ async function handleCreateSchema() {
       </div>
 
       <!-- Utility Blocks Row -->
-      <div class="md:col-span-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div
+        class="col-span-full grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(260px,1fr))]"
+      >
         <!-- SQL Console - Utility Block -->
         <div
           class="bg-linear-to-br from-indigo-50 to-slate-50 dark:from-indigo-950/30 dark:to-gray-800/50 rounded-xl p-4 ring-1 ring-indigo-200/70 dark:ring-indigo-800/50"
