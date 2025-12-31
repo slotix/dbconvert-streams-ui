@@ -99,16 +99,6 @@
             : 'h-0.5 bg-slate-300 dark:bg-gray-600 opacity-20'
         ]"
       />
-      <!-- Close right pane button -->
-      <button
-        type="button"
-        class="absolute top-2 right-2 z-10 p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition"
-        title="Close right pane"
-        @click="$emit('close-right-pane')"
-      >
-        <X class="h-4 w-4 text-gray-500 dark:text-gray-400" />
-      </button>
-
       <!-- Right pane tabs -->
       <div class="px-2 pt-2">
         <slot name="right-tabs" />
@@ -154,7 +144,6 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { X } from 'lucide-vue-next'
 import {
   useSplitPaneResize,
   type SplitPaneResizeController
@@ -170,7 +159,6 @@ const props = defineProps<{
 // Define emits
 defineEmits<{
   'set-active-pane': [pane: 'left' | 'right']
-  'close-right-pane': []
 }>()
 
 // Use composables and store

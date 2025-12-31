@@ -4,7 +4,6 @@
       :active-pane="activePane"
       :split-pane-resize="props.splitPaneResize"
       @set-active-pane="handleSetActivePane"
-      @close-right-pane="handleCloseRightPane"
     >
       <!-- Left pane tabs -->
       <template #left-tabs>
@@ -12,6 +11,7 @@
           pane-id="left"
           :is-active="activePane === 'left'"
           @activate-preview="handleActivatePreview('left')"
+          @pin-preview="handlePinPreview('left')"
           @activate-tab="(index) => handleActivateTab('left', index)"
           @close-tab="(index) => handleCloseTab('left', index)"
           @close-other-tabs="(index) => handleCloseOtherTabs('left', index)"
@@ -59,6 +59,7 @@
           pane-id="right"
           :is-active="activePane === 'right'"
           @activate-preview="handleActivatePreview('right')"
+          @pin-preview="handlePinPreview('right')"
           @activate-tab="(index) => handleActivateTab('right', index)"
           @close-tab="(index) => handleCloseTab('right', index)"
           @close-other-tabs="(index) => handleCloseOtherTabs('right', index)"
@@ -185,12 +186,12 @@ function handleSetActivePane(pane: 'left' | 'right') {
   emit('set-active-pane', pane)
 }
 
-function handleCloseRightPane() {
-  paneTabsStore.clearPane('right')
-}
-
 function handleActivatePreview(paneId: PaneId) {
   paneTabsStore.activatePreviewTab(paneId)
+}
+
+function handlePinPreview(paneId: PaneId) {
+  paneTabsStore.pinPreviewTab(paneId)
 }
 
 function handleActivateTab(paneId: PaneId, index: number) {
