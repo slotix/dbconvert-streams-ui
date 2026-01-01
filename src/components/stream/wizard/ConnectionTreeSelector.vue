@@ -94,7 +94,11 @@
           </div>
 
           <div v-else class="py-1">
-            <div v-for="bucket in getS3Buckets(connection.id)" :key="bucket" class="px-2">
+            <div
+              v-for="bucket in getS3Buckets(connection.id)"
+              :key="`${connection.id}-${bucket}-${isS3BucketSelected(connection.id, bucket)}`"
+              class="px-2"
+            >
               <div
                 class="relative flex w-full items-center gap-3 rounded-md px-2 py-1.5 text-sm transition-colors cursor-pointer"
                 :class="s3BucketRowClass(connection.id, bucket)"
@@ -273,7 +277,7 @@ import { useFileExplorerStore } from '@/stores/fileExplorer'
 import { useConnectionsStore } from '@/stores/connections'
 import { normalizeConnectionType, getConnectionTooltip } from '@/utils/connectionUtils'
 import { getConnectionHost, getConnectionPort } from '@/utils/specBuilder'
-import { listS3Buckets, configureS3Session } from '@/api/files'
+import { listS3Buckets } from '@/api/files'
 import {
   getConnectionKindFromSpec,
   getConnectionTypeLabel,
@@ -404,24 +408,6 @@ async function loadS3Buckets(connection: Connection) {
   s3BucketsState.value[connectionId] = { buckets: [], loading: true, error: null }
 
   try {
-    // Configure S3 session with connection credentials
-    const hasStaticCredentials = s3Spec.credentials?.accessKey && s3Spec.credentials?.secretKey
-
-    await configureS3Session({
-      credentialSource: hasStaticCredentials ? 'static' : 'aws',
-      region: s3Spec.region || 'us-east-1',
-      endpoint: s3Spec.endpoint,
-      urlStyle: 'auto',
-      useSSL: !s3Spec.endpoint?.includes('localhost'),
-      credentials: hasStaticCredentials
-        ? {
-            accessKeyId: s3Spec.credentials!.accessKey!,
-            secretAccessKey: s3Spec.credentials!.secretKey!,
-            sessionToken: s3Spec.credentials!.sessionToken
-          }
-        : undefined
-    })
-
     // List buckets
     const response = await listS3Buckets(connectionId)
     s3BucketsState.value[connectionId] = {

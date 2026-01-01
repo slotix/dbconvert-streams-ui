@@ -66,7 +66,6 @@ const filteredFiles = computed(() => {
 // Show picker conditions
 const showObjectPicker = computed(() => isDatabaseMode.value && (props.objects?.length || 0) > 0)
 const showFilePicker = computed(() => isFileMode.value && (props.files?.length || 0) > 0)
-const canShowPicker = computed(() => showObjectPicker.value || showFilePicker.value)
 
 function togglePicker() {
   showPicker.value = !showPicker.value

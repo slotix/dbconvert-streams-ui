@@ -1,13 +1,12 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { listDirectory, type FileSystemEntry } from '@/api/fileSystem'
-import { getFileMetadata, configureS3Session, listS3Objects, listS3Buckets } from '@/api/files'
+import { getFileMetadata, listS3Objects, listS3Buckets } from '@/api/files'
 import { getFileFormat, type FileFormat } from '@/utils/fileFormat'
 import { useConnectionsStore } from '@/stores/connections'
 import { getConnectionKindFromSpec, isFileBasedKind } from '@/types/specs'
 import type { FileMetadata } from '@/types/files'
 import type { Connection } from '@/types/connections'
-import type { S3ConfigRequest } from '@/types/s3'
 
 export const useFileExplorerStore = defineStore('fileExplorer', () => {
   // State - organized by connection ID
@@ -18,10 +17,6 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
   const loadingByConnection = ref<Record<string, boolean>>({})
   const expandedFoldersByConnection = ref<Record<string, Set<string>>>({})
   const pendingMetadataRequests = new Map<string, Promise<FileMetadata | null>>()
-
-  // S3 session configuration
-  const s3SessionConfigured = ref<boolean>(false)
-  const s3CurrentConnection = ref<Connection | null>(null)
 
   // Getters
   const getEntries = computed(() => {
@@ -120,7 +115,6 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
   // Actions
   async function loadEntries(connectionId: string, force = false, overridePath?: string) {
     if (!connectionId) return
-    if (!force && entriesByConnection.value[connectionId] && !overridePath) return
     // Support both local files and S3 connections.
     if (!isFilesConnectionType(connectionId)) return
 
@@ -148,8 +142,16 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
       return
     }
 
-    // Handle missing path
+    // Resolve folder path (may change if connection scope/config changed)
     const folderPath = overridePath || resolveConnectionFolderPath(connection)
+
+    // Fast-path cache: only skip if we already loaded THIS exact folderPath
+    if (!force && !overridePath && entriesByConnection.value[connectionId]) {
+      const lastPath = directoryPathsByConnection.value[connectionId]
+      if (lastPath && folderPath && lastPath === folderPath) {
+        return
+      }
+    }
     if (!folderPath) {
       entriesByConnection.value = {
         ...entriesByConnection.value,
@@ -181,8 +183,6 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
       const isS3 = folderPath.startsWith('s3://')
 
       if (isS3) {
-        await configureS3SessionForConnection(connection)
-
         // Parse bucket and prefix from URI (e.g., s3://my-bucket/prefix or s3://)
         const uri: string = folderPath
 
@@ -380,45 +380,6 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
     pendingMetadataRequests.clear()
   }
 
-  // S3-specific actions
-  async function configureS3SessionForConnection(connection: Connection) {
-    // Get S3 config from spec.s3 (S3 connections use dedicated spec)
-    const s3Spec = connection.spec?.s3
-
-    if (!s3Spec) {
-      return
-    }
-
-    if (s3SessionConfigured.value && s3CurrentConnection.value?.id === connection.id) {
-      return
-    }
-
-    // Get credentials from spec.s3
-    const hasCredentials = s3Spec.credentials?.accessKey && s3Spec.credentials?.secretKey
-    const hasCustomEndpoint = !!s3Spec.endpoint
-
-    const inferredUrlStyle = hasCustomEndpoint ? 'path' : 'auto'
-
-    const config: S3ConfigRequest = {
-      credentialSource: hasCredentials ? 'static' : 'aws',
-      region: s3Spec.region || 'us-east-1',
-      endpoint: s3Spec.endpoint || undefined,
-      urlStyle: inferredUrlStyle,
-      useSSL: hasCustomEndpoint ? !s3Spec.endpoint!.includes('localhost') : true,
-      credentials: hasCredentials
-        ? {
-            accessKeyId: s3Spec.credentials!.accessKey || '',
-            secretAccessKey: s3Spec.credentials!.secretKey || '',
-            sessionToken: s3Spec.credentials!.sessionToken
-          }
-        : undefined
-    }
-
-    await configureS3Session(config)
-    s3SessionConfigured.value = true
-    s3CurrentConnection.value = connection
-  }
-
   async function loadS3Files(bucket: string, prefix?: string, connectionId?: string) {
     const result = await listS3Objects({
       bucket,
@@ -512,9 +473,6 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
 
         const bucket = parsed.bucket
         const prefix = parsed.prefix
-
-        await configureS3SessionForConnection(connection)
-
         const requestPrefix = prefix ? buildS3RequestPrefix(prefix) : undefined
 
         // Recursive list + grouping is required to mark table folders (entry.isTable)
@@ -744,8 +702,6 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
     selectedPathsByConnection,
     loadingByConnection,
     expandedFoldersByConnection,
-    s3SessionConfigured,
-    s3CurrentConnection,
 
     // Getters
     getEntries,
@@ -764,7 +720,6 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
     clearSelection,
     clearAllSelectionsExcept,
     clearConnectionData,
-    configureS3SessionForConnection,
     loadS3Files,
     toggleFolder,
     collapseFolder,

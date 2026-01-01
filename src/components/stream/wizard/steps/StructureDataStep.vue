@@ -17,8 +17,37 @@
     <div
       class="bg-linear-to-br from-slate-50 to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-850 border border-gray-100 dark:border-gray-700 rounded-xl p-6 shadow-sm dark:shadow-gray-900/30"
     >
-      <!-- Pure File Source: Show file preview list only -->
-      <FilePreviewList v-if="isFileSourceConnection" :connection-id="sourceConnectionId" />
+      <!-- Pure File Source: Show file preview list for ALL file connections -->
+      <template v-if="isFileSourceConnection">
+        <div
+          v-for="fileConn in fileSourceConnections"
+          :key="fileConn.connectionId"
+          class="mb-6 last:mb-0"
+        >
+          <!-- File source header (when multiple sources) -->
+          <div
+            v-if="fileSourceConnections.length > 1"
+            class="flex items-center gap-3 mb-3 px-4 py-2 bg-linear-to-r from-teal-50 to-cyan-50 dark:from-teal-900/30 dark:to-cyan-900/30 rounded-lg border border-teal-200 dark:border-teal-700"
+          >
+            <component
+              :is="isS3Type(fileConn.connectionId) ? Cloud : FolderOpen"
+              class="w-5 h-5 text-teal-600 dark:text-teal-400"
+            />
+            <div class="flex items-center gap-2">
+              <span class="text-sm font-bold text-teal-900 dark:text-teal-100">
+                {{ fileConn.alias }}
+              </span>
+              <span class="text-xs text-teal-600 dark:text-teal-400">
+                {{ getConnectionName(fileConn.connectionId) }}
+              </span>
+              <span v-if="fileConn.s3?.bucket" class="text-xs text-teal-500 dark:text-teal-400">
+                / {{ fileConn.s3.bucket }}
+              </span>
+            </div>
+          </div>
+          <FilePreviewList :connection-id="fileConn.connectionId" />
+        </div>
+      </template>
 
       <!-- Mixed or Pure Database Sources -->
       <template v-else>
@@ -87,7 +116,7 @@
               >
                 <!-- File source header -->
                 <div
-                  class="flex items-center gap-3 mb-3 px-4 py-2 bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-teal-900/30 dark:to-cyan-900/30 rounded-lg border border-teal-200 dark:border-teal-700"
+                  class="flex items-center gap-3 mb-3 px-4 py-2 bg-linear-to-r from-teal-50 to-cyan-50 dark:from-teal-900/30 dark:to-cyan-900/30 rounded-lg border border-teal-200 dark:border-teal-700"
                 >
                   <component
                     :is="isS3Type(fileConn.connectionId) ? Cloud : FolderOpen"
@@ -411,11 +440,6 @@ const cdcOperations = computed({
       streamsStore.currentStreamConfig.source.options.operations = value
     }
   }
-})
-
-const sourceConnectionId = computed(() => {
-  const source = streamsStore.currentStreamConfig?.source
-  return source?.connections?.[0]?.connectionId || null
 })
 
 // Helper to check if a connection is a file/S3 type - spec is the ONLY source of truth

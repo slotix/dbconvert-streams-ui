@@ -498,6 +498,14 @@ function getFederatedTemplates() {
   const aliases = selectedConnections.value.map((c) => c.alias)
   const pg1 = aliases.find((a) => a.startsWith('pg')) || 'pg1'
   const my1 = aliases.find((a) => a.startsWith('my')) || 'my1'
+  // Find S3 aliases (common patterns: aws, do, s3, minio)
+  const s3Aliases = aliases.filter((a) =>
+    ['aws', 'do', 's3', 'minio', 'gcs', 'azure'].some(
+      (prefix) => a.toLowerCase().startsWith(prefix) || a.toLowerCase().includes('s3')
+    )
+  )
+  const aws = s3Aliases.find((a) => a.toLowerCase().startsWith('aws')) || 'aws'
+  const doAlias = s3Aliases.find((a) => a.toLowerCase().startsWith('do')) || 'do'
 
   return [
     {
@@ -517,6 +525,29 @@ SELECT * FROM ${pg1}.public.table_name LIMIT 100;`
       name: 'MySQL query',
       query: `-- Query MySQL connection
 SELECT * FROM ${my1}.database.table_name LIMIT 100;`
+    },
+    {
+      name: 'Query S3 with alias',
+      query: `-- Query S3 using connection alias (select an S3 connection first)
+-- Alias becomes the URL scheme: aws://bucket/path
+SELECT * FROM read_parquet('${aws}://bucket-name/path/*.parquet') LIMIT 100;`
+    },
+    {
+      name: 'JOIN across S3 providers',
+      query: `-- Join data from different S3 providers (AWS + DigitalOcean)
+SELECT a.*, b.*
+FROM read_parquet('${aws}://bucket/data_a.parquet') a
+JOIN read_parquet('${doAlias}://bucket/data_b.parquet') b ON a.id = b.id
+LIMIT 100;`
+    },
+    {
+      name: 'Database + S3 JOIN',
+      query: `-- Join database table with S3 data
+SELECT db.*, s3.*
+FROM ${pg1}.public.customers db
+JOIN read_parquet('${aws}://bucket/orders/*.parquet') s3
+ON db.id = s3.customer_id
+LIMIT 100;`
     },
     {
       name: 'Aggregate across databases',
@@ -558,13 +589,8 @@ SELECT * FROM read_parquet('/path/to/file.parquet') LIMIT 100;`
 SELECT * FROM read_csv('/path/to/file.csv', header=true) LIMIT 100;`
     },
     {
-      name: 'Query S3 Parquet',
-      query: `-- Query Parquet file from S3 (credentials require an S3 connection)
-SELECT * FROM read_parquet('s3://bucket-name/path/to/file.parquet') LIMIT 100;`
-    },
-    {
-      name: 'JOIN database + file',
-      query: `-- Join database table with Parquet file
+      name: 'JOIN database + local file',
+      query: `-- Join database table with local Parquet file
 SELECT db.*, f.*
 FROM ${pg1}.public.table_name db
 JOIN read_parquet('/path/to/file.parquet') f ON db.id = f.id

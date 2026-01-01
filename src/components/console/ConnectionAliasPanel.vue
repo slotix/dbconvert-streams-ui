@@ -75,13 +75,19 @@
         <Info class="h-4 w-4 text-blue-500 dark:text-blue-400 shrink-0 mt-0.5" />
         <div class="text-blue-700 dark:text-blue-300">
           <p>
-            Select database connections to query. Use aliases in your SQL:
+            <strong>Databases:</strong> Use aliases in your SQL:
             <code class="px-1 py-0.5 bg-blue-100 dark:bg-blue-800 rounded font-mono"
               >pg1.schema.table</code
             >
           </p>
+          <p class="mt-1">
+            <strong>S3:</strong> Use alias as URL scheme:
+            <code class="px-1 py-0.5 bg-blue-100 dark:bg-blue-800 rounded font-mono"
+              >read_parquet('aws://bucket/path/*.parquet')</code
+            >
+          </p>
           <p class="mt-1 text-blue-600 dark:text-blue-400">
-            <strong>Files:</strong> Query files directly without selecting a connection:
+            <strong>Local files:</strong> Query directly without selecting a connection:
             <code class="px-1 py-0.5 bg-blue-100 dark:bg-blue-800 rounded font-mono"
               >read_parquet('/path/file.parquet')</code
             >
@@ -89,16 +95,20 @@
         </div>
       </div>
 
-      <!-- S3/Cloud Credential Warning -->
+      <!-- Multi-S3 Info Note -->
       <div
-        v-if="hasMultipleCloudConnections"
-        class="mb-3 flex items-start space-x-2 p-2 bg-amber-50 dark:bg-amber-900/20 rounded-md text-xs"
+        v-if="hasMultipleS3Connections"
+        class="mb-3 flex items-start space-x-2 p-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-md text-xs"
       >
-        <AlertTriangle class="h-4 w-4 text-amber-500 dark:text-amber-400 shrink-0 mt-0.5" />
-        <div class="text-amber-700 dark:text-amber-300">
+        <Info class="h-4 w-4 text-emerald-500 dark:text-emerald-400 shrink-0 mt-0.5" />
+        <div class="text-emerald-700 dark:text-emerald-300">
           <p>
-            <strong>Note:</strong> Multiple S3/GCS connections selected. Only the first connection's
-            credentials will be used for cloud storage access.
+            <strong>Multi-S3 Query:</strong> Use aliases to query different providers in one query:
+            <code
+              class="px-1 py-0.5 bg-emerald-100 dark:bg-emerald-800 rounded font-mono text-[10px]"
+              >SELECT * FROM read_parquet('aws://bucket/a.parquet') JOIN
+              read_parquet('do://bucket/b.parquet')</code
+            >
           </p>
         </div>
       </div>
@@ -144,18 +154,25 @@
             <p class="text-xs text-gray-500 dark:text-gray-400 truncate">
               {{ getConnectionTypeLabelForUI(conn) }} · {{ getConnectionHost(conn) }}
             </p>
-            <!-- File connection hint -->
+            <!-- File connection hint (local files only) -->
             <p
-              v-if="isFileConnection(conn.id) && isSelected(conn.id)"
+              v-if="isLocalFileConnection(conn.id) && isSelected(conn.id)"
               class="text-xs text-emerald-600 dark:text-emerald-400 mt-0.5"
             >
               Use read_parquet() or read_csv_auto() with file paths
             </p>
+            <!-- S3 connection hint -->
+            <p
+              v-if="isS3Connection(conn.id) && isSelected(conn.id)"
+              class="text-xs text-amber-600 dark:text-amber-400 mt-0.5"
+            >
+              Use {{ getAlias(conn.id) }}://bucket/path in SQL queries
+            </p>
           </div>
 
-          <!-- Alias Input (shown when selected) - only for database connections -->
+          <!-- Alias Input (shown when selected) - for database and S3 connections -->
           <div
-            v-if="isSelected(conn.id) && !isFileConnection(conn.id)"
+            v-if="isSelected(conn.id) && showAliasForConnection(conn)"
             class="flex items-center space-x-2 shrink-0"
           >
             <span class="text-xs text-gray-500 dark:text-gray-400">as</span>
@@ -204,7 +221,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { RouterLink } from 'vue-router'
-import { AlertTriangle, ChevronDown, Cloud, Database, Folder, Info, Plus } from 'lucide-vue-next'
+import { ChevronDown, Cloud, Database, Folder, Info, Plus } from 'lucide-vue-next'
 import { useConnectionsStore } from '@/stores/connections'
 import type { Connection } from '@/types/connections'
 import type { ConnectionMapping } from '@/api/federated'
@@ -212,7 +229,6 @@ import { generateTypeBasedAlias } from '@/utils/federatedUtils'
 import {
   getConnectionKindFromSpec,
   getConnectionTypeLabel,
-  isCloudStorageKind,
   isDatabaseKind,
   isFileBasedKind
 } from '@/types/specs'
@@ -280,16 +296,14 @@ const availableConnections = computed(() => {
 // For backward compatibility, expose databaseConnections as alias
 const databaseConnections = availableConnections
 
-// Check if multiple S3/GCS connections are selected (credential limitation)
-const hasMultipleCloudConnections = computed(() => {
-  const cloudConnectionIds = props.modelValue
-    .map((m) => {
-      const conn = connectionsStore.connections.find((c) => c.id === m.connectionId)
-      const kind = getConnectionKindFromSpec(conn?.spec)
-      return kind && isCloudStorageKind(kind) ? kind : null
-    })
-    .filter((type) => type !== null)
-  return cloudConnectionIds.length > 1
+// Check if multiple S3 connections are selected (show info about multi-S3 queries)
+const hasMultipleS3Connections = computed(() => {
+  const s3ConnectionCount = props.modelValue.filter((m) => {
+    const conn = connectionsStore.connections.find((c) => c.id === m.connectionId)
+    const kind = getConnectionKindFromSpec(conn?.spec)
+    return kind === 's3'
+  }).length
+  return s3ConnectionCount > 1
 })
 
 const selectedCount = computed(() => props.modelValue.length)
@@ -451,10 +465,27 @@ function getConnectionIconColor(type: string): string {
   return 'text-gray-500 dark:text-gray-400'
 }
 
-// Check if a connection is a file type (for showing file-specific UI hints)
-function isFileConnection(connectionId: string): boolean {
+// Check if a connection is specifically an S3 connection
+function isS3Connection(connectionId: string): boolean {
   const conn = connectionsStore.connections.find((c) => c.id === connectionId)
-  return conn ? isFileConnectionKind(conn) : false
+  if (!conn) return false
+  const kind = getConnectionKindFromSpec(conn.spec)
+  return kind === 's3'
+}
+
+// Check if a connection is a local file connection (not S3/GCS/Azure)
+function isLocalFileConnection(connectionId: string): boolean {
+  const conn = connectionsStore.connections.find((c) => c.id === connectionId)
+  if (!conn) return false
+  const kind = getConnectionKindFromSpec(conn.spec)
+  return kind === 'files'
+}
+
+// Determine if alias input should be shown for a connection
+// Show for: databases and S3 connections (which support alias-based routing)
+function showAliasForConnection(conn: Connection): boolean {
+  const kind = getConnectionKindFromSpec(conn.spec)
+  return isDatabaseKind(kind) || kind === 's3'
 }
 
 // Load connections if not already loaded
