@@ -18,6 +18,19 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
   const expandedFoldersByConnection = ref<Record<string, Set<string>>>({})
   const pendingMetadataRequests = new Map<string, Promise<FileMetadata | null>>()
 
+  // S3 operations can be sensitive to shared backend/session state.
+  // Serialize S3 list requests across connections to avoid cross-connection interference.
+  let s3RequestQueue: Promise<unknown> = Promise.resolve()
+
+  function enqueueS3Request<T>(work: () => Promise<T>): Promise<T> {
+    const next = s3RequestQueue.then(work, work)
+    s3RequestQueue = next.then(
+      () => undefined,
+      () => undefined
+    )
+    return next
+  }
+
   // Getters
   const getEntries = computed(() => {
     return (connectionId: string): FileSystemEntry[] => {
@@ -183,23 +196,66 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
       const isS3 = folderPath.startsWith('s3://')
 
       if (isS3) {
-        // Parse bucket and prefix from URI (e.g., s3://my-bucket/prefix or s3://)
-        const uri: string = folderPath
+        await enqueueS3Request(async () => {
+          // Parse bucket and prefix from URI (e.g., s3://my-bucket/prefix or s3://)
+          const uri: string = folderPath
 
-        // Check if URI is just "s3://" (no bucket specified - browse all buckets)
-        if (uri === 's3://') {
-          // List all buckets
-          const response = await listS3Buckets(connectionId)
+          // Check if URI is just "s3://" (no bucket specified - browse all buckets)
+          if (uri === 's3://') {
+            // List all buckets
+            const response = await listS3Buckets(connectionId)
 
-          // Convert buckets to FileSystemEntry format
-          const entries: FileSystemEntry[] = response.buckets.map((bucketName) => ({
-            name: bucketName,
-            path: `s3://${bucketName}`,
-            isDirectory: true,
-            type: 'dir' as const,
-            isBucket: true,
-            size: 0
-          }))
+            // Convert buckets to FileSystemEntry format
+            const entries: FileSystemEntry[] = response.buckets.map((bucketName) => ({
+              name: bucketName,
+              path: `s3://${bucketName}`,
+              isDirectory: true,
+              type: 'dir' as const,
+              isBucket: true,
+              size: 0
+            }))
+
+            entriesByConnection.value = {
+              ...entriesByConnection.value,
+              [connectionId]: entries
+            }
+            directoryPathsByConnection.value = {
+              ...directoryPathsByConnection.value,
+              [connectionId]: uri
+            }
+            errorsByConnection.value = {
+              ...errorsByConnection.value,
+              [connectionId]: ''
+            }
+            return
+          }
+
+          // Parse bucket and prefix from URI
+          const parsed = parseS3Uri(uri)
+          if (!parsed) {
+            throw new Error('Invalid S3 URI format. Expected s3://bucket-name/optional-prefix')
+          }
+
+          const bucket = parsed.bucket
+          const prefix = parsed.prefix
+          const requestPrefix = buildS3RequestPrefix(prefix)
+
+          // List S3 objects recursively, then group into a tree.
+          // This is required to detect "table folders" (folders containing uniform data files)
+          // so the Explorer can open a consolidated DuckDB view for a folder.
+          const response = await listS3Objects({
+            bucket,
+            prefix: requestPrefix,
+            maxKeys: 1000,
+            connectionId,
+            recursive: true
+          })
+
+          const entries = groupS3ObjectsIntoTree(
+            response.objects || [],
+            bucket,
+            requestPrefix || ''
+          )
 
           entriesByConnection.value = {
             ...entriesByConnection.value,
@@ -213,44 +269,7 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
             ...errorsByConnection.value,
             [connectionId]: ''
           }
-          return
-        }
-
-        // Parse bucket and prefix from URI
-        const parsed = parseS3Uri(uri)
-        if (!parsed) {
-          throw new Error('Invalid S3 URI format. Expected s3://bucket-name/optional-prefix')
-        }
-
-        const bucket = parsed.bucket
-        const prefix = parsed.prefix
-        const requestPrefix = buildS3RequestPrefix(prefix)
-
-        // List S3 objects recursively, then group into a tree.
-        // This is required to detect "table folders" (folders containing uniform data files)
-        // so the Explorer can open a consolidated DuckDB view for a folder.
-        const response = await listS3Objects({
-          bucket,
-          prefix: requestPrefix,
-          maxKeys: 1000,
-          connectionId,
-          recursive: true
         })
-
-        const entries = groupS3ObjectsIntoTree(response.objects || [], bucket, requestPrefix || '')
-
-        entriesByConnection.value = {
-          ...entriesByConnection.value,
-          [connectionId]: entries
-        }
-        directoryPathsByConnection.value = {
-          ...directoryPathsByConnection.value,
-          [connectionId]: uri
-        }
-        errorsByConnection.value = {
-          ...errorsByConnection.value,
-          [connectionId]: ''
-        }
       } else {
         // Local filesystem - use existing logic
         const kind = getConnectionKindFromSpec(connection.spec)
@@ -467,37 +486,39 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
       const isS3 = folderPath.startsWith('s3://')
 
       if (isS3) {
-        // For S3, extract bucket and prefix from folder path
-        const parsed = parseS3Uri(folderPath)
-        if (!parsed) return
+        await enqueueS3Request(async () => {
+          // For S3, extract bucket and prefix from folder path
+          const parsed = parseS3Uri(folderPath)
+          if (!parsed) return
 
-        const bucket = parsed.bucket
-        const prefix = parsed.prefix
-        const requestPrefix = prefix ? buildS3RequestPrefix(prefix) : undefined
+          const bucket = parsed.bucket
+          const prefix = parsed.prefix
+          const requestPrefix = prefix ? buildS3RequestPrefix(prefix) : undefined
 
-        // Recursive list + grouping is required to mark table folders (entry.isTable)
-        // so clicking a folder can open a consolidated DuckDB view.
-        const response = await listS3Objects({
-          bucket,
-          prefix: requestPrefix,
-          maxKeys: 1000,
-          connectionId,
-          recursive: true
+          // Recursive list + grouping is required to mark table folders (entry.isTable)
+          // so clicking a folder can open a consolidated DuckDB view.
+          const response = await listS3Objects({
+            bucket,
+            prefix: requestPrefix,
+            maxKeys: 1000,
+            connectionId,
+            recursive: true
+          })
+
+          const folderContents = groupS3ObjectsIntoTree(
+            response.objects || [],
+            bucket,
+            requestPrefix || ''
+          )
+
+          // Update folder children immutably (single source of truth)
+          const currentEntries = entriesByConnection.value[connectionId] || []
+          const updatedEntries = updateFolderChildren(currentEntries, folderPath, folderContents)
+          entriesByConnection.value = {
+            ...entriesByConnection.value,
+            [connectionId]: updatedEntries
+          }
         })
-
-        const folderContents = groupS3ObjectsIntoTree(
-          response.objects || [],
-          bucket,
-          requestPrefix || ''
-        )
-
-        // Update folder children immutably (single source of truth)
-        const currentEntries = entriesByConnection.value[connectionId] || []
-        const updatedEntries = updateFolderChildren(currentEntries, folderPath, folderContents)
-        entriesByConnection.value = {
-          ...entriesByConnection.value,
-          [connectionId]: updatedEntries
-        }
       } else {
         // Local filesystem
         if (kind !== 'files') {

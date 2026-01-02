@@ -35,7 +35,7 @@
 import { computed, watch } from 'vue'
 import DualTreeSelector from '../DualTreeSelector.vue'
 import StreamNameField from '../StreamNameField.vue'
-import type { ConnectionMapping } from '@/api/federated'
+import type { StreamConnectionMapping } from '@/types/streamConfig'
 
 interface Props {
   sourceConnectionId?: string | null
@@ -45,7 +45,7 @@ interface Props {
   sourceSchema?: string | null
   targetSchema?: string | null
   targetPath?: string | null
-  sourceConnections?: ConnectionMapping[]
+  sourceConnections?: StreamConnectionMapping[]
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -84,7 +84,7 @@ const emit = defineEmits<{
   'clear-all': []
   'add-connection': [paneType: 'source' | 'target']
   'update:can-proceed': [value: boolean]
-  'update:source-connections': [connections: ConnectionMapping[]]
+  'update:source-connections': [connections: StreamConnectionMapping[]]
 }>()
 
 const primarySourceId = computed(
@@ -111,7 +111,7 @@ function handleTargetUpdate(
   updateCanProceed()
 }
 
-function handleSourceConnectionsUpdate(connections: ConnectionMapping[]) {
+function handleSourceConnectionsUpdate(connections: StreamConnectionMapping[]) {
   emit('update:source-connections', connections)
   updateCanProceed()
 }

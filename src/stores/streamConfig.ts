@@ -168,8 +168,25 @@ export const buildStreamPayload = (stream: StreamConfig): Partial<StreamConfig> 
     return sorted.filter((prefix, i) => !sorted.slice(0, i).some((p) => prefix.startsWith(p)))
   }
 
+  function filesForConnection(
+    allFiles: NonNullable<StreamConfig['files']> | undefined,
+    connectionId: string,
+    bucketFallback?: string
+  ): NonNullable<StreamConfig['files']> {
+    const files = allFiles || []
+    const hasTagged = files.some((f) => !!f.connectionId)
+    if (hasTagged) {
+      return files.filter((f) => f.connectionId === connectionId)
+    }
+    // Legacy fallback (older configs): scope by bucket.
+    if (bucketFallback) {
+      return files.filter((f) => parseS3Path(f.path)?.bucket === bucketFallback)
+    }
+    return files
+  }
+
   if (isS3Source) {
-    const bucket = connections[0]?.s3?.bucket || stream.sourceDatabase || ''
+    const bucket = connections[0]?.s3?.bucket || ''
 
     // Get existing prefixes/objects or derive from selected files
     const existingS3 = connections[0]?.s3
@@ -177,10 +194,12 @@ export const buildStreamPayload = (stream: StreamConfig): Partial<StreamConfig> 
       (existingS3?.prefixes && existingS3.prefixes.length > 0) ||
       (existingS3?.objects && existingS3.objects.length > 0)
 
+    const scopedFiles = filesForConnection(stream.files, connections[0]?.connectionId || '', bucket)
+
     const s3Config: S3SourceConfig = hasExistingSelections
       ? { bucket, prefixes: existingS3?.prefixes, objects: existingS3?.objects }
-      : stream.files
-        ? { bucket, ...s3ConfigFromFiles(stream.files) }
+      : scopedFiles.length > 0
+        ? { bucket, ...s3ConfigFromFiles(scopedFiles) }
         : { bucket, prefixes: [], objects: [] }
 
     // Clean up empty arrays before sending
@@ -312,7 +331,7 @@ export const buildStreamPayload = (stream: StreamConfig): Partial<StreamConfig> 
 
     // Include S3 config if present (for S3-backed connections)
     if (conn.s3) {
-      const bucket = conn.s3.bucket || conn.database || ''
+      const bucket = conn.s3.bucket || ''
 
       // If s3 already has prefixes/objects, use them directly
       if (
@@ -321,13 +340,10 @@ export const buildStreamPayload = (stream: StreamConfig): Partial<StreamConfig> 
       ) {
         result.s3 = conn.s3
       } else if (stream.files && stream.files.length > 0) {
-        // Otherwise, build from selected files matching this bucket
-        const filesForBucket = stream.files.filter((f) => {
-          const parsed = parseS3Path(f.path)
-          return parsed?.bucket === bucket
-        })
-        if (filesForBucket.length > 0) {
-          const s3FromFiles = s3ConfigFromFiles(filesForBucket)
+        // Otherwise, build from selected files for this connection (bucket match only for legacy configs)
+        const scopedFiles = filesForConnection(stream.files, conn.connectionId, bucket)
+        if (scopedFiles.length > 0) {
+          const s3FromFiles = s3ConfigFromFiles(scopedFiles)
           result.s3 = {
             bucket,
             ...(s3FromFiles.prefixes.length > 0 ? { prefixes: s3FromFiles.prefixes } : {}),
@@ -458,8 +474,14 @@ export const useStreamsStore = defineStore('streams', {
                 const normalizedPrefix = prefix.endsWith('/') ? prefix : `${prefix}/`
                 const path = `s3://${bucket}/${normalizedPrefix}`
                 const name = prefix.split('/').filter(Boolean).pop() || prefix
-                if (!files.find((f) => f.path === path)) {
-                  files.push({ name, path, type: 'dir', selected: true })
+                if (!files.find((f) => f.path === path && f.connectionId === conn.connectionId)) {
+                  files.push({
+                    name,
+                    connectionId: conn.connectionId,
+                    path,
+                    type: 'dir',
+                    selected: true
+                  })
                 }
               }
             }
@@ -468,8 +490,14 @@ export const useStreamsStore = defineStore('streams', {
               for (const obj of conn.s3.objects) {
                 const path = `s3://${bucket}/${obj}`
                 const name = obj.split('/').pop() || obj
-                if (!files.find((f) => f.path === path)) {
-                  files.push({ name, path, type: 'file', selected: true })
+                if (!files.find((f) => f.path === path && f.connectionId === conn.connectionId)) {
+                  files.push({
+                    name,
+                    connectionId: conn.connectionId,
+                    path,
+                    type: 'file',
+                    selected: true
+                  })
                 }
               }
             }

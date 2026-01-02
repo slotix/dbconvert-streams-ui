@@ -149,7 +149,9 @@ import { useStreamWizard } from '@/composables/useStreamWizard'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
 import { useCommonStore } from '@/stores/common'
-import type { ConnectionMapping } from '@/api/federated'
+import type { StreamConnectionMapping } from '@/types/streamConfig'
+import { getConnectionKindFromSpec } from '@/types/specs'
+import { DEFAULT_ALIAS } from '@/utils/federatedUtils'
 import WizardLayout from '@/components/connection/wizard/WizardLayout.vue'
 import SourceTargetSelectionStep from '@/components/stream/wizard/steps/SourceTargetSelectionStep.vue'
 import StructureDataStep from '@/components/stream/wizard/steps/StructureDataStep.vue'
@@ -382,24 +384,47 @@ watch(
 )
 
 function handleSourceUpdate(connectionId: string, database?: string, schema?: string) {
-  wizard.setSourceConnection(connectionId, database, schema)
+  const sourceConnection = connectionsStore.connectionByID(connectionId)
+  const sourceKind = getConnectionKindFromSpec(sourceConnection?.spec)
+
+  // S3 sources are selected by bucket (not by database).
+  if (sourceKind === 's3') {
+    if (!database) {
+      return
+    }
+    const alias =
+      wizard.sourceConnections.value.find((c) => c.connectionId === connectionId)?.alias ||
+      wizard.sourceConnections.value[0]?.alias ||
+      DEFAULT_ALIAS
+    wizard.setSourceConnections([{ alias, connectionId, s3: { bucket: database } }])
+    wizard.selection.value.sourceSchema = null
+  } else {
+    wizard.setSourceConnection(connectionId, database, schema)
+  }
+
   // Update both the wizard state and the stream config
   if (streamsStore.currentStreamConfig) {
     streamsStore.setSourceConnections(wizard.sourceConnections.value)
+    // For S3 sources, keep sourceDatabase unset; bucket lives under mapping.s3.bucket.
     streamsStore.currentStreamConfig.sourceDatabase =
-      wizard.selection.value.sourceDatabase || database || undefined
-    if (schema) {
+      wizard.selection.value.sourceDatabase ||
+      (sourceKind === 's3' ? undefined : database) ||
+      undefined
+    if (sourceKind !== 's3' && schema) {
       streamsStore.currentStreamConfig.sourceSchema = schema
     }
   }
 }
 
-function handleSourceConnectionsUpdate(connections: ConnectionMapping[]) {
+function handleSourceConnectionsUpdate(connections: StreamConnectionMapping[]) {
   wizard.setSourceConnections(connections)
   if (streamsStore.currentStreamConfig) {
     streamsStore.setSourceConnections(connections)
     const primary = connections[0]
-    streamsStore.currentStreamConfig.sourceDatabase = primary?.database || undefined
+    const primaryConn = primary ? connectionsStore.connectionByID(primary.connectionId) : undefined
+    const primaryKind = getConnectionKindFromSpec(primaryConn?.spec)
+    streamsStore.currentStreamConfig.sourceDatabase =
+      primaryKind === 's3' ? undefined : primary?.database || undefined
   }
 }
 

@@ -284,6 +284,7 @@ import {
   isDatabaseKind,
   isFileBasedKind
 } from '@/types/specs'
+import type { ConnectionKind } from '@/types/specs'
 import type { Connection } from '@/types/connections'
 import type { StreamConnectionMapping } from '@/types/streamConfig'
 
@@ -316,7 +317,7 @@ const emit = defineEmits<{
   'select-file': [payload: { connectionId: string; path: string }]
   'select-bucket': [payload: { connectionId: string; bucket: string }]
   'toggle-source-connection': [
-    payload: { connectionId: string; database?: string; checked: boolean }
+    payload: { connectionId: string; database?: string; checked: boolean; kind: ConnectionKind }
   ]
 }>()
 
@@ -423,12 +424,11 @@ async function loadS3Buckets(connection: Connection) {
 
 function handleS3BucketSelect(connection: Connection, bucket: string) {
   addToSet(expandedConnections, connection.id)
-  emit('select-connection', { connectionId: connection.id, database: bucket })
   emit('select-bucket', { connectionId: connection.id, bucket })
 }
 
 function handleS3BucketCheckboxChange(connectionId: string, bucket: string, checked: boolean) {
-  emit('toggle-source-connection', { connectionId, database: bucket, checked })
+  emit('toggle-source-connection', { connectionId, database: bucket, checked, kind: 's3' })
 }
 
 function handleS3BucketRowClick(connection: Connection, bucket: string) {
@@ -463,7 +463,7 @@ function isFileConnectionSelected(connectionId: string): boolean {
 function handleFilePathCheckboxChange(connectionId: string, checked: boolean) {
   const connection = getConnectionById(connectionId)
   const basePath = connection?.spec?.files?.basePath || ''
-  emit('toggle-source-connection', { connectionId, database: basePath, checked })
+  emit('toggle-source-connection', { connectionId, database: basePath, checked, kind: 'files' })
 }
 
 function handleFilePathRowClick(connection: Connection) {
@@ -500,7 +500,16 @@ function isDatabaseSelected(connectionId: string, database: string): boolean {
 }
 
 function handleDatabaseCheckboxChange(connectionId: string, database: string, checked: boolean) {
-  emit('toggle-source-connection', { connectionId, database, checked })
+  const connection = getConnectionById(connectionId)
+  const kind = getConnectionKindFromSpec(connection?.spec)
+  if (!kind) {
+    return
+  }
+  if (!isDatabaseKind(kind)) {
+    return
+  }
+
+  emit('toggle-source-connection', { connectionId, database, checked, kind })
   if (checked) {
     void ensureMetadata(connectionId, database)
   }
@@ -771,7 +780,7 @@ function handleDatabaseRowClick(connection: Connection, database: string) {
 }
 
 function getLogoSrc(connection: Connection): string {
-  const typeLabel = getConnectionTypeLabel(connection.spec, connection.type)
+  const typeLabel = getConnectionTypeLabel(connection.spec)
   if (!typeLabel) return ''
   const normalizedType = normalizeConnectionType(typeLabel)
   const dbType = connectionsStore.dbTypes.find(
@@ -781,7 +790,7 @@ function getLogoSrc(connection: Connection): string {
 }
 
 function getConnectionTypeDisplay(connection: Connection): string {
-  return getConnectionTypeLabel(connection.spec, connection.type) || ''
+  return getConnectionTypeLabel(connection.spec) || ''
 }
 
 watch(

@@ -151,10 +151,11 @@
               <template v-if="localSourceConnections.length === 1">
                 {{ getConnectionName(localSourceConnections[0].connectionId) }}
                 <span
-                  v-if="localSourceConnections[0].database"
+                  v-if="getSelectionValue(localSourceConnections[0])"
                   class="text-blue-600 dark:text-blue-300"
                 >
-                  / {{ localSourceConnections[0].database }}
+                  /
+                  {{ getSelectionValue(localSourceConnections[0]) }}
                 </span>
               </template>
               <template v-else> {{ localSourceConnections.length }} sources </template>
@@ -224,7 +225,7 @@
         <div class="flex flex-wrap gap-2">
           <div
             v-for="conn in localSourceConnections"
-            :key="`${conn.connectionId}-${conn.database}`"
+            :key="`${conn.connectionId}-${getSelectionValue(conn)}`"
             class="flex items-center gap-2 bg-white dark:bg-gray-800 border border-amber-300 dark:border-amber-600 rounded-md px-2 py-1.5"
           >
             <input
@@ -234,22 +235,22 @@
               @input="
                 updateConnectionAlias(
                   conn.connectionId,
-                  conn.database,
+                  getSelectionValue(conn),
                   ($event.target as HTMLInputElement).value
                 )
               "
             />
             <span class="text-xs text-gray-600 dark:text-gray-300">
               {{ getConnectionName(conn.connectionId) }}
-              <span v-if="conn.database" class="text-gray-500 dark:text-gray-400">
-                / {{ conn.database }}
+              <span v-if="getSelectionValue(conn)" class="text-gray-500 dark:text-gray-400">
+                / {{ getSelectionValue(conn) }}
               </span>
             </span>
             <button
               type="button"
               class="p-0.5 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
               title="Remove source"
-              @click="removeSourceConnection(conn.connectionId, conn.database)"
+              @click="removeSourceConnection(conn.connectionId, getSelectionValue(conn))"
             >
               <X class="w-3.5 h-3.5" />
             </button>
@@ -294,10 +295,12 @@ import StreamConnectionFilter from './StreamConnectionFilter.vue'
 import type { StreamConnectionMapping } from '@/types/streamConfig'
 import type { Connection } from '@/types/connections'
 import { generateTypeBasedAlias } from '@/utils/federatedUtils'
+import { getSourceSelectionValue, toggleSourceMapping } from './sourceMappings'
 import {
   getConnectionKindFromSpec,
   getConnectionTypeLabel,
   matchesConnectionTypeFilter,
+  type ConnectionKind,
   type ConnectionSpec
 } from '@/types/specs'
 
@@ -351,10 +354,26 @@ const localSourceConnections = ref<StreamConnectionMapping[]>([...props.sourceCo
 watch(
   () => props.sourceConnections,
   (val) => {
-    localSourceConnections.value = [...val]
+    localSourceConnections.value = [...val].filter((m) => {
+      const kind = getConnectionKind(m.connectionId)
+      // S3 selections must always have a bucket. Drop invalid/bucketless entries.
+      if (kind === 's3' && !m.s3?.bucket) {
+        return false
+      }
+      return true
+    })
   },
   { deep: true, immediate: true }
 )
+
+function getConnectionKind(connectionId: string) {
+  const c = connectionsStore.connectionByID(connectionId)
+  return getConnectionKindFromSpec(c?.spec)
+}
+
+function getSelectionValue(conn: StreamConnectionMapping): string | undefined {
+  return getSourceSelectionValue(conn, getConnectionKind(conn.connectionId))
+}
 
 const primarySourceId = computed(
   () => localSourceConnections.value[0]?.connectionId || props.sourceConnectionId
@@ -368,7 +387,7 @@ const showAliasUI = computed(() => localSourceConnections.value.length > 1)
 // Generate type-based alias for a connection (e.g., pg1, my1, s31)
 function generateAlias(connectionId: string): string {
   const connection = connectionsStore.connectionByID(connectionId)
-  const connectionType = getConnectionTypeLabel(connection?.spec, connection?.type) || undefined
+  const connectionType = getConnectionTypeLabel(connection?.spec) || undefined
   const existingAliases = localSourceConnections.value.map((c) => c.alias || '')
   return generateTypeBasedAlias(connectionType, existingAliases)
 }
@@ -376,7 +395,7 @@ function generateAlias(connectionId: string): string {
 // Update alias for a connection
 function updateConnectionAlias(
   connectionId: string,
-  database: string | undefined,
+  selectionValue: string | undefined,
   newAlias: string
 ) {
   // Sanitize: lowercase, alphanumeric + underscore only
@@ -385,12 +404,16 @@ function updateConnectionAlias(
 
   // Check for uniqueness (excluding the current connection)
   const isDuplicate = localSourceConnections.value.some(
-    (c) => c.alias === sanitized && !(c.connectionId === connectionId && c.database === database)
+    (c) =>
+      c.alias === sanitized &&
+      !(c.connectionId === connectionId && getSelectionValue(c) === selectionValue)
   )
   if (isDuplicate) return
 
   localSourceConnections.value = localSourceConnections.value.map((c) =>
-    c.connectionId === connectionId && c.database === database ? { ...c, alias: sanitized } : c
+    c.connectionId === connectionId && getSelectionValue(c) === selectionValue
+      ? { ...c, alias: sanitized }
+      : c
   )
   emit('update:source-connections', localSourceConnections.value)
 }
@@ -398,7 +421,7 @@ function updateConnectionAlias(
 // Remove a single source connection
 function removeSourceConnection(connectionId: string, database: string | undefined) {
   localSourceConnections.value = localSourceConnections.value.filter(
-    (c) => !(c.connectionId === connectionId && c.database === database)
+    (c) => !(c.connectionId === connectionId && getSelectionValue(c) === database)
   )
   emit('update:source-connections', localSourceConnections.value)
   syncPrimarySelection()
@@ -408,7 +431,7 @@ function syncPrimarySelection() {
   const primary = localSourceConnections.value[0]
   // Only emit single-source updates; multi-source state is handled via update:source-connections
   if (!primary || localSourceConnections.value.length !== 1) return
-  emit('update:source-connection', primary.connectionId, primary.database, undefined)
+  emit('update:source-connection', primary.connectionId, getSelectionValue(primary), undefined)
 }
 
 // Handle checkbox toggle for multi-source selection
@@ -416,35 +439,17 @@ function handleToggleSourceConnection(payload: {
   connectionId: string
   database?: string
   checked: boolean
+  kind: ConnectionKind
 }) {
-  const connection = connectionsStore.connectionByID(payload.connectionId)
-  if (!connection) return
-
-  // Check if this is an S3 connection
-  const isS3Connection = getConnectionKindFromSpec(connection.spec) === 's3'
-
-  if (payload.checked) {
-    // Add to source connections - check both connectionId AND database
-    const existing = localSourceConnections.value.find(
-      (c) => c.connectionId === payload.connectionId && c.database === payload.database
-    )
-    if (!existing) {
-      const alias = generateAlias(payload.connectionId)
-      const mapping: StreamConnectionMapping = {
-        connectionId: payload.connectionId,
-        alias: alias,
-        database: payload.database,
-        // For S3 connections, set the s3 config with bucket (database holds the bucket name)
-        ...(isS3Connection && payload.database ? { s3: { bucket: payload.database } } : {})
-      }
-      localSourceConnections.value = [...localSourceConnections.value, mapping]
-    }
-  } else {
-    // Remove from source connections - match both connectionId AND database
-    localSourceConnections.value = localSourceConnections.value.filter(
-      (c) => !(c.connectionId === payload.connectionId && c.database === payload.database)
-    )
-  }
+  const alias = generateAlias(payload.connectionId)
+  localSourceConnections.value = toggleSourceMapping({
+    current: localSourceConnections.value,
+    connectionId: payload.connectionId,
+    selectionValue: payload.database,
+    checked: payload.checked,
+    alias,
+    kind: payload.kind
+  })
 
   emit('update:source-connections', localSourceConnections.value)
   syncPrimarySelection()
@@ -454,7 +459,7 @@ const connections = computed(() => connectionsStore.connections)
 
 // Helper function to match type filter
 function matchesTypeFilter(conn: Connection, typeFilter: string | null): boolean {
-  return matchesConnectionTypeFilter(conn.spec, conn.type, typeFilter)
+  return matchesConnectionTypeFilter(conn.spec, undefined, typeFilter)
 }
 
 // Helper function to normalize text for case-insensitive search
@@ -479,8 +484,7 @@ function connectionMatchesDeepSearch(
 
   const spec = (connection.spec ?? undefined) as ConnectionSpecLike | undefined
   const host = spec?.database?.host || spec?.snowflake?.account || ''
-  const typeLabel =
-    getConnectionTypeLabel(spec as ConnectionSpec | undefined, connection.type) || ''
+  const typeLabel = getConnectionTypeLabel(spec as ConnectionSpec | undefined) || ''
   const connectionLabel = `${connection.name || ''} ${host} ${typeLabel}`
   if (normalize(connectionLabel).includes(normalizedQuery)) return true
 
@@ -572,6 +576,11 @@ function handleSourceConnectionSelect(payload: {
   database?: string
   schema?: string
 }) {
+  // S3 connections are selected by bucket only (via select-bucket).
+  // Selecting an S3 connection "root" without a bucket is invalid.
+  if (getConnectionKind(payload.connectionId) === 's3') {
+    return
+  }
   const alias =
     localSourceConnections.value.find((c) => c.connectionId === payload.connectionId)?.alias ||
     generateAlias(payload.connectionId)
@@ -610,6 +619,10 @@ function handleTargetConnectionSelect(payload: {
   database?: string
   schema?: string
 }) {
+  // S3 targets must be selected by bucket only (via select-bucket).
+  if (getConnectionKind(payload.connectionId) === 's3') {
+    return
+  }
   emit('update:target-connection', payload.connectionId, payload.database, payload.schema)
 }
 
@@ -638,7 +651,7 @@ function handleSourceFileSelect(payload: { connectionId: string; path: string })
 }
 
 function handleSourceBucketSelect(payload: { connectionId: string; bucket: string }) {
-  // For S3 sources, set both database (for display) and s3.bucket (for backend)
+  // For S3 sources, only buckets are valid selections.
   const alias =
     localSourceConnections.value.find((c) => c.connectionId === payload.connectionId)?.alias ||
     generateAlias(payload.connectionId)
@@ -646,8 +659,7 @@ function handleSourceBucketSelect(payload: { connectionId: string; bucket: strin
     {
       alias,
       connectionId: payload.connectionId,
-      database: payload.bucket, // For display purposes
-      s3: { bucket: payload.bucket } // Required by backend for S3 sources
+      s3: { bucket: payload.bucket }
     }
   ]
   emit('update:source-connections', localSourceConnections.value)

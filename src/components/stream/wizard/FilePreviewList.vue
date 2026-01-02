@@ -235,13 +235,27 @@ const paginatedRows = computed(() => {
   return filteredRows.value.slice(start, start + itemsPerPage)
 })
 
-// Filter files by current bucket for multi-source mode
+function fileEntryKey(e: Pick<FileEntry, 'connectionId' | 'path'>): string {
+  return `${e.connectionId || ''}::${e.path}`
+}
+
+// Filter files by connectionId when available (required for same-bucket multi-source)
 const configFiles = computed<FileEntry[]>(() => {
   const allFiles = streamsStore.currentStreamConfig?.files || []
-  if (!s3Bucket.value) return allFiles
-  // Filter to only files in this bucket
-  const bucketPrefix = `s3://${s3Bucket.value}/`
-  return allFiles.filter((f) => f.path.startsWith(bucketPrefix))
+
+  // If any entry is tagged with connectionId, use that as the source of truth.
+  const hasTaggedEntries = allFiles.some((f) => !!f.connectionId)
+  if (props.connectionId && hasTaggedEntries) {
+    return allFiles.filter((f) => f.connectionId === props.connectionId)
+  }
+
+  // Legacy fallback (older configs): filter by bucket.
+  if (s3Bucket.value) {
+    const bucketPrefix = `s3://${s3Bucket.value}/`
+    return allFiles.filter((f) => f.path.startsWith(bucketPrefix))
+  }
+
+  return allFiles
 })
 
 function isSelectable(entry: FileSystemEntry): boolean {
@@ -326,9 +340,14 @@ function hasExplicitlySelectedDescendants(entry: FileSystemEntry): boolean {
 function upsertConfigFile(entry: FileSystemEntry, selected: boolean) {
   if (!streamsStore.currentStreamConfig) return
   const files = streamsStore.currentStreamConfig.files || []
-  const idx = files.findIndex((f) => f.path === entry.path)
+  const idx = files.findIndex(
+    (f) =>
+      f.path === entry.path &&
+      (props.connectionId ? f.connectionId === props.connectionId : !f.connectionId)
+  )
   const next: FileEntry = {
     name: entry.name,
+    connectionId: props.connectionId || undefined,
     path: entry.path,
     type: entry.type,
     size: entry.size,
@@ -378,7 +397,12 @@ function removeDescendantSelections(entry: FileSystemEntry) {
   collectDescendantPaths(entry)
 
   // Remove or deselect descendants
-  streamsStore.currentStreamConfig.files = files.filter((f) => !pathsToRemove.has(f.path))
+  streamsStore.currentStreamConfig.files = files.filter((f) => {
+    if (props.connectionId && f.connectionId !== props.connectionId) {
+      return true
+    }
+    return !pathsToRemove.has(f.path)
+  })
 }
 
 function syncConfigFilesWithLoadedTree(entries: FileSystemEntry[]) {
@@ -387,15 +411,17 @@ function syncConfigFilesWithLoadedTree(entries: FileSystemEntry[]) {
   // Only sync metadata for existing entries, don't auto-select anything
   const existing = new Map<string, FileEntry>()
   for (const f of streamsStore.currentStreamConfig.files || []) {
-    existing.set(f.path, f)
+    existing.set(fileEntryKey(f), f)
   }
 
   const all = flattenAllLoaded(entries, 0).map((r) => r.entry)
   for (const e of all) {
-    const prev = existing.get(e.path)
+    const prev = existing.get(
+      fileEntryKey({ connectionId: props.connectionId || undefined, path: e.path })
+    )
     if (prev) {
       // Update metadata but keep selection state
-      existing.set(e.path, {
+      existing.set(fileEntryKey(prev), {
         ...prev,
         name: e.name,
         size: e.size,

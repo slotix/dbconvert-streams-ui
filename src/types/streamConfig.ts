@@ -147,6 +147,11 @@ export interface StreamConfig {
 
 export interface FileEntry {
   name: string
+  /**
+   * Source connection this file entry belongs to.
+   * Needed to disambiguate selections when multiple file/S3 sources share the same path/bucket.
+   */
+  connectionId?: string
   path: string
   size?: number
   type?: 'file' | 'dir'
