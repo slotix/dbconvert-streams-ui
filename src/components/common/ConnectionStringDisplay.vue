@@ -1,19 +1,27 @@
 <template>
-  <div class="relative font-mono text-sm">
-    <div class="text-gray-600 break-all" :class="{ 'pr-8': hasPassword }">
-      {{ displayString }}
-    </div>
+  <div class="inline-flex items-center gap-1 font-mono text-sm">
+    <span class="text-gray-600 dark:text-gray-400 break-all">{{ displayString }}</span>
     <button
       v-if="hasPassword"
-      class="absolute right-0 top-1/2 -translate-y-1/2 p-1 text-gray-500 hover:text-gray-700"
-      :title="showPassword ? 'Hide password' : 'Show password'"
+      v-tooltip="showPassword ? 'Hide password' : 'Show password'"
+      class="shrink-0 p-0.5 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
       @click.stop="togglePassword"
     >
-      <Eye v-if="!showPassword" class="h-4 w-4" />
-      <EyeOff v-else class="h-4 w-4" />
+      <Eye v-if="!showPassword" class="h-3.5 w-3.5" />
+      <EyeOff v-else class="h-3.5 w-3.5" />
     </button>
   </div>
 </template>
+
+<script lang="ts">
+import { vTooltip } from '@/directives/tooltip'
+
+export default {
+  directives: {
+    tooltip: vTooltip
+  }
+}
+</script>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
