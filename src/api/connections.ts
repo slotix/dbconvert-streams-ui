@@ -541,6 +541,12 @@ const executeQuery = async (
 ): Promise<{
   columns: string[]
   rows: unknown[][]
+  results?: Array<{
+    columns?: string[]
+    rows?: unknown[][]
+    commandTag?: string
+    rowsAffected?: number
+  }>
   affected_rows?: number
   affectedObject?: string
 }> => {
@@ -555,6 +561,12 @@ const executeQuery = async (
     const response: AxiosResponse<{
       columns: string[]
       rows: unknown[][]
+      results?: Array<{
+        columns?: string[]
+        rows?: unknown[][]
+        commandTag?: string
+        rowsAffected?: number
+      }>
       affected_rows?: number
       affectedObject?: string
     }> = await apiClient.post(

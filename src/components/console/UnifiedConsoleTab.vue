@@ -10,6 +10,12 @@
         <span class="text-sm font-medium text-gray-900 dark:text-gray-100">
           {{ consoleTitle }}
         </span>
+        <span
+          v-if="hasExecutedQuery && resultSetCount > 0"
+          class="text-xs px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300"
+        >
+          {{ resultSetCount }} result{{ resultSetCount === 1 ? '' : 's' }}
+        </span>
         <span v-if="mode === 'file'" class="text-xs text-gray-500 dark:text-gray-400">
           {{ scopeLabel }}
         </span>
@@ -148,6 +154,7 @@
         <SqlResultsPane
           :columns="resultColumns"
           :rows="queryResults"
+          :result-sets="resultSets"
           :error="queryError"
           :has-executed="hasExecutedQuery"
           :current-page="currentPage"
@@ -409,6 +416,7 @@ const {
   queryError,
   queryResults,
   resultColumns,
+  resultSets,
   lastQueryStats,
   currentPage,
   pageSize,
@@ -483,6 +491,15 @@ const scopeLabel = computed(() => {
     return `${connName} → ${props.database}`
   }
   return connName
+})
+
+const resultSetCount = computed(() => {
+  if (!hasExecutedQuery.value) return 0
+  if (Array.isArray(resultSets.value) && resultSets.value.length > 0) {
+    return resultSets.value.length
+  }
+  // Backward-compatible fallback (should rarely be needed)
+  return resultColumns.value.length > 0 || queryResults.value.length > 0 ? 1 : 0
 })
 
 // Query templates based on mode and dialect
@@ -935,7 +952,17 @@ async function executeQuery() {
   const startTime = Date.now()
 
   try {
-    let result: { columns: string[]; rows: unknown[][]; affectedObject?: string }
+    let result: {
+      columns: string[]
+      rows: unknown[][]
+      results?: Array<{
+        columns?: string[]
+        rows?: unknown[][]
+        commandTag?: string
+        rowsAffected?: number
+      }>
+      affectedObject?: string
+    }
 
     if (props.mode === 'file') {
       // File mode - use DuckDB file query API with connection ID for S3 credentials
@@ -946,26 +973,55 @@ async function executeQuery() {
       result = await connections.executeQuery(props.connectionId, query, db)
     }
 
-    let columns: string[] = []
-    let rows: Record<string, unknown>[] = []
+    const normalizedSets: Array<{
+      columns: string[]
+      rows: Record<string, unknown>[]
+      commandTag?: string
+      rowsAffected?: number
+    }> = []
 
-    if (result.columns && result.rows) {
-      columns = result.columns
-      rows = result.rows.map((row) => {
+    if (Array.isArray(result.results) && result.results.length > 0) {
+      for (const set of result.results) {
+        const cols = set.columns || []
+        const rows = (set.rows || []).map((row) => {
+          const obj: Record<string, unknown> = {}
+          cols.forEach((col, idx) => {
+            obj[col] = row[idx]
+          })
+          return obj
+        })
+        normalizedSets.push({
+          columns: cols,
+          rows,
+          commandTag: set.commandTag,
+          rowsAffected: set.rowsAffected
+        })
+      }
+    } else {
+      const cols = result.columns || []
+      const rows = (result.rows || []).map((row) => {
         const obj: Record<string, unknown> = {}
-        result.columns.forEach((col, idx) => {
+        cols.forEach((col, idx) => {
           obj[col] = row[idx]
         })
         return obj
       })
+      normalizedSets.push({ columns: cols, rows })
     }
+
+    let primary = normalizedSets.find((s) => s.columns.length > 0)
+    if (!primary) primary = normalizedSets[0]
+    if (!primary) primary = { columns: [], rows: [] }
+
+    const totalRowCount = normalizedSets.reduce((acc, s) => acc + s.rows.length, 0)
 
     const duration = Date.now() - startTime
 
     setExecutionResult({
-      columns,
-      rows,
-      stats: { rowCount: rows.length, duration }
+      columns: primary.columns,
+      rows: primary.rows,
+      resultSets: normalizedSets,
+      stats: { rowCount: totalRowCount, duration }
     })
 
     // Log the SQL query to SQL Logs
@@ -978,7 +1034,7 @@ async function executeQuery() {
       purpose: detectQueryPurpose(query),
       startedAt: new Date(startTime).toISOString(),
       durationMs: duration,
-      rowCount: rows.length
+      rowCount: totalRowCount
     })
 
     // Save successful query to history

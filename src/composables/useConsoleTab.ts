@@ -44,6 +44,12 @@ export interface ConsoleTabOptions {
 export interface ExecuteQueryResult {
   columns: string[]
   rows: Record<string, unknown>[]
+  resultSets?: Array<{
+    columns: string[]
+    rows: Record<string, unknown>[]
+    commandTag?: string
+    rowsAffected?: number
+  }>
   error?: string | null
   stats?: QueryStats | null
 }
@@ -113,6 +119,14 @@ export function useConsoleTab(options: ConsoleTabOptions) {
   const queryError = ref<string | null>(null)
   const queryResults = ref<Record<string, unknown>[]>([])
   const resultColumns = ref<string[]>([])
+  const resultSets = ref<
+    Array<{
+      columns: string[]
+      rows: Record<string, unknown>[]
+      commandTag?: string
+      rowsAffected?: number
+    }>
+  >([])
   const lastQueryStats = ref<QueryStats | null>(null)
   const currentPage = ref(1)
   const pageSize = ref(100)
@@ -152,6 +166,7 @@ export function useConsoleTab(options: ConsoleTabOptions) {
           queryError.value = cached.error
           queryResults.value = cached.rows
           resultColumns.value = cached.columns
+          resultSets.value = cached.resultSets || []
           lastQueryStats.value = cached.stats
           currentPage.value = 1
         } else {
@@ -159,6 +174,7 @@ export function useConsoleTab(options: ConsoleTabOptions) {
           queryError.value = null
           queryResults.value = []
           resultColumns.value = []
+          resultSets.value = []
           lastQueryStats.value = null
           currentPage.value = 1
         }
@@ -274,6 +290,7 @@ export function useConsoleTab(options: ConsoleTabOptions) {
     queryError.value = result.error || null
     queryResults.value = result.rows
     resultColumns.value = result.columns
+    resultSets.value = result.resultSets || []
     lastQueryStats.value = result.stats || null
     currentPage.value = 1
 
@@ -283,6 +300,7 @@ export function useConsoleTab(options: ConsoleTabOptions) {
       sqlConsoleStore.setResultCache(tabId, {
         columns: result.columns,
         rows: result.rows,
+        resultSets: result.resultSets || [],
         error: result.error || null,
         stats: result.stats || null
       })
@@ -294,6 +312,7 @@ export function useConsoleTab(options: ConsoleTabOptions) {
     queryError.value = error
     queryResults.value = []
     resultColumns.value = []
+    resultSets.value = []
     lastQueryStats.value = null
     currentPage.value = 1
 
@@ -303,6 +322,7 @@ export function useConsoleTab(options: ConsoleTabOptions) {
       sqlConsoleStore.setResultCache(tabId, {
         columns: [],
         rows: [],
+        resultSets: [],
         error,
         stats: null
       })
@@ -349,6 +369,7 @@ export function useConsoleTab(options: ConsoleTabOptions) {
     queryError,
     queryResults,
     resultColumns,
+    resultSets,
     lastQueryStats,
     currentPage,
     pageSize,

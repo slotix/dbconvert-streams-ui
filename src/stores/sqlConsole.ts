@@ -7,6 +7,12 @@ import { ref } from 'vue'
 export interface QueryResultCache {
   columns: string[]
   rows: Record<string, unknown>[]
+  resultSets?: Array<{
+    columns: string[]
+    rows: Record<string, unknown>[]
+    commandTag?: string
+    rowsAffected?: number
+  }>
   error: string | null
   stats: { rowCount: number; duration: number } | null
   executedAt: number
@@ -314,6 +320,12 @@ export const useSqlConsoleStore = defineStore('sqlConsole', () => {
     results: {
       columns: string[]
       rows: Record<string, unknown>[]
+      resultSets?: Array<{
+        columns: string[]
+        rows: Record<string, unknown>[]
+        commandTag?: string
+        rowsAffected?: number
+      }>
       error: string | null
       stats: { rowCount: number; duration: number } | null
     }
