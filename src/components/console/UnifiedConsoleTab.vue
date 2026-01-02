@@ -991,6 +991,7 @@ async function executeQuery() {
       }
       if (result.affectedObject === 'table' && db) {
         navigationStore.invalidateMetadata(props.connectionId, db)
+        await navigationStore.ensureMetadata(props.connectionId, db, true)
       }
     }
   } catch (error: unknown) {

@@ -89,11 +89,16 @@ async function load() {
 }
 
 async function refresh() {
-  // Refresh both overview and database list from sidebar
-  // This ensures dropped databases are removed from the sidebar
+  // Refresh overview, metadata, and database list from sidebar
+  // This ensures new/dropped tables and databases are reflected everywhere
   navigationStore.invalidateDatabases(props.connectionId)
-  await navigationStore.ensureDatabases(props.connectionId, true)
-  await load()
+  navigationStore.invalidateMetadata(props.connectionId, props.database)
+  await Promise.all([
+    navigationStore.ensureDatabases(props.connectionId, true),
+    navigationStore.ensureMetadata(props.connectionId, props.database, true)
+  ])
+  // Fetch overview with forceRefresh to bypass backend cache
+  await overviewStore.fetchOverview(props.connectionId, props.database, true)
 }
 
 onMounted(load)

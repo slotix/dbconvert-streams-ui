@@ -31,14 +31,19 @@ export const useDatabaseOverviewStore = defineStore('databaseOverview', () => {
   /**
    * Fetch database overview from API
    * Backend handles caching with 30s TTL
+   * @param forceRefresh - If true, bypasses backend cache
    */
-  async function fetchOverview(connId: string, dbName: string): Promise<DatabaseOverview> {
+  async function fetchOverview(
+    connId: string,
+    dbName: string,
+    forceRefresh = false
+  ): Promise<DatabaseOverview> {
     const key = getCacheKey(connId, dbName)
     state.loadingKeys[key] = true
     delete state.errors[key]
 
     try {
-      const data = await connections.getDatabaseOverview(connId, dbName, { refresh: false })
+      const data = await connections.getDatabaseOverview(connId, dbName, { refresh: forceRefresh })
       state.overviews[key] = data
       return data
     } catch (e) {
