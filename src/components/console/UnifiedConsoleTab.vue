@@ -188,6 +188,20 @@ export type ConsoleMode = 'database' | 'file'
 export type DatabaseScope = 'database' | 'connection'
 export type FileConnectionType = 'files' | 's3'
 
+type QueryResultSet = {
+  columns?: string[]
+  rows?: unknown[][]
+  commandTag?: string
+  rowsAffected?: number
+}
+
+type ExecuteQueryResult = {
+  columns: string[]
+  rows: unknown[][]
+  results?: QueryResultSet[]
+  affectedObject?: string
+}
+
 const props = defineProps<{
   connectionId: string
   mode: ConsoleMode
@@ -821,6 +835,10 @@ const schemaContext = computed<SchemaContext>(() => {
 })
 
 async function loadTableSuggestions() {
+  await loadTableSuggestionsWithRefresh(false)
+}
+
+async function loadTableSuggestionsWithRefresh(forceRefresh: boolean) {
   if (props.mode !== 'database') return
   if (useFederatedEngine.value) return
 
@@ -832,7 +850,7 @@ async function loadTableSuggestions() {
   }
 
   try {
-    const metadata = await connections.getMetadata(props.connectionId, db)
+    const metadata = await connections.getMetadata(props.connectionId, db, forceRefresh)
     tablesList.value = Object.keys(metadata.tables).map((name) => ({ name }))
 
     const colMap: Record<string, Array<{ name: string; type: string; nullable: boolean }>> = {}
@@ -952,17 +970,7 @@ async function executeQuery() {
   const startTime = Date.now()
 
   try {
-    let result: {
-      columns: string[]
-      rows: unknown[][]
-      results?: Array<{
-        columns?: string[]
-        rows?: unknown[][]
-        commandTag?: string
-        rowsAffected?: number
-      }>
-      affectedObject?: string
-    }
+    let result: ExecuteQueryResult
 
     if (props.mode === 'file') {
       // File mode - use DuckDB file query API with connection ID for S3 credentials
@@ -1040,7 +1048,7 @@ async function executeQuery() {
     // Save successful query to history
     saveToHistory(query)
 
-    // Database mode: refresh sidebar and overview if DDL query succeeded
+    // Database mode: refresh sidebar/overview if backend reports a schema change.
     if (props.mode === 'database' && result.affectedObject) {
       const db = props.database?.trim()
       if (result.affectedObject === 'database' || result.affectedObject === 'schema') {
@@ -1052,6 +1060,8 @@ async function executeQuery() {
         // Clear overview cache so it refetches with fresh table stats
         overviewStore.clearOverview(props.connectionId, db)
         await navigationStore.ensureMetadata(props.connectionId, db, true)
+        // Refresh autocomplete suggestions with forced metadata refresh
+        await loadTableSuggestionsWithRefresh(true)
         // Refresh overview in background (don't await - let it update reactively)
         overviewStore.fetchOverview(props.connectionId, db, true)
       }
