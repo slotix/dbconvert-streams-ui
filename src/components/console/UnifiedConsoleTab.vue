@@ -166,6 +166,7 @@ import type { SchemaContext } from '@/composables/useMonacoSqlProviders'
 import type { Connection } from '@/types/connections'
 import { useConnectionsStore } from '@/stores/connections'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
+import { useDatabaseOverviewStore } from '@/stores/databaseOverview'
 import { useLogsStore } from '@/stores/logs'
 import connections from '@/api/connections'
 import { executeFileQuery } from '@/api/files'
@@ -193,6 +194,7 @@ const props = defineProps<{
 
 const connectionsStore = useConnectionsStore()
 const navigationStore = useExplorerNavigationStore()
+const overviewStore = useDatabaseOverviewStore()
 const logsStore = useLogsStore()
 
 const showConsoleHeader = computed(() => props.mode === 'file')
@@ -982,7 +984,7 @@ async function executeQuery() {
     // Save successful query to history
     saveToHistory(query)
 
-    // Database mode: refresh sidebar if DDL query succeeded
+    // Database mode: refresh sidebar and overview if DDL query succeeded
     if (props.mode === 'database' && result.affectedObject) {
       const db = props.database?.trim()
       if (result.affectedObject === 'database' || result.affectedObject === 'schema') {
@@ -991,7 +993,11 @@ async function executeQuery() {
       }
       if (result.affectedObject === 'table' && db) {
         navigationStore.invalidateMetadata(props.connectionId, db)
+        // Clear overview cache so it refetches with fresh table stats
+        overviewStore.clearOverview(props.connectionId, db)
         await navigationStore.ensureMetadata(props.connectionId, db, true)
+        // Refresh overview in background (don't await - let it update reactively)
+        overviewStore.fetchOverview(props.connectionId, db, true)
       }
     }
   } catch (error: unknown) {
