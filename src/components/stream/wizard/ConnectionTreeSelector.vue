@@ -54,7 +54,7 @@
         </div>
       </button>
 
-      <div v-if="isConnectionExpanded(connection.id)" class="pt-1">
+      <div v-if="isConnectionExpanded(connection.id)" class="pt-1 ml-7">
         <!-- S3 Connection - Show buckets like databases -->
         <div v-if="isS3Connection(connection)" class="py-1">
           <div

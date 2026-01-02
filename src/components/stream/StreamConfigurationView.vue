@@ -1,67 +1,76 @@
 <template>
-  <div class="space-y-6">
-    <!-- Summary View (read-only) -->
-    <div class="space-y-4">
-      <div class="pb-4 border-b border-gray-100 dark:border-gray-800">
-        <div class="flex items-center gap-2">
-          <span class="text-sm text-gray-500 dark:text-gray-400">Mode:</span>
-          <span
-            :class="[
-              'inline-flex items-center rounded-md px-2.5 py-1 text-xs font-medium ring-1 ring-inset',
-              stream.mode === 'cdc'
-                ? 'bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 ring-orange-600/20 dark:ring-orange-500/30'
-                : 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 ring-indigo-600/20 dark:ring-indigo-500/30'
-            ]"
-          >
-            {{ stream.mode.toUpperCase() }}
-          </span>
-          <span
-            v-if="isFederatedMode"
-            class="inline-flex items-center rounded-md px-2.5 py-1 text-xs font-medium ring-1 ring-inset bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 ring-amber-600/20 dark:ring-amber-500/30"
-          >
-            FEDERATED
-          </span>
-        </div>
+  <div class="space-y-4">
+    <!-- Mode badges -->
+    <div class="pb-4 border-b border-gray-100 dark:border-gray-800">
+      <div class="flex items-center gap-2">
+        <span class="text-sm text-gray-500 dark:text-gray-400">Mode:</span>
+        <span
+          :class="[
+            'inline-flex items-center rounded-md px-2.5 py-1 text-xs font-medium ring-1 ring-inset',
+            stream.mode === 'cdc'
+              ? 'bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 ring-orange-600/20 dark:ring-orange-500/30'
+              : 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 ring-indigo-600/20 dark:ring-indigo-500/30'
+          ]"
+        >
+          {{ stream.mode.toUpperCase() }}
+        </span>
+        <span
+          v-if="isFederatedMode"
+          class="inline-flex items-center rounded-md px-2.5 py-1 text-xs font-medium ring-1 ring-inset bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 ring-amber-600/20 dark:ring-amber-500/30"
+        >
+          FEDERATED
+        </span>
+      </div>
+    </div>
+
+    <!-- Side-by-side layout for Source(s) and Target -->
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+      <!-- Source Column -->
+      <div class="space-y-2">
+        <label class="block text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
+          {{ isFederatedMode ? 'Source Connections' : 'Source Connection' }}
+        </label>
+        <FederatedConnectionsCard
+          :connections="stream.source?.connections || []"
+          :all-connections="allConnections"
+          :db-types="dbTypes"
+          @navigate="handleSourceNavigate"
+        />
       </div>
 
-      <!-- Multi-source Connections (shown when more than one source is configured) -->
-      <FederatedConnectionsCard
-        v-if="isFederatedMode"
-        :connections="stream.source?.connections || []"
-        :all-connections="allConnections"
-        :db-types="dbTypes"
-        @navigate="handleFederatedNavigate"
-      />
-
-      <!-- Single Source Connection (shown when only one source is configured) -->
-      <ConnectionCard
-        v-else
-        label="Source Connection"
-        :connection="source"
-        :logo-src="sourceLogo"
-        :has-connection="!!source && !!source.name"
-        @navigate="emit('navigate-source')"
-      />
-
-      <ConnectionCard
-        label="Target Connection"
-        :connection="target"
-        :logo-src="targetLogo"
-        :has-connection="!!target && !!target.name"
-        @navigate="emit('navigate-target')"
-      />
-
-      <FileOutputSummary v-if="isFileTarget && hasFileFormat" :stream="stream" />
-
-      <TablesSummary :displayed-tables="displayedTables" :remaining-count="remainingTablesCount" />
-
-      <QuerySourcesSummary :queries="allQueries" />
-
-      <div class="pt-4 border-t border-gray-100 dark:border-gray-800">
-        <div class="flex items-center gap-2">
-          <Calendar class="h-4 w-4 text-gray-500 dark:text-gray-400" />
-          <span class="text-sm text-gray-500 dark:text-gray-400">Created: {{ streamCreated }}</span>
+      <!-- Target Column -->
+      <div class="space-y-2">
+        <label class="block text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
+          Target Connection
+        </label>
+        <div
+          class="bg-gray-50 dark:bg-gray-900/40 rounded-md p-3 border border-gray-300 dark:border-gray-700 overflow-hidden"
+        >
+          <ConnectionCard
+            :connection="target"
+            :logo-src="targetLogo"
+            :has-connection="!!target && !!target.name"
+            :inline="true"
+            @navigate="emit('navigate-target')"
+          />
+          <!-- Output Configuration (for file targets) -->
+          <FileOutputSummary
+            v-if="isFileTarget && hasFileFormat"
+            :stream="stream"
+            :compact="true"
+          />
         </div>
+      </div>
+    </div>
+
+    <!-- Queries (if any) -->
+    <QuerySourcesSummary :queries="allQueries" />
+
+    <!-- Created timestamp -->
+    <div class="pt-4 border-t border-gray-100 dark:border-gray-800">
+      <div class="flex items-center gap-2">
+        <Calendar class="h-4 w-4 text-gray-500 dark:text-gray-400" />
+        <span class="text-sm text-gray-500 dark:text-gray-400">Created: {{ streamCreated }}</span>
       </div>
     </div>
   </div>
@@ -88,7 +97,6 @@ import type { Connection, DbType } from '@/types/connections'
 import ConnectionCard from './configuration/ConnectionCard.vue'
 import FederatedConnectionsCard from './configuration/FederatedConnectionsCard.vue'
 import FileOutputSummary from './configuration/FileOutputSummary.vue'
-import TablesSummary from './configuration/TablesSummary.vue'
 import QuerySourcesSummary from './configuration/QuerySourcesSummary.vue'
 import { getFileSpec } from '@/composables/useTargetSpec'
 
@@ -113,28 +121,6 @@ const emit = defineEmits<{
   (e: 'navigate-federated', connectionId: string): void
 }>()
 
-const displayedTables = computed(() => {
-  if (!props.stream?.source?.connections?.length) return []
-  // Collect tables from all connections
-  const allTables: string[] = []
-  for (const conn of props.stream.source.connections) {
-    if (conn.tables) {
-      allTables.push(...conn.tables.map((t) => t.name))
-    }
-  }
-  return allTables.slice(0, 5)
-})
-const remainingTablesCount = computed(() => {
-  if (!props.stream?.source?.connections?.length) return 0
-  // Count tables from all connections
-  let totalTables = 0
-  for (const conn of props.stream.source.connections) {
-    if (conn.tables) {
-      totalTables += conn.tables.length
-    }
-  }
-  return Math.max(0, totalTables - displayedTables.value.length)
-})
 // Collect queries from all connections
 const allQueries = computed(() => {
   if (!props.stream?.source?.connections?.length) return []
@@ -158,11 +144,14 @@ function getLogo(connection?: Connection) {
   return match ? match.logo : '/images/db-logos/all.svg'
 }
 
-function handleFederatedNavigate(connectionId: string) {
-  emit('navigate-federated', connectionId)
+function handleSourceNavigate(connectionId: string) {
+  if (isFederatedMode.value) {
+    emit('navigate-federated', connectionId)
+  } else {
+    emit('navigate-source')
+  }
 }
 
-const sourceLogo = computed(() => getLogo(props.source))
 const targetLogo = computed(() => getLogo(props.target))
 </script>
 

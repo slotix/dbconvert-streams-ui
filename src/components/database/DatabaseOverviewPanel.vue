@@ -12,16 +12,17 @@ import type { DatabaseMetadata, SQLTableMeta, SQLViewMeta } from '@/types/metada
 import BaseButton from '@/components/base/BaseButton.vue'
 import FormInput from '@/components/base/FormInput.vue'
 import {
+  ArrowDown,
+  ArrowUp,
   ChartBar,
   Clipboard,
   Database,
   Download,
   Info,
   Plus,
-  Server,
   Share2,
   Signal,
-  Sheet,
+  Table2,
   Terminal
 } from 'lucide-vue-next'
 
@@ -372,21 +373,64 @@ function isSystemTableName(tableName: string): boolean {
   return false
 }
 
-// Filter tables based on showSystemObjects setting
-const topSize = computed(() => {
-  const allTables = overview.value?.allTablesBySize || []
-  const filtered = showSystemObjects.value
-    ? allTables
-    : allTables.filter((t) => !isSystemTableName(t.name))
-  return filtered.slice(0, 10)
-})
+// Sorting state for top tables
+const tableSortBy = ref<'name' | 'size' | 'rows'>('size')
+const tableSortOrder = ref<'asc' | 'desc'>('desc')
 
-const topRows = computed(() => {
-  const allTables = overview.value?.allTablesByRows || []
-  const filtered = showSystemObjects.value
-    ? allTables
-    : allTables.filter((t) => !isSystemTableName(t.name))
-  return filtered.slice(0, 10)
+function toggleTableSort(column: 'name' | 'size' | 'rows') {
+  if (tableSortBy.value === column) {
+    tableSortOrder.value = tableSortOrder.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    tableSortBy.value = column
+    // Default to desc for size/rows, asc for name
+    tableSortOrder.value = column === 'name' ? 'asc' : 'desc'
+  }
+}
+
+// Combined top tables with both size and rows data
+const topTables = computed(() => {
+  const bySize = overview.value?.allTablesBySize || []
+  const byRows = overview.value?.allTablesByRows || []
+
+  // Create a map of table name -> { sizeBytes, approxRows }
+  const tableMap = new Map<string, { name: string; sizeBytes: number; approxRows: number }>()
+
+  for (const t of bySize) {
+    tableMap.set(t.name, { name: t.name, sizeBytes: t.sizeBytes || 0, approxRows: 0 })
+  }
+  for (const t of byRows) {
+    const existing = tableMap.get(t.name)
+    if (existing) {
+      existing.approxRows = t.approxRows || 0
+    } else {
+      tableMap.set(t.name, { name: t.name, sizeBytes: 0, approxRows: t.approxRows || 0 })
+    }
+  }
+
+  // Filter system tables if needed
+  let tables = Array.from(tableMap.values())
+  if (!showSystemObjects.value) {
+    tables = tables.filter((t) => !isSystemTableName(t.name))
+  }
+
+  // Sort based on current sort column and order
+  tables.sort((a, b) => {
+    let cmp = 0
+    switch (tableSortBy.value) {
+      case 'name':
+        cmp = a.name.localeCompare(b.name)
+        break
+      case 'size':
+        cmp = a.sizeBytes - b.sizeBytes
+        break
+      case 'rows':
+        cmp = a.approxRows - b.approxRows
+        break
+    }
+    return tableSortOrder.value === 'asc' ? cmp : -cmp
+  })
+
+  return tables.slice(0, 10)
 })
 
 const filteredSchemaCount = computed(() => {
@@ -756,93 +800,120 @@ async function handleCreateSchema() {
         </div>
       </div>
 
-      <!-- Top by size -->
+      <!-- Top Tables (sortable) -->
       <div
-        class="bg-slate-50 dark:bg-gray-800/50 rounded-xl p-4 ring-1 ring-slate-200/70 dark:ring-gray-700"
+        class="col-span-full md:col-span-1 xl:col-span-2 bg-slate-50 dark:bg-gray-800/50 rounded-xl p-4 ring-1 ring-slate-200/70 dark:ring-gray-700"
       >
         <div class="flex items-center gap-2 mb-3">
           <div class="p-1.5 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-            <Server class="h-4 w-4 text-purple-600 dark:text-purple-400" />
+            <Table2 class="h-4 w-4 text-purple-600 dark:text-purple-400" />
           </div>
-          <span class="text-sm font-semibold text-gray-700 dark:text-gray-300"
-            >Top tables by size</span
+          <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Top Tables</span>
+          <span
+            v-if="overview.engine === 'mysql'"
+            class="text-xs text-amber-600 dark:text-amber-400 font-normal"
+            >(rows approx)</span
           >
         </div>
-        <ul class="space-y-1">
-          <li
-            v-for="t in topSize"
-            :key="t.name"
-            class="flex items-center justify-between py-1 px-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors"
-          >
-            <button
-              type="button"
-              class="truncate text-left text-sm hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors min-w-0 flex-1"
-              :title="t.name"
-              @click="$emit('open-table', { name: t.name })"
-            >
-              {{ t.name }}
-            </button>
-            <span
-              class="ml-2 shrink-0 text-gray-500 dark:text-gray-400 text-xs font-medium"
-              :title="
-                t.sizeBytes > 0
-                  ? Intl.NumberFormat().format(t.sizeBytes) + ' bytes'
-                  : 'Size not available'
-              "
-              >{{ formatDataSize(t.sizeBytes, true) }}</span
-            >
-          </li>
-          <li
-            v-if="!topSize.length"
-            class="text-xs text-gray-500 dark:text-gray-400 py-2 text-center"
-          >
-            No tables
-          </li>
-        </ul>
-      </div>
 
-      <!-- Top by rows -->
-      <div
-        class="bg-slate-50 dark:bg-gray-800/50 rounded-xl p-4 ring-1 ring-slate-200/70 dark:ring-gray-700"
-      >
-        <div class="flex items-center gap-2 mb-3">
-          <div class="p-1.5 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
-            <Sheet class="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-          </div>
-          <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">
-            Top tables by rows
-            <span
-              v-if="overview.engine === 'mysql'"
-              class="ml-1 text-xs text-amber-600 dark:text-amber-400 font-normal"
-              >(approx)</span
-            >
-          </span>
+        <!-- Sortable table -->
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-xs text-gray-500 dark:text-gray-400 uppercase">
+                <th class="text-left pb-2 font-medium">
+                  <button
+                    type="button"
+                    class="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+                    @click="toggleTableSort('name')"
+                  >
+                    Name
+                    <ArrowUp
+                      v-if="tableSortBy === 'name' && tableSortOrder === 'asc'"
+                      class="h-3 w-3"
+                    />
+                    <ArrowDown
+                      v-else-if="tableSortBy === 'name' && tableSortOrder === 'desc'"
+                      class="h-3 w-3"
+                    />
+                  </button>
+                </th>
+                <th class="text-right pb-2 font-medium">
+                  <button
+                    type="button"
+                    class="flex items-center gap-1 ml-auto hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+                    @click="toggleTableSort('size')"
+                  >
+                    Size
+                    <ArrowUp
+                      v-if="tableSortBy === 'size' && tableSortOrder === 'asc'"
+                      class="h-3 w-3"
+                    />
+                    <ArrowDown
+                      v-else-if="tableSortBy === 'size' && tableSortOrder === 'desc'"
+                      class="h-3 w-3"
+                    />
+                  </button>
+                </th>
+                <th class="text-right pb-2 font-medium">
+                  <button
+                    type="button"
+                    class="flex items-center gap-1 ml-auto hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+                    @click="toggleTableSort('rows')"
+                  >
+                    Rows
+                    <ArrowUp
+                      v-if="tableSortBy === 'rows' && tableSortOrder === 'asc'"
+                      class="h-3 w-3"
+                    />
+                    <ArrowDown
+                      v-else-if="tableSortBy === 'rows' && tableSortOrder === 'desc'"
+                      class="h-3 w-3"
+                    />
+                  </button>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="t in topTables"
+                :key="t.name"
+                class="hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors"
+              >
+                <td class="py-1.5 pr-4">
+                  <button
+                    type="button"
+                    class="truncate text-left hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors max-w-[200px] block"
+                    :title="t.name"
+                    @click="$emit('open-table', { name: t.name })"
+                  >
+                    {{ t.name }}
+                  </button>
+                </td>
+                <td
+                  class="py-1.5 text-right text-gray-500 dark:text-gray-400 text-xs font-medium tabular-nums"
+                  :title="
+                    t.sizeBytes > 0
+                      ? Intl.NumberFormat().format(t.sizeBytes) + ' bytes'
+                      : 'Size not available'
+                  "
+                >
+                  {{ formatDataSize(t.sizeBytes, true) }}
+                </td>
+                <td
+                  class="py-1.5 text-right text-gray-500 dark:text-gray-400 text-xs font-medium tabular-nums"
+                >
+                  {{ Intl.NumberFormat().format(t.approxRows) }}
+                </td>
+              </tr>
+              <tr v-if="!topTables.length">
+                <td colspan="3" class="text-xs text-gray-500 dark:text-gray-400 py-4 text-center">
+                  No tables
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
-        <ul class="space-y-1">
-          <li
-            v-for="t in topRows"
-            :key="t.name"
-            class="flex items-center justify-between py-1 px-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors"
-          >
-            <button
-              type="button"
-              class="truncate text-left text-sm hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors min-w-0 flex-1"
-              :title="t.name"
-              @click="$emit('open-table', { name: t.name })"
-            >
-              {{ t.name }}
-            </button>
-            <span class="ml-2 shrink-0 text-gray-500 dark:text-gray-400 text-xs font-medium">
-              {{ Intl.NumberFormat().format(t.approxRows) }}
-            </span>
-          </li>
-          <li
-            v-if="!topRows.length"
-            class="text-xs text-gray-500 dark:text-gray-400 py-2 text-center"
-          >
-            No tables
-          </li>
-        </ul>
       </div>
 
       <!-- Notes -->

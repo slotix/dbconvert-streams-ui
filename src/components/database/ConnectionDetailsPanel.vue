@@ -827,8 +827,9 @@ const isLoadingDatabases = computed(() => {
         </template>
       </div>
 
-      <!-- Database Connection Details - Card Layout -->
-      <div v-else class="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(260px,1fr))]">
+      <!-- Database Connection Details - 2x2 Card Layout -->
+      <div v-else class="grid gap-4 grid-cols-1 md:grid-cols-2">
+        <!-- Row 1: Server Info -->
         <!-- Connection Info Card -->
         <div
           class="bg-slate-50 dark:bg-gray-800/50 rounded-xl p-4 ring-1 ring-slate-200/70 dark:ring-gray-700"
@@ -1054,39 +1055,8 @@ const isLoadingDatabases = computed(() => {
           </div>
         </div>
 
-        <!-- Database Console Card (for database connections only) - Utility Block -->
-        <div
-          v-if="!isFileConnection"
-          class="bg-linear-to-br from-indigo-50 to-slate-50 dark:from-indigo-950/30 dark:to-gray-800/50 rounded-xl p-4 ring-1 ring-indigo-200/70 dark:ring-indigo-800/50"
-        >
-          <div class="flex items-start gap-4 mb-4">
-            <div
-              class="shrink-0 p-3 bg-indigo-100 dark:bg-indigo-900/50 rounded-xl ring-1 ring-indigo-200 dark:ring-indigo-700/50"
-            >
-              <Terminal class="h-7 w-7 text-indigo-600 dark:text-indigo-400" />
-            </div>
-            <div class="flex-1 min-w-0 pt-1">
-              <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200">
-                Database Console
-              </h4>
-              <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                Execute SQL commands directly on this server (CREATE DATABASE, DROP, etc.)
-              </p>
-            </div>
-          </div>
-
-          <BaseButton
-            variant="secondary"
-            size="sm"
-            class="w-full justify-center"
-            @click="emit('open-sql-console')"
-          >
-            <Terminal class="w-4 h-4 mr-1.5" />
-            Open Database Console
-          </BaseButton>
-        </div>
-
-        <!-- Create Database Card - Utility Block -->
+        <!-- Row 2: Tools -->
+        <!-- Create Database Card -->
         <div
           v-if="canCreateDatabase"
           class="bg-linear-to-br from-emerald-50 to-slate-50 dark:from-emerald-950/30 dark:to-gray-800/50 rounded-xl p-4 ring-1 ring-emerald-200/70 dark:ring-emerald-800/50"
@@ -1164,6 +1134,38 @@ const isLoadingDatabases = computed(() => {
               </BaseButton>
             </div>
           </div>
+        </div>
+
+        <!-- Database Console Card -->
+        <div
+          v-if="!isFileConnection"
+          class="bg-linear-to-br from-indigo-50 to-slate-50 dark:from-indigo-950/30 dark:to-gray-800/50 rounded-xl p-4 ring-1 ring-indigo-200/70 dark:ring-indigo-800/50"
+        >
+          <div class="flex items-start gap-4 mb-4">
+            <div
+              class="shrink-0 p-3 bg-indigo-100 dark:bg-indigo-900/50 rounded-xl ring-1 ring-indigo-200 dark:ring-indigo-700/50"
+            >
+              <Terminal class="h-7 w-7 text-indigo-600 dark:text-indigo-400" />
+            </div>
+            <div class="flex-1 min-w-0 pt-1">
+              <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                Database Console
+              </h4>
+              <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                Execute SQL commands directly on this server (CREATE DATABASE, DROP, etc.)
+              </p>
+            </div>
+          </div>
+
+          <BaseButton
+            variant="secondary"
+            size="sm"
+            class="w-full justify-center"
+            @click="emit('open-sql-console')"
+          >
+            <Terminal class="w-4 h-4 mr-1.5" />
+            Open Database Console
+          </BaseButton>
         </div>
       </div>
 
