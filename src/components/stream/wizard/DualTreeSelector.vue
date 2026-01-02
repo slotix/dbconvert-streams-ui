@@ -387,7 +387,7 @@ const showAliasUI = computed(() => localSourceConnections.value.length > 1)
 // Generate type-based alias for a connection (e.g., pg1, my1, s31)
 function generateAlias(connectionId: string): string {
   const connection = connectionsStore.connectionByID(connectionId)
-  const connectionType = getConnectionTypeLabel(connection?.spec) || undefined
+  const connectionType = getConnectionTypeLabel(connection?.spec, connection?.type) || undefined
   const existingAliases = localSourceConnections.value.map((c) => c.alias || '')
   return generateTypeBasedAlias(connectionType, existingAliases)
 }

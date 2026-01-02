@@ -780,7 +780,7 @@ function handleDatabaseRowClick(connection: Connection, database: string) {
 }
 
 function getLogoSrc(connection: Connection): string {
-  const typeLabel = getConnectionTypeLabel(connection.spec)
+  const typeLabel = getConnectionTypeLabel(connection.spec, connection.type)
   if (!typeLabel) return ''
   const normalizedType = normalizeConnectionType(typeLabel)
   const dbType = connectionsStore.dbTypes.find(
@@ -790,7 +790,7 @@ function getLogoSrc(connection: Connection): string {
 }
 
 function getConnectionTypeDisplay(connection: Connection): string {
-  return getConnectionTypeLabel(connection.spec) || ''
+  return getConnectionTypeLabel(connection.spec, connection.type) || ''
 }
 
 watch(
