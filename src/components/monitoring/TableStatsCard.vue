@@ -13,6 +13,8 @@ const emit = defineEmits<{
 const monitoringStore = useMonitoringStore()
 const tableStatsGroup = computed(() => monitoringStore.tableStats)
 
+const isCDCMode = computed(() => monitoringStore.streamConfig?.mode === 'cdc')
+
 const allTables = computed(() => [
   ...tableStatsGroup.value.running,
   ...tableStatsGroup.value.completed,
@@ -110,7 +112,7 @@ function formatDuration(seconds: number) {
                 scope="col"
                 class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider"
               >
-                Rows
+                {{ isCDCMode ? 'Events' : 'Rows' }}
               </th>
               <th
                 scope="col"
@@ -119,6 +121,7 @@ function formatDuration(seconds: number) {
                 Size
               </th>
               <th
+                v-if="!isCDCMode"
                 scope="col"
                 class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"
               >
@@ -160,7 +163,7 @@ function formatDuration(seconds: number) {
               >
                 {{ table.size }}
               </td>
-              <td class="px-4 py-3">
+              <td v-if="!isCDCMode" class="px-4 py-3">
                 <TableProgressBar
                   v-if="table.estimatedSizeBytes && table.estimatedSizeBytes > 0"
                   :transferred="table.sizeBytes"
