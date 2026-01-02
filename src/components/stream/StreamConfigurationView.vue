@@ -79,7 +79,6 @@ export default {
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useRouter } from 'vue-router'
 import { Calendar } from 'lucide-vue-next'
 import { normalizeConnectionType } from '@/utils/connectionUtils'
 import { getConnectionTypeLabel } from '@/types/specs'
@@ -102,8 +101,6 @@ const props = defineProps<{
   isFileTarget: boolean
 }>()
 
-const router = useRouter()
-
 // Check if federated mode is enabled
 const isFederatedMode = computed(() => (props.stream.source?.connections?.length ?? 0) > 1)
 
@@ -113,6 +110,7 @@ const hasFileFormat = computed(() => !!getFileSpec(props.stream.target?.spec)?.f
 const emit = defineEmits<{
   (e: 'navigate-source'): void
   (e: 'navigate-target'): void
+  (e: 'navigate-federated', connectionId: string): void
 }>()
 
 const displayedTables = computed(() => {
@@ -161,8 +159,7 @@ function getLogo(connection?: Connection) {
 }
 
 function handleFederatedNavigate(connectionId: string) {
-  // Navigate to the explorer with the selected connection
-  router.push({ name: 'Explorer', query: { connectionId } })
+  emit('navigate-federated', connectionId)
 }
 
 const sourceLogo = computed(() => getLogo(props.source))

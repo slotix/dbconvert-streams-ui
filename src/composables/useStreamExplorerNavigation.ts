@@ -11,12 +11,14 @@ interface UseStreamExplorerNavigationOptions {
   stream: Ref<StreamConfig>
   source: Ref<Connection | undefined>
   target: Ref<Connection | undefined>
+  allConnections?: Ref<Connection[]>
 }
 
 export function useStreamExplorerNavigation({
   stream,
   source,
-  target
+  target,
+  allConnections
 }: UseStreamExplorerNavigationOptions) {
   const router = useRouter()
   const connectionsStore = useConnectionsStore()
@@ -87,9 +89,50 @@ export function useStreamExplorerNavigation({
     })
   }
 
+  async function navigateToConnectionExplorer(connectionId: string) {
+    // Find connection from allConnections or from the store
+    const connection =
+      allConnections?.value?.find((c) => c.id === connectionId) ||
+      connectionsStore.connections.find((c) => c.id === connectionId)
+
+    if (!connection?.id) return
+
+    explorerNavigationStore.setActiveConnectionId(connection.id)
+    connectionsStore.setCurrentConnection(connection.id)
+
+    const connectionKind = getConnectionKindFromSpec(connection.spec)
+    const isFileBased = isFileBasedKind(connectionKind)
+
+    if (isFileBased) {
+      await fileExplorerStore.loadEntries(connection.id, true)
+      explorerNavigationStore.selectConnection(connection.id)
+      window.sessionStorage.setItem('explorerFocusConnectionId', connection.id)
+    }
+
+    // Find the database from stream config for this connection
+    const connMapping = stream.value?.source?.connections?.find(
+      (c) => c.connectionId === connectionId
+    )
+    const database = connMapping?.database
+
+    if (!isFileBased && database) {
+      explorerNavigationStore.selectDatabase(connection.id, database)
+    }
+
+    router.push({
+      name: 'DatabaseMetadata',
+      params: { id: connection.id },
+      query: {
+        details: 'true',
+        db: isFileBased ? undefined : database || undefined
+      }
+    })
+  }
+
   return {
     isFileTarget,
     navigateToSourceExplorer,
-    navigateToTargetExplorer
+    navigateToTargetExplorer,
+    navigateToConnectionExplorer
   }
 }

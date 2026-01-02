@@ -199,6 +199,7 @@
           :is-file-target="isFileTarget"
           @navigate-source="navigateToSourceExplorer"
           @navigate-target="navigateToTargetExplorer"
+          @navigate-federated="navigateToConnectionExplorer"
         />
       </div>
 
@@ -357,12 +358,20 @@ const {
   stopStream
 } = useStreamControls(streamRef)
 
-const { isFileTarget, navigateToSourceExplorer, navigateToTargetExplorer } =
-  useStreamExplorerNavigation({
-    stream: streamRef,
-    source: sourceRef,
-    target: targetRef
-  })
+const dbTypes = computed(() => connectionsStore.dbTypes)
+const allConnections = computed(() => connectionsStore.connections)
+
+const {
+  isFileTarget,
+  navigateToSourceExplorer,
+  navigateToTargetExplorer,
+  navigateToConnectionExplorer
+} = useStreamExplorerNavigation({
+  stream: streamRef,
+  source: sourceRef,
+  target: targetRef,
+  allConnections
+})
 
 const streamIdRef = computed(() => streamRef.value.id || '')
 
@@ -371,9 +380,6 @@ const { historyRuns, handleDeleteRun, handleClearAll } = useStreamHistory({
   activeTab,
   isStreamFinished
 })
-
-const dbTypes = computed(() => connectionsStore.dbTypes)
-const allConnections = computed(() => connectionsStore.connections)
 
 interface StreamTab {
   id: StreamDetailsTab
