@@ -6,6 +6,7 @@ import type { TableStat, TableStatsGroup, TableMetadata } from '@/types/tableSta
 import { STATUS, STATUS_PRIORITY, TERMINAL_STATUSES, type Status } from '@/constants'
 import { parseDataSize, formatDataSize, formatDataRate } from '@/utils/formats'
 import { useFileExplorerStore } from '@/stores/fileExplorer'
+import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 
 // Define types for the state
 interface Node {
@@ -696,9 +697,14 @@ export const useMonitoringStore = defineStore('monitoring', {
           if (this.status !== newStatus) {
             const previousStatus = this.status
             this.status = newStatus
-            // Refresh file explorer when stream finishes with file target
-            if (newStatus === STATUS.FINISHED && previousStatus !== STATUS.FINISHED) {
+            // Refresh target when stream finishes or is stopped (CDC mode ends with STOPPED)
+            const isTerminalTransition =
+              (newStatus === STATUS.FINISHED || newStatus === STATUS.STOPPED) &&
+              previousStatus !== STATUS.FINISHED &&
+              previousStatus !== STATUS.STOPPED
+            if (isTerminalTransition) {
               this.refreshTargetFileExplorer()
+              this.refreshTargetDatabaseMetadata()
             }
           }
         }
@@ -879,6 +885,29 @@ export const useMonitoringStore = defineStore('monitoring', {
         // Force refresh the file list for the target connection
         fileExplorerStore.loadEntries(targetId, true)
       }
+    },
+    /**
+     * Refresh database metadata for target connection when stream finishes
+     * This ensures newly created tables, indexes, and foreign keys appear
+     * without requiring manual metadata refresh
+     */
+    async refreshTargetDatabaseMetadata() {
+      const targetId = this.streamConfig?.target?.id
+      const targetDatabase = this.streamConfig?.target?.spec?.database?.database
+      if (!targetId || !targetDatabase) return
+
+      const fileExplorerStore = useFileExplorerStore()
+
+      // Only refresh for database connections (not file-type connections)
+      if (fileExplorerStore.isFilesConnectionType(targetId)) {
+        return
+      }
+
+      const navigationStore = useExplorerNavigationStore()
+
+      // Invalidate and refresh the metadata cache for the target database
+      navigationStore.invalidateMetadata(targetId, targetDatabase)
+      await navigationStore.ensureMetadata(targetId, targetDatabase, true)
     }
   }
 })

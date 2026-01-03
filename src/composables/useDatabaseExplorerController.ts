@@ -1,6 +1,5 @@
 import { computed, onMounted, onUnmounted, ref, watch, type Ref } from 'vue'
 import type { RouteLocationNormalizedLoaded, Router } from 'vue-router'
-import connections from '@/api/connections'
 import type { FileSystemEntry } from '@/api/fileSystem'
 import { getConnectionHost, getConnectionPort, getConnectionDatabase } from '@/utils/specBuilder'
 import type { SQLTableMeta, SQLViewMeta } from '@/types/metadata'
@@ -120,16 +119,22 @@ export function useDatabaseExplorerController({
     // Otherwise restore by fetching metadata and creating a preview tab.
     let obj: SQLTableMeta | SQLViewMeta | undefined
     try {
-      const meta = await connections.getMetadata(payload.connectionId, payload.database)
+      await navigationStore.ensureMetadata(payload.connectionId, payload.database)
       if (token !== restoreToken.value) return
 
       if (payload.type === 'table') {
-        obj = Object.values(meta.tables || {}).find(
-          (t) => t.name === payload.name && (!schema || t.schema === schema)
+        obj = navigationStore.findTableMeta(
+          payload.connectionId,
+          payload.database,
+          payload.name,
+          schema
         )
       } else {
-        obj = Object.values(meta.views || {}).find(
-          (v) => v.name === payload.name && (!schema || v.schema === schema)
+        obj = navigationStore.findViewMeta(
+          payload.connectionId,
+          payload.database,
+          payload.name,
+          schema
         )
       }
     } catch (error) {
@@ -151,7 +156,6 @@ export function useDatabaseExplorerController({
         schema: schema || undefined,
         name: payload.name,
         type: payload.type,
-        meta: obj,
         tabType: 'database'
       },
       'preview'
@@ -314,7 +318,6 @@ export function useDatabaseExplorerController({
     schema?: string
     type: 'table' | 'view'
     name: string
-    meta: SQLTableMeta | SQLViewMeta
     mode: 'preview' | 'pinned'
     defaultTab?: 'structure' | 'data'
     openInRightSplit?: boolean
@@ -387,7 +390,6 @@ export function useDatabaseExplorerController({
         schema: payload.schema,
         name: payload.name,
         type: payload.type,
-        meta: payload.meta,
         tabType: 'database'
       },
       alwaysOpenNewTab.value ? 'pinned' : payload.mode
@@ -714,17 +716,11 @@ export function useDatabaseExplorerController({
     const targetDb = activeTab.database
 
     try {
-      const meta = await connections.getMetadata(targetConnId, targetDb)
-      let obj: SQLTableMeta | SQLViewMeta | undefined
-      if (o.type === 'table') {
-        obj = Object.values(meta.tables || {}).find(
-          (t) => t.name === o.name && (o.schema ? t.schema === o.schema : true)
-        )
-      } else {
-        obj = Object.values(meta.views || {}).find(
-          (v) => v.name === o.name && (o.schema ? v.schema === o.schema : true)
-        )
-      }
+      await navigationStore.ensureMetadata(targetConnId, targetDb)
+      const obj =
+        o.type === 'table'
+          ? navigationStore.findTableMeta(targetConnId, targetDb, o.name, o.schema)
+          : navigationStore.findViewMeta(targetConnId, targetDb, o.name, o.schema)
       if (!obj) return
 
       handleOpenFromTree({
@@ -733,7 +729,6 @@ export function useDatabaseExplorerController({
         schema: o.schema,
         type: o.type,
         name: o.name,
-        meta: obj,
         mode: 'preview',
         defaultTab: 'data',
         openInRightSplit: paneId === 'right'
@@ -940,19 +935,24 @@ export function useDatabaseExplorerController({
         if (!hasMatchingTab) {
           let obj: SQLTableMeta | SQLViewMeta | undefined
           try {
-            const meta = await connections.getMetadata(
+            await navigationStore.ensureMetadata(
               explorerState.currentConnectionId.value,
               rightDb as string
             )
-            if (rightType === 'table') {
-              obj = Object.values(meta.tables || {}).find(
-                (t) => t.name === rightName && (!rightSchema || t.schema === rightSchema)
-              )
-            } else {
-              obj = Object.values(meta.views || {}).find(
-                (v) => v.name === rightName && (!rightSchema || v.schema === rightSchema)
-              )
-            }
+            obj =
+              rightType === 'table'
+                ? navigationStore.findTableMeta(
+                    explorerState.currentConnectionId.value,
+                    rightDb as string,
+                    rightName as string,
+                    rightSchema
+                  )
+                : navigationStore.findViewMeta(
+                    explorerState.currentConnectionId.value,
+                    rightDb as string,
+                    rightName as string,
+                    rightSchema
+                  )
           } catch (error) {
             console.warn('Failed to restore right pane tab from URL:', error)
             clearRightPaneQueryParams()
@@ -966,7 +966,6 @@ export function useDatabaseExplorerController({
               schema: rightSchema,
               type: rightType as 'table' | 'view',
               name: rightName as string,
-              meta: obj,
               mode: 'preview',
               openInRightSplit: true,
               skipUrlUpdate: true

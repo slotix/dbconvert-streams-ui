@@ -180,11 +180,17 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
     }
     state.pinnedTabs = state.pinnedTabs.map((tab) => {
       const hydratedTab = { ...tab }
+      if (hydratedTab.tabType === 'database') {
+        delete hydratedTab.meta
+      }
       ensureObjectKey(paneId, hydratedTab)
       return hydratedTab
     })
     if (state.previewTab) {
       const hydratedPreview = { ...state.previewTab }
+      if (hydratedPreview.tabType === 'database') {
+        delete hydratedPreview.meta
+      }
       ensureObjectKey(paneId, hydratedPreview)
       state.previewTab = hydratedPreview
     }
@@ -215,6 +221,9 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
         ? savedState.visiblePanes
         : ['left']
     visiblePanes.value = new Set<PaneId>(visible)
+
+    // Persist immediately to remove any stale cached fields (e.g., tab.meta).
+    persistState()
   }
 
   restoreFromStorage()

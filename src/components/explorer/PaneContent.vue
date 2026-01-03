@@ -45,12 +45,12 @@
       />
     </div>
     <ObjectContainer
-      v-else-if="activeTab.tabType === 'database'"
+      v-else-if="activeTab.tabType === 'database' && resolvedDatabaseMeta"
       :key="`${paneId}-${activeTab.database}.${activeTab.schema || 'default'}.${activeTab.name}`"
       object-type="database"
       :pane-id="paneId"
       :connection-id="activeTab.connectionId"
-      :table-meta="activeTab.meta!"
+      :table-meta="resolvedDatabaseMeta"
       :is-view="activeTab.type === 'view'"
       :connection-type="connectionType"
       :database="activeTab.database!"
@@ -104,10 +104,12 @@ import DatabaseOverviewPanel from '@/components/database/DatabaseOverviewPanel.v
 import { UnifiedConsoleTab } from '@/components/console'
 import EmptyStateMessage from './EmptyStateMessage.vue'
 import { useConnectionsStore } from '@/stores/connections'
+import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { useFileExplorerStore } from '@/stores/fileExplorer'
 import type { PaneId } from '@/stores/paneTabs'
 import type { PaneTab } from '@/stores/paneTabs'
 import type { ShowDiagramPayload } from '@/types/diagram'
+import type { SQLTableMeta, SQLViewMeta } from '@/types/metadata'
 
 // Lazy load DiagramTab since it includes heavy D3.js
 const DiagramTab = defineAsyncComponent(() => import('@/components/database/DiagramTab.vue'))
@@ -153,6 +155,32 @@ defineEmits<{
 
 const connectionsStore = useConnectionsStore()
 const fileExplorerStore = useFileExplorerStore()
+const navigationStore = useExplorerNavigationStore()
+
+const resolvedDatabaseMeta = computed<SQLTableMeta | SQLViewMeta | null>(() => {
+  const activeTab = props.activeTab
+  if (!activeTab || activeTab.tabType !== 'database') return null
+
+  const database = activeTab.database
+  if (!database) return null
+
+  const metaFromStore =
+    activeTab.type === 'view'
+      ? navigationStore.findViewMeta(
+          activeTab.connectionId,
+          database,
+          activeTab.name,
+          activeTab.schema
+        )
+      : navigationStore.findTableMeta(
+          activeTab.connectionId,
+          database,
+          activeTab.name,
+          activeTab.schema
+        )
+
+  return metaFromStore || null
+})
 
 const wrapperClass = computed(() => {
   const base = 'h-[calc(100vh-220px)]'

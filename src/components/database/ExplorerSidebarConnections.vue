@@ -46,7 +46,6 @@ const emit = defineEmits<{
       schema?: string
       type: ObjectType
       name: string
-      meta: SQLTableMeta | SQLViewMeta
       mode: 'preview' | 'pinned'
       defaultTab?: DefaultTab
       openInRightSplit?: boolean
@@ -341,7 +340,6 @@ function onOpen(
     schema,
     type,
     name,
-    meta: obj,
     mode,
     defaultTab,
     openInRightSplit

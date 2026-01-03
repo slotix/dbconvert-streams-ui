@@ -7,7 +7,6 @@ import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import connectionsApi from '@/api/connections'
 import { createS3Bucket } from '@/api/files'
 import type { FileSystemEntry } from '@/api/fileSystem'
-import type { SQLTableMeta, SQLViewMeta } from '@/types/metadata'
 import type { DiagramFocusTarget, ShowDiagramPayload } from '@/types/diagram'
 
 type DefaultTab = 'structure' | 'data'
@@ -19,7 +18,6 @@ export interface OpenObjectParams {
   schema?: string
   type: ObjectType
   name: string
-  meta: SQLTableMeta | SQLViewMeta
   mode: 'preview' | 'pinned'
   defaultTab?: DefaultTab
   openInRightSplit?: boolean
@@ -246,10 +244,13 @@ export function useConnectionActions(emits?: {
     defaultTab?: DefaultTab,
     openInRightSplit?: boolean
   ) {
-    let obj: SQLTableMeta | SQLViewMeta | undefined
-    if (type === 'table') obj = navigationStore.findTableMeta(connId, db, name, schema)
-    else obj = navigationStore.findViewMeta(connId, db, name, schema)
-    if (!obj) return
+    // Only open if metadata is available in the navigation store.
+    // Tabs resolve meta from this store (single source of truth).
+    const exists =
+      type === 'table'
+        ? !!navigationStore.findTableMeta(connId, db, name, schema)
+        : !!navigationStore.findViewMeta(connId, db, name, schema)
+    if (!exists) return
 
     if (emits?.open) {
       emits.open({
@@ -258,7 +259,6 @@ export function useConnectionActions(emits?: {
         schema,
         type,
         name,
-        meta: obj,
         mode,
         defaultTab,
         openInRightSplit
