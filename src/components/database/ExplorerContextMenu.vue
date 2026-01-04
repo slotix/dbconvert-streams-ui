@@ -1,6 +1,19 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { Terminal } from 'lucide-vue-next'
+import {
+  Beaker,
+  Copy,
+  ExternalLink,
+  Eye,
+  EyeOff,
+  PanelRightOpen,
+  Pencil,
+  Plus,
+  RefreshCw,
+  Share2,
+  Terminal,
+  Trash2
+} from 'lucide-vue-next'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { useConnectionTreeLogic } from '@/composables/useConnectionTreeLogic'
 
@@ -134,49 +147,59 @@ function click(action: string, openInRightSplit?: boolean) {
             class="my-1 border-t border-gray-100 dark:border-gray-700"
           ></div>
           <button
-            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
             @click="click('test-connection')"
           >
-            Test connection
+            <Beaker class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
+            <span>Test connection</span>
           </button>
           <button
-            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
             @click="click('refresh-databases')"
           >
-            Refresh
+            <RefreshCw class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
+            <span>Refresh</span>
           </button>
           <button
             v-if="!props.isFileConnection"
-            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
             @click="click('toggle-system-databases')"
           >
-            {{ showSystemDatabases ? 'Hide system objects' : 'Show system objects' }}
+            <component
+              :is="showSystemDatabases ? EyeOff : Eye"
+              class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400"
+            />
+            <span>{{ showSystemDatabases ? 'Hide system objects' : 'Show system objects' }}</span>
           </button>
           <button
             v-if="canCreateDatabase"
-            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
             @click="click('create-database')"
           >
-            New Database
+            <Plus class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
+            <span>New Database</span>
           </button>
           <div class="my-1 border-t border-gray-100 dark:border-gray-700"></div>
           <button
-            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
             @click="click('edit-connection')"
           >
-            Edit
+            <Pencil class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
+            <span>Edit</span>
           </button>
           <button
-            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
             @click="click('clone-connection')"
           >
-            Clone
+            <Copy class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
+            <span>Clone</span>
           </button>
           <button
-            class="w-full text-left px-3 py-1.5 text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+            class="w-full text-left px-3 py-1.5 text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
             @click="click('delete-connection')"
           >
-            Delete
+            <Trash2 class="w-4 h-4 shrink-0" />
+            <span>Delete</span>
           </button>
         </template>
 
@@ -191,125 +214,146 @@ function click(action: string, openInRightSplit?: boolean) {
           </button>
           <div class="my-1 border-t border-gray-100 dark:border-gray-700"></div>
           <button
-            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
             @click="click('refresh-metadata')"
           >
-            Refresh metadata
+            <RefreshCw class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
+            <span>Refresh metadata</span>
           </button>
           <button
             v-if="canToggleSystemObjectsForDatabase"
-            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
             @click="click('toggle-system-objects')"
           >
-            {{ showSystemObjectsForDatabase ? 'Hide system objects' : 'Show system objects' }}
+            <component
+              :is="showSystemObjectsForDatabase ? EyeOff : Eye"
+              class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400"
+            />
+            <span>
+              {{ showSystemObjectsForDatabase ? 'Hide system objects' : 'Show system objects' }}
+            </span>
           </button>
           <button
             v-if="canCreateSchema"
-            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
             @click="click('create-schema')"
           >
-            New Schema
+            <Plus class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
+            <span>New Schema</span>
           </button>
           <div
             v-if="canCreateSchema || canToggleSystemObjectsForDatabase"
             class="my-1 border-t border-gray-100 dark:border-gray-700"
           ></div>
           <button
-            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
             @click="click('show-diagram')"
           >
-            Show diagram
+            <Share2 class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
+            <span>Show diagram</span>
           </button>
           <button
-            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
             @click="click('copy-database-name')"
           >
-            Copy name
+            <Copy class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
+            <span>Copy name</span>
           </button>
         </template>
 
         <template v-else-if="target.kind === 'schema'">
           <!-- Schema menu -->
           <button
-            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
             @click="click('refresh-metadata')"
           >
-            Refresh metadata
+            <RefreshCw class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
+            <span>Refresh metadata</span>
           </button>
           <button
-            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
             @click="click('copy-schema-name')"
           >
-            Copy name
+            <Copy class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
+            <span>Copy name</span>
           </button>
         </template>
 
         <template v-else-if="isOpenable">
           <!-- Table/View/File menu - shared actions -->
           <button
-            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
             @click="click('open', false)"
           >
-            Open
+            <ExternalLink class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
+            <span>Open</span>
           </button>
           <button
-            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
             @click="click('open', true)"
           >
-            Open in Right Pane
+            <PanelRightOpen class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
+            <span>Open in Right Pane</span>
           </button>
           <div class="my-1 border-t border-gray-100 dark:border-gray-700"></div>
 
           <!-- Table/View specific actions -->
           <template v-if="isTableOrView">
             <button
-              class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+              class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
               @click="click('open-in-sql-console')"
             >
-              Open in SQL Console
+              <Terminal class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
+              <span>Open in SQL Console</span>
             </button>
             <button
-              class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+              class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
               @click="click('show-diagram')"
             >
-              Show diagram
+              <Share2 class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
+              <span>Show diagram</span>
             </button>
             <div class="my-1 border-t border-gray-100 dark:border-gray-700"></div>
             <button
-              class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+              class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
               @click="click('copy-object-name')"
             >
-              Copy name
+              <Copy class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
+              <span>Copy name</span>
             </button>
             <button
-              class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50"
+              class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50 flex items-center gap-2"
               :disabled="!canCopyDDL"
               @click="click('copy-ddl')"
             >
-              Copy DDL
+              <Copy class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
+              <span>Copy DDL</span>
             </button>
           </template>
 
           <!-- File specific actions -->
           <template v-else-if="isFileOrTableFolder">
             <button
-              class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+              class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
               @click="click('insert-into-console')"
             >
-              Open in SQL Console
+              <Terminal class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
+              <span>Open in SQL Console</span>
             </button>
             <div class="my-1 border-t border-gray-100 dark:border-gray-700"></div>
             <button
-              class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+              class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
               @click="click('copy-file-name')"
             >
-              Copy name
+              <Copy class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
+              <span>Copy name</span>
             </button>
             <button
-              class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+              class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
               @click="click('copy-file-path')"
             >
-              Copy path
+              <Copy class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
+              <span>Copy path</span>
             </button>
           </template>
         </template>

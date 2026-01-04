@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { Copy, Pencil, Play, Pause, RotateCcw, Trash2 } from 'lucide-vue-next'
 
 // Get current zoom factor for position adjustment
 const getZoomFactor = () => {
@@ -70,28 +71,31 @@ function click(action: string) {
         <!-- Start/Run Again -->
         <button
           v-if="canStart"
-          class="w-full text-left px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 text-teal-600 dark:text-teal-300"
+          class="w-full text-left px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 text-teal-600 dark:text-teal-300 flex items-center gap-2"
           @click="click('start-stream')"
         >
-          {{ target.isFinished ? 'Run again' : 'Start' }}
+          <component :is="target.isFinished ? RotateCcw : Play" class="w-4 h-4 shrink-0" />
+          <span>{{ target.isFinished ? 'Run again' : 'Start' }}</span>
         </button>
 
         <!-- Pause -->
         <button
           v-if="canPause"
-          class="w-full text-left px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 text-yellow-600 dark:text-yellow-300"
+          class="w-full text-left px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 text-yellow-600 dark:text-yellow-300 flex items-center gap-2"
           @click="click('pause-stream')"
         >
-          Pause
+          <Pause class="w-4 h-4 shrink-0" />
+          <span>Pause</span>
         </button>
 
         <!-- Resume -->
         <button
           v-if="canResume"
-          class="w-full text-left px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 text-teal-600 dark:text-teal-300"
+          class="w-full text-left px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 text-teal-600 dark:text-teal-300 flex items-center gap-2"
           @click="click('resume-stream')"
         >
-          Resume
+          <Play class="w-4 h-4 shrink-0" />
+          <span>Resume</span>
         </button>
 
         <div
@@ -101,28 +105,31 @@ function click(action: string) {
 
         <!-- Edit -->
         <button
-          class="w-full text-left px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200"
+          class="w-full text-left px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200 flex items-center gap-2"
           @click="click('edit-stream')"
         >
-          Edit
+          <Pencil class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
+          <span>Edit</span>
         </button>
 
         <!-- Clone -->
         <button
-          class="w-full text-left px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200"
+          class="w-full text-left px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200 flex items-center gap-2"
           @click="click('clone-stream')"
         >
-          Clone
+          <Copy class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
+          <span>Clone</span>
         </button>
 
         <div class="my-1 border-t border-gray-100 dark:border-gray-800"></div>
 
         <!-- Delete -->
         <button
-          class="w-full text-left px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 text-red-600 dark:text-red-400"
+          class="w-full text-left px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 text-red-600 dark:text-red-400 flex items-center gap-2"
           @click="click('delete-stream')"
         >
-          Delete
+          <Trash2 class="w-4 h-4 shrink-0" />
+          <span>Delete</span>
         </button>
       </div>
     </div>
