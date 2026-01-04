@@ -242,3 +242,28 @@
   color: var(--tw-gray-100) !important;
   border-color: var(--tw-gray-700) !important;
 }
+
+/* ===========================
+   Pagination Footer Styling
+   =========================== */
+
+/* Prevent text wrapping in pagination elements */
+.ag-theme-alpine .ag-paging-row-summary-panel,
+.ag-theme-alpine .ag-paging-page-summary-panel {
+  white-space: nowrap;
+}
+
+/* On narrow screens, stack pagination elements vertically */
+@media (max-width: 500px) {
+  .ag-theme-alpine .ag-paging-panel {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.5rem;
+  }
+
+  .ag-theme-alpine .ag-paging-page-size,
+  .ag-theme-alpine .ag-paging-row-summary-panel,
+  .ag-theme-alpine .ag-paging-page-summary-panel {
+    flex: 0 0 auto;
+  }
+}
