@@ -137,15 +137,15 @@ onBeforeUnmount(() => {
   <div
     ref="panelRef"
     :style="panelStyle"
-    class="absolute z-10 w-[210px] rounded-xl border border-slate-200/80 dark:border-slate-700/70 bg-white/90 dark:bg-slate-900/80 shadow-[0_16px_32px_-20px_rgba(15,23,42,0.45)] backdrop-blur-md"
+    class="absolute z-10 w-[180px] rounded-xl border border-slate-200/80 dark:border-slate-700/70 bg-white/90 dark:bg-slate-900/80 shadow-[0_16px_32px_-20px_rgba(15,23,42,0.45)] backdrop-blur-md"
   >
     <div
-      class="flex items-center justify-between px-3 py-2 border-b border-slate-200/70 dark:border-slate-700/70 bg-gradient-to-r from-slate-50 via-white to-slate-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 select-none touch-none"
+      class="flex items-center justify-between px-2.5 py-1.5 border-b border-slate-200/70 dark:border-slate-700/70 bg-gradient-to-r from-slate-50 via-white to-slate-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 select-none touch-none"
       :class="[isDragging ? 'cursor-grabbing' : 'cursor-grab', isCollapsed ? 'border-b-0' : '']"
       @pointerdown="handlePointerDown"
     >
       <h4
-        class="text-[11px] font-semibold uppercase tracking-wide text-slate-700 dark:text-slate-200"
+        class="text-[10px] font-semibold uppercase tracking-wide text-slate-700 dark:text-slate-200"
       >
         Legend
       </h4>
@@ -156,44 +156,44 @@ onBeforeUnmount(() => {
           @pointerdown.stop
           @click="toggleCollapse"
         >
-          <ChevronUp v-if="!isCollapsed" class="w-4 h-4" />
-          <ChevronDown v-else class="w-4 h-4" />
+          <ChevronUp v-if="!isCollapsed" class="w-3.5 h-3.5" />
+          <ChevronDown v-else class="w-3.5 h-3.5" />
         </button>
-        <GripVertical class="w-4 h-4 text-slate-400 dark:text-slate-500" />
+        <GripVertical class="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
       </div>
     </div>
 
-    <div v-show="!isCollapsed" class="px-3 py-2.5 space-y-2 text-xs">
+    <div v-show="!isCollapsed" class="px-2.5 py-2 space-y-1.5 text-xs">
       <div
-        class="flex items-center gap-2 rounded-md border border-slate-200/70 dark:border-slate-700/60 bg-slate-50/80 dark:bg-slate-800/50 px-2 py-1.5"
+        class="flex items-center gap-2 rounded-md border border-slate-200/70 dark:border-slate-700/60 bg-slate-50/80 dark:bg-slate-800/50 px-2 py-1"
       >
         <div
-          class="w-4 h-4 rounded bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700"
+          class="w-3.5 h-3.5 rounded bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700"
         ></div>
         <span class="font-medium text-slate-700 dark:text-slate-200">Table</span>
       </div>
       <div
-        class="flex items-center gap-2 rounded-md border border-slate-200/70 dark:border-slate-700/60 bg-slate-50/80 dark:bg-slate-800/50 px-2 py-1.5"
+        class="flex items-center gap-2 rounded-md border border-slate-200/70 dark:border-slate-700/60 bg-slate-50/80 dark:bg-slate-800/50 px-2 py-1"
       >
-        <Focus class="w-4 h-4 text-purple-500 dark:text-purple-300" />
+        <Focus class="w-3.5 h-3.5 text-purple-500 dark:text-purple-300" />
         <span class="font-medium italic text-slate-700 dark:text-slate-200">View</span>
       </div>
       <div
-        class="flex items-center gap-2 rounded-md border border-slate-200/70 dark:border-slate-700/60 bg-slate-50/80 dark:bg-slate-800/50 px-2 py-1.5"
+        class="flex items-center gap-2 rounded-md border border-slate-200/70 dark:border-slate-700/60 bg-slate-50/80 dark:bg-slate-800/50 px-2 py-1"
       >
-        <div class="w-5 h-0.5 bg-cyan-500 rounded-full"></div>
+        <div class="w-4 h-0.5 bg-cyan-500 rounded-full"></div>
         <span class="font-medium text-slate-700 dark:text-slate-200">Foreign Key</span>
       </div>
       <div
-        class="flex items-center gap-2 rounded-md border border-slate-200/70 dark:border-slate-700/60 bg-slate-50/80 dark:bg-slate-800/50 px-2 py-1.5"
+        class="flex items-center gap-2 rounded-md border border-slate-200/70 dark:border-slate-700/60 bg-slate-50/80 dark:bg-slate-800/50 px-2 py-1"
       >
-        <div class="w-5 h-0.5 bg-orange-500 rounded-full"></div>
+        <div class="w-4 h-0.5 bg-orange-500 rounded-full"></div>
         <span class="font-medium text-slate-700 dark:text-slate-200">Junction Table</span>
       </div>
       <div
-        class="flex items-center gap-2 rounded-md border border-slate-200/70 dark:border-slate-700/60 bg-slate-50/80 dark:bg-slate-800/50 px-2 py-1.5"
+        class="flex items-center gap-2 rounded-md border border-slate-200/70 dark:border-slate-700/60 bg-slate-50/80 dark:bg-slate-800/50 px-2 py-1"
       >
-        <div class="w-5 h-0.5 border-t border-dashed border-slate-400 dark:border-slate-500"></div>
+        <div class="w-4 h-0.5 border-t border-dashed border-slate-400 dark:border-slate-500"></div>
         <span class="font-medium text-slate-700 dark:text-slate-200">View Dependency</span>
       </div>
     </div>

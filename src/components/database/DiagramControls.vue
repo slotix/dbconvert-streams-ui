@@ -178,15 +178,15 @@ onBeforeUnmount(() => {
   <div
     ref="panelRef"
     :style="panelStyle"
-    class="absolute z-10 min-w-[240px] rounded-xl border border-slate-200/80 dark:border-slate-700/70 bg-white/90 dark:bg-slate-900/80 shadow-[0_18px_36px_-22px_rgba(15,23,42,0.5)] backdrop-blur-md"
+    class="absolute z-10 min-w-[210px] rounded-xl border border-slate-200/80 dark:border-slate-700/70 bg-white/90 dark:bg-slate-900/80 shadow-[0_18px_36px_-22px_rgba(15,23,42,0.5)] backdrop-blur-md"
   >
     <div
-      class="flex items-center justify-between px-3 py-2 border-b border-slate-200/70 dark:border-slate-700/70 bg-gradient-to-r from-slate-50 via-white to-slate-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 select-none touch-none"
+      class="flex items-center justify-between px-2.5 py-1.5 border-b border-slate-200/70 dark:border-slate-700/70 bg-gradient-to-r from-slate-50 via-white to-slate-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 select-none touch-none"
       :class="[isDragging ? 'cursor-grabbing' : 'cursor-grab', isCollapsed ? 'border-b-0' : '']"
       @pointerdown="handlePointerDown"
     >
       <span
-        class="text-[11px] font-semibold uppercase tracking-wide text-slate-700 dark:text-slate-200"
+        class="text-[10px] font-semibold uppercase tracking-wide text-slate-700 dark:text-slate-200"
       >
         Diagram Tools
       </span>
@@ -197,44 +197,44 @@ onBeforeUnmount(() => {
           @pointerdown.stop
           @click="toggleCollapse"
         >
-          <ChevronUp v-if="!isCollapsed" class="w-4 h-4" />
-          <ChevronDown v-else class="w-4 h-4" />
+          <ChevronUp v-if="!isCollapsed" class="w-3.5 h-3.5" />
+          <ChevronDown v-else class="w-3.5 h-3.5" />
         </button>
-        <GripVertical class="w-4 h-4 text-slate-400 dark:text-slate-500" />
+        <GripVertical class="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
       </div>
     </div>
 
-    <div v-show="!isCollapsed" class="px-3 py-2.5 space-y-3">
+    <div v-show="!isCollapsed" class="px-2.5 py-2 space-y-2.5">
       <!-- Zoom Controls -->
       <div class="flex items-center justify-between">
         <span class="text-xs font-semibold text-slate-700 dark:text-slate-200">Zoom</span>
         <div class="flex items-center gap-1">
           <button
-            class="p-1 rounded-md text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus:outline-none focus:ring-1 focus:ring-cyan-500 focus:ring-offset-1 dark:focus:ring-offset-slate-900"
+            class="p-0.5 rounded-md text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus:outline-none focus:ring-1 focus:ring-cyan-500 focus:ring-offset-1 dark:focus:ring-offset-slate-900"
             @click="emit('zoom', 'out')"
           >
             <Minus class="w-3.5 h-3.5" />
           </button>
           <span
-            class="text-xs text-slate-600 dark:text-slate-400 min-w-[44px] text-center tabular-nums"
+            class="text-xs text-slate-600 dark:text-slate-400 min-w-[40px] text-center tabular-nums"
           >
             {{ Math.round(currentZoom * 100) }}%
           </span>
           <button
-            class="p-1 rounded-md text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus:outline-none focus:ring-1 focus:ring-cyan-500 focus:ring-offset-1 dark:focus:ring-offset-slate-900"
+            class="p-0.5 rounded-md text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus:outline-none focus:ring-1 focus:ring-cyan-500 focus:ring-offset-1 dark:focus:ring-offset-slate-900"
             @click="emit('zoom', 'in')"
           >
             <Plus class="w-3.5 h-3.5" />
           </button>
           <button
-            class="p-1 ml-1 rounded-md text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus:outline-none focus:ring-1 focus:ring-cyan-500 focus:ring-offset-1 dark:focus:ring-offset-slate-900"
+            class="p-0.5 ml-1 rounded-md text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus:outline-none focus:ring-1 focus:ring-cyan-500 focus:ring-offset-1 dark:focus:ring-offset-slate-900"
             title="Auto layout (recenter + retune)"
             @click="emit('auto')"
           >
             <Sparkles class="w-3.5 h-3.5" />
           </button>
           <button
-            class="p-1 ml-1 rounded-md text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus:outline-none focus:ring-1 focus:ring-cyan-500 focus:ring-offset-1 dark:focus:ring-offset-slate-900"
+            class="p-0.5 ml-1 rounded-md text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus:outline-none focus:ring-1 focus:ring-cyan-500 focus:ring-offset-1 dark:focus:ring-offset-slate-900"
             title="Export diagram"
             @click="emit('toggle-export')"
           >
@@ -246,14 +246,14 @@ onBeforeUnmount(() => {
       <!-- Export Options Panel -->
       <div
         v-if="exportOptions"
-        class="p-2 rounded-lg border border-slate-200/70 dark:border-slate-700/70 bg-slate-50/80 dark:bg-slate-800/60"
+        class="p-1.5 rounded-lg border border-slate-200/70 dark:border-slate-700/70 bg-slate-50/80 dark:bg-slate-800/60"
       >
-        <div class="flex items-center mb-2">
+        <div class="flex items-center mb-1.5">
           <span class="text-xs font-semibold text-slate-700 dark:text-slate-200 mr-auto"
             >Export Format</span
           >
         </div>
-        <div class="flex gap-2 mb-2 flex-wrap">
+        <div class="flex gap-2 mb-1.5 flex-wrap">
           <label class="inline-flex items-center cursor-pointer">
             <input
               type="radio"
@@ -286,7 +286,7 @@ onBeforeUnmount(() => {
           </label>
         </div>
         <button
-          class="w-full py-1.5 bg-slate-700 hover:bg-slate-800 dark:bg-slate-600 dark:hover:bg-slate-500 text-white text-xs font-semibold rounded-md focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-1 dark:focus:ring-offset-slate-900 transition-colors disabled:opacity-50"
+          class="w-full py-1 bg-slate-700 hover:bg-slate-800 dark:bg-slate-600 dark:hover:bg-slate-500 text-white text-xs font-semibold rounded-md focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-1 dark:focus:ring-offset-slate-900 transition-colors disabled:opacity-50"
           :disabled="exportProgress"
           @click="emit('export')"
         >
@@ -296,9 +296,9 @@ onBeforeUnmount(() => {
       </div>
 
       <!-- Force Controls -->
-      <div class="space-y-2.5">
+      <div class="space-y-2">
         <div>
-          <div class="flex items-center justify-between mb-1">
+          <div class="flex items-center justify-between mb-0.5">
             <label class="text-xs font-semibold text-slate-700 dark:text-slate-200"
               >Link Distance</label
             >
@@ -312,13 +312,13 @@ onBeforeUnmount(() => {
             min="100"
             max="800"
             step="20"
-            class="w-full h-1.5 bg-slate-200 dark:bg-slate-700/70 rounded-lg appearance-none cursor-pointer slider-gray"
+            class="w-full h-1 bg-slate-200 dark:bg-slate-700/70 rounded-lg appearance-none cursor-pointer slider-gray"
             @input="emit('update:linkDistance', Number(($event.target as HTMLInputElement).value))"
           />
         </div>
 
         <div>
-          <div class="flex items-center justify-between mb-1">
+          <div class="flex items-center justify-between mb-0.5">
             <label class="text-xs font-semibold text-slate-700 dark:text-slate-200"
               >Charge Strength</label
             >
@@ -332,7 +332,7 @@ onBeforeUnmount(() => {
             min="-6000"
             max="-200"
             step="100"
-            class="w-full h-1.5 bg-slate-200 dark:bg-slate-700/70 rounded-lg appearance-none cursor-pointer slider-gray"
+            class="w-full h-1 bg-slate-200 dark:bg-slate-700/70 rounded-lg appearance-none cursor-pointer slider-gray"
             @input="
               emit('update:chargeStrength', Number(($event.target as HTMLInputElement).value))
             "
@@ -340,7 +340,7 @@ onBeforeUnmount(() => {
         </div>
 
         <div>
-          <div class="flex items-center justify-between mb-1">
+          <div class="flex items-center justify-between mb-0.5">
             <label class="text-xs font-semibold text-slate-700 dark:text-slate-200"
               >Collision Radius</label
             >
@@ -354,7 +354,7 @@ onBeforeUnmount(() => {
             min="60"
             max="320"
             step="10"
-            class="w-full h-1.5 bg-slate-200 dark:bg-slate-700/70 rounded-lg appearance-none cursor-pointer slider-gray"
+            class="w-full h-1 bg-slate-200 dark:bg-slate-700/70 rounded-lg appearance-none cursor-pointer slider-gray"
             @input="
               emit('update:collisionRadius', Number(($event.target as HTMLInputElement).value))
             "
@@ -370,16 +370,16 @@ onBeforeUnmount(() => {
 .slider-gray::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
   background: rgb(107 114 128);
   cursor: pointer;
 }
 
 .slider-gray::-moz-range-thumb {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
   background: rgb(107 114 128);
   cursor: pointer;
