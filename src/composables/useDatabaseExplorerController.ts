@@ -546,17 +546,6 @@ export function useDatabaseExplorerController({
       },
       'pinned'
     )
-
-    // Pre-load schema data for the diagram
-    schemaStore.setConnectionId(payload.connectionId)
-    schemaStore.setDatabaseName(payload.database)
-    if (payload.focus) {
-      const focusName = payload.focus.schema
-        ? `${payload.focus.schema}.${payload.focus.name}`
-        : payload.focus.name
-      schemaStore.setSelectedTable(focusName)
-    }
-    schemaStore.fetchSchema(false)
   }
 
   function handleRefreshMetadata() {
@@ -1073,24 +1062,7 @@ export function useDatabaseExplorerController({
       ) {
         ensureDiagramTabMatchesRoute(state.connectionId, state.databaseName)
 
-        // Apply optional focus from URL
-        schemaStore.setConnectionId(state.connectionId)
-        schemaStore.setDatabaseName(state.databaseName)
-        const focusType = route.query.focusType
-        const focusName = route.query.focusName
-        const focusSchema = route.query.focusSchema
-        if (
-          (focusType === 'table' || focusType === 'view') &&
-          typeof focusName === 'string' &&
-          focusName
-        ) {
-          const fullName =
-            typeof focusSchema === 'string' && focusSchema
-              ? `${focusSchema}.${focusName}`
-              : focusName
-          schemaStore.setSelectedTable(fullName)
-        }
-        schemaStore.fetchSchema(false)
+        // Focus is applied by DiagramTab (route-aware) to avoid global schema state conflicts.
       }
 
       // Mark initial load as complete after first watcher run
