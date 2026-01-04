@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, onMounted, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useSchemaStore } from '@/stores/schema'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
+import { useObjectTabStateStore } from '@/stores/objectTabState'
 import DatabaseDiagramD3 from './DatabaseDiagramD3.vue'
 
 const props = defineProps<{
@@ -11,8 +12,15 @@ const props = defineProps<{
 
 const schemaStore = useSchemaStore()
 const navigationStore = useExplorerNavigationStore()
+const objectTabStateStore = useObjectTabStateStore()
 
-// Ensure schema is loaded for this database
+// Object key for persisting diagram state (shared across panes for same connection/database)
+const diagramObjectKey = computed(() => `diagram:${props.connectionId}:${props.database}`)
+
+// Local focus table that we control (for restoring persisted selection)
+const localFocusTable = ref<string | null>(null)
+
+// Ensure schema is loaded for this database and restore persisted selection
 onMounted(() => {
   if (
     schemaStore.connectionId !== props.connectionId ||
@@ -21,6 +29,12 @@ onMounted(() => {
     schemaStore.setConnectionId(props.connectionId)
     schemaStore.setDatabaseName(props.database)
     schemaStore.fetchSchema(false)
+  }
+
+  // Restore persisted selection
+  const persistedSelection = objectTabStateStore.getDiagramSelectedTable(diagramObjectKey.value)
+  if (persistedSelection) {
+    localFocusTable.value = persistedSelection
   }
 })
 
@@ -57,6 +71,17 @@ const isLoading = computed(() => schemaStore.loading)
 const hasData = computed(() => {
   return tables.value?.length > 0 || views.value?.length > 0
 })
+
+// Handle selection change from diagram and persist it
+function handleSelectionChange(tableName: string | null) {
+  objectTabStateStore.setDiagramSelectedTable(diagramObjectKey.value, tableName)
+}
+
+// Handle focus consumed - clear local focus but preserve the persisted selection
+function handleFocusConsumed() {
+  localFocusTable.value = null
+  schemaStore.setSelectedTable(null)
+}
 </script>
 
 <template>
@@ -80,8 +105,9 @@ const hasData = computed(() => {
       :tables="tables"
       :relations="relationships"
       :views="views"
-      :focus-table="schemaStore.selectedTable"
-      @focus-consumed="schemaStore.setSelectedTable(null)"
+      :focus-table="localFocusTable || schemaStore.selectedTable"
+      @focus-consumed="handleFocusConsumed"
+      @selection-change="handleSelectionChange"
     />
   </div>
 </template>

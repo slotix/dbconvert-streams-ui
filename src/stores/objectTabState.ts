@@ -45,6 +45,8 @@ type ObjectTabState = {
   agGridData?: AGGridDataState
   // Filter panel state (for Data tab)
   filterPanelState?: FilterPanelState
+  // Diagram state (for diagram tabs)
+  diagramSelectedTable?: string | null
 }
 
 const STORAGE_KEY = 'explorer.objectTabState'
@@ -174,6 +176,19 @@ export const useObjectTabStateStore = defineStore('objectTabState', {
         delete this.tabStates[objectKey].filterPanelState
         this.persistState()
       }
+    },
+
+    // Diagram state management
+    setDiagramSelectedTable(objectKey: string, tableName: string | null) {
+      if (!this.tabStates[objectKey]) {
+        this.tabStates[objectKey] = { mainTab: 0, subTab: 0 }
+      }
+      this.tabStates[objectKey].diagramSelectedTable = tableName
+      this.persistState()
+    },
+
+    getDiagramSelectedTable(objectKey: string): string | null {
+      return this.tabStates[objectKey]?.diagramSelectedTable || null
     },
 
     /**

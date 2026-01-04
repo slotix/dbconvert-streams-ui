@@ -42,6 +42,7 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   (e: 'focus-consumed'): void
+  (e: 'selection-change', tableName: string | null): void
 }>()
 
 // Template refs
@@ -248,6 +249,7 @@ function createNodes(
       event.stopPropagation()
       highlightingComposable.toggleSelection(d.name)
       updateHighlighting()
+      emit('selection-change', highlightingComposable.selectedTable.value)
     })
 
   // Table background
@@ -1137,6 +1139,7 @@ function createVisualization(reason: 'init' | 'resize' | 'data' | 'theme' = 'dat
   svg.on('click', () => {
     highlightingComposable.clearSelection()
     updateHighlighting()
+    emit('selection-change', null)
   })
 
   currentNodes = nodes
