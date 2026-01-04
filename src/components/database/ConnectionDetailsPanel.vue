@@ -682,7 +682,7 @@ const isLoadingDatabases = computed(() => {
                   <Terminal class="h-4 w-4 text-teal-600 dark:text-teal-400" />
                 </div>
                 <span class="text-sm font-semibold text-gray-700 dark:text-gray-300"
-                  >File Console</span
+                  >SQL Console</span
                 >
               </div>
               <p class="text-xs text-gray-600 dark:text-gray-400 mb-3">
@@ -695,7 +695,7 @@ const isLoadingDatabases = computed(() => {
                 @click="emit('open-file-console')"
               >
                 <Terminal class="w-4 h-4 mr-1.5" />
-                Open File Console
+                Open SQL Console
               </BaseButton>
             </div>
 

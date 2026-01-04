@@ -213,7 +213,7 @@ export function useSqlConsoleActions() {
       {
         id: tabId,
         connectionId,
-        name: `${conn?.name || 'Files'} (DuckDB)`,
+        name: conn?.name || 'Files',
         tabType: 'file-console',
         fileConnectionType: isS3 ? 's3' : 'files',
         basePath,

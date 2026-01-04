@@ -42,7 +42,7 @@
       <div class="flex items-start space-x-2">
         <Info class="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
         <div class="text-blue-700 dark:text-blue-300 space-y-2">
-          <p class="font-medium">File Console - Query Files with SQL</p>
+          <p class="font-medium">SQL Console - Query Files with SQL</p>
 
           <div>
             <p class="font-medium mb-1">File Reading Functions:</p>
@@ -394,12 +394,7 @@ const headerIcon = computed<Component>(() => {
   return props.mode === 'file' ? Terminal : Database
 })
 
-const consoleTitle = computed(() => {
-  if (props.mode === 'file') {
-    return 'File Console'
-  }
-  return 'SQL Console'
-})
+const consoleTitle = 'SQL Console'
 
 const scopeLabel = computed(() => {
   const connName = connection.value?.name || 'Connection'
