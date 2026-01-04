@@ -38,6 +38,12 @@ export type FilterPanelState = {
   limit?: number | null
 }
 
+export type DiagramZoomTransformState = {
+  x: number
+  y: number
+  k: number
+}
+
 type ObjectTabState = {
   mainTab: number // 0 = Data, 1 = Structure
   subTab: number // For Structure tab: 0 = Columns, 1 = Keys, 2 = Indexes, 3 = DDL
@@ -47,6 +53,7 @@ type ObjectTabState = {
   filterPanelState?: FilterPanelState
   // Diagram state (for diagram tabs)
   diagramSelectedTable?: string | null
+  diagramZoomTransform?: DiagramZoomTransformState | null
 }
 
 const STORAGE_KEY = 'explorer.objectTabState'
@@ -189,6 +196,18 @@ export const useObjectTabStateStore = defineStore('objectTabState', {
 
     getDiagramSelectedTable(objectKey: string): string | null {
       return this.tabStates[objectKey]?.diagramSelectedTable || null
+    },
+
+    setDiagramZoomTransform(objectKey: string, transform: DiagramZoomTransformState | null) {
+      if (!this.tabStates[objectKey]) {
+        this.tabStates[objectKey] = { mainTab: 0, subTab: 0 }
+      }
+      this.tabStates[objectKey].diagramZoomTransform = transform
+      this.persistState()
+    },
+
+    getDiagramZoomTransform(objectKey: string): DiagramZoomTransformState | null {
+      return this.tabStates[objectKey]?.diagramZoomTransform || null
     },
 
     /**

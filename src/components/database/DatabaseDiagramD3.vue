@@ -7,10 +7,11 @@ import type { Selection } from 'd3-selection'
 import type { ForceLink } from 'd3-force'
 import 'd3-transition'
 import { zoomIdentity, zoomTransform } from 'd3-zoom'
-import type { ZoomTransform } from 'd3-zoom'
+import type { D3ZoomEvent, ZoomTransform } from 'd3-zoom'
 import type { Relationship, Table } from '@/types/schema'
 import type { TableNode, TableLink } from '@/types/diagram'
 import { useThemeStore } from '@/stores/theme'
+import { useObjectTabStateStore } from '@/stores/objectTabState'
 import { BRAND_COLORS, getDiagramColors, createMarkerDefinitions } from '@/utils/d3DiagramConfig'
 import {
   buildDiagramLinks,
@@ -31,12 +32,14 @@ const props = withDefaults(
     relations: Relationship[]
     views: Table[]
     focusTable?: string | null
+    persistKey?: string | null
   }>(),
   {
     tables: () => [],
     relations: () => [],
     views: () => [],
-    focusTable: null
+    focusTable: null,
+    persistKey: null
   }
 )
 
@@ -76,6 +79,10 @@ let pendingFocusTable: string | null = null
 
 // Theme store
 const themeStore = useThemeStore()
+const objectTabStateStore = useObjectTabStateStore()
+
+let zoomPersistTimer: ReturnType<typeof setTimeout> | null = null
+let lastPersistedZoomToken: string | null = null
 
 // Composables
 const zoomComposable = useDiagramZoom()
@@ -687,6 +694,40 @@ function getRawViewportSize(fallback: number = 1200): { width: number; height: n
   }
 }
 
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value))
+}
+
+function schedulePersistZoom(transform: ZoomTransform) {
+  if (!props.persistKey) return
+
+  const k = clamp(transform.k, zoomComposable.minZoom, zoomComposable.maxZoom)
+  const x = Number.isFinite(transform.x) ? transform.x : 0
+  const y = Number.isFinite(transform.y) ? transform.y : 0
+  const token = `${x.toFixed(2)}:${y.toFixed(2)}:${k.toFixed(4)}`
+  if (lastPersistedZoomToken === token) return
+  lastPersistedZoomToken = token
+
+  if (zoomPersistTimer) clearTimeout(zoomPersistTimer)
+  zoomPersistTimer = setTimeout(() => {
+    objectTabStateStore.setDiagramZoomTransform(props.persistKey as string, { x, y, k })
+  }, 150)
+}
+
+function restorePersistedZoom(zoomBehavior: ReturnType<typeof zoomComposable.initializeZoom>) {
+  if (!props.persistKey || !svg) return
+  const stored = objectTabStateStore.getDiagramZoomTransform(props.persistKey)
+  if (!stored) return
+
+  const k = clamp(stored.k, zoomComposable.minZoom, zoomComposable.maxZoom)
+  const x = Number.isFinite(stored.x) ? stored.x : 0
+  const y = Number.isFinite(stored.y) ? stored.y : 0
+  const transform = zoomIdentity.translate(x, y).scale(k)
+
+  svg.call(zoomBehavior.transform, transform)
+  preservedZoomTransform = transform
+}
+
 function focusOnTable(tableName: string): boolean {
   if (!svgContainer.value || !svg) return false
 
@@ -700,22 +741,13 @@ function focusOnTable(tableName: string): boolean {
   if (!bounds) return false
 
   const { width, height } = getRawViewportSize(1200)
-  const padding = 260
   const duration = 550
 
-  const paddedWidth = Math.max(1, width - padding * 2)
-  const paddedHeight = Math.max(1, height - padding * 2)
-  const boundsWidth = Math.max(1, bounds.maxX - bounds.minX)
-  const boundsHeight = Math.max(1, bounds.maxY - bounds.minY)
-
-  const focusMaxZoom = 1.2
-  const scale = Math.max(
-    zoomComposable.minZoom,
-    Math.min(
-      Math.min(zoomComposable.maxZoom, focusMaxZoom),
-      Math.min(paddedWidth / boundsWidth, paddedHeight / boundsHeight)
-    )
-  )
+  const svgNode = svg.node()
+  if (!svgNode) return false
+  const currentTransform = zoomTransform(svgNode)
+  const scale =
+    Number.isFinite(currentTransform.k) && currentTransform.k > 0 ? currentTransform.k : 1
 
   const cx = (bounds.minX + bounds.maxX) / 2
   const cy = (bounds.minY + bounds.maxY) / 2
@@ -1003,7 +1035,16 @@ function createVisualization(reason: 'init' | 'resize' | 'data' | 'theme' = 'dat
     }
     return true
   })
+
+  zoomBehavior.on('zoom.persist', (event: D3ZoomEvent<SVGSVGElement, unknown>) => {
+    schedulePersistZoom(event.transform)
+  })
+
   zoomComposable.setInitialTransform()
+
+  if (reason === 'init') {
+    restorePersistedZoom(zoomBehavior)
+  }
 
   if (preservedZoomTransform && reason !== 'init') {
     svg.call(zoomBehavior.transform, preservedZoomTransform)
@@ -1203,6 +1244,7 @@ onBeforeUnmount(() => {
   appZoomObserver?.disconnect()
   appZoomObserver = null
   if (resizeTimer) clearTimeout(resizeTimer)
+  if (zoomPersistTimer) clearTimeout(zoomPersistTimer)
   forcesComposable.stopSimulation()
 })
 

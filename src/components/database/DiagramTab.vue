@@ -166,6 +166,7 @@ function handleFocusConsumed() {
       :tables="tables"
       :relations="relationships"
       :views="views"
+      :persist-key="diagramObjectKey"
       :focus-table="localFocusTable"
       @focus-consumed="handleFocusConsumed"
       @selection-change="handleSelectionChange"
