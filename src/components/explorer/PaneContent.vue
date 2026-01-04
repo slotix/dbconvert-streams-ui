@@ -57,6 +57,7 @@
       @tab-change="$emit('tab-change', $event)"
       @refresh-metadata="$emit('refresh-metadata')"
       @open-sql-console="$emit('open-sql-console', $event)"
+      @open-diagram="$emit('show-diagram', $event)"
     />
     <ObjectContainer
       v-else-if="activeTab.tabType === 'file'"
