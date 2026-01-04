@@ -101,6 +101,7 @@ export interface StructureOptions {
   tables?: boolean
   indexes?: boolean
   foreignKeys?: boolean
+  checkConstraints?: boolean
 }
 
 // UI structure options - same as backend, just used in wizard before saving

@@ -308,6 +308,28 @@
                 </label>
               </div>
             </div>
+
+            <!-- Create Check Constraints -->
+            <div class="relative flex items-start">
+              <div class="flex items-center h-5">
+                <input
+                  id="create-check-constraints"
+                  v-model="createCheckConstraints"
+                  type="checkbox"
+                  class="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
+                  :disabled="isFileSourceConnection"
+                  @change="handleOptionsChange"
+                />
+              </div>
+              <div class="ml-3 text-sm">
+                <label
+                  for="create-check-constraints"
+                  class="font-medium text-gray-700 dark:text-gray-300 cursor-pointer"
+                >
+                  Check constraints
+                </label>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -354,6 +376,7 @@ interface Props {
   createTables?: boolean
   createIndexes?: boolean
   createForeignKeys?: boolean
+  createCheckConstraints?: boolean
   copyData?: boolean
   sourceConnections?: StreamConnectionMapping[]
 }
@@ -363,6 +386,7 @@ const props = withDefaults(defineProps<Props>(), {
   createTables: true,
   createIndexes: true,
   createForeignKeys: true,
+  createCheckConstraints: true,
   copyData: true,
   sourceConnections: () => []
 })
@@ -371,6 +395,7 @@ const emit = defineEmits<{
   'update:create-tables': [value: boolean]
   'update:create-indexes': [value: boolean]
   'update:create-foreign-keys': [value: boolean]
+  'update:create-check-constraints': [value: boolean]
   'update:copy-data': [value: boolean]
   'update:can-proceed': [value: boolean]
 }>()
@@ -378,6 +403,7 @@ const emit = defineEmits<{
 const createTables = ref(props.createTables)
 const createIndexes = ref(props.createIndexes)
 const createForeignKeys = ref(props.createForeignKeys)
+const createCheckConstraints = ref(props.createCheckConstraints)
 const copyData = ref(props.copyData)
 const showAdvanced = ref(false)
 
@@ -518,19 +544,28 @@ watch(
 
 // Master "Create structure" checkbox - checked if any structure option is enabled
 const createStructure = computed({
-  get: () => createTables.value || createIndexes.value || createForeignKeys.value,
+  get: () =>
+    createTables.value ||
+    createIndexes.value ||
+    createForeignKeys.value ||
+    createCheckConstraints.value,
   set: (value: boolean) => {
     // When toggled, enable/disable all structure options
     createTables.value = value
     createIndexes.value = value
     createForeignKeys.value = value
+    createCheckConstraints.value = value
     handleOptionsChange()
   }
 })
 
 // Helper to check if any structure option is enabled
 const anyStructureEnabled = computed(
-  () => createTables.value || createIndexes.value || createForeignKeys.value
+  () =>
+    createTables.value ||
+    createIndexes.value ||
+    createForeignKeys.value ||
+    createCheckConstraints.value
 )
 
 function handleStructureToggle() {
@@ -542,6 +577,7 @@ function handleOptionsChange() {
   emit('update:create-tables', createTables.value)
   emit('update:create-indexes', createIndexes.value)
   emit('update:create-foreign-keys', createForeignKeys.value)
+  emit('update:create-check-constraints', createCheckConstraints.value)
   emit('update:copy-data', copyData.value)
 
   // For database targets, require at least one option (structure or data)

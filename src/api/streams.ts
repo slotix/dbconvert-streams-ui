@@ -13,10 +13,17 @@ type FKViolationDetail = {
   orphanCount: number
 }
 
+type ValidatedConstraintDetail = {
+  schemaName: string
+  tableName: string
+  constraintName: string
+}
+
 export type ConstraintsActionResponse = {
   engine: string
   action: string
   validatedCount?: number
+  validatedConstraints?: ValidatedConstraintDetail[]
   totalOrphanRows?: number
   violations?: FKViolationDetail[]
 }

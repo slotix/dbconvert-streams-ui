@@ -697,7 +697,8 @@ export const useStreamsStore = defineStore('streams', {
           existingSpec?.database?.structureOptions || {
             tables: true,
             indexes: true,
-            foreignKeys: true
+            foreignKeys: true,
+            checkConstraints: true
           }
         const skipData =
           this.currentStreamConfig.skipData ?? existingSpec?.database?.skipData ?? false

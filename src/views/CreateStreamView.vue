@@ -102,11 +102,13 @@
                 :create-tables="wizard.createTables.value"
                 :create-indexes="wizard.createIndexes.value"
                 :create-foreign-keys="wizard.createForeignKeys.value"
+                :create-check-constraints="wizard.createCheckConstraints.value"
                 :copy-data="wizard.copyData.value"
                 :source-connections="wizard.sourceConnections.value"
                 @update:create-tables="wizard.setCreateTables"
                 @update:create-indexes="wizard.setCreateIndexes"
                 @update:create-foreign-keys="wizard.setCreateForeignKeys"
+                @update:create-check-constraints="wizard.setCreateCheckConstraints"
                 @update:copy-data="wizard.setCopyData"
                 @update:can-proceed="updateCanProceed"
               />
@@ -556,7 +558,8 @@ async function handleFinish() {
     streamsStore.currentStreamConfig.structureOptions = {
       tables: wizard.createTables.value,
       indexes: wizard.createIndexes.value,
-      foreignKeys: wizard.createForeignKeys.value
+      foreignKeys: wizard.createForeignKeys.value,
+      checkConstraints: wizard.createCheckConstraints.value
     }
 
     if (!wizard.canUseCDCMode.value) {
@@ -644,7 +647,8 @@ async function handleQuickSave() {
     streamsStore.currentStreamConfig.structureOptions = {
       tables: wizard.createTables.value,
       indexes: wizard.createIndexes.value,
-      foreignKeys: wizard.createForeignKeys.value
+      foreignKeys: wizard.createForeignKeys.value,
+      checkConstraints: wizard.createCheckConstraints.value
     }
 
     if (!wizard.canUseCDCMode.value) {

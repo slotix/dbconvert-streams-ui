@@ -127,6 +127,7 @@ export function useStreamWizard() {
   const createTables = ref(true)
   const createIndexes = ref(true)
   const createForeignKeys = ref(true)
+  const createCheckConstraints = ref(true)
   const copyData = ref(true)
 
   // Initial state snapshot for change detection (edit mode only)
@@ -422,6 +423,10 @@ export function useStreamWizard() {
     createForeignKeys.value = value
   }
 
+  function setCreateCheckConstraints(value: boolean) {
+    createCheckConstraints.value = value
+  }
+
   function setCopyData(value: boolean) {
     copyData.value = value
   }
@@ -647,6 +652,7 @@ export function useStreamWizard() {
     createTables,
     createIndexes,
     createForeignKeys,
+    createCheckConstraints,
     copyData,
     sourceConnections,
     primarySourceId,
@@ -680,6 +686,7 @@ export function useStreamWizard() {
     setCreateTables,
     setCreateIndexes,
     setCreateForeignKeys,
+    setCreateCheckConstraints,
     setCopyData,
     setSourceConnections,
     reset,
