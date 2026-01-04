@@ -143,24 +143,21 @@
         </button>
         <div class="border-t border-gray-100 dark:border-gray-700 my-1" />
         <button
-          class="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+          class="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
           @click="handleContextMenuAction('close')"
         >
-          <X class="h-4 w-4 text-gray-500 dark:text-gray-400" />
           <span>Close</span>
         </button>
         <button
-          class="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+          class="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
           @click="handleContextMenuAction('close-others')"
         >
-          <X class="h-4 w-4 text-gray-500 dark:text-gray-400" />
           <span>Close Others</span>
         </button>
         <button
-          class="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+          class="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
           @click="handleContextMenuAction('close-all')"
         >
-          <X class="h-4 w-4 text-gray-500 dark:text-gray-400" />
           <span>Close All</span>
         </button>
       </div>
