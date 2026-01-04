@@ -135,6 +135,26 @@
               <Square class="h-4 w-4" :stroke-width="iconStroke" />
               Stop
             </BaseButton>
+
+            <!-- Validate constraints (PostgreSQL, after stop/finish) -->
+            <BaseButton
+              v-if="canValidateConstraints && isPostgresTarget"
+              v-tooltip="'Validate NOT VALID foreign key constraints on the target database'"
+              variant="secondary"
+              @click="runConstraints"
+            >
+              Validate Constraints
+            </BaseButton>
+
+            <!-- Check FK violations (MySQL, after stop/finish) -->
+            <BaseButton
+              v-if="canValidateConstraints && isMySQLTarget"
+              v-tooltip="'Check for foreign key violations (orphan rows) on the target database'"
+              variant="secondary"
+              @click="runConstraints"
+            >
+              Check FK Violations
+            </BaseButton>
           </div>
         </div>
         <div class="flex items-center gap-2">
@@ -351,12 +371,20 @@ const {
   isPaused,
   isStreamFinished,
   isStopped,
+  canValidateConstraints,
   streamStatus,
   startStream,
   pauseStream,
   resumeStream,
-  stopStream
+  stopStream,
+  runConstraints
 } = useStreamControls(streamRef)
+
+const targetType = computed(() => (props.target?.type || '').toLowerCase())
+const isPostgresTarget = computed(() =>
+  ['postgres', 'postgresql', 'pgx'].includes(targetType.value)
+)
+const isMySQLTarget = computed(() => targetType.value === 'mysql')
 
 const dbTypes = computed(() => connectionsStore.dbTypes)
 const allConnections = computed(() => connectionsStore.connections)

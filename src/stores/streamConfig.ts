@@ -923,6 +923,14 @@ export const useStreamsStore = defineStore('streams', {
         throw err
       }
     },
+    async runTargetConstraintsAction(configID: string) {
+      try {
+        return await api.runTargetConstraintsAction(configID)
+      } catch (err) {
+        console.error('Failed to run constraints action:', err)
+        throw err
+      }
+    },
     resetCurrentStream() {
       this.currentStreamConfig = normalizeStreamConfig({
         ...defaultStreamConfigOptions,

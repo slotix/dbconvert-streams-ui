@@ -76,6 +76,18 @@ export function useStreamControls(stream: Ref<StreamConfig>) {
     )
   })
 
+  const canValidateConstraints = computed(() => {
+    const configMatches = monitoringStore.streamConfig?.id === stream.value.id
+    const hasStreamId = monitoringStore.streamID !== ''
+    if (!configMatches || !hasStreamId) return false
+
+    return (
+      monitoringStore.status === statusEnum.FINISHED ||
+      monitoringStore.status === statusEnum.STOPPED ||
+      monitoringStore.stats.some((stat) => stat.status === 'FINISHED' || stat.status === 'STOPPED')
+    )
+  })
+
   const streamStatus = computed(() => {
     if (!isStreamRunning.value) {
       return getStreamStatusLabel(monitoringStore.status) || 'Ready'
@@ -159,15 +171,46 @@ export function useStreamControls(stream: Ref<StreamConfig>) {
     }
   }
 
+  async function runConstraints() {
+    if (!stream.value.id) return
+    try {
+      const result = await streamsStore.runTargetConstraintsAction(stream.value.id)
+
+      if (result.engine === 'postgres') {
+        const count = result.validatedCount ?? 0
+        commonStore.showNotification(`Validated ${count} constraint(s)`, 'success')
+        return
+      }
+
+      if (result.engine === 'mysql') {
+        const total = result.totalOrphanRows ?? 0
+        if (total === 0) {
+          commonStore.showNotification('No FK violations found', 'success')
+          return
+        }
+        commonStore.showNotification(`FK violations found: ${total} orphan row(s)`, 'error')
+        return
+      }
+
+      commonStore.showNotification('Constraints action completed', 'success')
+    } catch (error) {
+      console.error('Constraints action failed:', error)
+      const errorMsg = error instanceof Error ? error.message : String(error)
+      commonStore.showNotification(`Constraints action failed: ${errorMsg}`, 'error')
+    }
+  }
+
   return {
     isStreamRunning,
     isPaused,
     isStreamFinished,
     isStopped,
+    canValidateConstraints,
     streamStatus,
     startStream,
     pauseStream,
     resumeStream,
-    stopStream
+    stopStream,
+    runConstraints
   }
 }

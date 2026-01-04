@@ -6,6 +6,21 @@ import { apiClient } from './apiClient'
 import { type AxiosResponse } from 'axios'
 import { API_HEADERS } from '@/constants'
 
+type FKViolationDetail = {
+  schemaName: string
+  tableName: string
+  constraintName: string
+  orphanCount: number
+}
+
+export type ConstraintsActionResponse = {
+  engine: string
+  action: string
+  validatedCount?: number
+  totalOrphanRows?: number
+  violations?: FKViolationDetail[]
+}
+
 const getStreams = async (): Promise<StreamConfig[]> => {
   const commonStore = useCommonStore()
   validateApiKey(commonStore.apiKey)
@@ -135,6 +150,24 @@ const updateStreamConfig = async (id: string, config: StreamConfig): Promise<Str
   }
 }
 
+const runTargetConstraintsAction = async (configId: string): Promise<ConstraintsActionResponse> => {
+  const commonStore = useCommonStore()
+  validateApiKey(commonStore.apiKey)
+
+  try {
+    const response: AxiosResponse<ConstraintsActionResponse> = await apiClient.post(
+      `/stream-configs/${configId}/validate-constraints`,
+      null,
+      {
+        headers: { [API_HEADERS.API_KEY]: commonStore.apiKey }
+      }
+    )
+    return response.data
+  } catch (error) {
+    throw handleApiError(error)
+  }
+}
+
 export default {
   getStreams,
   createStream,
@@ -144,5 +177,6 @@ export default {
   pauseStream,
   resumeStream,
   stopStream,
-  updateStreamConfig
+  updateStreamConfig,
+  runTargetConstraintsAction
 }
