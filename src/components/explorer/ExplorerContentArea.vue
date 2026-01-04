@@ -106,7 +106,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted, onBeforeUnmount } from 'vue'
 import { useConnectionsStore } from '@/stores/connections'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { usePaneTabsStore, type PaneId } from '@/stores/paneTabs'
@@ -296,4 +296,20 @@ function handleOpenFileConsole(connectionId: string) {
     'pinned'
   )
 }
+
+// Keyboard shortcut: Ctrl+Shift+T to reopen closed tab
+function handleKeyDown(event: KeyboardEvent) {
+  if (event.ctrlKey && event.shiftKey && event.key === 'T') {
+    event.preventDefault()
+    paneTabsStore.reopenClosedTab()
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('keydown', handleKeyDown)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('keydown', handleKeyDown)
+})
 </script>

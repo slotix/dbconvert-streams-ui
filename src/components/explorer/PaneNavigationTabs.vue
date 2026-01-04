@@ -160,6 +160,20 @@
         >
           <span>Close All</span>
         </button>
+        <div class="border-t border-gray-100 dark:border-gray-700 my-1" />
+        <button
+          :disabled="!canReopenTab"
+          :class="[
+            'w-full text-left px-3 py-2 text-sm flex items-center justify-between',
+            canReopenTab
+              ? 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+              : 'text-gray-400 dark:text-gray-500 cursor-not-allowed'
+          ]"
+          @click="handleReopenClosedTab"
+        >
+          <span>Reopen Closed Tab</span>
+          <span class="text-xs text-gray-400 dark:text-gray-500">Ctrl+Shift+T</span>
+        </button>
       </div>
     </Teleport>
   </div>
@@ -208,6 +222,7 @@ const currentPreview = computed(() => paneState.value.previewTab)
 const activePinnedIndex = computed(() => paneState.value.activePinnedIndex ?? -1)
 const isPreviewActive = computed(() => activePinnedIndex.value < 0 && !!currentPreview.value)
 const hasAnyTabs = computed(() => pinnedTabs.value.length > 0 || !!currentPreview.value)
+const canReopenTab = computed(() => store.canReopenTab)
 
 const DRAG_MIME = 'application/x-dbconvert-pane-tab'
 
@@ -343,6 +358,11 @@ function handleContextMenuAction(action: 'close' | 'close-others' | 'close-all')
       break
   }
 
+  hideContextMenu()
+}
+
+function handleReopenClosedTab() {
+  store.reopenClosedTab()
   hideContextMenu()
 }
 

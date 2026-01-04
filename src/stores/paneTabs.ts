@@ -59,6 +59,15 @@ export interface PaneState {
 }
 
 /**
+ * Entry in closed tab history for "Reopen Closed Tab" feature
+ */
+export interface ClosedTabHistoryItem {
+  tab: PaneTab
+  paneId: PaneId
+  closedAt: number
+}
+
+/**
  * Initial empty pane state
  */
 function createEmptyPaneState(): PaneState {
@@ -70,11 +79,13 @@ function createEmptyPaneState(): PaneState {
 }
 
 const STORAGE_KEY = 'explorer.paneTabs'
+const MAX_CLOSED_TABS_HISTORY = 20
 
 type PersistedPaneTabsState = {
   panes: Record<PaneId, PaneState>
   activePane: PaneId
   visiblePanes: PaneId[]
+  closedTabsHistory?: ClosedTabHistoryItem[]
 }
 
 function buildObjectKey(paneId: PaneId, tab: PaneTab): string | null {
@@ -139,6 +150,7 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
   const panes = ref<Map<PaneId, PaneState>>(new Map())
   const activePane = ref<PaneId>('left')
   const visiblePanes = ref<Set<PaneId>>(new Set<PaneId>(['left'])) // Left always visible by default
+  const closedTabsHistory = ref<ClosedTabHistoryItem[]>([])
   const objectTabStateStore = useObjectTabStateStore()
 
   // Initialize panes
@@ -204,7 +216,8 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
         right: getPaneState('right')
       },
       activePane: activePane.value,
-      visiblePanes: Array.from(visiblePanes.value)
+      visiblePanes: Array.from(visiblePanes.value),
+      closedTabsHistory: closedTabsHistory.value
     })
   }
 
@@ -221,6 +234,11 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
         ? savedState.visiblePanes
         : ['left']
     visiblePanes.value = new Set<PaneId>(visible)
+
+    // Restore closed tabs history
+    if (savedState.closedTabsHistory && Array.isArray(savedState.closedTabsHistory)) {
+      closedTabsHistory.value = savedState.closedTabsHistory.slice(0, MAX_CLOSED_TABS_HISTORY)
+    }
 
     // Persist immediately to remove any stale cached fields (e.g., tab.meta).
     persistState()
@@ -254,6 +272,7 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
   const rightPaneState = computed(() => getPaneState('right'))
   const hasRightPaneContent = computed(() => hasPaneContent('right'))
   const isRightPaneVisible = computed(() => isPaneVisible('right'))
+  const canReopenTab = computed(() => closedTabsHistory.value.length > 0)
 
   // Tab key generation for deduplication
   function generateTabKey(tab: PaneTab): string {
@@ -411,6 +430,26 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
   }
 
   /**
+   * Push a tab to closed history for "Reopen Closed Tab" feature
+   */
+  function pushToClosedHistory(paneId: PaneId, tab: PaneTab) {
+    // Clone tab without volatile properties
+    const tabCopy = { ...tab }
+    delete tabCopy.meta
+
+    closedTabsHistory.value.unshift({
+      tab: tabCopy,
+      paneId,
+      closedAt: Date.now()
+    })
+
+    // Trim to max size
+    if (closedTabsHistory.value.length > MAX_CLOSED_TABS_HISTORY) {
+      closedTabsHistory.value = closedTabsHistory.value.slice(0, MAX_CLOSED_TABS_HISTORY)
+    }
+  }
+
+  /**
    * Close a pinned tab by index
    */
   function closeTab(paneId: PaneId, index: number) {
@@ -419,6 +458,9 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
 
     const wasActive = state.activePinnedIndex === index
     const [removedTab] = state.pinnedTabs.splice(index, 1)
+
+    // Save to history before clearing state
+    pushToClosedHistory(paneId, removedTab)
     clearObjectState(paneId, removedTab)
 
     // Adjust active index
@@ -428,6 +470,7 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
       if (!state.previewTab && paneId !== 'left') {
         hidePane(paneId)
       }
+      persistState()
       return
     }
 
@@ -452,6 +495,7 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
     const keepTab = state.pinnedTabs[keepIndex]
     state.pinnedTabs.forEach((tab, idx) => {
       if (idx !== keepIndex) {
+        pushToClosedHistory(paneId, tab)
         clearObjectState(paneId, tab)
       }
     })
@@ -465,13 +509,20 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
    */
   function closeAllTabs(paneId: PaneId) {
     const state = getPaneState(paneId)
-    state.pinnedTabs.forEach((tab) => clearObjectState(paneId, tab))
-    clearObjectState(paneId, state.previewTab)
+    state.pinnedTabs.forEach((tab) => {
+      pushToClosedHistory(paneId, tab)
+      clearObjectState(paneId, tab)
+    })
+    if (state.previewTab) {
+      pushToClosedHistory(paneId, state.previewTab)
+      clearObjectState(paneId, state.previewTab)
+    }
     state.pinnedTabs = []
+    state.previewTab = null
     state.activePinnedIndex = null
 
-    // If no preview tab and not left pane, hide it
-    if (!state.previewTab && paneId !== 'left') {
+    // If not left pane, hide it
+    if (paneId !== 'left') {
       hidePane(paneId)
     }
     persistState()
@@ -482,7 +533,10 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
    */
   function closePreviewTab(paneId: PaneId) {
     const state = getPaneState(paneId)
-    clearObjectState(paneId, state.previewTab)
+    if (state.previewTab) {
+      pushToClosedHistory(paneId, state.previewTab)
+      clearObjectState(paneId, state.previewTab)
+    }
     state.previewTab = null
 
     // If no pinned tabs and not left pane, hide it
@@ -604,6 +658,20 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
   }
 
   /**
+   * Reopen the most recently closed tab
+   * @returns true if a tab was reopened, false if history is empty
+   */
+  function reopenClosedTab(): boolean {
+    if (closedTabsHistory.value.length === 0) return false
+
+    const item = closedTabsHistory.value.shift()!
+    // addTab handles deduplication - if tab already exists, it activates the existing one
+    addTab(item.paneId, item.tab, 'pinned')
+    persistState()
+    return true
+  }
+
+  /**
    * Clear all state for a pane (reset to empty)
    */
   function clearPane(paneId: PaneId) {
@@ -637,6 +705,7 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
     panes,
     activePane,
     visiblePanes,
+    closedTabsHistory,
 
     // Getters
     getPaneState,
@@ -651,6 +720,7 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
     rightPaneState,
     hasRightPaneContent,
     isRightPaneVisible,
+    canReopenTab,
 
     // Actions
     setActivePane,
@@ -668,6 +738,7 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
     activatePreviewTab,
     updateTabFileMetadata,
     clearPane,
-    clearAllPanes
+    clearAllPanes,
+    reopenClosedTab
   }
 })
