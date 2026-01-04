@@ -5,7 +5,6 @@ import { useLucideIcons } from '@/composables/useLucideIcons'
 import { Menu, Plus } from 'lucide-vue-next'
 import { useCommonStore } from '@/stores/common'
 import { useConnectionsStore } from '@/stores/connections'
-import { useSchemaStore } from '@/stores/schema'
 import { usePaneTabsStore } from '@/stores/paneTabs'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { useExplorerViewStateStore } from '@/stores/explorerViewState'
@@ -38,7 +37,6 @@ const route = useRoute()
 const router = useRouter()
 const commonStore = useCommonStore()
 const connectionsStore = useConnectionsStore()
-const schemaStore = useSchemaStore()
 const paneTabsStore = usePaneTabsStore()
 const navigationStore = useExplorerNavigationStore()
 const viewStateStore = useExplorerViewStateStore()
@@ -147,7 +145,6 @@ const {
   explorerState,
   navigationStore,
   connectionsStore,
-  schemaStore,
   paneTabsStore,
   fileExplorerStore,
   commonStore,

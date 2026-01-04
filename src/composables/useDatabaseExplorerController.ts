@@ -12,7 +12,6 @@ import type { useSidebar } from '@/composables/useSidebar'
 import type { useRecentConnections } from '@/composables/useRecentConnections'
 import type { useCommonStore } from '@/stores/common'
 import type { useConnectionsStore } from '@/stores/connections'
-import type { useSchemaStore } from '@/stores/schema'
 import type { usePaneTabsStore } from '@/stores/paneTabs'
 import type { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import type { useFileExplorerStore } from '@/stores/fileExplorer'
@@ -23,7 +22,6 @@ type SidebarManager = ReturnType<typeof useSidebar>
 type RecentConnectionsManager = ReturnType<typeof useRecentConnections>
 type CommonStore = ReturnType<typeof useCommonStore>
 type ConnectionsStore = ReturnType<typeof useConnectionsStore>
-type SchemaStore = ReturnType<typeof useSchemaStore>
 type PaneTabsStore = ReturnType<typeof usePaneTabsStore>
 type NavigationStore = ReturnType<typeof useExplorerNavigationStore>
 type FileExplorerStore = ReturnType<typeof useFileExplorerStore>
@@ -34,7 +32,6 @@ interface UseDatabaseExplorerControllerOptions {
   explorerState: ExplorerState
   navigationStore: NavigationStore
   connectionsStore: ConnectionsStore
-  schemaStore: SchemaStore
   paneTabsStore: PaneTabsStore
   fileExplorerStore: FileExplorerStore
   commonStore: CommonStore
@@ -50,7 +47,6 @@ export function useDatabaseExplorerController({
   explorerState,
   navigationStore,
   connectionsStore,
-  schemaStore,
   paneTabsStore,
   fileExplorerStore,
   commonStore,
@@ -549,7 +545,11 @@ export function useDatabaseExplorerController({
   }
 
   function handleRefreshMetadata() {
-    schemaStore.fetchSchema(true)
+    const connectionId = viewState.connectionId
+    const database = viewState.databaseName
+    if (connectionId && database) {
+      void navigationStore.ensureMetadata(connectionId, database, true)
+    }
   }
 
   function handleSelectConnection(payload: { connectionId: string; mode?: 'preview' | 'pinned' }) {
@@ -597,9 +597,8 @@ export function useDatabaseExplorerController({
       payload.mode || (alwaysOpenNewTab.value ? 'pinned' : 'preview')
     openDatabaseOverviewTab(payload.connectionId, payload.database, effectiveMode, 'left')
 
-    schemaStore.setConnectionId(payload.connectionId)
-    schemaStore.setDatabaseName(payload.database)
-    schemaStore.fetchSchema(false)
+    // Ensure metadata is available for breadcrumb/object panels.
+    void navigationStore.ensureMetadata(payload.connectionId, payload.database, false)
   }
 
   async function handleFileSelect(payload: {
@@ -1016,9 +1015,8 @@ export function useDatabaseExplorerController({
             name: state.objectName || undefined
           })
 
-          schemaStore.setConnectionId(state.connectionId)
-          schemaStore.setDatabaseName(state.databaseName)
-          schemaStore.fetchSchema(false)
+          // Ensure metadata is available for breadcrumb/object panels.
+          void navigationStore.ensureMetadata(state.connectionId, state.databaseName, false)
         }
       } else if (state.viewType === 'connection-details') {
         explorerState.clearDatabaseSelection()

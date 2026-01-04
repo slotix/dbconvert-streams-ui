@@ -1,7 +1,6 @@
 import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useConnectionsStore } from '@/stores/connections'
-import { useSchemaStore } from '@/stores/schema'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { getConnectionHost, getConnectionPort } from '@/utils/specBuilder'
 import type { SQLTableMeta, SQLViewMeta } from '@/types/metadata'
@@ -14,7 +13,6 @@ type ObjectType = 'table' | 'view'
 export function useExplorerState() {
   const route = useRoute()
   const connectionsStore = useConnectionsStore()
-  const schemaStore = useSchemaStore()
   const navigationStore = useExplorerNavigationStore()
 
   // Current connection
@@ -72,9 +70,6 @@ export function useExplorerState() {
     () => getConnectionTypeLabel(activeConnection.value?.spec, activeConnection.value?.type) || ''
   )
   const activeDisplayCloudProvider = computed(() => activeConnection.value?.cloud_provider || '')
-
-  // Breadcrumb objects from schema store
-  const breadcrumbObjects = computed(() => schemaStore.breadcrumbItems)
 
   // Active context for breadcrumb
   const activeDatabaseName = computed(() => selectedDatabaseName.value)
@@ -138,7 +133,6 @@ export function useExplorerState() {
     activeDisplayHostPort,
     activeDisplayType,
     activeDisplayCloudProvider,
-    breadcrumbObjects,
     activeDatabaseName,
     activeSchemaName,
     activeObjectType,
