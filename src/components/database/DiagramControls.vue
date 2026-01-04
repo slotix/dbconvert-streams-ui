@@ -1,6 +1,14 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
-import { Download, GripVertical, Minus, Plus, Sparkles } from 'lucide-vue-next'
+import {
+  ChevronDown,
+  ChevronUp,
+  Download,
+  GripVertical,
+  Minus,
+  Plus,
+  Sparkles
+} from 'lucide-vue-next'
 import type { ExportFormat } from '@/composables/useDiagramExport'
 
 interface Props {
@@ -29,9 +37,31 @@ const emit = defineEmits<{
 const panelRef = ref<HTMLElement | null>(null)
 const isDragging = ref(false)
 const position = ref({ x: 0, y: 0 })
+const isCollapsed = ref(false)
 
 const storageKey = 'dbconvert.diagram.controls.position'
+const collapsedStorageKey = 'dbconvert.diagram.controls.collapsed'
 const margin = 12
+
+const toggleCollapse = () => {
+  isCollapsed.value = !isCollapsed.value
+  try {
+    window.localStorage.setItem(collapsedStorageKey, JSON.stringify(isCollapsed.value))
+  } catch {
+    // Ignore storage failures
+  }
+}
+
+const restoreCollapsedState = () => {
+  try {
+    const stored = window.localStorage.getItem(collapsedStorageKey)
+    if (stored) {
+      isCollapsed.value = JSON.parse(stored) === true
+    }
+  } catch {
+    // Ignore storage failures
+  }
+}
 
 const panelStyle = computed(() => ({
   left: '0px',
@@ -120,6 +150,7 @@ const handleResize = () => {
 }
 
 onMounted(async () => {
+  restoreCollapsedState()
   await nextTick()
   if (!restorePosition()) {
     const container = getContainer()
@@ -151,7 +182,7 @@ onBeforeUnmount(() => {
   >
     <div
       class="flex items-center justify-between px-3 py-2 border-b border-slate-200/70 dark:border-slate-700/70 bg-gradient-to-r from-slate-50 via-white to-slate-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 select-none touch-none"
-      :class="isDragging ? 'cursor-grabbing' : 'cursor-grab'"
+      :class="[isDragging ? 'cursor-grabbing' : 'cursor-grab', isCollapsed ? 'border-b-0' : '']"
       @pointerdown="handlePointerDown"
     >
       <span
@@ -159,10 +190,21 @@ onBeforeUnmount(() => {
       >
         Diagram Tools
       </span>
-      <GripVertical class="w-4 h-4 text-slate-400 dark:text-slate-500" />
+      <div class="flex items-center gap-1">
+        <button
+          class="p-0.5 rounded text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+          title="Toggle collapse"
+          @pointerdown.stop
+          @click="toggleCollapse"
+        >
+          <ChevronUp v-if="!isCollapsed" class="w-4 h-4" />
+          <ChevronDown v-else class="w-4 h-4" />
+        </button>
+        <GripVertical class="w-4 h-4 text-slate-400 dark:text-slate-500" />
+      </div>
     </div>
 
-    <div class="px-3 py-2.5 space-y-3">
+    <div v-show="!isCollapsed" class="px-3 py-2.5 space-y-3">
       <!-- Zoom Controls -->
       <div class="flex items-center justify-between">
         <span class="text-xs font-semibold text-slate-700 dark:text-slate-200">Zoom</span>

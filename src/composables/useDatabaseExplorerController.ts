@@ -1035,12 +1035,13 @@ export function useDatabaseExplorerController({
         explorerState.clearDatabaseSelection()
       }
 
-      if (state.viewType === 'connection-details') {
+      // Skip opening tabs on initial load to let persisted paneTabs state take precedence
+      if (!isInitialLoad.value && state.viewType === 'connection-details') {
         const effectiveMode: 'preview' | 'pinned' = alwaysOpenNewTab.value ? 'pinned' : 'preview'
         openConnectionDetailsTab(state.connectionId, effectiveMode, 'left')
       }
 
-      if (state.viewType === 'database-overview' && state.databaseName) {
+      if (!isInitialLoad.value && state.viewType === 'database-overview' && state.databaseName) {
         const effectiveMode: 'preview' | 'pinned' = alwaysOpenNewTab.value ? 'pinned' : 'preview'
         openDatabaseOverviewTab(state.connectionId, state.databaseName, effectiveMode, 'left')
       }
