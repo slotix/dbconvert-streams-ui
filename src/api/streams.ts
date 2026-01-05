@@ -94,9 +94,13 @@ const startStream = async (id: string): Promise<string> => {
   const commonStore = useCommonStore()
   validateApiKey(commonStore.apiKey)
   try {
-    const response: AxiosResponse<StreamID> = await apiClient.post(`/streams/${id}/start`, null, {
-      headers: { [API_HEADERS.API_KEY]: commonStore.apiKey }
-    })
+    const response: AxiosResponse<StreamID> = await apiClient.post(
+      `/stream-configs/${id}/start`,
+      null,
+      {
+        headers: { [API_HEADERS.API_KEY]: commonStore.apiKey }
+      }
+    )
     return response.data.id
   } catch (error) {
     throw handleApiError(error)
@@ -163,7 +167,7 @@ const runTargetConstraintsAction = async (configId: string): Promise<Constraints
 
   try {
     const response: AxiosResponse<ConstraintsActionResponse> = await apiClient.post(
-      `/stream-configs/${configId}/validate-constraints`,
+      `/stream/${configId}/validate-constraints`,
       null,
       {
         headers: { [API_HEADERS.API_KEY]: commonStore.apiKey }
