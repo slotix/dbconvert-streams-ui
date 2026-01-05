@@ -329,24 +329,56 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
   }
 
   async function handleDdlChange(affectedObjects: string[]) {
-    const db = databaseValue.value?.trim()
+    const selectionDb =
+      navigationStore.selection?.connectionId === connectionIdValue.value
+        ? navigationStore.selection?.database
+        : undefined
+    const db = databaseValue.value?.trim() || selectionDb?.trim()
+    const hasDatabaseChange = affectedObjects.includes('database')
+    const hasSchemaChange = affectedObjects.includes('schema')
+    const hasTableChange = affectedObjects.includes('table')
 
-    if (affectedObjects.includes('database') || affectedObjects.includes('schema')) {
+    if (hasDatabaseChange || hasSchemaChange) {
       navigationStore.invalidateDatabases(connectionIdValue.value)
       await navigationStore.ensureDatabases(connectionIdValue.value, true)
     }
 
-    if (affectedObjects.includes('table') && db) {
-      navigationStore.invalidateMetadata(connectionIdValue.value, db)
-      // Clear overview cache so it refetches with fresh table stats
-      overviewStore.clearOverview(connectionIdValue.value, db)
-      await navigationStore.ensureMetadata(connectionIdValue.value, db, true)
-      // Refresh autocomplete suggestions with forced metadata refresh
-      if (loadTableSuggestionsWithRefresh) {
-        await loadTableSuggestionsWithRefresh(true)
+    if (hasTableChange || hasSchemaChange) {
+      const refreshTargets = new Set<string>()
+      if (db) {
+        refreshTargets.add(db)
+      } else {
+        const cachedMetadata = navigationStore.metadataState[connectionIdValue.value]
+        if (cachedMetadata) {
+          for (const dbName of Object.keys(cachedMetadata)) {
+            if (dbName) refreshTargets.add(dbName)
+          }
+        }
+        const prefix = `${connectionIdValue.value}:`
+        for (const dbKey of navigationStore.expandedDatabases) {
+          if (!dbKey.startsWith(prefix)) continue
+          const dbName = dbKey.slice(prefix.length)
+          if (dbName) refreshTargets.add(dbName)
+        }
       }
-      // Refresh overview in background (don't await - let it update reactively)
-      overviewStore.fetchOverview(connectionIdValue.value, db, true)
+
+      const refreshes: Promise<unknown>[] = []
+      for (const targetDb of refreshTargets) {
+        navigationStore.invalidateMetadata(connectionIdValue.value, targetDb)
+        // Clear overview cache so it refetches with fresh schema/table stats
+        overviewStore.clearOverview(connectionIdValue.value, targetDb)
+        refreshes.push(navigationStore.ensureMetadata(connectionIdValue.value, targetDb, true))
+        // Refresh overview in background (don't await - let it update reactively)
+        overviewStore.fetchOverview(connectionIdValue.value, targetDb, true)
+      }
+
+      if (refreshes.length > 0) {
+        await Promise.all(refreshes)
+        // Refresh autocomplete suggestions with forced metadata refresh
+        if (loadTableSuggestionsWithRefresh) {
+          await loadTableSuggestionsWithRefresh(true)
+        }
+      }
     }
   }
 

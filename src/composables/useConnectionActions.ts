@@ -81,6 +81,31 @@ export function useConnectionActions(emits?: {
   async function refreshDatabases(id: string) {
     navigationStore.invalidateDatabases(id)
     await navigationStore.ensureDatabases(id, true)
+    const targets = new Set<string>()
+    const selection = navigationStore.selection
+    if (selection?.connectionId === id && selection.database) {
+      targets.add(selection.database)
+    }
+    const prefix = `${id}:`
+    for (const dbKey of navigationStore.expandedDatabases) {
+      if (!dbKey.startsWith(prefix)) continue
+      const dbName = dbKey.slice(prefix.length)
+      if (dbName) targets.add(dbName)
+    }
+    const cachedMetadata = navigationStore.metadataState[id]
+    if (cachedMetadata) {
+      for (const dbName of Object.keys(cachedMetadata)) {
+        if (dbName) targets.add(dbName)
+      }
+    }
+    if (targets.size > 0) {
+      const refreshes: Promise<unknown>[] = []
+      for (const dbName of targets) {
+        navigationStore.invalidateMetadata(id, dbName)
+        refreshes.push(navigationStore.ensureMetadata(id, dbName, true))
+      }
+      await Promise.all(refreshes)
+    }
     toast.success('Connections refreshed')
   }
 
