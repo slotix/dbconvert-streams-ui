@@ -828,7 +828,7 @@ const isLoadingDatabases = computed(() => {
       </div>
 
       <!-- Database Connection Details - 2x2 Card Layout -->
-      <div v-else class="grid gap-4 grid-cols-1 md:grid-cols-2">
+      <div v-else class="grid gap-4 grid-cols-[repeat(auto-fit,minmax(280px,1fr))]">
         <!-- Row 1: Server Info -->
         <!-- Connection Info Card -->
         <div
@@ -966,21 +966,23 @@ const isLoadingDatabases = computed(() => {
             </div>
 
             <!-- Stats Grid -->
-            <div class="grid grid-cols-2 gap-2">
-              <div>
-                <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+            <div class="grid grid-cols-[repeat(auto-fit,minmax(80px,1fr))] gap-x-4 gap-y-2">
+              <div class="min-w-0">
+                <label
+                  class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400 whitespace-nowrap"
                   >Databases</label
                 >
                 <p class="mt-0.5 font-semibold text-gray-900 dark:text-gray-100 text-base">
                   {{ serverStats.databases }}
                 </p>
               </div>
-              <div>
-                <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+              <div class="min-w-0">
+                <label
+                  class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400 whitespace-nowrap"
                   >Total Size</label
                 >
                 <p
-                  class="mt-0.5 font-semibold text-base"
+                  class="mt-0.5 font-semibold text-base whitespace-nowrap"
                   :class="
                     serverStats.hasData
                       ? 'text-gray-900 dark:text-gray-100'
@@ -990,8 +992,9 @@ const isLoadingDatabases = computed(() => {
                   {{ serverSizeDisplay }}
                 </p>
               </div>
-              <div>
-                <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+              <div class="min-w-0">
+                <label
+                  class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400 whitespace-nowrap"
                   >Tables</label
                 >
                 <p
@@ -1005,8 +1008,9 @@ const isLoadingDatabases = computed(() => {
                   {{ serverStats.hasData ? serverStats.tables : '—' }}
                 </p>
               </div>
-              <div>
-                <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+              <div class="min-w-0">
+                <label
+                  class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400 whitespace-nowrap"
                   >Views</label
                 >
                 <p
@@ -1030,20 +1034,24 @@ const isLoadingDatabases = computed(() => {
               "
               class="pt-2 border-t border-gray-200 dark:border-gray-700"
             >
-              <div class="grid grid-cols-2 gap-2">
-                <div v-if="serverStats.maxConnections > 0">
-                  <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+              <div class="grid grid-cols-[repeat(auto-fit,minmax(100px,1fr))] gap-x-4 gap-y-2">
+                <div v-if="serverStats.maxConnections > 0" class="min-w-0">
+                  <label
+                    class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400 whitespace-nowrap"
                     >Connections</label
                   >
-                  <p class="mt-0.5 font-semibold text-base text-gray-900 dark:text-gray-100">
+                  <p
+                    class="mt-0.5 font-semibold text-base text-gray-900 dark:text-gray-100 whitespace-nowrap"
+                  >
                     {{ serverStats.usedConnections }}
                     <span class="text-xs font-normal text-gray-500 dark:text-gray-400"
                       >/ {{ serverStats.maxConnections }}</span
                     >
                   </p>
                 </div>
-                <div v-if="serverStats.activeSessions > 0">
-                  <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+                <div v-if="serverStats.activeSessions > 0" class="min-w-0">
+                  <label
+                    class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400 whitespace-nowrap"
                     >Active Sessions</label
                   >
                   <p class="mt-0.5 font-semibold text-base text-gray-900 dark:text-gray-100">
@@ -1077,7 +1085,7 @@ const isLoadingDatabases = computed(() => {
             </div>
           </div>
 
-          <div class="flex gap-2">
+          <div class="flex flex-col sm:flex-row gap-2">
             <FormInput
               v-model="newDatabaseName"
               placeholder="database_name"
@@ -1088,7 +1096,7 @@ const isLoadingDatabases = computed(() => {
             <BaseButton
               variant="primary"
               size="sm"
-              class="shrink-0"
+              class="shrink-0 whitespace-nowrap"
               :disabled="!newDatabaseName.trim() || isCreatingDatabase"
               @click="handleCreateDatabase"
             >
