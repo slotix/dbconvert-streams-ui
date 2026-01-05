@@ -6,6 +6,7 @@ import { ref, computed, type Ref, type ComputedRef } from 'vue'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { useDatabaseOverviewStore } from '@/stores/databaseOverview'
 import { useLogsStore } from '@/stores/logs'
+import { sseLogsService } from '@/api/sseLogsServiceStructured'
 import connections from '@/api/connections'
 import { executeFileQuery } from '@/api/files'
 import { executeFederatedQuery, type ConnectionMapping } from '@/api/federated'
@@ -25,7 +26,7 @@ type ExecuteQueryApiResult = {
   columns: string[]
   rows: unknown[][]
   results?: QueryResultSet[]
-  affectedObject?: string
+  affectedObjects?: string[]
 }
 
 export interface NormalizedResultSet {
@@ -97,6 +98,7 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
   const databaseValue = computed(() => database?.value)
 
   const isExecuting = ref(false)
+  const shouldLogLocally = () => !sseLogsService.isActive()
 
   async function executeQuery() {
     const query = sqlQuery.value.trim()
@@ -164,17 +166,19 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
         stats: { rowCount: result.count || rows.length, duration }
       })
 
-      logsStore.addSQLLog({
-        id: `federated-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
-        connectionId: 'federated',
-        tabId: activeQueryTabId.value || undefined,
-        database: selectedConnections.value.map((c) => c.alias).join(', '),
-        query,
-        purpose: detectQueryPurpose(query),
-        startedAt: new Date(startTime).toISOString(),
-        durationMs: duration,
-        rowCount: rows.length
-      })
+      if (shouldLogLocally()) {
+        logsStore.addSQLLog({
+          id: `federated-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+          connectionId: 'federated',
+          tabId: activeQueryTabId.value || undefined,
+          database: selectedConnections.value.map((c) => c.alias).join(', '),
+          query,
+          purpose: detectQueryPurpose(query),
+          startedAt: new Date(startTime).toISOString(),
+          durationMs: duration,
+          rowCount: rows.length
+        })
+      }
 
       saveToHistory(query)
     } catch (error: unknown) {
@@ -184,18 +188,20 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
 
       setExecutionError(errorMsg)
 
-      logsStore.addSQLLog({
-        id: `federated-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
-        connectionId: 'federated',
-        tabId: activeQueryTabId.value || undefined,
-        database: selectedConnections.value.map((c) => c.alias).join(', '),
-        query,
-        purpose: detectQueryPurpose(query),
-        startedAt: new Date(startTime).toISOString(),
-        durationMs: duration,
-        rowCount: 0,
-        error: errorMsg
-      })
+      if (shouldLogLocally()) {
+        logsStore.addSQLLog({
+          id: `federated-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+          connectionId: 'federated',
+          tabId: activeQueryTabId.value || undefined,
+          database: selectedConnections.value.map((c) => c.alias).join(', '),
+          query,
+          purpose: detectQueryPurpose(query),
+          startedAt: new Date(startTime).toISOString(),
+          durationMs: duration,
+          rowCount: 0,
+          error: errorMsg
+        })
+      }
     } finally {
       isExecuting.value = false
     }
@@ -225,8 +231,8 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
       handleSuccessResult(result, query, startTime)
 
       // Refresh sidebar/overview if backend reports a schema change
-      if (result.affectedObject) {
-        await handleDdlChange(result.affectedObject)
+      if (result.affectedObjects?.length) {
+        await handleDdlChange(result.affectedObjects)
       }
     } catch (error: unknown) {
       handleErrorResult(error, query, startTime)
@@ -282,17 +288,19 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
     })
 
     // Log the SQL query
-    logsStore.addSQLLog({
-      id: `sql-console-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
-      connectionId: connectionIdValue.value,
-      tabId: activeQueryTabId.value || undefined,
-      database: modeValue.value === 'file' ? '' : databaseValue.value || '',
-      query: query,
-      purpose: detectQueryPurpose(query),
-      startedAt: new Date(startTime).toISOString(),
-      durationMs: duration,
-      rowCount: totalRowCount
-    })
+    if (shouldLogLocally()) {
+      logsStore.addSQLLog({
+        id: `sql-console-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+        connectionId: connectionIdValue.value,
+        tabId: activeQueryTabId.value || undefined,
+        database: modeValue.value === 'file' ? '' : databaseValue.value || '',
+        query: query,
+        purpose: detectQueryPurpose(query),
+        startedAt: new Date(startTime).toISOString(),
+        durationMs: duration,
+        rowCount: totalRowCount
+      })
+    }
 
     saveToHistory(query)
   }
@@ -304,29 +312,31 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
 
     setExecutionError(errorMsg)
 
-    logsStore.addSQLLog({
-      id: `sql-console-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
-      connectionId: connectionIdValue.value,
-      tabId: activeQueryTabId.value || undefined,
-      database: modeValue.value === 'file' ? '' : databaseValue.value || '',
-      query: query,
-      purpose: detectQueryPurpose(query),
-      startedAt: new Date(startTime).toISOString(),
-      durationMs: duration,
-      rowCount: 0,
-      error: errorMsg
-    })
+    if (shouldLogLocally()) {
+      logsStore.addSQLLog({
+        id: `sql-console-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+        connectionId: connectionIdValue.value,
+        tabId: activeQueryTabId.value || undefined,
+        database: modeValue.value === 'file' ? '' : databaseValue.value || '',
+        query: query,
+        purpose: detectQueryPurpose(query),
+        startedAt: new Date(startTime).toISOString(),
+        durationMs: duration,
+        rowCount: 0,
+        error: errorMsg
+      })
+    }
   }
 
-  async function handleDdlChange(affectedObject: string) {
+  async function handleDdlChange(affectedObjects: string[]) {
     const db = databaseValue.value?.trim()
 
-    if (affectedObject === 'database' || affectedObject === 'schema') {
+    if (affectedObjects.includes('database') || affectedObjects.includes('schema')) {
       navigationStore.invalidateDatabases(connectionIdValue.value)
       await navigationStore.ensureDatabases(connectionIdValue.value, true)
     }
 
-    if (affectedObject === 'table' && db) {
+    if (affectedObjects.includes('table') && db) {
       navigationStore.invalidateMetadata(connectionIdValue.value, db)
       // Clear overview cache so it refetches with fresh table stats
       overviewStore.clearOverview(connectionIdValue.value, db)
