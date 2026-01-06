@@ -594,7 +594,8 @@ export function useDatabaseExplorerController({
 
     const effectiveMode: 'preview' | 'pinned' =
       payload.mode || (alwaysOpenNewTab.value ? 'pinned' : 'preview')
-    openConnectionDetailsTab(payload.connectionId, effectiveMode, 'left')
+    const targetPane = paneTabsStore.activePane || 'left'
+    openConnectionDetailsTab(payload.connectionId, effectiveMode, targetPane)
 
     if (fileExplorerStore.isFilesConnectionType(payload.connectionId)) {
       // Load entries if not already cached - don't force reload to preserve expanded folders
@@ -617,11 +618,11 @@ export function useDatabaseExplorerController({
 
     explorerState.clearPanelStates()
     explorerState.setDatabaseSelection({ database: payload.database })
-    paneTabsStore.setActivePane('left')
 
     const effectiveMode: 'preview' | 'pinned' =
       payload.mode || (alwaysOpenNewTab.value ? 'pinned' : 'preview')
-    openDatabaseOverviewTab(payload.connectionId, payload.database, effectiveMode, 'left')
+    const targetPane = paneTabsStore.activePane || 'left'
+    openDatabaseOverviewTab(payload.connectionId, payload.database, effectiveMode, targetPane)
 
     // Ensure metadata is available for breadcrumb/object panels.
     void navigationStore.ensureMetadata(payload.connectionId, payload.database, false)
