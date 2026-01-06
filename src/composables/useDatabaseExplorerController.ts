@@ -552,6 +552,36 @@ export function useDatabaseExplorerController({
     }
   }
 
+  /**
+   * Preload metadata for all restored database tabs.
+   * This ensures tabs display data immediately after page reload
+   * instead of showing empty until the user clicks on a database.
+   */
+  function preloadMetadataForRestoredTabs() {
+    // Collect all database tabs from both panes
+    const allTabs: PaneTab[] = []
+    for (const paneId of ['left', 'right'] as const) {
+      const state = paneTabsStore.getPaneState(paneId)
+      allTabs.push(...state.pinnedTabs)
+      if (state.previewTab) {
+        allTabs.push(state.previewTab)
+      }
+    }
+
+    // Extract unique connectionId + database pairs from database tabs
+    const seen = new Set<string>()
+    for (const tab of allTabs) {
+      if (tab.tabType === 'database' && tab.connectionId && tab.database) {
+        const key = `${tab.connectionId}:${tab.database}`
+        if (!seen.has(key)) {
+          seen.add(key)
+          // Fire and forget - ensureMetadata handles deduplication internally
+          void navigationStore.ensureMetadata(tab.connectionId, tab.database, false)
+        }
+      }
+    }
+  }
+
   function handleSelectConnection(payload: { connectionId: string; mode?: 'preview' | 'pinned' }) {
     // Update store
     viewState.selectConnection(payload.connectionId)
@@ -1101,6 +1131,10 @@ export function useDatabaseExplorerController({
       } catch (error) {
         console.error('Failed to load connections on explorer mount:', error)
       }
+
+      // Preload metadata for all restored database tabs
+      // This ensures tabs show data immediately after page reload
+      preloadMetadataForRestoredTabs()
     }
 
     const focusConnIdFromStream = window.sessionStorage.getItem('explorerFocusConnectionId')
