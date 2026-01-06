@@ -58,21 +58,30 @@ export function useDatabaseExplorerController({
   // Use the new view state store as the single source of truth
   const viewState = useExplorerViewStateStore()
 
-  function pushExplorerRoute(connectionId: string, query: Record<string, string>) {
-    const nextPath = `/explorer/${connectionId}`
-    const currentQuery = JSON.stringify(route.query)
-    const nextQuery = JSON.stringify(query)
-    if (route.path === nextPath && currentQuery === nextQuery) return
-    void router.push({ path: nextPath, query })
+  // URL normalization: keep Explorer URL minimal (/explorer, no query).
+  // Tabs are persisted and multi-pane; encoding selection in URL is misleading.
+  watch(
+    () => route.query,
+    (query) => {
+      if (Object.keys(query).length > 0) {
+        void router.replace({ path: '/explorer' })
+      }
+    },
+    { immediate: true, deep: true }
+  )
+
+  // NOTE: The explorer URL is intentionally minimal.
+  // Tab state is persisted and multi-pane; encoding selection in URL becomes stale/misleading.
+  function pushExplorerRoute(_connectionId: string, _query: Record<string, string>) {
+    const nextPath = '/explorer'
+    if (route.path === nextPath && Object.keys(route.query).length === 0) return
+    void router.push({ path: nextPath })
   }
 
-  function pushRightPaneRoute(connectionId: string, query: Record<string, string>) {
-    const nextPath = `/explorer/${connectionId}`
-    const mergedQuery = { ...route.query, ...query }
-    const currentQuery = JSON.stringify(route.query)
-    const nextQuery = JSON.stringify(mergedQuery)
-    if (route.path === nextPath && currentQuery === nextQuery) return
-    void router.push({ path: nextPath, query: mergedQuery })
+  function pushRightPaneRoute(_connectionId: string, _query: Record<string, string>) {
+    const nextPath = '/explorer'
+    if (route.path === nextPath && Object.keys(route.query).length === 0) return
+    void router.push({ path: nextPath })
   }
 
   const restoreToken = ref(0)
@@ -283,16 +292,7 @@ export function useDatabaseExplorerController({
   const lacksExplorerContent = computed(() => !hasPaneContent.value)
 
   function clearRightPaneQueryParams() {
-    const nextQuery = { ...route.query }
-    delete nextQuery.rightDb
-    delete nextQuery.rightType
-    delete nextQuery.rightName
-    delete nextQuery.rightSchema
-    if (nextQuery.pane === 'right') {
-      delete nextQuery.pane
-    }
-
-    router.replace({ path: route.path, query: nextQuery })
+    router.replace({ path: '/explorer' })
   }
 
   function handleOpenFromTree(payload: {
@@ -1155,9 +1155,7 @@ export function useDatabaseExplorerController({
       })
     }
 
-    // REMOVED: All URL reading logic and state sync
-    // State sync is now handled by the viewState watcher above
-    // URL sync is handled by useExplorerUrlSync
+    // URL query params are intentionally not used as a source of truth.
 
     // If no view state at all, default to connection details for current connection
     if (!viewState.viewType && explorerState.currentConnectionId.value) {

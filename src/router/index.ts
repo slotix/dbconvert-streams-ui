@@ -37,12 +37,6 @@ const routes = [
     component: DatabaseExplorerView
   },
   {
-    path: '/explorer/:id',
-    name: 'DatabaseMetadata',
-    component: DatabaseExplorerView,
-    props: true
-  },
-  {
     path: '/federated',
     redirect: '/explorer'
   },

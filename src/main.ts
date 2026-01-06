@@ -14,18 +14,6 @@ import { DESKTOP_NAVIGATION } from '@/constants/desktopNavigation'
 import { isWailsContext } from '@/composables/useWailsEvents'
 import { setupDesktopZoom } from '@/utils/desktopZoom'
 
-type ExplorerViewState = {
-  viewType: 'connection-details' | 'database-overview' | 'table-data' | 'file-browser' | null
-  connectionId: string | null
-  databaseName: string | null
-  schemaName: string | null
-  objectType: 'table' | 'view' | null
-  objectName: string | null
-  filePath: string | null
-}
-
-const EXPLORER_VIEW_STATE_KEY = 'explorer.viewState'
-
 // Display startup banner
 console.log(`
 ┌────────────────────────────────┐
@@ -127,61 +115,6 @@ document.addEventListener('contextmenu', (event) => {
   event.preventDefault()
 })
 
-const loadExplorerViewState = (): ExplorerViewState | null => {
-  try {
-    const raw = window.localStorage.getItem(EXPLORER_VIEW_STATE_KEY)
-    if (!raw) {
-      return null
-    }
-    return JSON.parse(raw) as ExplorerViewState
-  } catch (error) {
-    console.warn('Failed to load explorer view state:', error)
-    return null
-  }
-}
-
-const buildExplorerRestoreRoute = (): string => {
-  const state = loadExplorerViewState()
-  if (!state?.connectionId) {
-    return ''
-  }
-
-  const params = new URLSearchParams()
-
-  switch (state.viewType) {
-    case 'connection-details':
-      params.set('details', 'true')
-      break
-    case 'database-overview':
-      if (state.databaseName) {
-        params.set('db', state.databaseName)
-      }
-      break
-    case 'table-data':
-      if (state.databaseName && state.objectType && state.objectName) {
-        params.set('db', state.databaseName)
-        params.set('type', state.objectType)
-        params.set('name', state.objectName)
-        if (state.schemaName) {
-          params.set('schema', state.schemaName)
-        }
-      } else if (state.databaseName) {
-        params.set('db', state.databaseName)
-      }
-      break
-    case 'file-browser':
-      if (state.filePath) {
-        params.set('file', state.filePath)
-      }
-      break
-    default:
-      break
-  }
-
-  const query = params.toString()
-  return `/explorer/${state.connectionId}${query ? `?${query}` : ''}`
-}
-
 const restoreDesktopRoute = async () => {
   const currentRoute = router.currentRoute.value
   // Skip if already on a non-overview route (e.g., navigated via URL)
@@ -193,16 +126,9 @@ const restoreDesktopRoute = async () => {
   const storedRoute = getStorageValue<string>(STORAGE_KEYS.DESKTOP_LAST_ROUTE, '')
   let targetRoute = storedRoute
 
-  // Try to restore explorer view state for more specific navigation
-  const explorerRestoreRoute = buildExplorerRestoreRoute()
-  if (
-    explorerRestoreRoute &&
-    (!storedRoute ||
-      storedRoute === '/explorer' ||
-      storedRoute.startsWith('/explorer?') ||
-      storedRoute.startsWith('/explorer/'))
-  ) {
-    targetRoute = explorerRestoreRoute
+  // Normalize any legacy explorer paths that may still be in storage.
+  if (targetRoute && targetRoute.startsWith('/explorer')) {
+    targetRoute = '/explorer'
   }
 
   // In desktop mode, default to workspace view if no stored route

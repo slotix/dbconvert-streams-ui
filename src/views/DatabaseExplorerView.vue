@@ -21,9 +21,7 @@ import { useSplitPaneResize } from '@/composables/useSplitPaneResize'
 import { useSidebar } from '@/composables/useSidebar'
 import { usePersistedState } from '@/composables/usePersistedState'
 import { useRecentConnections } from '@/composables/useRecentConnections'
-import { useExplorerRouter } from '@/composables/useExplorerRouter'
 import { useTreeSearch } from '@/composables/useTreeSearch'
-import { useExplorerUrlSync } from '@/composables/useExplorerUrlSync'
 import { useConnectionActions } from '@/composables/useConnectionActions'
 import { useDesktopMode } from '@/composables/useDesktopMode'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
@@ -47,8 +45,7 @@ const sidebarWidthToggle = inject<{
 }>('sidebarWidthToggle')
 const sidebarMenuToggle = inject<{ openSidebar: () => void }>('sidebarMenuToggle')
 
-// Set up two-way URL sync (Store ↔ URL)
-useExplorerUrlSync()
+// Explorer state is persisted; the URL is intentionally kept minimal (/explorer).
 
 // Use composables and stores for state management
 const explorerState = useExplorerState()
@@ -120,7 +117,6 @@ onMounted(() => {
 const {
   showDeleteConfirm,
   deleteConnectionMessage,
-  currentFileEntries,
   treeSelection,
   handleOpenFromTree,
   handleOpenFile,
@@ -152,15 +148,6 @@ const {
   searchInputRef,
   recentConnectionsManager,
   alwaysOpenNewTab
-})
-
-useExplorerRouter({
-  recentConnections: recentConnectionsManager.recentConnections,
-  lastViewedConnectionId: recentConnectionsManager.lastViewedConnectionId,
-  currentConnectionId: explorerState.currentConnectionId,
-  currentFileEntries,
-  onSelectConnection: handleSelectConnection,
-  onFileSelect: handleFileSelect
 })
 
 // Tab change handlers - no-op for now (tabs handle their own state)
@@ -263,7 +250,7 @@ function handleOpenFileConsole(payload: {
 
     <!-- Enhanced Functional Toolbar with gradient background -->
     <header
-      class="sticky top-0 z-30 bg-linear-to-r from-slate-50 via-white to-slate-50 dark:from-gray-900 dark:via-gray-850 dark:to-gray-900 border-b border-slate-200 dark:border-gray-700 shadow-sm dark:shadow-gray-900/30 lg:-ml-[var(--sidebar-width)] lg:w-[calc(100%+var(--sidebar-width))]"
+      class="sticky top-0 z-30 bg-linear-to-r from-slate-50 via-white to-slate-50 dark:from-gray-900 dark:via-gray-850 dark:to-gray-900 border-b border-slate-200 dark:border-gray-700 shadow-sm dark:shadow-gray-900/30 lg:-ml-(--sidebar-width) lg:w-[calc(100%+var(--sidebar-width))]"
     >
       <div class="px-6 py-4 flex items-center gap-4">
         <div class="flex items-center gap-3">
