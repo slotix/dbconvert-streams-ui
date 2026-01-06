@@ -547,13 +547,62 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
   }
 
   /**
+   * Reorder a pinned tab within the same pane.
+   * Moves tab from fromIndex to toIndex.
+   */
+  function reorderPinnedTab(paneId: PaneId, fromIndex: number, toIndex: number) {
+    if (fromIndex === toIndex) return
+
+    const state = getPaneState(paneId)
+    if (fromIndex < 0 || fromIndex >= state.pinnedTabs.length) return
+    if (toIndex < 0 || toIndex > state.pinnedTabs.length) return
+
+    // Remove the tab from its current position
+    const [movedTab] = state.pinnedTabs.splice(fromIndex, 1)
+
+    // Adjust toIndex if we removed an element before it
+    const adjustedToIndex = fromIndex < toIndex ? toIndex - 1 : toIndex
+
+    // Insert at the new position
+    state.pinnedTabs.splice(adjustedToIndex, 0, movedTab)
+
+    // Update active index if it was affected
+    if (state.activePinnedIndex !== null) {
+      if (state.activePinnedIndex === fromIndex) {
+        // The moved tab was active, update to its new position
+        state.activePinnedIndex = adjustedToIndex
+      } else if (
+        fromIndex < state.activePinnedIndex &&
+        adjustedToIndex >= state.activePinnedIndex
+      ) {
+        // Tab moved from before active to after/at active
+        state.activePinnedIndex--
+      } else if (
+        fromIndex > state.activePinnedIndex &&
+        adjustedToIndex <= state.activePinnedIndex
+      ) {
+        // Tab moved from after active to before/at active
+        state.activePinnedIndex++
+      }
+    }
+
+    persistState()
+  }
+
+  /**
    * Move a pinned tab from one pane to another.
    * - Pinned-only (does not touch preview tabs)
    * - If destination already has the same tab (same generateTabKey),
    *   activate destination and close source (no duplicates)
    * - Migrates per-tab UI state by moving objectTabStateStore key
+   * @param toIndex - optional target index in destination pane (defaults to end)
    */
-  function movePinnedTab(fromPaneId: PaneId, fromIndex: number, toPaneId: PaneId) {
+  function movePinnedTab(
+    fromPaneId: PaneId,
+    fromIndex: number,
+    toPaneId: PaneId,
+    toIndex?: number
+  ) {
     if (fromPaneId === toPaneId) return
 
     const fromState = getPaneState(fromPaneId)
@@ -603,10 +652,14 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
       objectTabStateStore.moveTabState(fromObjectKey, toObjectKey, true)
     }
 
-    // Insert into destination
+    // Insert into destination at specified index or at the end
     showPane(toPaneId)
-    toState.pinnedTabs.push(movedTab)
-    toState.activePinnedIndex = toState.pinnedTabs.length - 1
+    const insertIndex =
+      toIndex !== undefined
+        ? Math.min(Math.max(0, toIndex), toState.pinnedTabs.length)
+        : toState.pinnedTabs.length
+    toState.pinnedTabs.splice(insertIndex, 0, movedTab)
+    toState.activePinnedIndex = insertIndex
     setActivePane(toPaneId)
     persistState()
   }
@@ -733,6 +786,7 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
     closeOtherTabs,
     closeAllTabs,
     closePreviewTab,
+    reorderPinnedTab,
     movePinnedTab,
     activateTab,
     activatePreviewTab,

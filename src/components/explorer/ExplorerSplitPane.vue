@@ -11,17 +11,9 @@
           'shadow-[0_0_0_0.5px_rgb(20_184_166),0_0_2px_rgba(20_184_166,0.1)] dark:shadow-[0_0_0_0.5px_rgb(20_184_166),0_0_3px_rgba(20_184_166,0.15)]'
       ]"
       @mousedown="$emit('set-active-pane', 'left')"
-      @dragenter="onPaneDragEnter($event, 'left')"
-      @dragover="onPaneDragOver($event, 'left')"
-      @dragleave="onPaneDragLeave($event, 'left')"
+      @dragover="onPaneDragOver"
       @drop="onPaneDrop($event, 'left')"
-      @dragend="onDragEnd"
     >
-      <!-- Drop zone overlay -->
-      <div
-        v-if="dragOverPane === 'left'"
-        class="pointer-events-none absolute inset-0 z-30 rounded-lg border-2 border-dashed border-teal-500 bg-teal-500/10 transition-all"
-      />
       <!-- Top accent border for active pane -->
       <div
         v-if="hasRightPane"
@@ -79,17 +71,9 @@
           'shadow-[0_0_0_0.5px_rgb(20_184_166),0_0_2px_rgba(20_184_166,0.1)] dark:shadow-[0_0_0_0.5px_rgb(20_184_166),0_0_3px_rgba(20_184_166,0.15)]'
       ]"
       @mousedown="$emit('set-active-pane', 'right')"
-      @dragenter="onPaneDragEnter($event, 'right')"
-      @dragover="onPaneDragOver($event, 'right')"
-      @dragleave="onPaneDragLeave($event, 'right')"
+      @dragover="onPaneDragOver"
       @drop="onPaneDrop($event, 'right')"
-      @dragend="onDragEnd"
     >
-      <!-- Drop zone overlay -->
-      <div
-        v-if="dragOverPane === 'right'"
-        class="pointer-events-none absolute inset-0 z-30 rounded-lg border-2 border-dashed border-teal-500 bg-teal-500/10 transition-all"
-      />
       <!-- Top accent border for active pane -->
       <div
         class="pointer-events-none absolute inset-x-4 top-0 rounded-b-md transition-all duration-200"
@@ -117,17 +101,9 @@
     <div
       :class="['relative transition-all bg-white dark:bg-gray-900']"
       @mousedown="$emit('set-active-pane', 'left')"
-      @dragenter="onPaneDragEnter($event, 'left')"
-      @dragover="onPaneDragOver($event, 'left')"
-      @dragleave="onPaneDragLeave($event, 'left')"
+      @dragover="onPaneDragOver"
       @drop="onPaneDrop($event, 'left')"
-      @dragend="onDragEnd"
     >
-      <!-- Drop zone overlay -->
-      <div
-        v-if="dragOverPane === 'left'"
-        class="pointer-events-none absolute inset-0 z-30 rounded-lg border-2 border-dashed border-teal-500 bg-teal-500/10 transition-all"
-      />
       <!-- Left pane tabs -->
       <div class="px-2 pt-2">
         <slot name="left-tabs" />
@@ -143,7 +119,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import {
   useSplitPaneResize,
   type SplitPaneResizeController
@@ -175,9 +151,8 @@ const hasRightPane = computed(() => paneTabsStore.isRightPaneVisible)
 const isLeftActive = computed(() => props.activePane === 'left')
 const isRightActive = computed(() => props.activePane === 'right')
 
-// Drag-and-drop state
+// Drag-and-drop for pane-level drops (empty space, adds to end)
 const DRAG_MIME = 'application/x-dbconvert-pane-tab'
-const dragOverPane = ref<PaneId | null>(null)
 
 function isValidTabDrag(event: DragEvent): boolean {
   if (!event.dataTransfer) return false
@@ -187,35 +162,16 @@ function isValidTabDrag(event: DragEvent): boolean {
   )
 }
 
-function onPaneDragEnter(event: DragEvent, paneId: PaneId) {
-  if (isValidTabDrag(event)) {
-    dragOverPane.value = paneId
-  }
-}
-
-function onPaneDragOver(event: DragEvent, paneId: PaneId) {
+function onPaneDragOver(event: DragEvent) {
   if (!event.dataTransfer) return
   if (isValidTabDrag(event)) {
     event.preventDefault()
     event.dataTransfer.dropEffect = 'move'
-    dragOverPane.value = paneId
-  }
-}
-
-function onPaneDragLeave(event: DragEvent, paneId: PaneId) {
-  // Only clear if we're leaving the pane entirely (not entering a child)
-  const relatedTarget = event.relatedTarget as HTMLElement | null
-  const currentTarget = event.currentTarget as HTMLElement
-  if (!relatedTarget || !currentTarget.contains(relatedTarget)) {
-    if (dragOverPane.value === paneId) {
-      dragOverPane.value = null
-    }
   }
 }
 
 function onPaneDrop(event: DragEvent, paneId: PaneId) {
   event.preventDefault()
-  dragOverPane.value = null
 
   if (!event.dataTransfer) return
 
@@ -227,13 +183,10 @@ function onPaneDrop(event: DragEvent, paneId: PaneId) {
     if (parsed.fromPaneId !== 'left' && parsed.fromPaneId !== 'right') return
     if (!Number.isInteger(parsed.fromPinnedIndex) || parsed.fromPinnedIndex < 0) return
     if (parsed.fromPaneId === paneId) return
+    // Drop on pane (not on tab) - add to end
     paneTabsStore.movePinnedTab(parsed.fromPaneId, parsed.fromPinnedIndex, paneId)
   } catch {
     // ignore invalid payloads
   }
-}
-
-function onDragEnd() {
-  dragOverPane.value = null
 }
 </script>

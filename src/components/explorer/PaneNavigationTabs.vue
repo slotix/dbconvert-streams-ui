@@ -24,55 +24,70 @@
           <span class="text-xs ml-1">(Preview)</span>
         </button>
 
-        <!-- Pinned tabs (solid border) -->
-        <button
-          v-for="(tab, i) in pinnedTabs"
-          :key="tab.id"
-          :ref="(el) => setPinnedTabRef(el as HTMLElement | null, i)"
-          type="button"
-          draggable="true"
-          :class="[
-            'group flex items-center gap-2 rounded border bg-white dark:bg-gray-850 px-2 py-1 text-xs transition shrink-0',
-            'focus:outline-none focus:ring-1 focus:ring-slate-400 dark:focus:ring-slate-500',
-            isActiveTab(i)
-              ? 'border-teal-500 dark:border-teal-400 ring-2 ring-teal-500/40 dark:ring-teal-400/40 bg-teal-50/70 dark:bg-teal-900/20 shadow-[0_0_0_1px_rgba(20,184,166,0.35)]'
-              : 'border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800'
-          ]"
-          @click="$emit('activate-tab', i)"
-          @contextmenu.prevent="showContextMenu($event, i)"
-          @dragstart="onDragStart($event, i)"
-        >
-          <!-- Object type icon only (no data/structure indicator) -->
-          <component
-            :is="getObjectIcon(tab)"
-            :class="['h-4 w-4 shrink-0', getIconColor(tab)]"
-            aria-hidden="true"
+        <!-- Pinned tabs (solid border) with drop indicators -->
+        <template v-for="(tab, i) in pinnedTabs" :key="tab.id">
+          <!-- Drop indicator before tab -->
+          <div
+            v-if="shouldShowDropIndicator(i, 'before')"
+            class="w-0.5 h-6 bg-teal-500 rounded-full shrink-0 animate-pulse"
           />
-
-          <!-- Tab name -->
-          <span
-            class="truncate font-medium text-gray-900 dark:text-gray-100 max-w-[150px]"
-            :title="tab.name"
+          <button
+            :ref="(el) => setPinnedTabRef(el as HTMLElement | null, i)"
+            type="button"
+            draggable="true"
+            :class="[
+              'group flex items-center gap-2 rounded border bg-white dark:bg-gray-850 px-2 py-1 text-xs transition shrink-0',
+              'focus:outline-none focus:ring-1 focus:ring-slate-400 dark:focus:ring-slate-500',
+              isActiveTab(i)
+                ? 'border-teal-500 dark:border-teal-400 ring-2 ring-teal-500/40 dark:ring-teal-400/40 bg-teal-50/70 dark:bg-teal-900/20 shadow-[0_0_0_1px_rgba(20,184,166,0.35)]'
+                : 'border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800',
+              dragState.isDragging && dragState.draggedIndex === i && 'opacity-50'
+            ]"
+            @click="$emit('activate-tab', i)"
+            @contextmenu.prevent="showContextMenu($event, i)"
+            @dragstart="onDragStart($event, i)"
+            @dragover="onTabDragOver($event, i)"
+            @drop="onTabDrop($event, i)"
+            @dragleave="onTabDragLeave($event, i)"
+            @dragend="onDragEnd"
           >
-            {{ tab.name }}
-          </span>
-
-          <!-- Close button -->
-          <span
-            role="button"
-            tabindex="0"
-            class="flex h-4 w-4 items-center justify-center rounded transition hover:bg-slate-100 dark:hover:bg-slate-700 shrink-0"
-            :aria-label="`Close tab ${tab.name}`"
-            @click.stop="$emit('close-tab', i)"
-            @keydown.enter.stop.prevent="$emit('close-tab', i)"
-            @keydown.space.stop.prevent="$emit('close-tab', i)"
-          >
-            <X
-              class="h-3.5 w-3.5 text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300"
+            <!-- Object type icon only (no data/structure indicator) -->
+            <component
+              :is="getObjectIcon(tab)"
+              :class="['h-4 w-4 shrink-0', getIconColor(tab)]"
               aria-hidden="true"
             />
-          </span>
-        </button>
+
+            <!-- Tab name -->
+            <span
+              class="truncate font-medium text-gray-900 dark:text-gray-100 max-w-[150px]"
+              :title="tab.name"
+            >
+              {{ tab.name }}
+            </span>
+
+            <!-- Close button -->
+            <span
+              role="button"
+              tabindex="0"
+              class="flex h-4 w-4 items-center justify-center rounded transition hover:bg-slate-100 dark:hover:bg-slate-700 shrink-0"
+              :aria-label="`Close tab ${tab.name}`"
+              @click.stop="$emit('close-tab', i)"
+              @keydown.enter.stop.prevent="$emit('close-tab', i)"
+              @keydown.space.stop.prevent="$emit('close-tab', i)"
+            >
+              <X
+                class="h-3.5 w-3.5 text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300"
+                aria-hidden="true"
+              />
+            </span>
+          </button>
+          <!-- Drop indicator after tab -->
+          <div
+            v-if="shouldShowDropIndicator(i, 'after')"
+            class="w-0.5 h-6 bg-teal-500 rounded-full shrink-0 animate-pulse"
+          />
+        </template>
       </div>
     </div>
     <button
@@ -226,6 +241,27 @@ const canReopenTab = computed(() => store.canReopenTab)
 
 const DRAG_MIME = 'application/x-dbconvert-pane-tab'
 
+// Drag payload type
+interface DragPayload {
+  fromPaneId: PaneId
+  fromPinnedIndex: number
+}
+
+// Drag state for tab reordering (same-pane and cross-pane)
+const dragState = ref<{
+  isDragging: boolean
+  draggedIndex: number | null // Only set for same-pane drags (initiated here)
+  isCrossPaneDrag: boolean // True when drag is from another pane
+  dropTargetIndex: number | null
+  dropPosition: 'before' | 'after' | null
+}>({
+  isDragging: false,
+  draggedIndex: null,
+  isCrossPaneDrag: false,
+  dropTargetIndex: null,
+  dropPosition: null
+})
+
 function onDragStart(event: DragEvent, index: number) {
   // Pinned-only: index is always a pinned tab index.
   const payload = { fromPaneId: props.paneId, fromPinnedIndex: index }
@@ -238,6 +274,141 @@ function onDragStart(event: DragEvent, index: number) {
   if (event.dataTransfer) {
     event.dataTransfer.effectAllowed = 'move'
   }
+  dragState.value.isDragging = true
+  dragState.value.draggedIndex = index
+  dragState.value.isCrossPaneDrag = false
+}
+
+function isValidTabDrag(event: DragEvent): boolean {
+  if (!event.dataTransfer) return false
+  return (
+    Array.from(event.dataTransfer.types || []).includes(DRAG_MIME) ||
+    Array.from(event.dataTransfer.types || []).includes('text/plain')
+  )
+}
+
+function onTabDragOver(event: DragEvent, targetIndex: number) {
+  // Check if this is a valid tab drag
+  if (!isValidTabDrag(event)) return
+
+  // Always handle tab drags at the tab level for precise positioning
+  event.preventDefault()
+  event.stopPropagation()
+
+  const isSamePaneDrag = dragState.value.isDragging && dragState.value.draggedIndex !== null
+
+  if (isSamePaneDrag && dragState.value.draggedIndex === targetIndex) {
+    // Dragging over itself - no indicator
+    dragState.value.dropTargetIndex = null
+    dragState.value.dropPosition = null
+    return
+  }
+
+  const target = event.currentTarget as HTMLElement
+  const rect = target.getBoundingClientRect()
+  const mouseX = event.clientX
+  const midpoint = rect.left + rect.width / 2
+
+  // Determine if drop should be before or after target
+  const position = mouseX < midpoint ? 'before' : 'after'
+
+  dragState.value.dropTargetIndex = targetIndex
+  dragState.value.dropPosition = position
+
+  // Mark as cross-pane drag if not a same-pane drag
+  if (!isSamePaneDrag) {
+    dragState.value.isDragging = true
+    dragState.value.isCrossPaneDrag = true
+  }
+
+  if (event.dataTransfer) {
+    event.dataTransfer.dropEffect = 'move'
+  }
+}
+
+function onTabDrop(event: DragEvent, targetIndex: number) {
+  event.preventDefault()
+  event.stopPropagation()
+
+  // Read the actual payload on drop (now we can access the data)
+  const raw =
+    event.dataTransfer?.getData(DRAG_MIME) || event.dataTransfer?.getData('text/plain') || ''
+  let payload: DragPayload | null = null
+
+  try {
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      if (
+        (parsed.fromPaneId === 'left' || parsed.fromPaneId === 'right') &&
+        Number.isInteger(parsed.fromPinnedIndex) &&
+        parsed.fromPinnedIndex >= 0
+      ) {
+        payload = parsed
+      }
+    }
+  } catch {
+    // ignore
+  }
+
+  const position = dragState.value.dropPosition
+
+  // Reset drag state
+  resetDragState()
+
+  if (!payload) return
+
+  // Calculate the actual target index based on drop position
+  let toIndex = targetIndex
+  if (position === 'after') {
+    toIndex = targetIndex + 1
+  }
+
+  if (payload.fromPaneId === props.paneId) {
+    // Same pane reordering
+    const fromIndex = payload.fromPinnedIndex
+    if (fromIndex === targetIndex) return
+    // Don't move if it would result in the same position
+    if (toIndex === fromIndex || toIndex === fromIndex + 1) return
+    store.reorderPinnedTab(props.paneId, fromIndex, toIndex)
+  } else {
+    // Cross-pane move with specific position
+    store.movePinnedTab(payload.fromPaneId, payload.fromPinnedIndex, props.paneId, toIndex)
+  }
+}
+
+function onTabDragLeave(event: DragEvent, targetIndex: number) {
+  // Only clear if we're leaving the tab entirely
+  const relatedTarget = event.relatedTarget as HTMLElement | null
+  const currentTarget = event.currentTarget as HTMLElement
+
+  if (!relatedTarget || !currentTarget.contains(relatedTarget)) {
+    if (dragState.value.dropTargetIndex === targetIndex) {
+      dragState.value.dropTargetIndex = null
+      dragState.value.dropPosition = null
+    }
+  }
+}
+
+function onDragEnd() {
+  resetDragState()
+}
+
+function resetDragState() {
+  dragState.value = {
+    isDragging: false,
+    draggedIndex: null,
+    isCrossPaneDrag: false,
+    dropTargetIndex: null,
+    dropPosition: null
+  }
+}
+
+function shouldShowDropIndicator(index: number, position: 'before' | 'after'): boolean {
+  return (
+    dragState.value.isDragging &&
+    dragState.value.dropTargetIndex === index &&
+    dragState.value.dropPosition === position
+  )
 }
 
 // Context menu state
