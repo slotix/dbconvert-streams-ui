@@ -354,9 +354,13 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
         // Activate existing pinned tab
         state.activePinnedIndex = existingIndex
       } else {
-        // Add new pinned tab
-        state.pinnedTabs.push(fullTab)
-        state.activePinnedIndex = state.pinnedTabs.length - 1
+        // Insert adjacent to current active tab (VS Code style)
+        const insertIndex =
+          state.activePinnedIndex !== null && state.activePinnedIndex >= 0
+            ? state.activePinnedIndex + 1
+            : state.pinnedTabs.length
+        state.pinnedTabs.splice(insertIndex, 0, fullTab)
+        state.activePinnedIndex = insertIndex
       }
     } else {
       // If the requested preview is already open, don't clear object state.
@@ -419,9 +423,13 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
       // Activate existing
       state.activePinnedIndex = existingIndex
     } else {
-      // Add as new pinned tab
-      state.pinnedTabs.push(tab)
-      state.activePinnedIndex = state.pinnedTabs.length - 1
+      // Insert adjacent to current active tab (VS Code style)
+      const insertIndex =
+        state.activePinnedIndex !== null && state.activePinnedIndex >= 0
+          ? state.activePinnedIndex + 1
+          : 0
+      state.pinnedTabs.splice(insertIndex, 0, tab)
+      state.activePinnedIndex = insertIndex
     }
 
     // Clear preview

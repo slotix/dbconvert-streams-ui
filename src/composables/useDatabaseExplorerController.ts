@@ -321,9 +321,7 @@ export function useDatabaseExplorerController({
   }) {
     const previousConnectionId = explorerState.currentConnectionId.value
 
-    const targetPane: PaneId = payload.openInRightSplit
-      ? 'right'
-      : paneTabsStore.activePane || 'left'
+    const targetPane: PaneId = paneTabsStore.activePane || 'left'
 
     // For right-pane opens, do NOT update the global (left) selection.
     // The viewState watcher restores the selected object into the left pane;
@@ -433,9 +431,7 @@ export function useDatabaseExplorerController({
     // Clear panel states - file selection will be synced by watcher
     explorerState.clearPanelStates()
 
-    const targetPane: PaneId = payload.openInRightSplit
-      ? 'right'
-      : paneTabsStore.activePane || 'left'
+    const targetPane: PaneId = paneTabsStore.activePane || 'left'
 
     const effectiveMode: 'preview' | 'pinned' = alwaysOpenNewTab.value ? 'pinned' : payload.mode
 

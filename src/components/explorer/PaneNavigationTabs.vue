@@ -6,9 +6,9 @@
       @wheel="onWheel"
     >
       <div class="flex items-center gap-1 flex-nowrap min-w-max">
-        <!-- Preview tab (dashed border) -->
+        <!-- Preview tab at start when no active pinned tab (dashed border) -->
         <button
-          v-if="currentPreview"
+          v-if="currentPreview && activePinnedIndex < 0"
           ref="previewTabRef"
           type="button"
           :class="[
@@ -24,7 +24,7 @@
           <span class="text-xs ml-1">(Preview)</span>
         </button>
 
-        <!-- Pinned tabs (solid border) with drop indicators -->
+        <!-- Pinned tabs (solid border) with drop indicators and preview inserted after active -->
         <template v-for="(tab, i) in pinnedTabs" :key="tab.id">
           <!-- Drop indicator before tab -->
           <div
@@ -87,6 +87,23 @@
             v-if="shouldShowDropIndicator(i, 'after')"
             class="w-0.5 h-6 bg-teal-500 rounded-full shrink-0 animate-pulse"
           />
+          <!-- Preview tab appears after active pinned tab (VS Code style) -->
+          <button
+            v-if="currentPreview && activePinnedIndex === i"
+            ref="previewTabRef"
+            type="button"
+            :class="[
+              'shrink-0 px-2 py-1 text-xs rounded border border-dashed bg-white dark:bg-gray-850 italic transition focus:outline-none focus:ring-1',
+              isPreviewActive
+                ? 'border-teal-400 dark:border-teal-300 text-gray-900 dark:text-gray-100 bg-teal-50/70 dark:bg-teal-900/20 ring-teal-500/40 dark:ring-teal-400/40 shadow-[0_0_0_1px_rgba(20,184,166,0.35)]'
+                : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500 hover:text-gray-700 dark:hover:text-gray-300 focus:ring-slate-400 dark:focus:ring-slate-500'
+            ]"
+            @click="$emit('activate-preview')"
+            @dblclick.stop="$emit('pin-preview')"
+          >
+            <span class="truncate" :title="currentPreview.name">{{ currentPreview.name }}</span>
+            <span class="text-xs ml-1">(Preview)</span>
+          </button>
         </template>
       </div>
     </div>
