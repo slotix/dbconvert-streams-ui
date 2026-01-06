@@ -228,6 +228,10 @@ export function useConsoleTab(options: ConsoleTabOptions) {
     sqlConsoleStore.renameTab(consoleKey.value, database.value, tabId, newName)
   }
 
+  function reorderQueryTab(fromIndex: number, toIndex: number) {
+    sqlConsoleStore.reorderTab(consoleKey.value, database.value, fromIndex, toIndex)
+  }
+
   // ========== Query Formatting ==========
   function formatQuery() {
     try {
@@ -391,6 +395,7 @@ export function useConsoleTab(options: ConsoleTabOptions) {
     closeQueryTab,
     closeAllQueryTabs,
     handleRenameTab,
+    reorderQueryTab,
 
     // Query operations
     formatQuery,

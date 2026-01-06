@@ -71,6 +71,7 @@
         @close="removeQuery"
         @add="addQuery"
         @rename="handleRenameTab"
+        @reorder="reorderQuery"
       />
 
       <!-- Query Content -->
@@ -541,6 +542,29 @@ const removeQuery = (tabId: string) => {
         activeTabId.value = ''
       }
     }
+  }
+}
+
+const reorderQuery = (fromIndex: number, toIndex: number) => {
+  if (fromIndex === toIndex) return
+
+  const conn = streamsStore.currentStreamConfig?.source?.connections?.[0]
+  if (!conn?.queries) return
+  if (fromIndex < 0 || fromIndex >= conn.queries.length) return
+  if (toIndex < 0 || toIndex > conn.queries.length) return
+
+  // Remove from current position
+  const [movedQuery] = conn.queries.splice(fromIndex, 1)
+
+  // Adjust toIndex if we removed an element before it
+  const adjustedToIndex = fromIndex < toIndex ? toIndex - 1 : toIndex
+
+  // Insert at new position
+  conn.queries.splice(adjustedToIndex, 0, movedQuery)
+
+  // Update active tab to follow the moved query
+  if (activeTabId.value === `query-${fromIndex}`) {
+    activeTabId.value = `query-${adjustedToIndex}`
   }
 }
 

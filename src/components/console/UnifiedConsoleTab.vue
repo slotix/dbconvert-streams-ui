@@ -118,6 +118,7 @@
       @close-all="closeAllQueryTabs"
       @add="addQueryTab"
       @rename="handleRenameTab"
+      @reorder="reorderQueryTab"
     />
 
     <!-- Main Content Area -->
@@ -253,6 +254,7 @@ const {
   closeQueryTab,
   closeAllQueryTabs,
   handleRenameTab,
+  reorderQueryTab,
 
   // Query operations
   formatQuery,

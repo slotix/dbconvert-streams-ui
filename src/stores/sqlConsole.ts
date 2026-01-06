@@ -292,6 +292,31 @@ export const useSqlConsoleStore = defineStore('sqlConsole', () => {
     return newTab
   }
 
+  // Reorder tabs within a console
+  function reorderTab(
+    connectionId: string,
+    database: string | undefined,
+    fromIndex: number,
+    toIndex: number
+  ) {
+    if (fromIndex === toIndex) return
+
+    const state = getConsoleState(connectionId, database)
+    if (fromIndex < 0 || fromIndex >= state.tabs.length) return
+    if (toIndex < 0 || toIndex > state.tabs.length) return
+
+    // Remove the tab from its current position
+    const [movedTab] = state.tabs.splice(fromIndex, 1)
+
+    // Adjust toIndex if we removed an element before it
+    const adjustedToIndex = fromIndex < toIndex ? toIndex - 1 : toIndex
+
+    // Insert at the new position
+    state.tabs.splice(adjustedToIndex, 0, movedTab)
+
+    saveState()
+  }
+
   // Clear all tabs for a console (reset to default)
   function clearTabs(connectionId: string, database?: string) {
     const key = generateConsoleKey(connectionId, database)
@@ -401,6 +426,7 @@ export const useSqlConsoleStore = defineStore('sqlConsole', () => {
     updateTabQuery,
     renameTab,
     duplicateTab,
+    reorderTab,
     clearTabs,
     removeConsole,
     saveState,
