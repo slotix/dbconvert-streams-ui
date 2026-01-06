@@ -6,44 +6,31 @@
       @wheel="onWheel"
     >
       <div class="flex items-center gap-1 flex-nowrap min-w-max">
-        <!-- Preview tab at start when no active pinned tab (dashed border) -->
-        <button
-          v-if="currentPreview && activePinnedIndex < 0"
-          ref="previewTabRef"
-          type="button"
-          :class="[
-            'shrink-0 px-2 py-1 text-xs rounded border border-dashed bg-white dark:bg-gray-850 italic transition focus:outline-none focus:ring-1',
-            isPreviewActive
-              ? 'border-teal-400 dark:border-teal-300 text-gray-900 dark:text-gray-100 bg-teal-50/70 dark:bg-teal-900/20 ring-teal-500/40 dark:ring-teal-400/40 shadow-[0_0_0_1px_rgba(20,184,166,0.35)]'
-              : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500 hover:text-gray-700 dark:hover:text-gray-300 focus:ring-slate-400 dark:focus:ring-slate-500'
-          ]"
-          @click="$emit('activate-preview')"
-          @dblclick.stop="$emit('pin-preview')"
-        >
-          <span class="truncate" :title="currentPreview.name">{{ currentPreview.name }}</span>
-          <span class="text-xs ml-1">(Preview)</span>
-        </button>
-
-        <!-- Pinned tabs (solid border) with drop indicators and preview inserted after active -->
-        <template v-for="(tab, i) in pinnedTabs" :key="tab.id">
+        <template v-for="(tab, i) in tabs" :key="tab.id">
           <!-- Drop indicator before tab -->
           <div
             v-if="shouldShowDropIndicator(i, 'before')"
             class="w-0.5 h-6 bg-teal-500 rounded-full shrink-0 animate-pulse"
           />
           <button
-            :ref="(el) => setPinnedTabRef(el as HTMLElement | null, i)"
+            :ref="(el) => setTabRef(el as HTMLElement | null, i)"
             type="button"
             draggable="true"
             :class="[
               'group flex items-center gap-2 rounded border bg-white dark:bg-gray-850 px-2 py-1 text-xs transition shrink-0',
               'focus:outline-none focus:ring-1 focus:ring-slate-400 dark:focus:ring-slate-500',
+              isPreviewTab(i) ? 'border border-dashed italic' : 'border border-solid',
               isActiveTab(i)
-                ? 'border-teal-500 dark:border-teal-400 ring-2 ring-teal-500/40 dark:ring-teal-400/40 bg-teal-50/70 dark:bg-teal-900/20 shadow-[0_0_0_1px_rgba(20,184,166,0.35)]'
-                : 'border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800',
+                ? isPreviewTab(i)
+                  ? 'border-teal-400 dark:border-teal-300 text-gray-900 dark:text-gray-100 bg-teal-50/70 dark:bg-teal-900/20 ring-2 ring-teal-500/40 dark:ring-teal-400/40 shadow-[0_0_0_1px_rgba(20,184,166,0.35)]'
+                  : 'border-teal-500 dark:border-teal-400 ring-2 ring-teal-500/40 dark:ring-teal-400/40 bg-teal-50/70 dark:bg-teal-900/20 shadow-[0_0_0_1px_rgba(20,184,166,0.35)]'
+                : isPreviewTab(i)
+                  ? 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                  : 'border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800',
               dragState.isDragging && dragState.draggedIndex === i && 'opacity-50'
             ]"
             @click="$emit('activate-tab', i)"
+            @dblclick.stop="isPreviewTab(i) ? $emit('pin-preview') : undefined"
             @contextmenu.prevent="showContextMenu($event, i)"
             @dragstart="onDragStart($event, i)"
             @dragover="onTabDragOver($event, i)"
@@ -64,6 +51,10 @@
               :title="tab.name"
             >
               {{ tab.name }}
+            </span>
+
+            <span v-if="isPreviewTab(i)" class="text-xs ml-1 text-gray-500 dark:text-gray-400">
+              (Preview)
             </span>
 
             <!-- Close button -->
@@ -87,23 +78,6 @@
             v-if="shouldShowDropIndicator(i, 'after')"
             class="w-0.5 h-6 bg-teal-500 rounded-full shrink-0 animate-pulse"
           />
-          <!-- Preview tab appears after active pinned tab (VS Code style) -->
-          <button
-            v-if="currentPreview && activePinnedIndex === i"
-            ref="previewTabRef"
-            type="button"
-            :class="[
-              'shrink-0 px-2 py-1 text-xs rounded border border-dashed bg-white dark:bg-gray-850 italic transition focus:outline-none focus:ring-1',
-              isPreviewActive
-                ? 'border-teal-400 dark:border-teal-300 text-gray-900 dark:text-gray-100 bg-teal-50/70 dark:bg-teal-900/20 ring-teal-500/40 dark:ring-teal-400/40 shadow-[0_0_0_1px_rgba(20,184,166,0.35)]'
-                : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500 hover:text-gray-700 dark:hover:text-gray-300 focus:ring-slate-400 dark:focus:ring-slate-500'
-            ]"
-            @click="$emit('activate-preview')"
-            @dblclick.stop="$emit('pin-preview')"
-          >
-            <span class="truncate" :title="currentPreview.name">{{ currentPreview.name }}</span>
-            <span class="text-xs ml-1">(Preview)</span>
-          </button>
         </template>
       </div>
     </div>
@@ -127,24 +101,7 @@
         :style="{ left: `${adjustedOverflowMenuX}px`, top: `${adjustedOverflowMenuY}px` }"
       >
         <button
-          v-if="currentPreview"
-          class="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
-          :class="
-            isPreviewActive
-              ? 'text-gray-900 dark:text-gray-100'
-              : 'text-gray-700 dark:text-gray-300'
-          "
-          @click="activatePreviewFromMenu"
-        >
-          <span class="text-xs italic text-gray-500 dark:text-gray-400">Preview</span>
-          <span class="truncate">{{ currentPreview.name }}</span>
-        </button>
-        <div
-          v-if="currentPreview && pinnedTabs.length"
-          class="border-t border-gray-100 dark:border-gray-700 my-1"
-        />
-        <button
-          v-for="(tab, i) in pinnedTabs"
+          v-for="(tab, i) in tabs"
           :key="`overflow-${tab.id}`"
           class="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
           :class="
@@ -153,6 +110,9 @@
           @click="activateTabFromMenu(i)"
         >
           <component :is="getObjectIcon(tab)" :class="['h-4 w-4 shrink-0', getIconColor(tab)]" />
+          <span v-if="isPreviewTab(i)" class="text-xs italic text-gray-500 dark:text-gray-400">
+            Preview
+          </span>
           <span class="truncate">{{ tab.name }}</span>
         </button>
       </div>
@@ -249,11 +209,10 @@ const emit = defineEmits<{
 
 const store = usePaneTabsStore()
 const paneState = computed(() => store.getPaneState(props.paneId))
-const pinnedTabs = computed(() => paneState.value.pinnedTabs)
-const currentPreview = computed(() => paneState.value.previewTab)
-const activePinnedIndex = computed(() => paneState.value.activePinnedIndex ?? -1)
-const isPreviewActive = computed(() => activePinnedIndex.value < 0 && !!currentPreview.value)
-const hasAnyTabs = computed(() => pinnedTabs.value.length > 0 || !!currentPreview.value)
+const tabs = computed(() => paneState.value.tabs)
+const activeIndex = computed(() => paneState.value.activeIndex ?? -1)
+const previewIndex = computed(() => paneState.value.previewIndex ?? -1)
+const hasAnyTabs = computed(() => tabs.value.length > 0)
 const canReopenTab = computed(() => store.canReopenTab)
 
 const DRAG_MIME = 'application/x-dbconvert-pane-tab'
@@ -261,7 +220,8 @@ const DRAG_MIME = 'application/x-dbconvert-pane-tab'
 // Drag payload type
 interface DragPayload {
   fromPaneId: PaneId
-  fromPinnedIndex: number
+  fromIndex: number
+  wasPreview: boolean
 }
 
 // Drag state for tab reordering (same-pane and cross-pane)
@@ -280,8 +240,7 @@ const dragState = ref<{
 })
 
 function onDragStart(event: DragEvent, index: number) {
-  // Pinned-only: index is always a pinned tab index.
-  const payload = { fromPaneId: props.paneId, fromPinnedIndex: index }
+  const payload = { fromPaneId: props.paneId, fromIndex: index, wasPreview: isPreviewTab(index) }
   try {
     event.dataTransfer?.setData(DRAG_MIME, JSON.stringify(payload))
     event.dataTransfer?.setData('text/plain', JSON.stringify(payload))
@@ -357,10 +316,14 @@ function onTabDrop(event: DragEvent, targetIndex: number) {
       const parsed = JSON.parse(raw)
       if (
         (parsed.fromPaneId === 'left' || parsed.fromPaneId === 'right') &&
-        Number.isInteger(parsed.fromPinnedIndex) &&
-        parsed.fromPinnedIndex >= 0
+        Number.isInteger(parsed.fromIndex) &&
+        parsed.fromIndex >= 0
       ) {
-        payload = parsed
+        payload = {
+          fromPaneId: parsed.fromPaneId,
+          fromIndex: parsed.fromIndex,
+          wasPreview: !!parsed.wasPreview
+        }
       }
     }
   } catch {
@@ -382,14 +345,20 @@ function onTabDrop(event: DragEvent, targetIndex: number) {
 
   if (payload.fromPaneId === props.paneId) {
     // Same pane reordering
-    const fromIndex = payload.fromPinnedIndex
+    const fromIndex = payload.fromIndex
     if (fromIndex === targetIndex) return
     // Don't move if it would result in the same position
     if (toIndex === fromIndex || toIndex === fromIndex + 1) return
-    store.reorderPinnedTab(props.paneId, fromIndex, toIndex)
+    store.reorderTab(props.paneId, fromIndex, toIndex)
+    if (payload.wasPreview) {
+      const newPreviewIndex = paneState.value.previewIndex
+      if (newPreviewIndex !== null) {
+        store.keepTab(props.paneId, newPreviewIndex)
+      }
+    }
   } else {
     // Cross-pane move with specific position
-    store.movePinnedTab(payload.fromPaneId, payload.fromPinnedIndex, props.paneId, toIndex)
+    store.moveTab(payload.fromPaneId, payload.fromIndex, props.paneId, toIndex)
   }
 }
 
@@ -439,8 +408,7 @@ const contextMenuRef = ref<HTMLElement | null>(null)
 const adjustedMenuX = computed(() => contextMenu.value.x / getZoomFactor())
 const adjustedMenuY = computed(() => contextMenu.value.y / getZoomFactor())
 const tabsContainerRef = ref<HTMLElement | null>(null)
-const previewTabRef = ref<HTMLElement | null>(null)
-const pinnedTabRefs = ref<Map<number, HTMLElement>>(new Map())
+const tabRefs = ref<Map<number, HTMLElement>>(new Map())
 const overflowMenu = ref({ visible: false, x: 0, y: 0 })
 const overflowMenuRef = ref<HTMLElement | null>(null)
 const overflowButtonRef = ref<HTMLElement | null>(null)
@@ -448,15 +416,19 @@ const adjustedOverflowMenuX = computed(() => overflowMenu.value.x / getZoomFacto
 const adjustedOverflowMenuY = computed(() => overflowMenu.value.y / getZoomFactor())
 
 function isActiveTab(index: number): boolean {
-  return paneState.value.activePinnedIndex === index
+  return paneState.value.activeIndex === index
 }
 
-function setPinnedTabRef(el: HTMLElement | null, index: number) {
+function isPreviewTab(index: number): boolean {
+  return paneState.value.previewIndex === index
+}
+
+function setTabRef(el: HTMLElement | null, index: number) {
   if (!el) {
-    pinnedTabRefs.value.delete(index)
+    tabRefs.value.delete(index)
     return
   }
-  pinnedTabRefs.value.set(index, el)
+  tabRefs.value.set(index, el)
 }
 
 // Compute the target pane for move action
@@ -468,7 +440,7 @@ const moveToOtherPaneLabel = computed(() =>
 function handleMoveToOtherPane() {
   const index = contextMenu.value.tabIndex
   if (index >= 0) {
-    store.movePinnedTab(props.paneId, index, targetPaneId.value)
+    store.moveTab(props.paneId, index, targetPaneId.value)
   }
   hideContextMenu()
 }
@@ -583,11 +555,6 @@ function hideOverflowMenu() {
   overflowMenu.value.visible = false
 }
 
-function activatePreviewFromMenu() {
-  emit('activate-preview')
-  hideOverflowMenu()
-}
-
 function activateTabFromMenu(index: number) {
   emit('activate-tab', index)
   hideOverflowMenu()
@@ -629,10 +596,8 @@ function scrollActiveIntoView() {
   const container = tabsContainerRef.value
   if (!container) return
   let target: HTMLElement | null = null
-  if (activePinnedIndex.value >= 0) {
-    target = pinnedTabRefs.value.get(activePinnedIndex.value) ?? null
-  } else if (isPreviewActive.value) {
-    target = previewTabRef.value
+  if (activeIndex.value >= 0) {
+    target = tabRefs.value.get(activeIndex.value) ?? null
   }
   if (!target) return
   const containerRect = container.getBoundingClientRect()
@@ -648,14 +613,14 @@ onMounted(() => {
 })
 
 onBeforeUpdate(() => {
-  pinnedTabRefs.value = new Map()
+  tabRefs.value = new Map()
 })
 
 onBeforeUnmount(() => {
   document.removeEventListener('click', handleDocumentClick)
 })
 
-watch([pinnedTabs, currentPreview, activePinnedIndex, () => props.isActive], async () => {
+watch([tabs, activeIndex, previewIndex, () => props.isActive], async () => {
   await nextTick()
   scrollActiveIntoView()
 })

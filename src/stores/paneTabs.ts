@@ -53,9 +53,15 @@ export type PaneTab = {
  * State for a single pane
  */
 export interface PaneState {
-  pinnedTabs: PaneTab[]
-  previewTab: PaneTab | null
-  activePinnedIndex: number | null
+  /**
+   * Ordered list of tabs for the pane.
+   * Includes both kept (pinned=true) and preview (pinned=false) tabs.
+   */
+  tabs: PaneTab[]
+  /** Index of the currently active tab in `tabs` */
+  activeIndex: number | null
+  /** Index of the preview tab in `tabs` (null if none) */
+  previewIndex: number | null
 }
 
 /**
@@ -72,21 +78,38 @@ export interface ClosedTabHistoryItem {
  */
 function createEmptyPaneState(): PaneState {
   return {
-    pinnedTabs: [],
-    previewTab: null,
-    activePinnedIndex: null
+    tabs: [],
+    activeIndex: null,
+    previewIndex: null
   }
 }
 
 const STORAGE_KEY = 'explorer.paneTabs'
 const MAX_CLOSED_TABS_HISTORY = 20
 
-type PersistedPaneTabsState = {
+type PersistedPaneTabsStateV2 = {
   panes: Record<PaneId, PaneState>
   activePane: PaneId
   visiblePanes: PaneId[]
   closedTabsHistory?: ClosedTabHistoryItem[]
 }
+
+// Legacy persisted format (before stable ordered tabs refactor)
+type PersistedPaneTabsStateV1 = {
+  panes: Record<
+    PaneId,
+    {
+      pinnedTabs: PaneTab[]
+      previewTab: PaneTab | null
+      activePinnedIndex: number | null
+    }
+  >
+  activePane: PaneId
+  visiblePanes: PaneId[]
+  closedTabsHistory?: ClosedTabHistoryItem[]
+}
+
+type PersistedPaneTabsState = PersistedPaneTabsStateV1 | PersistedPaneTabsStateV2
 
 function buildObjectKey(paneId: PaneId, tab: PaneTab): string | null {
   if (tab.tabType === 'database' && tab.database && tab.name) {
@@ -129,7 +152,7 @@ function loadPersistedPaneTabsState(): PersistedPaneTabsState | null {
   return null
 }
 
-function persistPaneTabsState(state: PersistedPaneTabsState) {
+function persistPaneTabsState(state: PersistedPaneTabsStateV2) {
   if (!hasBrowserStorage()) {
     return
   }
@@ -185,12 +208,29 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
     }
   }
 
-  const hydratePaneState = (paneId: PaneId, savedState?: PaneState): PaneState => {
-    const state = {
-      ...createEmptyPaneState(),
+  const clampIndex = (index: number, length: number): number => {
+    if (length <= 0) return 0
+    return Math.min(Math.max(0, index), length - 1)
+  }
+
+  const getPreviewTab = (paneId: PaneId): PaneTab | null => {
+    const state = getPaneState(paneId)
+    if (state.previewIndex === null) return null
+    return state.tabs[state.previewIndex] || null
+  }
+
+  const isPreviewIndex = (state: PaneState, index: number): boolean => {
+    return state.previewIndex !== null && state.previewIndex === index
+  }
+
+  const hydratePaneStateV2 = (paneId: PaneId, savedState?: Partial<PaneState>): PaneState => {
+    const base = createEmptyPaneState()
+    const state: PaneState = {
+      ...base,
       ...(savedState || {})
-    }
-    state.pinnedTabs = state.pinnedTabs.map((tab) => {
+    } as PaneState
+
+    state.tabs = (state.tabs || []).map((tab) => {
       const hydratedTab = { ...tab }
       if (hydratedTab.tabType === 'database') {
         delete hydratedTab.meta
@@ -198,15 +238,54 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
       ensureObjectKey(paneId, hydratedTab)
       return hydratedTab
     })
-    if (state.previewTab) {
-      const hydratedPreview = { ...state.previewTab }
-      if (hydratedPreview.tabType === 'database') {
-        delete hydratedPreview.meta
+
+    if (state.previewIndex !== null) {
+      if (!state.tabs[state.previewIndex]) {
+        state.previewIndex = null
+      } else {
+        state.tabs[state.previewIndex] = { ...state.tabs[state.previewIndex], pinned: false }
       }
-      ensureObjectKey(paneId, hydratedPreview)
-      state.previewTab = hydratedPreview
     }
+
+    if (state.activeIndex !== null) {
+      if (!state.tabs[state.activeIndex]) {
+        state.activeIndex = state.tabs.length ? 0 : null
+      }
+    }
+
     return state
+  }
+
+  const migratePaneStateV1ToV2 = (
+    paneId: PaneId,
+    legacy: { pinnedTabs: PaneTab[]; previewTab: PaneTab | null; activePinnedIndex: number | null }
+  ): PaneState => {
+    const pinnedTabs = (legacy.pinnedTabs || []).map((t) => ({ ...t, pinned: true }))
+    const previewTab = legacy.previewTab ? { ...legacy.previewTab, pinned: false } : null
+
+    let previewIndex: number | null = null
+    const tabs: PaneTab[] = [...pinnedTabs]
+    if (previewTab) {
+      if (legacy.activePinnedIndex !== null && legacy.activePinnedIndex >= 0) {
+        previewIndex = Math.min(legacy.activePinnedIndex + 1, tabs.length)
+      } else {
+        previewIndex = 0
+      }
+      tabs.splice(previewIndex, 0, previewTab)
+    }
+
+    let activeIndex: number | null = null
+    if (legacy.activePinnedIndex !== null && legacy.activePinnedIndex >= 0) {
+      activeIndex = legacy.activePinnedIndex
+      if (previewIndex !== null && previewIndex <= activeIndex) {
+        activeIndex += 1
+      }
+      activeIndex = clampIndex(activeIndex, tabs.length)
+    } else if (previewIndex !== null) {
+      activeIndex = previewIndex
+    }
+
+    return hydratePaneStateV2(paneId, { tabs, activeIndex, previewIndex })
   }
 
   function persistState() {
@@ -225,8 +304,26 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
     const savedState = loadPersistedPaneTabsState()
     if (!savedState) return
 
-    panes.value.set('left', hydratePaneState('left', savedState.panes?.left))
-    panes.value.set('right', hydratePaneState('right', savedState.panes?.right))
+    const leftAny = (savedState as any).panes?.left
+    const rightAny = (savedState as any).panes?.right
+
+    const leftState =
+      leftAny && typeof leftAny === 'object' && 'tabs' in leftAny
+        ? hydratePaneStateV2('left', leftAny as PaneState)
+        : migratePaneStateV1ToV2(
+            'left',
+            (leftAny as any) || { pinnedTabs: [], previewTab: null, activePinnedIndex: null }
+          )
+    const rightState =
+      rightAny && typeof rightAny === 'object' && 'tabs' in rightAny
+        ? hydratePaneStateV2('right', rightAny as PaneState)
+        : migratePaneStateV1ToV2(
+            'right',
+            (rightAny as any) || { pinnedTabs: [], previewTab: null, activePinnedIndex: null }
+          )
+
+    panes.value.set('left', leftState)
+    panes.value.set('right', rightState)
 
     activePane.value = savedState.activePane || 'left'
     const visible: PaneId[] =
@@ -248,7 +345,7 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
 
   const hasPaneContent = (paneId: PaneId): boolean => {
     const state = getPaneState(paneId)
-    return state.pinnedTabs.length > 0 || state.previewTab !== null
+    return state.tabs.length > 0
   }
 
   const isPaneVisible = (paneId: PaneId): boolean => {
@@ -257,10 +354,10 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
 
   const getActiveTab = (paneId: PaneId): PaneTab | null => {
     const state = getPaneState(paneId)
-    if (state.activePinnedIndex !== null && state.pinnedTabs[state.activePinnedIndex]) {
-      return state.pinnedTabs[state.activePinnedIndex]
+    if (state.activeIndex !== null && state.tabs[state.activeIndex]) {
+      return state.tabs[state.activeIndex]
     }
-    return state.previewTab
+    return null
   }
 
   const isActivePane = (paneId: PaneId): boolean => {
@@ -337,73 +434,88 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
   function addTab(
     paneId: PaneId,
     tab: Omit<PaneTab, 'pinned'>,
-    mode: 'preview' | 'pinned' = 'preview'
+    mode: 'preview' | 'pinned' = 'preview',
+    options?: { focus?: boolean }
   ) {
     const state = getPaneState(paneId)
     const fullTab: PaneTab = { ...tab, pinned: mode === 'pinned' }
     ensureObjectKey(paneId, fullTab)
     const key = generateTabKey(fullTab)
 
+    const focus = options?.focus !== undefined ? options.focus : true
+
     // Show pane if not visible
     showPane(paneId)
 
-    if (mode === 'pinned') {
-      // Check if already exists in pinned tabs
-      const existingIndex = state.pinnedTabs.findIndex((t) => generateTabKey(t) === key)
-      if (existingIndex >= 0) {
-        // Activate existing pinned tab
-        state.activePinnedIndex = existingIndex
-      } else {
-        // Insert adjacent to current active tab (VS Code style)
-        const insertIndex =
-          state.activePinnedIndex !== null && state.activePinnedIndex >= 0
-            ? state.activePinnedIndex + 1
-            : state.pinnedTabs.length
-        state.pinnedTabs.splice(insertIndex, 0, fullTab)
-        state.activePinnedIndex = insertIndex
+    // If tab already exists in this pane, reveal it (no duplicates).
+    const existingIndex = state.tabs.findIndex((t) => generateTabKey(t) === key)
+    if (existingIndex >= 0) {
+      // If we are "pinning" the preview tab, convert it to kept in place.
+      if (
+        mode === 'pinned' &&
+        state.previewIndex !== null &&
+        existingIndex === state.previewIndex
+      ) {
+        state.tabs[existingIndex] = { ...state.tabs[existingIndex], pinned: true }
+        state.previewIndex = null
       }
-    } else {
-      // If the requested preview is already open, don't clear object state.
-      // Double-clicking fires two rapid opens; clearing here would wipe the tab's
-      // persisted object state (e.g., file grid rowData) and can render an empty grid.
-      if (state.previewTab && generateTabKey(state.previewTab) === key) {
-        state.activePinnedIndex = null
-        setActivePane(paneId)
-        persistState()
-        return
-      }
-      // Set as preview tab (replaces current preview)
-      if (state.previewTab) {
-        clearObjectState(paneId, state.previewTab)
-      }
-      state.previewTab = fullTab
-      state.activePinnedIndex = null
+      state.activeIndex = existingIndex
+      if (focus) setActivePane(paneId)
+      persistState()
+      return
     }
 
-    // Set this pane as active
-    setActivePane(paneId)
+    const safeActiveIndex =
+      state.activeIndex !== null && state.activeIndex >= 0
+        ? clampIndex(state.activeIndex, state.tabs.length)
+        : null
+
+    if (mode === 'pinned') {
+      // Insert adjacent to current active tab (VS Code style).
+      const insertIndex = safeActiveIndex !== null ? safeActiveIndex + 1 : state.tabs.length
+      state.tabs.splice(insertIndex, 0, { ...fullTab, pinned: true })
+      if (state.previewIndex !== null && insertIndex <= state.previewIndex) {
+        state.previewIndex += 1
+      }
+      state.activeIndex = insertIndex
+    } else {
+      // Preview open.
+      if (state.previewIndex !== null && state.tabs[state.previewIndex]) {
+        const prev = state.tabs[state.previewIndex]
+        // If we're replacing a different preview, clear the old tab's stored object state.
+        if (generateTabKey(prev) !== key) {
+          clearObjectState(paneId, prev)
+        }
+        state.tabs[state.previewIndex] = { ...fullTab, pinned: false }
+        state.activeIndex = state.previewIndex
+      } else {
+        // Create preview tab.
+        const insertIndex = safeActiveIndex !== null ? safeActiveIndex + 1 : state.tabs.length
+        state.tabs.splice(insertIndex, 0, { ...fullTab, pinned: false })
+        state.previewIndex = insertIndex
+        state.activeIndex = insertIndex
+      }
+    }
+
+    if (focus) {
+      setActivePane(paneId)
+    }
     persistState()
   }
 
   /**
    * Set preview tab for a pane (single-click behavior)
    */
-  function setPreviewTab(paneId: PaneId, tab: PaneTab | null) {
-    const state = getPaneState(paneId)
-    if (
-      state.previewTab &&
-      (!tab || ensureObjectKey(paneId, tab) !== ensureObjectKey(paneId, state.previewTab))
-    ) {
-      clearObjectState(paneId, state.previewTab)
+  function setPreviewTab(paneId: PaneId, tab: PaneTab | null, options?: { focus?: boolean }) {
+    const focus = options?.focus !== undefined ? options.focus : true
+
+    if (!tab) {
+      closePreviewTab(paneId)
+      return
     }
-    state.previewTab = tab
-    if (tab) {
-      ensureObjectKey(paneId, tab)
-      state.activePinnedIndex = null
-      showPane(paneId)
-      setActivePane(paneId)
-    }
-    persistState()
+
+    // Delegate to addTab to preserve dedupe + stable replacement semantics.
+    addTab(paneId, tab, 'preview', { focus })
   }
 
   /**
@@ -411,29 +523,33 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
    */
   function pinPreviewTab(paneId: PaneId) {
     const state = getPaneState(paneId)
-    if (!state.previewTab) return
-
-    const tab = { ...state.previewTab, pinned: true }
-    ensureObjectKey(paneId, tab)
-    const key = generateTabKey(tab)
-
-    // Check if already exists in pinned tabs
-    const existingIndex = state.pinnedTabs.findIndex((t) => generateTabKey(t) === key)
-    if (existingIndex >= 0) {
-      // Activate existing
-      state.activePinnedIndex = existingIndex
-    } else {
-      // Insert adjacent to current active tab (VS Code style)
-      const insertIndex =
-        state.activePinnedIndex !== null && state.activePinnedIndex >= 0
-          ? state.activePinnedIndex + 1
-          : 0
-      state.pinnedTabs.splice(insertIndex, 0, tab)
-      state.activePinnedIndex = insertIndex
+    if (state.previewIndex === null) return
+    const tab = state.tabs[state.previewIndex]
+    if (!tab) {
+      state.previewIndex = null
+      persistState()
+      return
     }
 
-    // Clear preview
-    state.previewTab = null
+    // Keep in place.
+    state.tabs[state.previewIndex] = { ...tab, pinned: true }
+    state.activeIndex = state.previewIndex
+    state.previewIndex = null
+    persistState()
+  }
+
+  /**
+   * Convert a preview tab to a kept tab by index (no-op if not preview).
+   * Used when a preview tab is moved via drag/drop: dropping implies keep.
+   */
+  function keepTab(paneId: PaneId, index: number) {
+    const state = getPaneState(paneId)
+    if (state.previewIndex === null) return
+    if (index !== state.previewIndex) return
+    const tab = state.tabs[index]
+    if (!tab) return
+    state.tabs[index] = { ...tab, pinned: true }
+    state.previewIndex = null
     persistState()
   }
 
@@ -462,20 +578,25 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
    */
   function closeTab(paneId: PaneId, index: number) {
     const state = getPaneState(paneId)
-    if (index < 0 || index >= state.pinnedTabs.length) return
+    if (index < 0 || index >= state.tabs.length) return
 
-    const wasActive = state.activePinnedIndex === index
-    const [removedTab] = state.pinnedTabs.splice(index, 1)
+    const wasActive = state.activeIndex === index
+    const wasPreview = isPreviewIndex(state, index)
+    const [removedTab] = state.tabs.splice(index, 1)
 
     // Save to history before clearing state
     pushToClosedHistory(paneId, removedTab)
     clearObjectState(paneId, removedTab)
 
-    // Adjust active index
-    if (!state.pinnedTabs.length) {
-      state.activePinnedIndex = null
-      // If no pinned tabs and no preview, hide pane (except left)
-      if (!state.previewTab && paneId !== 'left') {
+    if (wasPreview) {
+      state.previewIndex = null
+    } else if (state.previewIndex !== null && state.previewIndex > index) {
+      state.previewIndex -= 1
+    }
+
+    if (!state.tabs.length) {
+      state.activeIndex = null
+      if (paneId !== 'left') {
         hidePane(paneId)
       }
       persistState()
@@ -483,12 +604,10 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
     }
 
     if (wasActive) {
-      // Move to next tab, or previous if was last
-      const newIndex = Math.min(index, state.pinnedTabs.length - 1)
-      state.activePinnedIndex = newIndex
-    } else if (state.activePinnedIndex !== null && state.activePinnedIndex > index) {
-      // Adjust index if we closed a tab before the active one
-      state.activePinnedIndex--
+      const newIndex = Math.min(index, state.tabs.length - 1)
+      state.activeIndex = newIndex
+    } else if (state.activeIndex !== null && state.activeIndex > index) {
+      state.activeIndex -= 1
     }
     persistState()
   }
@@ -498,17 +617,18 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
    */
   function closeOtherTabs(paneId: PaneId, keepIndex: number) {
     const state = getPaneState(paneId)
-    if (keepIndex < 0 || keepIndex >= state.pinnedTabs.length) return
+    if (keepIndex < 0 || keepIndex >= state.tabs.length) return
 
-    const keepTab = state.pinnedTabs[keepIndex]
-    state.pinnedTabs.forEach((tab, idx) => {
+    const keepTabValue = state.tabs[keepIndex]
+    state.tabs.forEach((tab, idx) => {
       if (idx !== keepIndex) {
         pushToClosedHistory(paneId, tab)
         clearObjectState(paneId, tab)
       }
     })
-    state.pinnedTabs = [keepTab]
-    state.activePinnedIndex = 0
+    state.tabs = [{ ...keepTabValue, pinned: true }]
+    state.activeIndex = 0
+    state.previewIndex = null
     persistState()
   }
 
@@ -517,17 +637,13 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
    */
   function closeAllTabs(paneId: PaneId) {
     const state = getPaneState(paneId)
-    state.pinnedTabs.forEach((tab) => {
+    state.tabs.forEach((tab) => {
       pushToClosedHistory(paneId, tab)
       clearObjectState(paneId, tab)
     })
-    if (state.previewTab) {
-      pushToClosedHistory(paneId, state.previewTab)
-      clearObjectState(paneId, state.previewTab)
-    }
-    state.pinnedTabs = []
-    state.previewTab = null
-    state.activePinnedIndex = null
+    state.tabs = []
+    state.previewIndex = null
+    state.activeIndex = null
 
     // If not left pane, hide it
     if (paneId !== 'left') {
@@ -541,14 +657,23 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
    */
   function closePreviewTab(paneId: PaneId) {
     const state = getPaneState(paneId)
-    if (state.previewTab) {
-      pushToClosedHistory(paneId, state.previewTab)
-      clearObjectState(paneId, state.previewTab)
+    if (state.previewIndex === null) return
+    const idx = state.previewIndex
+    const tab = state.tabs[idx]
+    if (tab) {
+      pushToClosedHistory(paneId, tab)
+      clearObjectState(paneId, tab)
     }
-    state.previewTab = null
-
-    // If no pinned tabs and not left pane, hide it
-    if (!state.pinnedTabs.length && paneId !== 'left') {
+    state.tabs.splice(idx, 1)
+    state.previewIndex = null
+    if (state.activeIndex !== null) {
+      if (state.activeIndex === idx) {
+        state.activeIndex = state.tabs.length ? clampIndex(idx, state.tabs.length) : null
+      } else if (state.activeIndex > idx) {
+        state.activeIndex -= 1
+      }
+    }
+    if (!state.tabs.length && paneId !== 'left') {
       hidePane(paneId)
     }
     persistState()
@@ -558,39 +683,43 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
    * Reorder a pinned tab within the same pane.
    * Moves tab from fromIndex to toIndex.
    */
-  function reorderPinnedTab(paneId: PaneId, fromIndex: number, toIndex: number) {
+  function reorderTab(paneId: PaneId, fromIndex: number, toIndex: number) {
     if (fromIndex === toIndex) return
 
     const state = getPaneState(paneId)
-    if (fromIndex < 0 || fromIndex >= state.pinnedTabs.length) return
-    if (toIndex < 0 || toIndex > state.pinnedTabs.length) return
+    if (fromIndex < 0 || fromIndex >= state.tabs.length) return
+    if (toIndex < 0 || toIndex > state.tabs.length) return
 
     // Remove the tab from its current position
-    const [movedTab] = state.pinnedTabs.splice(fromIndex, 1)
+    const [movedTab] = state.tabs.splice(fromIndex, 1)
 
     // Adjust toIndex if we removed an element before it
     const adjustedToIndex = fromIndex < toIndex ? toIndex - 1 : toIndex
 
     // Insert at the new position
-    state.pinnedTabs.splice(adjustedToIndex, 0, movedTab)
+    state.tabs.splice(adjustedToIndex, 0, movedTab)
 
     // Update active index if it was affected
-    if (state.activePinnedIndex !== null) {
-      if (state.activePinnedIndex === fromIndex) {
+    if (state.activeIndex !== null) {
+      if (state.activeIndex === fromIndex) {
         // The moved tab was active, update to its new position
-        state.activePinnedIndex = adjustedToIndex
-      } else if (
-        fromIndex < state.activePinnedIndex &&
-        adjustedToIndex >= state.activePinnedIndex
-      ) {
+        state.activeIndex = adjustedToIndex
+      } else if (fromIndex < state.activeIndex && adjustedToIndex >= state.activeIndex) {
         // Tab moved from before active to after/at active
-        state.activePinnedIndex--
-      } else if (
-        fromIndex > state.activePinnedIndex &&
-        adjustedToIndex <= state.activePinnedIndex
-      ) {
+        state.activeIndex--
+      } else if (fromIndex > state.activeIndex && adjustedToIndex <= state.activeIndex) {
         // Tab moved from after active to before/at active
-        state.activePinnedIndex++
+        state.activeIndex++
+      }
+    }
+
+    if (state.previewIndex !== null) {
+      if (state.previewIndex === fromIndex) {
+        state.previewIndex = adjustedToIndex
+      } else if (fromIndex < state.previewIndex && adjustedToIndex >= state.previewIndex) {
+        state.previewIndex--
+      } else if (fromIndex > state.previewIndex && adjustedToIndex <= state.previewIndex) {
+        state.previewIndex++
       }
     }
 
@@ -605,28 +734,51 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
    * - Migrates per-tab UI state by moving objectTabStateStore key
    * @param toIndex - optional target index in destination pane (defaults to end)
    */
-  function movePinnedTab(
+  function moveTab(
     fromPaneId: PaneId,
     fromIndex: number,
     toPaneId: PaneId,
-    toIndex?: number
+    toIndex?: number,
+    options?: { focus?: boolean }
   ) {
     if (fromPaneId === toPaneId) return
 
+    const focus = options?.focus !== undefined ? options.focus : true
+
     const fromState = getPaneState(fromPaneId)
     const toState = getPaneState(toPaneId)
-    if (fromIndex < 0 || fromIndex >= fromState.pinnedTabs.length) return
+    if (fromIndex < 0 || fromIndex >= fromState.tabs.length) return
 
-    const sourceTab = fromState.pinnedTabs[fromIndex]
+    const sourceTab = fromState.tabs[fromIndex]
     const tabKey = generateTabKey(sourceTab)
 
-    const existingDestIndex = toState.pinnedTabs.findIndex((t) => generateTabKey(t) === tabKey)
+    const existingDestIndex = toState.tabs.findIndex((t) => generateTabKey(t) === tabKey)
     if (existingDestIndex >= 0) {
       // Destination already has this tab; just activate it and close the source.
-      toState.activePinnedIndex = existingDestIndex
-      setActivePane(toPaneId)
-      // Close source tab (clears old pane-scoped object state)
-      closeTab(fromPaneId, fromIndex)
+      toState.activeIndex = existingDestIndex
+      if (focus) setActivePane(toPaneId)
+
+      // Remove source without history; the content still exists.
+      const wasSourcePreview = isPreviewIndex(fromState, fromIndex)
+      const [removedTab] = fromState.tabs.splice(fromIndex, 1)
+      clearObjectState(fromPaneId, removedTab)
+      if (wasSourcePreview) {
+        fromState.previewIndex = null
+      } else if (fromState.previewIndex !== null && fromState.previewIndex > fromIndex) {
+        fromState.previewIndex -= 1
+      }
+      if (fromState.activeIndex !== null) {
+        if (fromState.activeIndex === fromIndex) {
+          fromState.activeIndex = fromState.tabs.length
+            ? clampIndex(fromIndex, fromState.tabs.length)
+            : null
+        } else if (fromState.activeIndex > fromIndex) {
+          fromState.activeIndex -= 1
+        }
+      }
+      if (!fromState.tabs.length && fromPaneId !== 'left') {
+        hidePane(fromPaneId)
+      }
       persistState()
       return
     }
@@ -634,25 +786,34 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
     // Prepare object key migration
     const fromObjectKey = ensureObjectKey(fromPaneId, sourceTab)
 
-    // Remove from source without clearing its object state (we migrate it)
-    const wasSourceActive = fromState.activePinnedIndex === fromIndex
-    const [removedTab] = fromState.pinnedTabs.splice(fromIndex, 1)
+    const wasSourcePreview = isPreviewIndex(fromState, fromIndex)
 
-    if (fromState.pinnedTabs.length === 0) {
-      fromState.activePinnedIndex = null
-      if (!fromState.previewTab && fromPaneId !== 'left') {
+    // Remove from source without clearing its object state (we migrate it)
+    const wasSourceActive = fromState.activeIndex === fromIndex
+    const [removedTab] = fromState.tabs.splice(fromIndex, 1)
+
+    if (wasSourcePreview) {
+      fromState.previewIndex = null
+    } else if (fromState.previewIndex !== null && fromState.previewIndex > fromIndex) {
+      fromState.previewIndex -= 1
+    }
+
+    if (!fromState.tabs.length) {
+      fromState.activeIndex = null
+      if (fromPaneId !== 'left') {
         hidePane(fromPaneId)
       }
     } else {
       if (wasSourceActive) {
-        const newIndex = Math.min(fromIndex, fromState.pinnedTabs.length - 1)
-        fromState.activePinnedIndex = newIndex
-      } else if (fromState.activePinnedIndex !== null && fromState.activePinnedIndex > fromIndex) {
-        fromState.activePinnedIndex--
+        const newIndex = Math.min(fromIndex, fromState.tabs.length - 1)
+        fromState.activeIndex = newIndex
+      } else if (fromState.activeIndex !== null && fromState.activeIndex > fromIndex) {
+        fromState.activeIndex--
       }
     }
 
     // Rebuild objectKey for the destination pane (pane-scoped)
+    // Any moved tab becomes kept in the destination (dropping implies keep).
     const movedTab: PaneTab = { ...removedTab, pinned: true }
     delete movedTab.objectKey
     const toObjectKey = ensureObjectKey(toPaneId, movedTab)
@@ -664,12 +825,30 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
     showPane(toPaneId)
     const insertIndex =
       toIndex !== undefined
-        ? Math.min(Math.max(0, toIndex), toState.pinnedTabs.length)
-        : toState.pinnedTabs.length
-    toState.pinnedTabs.splice(insertIndex, 0, movedTab)
-    toState.activePinnedIndex = insertIndex
-    setActivePane(toPaneId)
+        ? Math.min(Math.max(0, toIndex), toState.tabs.length)
+        : toState.tabs.length
+    toState.tabs.splice(insertIndex, 0, movedTab)
+    if (toState.previewIndex !== null && insertIndex <= toState.previewIndex) {
+      toState.previewIndex += 1
+    }
+    toState.activeIndex = insertIndex
+    if (focus) setActivePane(toPaneId)
     persistState()
+  }
+
+  // Backwards-compatible wrappers (older components treat these indices as "pinned tabs").
+  // Once the UI is updated, these can be removed.
+  function reorderPinnedTab(paneId: PaneId, fromIndex: number, toIndex: number) {
+    reorderTab(paneId, fromIndex, toIndex)
+  }
+
+  function movePinnedTab(
+    fromPaneId: PaneId,
+    fromIndex: number,
+    toPaneId: PaneId,
+    toIndex?: number
+  ) {
+    moveTab(fromPaneId, fromIndex, toPaneId, toIndex)
   }
 
   /**
@@ -677,9 +856,9 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
    */
   function activateTab(paneId: PaneId, index: number) {
     const state = getPaneState(paneId)
-    if (index < 0 || index >= state.pinnedTabs.length) return
+    if (index < 0 || index >= state.tabs.length) return
 
-    state.activePinnedIndex = index
+    state.activeIndex = index
     setActivePane(paneId)
     persistState()
   }
@@ -689,9 +868,9 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
    */
   function activatePreviewTab(paneId: PaneId) {
     const state = getPaneState(paneId)
-    if (!state.previewTab) return
+    if (state.previewIndex === null) return
 
-    state.activePinnedIndex = null
+    state.activeIndex = state.previewIndex
     setActivePane(paneId)
     persistState()
   }
@@ -702,20 +881,10 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
    */
   function updateTabFileMetadata(paneId: PaneId, tabId: string, metadata: FileMetadata | null) {
     const state = getPaneState(paneId)
-
-    // Check preview tab
-    if (state.previewTab && state.previewTab.id === tabId) {
-      state.previewTab = { ...state.previewTab, fileMetadata: metadata }
-      persistState()
-      return
-    }
-
-    // Check pinned tabs
-    const index = state.pinnedTabs.findIndex((t) => t.id === tabId)
-    if (index >= 0) {
-      state.pinnedTabs[index] = { ...state.pinnedTabs[index], fileMetadata: metadata }
-      persistState()
-    }
+    const index = state.tabs.findIndex((t) => t.id === tabId)
+    if (index < 0) return
+    state.tabs[index] = { ...state.tabs[index], fileMetadata: metadata }
+    persistState()
   }
 
   /**
@@ -737,8 +906,7 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
    */
   function clearPane(paneId: PaneId) {
     const state = getPaneState(paneId)
-    state.pinnedTabs.forEach((tab) => clearObjectState(paneId, tab))
-    clearObjectState(paneId, state.previewTab)
+    state.tabs.forEach((tab) => clearObjectState(paneId, tab))
     panes.value.set(paneId, createEmptyPaneState())
     if (paneId !== 'left') {
       hidePane(paneId)
@@ -750,10 +918,8 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
    * Clear all panes and reset to initial state
    */
   function clearAllPanes() {
-    panes.value.get('left')?.pinnedTabs.forEach((tab) => clearObjectState('left', tab))
-    panes.value.get('right')?.pinnedTabs.forEach((tab) => clearObjectState('right', tab))
-    clearObjectState('left', panes.value.get('left')?.previewTab)
-    clearObjectState('right', panes.value.get('right')?.previewTab)
+    panes.value.get('left')?.tabs.forEach((tab) => clearObjectState('left', tab))
+    panes.value.get('right')?.tabs.forEach((tab) => clearObjectState('right', tab))
     panes.value.set('left', createEmptyPaneState())
     panes.value.set('right', createEmptyPaneState())
     activePane.value = 'left'
@@ -775,6 +941,7 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
     getActiveTab,
     isActivePane,
     generateTabKey,
+    getPreviewTab,
 
     // Computed
     leftPaneState,
@@ -790,10 +957,13 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
     addTab,
     setPreviewTab,
     pinPreviewTab,
+    keepTab,
     closeTab,
     closeOtherTabs,
     closeAllTabs,
     closePreviewTab,
+    reorderTab,
+    moveTab,
     reorderPinnedTab,
     movePinnedTab,
     activateTab,

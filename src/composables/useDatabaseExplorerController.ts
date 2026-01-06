@@ -4,7 +4,7 @@ import type { FileSystemEntry } from '@/api/fileSystem'
 import { getConnectionHost, getConnectionPort, getConnectionDatabase } from '@/utils/specBuilder'
 import type { SQLTableMeta, SQLViewMeta } from '@/types/metadata'
 import type { ShowDiagramPayload } from '@/types/diagram'
-import type { PaneId, PaneTab, PaneState } from '@/stores/paneTabs'
+import type { PaneId, PaneTab } from '@/stores/paneTabs'
 import { useExplorerViewStateStore } from '@/stores/explorerViewState'
 import type SearchInput from '@/components/common/SearchInput.vue'
 import type { useExplorerState } from '@/composables/useExplorerState'
@@ -102,12 +102,12 @@ export function useDatabaseExplorerController({
       )
 
     // If the matching tab already exists, just activate it.
-    const pinnedIndex = leftState.pinnedTabs.findIndex((t) => matchesSelection(t))
-    if (pinnedIndex >= 0) {
-      paneTabsStore.activateTab('left', pinnedIndex)
+    const existingIndex = leftState.tabs.findIndex((t) => matchesSelection(t))
+    if (existingIndex >= 0) {
+      paneTabsStore.activateTab('left', existingIndex)
       return
     }
-    if (matchesSelection(leftState.previewTab)) {
+    if (matchesSelection(paneTabsStore.getPreviewTab('left'))) {
       paneTabsStore.activatePreviewTab('left')
       return
     }
@@ -162,9 +162,7 @@ export function useDatabaseExplorerController({
     const leftState = paneTabsStore.getPaneState('left')
     const tabId = `diagram:${connectionId}:${database}`
 
-    const existingIndex = leftState.pinnedTabs.findIndex(
-      (t) => t.tabType === 'diagram' && t.id === tabId
-    )
+    const existingIndex = leftState.tabs.findIndex((t) => t.tabType === 'diagram' && t.id === tabId)
     if (existingIndex >= 0) {
       paneTabsStore.activateTab('left', existingIndex)
       return
@@ -203,11 +201,8 @@ export function useDatabaseExplorerController({
     const tabName = getConnectionTabName(connectionId)
 
     if (mode === 'pinned') {
-      const paneState = paneTabsStore.getPaneState(paneId)
-      if (
-        paneState.previewTab?.tabType === 'connection-details' &&
-        paneState.previewTab.connectionId === connectionId
-      ) {
+      const preview = paneTabsStore.getPreviewTab(paneId)
+      if (preview?.tabType === 'connection-details' && preview.connectionId === connectionId) {
         paneTabsStore.pinPreviewTab(paneId)
         return
       }
@@ -235,11 +230,11 @@ export function useDatabaseExplorerController({
     const tabName = `DB: ${database}`
 
     if (mode === 'pinned') {
-      const paneState = paneTabsStore.getPaneState(paneId)
+      const preview = paneTabsStore.getPreviewTab(paneId)
       if (
-        paneState.previewTab?.tabType === 'database-overview' &&
-        paneState.previewTab.connectionId === connectionId &&
-        paneState.previewTab.database === database
+        preview?.tabType === 'database-overview' &&
+        preview.connectionId === connectionId &&
+        preview.database === database
       ) {
         paneTabsStore.pinPreviewTab(paneId)
         return
@@ -281,16 +276,8 @@ export function useDatabaseExplorerController({
     return `Delete ${label}? This cannot be undone.`
   })
 
-  const emptyPaneState: PaneState = { pinnedTabs: [], previewTab: null, activePinnedIndex: null }
   const hasPaneContent = computed(() => {
-    const leftState = paneTabsStore.leftPaneState ?? emptyPaneState
-    const rightState = paneTabsStore.rightPaneState ?? emptyPaneState
-    return (
-      leftState.pinnedTabs.length > 0 ||
-      leftState.previewTab !== null ||
-      rightState.pinnedTabs.length > 0 ||
-      rightState.previewTab !== null
-    )
+    return paneTabsStore.hasPaneContent('left') || paneTabsStore.hasPaneContent('right')
   })
 
   const lacksExplorerContent = computed(() => !hasPaneContent.value)
@@ -321,7 +308,11 @@ export function useDatabaseExplorerController({
   }) {
     const previousConnectionId = explorerState.currentConnectionId.value
 
-    const targetPane: PaneId = paneTabsStore.activePane || 'left'
+    // If explicitly opening in the right split (context menu / URL restore / breadcrumb pick),
+    // always target the right pane regardless of the currently active pane.
+    const targetPane: PaneId = payload.openInRightSplit
+      ? 'right'
+      : paneTabsStore.activePane || 'left'
 
     // For right-pane opens, do NOT update the global (left) selection.
     // The viewState watcher restores the selected object into the left pane;
@@ -418,11 +409,18 @@ export function useDatabaseExplorerController({
       return
     }
 
-    // Update viewState
-    viewState.selectFile(payload.connectionId, payload.path)
+    const targetPane: PaneId = payload.openInRightSplit
+      ? 'right'
+      : paneTabsStore.activePane || 'left'
 
-    if (!payload.skipUrlUpdate) {
-      pushExplorerRoute(payload.connectionId, { file: payload.path })
+    // Only update the global (URL-synced) viewState when targeting the left pane.
+    // Right pane file opens should not force left pane selection/focus.
+    if (targetPane === 'left') {
+      viewState.selectFile(payload.connectionId, payload.path)
+
+      if (!payload.skipUrlUpdate) {
+        pushExplorerRoute(payload.connectionId, { file: payload.path })
+      }
     }
 
     navigationStore.setActiveConnectionId(payload.connectionId)
@@ -430,8 +428,6 @@ export function useDatabaseExplorerController({
 
     // Clear panel states - file selection will be synced by watcher
     explorerState.clearPanelStates()
-
-    const targetPane: PaneId = paneTabsStore.activePane || 'left'
 
     const effectiveMode: 'preview' | 'pinned' = alwaysOpenNewTab.value ? 'pinned' : payload.mode
 
@@ -442,11 +438,8 @@ export function useDatabaseExplorerController({
     // with duplicate tabs (and often duplicate Vue keys/ids), which can cause the file
     // grid to render empty. Instead, pin the existing preview tab.
     if (effectiveMode === 'pinned') {
-      const paneState = paneTabsStore.getPaneState(targetPane)
-      if (
-        paneState.previewTab?.tabType === 'file' &&
-        paneState.previewTab.filePath === payload.path
-      ) {
+      const preview = paneTabsStore.getPreviewTab(targetPane)
+      if (preview?.tabType === 'file' && preview.filePath === payload.path) {
         paneTabsStore.pinPreviewTab(targetPane)
         return
       }
@@ -558,10 +551,7 @@ export function useDatabaseExplorerController({
     const allTabs: PaneTab[] = []
     for (const paneId of ['left', 'right'] as const) {
       const state = paneTabsStore.getPaneState(paneId)
-      allTabs.push(...state.pinnedTabs)
-      if (state.previewTab) {
-        allTabs.push(state.previewTab)
-      }
+      allTabs.push(...state.tabs)
     }
 
     // Extract unique connectionId + database pairs from database tabs
@@ -579,10 +569,14 @@ export function useDatabaseExplorerController({
   }
 
   function handleSelectConnection(payload: { connectionId: string; mode?: 'preview' | 'pinned' }) {
-    // Update store
-    viewState.selectConnection(payload.connectionId)
+    const targetPane: PaneId = paneTabsStore.activePane || 'left'
 
-    pushExplorerRoute(payload.connectionId, { details: 'true' })
+    // Only update the global (URL-synced) viewState when targeting the left pane.
+    // Right pane selection should not force the left pane to open/activate.
+    if (targetPane === 'left') {
+      viewState.selectConnection(payload.connectionId)
+      pushExplorerRoute(payload.connectionId, { details: 'true' })
+    }
 
     navigationStore.setActiveConnectionId(payload.connectionId)
     connectionsStore.setCurrentConnection(payload.connectionId)
@@ -594,7 +588,6 @@ export function useDatabaseExplorerController({
 
     const effectiveMode: 'preview' | 'pinned' =
       payload.mode || (alwaysOpenNewTab.value ? 'pinned' : 'preview')
-    const targetPane = paneTabsStore.activePane || 'left'
     openConnectionDetailsTab(payload.connectionId, effectiveMode, targetPane)
 
     if (fileExplorerStore.isFilesConnectionType(payload.connectionId)) {
@@ -608,10 +601,14 @@ export function useDatabaseExplorerController({
     database: string
     mode?: 'preview' | 'pinned'
   }) {
-    // Update store
-    viewState.selectDatabase(payload.connectionId, payload.database)
+    const targetPane: PaneId = paneTabsStore.activePane || 'left'
 
-    pushExplorerRoute(payload.connectionId, { db: payload.database })
+    // Only update the global (URL-synced) viewState when targeting the left pane.
+    // Right pane selection should not force the left pane to open/activate.
+    if (targetPane === 'left') {
+      viewState.selectDatabase(payload.connectionId, payload.database)
+      pushExplorerRoute(payload.connectionId, { db: payload.database })
+    }
 
     navigationStore.setActiveConnectionId(payload.connectionId)
     connectionsStore.setCurrentConnection(payload.connectionId)
@@ -621,7 +618,6 @@ export function useDatabaseExplorerController({
 
     const effectiveMode: 'preview' | 'pinned' =
       payload.mode || (alwaysOpenNewTab.value ? 'pinned' : 'preview')
-    const targetPane = paneTabsStore.activePane || 'left'
     openDatabaseOverviewTab(payload.connectionId, payload.database, effectiveMode, targetPane)
 
     // Ensure metadata is available for breadcrumb/object panels.
@@ -943,9 +939,7 @@ export function useDatabaseExplorerController({
               (tab.schema || undefined) === (rightSchema || undefined)
           )
 
-        const hasMatchingTab =
-          matchesSelection(rightState.previewTab) ||
-          rightState.pinnedTabs.some((tab) => matchesSelection(tab))
+        const hasMatchingTab = rightState.tabs.some((tab) => matchesSelection(tab))
 
         if (!hasMatchingTab) {
           let obj: SQLTableMeta | SQLViewMeta | undefined

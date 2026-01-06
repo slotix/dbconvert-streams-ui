@@ -179,12 +179,29 @@ function onPaneDrop(event: DragEvent, paneId: PaneId) {
   if (!raw) return
 
   try {
-    const parsed = JSON.parse(raw) as { fromPaneId: PaneId; fromPinnedIndex: number }
+    const parsed = JSON.parse(raw) as {
+      fromPaneId: PaneId
+      fromIndex: number
+      wasPreview?: boolean
+    }
     if (parsed.fromPaneId !== 'left' && parsed.fromPaneId !== 'right') return
-    if (!Number.isInteger(parsed.fromPinnedIndex) || parsed.fromPinnedIndex < 0) return
-    if (parsed.fromPaneId === paneId) return
+    if (!Number.isInteger(parsed.fromIndex) || parsed.fromIndex < 0) return
+
+    const toIndex = paneTabsStore.getPaneState(paneId).tabs.length
+
+    if (parsed.fromPaneId === paneId) {
+      paneTabsStore.reorderTab(paneId, parsed.fromIndex, toIndex)
+      if (parsed.wasPreview) {
+        const newPreviewIndex = paneTabsStore.getPaneState(paneId).previewIndex
+        if (newPreviewIndex !== null) {
+          paneTabsStore.keepTab(paneId, newPreviewIndex)
+        }
+      }
+      return
+    }
+
     // Drop on pane (not on tab) - add to end
-    paneTabsStore.movePinnedTab(parsed.fromPaneId, parsed.fromPinnedIndex, paneId)
+    paneTabsStore.moveTab(parsed.fromPaneId, parsed.fromIndex, paneId, toIndex)
   } catch {
     // ignore invalid payloads
   }
