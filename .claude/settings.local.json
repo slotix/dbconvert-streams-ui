@@ -34,7 +34,10 @@
       "Bash(yarn type-check:*)",
       "Bash(yarn vue-tsc:*)",
       "Bash(npx tsc:*)",
-      "Bash(xargs:*)"
+      "Bash(xargs:*)",
+      "Bash(npx eslint:*)",
+      "Bash(npx vue-tsc:*)",
+      "Bash(go vet:*)"
     ],
     "deny": [],
     "ask": []
