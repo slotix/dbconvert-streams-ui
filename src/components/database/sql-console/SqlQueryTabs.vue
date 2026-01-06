@@ -20,6 +20,7 @@
         ]"
         @click="$emit('select', tab.id)"
         @dblclick="startRename(tab)"
+        @contextmenu.prevent="showContextMenu($event, tab.id)"
         @dragstart="onDragStart($event, index)"
         @dragover="onDragOver($event, index)"
         @drop="onDrop($event, index)"
@@ -70,26 +71,74 @@
     >
       <X class="h-4 w-4" />
     </button>
+
+    <!-- Context Menu -->
+    <Teleport to="body">
+      <div
+        v-if="contextMenu.visible"
+        ref="contextMenuRef"
+        class="fixed z-50 bg-white dark:bg-gray-850 shadow-lg dark:shadow-gray-900/30 border border-gray-200 dark:border-gray-700 rounded-md py-1 min-w-40"
+        :style="{ left: `${contextMenu.x}px`, top: `${contextMenu.y}px` }"
+      >
+        <button
+          class="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+          @click="handleContextMenuAction('close')"
+        >
+          Close
+        </button>
+        <button
+          v-if="tabs.length > 1"
+          class="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+          @click="handleContextMenuAction('close-others')"
+        >
+          Close Others
+        </button>
+        <button
+          v-if="tabs.length > 1"
+          class="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+          @click="handleContextMenuAction('close-all')"
+        >
+          Close All
+        </button>
+        <div class="border-t border-gray-100 dark:border-gray-700 my-1" />
+        <button
+          :disabled="!canReopenTab"
+          :class="[
+            'w-full text-left px-3 py-2 text-sm flex items-center justify-between',
+            canReopenTab
+              ? 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+              : 'text-gray-400 dark:text-gray-500 cursor-not-allowed'
+          ]"
+          @click="handleReopenClosedTab"
+        >
+          <span>Reopen Closed Tab</span>
+          <span class="text-xs text-gray-400 dark:text-gray-500">Ctrl+Shift+T</span>
+        </button>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, nextTick } from 'vue'
+import { ref, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import { Plus, X } from 'lucide-vue-next'
 import type { SqlQueryTab } from '@/stores/sqlConsole'
 
 defineProps<{
   tabs: SqlQueryTab[]
   activeTabId: string | null
+  canReopenTab?: boolean
 }>()
 
 const emit = defineEmits<{
   select: [tabId: string]
   close: [tabId: string]
+  closeOthers: [tabId: string]
   closeAll: []
   add: []
   rename: [tabId: string, newName: string]
   reorder: [fromIndex: number, toIndex: number]
+  reopenClosedTab: []
 }>()
 
 // Tab renaming state
@@ -228,4 +277,66 @@ function cancelRename() {
   renamingTabId.value = null
   renameValue.value = ''
 }
+
+// Context menu state
+const contextMenu = ref({
+  visible: false,
+  x: 0,
+  y: 0,
+  tabId: ''
+})
+const contextMenuRef = ref<HTMLElement | null>(null)
+
+function showContextMenu(event: MouseEvent, tabId: string) {
+  contextMenu.value = {
+    visible: true,
+    x: event.clientX,
+    y: event.clientY,
+    tabId
+  }
+}
+
+function hideContextMenu() {
+  contextMenu.value.visible = false
+  contextMenu.value.tabId = ''
+}
+
+function handleContextMenuAction(action: 'close' | 'close-others' | 'close-all') {
+  const tabId = contextMenu.value.tabId
+
+  switch (action) {
+    case 'close':
+      emit('close', tabId)
+      break
+    case 'close-others':
+      emit('closeOthers', tabId)
+      break
+    case 'close-all':
+      emit('closeAll')
+      break
+  }
+
+  hideContextMenu()
+}
+
+function handleReopenClosedTab() {
+  emit('reopenClosedTab')
+  hideContextMenu()
+}
+
+// Close context menu when clicking outside
+function handleDocumentClick(event: MouseEvent) {
+  const target = event.target as Node
+  if (contextMenu.value.visible && contextMenuRef.value && !contextMenuRef.value.contains(target)) {
+    hideContextMenu()
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleDocumentClick)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleDocumentClick)
+})
 </script>

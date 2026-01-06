@@ -232,6 +232,24 @@ export function useConsoleTab(options: ConsoleTabOptions) {
     sqlConsoleStore.reorderTab(consoleKey.value, database.value, fromIndex, toIndex)
   }
 
+  function closeOthersQueryTabs(keepTabId: string) {
+    const tabs = sqlConsoleStore.getTabs(consoleKey.value, database.value)
+    // Close all tabs except the one to keep
+    tabs.forEach((tab) => {
+      if (tab.id !== keepTabId) {
+        sqlConsoleStore.closeTab(consoleKey.value, database.value, tab.id)
+      }
+    })
+  }
+
+  function canReopenQueryTab(): boolean {
+    return sqlConsoleStore.canReopenTab(consoleKey.value, database.value)
+  }
+
+  function reopenQueryTab() {
+    sqlConsoleStore.reopenClosedTab(consoleKey.value, database.value)
+  }
+
   // ========== Query Formatting ==========
   function formatQuery() {
     try {
@@ -394,8 +412,11 @@ export function useConsoleTab(options: ConsoleTabOptions) {
     addQueryTab,
     closeQueryTab,
     closeAllQueryTabs,
+    closeOthersQueryTabs,
     handleRenameTab,
     reorderQueryTab,
+    canReopenQueryTab,
+    reopenQueryTab,
 
     // Query operations
     formatQuery,

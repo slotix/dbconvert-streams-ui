@@ -67,6 +67,7 @@
       <SqlQueryTabs
         :tabs="queryTabs"
         :active-tab-id="activeTabId"
+        :can-reopen-tab="false"
         @select="setActiveTab"
         @close="removeQuery"
         @add="addQuery"

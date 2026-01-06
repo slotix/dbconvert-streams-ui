@@ -47,14 +47,26 @@ export interface SqlConsoleState {
 }
 
 /**
+ * Closed tab history item
+ */
+export interface ClosedTabHistoryItem {
+  tab: SqlQueryTab
+  closedAt: number
+}
+
+/**
  * Persisted state structure
  */
-type PersistedSqlConsoleState = Record<string, SqlConsoleState>
+type PersistedSqlConsoleState = Record<
+  string,
+  SqlConsoleState & { closedTabsHistory?: ClosedTabHistoryItem[] }
+>
 
 const STORAGE_KEY = 'explorer.sqlConsoleTabs'
+const MAX_CLOSED_TABS_HISTORY = 10
 
 function generateTabId(): string {
-  return `sql-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+  return `sql-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`
 }
 
 function generateConsoleKey(connectionId: string, database?: string): string {
@@ -126,6 +138,10 @@ export const useSqlConsoleStore = defineStore('sqlConsole', () => {
   // Key: tabId, Value: QueryResultCache
   const resultCache = ref<Map<string, QueryResultCache>>(new Map())
 
+  // Closed tabs history per console (persisted to localStorage)
+  // Key: console key, Value: array of closed tabs
+  const closedTabsHistory = ref<Map<string, ClosedTabHistoryItem[]>>(new Map())
+
   // Initialize from localStorage
   function restoreFromStorage() {
     const saved = loadPersistedState()
@@ -139,7 +155,12 @@ export const useSqlConsoleStore = defineStore('sqlConsole', () => {
       if (!state.activeTabId || !state.tabs.find((t) => t.id === state.activeTabId)) {
         state.activeTabId = state.tabs[0].id
       }
-      consoles.value.set(key, state)
+      consoles.value.set(key, { tabs: state.tabs, activeTabId: state.activeTabId })
+
+      // Restore closed tabs history
+      if (state.closedTabsHistory && Array.isArray(state.closedTabsHistory)) {
+        closedTabsHistory.value.set(key, state.closedTabsHistory.slice(0, MAX_CLOSED_TABS_HISTORY))
+      }
     }
   }
 
@@ -149,7 +170,10 @@ export const useSqlConsoleStore = defineStore('sqlConsole', () => {
   function saveState() {
     const obj: PersistedSqlConsoleState = {}
     consoles.value.forEach((state, key) => {
-      obj[key] = state
+      obj[key] = {
+        ...state,
+        closedTabsHistory: closedTabsHistory.value.get(key) || []
+      }
     })
     persistState(obj)
   }
@@ -204,21 +228,33 @@ export const useSqlConsoleStore = defineStore('sqlConsole', () => {
 
   // Close a tab
   function closeTab(connectionId: string, database: string | undefined, tabId: string) {
+    const key = generateConsoleKey(connectionId, database)
     const state = getConsoleState(connectionId, database)
     const index = state.tabs.findIndex((t) => t.id === tabId)
     if (index === -1) return
+
+    const closedTab = state.tabs[index]
 
     // Clear result cache for this tab
     resultCache.value.delete(tabId)
 
     // Don't close if it's the last tab
     if (state.tabs.length === 1) {
+      // Push to history before resetting (only if tab has content)
+      if (closedTab.query.trim()) {
+        pushToClosedHistory(key, closedTab)
+      }
       // Reset the tab instead
       const newTab = createDefaultTab('Query 1')
       state.tabs[0] = newTab
       state.activeTabId = newTab.id
       saveState()
       return
+    }
+
+    // Push to history before removing (only if tab has content)
+    if (closedTab.query.trim()) {
+      pushToClosedHistory(key, closedTab)
     }
 
     state.tabs.splice(index, 1)
@@ -231,6 +267,58 @@ export const useSqlConsoleStore = defineStore('sqlConsole', () => {
     }
 
     saveState()
+  }
+
+  // Push a tab to the closed history
+  function pushToClosedHistory(consoleKey: string, tab: SqlQueryTab) {
+    let history = closedTabsHistory.value.get(consoleKey)
+    if (!history) {
+      history = []
+      closedTabsHistory.value.set(consoleKey, history)
+    }
+
+    // Clone tab
+    const tabCopy = { ...tab }
+
+    history.unshift({
+      tab: tabCopy,
+      closedAt: Date.now()
+    })
+
+    // Trim to max size
+    if (history.length > MAX_CLOSED_TABS_HISTORY) {
+      closedTabsHistory.value.set(consoleKey, history.slice(0, MAX_CLOSED_TABS_HISTORY))
+    }
+  }
+
+  // Check if a console has closed tabs that can be reopened
+  function canReopenTab(connectionId: string, database?: string): boolean {
+    const key = generateConsoleKey(connectionId, database)
+    const history = closedTabsHistory.value.get(key)
+    return !!history && history.length > 0
+  }
+
+  // Reopen the most recently closed tab
+  function reopenClosedTab(connectionId: string, database?: string): SqlQueryTab | null {
+    const key = generateConsoleKey(connectionId, database)
+    const history = closedTabsHistory.value.get(key)
+    if (!history || history.length === 0) return null
+
+    const item = history.shift()!
+    const state = getConsoleState(connectionId, database)
+
+    // Create a new tab with the closed tab's content
+    const newTab: SqlQueryTab = {
+      ...item.tab,
+      id: generateTabId(), // Generate new ID to avoid conflicts
+      updatedAt: Date.now()
+    }
+
+    state.tabs.push(newTab)
+    state.activeTabId = newTab.id
+    saveState()
+
+    return newTab
   }
 
   // Update tab query content
@@ -430,6 +518,8 @@ export const useSqlConsoleStore = defineStore('sqlConsole', () => {
     clearTabs,
     removeConsole,
     saveState,
+    canReopenTab,
+    reopenClosedTab,
 
     // Result cache
     getResultCache,

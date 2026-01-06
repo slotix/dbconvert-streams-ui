@@ -113,12 +113,15 @@
     <SqlQueryTabs
       :tabs="queryTabs"
       :active-tab-id="activeQueryTabId"
+      :can-reopen-tab="canReopenQueryTab()"
       @select="setActiveQueryTab"
       @close="closeQueryTab"
+      @close-others="closeOthersQueryTabs"
       @close-all="closeAllQueryTabs"
       @add="addQueryTab"
       @rename="handleRenameTab"
       @reorder="reorderQueryTab"
+      @reopen-closed-tab="reopenQueryTab"
     />
 
     <!-- Main Content Area -->
@@ -253,8 +256,11 @@ const {
   addQueryTab,
   closeQueryTab,
   closeAllQueryTabs,
+  closeOthersQueryTabs,
   handleRenameTab,
   reorderQueryTab,
+  canReopenQueryTab,
+  reopenQueryTab,
 
   // Query operations
   formatQuery,
@@ -269,8 +275,7 @@ const {
   cleanup
 } = useConsoleTab({
   consoleKey,
-  historyKey,
-  getDefaultQuery: () => `-- Write your query here or select a template from the dropdown above\n`
+  historyKey
 })
 
 // ========== Data Sources Composable ==========
