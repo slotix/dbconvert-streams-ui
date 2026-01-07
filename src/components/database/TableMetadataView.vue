@@ -458,7 +458,7 @@ function getColumnCheckConstraints(column: SQLColumnMeta): string {
             <div
               v-for="trigger in tableTriggers"
               :key="`${trigger.schema || 'default'}:${trigger.name}`"
-              class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-850"
+              class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-850 overflow-hidden shadow-sm"
             >
               <TriggerDefinitionView
                 :trigger-meta="trigger"
