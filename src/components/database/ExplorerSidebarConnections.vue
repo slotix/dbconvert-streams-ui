@@ -478,7 +478,12 @@ function onMenuAction(payload: {
       if (t.kind === 'schema') actions.copyToClipboard(t.schema, 'Schema name copied')
       break
     case 'open':
-      if (t.kind === 'table' || t.kind === 'view' || t.kind === 'function' || t.kind === 'procedure')
+      if (
+        t.kind === 'table' ||
+        t.kind === 'view' ||
+        t.kind === 'function' ||
+        t.kind === 'procedure'
+      )
         actions.openObject(
           t.connectionId,
           t.database,
@@ -493,11 +498,21 @@ function onMenuAction(payload: {
         actions.openFile(t.connectionId, t.path, 'preview', undefined, payload.openInRightSplit)
       break
     case 'copy-object-name':
-      if (t.kind === 'table' || t.kind === 'view' || t.kind === 'function' || t.kind === 'procedure')
+      if (
+        t.kind === 'table' ||
+        t.kind === 'view' ||
+        t.kind === 'function' ||
+        t.kind === 'procedure'
+      )
         actions.copyToClipboard(t.name, 'Object name copied')
       break
     case 'copy-ddl':
-      if (t.kind === 'table' || t.kind === 'view' || t.kind === 'function' || t.kind === 'procedure')
+      if (
+        t.kind === 'table' ||
+        t.kind === 'view' ||
+        t.kind === 'function' ||
+        t.kind === 'procedure'
+      )
         void actions.copyDDL(t.connectionId, t.database, t.name, t.kind, t.schema)
       break
     case 'copy-file-name':
@@ -634,8 +649,7 @@ function handleContextMenuFile(payload: {
 
 onMounted(async () => {
   await loadConnections()
-  // Only auto-expand and load databases if there's a specific connection ID in the URL
-  // This happens when user navigates directly to /explorer/connection-id or clicks "Explore" from connection card
+  // Only auto-expand and load databases when an initial connection is provided (focus restore).
   if (props.initialExpandedConnectionId) {
     navigationStore.expandConnection(props.initialExpandedConnectionId)
     if (treeLogic.isFileConnection(props.initialExpandedConnectionId)) {

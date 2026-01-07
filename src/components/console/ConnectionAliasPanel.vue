@@ -314,7 +314,6 @@ const availableConnections = computed(() => {
   })
 })
 
-
 // Check if multiple S3 connections are selected (show info about multi-S3 queries)
 const hasMultipleS3Connections = computed(() => {
   const s3ConnectionCount = props.modelValue.filter((m) => {

@@ -1,5 +1,4 @@
 import { ref, computed } from 'vue'
-import { useRoute } from 'vue-router'
 import { useConnectionsStore } from '@/stores/connections'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { getConnectionHost, getConnectionPort } from '@/utils/specBuilder'
@@ -11,15 +10,11 @@ import { getConnectionKindFromSpec, getConnectionTypeLabel, isFileBasedKind } fr
 type ObjectType = 'table' | 'view' | 'function' | 'procedure'
 
 export function useExplorerState() {
-  const route = useRoute()
   const connectionsStore = useConnectionsStore()
   const navigationStore = useExplorerNavigationStore()
 
   // Current connection
-  const currentConnectionId = computed(() => {
-    const id = route.params.id as string
-    return id && id !== 'undefined' ? id : null
-  })
+  const currentConnectionId = computed(() => navigationStore.activeConnectionId || null)
   const currentConnection = computed(() =>
     currentConnectionId.value
       ? connectionsStore.connections.find((conn) => conn.id === currentConnectionId.value)
@@ -36,14 +31,9 @@ export function useExplorerState() {
   const selectedFileEntry = ref<FileSystemEntry | null>(null)
   const selectedFileMetadata = ref<FileMetadata | null>(null)
 
-  // REMOVED: URL update watcher - URL is now set directly by action handlers in controller
-
   // Computed properties for active connection details
   // Pinia store is the SYNCHRONOUS source of truth for connection ID
-  // Route is kept in sync for URL persistence only
-  const activeConnectionId = computed<string | null>(
-    () => navigationStore.activeConnectionId || currentConnectionId.value || null
-  )
+  const activeConnectionId = computed<string | null>(() => currentConnectionId.value)
 
   const activeConnection = computed(() =>
     connectionsStore.connections.find((c) => c.id === activeConnectionId.value)

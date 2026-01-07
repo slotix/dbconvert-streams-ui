@@ -36,13 +36,7 @@ const iconColor = computed(() => {
 
 <template>
   <component
-    :is="
-      props.objectType === 'table'
-        ? Sheet
-        : props.objectType === 'view'
-          ? Focus
-          : Code
-    "
+    :is="props.objectType === 'table' ? Sheet : props.objectType === 'view' ? Focus : Code"
     :class="[iconClass, iconColor, 'shrink-0 flex-none']"
   />
 </template>

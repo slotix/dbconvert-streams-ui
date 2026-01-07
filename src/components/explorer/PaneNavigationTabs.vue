@@ -177,7 +177,7 @@ import {
   Share2,
   Sheet,
   Terminal,
-  X,
+  X
 } from 'lucide-vue-next'
 import { usePaneTabsStore, type PaneId, type PaneTab } from '@/stores/paneTabs'
 

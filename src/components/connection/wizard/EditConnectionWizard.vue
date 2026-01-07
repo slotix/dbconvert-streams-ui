@@ -178,7 +178,8 @@ async function updateConnection() {
 
     // Navigate back to explorer and refocus the connection
     if (connectionId.value) {
-      router.push({ path: `/explorer/${connectionId.value}`, query: { focus: '1' } })
+      sessionStorage.setItem('explorerFocusConnectionId', connectionId.value)
+      router.push('/explorer')
     } else {
       router.push('/explorer')
     }
@@ -193,7 +194,8 @@ function cancelWizard() {
   connectionsStore.currentConnection = null
   // Navigate back to connection details view
   if (connectionId.value) {
-    router.push({ path: `/explorer/${connectionId.value}`, query: { details: 'true' } })
+    sessionStorage.setItem('explorerFocusConnectionId', connectionId.value)
+    router.push('/explorer')
   } else {
     router.push('/explorer')
   }

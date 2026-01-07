@@ -1,10 +1,5 @@
 import { defineStore } from 'pinia'
-import type {
-  DatabaseMetadata,
-  SQLRoutineMeta,
-  SQLTableMeta,
-  SQLViewMeta
-} from '@/types/metadata'
+import type { DatabaseMetadata, SQLRoutineMeta, SQLTableMeta, SQLViewMeta } from '@/types/metadata'
 import type { FileSystemEntry } from '@/api/fileSystem'
 import type { DatabaseInfo } from '@/types/connections'
 import connectionsApi from '@/api/connections'

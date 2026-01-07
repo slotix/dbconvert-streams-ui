@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, inject } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { useLucideIcons } from '@/composables/useLucideIcons'
 import { Menu, Plus } from 'lucide-vue-next'
 import { useCommonStore } from '@/stores/common'
@@ -31,7 +31,6 @@ import { useDatabaseExplorerController } from '@/composables/useDatabaseExplorer
 
 const { strokeWidth: iconStroke } = useLucideIcons()
 
-const route = useRoute()
 const router = useRouter()
 const commonStore = useCommonStore()
 const connectionsStore = useConnectionsStore()
@@ -136,7 +135,6 @@ const {
   cancelDeleteConnection,
   onCloneConnection
 } = useDatabaseExplorerController({
-  route,
   router,
   explorerState,
   navigationStore,

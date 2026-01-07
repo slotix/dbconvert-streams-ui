@@ -1,5 +1,5 @@
 import { computed, onMounted, onUnmounted, ref, watch, type Ref } from 'vue'
-import type { RouteLocationNormalizedLoaded, Router } from 'vue-router'
+import type { Router } from 'vue-router'
 import type { FileSystemEntry } from '@/api/fileSystem'
 import { getConnectionHost, getConnectionPort, getConnectionDatabase } from '@/utils/specBuilder'
 import type { SQLRoutineMeta, SQLTableMeta, SQLViewMeta } from '@/types/metadata'
@@ -27,7 +27,6 @@ type NavigationStore = ReturnType<typeof useExplorerNavigationStore>
 type FileExplorerStore = ReturnType<typeof useFileExplorerStore>
 
 interface UseDatabaseExplorerControllerOptions {
-  route: RouteLocationNormalizedLoaded
   router: Router
   explorerState: ExplorerState
   navigationStore: NavigationStore
@@ -42,7 +41,6 @@ interface UseDatabaseExplorerControllerOptions {
 }
 
 export function useDatabaseExplorerController({
-  route,
   router,
   explorerState,
   navigationStore,
@@ -57,32 +55,6 @@ export function useDatabaseExplorerController({
 }: UseDatabaseExplorerControllerOptions) {
   // Use the new view state store as the single source of truth
   const viewState = useExplorerViewStateStore()
-
-  // URL normalization: keep Explorer URL minimal (/explorer, no query).
-  // Tabs are persisted and multi-pane; encoding selection in URL is misleading.
-  watch(
-    () => route.query,
-    (query) => {
-      if (Object.keys(query).length > 0) {
-        void router.replace({ path: '/explorer' })
-      }
-    },
-    { immediate: true, deep: true }
-  )
-
-  // NOTE: The explorer URL is intentionally minimal.
-  // Tab state is persisted and multi-pane; encoding selection in URL becomes stale/misleading.
-  function pushExplorerRoute(_connectionId: string, _query: Record<string, string>) {
-    const nextPath = '/explorer'
-    if (route.path === nextPath && Object.keys(route.query).length === 0) return
-    void router.push({ path: nextPath })
-  }
-
-  function pushRightPaneRoute(_connectionId: string, _query: Record<string, string>) {
-    const nextPath = '/explorer'
-    if (route.path === nextPath && Object.keys(route.query).length === 0) return
-    void router.push({ path: nextPath })
-  }
 
   const restoreToken = ref(0)
   // Skip tab restoration on initial load - let the persisted paneTabs state take precedence
@@ -153,7 +125,7 @@ export function useDatabaseExplorerController({
         )
       }
     } catch (error) {
-      console.warn('Failed to restore left pane tab from URL/viewState:', error)
+      console.warn('Failed to restore left pane tab from viewState:', error)
       return
     }
 
@@ -174,30 +146,6 @@ export function useDatabaseExplorerController({
         tabType: 'database'
       },
       'preview'
-    )
-  }
-
-  function ensureDiagramTabMatchesRoute(connectionId: string, database: string) {
-    const leftState = paneTabsStore.getPaneState('left')
-    const tabId = `diagram:${connectionId}:${database}`
-
-    const existingIndex = leftState.tabs.findIndex((t) => t.tabType === 'diagram' && t.id === tabId)
-    if (existingIndex >= 0) {
-      paneTabsStore.activateTab('left', existingIndex)
-      return
-    }
-
-    paneTabsStore.addTab(
-      'left',
-      {
-        id: tabId,
-        connectionId,
-        database,
-        name: `Diagram: ${database}`,
-        tabType: 'diagram',
-        objectKey: tabId
-      },
-      'pinned'
     )
   }
 
@@ -301,10 +249,6 @@ export function useDatabaseExplorerController({
 
   const lacksExplorerContent = computed(() => !hasPaneContent.value)
 
-  function clearRightPaneQueryParams() {
-    router.replace({ path: '/explorer' })
-  }
-
   function handleOpenFromTree(payload: {
     connectionId: string
     database: string
@@ -314,11 +258,10 @@ export function useDatabaseExplorerController({
     mode: 'preview' | 'pinned'
     defaultTab?: 'structure' | 'data'
     openInRightSplit?: boolean
-    skipUrlUpdate?: boolean
   }) {
     const previousConnectionId = explorerState.currentConnectionId.value
 
-    // If explicitly opening in the right split (context menu / URL restore / breadcrumb pick),
+    // If explicitly opening in the right split (context menu / breadcrumb pick),
     // always target the right pane regardless of the currently active pane.
     const targetPane: PaneId = payload.openInRightSplit
       ? 'right'
@@ -336,32 +279,11 @@ export function useDatabaseExplorerController({
         payload.name,
         payload.schema
       )
-
-      if (!payload.skipUrlUpdate) {
-        const query: Record<string, string> = {
-          db: payload.database,
-          type: payload.type,
-          name: payload.name
-        }
-        if (payload.schema) query.schema = payload.schema
-        pushExplorerRoute(payload.connectionId, query)
-      }
     } else {
       // Ensure we are in the tab view (not connection details / overview), but
       // avoid selecting a left-pane object.
       if (viewState.viewType !== 'table-data') {
         viewState.selectDatabaseTabView(payload.connectionId, payload.database)
-      }
-
-      if (!payload.skipUrlUpdate) {
-        const query: Record<string, string> = {
-          rightDb: payload.database,
-          rightType: payload.type,
-          rightName: payload.name,
-          pane: 'right'
-        }
-        if (payload.schema) query.rightSchema = payload.schema
-        pushRightPaneRoute(payload.connectionId, query)
       }
     }
 
@@ -403,7 +325,6 @@ export function useDatabaseExplorerController({
     mode: 'preview' | 'pinned'
     defaultTab?: 'structure' | 'data'
     openInRightSplit?: boolean
-    skipUrlUpdate?: boolean
   }) {
     // Prevent multiple clicks while loading
     if (isLoadingFile.value) {
@@ -422,14 +343,10 @@ export function useDatabaseExplorerController({
       ? 'right'
       : paneTabsStore.activePane || 'left'
 
-    // Only update the global (URL-synced) viewState when targeting the left pane.
+    // Only update the global viewState when targeting the left pane.
     // Right pane file opens should not force left pane selection/focus.
     if (targetPane === 'left') {
       viewState.selectFile(payload.connectionId, payload.path)
-
-      if (!payload.skipUrlUpdate) {
-        pushExplorerRoute(payload.connectionId, { file: payload.path })
-      }
     }
 
     navigationStore.setActiveConnectionId(payload.connectionId)
@@ -502,26 +419,13 @@ export function useDatabaseExplorerController({
       })
   }
 
-  function handleShowDiagram(payload: ShowDiagramPayload & { skipUrlUpdate?: boolean }) {
+  function handleShowDiagram(payload: ShowDiagramPayload) {
     navigationStore.setActiveConnectionId(payload.connectionId)
 
     explorerState.setDatabaseSelection({ database: payload.database })
 
     // Set viewType to 'table-data' so showDatabaseOverview becomes false
     viewState.setViewType('table-data')
-
-    if (!payload.skipUrlUpdate) {
-      const query: Record<string, string> = {
-        db: payload.database,
-        diagram: 'true'
-      }
-      if (payload.focus) {
-        query.focusType = payload.focus.type
-        query.focusName = payload.focus.name
-        if (payload.focus.schema) query.focusSchema = payload.focus.schema
-      }
-      pushExplorerRoute(payload.connectionId, query)
-    }
 
     // Create a diagram tab
     const tabId = `diagram:${payload.connectionId}:${payload.database}`
@@ -578,11 +482,10 @@ export function useDatabaseExplorerController({
   function handleSelectConnection(payload: { connectionId: string; mode?: 'preview' | 'pinned' }) {
     const targetPane: PaneId = paneTabsStore.activePane || 'left'
 
-    // Only update the global (URL-synced) viewState when targeting the left pane.
+    // Only update the global viewState when targeting the left pane.
     // Right pane selection should not force the left pane to open/activate.
     if (targetPane === 'left') {
       viewState.selectConnection(payload.connectionId)
-      pushExplorerRoute(payload.connectionId, { details: 'true' })
     }
 
     navigationStore.setActiveConnectionId(payload.connectionId)
@@ -609,11 +512,10 @@ export function useDatabaseExplorerController({
   }) {
     const targetPane: PaneId = paneTabsStore.activePane || 'left'
 
-    // Only update the global (URL-synced) viewState when targeting the left pane.
+    // Only update the global viewState when targeting the left pane.
     // Right pane selection should not force the left pane to open/activate.
     if (targetPane === 'left') {
       viewState.selectDatabase(payload.connectionId, payload.database)
-      pushExplorerRoute(payload.connectionId, { db: payload.database })
     }
 
     navigationStore.setActiveConnectionId(payload.connectionId)
@@ -633,14 +535,13 @@ export function useDatabaseExplorerController({
     connectionId: string
     path: string
     entry?: FileSystemEntry
-    skipUrlUpdate?: boolean
   }) {
     // Prevent multiple clicks while loading
     if (isLoadingFile.value) {
       return
     }
 
-    // Skip if this file is already selected (prevents double processing from URL watcher)
+    // Skip if this file is already selected (prevents double processing)
     const currentSelectedPath = fileExplorerStore.getSelectedPath(payload.connectionId)
     if (currentSelectedPath === payload.path) {
       return
@@ -648,7 +549,7 @@ export function useDatabaseExplorerController({
 
     navigationStore.setActiveConnectionId(payload.connectionId)
 
-    // Find entry if not provided (e.g., from router/URL navigation)
+    // Find entry if not provided (e.g., from persisted state)
     let entry = payload.entry
     if (!entry) {
       const findEntry = (
@@ -706,8 +607,7 @@ export function useDatabaseExplorerController({
       path: payload.path,
       entry: entry,
       mode: 'preview',
-      defaultTab: 'data',
-      skipUrlUpdate: payload.skipUrlUpdate
+      defaultTab: 'data'
     })
   }
 
@@ -933,111 +833,9 @@ export function useDatabaseExplorerController({
         // Don't force reload - preserves existing entries and prevents search results from disappearing
         // if the reload fails. Force reload wipes expanded folder children and breaks deep search.
         await fileExplorerStore.loadEntries(newId, false)
-        const fileParam = route.query.file as string
-        if (fileParam && currentFileEntries.value.length > 0) {
-          // handleFileSelect will find the entry if needed (runs async)
-          void handleFileSelect({ connectionId: newId, path: fileParam })
-        }
       }
     }
   })
-
-  watch(
-    () =>
-      [
-        route.query.rightDb,
-        route.query.rightType,
-        route.query.rightName,
-        route.query.pane
-      ] as const,
-    async ([rightDb, rightType, rightName, activePane]) => {
-      if (
-        rightDb &&
-        rightType &&
-        rightName &&
-        explorerState.currentConnectionId.value &&
-        (rightType === 'table' ||
-          rightType === 'view' ||
-          rightType === 'function' ||
-          rightType === 'procedure')
-      ) {
-        const rightSchema = route.query.rightSchema as string | undefined
-
-        const rightState = paneTabsStore.getPaneState('right')
-        const matchesSelection = (tab: PaneTab | null | undefined) =>
-          Boolean(
-            tab &&
-              tab.tabType === 'database' &&
-              tab.connectionId === explorerState.currentConnectionId.value &&
-              tab.database === rightDb &&
-              tab.type === rightType &&
-              tab.name === rightName &&
-              (tab.schema || undefined) === (rightSchema || undefined)
-          )
-
-        const hasMatchingTab = rightState.tabs.some((tab) => matchesSelection(tab))
-
-        if (!hasMatchingTab) {
-          let obj: SQLTableMeta | SQLViewMeta | SQLRoutineMeta | undefined
-          try {
-            await navigationStore.ensureMetadata(
-              explorerState.currentConnectionId.value,
-              rightDb as string
-            )
-            if (rightType === 'table') {
-              obj = navigationStore.findTableMeta(
-                explorerState.currentConnectionId.value,
-                rightDb as string,
-                rightName as string,
-                rightSchema
-              )
-            } else if (rightType === 'view') {
-              obj = navigationStore.findViewMeta(
-                explorerState.currentConnectionId.value,
-                rightDb as string,
-                rightName as string,
-                rightSchema
-              )
-            } else {
-              const { routineName, signature } = parseRoutineName(rightName as string)
-              obj = navigationStore.findRoutineMeta(
-                explorerState.currentConnectionId.value,
-                rightDb as string,
-                routineName,
-                rightType === 'function' ? 'function' : 'procedure',
-                rightSchema,
-                signature
-              )
-            }
-          } catch (error) {
-            console.warn('Failed to restore right pane tab from URL:', error)
-            clearRightPaneQueryParams()
-            return
-          }
-
-          if (obj) {
-            handleOpenFromTree({
-              connectionId: explorerState.currentConnectionId.value,
-              database: rightDb as string,
-              schema: rightSchema,
-              type: rightType as 'table' | 'view' | 'function' | 'procedure',
-              name: rightName as string,
-              mode: 'preview',
-              openInRightSplit: true,
-              skipUrlUpdate: true
-            })
-          } else {
-            clearRightPaneQueryParams()
-          }
-        }
-      }
-
-      if (activePane === 'right' || activePane === 'left') {
-        paneTabsStore.setActivePane(activePane)
-      }
-    },
-    { immediate: false }
-  )
 
   watch(
     () => commonStore.isBackendConnected,
@@ -1053,7 +851,7 @@ export function useDatabaseExplorerController({
   )
 
   // Watch viewState changes to sync with explorerState and fetch data
-  // This handles URL sync updates and store changes
+  // This handles view state updates and store changes
   watch(
     () => ({
       viewType: viewState.viewType,
@@ -1101,7 +899,7 @@ export function useDatabaseExplorerController({
         openDatabaseOverviewTab(state.connectionId, state.databaseName, effectiveMode, 'left')
       }
 
-      // Ensure the visible content matches URL/viewState when navigating with browser back/forward.
+      // Ensure the visible content matches viewState.
       // Skip on initial load to let persisted paneTabs state take precedence.
       if (
         !isInitialLoad.value &&
@@ -1119,24 +917,12 @@ export function useDatabaseExplorerController({
         })
       }
 
-      // Restore/activate diagram tab from URL (skip on initial load)
-      if (
-        !isInitialLoad.value &&
-        state.viewType === 'table-data' &&
-        state.databaseName &&
-        route.query.diagram === 'true'
-      ) {
-        ensureDiagramTabMatchesRoute(state.connectionId, state.databaseName)
-
-        // Focus is applied by DiagramTab (route-aware) to avoid global schema state conflicts.
-      }
-
       // Mark initial load as complete after first watcher run
       if (isInitialLoad.value) {
         isInitialLoad.value = false
       }
 
-      // Sync file selection (and content) when URL/viewState changes
+      // Sync file selection (and content) when viewState changes
       if (state.viewType === 'file-browser' && state.filePath) {
         const targetConnectionId = state.connectionId
         const targetFilePath = state.filePath
@@ -1146,11 +932,10 @@ export function useDatabaseExplorerController({
             await fileExplorerStore.loadEntries(targetConnectionId)
             if (!targetFilePath) return
 
-            // Open/activate the tab for this file so the right-side content matches the URL
+            // Open/activate the tab for this file so the right-side content matches view state
             await handleFileSelect({
               connectionId: targetConnectionId,
-              path: targetFilePath,
-              skipUrlUpdate: true
+              path: targetFilePath
             })
           })()
         }
@@ -1200,8 +985,6 @@ export function useDatabaseExplorerController({
         cloud_provider: conn.cloud_provider || ''
       })
     }
-
-    // URL query params are intentionally not used as a source of truth.
 
     // If no view state at all, default to connection details for current connection
     if (!viewState.viewType && explorerState.currentConnectionId.value) {

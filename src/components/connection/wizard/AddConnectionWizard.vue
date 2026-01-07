@@ -205,7 +205,8 @@ async function createConnection() {
     } else {
       // Navigate back to explorer and focus the new connection
       if (newId) {
-        router.push({ path: `/explorer/${newId}`, query: { focus: '1' } })
+        sessionStorage.setItem('explorerFocusConnectionId', newId)
+        router.push('/explorer')
       } else {
         router.push('/explorer')
       }

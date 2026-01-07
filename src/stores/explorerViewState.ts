@@ -55,10 +55,7 @@ function persistState(state: PersistedState) {
  * Explorer View State Store
  *
  * Single source of truth for what view is currently shown in the database explorer.
- * This store persists to localStorage and drives the URL (not vice versa).
- *
- * Data Flow:
- * User Action → Store Action → localStorage → URL Sync Watcher → URL Update
+ * This store persists to localStorage.
  */
 export const useExplorerViewStateStore = defineStore('explorerViewState', () => {
   // Core navigation state
@@ -250,47 +247,6 @@ export const useExplorerViewStateStore = defineStore('explorerViewState', () => 
     saveState()
   }
 
-  /**
-   * Update from URL params (called by URL sync watcher)
-   * This is internal - should only be called by useExplorerUrlSync
-   */
-  function _updateFromUrl(params: {
-    connId: string
-    details?: boolean
-    database?: string
-    diagram?: boolean
-    schema?: string
-    type?: 'table' | 'view' | 'function' | 'procedure'
-    name?: string
-    file?: string
-  }) {
-    if (params.details) {
-      selectConnection(params.connId)
-    } else if (params.file) {
-      selectFile(params.connId, params.file)
-    } else if (params.diagram && params.database) {
-      selectDatabaseTabView(params.connId, params.database)
-    } else if (params.database && params.type && params.name) {
-      selectTable(params.connId, params.database, params.type, params.name, params.schema)
-    } else if (params.database) {
-      selectDatabase(params.connId, params.database)
-    } else {
-      // No query params - set to table-data view (pane tabs)
-      // This allows SQL Console and other tab-based views to work
-      // If connectionId changes, update it but preserve table-data view
-      if (connectionId.value !== params.connId) {
-        connectionId.value = params.connId
-        viewType.value = 'table-data'
-        databaseName.value = null
-        schemaName.value = null
-        objectType.value = null
-        objectName.value = null
-        filePath.value = null
-        saveState()
-      }
-    }
-  }
-
   return {
     // State
     viewType,
@@ -316,9 +272,6 @@ export const useExplorerViewStateStore = defineStore('explorerViewState', () => 
     setViewType: (type: ViewType) => {
       viewType.value = type
       saveState()
-    },
-
-    // Internal (for URL sync only)
-    _updateFromUrl
+    }
   }
 })

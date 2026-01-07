@@ -129,7 +129,8 @@ onMounted(async () => {
 function goBack() {
   // Navigate back to explorer with the connection details view
   if (connectionId.value) {
-    router.push({ path: `/explorer/${connectionId.value}`, query: { details: 'true' } })
+    sessionStorage.setItem('explorerFocusConnectionId', connectionId.value)
+    router.push('/explorer')
   } else {
     router.push('/explorer')
   }
