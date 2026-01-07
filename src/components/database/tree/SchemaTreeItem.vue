@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { inject, computed } from 'vue'
+import { inject, computed, ref } from 'vue'
 import type { ComputedRef } from 'vue'
 import { ChevronDown, ChevronRight, Grid2X2 } from 'lucide-vue-next'
 import ObjectList from './ObjectList.vue'
@@ -59,6 +59,19 @@ const schemaNameMatchesSearch = computed(() => {
 const parentMatchesSearch = computed(() => {
   return props.databaseNameMatchesSearch || schemaNameMatchesSearch.value
 })
+
+const hasSearch = computed(() => !!searchQuery.value?.trim())
+const tablesOpen = ref(true)
+const viewsOpen = ref(true)
+const triggersOpen = ref(true)
+const functionsOpen = ref(true)
+const proceduresOpen = ref(true)
+
+const tablesExpanded = computed(() => (hasSearch.value ? true : tablesOpen.value))
+const viewsExpanded = computed(() => (hasSearch.value ? true : viewsOpen.value))
+const triggersExpanded = computed(() => (hasSearch.value ? true : triggersOpen.value))
+const functionsExpanded = computed(() => (hasSearch.value ? true : functionsOpen.value))
+const proceduresExpanded = computed(() => (hasSearch.value ? true : proceduresOpen.value))
 
 const emit = defineEmits<{
   (e: 'toggle'): void
@@ -139,15 +152,25 @@ function handleObjectContextMenu(payload: {
       <HighlightedText class="font-medium" :text="schema.name || 'default'" :query="searchQuery" />
     </div>
     <div v-if="isExpanded" class="ml-4 border-l border-gray-200 dark:border-gray-700 pl-2">
-      <div
-        class="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 px-2 mt-1 flex items-center justify-between"
+      <button
+        type="button"
+        class="w-full text-left text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 px-2 mt-1 flex items-center justify-between hover:text-gray-500 dark:hover:text-gray-400"
+        :aria-expanded="tablesExpanded"
+        @click.stop="tablesOpen = !tablesOpen"
       >
-        <span>Tables</span>
+        <span class="flex items-center gap-1">
+          <component
+            :is="tablesExpanded ? ChevronDown : ChevronRight"
+            class="h-3 w-3 text-gray-400 dark:text-gray-500"
+          />
+          <span>Tables</span>
+        </span>
         <span class="text-[11px] font-medium text-gray-500 dark:text-gray-400 normal-case">
           {{ schema.tables.length }}
         </span>
-      </div>
+      </button>
       <ObjectList
+        v-if="tablesExpanded"
         :items="schema.tables"
         object-type="table"
         :connection-id="connectionId"
@@ -161,15 +184,25 @@ function handleObjectContextMenu(payload: {
         @middleclick="(p) => handleObjectOpen('table', p)"
         @contextmenu="handleObjectContextMenu"
       />
-      <div
-        class="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 px-2 mt-2 flex items-center justify-between"
+      <button
+        type="button"
+        class="w-full text-left text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 px-2 mt-2 flex items-center justify-between hover:text-gray-500 dark:hover:text-gray-400"
+        :aria-expanded="viewsExpanded"
+        @click.stop="viewsOpen = !viewsOpen"
       >
-        <span>Views</span>
+        <span class="flex items-center gap-1">
+          <component
+            :is="viewsExpanded ? ChevronDown : ChevronRight"
+            class="h-3 w-3 text-gray-400 dark:text-gray-500"
+          />
+          <span>Views</span>
+        </span>
         <span class="text-[11px] font-medium text-gray-500 dark:text-gray-400 normal-case">
           {{ schema.views.length }}
         </span>
-      </div>
+      </button>
       <ObjectList
+        v-if="viewsExpanded"
         :items="schema.views"
         object-type="view"
         :connection-id="connectionId"
@@ -182,17 +215,26 @@ function handleObjectContextMenu(payload: {
         @middleclick="(p) => handleObjectOpen('view', p)"
         @contextmenu="handleObjectContextMenu"
       />
-      <div
+      <button
         v-if="schema.triggers.length"
-        class="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 px-2 mt-2 flex items-center justify-between"
+        type="button"
+        class="w-full text-left text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 px-2 mt-2 flex items-center justify-between hover:text-gray-500 dark:hover:text-gray-400"
+        :aria-expanded="triggersExpanded"
+        @click.stop="triggersOpen = !triggersOpen"
       >
-        <span>Triggers</span>
+        <span class="flex items-center gap-1">
+          <component
+            :is="triggersExpanded ? ChevronDown : ChevronRight"
+            class="h-3 w-3 text-gray-400 dark:text-gray-500"
+          />
+          <span>Triggers</span>
+        </span>
         <span class="text-[11px] font-medium text-gray-500 dark:text-gray-400 normal-case">
           {{ schema.triggers.length }}
         </span>
-      </div>
+      </button>
       <ObjectList
-        v-if="schema.triggers.length"
+        v-if="schema.triggers.length && triggersExpanded"
         :items="schema.triggers"
         object-type="trigger"
         :connection-id="connectionId"
@@ -205,17 +247,26 @@ function handleObjectContextMenu(payload: {
         @middleclick="(p) => handleObjectOpen('trigger', p)"
         @contextmenu="handleObjectContextMenu"
       />
-      <div
+      <button
         v-if="schema.functions.length"
-        class="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 px-2 mt-2 flex items-center justify-between"
+        type="button"
+        class="w-full text-left text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 px-2 mt-2 flex items-center justify-between hover:text-gray-500 dark:hover:text-gray-400"
+        :aria-expanded="functionsExpanded"
+        @click.stop="functionsOpen = !functionsOpen"
       >
-        <span>Functions</span>
+        <span class="flex items-center gap-1">
+          <component
+            :is="functionsExpanded ? ChevronDown : ChevronRight"
+            class="h-3 w-3 text-gray-400 dark:text-gray-500"
+          />
+          <span>Functions</span>
+        </span>
         <span class="text-[11px] font-medium text-gray-500 dark:text-gray-400 normal-case">
           {{ schema.functions.length }}
         </span>
-      </div>
+      </button>
       <ObjectList
-        v-if="schema.functions.length"
+        v-if="schema.functions.length && functionsExpanded"
         :items="schema.functions"
         object-type="function"
         :connection-id="connectionId"
@@ -228,17 +279,26 @@ function handleObjectContextMenu(payload: {
         @middleclick="(p) => handleObjectOpen('function', p)"
         @contextmenu="handleObjectContextMenu"
       />
-      <div
+      <button
         v-if="schema.procedures.length"
-        class="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 px-2 mt-2 flex items-center justify-between"
+        type="button"
+        class="w-full text-left text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 px-2 mt-2 flex items-center justify-between hover:text-gray-500 dark:hover:text-gray-400"
+        :aria-expanded="proceduresExpanded"
+        @click.stop="proceduresOpen = !proceduresOpen"
       >
-        <span>Procedures</span>
+        <span class="flex items-center gap-1">
+          <component
+            :is="proceduresExpanded ? ChevronDown : ChevronRight"
+            class="h-3 w-3 text-gray-400 dark:text-gray-500"
+          />
+          <span>Procedures</span>
+        </span>
         <span class="text-[11px] font-medium text-gray-500 dark:text-gray-400 normal-case">
           {{ schema.procedures.length }}
         </span>
-      </div>
+      </button>
       <ObjectList
-        v-if="schema.procedures.length"
+        v-if="schema.procedures.length && proceduresExpanded"
         :items="schema.procedures"
         object-type="procedure"
         :connection-id="connectionId"
