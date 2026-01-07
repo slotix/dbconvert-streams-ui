@@ -226,7 +226,6 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, inject } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
 import { useLucideIcons } from '@/composables/useLucideIcons'
 import { RefreshCw, Plus, Menu } from 'lucide-vue-next'
 import { useStreamsStore } from '@/stores/streamConfig'
@@ -250,8 +249,6 @@ const streamsStore = useStreamsStore()
 const connectionsStore = useConnectionsStore()
 const monitoringStore = useMonitoringStore()
 const commonStore = useCommonStore()
-const route = useRoute()
-const router = useRouter()
 const { isDesktop } = useDesktopMode()
 const sidebarWidthToggle = inject<{
   isSidebarExpanded: { value: boolean }
@@ -262,10 +259,38 @@ const sidebarMenuToggle = inject<{ openSidebar: () => void }>('sidebarMenuToggle
 // Use sidebar composable for resize and toggle functionality
 const sidebar = useSidebar()
 
-const selectedStreamId = ref<string>('')
+const STREAMS_VIEW_STATE_STORAGE_KEY = 'streamsViewState'
+type StreamsViewState = {
+  selectedStreamId?: string
+  tab?: StreamDetailsTab
+}
 
-// Initial tab from query parameter (for navigating directly to a specific tab)
-const initialTab = computed(() => route.query.tab as StreamDetailsTab | undefined)
+function readStreamsViewState(): StreamsViewState | undefined {
+  try {
+    const raw = window.localStorage.getItem(STREAMS_VIEW_STATE_STORAGE_KEY)
+    if (!raw) return undefined
+    const parsed = JSON.parse(raw) as StreamsViewState
+    if (!parsed || typeof parsed !== 'object') return undefined
+    return parsed
+  } catch {
+    return undefined
+  }
+}
+
+function writeStreamsViewState(state: StreamsViewState) {
+  try {
+    window.localStorage.setItem(STREAMS_VIEW_STATE_STORAGE_KEY, JSON.stringify(state))
+  } catch {
+    // ignore storage errors (quota, privacy mode, etc.)
+  }
+}
+
+const persistedStateAtInit = readStreamsViewState()
+
+const selectedStreamId = ref<string>(persistedStateAtInit?.selectedStreamId || '')
+
+const restoredTab = ref<StreamDetailsTab | undefined>(persistedStateAtInit?.tab)
+const initialTab = computed(() => restoredTab.value)
 const searchQuery = ref('')
 const searchInputRef = ref<InstanceType<typeof SearchInput> | null>(null)
 
@@ -322,11 +347,19 @@ function handleSelectStream(payload: { streamId: string }) {
 function handleDeleteStream(payload: { streamId: string }) {
   if (selectedStreamId.value === payload.streamId) {
     selectedStreamId.value = ''
+    writeStreamsViewState({
+      ...readStreamsViewState(),
+      selectedStreamId: undefined
+    })
   }
 }
 
 function handleStreamDeletedFromPanel() {
   selectedStreamId.value = ''
+  writeStreamsViewState({
+    ...readStreamsViewState(),
+    selectedStreamId: undefined
+  })
 }
 
 // Fetch connections and streams on mount
@@ -340,11 +373,21 @@ onMounted(async () => {
       // Then fetch streams
       await streamsStore.refreshStreams()
 
-      // Check if there's a selected stream from query param (e.g., coming back from edit)
-      const selectedFromQuery = route.query.selected as string
-      if (selectedFromQuery) {
-        selectedStreamId.value = selectedFromQuery
-      } else if (monitoringStore.streamID) {
+      // Ensure restored state still points to a valid stream.
+      // (Avoid showing an empty panel if the stream was deleted.)
+      if (selectedStreamId.value) {
+        const exists = streamsStore.streamConfigs.some((s) => s.id === selectedStreamId.value)
+        if (!exists) {
+          selectedStreamId.value = ''
+          writeStreamsViewState({
+            ...readStreamsViewState(),
+            selectedStreamId: undefined
+          })
+        }
+      }
+
+      // Fallback: auto-select the currently running stream when no persisted selection exists.
+      if (!selectedStreamId.value && monitoringStore.streamID) {
         // Otherwise check if there's a running stream and auto-select it (from SSE structured logs)
         selectedStreamId.value = monitoringStore.streamID
       }
@@ -357,30 +400,15 @@ onMounted(async () => {
   window.addEventListener('keydown', handleKeyboardShortcut)
 })
 
-// Watch for selected query param changes (e.g., when navigating back from edit)
-watch(
-  () => route.query.selected,
-  (newSelected) => {
-    if (newSelected && typeof newSelected === 'string') {
-      selectedStreamId.value = newSelected
-    }
-  }
-)
-
+// Persist selected stream across navigation (e.g., Streams -> Explorer -> Streams)
 watch(
   () => selectedStreamId.value,
-  (newSelected) => {
-    const currentSelected = typeof route.query.selected === 'string' ? route.query.selected : ''
-    if (newSelected === currentSelected) {
-      return
-    }
-    const nextQuery = { ...route.query }
-    if (newSelected) {
-      nextQuery.selected = newSelected
-    } else {
-      delete nextQuery.selected
-    }
-    router.replace({ query: nextQuery })
+  (selected) => {
+    const existing = readStreamsViewState()
+    writeStreamsViewState({
+      ...existing,
+      selectedStreamId: selected || undefined
+    })
   }
 )
 

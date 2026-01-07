@@ -289,7 +289,7 @@ export default {
 
 <script setup lang="ts">
 import { ref, computed, watch, defineAsyncComponent, toRef } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { Play, Pause, Square } from 'lucide-vue-next'
 import { useLucideIcons } from '@/composables/useLucideIcons'
 import { useStreamsStore } from '@/stores/streamConfig'
@@ -324,7 +324,6 @@ const emit = defineEmits<{
 }>()
 
 const router = useRouter()
-const route = useRoute()
 const streamsStore = useStreamsStore()
 const connectionsStore = useConnectionsStore()
 const commonStore = useCommonStore()
@@ -347,19 +346,23 @@ watch(
 watch(
   () => activeTab.value,
   (newTab) => {
-    const currentTab = typeof route.query.tab === 'string' ? route.query.tab : ''
-    const nextTab = newTab === 'configuration' ? '' : newTab
-    if (nextTab === currentTab) {
-      return
+    // Persist active tab in localStorage so it survives navigation away/back.
+    // Streams page intentionally does not use URL query params as a source of truth.
+    try {
+      const key = 'streamsViewState'
+      const existingRaw = window.localStorage.getItem(key)
+      const existing = existingRaw ? (JSON.parse(existingRaw) as Record<string, unknown>) : {}
+      const next = {
+        ...existing,
+        selectedStreamId: props.stream.id,
+        tab: newTab
+      }
+      window.localStorage.setItem(key, JSON.stringify(next))
+    } catch {
+      // ignore storage errors
     }
-    const nextQuery = { ...route.query }
-    if (nextTab) {
-      nextQuery.tab = nextTab
-    } else {
-      delete nextQuery.tab
-    }
-    router.replace({ query: nextQuery })
-  }
+  },
+  { immediate: true }
 )
 
 const streamRef = toRef(props, 'stream')
@@ -468,6 +471,23 @@ async function deleteStream() {
     await streamsStore.deleteStreamConfig(props.stream.id)
     commonStore.showNotification('Stream deleted', 'success')
     showDeleteConfirm.value = false
+
+    // Ensure we don't persist a deleted stream as the last selection.
+    try {
+      const key = 'streamsViewState'
+      const existingRaw = window.localStorage.getItem(key)
+      const existing = existingRaw ? (JSON.parse(existingRaw) as Record<string, unknown>) : {}
+      window.localStorage.setItem(
+        key,
+        JSON.stringify({
+          ...existing,
+          selectedStreamId: undefined
+        })
+      )
+    } catch {
+      // ignore storage errors
+    }
+
     emit('stream-deleted')
   } catch (e: unknown) {
     if (e instanceof Error) {
