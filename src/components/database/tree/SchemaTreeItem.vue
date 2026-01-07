@@ -5,13 +5,12 @@ import { ChevronDown, ChevronRight, Grid2X2 } from 'lucide-vue-next'
 import ObjectList from './ObjectList.vue'
 import HighlightedText from '@/components/common/HighlightedText.vue'
 
-type ObjectType = 'table' | 'view' | 'trigger' | 'function' | 'procedure'
+type ObjectType = 'table' | 'view' | 'function' | 'procedure'
 
 interface SchemaInfo {
   name: string
   tables: string[]
   views: string[]
-  triggers: string[]
   functions: string[]
   procedures: string[]
 }
@@ -63,13 +62,11 @@ const parentMatchesSearch = computed(() => {
 const hasSearch = computed(() => !!searchQuery.value?.trim())
 const tablesOpen = ref(true)
 const viewsOpen = ref(true)
-const triggersOpen = ref(true)
 const functionsOpen = ref(true)
 const proceduresOpen = ref(true)
 
 const tablesExpanded = computed(() => (hasSearch.value ? true : tablesOpen.value))
 const viewsExpanded = computed(() => (hasSearch.value ? true : viewsOpen.value))
-const triggersExpanded = computed(() => (hasSearch.value ? true : triggersOpen.value))
 const functionsExpanded = computed(() => (hasSearch.value ? true : functionsOpen.value))
 const proceduresExpanded = computed(() => (hasSearch.value ? true : proceduresOpen.value))
 
@@ -213,38 +210,6 @@ function handleObjectContextMenu(payload: {
         @click="(p) => handleObjectOpen('view', p)"
         @dblclick="(p) => handleObjectOpen('view', p)"
         @middleclick="(p) => handleObjectOpen('view', p)"
-        @contextmenu="handleObjectContextMenu"
-      />
-      <button
-        v-if="schema.triggers.length"
-        type="button"
-        class="w-full text-left text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 px-2 mt-2 flex items-center justify-between hover:text-gray-500 dark:hover:text-gray-400"
-        :aria-expanded="triggersExpanded"
-        @click.stop="triggersOpen = !triggersOpen"
-      >
-        <span class="flex items-center gap-1">
-          <component
-            :is="triggersExpanded ? ChevronDown : ChevronRight"
-            class="h-3 w-3 text-gray-400 dark:text-gray-500"
-          />
-          <span>Triggers</span>
-        </span>
-        <span class="text-[11px] font-medium text-gray-500 dark:text-gray-400 normal-case">
-          {{ schema.triggers.length }}
-        </span>
-      </button>
-      <ObjectList
-        v-if="schema.triggers.length && triggersExpanded"
-        :items="schema.triggers"
-        object-type="trigger"
-        :connection-id="connectionId"
-        :database="database"
-        :schema="schema.name"
-        :explorer-obj-prefix="`${connectionId}:${database}:${schema.name || ''}`"
-        :parent-matches-search="parentMatchesSearch"
-        @click="(p) => handleObjectOpen('trigger', p)"
-        @dblclick="(p) => handleObjectOpen('trigger', p)"
-        @middleclick="(p) => handleObjectOpen('trigger', p)"
         @contextmenu="handleObjectContextMenu"
       />
       <button

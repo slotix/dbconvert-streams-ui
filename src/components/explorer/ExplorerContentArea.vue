@@ -147,7 +147,7 @@ const emit = defineEmits<{
     paneId: PaneId,
     payload: {
       name: string
-      type: 'table' | 'view' | 'trigger' | 'function' | 'procedure'
+      type: 'table' | 'view' | 'function' | 'procedure'
       schema?: string
     }
   ]

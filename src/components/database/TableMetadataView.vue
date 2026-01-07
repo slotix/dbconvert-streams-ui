@@ -2,11 +2,13 @@
 import { computed, ref, nextTick, watch } from 'vue'
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/vue'
 import { Key, Link } from 'lucide-vue-next'
-import { type SQLTableMeta, type SQLColumnMeta } from '@/types/metadata'
+import { type SQLTableMeta, type SQLColumnMeta, type SQLTriggerMeta } from '@/types/metadata'
 import { useObjectTabStateStore } from '@/stores/objectTabState'
+import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { formatDataSize } from '@/utils/formats'
 import { getSqlDialectFromType } from '@/types/specs'
 import DdlView from './DdlView.vue'
+import TriggerDefinitionView from './TriggerDefinitionView.vue'
 
 // Define brand colors as constants for consistency (matching DatabaseDiagramD3.vue)
 const BRAND_COLORS = {
@@ -34,6 +36,7 @@ const emit = defineEmits<{
 
 // Use the Pinia store for sub-tab state management
 const tabStateStore = useObjectTabStateStore()
+const navigationStore = useExplorerNavigationStore()
 
 const isLoading = ref(false)
 
@@ -101,6 +104,19 @@ const ddl = computed(() => props.tableMeta?.ddl)
 const partitions = computed(() => props.tableMeta?.partitions || [])
 const isPartitioned = computed(() => props.tableMeta?.isPartitioned || false)
 const partitionStrategy = computed(() => props.tableMeta?.partitionStrategy || '')
+const tableTriggers = computed<SQLTriggerMeta[]>(() => {
+  const metadata = navigationStore.getMetadata(props.connectionId, props.tableMeta.database)
+  if (!metadata?.triggers) return []
+  const tableName = props.tableMeta.name
+  const schemaName = props.tableMeta.schema || ''
+
+  return Object.values(metadata.triggers)
+    .filter((trigger) => {
+      if ((trigger.schema || '') !== schemaName) return false
+      return trigger.tableName === tableName
+    })
+    .sort((a, b) => a.name.localeCompare(b.name))
+})
 
 const tabs = computed(() => {
   const baseTabs = [
@@ -108,6 +124,10 @@ const tabs = computed(() => {
     { name: 'Keys', count: primaryKeys.value.length + foreignKeys.value.length },
     { name: 'Indexes', count: indexes.value.length }
   ]
+
+  if (tableTriggers.value.length > 0) {
+    baseTabs.push({ name: 'Triggers', count: tableTriggers.value.length })
+  }
 
   // Add Partitions tab only if table is partitioned
   if (isPartitioned.value && partitions.value.length > 0) {
@@ -428,6 +448,23 @@ function getColumnCheckConstraints(column: SQLColumnMeta): string {
                   </tbody>
                 </table>
               </div>
+            </div>
+          </div>
+        </TabPanel>
+
+        <!-- Triggers Panel -->
+        <TabPanel v-if="tableTriggers.length">
+          <div class="space-y-4">
+            <div
+              v-for="trigger in tableTriggers"
+              :key="`${trigger.schema || 'default'}:${trigger.name}`"
+              class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-850"
+            >
+              <TriggerDefinitionView
+                :trigger-meta="trigger"
+                :connection-type="connectionType"
+                :show-context="false"
+              />
             </div>
           </div>
         </TabPanel>

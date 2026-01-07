@@ -15,7 +15,7 @@ interface PersistedState {
   connectionId: string | null
   databaseName: string | null
   schemaName: string | null
-  objectType: 'table' | 'view' | 'trigger' | 'function' | 'procedure' | null
+  objectType: 'table' | 'view' | 'function' | 'procedure' | null
   objectName: string | null
   filePath: string | null
 }
@@ -66,7 +66,7 @@ export const useExplorerViewStateStore = defineStore('explorerViewState', () => 
   const connectionId = ref<string | null>(null)
   const databaseName = ref<string | null>(null)
   const schemaName = ref<string | null>(null)
-  const objectType = ref<'table' | 'view' | 'trigger' | 'function' | 'procedure' | null>(null)
+  const objectType = ref<'table' | 'view' | 'function' | 'procedure' | null>(null)
   const objectName = ref<string | null>(null)
   const filePath = ref<string | null>(null)
 
@@ -194,7 +194,7 @@ export const useExplorerViewStateStore = defineStore('explorerViewState', () => 
   function selectTable(
     connId: string,
     database: string,
-    type: 'table' | 'view' | 'trigger' | 'function' | 'procedure',
+    type: 'table' | 'view' | 'function' | 'procedure',
     name: string,
     schema?: string
   ) {
@@ -260,7 +260,7 @@ export const useExplorerViewStateStore = defineStore('explorerViewState', () => 
     database?: string
     diagram?: boolean
     schema?: string
-    type?: 'table' | 'view' | 'trigger' | 'function' | 'procedure'
+    type?: 'table' | 'view' | 'function' | 'procedure'
     name?: string
     file?: string
   }) {

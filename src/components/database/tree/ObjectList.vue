@@ -5,7 +5,7 @@ import ObjectIcon from '@/components/common/ObjectIcon.vue'
 import HighlightedText from '@/components/common/HighlightedText.vue'
 import { formatDataSize } from '@/utils/formats'
 
-type ObjectType = 'table' | 'view' | 'trigger' | 'function' | 'procedure'
+type ObjectType = 'table' | 'view' | 'function' | 'procedure'
 
 const props = defineProps<{
   items: string[]

@@ -3,14 +3,13 @@ import type {
   DatabaseMetadata,
   SQLRoutineMeta,
   SQLTableMeta,
-  SQLTriggerMeta,
   SQLViewMeta
 } from '@/types/metadata'
 import type { FileSystemEntry } from '@/api/fileSystem'
 import type { DatabaseInfo } from '@/types/connections'
 import connectionsApi from '@/api/connections'
 
-export type ObjectType = 'table' | 'view' | 'trigger' | 'function' | 'procedure'
+export type ObjectType = 'table' | 'view' | 'function' | 'procedure'
 export type DefaultTab = 'structure' | 'data'
 
 export interface NavigationSelection {
@@ -28,7 +27,7 @@ export interface OpenObjectPayload {
   schema?: string
   type: ObjectType
   name: string
-  meta: SQLTableMeta | SQLViewMeta | SQLTriggerMeta | SQLRoutineMeta
+  meta: SQLTableMeta | SQLViewMeta | SQLRoutineMeta
   mode: 'preview' | 'pinned'
   defaultTab?: DefaultTab
   openInRightSplit?: boolean
@@ -549,23 +548,6 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
           return v.name === viewName && v.schema === schema
         }
         return v.name === viewName
-      })
-    },
-
-    findTriggerMeta(
-      connectionId: string,
-      database: string,
-      triggerName: string,
-      schema?: string
-    ): SQLTriggerMeta | undefined {
-      const metadata = this.metadataState[connectionId]?.[database]
-      if (!metadata?.triggers) return undefined
-
-      return Object.values(metadata.triggers).find((t) => {
-        if (schema) {
-          return t.name === triggerName && t.schema === schema
-        }
-        return t.name === triggerName
       })
     },
 

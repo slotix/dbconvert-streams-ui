@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch, defineAsyncComponent, type Component } from 'vue'
 import { ArrowUpDown, Columns2, Filter, RefreshCw, Share2, Terminal } from 'lucide-vue-next'
-import type { SQLRoutineMeta, SQLTableMeta, SQLTriggerMeta, SQLViewMeta } from '@/types/metadata'
+import type { SQLRoutineMeta, SQLTableMeta, SQLViewMeta } from '@/types/metadata'
 import { type FileSystemEntry } from '@/api/fileSystem'
 import { type FileMetadata } from '@/types/files'
 import { useObjectTabStateStore } from '@/stores/objectTabState'
@@ -18,9 +18,6 @@ const DatabaseObjectDataView = defineAsyncComponent(
 )
 const RoutineDefinitionView = defineAsyncComponent(
   () => import('@/components/database/RoutineDefinitionView.vue')
-)
-const TriggerDefinitionView = defineAsyncComponent(
-  () => import('@/components/database/TriggerDefinitionView.vue')
 )
 
 // Lazy load file components that use ag-grid
@@ -43,8 +40,8 @@ const props = defineProps<{
   closable?: boolean
   paneId?: string // Optional pane identifier (e.g., 'left', 'right') for independent state per pane
   // Database-specific props
-  objectKind?: 'table' | 'view' | 'trigger' | 'function' | 'procedure'
-  objectMeta?: SQLTableMeta | SQLViewMeta | SQLTriggerMeta | SQLRoutineMeta
+  objectKind?: 'table' | 'view' | 'function' | 'procedure'
+  objectMeta?: SQLTableMeta | SQLViewMeta | SQLRoutineMeta
   connectionType?: string
   database?: string
   // File-specific props
@@ -156,20 +153,6 @@ const tabs = computed<TabItem[]>(() => {
                   connectionType: props.connectionType,
                   objectKey: objectKey.value
                 }
-        }
-      ]
-    }
-
-    if (props.objectKind === 'trigger') {
-      return [
-        {
-          name: 'Definition',
-          component: TriggerDefinitionView,
-          props: {
-            triggerMeta: props.objectMeta as SQLTriggerMeta,
-            connectionType: props.connectionType,
-            objectKey: objectKey.value
-          }
         }
       ]
     }

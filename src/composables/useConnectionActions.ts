@@ -10,7 +10,7 @@ import type { FileSystemEntry } from '@/api/fileSystem'
 import type { DiagramFocusTarget, ShowDiagramPayload } from '@/types/diagram'
 
 type DefaultTab = 'structure' | 'data'
-type ObjectType = 'table' | 'view' | 'trigger' | 'function' | 'procedure'
+type ObjectType = 'table' | 'view' | 'function' | 'procedure'
 
 export interface OpenObjectParams {
   connectionId: string
@@ -256,11 +256,6 @@ export function useConnectionActions(emits?: {
       const ddl = m?.definition || ''
       if (ddl) await copyToClipboard(ddl, 'View DDL copied')
       else toast.info('Definition not available')
-    } else if (kind === 'trigger') {
-      const m = navigationStore.findTriggerMeta(connectionId, database, name, schema)
-      const ddl = m?.definition || ''
-      if (ddl) await copyToClipboard(ddl, 'Trigger DDL copied')
-      else toast.info('Definition not available')
     } else {
       const { routineName, signature } = parseRoutineName(name)
       const m = navigationStore.findRoutineMeta(
@@ -348,9 +343,6 @@ export function useConnectionActions(emits?: {
     if (kind === 'view') {
       return !!navigationStore.findViewMeta(connectionId, database, name, schema)?.definition
     }
-    if (kind === 'trigger') {
-      return !!navigationStore.findTriggerMeta(connectionId, database, name, schema)?.definition
-    }
     const { routineName, signature } = parseRoutineName(name)
     return !!navigationStore.findRoutineMeta(
       connectionId,
@@ -371,8 +363,6 @@ export function useConnectionActions(emits?: {
   ) {
     if (kind === 'table') return navigationStore.findTableMeta(connectionId, database, name, schema)
     if (kind === 'view') return navigationStore.findViewMeta(connectionId, database, name, schema)
-    if (kind === 'trigger')
-      return navigationStore.findTriggerMeta(connectionId, database, name, schema)
     const { routineName, signature } = parseRoutineName(name)
     return navigationStore.findRoutineMeta(
       connectionId,

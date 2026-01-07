@@ -46,7 +46,7 @@ defineEmits<{
   'pick-name': [
     payload: {
       name: string
-      type: 'table' | 'view' | 'trigger' | 'function' | 'procedure'
+      type: 'table' | 'view' | 'function' | 'procedure'
       schema?: string
     }
   ]
@@ -186,7 +186,7 @@ const breadcrumbData = computed(() => {
   // Database object - build objects list for picker
   const objects: Array<{
     name: string
-    type: 'table' | 'view' | 'trigger' | 'function' | 'procedure'
+    type: 'table' | 'view' | 'function' | 'procedure'
     schema?: string
   }> = []
 
@@ -210,16 +210,6 @@ const breadcrumbData = computed(() => {
           name: view.name,
           type: 'view',
           schema: view.schema
-        })
-      })
-    }
-
-    if (props.metadata.triggers) {
-      Object.values(props.metadata.triggers).forEach((trigger) => {
-        objects.push({
-          name: trigger.name,
-          type: 'trigger',
-          schema: trigger.schema
         })
       })
     }

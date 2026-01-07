@@ -2,7 +2,7 @@ import { computed, onMounted, onUnmounted, ref, watch, type Ref } from 'vue'
 import type { RouteLocationNormalizedLoaded, Router } from 'vue-router'
 import type { FileSystemEntry } from '@/api/fileSystem'
 import { getConnectionHost, getConnectionPort, getConnectionDatabase } from '@/utils/specBuilder'
-import type { SQLRoutineMeta, SQLTableMeta, SQLTriggerMeta, SQLViewMeta } from '@/types/metadata'
+import type { SQLRoutineMeta, SQLTableMeta, SQLViewMeta } from '@/types/metadata'
 import type { ShowDiagramPayload } from '@/types/diagram'
 import type { PaneId, PaneTab } from '@/stores/paneTabs'
 import { useExplorerViewStateStore } from '@/stores/explorerViewState'
@@ -92,7 +92,7 @@ export function useDatabaseExplorerController({
     connectionId: string
     database: string
     schema?: string | null
-    type: 'table' | 'view' | 'trigger' | 'function' | 'procedure'
+    type: 'table' | 'view' | 'function' | 'procedure'
     name: string
   }) {
     const token = ++restoreToken.value
@@ -122,7 +122,7 @@ export function useDatabaseExplorerController({
     }
 
     // Otherwise restore by fetching metadata and creating a preview tab.
-    let obj: SQLTableMeta | SQLViewMeta | SQLTriggerMeta | SQLRoutineMeta | undefined
+    let obj: SQLTableMeta | SQLViewMeta | SQLRoutineMeta | undefined
     try {
       await navigationStore.ensureMetadata(payload.connectionId, payload.database)
       if (token !== restoreToken.value) return
@@ -136,13 +136,6 @@ export function useDatabaseExplorerController({
         )
       } else if (payload.type === 'view') {
         obj = navigationStore.findViewMeta(
-          payload.connectionId,
-          payload.database,
-          payload.name,
-          schema
-        )
-      } else if (payload.type === 'trigger') {
-        obj = navigationStore.findTriggerMeta(
           payload.connectionId,
           payload.database,
           payload.name,
@@ -316,7 +309,7 @@ export function useDatabaseExplorerController({
     connectionId: string
     database: string
     schema?: string
-    type: 'table' | 'view' | 'trigger' | 'function' | 'procedure'
+    type: 'table' | 'view' | 'function' | 'procedure'
     name: string
     mode: 'preview' | 'pinned'
     defaultTab?: 'structure' | 'data'
@@ -733,7 +726,7 @@ export function useDatabaseExplorerController({
     paneId: PaneId,
     o: {
       name: string
-      type: 'table' | 'view' | 'trigger' | 'function' | 'procedure'
+      type: 'table' | 'view' | 'function' | 'procedure'
       schema?: string
     }
   ) {
@@ -750,8 +743,6 @@ export function useDatabaseExplorerController({
         obj = navigationStore.findTableMeta(targetConnId, targetDb, o.name, o.schema)
       } else if (o.type === 'view') {
         obj = navigationStore.findViewMeta(targetConnId, targetDb, o.name, o.schema)
-      } else if (o.type === 'trigger') {
-        obj = navigationStore.findTriggerMeta(targetConnId, targetDb, o.name, o.schema)
       } else {
         const { routineName, signature } = parseRoutineName(o.name)
         obj = navigationStore.findRoutineMeta(
@@ -972,7 +963,6 @@ export function useDatabaseExplorerController({
         explorerState.currentConnectionId.value &&
         (rightType === 'table' ||
           rightType === 'view' ||
-          rightType === 'trigger' ||
           rightType === 'function' ||
           rightType === 'procedure')
       ) {
@@ -993,7 +983,7 @@ export function useDatabaseExplorerController({
         const hasMatchingTab = rightState.tabs.some((tab) => matchesSelection(tab))
 
         if (!hasMatchingTab) {
-          let obj: SQLTableMeta | SQLViewMeta | SQLTriggerMeta | SQLRoutineMeta | undefined
+          let obj: SQLTableMeta | SQLViewMeta | SQLRoutineMeta | undefined
           try {
             await navigationStore.ensureMetadata(
               explorerState.currentConnectionId.value,
@@ -1008,13 +998,6 @@ export function useDatabaseExplorerController({
               )
             } else if (rightType === 'view') {
               obj = navigationStore.findViewMeta(
-                explorerState.currentConnectionId.value,
-                rightDb as string,
-                rightName as string,
-                rightSchema
-              )
-            } else if (rightType === 'trigger') {
-              obj = navigationStore.findTriggerMeta(
                 explorerState.currentConnectionId.value,
                 rightDb as string,
                 rightName as string,
@@ -1042,7 +1025,7 @@ export function useDatabaseExplorerController({
               connectionId: explorerState.currentConnectionId.value,
               database: rightDb as string,
               schema: rightSchema,
-              type: rightType as 'table' | 'view' | 'trigger' | 'function' | 'procedure',
+              type: rightType as 'table' | 'view' | 'function' | 'procedure',
               name: rightName as string,
               mode: 'preview',
               openInRightSplit: true,

@@ -6,7 +6,7 @@ export type ContextTarget =
   | { kind: 'database'; connectionId: string; database: string }
   | { kind: 'schema'; connectionId: string; database: string; schema: string }
   | {
-      kind: 'table' | 'view' | 'trigger' | 'function' | 'procedure'
+      kind: 'table' | 'view' | 'function' | 'procedure'
       connectionId: string
       database: string
       schema?: string
@@ -24,7 +24,7 @@ export type ContextTarget =
 
 export type DatabaseObjectTarget = Extract<
   ContextTarget,
-  { kind: 'table' | 'view' | 'trigger' | 'function' | 'procedure' }
+  { kind: 'table' | 'view' | 'function' | 'procedure' }
 >
 
 /**
@@ -43,7 +43,6 @@ export function useTreeContextMenu() {
     menuTarget.value &&
     (menuTarget.value.kind === 'table' ||
       menuTarget.value.kind === 'view' ||
-      menuTarget.value.kind === 'trigger' ||
       menuTarget.value.kind === 'function' ||
       menuTarget.value.kind === 'procedure')
       ? (menuTarget.value as DatabaseObjectTarget)

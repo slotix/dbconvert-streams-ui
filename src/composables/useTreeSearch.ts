@@ -139,14 +139,6 @@ export function useTreeSearch(
         )
         if (hasViewMatch) return true
 
-        const hasTriggerMatch = Object.values(metadata.triggers || {}).some(
-          (trigger) =>
-            normalize(trigger.name).includes(normalizedQuery) ||
-            (trigger.schema && normalize(trigger.schema).includes(normalizedQuery)) ||
-            (trigger.tableName && normalize(trigger.tableName).includes(normalizedQuery))
-        )
-        if (hasTriggerMatch) return true
-
         const hasFunctionMatch = Object.values(metadata.functions || {}).some((fn) => {
           const signature = fn.signature ? `(${fn.signature})` : ''
           const label = `${fn.name}${signature}`
@@ -245,14 +237,6 @@ export function useTreeSearch(
     )
 
     if (hasViewMatch) return true
-
-    const hasTriggerMatch = Object.values(metadata.triggers || {}).some(
-      (trigger) =>
-        normalize(trigger.name).includes(normalizedQuery) ||
-        (trigger.schema && normalize(trigger.schema).includes(normalizedQuery)) ||
-        (trigger.tableName && normalize(trigger.tableName).includes(normalizedQuery))
-    )
-    if (hasTriggerMatch) return true
 
     const hasFunctionMatch = Object.values(metadata.functions || {}).some((fn) => {
       const signature = fn.signature ? `(${fn.signature})` : ''

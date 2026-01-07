@@ -178,7 +178,6 @@ import {
   Sheet,
   Terminal,
   X,
-  Zap
 } from 'lucide-vue-next'
 import { usePaneTabsStore, type PaneId, type PaneTab } from '@/stores/paneTabs'
 
@@ -448,7 +447,6 @@ function getObjectIcon(tab: PaneTab) {
   if (tab.tabType === 'file-console') return Terminal
   if (tab.tabType === 'diagram') return Share2
   if (tab.type === 'view') return Eye
-  if (tab.type === 'trigger') return Zap
   if (tab.type === 'function' || tab.type === 'procedure') return Code
   return Sheet
 }
@@ -464,9 +462,6 @@ function getIconColor(tab: PaneTab): string {
   if (tab.tabType === 'database') {
     if (tab.type === 'view') {
       return 'text-teal-500 dark:text-teal-400'
-    }
-    if (tab.type === 'trigger') {
-      return 'text-amber-500 dark:text-amber-400'
     }
     if (tab.type === 'function') {
       return 'text-indigo-500 dark:text-indigo-400'

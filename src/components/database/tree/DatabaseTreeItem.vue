@@ -8,7 +8,7 @@ import HighlightedText from '@/components/common/HighlightedText.vue'
 import { useDatabaseOverviewStore } from '@/stores/databaseOverview'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 
-type ObjectType = 'table' | 'view' | 'trigger' | 'function' | 'procedure'
+type ObjectType = 'table' | 'view' | 'function' | 'procedure'
 
 const overviewStore = useDatabaseOverviewStore()
 const navigationStore = useExplorerNavigationStore()
@@ -17,7 +17,6 @@ interface SchemaInfo {
   name: string
   tables: string[]
   views: string[]
-  triggers: string[]
   functions: string[]
   procedures: string[]
 }
@@ -34,7 +33,6 @@ const props = defineProps<{
   schemas: SchemaInfo[]
   flatTables: string[]
   flatViews: string[]
-  flatTriggers: string[]
   flatFunctions: string[]
   flatProcedures: string[]
   metadataLoaded: boolean
@@ -74,13 +72,11 @@ const databaseNameMatchesSearch = computed(() => {
 const hasSearch = computed(() => !!searchQuery.value?.trim())
 const tablesOpen = ref(true)
 const viewsOpen = ref(true)
-const triggersOpen = ref(true)
 const functionsOpen = ref(true)
 const proceduresOpen = ref(true)
 
 const tablesExpanded = computed(() => (hasSearch.value ? true : tablesOpen.value))
 const viewsExpanded = computed(() => (hasSearch.value ? true : viewsOpen.value))
-const triggersExpanded = computed(() => (hasSearch.value ? true : triggersOpen.value))
 const functionsExpanded = computed(() => (hasSearch.value ? true : functionsOpen.value))
 const proceduresExpanded = computed(() => (hasSearch.value ? true : proceduresOpen.value))
 
@@ -323,37 +319,6 @@ function handleFlatObjectContextMenu(payload: {
             @click="(p) => handleObjectOpen({ type: 'view', ...p })"
             @dblclick="(p) => handleObjectOpen({ type: 'view', ...p })"
             @middleclick="(p) => handleObjectOpen({ type: 'view', ...p })"
-            @contextmenu="handleFlatObjectContextMenu"
-          />
-          <button
-            v-if="flatTriggers.length"
-            type="button"
-            class="w-full text-left text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 px-2 mt-2 flex items-center justify-between hover:text-gray-500 dark:hover:text-gray-400"
-            :aria-expanded="triggersExpanded"
-            @click.stop="triggersOpen = !triggersOpen"
-          >
-            <span class="flex items-center gap-1">
-              <component
-                :is="triggersExpanded ? ChevronDown : ChevronRight"
-                class="h-3 w-3 text-gray-400 dark:text-gray-500"
-              />
-              <span>Triggers</span>
-            </span>
-            <span class="text-[11px] font-medium text-gray-500 dark:text-gray-400 normal-case">
-              {{ flatTriggers.length }}
-            </span>
-          </button>
-          <ObjectList
-            v-if="flatTriggers.length && triggersExpanded"
-            :items="flatTriggers"
-            object-type="trigger"
-            :connection-id="connectionId"
-            :database="database.name"
-            :explorer-obj-prefix="`${connectionId}:${database.name}:`"
-            :parent-matches-search="databaseNameMatchesSearch"
-            @click="(p) => handleObjectOpen({ type: 'trigger', ...p })"
-            @dblclick="(p) => handleObjectOpen({ type: 'trigger', ...p })"
-            @middleclick="(p) => handleObjectOpen({ type: 'trigger', ...p })"
             @contextmenu="handleFlatObjectContextMenu"
           />
           <button

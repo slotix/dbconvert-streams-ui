@@ -28,7 +28,7 @@ type ContextTarget =
   | { kind: 'database'; connectionId: string; database: string }
   | { kind: 'schema'; connectionId: string; database: string; schema: string }
   | {
-      kind: 'table' | 'view' | 'trigger' | 'function' | 'procedure'
+      kind: 'table' | 'view' | 'function' | 'procedure'
       connectionId: string
       database: string
       schema?: string
@@ -90,7 +90,6 @@ const isDatabaseObject = computed(
     !!props.target &&
     (props.target.kind === 'table' ||
       props.target.kind === 'view' ||
-      props.target.kind === 'trigger' ||
       props.target.kind === 'function' ||
       props.target.kind === 'procedure')
 )

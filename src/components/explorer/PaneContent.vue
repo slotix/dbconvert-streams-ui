@@ -110,7 +110,7 @@ import { useFileExplorerStore } from '@/stores/fileExplorer'
 import type { PaneId } from '@/stores/paneTabs'
 import type { PaneTab } from '@/stores/paneTabs'
 import type { ShowDiagramPayload } from '@/types/diagram'
-import type { SQLRoutineMeta, SQLTableMeta, SQLTriggerMeta, SQLViewMeta } from '@/types/metadata'
+import type { SQLRoutineMeta, SQLTableMeta, SQLViewMeta } from '@/types/metadata'
 
 // Lazy load DiagramTab since it includes heavy D3.js
 const DiagramTab = defineAsyncComponent(() => import('@/components/database/DiagramTab.vue'))
@@ -158,9 +158,7 @@ const connectionsStore = useConnectionsStore()
 const fileExplorerStore = useFileExplorerStore()
 const navigationStore = useExplorerNavigationStore()
 
-const resolvedDatabaseMeta = computed<
-  SQLTableMeta | SQLViewMeta | SQLTriggerMeta | SQLRoutineMeta | null
->(() => {
+const resolvedDatabaseMeta = computed<SQLTableMeta | SQLViewMeta | SQLRoutineMeta | null>(() => {
   const activeTab = props.activeTab
   if (!activeTab || activeTab.tabType !== 'database') return null
 
@@ -181,17 +179,6 @@ const resolvedDatabaseMeta = computed<
   if (activeTab.type === 'table') {
     return (
       navigationStore.findTableMeta(
-        activeTab.connectionId,
-        database,
-        activeTab.name,
-        activeTab.schema
-      ) || null
-    )
-  }
-
-  if (activeTab.type === 'trigger') {
-    return (
-      navigationStore.findTriggerMeta(
         activeTab.connectionId,
         database,
         activeTab.name,
