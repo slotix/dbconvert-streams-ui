@@ -89,7 +89,15 @@ const filteredItems = computed(() => {
 
 function getTableSize(tableName: string): string | null {
   if (props.objectType !== 'table' || !props.tableSizes) return null
-  const sizeBytes = props.tableSizes[tableName]
+  const schema = props.schema?.trim()
+  let sizeBytes: number | undefined
+  if (schema) {
+    const qualifiedName = `${schema}.${tableName}`
+    sizeBytes = props.tableSizes[qualifiedName]
+  }
+  if (sizeBytes === undefined) {
+    sizeBytes = props.tableSizes[tableName]
+  }
   // Use zeroAsNA=true because system tables (performance_schema, information_schema) report 0
   return sizeBytes !== undefined ? formatDataSize(sizeBytes, true) : null
 }

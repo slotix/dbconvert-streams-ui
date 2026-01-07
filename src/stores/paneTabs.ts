@@ -1,11 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type {
-  SQLRoutineMeta,
-  SQLTableMeta,
-  SQLTriggerMeta,
-  SQLViewMeta
-} from '@/types/metadata'
+import type { SQLRoutineMeta, SQLTableMeta, SQLTriggerMeta, SQLViewMeta } from '@/types/metadata'
 import type { FileSystemEntry } from '@/api/fileSystem'
 import type { FileMetadata } from '@/types/files'
 import { useObjectTabStateStore } from '@/stores/objectTabState'

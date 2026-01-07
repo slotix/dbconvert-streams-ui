@@ -37,7 +37,8 @@
       "Bash(xargs:*)",
       "Bash(npx eslint:*)",
       "Bash(npx vue-tsc:*)",
-      "Bash(go vet:*)"
+      "Bash(go vet:*)",
+      "Bash(yarn eslint:*)"
     ],
     "deny": [],
     "ask": []

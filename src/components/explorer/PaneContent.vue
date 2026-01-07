@@ -110,12 +110,7 @@ import { useFileExplorerStore } from '@/stores/fileExplorer'
 import type { PaneId } from '@/stores/paneTabs'
 import type { PaneTab } from '@/stores/paneTabs'
 import type { ShowDiagramPayload } from '@/types/diagram'
-import type {
-  SQLRoutineMeta,
-  SQLTableMeta,
-  SQLTriggerMeta,
-  SQLViewMeta
-} from '@/types/metadata'
+import type { SQLRoutineMeta, SQLTableMeta, SQLTriggerMeta, SQLViewMeta } from '@/types/metadata'
 
 // Lazy load DiagramTab since it includes heavy D3.js
 const DiagramTab = defineAsyncComponent(() => import('@/components/database/DiagramTab.vue'))

@@ -92,7 +92,13 @@ export function useConnectionTreeLogic() {
     // Initialize buckets for all schemas from the API response
     const buckets = new Map<
       string,
-      { tables: string[]; views: string[]; triggers: string[]; functions: string[]; procedures: string[] }
+      {
+        tables: string[]
+        views: string[]
+        triggers: string[]
+        functions: string[]
+        procedures: string[]
+      }
     >()
 
     // First, add all schemas from the API response (including empty ones)

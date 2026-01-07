@@ -578,8 +578,7 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
       signature?: string
     ): SQLRoutineMeta | undefined {
       const metadata = this.metadataState[connectionId]?.[database]
-      const routines =
-        routineType === 'function' ? metadata?.functions : metadata?.procedures
+      const routines = routineType === 'function' ? metadata?.functions : metadata?.procedures
       if (!routines) return undefined
 
       const normalizedSignature = (signature || '').trim()

@@ -53,10 +53,6 @@
               {{ tab.name }}
             </span>
 
-            <span v-if="isPreviewTab(i)" class="text-xs ml-1 text-gray-500 dark:text-gray-400">
-              (Preview)
-            </span>
-
             <!-- Close button -->
             <span
               role="button"
@@ -110,9 +106,6 @@
           @click="activateTabFromMenu(i)"
         >
           <component :is="getObjectIcon(tab)" :class="['h-4 w-4 shrink-0', getIconColor(tab)]" />
-          <span v-if="isPreviewTab(i)" class="text-xs italic text-gray-500 dark:text-gray-400">
-            Preview
-          </span>
           <span class="truncate">{{ tab.name }}</span>
         </button>
       </div>

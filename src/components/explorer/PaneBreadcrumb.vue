@@ -43,7 +43,11 @@ const props = defineProps<{
 
 defineEmits<{
   'pick-name': [
-    payload: { name: string; type: 'table' | 'view' | 'trigger' | 'function' | 'procedure'; schema?: string }
+    payload: {
+      name: string
+      type: 'table' | 'view' | 'trigger' | 'function' | 'procedure'
+      schema?: string
+    }
   ]
   'pick-file': [payload: { name: string; path: string }]
 }>()

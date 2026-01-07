@@ -1,12 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch, defineAsyncComponent, type Component } from 'vue'
 import { ArrowUpDown, Columns2, Filter, RefreshCw, Share2, Terminal } from 'lucide-vue-next'
-import type {
-  SQLRoutineMeta,
-  SQLTableMeta,
-  SQLTriggerMeta,
-  SQLViewMeta
-} from '@/types/metadata'
+import type { SQLRoutineMeta, SQLTableMeta, SQLTriggerMeta, SQLViewMeta } from '@/types/metadata'
 import { type FileSystemEntry } from '@/api/fileSystem'
 import { type FileMetadata } from '@/types/files'
 import { useObjectTabStateStore } from '@/stores/objectTabState'
@@ -93,8 +88,7 @@ type TabItem = {
 
 const isDataObject = computed(
   () =>
-    props.objectType === 'database' &&
-    (props.objectKind === 'table' || props.objectKind === 'view')
+    props.objectType === 'database' && (props.objectKind === 'table' || props.objectKind === 'view')
 )
 
 const tabs = computed<TabItem[]>(() => {

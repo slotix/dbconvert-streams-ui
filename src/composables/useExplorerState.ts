@@ -3,12 +3,7 @@ import { useRoute } from 'vue-router'
 import { useConnectionsStore } from '@/stores/connections'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { getConnectionHost, getConnectionPort } from '@/utils/specBuilder'
-import type {
-  SQLRoutineMeta,
-  SQLTableMeta,
-  SQLTriggerMeta,
-  SQLViewMeta
-} from '@/types/metadata'
+import type { SQLRoutineMeta, SQLTableMeta, SQLTriggerMeta, SQLViewMeta } from '@/types/metadata'
 import type { FileSystemEntry } from '@/api/fileSystem'
 import type { FileMetadata } from '@/types/files'
 import { getConnectionKindFromSpec, getConnectionTypeLabel, isFileBasedKind } from '@/types/specs'

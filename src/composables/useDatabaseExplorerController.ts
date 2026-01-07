@@ -993,12 +993,7 @@ export function useDatabaseExplorerController({
         const hasMatchingTab = rightState.tabs.some((tab) => matchesSelection(tab))
 
         if (!hasMatchingTab) {
-          let obj:
-            | SQLTableMeta
-            | SQLViewMeta
-            | SQLTriggerMeta
-            | SQLRoutineMeta
-            | undefined
+          let obj: SQLTableMeta | SQLViewMeta | SQLTriggerMeta | SQLRoutineMeta | undefined
           try {
             await navigationStore.ensureMetadata(
               explorerState.currentConnectionId.value,

@@ -8,50 +8,71 @@
       class="w-full flex items-center justify-between px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
       @click="toggleCollapse"
     >
-      <div class="flex items-center space-x-2">
+      <!-- Left side: Icon + Label -->
+      <div class="flex items-center gap-2.5 shrink-0">
         <Database class="h-4 w-4 text-teal-600 dark:text-teal-400" />
-        <span class="text-sm font-medium text-gray-900 dark:text-gray-100"> Data Sources </span>
+        <span class="text-sm font-medium text-gray-900 dark:text-gray-100">Data Sources</span>
+      </div>
 
-        <!-- Collapsed preview of selected sources -->
-        <div
-          v-if="isCollapsed && selectedPreview.length > 0"
-          class="hidden sm:flex items-center gap-1 max-w-[55vw] overflow-hidden"
-        >
+      <!-- Middle: Selected sources preview (only when collapsed) -->
+      <div v-if="isCollapsed" class="flex-1 flex items-center justify-end gap-2 mx-4 min-w-0">
+        <!-- Source chips -->
+        <div v-if="selectedPreview.length > 0" class="hidden sm:flex items-center gap-1.5 min-w-0">
           <span
             v-for="item in selectedPreview"
             :key="item.connectionId"
-            class="inline-flex items-center gap-1 px-1.5 py-0.5 text-[11px] rounded bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 truncate"
+            class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 max-w-[180px]"
           >
-            <span class="font-mono text-gray-600 dark:text-gray-300">{{ item.alias }}</span>
-            <span class="text-gray-400 dark:text-gray-500">·</span>
-            <span class="truncate max-w-40">{{ item.name }}</span>
+            <span class="font-mono font-medium text-teal-600 dark:text-teal-400">{{
+              item.alias
+            }}</span>
+            <span class="text-gray-300 dark:text-gray-600">·</span>
+            <span class="truncate text-gray-500 dark:text-gray-400">{{ item.name }}</span>
           </span>
           <span
             v-if="selectedOverflowCount > 0"
-            class="inline-flex items-center px-1.5 py-0.5 text-[11px] rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300"
+            class="px-1.5 py-0.5 text-xs font-medium rounded bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
           >
             +{{ selectedOverflowCount }}
           </span>
         </div>
 
+        <!-- Selection count badge -->
         <span
           v-if="selectedCount > 0"
-          class="px-1.5 py-0.5 text-xs font-medium rounded-full bg-teal-100 dark:bg-teal-900 text-teal-700 dark:text-teal-300"
+          class="shrink-0 px-2.5 py-1 text-xs font-semibold rounded-md bg-teal-500 dark:bg-teal-600 text-white"
+        >
+          {{ selectedCount }}
+        </span>
+
+        <!-- Add sources button -->
+        <span
+          class="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border transition-colors"
+          :class="[
+            selectedCount > 0
+              ? 'bg-transparent border-teal-500 dark:border-teal-600 text-teal-600 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/20'
+              : 'bg-teal-500 dark:bg-teal-600 border-teal-500 dark:border-teal-600 text-white'
+          ]"
+          :title="collapsedCtaTitle"
+        >
+          <Plus class="h-3.5 w-3.5" />
+          <span class="hidden xs:inline">{{ selectedCount > 0 ? 'Edit' : 'Select' }}</span>
+        </span>
+      </div>
+
+      <!-- Expanded state: just show selection count -->
+      <div v-else class="flex items-center gap-2">
+        <span
+          v-if="selectedCount > 0"
+          class="px-2 py-0.5 text-xs font-medium rounded-full bg-teal-100 dark:bg-teal-900/50 text-teal-700 dark:text-teal-300"
         >
           {{ selectedCount }} selected
         </span>
-
-        <span
-          v-if="isCollapsed"
-          class="inline-flex items-center gap-1 px-1.5 py-0.5 text-[11px] rounded bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800"
-          :title="collapsedCtaTitle"
-        >
-          <Plus class="h-3 w-3" />
-          {{ collapsedCtaLabel }}
-        </span>
       </div>
+
+      <!-- Chevron -->
       <ChevronDown
-        class="h-4 w-4 text-gray-400 transition-transform duration-200"
+        class="h-4 w-4 text-gray-400 shrink-0 ml-2 transition-transform duration-200"
         :class="{ '-rotate-180': !isCollapsed }"
       />
     </button>
@@ -307,9 +328,6 @@ const hasMultipleS3Connections = computed(() => {
 })
 
 const selectedCount = computed(() => props.modelValue.length)
-const collapsedCtaLabel = computed(() =>
-  selectedCount.value > 0 ? 'Add sources' : 'Select sources'
-)
 const collapsedCtaTitle = computed(() =>
   selectedCount.value > 0 ? 'Expand to add more sources' : 'Expand to select one or more sources'
 )
