@@ -1,13 +1,14 @@
 <template>
   <div class="mb-3 px-2" :data-pane-id="paneId">
-    <!-- Database object breadcrumb -->
+    <!-- Database object breadcrumb (including SQL console tabs) -->
     <ExplorerBreadcrumb
-      v-if="breadcrumbData.database"
+      v-if="breadcrumbData.database || breadcrumbData.isSqlConsole"
       :connection-label="breadcrumbData.connectionLabel"
       :database="breadcrumbData.database"
       :schema="breadcrumbData.schema"
       :name="breadcrumbData.name"
       :objects="breadcrumbData.objects"
+      :console-name="breadcrumbData.consoleName"
       @pick-name="(payload) => $emit('pick-name', payload)"
     />
 
@@ -145,9 +146,14 @@ const breadcrumbData = computed(() => {
       objects: [],
       pathSegments: [] as PathSegment[],
       fileName: null,
-      siblingFiles: [] as Array<{ name: string; path: string; format?: string }>
+      siblingFiles: [] as Array<{ name: string; path: string; format?: string }>,
+      isSqlConsole: false,
+      consoleName: null
     }
   }
+
+  // Check if this is a SQL console tab
+  const isSqlConsole = activeTab.tabType === 'sql-console'
 
   if (activeTab.tabType === 'file') {
     const filePath = activeTab.filePath || ''
@@ -171,7 +177,9 @@ const breadcrumbData = computed(() => {
       objects: [],
       pathSegments,
       fileName: activeTab.name || null,
-      siblingFiles
+      siblingFiles,
+      isSqlConsole: false,
+      consoleName: null
     }
   }
 
@@ -241,15 +249,23 @@ const breadcrumbData = computed(() => {
     }
   }
 
+  // For SQL console without database, use tab name as console identifier
+  const consoleName = isSqlConsole && !activeTab.database ? activeTab.name : null
+
+  // For SQL console tabs, don't show name since it's redundant (it just repeats connection → database)
+  const showName = !isSqlConsole
+
   return {
     connectionLabel: formatConnectionLabel(activeTab.connectionId),
     database: activeTab.database || null,
     schema: activeTab.schema || null,
-    name: activeTab.name || null,
+    name: showName ? activeTab.name || null : null,
     objects,
     pathSegments: [] as PathSegment[],
     fileName: null,
-    siblingFiles: [] as Array<{ name: string; path: string; format?: string }>
+    siblingFiles: [] as Array<{ name: string; path: string; format?: string }>,
+    isSqlConsole,
+    consoleName
   }
 })
 </script>

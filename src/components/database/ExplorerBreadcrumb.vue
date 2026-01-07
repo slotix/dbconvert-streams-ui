@@ -29,6 +29,9 @@ const props = defineProps<{
   // File-specific
   pathSegments?: PathSegment[]
   files?: FileEntry[]
+
+  // SQL Console without database - show console name instead
+  consoleName?: string | null
 }>()
 
 const emit = defineEmits<{
@@ -39,6 +42,7 @@ const emit = defineEmits<{
 // Determine breadcrumb mode
 const isFileMode = computed(() => !!(props.pathSegments && props.pathSegments.length > 0))
 const isDatabaseMode = computed(() => !!props.database)
+const isConsoleMode = computed(() => !!props.consoleName && !props.database)
 
 // Picker state
 const showPicker = ref(false)
@@ -107,8 +111,8 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
 <template>
   <nav aria-label="Breadcrumb" class="text-sm relative">
     <ol class="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-      <!-- Connection label (always shown first) -->
-      <li v-if="props.connectionLabel" class="inline-flex items-center gap-2">
+      <!-- Connection label (shown first, except in console mode where consoleName already includes it) -->
+      <li v-if="props.connectionLabel && !isConsoleMode" class="inline-flex items-center gap-2">
         <span class="text-gray-700 dark:text-gray-300 font-medium">{{
           props.connectionLabel
         }}</span>
@@ -147,6 +151,15 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
           </button>
           <span v-else class="text-gray-900 dark:text-gray-100 font-medium">
             {{ props.name }}
+          </span>
+        </li>
+      </template>
+
+      <!-- CONSOLE MODE: just show console name (it already includes connection info) -->
+      <template v-else-if="isConsoleMode">
+        <li class="inline-flex items-center gap-2">
+          <span class="text-gray-700 dark:text-gray-300 font-medium">
+            {{ props.consoleName }}
           </span>
         </li>
       </template>
