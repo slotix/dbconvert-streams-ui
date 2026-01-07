@@ -1,7 +1,7 @@
 <!-- A reusable component for displaying SQL code with Monaco editor syntax highlighting -->
 <script setup lang="ts">
 import { computed } from 'vue'
-import { SqlViewer } from '@/components/monaco'
+import { SqlMonaco } from '@/components/monaco'
 
 interface Props {
   code: string
@@ -30,8 +30,8 @@ const displayTitle = computed(() => {
 </script>
 
 <template>
-  <SqlViewer
-    :code="code"
+  <SqlMonaco
+    :model-value="code"
     :title="displayTitle"
     :dialect="dialect"
     :compact="compact"
@@ -40,5 +40,7 @@ const displayTitle = computed(() => {
     :auto-resize="autoResize"
     :min-height="minHeight"
     :max-height="maxHeight"
+    read-only
+    format-on-mount
   />
 </template>

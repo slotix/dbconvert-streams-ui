@@ -106,14 +106,18 @@
 
     <!-- SQL Editor -->
     <div class="flex-1 overflow-hidden bg-white dark:bg-gray-900 h-full">
-      <SqlEditor
+      <SqlMonaco
         ref="sqlEditorRef"
         :model-value="modelValue"
         :dialect="dialect"
         height="100%"
         :schema-context="schemaContext"
+        :enable-sql-providers="true"
+        :enable-execute="true"
+        :enable-format-action="true"
         @update:model-value="$emit('update:modelValue', $event)"
         @execute="$emit('execute')"
+        @format="$emit('format')"
       />
     </div>
   </div>
@@ -121,7 +125,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
-import { SqlEditor } from '@/components/monaco'
+import { SqlMonaco } from '@/components/monaco'
 import type { SchemaContext } from '@/composables/useMonacoSqlProviders'
 import { ChevronDown, Clock, Code, FileText, Play } from 'lucide-vue-next'
 

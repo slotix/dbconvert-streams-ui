@@ -32,7 +32,9 @@ const eventDisplay = computed(() => (eventValue.value ? eventValue.value.toUpper
         >
           Trigger
         </div>
-        <div class="mt-1 text-sm font-semibold text-gray-900 dark:text-gray-100 break-all font-mono">
+        <div
+          class="mt-1 text-sm font-semibold text-gray-900 dark:text-gray-100 break-all font-mono"
+        >
           {{ triggerMeta.name }}
         </div>
         <div

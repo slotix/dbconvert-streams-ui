@@ -156,13 +156,14 @@
             class="border-r border-gray-200 dark:border-gray-700 min-h-0"
             :style="{ width: `${editorWidth}%` }"
           >
-            <SqlEditor
+            <SqlMonaco
               v-model="activeQuery.query"
               :dialect="connectionDialect"
               :schema-context="schemaContext"
               height="100%"
-              placeholder="Enter your SQL query (JOINs, CTEs, aggregations)..."
-              @change="handleQueryChange(activeQuery)"
+              :enable-sql-providers="true"
+              :enable-execute="true"
+              :enable-format-action="true"
             />
           </div>
 
@@ -304,7 +305,7 @@ import {
   RefreshCw,
   Sheet
 } from 'lucide-vue-next'
-import SqlEditor from '@/components/monaco/SqlEditor.vue'
+import { SqlMonaco } from '@/components/monaco'
 import { SqlQueryTabs } from '@/components/database/sql-console'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
