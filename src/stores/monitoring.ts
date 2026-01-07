@@ -76,9 +76,6 @@ interface State {
   tableMetadata: Map<string, TableMetadata>
 }
 
-// Export status enum for backward compatibility
-export const statusEnum = STATUS
-
 export const useMonitoringStore = defineStore('monitoring', {
   state: (): State => ({
     streamID: '',

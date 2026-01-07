@@ -225,7 +225,6 @@ Unified status system for streams, tables, and nodes.
 - `getStatusLabel(status)` - Get display label
 - `getStatusPriority(status)` - Get priority value
 - `getWorstStatus(status1, status2)` - Compare and return worse status
-- `getStreamStatusLabel(status)` - Get stream status label (backward compatible)
 
 ---
 

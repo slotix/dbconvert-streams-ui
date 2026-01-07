@@ -146,9 +146,10 @@ export default {
 <script setup lang="ts">
 import { computed } from 'vue'
 import { ArrowRight, Copy, Pause, Pencil, Play, Trash } from 'lucide-vue-next'
-import { useMonitoringStore, statusEnum } from '@/stores/monitoring'
+import { useMonitoringStore } from '@/stores/monitoring'
 import type { StreamConfig } from '@/types/streamConfig'
 import type { Connection } from '@/types/connections'
+import { STATUS } from '@/constants'
 
 const props = defineProps<{
   stream: StreamConfig
@@ -190,7 +191,7 @@ const isPaused = computed(() => {
   if (!isRunning.value) return false
   // Check both: stats (when nodes exist and report) and overall stream status
   const statsHasPaused = monitoringStore.stats.some((stat) => stat.status === 'PAUSED')
-  const streamStatusIsPaused = monitoringStore.status === statusEnum.PAUSED
+  const streamStatusIsPaused = monitoringStore.status === STATUS.PAUSED
   return statsHasPaused || streamStatusIsPaused
 })
 
@@ -201,11 +202,11 @@ const isFinished = computed(() => {
     monitoringStore.stats.every((stat) => stat.status === 'FINISHED')
 
   const finishedStates: string[] = [
-    statusEnum.FINISHED,
-    statusEnum.STOPPED,
-    statusEnum.FAILED,
-    statusEnum.TIME_LIMIT_REACHED,
-    statusEnum.EVENT_LIMIT_REACHED
+    STATUS.FINISHED,
+    STATUS.STOPPED,
+    STATUS.FAILED,
+    STATUS.TIME_LIMIT_REACHED,
+    STATUS.EVENT_LIMIT_REACHED
   ]
   const isStreamStatusFinished = finishedStates.includes(monitoringStore.status)
 

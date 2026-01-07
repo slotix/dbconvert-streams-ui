@@ -137,7 +137,7 @@
       <!-- Connection List -->
       <div class="space-y-2 max-h-60 overflow-y-auto">
         <div
-          v-for="conn in databaseConnections"
+          v-for="conn in availableConnections"
           :key="conn.id"
           class="flex items-center space-x-3 p-2 rounded-md transition-colors"
           :class="[
@@ -225,7 +225,7 @@
 
         <!-- Empty State -->
         <div
-          v-if="databaseConnections.length === 0"
+          v-if="availableConnections.length === 0"
           class="py-6 text-center text-gray-500 dark:text-gray-400"
         >
           <Database class="h-8 w-8 mx-auto mb-2 text-gray-300 dark:text-gray-600" />
@@ -314,8 +314,6 @@ const availableConnections = computed(() => {
   })
 })
 
-// For backward compatibility, expose databaseConnections as alias
-const databaseConnections = availableConnections
 
 // Check if multiple S3 connections are selected (show info about multi-S3 queries)
 const hasMultipleS3Connections = computed(() => {

@@ -1,9 +1,9 @@
 import { computed, type Ref } from 'vue'
 import { useStreamsStore } from '@/stores/streamConfig'
-import { useMonitoringStore, statusEnum } from '@/stores/monitoring'
+import { useMonitoringStore } from '@/stores/monitoring'
 import { useCommonStore } from '@/stores/common'
 import type { StreamConfig } from '@/types/streamConfig'
-import { getStreamStatusLabel, type Status } from '@/constants'
+import { getStatusLabel, STATUS, type Status } from '@/constants'
 
 export function useStreamControls(stream: Ref<StreamConfig>) {
   const streamsStore = useStreamsStore()
@@ -20,11 +20,11 @@ export function useStreamControls(stream: Ref<StreamConfig>) {
     // Check if stream has finished/failed/stopped - these are terminal states
     // A failed stream is NOT running, even if it has a streamID
     const terminalStates: Status[] = [
-      statusEnum.FINISHED,
-      statusEnum.STOPPED,
-      statusEnum.FAILED,
-      statusEnum.TIME_LIMIT_REACHED,
-      statusEnum.EVENT_LIMIT_REACHED
+      STATUS.FINISHED,
+      STATUS.STOPPED,
+      STATUS.FAILED,
+      STATUS.TIME_LIMIT_REACHED,
+      STATUS.EVENT_LIMIT_REACHED
     ]
 
     const isTerminal = terminalStates.includes(monitoringStore.status as Status)
@@ -39,7 +39,7 @@ export function useStreamControls(stream: Ref<StreamConfig>) {
   const isPaused = computed(() => {
     if (!isStreamRunning.value) return false
     const statsHasPaused = monitoringStore.stats.some((stat) => stat.status === 'PAUSED')
-    const streamStatusIsPaused = monitoringStore.status === statusEnum.PAUSED
+    const streamStatusIsPaused = monitoringStore.status === STATUS.PAUSED
     return statsHasPaused || streamStatusIsPaused
   })
 
@@ -50,11 +50,11 @@ export function useStreamControls(stream: Ref<StreamConfig>) {
       monitoringStore.stats.every((stat) => stat.status === 'FINISHED')
 
     const finishedStates: Status[] = [
-      statusEnum.FINISHED,
-      statusEnum.STOPPED,
-      statusEnum.FAILED,
-      statusEnum.TIME_LIMIT_REACHED,
-      statusEnum.EVENT_LIMIT_REACHED
+      STATUS.FINISHED,
+      STATUS.STOPPED,
+      STATUS.FAILED,
+      STATUS.TIME_LIMIT_REACHED,
+      STATUS.EVENT_LIMIT_REACHED
     ]
 
     const isStreamStatusFinished = finishedStates.includes(monitoringStore.status as Status)
@@ -64,14 +64,14 @@ export function useStreamControls(stream: Ref<StreamConfig>) {
 
   const hasFailed = computed(() => {
     return (
-      monitoringStore.status === statusEnum.FAILED ||
+      monitoringStore.status === STATUS.FAILED ||
       monitoringStore.stats.some((stat) => stat.status === 'FAILED')
     )
   })
 
   const isStopped = computed(() => {
     return (
-      monitoringStore.status === statusEnum.STOPPED ||
+      monitoringStore.status === STATUS.STOPPED ||
       monitoringStore.stats.some((stat) => stat.status === 'STOPPED')
     )
   })
@@ -82,20 +82,20 @@ export function useStreamControls(stream: Ref<StreamConfig>) {
     if (!configMatches || !hasStreamId) return false
 
     return (
-      monitoringStore.status === statusEnum.FINISHED ||
-      monitoringStore.status === statusEnum.STOPPED ||
+      monitoringStore.status === STATUS.FINISHED ||
+      monitoringStore.status === STATUS.STOPPED ||
       monitoringStore.stats.some((stat) => stat.status === 'FINISHED' || stat.status === 'STOPPED')
     )
   })
 
   const streamStatus = computed(() => {
     if (!isStreamRunning.value) {
-      return getStreamStatusLabel(monitoringStore.status) || 'Ready'
+      return getStatusLabel(monitoringStore.status) || 'Ready'
     }
     if (hasFailed.value) return 'Failed'
     if (isStopped.value) return 'Stopped'
     if (isStreamFinished.value) {
-      return getStreamStatusLabel(monitoringStore.status) || 'Finished'
+      return getStatusLabel(monitoringStore.status) || 'Finished'
     }
     if (isPaused.value) return 'Paused'
     return monitoringStore.currentStage?.description || 'Running'

@@ -90,12 +90,6 @@ export function useExplorerState() {
     selectedFileMetadata.value = null
   }
 
-  // No-op - kept for backward compatibility with callers
-  // Previously cleared showDiagram state, but diagram is now handled via tabs
-  function clearPanelStates() {
-    // No-op
-  }
-
   function setDatabaseSelection(payload: {
     database: string
     schema?: string
@@ -141,7 +135,6 @@ export function useExplorerState() {
     // Methods
     clearDatabaseSelection,
     clearFileSelection,
-    clearPanelStates,
     setDatabaseSelection,
     setFileSelection
   }

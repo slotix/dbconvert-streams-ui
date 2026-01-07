@@ -65,16 +65,6 @@ const tabs = computed(() => [
 
 import type { SQLColumnMeta } from '@/types/metadata'
 
-// Type guards to gracefully handle legacy shapes if present
-function hasValueNumber(obj: unknown): obj is { value: number | null; Valid: boolean } {
-  if (!obj || typeof obj !== 'object') return false
-  return 'value' in obj
-}
-function hasInt64Number(obj: unknown): obj is { Int64: number | null; Valid: boolean } {
-  if (!obj || typeof obj !== 'object') return false
-  return 'Int64' in obj
-}
-
 function getColumnDefault(column: SQLColumnMeta) {
   return column.defaultValue?.Valid && column.defaultValue.String !== null
     ? column.defaultValue.String
@@ -84,16 +74,9 @@ function getColumnDefault(column: SQLColumnMeta) {
 function getColumnType(column: SQLColumnMeta) {
   let type = column.dataType
 
-  // Prefer current shape { Int64, Valid }, but tolerate legacy { value, Valid }
-  if (column.length && typeof column.length === 'object') {
-    if (hasInt64Number(column.length) && column.length.Valid && column.length.Int64 !== null) {
-      type += `(${column.length.Int64})`
-      return type
-    }
-    if (hasValueNumber(column.length) && column.length.Valid && column.length.value !== null) {
-      type += `(${column.length.value})`
-      return type
-    }
+  if (column.length.Valid && column.length.Int64 !== null) {
+    type += `(${column.length.Int64})`
+    return type
   }
 
   if (column.precision?.Valid && column.precision.Int64 !== null) {

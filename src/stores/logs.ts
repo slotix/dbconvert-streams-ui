@@ -202,7 +202,7 @@ export const useLogsStore = defineStore('logs', {
       maxLogs: 1000,
       isLogsPanelOpen: false,
       panelHeight: '50vh',
-      selectedStreamId: '', // For filtering logs by stream (legacy, for historical view)
+      selectedStreamId: '', // For filtering logs by stream in historical view
       historicalLogs: [] as SystemLog[], // Logs loaded from API
       isHistoricalView: false, // Flag to indicate if showing historical logs
       isLoadingHistoricalLogs: false, // Loading state for API fetch

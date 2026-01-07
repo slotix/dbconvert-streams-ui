@@ -559,50 +559,16 @@ export function useStreamWizard() {
 
     const sourceSchema = resolveSchema(config.sourceSchema, config.source)
 
-    // Populate structure options - check multiple possible locations
-    // Priority: 1. target.spec.database.structureOptions (spec is source of truth)
-    //           2. config.structureOptions (root level, legacy/wizard state)
-    //           3. target.options.structureOptions (deprecated, for backwards compat)
-    let structureOptions: Record<string, unknown> | undefined
+    const structureOptions =
+      config.target?.spec?.database?.structureOptions || config.structureOptions
+    const normalize = (value: boolean | undefined, defaultValue: boolean) =>
+      typeof value === 'boolean' ? value : defaultValue
+    createTables.value = normalize(structureOptions?.tables, true)
+    createIndexes.value = normalize(structureOptions?.indexes, true)
+    createForeignKeys.value = normalize(structureOptions?.foreignKeys, true)
+    createCheckConstraints.value = normalize(structureOptions?.checkConstraints, true)
 
-    // First check target.spec.database.structureOptions (source of truth)
-    const targetSpec = config?.target?.spec as Record<string, unknown> | undefined
-    if (targetSpec?.database && typeof targetSpec.database === 'object') {
-      const dbSpec = targetSpec.database as Record<string, unknown>
-      if (dbSpec.structureOptions && typeof dbSpec.structureOptions === 'object') {
-        structureOptions = dbSpec.structureOptions as Record<string, unknown>
-      }
-    }
-
-    // Fall back to root level (legacy)
-    if (!structureOptions || Object.keys(structureOptions).length === 0) {
-      structureOptions = (config as StreamConfig & { structureOptions?: Record<string, unknown> })
-        ?.structureOptions
-    }
-
-    if (structureOptions && Object.keys(structureOptions).length > 0) {
-      // Handle both naming conventions: tables/indexes/foreignKeys and createTables/createIndexes/createForeignKeys
-      const normalize = (value: unknown, defaultValue: boolean) =>
-        typeof value === 'boolean' ? value : defaultValue
-      createTables.value = normalize(structureOptions.tables ?? structureOptions.createTables, true)
-      createIndexes.value = normalize(
-        structureOptions.indexes ?? structureOptions.createIndexes,
-        true
-      )
-      createForeignKeys.value = normalize(
-        structureOptions.foreignKeys ?? structureOptions.createForeignKeys,
-        true
-      )
-    } else {
-      // Default to true when structureOptions is empty or missing
-      createTables.value = true
-      createIndexes.value = true
-      createForeignKeys.value = true
-    }
-
-    // Check skipData from root level (legacy UI state)
-    const configWithSkipData = config as StreamConfig & { skipData?: boolean }
-    const skipData = configWithSkipData?.skipData
+    const skipData = config.target?.spec?.database?.skipData ?? config.skipData
     copyData.value = skipData === undefined ? true : !skipData
 
     const connectionsStore = useConnectionsStore()

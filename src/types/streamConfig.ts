@@ -131,7 +131,7 @@ export interface StreamConfig {
   target: TargetConfig
   limits?: Limits
 
-  // Legacy file fields - for file browser component compatibility
+  // File fields for file browser component compatibility
   files?: FileEntry[]
 
   // Temporary UI-only fields (not sent to backend)

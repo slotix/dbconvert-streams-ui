@@ -87,29 +87,12 @@ function createEmptyPaneState(): PaneState {
 const STORAGE_KEY = 'explorer.paneTabs'
 const MAX_CLOSED_TABS_HISTORY = 20
 
-type PersistedPaneTabsStateV2 = {
+type PersistedPaneTabsState = {
   panes: Record<PaneId, PaneState>
   activePane: PaneId
   visiblePanes: PaneId[]
   closedTabsHistory?: ClosedTabHistoryItem[]
 }
-
-// Legacy persisted format (before stable ordered tabs refactor)
-type PersistedPaneTabsStateV1 = {
-  panes: Record<
-    PaneId,
-    {
-      pinnedTabs: PaneTab[]
-      previewTab: PaneTab | null
-      activePinnedIndex: number | null
-    }
-  >
-  activePane: PaneId
-  visiblePanes: PaneId[]
-  closedTabsHistory?: ClosedTabHistoryItem[]
-}
-
-type PersistedPaneTabsState = PersistedPaneTabsStateV1 | PersistedPaneTabsStateV2
 
 function buildObjectKey(paneId: PaneId, tab: PaneTab): string | null {
   if (tab.tabType === 'database' && tab.database && tab.name) {
@@ -153,7 +136,7 @@ function loadPersistedPaneTabsState(): PersistedPaneTabsState | null {
   return null
 }
 
-function persistPaneTabsState(state: PersistedPaneTabsStateV2) {
+function persistPaneTabsState(state: PersistedPaneTabsState) {
   if (!hasBrowserStorage()) {
     return
   }
@@ -224,7 +207,7 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
     return state.previewIndex !== null && state.previewIndex === index
   }
 
-  const hydratePaneStateV2 = (paneId: PaneId, savedState?: Partial<PaneState>): PaneState => {
+  const hydratePaneState = (paneId: PaneId, savedState?: Partial<PaneState>): PaneState => {
     const base = createEmptyPaneState()
     const state: PaneState = {
       ...base,
@@ -257,38 +240,6 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
     return state
   }
 
-  const migratePaneStateV1ToV2 = (
-    paneId: PaneId,
-    legacy: { pinnedTabs: PaneTab[]; previewTab: PaneTab | null; activePinnedIndex: number | null }
-  ): PaneState => {
-    const pinnedTabs = (legacy.pinnedTabs || []).map((t) => ({ ...t, pinned: true }))
-    const previewTab = legacy.previewTab ? { ...legacy.previewTab, pinned: false } : null
-
-    let previewIndex: number | null = null
-    const tabs: PaneTab[] = [...pinnedTabs]
-    if (previewTab) {
-      if (legacy.activePinnedIndex !== null && legacy.activePinnedIndex >= 0) {
-        previewIndex = Math.min(legacy.activePinnedIndex + 1, tabs.length)
-      } else {
-        previewIndex = 0
-      }
-      tabs.splice(previewIndex, 0, previewTab)
-    }
-
-    let activeIndex: number | null = null
-    if (legacy.activePinnedIndex !== null && legacy.activePinnedIndex >= 0) {
-      activeIndex = legacy.activePinnedIndex
-      if (previewIndex !== null && previewIndex <= activeIndex) {
-        activeIndex += 1
-      }
-      activeIndex = clampIndex(activeIndex, tabs.length)
-    } else if (previewIndex !== null) {
-      activeIndex = previewIndex
-    }
-
-    return hydratePaneStateV2(paneId, { tabs, activeIndex, previewIndex })
-  }
-
   function persistState() {
     persistPaneTabsState({
       panes: {
@@ -305,23 +256,8 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
     const savedState = loadPersistedPaneTabsState()
     if (!savedState) return
 
-    const leftAny = (savedState as any).panes?.left
-    const rightAny = (savedState as any).panes?.right
-
-    const leftState =
-      leftAny && typeof leftAny === 'object' && 'tabs' in leftAny
-        ? hydratePaneStateV2('left', leftAny as PaneState)
-        : migratePaneStateV1ToV2(
-            'left',
-            (leftAny as any) || { pinnedTabs: [], previewTab: null, activePinnedIndex: null }
-          )
-    const rightState =
-      rightAny && typeof rightAny === 'object' && 'tabs' in rightAny
-        ? hydratePaneStateV2('right', rightAny as PaneState)
-        : migratePaneStateV1ToV2(
-            'right',
-            (rightAny as any) || { pinnedTabs: [], previewTab: null, activePinnedIndex: null }
-          )
+    const leftState = hydratePaneState('left', savedState.panes?.left)
+    const rightState = hydratePaneState('right', savedState.panes?.right)
 
     panes.value.set('left', leftState)
     panes.value.set('right', rightState)
@@ -837,21 +773,6 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
     persistState()
   }
 
-  // Backwards-compatible wrappers (older components treat these indices as "pinned tabs").
-  // Once the UI is updated, these can be removed.
-  function reorderPinnedTab(paneId: PaneId, fromIndex: number, toIndex: number) {
-    reorderTab(paneId, fromIndex, toIndex)
-  }
-
-  function movePinnedTab(
-    fromPaneId: PaneId,
-    fromIndex: number,
-    toPaneId: PaneId,
-    toIndex?: number
-  ) {
-    moveTab(fromPaneId, fromIndex, toPaneId, toIndex)
-  }
-
   /**
    * Activate a pinned tab by index
    */
@@ -965,8 +886,6 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
     closePreviewTab,
     reorderTab,
     moveTab,
-    reorderPinnedTab,
-    movePinnedTab,
     activateTab,
     activatePreviewTab,
     updateTabFileMetadata,

@@ -340,7 +340,7 @@ export const buildStreamPayload = (stream: StreamConfig): Partial<StreamConfig> 
       ) {
         result.s3 = conn.s3
       } else if (stream.files && stream.files.length > 0) {
-        // Otherwise, build from selected files for this connection (bucket match only for legacy configs)
+        // Otherwise, build from selected files for this connection (bucket match only)
         const scopedFiles = filesForConnection(stream.files, conn.connectionId, bucket)
         if (scopedFiles.length > 0) {
           const s3FromFiles = s3ConfigFromFiles(scopedFiles)
@@ -691,8 +691,7 @@ export const useStreamsStore = defineStore('streams', {
           existingSpec?.files || existingSpec?.s3 || existingSpec?.gcs || existingSpec?.azure
         const existingFormat = existingFileSpec?.format
 
-        // Get structure options and skipData from root level (set by wizard) or existing spec
-        // These only apply to database targets (not file targets)
+        // Get structure options and skipData from wizard state or target spec
         const structureOptions = this.currentStreamConfig.structureOptions ||
           existingSpec?.database?.structureOptions || {
             tables: true,
@@ -893,9 +892,6 @@ export const useStreamsStore = defineStore('streams', {
     async pauseStream(id: string) {
       try {
         await api.pauseStream(id)
-        // Optionally update the monitoring store
-        // const monitoringStore = useMonitoringStore()
-        // monitoringStore.updateStreamStatus(statusEnum.paused)
       } catch (err) {
         console.error('Failed to pause stream:', err)
         throw err
@@ -904,9 +900,6 @@ export const useStreamsStore = defineStore('streams', {
     async resumeStream(id: string) {
       try {
         await api.resumeStream(id)
-        // Optionally update the monitoring store
-        // const monitoringStore = useMonitoringStore()
-        // monitoringStore.updateStreamStatus(statusEnum.running)
       } catch (err) {
         console.error('Failed to resume stream:', err)
         throw err

@@ -54,14 +54,3 @@ export interface LogFilter {
   streamId?: string
   search?: string
 }
-
-// Legacy types (kept for backward compatibility during migration)
-export interface LogEntry {
-  timestamp: string
-  level: string
-  message: string
-  source?: string
-  component?: string
-  streamId?: string
-  [key: string]: unknown
-}

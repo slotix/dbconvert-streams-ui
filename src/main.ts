@@ -126,11 +126,6 @@ const restoreDesktopRoute = async () => {
   const storedRoute = getStorageValue<string>(STORAGE_KEYS.DESKTOP_LAST_ROUTE, '')
   let targetRoute = storedRoute
 
-  // Normalize any legacy explorer paths that may still be in storage.
-  if (targetRoute && targetRoute.startsWith('/explorer')) {
-    targetRoute = '/explorer'
-  }
-
   // In desktop mode, default to workspace view if no stored route
   if (!targetRoute && isDesktop) {
     targetRoute = DESKTOP_NAVIGATION.defaultRoute

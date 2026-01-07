@@ -369,7 +369,6 @@ export function useDatabaseExplorerController({
     connectionsStore.setCurrentConnection(payload.connectionId)
 
     // Clear panel states and file selection - database selection will be synced by watcher
-    explorerState.clearPanelStates()
     explorerState.clearFileSelection()
 
     if (payload.connectionId !== previousConnectionId && previousConnectionId) {
@@ -437,7 +436,6 @@ export function useDatabaseExplorerController({
     connectionsStore.setCurrentConnection(payload.connectionId)
 
     // Clear panel states - file selection will be synced by watcher
-    explorerState.clearPanelStates()
 
     const effectiveMode: 'preview' | 'pinned' = alwaysOpenNewTab.value ? 'pinned' : payload.mode
 
@@ -507,7 +505,6 @@ export function useDatabaseExplorerController({
   function handleShowDiagram(payload: ShowDiagramPayload & { skipUrlUpdate?: boolean }) {
     navigationStore.setActiveConnectionId(payload.connectionId)
 
-    explorerState.clearPanelStates()
     explorerState.setDatabaseSelection({ database: payload.database })
 
     // Set viewType to 'table-data' so showDatabaseOverview becomes false
@@ -591,7 +588,6 @@ export function useDatabaseExplorerController({
     navigationStore.setActiveConnectionId(payload.connectionId)
     connectionsStore.setCurrentConnection(payload.connectionId)
 
-    explorerState.clearPanelStates()
     explorerState.clearDatabaseSelection()
 
     fileExplorerStore.clearSelection(payload.connectionId)
@@ -623,7 +619,6 @@ export function useDatabaseExplorerController({
     navigationStore.setActiveConnectionId(payload.connectionId)
     connectionsStore.setCurrentConnection(payload.connectionId)
 
-    explorerState.clearPanelStates()
     explorerState.setDatabaseSelection({ database: payload.database })
 
     const effectiveMode: 'preview' | 'pinned' =
@@ -1166,7 +1161,6 @@ export function useDatabaseExplorerController({
 
   onMounted(async () => {
     commonStore.setCurrentPage('Data Explorer')
-    sidebar.initializeSidebar()
 
     if (commonStore.isBackendConnected) {
       try {

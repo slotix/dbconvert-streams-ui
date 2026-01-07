@@ -69,12 +69,6 @@ export function useSidebar() {
     }
   }
 
-  function initializeSidebar() {
-    // No longer needed - usePersistedState handles initialization automatically
-    // Values are loaded from localStorage when the composable is created
-    // This function kept for backward compatibility but does nothing
-  }
-
   onUnmounted(() => {
     window.removeEventListener('mousemove', onSidebarDividerMouseMove)
   })
@@ -91,7 +85,6 @@ export function useSidebar() {
     // Methods
     onSidebarDividerDoubleClick,
     onSidebarDividerMouseDown,
-    toggleSidebar,
-    initializeSidebar
+    toggleSidebar
   }
 }

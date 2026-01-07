@@ -180,28 +180,6 @@ export function getWorstStatus(status1: Status, status2: Status): Status {
 }
 
 /**
- * Get stream status label (alias for getStatusLabel for backward compatibility)
- */
-export function getStreamStatusLabel(status: Status | number | string): string {
-  // Handle old numeric status values by converting to string
-  if (typeof status === 'number') {
-    const statusMap: Record<number, Status> = {
-      0: STATUS.UNDEFINED,
-      1: STATUS.READY,
-      2: STATUS.RUNNING,
-      3: STATUS.PAUSED,
-      4: STATUS.FAILED,
-      5: STATUS.TIME_LIMIT_REACHED,
-      6: STATUS.EVENT_LIMIT_REACHED,
-      7: STATUS.STOPPED,
-      8: STATUS.FINISHED
-    }
-    status = statusMap[status] || STATUS.UNDEFINED
-  }
-  return STATUS_LABELS[status as Status] || 'Unknown'
-}
-
-/**
  * Shared styling helpers for STOPPED stream states
  */
 export const STOP_STATUS_COLORS = {
