@@ -27,6 +27,7 @@ interface Props {
   schemaContext?: SchemaContext
   enableExecute?: boolean
   enableFormatAction?: boolean
+  fillParent?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -44,7 +45,8 @@ const props = withDefaults(defineProps<Props>(), {
   formatOnMount: false,
   enableSqlProviders: false,
   enableExecute: false,
-  enableFormatAction: false
+  enableFormatAction: false,
+  fillParent: false
 })
 
 const emit = defineEmits<{
@@ -92,6 +94,9 @@ const displayTitle = computed(() => {
 })
 
 const containerStyle = computed(() => {
+  if (props.fillParent) {
+    return { height: '100%', display: 'flex', flexDirection: 'column' }
+  }
   if (props.autoResize) return {}
 
   const style: Record<string, string> = { height: props.height }
@@ -129,7 +134,6 @@ const editorOptions = computed<MonacoTypes.editor.IEditorOptions>(() => {
     glyphMargin: false,
     folding: true,
     lineNumbersMinChars: 3,
-    contextmenu: true,
     automaticLayout: true
   }
 
@@ -302,7 +306,7 @@ defineExpose({
         {{ displayTitle }}
       </span>
     </div>
-    <div class="relative bg-white dark:bg-gray-900">
+    <div :class="['relative bg-white dark:bg-gray-900', props.fillParent ? 'flex-1 min-h-0' : '']">
       <div
         v-if="showCopy"
         class="absolute right-3 top-3 z-10 opacity-0 pointer-events-none transition-opacity group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto"
@@ -319,9 +323,10 @@ defineExpose({
         ref="editorRef"
         v-model="localValue"
         :language="monacoLanguage"
-        :height="editorHeight"
+        :height="props.fillParent ? '100%' : editorHeight"
         :read-only="props.readOnly"
         :options="editorOptions"
+        :fill-parent="props.fillParent"
         @mount="handleEditorMount"
       />
     </div>

@@ -1,11 +1,16 @@
 <template>
-  <div class="monaco-editor-wrapper">
+  <div :class="['monaco-editor-wrapper', props.fillParent ? 'fill-parent' : '']">
     <div
       ref="editorContainer"
-      class="monaco-editor-container"
-      :style="{ height: containerHeight }"
+      :class="['monaco-editor-container', props.fillParent ? 'fill-parent' : '']"
+      :style="props.fillParent ? {} : { height: containerHeight }"
     ></div>
-    <div class="resize-handle" title="Drag to resize" @mousedown="startResize">
+    <div
+      v-if="!props.fillParent"
+      class="resize-handle"
+      title="Drag to resize"
+      @mousedown="startResize"
+    >
       <svg width="10" height="10" viewBox="0 0 10 10">
         <path
           d="M9 1L1 9M9 5L5 9M9 9L9 9"
@@ -15,6 +20,61 @@
         />
       </svg>
     </div>
+
+    <!-- Custom context menu - prevent focus stealing with mousedown.prevent -->
+    <Teleport to="body">
+      <div
+        v-if="contextMenuVisible"
+        ref="contextMenuRef"
+        class="fixed z-50 bg-white dark:bg-gray-850 shadow-lg dark:shadow-gray-900/30 border border-gray-200 dark:border-gray-700 rounded-md py-1 min-w-36"
+        :style="{ left: contextMenuPos.x + 'px', top: contextMenuPos.y + 'px' }"
+        @mousedown.prevent.stop
+      >
+        <button
+          v-if="!props.readOnly"
+          :disabled="!hasSelection"
+          :class="[
+            'w-full text-left px-3 py-2 text-sm',
+            hasSelection
+              ? 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+              : 'text-gray-400 dark:text-gray-500 cursor-not-allowed'
+          ]"
+          @mousedown.prevent
+          @click.stop="handleCut"
+        >
+          Cut
+        </button>
+        <button
+          :disabled="!hasSelection"
+          :class="[
+            'w-full text-left px-3 py-2 text-sm',
+            hasSelection
+              ? 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+              : 'text-gray-400 dark:text-gray-500 cursor-not-allowed'
+          ]"
+          @mousedown.prevent
+          @click.stop="handleCopy"
+        >
+          Copy
+        </button>
+        <button
+          v-if="!props.readOnly"
+          class="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+          @mousedown.prevent
+          @click.stop="handlePaste"
+        >
+          Paste
+        </button>
+        <div class="border-t border-gray-100 dark:border-gray-700 my-1" />
+        <button
+          class="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+          @mousedown.prevent
+          @click.stop="handleSelectAll"
+        >
+          Select All
+        </button>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -36,6 +96,7 @@ interface Props {
   height?: string
   readOnly?: boolean
   options?: MonacoTypes.editor.IEditorOptions
+  fillParent?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -44,7 +105,8 @@ const props = withDefaults(defineProps<Props>(), {
   theme: undefined, // Auto-detect from theme store if undefined
   height: '400px',
   readOnly: false,
-  options: () => ({})
+  options: () => ({}),
+  fillParent: false
 })
 
 const emit = defineEmits<{
@@ -56,6 +118,7 @@ const emit = defineEmits<{
 }>()
 
 const editorContainer = ref<HTMLElement>()
+const contextMenuRef = ref<HTMLElement>()
 const editor = shallowRef<MonacoTypes.editor.IStandaloneCodeEditor>()
 const monaco = shallowRef<MonacoApi>()
 const themeStore = useThemeStore()
@@ -66,6 +129,89 @@ const containerHeight = ref(props.height)
 const isResizing = ref(false)
 const startY = ref(0)
 const startHeight = ref(0)
+
+// Custom context menu state
+const contextMenuVisible = ref(false)
+const contextMenuPos = ref({ x: 0, y: 0 })
+const hasSelection = ref(false)
+
+function hideContextMenu() {
+  contextMenuVisible.value = false
+}
+
+function updateSelectionState() {
+  const ed = editor.value
+  if (!ed) {
+    hasSelection.value = false
+    return
+  }
+  const selection = ed.getSelection()
+  hasSelection.value = selection ? !selection.isEmpty() : false
+}
+
+async function handleCut() {
+  hideContextMenu()
+  const ed = editor.value
+  if (!ed) return
+  const selection = ed.getSelection()
+  if (selection) {
+    const text = ed.getModel()?.getValueInRange(selection) || ''
+    await navigator.clipboard.writeText(text)
+    ed.executeEdits('cut', [{ range: selection, text: '' }])
+  }
+  ed.focus()
+}
+
+async function handleCopy() {
+  hideContextMenu()
+  const ed = editor.value
+  if (!ed) return
+  try {
+    const selection = ed.getSelection()
+    if (selection && !selection.isEmpty()) {
+      const text = ed.getModel()?.getValueInRange(selection) || ''
+      if (text) {
+        await navigator.clipboard.writeText(text)
+      }
+    }
+  } catch (err) {
+    console.warn('Copy failed:', err)
+  }
+  ed.focus()
+}
+
+async function handlePaste() {
+  hideContextMenu()
+  const ed = editor.value
+  if (!ed) return
+  try {
+    const text = await navigator.clipboard.readText()
+    const selection = ed.getSelection()
+    if (selection) {
+      ed.executeEdits('paste', [
+        {
+          range: selection,
+          text: text,
+          forceMoveMarkers: true
+        }
+      ])
+    }
+  } catch {
+    console.warn('Clipboard access denied')
+  }
+  ed.focus()
+}
+
+function handleSelectAll() {
+  hideContextMenu()
+  const ed = editor.value
+  if (!ed) return
+  const model = ed.getModel()
+  if (model) {
+    ed.setSelection(model.getFullModelRange())
+  }
+  ed.focus()
+}
 
 const startResize = (e: MouseEvent) => {
   isResizing.value = true
@@ -230,11 +376,28 @@ onMounted(async () => {
       },
       // Fix for CSS zoom coordinate issues in desktop app
       fixedOverflowWidgets: true,
-      ...props.options
+      ...props.options,
+      // Disable default context menu - we use our own custom one
+      // This MUST be after ...props.options to prevent override
+      contextmenu: false
     }
 
     // Create editor instance
     editor.value = monacoInstance.editor.create(editorContainer.value, defaultOptions)
+
+    // Disable Command Palette (F1) - many commands don't work in standalone Monaco
+    editor.value.addCommand(monacoInstance.KeyCode.F1, () => {
+      // Do nothing - command palette disabled
+    })
+
+    // Attach custom context menu to Monaco's DOM
+    editor.value.onContextMenu((e) => {
+      e.event.preventDefault()
+      e.event.stopPropagation()
+      updateSelectionState()
+      contextMenuPos.value = { x: e.event.posx, y: e.event.posy }
+      contextMenuVisible.value = true
+    })
 
     // Listen to content changes
     editor.value.onDidChangeModelContent(() => {
@@ -267,11 +430,23 @@ onMounted(async () => {
   }
 })
 
+// Close context menu when clicking outside
+function handleDocumentClick(e: MouseEvent) {
+  if (contextMenuRef.value && !contextMenuRef.value.contains(e.target as Node)) {
+    hideContextMenu()
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleDocumentClick)
+})
+
 onBeforeUnmount(() => {
   editor.value?.dispose()
   // Clean up resize event listeners
   document.removeEventListener('mousemove', onResize)
   document.removeEventListener('mouseup', stopResize)
+  document.removeEventListener('click', handleDocumentClick)
 })
 
 // Expose editor instance for parent components
@@ -288,11 +463,20 @@ defineExpose({
   height: 100%;
 }
 
+.monaco-editor-wrapper.fill-parent {
+  height: 100%;
+}
+
 .monaco-editor-container {
   width: 100%;
   height: 100%;
   overflow: hidden;
   min-height: 300px;
+}
+
+.monaco-editor-container.fill-parent {
+  height: 100%;
+  min-height: 0;
 }
 
 .resize-handle {
