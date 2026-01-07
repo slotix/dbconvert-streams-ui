@@ -1,9 +1,3 @@
-export interface CombinedUsageResponse {
-  dailyUsage: DailyUsage[]
-  monthlyUsage: MonthlyUsage[]
-  // subscriptionPeriodUsage: SubscriptionPeriodUsage
-}
-
 export interface DailyUsage {
   date: string
   data_volume: number
@@ -12,10 +6,6 @@ export interface DailyUsage {
 export interface MonthlyUsage {
   month: string
   data_volume: number
-}
-
-export interface MonthlyUsageResponse {
-  usage: MonthlyUsage[]
 }
 
 export interface SubscriptionPeriodUsage {

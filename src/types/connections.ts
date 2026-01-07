@@ -63,26 +63,3 @@ export interface SchemaInfo {
   isSystem?: boolean
   systemReason?: string
 }
-
-export interface SchemaFilter {
-  connectionId: string
-  activeSchemas: string[]
-  allSchemas: string[]
-}
-
-export interface MultiSchemaTable {
-  schema: string
-  table: string
-  fullName: string
-}
-
-export interface StreamConfig {
-  name: string
-  source: string
-  target: string
-  mode: string
-  dataBundleSize?: number
-  tables: MultiSchemaTable[]
-  sourceSchemaFilter?: string[]
-  targetSchemaFilter?: string[]
-}

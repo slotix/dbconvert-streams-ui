@@ -56,11 +56,6 @@ export interface SQLIndexMeta {
   type: string // BTREE, HASH, GIN, etc.
 }
 
-export interface TableDDL {
-  createTable: string
-  createIndexes: string[]
-}
-
 export interface SQLTableMeta {
   name: string
   schema: string

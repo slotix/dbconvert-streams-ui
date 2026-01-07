@@ -1,27 +1,3 @@
-export interface NodeStat {
-  failedCounter: number
-  counter: number
-  prevDataSize: number
-  sumDataSize: number
-  reportingInterval: number
-  start: string
-  duration: number
-  avgRate: number
-  status: string
-}
-
-export interface StreamNode {
-  id: string
-  type: string
-  stat: NodeStat
-}
-
-export interface StreamStats {
-  configID: string
-  streamID: string
-  nodes: StreamNode[]
-}
-
 export interface AggregatedNodeStats {
   type: string // "source" or "target"
   status: string // Worst status among nodes

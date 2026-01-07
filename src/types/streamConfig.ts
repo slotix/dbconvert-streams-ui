@@ -61,14 +61,6 @@ export interface StreamID {
   id: string
 }
 
-export interface StreamRunHistory {
-  id: string // Stream execution ID
-  timestamp: number
-  duration: string
-  status: string
-  dataSize: string
-}
-
 export interface SourceOptions {
   dataBundleSize?: number
   replicationSlot?: string

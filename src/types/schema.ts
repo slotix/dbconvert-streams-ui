@@ -30,11 +30,6 @@ export interface Position {
   y: number
 }
 
-export interface TablePosition {
-  id: string
-  position: Position
-}
-
 export interface Relationship {
   id: string
   sourceTable: string

@@ -46,11 +46,3 @@ export interface StandardLogEntry {
   bytesUploaded?: number
   writerId?: number
 }
-
-export interface LogFilter {
-  levels?: LogLevel[]
-  nodeTypes?: NodeType[]
-  categories?: LogCategory[]
-  streamId?: string
-  search?: string
-}
