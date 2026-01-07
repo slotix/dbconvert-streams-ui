@@ -2,6 +2,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import MonacoEditor from './MonacoEditor.vue'
+import CopyButton from '@/components/common/CopyButton.vue'
 import { useMonacoSqlProviders, type SchemaContext } from '@/composables/useMonacoSqlProviders'
 
 import type * as MonacoTypes from 'monaco-editor'
@@ -86,6 +87,7 @@ const editorOptions = computed<MonacoTypes.editor.IEditorOptions>(() => ({
   minimap: { enabled: false },
   scrollBeyondLastLine: false,
   fontSize: 14,
+  padding: { top: 12 },
   lineNumbers: 'on',
   glyphMargin: false,
   folding: true,
@@ -162,9 +164,20 @@ defineExpose({
 
 <template>
   <div
-    class="rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden focus-within:ring-2 focus-within:ring-slate-600 dark:focus-within:ring-emerald-400 focus-within:border-transparent h-full"
+    class="group relative rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden focus-within:ring-2 focus-within:ring-slate-600 dark:focus-within:ring-emerald-400 focus-within:border-transparent h-full"
     :style="{ height: height, minHeight: '300px' }"
   >
+    <div
+      class="absolute right-3 top-3 z-10 opacity-0 pointer-events-none transition-opacity group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto"
+    >
+      <CopyButton
+        :text="localValue"
+        button-class="px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-200 bg-white/90 dark:bg-gray-850/90 border border-gray-200 dark:border-gray-700 shadow-sm backdrop-blur-sm"
+        icon-class="text-gray-500 dark:text-gray-400"
+      >
+        Copy
+      </CopyButton>
+    </div>
     <MonacoEditor
       ref="editorRef"
       v-model="localValue"

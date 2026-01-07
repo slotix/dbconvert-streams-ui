@@ -32,6 +32,6 @@ async function handleCopy() {
     @click.stop="handleCopy"
   >
     <Clipboard :class="[iconSizes.tableAction, iconClass || 'text-gray-500 dark:text-gray-400']" />
-    <slot>Copy</slot>
+    <span class="ml-1"><slot>Copy</slot></span>
   </button>
 </template>

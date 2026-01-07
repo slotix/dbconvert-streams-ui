@@ -63,6 +63,7 @@ const editorOptions = computed<MonacoTypes.editor.IEditorOptions>(() => ({
   minimap: { enabled: false },
   scrollBeyondLastLine: false,
   fontSize: 14,
+  padding: { top: 12 },
   lineNumbers: 'on',
   glyphMargin: false,
   folding: true,
@@ -75,7 +76,7 @@ const editorOptions = computed<MonacoTypes.editor.IEditorOptions>(() => ({
     alwaysConsumeMouseWheel: false
   },
   wordWrap: props.compact ? 'off' : 'on',
-  contextmenu: false,
+  contextmenu: true,
   automaticLayout: true
 }))
 
@@ -127,7 +128,7 @@ const handleEditorMount = (
 
 <template>
   <div
-    class="rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-gray-900/30"
+    class="group rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-gray-900/30"
   >
     <!-- Header -->
     <div
@@ -137,11 +138,21 @@ const handleEditorMount = (
       <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
         {{ index ? `${title} ${index}` : title }}
       </span>
-      <CopyButton :text="code" />
     </div>
 
     <!-- Monaco Editor -->
-    <div class="bg-white dark:bg-gray-900" :class="{ 'mt-4': !showHeader }">
+    <div class="relative bg-white dark:bg-gray-900">
+      <div
+        class="absolute right-3 top-3 z-10 opacity-0 pointer-events-none transition-opacity group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto"
+      >
+        <CopyButton
+          :text="code"
+          button-class="px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-200 bg-white/90 dark:bg-gray-850/90 border border-gray-200 dark:border-gray-700 shadow-sm backdrop-blur-sm"
+          icon-class="text-gray-500 dark:text-gray-400"
+        >
+          Copy
+        </CopyButton>
+      </div>
       <MonacoEditor
         ref="editorRef"
         :model-value="code"

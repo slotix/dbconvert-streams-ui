@@ -17,7 +17,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  showHeader: true
+  showHeader: false
 })
 
 // Compute display title
