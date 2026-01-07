@@ -2,7 +2,7 @@ import { computed, onMounted, onUnmounted, ref, watch, type Ref } from 'vue'
 import type { RouteLocationNormalizedLoaded, Router } from 'vue-router'
 import type { FileSystemEntry } from '@/api/fileSystem'
 import { getConnectionHost, getConnectionPort, getConnectionDatabase } from '@/utils/specBuilder'
-import type { SQLTableMeta, SQLViewMeta } from '@/types/metadata'
+import type { SQLRoutineMeta, SQLTableMeta, SQLTriggerMeta, SQLViewMeta } from '@/types/metadata'
 import type { ShowDiagramPayload } from '@/types/diagram'
 import type { PaneId, PaneTab } from '@/stores/paneTabs'
 import { useExplorerViewStateStore } from '@/stores/explorerViewState'
@@ -92,7 +92,7 @@ export function useDatabaseExplorerController({
     connectionId: string
     database: string
     schema?: string | null
-    type: 'table' | 'view'
+    type: 'table' | 'view' | 'trigger' | 'function' | 'procedure'
     name: string
   }) {
     const token = ++restoreToken.value
@@ -122,7 +122,7 @@ export function useDatabaseExplorerController({
     }
 
     // Otherwise restore by fetching metadata and creating a preview tab.
-    let obj: SQLTableMeta | SQLViewMeta | undefined
+    let obj: SQLTableMeta | SQLViewMeta | SQLTriggerMeta | SQLRoutineMeta | undefined
     try {
       await navigationStore.ensureMetadata(payload.connectionId, payload.database)
       if (token !== restoreToken.value) return
@@ -134,12 +134,29 @@ export function useDatabaseExplorerController({
           payload.name,
           schema
         )
-      } else {
+      } else if (payload.type === 'view') {
         obj = navigationStore.findViewMeta(
           payload.connectionId,
           payload.database,
           payload.name,
           schema
+        )
+      } else if (payload.type === 'trigger') {
+        obj = navigationStore.findTriggerMeta(
+          payload.connectionId,
+          payload.database,
+          payload.name,
+          schema
+        )
+      } else {
+        const { routineName, signature } = parseRoutineName(payload.name)
+        obj = navigationStore.findRoutineMeta(
+          payload.connectionId,
+          payload.database,
+          routineName,
+          payload.type === 'function' ? 'function' : 'procedure',
+          schema,
+          signature
         )
       }
     } catch (error) {
@@ -299,7 +316,7 @@ export function useDatabaseExplorerController({
     connectionId: string
     database: string
     schema?: string
-    type: 'table' | 'view'
+    type: 'table' | 'view' | 'trigger' | 'function' | 'procedure'
     name: string
     mode: 'preview' | 'pinned'
     defaultTab?: 'structure' | 'data'
@@ -716,7 +733,7 @@ export function useDatabaseExplorerController({
     paneId: PaneId,
     o: {
       name: string
-      type: 'table' | 'view'
+      type: 'table' | 'view' | 'trigger' | 'function' | 'procedure'
       schema?: string
     }
   ) {
@@ -728,10 +745,24 @@ export function useDatabaseExplorerController({
 
     try {
       await navigationStore.ensureMetadata(targetConnId, targetDb)
-      const obj =
-        o.type === 'table'
-          ? navigationStore.findTableMeta(targetConnId, targetDb, o.name, o.schema)
-          : navigationStore.findViewMeta(targetConnId, targetDb, o.name, o.schema)
+      let obj
+      if (o.type === 'table') {
+        obj = navigationStore.findTableMeta(targetConnId, targetDb, o.name, o.schema)
+      } else if (o.type === 'view') {
+        obj = navigationStore.findViewMeta(targetConnId, targetDb, o.name, o.schema)
+      } else if (o.type === 'trigger') {
+        obj = navigationStore.findTriggerMeta(targetConnId, targetDb, o.name, o.schema)
+      } else {
+        const { routineName, signature } = parseRoutineName(o.name)
+        obj = navigationStore.findRoutineMeta(
+          targetConnId,
+          targetDb,
+          routineName,
+          o.type === 'function' ? 'function' : 'procedure',
+          o.schema,
+          signature
+        )
+      }
       if (!obj) return
 
       handleOpenFromTree({
@@ -746,6 +777,22 @@ export function useDatabaseExplorerController({
       })
     } catch {
       // ignore open errors
+    }
+  }
+
+  function parseRoutineName(label: string): { routineName: string; signature?: string } {
+    const trimmed = label.trim()
+    const openParen = trimmed.indexOf('(')
+    if (openParen < 0) {
+      return { routineName: trimmed }
+    }
+    const closeParen = trimmed.lastIndexOf(')')
+    if (closeParen < openParen) {
+      return { routineName: trimmed }
+    }
+    return {
+      routineName: trimmed.slice(0, openParen).trim(),
+      signature: trimmed.slice(openParen + 1, closeParen).trim()
     }
   }
 
@@ -923,7 +970,11 @@ export function useDatabaseExplorerController({
         rightType &&
         rightName &&
         explorerState.currentConnectionId.value &&
-        (rightType === 'table' || rightType === 'view')
+        (rightType === 'table' ||
+          rightType === 'view' ||
+          rightType === 'trigger' ||
+          rightType === 'function' ||
+          rightType === 'procedure')
       ) {
         const rightSchema = route.query.rightSchema as string | undefined
 
@@ -942,26 +993,49 @@ export function useDatabaseExplorerController({
         const hasMatchingTab = rightState.tabs.some((tab) => matchesSelection(tab))
 
         if (!hasMatchingTab) {
-          let obj: SQLTableMeta | SQLViewMeta | undefined
+          let obj:
+            | SQLTableMeta
+            | SQLViewMeta
+            | SQLTriggerMeta
+            | SQLRoutineMeta
+            | undefined
           try {
             await navigationStore.ensureMetadata(
               explorerState.currentConnectionId.value,
               rightDb as string
             )
-            obj =
-              rightType === 'table'
-                ? navigationStore.findTableMeta(
-                    explorerState.currentConnectionId.value,
-                    rightDb as string,
-                    rightName as string,
-                    rightSchema
-                  )
-                : navigationStore.findViewMeta(
-                    explorerState.currentConnectionId.value,
-                    rightDb as string,
-                    rightName as string,
-                    rightSchema
-                  )
+            if (rightType === 'table') {
+              obj = navigationStore.findTableMeta(
+                explorerState.currentConnectionId.value,
+                rightDb as string,
+                rightName as string,
+                rightSchema
+              )
+            } else if (rightType === 'view') {
+              obj = navigationStore.findViewMeta(
+                explorerState.currentConnectionId.value,
+                rightDb as string,
+                rightName as string,
+                rightSchema
+              )
+            } else if (rightType === 'trigger') {
+              obj = navigationStore.findTriggerMeta(
+                explorerState.currentConnectionId.value,
+                rightDb as string,
+                rightName as string,
+                rightSchema
+              )
+            } else {
+              const { routineName, signature } = parseRoutineName(rightName as string)
+              obj = navigationStore.findRoutineMeta(
+                explorerState.currentConnectionId.value,
+                rightDb as string,
+                routineName,
+                rightType === 'function' ? 'function' : 'procedure',
+                rightSchema,
+                signature
+              )
+            }
           } catch (error) {
             console.warn('Failed to restore right pane tab from URL:', error)
             clearRightPaneQueryParams()
@@ -973,7 +1047,7 @@ export function useDatabaseExplorerController({
               connectionId: explorerState.currentConnectionId.value,
               database: rightDb as string,
               schema: rightSchema,
-              type: rightType as 'table' | 'view',
+              type: rightType as 'table' | 'view' | 'trigger' | 'function' | 'procedure',
               name: rightName as string,
               mode: 'preview',
               openInRightSplit: true,

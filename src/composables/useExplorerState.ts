@@ -3,12 +3,17 @@ import { useRoute } from 'vue-router'
 import { useConnectionsStore } from '@/stores/connections'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { getConnectionHost, getConnectionPort } from '@/utils/specBuilder'
-import type { SQLTableMeta, SQLViewMeta } from '@/types/metadata'
+import type {
+  SQLRoutineMeta,
+  SQLTableMeta,
+  SQLTriggerMeta,
+  SQLViewMeta
+} from '@/types/metadata'
 import type { FileSystemEntry } from '@/api/fileSystem'
 import type { FileMetadata } from '@/types/files'
 import { getConnectionKindFromSpec, getConnectionTypeLabel, isFileBasedKind } from '@/types/specs'
 
-type ObjectType = 'table' | 'view'
+type ObjectType = 'table' | 'view' | 'trigger' | 'function' | 'procedure'
 
 export function useExplorerState() {
   const route = useRoute()
@@ -30,7 +35,9 @@ export function useExplorerState() {
   const selectedSchemaName = ref<string | null>(null)
   const selectedObjectType = ref<ObjectType | null>(null)
   const selectedObjectName = ref<string | null>(null)
-  const selectedMeta = ref<SQLTableMeta | SQLViewMeta | null>(null)
+  const selectedMeta = ref<SQLTableMeta | SQLViewMeta | SQLTriggerMeta | SQLRoutineMeta | null>(
+    null
+  )
 
   // File selection
   const selectedFileEntry = ref<FileSystemEntry | null>(null)
@@ -101,7 +108,7 @@ export function useExplorerState() {
     schema?: string
     type?: ObjectType
     name?: string
-    meta?: SQLTableMeta | SQLViewMeta
+    meta?: SQLTableMeta | SQLViewMeta | SQLTriggerMeta | SQLRoutineMeta
   }) {
     selectedDatabaseName.value = payload.database
     selectedSchemaName.value = payload.schema || null

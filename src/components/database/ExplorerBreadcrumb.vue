@@ -6,7 +6,7 @@ import SearchInput from '@/components/common/SearchInput.vue'
 import HighlightedText from '@/components/common/HighlightedText.vue'
 import type { PathSegment } from '@/utils/pathUtils'
 
-type ObjectType = 'table' | 'view'
+type ObjectType = 'table' | 'view' | 'trigger' | 'function' | 'procedure'
 
 // File entry for picker
 interface FileEntry {
@@ -140,7 +140,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
             ref="anchorRef"
             type="button"
             class="text-gray-900 dark:text-gray-100 font-medium hover:underline"
-            title="Switch table or view"
+            title="Switch object"
             @click.stop="togglePicker"
           >
             {{ props.name }}

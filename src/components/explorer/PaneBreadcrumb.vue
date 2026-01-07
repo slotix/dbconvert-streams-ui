@@ -42,7 +42,9 @@ const props = defineProps<{
 }>()
 
 defineEmits<{
-  'pick-name': [payload: { name: string; type: 'table' | 'view'; schema?: string }]
+  'pick-name': [
+    payload: { name: string; type: 'table' | 'view' | 'trigger' | 'function' | 'procedure'; schema?: string }
+  ]
   'pick-file': [payload: { name: string; path: string }]
 }>()
 
@@ -170,7 +172,11 @@ const breadcrumbData = computed(() => {
   }
 
   // Database object - build objects list for picker
-  const objects: Array<{ name: string; type: 'table' | 'view'; schema?: string }> = []
+  const objects: Array<{
+    name: string
+    type: 'table' | 'view' | 'trigger' | 'function' | 'procedure'
+    schema?: string
+  }> = []
 
   // Build objects list from metadata for picker dropdown
   if (props.metadata) {
@@ -192,6 +198,40 @@ const breadcrumbData = computed(() => {
           name: view.name,
           type: 'view',
           schema: view.schema
+        })
+      })
+    }
+
+    if (props.metadata.triggers) {
+      Object.values(props.metadata.triggers).forEach((trigger) => {
+        objects.push({
+          name: trigger.name,
+          type: 'trigger',
+          schema: trigger.schema
+        })
+      })
+    }
+
+    if (props.metadata.functions) {
+      Object.values(props.metadata.functions).forEach((fn) => {
+        const signature = fn.signature?.trim()
+        const label = signature ? `${fn.name}(${signature})` : fn.name
+        objects.push({
+          name: label,
+          type: 'function',
+          schema: fn.schema
+        })
+      })
+    }
+
+    if (props.metadata.procedures) {
+      Object.values(props.metadata.procedures).forEach((proc) => {
+        const signature = proc.signature?.trim()
+        const label = signature ? `${proc.name}(${signature})` : proc.name
+        objects.push({
+          name: label,
+          type: 'procedure',
+          schema: proc.schema
         })
       })
     }

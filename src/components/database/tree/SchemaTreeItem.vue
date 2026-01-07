@@ -5,12 +5,15 @@ import { ChevronDown, ChevronRight, Grid2X2 } from 'lucide-vue-next'
 import ObjectList from './ObjectList.vue'
 import HighlightedText from '@/components/common/HighlightedText.vue'
 
-type ObjectType = 'table' | 'view'
+type ObjectType = 'table' | 'view' | 'trigger' | 'function' | 'procedure'
 
 interface SchemaInfo {
   name: string
   tables: string[]
   views: string[]
+  triggers: string[]
+  functions: string[]
+  procedures: string[]
 }
 
 const props = defineProps<{
@@ -30,7 +33,7 @@ const treeSelection = inject<
     connectionId?: string
     database?: string
     schema?: string
-    type?: 'table' | 'view' | null
+    type?: ObjectType | null
     name?: string | null
   }>
 >('treeSelection')!
@@ -177,6 +180,75 @@ function handleObjectContextMenu(payload: {
         @click="(p) => handleObjectOpen('view', p)"
         @dblclick="(p) => handleObjectOpen('view', p)"
         @middleclick="(p) => handleObjectOpen('view', p)"
+        @contextmenu="handleObjectContextMenu"
+      />
+      <div
+        v-if="schema.triggers.length"
+        class="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 px-2 mt-2 flex items-center justify-between"
+      >
+        <span>Triggers</span>
+        <span class="text-[11px] font-medium text-gray-500 dark:text-gray-400 normal-case">
+          {{ schema.triggers.length }}
+        </span>
+      </div>
+      <ObjectList
+        v-if="schema.triggers.length"
+        :items="schema.triggers"
+        object-type="trigger"
+        :connection-id="connectionId"
+        :database="database"
+        :schema="schema.name"
+        :explorer-obj-prefix="`${connectionId}:${database}:${schema.name || ''}`"
+        :parent-matches-search="parentMatchesSearch"
+        @click="(p) => handleObjectOpen('trigger', p)"
+        @dblclick="(p) => handleObjectOpen('trigger', p)"
+        @middleclick="(p) => handleObjectOpen('trigger', p)"
+        @contextmenu="handleObjectContextMenu"
+      />
+      <div
+        v-if="schema.functions.length"
+        class="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 px-2 mt-2 flex items-center justify-between"
+      >
+        <span>Functions</span>
+        <span class="text-[11px] font-medium text-gray-500 dark:text-gray-400 normal-case">
+          {{ schema.functions.length }}
+        </span>
+      </div>
+      <ObjectList
+        v-if="schema.functions.length"
+        :items="schema.functions"
+        object-type="function"
+        :connection-id="connectionId"
+        :database="database"
+        :schema="schema.name"
+        :explorer-obj-prefix="`${connectionId}:${database}:${schema.name || ''}`"
+        :parent-matches-search="parentMatchesSearch"
+        @click="(p) => handleObjectOpen('function', p)"
+        @dblclick="(p) => handleObjectOpen('function', p)"
+        @middleclick="(p) => handleObjectOpen('function', p)"
+        @contextmenu="handleObjectContextMenu"
+      />
+      <div
+        v-if="schema.procedures.length"
+        class="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 px-2 mt-2 flex items-center justify-between"
+      >
+        <span>Procedures</span>
+        <span class="text-[11px] font-medium text-gray-500 dark:text-gray-400 normal-case">
+          {{ schema.procedures.length }}
+        </span>
+      </div>
+      <ObjectList
+        v-if="schema.procedures.length"
+        :items="schema.procedures"
+        object-type="procedure"
+        :connection-id="connectionId"
+        :database="database"
+        :schema="schema.name"
+        :explorer-obj-prefix="`${connectionId}:${database}:${schema.name || ''}`"
+        :parent-matches-search="parentMatchesSearch"
+        @click="(p) => handleObjectOpen('procedure', p)"
+        @dblclick="(p) => handleObjectOpen('procedure', p)"
+        @middleclick="(p) => handleObjectOpen('procedure', p)"
         @contextmenu="handleObjectContextMenu"
       />
     </div>

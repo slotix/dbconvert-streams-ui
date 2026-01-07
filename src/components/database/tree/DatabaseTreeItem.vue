@@ -8,7 +8,7 @@ import HighlightedText from '@/components/common/HighlightedText.vue'
 import { useDatabaseOverviewStore } from '@/stores/databaseOverview'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 
-type ObjectType = 'table' | 'view'
+type ObjectType = 'table' | 'view' | 'trigger' | 'function' | 'procedure'
 
 const overviewStore = useDatabaseOverviewStore()
 const navigationStore = useExplorerNavigationStore()
@@ -17,6 +17,9 @@ interface SchemaInfo {
   name: string
   tables: string[]
   views: string[]
+  triggers: string[]
+  functions: string[]
+  procedures: string[]
 }
 
 interface DatabaseInfo {
@@ -31,6 +34,9 @@ const props = defineProps<{
   schemas: SchemaInfo[]
   flatTables: string[]
   flatViews: string[]
+  flatTriggers: string[]
+  flatFunctions: string[]
+  flatProcedures: string[]
   metadataLoaded: boolean
 }>()
 
@@ -42,7 +48,7 @@ const treeSelection = inject<
     connectionId?: string
     database?: string
     schema?: string
-    type?: 'table' | 'view' | null
+    type?: ObjectType | null
     name?: string | null
   }>
 >('treeSelection')!
@@ -284,6 +290,72 @@ function handleFlatObjectContextMenu(payload: {
             @click="(p) => handleObjectOpen({ type: 'view', ...p })"
             @dblclick="(p) => handleObjectOpen({ type: 'view', ...p })"
             @middleclick="(p) => handleObjectOpen({ type: 'view', ...p })"
+            @contextmenu="handleFlatObjectContextMenu"
+          />
+          <div
+            v-if="flatTriggers.length"
+            class="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 px-2 mt-2 flex items-center justify-between"
+          >
+            <span>Triggers</span>
+            <span class="text-[11px] font-medium text-gray-500 dark:text-gray-400 normal-case">
+              {{ flatTriggers.length }}
+            </span>
+          </div>
+          <ObjectList
+            v-if="flatTriggers.length"
+            :items="flatTriggers"
+            object-type="trigger"
+            :connection-id="connectionId"
+            :database="database.name"
+            :explorer-obj-prefix="`${connectionId}:${database.name}:`"
+            :parent-matches-search="databaseNameMatchesSearch"
+            @click="(p) => handleObjectOpen({ type: 'trigger', ...p })"
+            @dblclick="(p) => handleObjectOpen({ type: 'trigger', ...p })"
+            @middleclick="(p) => handleObjectOpen({ type: 'trigger', ...p })"
+            @contextmenu="handleFlatObjectContextMenu"
+          />
+          <div
+            v-if="flatFunctions.length"
+            class="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 px-2 mt-2 flex items-center justify-between"
+          >
+            <span>Functions</span>
+            <span class="text-[11px] font-medium text-gray-500 dark:text-gray-400 normal-case">
+              {{ flatFunctions.length }}
+            </span>
+          </div>
+          <ObjectList
+            v-if="flatFunctions.length"
+            :items="flatFunctions"
+            object-type="function"
+            :connection-id="connectionId"
+            :database="database.name"
+            :explorer-obj-prefix="`${connectionId}:${database.name}:`"
+            :parent-matches-search="databaseNameMatchesSearch"
+            @click="(p) => handleObjectOpen({ type: 'function', ...p })"
+            @dblclick="(p) => handleObjectOpen({ type: 'function', ...p })"
+            @middleclick="(p) => handleObjectOpen({ type: 'function', ...p })"
+            @contextmenu="handleFlatObjectContextMenu"
+          />
+          <div
+            v-if="flatProcedures.length"
+            class="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 px-2 mt-2 flex items-center justify-between"
+          >
+            <span>Procedures</span>
+            <span class="text-[11px] font-medium text-gray-500 dark:text-gray-400 normal-case">
+              {{ flatProcedures.length }}
+            </span>
+          </div>
+          <ObjectList
+            v-if="flatProcedures.length"
+            :items="flatProcedures"
+            object-type="procedure"
+            :connection-id="connectionId"
+            :database="database.name"
+            :explorer-obj-prefix="`${connectionId}:${database.name}:`"
+            :parent-matches-search="databaseNameMatchesSearch"
+            @click="(p) => handleObjectOpen({ type: 'procedure', ...p })"
+            @dblclick="(p) => handleObjectOpen({ type: 'procedure', ...p })"
+            @middleclick="(p) => handleObjectOpen({ type: 'procedure', ...p })"
             @contextmenu="handleFlatObjectContextMenu"
           />
         </div>

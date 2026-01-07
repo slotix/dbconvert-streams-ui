@@ -1,6 +1,11 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { SQLTableMeta, SQLViewMeta } from '@/types/metadata'
+import type {
+  SQLRoutineMeta,
+  SQLTableMeta,
+  SQLTriggerMeta,
+  SQLViewMeta
+} from '@/types/metadata'
 import type { FileSystemEntry } from '@/api/fileSystem'
 import type { FileMetadata } from '@/types/files'
 import { useObjectTabStateStore } from '@/stores/objectTabState'
@@ -32,8 +37,8 @@ export type PaneTab = {
   // Database-specific properties
   database?: string
   schema?: string
-  type?: 'table' | 'view'
-  meta?: SQLTableMeta | SQLViewMeta
+  type?: 'table' | 'view' | 'trigger' | 'function' | 'procedure'
+  meta?: SQLTableMeta | SQLViewMeta | SQLTriggerMeta | SQLRoutineMeta
 
   // SQL Console specific properties
   sqlScope?: 'database' | 'connection' // database = pre-sets USE db; connection = raw
@@ -114,7 +119,8 @@ type PersistedPaneTabsState = PersistedPaneTabsStateV1 | PersistedPaneTabsStateV
 function buildObjectKey(paneId: PaneId, tab: PaneTab): string | null {
   if (tab.tabType === 'database' && tab.database && tab.name) {
     const schema = tab.schema || 'default'
-    return `${paneId}:db-${tab.database}-${schema}-${tab.name}`
+    const kind = tab.type || 'table'
+    return `${paneId}:db-${tab.database}-${schema}-${kind}-${tab.name}`
   }
   if (tab.tabType === 'file' && tab.filePath) {
     return `${paneId}:file-${tab.filePath}`

@@ -1,10 +1,16 @@
 import { defineStore } from 'pinia'
-import type { DatabaseMetadata, SQLTableMeta, SQLViewMeta } from '@/types/metadata'
+import type {
+  DatabaseMetadata,
+  SQLRoutineMeta,
+  SQLTableMeta,
+  SQLTriggerMeta,
+  SQLViewMeta
+} from '@/types/metadata'
 import type { FileSystemEntry } from '@/api/fileSystem'
 import type { DatabaseInfo } from '@/types/connections'
 import connectionsApi from '@/api/connections'
 
-export type ObjectType = 'table' | 'view'
+export type ObjectType = 'table' | 'view' | 'trigger' | 'function' | 'procedure'
 export type DefaultTab = 'structure' | 'data'
 
 export interface NavigationSelection {
@@ -22,7 +28,7 @@ export interface OpenObjectPayload {
   schema?: string
   type: ObjectType
   name: string
-  meta: SQLTableMeta | SQLViewMeta
+  meta: SQLTableMeta | SQLViewMeta | SQLTriggerMeta | SQLRoutineMeta
   mode: 'preview' | 'pinned'
   defaultTab?: DefaultTab
   openInRightSplit?: boolean
@@ -543,6 +549,45 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
           return v.name === viewName && v.schema === schema
         }
         return v.name === viewName
+      })
+    },
+
+    findTriggerMeta(
+      connectionId: string,
+      database: string,
+      triggerName: string,
+      schema?: string
+    ): SQLTriggerMeta | undefined {
+      const metadata = this.metadataState[connectionId]?.[database]
+      if (!metadata?.triggers) return undefined
+
+      return Object.values(metadata.triggers).find((t) => {
+        if (schema) {
+          return t.name === triggerName && t.schema === schema
+        }
+        return t.name === triggerName
+      })
+    },
+
+    findRoutineMeta(
+      connectionId: string,
+      database: string,
+      routineName: string,
+      routineType: 'function' | 'procedure',
+      schema?: string,
+      signature?: string
+    ): SQLRoutineMeta | undefined {
+      const metadata = this.metadataState[connectionId]?.[database]
+      const routines =
+        routineType === 'function' ? metadata?.functions : metadata?.procedures
+      if (!routines) return undefined
+
+      const normalizedSignature = (signature || '').trim()
+      return Object.values(routines).find((r) => {
+        if (schema && r.schema !== schema) return false
+        if (r.name !== routineName) return false
+        if (!normalizedSignature) return true
+        return (r.signature || '').trim() === normalizedSignature
       })
     }
   }

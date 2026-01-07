@@ -32,7 +32,7 @@ export function useExplorerUrlSync() {
       database: query.db as string | undefined,
       diagram: query.diagram === 'true',
       schema: query.schema as string | undefined,
-      type: query.type as 'table' | 'view' | undefined,
+      type: query.type as 'table' | 'view' | 'trigger' | 'function' | 'procedure' | undefined,
       name: query.name as string | undefined,
       file: query.file as string | undefined
     })

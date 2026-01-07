@@ -10,7 +10,7 @@ import type { FileSystemEntry } from '@/api/fileSystem'
 import type { DiagramFocusTarget, ShowDiagramPayload } from '@/types/diagram'
 
 type DefaultTab = 'structure' | 'data'
-type ObjectType = 'table' | 'view'
+type ObjectType = 'table' | 'view' | 'trigger' | 'function' | 'procedure'
 
 export interface OpenObjectParams {
   connectionId: string
@@ -243,7 +243,7 @@ export function useConnectionActions(emits?: {
     connectionId: string,
     database: string,
     name: string,
-    kind: 'table' | 'view',
+    kind: ObjectType,
     schema?: string
   ) {
     if (kind === 'table') {
@@ -251,15 +251,33 @@ export function useConnectionActions(emits?: {
       const ddl = m?.ddl?.createTable || ''
       if (ddl) await copyToClipboard(ddl, 'Table DDL copied')
       else toast.info('DDL not available')
-    } else {
+    } else if (kind === 'view') {
       const m = navigationStore.findViewMeta(connectionId, database, name, schema)
       const ddl = m?.definition || ''
       if (ddl) await copyToClipboard(ddl, 'View DDL copied')
       else toast.info('Definition not available')
+    } else if (kind === 'trigger') {
+      const m = navigationStore.findTriggerMeta(connectionId, database, name, schema)
+      const ddl = m?.definition || ''
+      if (ddl) await copyToClipboard(ddl, 'Trigger DDL copied')
+      else toast.info('Definition not available')
+    } else {
+      const { routineName, signature } = parseRoutineName(name)
+      const m = navigationStore.findRoutineMeta(
+        connectionId,
+        database,
+        routineName,
+        kind === 'function' ? 'function' : 'procedure',
+        schema,
+        signature
+      )
+      const ddl = m?.definition || ''
+      if (ddl) await copyToClipboard(ddl, 'Routine DDL copied')
+      else toast.info('Definition not available')
     }
   }
 
-  function openTable(
+  function openObject(
     connId: string,
     db: string,
     type: ObjectType,
@@ -271,10 +289,7 @@ export function useConnectionActions(emits?: {
   ) {
     // Only open if metadata is available in the navigation store.
     // Tabs resolve meta from this store (single source of truth).
-    const exists =
-      type === 'table'
-        ? !!navigationStore.findTableMeta(connId, db, name, schema)
-        : !!navigationStore.findViewMeta(connId, db, name, schema)
+    const exists = resolveObjectMeta(connId, db, type, name, schema)
     if (!exists) return
 
     if (emits?.open) {
@@ -324,13 +339,65 @@ export function useConnectionActions(emits?: {
     connectionId: string,
     database: string,
     name: string,
-    kind: 'table' | 'view',
+    kind: ObjectType,
     schema?: string
   ): boolean {
     if (kind === 'table') {
       return !!navigationStore.findTableMeta(connectionId, database, name, schema)?.ddl?.createTable
     }
-    return !!navigationStore.findViewMeta(connectionId, database, name, schema)?.definition
+    if (kind === 'view') {
+      return !!navigationStore.findViewMeta(connectionId, database, name, schema)?.definition
+    }
+    if (kind === 'trigger') {
+      return !!navigationStore.findTriggerMeta(connectionId, database, name, schema)?.definition
+    }
+    const { routineName, signature } = parseRoutineName(name)
+    return !!navigationStore.findRoutineMeta(
+      connectionId,
+      database,
+      routineName,
+      kind === 'function' ? 'function' : 'procedure',
+      schema,
+      signature
+    )?.definition
+  }
+
+  function resolveObjectMeta(
+    connectionId: string,
+    database: string,
+    kind: ObjectType,
+    name: string,
+    schema?: string
+  ) {
+    if (kind === 'table') return navigationStore.findTableMeta(connectionId, database, name, schema)
+    if (kind === 'view') return navigationStore.findViewMeta(connectionId, database, name, schema)
+    if (kind === 'trigger')
+      return navigationStore.findTriggerMeta(connectionId, database, name, schema)
+    const { routineName, signature } = parseRoutineName(name)
+    return navigationStore.findRoutineMeta(
+      connectionId,
+      database,
+      routineName,
+      kind === 'function' ? 'function' : 'procedure',
+      schema,
+      signature
+    )
+  }
+
+  function parseRoutineName(label: string): { routineName: string; signature?: string } {
+    const trimmed = label.trim()
+    const openParen = trimmed.indexOf('(')
+    if (openParen < 0) {
+      return { routineName: trimmed }
+    }
+    const closeParen = trimmed.lastIndexOf(')')
+    if (closeParen < openParen) {
+      return { routineName: trimmed }
+    }
+    return {
+      routineName: trimmed.slice(0, openParen).trim(),
+      signature: trimmed.slice(openParen + 1, closeParen).trim()
+    }
   }
 
   return {
@@ -350,7 +417,7 @@ export function useConnectionActions(emits?: {
     createDatabase,
     createSchema,
     createBucket,
-    openTable,
+    openObject,
     openFile,
     showDiagram,
 

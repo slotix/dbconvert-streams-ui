@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import { computed, ref, watch, defineAsyncComponent, type Component } from 'vue'
 import { ArrowUpDown, Columns2, Filter, RefreshCw, Share2, Terminal } from 'lucide-vue-next'
-import { type SQLTableMeta, type SQLViewMeta } from '@/types/metadata'
+import type {
+  SQLRoutineMeta,
+  SQLTableMeta,
+  SQLTriggerMeta,
+  SQLViewMeta
+} from '@/types/metadata'
 import { type FileSystemEntry } from '@/api/fileSystem'
 import { type FileMetadata } from '@/types/files'
 import { useObjectTabStateStore } from '@/stores/objectTabState'
@@ -15,6 +20,12 @@ const ViewStructureView = defineAsyncComponent(
 )
 const DatabaseObjectDataView = defineAsyncComponent(
   () => import('@/components/database/DatabaseObjectDataView.vue')
+)
+const RoutineDefinitionView = defineAsyncComponent(
+  () => import('@/components/database/RoutineDefinitionView.vue')
+)
+const TriggerDefinitionView = defineAsyncComponent(
+  () => import('@/components/database/TriggerDefinitionView.vue')
 )
 
 // Lazy load file components that use ag-grid
@@ -37,8 +48,8 @@ const props = defineProps<{
   closable?: boolean
   paneId?: string // Optional pane identifier (e.g., 'left', 'right') for independent state per pane
   // Database-specific props
-  tableMeta?: SQLTableMeta | SQLViewMeta
-  isView?: boolean
+  objectKind?: 'table' | 'view' | 'trigger' | 'function' | 'procedure'
+  objectMeta?: SQLTableMeta | SQLViewMeta | SQLTriggerMeta | SQLRoutineMeta
   connectionType?: string
   database?: string
   // File-specific props
@@ -80,6 +91,12 @@ type TabItem = {
   props: Record<string, unknown>
 }
 
+const isDataObject = computed(
+  () =>
+    props.objectType === 'database' &&
+    (props.objectKind === 'table' || props.objectKind === 'view')
+)
+
 const tabs = computed<TabItem[]>(() => {
   if (props.objectType === 'file') {
     if (!props.fileEntry) {
@@ -108,45 +125,70 @@ const tabs = computed<TabItem[]>(() => {
       }
     ]
   } else {
-    if (
-      !props.tableMeta ||
-      props.isView === undefined ||
-      !props.database ||
-      !props.connectionType
-    ) {
+    if (!props.objectMeta || !props.objectKind || !props.database || !props.connectionType) {
       console.error(
-        'tableMeta, isView, database, and connectionType are required when objectType is database'
+        'objectMeta, objectKind, database, and connectionType are required when objectType is database'
       )
       return []
     }
+
+    if (props.objectKind === 'table' || props.objectKind === 'view') {
+      return [
+        {
+          name: 'Data',
+          component: DatabaseObjectDataView,
+          props: {
+            tableMeta: props.objectMeta as SQLTableMeta | SQLViewMeta,
+            isView: props.objectKind === 'view',
+            database: props.database,
+            connectionId: props.connectionId,
+            objectKey: objectKey.value
+          }
+        },
+        {
+          name: 'Structure',
+          component: props.objectKind === 'view' ? ViewStructureView : TableMetadataView,
+          props:
+            props.objectKind === 'view'
+              ? {
+                  viewMeta: props.objectMeta as SQLViewMeta,
+                  connectionId: props.connectionId,
+                  connectionType: props.connectionType,
+                  objectKey: objectKey.value
+                }
+              : {
+                  tableMeta: props.objectMeta as SQLTableMeta,
+                  connectionId: props.connectionId,
+                  connectionType: props.connectionType,
+                  objectKey: objectKey.value
+                }
+        }
+      ]
+    }
+
+    if (props.objectKind === 'trigger') {
+      return [
+        {
+          name: 'Definition',
+          component: TriggerDefinitionView,
+          props: {
+            triggerMeta: props.objectMeta as SQLTriggerMeta,
+            connectionType: props.connectionType,
+            objectKey: objectKey.value
+          }
+        }
+      ]
+    }
+
     return [
       {
-        name: 'Data',
-        component: DatabaseObjectDataView,
+        name: 'Definition',
+        component: RoutineDefinitionView,
         props: {
-          tableMeta: props.tableMeta,
-          isView: props.isView,
-          database: props.database,
-          connectionId: props.connectionId,
+          routineMeta: props.objectMeta as SQLRoutineMeta,
+          connectionType: props.connectionType,
           objectKey: objectKey.value
         }
-      },
-      {
-        name: 'Structure',
-        component: props.isView ? ViewStructureView : TableMetadataView,
-        props: props.isView
-          ? {
-              viewMeta: props.tableMeta as SQLViewMeta,
-              connectionId: props.connectionId,
-              connectionType: props.connectionType,
-              objectKey: objectKey.value
-            }
-          : {
-              tableMeta: props.tableMeta as SQLTableMeta,
-              connectionId: props.connectionId,
-              connectionType: props.connectionType,
-              objectKey: objectKey.value
-            }
       }
     ]
   }
@@ -158,8 +200,10 @@ const tabs = computed<TabItem[]>(() => {
 function getObjectKey(): string {
   const panePrefix = props.paneId ? `${props.paneId}:` : ''
 
-  if (props.objectType === 'database' && props.tableMeta) {
-    return `${panePrefix}db-${props.tableMeta.database}-${props.tableMeta.schema || 'default'}-${props.tableMeta.name}`
+  if (props.objectType === 'database' && props.objectMeta) {
+    const schema = props.objectMeta.schema || 'default'
+    const kind = props.objectKind || 'table'
+    return `${panePrefix}db-${props.objectMeta.database}-${schema}-${kind}-${props.objectMeta.name}`
   } else if (props.objectType === 'file' && props.fileEntry) {
     return `${panePrefix}file-${props.fileEntry.path}`
   }
@@ -187,7 +231,7 @@ function onTabChange(i: number) {
   selectedIndex.value = i
   // Save state to Pinia store
   tabStateStore.setTabState(objectKey.value, i)
-  const activeTab = i === 0 ? 'data' : 'structure'
+  const activeTab = isDataObject.value && i === 0 ? 'data' : 'structure'
   emit('tab-change', activeTab)
 }
 
@@ -293,12 +337,13 @@ async function onRefreshClick() {
 }
 
 function onOpenSqlConsole() {
-  if (props.objectType === 'database' && props.tableMeta && props.database) {
+  if (isDataObject.value && props.objectMeta && props.database) {
+    const meta = props.objectMeta as SQLTableMeta | SQLViewMeta
     emit('open-sql-console', {
       connectionId: props.connectionId,
       database: props.database,
-      tableName: props.tableMeta.name,
-      schema: props.tableMeta.schema
+      tableName: meta.name,
+      schema: meta.schema
     })
   }
 }
@@ -316,14 +361,15 @@ function onOpenFileConsole() {
 }
 
 function onOpenDiagram() {
-  if (props.objectType === 'database' && props.tableMeta && props.database) {
+  if (isDataObject.value && props.objectMeta && props.database) {
+    const meta = props.objectMeta as SQLTableMeta | SQLViewMeta
     emit('open-diagram', {
       connectionId: props.connectionId,
       database: props.database,
       focus: {
-        type: props.isView ? 'view' : 'table',
-        name: props.tableMeta.name,
-        schema: props.tableMeta.schema
+        type: props.objectKind === 'view' ? 'view' : 'table',
+        name: meta.name,
+        schema: meta.schema
       }
     })
   }
@@ -343,7 +389,7 @@ function onOpenDiagram() {
         <!-- Left: Tabs + Filter Controls -->
         <div class="flex items-center gap-4">
           <!-- Data/Structure tabs -->
-          <div class="inline-flex rounded-md shadow-sm" role="group">
+          <div v-if="tabs.length > 1" class="inline-flex rounded-md shadow-sm" role="group">
             <button
               v-for="(tab, i) in tabs"
               :key="tab.name"
@@ -367,7 +413,7 @@ function onOpenDiagram() {
           </div>
 
           <!-- Filter Action Buttons (only shown on Data tab) -->
-          <div v-if="selectedIndex === 0" class="flex items-center gap-1">
+          <div v-if="selectedIndex === 0 && isDataObject" class="flex items-center gap-1">
             <button
               type="button"
               class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded transition-colors"
@@ -426,7 +472,7 @@ function onOpenDiagram() {
         <div class="flex items-center gap-2">
           <!-- SQL Console button (only for database objects on Data tab) -->
           <button
-            v-if="objectType === 'database' && selectedIndex === 0"
+            v-if="isDataObject && selectedIndex === 0"
             type="button"
             class="inline-flex items-center rounded-md bg-white dark:bg-gray-800 px-2.5 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 shadow-sm dark:shadow-gray-900/30 border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
             title="Open in SQL Console"
@@ -436,7 +482,7 @@ function onOpenDiagram() {
           </button>
           <!-- Diagram button (only for database objects on Data tab) -->
           <button
-            v-if="objectType === 'database' && selectedIndex === 0"
+            v-if="isDataObject && selectedIndex === 0"
             type="button"
             class="inline-flex items-center rounded-md bg-white dark:bg-gray-800 px-2.5 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 shadow-sm dark:shadow-gray-900/30 border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
             title="Show in Diagram"
@@ -466,7 +512,7 @@ function onOpenDiagram() {
                 isRefreshing ? 'animate-spin' : 'text-gray-400 dark:text-gray-500'
               ]"
             />
-            {{ selectedIndex === 0 ? 'Refresh Data' : 'Refresh Metadata' }}
+            {{ isDataObject && selectedIndex === 0 ? 'Refresh Data' : 'Refresh Metadata' }}
           </button>
         </div>
       </div>

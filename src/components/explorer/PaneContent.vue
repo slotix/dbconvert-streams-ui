@@ -50,8 +50,8 @@
       object-type="database"
       :pane-id="paneId"
       :connection-id="activeTab.connectionId"
-      :table-meta="resolvedDatabaseMeta"
-      :is-view="activeTab.type === 'view'"
+      :object-meta="resolvedDatabaseMeta"
+      :object-kind="activeTab.type"
       :connection-type="connectionType"
       :database="activeTab.database!"
       @tab-change="$emit('tab-change', $event)"
@@ -110,7 +110,12 @@ import { useFileExplorerStore } from '@/stores/fileExplorer'
 import type { PaneId } from '@/stores/paneTabs'
 import type { PaneTab } from '@/stores/paneTabs'
 import type { ShowDiagramPayload } from '@/types/diagram'
-import type { SQLTableMeta, SQLViewMeta } from '@/types/metadata'
+import type {
+  SQLRoutineMeta,
+  SQLTableMeta,
+  SQLTriggerMeta,
+  SQLViewMeta
+} from '@/types/metadata'
 
 // Lazy load DiagramTab since it includes heavy D3.js
 const DiagramTab = defineAsyncComponent(() => import('@/components/database/DiagramTab.vue'))
@@ -158,30 +163,80 @@ const connectionsStore = useConnectionsStore()
 const fileExplorerStore = useFileExplorerStore()
 const navigationStore = useExplorerNavigationStore()
 
-const resolvedDatabaseMeta = computed<SQLTableMeta | SQLViewMeta | null>(() => {
+const resolvedDatabaseMeta = computed<
+  SQLTableMeta | SQLViewMeta | SQLTriggerMeta | SQLRoutineMeta | null
+>(() => {
   const activeTab = props.activeTab
   if (!activeTab || activeTab.tabType !== 'database') return null
 
   const database = activeTab.database
   if (!database) return null
 
-  const metaFromStore =
-    activeTab.type === 'view'
-      ? navigationStore.findViewMeta(
-          activeTab.connectionId,
-          database,
-          activeTab.name,
-          activeTab.schema
-        )
-      : navigationStore.findTableMeta(
-          activeTab.connectionId,
-          database,
-          activeTab.name,
-          activeTab.schema
-        )
+  if (activeTab.type === 'view') {
+    return (
+      navigationStore.findViewMeta(
+        activeTab.connectionId,
+        database,
+        activeTab.name,
+        activeTab.schema
+      ) || null
+    )
+  }
 
-  return metaFromStore || null
+  if (activeTab.type === 'table') {
+    return (
+      navigationStore.findTableMeta(
+        activeTab.connectionId,
+        database,
+        activeTab.name,
+        activeTab.schema
+      ) || null
+    )
+  }
+
+  if (activeTab.type === 'trigger') {
+    return (
+      navigationStore.findTriggerMeta(
+        activeTab.connectionId,
+        database,
+        activeTab.name,
+        activeTab.schema
+      ) || null
+    )
+  }
+
+  if (activeTab.type === 'function' || activeTab.type === 'procedure') {
+    const { routineName, signature } = parseRoutineName(activeTab.name)
+    return (
+      navigationStore.findRoutineMeta(
+        activeTab.connectionId,
+        database,
+        routineName,
+        activeTab.type === 'function' ? 'function' : 'procedure',
+        activeTab.schema,
+        signature
+      ) || null
+    )
+  }
+
+  return null
 })
+
+function parseRoutineName(label: string): { routineName: string; signature?: string } {
+  const trimmed = label.trim()
+  const openParen = trimmed.indexOf('(')
+  if (openParen < 0) {
+    return { routineName: trimmed }
+  }
+  const closeParen = trimmed.lastIndexOf(')')
+  if (closeParen < openParen) {
+    return { routineName: trimmed }
+  }
+  return {
+    routineName: trimmed.slice(0, openParen).trim(),
+    signature: trimmed.slice(openParen + 1, closeParen).trim()
+  }
+}
 
 const wrapperClass = computed(() => {
   const base = 'h-[calc(100vh-220px)]'

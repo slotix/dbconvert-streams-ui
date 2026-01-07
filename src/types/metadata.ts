@@ -88,9 +88,33 @@ export interface SQLViewMeta {
   dependsOn: string[] | null
 }
 
+export interface SQLTriggerMeta {
+  name: string
+  schema: string
+  database: string
+  tableName: string
+  event?: string
+  timing?: string
+  definition?: string
+}
+
+export interface SQLRoutineMeta {
+  name: string
+  schema: string
+  database: string
+  routineType: 'function' | 'procedure'
+  signature?: string
+  returnType?: string
+  language?: string
+  definition?: string
+}
+
 export interface DatabaseMetadata {
   tables: Record<string, SQLTableMeta>
   views: Record<string, SQLViewMeta>
+  triggers?: Record<string, SQLTriggerMeta>
+  functions?: Record<string, SQLRoutineMeta>
+  procedures?: Record<string, SQLRoutineMeta>
   schemas?: string[]
 }
 

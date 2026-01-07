@@ -138,6 +138,34 @@ export function useTreeSearch(
             (view.schema && normalize(view.schema).includes(normalizedQuery))
         )
         if (hasViewMatch) return true
+
+        const hasTriggerMatch = Object.values(metadata.triggers || {}).some(
+          (trigger) =>
+            normalize(trigger.name).includes(normalizedQuery) ||
+            (trigger.schema && normalize(trigger.schema).includes(normalizedQuery)) ||
+            (trigger.tableName && normalize(trigger.tableName).includes(normalizedQuery))
+        )
+        if (hasTriggerMatch) return true
+
+        const hasFunctionMatch = Object.values(metadata.functions || {}).some((fn) => {
+          const signature = fn.signature ? `(${fn.signature})` : ''
+          const label = `${fn.name}${signature}`
+          return (
+            normalize(label).includes(normalizedQuery) ||
+            (fn.schema && normalize(fn.schema).includes(normalizedQuery))
+          )
+        })
+        if (hasFunctionMatch) return true
+
+        const hasProcedureMatch = Object.values(metadata.procedures || {}).some((proc) => {
+          const signature = proc.signature ? `(${proc.signature})` : ''
+          const label = `${proc.name}${signature}`
+          return (
+            normalize(label).includes(normalizedQuery) ||
+            (proc.schema && normalize(proc.schema).includes(normalizedQuery))
+          )
+        })
+        if (hasProcedureMatch) return true
       }
 
       // Search in file entries (for S3/file connections)
@@ -216,7 +244,36 @@ export function useTreeSearch(
         (view.schema && normalize(view.schema).includes(normalizedQuery))
     )
 
-    return hasViewMatch
+    if (hasViewMatch) return true
+
+    const hasTriggerMatch = Object.values(metadata.triggers || {}).some(
+      (trigger) =>
+        normalize(trigger.name).includes(normalizedQuery) ||
+        (trigger.schema && normalize(trigger.schema).includes(normalizedQuery)) ||
+        (trigger.tableName && normalize(trigger.tableName).includes(normalizedQuery))
+    )
+    if (hasTriggerMatch) return true
+
+    const hasFunctionMatch = Object.values(metadata.functions || {}).some((fn) => {
+      const signature = fn.signature ? `(${fn.signature})` : ''
+      const label = `${fn.name}${signature}`
+      return (
+        normalize(label).includes(normalizedQuery) ||
+        (fn.schema && normalize(fn.schema).includes(normalizedQuery))
+      )
+    })
+    if (hasFunctionMatch) return true
+
+    const hasProcedureMatch = Object.values(metadata.procedures || {}).some((proc) => {
+      const signature = proc.signature ? `(${proc.signature})` : ''
+      const label = `${proc.name}${signature}`
+      return (
+        normalize(label).includes(normalizedQuery) ||
+        (proc.schema && normalize(proc.schema).includes(normalizedQuery))
+      )
+    })
+
+    return hasProcedureMatch
   }
 
   /**

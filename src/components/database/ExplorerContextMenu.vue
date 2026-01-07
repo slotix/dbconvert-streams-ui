@@ -28,7 +28,7 @@ type ContextTarget =
   | { kind: 'database'; connectionId: string; database: string }
   | { kind: 'schema'; connectionId: string; database: string; schema: string }
   | {
-      kind: 'table' | 'view'
+      kind: 'table' | 'view' | 'trigger' | 'function' | 'procedure'
       connectionId: string
       database: string
       schema?: string
@@ -85,6 +85,15 @@ const canToggleSystemObjectsForDatabase = computed(() => {
   if (!props.target || props.target.kind !== 'database') return false
   return treeLogic.hasSchemas(props.target.connectionId)
 })
+const isDatabaseObject = computed(
+  () =>
+    !!props.target &&
+    (props.target.kind === 'table' ||
+      props.target.kind === 'view' ||
+      props.target.kind === 'trigger' ||
+      props.target.kind === 'function' ||
+      props.target.kind === 'procedure')
+)
 const isTableOrView = computed(
   () => !!props.target && (props.target.kind === 'table' || props.target.kind === 'view')
 )
@@ -102,7 +111,7 @@ const isNavigationFolder = computed(() => {
   return props.target.isDir && !props.target.isTable
 })
 // Objects that can be opened (tables, views, files, table folders)
-const isOpenable = computed(() => isTableOrView.value || isFileOrTableFolder.value)
+const isOpenable = computed(() => isDatabaseObject.value || isFileOrTableFolder.value)
 // Only show menu if visible, has target, and is not a navigation folder
 const hasMenu = computed(() => props.visible && !!props.target && !isNavigationFolder.value)
 
@@ -297,23 +306,25 @@ function click(action: string, openInRightSplit?: boolean) {
           </button>
           <div class="my-1 border-t border-gray-100 dark:border-gray-700"></div>
 
-          <!-- Table/View specific actions -->
-          <template v-if="isTableOrView">
-            <button
-              class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
-              @click="click('open-in-sql-console')"
-            >
-              <Terminal class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
-              <span>Open in SQL Console</span>
-            </button>
-            <button
-              class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
-              @click="click('show-diagram')"
-            >
-              <Share2 class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
-              <span>Show diagram</span>
-            </button>
-            <div class="my-1 border-t border-gray-100 dark:border-gray-700"></div>
+          <!-- Database object actions -->
+          <template v-if="isDatabaseObject">
+            <template v-if="isTableOrView">
+              <button
+                class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
+                @click="click('open-in-sql-console')"
+              >
+                <Terminal class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
+                <span>Open in SQL Console</span>
+              </button>
+              <button
+                class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
+                @click="click('show-diagram')"
+              >
+                <Share2 class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
+                <span>Show diagram</span>
+              </button>
+              <div class="my-1 border-t border-gray-100 dark:border-gray-700"></div>
+            </template>
             <button
               class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
               @click="click('copy-object-name')"

@@ -13,14 +13,14 @@ import { useTreeSearch } from '@/composables/useTreeSearch'
 import { useSqlConsoleActions } from '@/composables/useSqlConsoleActions'
 import type { Connection } from '@/types/connections'
 import type { DiagramFocusTarget, ShowDiagramPayload } from '@/types/diagram'
-import type { SQLTableMeta, SQLViewMeta } from '@/types/metadata'
+import type { SQLRoutineMeta, SQLTableMeta, SQLTriggerMeta, SQLViewMeta } from '@/types/metadata'
 import type { FileSystemEntry } from '@/api/fileSystem'
 import { getConnectionKindFromSpec, getConnectionTypeLabel, isDatabaseKind } from '@/types/specs'
 import ExplorerContextMenu from './ExplorerContextMenu.vue'
 import ConnectionTreeItem from './tree/ConnectionTreeItem.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
-type ObjectType = 'table' | 'view'
+type ObjectType = 'table' | 'view' | 'trigger' | 'function' | 'procedure'
 
 const props = defineProps<{
   initialExpandedConnectionId?: string
@@ -325,9 +325,21 @@ function onOpen(
   defaultTab?: DefaultTab,
   openInRightSplit?: boolean
 ) {
-  let obj: SQLTableMeta | SQLViewMeta | undefined
+  let obj: SQLTableMeta | SQLViewMeta | SQLTriggerMeta | SQLRoutineMeta | undefined
   if (type === 'table') obj = navigationStore.findTableMeta(connId, db, name, schema)
-  else obj = navigationStore.findViewMeta(connId, db, name, schema)
+  else if (type === 'view') obj = navigationStore.findViewMeta(connId, db, name, schema)
+  else if (type === 'trigger') obj = navigationStore.findTriggerMeta(connId, db, name, schema)
+  else {
+    const { routineName, signature } = parseRoutineName(name)
+    obj = navigationStore.findRoutineMeta(
+      connId,
+      db,
+      routineName,
+      type === 'function' ? 'function' : 'procedure',
+      schema,
+      signature
+    )
+  }
 
   if (!obj) {
     console.error('[ExplorerSidebarConnections] Metadata not found for', type, name, 'in', db)
@@ -344,6 +356,22 @@ function onOpen(
     defaultTab,
     openInRightSplit
   })
+}
+
+function parseRoutineName(label: string): { routineName: string; signature?: string } {
+  const trimmed = label.trim()
+  const openParen = trimmed.indexOf('(')
+  if (openParen < 0) {
+    return { routineName: trimmed }
+  }
+  const closeParen = trimmed.lastIndexOf(')')
+  if (closeParen < openParen) {
+    return { routineName: trimmed }
+  }
+  return {
+    routineName: trimmed.slice(0, openParen).trim(),
+    signature: trimmed.slice(openParen + 1, closeParen).trim()
+  }
 }
 
 // Simplified menu action handler using composables
@@ -451,8 +479,14 @@ function onMenuAction(payload: {
       if (t.kind === 'schema') actions.copyToClipboard(t.schema, 'Schema name copied')
       break
     case 'open':
-      if (t.kind === 'table' || t.kind === 'view')
-        actions.openTable(
+      if (
+        t.kind === 'table' ||
+        t.kind === 'view' ||
+        t.kind === 'trigger' ||
+        t.kind === 'function' ||
+        t.kind === 'procedure'
+      )
+        actions.openObject(
           t.connectionId,
           t.database,
           t.kind,
@@ -466,11 +500,23 @@ function onMenuAction(payload: {
         actions.openFile(t.connectionId, t.path, 'preview', undefined, payload.openInRightSplit)
       break
     case 'copy-object-name':
-      if (t.kind === 'table' || t.kind === 'view')
+      if (
+        t.kind === 'table' ||
+        t.kind === 'view' ||
+        t.kind === 'trigger' ||
+        t.kind === 'function' ||
+        t.kind === 'procedure'
+      )
         actions.copyToClipboard(t.name, 'Object name copied')
       break
     case 'copy-ddl':
-      if (t.kind === 'table' || t.kind === 'view')
+      if (
+        t.kind === 'table' ||
+        t.kind === 'view' ||
+        t.kind === 'trigger' ||
+        t.kind === 'function' ||
+        t.kind === 'procedure'
+      )
         void actions.copyDDL(t.connectionId, t.database, t.name, t.kind, t.schema)
       break
     case 'copy-file-name':
@@ -756,6 +802,32 @@ async function expandForSearch(query: string, runId: number) {
                   (view.schema || '').toLowerCase().includes(q)
                 ) {
                   if (view.schema) schemasToExpand.add(view.schema)
+                }
+              }
+
+              for (const trigger of Object.values(meta.triggers || {})) {
+                if (
+                  (trigger.name || '').toLowerCase().includes(q) ||
+                  (trigger.schema || '').toLowerCase().includes(q) ||
+                  (trigger.tableName || '').toLowerCase().includes(q)
+                ) {
+                  if (trigger.schema) schemasToExpand.add(trigger.schema)
+                }
+              }
+
+              for (const fn of Object.values(meta.functions || {})) {
+                const signature = fn.signature ? `(${fn.signature})` : ''
+                const label = `${fn.name || ''}${signature}`.toLowerCase()
+                if (label.includes(q) || (fn.schema || '').toLowerCase().includes(q)) {
+                  if (fn.schema) schemasToExpand.add(fn.schema)
+                }
+              }
+
+              for (const proc of Object.values(meta.procedures || {})) {
+                const signature = proc.signature ? `(${proc.signature})` : ''
+                const label = `${proc.name || ''}${signature}`.toLowerCase()
+                if (label.includes(q) || (proc.schema || '').toLowerCase().includes(q)) {
+                  if (proc.schema) schemasToExpand.add(proc.schema)
                 }
               }
 

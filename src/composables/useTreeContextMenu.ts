@@ -6,7 +6,7 @@ export type ContextTarget =
   | { kind: 'database'; connectionId: string; database: string }
   | { kind: 'schema'; connectionId: string; database: string; schema: string }
   | {
-      kind: 'table' | 'view'
+      kind: 'table' | 'view' | 'trigger' | 'function' | 'procedure'
       connectionId: string
       database: string
       schema?: string
@@ -22,7 +22,10 @@ export type ContextTarget =
       format?: string
     }
 
-export type TableOrViewTarget = Extract<ContextTarget, { kind: 'table' | 'view' }>
+export type DatabaseObjectTarget = Extract<
+  ContextTarget,
+  { kind: 'table' | 'view' | 'trigger' | 'function' | 'procedure' }
+>
 
 /**
  * Composable for managing context menu state in tree views
@@ -36,9 +39,14 @@ export function useTreeContextMenu() {
   const hasContextMenu = computed(() => contextMenuVisible.value && !!contextTarget.value)
   const menuTarget = computed<ContextTarget>(() => contextTarget.value as ContextTarget)
 
-  const menuObj = computed<TableOrViewTarget | null>(() =>
-    menuTarget.value && (menuTarget.value.kind === 'table' || menuTarget.value.kind === 'view')
-      ? (menuTarget.value as TableOrViewTarget)
+  const menuObj = computed<DatabaseObjectTarget | null>(() =>
+    menuTarget.value &&
+    (menuTarget.value.kind === 'table' ||
+      menuTarget.value.kind === 'view' ||
+      menuTarget.value.kind === 'trigger' ||
+      menuTarget.value.kind === 'function' ||
+      menuTarget.value.kind === 'procedure')
+      ? (menuTarget.value as DatabaseObjectTarget)
       : null
   )
 

@@ -5,7 +5,7 @@ import ObjectIcon from '@/components/common/ObjectIcon.vue'
 import HighlightedText from '@/components/common/HighlightedText.vue'
 import { formatDataSize } from '@/utils/formats'
 
-type ObjectType = 'table' | 'view'
+type ObjectType = 'table' | 'view' | 'trigger' | 'function' | 'procedure'
 
 const props = defineProps<{
   items: string[]
@@ -25,7 +25,7 @@ const treeSelection = inject<
     connectionId?: string
     database?: string
     schema?: string
-    type?: 'table' | 'view' | null
+    type?: ObjectType | null
     name?: string | null
   }>
 >('treeSelection')!

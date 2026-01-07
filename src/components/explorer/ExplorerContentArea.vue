@@ -145,7 +145,11 @@ const emit = defineEmits<{
   'refresh-metadata': []
   'breadcrumb-pick-name': [
     paneId: PaneId,
-    payload: { name: string; type: 'table' | 'view'; schema?: string }
+    payload: {
+      name: string
+      type: 'table' | 'view' | 'trigger' | 'function' | 'procedure'
+      schema?: string
+    }
   ]
   'breadcrumb-pick-file': [paneId: PaneId, payload: { name: string; path: string }]
 }>()

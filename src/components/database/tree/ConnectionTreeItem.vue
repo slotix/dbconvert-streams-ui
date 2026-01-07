@@ -16,7 +16,7 @@ import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import type { Connection } from '@/types/connections'
 import type { FileSystemEntry } from '@/api/fileSystem'
 
-type ObjectType = 'table' | 'view'
+type ObjectType = 'table' | 'view' | 'trigger' | 'function' | 'procedure'
 
 interface DatabaseInfo {
   name: string
@@ -37,7 +37,7 @@ const treeSelection = inject<
     connectionId?: string
     database?: string
     schema?: string
-    type?: 'table' | 'view' | null
+    type?: ObjectType | null
     name?: string | null
     filePath?: string
   }>
@@ -432,6 +432,9 @@ const connectionPort = computed(() => getConnectionPort(props.connection))
           :schemas="treeLogic.getSchemas(connection.id, db.name)"
           :flat-tables="treeLogic.getFlatTables(connection.id, db.name)"
           :flat-views="treeLogic.getFlatViews(connection.id, db.name)"
+          :flat-triggers="treeLogic.getFlatTriggers(connection.id, db.name)"
+          :flat-functions="treeLogic.getFlatFunctions(connection.id, db.name)"
+          :flat-procedures="treeLogic.getFlatProcedures(connection.id, db.name)"
           :search-query="searchQuery"
           :caret-class="caretClass"
           :metadata-loaded="treeLogic.isMetadataLoaded(connection.id, db.name)"
