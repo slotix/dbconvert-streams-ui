@@ -3,9 +3,9 @@ import { computed } from 'vue'
 import {
   Beaker,
   Copy,
-  ExternalLink,
   Eye,
   EyeOff,
+  PanelLeftOpen,
   PanelRightOpen,
   Pencil,
   Plus,
@@ -294,8 +294,8 @@ function click(action: string, openInRightSplit?: boolean) {
             class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
             @click="click('open', false)"
           >
-            <ExternalLink class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
-            <span>Open</span>
+            <PanelLeftOpen class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
+            <span>Open in Left Pane</span>
           </button>
           <button
             class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
