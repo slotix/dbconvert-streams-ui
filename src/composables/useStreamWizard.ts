@@ -70,7 +70,11 @@ export function useStreamWizard() {
   // For display purposes only (e.g., showing first connection in UI summary)
   // All sources are equal - there's no true "primary"
   const primarySourceId = computed(() => sourceConnections.value[0]?.connectionId || null)
-  const primarySourceDatabase = computed(() => sourceConnections.value[0]?.database || null)
+  const primarySourceDatabase = computed(() => {
+    const primary = sourceConnections.value[0]
+    if (!primary) return null
+    return primary.database || primary.s3?.bucket || primary.files?.basePath || null
+  })
 
   // Type-aware helpers - organize by connection TYPE not COUNT
   const hasFileSource = computed(() => {
@@ -152,6 +156,8 @@ export function useStreamWizard() {
           alias: c.alias,
           connectionId: c.connectionId,
           database: c.database,
+          s3: c.s3,
+          files: c.files,
           tables: c.tables?.map((t) => ({
             name: t.name,
             selected: t.selected,
@@ -223,6 +229,8 @@ export function useStreamWizard() {
       if (
         current.connectionId !== orig.connectionId ||
         current.database !== orig.database ||
+        current.files?.basePath !== orig.files?.basePath ||
+        current.s3?.bucket !== orig.s3?.bucket ||
         current.alias !== orig.alias
       ) {
         return true
@@ -260,9 +268,9 @@ export function useStreamWizard() {
     const hasSourceTargetConflict = sourceConnections.value.some((conn) => {
       if (conn.connectionId !== selection.value.targetConnectionId) return false
       // Same connection - check if database/bucket also matches
-      const sourceDb = conn.database || conn.s3?.bucket
-      const targetDb = selection.value.targetDatabase
-      return sourceDb && targetDb && sourceDb === targetDb
+      const sourceSelection = conn.database || conn.s3?.bucket || conn.files?.basePath
+      const targetSelection = selection.value.targetDatabase || selection.value.targetPath
+      return sourceSelection && targetSelection && sourceSelection === targetSelection
     })
 
     return Boolean(
@@ -363,7 +371,8 @@ export function useStreamWizard() {
     const previousId = selection.value.sourceConnectionId
     const primary = sourceConnections.value[0]
     selection.value.sourceConnectionId = primary?.connectionId || null
-    selection.value.sourceDatabase = primary?.database || null
+    selection.value.sourceDatabase =
+      primary?.database || primary?.s3?.bucket || primary?.files?.basePath || null
 
     if (schemaOverride !== undefined) {
       selection.value.sourceSchema = schemaOverride
@@ -374,17 +383,29 @@ export function useStreamWizard() {
 
   // Selection methods
   function setSourceConnection(connectionId: string, database?: string, schema?: string) {
+    const connectionsStore = useConnectionsStore()
+    const connection = connectionsStore.connectionByID(connectionId)
+    const kind = getConnectionKindFromSpec(connection?.spec)
     const alias =
       sourceConnections.value.find((c) => c.connectionId === connectionId)?.alias ||
       sourceConnections.value[0]?.alias ||
       DEFAULT_ALIAS
-    setSourceConnections([
-      {
-        alias,
-        connectionId,
-        database
+    const mapping: StreamConnectionMapping = {
+      alias,
+      connectionId
+    }
+
+    if (kind === 's3') {
+      mapping.s3 = database ? { bucket: database } : undefined
+    } else if (kind === 'files') {
+      mapping.files = {
+        basePath: database || connection?.spec?.files?.basePath || ''
       }
-    ])
+    } else {
+      mapping.database = database
+    }
+
+    setSourceConnections([mapping])
     selection.value.sourceSchema = schema || null
   }
 
@@ -592,7 +613,8 @@ export function useStreamWizard() {
           schema: fc.schema,
           tables: fc.tables,
           queries: fc.queries,
-          s3: fc.s3
+          s3: fc.s3,
+          files: fc.files
         }))
 
     setSourceConnections(connectionsFromConfig)
@@ -600,7 +622,23 @@ export function useStreamWizard() {
     if (resolvedSourceDatabase) {
       selection.value.sourceDatabase = resolvedSourceDatabase
       if (sourceConnections.value[0]) {
-        sourceConnections.value[0].database = resolvedSourceDatabase
+        const connId = sourceConnections.value[0].connectionId
+        const resolved = connectionsStore.connectionByID(connId)
+        const kind = getConnectionKindFromSpec(resolved?.spec)
+        if (kind === 's3') {
+          sourceConnections.value[0].s3 = {
+            bucket: resolvedSourceDatabase,
+            prefixes: sourceConnections.value[0].s3?.prefixes,
+            objects: sourceConnections.value[0].s3?.objects
+          }
+        } else if (kind === 'files') {
+          sourceConnections.value[0].files = {
+            basePath: resolvedSourceDatabase,
+            paths: sourceConnections.value[0].files?.paths
+          }
+        } else {
+          sourceConnections.value[0].database = resolvedSourceDatabase
+        }
       }
     }
     selection.value.sourceSchema = sourceSchema

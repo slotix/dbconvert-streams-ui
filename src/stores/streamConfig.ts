@@ -55,6 +55,55 @@ function normalizeStreamConfig(config: StreamConfig): StreamConfig {
   }
 }
 
+function trimTrailingSeparators(value: string): string {
+  let end = value.length
+  while (end > 0) {
+    const ch = value[end - 1]
+    if (ch !== '/' && ch !== '\\') {
+      break
+    }
+    end -= 1
+  }
+  return value.slice(0, end)
+}
+
+function normalizeLocalPath(value: string): string {
+  return value.trim().split('\\').join('/')
+}
+
+function relativePathFromBase(basePath: string, fullPath: string): string {
+  const normalizedBase = trimTrailingSeparators(normalizeLocalPath(basePath))
+  const normalizedFull = normalizeLocalPath(fullPath)
+  if (!normalizedBase) {
+    return normalizedFull
+  }
+  if (normalizedFull === normalizedBase) {
+    return ''
+  }
+  const basePrefix = normalizedBase + '/'
+  if (normalizedFull.startsWith(basePrefix)) {
+    return normalizedFull.slice(basePrefix.length)
+  }
+  return normalizedFull
+}
+
+function ensureTrailingSlash(value: string): string {
+  const trimmed = trimTrailingSeparators(value)
+  if (!trimmed) {
+    return ''
+  }
+  return `${trimmed}/`
+}
+
+function getLeafName(path: string): string {
+  const normalized = normalizeLocalPath(trimTrailingSeparators(path))
+  if (!normalized) {
+    return ''
+  }
+  const parts = normalized.split('/').filter((segment) => segment)
+  return parts[parts.length - 1] || ''
+}
+
 export const defaultStreamConfigOptions: StreamConfig = {
   id: '',
   name: '',
@@ -168,6 +217,34 @@ export const buildStreamPayload = (stream: StreamConfig): Partial<StreamConfig> 
     return sorted.filter((prefix, i) => !sorted.slice(0, i).some((p) => prefix.startsWith(p)))
   }
 
+  function filesConfigFromFiles(
+    files: NonNullable<StreamConfig['files']>,
+    basePath: string
+  ): string[] {
+    const folderPaths: string[] = []
+    const filePaths: string[] = []
+
+    for (const f of files) {
+      if (!f.selected) continue
+      const relative = relativePathFromBase(basePath, f.path)
+      if (!relative) continue
+
+      if (f.type === 'dir') {
+        folderPaths.push(ensureTrailingSlash(relative))
+      } else {
+        filePaths.push(relative)
+      }
+    }
+
+    const dedupedFolders = deduplicatePrefixes(folderPaths.filter((p) => p))
+
+    const filteredFiles = filePaths.filter((filePath) => {
+      return !dedupedFolders.some((prefix) => filePath.startsWith(prefix))
+    })
+
+    return [...dedupedFolders, ...filteredFiles]
+  }
+
   function filesForConnection(
     allFiles: NonNullable<StreamConfig['files']> | undefined,
     connectionId: string,
@@ -181,6 +258,29 @@ export const buildStreamPayload = (stream: StreamConfig): Partial<StreamConfig> 
     // Legacy fallback (older configs): scope by bucket.
     if (bucketFallback) {
       return files.filter((f) => parseS3Path(f.path)?.bucket === bucketFallback)
+    }
+    return files
+  }
+
+  function filesForLocalConnection(
+    allFiles: NonNullable<StreamConfig['files']> | undefined,
+    connectionId: string,
+    basePathFallback?: string
+  ): NonNullable<StreamConfig['files']> {
+    const files = allFiles || []
+    const hasTagged = files.some((f) => !!f.connectionId)
+    if (hasTagged) {
+      return files.filter((f) => f.connectionId === connectionId)
+    }
+    if (basePathFallback) {
+      const normalizedBase = trimTrailingSeparators(normalizeLocalPath(basePathFallback))
+      if (normalizedBase) {
+        const basePrefix = normalizedBase + '/'
+        return files.filter((f) => {
+          const normalizedPath = normalizeLocalPath(f.path)
+          return normalizedPath === normalizedBase || normalizedPath.startsWith(basePrefix)
+        })
+      }
     }
     return files
   }
@@ -261,21 +361,6 @@ export const buildStreamPayload = (stream: StreamConfig): Partial<StreamConfig> 
     return filteredStream
   }
 
-  // For file sources, convert selected files to table entries
-  // Files are stored in stream.files, and each file becomes a table
-  let sourceTables: Table[] = []
-  if (stream.files && stream.files.length > 0) {
-    const selectedFiles = stream.files.filter((f) => f.selected)
-    if (selectedFiles.length > 0) {
-      // Convert files to tables (file name without extension = table name)
-      sourceTables = selectedFiles.map((file) => {
-        // Extract table name from file name (remove extension)
-        const tableName = file.name.replace(/\.(parquet|csv|json|jsonl|gz|zst)$/gi, '')
-        return { name: tableName, selected: true }
-      })
-    }
-  }
-
   // Helper to filter tables with their filters
   function filterTables(tables: Table[]): Table[] {
     return tables.map((table) => {
@@ -297,16 +382,20 @@ export const buildStreamPayload = (stream: StreamConfig): Partial<StreamConfig> 
     })
   }
 
-  // Build connections with their per-connection database/schema/tables/queries
+  // Build connections with their per-connection database/schema/tables/queries/files
   const builtConnections: StreamConnectionMapping[] = connections.map((conn) => {
+    const resolvedConn = connectionsStore.connectionByID(conn.connectionId)
+    const connKind = getConnectionKindFromSpec(resolvedConn?.spec)
+    const isS3Conn = connKind === 's3'
+    const isFilesConn = connKind === 'files'
+
     const result: StreamConnectionMapping = {
       alias: conn.alias,
       connectionId: conn.connectionId
     }
 
-    // For S3 connections, do NOT include database/schema/tables/queries (backend requires them empty)
-    // Only include these fields for non-S3 connections
-    if (!conn.s3) {
+    // Only include database/schema/tables/queries for database connections
+    if (!isS3Conn && !isFilesConn) {
       if (conn.database) {
         result.database = conn.database
       }
@@ -314,10 +403,8 @@ export const buildStreamPayload = (stream: StreamConfig): Partial<StreamConfig> 
         result.schema = conn.schema
       }
 
-      // Get tables from connection or use converted file tables (for single-source file streams)
-      const connTables = conn.tables && conn.tables.length > 0 ? conn.tables : sourceTables
-      if (connTables.length > 0) {
-        result.tables = filterTables(connTables)
+      if (conn.tables && conn.tables.length > 0) {
+        result.tables = filterTables(conn.tables)
       }
 
       // Include custom queries (only for convert mode)
@@ -329,14 +416,30 @@ export const buildStreamPayload = (stream: StreamConfig): Partial<StreamConfig> 
       }
     }
 
+    if (isFilesConn) {
+      const basePath = conn.files?.basePath || resolvedConn?.spec?.files?.basePath || ''
+      const hasExistingPaths = !!(conn.files?.paths && conn.files.paths.length > 0)
+      const scopedFiles = filesForLocalConnection(stream.files, conn.connectionId, basePath)
+      const paths = hasExistingPaths
+        ? conn.files?.paths || []
+        : scopedFiles.length > 0
+          ? filesConfigFromFiles(scopedFiles, basePath)
+          : []
+
+      result.files = {
+        basePath,
+        ...(paths.length > 0 ? { paths } : {})
+      }
+    }
+
     // Include S3 config if present (for S3-backed connections)
-    if (conn.s3) {
-      const bucket = conn.s3.bucket || ''
+    if (conn.s3 || isS3Conn) {
+      const bucket = conn.s3?.bucket || ''
 
       // If s3 already has prefixes/objects, use them directly
       if (
-        (conn.s3.prefixes && conn.s3.prefixes.length > 0) ||
-        (conn.s3.objects && conn.s3.objects.length > 0)
+        (conn.s3?.prefixes && conn.s3.prefixes.length > 0) ||
+        (conn.s3?.objects && conn.s3.objects.length > 0)
       ) {
         result.s3 = conn.s3
       } else if (stream.files && stream.files.length > 0) {
@@ -353,7 +456,7 @@ export const buildStreamPayload = (stream: StreamConfig): Partial<StreamConfig> 
           // No files selected, just set bucket (will fail backend validation)
           result.s3 = { bucket }
         }
-      } else {
+      } else if (conn.s3) {
         // No files array, just preserve the s3 config as-is
         result.s3 = conn.s3
       }
@@ -502,8 +605,47 @@ export const useStreamsStore = defineStore('streams', {
               }
             }
           }
+
+          if (conn.files?.basePath) {
+            const basePath = conn.files.basePath
+            const paths = conn.files.paths || []
+            for (const relative of paths) {
+              const isDir = relative.endsWith('/')
+              const trimmedRelative = isDir ? trimTrailingSeparators(relative) : relative
+              const selectionPath = isDir ? ensureTrailingSlash(trimmedRelative) : trimmedRelative
+              const name = getLeafName(trimmedRelative || basePath) || trimmedRelative || basePath
+              if (
+                !files.find((f) => f.path === selectionPath && f.connectionId === conn.connectionId)
+              ) {
+                files.push({
+                  name,
+                  connectionId: conn.connectionId,
+                  path: selectionPath,
+                  type: isDir ? 'dir' : 'file',
+                  selected: true
+                })
+              }
+            }
+          }
         }
-        this.currentStreamConfig.files = files
+
+        const normalizedFiles = files.map((file) => {
+          if (!file.connectionId) return file
+          if (file.path.startsWith('s3://')) return file
+          const conn = this.currentStreamConfig?.source?.connections?.find(
+            (c) => c.connectionId === file.connectionId
+          )
+          const basePath =
+            conn?.files?.basePath ||
+            useConnectionsStore().connectionByID(file.connectionId)?.spec?.files?.basePath ||
+            ''
+          if (!basePath) return file
+          const relative = relativePathFromBase(basePath, file.path)
+          if (!relative || relative === file.path) return file
+          const normalizedPath = file.type === 'dir' ? ensureTrailingSlash(relative) : relative
+          return { ...file, path: normalizedPath }
+        })
+        this.currentStreamConfig.files = normalizedFiles
       }
 
       // Clear source connections that reference deleted connections
@@ -532,19 +674,32 @@ export const useStreamsStore = defineStore('streams', {
       if (this.currentStreamConfig) {
         const existingConn = this.currentStreamConfig.source.connections?.[0]
         const alias = existingConn?.alias || DEFAULT_ALIAS
+        const connectionsStore = useConnectionsStore()
+        const resolved = connectionsStore.connectionByID(sourceId)
+        const kind = getConnectionKindFromSpec(resolved?.spec)
+        const next: StreamConnectionMapping = {
+          alias,
+          connectionId: sourceId,
+          schema: existingConn?.schema,
+          tables: existingConn?.tables,
+          queries: existingConn?.queries,
+          s3: existingConn?.s3
+        }
+
+        if (kind === 'files') {
+          const basePath =
+            database || existingConn?.files?.basePath || resolved?.spec?.files?.basePath || ''
+          next.files = {
+            basePath,
+            paths: existingConn?.files?.paths
+          }
+        } else if (kind !== 's3') {
+          next.database = database ?? existingConn?.database
+        }
+
         this.currentStreamConfig.source = normalizeSource({
           ...this.currentStreamConfig.source,
-          connections: [
-            {
-              alias,
-              connectionId: sourceId,
-              database: database ?? existingConn?.database,
-              schema: existingConn?.schema,
-              tables: existingConn?.tables,
-              queries: existingConn?.queries,
-              s3: existingConn?.s3
-            }
-          ]
+          connections: [next]
         })
       }
     },
@@ -630,6 +785,7 @@ export const useStreamsStore = defineStore('streams', {
           : null
         const primarySourceKind = getConnectionKindFromSpec(primarySourceConn?.spec)
         const isS3Source = primarySourceKind === 's3' && connectionCount === 1
+        const isFileSource = primarySourceKind === 'files' && connectionCount === 1
 
         // Copy database/schema from root level to per-connection fields
         if (isS3Source) {
@@ -653,6 +809,31 @@ export const useStreamsStore = defineStore('streams', {
                       objects: first.s3?.objects
                     }
                   : first.s3
+              },
+              ...rest
+            ]
+          }
+        } else if (isFileSource) {
+          const basePath =
+            this.currentStreamConfig.sourceDatabase ||
+            this.currentStreamConfig.source.connections?.[0]?.files?.basePath ||
+            primarySourceConn?.spec?.files?.basePath ||
+            ''
+
+          if (this.currentStreamConfig.source.connections?.length) {
+            const [first, ...rest] = this.currentStreamConfig.source.connections
+            this.currentStreamConfig.source.connections = [
+              {
+                ...first,
+                database: undefined,
+                schema: undefined,
+                s3: undefined,
+                files: basePath
+                  ? {
+                      basePath,
+                      paths: first.files?.paths
+                    }
+                  : first.files
               },
               ...rest
             ]

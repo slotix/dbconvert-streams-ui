@@ -167,6 +167,12 @@ const isS3Connection = computed(() => {
   return !!conn?.spec?.s3
 })
 
+const localBasePath = computed(() => {
+  if (!props.connectionId) return ''
+  const conn = connectionsStore.connectionByID(props.connectionId)
+  return conn?.spec?.files?.basePath || ''
+})
+
 // Get bucket directly from stream config - doesn't depend on connectionsStore being loaded
 const s3Bucket = computed(() => {
   const sourceConn = streamsStore.currentStreamConfig?.source?.connections?.find(
@@ -235,8 +241,66 @@ const paginatedRows = computed(() => {
   return filteredRows.value.slice(start, start + itemsPerPage)
 })
 
-function fileEntryKey(e: Pick<FileEntry, 'connectionId' | 'path'>): string {
-  return `${e.connectionId || ''}::${e.path}`
+function trimTrailingSeparators(value: string): string {
+  let end = value.length
+  while (end > 0) {
+    const ch = value[end - 1]
+    if (ch !== '/' && ch !== '\\') {
+      break
+    }
+    end -= 1
+  }
+  return value.slice(0, end)
+}
+
+function normalizeLocalPath(value: string): string {
+  return value.trim().split('\\').join('/')
+}
+
+function relativePathFromBase(basePath: string, fullPath: string): string {
+  const normalizedBase = trimTrailingSeparators(normalizeLocalPath(basePath))
+  const normalizedFull = normalizeLocalPath(fullPath)
+  if (!normalizedBase) {
+    return normalizedFull
+  }
+  if (normalizedFull === normalizedBase) {
+    return ''
+  }
+  const basePrefix = normalizedBase + '/'
+  if (normalizedFull.startsWith(basePrefix)) {
+    return normalizedFull.slice(basePrefix.length)
+  }
+  return normalizedFull
+}
+
+function ensureTrailingSlash(value: string): string {
+  const trimmed = trimTrailingSeparators(value)
+  if (!trimmed) {
+    return ''
+  }
+  return `${trimmed}/`
+}
+
+function selectionPathForEntry(entry: { path: string; type?: 'file' | 'dir' }): string {
+  if (isS3Connection.value) {
+    return entry.path
+  }
+  const basePath = localBasePath.value
+  if (!basePath) {
+    return entry.path
+  }
+  const relative = relativePathFromBase(basePath, entry.path)
+  if (!relative) {
+    return relative
+  }
+  if (entry.type === 'dir') {
+    return ensureTrailingSlash(relative)
+  }
+  return relative
+}
+
+function fileEntryKey(e: Pick<FileEntry, 'connectionId' | 'path' | 'type'>): string {
+  return `${e.connectionId || ''}::${selectionPathForEntry({ path: e.path, type: e.type })}`
 }
 
 // Filter files by connectionId when available (required for same-bucket multi-source)
@@ -260,30 +324,34 @@ const configFiles = computed<FileEntry[]>(() => {
 
 function isSelectable(entry: FileSystemEntry): boolean {
   if (entry.type === 'file') return true
-  // For S3 sources, allow selecting folder prefixes.
-  if (entry.type === 'dir' && isS3Connection.value) return true
+  // Allow selecting folders for both S3 prefixes and local directories
+  if (entry.type === 'dir') return true
   return false
 }
 
 /**
  * Check if item is explicitly selected in the store
  */
-function isExplicitlySelected(path: string): boolean {
-  return !!configFiles.value.find((f) => f.path === path)?.selected
+function isExplicitlySelected(entry: FileSystemEntry): boolean {
+  const selectionPath = selectionPathForEntry(entry)
+  return !!configFiles.value.find((f) => f.path === selectionPath)?.selected
 }
 
 /**
  * Check if any ancestor folder of the given path is explicitly selected.
  * If ancestor is selected, the item is implicitly included.
  */
-function isAncestorSelected(path: string): boolean {
+function isAncestorSelected(entry: FileSystemEntry): boolean {
   // Find all explicitly selected folders
   const selectedFolders = configFiles.value
     .filter((f) => f.selected && f.type === 'dir')
     .map((f) => (f.path.endsWith('/') ? f.path : `${f.path}/`))
 
   // Check if path falls under any selected folder
-  return selectedFolders.some((folder) => path.startsWith(folder) && path !== folder.slice(0, -1))
+  const selectionPath = selectionPathForEntry(entry)
+  return selectedFolders.some(
+    (folder) => selectionPath.startsWith(folder) && selectionPath !== folder.slice(0, -1)
+  )
 }
 
 /**
@@ -292,8 +360,8 @@ function isAncestorSelected(path: string): boolean {
  * - Indeterminate (folders only): has explicitly selected descendants but folder itself not selected
  */
 function getCheckboxState(entry: FileSystemEntry): { checked: boolean; indeterminate: boolean } {
-  const explicitlySelected = isExplicitlySelected(entry.path)
-  const ancestorSelected = isAncestorSelected(entry.path)
+  const explicitlySelected = isExplicitlySelected(entry)
+  const ancestorSelected = isAncestorSelected(entry)
 
   // If explicitly selected or ancestor is selected, show as checked
   if (explicitlySelected || ancestorSelected) {
@@ -320,7 +388,7 @@ function hasExplicitlySelectedDescendants(entry: FileSystemEntry): boolean {
   // First check loaded children
   if (entry.children && entry.children.length > 0) {
     for (const child of entry.children) {
-      if (isExplicitlySelected(child.path)) {
+      if (isExplicitlySelected(child)) {
         return true
       }
       if (child.type === 'dir' && hasExplicitlySelectedDescendants(child)) {
@@ -331,24 +399,26 @@ function hasExplicitlySelectedDescendants(entry: FileSystemEntry): boolean {
 
   // Also check configFiles for selected descendants (handles unloaded children in edit mode)
   // A path is a descendant if it starts with the folder path (which ends with /)
-  const folderPrefix = entry.path.endsWith('/') ? entry.path : `${entry.path}/`
+  const selectionPath = selectionPathForEntry(entry)
+  const folderPrefix = selectionPath.endsWith('/') ? selectionPath : `${selectionPath}/`
   return configFiles.value.some(
-    (f) => f.selected && f.path.startsWith(folderPrefix) && f.path !== entry.path
+    (f) => f.selected && f.path.startsWith(folderPrefix) && f.path !== selectionPath
   )
 }
 
 function upsertConfigFile(entry: FileSystemEntry, selected: boolean) {
   if (!streamsStore.currentStreamConfig) return
   const files = streamsStore.currentStreamConfig.files || []
+  const selectionPath = selectionPathForEntry(entry)
   const idx = files.findIndex(
     (f) =>
-      f.path === entry.path &&
+      f.path === selectionPath &&
       (props.connectionId ? f.connectionId === props.connectionId : !f.connectionId)
   )
   const next: FileEntry = {
     name: entry.name,
     connectionId: props.connectionId || undefined,
-    path: entry.path,
+    path: selectionPath,
     type: entry.type,
     size: entry.size,
     selected
@@ -386,7 +456,7 @@ function removeDescendantSelections(entry: FileSystemEntry) {
   function collectDescendantPaths(e: FileSystemEntry) {
     if (e.children) {
       for (const child of e.children) {
-        pathsToRemove.add(child.path)
+        pathsToRemove.add(selectionPathForEntry(child))
         if (child.type === 'dir') {
           collectDescendantPaths(child)
         }
@@ -417,7 +487,11 @@ function syncConfigFilesWithLoadedTree(entries: FileSystemEntry[]) {
   const all = flattenAllLoaded(entries, 0).map((r) => r.entry)
   for (const e of all) {
     const prev = existing.get(
-      fileEntryKey({ connectionId: props.connectionId || undefined, path: e.path })
+      fileEntryKey({
+        connectionId: props.connectionId || undefined,
+        path: e.path,
+        type: e.type
+      })
     )
     if (prev) {
       // Update metadata but keep selection state
@@ -451,7 +525,9 @@ const selectedCount = computed(() => {
   }).length
 
   // Also count selected items from configFiles that aren't in the visible tree
-  const visiblePaths = new Set(allRows.map((r) => r.entry.path))
+  const visiblePaths = new Set(
+    allRows.map((r) => selectionPathForEntry({ path: r.entry.path, type: r.entry.type }))
+  )
   const hiddenSelected = configFiles.value.filter(
     (f) => f.selected && !visiblePaths.has(f.path)
   ).length
@@ -514,7 +590,17 @@ function getParentPaths(filePath: string): string[] {
 
   // Handle S3 paths: s3://bucket/folder1/folder2/...
   const s3Match = filePath.match(/^(s3:\/\/[^/]+\/)(.*)$/)
-  if (!s3Match) return parents
+  if (!s3Match) {
+    const basePath = trimTrailingSeparators(normalizeLocalPath(localBasePath.value))
+    if (!basePath) return parents
+    const relative = trimTrailingSeparators(relativePathFromBase(basePath, filePath))
+    if (!relative) return parents
+    const segments = relative.split('/').filter(Boolean)
+    for (let i = 0; i < segments.length - 1; i++) {
+      parents.push(`${basePath}/${segments.slice(0, i + 1).join('/')}`)
+    }
+    return parents
+  }
 
   const bucketPrefix = s3Match[1] // 's3://bucket/'
   const relativePath = s3Match[2] // 'folder1/folder2/file.parquet' or 'folder1/folder2/'

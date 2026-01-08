@@ -317,7 +317,12 @@ const emit = defineEmits<{
   'select-file': [payload: { connectionId: string; path: string }]
   'select-bucket': [payload: { connectionId: string; bucket: string }]
   'toggle-source-connection': [
-    payload: { connectionId: string; database?: string; checked: boolean; kind: ConnectionKind }
+    payload: {
+      connectionId: string
+      selectionValue?: string
+      checked: boolean
+      kind: ConnectionKind
+    }
   ]
 }>()
 
@@ -428,7 +433,7 @@ function handleS3BucketSelect(connection: Connection, bucket: string) {
 }
 
 function handleS3BucketCheckboxChange(connectionId: string, bucket: string, checked: boolean) {
-  emit('toggle-source-connection', { connectionId, database: bucket, checked, kind: 's3' })
+  emit('toggle-source-connection', { connectionId, selectionValue: bucket, checked, kind: 's3' })
 }
 
 function handleS3BucketRowClick(connection: Connection, bucket: string) {
@@ -454,7 +459,7 @@ function isFileConnectionSelected(connectionId: string): boolean {
   // Target mode: check selectedPath (single-select)
   if (props.mode === 'source') {
     return props.sourceConnections.some(
-      (fc) => fc.connectionId === connectionId && fc.database === basePath
+      (fc) => fc.connectionId === connectionId && fc.files?.basePath === basePath
     )
   }
   return props.selectedConnectionId === connectionId && props.selectedPath === basePath
@@ -463,7 +468,12 @@ function isFileConnectionSelected(connectionId: string): boolean {
 function handleFilePathCheckboxChange(connectionId: string, checked: boolean) {
   const connection = getConnectionById(connectionId)
   const basePath = connection?.spec?.files?.basePath || ''
-  emit('toggle-source-connection', { connectionId, database: basePath, checked, kind: 'files' })
+  emit('toggle-source-connection', {
+    connectionId,
+    selectionValue: basePath,
+    checked,
+    kind: 'files'
+  })
 }
 
 function handleFilePathRowClick(connection: Connection) {
@@ -509,7 +519,7 @@ function handleDatabaseCheckboxChange(connectionId: string, database: string, ch
     return
   }
 
-  emit('toggle-source-connection', { connectionId, database, checked, kind })
+  emit('toggle-source-connection', { connectionId, selectionValue: database, checked, kind })
   if (checked) {
     void ensureMetadata(connectionId, database)
   }

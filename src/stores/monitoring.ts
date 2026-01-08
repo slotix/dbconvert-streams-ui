@@ -390,8 +390,7 @@ export const useMonitoringStore = defineStore('monitoring', {
 
       // Filter to s3_upload logs for current stream
       const uploadLogs = state.logs.filter(
-        (log) =>
-          log.category === 's3_upload' && log.table && log.streamId === currentStreamID
+        (log) => log.category === 's3_upload' && log.table && log.streamId === currentStreamID
       )
 
       // S3 upload has its own status values: UPLOADING, FINISHED, FAILED

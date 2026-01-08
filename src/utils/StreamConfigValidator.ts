@@ -205,6 +205,45 @@ function validateSource(source: unknown, errors: ValidationError[]): void {
           hasAnySelection = true
         }
       }
+    } else if (conn.files !== undefined) {
+      if (typeof conn.files !== 'object' || conn.files === null) {
+        errors.push({
+          path: `${connPath}.files`,
+          message: 'files must be an object'
+        })
+      } else {
+        if (conn.database && typeof conn.database === 'string' && conn.database.trim() !== '') {
+          errors.push({
+            path: `${connPath}.database`,
+            message: 'database must be empty for files connections'
+          })
+        }
+        if (conn.schema && typeof conn.schema === 'string' && conn.schema.trim() !== '') {
+          errors.push({
+            path: `${connPath}.schema`,
+            message: 'schema must be empty for files connections'
+          })
+        }
+        if (Array.isArray(conn.tables) && conn.tables.length > 0) {
+          errors.push({
+            path: `${connPath}.tables`,
+            message: 'tables must be empty for files connections'
+          })
+        }
+        if (Array.isArray(conn.queries) && conn.queries.length > 0) {
+          errors.push({
+            path: `${connPath}.queries`,
+            message: 'queries must be empty for files connections'
+          })
+        }
+
+        validateFilesConfig(conn.files as Record<string, unknown>, connPath, errors)
+        const files = conn.files as Record<string, unknown>
+        const paths = Array.isArray(files.paths) ? files.paths : []
+        if (paths.length > 0) {
+          hasAnySelection = true
+        }
+      }
     } else {
       // Database connection - validate tables/queries
       if (Array.isArray(conn.tables) && conn.tables.length > 0) {
@@ -221,7 +260,8 @@ function validateSource(source: unknown, errors: ValidationError[]): void {
   if (!hasAnySelection) {
     errors.push({
       path: 'source.connections',
-      message: 'At least one connection must have tables, queries, or S3 selections'
+      message:
+        'At least one connection must have tables, queries, S3 selections, or file selections'
     })
   }
 
@@ -302,6 +342,37 @@ function validateS3Config(
       errors.push({
         path: `${connPath}.s3.objects[${index}]`,
         message: `object '${trimmed}' must not end with '/'`
+      })
+    }
+  })
+}
+
+function validateFilesConfig(
+  files: Record<string, unknown>,
+  connPath: string,
+  errors: ValidationError[]
+): void {
+  const basePath = typeof files.basePath === 'string' ? files.basePath.trim() : ''
+  if (!basePath) {
+    errors.push({
+      path: `${connPath}.files.basePath`,
+      message: 'files.basePath is required'
+    })
+  }
+
+  const paths = Array.isArray(files.paths) ? files.paths : []
+  if (paths.length === 0) {
+    errors.push({
+      path: `${connPath}.files.paths`,
+      message: 'files.paths must contain at least one entry'
+    })
+  }
+
+  paths.forEach((pathValue, index) => {
+    if (typeof pathValue !== 'string' || pathValue.trim() === '') {
+      errors.push({
+        path: `${connPath}.files.paths[${index}]`,
+        message: 'file path must be a non-empty string'
       })
     }
   })
@@ -456,6 +527,7 @@ function extractConnections(src: Record<string, unknown>): Array<{
   tables?: unknown[]
   queries?: unknown[]
   s3?: unknown
+  files?: unknown
 }> {
   if (Array.isArray(src.connections) && src.connections.length > 0) {
     return src.connections as Array<{
@@ -466,6 +538,7 @@ function extractConnections(src: Record<string, unknown>): Array<{
       tables?: unknown[]
       queries?: unknown[]
       s3?: unknown
+      files?: unknown
     }>
   }
   return []

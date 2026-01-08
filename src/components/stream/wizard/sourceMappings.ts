@@ -8,6 +8,7 @@ export function getSourceSelectionValue(
   kind: ConnectionKind | null
 ): string | undefined {
   if (kind === 's3') return mapping.s3?.bucket
+  if (kind === 'files') return mapping.files?.basePath
   return mapping.database
 }
 
@@ -34,13 +35,16 @@ export function makeDatabaseSourceMapping(params: {
 export function makeFileSourceMapping(params: {
   connectionId: string
   alias: string
-  path?: string
+  basePath: string
+  paths?: string[]
 }): StreamConnectionMapping {
   return {
     connectionId: params.connectionId,
     alias: params.alias,
-    // Legacy field name, but value is a filesystem path.
-    database: params.path
+    files: {
+      basePath: params.basePath,
+      paths: params.paths
+    }
   }
 }
 
@@ -86,12 +90,13 @@ export function toggleSourceMapping(params: {
   }
 
   if (params.kind === 'files') {
+    if (!params.selectionValue) return params.current
     return [
       ...params.current,
       makeFileSourceMapping({
         connectionId: params.connectionId,
         alias: params.alias,
-        path: params.selectionValue
+        basePath: params.selectionValue
       })
     ]
   }

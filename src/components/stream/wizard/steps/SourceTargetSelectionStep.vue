@@ -36,6 +36,9 @@ import { computed, watch } from 'vue'
 import DualTreeSelector from '../DualTreeSelector.vue'
 import StreamNameField from '../StreamNameField.vue'
 import type { StreamConnectionMapping } from '@/types/streamConfig'
+import { useConnectionsStore } from '@/stores/connections'
+import { getConnectionKindFromSpec } from '@/types/specs'
+import { getSourceSelectionValue } from '@/components/stream/wizard/sourceMappings'
 
 interface Props {
   sourceConnectionId?: string | null
@@ -90,9 +93,17 @@ const emit = defineEmits<{
 const primarySourceId = computed(
   () => props.sourceConnections[0]?.connectionId || props.sourceConnectionId
 )
-const primarySourceDatabase = computed(
-  () => props.sourceConnections[0]?.database || props.sourceDatabase
-)
+const connectionsStore = useConnectionsStore()
+
+const primarySourceDatabase = computed(() => {
+  const primary = props.sourceConnections[0]
+  if (primary) {
+    const conn = connectionsStore.connectionByID(primary.connectionId)
+    const kind = getConnectionKindFromSpec(conn?.spec)
+    return getSourceSelectionValue(primary, kind)
+  }
+  return props.sourceDatabase
+})
 // Multiple sources = 2+ connections selected
 const hasMultipleSources = computed(() => props.sourceConnections.length > 1)
 

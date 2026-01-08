@@ -75,6 +75,11 @@ export interface S3SourceConfig {
   objects?: string[]
 }
 
+export interface FilesSourceConfig {
+  basePath: string
+  paths?: string[]
+}
+
 // StreamConnectionMapping extends the federated ConnectionMapping with
 // per-connection database/tables/queries/S3 config for stream sources.
 // Each connection owns its own selection of what to stream.
@@ -87,6 +92,8 @@ export interface StreamConnectionMapping extends ConnectionMapping {
   queries?: QuerySource[]
   /** S3 selection config for S3-backed file connections only */
   s3?: S3SourceConfig
+  /** Local file selection config for local files connections only */
+  files?: FilesSourceConfig
 }
 
 export interface SourceConfig {

@@ -299,6 +299,7 @@ import { getSourceSelectionValue, toggleSourceMapping } from './sourceMappings'
 import {
   getConnectionKindFromSpec,
   getConnectionTypeLabel,
+  isDatabaseKind,
   matchesConnectionTypeFilter,
   type ConnectionKind,
   type ConnectionSpec
@@ -378,9 +379,13 @@ function getSelectionValue(conn: StreamConnectionMapping): string | undefined {
 const primarySourceId = computed(
   () => localSourceConnections.value[0]?.connectionId || props.sourceConnectionId
 )
-const primarySourceDatabase = computed(
-  () => localSourceConnections.value[0]?.database || props.sourceDatabase
-)
+const primarySourceDatabase = computed(() => {
+  const primary = localSourceConnections.value[0]
+  if (primary) {
+    return getSelectionValue(primary)
+  }
+  return props.sourceDatabase
+})
 // Show alias UI when 2+ sources selected (for disambiguation in queries)
 const showAliasUI = computed(() => localSourceConnections.value.length > 1)
 
@@ -437,7 +442,7 @@ function syncPrimarySelection() {
 // Handle checkbox toggle for multi-source selection
 function handleToggleSourceConnection(payload: {
   connectionId: string
-  database?: string
+  selectionValue?: string
   checked: boolean
   kind: ConnectionKind
 }) {
@@ -445,7 +450,7 @@ function handleToggleSourceConnection(payload: {
   localSourceConnections.value = toggleSourceMapping({
     current: localSourceConnections.value,
     connectionId: payload.connectionId,
-    selectionValue: payload.database,
+    selectionValue: payload.selectionValue,
     checked: payload.checked,
     alias,
     kind: payload.kind
@@ -577,8 +582,9 @@ function handleSourceConnectionSelect(payload: {
   schema?: string
 }) {
   // S3 connections are selected by bucket only (via select-bucket).
-  // Selecting an S3 connection "root" without a bucket is invalid.
-  if (getConnectionKind(payload.connectionId) === 's3') {
+  // Files connections are selected by base path (via select-file).
+  const kind = getConnectionKind(payload.connectionId)
+  if (kind === 's3' || kind === 'files') {
     return
   }
   const alias =
@@ -600,6 +606,9 @@ function handleSourceDatabaseSelect(payload: {
   database: string
   schema?: string
 }) {
+  if (!isDatabaseKind(getConnectionKind(payload.connectionId))) {
+    return
+  }
   const alias =
     localSourceConnections.value.find((c) => c.connectionId === payload.connectionId)?.alias ||
     generateAlias(payload.connectionId)
@@ -635,7 +644,6 @@ function handleTargetDatabaseSelect(payload: {
 }
 
 function handleSourceFileSelect(payload: { connectionId: string; path: string }) {
-  // For local file sources, treat the path as the "database" equivalent
   const alias =
     localSourceConnections.value.find((c) => c.connectionId === payload.connectionId)?.alias ||
     generateAlias(payload.connectionId)
@@ -643,7 +651,9 @@ function handleSourceFileSelect(payload: { connectionId: string; path: string })
     {
       alias,
       connectionId: payload.connectionId,
-      database: payload.path // Use path as database for file sources
+      files: {
+        basePath: payload.path
+      }
     }
   ]
   emit('update:source-connections', localSourceConnections.value)

@@ -271,7 +271,8 @@ export function normalizeStreamConnections(
       schema: conn.schema,
       tables: conn.tables,
       queries: conn.queries,
-      s3: conn.s3
+      s3: conn.s3,
+      files: conn.files
     }
   })
 }
