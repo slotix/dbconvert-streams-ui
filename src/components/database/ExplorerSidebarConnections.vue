@@ -3,7 +3,7 @@ import { ref, computed, watch, onMounted, nextTick, provide } from 'vue'
 import { useDebounceFn, useResizeObserver } from '@vueuse/core'
 import { Boxes } from 'lucide-vue-next'
 import { useConnectionsStore } from '@/stores/connections'
-import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
+import { useExplorerNavigationStore, type ObjectType } from '@/stores/explorerNavigation'
 import { useFileExplorerStore } from '@/stores/fileExplorer'
 import { useConnectionTreeLogic } from '@/composables/useConnectionTreeLogic'
 import { useTreeContextMenu, type ContextTarget } from '@/composables/useTreeContextMenu'
@@ -20,8 +20,6 @@ import { parseRoutineName } from '@/utils/routineUtils'
 import ExplorerContextMenu from './ExplorerContextMenu.vue'
 import ConnectionTreeItem from './tree/ConnectionTreeItem.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
-
-type ObjectType = 'table' | 'view' | 'function' | 'procedure' | 'sequence'
 
 const props = defineProps<{
   initialExpandedConnectionId?: string

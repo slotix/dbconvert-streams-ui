@@ -6,9 +6,7 @@ import SchemaTreeItem from './SchemaTreeItem.vue'
 import ObjectList from './ObjectList.vue'
 import HighlightedText from '@/components/common/HighlightedText.vue'
 import { useDatabaseOverviewStore } from '@/stores/databaseOverview'
-import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
-
-type ObjectType = 'table' | 'view' | 'function' | 'procedure' | 'sequence'
+import { useExplorerNavigationStore, type ObjectType } from '@/stores/explorerNavigation'
 
 const overviewStore = useDatabaseOverviewStore()
 const navigationStore = useExplorerNavigationStore()

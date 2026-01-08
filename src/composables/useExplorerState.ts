@@ -1,13 +1,11 @@
 import { ref, computed } from 'vue'
 import { useConnectionsStore } from '@/stores/connections'
-import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
+import { useExplorerNavigationStore, type ObjectType } from '@/stores/explorerNavigation'
 import { getConnectionHost, getConnectionPort } from '@/utils/specBuilder'
 import type { SQLRoutineMeta, SQLSequenceMeta, SQLTableMeta, SQLViewMeta } from '@/types/metadata'
 import type { FileSystemEntry } from '@/api/fileSystem'
 import type { FileMetadata } from '@/types/files'
 import { getConnectionKindFromSpec, getConnectionTypeLabel, isFileBasedKind } from '@/types/specs'
-
-type ObjectType = 'table' | 'view' | 'function' | 'procedure' | 'sequence'
 
 export function useExplorerState() {
   const connectionsStore = useConnectionsStore()

@@ -3,32 +3,7 @@ import { getStreamLogs } from '@/api/apiClient'
 import type { StandardLogEntry } from '@/types/logs'
 import { useMonitoringStore } from '@/stores/monitoring'
 import type { LogLevel, LogCategory, NodeType, Status } from '@/constants'
-
-// localStorage keys for user preferences
-const STORAGE_KEYS = {
-  viewMode: 'sqlLogViewMode',
-  sortOrder: 'sqlLogSortOrder',
-  timeWindow: 'sqlLogTimeWindow',
-  errorsOnly: 'sqlLogErrorsOnly'
-} as const
-
-// Helper functions for localStorage persistence
-function loadFromStorage<T>(key: string, defaultValue: T): T {
-  try {
-    const stored = localStorage.getItem(key)
-    return stored ? (JSON.parse(stored) as T) : defaultValue
-  } catch {
-    return defaultValue
-  }
-}
-
-function saveToStorage(key: string, value: unknown): void {
-  try {
-    localStorage.setItem(key, JSON.stringify(value))
-  } catch (e) {
-    console.warn(`Failed to save ${key} to localStorage:`, e)
-  }
-}
+import { STORAGE_KEYS, getStorageValue, setStorageValue } from '@/constants/storageKeys'
 
 export interface SystemLog {
   id: number
@@ -227,9 +202,9 @@ export const useLogsStore = defineStore('logs', {
           'SCHEMA_CHANGE',
           'DML_OPERATION'
         ]),
-        timeWindow: loadFromStorage<TimeWindow>(STORAGE_KEYS.timeWindow, 'session'),
+        timeWindow: getStorageValue<TimeWindow>(STORAGE_KEYS.LOGS_TIME_WINDOW, 'session'),
         searchText: '', // Not persisted - session specific
-        errorsOnly: loadFromStorage<boolean>(STORAGE_KEYS.errorsOnly, false),
+        errorsOnly: getStorageValue<boolean>(STORAGE_KEYS.LOGS_ERRORS_ONLY, false),
         currentTabOnly: false // Not persisted - session specific
       } as LogFilters,
 
@@ -240,8 +215,8 @@ export const useLogsStore = defineStore('logs', {
       // UI state (with persisted preferences)
       currentTabId: null as string | null,
       collapsedLocations: new Set<string>(), // Locations that are collapsed when visuallyGrouped is true
-      visuallyGrouped: loadFromStorage<boolean>('sqlLogVisuallyGrouped', true), // Show location headers
-      sortOrder: loadFromStorage<'newest' | 'oldest'>(STORAGE_KEYS.sortOrder, 'newest')
+      visuallyGrouped: getStorageValue<boolean>(STORAGE_KEYS.LOGS_VISUALLY_GROUPED, true), // Show location headers
+      sortOrder: getStorageValue<'newest' | 'oldest'>(STORAGE_KEYS.LOGS_SORT_ORDER, 'newest')
     }
   },
 
@@ -629,28 +604,28 @@ export const useLogsStore = defineStore('logs', {
 
     toggleVisualGrouping() {
       this.visuallyGrouped = !this.visuallyGrouped
-      saveToStorage('sqlLogVisuallyGrouped', this.visuallyGrouped)
+      setStorageValue(STORAGE_KEYS.LOGS_VISUALLY_GROUPED, this.visuallyGrouped)
     },
 
     toggleSortOrder() {
       this.sortOrder = this.sortOrder === 'newest' ? 'oldest' : 'newest'
-      saveToStorage(STORAGE_KEYS.sortOrder, this.sortOrder)
+      setStorageValue(STORAGE_KEYS.LOGS_SORT_ORDER, this.sortOrder)
     },
 
     setSortOrder(order: 'newest' | 'oldest') {
       this.sortOrder = order
-      saveToStorage(STORAGE_KEYS.sortOrder, order)
+      setStorageValue(STORAGE_KEYS.LOGS_SORT_ORDER, order)
     },
 
     // Filter preference persistence
     setTimeWindow(timeWindow: TimeWindow) {
       this.filters.timeWindow = timeWindow
-      saveToStorage(STORAGE_KEYS.timeWindow, timeWindow)
+      setStorageValue(STORAGE_KEYS.LOGS_TIME_WINDOW, timeWindow)
     },
 
     setErrorsOnly(errorsOnly: boolean) {
       this.filters.errorsOnly = errorsOnly
-      saveToStorage(STORAGE_KEYS.errorsOnly, errorsOnly)
+      setStorageValue(STORAGE_KEYS.LOGS_ERRORS_ONLY, errorsOnly)
     },
 
     setQueryPurposes(purposes: Set<QueryPurpose>) {

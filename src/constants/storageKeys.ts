@@ -44,7 +44,22 @@ export const STORAGE_KEYS = {
   DESKTOP_LAST_ROUTE: 'desktop-last-route',
 
   /** UI zoom level for desktop app */
-  DESKTOP_UI_ZOOM: 'desktop-ui-zoom'
+  DESKTOP_UI_ZOOM: 'desktop-ui-zoom',
+
+  /** Logs panel view mode preference */
+  LOGS_VIEW_MODE: 'sqlLogViewMode',
+
+  /** Logs panel sort order preference */
+  LOGS_SORT_ORDER: 'sqlLogSortOrder',
+
+  /** Logs panel time window preference */
+  LOGS_TIME_WINDOW: 'sqlLogTimeWindow',
+
+  /** Logs panel errors-only filter preference */
+  LOGS_ERRORS_ONLY: 'sqlLogErrorsOnly',
+
+  /** Logs panel visually grouped preference */
+  LOGS_VISUALLY_GROUPED: 'sqlLogVisuallyGrouped'
 } as const
 
 /**

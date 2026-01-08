@@ -4,8 +4,7 @@ import type { ComputedRef } from 'vue'
 import ObjectIcon from '@/components/common/ObjectIcon.vue'
 import HighlightedText from '@/components/common/HighlightedText.vue'
 import { formatDataSize } from '@/utils/formats'
-
-type ObjectType = 'table' | 'view' | 'function' | 'procedure' | 'sequence'
+import type { ObjectType } from '@/stores/explorerNavigation'
 
 const props = defineProps<{
   items: string[]

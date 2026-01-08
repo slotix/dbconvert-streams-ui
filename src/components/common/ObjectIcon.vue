@@ -3,8 +3,7 @@ import { computed } from 'vue'
 import { Code, Focus, Hash, Sheet } from 'lucide-vue-next'
 import { useIconSizes } from '@/composables/useIconSizes'
 import type { IconSizeKey } from '@/constants'
-
-type ObjectType = 'table' | 'view' | 'function' | 'procedure' | 'sequence'
+import type { ObjectType } from '@/stores/explorerNavigation'
 
 interface Props {
   objectType: ObjectType

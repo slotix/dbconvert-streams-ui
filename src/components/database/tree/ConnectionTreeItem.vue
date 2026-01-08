@@ -12,11 +12,9 @@ import { getConnectionTooltip } from '@/utils/connectionUtils'
 import { getConnectionHost, getConnectionPort } from '@/utils/specBuilder'
 import { useConnectionTreeLogic } from '@/composables/useConnectionTreeLogic'
 import { useFileExplorerStore } from '@/stores/fileExplorer'
-import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
+import { useExplorerNavigationStore, type ObjectType } from '@/stores/explorerNavigation'
 import type { Connection } from '@/types/connections'
 import type { FileSystemEntry } from '@/api/fileSystem'
-
-type ObjectType = 'table' | 'view' | 'function' | 'procedure' | 'sequence'
 
 interface DatabaseInfo {
   name: string

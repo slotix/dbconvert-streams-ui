@@ -4,8 +4,7 @@ import type { ComputedRef } from 'vue'
 import { ChevronDown, ChevronRight, Grid2X2 } from 'lucide-vue-next'
 import ObjectList from './ObjectList.vue'
 import HighlightedText from '@/components/common/HighlightedText.vue'
-
-type ObjectType = 'table' | 'view' | 'function' | 'procedure' | 'sequence'
+import type { ObjectType } from '@/stores/explorerNavigation'
 
 interface SchemaInfo {
   name: string
