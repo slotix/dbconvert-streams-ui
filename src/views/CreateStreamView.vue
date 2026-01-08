@@ -307,21 +307,7 @@ watch(
     if (!streamsStore.currentStreamConfig) return
     // Preserve existing per-connection data (tables, queries, s3) when syncing wizard state
     const existingConnections = streamsStore.currentStreamConfig.source?.connections || []
-    const mergedConnections = connections.map((wizardConn) => {
-      const existing = existingConnections.find(
-        (ec) => ec.connectionId === wizardConn.connectionId || ec.alias === wizardConn.alias
-      )
-      return {
-        alias: wizardConn.alias,
-        connectionId: wizardConn.connectionId,
-        database: wizardConn.database,
-        schema: existing?.schema,
-        tables: existing?.tables,
-        queries: existing?.queries,
-        // Prefer wizard's s3 config (from bucket selection) over existing (for edit mode fallback)
-        s3: wizardConn.s3 || existing?.s3
-      }
-    })
+    const mergedConnections = mergeWizardConnections(connections, existingConnections)
     streamsStore.setSourceConnections(mergedConnections)
     const primary = connections[0]
     streamsStore.currentStreamConfig.sourceDatabase = primary?.database || undefined
@@ -490,6 +476,77 @@ function updateCanProceed(value: boolean) {
   canProceedOverride.value = value
 }
 
+function mergeWizardConnections(
+  wizardConnections: StreamConnectionMapping[],
+  existingConnections: StreamConnectionMapping[]
+): StreamConnectionMapping[] {
+  return wizardConnections.map((wizardConn) => {
+    const existing = existingConnections.find(
+      (ec) => ec.connectionId === wizardConn.connectionId || ec.alias === wizardConn.alias
+    )
+    return {
+      alias: wizardConn.alias,
+      connectionId: wizardConn.connectionId,
+      database: wizardConn.database,
+      // Preserve existing per-connection data (tables, queries, schema)
+      schema: existing?.schema,
+      tables: existing?.tables,
+      queries: existing?.queries,
+      // Prefer wizard's s3 config (from bucket selection) over existing (for edit mode fallback)
+      s3: wizardConn.s3 || existing?.s3
+    }
+  })
+}
+
+function applyWizardSourceSelection(mergedConnections: StreamConnectionMapping[]) {
+  if (!streamsStore.currentStreamConfig) return
+  streamsStore.setSourceConnections(mergedConnections)
+  const primarySource = wizard.sourceConnections.value[0]
+  streamsStore.currentStreamConfig.sourceDatabase =
+    primarySource?.database || wizard.selection.value.sourceDatabase || undefined
+  if (wizard.selection.value.sourceSchema) {
+    streamsStore.currentStreamConfig.sourceSchema = wizard.selection.value.sourceSchema
+  }
+}
+
+function applyWizardTargetSelection(includeTargetPath: boolean) {
+  if (!streamsStore.currentStreamConfig) return
+  if (wizard.selection.value.targetConnectionId) {
+    streamsStore.updateTarget(wizard.selection.value.targetConnectionId)
+  }
+  if (wizard.selection.value.targetDatabase) {
+    streamsStore.currentStreamConfig.targetDatabase = wizard.selection.value.targetDatabase
+  }
+  if (wizard.selection.value.targetSchema) {
+    streamsStore.currentStreamConfig.targetSchema = wizard.selection.value.targetSchema
+  }
+  if (includeTargetPath && wizard.selection.value.targetPath) {
+    streamsStore.currentStreamConfig.targetPath = wizard.selection.value.targetPath
+  }
+}
+
+function applyWizardStructureOptions() {
+  if (!streamsStore.currentStreamConfig) return
+  // Set skipData based on the "Copy data" checkbox
+  streamsStore.currentStreamConfig.skipData = !wizard.copyData.value
+
+  // Set granular structure creation options
+  streamsStore.currentStreamConfig.structureOptions = {
+    tables: wizard.createTables.value,
+    indexes: wizard.createIndexes.value,
+    foreignKeys: wizard.createForeignKeys.value,
+    checkConstraints: wizard.createCheckConstraints.value
+  }
+
+  if (!wizard.canUseCDCMode.value) {
+    streamsStore.currentStreamConfig.mode = 'convert'
+  }
+}
+
+function hasValidSourceAndTarget(): boolean {
+  return wizard.sourceConnections.value.length > 0 && !!wizard.selection.value.targetConnectionId
+}
+
 function goToAddConnection(paneType: 'source' | 'target') {
   // Store the paneType in session storage so we can return to the correct pane
   sessionStorage.setItem('streamWizardReturnPane', paneType)
@@ -503,8 +560,7 @@ async function handleNextStep() {
 }
 
 async function handleFinish() {
-  const hasValidSource = wizard.sourceConnections.value.length > 0
-  if (!hasValidSource || !wizard.selection.value.targetConnectionId) {
+  if (!hasValidSourceAndTarget()) {
     commonStore.showNotification('Source and target must be selected', 'error')
     return
   }
@@ -517,55 +573,13 @@ async function handleFinish() {
 
     // Merge wizard connection metadata with existing store connections to preserve tables/queries/s3
     const existingConnections = streamsStore.currentStreamConfig.source?.connections || []
-    const mergedConnections = wizard.sourceConnections.value.map((wizardConn) => {
-      // Find matching existing connection by connectionId or alias
-      const existing = existingConnections.find(
-        (ec) => ec.connectionId === wizardConn.connectionId || ec.alias === wizardConn.alias
-      )
-      return {
-        alias: wizardConn.alias,
-        connectionId: wizardConn.connectionId,
-        database: wizardConn.database,
-        // Preserve existing per-connection data (tables, queries, schema)
-        schema: existing?.schema,
-        tables: existing?.tables,
-        queries: existing?.queries,
-        // Prefer wizard's s3 config (from bucket selection) over existing (for edit mode fallback)
-        s3: wizardConn.s3 || existing?.s3
-      }
-    })
-    streamsStore.setSourceConnections(mergedConnections)
-    const primarySource = wizard.sourceConnections.value[0]
-    streamsStore.currentStreamConfig.sourceDatabase =
-      primarySource?.database || wizard.selection.value.sourceDatabase || undefined
-    if (wizard.selection.value.sourceSchema) {
-      streamsStore.currentStreamConfig.sourceSchema = wizard.selection.value.sourceSchema
-    }
-
-    if (wizard.selection.value.targetConnectionId) {
-      streamsStore.updateTarget(wizard.selection.value.targetConnectionId)
-    }
-    if (wizard.selection.value.targetDatabase) {
-      streamsStore.currentStreamConfig.targetDatabase = wizard.selection.value.targetDatabase
-    }
-    if (wizard.selection.value.targetSchema) {
-      streamsStore.currentStreamConfig.targetSchema = wizard.selection.value.targetSchema
-    }
-
-    // Set skipData based on the "Copy data" checkbox
-    streamsStore.currentStreamConfig.skipData = !wizard.copyData.value
-
-    // Set granular structure creation options
-    streamsStore.currentStreamConfig.structureOptions = {
-      tables: wizard.createTables.value,
-      indexes: wizard.createIndexes.value,
-      foreignKeys: wizard.createForeignKeys.value,
-      checkConstraints: wizard.createCheckConstraints.value
-    }
-
-    if (!wizard.canUseCDCMode.value) {
-      streamsStore.currentStreamConfig.mode = 'convert'
-    }
+    const mergedConnections = mergeWizardConnections(
+      wizard.sourceConnections.value,
+      existingConnections
+    )
+    applyWizardSourceSelection(mergedConnections)
+    applyWizardTargetSelection(false)
+    applyWizardStructureOptions()
 
     // Save the stream (use update if editing existing stream)
     const savedStreamId = await streamsStore.saveStream(isEditMode.value)
@@ -590,8 +604,7 @@ async function handleFinish() {
 }
 
 async function handleQuickSave() {
-  const hasValidSource = wizard.sourceConnections.value.length > 0
-  if (!hasValidSource || !wizard.selection.value.targetConnectionId) {
+  if (!hasValidSourceAndTarget()) {
     commonStore.showNotification('Source and target must be selected', 'error')
     return
   }
@@ -604,56 +617,13 @@ async function handleQuickSave() {
 
     // Merge wizard connection metadata with existing store connections to preserve tables/queries/s3
     const existingConnections = streamsStore.currentStreamConfig.source?.connections || []
-    const mergedConnections = wizard.sourceConnections.value.map((wizardConn) => {
-      const existing = existingConnections.find(
-        (ec) => ec.connectionId === wizardConn.connectionId || ec.alias === wizardConn.alias
-      )
-      return {
-        alias: wizardConn.alias,
-        connectionId: wizardConn.connectionId,
-        database: wizardConn.database,
-        schema: existing?.schema,
-        tables: existing?.tables,
-        queries: existing?.queries,
-        // Prefer wizard's s3 config (from bucket selection) over existing (for edit mode fallback)
-        s3: wizardConn.s3 || existing?.s3
-      }
-    })
-    streamsStore.setSourceConnections(mergedConnections)
-    const primarySource = wizard.sourceConnections.value[0]
-    streamsStore.currentStreamConfig.sourceDatabase =
-      primarySource?.database || wizard.selection.value.sourceDatabase || undefined
-    if (wizard.selection.value.sourceSchema) {
-      streamsStore.currentStreamConfig.sourceSchema = wizard.selection.value.sourceSchema
-    }
-
-    if (wizard.selection.value.targetConnectionId) {
-      streamsStore.updateTarget(wizard.selection.value.targetConnectionId)
-    }
-    if (wizard.selection.value.targetDatabase) {
-      streamsStore.currentStreamConfig.targetDatabase = wizard.selection.value.targetDatabase
-    }
-    if (wizard.selection.value.targetSchema) {
-      streamsStore.currentStreamConfig.targetSchema = wizard.selection.value.targetSchema
-    }
-    if (wizard.selection.value.targetPath) {
-      streamsStore.currentStreamConfig.targetPath = wizard.selection.value.targetPath
-    }
-
-    // Set skipData based on the "Copy data" checkbox
-    streamsStore.currentStreamConfig.skipData = !wizard.copyData.value
-
-    // Set granular structure creation options
-    streamsStore.currentStreamConfig.structureOptions = {
-      tables: wizard.createTables.value,
-      indexes: wizard.createIndexes.value,
-      foreignKeys: wizard.createForeignKeys.value,
-      checkConstraints: wizard.createCheckConstraints.value
-    }
-
-    if (!wizard.canUseCDCMode.value) {
-      streamsStore.currentStreamConfig.mode = 'convert'
-    }
+    const mergedConnections = mergeWizardConnections(
+      wizard.sourceConnections.value,
+      existingConnections
+    )
+    applyWizardSourceSelection(mergedConnections)
+    applyWizardTargetSelection(true)
+    applyWizardStructureOptions()
 
     // Save the stream (use update if editing existing stream)
     const savedStreamId = await streamsStore.saveStream(isEditMode.value)

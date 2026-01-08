@@ -191,12 +191,16 @@ export const useMonitoringStore = defineStore('monitoring', {
      * Groups by table name and returns latest stat per table
      */
     tableStats(state: State): TableStatsGroup {
-      // Get current stream ID
-      let currentStreamID = state.streamID
-      if (!currentStreamID && state.logs.length > 0) {
-        const recentLog = state.logs[state.logs.length - 1]
-        if (recentLog.streamId) {
-          currentStreamID = recentLog.streamId
+      // Get current stream ID (prefer explicit selection; fallback to last run for config)
+      const currentStreamID = state.streamID
+      if (!currentStreamID) {
+        return {
+          completed: [],
+          running: [],
+          failed: [],
+          stopped: [],
+          paused: [],
+          total: 0
         }
       }
 
@@ -210,7 +214,7 @@ export const useMonitoringStore = defineStore('monitoring', {
           log.table &&
           log.table.toLowerCase() !== 'total' && // Exclude aggregate "Total" entries
           log.table.toLowerCase() !== 'summary' && // Exclude aggregate "Summary" entries
-          (!currentStreamID || log.streamId === currentStreamID)
+          log.streamId === currentStreamID
       )
 
       // Group by table name to get the worst status per table
@@ -366,22 +370,28 @@ export const useMonitoringStore = defineStore('monitoring', {
         rate: number
       }
     } {
-      // Get current stream ID
-      let currentStreamID = state.streamID
+      // Get current stream ID (prefer explicit selection; fallback to last run for config)
+      const currentStreamID = state.streamID
       if (!currentStreamID) {
-        const recentStreamId = state.logs.find(
-          (log): log is Log & { streamId: string } =>
-            typeof log.streamId === 'string' && log.streamId.length > 0
-        )?.streamId
-        if (recentStreamId) currentStreamID = recentStreamId
+        return {
+          completed: [],
+          uploading: [],
+          failed: [],
+          total: 0,
+          aggregate: {
+            filesTotal: 0,
+            filesUploaded: 0,
+            bytesTotal: 0,
+            bytesUploaded: 0,
+            rate: 0
+          }
+        }
       }
 
       // Filter to s3_upload logs for current stream
       const uploadLogs = state.logs.filter(
         (log) =>
-          log.category === 's3_upload' &&
-          log.table &&
-          (!currentStreamID || log.streamId === currentStreamID)
+          log.category === 's3_upload' && log.table && log.streamId === currentStreamID
       )
 
       // S3 upload has its own status values: UPLOADING, FINISHED, FAILED
@@ -534,9 +544,6 @@ export const useMonitoringStore = defineStore('monitoring', {
       // If switching to a different stream, clear old data
       // This prevents mixing old stream's logs with the new stream
       if (this.streamID !== id) {
-        // Filter out logs that don't belong to the new stream
-        // This preserves logs that arrived BEFORE setStream was called (fast streams)
-        this.logs = this.logs.filter((log) => log.streamId === id)
         this.nodes = []
         this.aggregatedStats = null
         this.currentStageID = 0

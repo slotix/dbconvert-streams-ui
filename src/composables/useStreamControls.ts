@@ -4,11 +4,13 @@ import { useMonitoringStore } from '@/stores/monitoring'
 import { useCommonStore } from '@/stores/common'
 import type { StreamConfig } from '@/types/streamConfig'
 import { getStatusLabel, STATUS, type Status } from '@/constants'
+import { useStreamActions } from '@/composables/useStreamActions'
 
 export function useStreamControls(stream: Ref<StreamConfig>) {
   const streamsStore = useStreamsStore()
   const monitoringStore = useMonitoringStore()
   const commonStore = useCommonStore()
+  const streamActions = useStreamActions()
 
   const isStreamRunning = computed(() => {
     const configMatches = monitoringStore.streamConfig?.id === stream.value.id
@@ -102,73 +104,19 @@ export function useStreamControls(stream: Ref<StreamConfig>) {
   })
 
   async function startStream() {
-    try {
-      const streamID = await streamsStore.startStream(stream.value.id!)
-      commonStore.showNotification('Stream started', 'success')
-      monitoringStore.setStream(streamID, stream.value)
-      monitoringStore.requestShowMonitorTab()
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        if (err.message.includes('active streams') || err.message.includes('stream_state')) {
-          commonStore.showNotification(
-            'Please wait for the current stream to finish before starting a new one',
-            'warning'
-          )
-          setTimeout(async () => {
-            try {
-              const streamID = await streamsStore.startStream(stream.value.id!)
-              commonStore.showNotification('Stream started', 'success')
-              monitoringStore.setStream(streamID, stream.value)
-              monitoringStore.requestShowMonitorTab()
-            } catch (retryErr) {
-              if (retryErr instanceof Error) {
-                commonStore.showNotification(retryErr.message, 'error')
-              }
-            }
-          }, 2000)
-        } else {
-          commonStore.showNotification(err.message, 'error')
-        }
-      } else {
-        commonStore.showNotification('An unknown error occurred', 'error')
-      }
-    }
+    await streamActions.startStream(stream.value)
   }
 
   async function pauseStream() {
-    try {
-      await streamsStore.pauseStream(monitoringStore.streamID)
-      commonStore.showNotification('Stream paused', 'success')
-      monitoringStore.requestShowMonitorTab()
-    } catch (error) {
-      console.error('Pause stream failed:', error)
-      const errorMsg = error instanceof Error ? error.message : String(error)
-      commonStore.showNotification(`Failed to pause: ${errorMsg}`, 'error')
-    }
+    await streamActions.pauseStream(monitoringStore.streamID)
   }
 
   async function resumeStream() {
-    try {
-      await streamsStore.resumeStream(monitoringStore.streamID)
-      commonStore.showNotification('Stream resumed', 'success')
-      monitoringStore.requestShowMonitorTab()
-    } catch (error) {
-      console.error('Resume stream failed:', error)
-      const errorMsg = error instanceof Error ? error.message : String(error)
-      commonStore.showNotification(`Failed to resume: ${errorMsg}`, 'error')
-    }
+    await streamActions.resumeStream(monitoringStore.streamID)
   }
 
   async function stopStream() {
-    try {
-      await streamsStore.stopStream(monitoringStore.streamID)
-      commonStore.showNotification('Stream stopped', 'success')
-      monitoringStore.requestShowMonitorTab()
-    } catch (error) {
-      console.error('Stop stream failed:', error)
-      const errorMsg = error instanceof Error ? error.message : String(error)
-      commonStore.showNotification(`Failed to stop: ${errorMsg}`, 'error')
-    }
+    await streamActions.stopStream(monitoringStore.streamID)
   }
 
   async function runConstraints() {

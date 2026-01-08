@@ -307,6 +307,20 @@ const selectedStream = computed<StreamConfig | undefined>(() => {
   return streamsStore.streamConfigs.find((s) => s.id === selectedStreamId.value)
 })
 
+watch(
+  () => selectedStream.value,
+  (stream) => {
+    if (!stream) return
+    const streamId = stream.id
+    if (!streamId) return
+    const isSameStream = monitoringStore.streamConfig?.id === streamId
+    if (isSameStream && monitoringStore.streamID) {
+      return
+    }
+    monitoringStore.setStream('', stream)
+  }
+)
+
 function connectionByID(id?: string): Connection | undefined {
   if (!id) return undefined
   return connectionsStore.connections.find((conn) => conn.id === id)

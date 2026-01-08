@@ -88,12 +88,12 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { RefreshCw } from 'lucide-vue-next'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
-import { useMonitoringStore } from '@/stores/monitoring'
+import { useStreamActions } from '@/composables/useStreamActions'
 import { useStreamContextMenu } from '@/composables/useStreamContextMenu'
 import StreamListItem from './StreamListItem.vue'
 import StreamContextMenu from './StreamContextMenu.vue'
@@ -114,7 +114,7 @@ const emit = defineEmits<{
 const router = useRouter()
 const streamsStore = useStreamsStore()
 const connectionsStore = useConnectionsStore()
-const monitoringStore = useMonitoringStore()
+const streamActions = useStreamActions()
 const contextMenu = useStreamContextMenu()
 
 const isLoading = ref(false)
@@ -157,14 +157,12 @@ async function handleStartStream(payload: { streamId: string }) {
     const stream = streamsStore.streamConfigs.find((s) => s.id === payload.streamId)
     if (!stream) return
 
-    const streamID = await streamsStore.startStream(payload.streamId)
-    monitoringStore.setStream(streamID, stream)
-
-    // Request to show monitor tab
-    monitoringStore.requestShowMonitorTab()
+    const streamID = await streamActions.startStream(stream)
 
     // Select the stream that was started
-    emit('select-stream', { streamId: payload.streamId })
+    if (streamID) {
+      emit('select-stream', { streamId: payload.streamId })
+    }
   } catch (error) {
     console.error('Failed to start stream:', error)
   }
@@ -172,9 +170,7 @@ async function handleStartStream(payload: { streamId: string }) {
 
 async function handlePauseStream() {
   try {
-    await streamsStore.pauseStream(monitoringStore.streamID)
-    // Request to show monitor tab
-    monitoringStore.requestShowMonitorTab()
+    await streamActions.pauseStream()
   } catch (error) {
     console.error('Failed to pause stream:', error)
   }
@@ -182,9 +178,7 @@ async function handlePauseStream() {
 
 async function handleResumeStream() {
   try {
-    await streamsStore.resumeStream(monitoringStore.streamID)
-    // Request to show monitor tab
-    monitoringStore.requestShowMonitorTab()
+    await streamActions.resumeStream()
   } catch (error) {
     console.error('Failed to resume stream:', error)
   }
@@ -283,21 +277,7 @@ async function onContextMenuAction(payload: {
   }
 }
 
-// Fetch streams on mount
-watch(
-  () => streamsStore.streamConfigs,
-  async () => {
-    if (!streamsStore.streamConfigs || streamsStore.streamConfigs.length === 0) {
-      isLoading.value = true
-      try {
-        await streamsStore.refreshStreams()
-      } finally {
-        isLoading.value = false
-      }
-    }
-  },
-  { immediate: true }
-)
+// Streams are loaded by StreamsView; sidebar only renders them.
 </script>
 
 <style scoped>

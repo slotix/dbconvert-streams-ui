@@ -581,12 +581,6 @@ const validateTableName = (query: QuerySource, index: number) => {
   }
 }
 
-const handleQueryChange = (query: QuerySource) => {
-  // When query changes, mark as needing re-run
-  query.validated = false
-  query.columns = undefined
-}
-
 const runPreview = async (query: QuerySource, index: number) => {
   if (!query.query || query.query.trim().length === 0) {
     previewErrors.value[index] = 'Query cannot be empty'

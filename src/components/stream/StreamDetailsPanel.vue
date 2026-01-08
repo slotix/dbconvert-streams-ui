@@ -224,17 +224,34 @@
       </div>
 
       <!-- Monitor Tab -->
-      <div v-else-if="activeTab === 'monitor'" class="p-6 space-y-6">
-        <!-- Performance Stats -->
-        <StatContainer
-          :stream="stream"
-          :is-running="isStreamRunning"
-          :is-stream-finished="isStreamFinished"
-          :is-stopped="isStopped"
-          :is-paused="isPaused"
-          :stream-status="streamStatus"
-          @compare-table="handleCompareTable"
-        />
+      <div v-else-if="activeTab === 'monitor'" class="p-6">
+        <div v-if="hasActiveRun" class="space-y-6">
+          <!-- Performance Stats -->
+          <StatContainer
+            :stream="stream"
+            :is-running="isStreamRunning"
+            :is-stream-finished="isStreamFinished"
+            :is-stopped="isStopped"
+            :is-paused="isPaused"
+            :stream-status="streamStatus"
+            @compare-table="handleCompareTable"
+          />
+        </div>
+        <div
+          v-else
+          class="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/30 p-8 text-center"
+        >
+          <h4 class="text-base font-semibold text-gray-900 dark:text-gray-100">Monitor is empty</h4>
+          <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+            Run this stream to see live stats, or open History to view past runs.
+          </p>
+          <div class="mt-4 flex items-center justify-center gap-3">
+            <BaseButton variant="primary" @click="startStream">Run Stream</BaseButton>
+            <BaseButton variant="secondary" @click="activeTab = 'history'">
+              View History
+            </BaseButton>
+          </div>
+        </div>
       </div>
 
       <!-- History Tab -->
@@ -395,6 +412,9 @@ const {
 })
 
 const streamIdRef = computed(() => streamRef.value.id || '')
+const hasActiveRun = computed(() => {
+  return monitoringStore.streamConfig?.id === props.stream.id && monitoringStore.streamID !== ''
+})
 
 const { historyRuns, handleDeleteRun, handleClearAll } = useStreamHistory({
   streamId: streamIdRef,
