@@ -111,6 +111,7 @@ import type { PaneId } from '@/stores/paneTabs'
 import type { PaneTab } from '@/stores/paneTabs'
 import type { ShowDiagramPayload } from '@/types/diagram'
 import type { SQLRoutineMeta, SQLSequenceMeta, SQLTableMeta, SQLViewMeta } from '@/types/metadata'
+import { parseRoutineName } from '@/utils/routineUtils'
 
 // Lazy load DiagramTab since it includes heavy D3.js
 const DiagramTab = defineAsyncComponent(() => import('@/components/database/DiagramTab.vue'))
@@ -216,22 +217,6 @@ const resolvedDatabaseMeta = computed<
 
   return null
 })
-
-function parseRoutineName(label: string): { routineName: string; signature?: string } {
-  const trimmed = label.trim()
-  const openParen = trimmed.indexOf('(')
-  if (openParen < 0) {
-    return { routineName: trimmed }
-  }
-  const closeParen = trimmed.lastIndexOf(')')
-  if (closeParen < openParen) {
-    return { routineName: trimmed }
-  }
-  return {
-    routineName: trimmed.slice(0, openParen).trim(),
-    signature: trimmed.slice(openParen + 1, closeParen).trim()
-  }
-}
 
 const wrapperClass = computed(() => {
   const base = 'h-[calc(100vh-220px)]'

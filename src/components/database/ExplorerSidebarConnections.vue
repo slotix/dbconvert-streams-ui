@@ -16,6 +16,7 @@ import type { DiagramFocusTarget, ShowDiagramPayload } from '@/types/diagram'
 import type { SQLRoutineMeta, SQLSequenceMeta, SQLTableMeta, SQLViewMeta } from '@/types/metadata'
 import type { FileSystemEntry } from '@/api/fileSystem'
 import { getConnectionKindFromSpec, getConnectionTypeLabel, isDatabaseKind } from '@/types/specs'
+import { parseRoutineName } from '@/utils/routineUtils'
 import ExplorerContextMenu from './ExplorerContextMenu.vue'
 import ConnectionTreeItem from './tree/ConnectionTreeItem.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
@@ -356,22 +357,6 @@ function onOpen(
     defaultTab,
     openInRightSplit
   })
-}
-
-function parseRoutineName(label: string): { routineName: string; signature?: string } {
-  const trimmed = label.trim()
-  const openParen = trimmed.indexOf('(')
-  if (openParen < 0) {
-    return { routineName: trimmed }
-  }
-  const closeParen = trimmed.lastIndexOf(')')
-  if (closeParen < openParen) {
-    return { routineName: trimmed }
-  }
-  return {
-    routineName: trimmed.slice(0, openParen).trim(),
-    signature: trimmed.slice(openParen + 1, closeParen).trim()
-  }
 }
 
 // Simplified menu action handler using composables

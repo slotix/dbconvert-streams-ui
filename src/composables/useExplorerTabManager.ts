@@ -6,6 +6,7 @@ import type { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import type { useConnectionsStore } from '@/stores/connections'
 import { getConnectionHost } from '@/utils/specBuilder'
 import { getConnectionTypeLabel } from '@/types/specs'
+import { parseRoutineName } from '@/utils/routineUtils'
 
 type PaneTabsStore = ReturnType<typeof usePaneTabsStore>
 type NavigationStore = ReturnType<typeof useExplorerNavigationStore>
@@ -23,22 +24,6 @@ export function useExplorerTabManager({
   connectionsStore
 }: UseExplorerTabManagerOptions) {
   const restoreToken = ref(0)
-
-  function parseRoutineName(label: string): { routineName: string; signature?: string } {
-    const trimmed = label.trim()
-    const openParen = trimmed.indexOf('(')
-    if (openParen < 0) {
-      return { routineName: trimmed }
-    }
-    const closeParen = trimmed.lastIndexOf(')')
-    if (closeParen < openParen) {
-      return { routineName: trimmed }
-    }
-    return {
-      routineName: trimmed.slice(0, openParen).trim(),
-      signature: trimmed.slice(openParen + 1, closeParen).trim()
-    }
-  }
 
   async function ensureLeftPaneMatchesViewState(payload: {
     connectionId: string
@@ -236,7 +221,6 @@ export function useExplorerTabManager({
   }
 
   return {
-    parseRoutineName,
     ensureLeftPaneMatchesViewState,
     getConnectionTabName,
     openConnectionDetailsTab,

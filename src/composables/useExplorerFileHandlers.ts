@@ -7,6 +7,7 @@ import type { useConnectionsStore } from '@/stores/connections'
 import type { useFileExplorerStore } from '@/stores/fileExplorer'
 import type { useExplorerViewStateStore } from '@/stores/explorerViewState'
 import type { useExplorerState } from '@/composables/useExplorerState'
+import { findFileEntryByPath } from '@/utils/fileEntryUtils'
 
 type PaneTabsStore = ReturnType<typeof usePaneTabsStore>
 type NavigationStore = ReturnType<typeof useExplorerNavigationStore>
@@ -165,21 +166,7 @@ export function useExplorerFileHandlers({
     // Find entry if not provided (e.g., from persisted state)
     let entry = payload.entry
     if (!entry) {
-      const findEntry = (
-        entries: FileSystemEntry[],
-        targetPath: string
-      ): FileSystemEntry | null => {
-        for (const e of entries) {
-          if (e.path === targetPath) return e
-          if (e.children) {
-            const found = findEntry(e.children, targetPath)
-            if (found) return found
-          }
-        }
-        return null
-      }
-
-      entry = findEntry(currentFileEntries.value, payload.path) || undefined
+      entry = findFileEntryByPath(currentFileEntries.value, payload.path) || undefined
 
       // If entry not found, try expanding parent folders and search again
       if (!entry) {
@@ -188,13 +175,13 @@ export function useExplorerFileHandlers({
         // Expand each parent folder in the path
         for (let i = pathSegments.length - 1; i > 0; i--) {
           const parentPath = pathSegments.slice(0, i).join('/')
-          const parentEntry = findEntry(currentFileEntries.value, parentPath)
+          const parentEntry = findFileEntryByPath(currentFileEntries.value, parentPath)
 
           if (parentEntry && parentEntry.type === 'dir' && !parentEntry.isLoaded) {
             // Load folder contents if not already loaded
             await fileExplorerStore.loadFolderContents(payload.connectionId, parentPath)
             // Retry finding the entry after loading
-            entry = findEntry(currentFileEntries.value, payload.path) || undefined
+            entry = findFileEntryByPath(currentFileEntries.value, payload.path) || undefined
             if (entry) break
           }
         }
@@ -243,20 +230,8 @@ export function useExplorerFileHandlers({
 
     const targetConnId = activeTab.connectionId
 
-    // Find the file entry in the file explorer store
-    const findEntry = (entries: FileSystemEntry[], targetPath: string): FileSystemEntry | null => {
-      for (const e of entries) {
-        if (e.path === targetPath) return e
-        if (e.children) {
-          const found = findEntry(e.children, targetPath)
-          if (found) return found
-        }
-      }
-      return null
-    }
-
     const entries = fileExplorerStore.getEntries(targetConnId)
-    const entry = findEntry(entries, payload.path)
+    const entry = findFileEntryByPath(entries, payload.path)
 
     if (!entry) {
       console.warn('handlePickFileFromBreadcrumb: Could not find entry for path:', payload.path)

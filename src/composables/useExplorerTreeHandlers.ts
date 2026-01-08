@@ -8,6 +8,7 @@ import type { useFileExplorerStore } from '@/stores/fileExplorer'
 import type { useExplorerViewStateStore } from '@/stores/explorerViewState'
 import type { useExplorerState } from '@/composables/useExplorerState'
 import type { useExplorerTabManager } from '@/composables/useExplorerTabManager'
+import { parseRoutineName } from '@/utils/routineUtils'
 
 type PaneTabsStore = ReturnType<typeof usePaneTabsStore>
 type NavigationStore = ReturnType<typeof useExplorerNavigationStore>
@@ -224,7 +225,7 @@ export function useExplorerTreeHandlers({
       } else if (o.type === 'sequence') {
         obj = navigationStore.findSequenceMeta(targetConnId, targetDb, o.name, o.schema)
       } else {
-        const { routineName, signature } = tabManager.parseRoutineName(o.name)
+        const { routineName, signature } = parseRoutineName(o.name)
         obj = navigationStore.findRoutineMeta(
           targetConnId,
           targetDb,
