@@ -6,7 +6,7 @@ import SearchInput from '@/components/common/SearchInput.vue'
 import HighlightedText from '@/components/common/HighlightedText.vue'
 import type { PathSegment } from '@/utils/pathUtils'
 
-type ObjectType = 'table' | 'view' | 'function' | 'procedure'
+type ObjectType = 'table' | 'view' | 'function' | 'procedure' | 'sequence'
 
 // File entry for picker
 interface FileEntry {

@@ -46,7 +46,7 @@ defineEmits<{
   'pick-name': [
     payload: {
       name: string
-      type: 'table' | 'view' | 'function' | 'procedure'
+      type: 'table' | 'view' | 'function' | 'procedure' | 'sequence'
       schema?: string
     }
   ]
@@ -186,7 +186,7 @@ const breadcrumbData = computed(() => {
   // Database object - build objects list for picker
   const objects: Array<{
     name: string
-    type: 'table' | 'view' | 'function' | 'procedure'
+    type: 'table' | 'view' | 'function' | 'procedure' | 'sequence'
     schema?: string
   }> = []
 
@@ -234,6 +234,16 @@ const breadcrumbData = computed(() => {
           name: label,
           type: 'procedure',
           schema: proc.schema
+        })
+      })
+    }
+
+    if (props.metadata.sequences) {
+      Object.values(props.metadata.sequences).forEach((seq) => {
+        objects.push({
+          name: seq.name,
+          type: 'sequence',
+          schema: seq.schema
         })
       })
     }

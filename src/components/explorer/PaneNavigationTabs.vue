@@ -172,6 +172,7 @@ import {
   Database,
   Eye,
   File,
+  Hash,
   MoreHorizontal,
   Server,
   Share2,
@@ -448,6 +449,7 @@ function getObjectIcon(tab: PaneTab) {
   if (tab.tabType === 'diagram') return Share2
   if (tab.type === 'view') return Eye
   if (tab.type === 'function' || tab.type === 'procedure') return Code
+  if (tab.type === 'sequence') return Hash
   return Sheet
 }
 
@@ -458,7 +460,7 @@ function getIconColor(tab: PaneTab): string {
   if (tab.tabType === 'database-overview') {
     return 'text-teal-500 dark:text-teal-400'
   }
-  // Database tabs: tables and views
+  // Database tabs: tables, views, sequences, routines
   if (tab.tabType === 'database') {
     if (tab.type === 'view') {
       return 'text-teal-500 dark:text-teal-400'
@@ -468,6 +470,9 @@ function getIconColor(tab: PaneTab): string {
     }
     if (tab.type === 'procedure') {
       return 'text-violet-500 dark:text-violet-400'
+    }
+    if (tab.type === 'sequence') {
+      return 'text-amber-500 dark:text-amber-400'
     }
     return 'text-blue-500 dark:text-blue-400'
   }

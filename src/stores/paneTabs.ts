@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { SQLRoutineMeta, SQLTableMeta, SQLViewMeta } from '@/types/metadata'
+import type { SQLRoutineMeta, SQLSequenceMeta, SQLTableMeta, SQLViewMeta } from '@/types/metadata'
 import type { FileSystemEntry } from '@/api/fileSystem'
 import type { FileMetadata } from '@/types/files'
 import { useObjectTabStateStore } from '@/stores/objectTabState'
@@ -32,8 +32,8 @@ export type PaneTab = {
   // Database-specific properties
   database?: string
   schema?: string
-  type?: 'table' | 'view' | 'function' | 'procedure'
-  meta?: SQLTableMeta | SQLViewMeta | SQLRoutineMeta
+  type?: 'table' | 'view' | 'function' | 'procedure' | 'sequence'
+  meta?: SQLTableMeta | SQLViewMeta | SQLRoutineMeta | SQLSequenceMeta
 
   // SQL Console specific properties
   sqlScope?: 'database' | 'connection' // database = pre-sets USE db; connection = raw

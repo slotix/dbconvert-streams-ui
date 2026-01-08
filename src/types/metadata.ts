@@ -104,12 +104,28 @@ export interface SQLRoutineMeta {
   definition?: string
 }
 
+export interface SQLSequenceMeta {
+  name: string
+  schema: string
+  database: string
+  startValue: number
+  increment: number
+  minValue: number
+  maxValue: number
+  cacheSize: number
+  isCycled: boolean
+  lastValue?: number | null
+  ownerTable?: string
+  ownerColumn?: string
+}
+
 export interface DatabaseMetadata {
   tables: Record<string, SQLTableMeta>
   views: Record<string, SQLViewMeta>
   triggers?: Record<string, SQLTriggerMeta>
   functions?: Record<string, SQLRoutineMeta>
   procedures?: Record<string, SQLRoutineMeta>
+  sequences?: Record<string, SQLSequenceMeta>
   schemas?: string[]
 }
 

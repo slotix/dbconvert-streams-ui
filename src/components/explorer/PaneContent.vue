@@ -110,7 +110,7 @@ import { useFileExplorerStore } from '@/stores/fileExplorer'
 import type { PaneId } from '@/stores/paneTabs'
 import type { PaneTab } from '@/stores/paneTabs'
 import type { ShowDiagramPayload } from '@/types/diagram'
-import type { SQLRoutineMeta, SQLTableMeta, SQLViewMeta } from '@/types/metadata'
+import type { SQLRoutineMeta, SQLSequenceMeta, SQLTableMeta, SQLViewMeta } from '@/types/metadata'
 
 // Lazy load DiagramTab since it includes heavy D3.js
 const DiagramTab = defineAsyncComponent(() => import('@/components/database/DiagramTab.vue'))
@@ -158,7 +158,9 @@ const connectionsStore = useConnectionsStore()
 const fileExplorerStore = useFileExplorerStore()
 const navigationStore = useExplorerNavigationStore()
 
-const resolvedDatabaseMeta = computed<SQLTableMeta | SQLViewMeta | SQLRoutineMeta | null>(() => {
+const resolvedDatabaseMeta = computed<
+  SQLTableMeta | SQLViewMeta | SQLRoutineMeta | SQLSequenceMeta | null
+>(() => {
   const activeTab = props.activeTab
   if (!activeTab || activeTab.tabType !== 'database') return null
 
@@ -179,6 +181,17 @@ const resolvedDatabaseMeta = computed<SQLTableMeta | SQLViewMeta | SQLRoutineMet
   if (activeTab.type === 'table') {
     return (
       navigationStore.findTableMeta(
+        activeTab.connectionId,
+        database,
+        activeTab.name,
+        activeTab.schema
+      ) || null
+    )
+  }
+
+  if (activeTab.type === 'sequence') {
+    return (
+      navigationStore.findSequenceMeta(
         activeTab.connectionId,
         database,
         activeTab.name,

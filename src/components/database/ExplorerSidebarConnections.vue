@@ -13,14 +13,14 @@ import { useTreeSearch } from '@/composables/useTreeSearch'
 import { useSqlConsoleActions } from '@/composables/useSqlConsoleActions'
 import type { Connection } from '@/types/connections'
 import type { DiagramFocusTarget, ShowDiagramPayload } from '@/types/diagram'
-import type { SQLRoutineMeta, SQLTableMeta, SQLViewMeta } from '@/types/metadata'
+import type { SQLRoutineMeta, SQLSequenceMeta, SQLTableMeta, SQLViewMeta } from '@/types/metadata'
 import type { FileSystemEntry } from '@/api/fileSystem'
 import { getConnectionKindFromSpec, getConnectionTypeLabel, isDatabaseKind } from '@/types/specs'
 import ExplorerContextMenu from './ExplorerContextMenu.vue'
 import ConnectionTreeItem from './tree/ConnectionTreeItem.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
-type ObjectType = 'table' | 'view' | 'function' | 'procedure'
+type ObjectType = 'table' | 'view' | 'function' | 'procedure' | 'sequence'
 
 const props = defineProps<{
   initialExpandedConnectionId?: string
@@ -325,9 +325,10 @@ function onOpen(
   defaultTab?: DefaultTab,
   openInRightSplit?: boolean
 ) {
-  let obj: SQLTableMeta | SQLViewMeta | SQLRoutineMeta | undefined
+  let obj: SQLTableMeta | SQLViewMeta | SQLRoutineMeta | SQLSequenceMeta | undefined
   if (type === 'table') obj = navigationStore.findTableMeta(connId, db, name, schema)
   else if (type === 'view') obj = navigationStore.findViewMeta(connId, db, name, schema)
+  else if (type === 'sequence') obj = navigationStore.findSequenceMeta(connId, db, name, schema)
   else {
     const { routineName, signature } = parseRoutineName(name)
     obj = navigationStore.findRoutineMeta(

@@ -5,7 +5,7 @@ import { ChevronDown, ChevronRight, Grid2X2 } from 'lucide-vue-next'
 import ObjectList from './ObjectList.vue'
 import HighlightedText from '@/components/common/HighlightedText.vue'
 
-type ObjectType = 'table' | 'view' | 'function' | 'procedure'
+type ObjectType = 'table' | 'view' | 'function' | 'procedure' | 'sequence'
 
 interface SchemaInfo {
   name: string
@@ -13,6 +13,7 @@ interface SchemaInfo {
   views: string[]
   functions: string[]
   procedures: string[]
+  sequences: string[]
 }
 
 const props = defineProps<{
@@ -64,11 +65,13 @@ const tablesOpen = ref(true)
 const viewsOpen = ref(true)
 const functionsOpen = ref(true)
 const proceduresOpen = ref(true)
+const sequencesOpen = ref(true)
 
 const tablesExpanded = computed(() => (hasSearch.value ? true : tablesOpen.value))
 const viewsExpanded = computed(() => (hasSearch.value ? true : viewsOpen.value))
 const functionsExpanded = computed(() => (hasSearch.value ? true : functionsOpen.value))
 const proceduresExpanded = computed(() => (hasSearch.value ? true : proceduresOpen.value))
+const sequencesExpanded = computed(() => (hasSearch.value ? true : sequencesOpen.value))
 
 const emit = defineEmits<{
   (e: 'toggle'): void
@@ -274,6 +277,38 @@ function handleObjectContextMenu(payload: {
         @click="(p) => handleObjectOpen('procedure', p)"
         @dblclick="(p) => handleObjectOpen('procedure', p)"
         @middleclick="(p) => handleObjectOpen('procedure', p)"
+        @contextmenu="handleObjectContextMenu"
+      />
+      <button
+        v-if="schema.sequences.length"
+        type="button"
+        class="w-full text-left text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 px-2 mt-2 flex items-center justify-between hover:text-gray-500 dark:hover:text-gray-400"
+        :aria-expanded="sequencesExpanded"
+        @click.stop="sequencesOpen = !sequencesOpen"
+      >
+        <span class="flex items-center gap-1">
+          <component
+            :is="sequencesExpanded ? ChevronDown : ChevronRight"
+            class="h-3 w-3 text-gray-400 dark:text-gray-500"
+          />
+          <span>Sequences</span>
+        </span>
+        <span class="text-[11px] font-medium text-gray-500 dark:text-gray-400 normal-case">
+          {{ schema.sequences.length }}
+        </span>
+      </button>
+      <ObjectList
+        v-if="schema.sequences.length && sequencesExpanded"
+        :items="schema.sequences"
+        object-type="sequence"
+        :connection-id="connectionId"
+        :database="database"
+        :schema="schema.name"
+        :explorer-obj-prefix="`${connectionId}:${database}:${schema.name || ''}`"
+        :parent-matches-search="parentMatchesSearch"
+        @click="(p) => handleObjectOpen('sequence', p)"
+        @dblclick="(p) => handleObjectOpen('sequence', p)"
+        @middleclick="(p) => handleObjectOpen('sequence', p)"
         @contextmenu="handleObjectContextMenu"
       />
     </div>

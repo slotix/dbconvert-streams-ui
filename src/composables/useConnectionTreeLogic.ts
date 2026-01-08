@@ -15,6 +15,7 @@ interface SchemaInfo {
   views: string[]
   functions: string[]
   procedures: string[]
+  sequences: string[]
 }
 
 function formatRoutineName(name: string, signature?: string): string {
@@ -96,6 +97,7 @@ export function useConnectionTreeLogic() {
         views: string[]
         functions: string[]
         procedures: string[]
+        sequences: string[]
       }
     >()
 
@@ -106,7 +108,8 @@ export function useConnectionTreeLogic() {
           tables: [],
           views: [],
           functions: [],
-          procedures: []
+          procedures: [],
+          sequences: []
         })
       })
     }
@@ -115,30 +118,37 @@ export function useConnectionTreeLogic() {
     Object.values(meta.tables || {}).forEach((t) => {
       const s = t.schema || ''
       if (!buckets.has(s)) {
-        buckets.set(s, { tables: [], views: [], functions: [], procedures: [] })
+        buckets.set(s, { tables: [], views: [], functions: [], procedures: [], sequences: [] })
       }
       buckets.get(s)!.tables.push(t.name)
     })
     Object.values(meta.views || {}).forEach((v) => {
       const s = v.schema || ''
       if (!buckets.has(s)) {
-        buckets.set(s, { tables: [], views: [], functions: [], procedures: [] })
+        buckets.set(s, { tables: [], views: [], functions: [], procedures: [], sequences: [] })
       }
       buckets.get(s)!.views.push(v.name)
     })
     Object.values(meta.functions || {}).forEach((fn) => {
       const s = fn.schema || ''
       if (!buckets.has(s)) {
-        buckets.set(s, { tables: [], views: [], functions: [], procedures: [] })
+        buckets.set(s, { tables: [], views: [], functions: [], procedures: [], sequences: [] })
       }
       buckets.get(s)!.functions.push(formatRoutineName(fn.name, fn.signature))
     })
     Object.values(meta.procedures || {}).forEach((proc) => {
       const s = proc.schema || ''
       if (!buckets.has(s)) {
-        buckets.set(s, { tables: [], views: [], functions: [], procedures: [] })
+        buckets.set(s, { tables: [], views: [], functions: [], procedures: [], sequences: [] })
       }
       buckets.get(s)!.procedures.push(formatRoutineName(proc.name, proc.signature))
+    })
+    Object.values(meta.sequences || {}).forEach((seq) => {
+      const s = seq.schema || ''
+      if (!buckets.has(s)) {
+        buckets.set(s, { tables: [], views: [], functions: [], procedures: [], sequences: [] })
+      }
+      buckets.get(s)!.sequences.push(seq.name)
     })
 
     let arr = Array.from(buckets.entries()).map(([name, bucket]) => ({
@@ -146,7 +156,8 @@ export function useConnectionTreeLogic() {
       tables: bucket.tables.sort((a, b) => a.localeCompare(b)),
       views: bucket.views.sort((a, b) => a.localeCompare(b)),
       functions: bucket.functions.sort((a, b) => a.localeCompare(b)),
-      procedures: bucket.procedures.sort((a, b) => a.localeCompare(b))
+      procedures: bucket.procedures.sort((a, b) => a.localeCompare(b)),
+      sequences: bucket.sequences.sort((a, b) => a.localeCompare(b))
     }))
 
     // Filter out system schemas when showSystemObjects is false
@@ -197,6 +208,14 @@ export function useConnectionTreeLogic() {
       .sort((a, b) => a.localeCompare(b))
   }
 
+  function getFlatSequences(connId: string, db: string): string[] {
+    const meta = navigationStore.metadataState[connId]?.[db]
+    if (!meta) return []
+    return Object.values(meta.sequences || {})
+      .map((s) => s.name)
+      .sort((a, b) => a.localeCompare(b))
+  }
+
   function isMetadataLoaded(connId: string, dbName: string): boolean {
     return !!navigationStore.metadataState[connId]?.[dbName]
   }
@@ -222,6 +241,7 @@ export function useConnectionTreeLogic() {
     getFlatViews,
     getFlatFunctions,
     getFlatProcedures,
+    getFlatSequences,
     isMetadataLoaded,
     matchesTypeFilters
   }

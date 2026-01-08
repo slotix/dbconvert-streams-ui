@@ -2,12 +2,12 @@ import { ref, computed } from 'vue'
 import { useConnectionsStore } from '@/stores/connections'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { getConnectionHost, getConnectionPort } from '@/utils/specBuilder'
-import type { SQLRoutineMeta, SQLTableMeta, SQLViewMeta } from '@/types/metadata'
+import type { SQLRoutineMeta, SQLSequenceMeta, SQLTableMeta, SQLViewMeta } from '@/types/metadata'
 import type { FileSystemEntry } from '@/api/fileSystem'
 import type { FileMetadata } from '@/types/files'
 import { getConnectionKindFromSpec, getConnectionTypeLabel, isFileBasedKind } from '@/types/specs'
 
-type ObjectType = 'table' | 'view' | 'function' | 'procedure'
+type ObjectType = 'table' | 'view' | 'function' | 'procedure' | 'sequence'
 
 export function useExplorerState() {
   const connectionsStore = useConnectionsStore()
@@ -25,7 +25,9 @@ export function useExplorerState() {
   const selectedSchemaName = ref<string | null>(null)
   const selectedObjectType = ref<ObjectType | null>(null)
   const selectedObjectName = ref<string | null>(null)
-  const selectedMeta = ref<SQLTableMeta | SQLViewMeta | SQLRoutineMeta | null>(null)
+  const selectedMeta = ref<SQLTableMeta | SQLViewMeta | SQLRoutineMeta | SQLSequenceMeta | null>(
+    null
+  )
 
   // File selection
   const selectedFileEntry = ref<FileSystemEntry | null>(null)

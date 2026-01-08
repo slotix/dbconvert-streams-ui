@@ -2,7 +2,7 @@ import { computed, onMounted, onUnmounted, ref, watch, type Ref } from 'vue'
 import type { Router } from 'vue-router'
 import type { FileSystemEntry } from '@/api/fileSystem'
 import { getConnectionHost, getConnectionPort, getConnectionDatabase } from '@/utils/specBuilder'
-import type { SQLRoutineMeta, SQLTableMeta, SQLViewMeta } from '@/types/metadata'
+import type { SQLRoutineMeta, SQLSequenceMeta, SQLTableMeta, SQLViewMeta } from '@/types/metadata'
 import type { ShowDiagramPayload } from '@/types/diagram'
 import type { PaneId, PaneTab } from '@/stores/paneTabs'
 import { useExplorerViewStateStore } from '@/stores/explorerViewState'
@@ -64,7 +64,7 @@ export function useDatabaseExplorerController({
     connectionId: string
     database: string
     schema?: string | null
-    type: 'table' | 'view' | 'function' | 'procedure'
+    type: 'table' | 'view' | 'function' | 'procedure' | 'sequence'
     name: string
   }) {
     const token = ++restoreToken.value
@@ -94,7 +94,7 @@ export function useDatabaseExplorerController({
     }
 
     // Otherwise restore by fetching metadata and creating a preview tab.
-    let obj: SQLTableMeta | SQLViewMeta | SQLRoutineMeta | undefined
+    let obj: SQLTableMeta | SQLViewMeta | SQLRoutineMeta | SQLSequenceMeta | undefined
     try {
       await navigationStore.ensureMetadata(payload.connectionId, payload.database)
       if (token !== restoreToken.value) return
@@ -108,6 +108,13 @@ export function useDatabaseExplorerController({
         )
       } else if (payload.type === 'view') {
         obj = navigationStore.findViewMeta(
+          payload.connectionId,
+          payload.database,
+          payload.name,
+          schema
+        )
+      } else if (payload.type === 'sequence') {
+        obj = navigationStore.findSequenceMeta(
           payload.connectionId,
           payload.database,
           payload.name,
@@ -253,7 +260,7 @@ export function useDatabaseExplorerController({
     connectionId: string
     database: string
     schema?: string
-    type: 'table' | 'view' | 'function' | 'procedure'
+    type: 'table' | 'view' | 'function' | 'procedure' | 'sequence'
     name: string
     mode: 'preview' | 'pinned'
     defaultTab?: 'structure' | 'data'
@@ -621,7 +628,7 @@ export function useDatabaseExplorerController({
     paneId: PaneId,
     o: {
       name: string
-      type: 'table' | 'view' | 'function' | 'procedure'
+      type: 'table' | 'view' | 'function' | 'procedure' | 'sequence'
       schema?: string
     }
   ) {
@@ -638,6 +645,8 @@ export function useDatabaseExplorerController({
         obj = navigationStore.findTableMeta(targetConnId, targetDb, o.name, o.schema)
       } else if (o.type === 'view') {
         obj = navigationStore.findViewMeta(targetConnId, targetDb, o.name, o.schema)
+      } else if (o.type === 'sequence') {
+        obj = navigationStore.findSequenceMeta(targetConnId, targetDb, o.name, o.schema)
       } else {
         const { routineName, signature } = parseRoutineName(o.name)
         obj = navigationStore.findRoutineMeta(

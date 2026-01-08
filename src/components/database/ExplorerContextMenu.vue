@@ -28,7 +28,7 @@ type ContextTarget =
   | { kind: 'database'; connectionId: string; database: string }
   | { kind: 'schema'; connectionId: string; database: string; schema: string }
   | {
-      kind: 'table' | 'view' | 'function' | 'procedure'
+      kind: 'table' | 'view' | 'function' | 'procedure' | 'sequence'
       connectionId: string
       database: string
       schema?: string

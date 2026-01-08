@@ -10,7 +10,7 @@ import type { FileSystemEntry } from '@/api/fileSystem'
 import type { DiagramFocusTarget, ShowDiagramPayload } from '@/types/diagram'
 
 type DefaultTab = 'structure' | 'data'
-type ObjectType = 'table' | 'view' | 'function' | 'procedure'
+type ObjectType = 'table' | 'view' | 'function' | 'procedure' | 'sequence'
 
 export interface OpenObjectParams {
   connectionId: string

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch, defineAsyncComponent, type Component } from 'vue'
 import { ArrowUpDown, Columns2, Filter, RefreshCw, Share2, Terminal } from 'lucide-vue-next'
-import type { SQLRoutineMeta, SQLTableMeta, SQLViewMeta } from '@/types/metadata'
+import type { SQLRoutineMeta, SQLSequenceMeta, SQLTableMeta, SQLViewMeta } from '@/types/metadata'
 import { type FileSystemEntry } from '@/api/fileSystem'
 import { type FileMetadata } from '@/types/files'
 import { useObjectTabStateStore } from '@/stores/objectTabState'
@@ -18,6 +18,9 @@ const DatabaseObjectDataView = defineAsyncComponent(
 )
 const RoutineDefinitionView = defineAsyncComponent(
   () => import('@/components/database/RoutineDefinitionView.vue')
+)
+const SequenceDefinitionView = defineAsyncComponent(
+  () => import('@/components/database/SequenceDefinitionView.vue')
 )
 
 // Lazy load file components that use ag-grid
@@ -40,8 +43,8 @@ const props = defineProps<{
   closable?: boolean
   paneId?: string // Optional pane identifier (e.g., 'left', 'right') for independent state per pane
   // Database-specific props
-  objectKind?: 'table' | 'view' | 'function' | 'procedure'
-  objectMeta?: SQLTableMeta | SQLViewMeta | SQLRoutineMeta
+  objectKind?: 'table' | 'view' | 'function' | 'procedure' | 'sequence'
+  objectMeta?: SQLTableMeta | SQLViewMeta | SQLRoutineMeta | SQLSequenceMeta
   connectionType?: string
   database?: string
   // File-specific props
@@ -157,6 +160,21 @@ const tabs = computed<TabItem[]>(() => {
       ]
     }
 
+    if (props.objectKind === 'sequence') {
+      return [
+        {
+          name: 'Definition',
+          component: SequenceDefinitionView,
+          props: {
+            sequenceMeta: props.objectMeta as SQLSequenceMeta,
+            connectionType: props.connectionType,
+            objectKey: objectKey.value
+          }
+        }
+      ]
+    }
+
+    // function or procedure
     return [
       {
         name: 'Definition',

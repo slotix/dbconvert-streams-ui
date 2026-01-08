@@ -1,10 +1,16 @@
 import { defineStore } from 'pinia'
-import type { DatabaseMetadata, SQLRoutineMeta, SQLTableMeta, SQLViewMeta } from '@/types/metadata'
+import type {
+  DatabaseMetadata,
+  SQLRoutineMeta,
+  SQLSequenceMeta,
+  SQLTableMeta,
+  SQLViewMeta
+} from '@/types/metadata'
 import type { FileSystemEntry } from '@/api/fileSystem'
 import type { DatabaseInfo } from '@/types/connections'
 import connectionsApi from '@/api/connections'
 
-export type ObjectType = 'table' | 'view' | 'function' | 'procedure'
+export type ObjectType = 'table' | 'view' | 'function' | 'procedure' | 'sequence'
 export type DefaultTab = 'structure' | 'data'
 
 export interface NavigationSelection {
@@ -22,7 +28,7 @@ export interface OpenObjectPayload {
   schema?: string
   type: ObjectType
   name: string
-  meta: SQLTableMeta | SQLViewMeta | SQLRoutineMeta
+  meta: SQLTableMeta | SQLViewMeta | SQLRoutineMeta | SQLSequenceMeta
   mode: 'preview' | 'pinned'
   defaultTab?: DefaultTab
   openInRightSplit?: boolean
@@ -564,6 +570,21 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
         if (r.name !== routineName) return false
         if (!normalizedSignature) return true
         return (r.signature || '').trim() === normalizedSignature
+      })
+    },
+
+    findSequenceMeta(
+      connectionId: string,
+      database: string,
+      sequenceName: string,
+      schema?: string
+    ): SQLSequenceMeta | undefined {
+      const metadata = this.metadataState[connectionId]?.[database]
+      if (!metadata?.sequences) return undefined
+
+      return Object.values(metadata.sequences).find((s) => {
+        if (schema && s.schema !== schema) return false
+        return s.name === sequenceName
       })
     }
   }

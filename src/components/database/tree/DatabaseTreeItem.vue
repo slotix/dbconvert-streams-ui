@@ -8,7 +8,7 @@ import HighlightedText from '@/components/common/HighlightedText.vue'
 import { useDatabaseOverviewStore } from '@/stores/databaseOverview'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 
-type ObjectType = 'table' | 'view' | 'function' | 'procedure'
+type ObjectType = 'table' | 'view' | 'function' | 'procedure' | 'sequence'
 
 const overviewStore = useDatabaseOverviewStore()
 const navigationStore = useExplorerNavigationStore()
@@ -19,6 +19,7 @@ interface SchemaInfo {
   views: string[]
   functions: string[]
   procedures: string[]
+  sequences: string[]
 }
 
 interface DatabaseInfo {
