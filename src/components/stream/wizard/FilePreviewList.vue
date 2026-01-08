@@ -440,7 +440,90 @@ function onToggle(entry: FileSystemEntry, checked: boolean) {
     removeDescendantSelections(entry)
   }
 
+  // When unchecking an item that was implicitly selected via ancestor,
+  // we need to "explode" the ancestor into explicit sibling selections
+  if (!checked && isAncestorSelected(entry)) {
+    explodeAncestorSelection(entry)
+    return
+  }
+
   upsertConfigFile(entry, checked)
+}
+
+/**
+ * When deselecting a child that was implicitly selected via an ancestor,
+ * remove the ancestor selection and add all siblings as explicit selections.
+ */
+function explodeAncestorSelection(entry: FileSystemEntry) {
+  if (!streamsStore.currentStreamConfig) return
+
+  const entryPath = selectionPathForEntry(entry)
+
+  // Find the selected ancestor folder that covers this entry
+  const files = streamsStore.currentStreamConfig.files || []
+  const selectedAncestor = files.find((f) => {
+    if (!f.selected || f.type !== 'dir') return false
+    const folderPath = f.path.endsWith('/') ? f.path : `${f.path}/`
+    return entryPath.startsWith(folderPath) && entryPath !== folderPath.slice(0, -1)
+  })
+
+  if (!selectedAncestor) return
+
+  const ancestorPath = selectedAncestor.path.endsWith('/')
+    ? selectedAncestor.path
+    : `${selectedAncestor.path}/`
+
+  // Find the ancestor entry in the loaded tree to get its children
+  const ancestorEntry = findEntryBySelectionPath(ancestorPath)
+  if (!ancestorEntry || !ancestorEntry.children) {
+    // If ancestor not loaded, just remove ancestor and mark entry as deselected
+    streamsStore.currentStreamConfig.files = files.filter(
+      (f) => f.path !== selectedAncestor.path || f.connectionId !== props.connectionId
+    )
+    return
+  }
+
+  // Remove the ancestor selection
+  const updatedFiles = files.filter(
+    (f) => f.path !== selectedAncestor.path || f.connectionId !== props.connectionId
+  )
+
+  // Add all children of the ancestor EXCEPT the one being deselected
+  for (const child of ancestorEntry.children) {
+    const childPath = selectionPathForEntry(child)
+    if (childPath !== entryPath && isSelectable(child)) {
+      updatedFiles.push({
+        name: child.name,
+        connectionId: props.connectionId || undefined,
+        path: childPath,
+        type: child.type,
+        size: child.size,
+        selected: true
+      })
+    }
+  }
+
+  streamsStore.currentStreamConfig.files = updatedFiles
+}
+
+/**
+ * Find an entry in the loaded tree by its selection path
+ */
+function findEntryBySelectionPath(targetPath: string): FileSystemEntry | null {
+  function search(entries: FileSystemEntry[]): FileSystemEntry | null {
+    for (const e of entries) {
+      const ePath = selectionPathForEntry(e)
+      if (ePath === targetPath || ePath === targetPath.slice(0, -1)) {
+        return e
+      }
+      if (e.children) {
+        const found = search(e.children)
+        if (found) return found
+      }
+    }
+    return null
+  }
+  return search(rawFiles.value)
 }
 
 /**
