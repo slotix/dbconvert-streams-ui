@@ -431,13 +431,16 @@ function upsertConfigFile(entry: FileSystemEntry, selected: boolean) {
   streamsStore.currentStreamConfig.files = files
 }
 
-function onToggle(entry: FileSystemEntry, checked: boolean) {
+async function onToggle(entry: FileSystemEntry, checked: boolean) {
   if (!isSelectable(entry)) return
 
   if (checked && entry.type === 'dir') {
-    // When selecting a folder, remove explicit selections of descendants
-    // (they're now implicitly included via the folder prefix)
-    removeDescendantSelections(entry)
+    const expanded = await expandSelectionToTableFolders(entry)
+    if (!expanded) {
+      // When selecting a folder, remove explicit selections of descendants
+      // (they're now implicitly included via the folder prefix)
+      removeDescendantSelections(entry)
+    }
   }
 
   // When unchecking an item that was implicitly selected via ancestor,
@@ -556,6 +559,32 @@ function removeDescendantSelections(entry: FileSystemEntry) {
     }
     return !pathsToRemove.has(f.path)
   })
+}
+
+async function expandSelectionToTableFolders(entry: FileSystemEntry): Promise<boolean> {
+  if (!props.connectionId || isS3Connection.value) return false
+  if (entry.type !== 'dir' || entry.isTable) return false
+
+  if (!entry.isLoaded) {
+    await fileExplorerStore.loadFolderContents(props.connectionId, entry.path)
+  }
+
+  const entryPath = selectionPathForEntry(entry)
+  const refreshedEntry = findEntryBySelectionPath(entryPath) || entry
+  const children = refreshedEntry.children || []
+  if (children.length === 0) return false
+
+  const tableChildren = children.filter((child) => child.type === 'dir' && child.isTable)
+  if (tableChildren.length === 0) return false
+
+  removeDescendantSelections(refreshedEntry)
+  for (const child of tableChildren) {
+    upsertConfigFile(child, true)
+  }
+
+  fileExplorerStore.expandFolder(props.connectionId, refreshedEntry.path)
+
+  return true
 }
 
 function syncConfigFilesWithLoadedTree(entries: FileSystemEntry[]) {

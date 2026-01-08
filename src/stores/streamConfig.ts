@@ -217,6 +217,17 @@ export const buildStreamPayload = (stream: StreamConfig): Partial<StreamConfig> 
     return sorted.filter((prefix, i) => !sorted.slice(0, i).some((p) => prefix.startsWith(p)))
   }
 
+  function deduplicateFolderSelections(paths: string[]): string[] {
+    const sorted = [...paths].sort((a, b) => b.length - a.length)
+    const kept: string[] = []
+    for (const candidate of sorted) {
+      if (!kept.some((path) => path.startsWith(candidate))) {
+        kept.push(candidate)
+      }
+    }
+    return kept.reverse()
+  }
+
   function filesConfigFromFiles(
     files: NonNullable<StreamConfig['files']>,
     basePath: string
@@ -236,7 +247,7 @@ export const buildStreamPayload = (stream: StreamConfig): Partial<StreamConfig> 
       }
     }
 
-    const dedupedFolders = deduplicatePrefixes(folderPaths.filter((p) => p))
+    const dedupedFolders = deduplicateFolderSelections(folderPaths.filter((p) => p))
 
     const filteredFiles = filePaths.filter((filePath) => {
       return !dedupedFolders.some((prefix) => filePath.startsWith(prefix))
