@@ -159,6 +159,7 @@ import SourceTargetSelectionStep from '@/components/stream/wizard/steps/SourceTa
 import StructureDataStep from '@/components/stream/wizard/steps/StructureDataStep.vue'
 import StreamConfigurationStep from '@/components/stream/wizard/steps/StreamConfigurationStep.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
+import { setSelectedStreamInViewState } from '@/utils/streamsViewState'
 
 const { strokeWidth: iconStroke } = useLucideIcons()
 
@@ -577,10 +578,9 @@ async function handleFinish() {
     // Navigate to streams list with the stream selected
     const selectId = savedStreamId || streamId.value
     if (selectId) {
-      router.push({ name: 'Streams', query: { selected: selectId } })
-    } else {
-      router.push({ name: 'Streams' })
+      setSelectedStreamInViewState(selectId)
     }
+    router.push({ name: 'Streams' })
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred'
     commonStore.showNotification(`Failed to create stream: ${errorMessage}`, 'error')
@@ -663,10 +663,9 @@ async function handleQuickSave() {
     // Navigate back to streams list with the stream selected
     const selectId = savedStreamId || streamId.value
     if (selectId) {
-      router.push({ name: 'Streams', query: { selected: selectId } })
-    } else {
-      router.push({ name: 'Streams' })
+      setSelectedStreamInViewState(selectId)
     }
+    router.push({ name: 'Streams' })
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred'
     commonStore.showNotification(`Failed to update stream: ${errorMessage}`, 'error')
@@ -694,7 +693,8 @@ function confirmExit() {
   streamsStore.resetCurrentStream()
   // If in edit mode, return to streams with the stream selected
   if (isEditMode.value && streamId.value) {
-    router.push({ name: 'Streams', query: { selected: streamId.value } })
+    setSelectedStreamInViewState(streamId.value)
+    router.push({ name: 'Streams' })
   } else {
     router.push({ name: 'Streams' })
   }

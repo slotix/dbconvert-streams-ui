@@ -242,6 +242,7 @@ import BaseButton from '@/components/base/BaseButton.vue'
 import type { StreamConfig } from '@/types/streamConfig'
 import type { Connection } from '@/types/connections'
 import type { StreamDetailsTab } from '@/composables/useStreamHistory'
+import { readStreamsViewState, setSelectedStreamInViewState } from '@/utils/streamsViewState'
 
 const { strokeWidth: iconStroke } = useLucideIcons()
 
@@ -259,37 +260,8 @@ const sidebarMenuToggle = inject<{ openSidebar: () => void }>('sidebarMenuToggle
 // Use sidebar composable for resize and toggle functionality
 const sidebar = useSidebar()
 
-const STREAMS_VIEW_STATE_STORAGE_KEY = 'streamsViewState'
-type StreamsViewState = {
-  selectedStreamId?: string
-  tab?: StreamDetailsTab
-}
-
-function readStreamsViewState(): StreamsViewState | undefined {
-  try {
-    const raw = window.localStorage.getItem(STREAMS_VIEW_STATE_STORAGE_KEY)
-    if (!raw) return undefined
-    const parsed = JSON.parse(raw) as StreamsViewState
-    if (!parsed || typeof parsed !== 'object') return undefined
-    return parsed
-  } catch {
-    return undefined
-  }
-}
-
-function writeStreamsViewState(state: StreamsViewState) {
-  try {
-    window.localStorage.setItem(STREAMS_VIEW_STATE_STORAGE_KEY, JSON.stringify(state))
-  } catch {
-    // ignore storage errors (quota, privacy mode, etc.)
-  }
-}
-
-const persistedStateAtInit = readStreamsViewState()
-
-const selectedStreamId = ref<string>(persistedStateAtInit?.selectedStreamId || '')
-
-const restoredTab = ref<StreamDetailsTab | undefined>(persistedStateAtInit?.tab)
+const selectedStreamId = ref<string>('')
+const restoredTab = ref<StreamDetailsTab | undefined>(undefined)
 const initialTab = computed(() => restoredTab.value)
 const searchQuery = ref('')
 const searchInputRef = ref<InstanceType<typeof SearchInput> | null>(null)
@@ -347,23 +319,25 @@ function handleSelectStream(payload: { streamId: string }) {
 function handleDeleteStream(payload: { streamId: string }) {
   if (selectedStreamId.value === payload.streamId) {
     selectedStreamId.value = ''
-    writeStreamsViewState({
-      ...readStreamsViewState(),
-      selectedStreamId: undefined
-    })
+    setSelectedStreamInViewState()
   }
 }
 
 function handleStreamDeletedFromPanel() {
   selectedStreamId.value = ''
-  writeStreamsViewState({
-    ...readStreamsViewState(),
-    selectedStreamId: undefined
-  })
+  setSelectedStreamInViewState()
 }
 
 // Fetch connections and streams on mount
 onMounted(async () => {
+  const persistedStateAtInit = readStreamsViewState()
+  if (persistedStateAtInit?.selectedStreamId) {
+    selectedStreamId.value = persistedStateAtInit.selectedStreamId
+  }
+  if (persistedStateAtInit?.tab) {
+    restoredTab.value = persistedStateAtInit.tab
+  }
+
   // Only fetch if backend is connected
   if (isBackendConnected.value) {
     try {
@@ -379,10 +353,7 @@ onMounted(async () => {
         const exists = streamsStore.streamConfigs.some((s) => s.id === selectedStreamId.value)
         if (!exists) {
           selectedStreamId.value = ''
-          writeStreamsViewState({
-            ...readStreamsViewState(),
-            selectedStreamId: undefined
-          })
+          setSelectedStreamInViewState()
         }
       }
 
@@ -404,11 +375,11 @@ onMounted(async () => {
 watch(
   () => selectedStreamId.value,
   (selected) => {
-    const existing = readStreamsViewState()
-    writeStreamsViewState({
-      ...existing,
-      selectedStreamId: selected || undefined
-    })
+    setSelectedStreamInViewState(selected || undefined)
+    const stored = readStreamsViewState()
+    if (stored?.tab) {
+      restoredTab.value = stored.tab
+    }
   }
 )
 

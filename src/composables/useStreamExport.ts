@@ -16,6 +16,7 @@ import { useConnectionsStore } from '@/stores/connections'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useMonitoringStore } from '@/stores/monitoring'
 import { useQueryFilterStore } from '@/stores/queryFilterStore'
+import { updateStreamsViewState } from '@/utils/streamsViewState'
 import connectionsApi from '@/api/connections'
 import streamsApi from '@/api/streams'
 import type { Connection } from '@/types/connections'
@@ -268,10 +269,9 @@ export function useStreamExport() {
       }
 
       // Step 5: Navigate to streams view with the stream selected and monitor tab active
-      router.push({
-        name: 'Streams',
-        query: { selected: streamConfigId, tab: 'monitor' }
-      })
+      updateStreamsViewState({ selectedStreamId: streamConfigId, tab: 'monitor' })
+
+      router.push({ name: 'Streams' })
 
       return {
         success: true,

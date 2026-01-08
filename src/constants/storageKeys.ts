@@ -59,7 +59,10 @@ export const STORAGE_KEYS = {
   LOGS_ERRORS_ONLY: 'sqlLogErrorsOnly',
 
   /** Logs panel visually grouped preference */
-  LOGS_VISUALLY_GROUPED: 'sqlLogVisuallyGrouped'
+  LOGS_VISUALLY_GROUPED: 'sqlLogVisuallyGrouped',
+
+  /** Streams view selection + active tab */
+  STREAMS_VIEW_STATE: 'streamsViewState'
 } as const
 
 /**

@@ -305,6 +305,7 @@ import StreamConfigurationView from '@/components/stream/StreamConfigurationView
 import { useStreamControls } from '@/composables/useStreamControls'
 import { useStreamHistory, type StreamDetailsTab } from '@/composables/useStreamHistory'
 import { useStreamExplorerNavigation } from '@/composables/useStreamExplorerNavigation'
+import { updateStreamsViewState, setSelectedStreamInViewState } from '@/utils/streamsViewState'
 
 // Lazy load heavy components that use ag-grid
 const StreamHistoryTableAGGrid = defineAsyncComponent(
@@ -333,7 +334,7 @@ const { strokeWidth: iconStroke } = useLucideIcons()
 const showDeleteConfirm = ref(false)
 const activeTab = ref<StreamDetailsTab>(props.initialTab || 'configuration')
 
-// Watch for initialTab prop changes (e.g., from URL query params)
+// Watch for initialTab prop changes (persisted in localStorage)
 watch(
   () => props.initialTab,
   (newTab) => {
@@ -346,21 +347,10 @@ watch(
 watch(
   () => activeTab.value,
   (newTab) => {
-    // Persist active tab in localStorage so it survives navigation away/back.
-    // Streams page intentionally does not use URL query params as a source of truth.
-    try {
-      const key = 'streamsViewState'
-      const existingRaw = window.localStorage.getItem(key)
-      const existing = existingRaw ? (JSON.parse(existingRaw) as Record<string, unknown>) : {}
-      const next = {
-        ...existing,
-        selectedStreamId: props.stream.id,
-        tab: newTab
-      }
-      window.localStorage.setItem(key, JSON.stringify(next))
-    } catch {
-      // ignore storage errors
-    }
+    updateStreamsViewState({
+      selectedStreamId: props.stream.id,
+      tab: newTab
+    })
   },
   { immediate: true }
 )
@@ -473,20 +463,7 @@ async function deleteStream() {
     showDeleteConfirm.value = false
 
     // Ensure we don't persist a deleted stream as the last selection.
-    try {
-      const key = 'streamsViewState'
-      const existingRaw = window.localStorage.getItem(key)
-      const existing = existingRaw ? (JSON.parse(existingRaw) as Record<string, unknown>) : {}
-      window.localStorage.setItem(
-        key,
-        JSON.stringify({
-          ...existing,
-          selectedStreamId: undefined
-        })
-      )
-    } catch {
-      // ignore storage errors
-    }
+    setSelectedStreamInViewState()
 
     emit('stream-deleted')
   } catch (e: unknown) {

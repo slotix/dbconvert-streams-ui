@@ -83,6 +83,7 @@ import { useDesktopMode } from '@/composables/useDesktopMode'
 import StreamConfigJsonEditor from '@/components/stream/StreamConfigJsonEditor.vue'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useCommonStore } from '@/stores/common'
+import { setSelectedStreamInViewState } from '@/utils/streamsViewState'
 import streamsApi from '@/api/streams'
 import type { StreamConfig } from '@/types/streamConfig'
 
@@ -123,7 +124,8 @@ onMounted(async () => {
 function goBack() {
   // Navigate back to streams view with the stream selected
   if (streamId.value) {
-    router.push({ name: 'Streams', query: { selected: streamId.value } })
+    setSelectedStreamInViewState(streamId.value)
+    router.push({ name: 'Streams' })
   } else {
     router.push({ name: 'Streams' })
   }
