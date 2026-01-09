@@ -241,16 +241,10 @@
           v-else
           class="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/30 p-8 text-center"
         >
-          <h4 class="text-base font-semibold text-gray-900 dark:text-gray-100">Monitor is empty</h4>
+          <h4 class="text-base font-semibold text-gray-900 dark:text-gray-100">No data yet</h4>
           <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
-            Run this stream to see live stats, or open History to view past runs.
+            Run the stream to see live statistics
           </p>
-          <div class="mt-4 flex items-center justify-center gap-3">
-            <BaseButton variant="primary" @click="startStream">Run Stream</BaseButton>
-            <BaseButton variant="secondary" @click="activeTab = 'history'">
-              View History
-            </BaseButton>
-          </div>
         </div>
       </div>
 
