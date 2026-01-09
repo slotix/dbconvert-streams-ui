@@ -70,6 +70,12 @@ Never run `yarn dev` automatically; the maintainer starts the dev server manuall
 - Use `src/utils/formats.ts` helpers for formatting; do not reimplement
 - Store static maps and tokens in `src/constants/` and import from there
 
+## Engineering Principles
+
+Core repo preferences (simplicity-first, DRY, and no transitional compatibility by default):
+
+- See [.github/skills/engineering-principles/SKILL.md](.github/skills/engineering-principles/SKILL.md)
+
 ## Testing Guidelines
 Testing rules are maintained as a skill doc to avoid duplication and drift:
 

@@ -9,6 +9,12 @@ This repo includes optional Claude Code agent profiles under `.claude/agents/`:
 - `.claude/agents/qa-engineer.md` — runs `yarn build` to validate compilation
 - `.claude/agents/testing.md` — testing-focused agent (follows `.github/skills/testing/SKILL.md` + `TESTING.md`)
 
+## Engineering Principles
+
+Core repo preferences (simplicity-first, DRY, and no transitional compatibility by default):
+
+- `.github/skills/engineering-principles/SKILL.md`
+
 ---
 
 ## Project Overview
