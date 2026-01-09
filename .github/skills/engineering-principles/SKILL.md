@@ -14,6 +14,8 @@ description: Core repo preferences: simplicity-first, DRY, and avoid compatibili
 - When migrating (legacy config/state/props → new approach), prefer a **single** source of truth:
   - Update call-sites in the same change.
   - Remove the old path instead of maintaining adapters.
+- Do **not** add implicit fallbacks ("try old behavior if new behavior fails") or silent defaulting.
+  - If a fallback might be needed for rollout safety, **ask first** and only implement it after explicit confirmation.
 - If backward compatibility is required, **ask first** and keep it time-boxed with a removal plan.
 
 ## Keep it DRY (but readable)
