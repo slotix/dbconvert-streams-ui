@@ -71,9 +71,10 @@ Never run `yarn dev` automatically; the maintainer starts the dev server manuall
 - Store static maps and tokens in `src/constants/` and import from there
 
 ## Testing Guidelines
-- Unit tests: `src/__tests__/` with Vitest
-- Playwright auth state: `tests/.auth/user.json` (not committed)
-- Add tests for new/changed behavior where practical
+Testing rules are maintained as a skill doc to avoid duplication and drift:
+
+- See [.github/skills/testing/SKILL.md](.github/skills/testing/SKILL.md)
+- For developer instructions on running unit/e2e tests, see [TESTING.md](TESTING.md)
 
 ## Security & Configuration Tips
 - Do not commit secrets; use `.env.local` for local overrides

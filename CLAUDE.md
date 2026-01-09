@@ -2,6 +2,13 @@
 
 Guidelines for Claude Code when contributing to this repository.
 
+## Available Claude agents
+
+This repo includes optional Claude Code agent profiles under `.claude/agents/`:
+
+- `.claude/agents/qa-engineer.md` — runs `yarn build` to validate compilation
+- `.claude/agents/testing.md` — testing-focused agent (follows `.github/skills/testing/SKILL.md` + `TESTING.md`)
+
 ---
 
 ## Project Overview
@@ -207,22 +214,8 @@ Tech: Go 1.24 · NATS JetStream · Consul · Vault
 
 ## Testing
 
-### Playwright E2E
-
-* Auth state: `tests/.auth/user.json`
-* Reuses saved API key (no env vars)
-* Commands:
-
-  ```bash
-  yarn test          # headless
-  yarn test:headed   # visible browser
-  yarn test:ui       # interactive
-  ```
-
-### Vitest Unit
-
-`src/__tests__/` directory
-Run via `yarn test:unit`
+- Developer test running instructions (unit + Playwright E2E): [TESTING.md](TESTING.md)
+- Agent/Copilot testing policy and constraints: `.github/skills/testing/SKILL.md`
 
 ---
 

@@ -1,5 +1,19 @@
 # Testing Setup
 
+This document is a developer-facing guide for **running** tests in this repo.
+
+For agent/Copilot testing policies (defaults, constraints like not auto-running `yarn dev`), see:
+- `.github/skills/testing/SKILL.md`
+
+## Unit Tests (Vitest)
+
+- Location: `src/__tests__/`
+- Run:
+
+```bash
+yarn test:unit
+```
+
 ## Playwright Tests
 
 ### Prerequisites
