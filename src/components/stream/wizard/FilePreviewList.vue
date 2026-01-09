@@ -55,94 +55,93 @@
         No files found
       </div>
       <div v-else class="p-4">
-        <div class="space-y-1">
-          <div
-            v-for="row in paginatedRows"
-            :key="row.entry.path"
-            class="flex items-center justify-between px-3 py-2 text-sm rounded-md hover:bg-gray-50 dark:hover:bg-gray-800/70"
-            :style="{ paddingLeft: `${row.depth * 12 + 12}px` }"
-          >
-            <div class="flex items-center flex-1 min-w-0">
-              <!-- Expand chevron (folders only) -->
-              <button
-                v-if="row.entry.type === 'dir'"
-                type="button"
-                class="shrink-0 mr-2 p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
-                :class="{ 'rotate-90': isExpanded(row.entry.path) }"
-                @click="toggleFolder(row.entry)"
+        <div
+          ref="listContainer"
+          class="max-h-[420px] overflow-y-auto overscroll-contain scrollbar-thin"
+          @scroll="onScroll"
+        >
+          <div class="relative" :style="{ height: `${totalHeight}px` }">
+            <div class="absolute inset-x-0" :style="{ transform: `translateY(${translateY}px)` }">
+              <div
+                v-for="row in virtualRows"
+                :key="row.entry.path"
+                class="flex items-center justify-between px-3 py-2 text-sm rounded-md hover:bg-gray-50 dark:hover:bg-gray-800/70 h-10"
+                :style="{ paddingLeft: `${row.depth * 12 + 12}px` }"
               >
-                <svg
-                  class="h-4 w-4 text-gray-500 dark:text-gray-400"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                  aria-hidden="true"
-                >
-                  <path
-                    fill-rule="evenodd"
-                    d="M7.21 14.77a.75.75 0 01.02-1.06L10.94 10 7.23 6.29a.75.75 0 011.06-1.06l4.24 4.24a.75.75 0 010 1.06l-4.24 4.24a.75.75 0 01-1.06.02z"
-                    clip-rule="evenodd"
+                <div class="flex items-center flex-1 min-w-0">
+                  <!-- Expand chevron (folders only) -->
+                  <button
+                    v-if="row.entry.type === 'dir'"
+                    type="button"
+                    class="shrink-0 mr-2 p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
+                    :class="{ 'rotate-90': isExpanded(row.entry.path) }"
+                    @click="toggleFolder(row.entry)"
+                  >
+                    <svg
+                      class="h-4 w-4 text-gray-500 dark:text-gray-400"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                      aria-hidden="true"
+                    >
+                      <path
+                        fill-rule="evenodd"
+                        d="M7.21 14.77a.75.75 0 01.02-1.06L10.94 10 7.23 6.29a.75.75 0 011.06-1.06l4.24 4.24a.75.75 0 010 1.06l-4.24 4.24a.75.75 0 01-1.06.02z"
+                        clip-rule="evenodd"
+                      />
+                    </svg>
+                  </button>
+                  <span v-else class="h-4 w-4 shrink-0 mr-2" />
+
+                  <!-- Checkbox (files always; folders only for S3 prefixes) -->
+                  <input
+                    :id="`file-${row.entry.path}`"
+                    :checked="getCheckboxState(row.entry).checked"
+                    :indeterminate="getCheckboxState(row.entry).indeterminate"
+                    :disabled="!isSelectable(row.entry)"
+                    type="checkbox"
+                    class="h-4 w-4 text-teal-600 dark:text-teal-500 focus:ring-teal-500 dark:focus:ring-teal-400 border-gray-300 dark:border-gray-600 rounded mr-3 bg-white dark:bg-gray-800"
+                    @click.stop
+                    @change="
+                      onToggle(row.entry, ($event.target as HTMLInputElement)?.checked || false)
+                    "
                   />
-                </svg>
-              </button>
-              <span v-else class="h-4 w-4 shrink-0 mr-2" />
 
-              <!-- Checkbox (files always; folders only for S3 prefixes) -->
-              <input
-                :id="`file-${row.entry.path}`"
-                :checked="getCheckboxState(row.entry).checked"
-                :indeterminate="getCheckboxState(row.entry).indeterminate"
-                :disabled="!isSelectable(row.entry)"
-                type="checkbox"
-                class="h-4 w-4 text-teal-600 dark:text-teal-500 focus:ring-teal-500 dark:focus:ring-teal-400 border-gray-300 dark:border-gray-600 rounded mr-3 bg-white dark:bg-gray-800"
-                @click.stop
-                @change="onToggle(row.entry, ($event.target as HTMLInputElement)?.checked || false)"
-              />
+                  <FileIcon
+                    :file-format="fileFormat(row.entry)"
+                    :is-directory="row.entry.type === 'dir'"
+                    :is-table-folder="!!row.entry.isTable"
+                    :is-bucket="!!row.entry.isBucket"
+                    class="mr-2"
+                  />
 
-              <FileIcon
-                :file-format="fileFormat(row.entry)"
-                :is-directory="row.entry.type === 'dir'"
-                :is-table-folder="!!row.entry.isTable"
-                :is-bucket="!!row.entry.isBucket"
-                class="mr-2"
-              />
+                  <button
+                    type="button"
+                    class="text-left flex-1 min-w-0 truncate"
+                    @click="row.entry.type === 'dir' && toggleFolder(row.entry)"
+                  >
+                    <span class="text-gray-900 dark:text-gray-100">{{ row.entry.name }}</span>
+                  </button>
+                </div>
 
-              <button
-                type="button"
-                class="text-left flex-1 min-w-0 truncate"
-                @click="row.entry.type === 'dir' && toggleFolder(row.entry)"
-              >
-                <span class="text-gray-900 dark:text-gray-100">{{ row.entry.name }}</span>
-              </button>
+                <span class="text-xs text-gray-500 dark:text-gray-400 ml-4 shrink-0">
+                  {{ formatDataSize(row.entry.size || 0) }}
+                </span>
+              </div>
             </div>
-
-            <span class="text-xs text-gray-500 dark:text-gray-400 ml-4 shrink-0">
-              {{ formatDataSize(row.entry.size || 0) }}
-            </span>
           </div>
         </div>
       </div>
-    </div>
-
-    <!-- Pagination -->
-    <div v-if="totalPages > 1" class="mt-4">
-      <Pagination
-        :total-items="filteredRows.length"
-        :itemsPerPage="itemsPerPage"
-        :current-page="currentPage"
-        @update:currentPage="updateCurrentPage"
-      />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, watch, ref } from 'vue'
+import { computed, watch, ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useFileExplorerStore } from '@/stores/fileExplorer'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { getFileFormat } from '@/utils/fileFormat'
 import { formatDataSize } from '@/utils/formats'
 import FormInput from '@/components/base/FormInput.vue'
-import Pagination from '@/components/common/Pagination.vue'
 import type { FileSystemEntry } from '@/api/fileSystem'
 import type { FileEntry } from '@/types/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
@@ -226,20 +225,22 @@ const filteredRows = computed<TreeRow[]>(() => {
   return flattenAllLoaded(rawFiles.value, 0).filter((r) => r.entry.name.toLowerCase().includes(q))
 })
 
-const currentPage = ref(1)
-const itemsPerPage = 10
+const listContainer = ref<HTMLElement | null>(null)
+const scrollTop = ref(0)
+const viewportHeight = ref(0)
+const rowHeight = 40
+const overscan = 8
 
-const totalPages = computed(() =>
-  itemsPerPage > 0 ? Math.max(1, Math.ceil(filteredRows.value.length / itemsPerPage)) : 1
-)
-
-const paginatedRows = computed(() => {
-  if (itemsPerPage <= 0) {
-    return filteredRows.value
-  }
-  const start = (currentPage.value - 1) * itemsPerPage
-  return filteredRows.value.slice(start, start + itemsPerPage)
+const totalHeight = computed(() => filteredRows.value.length * rowHeight)
+const startIndex = computed(() => {
+  return Math.max(0, Math.floor(scrollTop.value / rowHeight) - overscan)
 })
+const endIndex = computed(() => {
+  const visibleCount = Math.ceil(viewportHeight.value / rowHeight) + overscan * 2
+  return Math.min(filteredRows.value.length, startIndex.value + visibleCount)
+})
+const virtualRows = computed(() => filteredRows.value.slice(startIndex.value, endIndex.value))
+const translateY = computed(() => startIndex.value * rowHeight)
 
 function trimTrailingSeparators(value: string): string {
   let end = value.length
@@ -349,8 +350,10 @@ function isAncestorSelected(entry: FileSystemEntry): boolean {
 
   // Check if path falls under any selected folder
   const selectionPath = selectionPathForEntry(entry)
+  if (!selectionPath) return false
+  const normalizedSelection = selectionPath.endsWith('/') ? selectionPath : `${selectionPath}/`
   return selectedFolders.some(
-    (folder) => selectionPath.startsWith(folder) && selectionPath !== folder.slice(0, -1)
+    (folder) => normalizedSelection.startsWith(folder) && normalizedSelection !== folder
   )
 }
 
@@ -434,13 +437,26 @@ function upsertConfigFile(entry: FileSystemEntry, selected: boolean) {
 async function onToggle(entry: FileSystemEntry, checked: boolean) {
   if (!isSelectable(entry)) return
 
-  if (checked && entry.type === 'dir') {
+  if (entry.type === 'dir') {
+    const state = getCheckboxState(entry)
+    if (state.checked || state.indeterminate) {
+      if (isAncestorSelected(entry)) {
+        explodeAncestorSelection(entry)
+        return
+      }
+      removeDescendantSelections(entry)
+      upsertConfigFile(entry, false)
+      return
+    }
+
     const expanded = await expandSelectionToTableFolders(entry)
     if (!expanded) {
       // When selecting a folder, remove explicit selections of descendants
       // (they're now implicitly included via the folder prefix)
       removeDescendantSelections(entry)
     }
+    upsertConfigFile(entry, true)
+    return
   }
 
   // When unchecking an item that was implicitly selected via ancestor,
@@ -467,7 +483,8 @@ function explodeAncestorSelection(entry: FileSystemEntry) {
   const selectedAncestor = files.find((f) => {
     if (!f.selected || f.type !== 'dir') return false
     const folderPath = f.path.endsWith('/') ? f.path : `${f.path}/`
-    return entryPath.startsWith(folderPath) && entryPath !== folderPath.slice(0, -1)
+    const normalizedEntry = entryPath.endsWith('/') ? entryPath : `${entryPath}/`
+    return normalizedEntry.startsWith(folderPath) && normalizedEntry !== folderPath
   })
 
   if (!selectedAncestor) return
@@ -534,10 +551,13 @@ function findEntryBySelectionPath(targetPath: string): FileSystemEntry | null {
  * (called when folder is selected, making descendants implicit)
  */
 function removeDescendantSelections(entry: FileSystemEntry) {
-  if (!entry.children || !streamsStore.currentStreamConfig) return
+  if (!streamsStore.currentStreamConfig) return
 
   const files = streamsStore.currentStreamConfig.files || []
   const pathsToRemove = new Set<string>()
+  const selectionPath = selectionPathForEntry(entry)
+  if (!selectionPath) return
+  const folderPrefix = selectionPath.endsWith('/') ? selectionPath : `${selectionPath}/`
 
   function collectDescendantPaths(e: FileSystemEntry) {
     if (e.children) {
@@ -554,10 +574,15 @@ function removeDescendantSelections(entry: FileSystemEntry) {
 
   // Remove or deselect descendants
   streamsStore.currentStreamConfig.files = files.filter((f) => {
-    if (props.connectionId && f.connectionId !== props.connectionId) {
+    if (props.connectionId && f.connectionId && f.connectionId !== props.connectionId) {
       return true
     }
-    return !pathsToRemove.has(f.path)
+    if (pathsToRemove.has(f.path)) {
+      return false
+    }
+    const candidatePath =
+      f.type === 'dir' || f.path.endsWith('/') ? ensureTrailingSlash(f.path) : f.path
+    return !(candidatePath.startsWith(folderPrefix) && f.path !== selectionPath)
   })
 }
 
@@ -683,13 +708,36 @@ function toggleSelectAll(event: Event) {
   })
 }
 
-function updateCurrentPage(page: number) {
-  currentPage.value = page
+function updateViewportHeight() {
+  if (!listContainer.value) return
+  viewportHeight.value = listContainer.value.clientHeight
 }
 
-// Reset to page 1 when search changes
-watch(searchQuery, () => {
-  currentPage.value = 1
+function onScroll() {
+  if (!listContainer.value) return
+  scrollTop.value = listContainer.value.scrollTop
+}
+
+function resetScroll() {
+  scrollTop.value = 0
+  if (listContainer.value) {
+    listContainer.value.scrollTop = 0
+  }
+}
+
+onMounted(() => {
+  updateViewportHeight()
+  window.addEventListener('resize', updateViewportHeight)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', updateViewportHeight)
+})
+
+watch(filteredRows, async () => {
+  await nextTick()
+  updateViewportHeight()
+  resetScroll()
 })
 
 /**
