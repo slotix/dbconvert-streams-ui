@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, onBeforeUnmount } from 'vue'
-import { AlertCircle, BarChart3, Hash, Loader2, Percent, RefreshCw } from 'lucide-vue-next'
+import { AlertCircle, BarChart3, Hash, Loader2, RefreshCw } from 'lucide-vue-next'
 import { getTableSummary } from '@/api/tableSummary'
 import type { TableSummaryResponse, ColumnSummary } from '@/types/tableSummary'
 import type { SQLTableMeta, SQLViewMeta } from '@/types/metadata'
@@ -139,7 +139,7 @@ function getCardinalityLabel(indicator: string): string {
   }
 }
 
-async function fetchSummary() {
+async function fetchSummary(forceRefresh = false) {
   // Cancel any existing request
   if (abortController) {
     abortController.abort()
@@ -162,7 +162,8 @@ async function fetchSummary() {
         schema: props.tableMeta.schema,
         table: props.tableMeta.name
       },
-      signal
+      signal,
+      forceRefresh ? { refresh: true } : undefined
     )
 
     // Ignore results from stale/overlapped requests.
@@ -194,7 +195,7 @@ async function fetchSummary() {
 
 // Expose refresh method
 async function refresh() {
-  await fetchSummary()
+  await fetchSummary(true)
 }
 
 defineExpose({ refresh })
@@ -203,7 +204,7 @@ watch(
   () => props.isActive,
   (active) => {
     if (active) {
-      fetchSummary()
+      fetchSummary(false)
       return
     }
 
@@ -245,7 +246,7 @@ onBeforeUnmount(() => {
           <button
             type="button"
             class="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-red-700 dark:text-red-300 hover:text-red-800 dark:hover:text-red-200"
-            @click="fetchSummary"
+            @click="() => fetchSummary(false)"
           >
             <RefreshCw class="h-4 w-4" />
             Try again
@@ -286,7 +287,7 @@ onBeforeUnmount(() => {
             {{ summary.columnCount }}
           </div>
         </div>
-        <div class="flex-1 min-w-[80px] rounded-lg bg-gray-50 dark:bg-gray-800/50 p-3">
+        <div class="flex-1 min-w-20 rounded-lg bg-gray-50 dark:bg-gray-800/50 p-3">
           <div
             class="text-gray-500 dark:text-gray-400 text-[11px] font-medium uppercase tracking-wide truncate"
           >

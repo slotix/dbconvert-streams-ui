@@ -276,6 +276,9 @@ type DataViewComponent = Refreshable & {
 const panelRefs = ref<DataViewComponent[]>([])
 const isRefreshing = ref(false)
 
+const activeTabName = computed(() => tabs.value[selectedIndex.value]?.name || '')
+const isSummaryTab = computed(() => isDataObject.value && activeTabName.value === 'Summary')
+
 // Get the current data view's filter panel ref (handles both ref and direct value)
 function getFilterPanel(): FilterPanelMethods | null {
   const dataView = panelRefs.value[0] as DataViewComponent | undefined
@@ -534,7 +537,13 @@ function onOpenDiagram() {
                 isRefreshing ? 'animate-spin' : 'text-gray-400 dark:text-gray-500'
               ]"
             />
-            {{ isDataObject && selectedIndex === 0 ? 'Refresh Data' : 'Refresh Metadata' }}
+            {{
+              isDataObject && selectedIndex === 0
+                ? 'Refresh Data'
+                : isSummaryTab
+                  ? 'Refresh Summary'
+                  : 'Refresh Metadata'
+            }}
           </button>
         </div>
       </div>

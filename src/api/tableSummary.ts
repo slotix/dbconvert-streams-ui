@@ -17,7 +17,14 @@ import type { TableSummaryRequest, TableSummaryResponse } from '@/types/tableSum
  */
 export async function getTableSummary(
   request: TableSummaryRequest,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  options?: {
+    /**
+     * If true, bypasses server-side summary cache and recomputes statistics.
+     * Maps to stream-api query param `?refresh=true`.
+     */
+    refresh?: boolean
+  }
 ): Promise<TableSummaryResponse> {
   const commonStore = useCommonStore()
   validateApiKey(commonStore.apiKey)
@@ -25,13 +32,20 @@ export async function getTableSummary(
   try {
     const { connectionId, database, table, schema, samplePercent } = request
 
+    const params: Record<string, string> | undefined = (() => {
+      const p: Record<string, string> = {}
+      if (schema) p.schema = schema
+      if (options?.refresh) p.refresh = 'true'
+      return Object.keys(p).length ? p : undefined
+    })()
+
     const response: AxiosResponse<TableSummaryResponse> = await apiClient.post(
       `/connections/${encodeURIComponent(connectionId)}/databases/${encodeURIComponent(database)}/tables/${encodeURIComponent(table)}/summary`,
       typeof samplePercent === 'number' ? { samplePercent } : {},
       {
         headers: { [API_HEADERS.API_KEY]: commonStore.apiKey },
         timeout: API_TIMEOUTS.VERY_LONG, // 2 minutes for large tables
-        params: schema ? { schema } : undefined,
+        params,
         signal // Pass abort signal for cancellation
       }
     )
