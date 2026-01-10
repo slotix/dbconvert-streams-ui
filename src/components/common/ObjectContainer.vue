@@ -22,6 +22,9 @@ const RoutineDefinitionView = defineAsyncComponent(
 const SequenceDefinitionView = defineAsyncComponent(
   () => import('@/components/database/SequenceDefinitionView.vue')
 )
+const TableSummaryTab = defineAsyncComponent(
+  () => import('@/components/database/TableSummaryTab.vue')
+)
 
 // Lazy load file components that use ag-grid
 const FileDataView = defineAsyncComponent(() => import('@/components/files/FileDataView.vue'))
@@ -91,6 +94,12 @@ const isDataObject = computed(
     props.objectType === 'database' && (props.objectKind === 'table' || props.objectKind === 'view')
 )
 
+// Check if connection type supports table summary (DuckDB SUMMARIZE)
+const supportsSummary = computed(() => {
+  const type = props.connectionType?.toLowerCase() || ''
+  return type === 'mysql' || type === 'mariadb' || type === 'postgresql' || type === 'postgres'
+})
+
 const tabs = computed<TabItem[]>(() => {
   if (props.objectType === 'file') {
     if (!props.fileEntry) {
@@ -127,7 +136,7 @@ const tabs = computed<TabItem[]>(() => {
     }
 
     if (props.objectKind === 'table' || props.objectKind === 'view') {
-      return [
+      const baseTabs: TabItem[] = [
         {
           name: 'Data',
           component: DatabaseObjectDataView,
@@ -158,6 +167,24 @@ const tabs = computed<TabItem[]>(() => {
                 }
         }
       ]
+
+      // Add Summary tab for MySQL and PostgreSQL connections
+      if (supportsSummary.value) {
+        const summaryTabIndex = baseTabs.length
+        baseTabs.push({
+          name: 'Summary',
+          component: TableSummaryTab,
+          props: {
+            tableMeta: props.objectMeta as SQLTableMeta | SQLViewMeta,
+            connectionId: props.connectionId,
+            database: props.database,
+            isView: props.objectKind === 'view',
+            isActive: selectedIndex.value === summaryTabIndex
+          }
+        })
+      }
+
+      return baseTabs
     }
 
     if (props.objectKind === 'sequence') {
