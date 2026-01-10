@@ -19,6 +19,13 @@ const summary = ref<TableSummaryResponse | null>(null)
 
 // AbortController for cancelling in-flight requests
 let abortController: AbortController | null = null
+let activeRequestSeq = 0
+
+function isCanceledRequest(e: unknown): boolean {
+  if (!e || typeof e !== 'object') return false
+  const err = e as { name?: string; code?: string }
+  return err.name === 'CanceledError' || err.name === 'AbortError' || err.code === 'ERR_CANCELED'
+}
 
 // Format numbers with commas
 function formatNumber(value: number | null | undefined): string {
@@ -112,13 +119,15 @@ async function fetchSummary() {
 
   // Create new controller for this request
   abortController = new AbortController()
-  const signal = abortController.signal
+  const currentController = abortController
+  const signal = currentController.signal
+  const requestSeq = ++activeRequestSeq
 
   loading.value = true
   error.value = null
 
   try {
-    summary.value = await getTableSummary(
+    const result = await getTableSummary(
       {
         connectionId: props.connectionId,
         database: props.database,
@@ -127,15 +136,31 @@ async function fetchSummary() {
       },
       signal
     )
-  } catch (e) {
-    // Ignore cancellation errors - this is expected when user switches tabs
-    if (e instanceof Error && (e.name === 'CanceledError' || e.name === 'AbortError')) {
+
+    // Ignore results from stale/overlapped requests.
+    if (requestSeq !== activeRequestSeq || abortController !== currentController) {
       return
     }
+
+    summary.value = result
+  } catch (e) {
+    // Ignore cancellation errors - this is expected when user switches tabs
+    if (isCanceledRequest(e)) {
+      return
+    }
+
+    // Ignore errors from stale/overlapped requests.
+    if (requestSeq !== activeRequestSeq || abortController !== currentController) {
+      return
+    }
+
     error.value = e instanceof Error ? e.message : 'Failed to load summary'
     console.error('Failed to fetch table summary:', e)
   } finally {
-    loading.value = false
+    // Only clear loading for the active request.
+    if (requestSeq === activeRequestSeq && abortController === currentController) {
+      loading.value = false
+    }
   }
 }
 
@@ -158,6 +183,7 @@ watch(
     if (abortController) {
       abortController.abort()
       abortController = null
+      activeRequestSeq++
     }
   },
   { immediate: true }
@@ -168,6 +194,7 @@ onBeforeUnmount(() => {
   if (abortController) {
     abortController.abort()
     abortController = null
+    activeRequestSeq++
   }
 })
 </script>

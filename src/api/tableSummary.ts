@@ -2,7 +2,7 @@
  * Table Summary API Service
  * Fetches column-level statistics using DuckDB SUMMARIZE
  */
-import { type AxiosResponse } from 'axios'
+import axios, { type AxiosResponse } from 'axios'
 import { apiClient, validateApiKey } from './apiClient'
 import { useCommonStore } from '@/stores/common'
 import { handleApiError } from '@/utils/errorHandler'
@@ -38,7 +38,11 @@ export async function getTableSummary(
     return response.data
   } catch (error) {
     // Don't treat cancellation as an error
-    if (error instanceof Error && error.name === 'CanceledError') {
+    if (
+      axios.isCancel(error) ||
+      (axios.isAxiosError(error) && error.code === 'ERR_CANCELED') ||
+      (error instanceof Error && (error.name === 'CanceledError' || error.name === 'AbortError'))
+    ) {
       throw error // Re-throw to let caller handle it
     }
     throw handleApiError(error)
