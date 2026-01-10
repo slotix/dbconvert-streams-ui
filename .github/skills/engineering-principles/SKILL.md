@@ -22,3 +22,7 @@ description: Core repo preferences: simplicity-first, DRY, and avoid compatibili
 - Remove duplication when it improves maintainability.
 - Prefer small focused helpers/composables over copy/paste.
 - Don’t over-abstract UI: readability and local clarity matter.
+
+## Backend-first caching
+- If caching is needed but not explicitly specified, prefer caching in the backend/API layer.
+- Only implement UI-side caching (Pinia/localStorage/in-memory) when the requirement explicitly calls for it (e.g., offline UX, instant back/forward, client-only data).

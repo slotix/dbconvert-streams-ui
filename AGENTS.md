@@ -66,6 +66,11 @@ Never run `yarn dev` automatically; the maintainer starts the dev server manuall
   }
   ```
 
+## Caching Policy
+- Prefer **backend-side caching** by default (API / server layer).
+- Only add **UI-side caching** (Pinia/localStorage/in-memory caches) when the requirement explicitly asks for UI caching or offline behavior.
+- If caching is needed but not specified, assume backend caching and avoid inventing UI caches.
+
 ## Utilities & Constants
 - Use `src/utils/formats.ts` helpers for formatting; do not reimplement
 - Store static maps and tokens in `src/constants/` and import from there
