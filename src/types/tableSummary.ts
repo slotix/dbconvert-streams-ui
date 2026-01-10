@@ -46,4 +46,5 @@ export interface TableSummaryResponse {
   sampled: boolean
   samplePercent?: number
   status: string
+  cachedAt?: string // ISO timestamp when result was cached
 }
