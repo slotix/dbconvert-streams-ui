@@ -38,24 +38,10 @@ const searchText = ref('')
 const searchInputRef = ref<HTMLInputElement | null>(null)
 const systemLogsSortOrder = ref<'newest' | 'oldest'>('newest')
 
-// Filtered logs based on selected tab, message type, and search
-const filteredLogs = computed(() => {
+// Filtered logs based on message type and search (no tab filter)
+const baseFilteredLogs = computed(() => {
   // Use historical logs if in historical view, otherwise use SSE logs
   let filtered = store.isHistoricalView ? store.historicalLogs : store.logs
-
-  // Filter by selected tab
-  if (!store.isHistoricalView) {
-    const selectedTab = store.systemLogTabs.get(store.selectedSystemLogTabId)
-    if (selectedTab) {
-      if (selectedTab.streamId === null) {
-        // General tab: show only logs without streamId
-        filtered = filtered.filter((log) => !log.streamId)
-      } else {
-        // Stream tab: show logs for this streamId only
-        filtered = filtered.filter((log) => log.streamId === selectedTab.streamId)
-      }
-    }
-  }
 
   // Filter by message type (multiple selections)
   filtered = filtered.filter((log) => {
@@ -100,6 +86,27 @@ const filteredLogs = computed(() => {
         category.includes(query)
       )
     })
+  }
+
+  return filtered
+})
+
+// Filtered logs based on selected tab, message type, and search
+const filteredLogs = computed(() => {
+  let filtered = baseFilteredLogs.value
+
+  // Filter by selected tab
+  if (!store.isHistoricalView) {
+    const selectedTab = store.systemLogTabs.get(store.selectedSystemLogTabId)
+    if (selectedTab) {
+      if (selectedTab.streamId === null) {
+        // General tab: show only logs without streamId
+        filtered = filtered.filter((log) => !log.streamId)
+      } else {
+        // Stream tab: show logs for this streamId only
+        filtered = filtered.filter((log) => log.streamId === selectedTab.streamId)
+      }
+    }
   }
 
   // Sort by timestamp based on sort order preference
@@ -627,8 +634,8 @@ onBeforeUnmount(() => {
                       >
                         {{
                           tab.streamId === null
-                            ? filteredLogs.filter((log) => !log.streamId).length
-                            : filteredLogs.filter((log) => log.streamId === tab.streamId).length
+                            ? baseFilteredLogs.filter((log) => !log.streamId).length
+                            : baseFilteredLogs.filter((log) => log.streamId === tab.streamId).length
                         }}
                       </span>
                       <!-- Close button (X) - not for General tab -->
