@@ -27,9 +27,22 @@ function isCanceledRequest(e: unknown): boolean {
   return err.name === 'CanceledError' || err.name === 'AbortError' || err.code === 'ERR_CANCELED'
 }
 
-// Format numbers with commas
+// Format numbers with commas (compact for large numbers)
 function formatNumber(value: number | null | undefined): string {
   if (value === null || value === undefined) return '-'
+  // Use compact notation for very large numbers
+  if (Math.abs(value) >= 1_000_000) {
+    return value.toLocaleString(undefined, { notation: 'compact', maximumFractionDigits: 1 })
+  }
+  return value.toLocaleString()
+}
+
+// Format large numbers for display in cards (always compact)
+function formatCompact(value: number | null | undefined): string {
+  if (value === null || value === undefined) return '-'
+  if (Math.abs(value) >= 1_000_000) {
+    return value.toLocaleString(undefined, { notation: 'compact', maximumFractionDigits: 2 })
+  }
   return value.toLocaleString()
 }
 
@@ -39,13 +52,28 @@ function formatPercent(value: number | null | undefined): string {
   return `${value.toFixed(1)}%`
 }
 
+// Format numeric value with limited decimals
+function formatNumericValue(value: number): string {
+  // For integers or near-integers, show as integer
+  if (Number.isInteger(value) || Math.abs(value - Math.round(value)) < 0.0001) {
+    return Math.round(value).toLocaleString()
+  }
+  // For decimals, limit to 2 decimal places
+  if (Math.abs(value) >= 1000) {
+    return value.toLocaleString(undefined, { maximumFractionDigits: 2 })
+  }
+  return value.toFixed(2)
+}
+
 // Format value for display (handles various types)
-function formatValue(value: string | number | null | undefined): string {
+function formatValue(value: string | number | null | undefined, maxLength = 30): string {
   if (value === null || value === undefined) return '-'
-  if (typeof value === 'number') return formatNumber(value)
+  if (typeof value === 'number') {
+    return formatNumericValue(value)
+  }
   // Truncate long strings
   const str = String(value)
-  return str.length > 50 ? str.substring(0, 47) + '...' : str
+  return str.length > maxLength ? str.substring(0, maxLength - 3) + '...' : str
 }
 
 // Check if column is numeric type
@@ -229,51 +257,47 @@ onBeforeUnmount(() => {
     <!-- Summary Content -->
     <div v-else-if="summary" class="space-y-6">
       <!-- Overview Cards -->
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div class="rounded-lg bg-gray-50 dark:bg-gray-800/50 p-4">
+      <div class="flex flex-wrap gap-3">
+        <div class="flex-1 min-w-[110px] rounded-lg bg-gray-50 dark:bg-gray-800/50 p-3">
           <div
-            class="flex items-center gap-2 text-gray-500 dark:text-gray-400 text-xs font-medium uppercase tracking-wide"
+            class="flex items-center gap-1.5 text-gray-500 dark:text-gray-400 text-[11px] font-medium uppercase tracking-wide"
           >
-            <Hash class="h-4 w-4" />
-            {{ summary.sampled ? 'Rows analyzed' : 'Rows' }}
+            <Hash class="h-3.5 w-3.5 shrink-0" />
+            <span class="truncate">{{ summary.sampled ? 'Rows' : 'Rows' }}</span>
           </div>
-          <div class="mt-2 text-2xl font-semibold text-gray-900 dark:text-gray-100">
-            {{ formatNumber(summary.rowCount) }}
+          <div
+            class="mt-1 text-lg font-semibold text-gray-900 dark:text-gray-100 truncate"
+            :title="summary.rowCount.toLocaleString()"
+          >
+            {{ formatCompact(summary.rowCount) }}
           </div>
-          <div v-if="summary.sampled" class="mt-1 text-xs text-amber-700 dark:text-amber-300">
-            Based on {{ summary.samplePercent }}% sample
+          <div v-if="summary.sampled" class="mt-0.5 text-[10px] text-amber-600 dark:text-amber-400">
+            {{ summary.samplePercent }}% sample
           </div>
         </div>
-        <div class="rounded-lg bg-gray-50 dark:bg-gray-800/50 p-4">
+        <div class="flex-1 min-w-[90px] rounded-lg bg-gray-50 dark:bg-gray-800/50 p-3">
           <div
-            class="flex items-center gap-2 text-gray-500 dark:text-gray-400 text-xs font-medium uppercase tracking-wide"
+            class="flex items-center gap-1.5 text-gray-500 dark:text-gray-400 text-[11px] font-medium uppercase tracking-wide"
           >
-            <BarChart3 class="h-4 w-4" />
-            Columns
+            <BarChart3 class="h-3.5 w-3.5 shrink-0" />
+            <span>Cols</span>
           </div>
-          <div class="mt-2 text-2xl font-semibold text-gray-900 dark:text-gray-100">
-            {{ formatNumber(summary.columnCount) }}
+          <div class="mt-1 text-lg font-semibold text-gray-900 dark:text-gray-100">
+            {{ summary.columnCount }}
           </div>
         </div>
-        <div class="rounded-lg bg-gray-50 dark:bg-gray-800/50 p-4">
+        <div class="flex-1 min-w-[80px] rounded-lg bg-gray-50 dark:bg-gray-800/50 p-3">
           <div
-            class="flex items-center gap-2 text-gray-500 dark:text-gray-400 text-xs font-medium uppercase tracking-wide"
+            class="text-gray-500 dark:text-gray-400 text-[11px] font-medium uppercase tracking-wide truncate"
           >
-            Execution Time
+            Time
           </div>
-          <div class="mt-2 text-2xl font-semibold text-gray-900 dark:text-gray-100">
-            {{ summary.executionTimeMs }}ms
-          </div>
-        </div>
-        <div v-if="summary.sampled" class="rounded-lg bg-amber-50 dark:bg-amber-900/20 p-4">
-          <div
-            class="flex items-center gap-2 text-amber-600 dark:text-amber-400 text-xs font-medium uppercase tracking-wide"
-          >
-            <Percent class="h-4 w-4" />
-            Sampled
-          </div>
-          <div class="mt-2 text-2xl font-semibold text-amber-700 dark:text-amber-300">
-            {{ summary.samplePercent }}%
+          <div class="mt-1 text-lg font-semibold text-gray-900 dark:text-gray-100">
+            {{
+              summary.executionTimeMs >= 1000
+                ? (summary.executionTimeMs / 1000).toFixed(1) + 's'
+                : summary.executionTimeMs + 'ms'
+            }}
           </div>
         </div>
       </div>
@@ -401,59 +425,63 @@ onBeforeUnmount(() => {
       <!-- Additional Statistics (Quartiles for numeric columns) -->
       <div
         v-if="summary.columns.some((c) => isNumericColumn(c) && c.q25 != null)"
-        class="space-y-4"
+        class="space-y-3"
       >
         <h3 class="text-sm font-medium text-gray-900 dark:text-gray-100">
           Numeric Column Distribution
         </h3>
-        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div class="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           <div
             v-for="col in summary.columns.filter((c) => isNumericColumn(c) && c.q25 != null)"
             :key="`dist-${col.name}`"
-            class="rounded-lg border border-gray-200 dark:border-gray-700 p-4"
+            class="rounded-lg border border-gray-200 dark:border-gray-700 p-3"
           >
-            <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">
+            <h4
+              class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2 truncate"
+              :title="col.name"
+            >
               {{ col.name }}
             </h4>
-            <div class="space-y-2 text-sm">
-              <div class="flex justify-between">
-                <span class="text-gray-500 dark:text-gray-400">Min</span>
-                <span class="font-mono text-gray-900 dark:text-gray-100">{{
-                  formatValue(col.min)
-                }}</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-gray-500 dark:text-gray-400">Q25</span>
-                <span class="font-mono text-gray-900 dark:text-gray-100">{{
-                  formatValue(col.q25)
-                }}</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-gray-500 dark:text-gray-400">Median (Q50)</span>
-                <span class="font-mono text-gray-900 dark:text-gray-100">{{
-                  formatValue(col.q50)
-                }}</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-gray-500 dark:text-gray-400">Q75</span>
-                <span class="font-mono text-gray-900 dark:text-gray-100">{{
-                  formatValue(col.q75)
-                }}</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-gray-500 dark:text-gray-400">Max</span>
-                <span class="font-mono text-gray-900 dark:text-gray-100">{{
-                  formatValue(col.max)
-                }}</span>
-              </div>
-              <div
-                class="flex justify-between border-t border-gray-100 dark:border-gray-700 pt-2 mt-2"
+            <div class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
+              <span class="text-gray-500 dark:text-gray-400">Min</span>
+              <span
+                class="font-mono text-gray-900 dark:text-gray-100 text-right truncate"
+                :title="String(col.min)"
+                >{{ formatValue(col.min) }}</span
               >
-                <span class="text-gray-500 dark:text-gray-400">Std Dev</span>
-                <span class="font-mono text-gray-900 dark:text-gray-100">{{
-                  formatValue(col.std)
-                }}</span>
-              </div>
+              <span class="text-gray-500 dark:text-gray-400">Q25</span>
+              <span
+                class="font-mono text-gray-900 dark:text-gray-100 text-right truncate"
+                :title="String(col.q25)"
+                >{{ formatValue(col.q25) }}</span
+              >
+              <span class="text-gray-500 dark:text-gray-400">Median</span>
+              <span
+                class="font-mono text-gray-900 dark:text-gray-100 text-right truncate"
+                :title="String(col.q50)"
+                >{{ formatValue(col.q50) }}</span
+              >
+              <span class="text-gray-500 dark:text-gray-400">Q75</span>
+              <span
+                class="font-mono text-gray-900 dark:text-gray-100 text-right truncate"
+                :title="String(col.q75)"
+                >{{ formatValue(col.q75) }}</span
+              >
+              <span class="text-gray-500 dark:text-gray-400">Max</span>
+              <span
+                class="font-mono text-gray-900 dark:text-gray-100 text-right truncate"
+                :title="String(col.max)"
+                >{{ formatValue(col.max) }}</span
+              >
+              <span
+                class="text-gray-500 dark:text-gray-400 pt-1 border-t border-gray-100 dark:border-gray-700"
+                >Std</span
+              >
+              <span
+                class="font-mono text-gray-900 dark:text-gray-100 text-right truncate pt-1 border-t border-gray-100 dark:border-gray-700"
+                :title="String(col.std)"
+                >{{ formatValue(col.std) }}</span
+              >
             </div>
           </div>
         </div>
