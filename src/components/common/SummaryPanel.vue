@@ -259,7 +259,9 @@ function getCardinalityLabel(indicator: string): string {
         </div>
       </div>
       <div class="flex-1 min-w-20 rounded-lg bg-gray-50 dark:bg-gray-800/50 p-3">
-        <div class="text-gray-500 dark:text-gray-400 text-[11px] font-medium uppercase tracking-wide truncate">
+        <div
+          class="text-gray-500 dark:text-gray-400 text-[11px] font-medium uppercase tracking-wide truncate"
+        >
           Time
         </div>
         <div class="mt-1 text-lg font-semibold text-gray-900 dark:text-gray-100">
@@ -388,7 +390,10 @@ function getCardinalityLabel(indicator: string): string {
                 </span>
               </td>
               <td class="px-4 py-3 whitespace-nowrap text-right">
-                <span v-if="isNumericColumn(col) && col.avg != null" class="text-sm text-gray-900 dark:text-gray-100">
+                <span
+                  v-if="isNumericColumn(col) && col.avg != null"
+                  class="text-sm text-gray-900 dark:text-gray-100"
+                >
                   {{ formatValue(col.avg) }}
                 </span>
                 <span v-else class="text-sm text-gray-400 dark:text-gray-500">-</span>
@@ -401,14 +406,19 @@ function getCardinalityLabel(indicator: string): string {
 
     <!-- Additional Statistics (Quartiles for numeric columns) -->
     <div v-if="summary.columns.some((c) => isNumericColumn(c) && c.q25 != null)" class="space-y-3">
-      <h3 class="text-sm font-medium text-gray-900 dark:text-gray-100">Numeric Column Distribution</h3>
+      <h3 class="text-sm font-medium text-gray-900 dark:text-gray-100">
+        Numeric Column Distribution
+      </h3>
       <div class="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         <div
           v-for="col in summary.columns.filter((c) => isNumericColumn(c) && c.q25 != null)"
           :key="`dist-${col.name}`"
           class="rounded-lg border border-gray-200 dark:border-gray-700 p-3"
         >
-          <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2 truncate" :title="col.name">
+          <h4
+            class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2 truncate"
+            :title="col.name"
+          >
             {{ col.name }}
           </h4>
           <div class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">

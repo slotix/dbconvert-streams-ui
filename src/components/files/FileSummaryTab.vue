@@ -104,7 +104,11 @@ watch(
 
 <template>
   <div class="p-4">
-    <UnsupportedFileMessage v-if="isUnsupportedFile" :file-name="fileEntry.name" variant="summary" />
+    <UnsupportedFileMessage
+      v-if="isUnsupportedFile"
+      :file-name="fileEntry.name"
+      variant="summary"
+    />
 
     <template v-else>
       <div class="mb-4 flex flex-wrap items-center justify-between gap-3">

@@ -55,7 +55,7 @@ const themes = [
                   : 'text-gray-700 dark:text-gray-300',
                 'group flex w-full items-center px-4 py-2 text-sm'
               ]"
-              @click="themeStore.setTheme(theme.value)"
+              @click="(e: MouseEvent) => themeStore.setTheme(theme.value, e.clientX, e.clientY)"
             >
               <component
                 :is="theme.icon"

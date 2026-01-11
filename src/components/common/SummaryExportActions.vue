@@ -61,12 +61,14 @@ function buildExportFileName(extension: string): string {
 }
 
 function sanitizeFileName(value: string): string {
-  return value
-    .trim()
-    .replace(/[\\/]+/g, '_')
-    .replace(/\s+/g, '_')
-    .replace(/[^a-zA-Z0-9._-]/g, '')
-    .slice(0, 120) || 'summary'
+  return (
+    value
+      .trim()
+      .replace(/[\\/]+/g, '_')
+      .replace(/\s+/g, '_')
+      .replace(/[^a-zA-Z0-9._-]/g, '')
+      .slice(0, 120) || 'summary'
+  )
 }
 
 function downloadText(content: string, filename: string, mime: string) {

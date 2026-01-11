@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, watch } from 'vue'
+import { ref } from 'vue'
 
 export type ThemeMode = 'light' | 'dark'
 
@@ -22,37 +22,54 @@ export const useThemeStore = defineStore('theme', () => {
     updateTheme()
   }
 
-  // Update the actual theme applied to DOM
-  function updateTheme() {
-    const root = document.documentElement
+  // Update the actual theme applied to DOM with optional reveal origin coordinates
+  function updateTheme(x?: number, y?: number) {
+    const applyTheme = () => {
+      const root = document.documentElement
 
-    isDark.value = mode.value === 'dark'
+      isDark.value = mode.value === 'dark'
 
-    if (isDark.value) {
-      root.classList.add('dark')
-    } else {
-      root.classList.remove('dark')
+      if (isDark.value) {
+        root.classList.add('dark')
+      } else {
+        root.classList.remove('dark')
+      }
+
+      emitNativeTheme(mode.value, isDark.value)
     }
 
-    emitNativeTheme(mode.value, isDark.value)
+    // Use View Transitions API for slide effect (Chrome 111+, Safari 18+)
+    if (document.startViewTransition) {
+      // Disable element transitions during view transition to prevent tearing
+      document.documentElement.classList.add('view-transition-active')
+
+      // Wait for the class to be applied and styles to settle before starting transition
+      requestAnimationFrame(() => {
+        const transition = document.startViewTransition(() => {
+          applyTheme()
+          // Force synchronous style recalculation
+          document.documentElement.offsetHeight
+        })
+        transition.finished.then(() => {
+          document.documentElement.classList.remove('view-transition-active')
+        })
+      })
+    } else {
+      applyTheme()
+    }
   }
 
-  // Set theme mode
-  function setTheme(newMode: ThemeMode) {
+  // Set theme mode with optional click position for reveal animation
+  function setTheme(newMode: ThemeMode, x?: number, y?: number) {
     mode.value = newMode
     localStorage.setItem('theme-mode', newMode)
-    updateTheme()
+    updateTheme(x, y)
   }
 
-  // Toggle between light and dark (skips system)
-  function toggleTheme() {
-    setTheme(isDark.value ? 'light' : 'dark')
+  // Toggle between light and dark with optional click position
+  function toggleTheme(x?: number, y?: number) {
+    setTheme(isDark.value ? 'light' : 'dark', x, y)
   }
-
-  // Watch mode changes
-  watch(mode, () => {
-    updateTheme()
-  })
 
   return {
     mode,
