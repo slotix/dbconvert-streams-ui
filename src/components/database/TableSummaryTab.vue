@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onBeforeUnmount } from 'vue'
+import { computed, ref, watch, onBeforeUnmount } from 'vue'
 import { AlertCircle, BarChart3, Hash, Loader2, RefreshCw } from 'lucide-vue-next'
 import { getTableSummary } from '@/api/tableSummary'
 import type { TableSummaryResponse, ColumnSummary } from '@/types/tableSummary'
@@ -16,10 +16,104 @@ const props = defineProps<{
 const loading = ref(false)
 const error = ref<string | null>(null)
 const summary = ref<TableSummaryResponse | null>(null)
+const showSlowHint = ref(false)
+
+const SAMPLE_PRESETS = [100, 25, 10, 5, 1] as const
+const selectedSamplePreset = ref<(typeof SAMPLE_PRESETS)[number] | 'custom'>(100)
+const customSamplePercent = ref<number>(10)
+
+const tabIdentityKey = computed(() => {
+  const schema = props.tableMeta.schema ?? ''
+  const parts = [props.connectionId, props.database, schema, props.tableMeta.name]
+  return parts.map((p) => encodeURIComponent(p)).join('|')
+})
+
+const SAMPLE_STORAGE_PREFIX = 'dbconvert.summary.sample'
+
+function getSampleStorageKey(kind: 'preset' | 'custom'): string {
+  return `${SAMPLE_STORAGE_PREFIX}.${kind}:${tabIdentityKey.value}`
+}
+
+let suppressSamplePersist = false
+
+function loadSampleSettingsForTab(): void {
+  // Default value should always be 100% unless explicitly stored for this tab.
+  if (typeof window === 'undefined') return
+  suppressSamplePersist = true
+  try {
+    selectedSamplePreset.value = 100
+    customSamplePercent.value = 10
+
+    const rawPreset = window.localStorage.getItem(getSampleStorageKey('preset'))
+    if (rawPreset === 'custom') {
+      selectedSamplePreset.value = 'custom'
+    } else if (rawPreset != null) {
+      const parsed = Number.parseInt(rawPreset, 10)
+      if ((SAMPLE_PRESETS as readonly number[]).includes(parsed)) {
+        selectedSamplePreset.value = parsed as (typeof SAMPLE_PRESETS)[number]
+      }
+    }
+
+    const rawCustom = window.localStorage.getItem(getSampleStorageKey('custom'))
+    if (rawCustom != null) {
+      const parsed = Number.parseInt(rawCustom, 10)
+      if (!Number.isNaN(parsed)) {
+        customSamplePercent.value = Math.min(100, Math.max(1, parsed))
+      }
+    }
+  } catch {
+    // Ignore localStorage failures (e.g. privacy mode)
+  } finally {
+    suppressSamplePersist = false
+  }
+}
+
+function persistSampleSettingsForTab(): void {
+  if (typeof window === 'undefined') return
+  if (suppressSamplePersist) return
+  try {
+    window.localStorage.setItem(getSampleStorageKey('preset'), String(selectedSamplePreset.value))
+    window.localStorage.setItem(getSampleStorageKey('custom'), String(customSamplePercent.value))
+  } catch {
+    // Ignore localStorage failures
+  }
+}
+
+const effectiveSamplePercent = computed<number>(() => {
+  if (selectedSamplePreset.value === 'custom') {
+    const bounded = Math.min(100, Math.max(1, Math.round(customSamplePercent.value)))
+    return bounded
+  }
+  return selectedSamplePreset.value
+})
+
+const requestSamplePercent = computed<number | undefined>(() => {
+  // Treat 100% as "no sampling" (full table scan).
+  return effectiveSamplePercent.value >= 100 ? undefined : effectiveSamplePercent.value
+})
+
+const SLOW_HINT_DELAY_MS = 2500
+let slowHintTimer: ReturnType<typeof setTimeout> | null = null
+
+function clearSlowHintTimer() {
+  if (!slowHintTimer) return
+  clearTimeout(slowHintTimer)
+  slowHintTimer = null
+}
 
 // AbortController for cancelling in-flight requests
 let abortController: AbortController | null = null
 let activeRequestSeq = 0
+
+function cancelFetch() {
+  if (!abortController) return
+  abortController.abort()
+  abortController = null
+  activeRequestSeq++
+  loading.value = false
+  showSlowHint.value = false
+  clearSlowHintTimer()
+}
 
 function isCanceledRequest(e: unknown): boolean {
   if (!e || typeof e !== 'object') return false
@@ -153,6 +247,13 @@ async function fetchSummary(forceRefresh = false) {
 
   loading.value = true
   error.value = null
+  showSlowHint.value = false
+  clearSlowHintTimer()
+  slowHintTimer = setTimeout(() => {
+    if (requestSeq !== activeRequestSeq || abortController !== currentController) return
+    if (!loading.value) return
+    showSlowHint.value = true
+  }, SLOW_HINT_DELAY_MS)
 
   try {
     const result = await getTableSummary(
@@ -160,7 +261,8 @@ async function fetchSummary(forceRefresh = false) {
         connectionId: props.connectionId,
         database: props.database,
         schema: props.tableMeta.schema,
-        table: props.tableMeta.name
+        table: props.tableMeta.name,
+        samplePercent: requestSamplePercent.value
       },
       signal,
       forceRefresh ? { refresh: true } : undefined
@@ -189,6 +291,8 @@ async function fetchSummary(forceRefresh = false) {
     // Only clear loading for the active request.
     if (requestSeq === activeRequestSeq && abortController === currentController) {
       loading.value = false
+      showSlowHint.value = false
+      clearSlowHintTimer()
     }
   }
 }
@@ -199,6 +303,29 @@ async function refresh() {
 }
 
 defineExpose({ refresh })
+
+watch(
+  () => tabIdentityKey.value,
+  () => {
+    loadSampleSettingsForTab()
+  },
+  { immediate: true }
+)
+
+watch(
+  () => [selectedSamplePreset.value, customSamplePercent.value],
+  () => {
+    persistSampleSettingsForTab()
+  }
+)
+
+watch(
+  () => effectiveSamplePercent.value,
+  () => {
+    if (!props.isActive) return
+    fetchSummary(false)
+  }
+)
 
 watch(
   () => props.isActive,
@@ -214,6 +341,9 @@ watch(
       abortController = null
       activeRequestSeq++
     }
+
+    showSlowHint.value = false
+    clearSlowHintTimer()
   },
   { immediate: true }
 )
@@ -225,15 +355,54 @@ onBeforeUnmount(() => {
     abortController = null
     activeRequestSeq++
   }
+
+  showSlowHint.value = false
+  clearSlowHintTimer()
 })
 </script>
 
 <template>
   <div class="p-4">
+    <div class="mb-4 flex items-center gap-2">
+      <span class="text-xs font-medium text-gray-600 dark:text-gray-300">Sample:</span>
+      <select
+        v-model="selectedSamplePreset"
+        class="h-8 rounded-md bg-white dark:bg-gray-800 px-2 text-xs text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-600"
+        :disabled="loading"
+      >
+        <option v-for="pct in SAMPLE_PRESETS" :key="pct" :value="pct">{{ pct }}%</option>
+        <option value="custom">Custom…</option>
+      </select>
+
+      <input
+        v-if="selectedSamplePreset === 'custom'"
+        v-model.number="customSamplePercent"
+        type="number"
+        min="1"
+        max="100"
+        step="1"
+        class="h-8 w-20 rounded-md bg-white dark:bg-gray-800 px-2 text-xs text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-600"
+        :disabled="loading"
+        aria-label="Custom sample percent"
+      />
+    </div>
+
     <!-- Loading State -->
     <div v-if="loading" class="flex flex-col items-center justify-center py-16">
       <Loader2 class="h-8 w-8 animate-spin text-teal-500" />
       <p class="mt-4 text-sm text-gray-500 dark:text-gray-400">Analyzing table statistics...</p>
+
+      <p v-if="showSlowHint" class="mt-1 text-xs text-gray-500 dark:text-gray-500">
+        Large tables can take a while. Use a smaller Sample value for faster results.
+      </p>
+
+      <button
+        type="button"
+        class="mt-4 inline-flex items-center rounded-md bg-white dark:bg-gray-800 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 shadow-sm dark:shadow-gray-900/30 border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+        @click="cancelFetch"
+      >
+        Cancel
+      </button>
     </div>
 
     <!-- Error State -->
