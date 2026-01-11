@@ -5,6 +5,7 @@ import type { SQLRoutineMeta, SQLSequenceMeta, SQLTableMeta, SQLViewMeta } from 
 import { type FileSystemEntry } from '@/api/fileSystem'
 import { type FileMetadata } from '@/types/files'
 import { useObjectTabStateStore } from '@/stores/objectTabState'
+import { getFileFormat } from '@/utils/fileFormat'
 
 // Lazy load database components that use ag-grid
 const TableMetadataView = defineAsyncComponent(
@@ -25,6 +26,7 @@ const SequenceDefinitionView = defineAsyncComponent(
 const TableSummaryTab = defineAsyncComponent(
   () => import('@/components/database/TableSummaryTab.vue')
 )
+const FileSummaryTab = defineAsyncComponent(() => import('@/components/files/FileSummaryTab.vue'))
 
 // Lazy load file components that use ag-grid
 const FileDataView = defineAsyncComponent(() => import('@/components/files/FileDataView.vue'))
@@ -100,13 +102,20 @@ const supportsSummary = computed(() => {
   return type === 'mysql' || type === 'mariadb' || type === 'postgresql' || type === 'postgres'
 })
 
+const supportsFileSummary = computed(() => {
+  if (props.objectType !== 'file' || !props.fileEntry) return false
+  if (props.fileEntry.type === 'dir' && !props.fileEntry.isTable) return false
+  const format = props.fileEntry.format || getFileFormat(props.fileEntry.name)
+  return Boolean(format)
+})
+
 const tabs = computed<TabItem[]>(() => {
   if (props.objectType === 'file') {
     if (!props.fileEntry) {
       console.error('fileEntry is required when objectType is file')
       return []
     }
-    return [
+    const baseTabs: TabItem[] = [
       {
         name: 'Data',
         component: FileDataView,
@@ -127,6 +136,21 @@ const tabs = computed<TabItem[]>(() => {
         }
       }
     ]
+
+    if (supportsFileSummary.value) {
+      const summaryTabIndex = baseTabs.length
+      baseTabs.push({
+        name: 'Summary',
+        component: FileSummaryTab,
+        props: {
+          fileEntry: props.fileEntry,
+          connectionId: props.connectionId,
+          isActive: selectedIndex.value === summaryTabIndex
+        }
+      })
+    }
+
+    return baseTabs
   } else {
     if (!props.objectMeta || !props.objectKind || !props.database || !props.connectionType) {
       console.error(
@@ -277,7 +301,7 @@ const panelRefs = ref<DataViewComponent[]>([])
 const isRefreshing = ref(false)
 
 const activeTabName = computed(() => tabs.value[selectedIndex.value]?.name || '')
-const isSummaryTab = computed(() => isDataObject.value && activeTabName.value === 'Summary')
+const isSummaryTab = computed(() => activeTabName.value === 'Summary')
 
 // Get the current data view's filter panel ref (handles both ref and direct value)
 function getFilterPanel(): FilterPanelMethods | null {
@@ -404,7 +428,7 @@ function onOpenDiagram() {
 <template>
   <div
     :class="[
-      'bg-white dark:bg-gray-850',
+      'bg-white dark:bg-gray-850 h-full flex flex-col min-h-0',
       $attrs.class ? $attrs.class : 'shadow-sm ring-1 ring-gray-900/5 dark:ring-gray-700 rounded-lg'
     ]"
   >
@@ -550,7 +574,7 @@ function onOpenDiagram() {
     </div>
 
     <!-- Tab Content -->
-    <div class="overflow-hidden">
+    <div :class="['flex-1 min-h-0', isSummaryTab ? 'overflow-y-auto' : 'overflow-hidden']">
       <div v-for="(tab, i) in tabs" v-show="selectedIndex === i" :key="tab.name">
         <component
           :is="tab.component"

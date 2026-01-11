@@ -3,7 +3,7 @@ import { SUPPORTED_FILE_FORMATS } from '@/constants/fileFormats'
 
 defineProps<{
   fileName: string
-  variant?: 'data' | 'structure'
+  variant?: 'data' | 'structure' | 'summary'
 }>()
 </script>
 
@@ -31,6 +31,9 @@ defineProps<{
       <p class="text-sm text-gray-600 dark:text-gray-300 mb-4">
         <template v-if="variant === 'structure'">
           Structure information is not available for
+        </template>
+        <template v-else-if="variant === 'summary'">
+          Summary information is not available for
         </template>
         <template v-else> The file </template>
         <span class="font-mono font-semibold text-gray-900 dark:text-gray-100">{{ fileName }}</span>

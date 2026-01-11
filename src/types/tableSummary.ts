@@ -17,6 +17,9 @@ export interface ColumnSummary {
   q25?: string | number | null
   q50?: string | number | null
   q75?: string | number | null
+  minLength?: number | null
+  maxLength?: number | null
+  avgLength?: number | null
   count: number
   nullPercentage: number
 }
