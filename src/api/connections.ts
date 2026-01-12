@@ -364,6 +364,11 @@ interface UpdateTableRowsResponse {
   rows: Record<string, unknown>[]
 }
 
+interface DeleteTableRowsResponse {
+  status: string
+  deleted: number
+}
+
 const getTableData = async (
   connectionId: string,
   database: string,
@@ -428,6 +433,30 @@ const updateTableRows = async (
   try {
     const url = `/connections/${connectionId}/databases/${encodeURIComponent(database)}/tables/${encodeURIComponent(tableName)}/rows/edit`
     const response: AxiosResponse<UpdateTableRowsResponse> = await apiClient.patch(url, body, {
+      headers: { [API_HEADERS.API_KEY]: commonStore.apiKey },
+      timeout: OPERATION_TIMEOUTS.getTableData
+    })
+    return response.data
+  } catch (error) {
+    throw handleApiError(error)
+  }
+}
+
+const deleteTableRows = async (
+  connectionId: string,
+  database: string,
+  tableName: string,
+  body: {
+    schema?: string
+    deletes: { keys: Record<string, unknown> }[]
+  }
+): Promise<DeleteTableRowsResponse> => {
+  const commonStore = useCommonStore()
+  validateApiKey(commonStore.apiKey)
+  try {
+    const url = `/connections/${connectionId}/databases/${encodeURIComponent(database)}/tables/${encodeURIComponent(tableName)}/rows/delete`
+    const response: AxiosResponse<DeleteTableRowsResponse> = await apiClient.delete(url, {
+      data: body,
       headers: { [API_HEADERS.API_KEY]: commonStore.apiKey },
       timeout: OPERATION_TIMEOUTS.getTableData
     })
@@ -662,6 +691,7 @@ export default {
   getDatabaseOverview,
   getTableData,
   updateTableRows,
+  deleteTableRows,
   getViews,
   getViewData,
   getTableExactCount,

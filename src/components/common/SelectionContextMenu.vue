@@ -8,6 +8,7 @@ const props = defineProps<{
   x: number
   y: number
   hasSelection: boolean
+  isEditable?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -15,6 +16,7 @@ const emit = defineEmits<{
   (e: 'select-all'): void
   (e: 'deselect-all'): void
   (e: 'copy', format: CopyFormat): void
+  (e: 'delete'): void
 }>()
 
 const menuStyle = computed(() => ({
@@ -42,6 +44,11 @@ function deselectAllAndClose() {
 
 function copyAndClose(format: CopyFormat) {
   emit('copy', format)
+  emit('close')
+}
+
+function deleteAndClose() {
+  emit('delete')
   emit('close')
 }
 </script>
@@ -94,6 +101,18 @@ function copyAndClose(format: CopyFormat) {
       >
         Copy (JSON)
       </button>
+
+      <template v-if="isEditable">
+        <div class="my-1 border-t border-gray-200 dark:border-gray-700"></div>
+        <button
+          type="button"
+          class="w-full text-left px-3 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
+          :disabled="!hasSelection"
+          @click="deleteAndClose"
+        >
+          Delete selected rows
+        </button>
+      </template>
     </div>
   </div>
 </template>

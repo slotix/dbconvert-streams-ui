@@ -539,6 +539,56 @@ async function saveEdits() {
   }
 }
 
+async function deleteSelectedRows() {
+  const api = baseGrid.gridApi.value
+  if (!api) return
+  if (!isTableEditable.value) return
+  if (baseGrid.selectedRowCount.value === 0) {
+    toast.info('Select one or more rows to delete')
+    return
+  }
+
+  const selectedRows = baseGrid.selectedRows.value
+  const deletes = selectedRows.map((row) => ({ keys: getKeyValues(row) }))
+  const rowCount = deletes.length
+
+  const confirmed = await confirmDialog.confirm({
+    title: 'Delete rows',
+    description: `Are you sure you want to delete ${rowCount} row${rowCount === 1 ? '' : 's'}? This action cannot be undone.`,
+    confirmLabel: 'Delete',
+    cancelLabel: 'Cancel',
+    danger: true
+  })
+
+  if (!confirmed) return
+
+  try {
+    const objectName = getObjectName(props.tableMeta)
+    const objectSchema = getObjectSchema(props.tableMeta)
+
+    const resp = await connections.deleteTableRows(props.connectionId, props.database, objectName, {
+      schema: objectSchema || undefined,
+      deletes
+    })
+
+    toast.success(`Deleted ${resp.deleted} row${resp.deleted === 1 ? '' : 's'}`)
+
+    api.deselectAll()
+
+    if (baseGrid.totalRowCount.value > 0) {
+      baseGrid.totalRowCount.value = Math.max(0, baseGrid.totalRowCount.value - resp.deleted)
+    }
+    if (exactRowCount.value !== null) {
+      exactRowCount.value = Math.max(0, exactRowCount.value - resp.deleted)
+    }
+
+    api.purgeInfiniteCache()
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : 'Failed to delete rows'
+    toast.error(msg)
+  }
+}
+
 // Determine if the current count is exact (vs approximate)
 // Count is exact if:
 // 1. User manually calculated it (exactRowCount is set), OR
@@ -1080,10 +1130,12 @@ defineExpose({
       :x="selectionMenuX"
       :y="selectionMenuY"
       :has-selection="canCopySelection"
+      :is-editable="isTableEditable"
       @close="selectionMenuOpen = false"
       @select-all="selectAllOnCurrentPage"
       @deselect-all="deselectAll"
       @copy="copySelectedRows"
+      @delete="deleteSelectedRows"
     />
 
     <!-- Row count controls below table -->
