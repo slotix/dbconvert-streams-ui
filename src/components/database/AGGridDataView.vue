@@ -231,12 +231,56 @@ function getEditedCellTooltip(rowId: string, field: string, dataType?: string): 
 
 const columnMetaByName = computed(() => {
   const meta = props.tableMeta
-  const out = new Map<string, { dataType?: string }>()
+  const out = new Map<string, { dataType?: string; isNullable?: boolean; scale?: number }>()
   for (const c of meta?.columns || []) {
-    out.set(c.name, { dataType: c.dataType })
+    const scale = c.scale?.Valid ? Number(c.scale.Int64 ?? 0) : undefined
+    out.set(c.name, { dataType: c.dataType, isNullable: c.isNullable, scale })
   }
   return out
 })
+
+function isNumericType(sqlType: string | undefined): boolean {
+  if (!sqlType) return false
+  const t = normalizeSqlType(sqlType)
+  return (
+    t.includes('decimal') ||
+    t.includes('numeric') ||
+    t.includes('number') ||
+    t.includes('float') ||
+    t.includes('double') ||
+    t.includes('real')
+  )
+}
+
+function numbersEqual(a: unknown, b: unknown, scale?: number): boolean {
+  if (a === null || a === undefined) return b === null || b === undefined
+  if (b === null || b === undefined) return false
+
+  const toNum = (v: unknown): number | null => {
+    if (typeof v === 'number') return v
+    const s = String(v).trim().replace(',', '.')
+    if (s === '') return null
+    const n = Number.parseFloat(s)
+    return Number.isNaN(n) ? null : n
+  }
+
+  const na = toNum(a)
+  const nb = toNum(b)
+  if (na === null || nb === null) return false
+
+  if (typeof scale === 'number' && scale >= 0) {
+    const factor = Math.pow(10, scale)
+    return Math.round(na * factor) === Math.round(nb * factor)
+  }
+
+  return Object.is(na, nb)
+}
+
+function valuesEqualForField(field: string, a: unknown, b: unknown): boolean {
+  const meta = columnMetaByName.value.get(field)
+  if (isNumericType(meta?.dataType)) return numbersEqual(a, b, meta?.scale)
+  return valuesEqual(a, b)
+}
 
 const rowChangeItems = computed(() => {
   const rowId = rowChangesRowId.value
@@ -316,16 +360,41 @@ function emptyToNullIfNullable(value: unknown, isNullable: boolean): unknown {
   return value
 }
 
-function parseNumberInput(raw: unknown, kind: 'integer' | 'number', isNullable: boolean): unknown {
+function parseNumberInput(
+  raw: unknown,
+  kind: 'integer' | 'number',
+  isNullable: boolean,
+  oldValue: unknown,
+  scale?: number
+): unknown {
   const normalized = emptyToNullIfNullable(raw, isNullable)
   if (normalized === null) return null
-  if (typeof normalized === 'number') return normalized
+  if (typeof normalized === 'number') {
+    if (kind === 'integer') return normalized
+    if (typeof scale === 'number' && scale >= 0) {
+      const factor = Math.pow(10, scale)
+      return Math.round(normalized * factor) / factor
+    }
+    return normalized
+  }
 
-  const s = String(normalized).trim()
-  if (s === '') return isNullable ? null : raw
+  const s = String(normalized).trim().replace(',', '.')
+
+  // If the editor gives us an empty/invalid string for a NOT NULL column, keep the old value
+  // rather than turning the cell into an empty string.
+  if (s === '') return isNullable ? null : oldValue
+
+  // Avoid transient invalid states that can happen mid-edit.
+  if (s === '-' || s === '+' || s === '.' || s === '-.' || s === '+.') return oldValue
 
   const n = kind === 'integer' ? Number.parseInt(s, 10) : Number.parseFloat(s)
-  if (Number.isNaN(n)) return raw
+  if (Number.isNaN(n)) return oldValue
+
+  if (kind === 'number' && typeof scale === 'number' && scale >= 0) {
+    const factor = Math.pow(10, scale)
+    return Math.round(n * factor) / factor
+  }
+
   return n
 }
 
@@ -380,11 +449,13 @@ const columnDefs = computed<ColDef[]>(() => {
     const isKey = keyCols.has(col.name)
     const isCellEditable = editable && !isKey
 
+    const scale = col.scale?.Valid ? Number(col.scale.Int64 ?? 0) : undefined
+
     const valueParser = (p: { newValue: unknown; oldValue: unknown }) => {
       switch (kind) {
         case 'integer':
         case 'number':
-          return parseNumberInput(p.newValue, kind, col.isNullable)
+          return parseNumberInput(p.newValue, kind, col.isNullable, p.oldValue, scale)
         case 'date':
           return normalizeDateString(p.newValue, col.isNullable)
         case 'datetime':
@@ -396,18 +467,17 @@ const columnDefs = computed<ColDef[]>(() => {
 
     const cellEditor = (() => {
       if (!isCellEditable) return undefined
-      if (kind === 'integer' || kind === 'number') return 'agNumberCellEditor'
+      // Decimal types (numeric/decimal/etc) can hit browser step-mismatch validation in <input type="number">
+      // which causes AG Grid to hand us an empty string on commit. Use a text editor and parse ourselves.
+      if (kind === 'integer') return 'agNumberCellEditor'
+      if (kind === 'number') return 'agTextCellEditor'
       if (kind === 'date') return 'agDateStringCellEditor'
       return 'agTextCellEditor'
     })()
 
     const cellEditorParams = (() => {
-      if (kind !== 'integer' && kind !== 'number') return undefined
-      const scale = col.scale?.Valid ? Number(col.scale.Int64 ?? 0) : 0
-      const step = kind === 'integer' ? 1 : scale > 0 ? 1 / Math.pow(10, scale) : 1
-      return {
-        step
-      }
+      if (kind !== 'integer') return undefined
+      return { step: 1 }
     })()
 
     return {
@@ -667,12 +737,25 @@ function onCellValueChanged(event: {
     ? current.original
     : (() => {
         const snapshot = { ...row }
-        snapshot[field] = event.oldValue
+
+        const meta = columnMetaByName.value.get(field)
+        const kind = inferEditorKind(meta?.dataType || '')
+        if (kind === 'integer' || kind === 'number') {
+          snapshot[field] = parseNumberInput(
+            event.oldValue,
+            kind,
+            Boolean(meta?.isNullable),
+            event.oldValue,
+            meta?.scale
+          )
+        } else {
+          snapshot[field] = event.oldValue
+        }
         return snapshot
       })()
 
   const nextChanges = { ...(current?.changes || {}) }
-  if (valuesEqual(original[field], event.newValue)) {
+  if (valuesEqualForField(field, original[field], event.newValue)) {
     delete nextChanges[field]
   } else {
     nextChanges[field] = event.newValue
