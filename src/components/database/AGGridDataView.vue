@@ -64,10 +64,18 @@ type PendingEdit = {
   original: Record<string, unknown>
 }
 
-const pendingEdits = ref<Record<string, PendingEdit>>({})
-const pendingEditCount = computed(() => Object.keys(pendingEdits.value).length)
+type PendingDelete = {
+  keys: Record<string, unknown>
+  original: Record<string, unknown>
+}
 
-const hasUnsavedChanges = computed(() => pendingEditCount.value > 0)
+const pendingEdits = ref<Record<string, PendingEdit>>({})
+const pendingDeletes = ref<Record<string, PendingDelete>>({})
+
+const pendingEditCount = computed(() => Object.keys(pendingEdits.value).length)
+const pendingDeleteCount = computed(() => Object.keys(pendingDeletes.value).length)
+
+const hasUnsavedChanges = computed(() => pendingEditCount.value > 0 || pendingDeleteCount.value > 0)
 
 function onBeforeUnload(event: BeforeUnloadEvent) {
   if (!hasUnsavedChanges.value) return
@@ -175,6 +183,17 @@ function makeRowId(row: Record<string, unknown>): string {
   })
   return parts.join('|')
 }
+
+function isRowPendingDelete(rowId: string | undefined): boolean {
+  if (!rowId) return false
+  return Boolean(pendingDeletes.value[rowId])
+}
+
+const rowClassRules = computed(() => ({
+  'row-pending-delete': (params: { node?: { id?: string } }) => isRowPendingDelete(params.node?.id),
+  'row-pending-edit': (params: { node?: { id?: string } }) =>
+    Boolean(params.node?.id && pendingEdits.value[params.node.id])
+}))
 
 function getKeyValues(row: Record<string, unknown>): Record<string, unknown> {
   const out: Record<string, unknown> = {}
@@ -337,7 +356,11 @@ const columnDefs = computed<ColDef[]>(() => {
       headerTooltip: `${col.dataType}${col.isNullable ? '' : ' NOT NULL'} - Use Query Filter panel to sort/filter`,
       wrapText: false,
       autoHeight: false,
-      editable: isCellEditable,
+      editable: (p: { data: Record<string, unknown> }) => {
+        if (!isCellEditable) return false
+        const rowId = makeRowId(p.data)
+        return !pendingDeletes.value[rowId]
+      },
       cellClass: isCellEditable ? 'ag-cell-editable' : undefined,
       valueParser,
       cellEditor,
@@ -487,21 +510,39 @@ function onCellValueChanged(event: {
   }
 }
 
-function cancelEdits() {
+function cancelChanges() {
   const api = baseGrid.gridApi.value
-  if (api) {
-    api.stopEditing(true)
-    for (const [rowId, edit] of Object.entries(pendingEdits.value)) {
-      const node = api.getRowNode(rowId)
-      if (node) {
-        node.setData(edit.original)
-      }
+  const editsToRestore = pendingEdits.value
+  const deleteRowIds = Object.keys(pendingDeletes.value)
+
+  // Clear state first so rowClassRules evaluates to "not deleted" on redraw.
+  pendingEdits.value = {}
+  pendingDeletes.value = {}
+
+  if (!api) return
+
+  api.stopEditing(true)
+
+  // Restore edited rows
+  for (const [rowId, edit] of Object.entries(editsToRestore)) {
+    const node = api.getRowNode(rowId)
+    if (node) {
+      node.setData(edit.original)
     }
   }
-  pendingEdits.value = {}
+
+  // Refresh styling for previously-deleted rows (data was never removed).
+  const deleteNodes = deleteRowIds
+    .map((rowId) => api.getRowNode(rowId))
+    .filter((n): n is NonNullable<typeof n> => Boolean(n))
+
+  if (deleteNodes.length > 0) {
+    api.refreshCells({ rowNodes: deleteNodes, force: true })
+    api.redrawRows({ rowNodes: deleteNodes })
+  }
 }
 
-async function saveEdits() {
+async function saveChanges() {
   const api = baseGrid.gridApi.value
   if (!api) return
   if (!isTableEditable.value) return
@@ -509,37 +550,97 @@ async function saveEdits() {
   const objectName = getObjectName(props.tableMeta)
   const objectSchema = getObjectSchema(props.tableMeta)
 
-  const entries = Object.entries(pendingEdits.value)
-  if (entries.length === 0) return
+  const editEntries = Object.entries(pendingEdits.value)
+  const deleteEntries = Object.entries(pendingDeletes.value)
 
-  try {
-    const resp = await connections.updateTableRows(props.connectionId, props.database, objectName, {
-      schema: objectSchema || undefined,
-      edits: entries.map(([, edit]) => ({ keys: edit.keys, changes: edit.changes }))
-    })
+  if (editEntries.length === 0 && deleteEntries.length === 0) return
 
-    if (!resp.rows || resp.rows.length !== entries.length) {
-      throw new Error('Unexpected response from server')
-    }
+  let editSuccess = false
+  let deleteSuccess = false
+  let deletedCount = 0
 
-    for (let i = 0; i < entries.length; i++) {
-      const [rowId] = entries[i]
-      const row = resp.rows[i]
-      const node = api.getRowNode(rowId)
-      if (node && row) {
-        node.setData(row)
+  // First apply edits
+  if (editEntries.length > 0) {
+    try {
+      const resp = await connections.updateTableRows(
+        props.connectionId,
+        props.database,
+        objectName,
+        {
+          schema: objectSchema || undefined,
+          edits: editEntries.map(([, edit]) => ({ keys: edit.keys, changes: edit.changes }))
+        }
+      )
+
+      if (!resp.rows || resp.rows.length !== editEntries.length) {
+        throw new Error('Unexpected response from server')
       }
-    }
 
-    pendingEdits.value = {}
-    toast.success('Saved')
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : 'Failed to save edits'
-    toast.error(msg)
+      for (let i = 0; i < editEntries.length; i++) {
+        const [rowId] = editEntries[i]
+        const row = resp.rows[i]
+        const node = api.getRowNode(rowId)
+        if (node && row) {
+          node.setData(row)
+        }
+      }
+
+      pendingEdits.value = {}
+      editSuccess = true
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Failed to save edits'
+      toast.error(msg)
+      return // Don't continue to deletes if edits failed
+    }
+  } else {
+    editSuccess = true
+  }
+
+  // Then apply deletes
+  if (deleteEntries.length > 0) {
+    try {
+      const resp = await connections.deleteTableRows(
+        props.connectionId,
+        props.database,
+        objectName,
+        {
+          schema: objectSchema || undefined,
+          deletes: deleteEntries.map(([, del]) => ({ keys: del.keys }))
+        }
+      )
+
+      deletedCount = resp.deleted
+      pendingDeletes.value = {}
+      deleteSuccess = true
+
+      // Update row counts
+      if (baseGrid.totalRowCount.value > 0) {
+        baseGrid.totalRowCount.value = Math.max(0, baseGrid.totalRowCount.value - deletedCount)
+      }
+      if (exactRowCount.value !== null) {
+        exactRowCount.value = Math.max(0, exactRowCount.value - deletedCount)
+      }
+
+      // Refresh the grid to remove deleted rows
+      api.purgeInfiniteCache()
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Failed to delete rows'
+      toast.error(msg)
+    }
+  } else {
+    deleteSuccess = true
+  }
+
+  // Show success message
+  if (editSuccess && deleteSuccess) {
+    const parts: string[] = []
+    if (editEntries.length > 0) parts.push(`${editEntries.length} edited`)
+    if (deletedCount > 0) parts.push(`${deletedCount} deleted`)
+    toast.success(parts.length > 0 ? `Saved: ${parts.join(', ')}` : 'Saved')
   }
 }
 
-async function deleteSelectedRows() {
+function deleteSelectedRows() {
   const api = baseGrid.gridApi.value
   if (!api) return
   if (!isTableEditable.value) return
@@ -549,43 +650,45 @@ async function deleteSelectedRows() {
   }
 
   const selectedRows = baseGrid.selectedRows.value
-  const deletes = selectedRows.map((row) => ({ keys: getKeyValues(row) }))
-  const rowCount = deletes.length
 
-  const confirmed = await confirmDialog.confirm({
-    title: 'Delete rows',
-    description: `Are you sure you want to delete ${rowCount} row${rowCount === 1 ? '' : 's'}? This action cannot be undone.`,
-    confirmLabel: 'Delete',
-    cancelLabel: 'Cancel',
-    danger: true
-  })
+  const stagedRowIds: string[] = []
 
-  if (!confirmed) return
+  // Stage each selected row for deletion
+  for (const row of selectedRows) {
+    const rowId = makeRowId(row)
+    // Don't re-add if already pending delete
+    if (pendingDeletes.value[rowId]) continue
 
-  try {
-    const objectName = getObjectName(props.tableMeta)
-    const objectSchema = getObjectSchema(props.tableMeta)
-
-    const resp = await connections.deleteTableRows(props.connectionId, props.database, objectName, {
-      schema: objectSchema || undefined,
-      deletes
-    })
-
-    toast.success(`Deleted ${resp.deleted} row${resp.deleted === 1 ? '' : 's'}`)
-
-    api.deselectAll()
-
-    if (baseGrid.totalRowCount.value > 0) {
-      baseGrid.totalRowCount.value = Math.max(0, baseGrid.totalRowCount.value - resp.deleted)
-    }
-    if (exactRowCount.value !== null) {
-      exactRowCount.value = Math.max(0, exactRowCount.value - resp.deleted)
+    // If the row has pending edits, deleting it supersedes edits.
+    if (pendingEdits.value[rowId]) {
+      const nextEdits = { ...pendingEdits.value }
+      delete nextEdits[rowId]
+      pendingEdits.value = nextEdits
     }
 
-    api.purgeInfiniteCache()
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : 'Failed to delete rows'
-    toast.error(msg)
+    pendingDeletes.value = {
+      ...pendingDeletes.value,
+      [rowId]: {
+        keys: getKeyValues(row),
+        original: { ...row }
+      }
+    }
+
+    stagedRowIds.push(rowId)
+  }
+
+  // Deselect rows and redraw to show pending delete styling
+  api.deselectAll()
+
+  const stagedNodes = stagedRowIds
+    .map((rowId) => api.getRowNode(rowId))
+    .filter((n): n is NonNullable<typeof n> => Boolean(n))
+
+  if (stagedNodes.length > 0) {
+    api.refreshCells({ rowNodes: stagedNodes, force: true })
+    api.redrawRows({ rowNodes: stagedNodes })
+  } else {
+    api.redrawRows()
   }
 }
 
@@ -1058,6 +1161,14 @@ defineExpose({
           <span v-if="pendingEditCount > 0" class="text-xs text-teal-700 dark:text-teal-300">
             {{ pendingEditCount }} row{{ pendingEditCount === 1 ? '' : 's' }} edited
           </span>
+
+          <span
+            v-if="pendingDeleteCount > 0"
+            class="text-xs text-red-600 dark:text-red-400"
+            title="Rows are staged for deletion until Save"
+          >
+            {{ pendingDeleteCount }} row{{ pendingDeleteCount === 1 ? '' : 's' }} deleted
+          </span>
         </div>
 
         <div class="flex items-center gap-2">
@@ -1065,20 +1176,20 @@ defineExpose({
 
           <div class="mx-1 h-4 w-px bg-gray-200 dark:bg-gray-700"></div>
 
-          <template v-if="pendingEditCount > 0">
+          <template v-if="hasUnsavedChanges">
             <button
               type="button"
               class="text-xs rounded-md px-2.5 py-1 border border-teal-600 bg-teal-600 text-white hover:bg-teal-700 hover:border-teal-700 disabled:opacity-50 disabled:cursor-not-allowed dark:border-teal-500 dark:bg-teal-600 dark:hover:bg-teal-700"
-              title="Save pending edits"
-              @click="saveEdits"
+              title="Save pending changes"
+              @click="saveChanges"
             >
               Save
             </button>
             <button
               type="button"
               class="text-xs rounded-md px-2.5 py-1 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Discard pending edits"
-              @click="cancelEdits"
+              title="Discard pending changes"
+              @click="cancelChanges"
             >
               Cancel
             </button>
@@ -1115,6 +1226,7 @@ defineExpose({
       <AgGridVue
         :columnDefs="columnDefs"
         :gridOptions="baseGrid.gridOptions.value"
+        :rowClassRules="rowClassRules"
         style="width: 100%; height: 100%"
         @grid-ready="baseGrid.onGridReady"
         @cell-context-menu="openSelectionMenu"
@@ -1231,5 +1343,23 @@ defineExpose({
   white-space: normal;
   line-height: 1.5;
   padding: 8px;
+}
+
+/* Pending delete: just a subtle red tint + strike-through (no gutter/dots) */
+:deep(.ag-row.row-pending-delete),
+:deep(.ag-row.row-pending-delete .ag-cell) {
+  background-color: rgba(220, 38, 38, 0.06);
+}
+
+:deep(.ag-row.row-pending-delete .ag-cell),
+:deep(.ag-row.row-pending-delete .ag-cell-value) {
+  text-decoration: line-through;
+}
+
+@media (prefers-color-scheme: dark) {
+  :deep(.ag-row.row-pending-delete),
+  :deep(.ag-row.row-pending-delete .ag-cell) {
+    background-color: rgba(248, 113, 113, 0.12);
+  }
 }
 </style>
