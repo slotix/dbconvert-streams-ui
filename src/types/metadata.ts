@@ -64,6 +64,12 @@ export interface SQLTableMeta {
   primaryKeys: string[]
   foreignKeys: SQLForeignKeyMeta[]
   indexes: SQLIndexMeta[]
+
+  // Safe-by-default editability hints from backend metadata
+  isEditable?: boolean
+  editKeyColumns?: string[]
+  editKeyType?: string
+  editabilityReason?: string
   ddl?: {
     createTable: string
     createIndexes?: string[]

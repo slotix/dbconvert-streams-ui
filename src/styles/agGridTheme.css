@@ -51,6 +51,23 @@
   ); /* gray-600 with transparency */
 }
 
+/* Prevent browser text selection while row-selecting/dragging in the grid.
+   (We use toolbar copy + AG Grid APIs instead of native text selection.) */
+.ag-theme-alpine.select-none,
+.ag-theme-alpine.select-none * {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Allow selecting/editing text inside cell editors and inputs. */
+.ag-theme-alpine.select-none .ag-cell-inline-editing,
+.ag-theme-alpine.select-none .ag-cell-inline-editing *,
+.ag-theme-alpine.select-none input,
+.ag-theme-alpine.select-none textarea {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
 /* Always show menu icon for all columns */
 .ag-theme-alpine :deep(.ag-header-cell-menu-button) {
   opacity: 1 !important;

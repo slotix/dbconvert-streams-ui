@@ -111,6 +111,7 @@ import { useConnectionsStore } from '@/stores/connections'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { usePaneTabsStore, type PaneId } from '@/stores/paneTabs'
 import { useExplorerViewStateStore } from '@/stores/explorerViewState'
+import { useUnsavedChangesGuard } from '@/composables/useUnsavedChangesGuard'
 import ExplorerSplitPane from './ExplorerSplitPane.vue'
 import type { SplitPaneResizeController } from '@/composables/useSplitPaneResize'
 import PaneNavigationTabs from './PaneNavigationTabs.vue'
@@ -159,6 +160,8 @@ const navigationStore = useExplorerNavigationStore()
 const paneTabsStore = usePaneTabsStore()
 const viewStateStore = useExplorerViewStateStore()
 const { openTableInSqlConsole, openFileInDuckDbConsole } = useSqlConsoleActions()
+const { confirmLeavePaneIfDirty, confirmCloseTabIfDirty, confirmCloseManyTabsIfAnyDirty } =
+  useUnsavedChangesGuard()
 
 // Get metadata for breadcrumb
 const metadata = computed(() => {
@@ -191,7 +194,12 @@ function handleSetActivePane(pane: 'left' | 'right') {
 }
 
 function handleActivatePreview(paneId: PaneId) {
-  paneTabsStore.activatePreviewTab(paneId)
+  ;(async () => {
+    const state = paneTabsStore.getPaneState(paneId)
+    const ok = await confirmLeavePaneIfDirty(paneId, state.previewIndex)
+    if (!ok) return
+    paneTabsStore.activatePreviewTab(paneId)
+  })().catch(console.error)
 }
 
 function handlePinPreview(paneId: PaneId) {
@@ -199,19 +207,38 @@ function handlePinPreview(paneId: PaneId) {
 }
 
 function handleActivateTab(paneId: PaneId, index: number) {
-  paneTabsStore.activateTab(paneId, index)
+  ;(async () => {
+    const ok = await confirmLeavePaneIfDirty(paneId, index)
+    if (!ok) return
+    paneTabsStore.activateTab(paneId, index)
+  })().catch(console.error)
 }
 
 function handleCloseTab(paneId: PaneId, index: number) {
-  paneTabsStore.closeTab(paneId, index)
+  ;(async () => {
+    const ok = await confirmCloseTabIfDirty(paneId, index)
+    if (!ok) return
+    paneTabsStore.closeTab(paneId, index)
+  })().catch(console.error)
 }
 
 function handleCloseOtherTabs(paneId: PaneId, keepIndex: number) {
-  paneTabsStore.closeOtherTabs(paneId, keepIndex)
+  ;(async () => {
+    const state = paneTabsStore.getPaneState(paneId)
+    const tabsToClose = state.tabs.filter((_, idx) => idx !== keepIndex)
+    const ok = await confirmCloseManyTabsIfAnyDirty(tabsToClose)
+    if (!ok) return
+    paneTabsStore.closeOtherTabs(paneId, keepIndex)
+  })().catch(console.error)
 }
 
 function handleCloseAllTabs(paneId: PaneId) {
-  paneTabsStore.closeAllTabs(paneId)
+  ;(async () => {
+    const state = paneTabsStore.getPaneState(paneId)
+    const ok = await confirmCloseManyTabsIfAnyDirty(state.tabs)
+    if (!ok) return
+    paneTabsStore.closeAllTabs(paneId)
+  })().catch(console.error)
 }
 
 /**
@@ -219,25 +246,30 @@ function handleCloseAllTabs(paneId: PaneId) {
  * Opens a database-scoped SQL console as a pinned tab in the left pane
  */
 function handleOpenSqlConsole(payload: { connectionId: string; database: string }) {
-  const tabId = `sql::${payload.connectionId}::${payload.database}`
+  ;(async () => {
+    const ok = await confirmLeavePaneIfDirty('left')
+    if (!ok) return
 
-  paneTabsStore.addTab(
-    'left',
-    {
-      id: tabId,
-      connectionId: payload.connectionId,
-      database: payload.database,
-      name: `SQL: ${payload.database}`,
-      tabType: 'sql-console',
-      sqlScope: 'database',
-      objectKey: tabId
-    },
-    'pinned'
-  )
+    const tabId = `sql::${payload.connectionId}::${payload.database}`
 
-  // Switch view state to show tabs instead of database overview
-  // Set viewType directly since there's no dedicated action for sql-console
-  viewStateStore.viewType = 'table-data'
+    paneTabsStore.addTab(
+      'left',
+      {
+        id: tabId,
+        connectionId: payload.connectionId,
+        database: payload.database,
+        name: `SQL: ${payload.database}`,
+        tabType: 'sql-console',
+        sqlScope: 'database',
+        objectKey: tabId
+      },
+      'pinned'
+    )
+
+    // Switch view state to show tabs instead of database overview
+    // Set viewType directly since there's no dedicated action for sql-console
+    viewStateStore.viewType = 'table-data'
+  })().catch(console.error)
 }
 
 /**
@@ -246,25 +278,29 @@ function handleOpenSqlConsole(payload: { connectionId: string; database: string 
  */
 function handleOpenConnectionSqlConsole(connectionId: string) {
   if (!connectionId) return
+  ;(async () => {
+    const ok = await confirmLeavePaneIfDirty('left')
+    if (!ok) return
 
-  // Switch view state FIRST to show tabs instead of connection details
-  viewStateStore.setViewType('table-data')
+    // Switch view state to show tabs instead of connection details
+    viewStateStore.setViewType('table-data')
 
-  const tabId = `sql-console:${connectionId}:*`
+    const tabId = `sql-console:${connectionId}:*`
 
-  paneTabsStore.addTab(
-    'left',
-    {
-      id: tabId,
-      connectionId: connectionId,
-      database: '',
-      name: `${connectionsStore.connectionByID(connectionId)?.name || 'SQL'} (Admin)`,
-      tabType: 'sql-console',
-      sqlScope: 'connection',
-      objectKey: tabId
-    },
-    'pinned'
-  )
+    paneTabsStore.addTab(
+      'left',
+      {
+        id: tabId,
+        connectionId: connectionId,
+        database: '',
+        name: `${connectionsStore.connectionByID(connectionId)?.name || 'SQL'} (Admin)`,
+        tabType: 'sql-console',
+        sqlScope: 'connection',
+        objectKey: tabId
+      },
+      'pinned'
+    )
+  })().catch(console.error)
 }
 
 /**
@@ -272,33 +308,37 @@ function handleOpenConnectionSqlConsole(connectionId: string) {
  */
 function handleOpenFileConsole(connectionId: string) {
   if (!connectionId) return
+  ;(async () => {
+    const ok = await confirmLeavePaneIfDirty('left')
+    if (!ok) return
 
-  // Switch view state FIRST to show tabs instead of connection details
-  viewStateStore.setViewType('table-data')
+    // Switch view state to show tabs instead of connection details
+    viewStateStore.setViewType('table-data')
 
-  const conn = connectionsStore.connectionByID(connectionId)
-  const kind = getConnectionKindFromSpec(conn?.spec)
-  if (kind !== 'files' && kind !== 's3') {
-    return
-  }
-  const isS3 = kind === 's3'
-  const basePath = isS3 ? conn?.spec?.s3?.scope?.bucket : conn?.spec?.files?.basePath
+    const conn = connectionsStore.connectionByID(connectionId)
+    const kind = getConnectionKindFromSpec(conn?.spec)
+    if (kind !== 'files' && kind !== 's3') {
+      return
+    }
+    const isS3 = kind === 's3'
+    const basePath = isS3 ? conn?.spec?.s3?.scope?.bucket : conn?.spec?.files?.basePath
 
-  const tabId = `file-console:${connectionId}`
+    const tabId = `file-console:${connectionId}`
 
-  paneTabsStore.addTab(
-    'left',
-    {
-      id: tabId,
-      connectionId: connectionId,
-      name: `${conn?.name || 'Files'} (DuckDB)`,
-      tabType: 'file-console',
-      fileConnectionType: isS3 ? 's3' : 'files',
-      basePath: basePath,
-      objectKey: tabId
-    },
-    'pinned'
-  )
+    paneTabsStore.addTab(
+      'left',
+      {
+        id: tabId,
+        connectionId: connectionId,
+        name: `${conn?.name || 'Files'} (DuckDB)`,
+        tabType: 'file-console',
+        fileConnectionType: isS3 ? 's3' : 'files',
+        basePath: basePath,
+        objectKey: tabId
+      },
+      'pinned'
+    )
+  })().catch(console.error)
 }
 
 // Keyboard shortcut: Ctrl+Shift+T to reopen closed tab

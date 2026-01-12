@@ -98,8 +98,23 @@ function persistTabStates(tabStates: Record<string, ObjectTabState>) {
 export const useObjectTabStateStore = defineStore('objectTabState', {
   state: () => ({
     // Map of object keys to their complete tab state
-    tabStates: loadPersistedTabStates()
+    tabStates: loadPersistedTabStates(),
+
+    // Non-persisted: per-tab dirty state (e.g., pending AG Grid edits)
+    unsavedChangesByObjectKey: {} as Record<string, true>
   }),
+
+  getters: {
+    hasUnsavedChanges:
+      (state) =>
+      (objectKey: string): boolean => {
+        return Boolean(state.unsavedChangesByObjectKey[objectKey])
+      },
+
+    hasAnyUnsavedChanges: (state): boolean => {
+      return Object.keys(state.unsavedChangesByObjectKey).length > 0
+    }
+  },
 
   actions: {
     persistState() {
@@ -157,12 +172,24 @@ export const useObjectTabStateStore = defineStore('objectTabState', {
 
     clearTabState(objectKey: string) {
       delete this.tabStates[objectKey]
+      delete this.unsavedChangesByObjectKey[objectKey]
       this.persistState()
     },
 
     clearAllTabStates() {
       this.tabStates = {}
+      this.unsavedChangesByObjectKey = {}
       this.persistState()
+    },
+
+    setHasUnsavedChanges(objectKey: string, hasUnsavedChanges: boolean) {
+      if (!objectKey) return
+      if (hasUnsavedChanges) {
+        this.unsavedChangesByObjectKey[objectKey] = true
+        return
+      }
+
+      delete this.unsavedChangesByObjectKey[objectKey]
     },
 
     // Filter Panel state management
@@ -226,6 +253,14 @@ export const useObjectTabStateStore = defineStore('objectTabState', {
 
       this.tabStates[toObjectKey] = state
       delete this.tabStates[fromObjectKey]
+
+      const dirty = this.unsavedChangesByObjectKey[fromObjectKey]
+      if (dirty !== undefined) {
+        if (overwrite || this.unsavedChangesByObjectKey[toObjectKey] === undefined) {
+          this.unsavedChangesByObjectKey[toObjectKey] = dirty
+        }
+        delete this.unsavedChangesByObjectKey[fromObjectKey]
+      }
       this.persistState()
     }
   }

@@ -16,6 +16,10 @@ import {
   type FetchDataResult
 } from '@/composables/useBaseAGGridView'
 import { useObjectTabStateStore } from '@/stores/objectTabState'
+import { useCopyToClipboard } from '@/composables/useCopyToClipboard'
+import { formatRowsForClipboard, type CopyFormat } from '@/utils/agGridClipboard'
+import { useToast } from 'vue-toastification'
+import SelectionContextMenu from '@/components/common/SelectionContextMenu.vue'
 
 const props = defineProps<{
   entry: FileSystemEntry
@@ -25,6 +29,13 @@ const props = defineProps<{
 }>()
 
 const tabStateStore = useObjectTabStateStore()
+
+const toast = useToast()
+const { copy: copyToClipboard } = useCopyToClipboard()
+
+const selectionMenuOpen = ref(false)
+const selectionMenuX = ref(0)
+const selectionMenuY = ref(0)
 
 // Component-specific state
 const isInitialLoading = ref(true)
@@ -39,6 +50,70 @@ const fileFormat = computed(() => props.entry.format || getFileFormat(props.entr
 
 // Check if file format is supported
 const isUnsupportedFile = computed(() => fileFormat.value === null)
+
+const allColumnNames = computed(() => {
+  const cols = props.metadata?.columns || derivedColumns.value
+  if (!cols || cols.length === 0) return []
+  return cols.map((c) => c.name)
+})
+
+const canCopySelection = computed(() => baseGrid.selectedRowCount.value > 0)
+
+function openSelectionMenu(event: unknown) {
+  const nativeEvent = (event as { event?: MouseEvent }).event
+  if (!nativeEvent) return
+  nativeEvent.preventDefault()
+  nativeEvent.stopPropagation()
+
+  selectionMenuX.value = nativeEvent.clientX
+  selectionMenuY.value = nativeEvent.clientY
+  selectionMenuOpen.value = true
+}
+
+function selectAllOnCurrentPage() {
+  const api = baseGrid.gridApi.value
+  if (!api) return
+
+  const pageSize = api.paginationGetPageSize()
+  const currentPage = api.paginationGetCurrentPage()
+  const startRow = currentPage * pageSize
+  const endRow = startRow + pageSize
+
+  for (let i = startRow; i < endRow; i++) {
+    const node = api.getDisplayedRowAtIndex(i)
+    if (node) node.setSelected(true)
+  }
+}
+
+function deselectAll() {
+  baseGrid.gridApi.value?.deselectAll()
+}
+
+async function copySelectedRows(format: CopyFormat) {
+  const api = baseGrid.gridApi.value
+  if (!api) return
+
+  if (baseGrid.selectedRowCount.value === 0) {
+    toast.info('Select one or more rows to copy')
+    return
+  }
+
+  const columns = allColumnNames.value
+
+  const text = formatRowsForClipboard({
+    rows: baseGrid.selectedRows.value,
+    columns,
+    format
+  })
+
+  const ok = await copyToClipboard(text)
+  if (!ok) {
+    toast.error('Failed to copy to clipboard')
+    return
+  }
+
+  toast.success('Copied')
+}
 
 // Watch for metadata warnings
 watch(
@@ -372,6 +447,21 @@ defineExpose({
       @columns-change="onColumnsChange"
     />
 
+    <!-- Selection + Copy Toolbar -->
+    <div
+      v-if="!isUnsupportedFile"
+      class="flex items-center justify-between px-3 py-1.5 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700"
+    >
+      <span class="text-xs text-gray-500 dark:text-gray-400">
+        {{
+          baseGrid.selectedRowCount.value > 0
+            ? `${baseGrid.selectedRowCount.value} selected`
+            : 'Select rows to copy'
+        }}
+      </span>
+      <span class="text-xs text-gray-500 dark:text-gray-400">Right-click for actions</span>
+    </div>
+
     <!-- Warnings (only show when there's no error) -->
     <div
       v-if="!isUnsupportedFile && !baseGrid.error.value && warnings.length > 0"
@@ -426,7 +516,7 @@ defineExpose({
     <div
       v-if="!isUnsupportedFile && !baseGrid.error.value"
       :ref="(el) => (baseGrid.gridContainerRef.value = el as HTMLElement)"
-      class="relative ag-theme-alpine"
+      class="relative ag-theme-alpine select-none"
       style="height: 750px; width: 100%"
     >
       <ag-grid-vue
@@ -434,6 +524,7 @@ defineExpose({
         :columnDefs="columnDefs"
         :gridOptions="baseGrid.gridOptions.value"
         @grid-ready="baseGrid.onGridReady"
+        @cell-context-menu="openSelectionMenu"
         @column-pinned="saveColumnState"
         @column-moved="saveColumnState"
         @column-resized="saveColumnState"
@@ -486,6 +577,17 @@ defineExpose({
       :column="baseGrid.contextMenuColumn.value"
       :grid-api="baseGrid.gridApi.value"
       @close="baseGrid.closeContextMenu"
+    />
+
+    <SelectionContextMenu
+      :open="selectionMenuOpen"
+      :x="selectionMenuX"
+      :y="selectionMenuY"
+      :has-selection="canCopySelection"
+      @close="selectionMenuOpen = false"
+      @select-all="selectAllOnCurrentPage"
+      @deselect-all="deselectAll"
+      @copy="copySelectedRows"
     />
   </div>
 </template>

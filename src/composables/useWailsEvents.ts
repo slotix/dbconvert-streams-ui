@@ -8,6 +8,8 @@
 import { onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useLogsStore } from '@/stores/logs'
+import { useObjectTabStateStore } from '@/stores/objectTabState'
+import { useConfirmDialogStore } from '@/stores/confirmDialog'
 import { useDesktopZoom } from '@/utils/desktopZoom'
 
 /**
@@ -119,6 +121,57 @@ export function useWailsMenuEvents() {
     )
 
     console.log('[Wails] Menu event listeners initialized')
+  })
+
+  onUnmounted(() => {
+    cleanupFns.forEach((fn) => fn())
+    cleanupFns.length = 0
+  })
+}
+
+/**
+ * Composable to handle Wails app lifecycle events.
+ *
+ * Currently listens for a backend close request and responds with a decision
+ * after running the UI's styled unsaved-changes confirm flow.
+ */
+export function useWailsAppCloseEvents() {
+  const objectTabStateStore = useObjectTabStateStore()
+  const confirmDialog = useConfirmDialogStore()
+  const cleanupFns: (() => void)[] = []
+
+  onMounted(() => {
+    if (!isWailsContext()) {
+      return
+    }
+
+    cleanupFns.push(
+      eventsOn('app:close-requested', async (payload: unknown) => {
+        const requestId =
+          payload && typeof payload === 'object' && 'id' in payload
+            ? Number((payload as { id?: unknown }).id)
+            : 0
+
+        let allow = true
+
+        if (objectTabStateStore.hasAnyUnsavedChanges) {
+          allow = await confirmDialog.confirm({
+            title: 'Unsaved changes',
+            description: 'You have unsaved changes. Quit anyway?',
+            confirmLabel: 'Quit',
+            cancelLabel: 'Cancel',
+            danger: true
+          })
+        }
+
+        window.runtime?.EventsEmit?.('app:close-decision', {
+          id: requestId,
+          allow
+        })
+      })
+    )
+
+    console.log('[Wails] App close event listeners initialized')
   })
 
   onUnmounted(() => {

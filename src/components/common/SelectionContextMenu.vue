@@ -1,0 +1,99 @@
+<script setup lang="ts">
+import { computed } from 'vue'
+
+type CopyFormat = 'tsv' | 'csv' | 'json'
+
+const props = defineProps<{
+  open: boolean
+  x: number
+  y: number
+  hasSelection: boolean
+}>()
+
+const emit = defineEmits<{
+  (e: 'close'): void
+  (e: 'select-all'): void
+  (e: 'deselect-all'): void
+  (e: 'copy', format: CopyFormat): void
+}>()
+
+const menuStyle = computed(() => ({
+  left: `${props.x}px`,
+  top: `${props.y}px`
+}))
+
+function onBackdropClick() {
+  emit('close')
+}
+
+function onMenuClick(event: MouseEvent) {
+  event.stopPropagation()
+}
+
+function selectAllAndClose() {
+  emit('select-all')
+  emit('close')
+}
+
+function deselectAllAndClose() {
+  emit('deselect-all')
+  emit('close')
+}
+
+function copyAndClose(format: CopyFormat) {
+  emit('copy', format)
+  emit('close')
+}
+</script>
+
+<template>
+  <div v-if="open" class="fixed inset-0 z-50" @click="onBackdropClick">
+    <div
+      class="fixed min-w-48 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg text-sm"
+      :style="menuStyle"
+      @click="onMenuClick"
+    >
+      <button
+        type="button"
+        class="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800"
+        @click="selectAllAndClose"
+      >
+        Select all (page)
+      </button>
+      <button
+        type="button"
+        class="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800"
+        @click="deselectAllAndClose"
+      >
+        Deselect all
+      </button>
+
+      <div class="my-1 border-t border-gray-200 dark:border-gray-700"></div>
+
+      <button
+        type="button"
+        class="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+        :disabled="!hasSelection"
+        @click="copyAndClose('tsv')"
+      >
+        Copy (TSV)
+      </button>
+      <button
+        type="button"
+        class="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+        :disabled="!hasSelection"
+        @click="copyAndClose('csv')"
+      >
+        Copy (CSV)
+      </button>
+      <button
+        type="button"
+        class="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+        :disabled="!hasSelection"
+        @click="copyAndClose('json')"
+      >
+        Copy (JSON)
+      </button>
+    </div>
+  </div>
+</template>

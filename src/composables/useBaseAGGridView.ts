@@ -76,6 +76,9 @@ export interface BaseAGGridViewOptions {
 
   /** Callback after grid is ready (after base setup) */
   onGridReady?: (api: GridApi) => void
+
+  /** Optional stable row id function (must be set at init; cannot be updated later) */
+  getRowId?: GridOptions['getRowId']
 }
 
 /**
@@ -90,7 +93,8 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
     fetchData,
     onFilterChanged,
     onSortChanged,
-    onGridReady: onGridReadyCallback
+    onGridReady: onGridReadyCallback,
+    getRowId
   } = options
 
   // Tab state store for persistence
@@ -121,6 +125,10 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
   const totalRowCount = ref<number>(initialTotalRowCount?.value ?? 0)
   const currentFirstRow = ref<number>(1)
   const currentLastRow = ref<number>(100)
+
+  // Selection state (multi-row selection)
+  const selectedRows = ref<Record<string, unknown>[]>([])
+  const selectedRowCount = computed(() => selectedRows.value.length)
 
   // Page size options and state
   const PAGE_SIZE_OPTIONS = [20, 50, 100, 200, 500] as const
@@ -201,8 +209,16 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
     rowHeight: 32,
     headerHeight: 40,
     suppressCellFocus: true,
+    getRowId,
+    rowSelection: {
+      mode: 'multiRow',
+      enableClickSelection: true,
+      enableSelectionWithoutKeys: false,
+      checkboxes: false,
+      headerCheckbox: false
+    },
     animateRows: false,
-    enableCellTextSelection: true,
+    enableCellTextSelection: false,
     ensureDomOrder: true,
     domLayout: 'normal',
     pagination: true,
@@ -513,6 +529,14 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
       }
     }, 100)
 
+    // Track selected rows
+    const updateSelection = () => {
+      if (!gridApi.value || gridApi.value.isDestroyed()) return
+      selectedRows.value = gridApi.value.getSelectedRows() as Record<string, unknown>[]
+    }
+    params.api.addEventListener('selectionChanged', updateSelection)
+    updateSelection()
+
     // Restore saved state before setting datasource
     const savedState = tabStateStore.getAGGridDataState(objectKey.value)
 
@@ -621,6 +645,10 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
     totalRowCount,
     currentFirstRow,
     currentLastRow,
+
+    // Selection
+    selectedRows,
+    selectedRowCount,
 
     // Pagination
     pageSize,

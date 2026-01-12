@@ -1,8 +1,9 @@
 import { useConnectionsStore } from '@/stores/connections'
-import { useSqlConsoleStore } from '@/stores/sqlConsole'
-import { usePaneTabsStore } from '@/stores/paneTabs'
 import { useExplorerViewStateStore } from '@/stores/explorerViewState'
-import { getSqlDialectFromConnection, getConnectionKindFromSpec } from '@/types/specs'
+import { usePaneTabsStore } from '@/stores/paneTabs'
+import { useSqlConsoleStore } from '@/stores/sqlConsole'
+import { useUnsavedChangesGuard } from '@/composables/useUnsavedChangesGuard'
+import { getConnectionKindFromSpec, getSqlDialectFromConnection } from '@/types/specs'
 
 export interface OpenTableSqlConsolePayload {
   connectionId: string
@@ -24,19 +25,14 @@ export function useSqlConsoleActions() {
   const sqlConsoleStore = useSqlConsoleStore()
   const paneTabsStore = usePaneTabsStore()
   const viewStateStore = useExplorerViewStateStore()
+  const { confirmLeavePaneIfDirty } = useUnsavedChangesGuard()
 
-  /**
-   * Quote identifier based on SQL dialect
-   */
   function quoteIdentifier(name: string, dialect: string | null): string {
     if (dialect === 'mysql') return `\`${name}\``
     if (dialect === 'pgsql') return `"${name}"`
     return name
   }
 
-  /**
-   * Generate a SELECT query for a table with proper dialect-specific quoting
-   */
   function generateSelectQuery(
     tableName: string,
     schema: string | undefined,
@@ -45,69 +41,47 @@ export function useSqlConsoleActions() {
     const quotedTable = schema
       ? `${quoteIdentifier(schema, dialect)}.${quoteIdentifier(tableName, dialect)}`
       : quoteIdentifier(tableName, dialect)
-
     return `SELECT * FROM ${quotedTable} LIMIT 100;`
   }
 
-  /**
-   * Generate DuckDB read function call based on file extension
-   * For directories, uses glob pattern to read all files
-   */
   function generateDuckDBReadQuery(
     path: string,
     fileName: string,
     isDir: boolean = false,
     format?: string
   ): string {
-    // For directories, use glob pattern with appropriate read function
-    if (isDir) {
-      const joinPath = (prefix: string, suffix: string) => {
-        const cleanedSuffix = suffix.replace(/^\/+/, '')
-        if (prefix === '') return cleanedSuffix
-        return prefix.endsWith('/') ? `${prefix}${cleanedSuffix}` : `${prefix}/${cleanedSuffix}`
-      }
+    const joinPath = (prefix: string, suffix: string) => {
+      const cleanedSuffix = suffix.replace(/^\/+/, '')
+      if (prefix === '') return cleanedSuffix
+      return prefix.endsWith('/') ? `${prefix}${cleanedSuffix}` : `${prefix}/${cleanedSuffix}`
+    }
 
+    if (isDir) {
       const fmt = format?.toLowerCase()
       if (fmt === 'parquet') {
         const fullPath = joinPath(path, '*.parquet')
         return `SELECT * FROM read_parquet('${fullPath}') LIMIT 100;`
-      } else if (fmt === 'json' || fmt === 'jsonl') {
-        const fullPath = joinPath(path, '*.json*')
+      }
+      if (fmt === 'json' || fmt === 'jsonl') {
+        const fullPath = joinPath(path, '*.*')
         return `SELECT * FROM read_json_auto('${fullPath}') LIMIT 100;`
       }
 
-      // Default to csv_auto which handles most formats
       const fullPath = joinPath(path, '*.*')
       return `SELECT * FROM read_csv_auto('${fullPath}') LIMIT 100;`
     }
 
-    // Get file extension (handle compressed files like .csv.gz)
     const lowerName = fileName.toLowerCase()
-    let ext = ''
+    let ext = lowerName.split('.').pop() || ''
 
-    if (
-      lowerName.endsWith('.csv') ||
-      lowerName.endsWith('.csv.gz') ||
-      lowerName.endsWith('.csv.zst')
-    ) {
+    if (lowerName.endsWith('.csv.gz') || lowerName.endsWith('.csv.zst')) {
       ext = 'csv'
-    } else if (
-      lowerName.endsWith('.json') ||
-      lowerName.endsWith('.json.gz') ||
-      lowerName.endsWith('.json.zst')
-    ) {
+    } else if (lowerName.endsWith('.json.gz') || lowerName.endsWith('.json.zst')) {
       ext = 'json'
-    } else if (
-      lowerName.endsWith('.jsonl') ||
-      lowerName.endsWith('.jsonl.gz') ||
-      lowerName.endsWith('.jsonl.zst')
-    ) {
+    } else if (lowerName.endsWith('.jsonl.gz') || lowerName.endsWith('.jsonl.zst')) {
       ext = 'jsonl'
-    } else if (lowerName.endsWith('.parquet')) {
-      ext = 'parquet'
     }
 
-    // Generate the appropriate read function
     let funcCall: string
     switch (ext) {
       case 'csv':
@@ -127,103 +101,89 @@ export function useSqlConsoleActions() {
     return `SELECT * FROM ${funcCall} LIMIT 100;`
   }
 
-  /**
-   * Open SQL Console with a SELECT query for a specific table
-   * Used by both context menu and Data tab toolbar button
-   */
   function openTableInSqlConsole(payload: OpenTableSqlConsolePayload): void {
-    const { connectionId, database, tableName, schema } = payload
-    const consoleKey = `${connectionId}:${database}`
+    ;(async () => {
+      const targetPane = paneTabsStore.activePane || 'left'
+      const ok = await confirmLeavePaneIfDirty(targetPane)
+      if (!ok) return
 
-    // Get connection to determine dialect for proper quoting
-    const conn = connectionsStore.connectionByID(connectionId)
-    const dialect = getSqlDialectFromConnection(conn?.spec, conn?.type)
+      const { connectionId, database, tableName, schema } = payload
 
-    // Generate SELECT query
-    const query = generateSelectQuery(tableName, schema, dialect)
+      const conn = connectionsStore.connectionByID(connectionId)
+      const dialect = getSqlDialectFromConnection(conn?.spec, conn?.type)
+      const query = generateSelectQuery(tableName, schema, dialect)
 
-    // Create table context for customizing templates
-    const tableContext = {
-      tableName,
-      schema
-    }
+      const tableContext = { tableName, schema }
+      sqlConsoleStore.addTabWithQuery(connectionId, database, query, tableName, tableContext)
 
-    // Create a new tab with the query
-    sqlConsoleStore.addTabWithQuery(consoleKey, undefined, query, tableName, tableContext)
+      const connection = connectionsStore.connectionByID(connectionId)
+      const connName = connection?.name || 'SQL'
+      const tabName = `${connName} → ${database}`
+      const tabId = `sql-console:${connectionId}:${database}`
 
-    // Open the SQL console pane tab
-    const connection = connectionsStore.connectionByID(connectionId)
-    const connName = connection?.name || 'SQL'
-    const tabName = `${connName} → ${database}`
+      paneTabsStore.addTab(
+        targetPane,
+        {
+          id: tabId,
+          connectionId,
+          database,
+          name: tabName,
+          tabType: 'sql-console',
+          sqlScope: 'database',
+          objectKey: tabId
+        },
+        'pinned'
+      )
 
-    paneTabsStore.addTab(
-      paneTabsStore.activePane || 'left',
-      {
-        id: `sql-console:${connectionId}:${database}`,
-        connectionId,
-        database,
-        name: tabName,
-        tabType: 'sql-console',
-        sqlScope: 'database'
-      },
-      'pinned'
-    )
-
-    // Switch view state to show tabs
-    viewStateStore.setViewType('table-data')
+      viewStateStore.setViewType('table-data')
+    })().catch(console.error)
   }
 
-  /**
-   * Open DuckDB Console with a read query for a file or directory
-   * Used by both context menu and Data tab toolbar button for file connections
-   */
   function openFileInDuckDbConsole(payload: OpenFileDuckDbConsolePayload): void {
-    const { connectionId, filePath, fileName, isDir, format } = payload
-    const consoleKey = `file:${connectionId}`
+    ;(async () => {
+      const targetPane = paneTabsStore.activePane || 'left'
+      const ok = await confirmLeavePaneIfDirty(targetPane)
+      if (!ok) return
 
-    // Get connection to determine if S3
-    const conn = connectionsStore.connectionByID(connectionId)
-    const kind = getConnectionKindFromSpec(conn?.spec)
-    if (kind !== 'files' && kind !== 's3') {
-      return
-    }
-    const isS3 = kind === 's3'
+      const { connectionId, filePath, fileName, isDir, format } = payload
 
-    // Generate DuckDB read query
-    const query = generateDuckDBReadQuery(filePath, fileName, isDir, format)
+      const conn = connectionsStore.connectionByID(connectionId)
+      const kind = getConnectionKindFromSpec(conn?.spec)
+      if (kind !== 'files' && kind !== 's3') {
+        return
+      }
+      const isS3 = kind === 's3'
 
-    // Create file context for customizing templates
-    const fileContext = {
-      path: filePath,
-      format,
-      isS3
-    }
-
-    // Create a new tab with the query
-    sqlConsoleStore.addTabWithQuery(consoleKey, undefined, query, fileName, undefined, fileContext)
-
-    // Get base path for the console
-    const basePath = isS3 ? conn?.spec?.s3?.scope?.bucket : conn?.spec?.files?.basePath
-
-    // Open the file console pane tab
-    const tabId = `file-console:${connectionId}`
-
-    paneTabsStore.addTab(
-      paneTabsStore.activePane || 'left',
-      {
-        id: tabId,
+      const query = generateDuckDBReadQuery(filePath, fileName, Boolean(isDir), format)
+      const fileContext = { path: filePath, format, isS3 }
+      sqlConsoleStore.addTabWithQuery(
         connectionId,
-        name: conn?.name || 'Files',
-        tabType: 'file-console',
-        fileConnectionType: isS3 ? 's3' : 'files',
-        basePath,
-        objectKey: tabId
-      },
-      'pinned'
-    )
+        undefined,
+        query,
+        fileName,
+        undefined,
+        fileContext
+      )
 
-    // Switch view state to show tabs
-    viewStateStore.setViewType('table-data')
+      const basePath = isS3 ? conn?.spec?.s3?.scope?.bucket : conn?.spec?.files?.basePath
+      const tabId = `file-console:${connectionId}`
+
+      paneTabsStore.addTab(
+        targetPane,
+        {
+          id: tabId,
+          connectionId,
+          name: conn?.name || 'Files',
+          tabType: 'file-console',
+          fileConnectionType: isS3 ? 's3' : 'files',
+          basePath,
+          objectKey: tabId
+        },
+        'pinned'
+      )
+
+      viewStateStore.setViewType('table-data')
+    })().catch(console.error)
   }
 
   return {

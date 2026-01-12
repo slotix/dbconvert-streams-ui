@@ -7,6 +7,7 @@ import type { useConnectionsStore } from '@/stores/connections'
 import { getConnectionHost } from '@/utils/specBuilder'
 import { getConnectionTypeLabel } from '@/types/specs'
 import { parseRoutineName } from '@/utils/routineUtils'
+import { useUnsavedChangesGuard } from '@/composables/useUnsavedChangesGuard'
 
 type PaneTabsStore = ReturnType<typeof usePaneTabsStore>
 type NavigationStore = ReturnType<typeof useExplorerNavigationStore>
@@ -24,6 +25,7 @@ export function useExplorerTabManager({
   connectionsStore
 }: UseExplorerTabManagerOptions) {
   const restoreToken = ref(0)
+  const { confirmLeavePaneIfDirty } = useUnsavedChangesGuard()
 
   async function ensureLeftPaneMatchesViewState(payload: {
     connectionId: string
@@ -50,10 +52,15 @@ export function useExplorerTabManager({
     // If the matching tab already exists, just activate it.
     const existingIndex = leftState.tabs.findIndex((t) => matchesSelection(t))
     if (existingIndex >= 0) {
+      const ok = await confirmLeavePaneIfDirty('left', existingIndex)
+      if (!ok) return
       paneTabsStore.activateTab('left', existingIndex)
       return
     }
     if (matchesSelection(paneTabsStore.getPreviewTab('left'))) {
+      const state = paneTabsStore.getPaneState('left')
+      const ok = await confirmLeavePaneIfDirty('left', state.previewIndex)
+      if (!ok) return
       paneTabsStore.activatePreviewTab('left')
       return
     }
@@ -106,6 +113,9 @@ export function useExplorerTabManager({
       return
     }
 
+    const ok = await confirmLeavePaneIfDirty('left')
+    if (!ok) return
+
     paneTabsStore.addTab(
       'left',
       {
@@ -136,27 +146,32 @@ export function useExplorerTabManager({
     mode: 'preview' | 'pinned',
     paneId: PaneId = 'left'
   ) {
-    const tabId = `connection-details:${connectionId}`
-    const tabName = getConnectionTabName(connectionId)
+    ;(async () => {
+      const ok = await confirmLeavePaneIfDirty(paneId)
+      if (!ok) return
 
-    if (mode === 'pinned') {
-      const preview = paneTabsStore.getPreviewTab(paneId)
-      if (preview?.tabType === 'connection-details' && preview.connectionId === connectionId) {
-        paneTabsStore.pinPreviewTab(paneId)
-        return
+      const tabId = `connection-details:${connectionId}`
+      const tabName = getConnectionTabName(connectionId)
+
+      if (mode === 'pinned') {
+        const preview = paneTabsStore.getPreviewTab(paneId)
+        if (preview?.tabType === 'connection-details' && preview.connectionId === connectionId) {
+          paneTabsStore.pinPreviewTab(paneId)
+          return
+        }
       }
-    }
 
-    paneTabsStore.addTab(
-      paneId,
-      {
-        id: tabId,
-        connectionId,
-        name: tabName,
-        tabType: 'connection-details'
-      },
-      mode
-    )
+      paneTabsStore.addTab(
+        paneId,
+        {
+          id: tabId,
+          connectionId,
+          name: tabName,
+          tabType: 'connection-details'
+        },
+        mode
+      )
+    })().catch(console.error)
   }
 
   function openDatabaseOverviewTab(
@@ -165,32 +180,37 @@ export function useExplorerTabManager({
     mode: 'preview' | 'pinned',
     paneId: PaneId = 'left'
   ) {
-    const tabId = `db-overview:${connectionId}:${database}`
-    const tabName = `DB: ${database}`
+    ;(async () => {
+      const ok = await confirmLeavePaneIfDirty(paneId)
+      if (!ok) return
 
-    if (mode === 'pinned') {
-      const preview = paneTabsStore.getPreviewTab(paneId)
-      if (
-        preview?.tabType === 'database-overview' &&
-        preview.connectionId === connectionId &&
-        preview.database === database
-      ) {
-        paneTabsStore.pinPreviewTab(paneId)
-        return
+      const tabId = `db-overview:${connectionId}:${database}`
+      const tabName = `DB: ${database}`
+
+      if (mode === 'pinned') {
+        const preview = paneTabsStore.getPreviewTab(paneId)
+        if (
+          preview?.tabType === 'database-overview' &&
+          preview.connectionId === connectionId &&
+          preview.database === database
+        ) {
+          paneTabsStore.pinPreviewTab(paneId)
+          return
+        }
       }
-    }
 
-    paneTabsStore.addTab(
-      paneId,
-      {
-        id: tabId,
-        connectionId,
-        database,
-        name: tabName,
-        tabType: 'database-overview'
-      },
-      mode
-    )
+      paneTabsStore.addTab(
+        paneId,
+        {
+          id: tabId,
+          connectionId,
+          database,
+          name: tabName,
+          tabType: 'database-overview'
+        },
+        mode
+      )
+    })().catch(console.error)
   }
 
   /**

@@ -22,8 +22,8 @@ export const useThemeStore = defineStore('theme', () => {
     updateTheme()
   }
 
-  // Update the actual theme applied to DOM with optional reveal origin coordinates
-  function updateTheme(x?: number, y?: number) {
+  // Update the actual theme applied to DOM
+  function updateTheme() {
     const applyTheme = () => {
       const root = document.documentElement
 
@@ -59,16 +59,16 @@ export const useThemeStore = defineStore('theme', () => {
     }
   }
 
-  // Set theme mode with optional click position for reveal animation
-  function setTheme(newMode: ThemeMode, x?: number, y?: number) {
+  // Set theme mode
+  function setTheme(newMode: ThemeMode) {
     mode.value = newMode
     localStorage.setItem('theme-mode', newMode)
-    updateTheme(x, y)
+    updateTheme()
   }
 
-  // Toggle between light and dark with optional click position
-  function toggleTheme(x?: number, y?: number) {
-    setTheme(isDark.value ? 'light' : 'dark', x, y)
+  // Toggle between light and dark
+  function toggleTheme(): void {
+    setTheme(isDark.value ? 'light' : 'dark')
   }
 
   return {

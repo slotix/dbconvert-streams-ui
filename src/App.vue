@@ -246,6 +246,18 @@
       </Dialog>
     </TransitionRoot>
 
+    <ConfirmDialog
+      :is-open="confirmDialog.isOpen"
+      :title="confirmDialog.title"
+      :description="confirmDialog.description"
+      :confirm-label="confirmDialog.confirmLabel"
+      :cancel-label="confirmDialog.cancelLabel"
+      :danger="confirmDialog.danger"
+      @confirm="confirmDialog.resolveConfirm"
+      @cancel="confirmDialog.resolveCancel"
+      @update:isOpen="(open) => (!open ? confirmDialog.resolveCancel() : null)"
+    />
+
     <!-- Static sidebar for desktop -->
     <div
       :class="[
@@ -322,7 +334,7 @@
                 <!-- System logs badge -->
                 <span
                   v-if="logsStore.logs.length > 0"
-                  class="bg-gray-200 text-gray-700 dark:bg-gray-600 dark:text-gray-200 text-xs rounded-full px-1.5 py-0.5 min-w-[20px] text-center"
+                  class="bg-gray-200 text-gray-700 dark:bg-gray-600 dark:text-gray-200 text-xs rounded-full px-1.5 py-0.5 min-w-5 text-center"
                   title="System Logs"
                 >
                   {{ logsStore.logs.length > 99 ? '99+' : logsStore.logs.length }}
@@ -330,7 +342,7 @@
                 <!-- SQL logs badge -->
                 <span
                   v-if="logsStore.sqlLogsCount > 0"
-                  class="bg-teal-100 text-teal-700 dark:bg-teal-900/50 dark:text-teal-300 text-xs rounded-full px-1.5 py-0.5 min-w-[20px] text-center"
+                  class="bg-teal-100 text-teal-700 dark:bg-teal-900/50 dark:text-teal-300 text-xs rounded-full px-1.5 py-0.5 min-w-5 text-center"
                   title="SQL Logs"
                 >
                   {{ logsStore.sqlLogsCount > 99 ? '99+' : logsStore.sqlLogsCount }}
@@ -431,7 +443,7 @@
             <!-- Tooltip -->
             <div
               v-if="!isSidebarExpanded"
-              class="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 hidden group-hover:block bg-gray-900 dark:bg-gray-800 text-white px-2 py-1 rounded text-sm whitespace-nowrap z-[9999] pointer-events-none"
+              class="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 hidden group-hover:block bg-gray-900 dark:bg-gray-800 text-white px-2 py-1 rounded text-sm whitespace-nowrap z-9999 pointer-events-none"
             >
               Overview
             </div>
@@ -456,14 +468,14 @@
               <!-- Tooltip -->
               <div
                 v-if="!isSidebarExpanded"
-                class="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 hidden group-hover:block bg-gray-900 dark:bg-gray-800 text-white px-2 py-1 rounded text-sm whitespace-nowrap z-[9999] pointer-events-none"
+                class="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 hidden group-hover:block bg-gray-900 dark:bg-gray-800 text-white px-2 py-1 rounded text-sm whitespace-nowrap z-9999 pointer-events-none"
               >
                 Settings
               </div>
             </button>
             <div
               v-if="settingsOpen"
-              class="absolute left-full ml-2 bottom-0 w-64 rounded-lg bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black/10 dark:ring-gray-700 z-[9999] p-3"
+              class="absolute left-full ml-2 bottom-0 w-64 rounded-lg bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black/10 dark:ring-gray-700 z-9999 p-3"
             >
               <div class="flex items-center justify-between">
                 <span class="text-sm font-semibold text-gray-700 dark:text-gray-200">Theme</span>
@@ -556,7 +568,7 @@
             <!-- Tooltip -->
             <div
               v-if="!isSidebarExpanded"
-              class="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 hidden group-hover:block bg-gray-900 dark:bg-gray-800 text-white px-2 py-1 rounded text-sm whitespace-nowrap z-[9999] pointer-events-none"
+              class="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 hidden group-hover:block bg-gray-900 dark:bg-gray-800 text-white px-2 py-1 rounded text-sm whitespace-nowrap z-9999 pointer-events-none"
             >
               GitHub Discussions
             </div>
@@ -581,7 +593,7 @@
             <!-- Tooltip -->
             <div
               v-if="!isSidebarExpanded"
-              class="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 hidden group-hover:block bg-gray-900 dark:bg-gray-800 text-white px-2 py-1 rounded text-sm whitespace-nowrap z-[9999] pointer-events-none"
+              class="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 hidden group-hover:block bg-gray-900 dark:bg-gray-800 text-white px-2 py-1 rounded text-sm whitespace-nowrap z-9999 pointer-events-none"
             >
               Documentation
             </div>
@@ -593,7 +605,7 @@
       </div>
     </div>
 
-    <div class="lg:pl-[var(--sidebar-width)]">
+    <div class="lg:pl-(--sidebar-width)">
       <RouteGuard v-if="!isInitializing">
         <RouterView />
       </RouteGuard>
@@ -615,15 +627,17 @@ import ApiKeyInput from '@/components/ApiKeyInput.vue'
 import LogsPanel from '@/components/logs/LogsPanel.vue'
 import VersionDisplay from '@/components/common/VersionDisplay.vue'
 import AboutDialog from '@/components/common/AboutDialog.vue'
+import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import RouteGuard from '@/components/common/RouteGuard.vue'
 import ThemeToggle from '@/components/ThemeToggle.vue'
 import { initializeApiClient } from '@/api/apiClient'
 import { useContextualIconSizes } from '@/composables/useIconSizes'
-import { useWailsMenuEvents } from '@/composables/useWailsEvents'
+import { useWailsAppCloseEvents, useWailsMenuEvents } from '@/composables/useWailsEvents'
 import { useDesktopMode } from '@/composables/useDesktopMode'
 import { setStorageValue, STORAGE_KEYS } from '@/constants/storageKeys'
 import { useDesktopZoom } from '@/utils/desktopZoom'
 import { useThemeStore } from '@/stores/theme'
+import { useConfirmDialogStore } from '@/stores/confirmDialog'
 
 import { Dialog, DialogPanel, TransitionChild, TransitionRoot } from '@headlessui/vue'
 import {
@@ -643,6 +657,7 @@ import { useLucideIcons } from '@/composables/useLucideIcons'
 const commonStore = useCommonStore()
 const logsStore = useLogsStore()
 const themeStore = useThemeStore()
+const confirmDialog = useConfirmDialogStore()
 const router = useRouter()
 const { strokeWidth: iconStroke } = useLucideIcons()
 const isInitializing = ref(true)
@@ -683,6 +698,7 @@ const iconSizes = useContextualIconSizes()
 
 // Initialize Wails menu event listeners (no-op when running as web app)
 useWailsMenuEvents()
+useWailsAppCloseEvents()
 
 // Desktop mode detection
 const { isDesktop } = useDesktopMode()

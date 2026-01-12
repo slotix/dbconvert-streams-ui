@@ -8,6 +8,7 @@ import type { useFileExplorerStore } from '@/stores/fileExplorer'
 import type { useExplorerViewStateStore } from '@/stores/explorerViewState'
 import type { useExplorerState } from '@/composables/useExplorerState'
 import { findFileEntryByPath } from '@/utils/fileEntryUtils'
+import { useUnsavedChangesGuard } from '@/composables/useUnsavedChangesGuard'
 
 type PaneTabsStore = ReturnType<typeof usePaneTabsStore>
 type NavigationStore = ReturnType<typeof useExplorerNavigationStore>
@@ -37,6 +38,7 @@ export function useExplorerFileHandlers({
 }: UseExplorerFileHandlersOptions) {
   // Loading state to prevent multiple file clicks during loading
   const isLoadingFile = ref(false)
+  const { confirmLeavePaneIfDirty } = useUnsavedChangesGuard()
 
   const currentFileEntries = computed<FileSystemEntry[]>(() => {
     const id = explorerState.currentConnectionId.value
@@ -68,6 +70,11 @@ export function useExplorerFileHandlers({
     const targetPane: PaneId = payload.openInRightSplit
       ? 'right'
       : paneTabsStore.activePane || 'left'
+
+    const ok = await confirmLeavePaneIfDirty(targetPane)
+    if (!ok) {
+      return
+    }
 
     // Only update the global viewState when targeting the left pane.
     // Right pane file opens should not force left pane selection/focus.

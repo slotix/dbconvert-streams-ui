@@ -9,6 +9,7 @@ import type { useExplorerViewStateStore } from '@/stores/explorerViewState'
 import type { useExplorerState } from '@/composables/useExplorerState'
 import type { useExplorerTabManager } from '@/composables/useExplorerTabManager'
 import { parseRoutineName } from '@/utils/routineUtils'
+import { useUnsavedChangesGuard } from '@/composables/useUnsavedChangesGuard'
 
 type PaneTabsStore = ReturnType<typeof usePaneTabsStore>
 type NavigationStore = ReturnType<typeof useExplorerNavigationStore>
@@ -41,6 +42,7 @@ export function useExplorerTreeHandlers({
 }: UseExplorerTreeHandlersOptions) {
   // Tree selection is derived from store (single source of truth)
   const treeSelection = computed(() => viewState.treeSelection)
+  const { confirmLeavePaneIfDirty } = useUnsavedChangesGuard()
 
   function handleOpenFromTree(payload: {
     connectionId: string
@@ -52,88 +54,98 @@ export function useExplorerTreeHandlers({
     defaultTab?: 'structure' | 'data'
     openInRightSplit?: boolean
   }) {
-    const previousConnectionId = explorerState.currentConnectionId.value
+    ;(async () => {
+      const previousConnectionId = explorerState.currentConnectionId.value
 
-    // If explicitly opening in the right split (context menu / breadcrumb pick),
-    // always target the right pane regardless of the currently active pane.
-    const targetPane: PaneId = payload.openInRightSplit
-      ? 'right'
-      : paneTabsStore.activePane || 'left'
+      // If explicitly opening in the right split (context menu / breadcrumb pick),
+      // always target the right pane regardless of the currently active pane.
+      const targetPane: PaneId = payload.openInRightSplit
+        ? 'right'
+        : paneTabsStore.activePane || 'left'
 
-    // For right-pane opens, do NOT update the global (left) selection.
-    // The viewState watcher restores the selected object into the left pane;
-    // updating it here would cause the left pane to change even when the user
-    // intended to open in the active/right pane.
-    if (targetPane === 'left') {
-      viewState.selectTable(
-        payload.connectionId,
-        payload.database,
-        payload.type,
-        payload.name,
-        payload.schema
-      )
-    } else {
-      // Ensure we are in the tab view (not connection details / overview), but
-      // avoid selecting a left-pane object.
-      if (viewState.viewType !== 'table-data') {
-        viewState.selectDatabaseTabView(payload.connectionId, payload.database)
+      const ok = await confirmLeavePaneIfDirty(targetPane)
+      if (!ok) return
+
+      // For right-pane opens, do NOT update the global (left) selection.
+      // The viewState watcher restores the selected object into the left pane;
+      // updating it here would cause the left pane to change even when the user
+      // intended to open in the active/right pane.
+      if (targetPane === 'left') {
+        viewState.selectTable(
+          payload.connectionId,
+          payload.database,
+          payload.type,
+          payload.name,
+          payload.schema
+        )
+      } else {
+        // Ensure we are in the tab view (not connection details / overview), but
+        // avoid selecting a left-pane object.
+        if (viewState.viewType !== 'table-data') {
+          viewState.selectDatabaseTabView(payload.connectionId, payload.database)
+        }
       }
-    }
 
-    navigationStore.setActiveConnectionId(payload.connectionId)
-    connectionsStore.setCurrentConnection(payload.connectionId)
+      navigationStore.setActiveConnectionId(payload.connectionId)
+      connectionsStore.setCurrentConnection(payload.connectionId)
 
-    // Clear panel states and file selection - database selection will be synced by watcher
-    explorerState.clearFileSelection()
+      // Clear panel states and file selection - database selection will be synced by watcher
+      explorerState.clearFileSelection()
 
-    if (payload.connectionId !== previousConnectionId && previousConnectionId) {
-      fileExplorerStore.clearSelection(previousConnectionId)
-    }
+      if (payload.connectionId !== previousConnectionId && previousConnectionId) {
+        fileExplorerStore.clearSelection(previousConnectionId)
+      }
 
-    paneTabsStore.addTab(
-      targetPane,
-      {
-        id: `${payload.connectionId}:${payload.database || ''}:${payload.schema || ''}:${payload.name}:${payload.type || ''}`,
-        connectionId: payload.connectionId,
-        database: payload.database,
-        schema: payload.schema,
-        name: payload.name,
-        type: payload.type,
-        tabType: 'database'
-      },
-      alwaysOpenNewTab.value ? 'pinned' : payload.mode
-    )
+      paneTabsStore.addTab(
+        targetPane,
+        {
+          id: `${payload.connectionId}:${payload.database || ''}:${payload.schema || ''}:${payload.name}:${payload.type || ''}`,
+          connectionId: payload.connectionId,
+          database: payload.database,
+          schema: payload.schema,
+          name: payload.name,
+          type: payload.type,
+          tabType: 'database'
+        },
+        alwaysOpenNewTab.value ? 'pinned' : payload.mode
+      )
 
-    // Opening in the right split should always make the right pane active,
-    // even if other watchers also open/restore left-pane content in the same flow.
-    if (payload.openInRightSplit) {
-      paneTabsStore.setActivePane('right')
-    }
+      // Opening in the right split should always make the right pane active,
+      // even if other watchers also open/restore left-pane content in the same flow.
+      if (payload.openInRightSplit) {
+        paneTabsStore.setActivePane('right')
+      }
+    })().catch(console.error)
   }
 
   function handleShowDiagram(payload: ShowDiagramPayload) {
-    navigationStore.setActiveConnectionId(payload.connectionId)
+    ;(async () => {
+      const ok = await confirmLeavePaneIfDirty('left')
+      if (!ok) return
 
-    explorerState.setDatabaseSelection({ database: payload.database })
+      navigationStore.setActiveConnectionId(payload.connectionId)
 
-    // Set viewType to 'table-data' so showDatabaseOverview becomes false
-    viewState.setViewType('table-data')
+      explorerState.setDatabaseSelection({ database: payload.database })
 
-    // Create a diagram tab
-    const tabId = `diagram:${payload.connectionId}:${payload.database}`
+      // Set viewType to 'table-data' so showDatabaseOverview becomes false
+      viewState.setViewType('table-data')
 
-    paneTabsStore.addTab(
-      'left',
-      {
-        id: tabId,
-        connectionId: payload.connectionId,
-        database: payload.database,
-        name: `Diagram: ${payload.database}`,
-        tabType: 'diagram',
-        objectKey: tabId
-      },
-      'pinned'
-    )
+      // Create a diagram tab
+      const tabId = `diagram:${payload.connectionId}:${payload.database}`
+
+      paneTabsStore.addTab(
+        'left',
+        {
+          id: tabId,
+          connectionId: payload.connectionId,
+          database: payload.database,
+          name: `Diagram: ${payload.database}`,
+          tabType: 'diagram',
+          objectKey: tabId
+        },
+        'pinned'
+      )
+    })().catch(console.error)
   }
 
   function handleRefreshMetadata() {

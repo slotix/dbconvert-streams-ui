@@ -359,6 +359,11 @@ interface TableData {
   status: string
 }
 
+interface UpdateTableRowsResponse {
+  status: string
+  rows: Record<string, unknown>[]
+}
+
 const getTableData = async (
   connectionId: string,
   database: string,
@@ -402,6 +407,29 @@ const getTableData = async (
 
     const response: AxiosResponse<TableData> = await apiClient.get(url, {
       headers: { [API_HEADERS.API_KEY]: commonStore.apiKey }
+    })
+    return response.data
+  } catch (error) {
+    throw handleApiError(error)
+  }
+}
+
+const updateTableRows = async (
+  connectionId: string,
+  database: string,
+  tableName: string,
+  body: {
+    schema?: string
+    edits: { keys: Record<string, unknown>; changes: Record<string, unknown> }[]
+  }
+): Promise<UpdateTableRowsResponse> => {
+  const commonStore = useCommonStore()
+  validateApiKey(commonStore.apiKey)
+  try {
+    const url = `/connections/${connectionId}/databases/${encodeURIComponent(database)}/tables/${encodeURIComponent(tableName)}/rows/edit`
+    const response: AxiosResponse<UpdateTableRowsResponse> = await apiClient.patch(url, body, {
+      headers: { [API_HEADERS.API_KEY]: commonStore.apiKey },
+      timeout: OPERATION_TIMEOUTS.getTableData
     })
     return response.data
   } catch (error) {
@@ -633,6 +661,7 @@ export default {
   getDatabaseSummary,
   getDatabaseOverview,
   getTableData,
+  updateTableRows,
   getViews,
   getViewData,
   getTableExactCount,

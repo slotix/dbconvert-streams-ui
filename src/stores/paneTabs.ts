@@ -574,6 +574,7 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
    */
   function closeAllTabs(paneId: PaneId) {
     const state = getPaneState(paneId)
+
     state.tabs.forEach((tab) => {
       pushToClosedHistory(paneId, tab)
       clearObjectState(paneId, tab)
