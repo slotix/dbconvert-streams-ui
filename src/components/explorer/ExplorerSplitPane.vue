@@ -125,6 +125,8 @@ import {
   type SplitPaneResizeController
 } from '@/composables/useSplitPaneResize'
 import { usePaneTabsStore, type PaneId } from '@/stores/paneTabs'
+import { useUnsavedChangesGuard } from '@/composables/useUnsavedChangesGuard'
+import { useObjectTabStateStore } from '@/stores/objectTabState'
 
 // Define props
 const props = defineProps<{
@@ -143,6 +145,8 @@ const splitPaneResize = props.splitPaneResize ?? useSplitPaneResize()
 const { splitGrow, splitContainerRef, leftPaneRef, onDividerMouseDown, onDividerDoubleClick } =
   splitPaneResize
 const paneTabsStore = usePaneTabsStore()
+const objectTabStateStore = useObjectTabStateStore()
+const { isObjectKeyDirty, confirmDiscardUnsavedChanges } = useUnsavedChangesGuard()
 
 // Check if we have right pane content
 const hasRightPane = computed(() => paneTabsStore.isRightPaneVisible)
@@ -201,6 +205,21 @@ function onPaneDrop(event: DragEvent, paneId: PaneId) {
     }
 
     // Drop on pane (not on tab) - add to end
+    const fromTab = paneTabsStore.getPaneState(parsed.fromPaneId).tabs[parsed.fromIndex]
+    const fromObjectKey = fromTab?.objectKey
+    if (isObjectKeyDirty(fromObjectKey)) {
+      confirmDiscardUnsavedChanges({
+        description: 'You have unsaved changes in this tab. Discard them and move the tab?'
+      }).then((confirmed) => {
+        if (!confirmed) return
+        if (fromObjectKey) {
+          objectTabStateStore.setHasUnsavedChanges(fromObjectKey, false)
+        }
+        paneTabsStore.moveTab(parsed.fromPaneId, parsed.fromIndex, paneId, toIndex)
+      })
+      return
+    }
+
     paneTabsStore.moveTab(parsed.fromPaneId, parsed.fromIndex, paneId, toIndex)
   } catch {
     // ignore invalid payloads

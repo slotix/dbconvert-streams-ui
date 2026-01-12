@@ -364,6 +364,12 @@ interface UpdateTableRowsResponse {
   rows: Record<string, unknown>[]
 }
 
+interface InsertTableRowsResponse {
+  status: string
+  inserted: number
+  rows?: Record<string, unknown>[]
+}
+
 interface DeleteTableRowsResponse {
   status: string
   deleted: number
@@ -433,6 +439,29 @@ const updateTableRows = async (
   try {
     const url = `/connections/${connectionId}/databases/${encodeURIComponent(database)}/tables/${encodeURIComponent(tableName)}/rows/edit`
     const response: AxiosResponse<UpdateTableRowsResponse> = await apiClient.patch(url, body, {
+      headers: { [API_HEADERS.API_KEY]: commonStore.apiKey },
+      timeout: OPERATION_TIMEOUTS.getTableData
+    })
+    return response.data
+  } catch (error) {
+    throw handleApiError(error)
+  }
+}
+
+const insertTableRows = async (
+  connectionId: string,
+  database: string,
+  tableName: string,
+  body: {
+    schema?: string
+    inserts: { values: Record<string, unknown> }[]
+  }
+): Promise<InsertTableRowsResponse> => {
+  const commonStore = useCommonStore()
+  validateApiKey(commonStore.apiKey)
+  try {
+    const url = `/connections/${connectionId}/databases/${encodeURIComponent(database)}/tables/${encodeURIComponent(tableName)}/rows/insert`
+    const response: AxiosResponse<InsertTableRowsResponse> = await apiClient.post(url, body, {
       headers: { [API_HEADERS.API_KEY]: commonStore.apiKey },
       timeout: OPERATION_TIMEOUTS.getTableData
     })
@@ -690,6 +719,7 @@ export default {
   getDatabaseSummary,
   getDatabaseOverview,
   getTableData,
+  insertTableRows,
   updateTableRows,
   deleteTableRows,
   getViews,

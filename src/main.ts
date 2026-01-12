@@ -8,6 +8,7 @@ import App from './App.vue'
 import router from './router'
 // import { logEnvironment } from '@/utils/environment'
 import { vTooltip } from '@/directives/tooltip'
+import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import { useThemeStore } from '@/stores/theme'
 import { getStorageValue, STORAGE_KEYS } from '@/constants/storageKeys'
 import { DESKTOP_NAVIGATION } from '@/constants/desktopNavigation'
@@ -65,6 +66,7 @@ app.use(pinia)
 app.use(router)
 app.use(Toast, toastOptions)
 app.directive('tooltip', vTooltip)
+app.component('ConfirmDialog', ConfirmDialog)
 
 // Initialize theme before mounting
 const themeStore = useThemeStore()

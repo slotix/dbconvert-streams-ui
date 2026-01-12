@@ -181,6 +181,8 @@ import {
   X
 } from 'lucide-vue-next'
 import { usePaneTabsStore, type PaneId, type PaneTab } from '@/stores/paneTabs'
+import { useUnsavedChangesGuard } from '@/composables/useUnsavedChangesGuard'
+import { useObjectTabStateStore } from '@/stores/objectTabState'
 
 // Get current zoom factor for position adjustment
 const getZoomFactor = () => {
@@ -203,6 +205,8 @@ const emit = defineEmits<{
 }>()
 
 const store = usePaneTabsStore()
+const objectTabStateStore = useObjectTabStateStore()
+const { isObjectKeyDirty, confirmDiscardUnsavedChanges } = useUnsavedChangesGuard()
 const paneState = computed(() => store.getPaneState(props.paneId))
 const tabs = computed(() => paneState.value.tabs)
 const activeIndex = computed(() => paneState.value.activeIndex ?? -1)
@@ -258,6 +262,27 @@ function isValidTabDrag(event: DragEvent): boolean {
   )
 }
 
+async function confirmMoveTabIfDirty(fromPaneId: PaneId, fromIndex: number): Promise<boolean> {
+  const fromState = store.getPaneState(fromPaneId)
+  const tab = fromState.tabs[fromIndex]
+  const objectKey = tab?.objectKey
+  if (!isObjectKeyDirty(objectKey)) return true
+
+  const confirmed = await confirmDiscardUnsavedChanges({
+    description: 'You have unsaved changes in this tab. Discard them and move the tab?'
+  })
+  if (!confirmed) return false
+
+  if (objectKey) {
+    // Moving a dirty tab currently remounts the view, which would drop in-memory edits.
+    // If the user confirmed discarding, clear the shared dirty flag so the destination
+    // tab isn't incorrectly marked as having unsaved changes.
+    objectTabStateStore.setHasUnsavedChanges(objectKey, false)
+  }
+
+  return true
+}
+
 function onTabDragOver(event: DragEvent, targetIndex: number) {
   // Check if this is a valid tab drag
   if (!isValidTabDrag(event)) return
@@ -297,7 +322,7 @@ function onTabDragOver(event: DragEvent, targetIndex: number) {
   }
 }
 
-function onTabDrop(event: DragEvent, targetIndex: number) {
+async function onTabDrop(event: DragEvent, targetIndex: number) {
   event.preventDefault()
   event.stopPropagation()
 
@@ -353,6 +378,8 @@ function onTabDrop(event: DragEvent, targetIndex: number) {
     }
   } else {
     // Cross-pane move with specific position
+    const ok = await confirmMoveTabIfDirty(payload.fromPaneId, payload.fromIndex)
+    if (!ok) return
     store.moveTab(payload.fromPaneId, payload.fromIndex, props.paneId, toIndex)
   }
 }
@@ -432,9 +459,14 @@ const moveToOtherPaneLabel = computed(() =>
   props.paneId === 'left' ? 'Move to Right Pane' : 'Move to Left Pane'
 )
 
-function handleMoveToOtherPane() {
+async function handleMoveToOtherPane() {
   const index = contextMenu.value.tabIndex
   if (index >= 0) {
+    const ok = await confirmMoveTabIfDirty(props.paneId, index)
+    if (!ok) {
+      hideContextMenu()
+      return
+    }
     store.moveTab(props.paneId, index, targetPaneId.value)
   }
   hideContextMenu()

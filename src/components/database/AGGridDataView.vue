@@ -13,7 +13,6 @@ import { isWailsContext } from '@/composables/useWailsEvents'
 import { useUnsavedChangesGuard } from '@/composables/useUnsavedChangesGuard'
 import ColumnContextMenu from './ColumnContextMenu.vue'
 import DataFilterPanel from './DataFilterPanel.vue'
-import ExportToolbar from '@/components/common/ExportToolbar.vue'
 import SelectionContextMenu from '@/components/common/SelectionContextMenu.vue'
 import { getConnectionTypeLabel, getSqlDialectFromConnection } from '@/types/specs'
 import {
@@ -24,10 +23,14 @@ import {
 
 import { useAgGridDataViewColumnDefs } from '@/composables/useAgGridDataViewColumnDefs'
 import AGGridRowChangesPanel from '@/components/database/aggrid/AGGridRowChangesPanel.vue'
+import AGGridInsertRowPanel from '@/components/database/aggrid/AGGridInsertRowPanel.vue'
 import AGGridRowCountControls from '@/components/database/aggrid/AGGridRowCountControls.vue'
 import { useAgGridRowChangeTracking } from '@/composables/useAgGridRowChangeTracking'
 import { useExactRowCount } from '@/composables/useExactRowCount'
 import { useAgGridSelectionActions } from '@/composables/useAgGridSelectionActions'
+import { Check, Pencil, Plus, Trash2, Download, ChevronDown } from 'lucide-vue-next'
+import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/vue'
+import { useLucideIcons } from '@/composables/useLucideIcons'
 
 const props = defineProps<{
   tableMeta: SQLTableMeta | SQLViewMeta
@@ -55,9 +58,14 @@ const connectionDialect = computed(() =>
 const toast = useToast()
 const { copy: copyToClipboard } = useCopyToClipboard()
 const { confirmDiscardUnsavedChanges } = useUnsavedChangesGuard()
+const { strokeWidth: iconStroke } = useLucideIcons()
 
 const rowChangesPanelOpen = ref(false)
 const rowChangesRowId = ref<string | null>(null)
+
+const insertRowPanelOpen = ref(false)
+const insertEditingId = ref<string | null>(null)
+const insertInitialValues = ref<Record<string, unknown>>({})
 
 // Generate cache key for current table/view
 const getCacheKey = () => {
@@ -100,6 +108,11 @@ const editDisabledReason = computed(() => {
 })
 
 function makeRowId(row: Record<string, unknown>): string {
+  const pendingInsertId = row.__pendingInsertId
+  if (typeof pendingInsertId === 'string' && pendingInsertId.length > 0) {
+    return `__pending_insert__=${pendingInsertId}`
+  }
+
   const parts = editKeyColumns.value.map((k) => {
     const v = row[k]
     let s = ''
@@ -125,10 +138,27 @@ function getKeyValues(row: Record<string, unknown>): Record<string, unknown> {
 
 const columnMetaByName = computed(() => {
   const meta = props.tableMeta
-  const out = new Map<string, { dataType?: string; isNullable?: boolean; scale?: number }>()
+  const out = new Map<
+    string,
+    {
+      dataType?: string
+      isNullable?: boolean
+      scale?: number
+      isPrimaryKey?: boolean
+      autoIncrement?: boolean
+      hasDefault?: boolean
+    }
+  >()
   for (const c of meta?.columns || []) {
     const scale = c.scale?.Valid ? Number(c.scale.Int64 ?? 0) : undefined
-    out.set(c.name, { dataType: c.dataType, isNullable: c.isNullable, scale })
+    out.set(c.name, {
+      dataType: c.dataType,
+      isNullable: c.isNullable,
+      scale,
+      isPrimaryKey: c.isPrimaryKey,
+      autoIncrement: c.autoIncrement,
+      hasDefault: Boolean(c.defaultValue?.Valid)
+    })
   }
   return out
 })
@@ -136,6 +166,13 @@ const columnMetaByName = computed(() => {
 function openRowChangesPanel(rowId: string) {
   rowChangesRowId.value = rowId
   rowChangesPanelOpen.value = true
+}
+
+function openFirstEditedRowPanel() {
+  const firstEditedRowId = Object.keys(pendingEdits.value)[0]
+  if (firstEditedRowId) {
+    openRowChangesPanel(firstEditedRowId)
+  }
 }
 
 function closeRowChangesPanel() {
@@ -290,11 +327,15 @@ const calculateExactCount = exactCount.calculateExactCount
 const {
   pendingEdits,
   pendingDeletes,
+  pendingInserts,
   pendingEditCount,
   pendingDeleteCount,
+  pendingInsertCount,
   showChangesGutter,
   hasUnsavedChanges,
   rowClassRules,
+  pinnedTopRowData,
+  upsertPendingInsert,
   stageDeleteRow,
   revertRowField,
   onCellValueChanged,
@@ -316,6 +357,57 @@ const {
 
   onDeletedRowsApplied: exactCount.applyDeletedCount
 })
+
+watch(
+  () => baseGrid.gridApi.value,
+  (api) => {
+    if (!api) return
+    // Ensure pinned inserts show up even if staged before grid was ready.
+    api.setGridOption('pinnedTopRowData', pinnedTopRowData.value)
+  },
+  { immediate: true }
+)
+
+function openInsertRowPanelForNew() {
+  insertEditingId.value = null
+  insertInitialValues.value = {}
+  insertRowPanelOpen.value = true
+}
+
+function openInsertRowPanelForExisting(id: string) {
+  const existing = pendingInserts.value[id]
+  if (!existing) return
+  insertEditingId.value = id
+  insertInitialValues.value = { ...existing.values }
+  insertRowPanelOpen.value = true
+}
+
+function closeInsertRowPanel() {
+  insertRowPanelOpen.value = false
+  insertEditingId.value = null
+  insertInitialValues.value = {}
+}
+
+function onInsertRow(values: Record<string, unknown>, existingId?: string | null) {
+  upsertPendingInsert(values, existingId || undefined)
+  toast.info('Row staged. Click Save to commit.')
+  closeInsertRowPanel()
+}
+
+function onInsertRowAndAddAnother(values: Record<string, unknown>, existingId?: string | null) {
+  upsertPendingInsert(values, existingId || undefined)
+  toast.info('Row staged. Click Save to commit.')
+  // Keep panel open and reset draft
+  insertEditingId.value = null
+  insertInitialValues.value = {}
+  insertRowPanelOpen.value = true
+}
+
+function onRowClicked(event: { data?: Record<string, unknown> }) {
+  const id = event.data?.__pendingInsertId
+  if (typeof id !== 'string' || id.length === 0) return
+  openInsertRowPanelForExisting(id)
+}
 
 function getEditedCellTooltip(rowId: string, field: string, dataType?: string): string | null {
   const edit = pendingEdits.value[rowId]
@@ -578,52 +670,90 @@ defineExpose({
         @columns-change="onColumnsChange"
       />
 
-      <!-- Grid Actions Toolbar -->
+      <!-- Grid Actions Toolbar (container for responsive badges) -->
       <div
-        class="flex items-center justify-between px-3 py-1.5 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700"
+        class="toolbar-container flex items-center justify-between px-3 py-1.5 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700"
       >
-        <div class="flex items-center gap-3">
-          <span class="text-xs text-gray-500 dark:text-gray-400">
-            {{
-              baseGrid.selectedRowCount.value > 0
-                ? `${baseGrid.selectedRowCount.value} selected`
-                : 'Select rows to copy'
-            }}
+        <!-- Left side: Status badges -->
+        <div class="flex items-center gap-2">
+          <!-- Selection count -->
+          <span
+            v-if="baseGrid.selectedRowCount.value > 0"
+            class="stat-badge stat-badge-gray"
+            title="Selected rows"
+          >
+            {{ baseGrid.selectedRowCount.value }}
+            <span class="badge-text">selected</span>
           </span>
 
+          <!-- Read-only warning -->
           <span
             v-if="!isView && !isTableEditable"
-            class="text-xs text-amber-700 dark:text-amber-300"
+            class="stat-badge stat-badge-amber"
             :title="editDisabledReason"
           >
-            Read-only: {{ editDisabledReason }}
+            <span class="badge-text">Read-only</span>
+            <span class="badge-text-short">RO</span>
           </span>
 
+          <!-- Editable indicator -->
           <span
             v-else-if="!isView && isTableEditable"
-            class="text-xs text-teal-700 dark:text-teal-300"
+            class="stat-badge stat-badge-teal"
             title="Double-click a cell to edit. Changes require Save."
           >
-            Editable
+            <Check class="h-3 w-3" :stroke-width="iconStroke" />
+            <span class="badge-text">Editable</span>
           </span>
 
-          <span v-if="pendingEditCount > 0" class="text-xs text-teal-700 dark:text-teal-300">
-            {{ pendingEditCount }} row{{ pendingEditCount === 1 ? '' : 's' }} edited
+          <!-- Edited count -->
+          <button
+            v-if="pendingEditCount > 0"
+            type="button"
+            class="stat-badge stat-badge-teal stat-badge-clickable"
+            title="Click to view edited rows"
+            @click="openFirstEditedRowPanel"
+          >
+            <Pencil class="h-3 w-3" :stroke-width="iconStroke" />
+            {{ pendingEditCount }}
+            <span class="badge-text">edited</span>
+          </button>
+
+          <!-- New count -->
+          <span
+            v-if="pendingInsertCount > 0"
+            class="stat-badge stat-badge-sky"
+            title="Rows staged for insert until Save"
+          >
+            <Plus class="h-3 w-3" :stroke-width="iconStroke" />
+            {{ pendingInsertCount }}
+            <span class="badge-text">new</span>
           </span>
 
+          <!-- Deleted count -->
           <span
             v-if="pendingDeleteCount > 0"
-            class="text-xs text-red-600 dark:text-red-400"
-            title="Rows are staged for deletion until Save"
+            class="stat-badge stat-badge-red"
+            title="Rows staged for deletion until Save"
           >
-            {{ pendingDeleteCount }} row{{ pendingDeleteCount === 1 ? '' : 's' }} deleted
+            <Trash2 class="h-3 w-3" :stroke-width="iconStroke" />
+            {{ pendingDeleteCount }}
+            <span class="badge-text">deleted</span>
           </span>
         </div>
 
+        <!-- Right side: Actions -->
         <div class="flex items-center gap-2">
-          <span class="text-xs text-gray-500 dark:text-gray-400">Right-click for actions</span>
-
-          <div class="mx-1 h-4 w-px bg-gray-200 dark:bg-gray-700"></div>
+          <button
+            v-if="!isView && isTableEditable"
+            type="button"
+            class="text-xs rounded-md px-2.5 py-1 border border-sky-400 bg-sky-50 text-sky-900 hover:bg-sky-100 disabled:opacity-50 disabled:cursor-not-allowed dark:border-sky-400/50 dark:bg-sky-900/20 dark:text-sky-100 dark:hover:bg-sky-900/30 inline-flex items-center gap-1"
+            title="Stage a new row for insert"
+            @click="openInsertRowPanelForNew"
+          >
+            <Plus class="h-3.5 w-3.5" :stroke-width="iconStroke" />
+            <span class="badge-text">Add row</span>
+          </button>
 
           <template v-if="hasUnsavedChanges">
             <button
@@ -644,13 +774,79 @@ defineExpose({
             </button>
           </template>
 
-          <ExportToolbar
-            v-if="hasDataForExport"
-            :show-stream-export="true"
-            :is-exporting="isStreamExporting"
-            @export="handleExport"
-            @stream-export="handleStreamExport"
-          />
+          <!-- Export dropdown -->
+          <Menu v-if="hasDataForExport" as="div" class="relative">
+            <MenuButton
+              class="text-xs rounded-md px-2.5 py-1 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 inline-flex items-center gap-1"
+              :disabled="isStreamExporting"
+            >
+              <Download class="h-3.5 w-3.5" :stroke-width="iconStroke" />
+              <span class="badge-text">Export</span>
+              <ChevronDown class="h-3 w-3" :stroke-width="iconStroke" />
+            </MenuButton>
+            <transition
+              enter-active-class="transition duration-100 ease-out"
+              enter-from-class="transform scale-95 opacity-0"
+              enter-to-class="transform scale-100 opacity-100"
+              leave-active-class="transition duration-75 ease-in"
+              leave-from-class="transform scale-100 opacity-100"
+              leave-to-class="transform scale-95 opacity-0"
+            >
+              <MenuItems
+                class="absolute right-0 mt-1 w-36 origin-top-right rounded-md bg-white dark:bg-gray-850 shadow-lg ring-1 ring-black/5 dark:ring-white/10 focus:outline-none z-50"
+              >
+                <div class="py-1">
+                  <MenuItem v-slot="{ active }">
+                    <button
+                      :class="[
+                        active ? 'bg-gray-100 dark:bg-gray-700' : '',
+                        'w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-200'
+                      ]"
+                      @click="handleExport('csv')"
+                    >
+                      CSV
+                    </button>
+                  </MenuItem>
+                  <MenuItem v-slot="{ active }">
+                    <button
+                      :class="[
+                        active ? 'bg-gray-100 dark:bg-gray-700' : '',
+                        'w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-200'
+                      ]"
+                      @click="handleExport('json')"
+                    >
+                      JSON
+                    </button>
+                  </MenuItem>
+                  <MenuItem v-slot="{ active }">
+                    <button
+                      :class="[
+                        active ? 'bg-gray-100 dark:bg-gray-700' : '',
+                        'w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-200'
+                      ]"
+                      @click="handleExport('excel')"
+                    >
+                      Excel
+                    </button>
+                  </MenuItem>
+                  <div class="border-t border-gray-200 dark:border-gray-700 my-1"></div>
+                  <MenuItem v-slot="{ active }">
+                    <button
+                      :class="[
+                        active ? 'bg-gray-100 dark:bg-gray-700' : '',
+                        'w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-200',
+                        isStreamExporting ? 'opacity-50 cursor-not-allowed' : ''
+                      ]"
+                      :disabled="isStreamExporting"
+                      @click="handleStreamExport('csv')"
+                    >
+                      {{ isStreamExporting ? 'Exporting...' : 'Stream Export' }}
+                    </button>
+                  </MenuItem>
+                </div>
+              </MenuItems>
+            </transition>
+          </Menu>
         </div>
       </div>
     </div>
@@ -678,6 +874,7 @@ defineExpose({
         :rowClassRules="rowClassRules"
         style="width: 100%; height: 100%"
         @grid-ready="baseGrid.onGridReady"
+        @row-clicked="onRowClicked"
         @cell-context-menu="openSelectionMenu"
         @cell-clicked="onCellClicked"
         @cell-value-changed="onCellValueChanged"
@@ -707,6 +904,17 @@ defineExpose({
       :items="rowChangeItems"
       @close="closeRowChangesPanel"
       @revert="(field) => rowChangesRowId && revertRowField(rowChangesRowId, field)"
+    />
+
+    <AGGridInsertRowPanel
+      :open="insertRowPanelOpen"
+      :table-label="getObjectName(tableMeta)"
+      :columns="tableMeta.columns"
+      :initial-values="insertInitialValues"
+      :existing-insert-id="insertEditingId"
+      @close="closeInsertRowPanel"
+      @insert="onInsertRow"
+      @insert-and-add-another="onInsertRowAndAddAnother"
     />
 
     <AGGridRowCountControls
@@ -743,6 +951,12 @@ defineExpose({
   background-color: rgba(220, 38, 38, 0.06);
 }
 
+/* Pending insert: sky tint (no left border for consistency with other row types) */
+:deep(.ag-row.row-pending-insert),
+:deep(.ag-row.row-pending-insert .ag-cell) {
+  background-color: rgba(14, 165, 233, 0.1); /* sky-500/10 */
+}
+
 :deep(.ag-row.row-pending-delete .ag-cell),
 :deep(.ag-row.row-pending-delete .ag-cell-value) {
   text-decoration: line-through;
@@ -754,45 +968,46 @@ defineExpose({
   box-shadow: inset 0 0 0 1px rgba(13, 148, 136, 0.9);
 }
 
-/* Row change gutter (DataGrip-style summary trigger) */
+/* Row change gutter - clickable indicator */
 :deep(.ag-cell.row-change-gutter) {
   display: flex;
   align-items: center;
-  padding-left: 10px;
-  padding-right: 6px;
+  justify-content: center;
+  padding: 0;
 }
 
-:deep(.ag-cell.row-change-gutter .row-change-badge) {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  cursor: pointer;
-  user-select: none;
-}
-
-:deep(.ag-cell.row-change-gutter .row-change-dot) {
-  width: 8px;
-  height: 8px;
-  border-radius: 9999px;
-  background-color: rgb(13 148 136);
-  box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.16);
-}
-
-:deep(.ag-cell.row-change-gutter .row-change-count) {
-  min-width: 18px;
-  height: 16px;
-  padding: 0 6px;
-  border-radius: 9999px;
-  display: inline-flex;
+:deep(.ag-cell.row-change-gutter .row-action-indicator) {
+  display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.7rem;
-  line-height: 1;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+:deep(.ag-cell.row-change-gutter .row-action-indicator .indicator-icon) {
+  width: 12px;
+  height: 12px;
+}
+
+:deep(.ag-cell.row-change-gutter .row-action-edit) {
+  background-color: rgba(13, 148, 136, 0.15);
   color: rgb(13 148 136);
-  background-color: rgba(13, 148, 136, 0.12);
-  border: 1px solid rgba(13, 148, 136, 0.28);
+}
+
+:deep(.ag-cell.row-change-gutter .row-action-edit:hover) {
+  background-color: rgba(13, 148, 136, 0.25);
+}
+
+:deep(.ag-cell.row-change-gutter .row-action-insert) {
+  background-color: rgba(14, 165, 233, 0.15);
+  color: rgb(14 165 233);
+}
+
+:deep(.ag-cell.row-change-gutter .row-action-insert:hover) {
+  background-color: rgba(14, 165, 233, 0.25);
 }
 
 /* When the row is selected, keep selection background and only show the edited outline */
@@ -807,29 +1022,143 @@ defineExpose({
     background-color: rgba(248, 113, 113, 0.12);
   }
 
+  :deep(.ag-row.row-pending-insert),
+  :deep(.ag-row.row-pending-insert .ag-cell) {
+    background-color: rgba(56, 189, 248, 0.14);
+  }
+
   :deep(.ag-cell.cell-pending-edit) {
     background-color: rgba(45, 212, 191, 0.14);
     box-shadow: inset 0 0 0 1px rgba(45, 212, 191, 0.95);
   }
 
-  :deep(.ag-cell.row-change-gutter .row-change-badge) {
+  :deep(.ag-cell.row-change-gutter .row-action-edit) {
+    background-color: rgba(45, 212, 191, 0.2);
     color: rgb(45 212 191);
   }
 
-  :deep(.ag-cell.row-change-gutter .row-change-dot) {
-    background-color: rgb(45 212 191);
-    box-shadow: 0 0 0 2px rgba(45, 212, 191, 0.18);
+  :deep(.ag-cell.row-change-gutter .row-action-edit:hover) {
+    background-color: rgba(45, 212, 191, 0.3);
   }
 
-  :deep(.ag-cell.row-change-gutter .row-change-count) {
-    color: rgb(45 212 191);
-    background-color: rgba(45, 212, 191, 0.14);
-    border: 1px solid rgba(45, 212, 191, 0.28);
+  :deep(.ag-cell.row-change-gutter .row-action-insert) {
+    background-color: rgba(56, 189, 248, 0.2);
+    color: rgb(56 189 248);
+  }
+
+  :deep(.ag-cell.row-change-gutter .row-action-insert:hover) {
+    background-color: rgba(56, 189, 248, 0.3);
   }
 
   :deep(.ag-row.ag-row-selected .ag-cell.cell-pending-edit) {
     background-color: transparent;
     box-shadow: inset 0 0 0 2px rgba(45, 212, 191, 1);
   }
+}
+
+/* Container query for toolbar responsiveness */
+.toolbar-container {
+  container-type: inline-size;
+  container-name: toolbar;
+}
+
+/* Badge text visibility based on container width */
+.badge-text {
+  display: none;
+}
+
+.badge-text-short {
+  display: inline;
+}
+
+/* Show full text on wider containers (> 700px) */
+@container toolbar (min-width: 700px) {
+  .badge-text {
+    display: inline;
+  }
+  .badge-text-short {
+    display: none;
+  }
+}
+
+/* Status badge styles */
+.stat-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.stat-badge-clickable {
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.stat-badge-clickable:hover {
+  opacity: 0.8;
+}
+
+.stat-badge-gray {
+  background-color: rgba(107, 114, 128, 0.1);
+  color: rgb(107 114 128);
+  border: 1px solid rgba(107, 114, 128, 0.2);
+}
+
+.stat-badge-teal {
+  background-color: rgba(13, 148, 136, 0.1);
+  color: rgb(13 148 136);
+  border: 1px solid rgba(13, 148, 136, 0.2);
+}
+
+.stat-badge-sky {
+  background-color: rgba(14, 165, 233, 0.1);
+  color: rgb(14 165 233);
+  border: 1px solid rgba(14, 165, 233, 0.2);
+}
+
+.stat-badge-red {
+  background-color: rgba(220, 38, 38, 0.1);
+  color: rgb(220 38 38);
+  border: 1px solid rgba(220, 38, 38, 0.2);
+}
+
+.stat-badge-amber {
+  background-color: rgba(217, 119, 6, 0.1);
+  color: rgb(217 119 6);
+  border: 1px solid rgba(217, 119, 6, 0.2);
+}
+
+/* Dark mode badge styles (class-based dark mode) */
+:global(.dark) .stat-badge-gray {
+  background-color: rgba(156, 163, 175, 0.14);
+  color: rgb(156 163 175);
+  border: 1px solid rgba(156, 163, 175, 0.25);
+}
+
+:global(.dark) .stat-badge-teal {
+  background-color: rgba(45, 212, 191, 0.14);
+  color: rgb(45 212 191);
+  border: 1px solid rgba(45, 212, 191, 0.25);
+}
+
+:global(.dark) .stat-badge-sky {
+  background-color: rgba(56, 189, 248, 0.14);
+  color: rgb(56 189 248);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+}
+
+:global(.dark) .stat-badge-red {
+  background-color: rgba(248, 113, 113, 0.14);
+  color: rgb(248 113 113);
+  border: 1px solid rgba(248, 113, 113, 0.25);
+}
+
+:global(.dark) .stat-badge-amber {
+  background-color: rgba(251, 191, 36, 0.14);
+  color: rgb(251 191 36);
+  border: 1px solid rgba(251, 191, 36, 0.25);
 }
 </style>

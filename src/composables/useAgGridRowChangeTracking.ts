@@ -14,6 +14,12 @@ export type PendingDelete = {
   original: Record<string, unknown>
 }
 
+export type PendingInsert = {
+  id: string
+  createdAt: number
+  values: Record<string, unknown>
+}
+
 type ToastLike = {
   success: (message: string) => void
   error: (message: string) => void
@@ -26,7 +32,17 @@ export type UseAgGridRowChangeTrackingOptions = {
   makeRowId: (row: Record<string, unknown>) => string
   getKeyValues: (row: Record<string, unknown>) => Record<string, unknown>
   columnMetaByName: ComputedRef<
-    Map<string, { dataType?: string; isNullable?: boolean; scale?: number }>
+    Map<
+      string,
+      {
+        dataType?: string
+        isNullable?: boolean
+        scale?: number
+        isPrimaryKey?: boolean
+        autoIncrement?: boolean
+        hasDefault?: boolean
+      }
+    >
   >
   gridApi: Ref<GridApi | null>
   toast: ToastLike
@@ -42,26 +58,89 @@ export type UseAgGridRowChangeTrackingOptions = {
 export function useAgGridRowChangeTracking(options: UseAgGridRowChangeTrackingOptions) {
   const pendingEdits = ref<Record<string, PendingEdit>>({})
   const pendingDeletes = ref<Record<string, PendingDelete>>({})
+  const pendingInserts = ref<Record<string, PendingInsert>>({})
 
   const pendingEditCount = computed(() => Object.keys(pendingEdits.value).length)
   const pendingDeleteCount = computed(() => Object.keys(pendingDeletes.value).length)
+  const pendingInsertCount = computed(() => Object.keys(pendingInserts.value).length)
 
-  const showChangesGutter = computed(() => pendingEditCount.value > 0)
-  const hasUnsavedChanges = computed(
-    () => pendingEditCount.value > 0 || pendingDeleteCount.value > 0
+  const showChangesGutter = computed(
+    () => pendingEditCount.value > 0 || pendingInsertCount.value > 0
   )
+  const hasUnsavedChanges = computed(
+    () => pendingInsertCount.value > 0 || pendingEditCount.value > 0 || pendingDeleteCount.value > 0
+  )
+
+  function makePendingInsertId(): string {
+    // Small, dependency-free unique-ish id for client-side staging.
+    return `ins_${Date.now()}_${Math.random().toString(16).slice(2)}`
+  }
+
+  const pinnedTopRowData = computed(() => {
+    const rows = Object.values(pendingInserts.value)
+    // Show newest staged rows first.
+    rows.sort((a, b) => b.createdAt - a.createdAt)
+    return rows.map((ins) => ({
+      ...ins.values,
+      __pendingInsertId: ins.id
+    }))
+  })
+
+  function syncPinnedInsertsToGrid() {
+    const api = options.gridApi.value
+    if (!api || api.isDestroyed()) return
+    api.setGridOption('pinnedTopRowData', pinnedTopRowData.value)
+  }
 
   function isRowPendingDelete(rowId: string | undefined): boolean {
     if (!rowId) return false
     return Boolean(pendingDeletes.value[rowId])
   }
 
+  function isPendingInsertRow(data: unknown): boolean {
+    if (!data || typeof data !== 'object') return false
+    return Boolean((data as Record<string, unknown>).__pendingInsertId)
+  }
+
   const rowClassRules = computed(() => ({
     'row-pending-delete': (params: { node?: { id?: string } }) =>
-      isRowPendingDelete(params.node?.id)
+      isRowPendingDelete(params.node?.id),
+    'row-pending-insert': (params: { data?: Record<string, unknown> }) =>
+      isPendingInsertRow(params.data)
   }))
 
+  function removePendingInsert(id: string) {
+    if (!pendingInserts.value[id]) return
+    const next = { ...pendingInserts.value }
+    delete next[id]
+    pendingInserts.value = next
+    syncPinnedInsertsToGrid()
+  }
+
+  function upsertPendingInsert(values: Record<string, unknown>, existingId?: string): string {
+    const id = existingId || makePendingInsertId()
+
+    const createdAt =
+      existingId && pendingInserts.value[existingId]
+        ? pendingInserts.value[existingId].createdAt
+        : Date.now()
+
+    pendingInserts.value = {
+      ...pendingInserts.value,
+      [id]: { id, createdAt, values: { ...values } }
+    }
+    syncPinnedInsertsToGrid()
+    return id
+  }
+
   function stageDeleteRow(row: Record<string, unknown>): string {
+    const insertId = row.__pendingInsertId
+    if (typeof insertId === 'string' && insertId.length > 0) {
+      // Deleting a staged insert should simply remove it from the pending insert set.
+      removePendingInsert(insertId)
+      return insertId
+    }
+
     const rowId = options.makeRowId(row)
 
     if (pendingDeletes.value[rowId]) return rowId
@@ -102,6 +181,7 @@ export function useAgGridRowChangeTracking(options: UseAgGridRowChangeTrackingOp
   function clearAllPending() {
     pendingEdits.value = {}
     pendingDeletes.value = {}
+    pendingInserts.value = {}
   }
 
   function cancelChanges() {
@@ -109,12 +189,19 @@ export function useAgGridRowChangeTracking(options: UseAgGridRowChangeTrackingOp
     const editsToRestore = pendingEdits.value
     const deleteRowIds = Object.keys(pendingDeletes.value)
 
+    // Capture current pinned rows so we can re-style/refresh properly after clearing.
+    const hadPinnedInserts = pinnedTopRowData.value.length > 0
+
     // Clear state first so rowClassRules evaluates to "not deleted" on redraw.
     clearAllPending()
 
     if (!api) return
 
     api.stopEditing(true)
+
+    if (hadPinnedInserts) {
+      api.setGridOption('pinnedTopRowData', [])
+    }
 
     // Restore edited rows
     for (const [rowId, edit] of Object.entries(editsToRestore)) {
@@ -138,14 +225,65 @@ export function useAgGridRowChangeTracking(options: UseAgGridRowChangeTrackingOp
     if (!api) return
     if (!options.isTableEditable.value) return
 
+    const insertEntries = Object.values(pendingInserts.value)
     const editEntries = Object.entries(pendingEdits.value)
     const deleteEntries = Object.entries(pendingDeletes.value)
 
-    if (editEntries.length === 0 && deleteEntries.length === 0) return
+    if (insertEntries.length === 0 && editEntries.length === 0 && deleteEntries.length === 0) {
+      return
+    }
 
+    let insertSuccess = false
     let editSuccess = false
     let deleteSuccess = false
+    let insertedCount = 0
     let deletedCount = 0
+
+    // First apply inserts
+    if (insertEntries.length > 0) {
+      try {
+        const isGeneratedInsertColumn = (colName: string): boolean => {
+          const meta = options.columnMetaByName.value.get(colName)
+          if (!meta) return false
+          return (
+            Boolean(meta.autoIncrement) || (Boolean(meta.isPrimaryKey) && Boolean(meta.hasDefault))
+          )
+        }
+
+        const scrubGenerated = (values: Record<string, unknown>): Record<string, unknown> => {
+          const out: Record<string, unknown> = {}
+          for (const [k, v] of Object.entries(values || {})) {
+            if (isGeneratedInsertColumn(k)) continue
+            out[k] = v
+          }
+          return out
+        }
+
+        const resp = await connections.insertTableRows(
+          options.connectionId.value,
+          options.database.value,
+          options.objectName.value,
+          {
+            schema: options.objectSchema.value || undefined,
+            inserts: insertEntries.map((ins) => ({ values: scrubGenerated(ins.values) }))
+          }
+        )
+
+        insertedCount = resp.inserted
+        pendingInserts.value = {}
+        api.setGridOption('pinnedTopRowData', [])
+        insertSuccess = true
+
+        // Refresh grid so newly inserted rows can appear if they fall into current page/sort.
+        api.purgeInfiniteCache()
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : 'Failed to insert rows'
+        options.toast.error(msg)
+        return // Don't continue if inserts failed
+      }
+    } else {
+      insertSuccess = true
+    }
 
     // First apply edits
     if (editEntries.length > 0) {
@@ -213,6 +351,7 @@ export function useAgGridRowChangeTracking(options: UseAgGridRowChangeTrackingOp
 
     if (editSuccess && deleteSuccess) {
       const parts: string[] = []
+      if (insertedCount > 0) parts.push(`${insertedCount} inserted`)
       if (editEntries.length > 0) parts.push(`${editEntries.length} edited`)
       if (deletedCount > 0) parts.push(`${deletedCount} deleted`)
       options.toast.success(parts.length > 0 ? `Saved: ${parts.join(', ')}` : 'Saved')
@@ -309,11 +448,18 @@ export function useAgGridRowChangeTracking(options: UseAgGridRowChangeTrackingOp
   return {
     pendingEdits,
     pendingDeletes,
+    pendingInserts,
     pendingEditCount,
     pendingDeleteCount,
+    pendingInsertCount,
     showChangesGutter,
     hasUnsavedChanges,
     rowClassRules,
+
+    pinnedTopRowData,
+
+    upsertPendingInsert,
+    removePendingInsert,
 
     stageDeleteRow,
     revertRowField,

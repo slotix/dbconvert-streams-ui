@@ -94,8 +94,9 @@ export function useAgGridDataViewColumnDefs(options: UseAgGridDataViewColumnDefs
         headerTooltip: `${col.dataType}${col.isNullable ? '' : ' NOT NULL'} - Use Query Filter panel to sort/filter`,
         wrapText: false,
         autoHeight: false,
-        editable: (p: { data: Record<string, unknown> }) => {
+        editable: (p: { data: Record<string, unknown>; node?: { rowPinned?: string | null } }) => {
           if (!isCellEditable) return false
+          if (p.node?.rowPinned) return false
           const rowId = options.makeRowId(p.data)
           return !options.pendingDeletes.value[rowId]
         },
@@ -132,34 +133,35 @@ export function useAgGridDataViewColumnDefs(options: UseAgGridDataViewColumnDefs
       floatingFilter: false,
       suppressHeaderMenuButton: true,
       suppressHeaderFilterButton: true,
-      width: 54,
-      minWidth: 54,
-      maxWidth: 54,
+      width: 36,
+      minWidth: 36,
+      maxWidth: 36,
       cellClass: 'row-change-gutter',
-      cellRenderer: (p: { node?: { id?: string } }) => {
+      cellRenderer: (p: { node?: { id?: string }; data?: Record<string, unknown> }) => {
         const rowId = p.node?.id
         if (!rowId) return ''
+
+        // Check if this is a pending insert row (new row)
+        const isPendingInsert = Boolean(p.data?.__pendingInsertId)
+        if (isPendingInsert) {
+          return `<span class="row-action-indicator row-action-insert" title="Click to edit new row">
+            <svg class="indicator-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 18l6-6-6-6"/>
+            </svg>
+          </span>`
+        }
+
+        // Check if this is an edited row
         const edit = options.pendingEdits.value[rowId]
         const changeCount = edit?.changes ? Object.keys(edit.changes).length : 0
         if (!edit || changeCount === 0) return ''
 
         const label = changeCount === 1 ? '1 change' : `${changeCount} changes`
-
-        if (changeCount === 1) {
-          return `
-            <span class="row-change-badge" title="${label}">
-              <span class="row-change-dot"></span>
-            </span>
-          `
-        }
-
-        const displayCount = changeCount > 9 ? '9+' : String(changeCount)
-        return `
-          <span class="row-change-badge" title="${label}">
-            <span class="row-change-dot"></span>
-            <span class="row-change-count">${displayCount}</span>
-          </span>
-        `
+        return `<span class="row-action-indicator row-action-edit" title="${label} - Click to view">
+          <svg class="indicator-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 18l6-6-6-6"/>
+          </svg>
+        </span>`
       }
     }
 
