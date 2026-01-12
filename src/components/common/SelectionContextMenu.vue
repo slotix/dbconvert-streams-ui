@@ -9,6 +9,7 @@ const props = defineProps<{
   y: number
   hasSelection: boolean
   isEditable?: boolean
+  canRevertCell?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -17,6 +18,7 @@ const emit = defineEmits<{
   (e: 'deselect-all'): void
   (e: 'copy', format: CopyFormat): void
   (e: 'delete'): void
+  (e: 'revert-cell'): void
 }>()
 
 const menuStyle = computed(() => ({
@@ -51,6 +53,11 @@ function deleteAndClose() {
   emit('delete')
   emit('close')
 }
+
+function revertCellAndClose() {
+  emit('revert-cell')
+  emit('close')
+}
 </script>
 
 <template>
@@ -73,6 +80,15 @@ function deleteAndClose() {
         @click="deselectAllAndClose"
       >
         Deselect all
+      </button>
+
+      <button
+        v-if="canRevertCell"
+        type="button"
+        class="w-full text-left px-3 py-2 text-teal-700 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-900/20"
+        @click="revertCellAndClose"
+      >
+        Revert cell
       </button>
 
       <div class="my-1 border-t border-gray-200 dark:border-gray-700"></div>

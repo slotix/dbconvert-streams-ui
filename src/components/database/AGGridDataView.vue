@@ -2,7 +2,9 @@
 import { ref, watch, computed, onMounted, onBeforeUnmount } from 'vue'
 import { onBeforeRouteLeave } from 'vue-router'
 import { AgGridVue } from 'ag-grid-vue3'
-import type { ColDef } from 'ag-grid-community'
+import type { ColDef, ITooltipParams, ValueFormatterParams } from 'ag-grid-community'
+import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue'
+import { X } from 'lucide-vue-next'
 import { type SQLTableMeta, type SQLViewMeta } from '@/types/metadata'
 import connections from '@/api/connections'
 import { formatTableValue } from '@/utils/dataUtils'
@@ -12,6 +14,7 @@ import { useToast } from 'vue-toastification'
 import { useObjectTabStateStore } from '@/stores/objectTabState'
 import { useConnectionsStore } from '@/stores/connections'
 import { useConfirmDialogStore } from '@/stores/confirmDialog'
+import { useLucideIcons } from '@/composables/useLucideIcons'
 import { isWailsContext } from '@/composables/useWailsEvents'
 import ColumnContextMenu from './ColumnContextMenu.vue'
 import DataFilterPanel from './DataFilterPanel.vue'
@@ -51,12 +54,19 @@ const connectionDialect = computed(() =>
 
 const toast = useToast()
 const { copy: copyToClipboard } = useCopyToClipboard()
+const { strokeWidth: iconStroke } = useLucideIcons()
 
 const confirmDialog = useConfirmDialogStore()
 
 const selectionMenuOpen = ref(false)
 const selectionMenuX = ref(0)
 const selectionMenuY = ref(0)
+
+const contextRowId = ref<string | null>(null)
+const contextField = ref<string | null>(null)
+
+const rowChangesPanelOpen = ref(false)
+const rowChangesRowId = ref<string | null>(null)
 
 type PendingEdit = {
   keys: Record<string, unknown>
@@ -74,6 +84,8 @@ const pendingDeletes = ref<Record<string, PendingDelete>>({})
 
 const pendingEditCount = computed(() => Object.keys(pendingEdits.value).length)
 const pendingDeleteCount = computed(() => Object.keys(pendingDeletes.value).length)
+
+const showChangesGutter = computed(() => pendingEditCount.value > 0)
 
 const hasUnsavedChanges = computed(() => pendingEditCount.value > 0 || pendingDeleteCount.value > 0)
 
@@ -190,9 +202,7 @@ function isRowPendingDelete(rowId: string | undefined): boolean {
 }
 
 const rowClassRules = computed(() => ({
-  'row-pending-delete': (params: { node?: { id?: string } }) => isRowPendingDelete(params.node?.id),
-  'row-pending-edit': (params: { node?: { id?: string } }) =>
-    Boolean(params.node?.id && pendingEdits.value[params.node.id])
+  'row-pending-delete': (params: { node?: { id?: string } }) => isRowPendingDelete(params.node?.id)
 }))
 
 function getKeyValues(row: Record<string, unknown>): Record<string, unknown> {
@@ -208,6 +218,66 @@ function valuesEqual(a: unknown, b: unknown): boolean {
   } catch {
     return String(a) === String(b)
   }
+}
+
+function getEditedCellTooltip(rowId: string, field: string, dataType?: string): string | null {
+  const edit = pendingEdits.value[rowId]
+  if (!edit?.changes || !Object.prototype.hasOwnProperty.call(edit.changes, field)) return null
+
+  const oldValue = formatTableValue(edit.original?.[field], dataType)
+  const newValue = formatTableValue(edit.changes[field], dataType)
+  return `Old: ${oldValue}\nNew: ${newValue}`
+}
+
+const columnMetaByName = computed(() => {
+  const meta = props.tableMeta
+  const out = new Map<string, { dataType?: string }>()
+  for (const c of meta?.columns || []) {
+    out.set(c.name, { dataType: c.dataType })
+  }
+  return out
+})
+
+const rowChangeItems = computed(() => {
+  const rowId = rowChangesRowId.value
+  if (!rowId) return [] as Array<{ field: string; oldValue: string; newValue: string }>
+  const edit = pendingEdits.value[rowId]
+  if (!edit?.changes) return [] as Array<{ field: string; oldValue: string; newValue: string }>
+
+  return Object.keys(edit.changes)
+    .sort()
+    .map((field) => {
+      const dataType = columnMetaByName.value.get(field)?.dataType
+      return {
+        field,
+        oldValue: formatTableValue(edit.original?.[field], dataType),
+        newValue: formatTableValue(edit.changes[field], dataType)
+      }
+    })
+})
+
+function openRowChangesPanel(rowId: string) {
+  rowChangesRowId.value = rowId
+  rowChangesPanelOpen.value = true
+}
+
+function closeRowChangesPanel() {
+  rowChangesPanelOpen.value = false
+  rowChangesRowId.value = null
+}
+
+function revertRowField(rowId: string, field: string) {
+  const api = baseGrid.gridApi.value
+  if (!api) return
+  if (!isTableEditable.value) return
+  const edit = pendingEdits.value[rowId]
+  if (!edit?.changes || !Object.prototype.hasOwnProperty.call(edit.changes, field)) return
+
+  const node = api.getRowNode(rowId)
+  if (!node) return
+
+  node.setDataValue(field, edit.original?.[field])
+  api.refreshCells({ rowNodes: [node], columns: [field], force: true })
 }
 
 type ColumnEditorKind = 'integer' | 'number' | 'date' | 'datetime' | 'text'
@@ -305,7 +375,7 @@ const columnDefs = computed<ColDef[]>(() => {
   const editable = isTableEditable.value
   const keyCols = new Set(editKeyColumns.value)
 
-  return meta.columns.map((col) => {
+  const dataCols = meta.columns.map((col) => {
     const kind = inferEditorKind(col.dataType)
     const isKey = keyCols.has(col.name)
     const isCellEditable = editable && !isKey
@@ -352,7 +422,14 @@ const columnDefs = computed<ColDef[]>(() => {
       resizable: true,
       flex: 1,
       minWidth: 120,
-      valueFormatter: (params) => formatTableValue(params.value),
+      valueFormatter: (params: ValueFormatterParams) =>
+        formatTableValue(params.value, col.dataType),
+      tooltipValueGetter: (p: ITooltipParams) => {
+        const rowId = p.node?.id
+        const field = (p.colDef as unknown as { field?: string } | null)?.field
+        if (!rowId || !field) return undefined
+        return getEditedCellTooltip(rowId, field, col.dataType) || undefined
+      },
       headerTooltip: `${col.dataType}${col.isNullable ? '' : ' NOT NULL'} - Use Query Filter panel to sort/filter`,
       wrapText: false,
       autoHeight: false,
@@ -362,12 +439,110 @@ const columnDefs = computed<ColDef[]>(() => {
         return !pendingDeletes.value[rowId]
       },
       cellClass: isCellEditable ? 'ag-cell-editable' : undefined,
+      cellClassRules: {
+        'cell-pending-edit': (p: {
+          node?: { id?: string }
+          colDef?: { field?: string }
+          data?: Record<string, unknown>
+        }) => {
+          const rowId = p.node?.id
+          const field = p.colDef?.field
+          if (!rowId || !field) return false
+          const edit = pendingEdits.value[rowId]
+          return Boolean(edit?.changes && Object.prototype.hasOwnProperty.call(edit.changes, field))
+        }
+      },
       valueParser,
       cellEditor,
       cellEditorParams
     }
   })
+
+  if (!editable) return dataCols
+
+  const changesCol: ColDef = {
+    colId: '__changes__',
+    headerName: '',
+    hide: !showChangesGutter.value,
+    pinned: 'left',
+    lockPinned: true,
+    suppressMovable: true,
+    resizable: false,
+    sortable: false,
+    filter: false,
+    floatingFilter: false,
+    suppressHeaderMenuButton: true,
+    suppressHeaderFilterButton: true,
+    width: 54,
+    minWidth: 54,
+    maxWidth: 54,
+    cellClass: 'row-change-gutter',
+    cellRenderer: (p: { node?: { id?: string } }) => {
+      const rowId = p.node?.id
+      if (!rowId) return ''
+      const edit = pendingEdits.value[rowId]
+      const changeCount = edit?.changes ? Object.keys(edit.changes).length : 0
+      if (!edit || changeCount === 0) return ''
+
+      const label = changeCount === 1 ? '1 change' : `${changeCount} changes`
+
+      if (changeCount === 1) {
+        return `
+          <span class="row-change-badge" title="${label}">
+            <span class="row-change-dot"></span>
+          </span>
+        `
+      }
+
+      const displayCount = changeCount > 9 ? '9+' : String(changeCount)
+      return `
+        <span class="row-change-badge" title="${label}">
+          <span class="row-change-dot"></span>
+          <span class="row-change-count">${displayCount}</span>
+        </span>
+      `
+    }
+  }
+
+  return [changesCol, ...dataCols]
 })
+
+function onCellClicked(event: { column?: { getColId: () => string }; node?: { id?: string } }) {
+  const colId = event.column?.getColId?.()
+  if (colId !== '__changes__') return
+  const rowId = event.node?.id
+  if (!rowId) return
+  if (!pendingEdits.value[rowId]) return
+  openRowChangesPanel(rowId)
+}
+
+const canRevertContextCell = computed(() => {
+  if (!isTableEditable.value) return false
+  const rowId = contextRowId.value
+  const field = contextField.value
+  if (!rowId || !field) return false
+  const edit = pendingEdits.value[rowId]
+  return Boolean(edit?.changes && Object.prototype.hasOwnProperty.call(edit.changes, field))
+})
+
+function revertContextCell() {
+  const api = baseGrid.gridApi.value
+  if (!api) return
+  if (!isTableEditable.value) return
+  const rowId = contextRowId.value
+  const field = contextField.value
+  if (!rowId || !field) return
+
+  const edit = pendingEdits.value[rowId]
+  if (!edit?.changes || !Object.prototype.hasOwnProperty.call(edit.changes, field)) return
+
+  const node = api.getRowNode(rowId)
+  if (!node) return
+
+  // Let onCellValueChanged reconcile pendingEdits by setting the original value back.
+  node.setDataValue(field, edit.original?.[field])
+  api.refreshCells({ rowNodes: [node], columns: [field], force: true })
+}
 
 // Data fetching callback for base composable
 async function fetchData(params: FetchDataParams): Promise<FetchDataResult> {
@@ -463,6 +638,15 @@ const baseGrid = useBaseAGGridView({
   }
 })
 
+watch(
+  () => ({ api: baseGrid.gridApi.value, visible: showChangesGutter.value }),
+  ({ api, visible }) => {
+    if (!api) return
+    api.setColumnsVisible(['__changes__'], visible)
+  },
+  { immediate: true }
+)
+
 function onCellValueChanged(event: {
   data: Record<string, unknown>
   colDef: { field?: string }
@@ -470,6 +654,7 @@ function onCellValueChanged(event: {
   newValue: unknown
 }) {
   if (!isTableEditable.value) return
+  const api = baseGrid.gridApi.value
   const field = event.colDef.field
   if (!field) return
   if (editKeyColumns.value.includes(field)) return
@@ -497,6 +682,11 @@ function onCellValueChanged(event: {
     const next = { ...pendingEdits.value }
     delete next[rowId]
     pendingEdits.value = next
+
+    if (api) {
+      const node = api.getRowNode(rowId)
+      if (node) api.refreshCells({ rowNodes: [node], columns: ['__changes__', field], force: true })
+    }
     return
   }
 
@@ -507,6 +697,11 @@ function onCellValueChanged(event: {
       changes: nextChanges,
       original
     }
+  }
+
+  if (api) {
+    const node = api.getRowNode(rowId)
+    if (node) api.refreshCells({ rowNodes: [node], columns: ['__changes__', field], force: true })
   }
 }
 
@@ -1049,10 +1244,19 @@ const canCopySelection = computed(() => baseGrid.selectedRowCount.value > 0)
 
 function openSelectionMenu(event: unknown) {
   // AG Grid passes a complex event object; the native mouse event is at event.event.
-  const nativeEvent = (event as { event?: MouseEvent }).event
+  const e = event as {
+    event?: MouseEvent
+    node?: { id?: string }
+    colDef?: { field?: string }
+    column?: { getColId?: () => string }
+  }
+  const nativeEvent = e.event
   if (!nativeEvent) return
   nativeEvent.preventDefault()
   nativeEvent.stopPropagation()
+
+  contextRowId.value = e.node?.id || null
+  contextField.value = e.colDef?.field || e.column?.getColId?.() || null
 
   selectionMenuX.value = nativeEvent.clientX
   selectionMenuY.value = nativeEvent.clientY
@@ -1230,6 +1434,7 @@ defineExpose({
         style="width: 100%; height: 100%"
         @grid-ready="baseGrid.onGridReady"
         @cell-context-menu="openSelectionMenu"
+        @cell-clicked="onCellClicked"
         @cell-value-changed="onCellValueChanged"
         @column-pinned="saveColumnState"
         @column-moved="saveColumnState"
@@ -1243,12 +1448,116 @@ defineExpose({
       :y="selectionMenuY"
       :has-selection="canCopySelection"
       :is-editable="isTableEditable"
+      :can-revert-cell="canRevertContextCell"
       @close="selectionMenuOpen = false"
       @select-all="selectAllOnCurrentPage"
       @deselect-all="deselectAll"
       @copy="copySelectedRows"
       @delete="deleteSelectedRows"
+      @revert-cell="revertContextCell"
     />
+
+    <!-- Row Changes Panel (DataGrip-style) -->
+    <TransitionRoot as="template" :show="rowChangesPanelOpen">
+      <Dialog as="div" class="relative z-50" @close="closeRowChangesPanel">
+        <TransitionChild
+          as="template"
+          enter="ease-out duration-200"
+          enter-from="opacity-0"
+          enter-to="opacity-100"
+          leave="ease-in duration-150"
+          leave-from="opacity-100"
+          leave-to="opacity-0"
+        >
+          <div class="fixed inset-0 bg-black/40" />
+        </TransitionChild>
+
+        <div class="fixed inset-0 overflow-hidden">
+          <div class="absolute inset-0 overflow-hidden">
+            <div class="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10">
+              <TransitionChild
+                as="template"
+                enter="transform transition ease-in-out duration-200"
+                enter-from="translate-x-full"
+                enter-to="translate-x-0"
+                leave="transform transition ease-in-out duration-150"
+                leave-from="translate-x-0"
+                leave-to="translate-x-full"
+              >
+                <DialogPanel
+                  class="pointer-events-auto w-screen max-w-md bg-white dark:bg-gray-850 shadow-2xl dark:shadow-gray-900/50 border-l border-gray-200 dark:border-gray-700"
+                >
+                  <div class="h-full flex flex-col">
+                    <div
+                      class="px-4 py-4 border-b border-gray-200 dark:border-gray-700 flex items-start justify-between"
+                    >
+                      <div class="min-w-0">
+                        <DialogTitle class="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                          Changes in this row
+                        </DialogTitle>
+                        <p class="mt-1 text-xs text-gray-600 dark:text-gray-400">
+                          {{ rowChangeItems.length }} field{{
+                            rowChangeItems.length === 1 ? '' : 's'
+                          }}
+                          changed
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        class="ml-3 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+                        @click="closeRowChangesPanel"
+                      >
+                        <X class="h-5 w-5" :stroke-width="iconStroke" />
+                        <span class="sr-only">Close</span>
+                      </button>
+                    </div>
+
+                    <div class="flex-1 overflow-y-auto px-4 py-4">
+                      <div
+                        v-if="rowChangeItems.length === 0"
+                        class="text-sm text-gray-600 dark:text-gray-400"
+                      >
+                        No pending edits for this row.
+                      </div>
+
+                      <div v-else class="space-y-3">
+                        <div
+                          v-for="item in rowChangeItems"
+                          :key="item.field"
+                          class="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-900/40 p-3"
+                        >
+                          <div class="flex items-center justify-between gap-3">
+                            <div
+                              class="text-xs font-semibold text-gray-800 dark:text-gray-200 truncate"
+                            >
+                              {{ item.field }}
+                            </div>
+                            <button
+                              type="button"
+                              class="text-xs text-teal-700 dark:text-teal-300 hover:underline"
+                              @click="
+                                rowChangesRowId && revertRowField(rowChangesRowId, item.field)
+                              "
+                            >
+                              Revert
+                            </button>
+                          </div>
+                          <div class="mt-2 text-xs text-gray-700 dark:text-gray-300">
+                            <span class="line-through opacity-70">{{ item.oldValue }}</span>
+                            <span class="mx-2 opacity-70">→</span>
+                            <span class="font-semibold">{{ item.newValue }}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </DialogPanel>
+              </TransitionChild>
+            </div>
+          </div>
+        </div>
+      </Dialog>
+    </TransitionRoot>
 
     <!-- Row count controls below table -->
     <div class="mt-3 flex items-center justify-between">
@@ -1356,10 +1665,88 @@ defineExpose({
   text-decoration: line-through;
 }
 
+/* Pending edit: highlight edited cells and show old/new values */
+:deep(.ag-cell.cell-pending-edit) {
+  background-color: rgba(13, 148, 136, 0.08); /* teal tint */
+  box-shadow: inset 0 0 0 1px rgba(13, 148, 136, 0.9);
+}
+
+/* Row change gutter (DataGrip-style summary trigger) */
+:deep(.ag-cell.row-change-gutter) {
+  display: flex;
+  align-items: center;
+  padding-left: 10px;
+  padding-right: 6px;
+}
+
+:deep(.ag-cell.row-change-gutter .row-change-badge) {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+}
+
+:deep(.ag-cell.row-change-gutter .row-change-dot) {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background-color: rgb(13 148 136);
+  box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.16);
+}
+
+:deep(.ag-cell.row-change-gutter .row-change-count) {
+  min-width: 18px;
+  height: 16px;
+  padding: 0 6px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  line-height: 1;
+  color: rgb(13 148 136);
+  background-color: rgba(13, 148, 136, 0.12);
+  border: 1px solid rgba(13, 148, 136, 0.28);
+}
+
+/* When the row is selected, keep selection background and only show the edited outline */
+:deep(.ag-row.ag-row-selected .ag-cell.cell-pending-edit) {
+  background-color: transparent;
+  box-shadow: inset 0 0 0 2px rgba(13, 148, 136, 1);
+}
+
 @media (prefers-color-scheme: dark) {
   :deep(.ag-row.row-pending-delete),
   :deep(.ag-row.row-pending-delete .ag-cell) {
     background-color: rgba(248, 113, 113, 0.12);
+  }
+
+  :deep(.ag-cell.cell-pending-edit) {
+    background-color: rgba(45, 212, 191, 0.14);
+    box-shadow: inset 0 0 0 1px rgba(45, 212, 191, 0.95);
+  }
+
+  :deep(.ag-cell.row-change-gutter .row-change-badge) {
+    color: rgb(45 212 191);
+  }
+
+  :deep(.ag-cell.row-change-gutter .row-change-dot) {
+    background-color: rgb(45 212 191);
+    box-shadow: 0 0 0 2px rgba(45, 212, 191, 0.18);
+  }
+
+  :deep(.ag-cell.row-change-gutter .row-change-count) {
+    color: rgb(45 212 191);
+    background-color: rgba(45, 212, 191, 0.14);
+    border: 1px solid rgba(45, 212, 191, 0.28);
+  }
+
+  :deep(.ag-row.ag-row-selected .ag-cell.cell-pending-edit) {
+    background-color: transparent;
+    box-shadow: inset 0 0 0 2px rgba(45, 212, 191, 1);
   }
 }
 </style>

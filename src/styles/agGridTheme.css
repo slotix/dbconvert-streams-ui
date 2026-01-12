@@ -51,6 +51,11 @@
   ); /* gray-600 with transparency */
 }
 
+/* Tooltips: preserve newlines (used for edited-cell Old/New hints). */
+.ag-theme-alpine .ag-tooltip {
+  white-space: pre-line;
+}
+
 /* Prevent browser text selection while row-selecting/dragging in the grid.
    (We use toolbar copy + AG Grid APIs instead of native text selection.) */
 .ag-theme-alpine.select-none,
@@ -179,6 +184,10 @@
   /* Active/focus colors - teal accent */
   --ag-alpine-active-color: rgb(20 184 166);
   --ag-input-focus-border-color: rgb(45 212 191);
+
+  /* Tooltip styling (default Alpine tooltip background is light; override for dark mode) */
+  --ag-tooltip-background-color: rgb(23 23 23);
+  --ag-tooltip-text-color: rgb(245 245 245);
 
   /* Range selection colors with teal */
   --ag-range-selection-background-color-2: rgba(20, 184, 166, 0.25);
