@@ -142,11 +142,13 @@ const limit = ref<number | null>(null)
 
 // Convert AG Grid ColDef[] to ColumnDef[]
 const normalizedColumns = computed<ColumnDef[]>(() =>
-  props.columns.map((col) => ({
-    name: col.field || '',
-    label: (col.headerName as string) || col.field || '',
-    type: col.type as string | undefined
-  }))
+  props.columns
+    .filter((col) => Boolean(col.field))
+    .map((col) => ({
+      name: col.field as string,
+      label: (col.headerName as string) || (col.field as string),
+      type: col.type as string | undefined
+    }))
 )
 
 // Collapsed SQL preview (single line)
