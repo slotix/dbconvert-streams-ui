@@ -233,7 +233,6 @@ export function useAgGridRowChangeTracking(options: UseAgGridRowChangeTrackingOp
       return
     }
 
-    let insertSuccess = false
     let editSuccess = false
     let deleteSuccess = false
     let insertedCount = 0
@@ -272,7 +271,6 @@ export function useAgGridRowChangeTracking(options: UseAgGridRowChangeTrackingOp
         insertedCount = resp.inserted
         pendingInserts.value = {}
         api.setGridOption('pinnedTopRowData', [])
-        insertSuccess = true
 
         // Refresh grid so newly inserted rows can appear if they fall into current page/sort.
         api.purgeInfiniteCache()
@@ -281,8 +279,6 @@ export function useAgGridRowChangeTracking(options: UseAgGridRowChangeTrackingOp
         options.toast.error(msg)
         return // Don't continue if inserts failed
       }
-    } else {
-      insertSuccess = true
     }
 
     // First apply edits

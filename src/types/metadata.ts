@@ -11,6 +11,7 @@ interface NullableNumber {
 export interface SQLForeignKeyMeta {
   name: string // Name of the foreign key constraint
   sourceColumn: string // Column in the current table
+  referencedSchema?: string // Referenced schema (PostgreSQL)
   referencedTable: string // Referenced table name
   referencedColumn: string // Referenced column name
   onUpdate?: string // ON UPDATE behavior (CASCADE, SET NULL, etc.)
@@ -36,6 +37,14 @@ export interface SQLPartitionMeta {
 export interface SQLColumnMeta {
   name: string
   dataType: string
+  // Engine-specific fidelity hints (optional)
+  columnType?: string // MySQL raw type string (e.g., "tinyint(1) unsigned", "enum('a','b')")
+  characterSet?: string // MySQL character set
+  collation?: string // MySQL collation
+  udtName?: string // PostgreSQL underlying type name (information_schema.udt_name)
+  enumValues?: string[] // PostgreSQL enum labels (when discoverable)
+  domainBaseType?: string // PostgreSQL domain base type (when discoverable)
+  isUnsigned?: boolean // MySQL unsigned numeric flag (derived from columnType)
   isNullable: boolean
   defaultValue: NullableString
   isPrimaryKey: boolean
@@ -54,6 +63,7 @@ export interface SQLIndexMeta {
   isUnique: boolean
   isPrimary: boolean
   type: string // BTREE, HASH, GIN, etc.
+  isFullTextIndex?: boolean
 }
 
 export interface SQLTableMeta {
@@ -64,6 +74,10 @@ export interface SQLTableMeta {
   primaryKeys: string[]
   foreignKeys: SQLForeignKeyMeta[]
   indexes: SQLIndexMeta[]
+
+  // Size estimates (when provided by backend discovery)
+  estimatedRows?: number
+  estimatedSizeBytes?: number
 
   // Safe-by-default editability hints from backend metadata
   isEditable?: boolean

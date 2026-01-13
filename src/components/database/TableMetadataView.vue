@@ -39,6 +39,7 @@ const tabStateStore = useObjectTabStateStore()
 const navigationStore = useExplorerNavigationStore()
 
 const isLoading = ref(false)
+const showAdvancedColumns = ref(false)
 
 function handleRefresh() {
   isLoading.value = true
@@ -82,6 +83,7 @@ const columns = computed(() => {
 type FK = {
   name: string
   sourceColumn: string
+  referencedSchema?: string
   referencedTable: string
   referencedColumn: string
   onUpdate?: string
@@ -91,6 +93,7 @@ const foreignKeys = computed(() => {
   return (props.tableMeta?.foreignKeys || []).map((fk: FK) => ({
     name: fk.name,
     sourceColumn: fk.sourceColumn,
+    referencedSchema: fk.referencedSchema,
     referencedTable: fk.referencedTable,
     referencedColumn: fk.referencedColumn,
     onUpdate: fk.onUpdate,
@@ -180,6 +183,103 @@ function getColumnType(column: SQLColumnMeta) {
   return type
 }
 
+function parseSqlStringLiteralList(input: string): string[] | null {
+  // Parses a comma-separated list of single-quoted SQL string literals.
+  // Example: `'a','b','c'` -> ["a","b","c"]. Handles doubled quotes: `''`.
+  const s = input.trim()
+  const out: string[] = []
+  let i = 0
+
+  const skipSpaces = () => {
+    while (i < s.length && /\s/.test(s[i])) i++
+  }
+
+  while (i < s.length) {
+    skipSpaces()
+    if (i >= s.length) break
+    if (s[i] !== "'") return null
+    i++
+
+    let buf = ''
+    while (i < s.length) {
+      const ch = s[i]
+      if (ch === "'") {
+        // doubled single-quote escape
+        if (i + 1 < s.length && s[i + 1] === "'") {
+          buf += "'"
+          i += 2
+          continue
+        }
+        i++
+        break
+      }
+      buf += ch
+      i++
+    }
+
+    out.push(buf)
+    skipSpaces()
+    if (i >= s.length) break
+    if (s[i] === ',') {
+      i++
+      continue
+    }
+    return null
+  }
+
+  return out
+}
+
+function getEnumSetInfo(column: SQLColumnMeta): { kind: 'enum' | 'set'; values: string[] } | null {
+  // Postgres: enumValues are already decoded.
+  if (column.enumValues && column.enumValues.length > 0) {
+    return { kind: 'enum', values: column.enumValues }
+  }
+
+  // MySQL: infer from columnType (raw) but do not display it.
+  const ct = (column.columnType || '').trim()
+  if (!ct) return null
+  const lower = ct.toLowerCase()
+
+  const isEnum = lower.startsWith('enum(')
+  const isSet = lower.startsWith('set(')
+  if (!isEnum && !isSet) return null
+
+  const open = ct.indexOf('(')
+  const close = ct.lastIndexOf(')')
+  if (open < 0 || close <= open) return null
+
+  const inside = ct.slice(open + 1, close)
+  const values = parseSqlStringLiteralList(inside)
+  if (!values || values.length === 0) return null
+  return { kind: isSet ? 'set' : 'enum', values }
+}
+
+function formatEnumSetSummary(values: string[], maxShown = 4): string {
+  if (!values.length) return ''
+  if (values.length <= maxShown) return values.join(', ')
+  const shown = values.slice(0, maxShown).join(', ')
+  return `${shown} +${values.length - maxShown} more`
+}
+
+function getEnumSetLabel(column: SQLColumnMeta): string {
+  const info = getEnumSetInfo(column)
+  if (!info) return ''
+  return info.kind.toUpperCase()
+}
+
+function getEnumSetSummary(column: SQLColumnMeta): string {
+  const info = getEnumSetInfo(column)
+  if (!info) return ''
+  return formatEnumSetSummary(info.values)
+}
+
+function getEnumSetTitle(column: SQLColumnMeta): string {
+  const info = getEnumSetInfo(column)
+  if (!info) return ''
+  return info.values.join(', ')
+}
+
 function getColumnDefault(column: SQLColumnMeta) {
   const defaultValue = column.defaultValue
   if (!defaultValue) return '-'
@@ -201,6 +301,29 @@ function getColumnCheckConstraints(column: SQLColumnMeta): string {
       return c.clause
     })
     .join(' AND ')
+}
+
+function getAdvancedColumnMetaSummary(column: SQLColumnMeta): string {
+  const parts: string[] = []
+
+  const characterSet = (column.characterSet || '').trim()
+  if (characterSet) parts.push(`Charset: ${characterSet}`)
+
+  const collation = (column.collation || '').trim()
+  if (collation) parts.push(`Collation: ${collation}`)
+
+  const dataType = (column.dataType || '').trim().toLowerCase()
+  const udtName = (column.udtName || '').trim()
+  if (udtName && udtName.toLowerCase() !== dataType) {
+    parts.push(`UDT: ${udtName}`)
+  }
+
+  const domainBaseType = (column.domainBaseType || '').trim()
+  if (domainBaseType && domainBaseType.toLowerCase() !== dataType) {
+    parts.push(`Domain base: ${domainBaseType}`)
+  }
+
+  return parts.join(' · ')
 }
 
 // extra display removed for compactness
@@ -246,6 +369,22 @@ function getColumnCheckConstraints(column: SQLColumnMeta): string {
       <TabPanels class="p-4">
         <!-- Columns Panel -->
         <TabPanel>
+          <div class="mb-3 flex items-center justify-end">
+            <button
+              type="button"
+              class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset transition-colors"
+              :class="
+                showAdvancedColumns
+                  ? 'bg-gray-100 text-gray-900 ring-gray-200 dark:bg-gray-800 dark:text-gray-100 dark:ring-gray-700'
+                  : 'bg-white text-gray-600 ring-gray-200 hover:bg-gray-50 dark:bg-gray-850 dark:text-gray-300 dark:ring-gray-700 dark:hover:bg-gray-800'
+              "
+              :aria-pressed="showAdvancedColumns"
+              @click="showAdvancedColumns = !showAdvancedColumns"
+            >
+              Advanced
+            </button>
+          </div>
+
           <div class="overflow-x-auto">
             <div class="min-w-[640px]">
               <div class="ring-1 ring-gray-200 dark:ring-gray-700 rounded-lg">
@@ -308,11 +447,41 @@ function getColumnCheckConstraints(column: SQLColumnMeta): string {
                           }}</span>
                         </div>
                       </td>
-                      <td
-                        class="whitespace-nowrap px-3 py-2 text-sm text-gray-500 dark:text-gray-400"
-                      >
-                        {{ getColumnType(column) }}
+
+                      <td class="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
+                        <div class="leading-5">
+                          <div class="flex items-center gap-2">
+                            <span class="whitespace-nowrap">{{ getColumnType(column) }}</span>
+                            <span
+                              v-if="column.isUnsigned"
+                              class="inline-flex items-center rounded-md bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-800 ring-1 ring-inset ring-amber-200 dark:bg-amber-900/30 dark:text-amber-200 dark:ring-amber-700/50"
+                            >
+                              UNSIGNED
+                            </span>
+                          </div>
+                          <div
+                            v-if="getEnumSetSummary(column)"
+                            class="mt-0.5 text-xs text-gray-400 dark:text-gray-500 max-w-[420px] truncate"
+                            :title="getEnumSetTitle(column)"
+                          >
+                            <span
+                              class="mr-1 inline-flex items-center rounded-md bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-700 ring-1 ring-inset ring-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:ring-gray-700"
+                            >
+                              {{ getEnumSetLabel(column) }}
+                            </span>
+                            {{ getEnumSetSummary(column) }}
+                          </div>
+
+                          <div
+                            v-if="showAdvancedColumns && getAdvancedColumnMetaSummary(column)"
+                            class="mt-0.5 text-xs text-gray-400 dark:text-gray-500 max-w-[420px] truncate"
+                            :title="getAdvancedColumnMetaSummary(column)"
+                          >
+                            {{ getAdvancedColumnMetaSummary(column) }}
+                          </div>
+                        </div>
                       </td>
+
                       <td
                         class="whitespace-nowrap px-3 py-2 text-sm text-gray-500 dark:text-gray-400"
                       >
@@ -381,9 +550,9 @@ function getColumnCheckConstraints(column: SQLColumnMeta): string {
                         {{ key.name }}
                       </p>
                       <p class="mt-1 truncate text-xs leading-5 text-gray-500 dark:text-gray-400">
-                        {{ key.sourceColumn }} → {{ key.referencedTable }}.{{
-                          key.referencedColumn
-                        }}
+                        <span>{{ key.sourceColumn }} → </span>
+                        <span v-if="key.referencedSchema">{{ key.referencedSchema }}.</span>
+                        <span>{{ key.referencedTable }}.{{ key.referencedColumn }}</span>
                       </p>
                       <p class="mt-1 truncate text-xs leading-5 text-gray-500 dark:text-gray-400">
                         ON UPDATE {{ key.onUpdate }}, ON DELETE {{ key.onDelete }}
@@ -476,7 +645,7 @@ function getColumnCheckConstraints(column: SQLColumnMeta): string {
               class="rounded-lg bg-blue-50 dark:bg-blue-900/20 p-4 border border-blue-200 dark:border-blue-800"
             >
               <div class="flex">
-                <div class="flex-shrink-0">
+                <div class="shrink-0">
                   <svg
                     class="h-5 w-5 text-blue-400 dark:text-blue-300"
                     viewBox="0 0 20 20"
