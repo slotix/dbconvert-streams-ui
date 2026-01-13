@@ -1,7 +1,7 @@
 import { ref, computed, watch, type ComputedRef } from 'vue'
 import { useSqlConsoleStore } from '@/stores/sqlConsole'
 import type { QueryPurpose } from '@/stores/logs'
-import { format as formatSQL } from 'sql-formatter'
+import { format as formatSQL, type SqlLanguage } from 'sql-formatter'
 import { useSplitPaneResize } from './useSplitPaneResize'
 
 export interface QueryHistoryItem {
@@ -29,6 +29,11 @@ export interface ConsoleTabOptions {
    * Optional database name for database-scoped consoles
    */
   database?: string | ComputedRef<string | undefined>
+
+  /**
+   * SQL dialect for formatting (e.g., 'mysql', 'postgresql', 'sql')
+   */
+  dialect?: string | ComputedRef<string>
 
   /**
    * Function to get default query template for new tabs
@@ -91,6 +96,7 @@ export function useConsoleTab(options: ConsoleTabOptions) {
     consoleKey: consoleKeyOption,
     historyKey: historyKeyOption,
     database: databaseOption,
+    dialect: dialectOption,
     getDefaultQuery = () => '',
     maxHistoryItems = 50
   } = options
@@ -110,6 +116,13 @@ export function useConsoleTab(options: ConsoleTabOptions) {
       : typeof databaseOption === 'string'
         ? databaseOption
         : databaseOption.value
+  )
+  const dialect = computed(() =>
+    dialectOption === undefined
+      ? 'sql'
+      : typeof dialectOption === 'string'
+        ? dialectOption
+        : dialectOption.value
   )
 
   // ========== Query State ==========
@@ -251,11 +264,36 @@ export function useConsoleTab(options: ConsoleTabOptions) {
   }
 
   // ========== Query Formatting ==========
+  // Map our dialect names to sql-formatter language names
+  function getFormatterLanguage(d: string): SqlLanguage {
+    const dialectMap: Record<string, SqlLanguage> = {
+      mysql: 'mysql',
+      mariadb: 'mariadb',
+      postgresql: 'postgresql',
+      pgsql: 'postgresql',
+      postgres: 'postgresql',
+      mssql: 'tsql',
+      sqlserver: 'tsql',
+      oracle: 'plsql',
+      snowflake: 'snowflake',
+      redshift: 'redshift',
+      bigquery: 'bigquery',
+      spark: 'spark',
+      duckdb: 'duckdb',
+      sqlite: 'sqlite'
+    }
+    return dialectMap[d.toLowerCase()] || 'sql'
+  }
+
   function formatQuery() {
     try {
-      sqlQuery.value = formatSQL(sqlQuery.value, { language: 'sql' })
-    } catch {
-      // Keep original if formatting fails
+      const lang = getFormatterLanguage(dialect.value)
+      const formatted = formatSQL(sqlQuery.value, { language: lang })
+      if (formatted !== sqlQuery.value) {
+        sqlQuery.value = formatted
+      }
+    } catch (e) {
+      console.error('SQL formatting failed:', e)
     }
   }
 

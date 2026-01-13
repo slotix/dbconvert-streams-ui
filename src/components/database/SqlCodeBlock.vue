@@ -41,6 +41,5 @@ const displayTitle = computed(() => {
     :min-height="minHeight"
     :max-height="maxHeight"
     read-only
-    format-on-mount
   />
 </template>

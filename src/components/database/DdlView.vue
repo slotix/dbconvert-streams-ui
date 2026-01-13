@@ -33,7 +33,17 @@ const indexesSql = computed(() => {
       title="SQL Definition"
       :dialect="dialect"
       compact
+      auto-resize
+      :max-height="800"
     />
-    <SqlCodeBlock v-if="indexesSql" :code="indexesSql" title="Indexes" :dialect="dialect" compact />
+    <SqlCodeBlock
+      v-if="indexesSql"
+      :code="indexesSql"
+      title="Indexes"
+      :dialect="dialect"
+      compact
+      auto-resize
+      :max-height="400"
+    />
   </div>
 </template>

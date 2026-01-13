@@ -519,9 +519,9 @@ function onOpenDiagram() {
 
         <!-- Right: SQL/DuckDB Console + Refresh buttons -->
         <div class="flex items-center gap-2">
-          <!-- SQL Console button (only for database objects on Data tab) -->
+          <!-- SQL Console button (for database tables/views) -->
           <button
-            v-if="isDataObject && selectedIndex === 0"
+            v-if="isDataObject"
             type="button"
             class="inline-flex items-center rounded-md bg-white dark:bg-gray-800 px-2.5 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 shadow-sm dark:shadow-gray-900/30 border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
             title="Open in SQL Console"
@@ -529,9 +529,9 @@ function onOpenDiagram() {
           >
             <Terminal class="h-4 w-4" />
           </button>
-          <!-- Diagram button (only for database objects on Data tab) -->
+          <!-- Diagram button (for database tables/views) -->
           <button
-            v-if="isDataObject && selectedIndex === 0"
+            v-if="isDataObject"
             type="button"
             class="inline-flex items-center rounded-md bg-white dark:bg-gray-800 px-2.5 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 shadow-sm dark:shadow-gray-900/30 border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
             title="Show in Diagram"
@@ -539,9 +539,9 @@ function onOpenDiagram() {
           >
             <Share2 class="h-4 w-4" />
           </button>
-          <!-- DuckDB Console button (only for file objects on Data tab) -->
+          <!-- DuckDB Console button (for file objects) -->
           <button
-            v-if="objectType === 'file' && selectedIndex === 0"
+            v-if="objectType === 'file'"
             type="button"
             class="inline-flex items-center rounded-md bg-white dark:bg-gray-800 px-2.5 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 shadow-sm dark:shadow-gray-900/30 border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
             title="Open in DuckDB Console"

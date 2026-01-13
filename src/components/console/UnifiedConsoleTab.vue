@@ -227,6 +227,37 @@ const historyKey = computed(() => {
 // ========== Base Connection ==========
 const connection = computed(() => connectionsStore.connectionByID(props.connectionId))
 
+// ========== Data Sources Composable ==========
+// Note: Must be before useConsoleTab so we can compute dialect
+const modeRef = computed(() => props.mode)
+const connectionIdRef = computed(() => props.connectionId)
+const databaseRef = computed(() => props.database)
+
+const {
+  selectedConnections,
+  useFederatedEngine,
+  handleUpdateSelectedConnections,
+  initializeDefaultSources,
+  syncPrimarySource,
+  restoreSelectedConnections
+} = useConsoleSources({
+  connectionId: connectionIdRef,
+  mode: modeRef,
+  database: databaseRef,
+  consoleKey
+})
+
+// ========== SQL Dialect ==========
+const currentDialect = computed(() => {
+  if (useFederatedEngine.value) {
+    return 'sql'
+  }
+  if (props.mode === 'file') {
+    return 'sql' // DuckDB uses standard SQL
+  }
+  return getSqlDialectFromConnection(connection.value?.spec, connection.value?.type)
+})
+
 // ========== Console Tab Composable ==========
 const {
   // State
@@ -275,26 +306,8 @@ const {
   cleanup
 } = useConsoleTab({
   consoleKey,
-  historyKey
-})
-
-// ========== Data Sources Composable ==========
-const modeRef = computed(() => props.mode)
-const connectionIdRef = computed(() => props.connectionId)
-const databaseRef = computed(() => props.database)
-
-const {
-  selectedConnections,
-  useFederatedEngine,
-  handleUpdateSelectedConnections,
-  initializeDefaultSources,
-  syncPrimarySource,
-  restoreSelectedConnections
-} = useConsoleSources({
-  connectionId: connectionIdRef,
-  mode: modeRef,
-  database: databaseRef,
-  consoleKey
+  historyKey,
+  dialect: currentDialect
 })
 
 // ========== Query Execution Composable ==========
@@ -315,16 +328,6 @@ const { isExecuting, executeQuery } = useQueryExecution({
 // ========== Schema Context (database mode) ==========
 const tablesList = ref<Array<{ name: string; schema?: string }>>([])
 const columnsMap = ref<Record<string, Array<{ name: string; type: string; nullable: boolean }>>>({})
-
-const currentDialect = computed(() => {
-  if (useFederatedEngine.value) {
-    return 'sql'
-  }
-  if (props.mode === 'file') {
-    return 'sql' // DuckDB uses standard SQL
-  }
-  return getSqlDialectFromConnection(connection.value?.spec, connection.value?.type)
-})
 
 const schemaContext = computed<SchemaContext>(() => {
   if (useFederatedEngine.value) {
