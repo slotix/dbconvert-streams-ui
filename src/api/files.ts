@@ -194,6 +194,35 @@ export interface FileQueryResponse {
   status: string
 }
 
+export interface FileRowEdit {
+  rowId: number
+  changes: Record<string, unknown>
+}
+
+export interface FileRowInsert {
+  values: Record<string, unknown>
+}
+
+export interface FileRowDelete {
+  rowId: number
+}
+
+export interface ApplyFileRowChangesRequest {
+  path: string
+  format: FileFormat
+  connectionId?: string
+  edits?: FileRowEdit[]
+  inserts?: FileRowInsert[]
+  deletes?: FileRowDelete[]
+}
+
+export interface ApplyFileRowChangesResponse {
+  status: string
+  updated: number
+  inserted: number
+  deleted: number
+}
+
 /**
  * Execute a SQL query on files using DuckDB
  * The query can use DuckDB file reading functions like:
@@ -223,6 +252,23 @@ export async function executeFileQuery(
   }
 }
 
+export async function applyFileRowChanges(
+  payload: ApplyFileRowChangesRequest
+): Promise<ApplyFileRowChangesResponse> {
+  try {
+    const response = await apiClient.post<ApplyFileRowChangesResponse>(
+      '/files/rows/apply',
+      payload,
+      {
+        ...withAuthHeaders()
+      }
+    )
+    return response.data
+  } catch (error) {
+    throw handleApiError(error)
+  }
+}
+
 export default {
   getFileMetadata,
   getFileData,
@@ -233,5 +279,6 @@ export default {
   createS3Bucket,
   validateS3Path,
   readS3Manifest,
-  executeFileQuery
+  executeFileQuery,
+  applyFileRowChanges
 }

@@ -1,6 +1,5 @@
 import { computed, ref, type ComputedRef, type Ref } from 'vue'
 import type { GridApi } from 'ag-grid-community'
-import connections from '@/api/connections'
 import { inferEditorKind, parseNumberInput, valuesEqualForSqlType } from '@/utils/agGridEditing'
 
 export type PendingEdit = {
@@ -18,6 +17,33 @@ export type PendingInsert = {
   id: string
   createdAt: number
   values: Record<string, unknown>
+}
+
+export type RowChangePayload = {
+  inserts: Array<{ values: Record<string, unknown> }>
+  edits: Array<{ keys: Record<string, unknown>; changes: Record<string, unknown> }>
+  deletes: Array<{ keys: Record<string, unknown> }>
+}
+
+export type RowChangeResult = {
+  rows?: Record<string, unknown>[]
+  inserted?: number
+  updated?: number
+  deleted?: number
+}
+
+export type RowChangeAdapter = {
+  applyChanges?: (payload: RowChangePayload) => Promise<RowChangeResult>
+  insertRows?: (payload: { inserts: Array<{ values: Record<string, unknown> }> }) => Promise<{
+    inserted: number
+  }>
+  updateRows?: (payload: {
+    edits: Array<{ keys: Record<string, unknown>; changes: Record<string, unknown> }>
+  }) => Promise<{ rows?: Record<string, unknown>[] }>
+  deleteRows?: (payload: { deletes: Array<{ keys: Record<string, unknown> }> }) => Promise<{
+    deleted: number
+  }>
+  forceRefreshAfterSave?: boolean
 }
 
 type ToastLike = {
@@ -46,11 +72,7 @@ export type UseAgGridRowChangeTrackingOptions = {
   >
   gridApi: Ref<GridApi | null>
   toast: ToastLike
-
-  connectionId: ComputedRef<string>
-  database: ComputedRef<string>
-  objectName: ComputedRef<string>
-  objectSchema: ComputedRef<string | null>
+  rowOps: RowChangeAdapter
 
   onDeletedRowsApplied?: (deletedCount: number) => void
 }
@@ -238,111 +260,150 @@ export function useAgGridRowChangeTracking(options: UseAgGridRowChangeTrackingOp
     let insertedCount = 0
     let deletedCount = 0
 
-    // First apply inserts
-    if (insertEntries.length > 0) {
+    const isGeneratedInsertColumn = (colName: string): boolean => {
+      const meta = options.columnMetaByName.value.get(colName)
+      if (!meta) return false
+      return Boolean(meta.autoIncrement) || (Boolean(meta.isPrimaryKey) && Boolean(meta.hasDefault))
+    }
+
+    const scrubGenerated = (values: Record<string, unknown>): Record<string, unknown> => {
+      const out: Record<string, unknown> = {}
+      for (const [k, v] of Object.entries(values || {})) {
+        if (isGeneratedInsertColumn(k)) continue
+        out[k] = v
+      }
+      return out
+    }
+
+    const insertPayload = insertEntries.map((ins) => ({ values: scrubGenerated(ins.values) }))
+    const editPayload = editEntries.map(([, edit]) => ({ keys: edit.keys, changes: edit.changes }))
+    const deletePayload = deleteEntries.map(([, del]) => ({ keys: del.keys }))
+
+    if (options.rowOps.applyChanges) {
       try {
-        const isGeneratedInsertColumn = (colName: string): boolean => {
-          const meta = options.columnMetaByName.value.get(colName)
-          if (!meta) return false
-          return (
-            Boolean(meta.autoIncrement) || (Boolean(meta.isPrimaryKey) && Boolean(meta.hasDefault))
-          )
-        }
+        const resp = await options.rowOps.applyChanges({
+          inserts: insertPayload,
+          edits: editPayload,
+          deletes: deletePayload
+        })
 
-        const scrubGenerated = (values: Record<string, unknown>): Record<string, unknown> => {
-          const out: Record<string, unknown> = {}
-          for (const [k, v] of Object.entries(values || {})) {
-            if (isGeneratedInsertColumn(k)) continue
-            out[k] = v
-          }
-          return out
-        }
+        insertedCount = resp.inserted ?? insertEntries.length
+        deletedCount = resp.deleted ?? deleteEntries.length
 
-        const resp = await connections.insertTableRows(
-          options.connectionId.value,
-          options.database.value,
-          options.objectName.value,
-          {
-            schema: options.objectSchema.value || undefined,
-            inserts: insertEntries.map((ins) => ({ values: scrubGenerated(ins.values) }))
-          }
-        )
-
-        insertedCount = resp.inserted
         pendingInserts.value = {}
+        pendingEdits.value = {}
+        pendingDeletes.value = {}
         api.setGridOption('pinnedTopRowData', [])
 
-        // Refresh grid so newly inserted rows can appear if they fall into current page/sort.
-        api.purgeInfiniteCache()
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : 'Failed to insert rows'
-        options.toast.error(msg)
-        return // Don't continue if inserts failed
-      }
-    }
+        const shouldRefresh =
+          options.rowOps.forceRefreshAfterSave ||
+          insertEntries.length > 0 ||
+          deleteEntries.length > 0 ||
+          !resp.rows ||
+          resp.rows.length !== editEntries.length
 
-    // First apply edits
-    if (editEntries.length > 0) {
-      try {
-        const resp = await connections.updateTableRows(
-          options.connectionId.value,
-          options.database.value,
-          options.objectName.value,
-          {
-            schema: options.objectSchema.value || undefined,
-            edits: editEntries.map(([, edit]) => ({ keys: edit.keys, changes: edit.changes }))
+        if (!shouldRefresh && resp.rows) {
+          for (let i = 0; i < editEntries.length; i++) {
+            const [rowId] = editEntries[i]
+            const row = resp.rows[i]
+            const node = api.getRowNode(rowId)
+            if (node && row) node.setData(row)
           }
-        )
-
-        if (!resp.rows || resp.rows.length !== editEntries.length) {
-          throw new Error('Unexpected response from server')
+        } else {
+          api.purgeInfiniteCache()
         }
 
-        for (let i = 0; i < editEntries.length; i++) {
-          const [rowId] = editEntries[i]
-          const row = resp.rows[i]
-          const node = api.getRowNode(rowId)
-          if (node && row) node.setData(row)
-        }
-
-        pendingEdits.value = {}
         editSuccess = true
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : 'Failed to save edits'
-        options.toast.error(msg)
-        return // Don't continue to deletes if edits failed
-      }
-    } else {
-      editSuccess = true
-    }
-
-    // Then apply deletes
-    if (deleteEntries.length > 0) {
-      try {
-        const resp = await connections.deleteTableRows(
-          options.connectionId.value,
-          options.database.value,
-          options.objectName.value,
-          {
-            schema: options.objectSchema.value || undefined,
-            deletes: deleteEntries.map(([, del]) => ({ keys: del.keys }))
-          }
-        )
-
-        deletedCount = resp.deleted
-        pendingDeletes.value = {}
         deleteSuccess = true
-
         options.onDeletedRowsApplied?.(deletedCount)
-
-        // Refresh the grid to remove deleted rows
-        api.purgeInfiniteCache()
       } catch (e) {
-        const msg = e instanceof Error ? e.message : 'Failed to delete rows'
+        const msg = e instanceof Error ? e.message : 'Failed to save rows'
         options.toast.error(msg)
+        return
       }
     } else {
-      deleteSuccess = true
+      // First apply inserts
+      if (insertEntries.length > 0) {
+        if (!options.rowOps.insertRows) {
+          options.toast.error('Insert is not supported')
+          return
+        }
+        try {
+          const resp = await options.rowOps.insertRows({ inserts: insertPayload })
+
+          insertedCount = resp.inserted
+          pendingInserts.value = {}
+          api.setGridOption('pinnedTopRowData', [])
+
+          // Refresh grid so newly inserted rows can appear if they fall into current page/sort.
+          api.purgeInfiniteCache()
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : 'Failed to insert rows'
+          options.toast.error(msg)
+          return // Don't continue if inserts failed
+        }
+      }
+
+      // Then apply edits
+      if (editEntries.length > 0) {
+        if (!options.rowOps.updateRows) {
+          options.toast.error('Update is not supported')
+          return
+        }
+        try {
+          const resp = await options.rowOps.updateRows({ edits: editPayload })
+
+          const shouldRefresh =
+            options.rowOps.forceRefreshAfterSave ||
+            !resp.rows ||
+            resp.rows.length !== editEntries.length
+
+          if (!shouldRefresh && resp.rows) {
+            for (let i = 0; i < editEntries.length; i++) {
+              const [rowId] = editEntries[i]
+              const row = resp.rows[i]
+              const node = api.getRowNode(rowId)
+              if (node && row) node.setData(row)
+            }
+          } else {
+            api.purgeInfiniteCache()
+          }
+
+          pendingEdits.value = {}
+          editSuccess = true
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : 'Failed to save edits'
+          options.toast.error(msg)
+          return // Don't continue to deletes if edits failed
+        }
+      } else {
+        editSuccess = true
+      }
+
+      // Then apply deletes
+      if (deleteEntries.length > 0) {
+        if (!options.rowOps.deleteRows) {
+          options.toast.error('Delete is not supported')
+          return
+        }
+        try {
+          const resp = await options.rowOps.deleteRows({ deletes: deletePayload })
+
+          deletedCount = resp.deleted
+          pendingDeletes.value = {}
+          deleteSuccess = true
+
+          options.onDeletedRowsApplied?.(deletedCount)
+
+          // Refresh the grid to remove deleted rows
+          api.purgeInfiniteCache()
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : 'Failed to delete rows'
+          options.toast.error(msg)
+        }
+      } else {
+        deleteSuccess = true
+      }
     }
 
     if (editSuccess && deleteSuccess) {

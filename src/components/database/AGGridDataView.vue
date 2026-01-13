@@ -349,11 +349,38 @@ const {
   columnMetaByName,
   gridApi: baseGrid.gridApi,
   toast,
-
-  connectionId: computed(() => props.connectionId),
-  database: computed(() => props.database),
-  objectName: computed(() => getObjectName(props.tableMeta)),
-  objectSchema: computed(() => getObjectSchema(props.tableMeta) || null),
+  rowOps: {
+    insertRows: (payload) =>
+      connections.insertTableRows(
+        props.connectionId,
+        props.database,
+        getObjectName(props.tableMeta),
+        {
+          schema: getObjectSchema(props.tableMeta) || undefined,
+          inserts: payload.inserts
+        }
+      ),
+    updateRows: (payload) =>
+      connections.updateTableRows(
+        props.connectionId,
+        props.database,
+        getObjectName(props.tableMeta),
+        {
+          schema: getObjectSchema(props.tableMeta) || undefined,
+          edits: payload.edits
+        }
+      ),
+    deleteRows: (payload) =>
+      connections.deleteTableRows(
+        props.connectionId,
+        props.database,
+        getObjectName(props.tableMeta),
+        {
+          schema: getObjectSchema(props.tableMeta) || undefined,
+          deletes: payload.deletes
+        }
+      )
+  },
 
   onDeletedRowsApplied: exactCount.applyDeletedCount
 })
