@@ -31,11 +31,11 @@ defineExpose({
 <template>
   <div
     :class="[
-      'bg-white dark:bg-gray-850',
+      'bg-white dark:bg-gray-850 h-full min-h-0 flex flex-col',
       $attrs.class ? $attrs.class : 'shadow-sm ring-1 ring-gray-900/5 dark:ring-gray-700 rounded-lg'
     ]"
   >
-    <div class="p-4">
+    <div class="p-4 flex-1 min-h-0">
       <AGGridFileDataView
         ref="agGridRef"
         :entry="entry"

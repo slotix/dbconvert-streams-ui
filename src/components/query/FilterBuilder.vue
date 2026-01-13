@@ -88,7 +88,7 @@
     </div>
 
     <!-- WHERE Filters -->
-    <div v-if="filters.length > 0" class="space-y-1.5">
+    <div v-if="filters.length > 0" class="space-y-1.5 max-h-48 overflow-y-auto pr-1">
       <div
         v-for="filter in filters"
         :key="filter.id"
@@ -135,7 +135,7 @@
     </div>
 
     <!-- ORDER BY -->
-    <div v-if="sorts.length > 0" class="space-y-1.5">
+    <div v-if="sorts.length > 0" class="space-y-1.5 max-h-40 overflow-y-auto pr-1">
       <div
         v-for="(sort, index) in sorts"
         :key="index"

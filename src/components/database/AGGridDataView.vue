@@ -682,7 +682,7 @@ defineExpose({
 </script>
 
 <template>
-  <div class="flex flex-col h-full">
+  <div class="flex flex-col h-full min-h-0">
     <!-- Toolbar with Filter Panel and Export -->
     <div class="flex flex-col">
       <!-- Data Filter Panel (replaces SQL Query Banner) -->
@@ -889,10 +889,10 @@ defineExpose({
     <!-- AG Grid -->
     <div
       :ref="(el) => (baseGrid.gridContainerRef.value = el as HTMLElement)"
-      class="ag-theme-alpine select-none"
+      class="ag-theme-alpine select-none flex-1 min-h-0"
       :style="{
         width: '100%',
-        height: '750px'
+        height: '100%'
       }"
     >
       <AgGridVue

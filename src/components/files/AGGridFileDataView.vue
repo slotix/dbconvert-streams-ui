@@ -68,11 +68,6 @@ const editDisabledReason = computed(() => {
   return ''
 })
 
-const tableFolderNote = computed(() => {
-  if (!isTableFolder.value) return ''
-  return 'Folder groups multiple files. Open a specific file to edit.'
-})
-
 const editKeyColumns = computed(() => (isTableEditable.value ? [ROW_ID_COLUMN] : []))
 
 const fileColumns = computed(() => {
@@ -683,7 +678,7 @@ defineExpose({
 </script>
 
 <template>
-  <div class="flex flex-col h-full">
+  <div class="flex flex-col h-full min-h-0">
     <!-- Unsupported file type message -->
     <UnsupportedFileMessage
       v-if="isUnsupportedFile"
@@ -727,6 +722,15 @@ defineExpose({
         >
           <span class="badge-text">Read-only</span>
           <span class="badge-text-short">RO</span>
+        </span>
+
+        <span
+          v-if="isTableFolder"
+          class="stat-badge stat-badge-gray"
+          title="Folder groups multiple files. Open a specific file to edit."
+        >
+          <span class="badge-text">Table folder</span>
+          <span class="badge-text-short">Folder</span>
         </span>
 
         <span
@@ -804,14 +808,6 @@ defineExpose({
       </div>
     </div>
 
-    <div
-      v-if="!isUnsupportedFile && tableFolderNote"
-      class="mb-3 p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-md text-sm text-blue-700 dark:text-blue-200"
-    >
-      <div class="font-medium mb-1">Table folder</div>
-      <p>{{ tableFolderNote }}</p>
-    </div>
-
     <!-- Warnings (only show when there's no error) -->
     <div
       v-if="!isUnsupportedFile && !baseGrid.error.value && warnings.length > 0"
@@ -866,8 +862,8 @@ defineExpose({
     <div
       v-if="!isUnsupportedFile && !baseGrid.error.value"
       :ref="(el) => (baseGrid.gridContainerRef.value = el as HTMLElement)"
-      class="relative ag-theme-alpine select-none"
-      style="height: 750px; width: 100%"
+      class="relative ag-theme-alpine select-none flex-1 min-h-0"
+      style="height: 100%; width: 100%"
     >
       <ag-grid-vue
         class="h-full w-full"

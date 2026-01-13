@@ -303,6 +303,19 @@ const isRefreshing = ref(false)
 const activeTabName = computed(() => tabs.value[selectedIndex.value]?.name || '')
 const isSummaryTab = computed(() => activeTabName.value === 'Summary')
 
+const isFileObject = computed(() => props.objectType === 'file' && Boolean(props.fileEntry))
+
+const supportsFileFilters = computed(() => {
+  if (!isFileObject.value || !props.fileEntry) return false
+  if (props.fileEntry.type === 'dir' && !props.fileEntry.isTable) return false
+  const format = props.fileEntry.format || getFileFormat(props.fileEntry.name)
+  return Boolean(format)
+})
+
+const showFilterControls = computed(
+  () => selectedIndex.value === 0 && (isDataObject.value || supportsFileFilters.value)
+)
+
 // Get the current data view's filter panel ref (handles both ref and direct value)
 function getFilterPanel(): FilterPanelMethods | null {
   const dataView = panelRefs.value[0] as DataViewComponent | undefined
@@ -462,7 +475,7 @@ function onOpenDiagram() {
           </div>
 
           <!-- Filter Action Buttons (only shown on Data tab) -->
-          <div v-if="selectedIndex === 0 && isDataObject" class="flex items-center gap-1">
+          <div v-if="showFilterControls" class="flex items-center gap-1">
             <button
               type="button"
               class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded transition-colors"
@@ -562,7 +575,7 @@ function onOpenDiagram() {
               ]"
             />
             {{
-              isDataObject && selectedIndex === 0
+              showFilterControls
                 ? 'Refresh Data'
                 : isSummaryTab
                   ? 'Refresh Summary'
@@ -575,7 +588,12 @@ function onOpenDiagram() {
 
     <!-- Tab Content -->
     <div :class="['flex-1 min-h-0', isSummaryTab ? 'overflow-y-auto' : 'overflow-hidden']">
-      <div v-for="(tab, i) in tabs" v-show="selectedIndex === i" :key="tab.name">
+      <div
+        v-for="(tab, i) in tabs"
+        v-show="selectedIndex === i"
+        :key="tab.name"
+        class="h-full min-h-0"
+      >
         <component
           :is="tab.component"
           v-bind="tab.props"
