@@ -64,8 +64,13 @@ const isTableEditable = computed(() => !isUnsupportedFile.value && !isTableFolde
 
 const editDisabledReason = computed(() => {
   if (isUnsupportedFile.value) return 'Unsupported file type'
-  if (isTableFolder.value) return 'Table folders are read-only for now'
+  if (isTableFolder.value) return 'Table folders are read-only. Edit a single file.'
   return ''
+})
+
+const tableFolderNote = computed(() => {
+  if (!isTableFolder.value) return ''
+  return 'Folder groups multiple files. Open a specific file to edit.'
 })
 
 const editKeyColumns = computed(() => (isTableEditable.value ? [ROW_ID_COLUMN] : []))
@@ -797,6 +802,14 @@ defineExpose({
           </button>
         </template>
       </div>
+    </div>
+
+    <div
+      v-if="!isUnsupportedFile && tableFolderNote"
+      class="mb-3 p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-md text-sm text-blue-700 dark:text-blue-200"
+    >
+      <div class="font-medium mb-1">Table folder</div>
+      <p>{{ tableFolderNote }}</p>
     </div>
 
     <!-- Warnings (only show when there's no error) -->
