@@ -106,6 +106,12 @@ import BaseButton from '@/components/base/BaseButton.vue'
 import 'ag-grid-community/styles/ag-grid.css'
 import 'ag-grid-community/styles/ag-theme-alpine.css'
 import '@/styles/agGridTheme.css'
+import {
+  PAGE_SIZE_OPTIONS,
+  DEFAULT_PAGE_SIZE,
+  GRID_HEADER_HEIGHT,
+  GRID_ROW_HEIGHT_LARGE
+} from '@/constants/gridConfig'
 import type { StreamRun } from '@/types/streamHistory'
 
 // Register AG Grid modules
@@ -274,16 +280,16 @@ const postProcessPopup = (params: PostProcessPopupParams) => {
 
 const gridOptions = computed<GridOptions>(() => ({
   theme: 'legacy',
-  rowHeight: 48,
-  headerHeight: 40,
+  rowHeight: GRID_ROW_HEIGHT_LARGE,
+  headerHeight: GRID_HEADER_HEIGHT,
   suppressCellFocus: true,
   animateRows: false,
   enableCellTextSelection: true,
   domLayout: 'normal',
   // Enable client-side pagination
   pagination: true,
-  paginationPageSize: 20,
-  paginationPageSizeSelector: [20, 50, 100],
+  paginationPageSize: DEFAULT_PAGE_SIZE,
+  paginationPageSizeSelector: PAGE_SIZE_OPTIONS as unknown as number[],
   postProcessPopup,
   defaultColDef: {
     sortable: true,

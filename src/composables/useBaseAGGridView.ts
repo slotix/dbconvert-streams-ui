@@ -24,6 +24,13 @@ import { getSqlDialectFromType } from '@/types/specs'
 import 'ag-grid-community/styles/ag-grid.css'
 import 'ag-grid-community/styles/ag-theme-alpine.css'
 import '@/styles/agGridTheme.css'
+import {
+  PAGE_SIZE_OPTIONS,
+  DEFAULT_PAGE_SIZE,
+  isPageSizeOption,
+  GRID_HEADER_HEIGHT,
+  GRID_ROW_HEIGHT
+} from '@/constants/gridConfig'
 
 // Register AG Grid modules once
 ModuleRegistry.registerModules([AllCommunityModule])
@@ -130,13 +137,8 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
   const selectedRows = ref<Record<string, unknown>[]>([])
   const selectedRowCount = computed(() => selectedRows.value.length)
 
-  // Page size options and state
-  const PAGE_SIZE_OPTIONS = [20, 50, 100, 200, 500] as const
-  type PageSizeOption = (typeof PAGE_SIZE_OPTIONS)[number]
-  function isPageSizeOption(value: number): value is PageSizeOption {
-    return (PAGE_SIZE_OPTIONS as readonly number[]).includes(value)
-  }
-  const pageSize = ref<number>(100) // Default page size
+  // Page size state (options imported from @/constants/gridConfig)
+  const pageSize = ref<number>(DEFAULT_PAGE_SIZE)
 
   // Context menu state (local to each instance)
   const showContextMenu = ref(false)
@@ -206,8 +208,8 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
   const gridOptions = computed<GridOptions>(() => ({
     theme: 'legacy',
     rowModelType: 'infinite',
-    rowHeight: 32,
-    headerHeight: 40,
+    rowHeight: GRID_ROW_HEIGHT,
+    headerHeight: GRID_HEADER_HEIGHT,
     suppressCellFocus: true,
     getRowId,
     rowSelection: {
@@ -223,6 +225,7 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
     domLayout: 'normal',
     pagination: true,
     paginationPageSize: pageSize.value,
+    paginationPageSizeSelector: PAGE_SIZE_OPTIONS as unknown as number[],
     cacheBlockSize: 200,
     cacheOverflowSize: 2,
     maxConcurrentDatasourceRequests: 2,
