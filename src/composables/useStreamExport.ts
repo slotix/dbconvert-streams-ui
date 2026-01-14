@@ -26,8 +26,6 @@ import { buildFileTargetSpec } from '@/utils/specBuilder'
 // Local storage key for the shared export connection ID
 const EXPORT_CONNECTION_KEY = 'dbconvert-export-connection-id'
 const EXPORT_CONNECTION_NAME = 'Data Explorer Export'
-// Empty string lets backend use platform-appropriate temp directory
-const DEFAULT_EXPORT_PATH = ''
 
 export type StreamExportFormat = 'csv' | 'jsonl' | 'parquet'
 
@@ -101,7 +99,7 @@ export function useStreamExport() {
       type: 'files',
       spec: {
         files: {
-          basePath: DEFAULT_EXPORT_PATH
+          basePath: ''
         }
       }
     }
@@ -114,18 +112,26 @@ export function useStreamExport() {
 
     // Refresh connections store
     await connectionsStore.refreshConnections()
+    try {
+      await connectionsApi.pingConnectionById(newConnectionId)
+    } catch (e) {
+      console.warn('Failed to initialize export connection path:', e)
+    }
 
     return newConnectionId
   }
 
   /**
    * Build the custom SQL query for export based on current filters/sorts.
+   * Note: Query is executed by DuckDB, so always use double quotes for identifiers.
+   * DuckDB uses the connection alias as the catalog: "alias"."schema"."table" (Postgres),
+   * or "alias"."table" (MySQL).
    */
   function buildExportQuery(options: StreamExportOptions): string {
     const {
       table,
       schema,
-      dialect = 'mysql',
+      dialect = 'sql',
       objectKey,
       whereClause,
       orderByColumns,
@@ -133,24 +139,25 @@ export function useStreamExport() {
       limit
     } = options
 
-    const quoteId = (name: string) => {
-      if (dialect === 'mysql') return `\`${name}\``
-      if (dialect === 'pgsql') return `"${name}"`
-      return name
-    }
+    // Always use double quotes - query is executed by DuckDB regardless of source dialect
+    const quoteId = (name: string) => `"${name}"`
 
-    // Build table reference with schema if provided
-    const tableRef = schema ? `${quoteId(schema)}.${quoteId(table)}` : quoteId(table)
+    // Build fully qualified table reference for DuckDB using the alias "src".
+    const tableParts = [quoteId('src')]
+    if (schema && dialect !== 'mysql') tableParts.push(quoteId(schema))
+    tableParts.push(quoteId(table))
+    const tableRef = tableParts.join('.')
 
-    const parts: string[] = [`SELECT * FROM ${tableRef}`]
+    const queryParts: string[] = [`SELECT * FROM ${tableRef}`]
 
     // Get WHERE clause - either from params or from query filter store
+    // Use 'pgsql' dialect for double quotes since query is executed by DuckDB
     let where = whereClause
     if (!where && objectKey) {
-      where = queryFilterStore.buildWhereClause(objectKey, true, dialect)
+      where = queryFilterStore.buildWhereClause(objectKey, true, 'pgsql')
     }
     if (where) {
-      parts.push(`WHERE ${where}`)
+      queryParts.push(`WHERE ${where}`)
     }
 
     // Get ORDER BY - either from params or from query filter store
@@ -169,16 +176,16 @@ export function useStreamExport() {
         return `${quoteId(col.trim())} ${dir}`
       })
       if (sortClauses.length > 0) {
-        parts.push(`ORDER BY ${sortClauses.join(', ')}`)
+        queryParts.push(`ORDER BY ${sortClauses.join(', ')}`)
       }
     }
 
     // Add LIMIT if specified
     if (limit && limit > 0) {
-      parts.push(`LIMIT ${limit}`)
+      queryParts.push(`LIMIT ${limit}`)
     }
 
-    return parts.join(' ')
+    return queryParts.join(' ')
   }
 
   /**

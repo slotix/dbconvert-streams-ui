@@ -4,11 +4,11 @@
     <div class="flex items-center justify-between">
       <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">Run History</h3>
       <div class="flex items-center gap-3">
-        <span v-if="runs.length > 0" class="text-xs text-gray-500 dark:text-gray-400">
-          {{ runs.length }} total run{{ runs.length !== 1 ? 's' : '' }}
+        <span v-if="safeRuns.length > 0" class="text-xs text-gray-500 dark:text-gray-400">
+          {{ safeRuns.length }} total run{{ safeRuns.length !== 1 ? 's' : '' }}
         </span>
         <BaseButton
-          v-if="runs.length > 0"
+          v-if="safeRuns.length > 0"
           variant="danger"
           size="sm"
           title="Delete all runs from history"
@@ -28,7 +28,7 @@
 
     <!-- Empty state -->
     <div
-      v-if="runs.length === 0"
+      v-if="safeRuns.length === 0"
       class="text-center py-8 bg-gray-50 dark:bg-gray-900/40 rounded-lg border border-gray-200 dark:border-gray-700"
     >
       <svg
@@ -53,7 +53,7 @@
     <!-- AG Grid table with built-in pagination -->
     <div v-else class="ag-theme-alpine" :style="{ width: '100%', height: '850px' }">
       <AgGridVue
-        :row-data="runs"
+        :row-data="safeRuns"
         :column-defs="columnDefs"
         :grid-options="gridOptions"
         style="width: 100%; height: 100%"
@@ -117,10 +117,18 @@ import type { StreamRun } from '@/types/streamHistory'
 // Register AG Grid modules
 ModuleRegistry.registerModules([AllCommunityModule])
 
-defineProps<{
-  configId: string
-  runs: StreamRun[]
-}>()
+const props = withDefaults(
+  defineProps<{
+    configId: string
+    runs: StreamRun[] | null
+  }>(),
+  {
+    runs: () => []
+  }
+)
+
+// Computed to safely access runs (handles null)
+const safeRuns = computed(() => props.runs ?? [])
 
 const emit = defineEmits<{
   'delete-run': [runId: string]
