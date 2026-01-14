@@ -6,7 +6,7 @@
  *
  * Features:
  * - Shared file connection for all exports (created once, reused)
- * - Custom SQL query support (with WHERE, ORDER BY, LIMIT)
+ * - Uses table filters/sorts/limit from the filter panel
  * - Navigates to stream monitor after starting export
  */
 
@@ -20,9 +20,8 @@ import { updateStreamsViewState } from '@/utils/streamsViewState'
 import connectionsApi from '@/api/connections'
 import streamsApi from '@/api/streams'
 import type { Connection } from '@/types/connections'
-import type { StreamConfig, QuerySource } from '@/types/streamConfig'
+import type { StreamConfig, TableFilterState } from '@/types/streamConfig'
 import { buildFileTargetSpec } from '@/utils/specBuilder'
-import { buildPanelClauses } from '@/components/query'
 
 // Local storage key for the shared export connection ID
 const EXPORT_CONNECTION_KEY = 'dbconvert-export-connection-id'
@@ -122,122 +121,26 @@ export function useStreamExport() {
     return newConnectionId
   }
 
-  /**
-   * Build the custom SQL query for export based on current filters/sorts.
-   * Note: Query is executed by DuckDB, so always use double quotes for identifiers.
-   * DuckDB uses the connection alias as the catalog: "alias"."schema"."table" (Postgres),
-   * or "alias"."table" (MySQL).
-   */
-  function buildExportQuery(options: StreamExportOptions): string {
-    const {
-      table,
-      schema,
-      dialect = 'sql',
-      objectKey,
-      whereClause,
-      orderByColumns,
-      orderByDirections,
-      limit
-    } = options
+  function buildTableFilterState(objectKey?: string): TableFilterState | undefined {
+    if (!objectKey) return undefined
+    const panelState = tabStateStore.getFilterPanelState(objectKey)
+    if (!panelState) return undefined
 
-    // Always use double quotes - query is executed by DuckDB regardless of source dialect
-    const quoteId = (name: string) => `"${name}"`
+    const hasFilters = panelState.filters?.some((f) => f.column && (f.value || f.operator))
+    const hasSorts = panelState.sorts?.some((s) => s.column)
+    const hasLimit = Boolean(panelState.limit && panelState.limit > 0)
+    const hasSelectedColumns = Boolean(panelState.selectedColumns?.length)
 
-    // Build fully qualified table reference for DuckDB using the alias "src".
-    const tableParts = [quoteId('src')]
-    if (schema && dialect !== 'mysql') tableParts.push(quoteId(schema))
-    tableParts.push(quoteId(table))
-    const tableRef = tableParts.join('.')
-
-    const queryParts: string[] = [`SELECT * FROM ${tableRef}`]
-
-    // Get WHERE clause - either from params or from AG Grid panel state
-    // Use 'pgsql' dialect for double quotes since query is executed by DuckDB
-    let where = whereClause
-    if (!where && objectKey) {
-      const gridState = tabStateStore.getAGGridDataState(objectKey)
-      if (gridState?.panelWhereSQL) {
-        where = gridState.panelWhereSQL
-      } else {
-        const panelState = tabStateStore.getFilterPanelState(objectKey)
-        if (panelState) {
-          where = buildPanelClauses({
-            filters: panelState.filters,
-            sorts: panelState.sorts,
-            limit: panelState.limit,
-            dialect: 'pgsql',
-            quoteColumns: true
-          }).where
-        }
-      }
-    }
-    if (where) {
-      queryParts.push(`WHERE ${where}`)
+    if (!hasFilters && !hasSorts && !hasLimit && !hasSelectedColumns) {
+      return undefined
     }
 
-    // Get ORDER BY - either from params or from AG Grid panel state
-    let orderCols = orderByColumns
-    let orderDirs = orderByDirections
-    if (!orderCols && objectKey) {
-      const gridState = tabStateStore.getAGGridDataState(objectKey)
-      if (gridState?.sortModel?.length) {
-        orderCols = gridState.sortModel.map((s) => s.colId).join(',')
-        orderDirs = gridState.sortModel.map((s) => (s.sort || 'asc').toUpperCase()).join(',')
-      } else {
-        const panelState = tabStateStore.getFilterPanelState(objectKey)
-        if (panelState) {
-          const panelClauses = buildPanelClauses({
-            filters: panelState.filters,
-            sorts: panelState.sorts,
-            limit: panelState.limit,
-            dialect: 'pgsql',
-            quoteColumns: true
-          })
-          orderCols = panelClauses.orderBy
-          orderDirs = panelClauses.orderDir
-        }
-      }
+    return {
+      selectedColumns: panelState.selectedColumns?.length ? panelState.selectedColumns : undefined,
+      filters: panelState.filters?.length ? panelState.filters : undefined,
+      sorts: panelState.sorts?.length ? panelState.sorts : undefined,
+      limit: panelState.limit ?? undefined
     }
-
-    if (orderCols) {
-      const cols = orderCols.split(',').filter((c) => c.trim())
-      const dirs = orderDirs?.split(',') || []
-      const sortClauses = cols.map((col, i) => {
-        const dir = dirs[i]?.trim().toUpperCase() || 'ASC'
-        return `${quoteId(col.trim())} ${dir}`
-      })
-      if (sortClauses.length > 0) {
-        queryParts.push(`ORDER BY ${sortClauses.join(', ')}`)
-      }
-    }
-
-    // Add LIMIT if specified (options override panel state)
-    let exportLimit = limit
-    if ((!exportLimit || exportLimit <= 0) && objectKey) {
-      const gridState = tabStateStore.getAGGridDataState(objectKey)
-      if (gridState?.panelLimit && gridState.panelLimit > 0) {
-        exportLimit = gridState.panelLimit
-      } else {
-        const panelState = tabStateStore.getFilterPanelState(objectKey)
-        if (panelState) {
-          const panelLimit = buildPanelClauses({
-            filters: panelState.filters,
-            sorts: panelState.sorts,
-            limit: panelState.limit,
-            dialect: 'pgsql',
-            quoteColumns: true
-          }).limit
-          if (panelLimit && panelLimit > 0) {
-            exportLimit = panelLimit
-          }
-        }
-      }
-    }
-    if (exportLimit && exportLimit > 0) {
-      queryParts.push(`LIMIT ${exportLimit}`)
-    }
-
-    return queryParts.join(' ')
   }
 
   /**
@@ -247,20 +150,13 @@ export function useStreamExport() {
     options: StreamExportOptions,
     targetConnectionId: string
   ): Promise<string> {
-    const { connectionId, database, schema, table, format } = options
+    const { connectionId, database, schema, table, format, objectKey } = options
 
-    // Build the custom SQL query
-    const query = buildExportQuery(options)
+    const filter = buildTableFilterState(objectKey)
 
     // Create stream config
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
     const streamName = `Export ${table} to ${format.toUpperCase()} - ${timestamp}`
-
-    // Use QuerySource for custom SQL queries (convert mode)
-    const querySource: QuerySource = {
-      name: table,
-      query: query
-    }
 
     // Build target spec for file output
     // Output goes to the connection's basePath
@@ -277,7 +173,12 @@ export function useStreamExport() {
             connectionId,
             database: database,
             schema: schema,
-            queries: [querySource]
+            tables: [
+              {
+                name: table,
+                ...(filter ? { filter } : {})
+              }
+            ]
           }
         ]
       },
@@ -374,7 +275,6 @@ export function useStreamExport() {
     // Methods
     exportTable,
     getOrCreateExportConnection,
-    buildExportQuery,
     getExportConnectionId,
     clearExportConnectionId
   }
