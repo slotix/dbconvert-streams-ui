@@ -345,13 +345,6 @@ export function useDatabaseExplorerController({
       tabManager.preloadMetadataForRestoredTabs()
     }
 
-    const focusConnIdFromStream = window.sessionStorage.getItem('explorerFocusConnectionId')
-    if (focusConnIdFromStream) {
-      // Navigation from stream config - select the connection
-      viewState.selectConnection(focusConnIdFromStream)
-      window.sessionStorage.removeItem('explorerFocusConnectionId')
-    }
-
     window.addEventListener('keydown', handleKeyboardShortcut)
 
     if (

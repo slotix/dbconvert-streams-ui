@@ -3,6 +3,7 @@ import { useRouter } from 'vue-router'
 import { useConnectionsStore } from '@/stores/connections'
 import { useFileExplorerStore } from '@/stores/fileExplorer'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
+import { useExplorerViewStateStore } from '@/stores/explorerViewState'
 import type { StreamConfig } from '@/types/streamConfig'
 import type { Connection } from '@/types/connections'
 import { getConnectionKindFromSpec, isFileBasedKind } from '@/types/specs'
@@ -24,6 +25,7 @@ export function useStreamExplorerNavigation({
   const connectionsStore = useConnectionsStore()
   const fileExplorerStore = useFileExplorerStore()
   const explorerNavigationStore = useExplorerNavigationStore()
+  const explorerViewStateStore = useExplorerViewStateStore()
 
   const isFileTarget = computed(() => {
     const kind = getConnectionKindFromSpec(target.value?.spec)
@@ -50,14 +52,20 @@ export function useStreamExplorerNavigation({
     if (isSourceFile) {
       await fileExplorerStore.loadEntries(source.value.id, true)
       explorerNavigationStore.selectConnection(source.value.id)
-      window.sessionStorage.setItem('explorerFocusConnectionId', source.value.id)
     } else if (sourceDatabase.value) {
       explorerNavigationStore.selectDatabase(source.value.id, sourceDatabase.value)
     }
 
+    if (isSourceFile) {
+      explorerViewStateStore.selectConnection(source.value.id)
+    } else if (sourceDatabase.value) {
+      explorerViewStateStore.selectDatabase(source.value.id, sourceDatabase.value)
+    } else {
+      explorerViewStateStore.selectConnection(source.value.id)
+    }
+
     router.push({
-      name: 'DatabaseMetadata',
-      params: { id: source.value.id },
+      name: 'DatabaseExplorer',
       query: {
         details: 'true',
         db: isSourceFile ? undefined : sourceDatabase.value || undefined
@@ -74,14 +82,20 @@ export function useStreamExplorerNavigation({
     if (isFileTarget.value) {
       await fileExplorerStore.loadEntries(target.value.id, true)
       explorerNavigationStore.selectConnection(target.value.id)
-      window.sessionStorage.setItem('explorerFocusConnectionId', target.value.id)
     } else if (targetDatabase.value) {
       explorerNavigationStore.selectDatabase(target.value.id, targetDatabase.value)
     }
 
+    if (isFileTarget.value) {
+      explorerViewStateStore.selectConnection(target.value.id)
+    } else if (targetDatabase.value) {
+      explorerViewStateStore.selectDatabase(target.value.id, targetDatabase.value)
+    } else {
+      explorerViewStateStore.selectConnection(target.value.id)
+    }
+
     router.push({
-      name: 'DatabaseMetadata',
-      params: { id: target.value.id },
+      name: 'DatabaseExplorer',
       query: {
         details: 'true',
         db: isFileTarget.value ? undefined : targetDatabase.value || undefined
@@ -106,7 +120,6 @@ export function useStreamExplorerNavigation({
     if (isFileBased) {
       await fileExplorerStore.loadEntries(connection.id, true)
       explorerNavigationStore.selectConnection(connection.id)
-      window.sessionStorage.setItem('explorerFocusConnectionId', connection.id)
     }
 
     // Find the database from stream config for this connection
@@ -119,9 +132,16 @@ export function useStreamExplorerNavigation({
       explorerNavigationStore.selectDatabase(connection.id, database)
     }
 
+    if (isFileBased) {
+      explorerViewStateStore.selectConnection(connection.id)
+    } else if (database) {
+      explorerViewStateStore.selectDatabase(connection.id, database)
+    } else {
+      explorerViewStateStore.selectConnection(connection.id)
+    }
+
     router.push({
-      name: 'DatabaseMetadata',
-      params: { id: connection.id },
+      name: 'DatabaseExplorer',
       query: {
         details: 'true',
         db: isFileBased ? undefined : database || undefined
