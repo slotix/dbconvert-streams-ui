@@ -5,6 +5,8 @@
  */
 
 export type SqlDialect = 'mysql' | 'pgsql' | 'sql'
+export type FilterClause = { column: string; operator: string; value: string }
+export type SortClause = { column: string; direction: 'ASC' | 'DESC' }
 
 // Operators that don't need a value
 const UNARY_OPERATORS = ['IS NULL', 'IS NOT NULL']
@@ -94,4 +96,31 @@ export function operatorToSql(
       return `${col} ${operator} ${val}`
     }
   }
+}
+
+/**
+ * Build WHERE/ORDER/LIMIT clauses from filter panel state.
+ */
+export function buildPanelClauses(params: {
+  filters?: FilterClause[]
+  sorts?: SortClause[]
+  limit?: number | null
+  dialect?: SqlDialect
+  quoteColumns?: boolean
+}): { where: string; orderBy: string; orderDir: string; limit?: number } {
+  const { filters = [], sorts = [], limit = null, dialect = 'mysql', quoteColumns = false } = params
+
+  const whereConditions = filters
+    .filter((f) => f.column && (isUnaryOperator(f.operator) || f.value))
+    .map((f) => operatorToSql(f.column, f.operator, f.value, dialect, quoteColumns))
+
+  const where = whereConditions.join(' AND ')
+
+  const validSorts = sorts.filter((s) => s.column)
+  const orderBy = validSorts.map((s) => s.column).join(',')
+  const orderDir = validSorts.map((s) => s.direction).join(',')
+
+  const normalizedLimit = limit !== null && limit > 0 ? limit : undefined
+
+  return { where, orderBy, orderDir, limit: normalizedLimit }
 }

@@ -15,13 +15,14 @@ import { useRouter } from 'vue-router'
 import { useConnectionsStore } from '@/stores/connections'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useMonitoringStore } from '@/stores/monitoring'
-import { useQueryFilterStore } from '@/stores/queryFilterStore'
+import { useObjectTabStateStore } from '@/stores/objectTabState'
 import { updateStreamsViewState } from '@/utils/streamsViewState'
 import connectionsApi from '@/api/connections'
 import streamsApi from '@/api/streams'
 import type { Connection } from '@/types/connections'
 import type { StreamConfig, QuerySource } from '@/types/streamConfig'
 import { buildFileTargetSpec } from '@/utils/specBuilder'
+import { buildPanelClauses } from '@/components/query'
 
 // Local storage key for the shared export connection ID
 const EXPORT_CONNECTION_KEY = 'dbconvert-export-connection-id'
@@ -66,7 +67,7 @@ export function useStreamExport() {
   const connectionsStore = useConnectionsStore()
   const streamsStore = useStreamsStore()
   const monitoringStore = useMonitoringStore()
-  const queryFilterStore = useQueryFilterStore()
+  const tabStateStore = useObjectTabStateStore()
 
   const isExporting = ref(false)
   const exportError = ref<string | null>(null)
@@ -150,22 +151,52 @@ export function useStreamExport() {
 
     const queryParts: string[] = [`SELECT * FROM ${tableRef}`]
 
-    // Get WHERE clause - either from params or from query filter store
+    // Get WHERE clause - either from params or from AG Grid panel state
     // Use 'pgsql' dialect for double quotes since query is executed by DuckDB
     let where = whereClause
     if (!where && objectKey) {
-      where = queryFilterStore.buildWhereClause(objectKey, true, 'pgsql')
+      const gridState = tabStateStore.getAGGridDataState(objectKey)
+      if (gridState?.panelWhereSQL) {
+        where = gridState.panelWhereSQL
+      } else {
+        const panelState = tabStateStore.getFilterPanelState(objectKey)
+        if (panelState) {
+          where = buildPanelClauses({
+            filters: panelState.filters,
+            sorts: panelState.sorts,
+            limit: panelState.limit,
+            dialect: 'pgsql',
+            quoteColumns: true
+          }).where
+        }
+      }
     }
     if (where) {
       queryParts.push(`WHERE ${where}`)
     }
 
-    // Get ORDER BY - either from params or from query filter store
+    // Get ORDER BY - either from params or from AG Grid panel state
     let orderCols = orderByColumns
     let orderDirs = orderByDirections
     if (!orderCols && objectKey) {
-      orderCols = queryFilterStore.buildOrderByColumns(objectKey)
-      orderDirs = queryFilterStore.buildOrderByDirections(objectKey)
+      const gridState = tabStateStore.getAGGridDataState(objectKey)
+      if (gridState?.sortModel?.length) {
+        orderCols = gridState.sortModel.map((s) => s.colId).join(',')
+        orderDirs = gridState.sortModel.map((s) => (s.sort || 'asc').toUpperCase()).join(',')
+      } else {
+        const panelState = tabStateStore.getFilterPanelState(objectKey)
+        if (panelState) {
+          const panelClauses = buildPanelClauses({
+            filters: panelState.filters,
+            sorts: panelState.sorts,
+            limit: panelState.limit,
+            dialect: 'pgsql',
+            quoteColumns: true
+          })
+          orderCols = panelClauses.orderBy
+          orderDirs = panelClauses.orderDir
+        }
+      }
     }
 
     if (orderCols) {
@@ -180,9 +211,30 @@ export function useStreamExport() {
       }
     }
 
-    // Add LIMIT if specified
-    if (limit && limit > 0) {
-      queryParts.push(`LIMIT ${limit}`)
+    // Add LIMIT if specified (options override panel state)
+    let exportLimit = limit
+    if ((!exportLimit || exportLimit <= 0) && objectKey) {
+      const gridState = tabStateStore.getAGGridDataState(objectKey)
+      if (gridState?.panelLimit && gridState.panelLimit > 0) {
+        exportLimit = gridState.panelLimit
+      } else {
+        const panelState = tabStateStore.getFilterPanelState(objectKey)
+        if (panelState) {
+          const panelLimit = buildPanelClauses({
+            filters: panelState.filters,
+            sorts: panelState.sorts,
+            limit: panelState.limit,
+            dialect: 'pgsql',
+            quoteColumns: true
+          }).limit
+          if (panelLimit && panelLimit > 0) {
+            exportLimit = panelLimit
+          }
+        }
+      }
+    }
+    if (exportLimit && exportLimit > 0) {
+      queryParts.push(`LIMIT ${exportLimit}`)
     }
 
     return queryParts.join(' ')

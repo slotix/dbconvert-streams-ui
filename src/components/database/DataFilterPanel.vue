@@ -100,7 +100,7 @@ import {
   type ColumnDef,
   type FilterCondition,
   type SortCondition,
-  operatorToSql,
+  buildPanelClauses,
   isUnaryOperator
 } from '@/components/query'
 
@@ -155,25 +155,35 @@ const normalizedColumns = computed<ColumnDef[]>(() =>
 const collapsedSqlPreview = computed(() => {
   const parts: string[] = []
 
-  // WHERE conditions
-  const whereConditions = filters.value
-    .filter((f) => f.column && (isUnaryOperator(f.operator) || f.value))
-    .map((f) => operatorToSql(f.column, f.operator, f.value, props.dialect, false))
+  const {
+    where,
+    orderBy,
+    orderDir,
+    limit: limitValue
+  } = buildPanelClauses({
+    filters: filters.value,
+    sorts: sorts.value,
+    limit: limit.value,
+    dialect: props.dialect,
+    quoteColumns: false
+  })
 
-  if (whereConditions.length > 0) {
-    parts.push(`WHERE ${whereConditions.join(' AND ')}`)
+  if (where) {
+    parts.push(`WHERE ${where}`)
   }
 
-  // ORDER BY
-  const sortClauses = sorts.value.filter((s) => s.column).map((s) => `${s.column} ${s.direction}`)
-
-  if (sortClauses.length > 0) {
+  if (orderBy) {
+    const columns = orderBy.split(',')
+    const directions = orderDir.split(',')
+    const sortClauses = columns.map((col, i) => {
+      const direction = directions[i] || 'ASC'
+      return `${col} ${direction}`
+    })
     parts.push(`ORDER BY ${sortClauses.join(', ')}`)
   }
 
-  // LIMIT
-  if (limit.value !== null && limit.value > 0) {
-    parts.push(`LIMIT ${limit.value}`)
+  if (limitValue) {
+    parts.push(`LIMIT ${limitValue}`)
   }
 
   return parts.join(' ')
@@ -308,20 +318,18 @@ function toggleColumnSelector() {
 }
 
 function applyFilters() {
-  // Build WHERE clause
-  const whereConditions = filters.value
-    .filter((f) => f.column && (isUnaryOperator(f.operator) || f.value))
-    .map((f) => operatorToSql(f.column, f.operator, f.value, props.dialect, false))
-
-  const where = whereConditions.join(' AND ')
-
-  // Build ORDER BY
-  const validSorts = sorts.value.filter((s) => s.column)
-  const orderBy = validSorts.map((s) => s.column).join(',')
-  const orderDir = validSorts.map((s) => s.direction).join(',')
-
-  // Build LIMIT
-  const limitValue = limit.value !== null && limit.value > 0 ? limit.value : undefined
+  const {
+    where,
+    orderBy,
+    orderDir,
+    limit: limitValue
+  } = buildPanelClauses({
+    filters: filters.value,
+    sorts: sorts.value,
+    limit: limit.value,
+    dialect: props.dialect,
+    quoteColumns: false
+  })
 
   emit('apply', { where, orderBy, orderDir, limit: limitValue })
   isDirty.value = false
