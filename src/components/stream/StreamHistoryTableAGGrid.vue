@@ -262,14 +262,15 @@ const columnDefs = ref<ColDef[]>([
     headerName: 'Rows',
     sortable: true,
     filter: false,
-    width: 150,
+    minWidth: 100,
+    flex: 1,
     cellRenderer: rowsCellRenderer
   },
   {
     headerName: 'Actions',
     sortable: false,
     filter: false,
-    width: 120,
+    width: 100,
     cellRenderer: actionsCellRenderer,
     pinned: 'right',
     suppressHeaderMenuButton: true

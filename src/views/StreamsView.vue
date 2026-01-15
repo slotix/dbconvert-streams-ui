@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-full">
+  <div class="h-screen overflow-hidden flex flex-col">
     <!-- Disconnected Overlay -->
     <DisconnectedOverlay />
 
@@ -63,7 +63,7 @@
     </header>
 
     <!-- Main Content -->
-    <main class="mx-auto py-4 overflow-x-hidden">
+    <main class="flex-1 mx-auto py-4 overflow-hidden w-full">
       <!-- No streams (show regardless of backend connection status) -->
       <div
         v-if="streamsCount() === 0"
@@ -94,10 +94,10 @@
       </div>
 
       <!-- Streams with resizable sidebar -->
-      <div v-else class="px-4 sm:px-6 lg:px-8">
+      <div v-else class="px-4 sm:px-6 lg:px-8 h-full">
         <div
           :ref="(el) => (sidebar.sidebarContainerRef.value = el as HTMLElement)"
-          class="mt-6 flex flex-row items-stretch min-w-0 overflow-x-hidden"
+          class="pt-6 flex flex-row items-stretch min-w-0 overflow-hidden h-full"
         >
           <!-- Sidebar -->
           <div
@@ -186,7 +186,7 @@
             :class="[
               'grow',
               'min-w-0',
-              'overflow-x-hidden',
+              'overflow-hidden',
               sidebar.sidebarVisible.value ? 'pl-2' : 'pl-0'
             ]"
           >
