@@ -675,6 +675,18 @@ describe('StreamConfigValidator', () => {
       expect(result.errors.filter((e) => e.path.includes('compression'))).toHaveLength(0)
     })
 
+    it('should accept valid compression: snappy', () => {
+      const config = {
+        ...validConfig,
+        target: {
+          ...validConfig.target,
+          spec: { local: { compression: 'snappy' } }
+        }
+      }
+      const result = validateStreamConfig(config)
+      expect(result.errors.filter((e) => e.path.includes('compression'))).toHaveLength(0)
+    })
+
     it('should accept valid compression: none', () => {
       const config = {
         ...validConfig,

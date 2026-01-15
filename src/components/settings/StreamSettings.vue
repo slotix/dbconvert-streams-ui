@@ -291,6 +291,7 @@ const compressionOptions = computed(() => {
     // Parquet has built-in compression - no file extension added
     return [
       { value: 'zstd', label: 'ZSTD - Recommended' },
+      { value: 'snappy', label: 'SNAPPY - Fast Decoding' },
       { value: 'gzip', label: 'GZIP - Legacy Compatibility' },
       { value: 'uncompressed', label: 'Uncompressed - No Compression' }
     ]
@@ -412,6 +413,8 @@ const compressionDescription = computed(() => {
   switch (compressionType.value) {
     case 'zstd':
       return `Best compression ratio with fast decompression - modern standard (recommended)${parquetNote}`
+    case 'snappy':
+      return `Fast compression and decompression - common Parquet default${parquetNote}`
     case 'gzip':
       return `Good balance of compression and speed - for legacy system compatibility${parquetNote}`
     case 'uncompressed':

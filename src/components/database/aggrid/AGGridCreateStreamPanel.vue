@@ -36,7 +36,7 @@ const format = ref<StreamExportFormat>('csv')
 const runImmediately = ref(true)
 const streamName = ref('')
 const streamNameTouched = ref(false)
-const compression = ref<'none' | 'gzip' | 'zstd'>('none')
+const compression = ref<'none' | 'gzip' | 'zstd' | 'snappy'>('none')
 const targetBasePath = ref('')
 const showOptions = ref(false)
 
@@ -74,6 +74,23 @@ const currentExportBasePath = computed(() => {
   return connection?.spec?.files?.basePath || ''
 })
 
+const compressionOptions = computed(() => {
+  if (format.value === 'parquet') {
+    return [
+      { value: 'none', label: 'None' },
+      { value: 'zstd', label: 'Zstd' },
+      { value: 'snappy', label: 'Snappy' },
+      { value: 'gzip', label: 'Gzip' }
+    ]
+  }
+
+  return [
+    { value: 'none', label: 'None' },
+    { value: 'gzip', label: 'Gzip' },
+    { value: 'zstd', label: 'Zstd' }
+  ]
+})
+
 function generateStreamName(): string {
   return buildExportStreamName(props.objectName, format.value)
 }
@@ -96,9 +113,7 @@ watch(format, () => {
   if (!streamNameTouched.value) {
     streamName.value = generateStreamName()
   }
-  if (format.value === 'parquet') {
-    compression.value = 'none'
-  }
+  // No-op: keep compression value when switching formats
 })
 
 async function onCreateStream() {
@@ -284,19 +299,17 @@ async function onCreateStream() {
           Stream-level settings
         </div>
 
-        <div v-if="format !== 'parquet'">
-          <label class="block">
-            <span class="text-xs text-gray-700 dark:text-gray-300">Compression</span>
-            <select
-              v-model="compression"
-              class="mt-1 w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-850 px-2.5 py-2 text-sm text-gray-900 dark:text-gray-100"
-            >
-              <option value="none">None</option>
-              <option value="gzip">Gzip</option>
-              <option value="zstd">Zstd</option>
-            </select>
-          </label>
-        </div>
+        <label class="block">
+          <span class="text-xs text-gray-700 dark:text-gray-300">Compression</span>
+          <select
+            v-model="compression"
+            class="mt-1 w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-850 px-2.5 py-2 text-sm text-gray-900 dark:text-gray-100"
+          >
+            <option v-for="option in compressionOptions" :key="option.value" :value="option.value">
+              {{ option.label }}
+            </option>
+          </select>
+        </label>
 
         <label class="block">
           <span class="text-xs text-gray-700 dark:text-gray-300">Target path</span>

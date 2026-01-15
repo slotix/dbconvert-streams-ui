@@ -25,7 +25,7 @@ const IMMUTABLE_FIELDS = ['id', 'created'] as const
 const VALID_FILE_FORMATS = ['csv', 'jsonl', 'parquet'] as const
 
 // Valid compression types
-const VALID_COMPRESSION_TYPES = ['none', 'gzip', 'zstd', 'uncompressed'] as const
+const VALID_COMPRESSION_TYPES = ['none', 'gzip', 'zstd', 'snappy', 'uncompressed'] as const
 
 /**
  * Validates a stream configuration object

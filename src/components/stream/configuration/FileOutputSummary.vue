@@ -63,7 +63,8 @@ const fileFormat = computed(() => getFileSpec(props.stream.target?.spec)?.fileFo
 
 // Get compression from spec.format
 const compressionLabel = computed(() => {
-  const format = getFormatSpec(props.stream.target?.spec)
+  const spec = props.stream.target?.spec
+  const format = getFormatSpec(spec)
   return (format?.compression || 'zstd').toUpperCase()
 })
 
@@ -74,6 +75,9 @@ const compressionBadgeClass = computed(() => {
   const compressionType = format?.compression
   if (compressionType === 'zstd') {
     return `${base}bg-green-50 text-green-700 ring-green-600/20 dark:bg-green-900/30 dark:text-green-300 dark:ring-green-500/30`
+  }
+  if (compressionType === 'snappy') {
+    return `${base}bg-blue-50 text-blue-700 ring-blue-600/20 dark:bg-blue-900/30 dark:text-blue-300 dark:ring-blue-500/30`
   }
   if (compressionType === 'gzip') {
     return `${base}bg-yellow-50 text-yellow-700 ring-yellow-600/20 dark:bg-yellow-900/30 dark:text-yellow-300 dark:ring-yellow-500/30`

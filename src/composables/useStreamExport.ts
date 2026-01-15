@@ -65,7 +65,7 @@ export interface StreamExportOptions {
   /** Run immediately after creation (default: true) */
   runImmediately?: boolean
   /** Optional compression setting */
-  compression?: 'gzip' | 'zstd' | 'none'
+  compression?: 'gzip' | 'zstd' | 'snappy' | 'none'
   /** Optional override for export connection base path */
   targetBasePath?: string
   /** Custom WHERE clause (if not using objectKey) */
