@@ -24,6 +24,7 @@ import {
 import { useAgGridDataViewColumnDefs } from '@/composables/useAgGridDataViewColumnDefs'
 import AGGridRowChangesPanel from '@/components/database/aggrid/AGGridRowChangesPanel.vue'
 import AGGridInsertRowPanel from '@/components/database/aggrid/AGGridInsertRowPanel.vue'
+import AGGridCreateStreamPanel from '@/components/database/aggrid/AGGridCreateStreamPanel.vue'
 import AGGridRowCountControls from '@/components/database/aggrid/AGGridRowCountControls.vue'
 import { useAgGridRowChangeTracking } from '@/composables/useAgGridRowChangeTracking'
 import { useExactRowCount } from '@/composables/useExactRowCount'
@@ -66,6 +67,7 @@ const rowChangesRowId = ref<string | null>(null)
 const insertRowPanelOpen = ref(false)
 const insertEditingId = ref<string | null>(null)
 const insertInitialValues = ref<Record<string, unknown>>({})
+const createStreamPanelOpen = ref(false)
 
 // Generate cache key for current table/view
 const getCacheKey = () => {
@@ -81,6 +83,9 @@ function getObjectName(meta: SQLTableMeta | SQLViewMeta): string {
 function getObjectSchema(meta: SQLTableMeta | SQLViewMeta): string {
   return props.isView ? (meta as SQLViewMeta).schema : (meta as SQLTableMeta).schema
 }
+
+const objectName = computed(() => getObjectName(props.tableMeta))
+const objectSchema = computed(() => getObjectSchema(props.tableMeta))
 
 const isTableEditable = computed(() => {
   if (props.isView) return false
@@ -300,8 +305,8 @@ const exactCount = useExactRowCount({
 
   connectionId: computed(() => props.connectionId),
   database: computed(() => props.database),
-  objectName: computed(() => getObjectName(props.tableMeta)),
-  objectSchema: computed(() => getObjectSchema(props.tableMeta) || null),
+  objectName,
+  objectSchema: computed(() => objectSchema.value || null),
 
   whereClause: baseGrid.whereClause,
   totalRowCount: baseGrid.totalRowCount,
@@ -668,9 +673,15 @@ const {
   canRevertContextCell,
   revertContextCell,
   handleExport,
-  handleStreamExport,
   isStreamExporting
 } = selectionActions
+function openCreateStreamPanel() {
+  createStreamPanelOpen.value = true
+}
+
+function closeCreateStreamPanel() {
+  createStreamPanelOpen.value = false
+}
 
 // Expose methods to parent
 defineExpose({
@@ -865,9 +876,9 @@ defineExpose({
                         isStreamExporting ? 'opacity-50 cursor-not-allowed' : ''
                       ]"
                       :disabled="isStreamExporting"
-                      @click="handleStreamExport('csv')"
+                      @click="openCreateStreamPanel"
                     >
-                      {{ isStreamExporting ? 'Exporting...' : 'Stream Export' }}
+                      {{ isStreamExporting ? 'Creating...' : 'Create stream from this view…' }}
                     </button>
                   </MenuItem>
                 </div>
@@ -942,6 +953,20 @@ defineExpose({
       @close="closeInsertRowPanel"
       @insert="onInsertRow"
       @insert-and-add-another="onInsertRowAndAddAnother"
+    />
+
+    <AGGridCreateStreamPanel
+      :open="createStreamPanelOpen"
+      :connection-id="connectionId"
+      :connection-name="connection?.name"
+      :database="database"
+      :schema="objectSchema"
+      :object-name="objectName"
+      :object-key="objectKey"
+      :all-columns="allColumnNames"
+      :is-view="isView"
+      :dialect="connectionDialect"
+      @close="closeCreateStreamPanel"
     />
 
     <AGGridRowCountControls

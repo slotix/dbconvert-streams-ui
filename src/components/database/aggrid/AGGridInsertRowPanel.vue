@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
-import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue'
-import { X } from 'lucide-vue-next'
-import { useLucideIcons } from '@/composables/useLucideIcons'
+import SlideOverPanel from '@/components/common/SlideOverPanel.vue'
 import type { SQLColumnMeta } from '@/types/metadata'
 import {
   emptyToNullIfNullable,
@@ -25,8 +23,6 @@ const emit = defineEmits<{
   (e: 'insert', values: Record<string, unknown>, existingId?: string | null): void
   (e: 'insertAndAddAnother', values: Record<string, unknown>, existingId?: string | null): void
 }>()
-
-const { strokeWidth: iconStroke } = useLucideIcons()
 
 const touched = ref<Set<string>>(new Set())
 const draft = reactive<Record<string, unknown>>({})
@@ -165,161 +161,103 @@ function inputTypeFor(col: SQLColumnMeta): string {
 </script>
 
 <template>
-  <TransitionRoot as="template" :show="open">
-    <Dialog as="div" class="relative z-50" @close="emit('close')">
-      <TransitionChild
-        as="template"
-        enter="ease-out duration-200"
-        enter-from="opacity-0"
-        enter-to="opacity-100"
-        leave="ease-in duration-150"
-        leave-from="opacity-100"
-        leave-to="opacity-0"
+  <SlideOverPanel
+    :open="open"
+    :title="`New row (${tableLabel})`"
+    subtitle="Fill required fields, then stage the row. Save commits it."
+    @close="emit('close')"
+  >
+    <div class="space-y-4">
+      <div
+        v-if="missingRequired.length > 0"
+        class="rounded-md border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-3"
       >
-        <div class="fixed inset-0 bg-black/40" />
-      </TransitionChild>
-
-      <div class="fixed inset-0 overflow-hidden">
-        <div class="absolute inset-0 overflow-hidden">
-          <div class="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10">
-            <TransitionChild
-              as="template"
-              enter="transform transition ease-in-out duration-200"
-              enter-from="translate-x-full"
-              enter-to="translate-x-0"
-              leave="transform transition ease-in-out duration-150"
-              leave-from="translate-x-0"
-              leave-to="translate-x-full"
-            >
-              <DialogPanel
-                class="pointer-events-auto w-screen max-w-md bg-white dark:bg-gray-850 shadow-2xl dark:shadow-gray-900/50 border-l border-gray-200 dark:border-gray-700"
-              >
-                <div class="h-full flex flex-col">
-                  <div
-                    class="px-4 py-4 border-b border-gray-200 dark:border-gray-700 flex items-start justify-between"
-                  >
-                    <div class="min-w-0">
-                      <DialogTitle class="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                        New row ({{ tableLabel }})
-                      </DialogTitle>
-                      <p class="mt-1 text-xs text-gray-600 dark:text-gray-400">
-                        Fill required fields, then stage the row. Save commits it.
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      class="ml-3 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
-                      @click="emit('close')"
-                    >
-                      <X class="h-5 w-5" :stroke-width="iconStroke" />
-                      <span class="sr-only">Close</span>
-                    </button>
-                  </div>
-
-                  <div class="flex-1 overflow-y-auto px-4 py-4">
-                    <div class="space-y-4">
-                      <div
-                        v-if="missingRequired.length > 0"
-                        class="rounded-md border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-3"
-                      >
-                        <div class="text-xs font-semibold text-amber-800 dark:text-amber-200">
-                          Required fields missing
-                        </div>
-                        <div class="mt-1 text-xs text-amber-700 dark:text-amber-300">
-                          {{ missingRequired.join(', ') }}
-                        </div>
-                      </div>
-
-                      <div
-                        v-for="col in columns"
-                        :key="col.name"
-                        class="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-900/40 p-3"
-                      >
-                        <div class="flex items-start justify-between gap-3">
-                          <div class="min-w-0">
-                            <div
-                              class="text-xs font-semibold text-gray-800 dark:text-gray-200 truncate"
-                            >
-                              {{ col.name }}
-                              <span
-                                v-if="requiredColumns.includes(col.name)"
-                                class="ml-2 text-[10px] font-semibold text-red-700 dark:text-red-300"
-                              >
-                                REQUIRED
-                              </span>
-                              <span
-                                v-else-if="isGeneratedColumn(col)"
-                                class="ml-2 text-[10px] font-semibold text-gray-500 dark:text-gray-400"
-                              >
-                                GENERATED
-                              </span>
-                              <span
-                                v-else-if="col.defaultValue?.Valid || col.autoIncrement"
-                                class="ml-2 text-[10px] font-semibold text-gray-500 dark:text-gray-400"
-                              >
-                                DEFAULT
-                              </span>
-                            </div>
-                            <div class="mt-1 text-[10px] text-gray-600 dark:text-gray-400">
-                              {{ col.dataType }}
-                              <span v-if="!col.isNullable"> · NOT NULL</span>
-                              <span v-else> · NULLABLE</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div class="mt-2">
-                          <input
-                            :type="inputTypeFor(col)"
-                            class="w-full rounded-md border px-2.5 py-2 text-sm bg-white dark:bg-gray-850 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-teal-500/40"
-                            :disabled="isGeneratedColumn(col)"
-                            :class="
-                              isMissingRequired(col.name)
-                                ? 'border-red-400 dark:border-red-600'
-                                : 'border-gray-200 dark:border-gray-700'
-                            "
-                            :placeholder="placeholderFor(col)"
-                            :value="toInputValue(draft[col.name])"
-                            @input="(e) => setFieldValue(col, (e.target as HTMLInputElement).value)"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div
-                    class="px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex items-center justify-end gap-2"
-                  >
-                    <button
-                      type="button"
-                      class="text-xs rounded-md px-2.5 py-1 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
-                      @click="emit('close')"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="button"
-                      class="text-xs rounded-md px-2.5 py-1 border border-teal-600 bg-teal-600 text-white hover:bg-teal-700 hover:border-teal-700 disabled:opacity-50 disabled:cursor-not-allowed dark:border-teal-500 dark:bg-teal-600 dark:hover:bg-teal-700"
-                      :disabled="missingRequired.length > 0"
-                      @click="onSubmit('insert')"
-                    >
-                      Insert
-                    </button>
-                    <button
-                      type="button"
-                      class="text-xs rounded-md px-2.5 py-1 border border-teal-600/50 bg-teal-50 text-teal-800 hover:bg-teal-100 disabled:opacity-50 disabled:cursor-not-allowed dark:border-teal-400/40 dark:bg-teal-900/20 dark:text-teal-200 dark:hover:bg-teal-900/30"
-                      :disabled="missingRequired.length > 0"
-                      @click="onSubmit('insertAndAddAnother')"
-                    >
-                      Insert &amp; add another
-                    </button>
-                  </div>
-                </div>
-              </DialogPanel>
-            </TransitionChild>
-          </div>
+        <div class="text-xs font-semibold text-amber-800 dark:text-amber-200">
+          Required fields missing
+        </div>
+        <div class="mt-1 text-xs text-amber-700 dark:text-amber-300">
+          {{ missingRequired.join(', ') }}
         </div>
       </div>
-    </Dialog>
-  </TransitionRoot>
+
+      <div
+        v-for="col in columns"
+        :key="col.name"
+        class="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-900/40 p-3"
+      >
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0">
+            <div class="text-xs font-semibold text-gray-800 dark:text-gray-200 truncate">
+              {{ col.name }}
+              <span
+                v-if="requiredColumns.includes(col.name)"
+                class="ml-2 text-[10px] font-semibold text-red-700 dark:text-red-300"
+              >
+                REQUIRED
+              </span>
+              <span
+                v-else-if="isGeneratedColumn(col)"
+                class="ml-2 text-[10px] font-semibold text-gray-500 dark:text-gray-400"
+              >
+                GENERATED
+              </span>
+              <span
+                v-else-if="col.defaultValue?.Valid || col.autoIncrement"
+                class="ml-2 text-[10px] font-semibold text-gray-500 dark:text-gray-400"
+              >
+                DEFAULT
+              </span>
+            </div>
+            <div class="mt-1 text-[10px] text-gray-600 dark:text-gray-400">
+              {{ col.dataType }}
+              <span v-if="!col.isNullable"> · NOT NULL</span>
+              <span v-else> · NULLABLE</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-2">
+          <input
+            :type="inputTypeFor(col)"
+            class="w-full rounded-md border px-2.5 py-2 text-sm bg-white dark:bg-gray-850 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-teal-500/40"
+            :disabled="isGeneratedColumn(col)"
+            :class="
+              isMissingRequired(col.name)
+                ? 'border-red-400 dark:border-red-600'
+                : 'border-gray-200 dark:border-gray-700'
+            "
+            :placeholder="placeholderFor(col)"
+            :value="toInputValue(draft[col.name])"
+            @input="(e) => setFieldValue(col, (e.target as HTMLInputElement).value)"
+          />
+        </div>
+      </div>
+    </div>
+
+    <template #footer>
+      <button
+        type="button"
+        class="text-xs rounded-md px-2.5 py-1 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
+        @click="emit('close')"
+      >
+        Cancel
+      </button>
+      <button
+        type="button"
+        class="text-xs rounded-md px-2.5 py-1 border border-teal-600 bg-teal-600 text-white hover:bg-teal-700 hover:border-teal-700 disabled:opacity-50 disabled:cursor-not-allowed dark:border-teal-500 dark:bg-teal-600 dark:hover:bg-teal-700"
+        :disabled="missingRequired.length > 0"
+        @click="onSubmit('insert')"
+      >
+        Insert
+      </button>
+      <button
+        type="button"
+        class="text-xs rounded-md px-2.5 py-1 border border-teal-600/50 bg-teal-50 text-teal-800 hover:bg-teal-100 disabled:opacity-50 disabled:cursor-not-allowed dark:border-teal-400/40 dark:bg-teal-900/20 dark:text-teal-200 dark:hover:bg-teal-900/30"
+        :disabled="missingRequired.length > 0"
+        @click="onSubmit('insertAndAddAnother')"
+      >
+        Insert &amp; add another
+      </button>
+    </template>
+  </SlideOverPanel>
 </template>

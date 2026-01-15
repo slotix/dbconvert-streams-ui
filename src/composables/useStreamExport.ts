@@ -29,6 +29,22 @@ const EXPORT_CONNECTION_NAME = 'Data Explorer Export'
 
 export type StreamExportFormat = 'csv' | 'jsonl' | 'parquet'
 
+function formatSortableTimestamp(date: Date): string {
+  const pad = (value: number) => String(value).padStart(2, '0')
+  const year = date.getFullYear()
+  const month = pad(date.getMonth() + 1)
+  const day = pad(date.getDate())
+  const hours = pad(date.getHours())
+  const minutes = pad(date.getMinutes())
+  const seconds = pad(date.getSeconds())
+  return `${year}${month}${day}_${hours}${minutes}${seconds}`
+}
+
+export function buildExportStreamName(table: string, format: StreamExportFormat): string {
+  const timestamp = formatSortableTimestamp(new Date())
+  return `export_${table}_to_${format}_${timestamp}`
+}
+
 export interface StreamExportOptions {
   /** Source connection ID */
   connectionId: string
@@ -44,6 +60,14 @@ export interface StreamExportOptions {
   objectKey?: string
   /** SQL dialect for building query */
   dialect?: 'mysql' | 'pgsql' | 'sql'
+  /** Optional custom stream name */
+  streamName?: string
+  /** Run immediately after creation (default: true) */
+  runImmediately?: boolean
+  /** Optional compression setting */
+  compression?: 'gzip' | 'zstd' | 'none'
+  /** Optional override for export connection base path */
+  targetBasePath?: string
   /** Custom WHERE clause (if not using objectKey) */
   whereClause?: string
   /** Custom ORDER BY columns (comma-separated) */
@@ -75,9 +99,10 @@ export function useStreamExport() {
    * Get or create the shared export file connection.
    * This connection is reused for all data explorer exports.
    */
-  async function getOrCreateExportConnection(): Promise<string> {
+  async function getOrCreateExportConnection(basePath?: string): Promise<string> {
     // Check if we have a stored connection ID
     const storedConnectionId = localStorage.getItem(EXPORT_CONNECTION_KEY)
+    const normalizedBasePath = basePath?.trim() || ''
 
     if (storedConnectionId) {
       // Verify the connection still exists
@@ -85,6 +110,21 @@ export function useStreamExport() {
         const connections = await connectionsApi.getConnections()
         const existingConnection = connections.find((c: Connection) => c.id === storedConnectionId)
         if (existingConnection) {
+          const existingBasePath = existingConnection.spec?.files?.basePath || ''
+          if (normalizedBasePath && existingBasePath !== normalizedBasePath) {
+            const updatedConnection = {
+              ...existingConnection,
+              spec: {
+                ...existingConnection.spec,
+                files: {
+                  ...existingConnection.spec.files,
+                  basePath: normalizedBasePath
+                }
+              }
+            }
+            await connectionsApi.updateConnectionById(storedConnectionId, updatedConnection)
+            await connectionsStore.refreshConnections()
+          }
           return storedConnectionId
         }
       } catch (e) {
@@ -99,7 +139,7 @@ export function useStreamExport() {
       type: 'files',
       spec: {
         files: {
-          basePath: ''
+          basePath: normalizedBasePath
         }
       }
     }
@@ -155,13 +195,15 @@ export function useStreamExport() {
     const filter = buildTableFilterState(objectKey)
 
     // Create stream config
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
-    const streamName = `Export ${table} to ${format.toUpperCase()} - ${timestamp}`
+    const defaultStreamName = buildExportStreamName(table, format)
+    const streamName = options.streamName?.trim() || defaultStreamName
 
     // Build target spec for file output
     // Output goes to the connection's basePath
     // The backend handles file organization within that directory
-    const targetSpec = buildFileTargetSpec(format)
+    const compression =
+      options.compression && options.compression !== 'none' ? options.compression : undefined
+    const targetSpec = buildFileTargetSpec(format, compression)
 
     const streamConfig: Partial<StreamConfig> = {
       name: streamName,
@@ -208,15 +250,34 @@ export function useStreamExport() {
    * 5. Navigate to the stream monitor
    */
   async function exportTable(options: StreamExportOptions): Promise<StreamExportResult> {
+    return createStreamFromView({ ...options, runImmediately: true })
+  }
+
+  /**
+   * Create a stream from the current view with optional run control.
+   */
+  async function createStreamFromView(options: StreamExportOptions): Promise<StreamExportResult> {
     isExporting.value = true
     exportError.value = null
 
     try {
+      const runImmediately = options.runImmediately !== false
+
       // Step 1: Get or create the shared export connection
-      const targetConnectionId = await getOrCreateExportConnection()
+      const targetConnectionId = await getOrCreateExportConnection(options.targetBasePath)
 
       // Step 2: Create the stream config
       const streamConfigId = await createExportStreamConfig(options, targetConnectionId)
+
+      if (!runImmediately) {
+        updateStreamsViewState({ selectedStreamId: streamConfigId, tab: 'configuration' })
+        router.push({ name: 'Streams' })
+
+        return {
+          success: true,
+          streamConfigId
+        }
+      }
 
       // Step 3: Start the stream
       const streamId = await streamsApi.startStream(streamConfigId)
@@ -274,6 +335,7 @@ export function useStreamExport() {
 
     // Methods
     exportTable,
+    createStreamFromView,
     getOrCreateExportConnection,
     getExportConnectionId,
     clearExportConnectionId
