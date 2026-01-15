@@ -2,7 +2,6 @@
 import { computed, ref, watch } from 'vue'
 import SlideOverPanel from '@/components/common/SlideOverPanel.vue'
 import { useObjectTabStateStore } from '@/stores/objectTabState'
-import { useConnectionsStore } from '@/stores/connections'
 import { useToast } from 'vue-toastification'
 import {
   buildExportStreamName,
@@ -10,6 +9,7 @@ import {
   type StreamExportFormat
 } from '@/composables/useStreamExport'
 import type { FilterConfig, SortConfig } from '@/stores/objectTabState'
+import apiClient from '@/api/apiClient'
 
 const props = defineProps<{
   open: boolean
@@ -29,7 +29,6 @@ const emit = defineEmits<{
 }>()
 
 const tabStateStore = useObjectTabStateStore()
-const connectionsStore = useConnectionsStore()
 const toast = useToast()
 
 const format = ref<StreamExportFormat>('csv')
@@ -39,8 +38,9 @@ const streamNameTouched = ref(false)
 const compression = ref<'none' | 'gzip' | 'zstd' | 'snappy'>('none')
 const targetBasePath = ref('')
 const showOptions = ref(false)
+const defaultExportPath = ref('')
 
-const { createStreamFromView, getExportConnectionId, isExporting } = useStreamExport()
+const { createStreamFromView, isExporting } = useStreamExport()
 
 const filterState = computed(() => tabStateStore.getFilterPanelState(props.objectKey))
 
@@ -67,13 +67,6 @@ const selectedColumnsLabel = computed(() => {
   return `${selectedColumns.value.length} columns selected`
 })
 
-const currentExportBasePath = computed(() => {
-  const id = getExportConnectionId()
-  if (!id) return ''
-  const connection = connectionsStore.connectionByID(id)
-  return connection?.spec?.files?.basePath || ''
-})
-
 const compressionOptions = computed(() => {
   if (format.value === 'parquet') {
     return [
@@ -97,7 +90,7 @@ function generateStreamName(): string {
 
 watch(
   () => props.open,
-  (open) => {
+  async (open) => {
     if (!open) return
     format.value = 'csv'
     runImmediately.value = true
@@ -106,6 +99,14 @@ watch(
     showOptions.value = false
     streamNameTouched.value = false
     streamName.value = generateStreamName()
+
+    // Fetch system defaults for export path
+    try {
+      const defaults = await apiClient.getSystemDefaults()
+      defaultExportPath.value = defaults.defaultExportPath
+    } catch {
+      defaultExportPath.value = ''
+    }
   }
 )
 
@@ -320,8 +321,8 @@ async function onCreateStream() {
             class="mt-1 w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-850 px-2.5 py-2 text-sm text-gray-900 dark:text-gray-100"
             placeholder="Leave blank to use default export folder"
           />
-          <p v-if="currentExportBasePath" class="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
-            Export folder (server default): {{ currentExportBasePath }}
+          <p v-if="defaultExportPath" class="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
+            Export folder (server default): {{ defaultExportPath }}
           </p>
         </label>
       </div>

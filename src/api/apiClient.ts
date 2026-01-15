@@ -1,7 +1,7 @@
 import axios, { type AxiosInstance, type AxiosError, type AxiosRequestConfig } from 'axios'
 import { handleApiError } from '@/utils/errorHandler'
 import { type UserData } from '@/types/user'
-import { type ServiceStatusResponse } from '@/types/common'
+import { type ServiceStatusResponse, type SystemDefaults } from '@/types/common'
 import { useCommonStore } from '@/stores/common'
 import { getBackendUrl, getSentryDsn } from '@/utils/environment'
 import { DEFAULT_API_TIMEOUT, API_RETRY, API_HEADERS, CONTENT_TYPES } from '@/constants'
@@ -201,6 +201,15 @@ const getServiceStatus = async (): Promise<ServiceStatusResponse> => {
   }
 }
 
+const getSystemDefaults = async (): Promise<SystemDefaults> => {
+  try {
+    const response: ApiResponse<SystemDefaults> = await apiClient.get('/system/defaults')
+    return response.data
+  } catch (error) {
+    throw handleApiError(error)
+  }
+}
+
 export async function getConnections(): Promise<unknown> {
   try {
     const response = await apiClient.get('/connections')
@@ -256,6 +265,7 @@ export default {
   backendHealthCheck,
   sentryHealthCheck,
   getServiceStatus,
+  getSystemDefaults,
   getConnections,
   getStreams,
   getStreamLogs

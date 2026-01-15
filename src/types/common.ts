@@ -9,6 +9,11 @@ export interface ServiceStatusResponse {
   services: ServiceStatus[]
 }
 
+export interface SystemDefaults {
+  defaultExportPath: string
+  mode: 'desktop' | 'server' | 'docker'
+}
+
 export type NodeType = 'source' | 'target' | 'api'
 
 export const NodeTypes = {
