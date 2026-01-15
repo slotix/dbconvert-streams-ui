@@ -123,6 +123,7 @@ async function onCreateStream() {
     database: props.database,
     schema: props.schema || undefined,
     table: props.objectName,
+    allColumns: props.allColumns,
     format: format.value,
     objectKey: props.objectKey,
     dialect: props.dialect,

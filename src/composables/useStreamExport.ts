@@ -54,6 +54,8 @@ export interface StreamExportOptions {
   schema?: string
   /** Table name */
   table: string
+  /** Full column list (used to omit redundant selectedColumns) */
+  allColumns?: string[]
   /** Export format */
   format: StreamExportFormat
   /** Object key for query filter store (to get current filters/sorts) */
@@ -161,7 +163,10 @@ export function useStreamExport() {
     return newConnectionId
   }
 
-  function buildTableFilterState(objectKey?: string): TableFilterState | undefined {
+  function buildTableFilterState(
+    objectKey?: string,
+    allColumns?: string[]
+  ): TableFilterState | undefined {
     if (!objectKey) return undefined
     const panelState = tabStateStore.getFilterPanelState(objectKey)
     if (!panelState) return undefined
@@ -169,14 +174,21 @@ export function useStreamExport() {
     const hasFilters = panelState.filters?.some((f) => f.column && (f.value || f.operator))
     const hasSorts = panelState.sorts?.some((s) => s.column)
     const hasLimit = Boolean(panelState.limit && panelState.limit > 0)
-    const hasSelectedColumns = Boolean(panelState.selectedColumns?.length)
+    const selectedColumns = (panelState.selectedColumns || []).filter(Boolean)
+    const normalizedAllColumns = (allColumns || []).filter(Boolean)
+    const allColumnsSet = new Set(normalizedAllColumns)
+    const selectedColumnsAreAll =
+      normalizedAllColumns.length > 0 &&
+      selectedColumns.length === normalizedAllColumns.length &&
+      selectedColumns.every((column) => allColumnsSet.has(column))
+    const hasSelectedColumns = selectedColumns.length > 0 && !selectedColumnsAreAll
 
     if (!hasFilters && !hasSorts && !hasLimit && !hasSelectedColumns) {
       return undefined
     }
 
     return {
-      selectedColumns: panelState.selectedColumns?.length ? panelState.selectedColumns : undefined,
+      selectedColumns: hasSelectedColumns ? selectedColumns : undefined,
       filters: panelState.filters?.length ? panelState.filters : undefined,
       sorts: panelState.sorts?.length ? panelState.sorts : undefined,
       limit: panelState.limit ?? undefined
@@ -190,9 +202,9 @@ export function useStreamExport() {
     options: StreamExportOptions,
     targetConnectionId: string
   ): Promise<string> {
-    const { connectionId, database, schema, table, format, objectKey } = options
+    const { connectionId, database, schema, table, format, objectKey, allColumns } = options
 
-    const filter = buildTableFilterState(objectKey)
+    const filter = buildTableFilterState(objectKey, allColumns)
 
     // Create stream config
     const defaultStreamName = buildExportStreamName(table, format)
