@@ -321,7 +321,7 @@ async function onCreateStream() {
             placeholder="Leave blank to use default export folder"
           />
           <p v-if="currentExportBasePath" class="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
-            Current export folder: {{ currentExportBasePath }}
+            Export folder (server default): {{ currentExportBasePath }}
           </p>
         </label>
       </div>
