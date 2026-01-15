@@ -75,7 +75,7 @@
           >
             <!-- Connection Header -->
             <div
-              class="sticky top-0 z-20 flex items-center justify-between px-4 py-3 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/30 dark:to-orange-900/30 border-b-2 border-amber-200 dark:border-amber-700 cursor-pointer backdrop-blur-sm"
+              class="sticky top-0 z-20 flex items-center justify-between px-4 py-3 bg-linear-to-r from-amber-50 to-orange-50 dark:from-amber-900/30 dark:to-orange-900/30 border-b-2 border-amber-200 dark:border-amber-700 cursor-pointer backdrop-blur-sm"
               @click="toggleConnectionGroup(connectionGroup.alias)"
             >
               <div class="flex items-center gap-3">
@@ -978,6 +978,17 @@ const refreshTables = async () => {
           existingSelections.set(table.name, table.selected ?? true)
           if (table.filter) {
             existingFilters.set(table.name, table.filter)
+          }
+
+          if (!table.name.includes('.')) {
+            const schema = conn.schema || currentStreamConfig.value.sourceSchema
+            if (schema) {
+              const schemaName = `${schema}.${table.name}`
+              existingSelections.set(schemaName, table.selected ?? true)
+              if (table.filter) {
+                existingFilters.set(schemaName, table.filter)
+              }
+            }
           }
         })
       }
