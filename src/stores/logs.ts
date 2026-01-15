@@ -178,8 +178,8 @@ export const useLogsStore = defineStore('logs', {
       isLogsPanelOpen: false,
       panelHeight: '50vh',
       selectedStreamId: '', // For filtering logs by stream in historical view
-      historicalLogs: [] as SystemLog[], // Logs loaded from API
-      isHistoricalView: false, // Flag to indicate if showing historical logs
+      historicalLogsMap: new Map<string, SystemLog[]>(), // Historical logs keyed by tabId
+      maxHistoricalTabs: 5, // Limit number of historical log tabs to conserve memory
       isLoadingHistoricalLogs: false, // Loading state for API fetch
 
       // System Logs Tabs
@@ -228,6 +228,16 @@ export const useLogsStore = defineStore('logs', {
 
     hasErrors: (state) => {
       return state.logs.some((log) => log.level === 'error')
+    },
+
+    // Check if current tab has historical logs (loaded from API)
+    isCurrentTabHistorical: (state) => {
+      return state.historicalLogsMap.has(state.selectedSystemLogTabId)
+    },
+
+    // Get historical logs for a specific tab
+    getHistoricalLogsForTab: (state) => (tabId: string) => {
+      return state.historicalLogsMap.get(tabId) || []
     },
 
     // Total SQL logs count (for sidebar badge)
@@ -321,13 +331,6 @@ export const useLogsStore = defineStore('logs', {
 
   actions: {
     addLog(log: Omit<SystemLog, 'id'>) {
-      // If we're in historical view and new logs arrive from a DIFFERENT stream, exit historical view
-      // This allows us to switch back to real-time monitoring when a new stream starts
-      if (this.isHistoricalView && log.streamId && log.streamId !== this.selectedStreamId) {
-        this.isHistoricalView = false
-        this.historicalLogs = []
-      }
-
       // Trim logs if we exceed maxLogs
       if (this.logs.length >= this.maxLogs) {
         this.logs = this.logs.slice(-Math.floor(this.maxLogs / 2))
@@ -393,6 +396,9 @@ export const useLogsStore = defineStore('logs', {
       if (tabId === 'general') return // Cannot remove general tab
       this.systemLogTabs.delete(tabId)
 
+      // Clean up historical logs for this tab
+      this.historicalLogsMap.delete(tabId)
+
       // If we removed the selected tab, select General
       if (this.selectedSystemLogTabId === tabId) {
         this.selectedSystemLogTabId = 'general'
@@ -416,6 +422,7 @@ export const useLogsStore = defineStore('logs', {
       })
       this.selectedSystemLogTabId = 'general'
       this.systemLogTabRunTimestamps.clear()
+      this.historicalLogsMap.clear()
     },
 
     cleanupEmptyLogs() {
@@ -449,8 +456,6 @@ export const useLogsStore = defineStore('logs', {
 
     async loadHistoricalLogs(streamId: string) {
       this.isLoadingHistoricalLogs = true
-      this.isHistoricalView = false
-      this.historicalLogs = []
 
       try {
         // Fetch logs from the API
@@ -467,7 +472,7 @@ export const useLogsStore = defineStore('logs', {
         }
 
         // Convert raw logs to SystemLog format
-        this.historicalLogs = rawLogs.map((log, index) => ({
+        const historicalLogs = rawLogs.map((log, index) => ({
           id: Date.now() + index,
           message: (log.msg as string) || (log.message as string) || '',
           level: ((log.level as string) || 'info') as LogLevel,
@@ -503,11 +508,24 @@ export const useLogsStore = defineStore('logs', {
         const label = `${shortStreamId} - ${timeLabel}`
         const fullLabel = `${cleanStreamId} - ${timeLabel}`
 
+        const tabId = `${streamId}:${runTimestamp}`
+
+        // Enforce tab limit: remove oldest historical tab if at limit
+        const historicalTabIds = Array.from(this.systemLogTabs.keys()).filter(
+          (id) => id !== 'general' && this.historicalLogsMap.has(id)
+        )
+        if (historicalTabIds.length >= this.maxHistoricalTabs) {
+          // Remove the oldest historical tab (first one in the map)
+          const oldestTabId = historicalTabIds[0]
+          this.removeSystemLogTab(oldestTabId)
+        }
+
+        // Store historical logs for this tab
+        this.historicalLogsMap.set(tabId, historicalLogs)
+
         // Add the tab and select it
         this.addSystemLogTab(streamId, runTimestamp, label, fullLabel)
 
-        // Set the view to historical
-        this.isHistoricalView = true
         this.selectedStreamId = streamId
 
         // Open the panel
@@ -516,16 +534,13 @@ export const useLogsStore = defineStore('logs', {
         }
       } catch (error) {
         console.error('Failed to load historical logs:', error)
-        // Fall back to in-memory logs
-        this.isHistoricalView = false
       } finally {
         this.isLoadingHistoricalLogs = false
       }
     },
 
     clearHistoricalLogs() {
-      this.historicalLogs = []
-      this.isHistoricalView = false
+      this.historicalLogsMap.clear()
     },
 
     // Phase 2: SQL Logs Actions

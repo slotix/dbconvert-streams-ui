@@ -40,8 +40,8 @@ const systemLogsSortOrder = ref<'newest' | 'oldest'>('newest')
 
 // Filtered logs based on message type and search (no tab filter)
 const baseFilteredLogs = computed(() => {
-  // Use historical logs if in historical view, otherwise use SSE logs
-  let filtered = store.isHistoricalView ? store.historicalLogs : store.logs
+  // Use real-time logs from SSE (historical logs are handled per-tab in filteredLogs)
+  let filtered = store.logs
 
   // Filter by message type (multiple selections)
   filtered = filtered.filter((log) => {
@@ -93,19 +93,30 @@ const baseFilteredLogs = computed(() => {
 
 // Filtered logs based on selected tab, message type, and search
 const filteredLogs = computed(() => {
+  const selectedTabId = store.selectedSystemLogTabId
+  const selectedTab = store.systemLogTabs.get(selectedTabId)
+
+  // Check if this tab has historical logs (loaded from API)
+  const historicalLogs = store.historicalLogsMap.get(selectedTabId)
+  if (historicalLogs && historicalLogs.length > 0) {
+    // Apply message type and search filters to historical logs
+    let filtered = applyMessageAndSearchFilters(historicalLogs)
+    // Sort by timestamp based on sort order preference
+    return [...filtered].sort((a, b) =>
+      systemLogsSortOrder.value === 'newest' ? b.timestamp - a.timestamp : a.timestamp - b.timestamp
+    )
+  }
+
+  // For real-time tabs, filter from baseFilteredLogs
   let filtered = baseFilteredLogs.value
 
-  // Filter by selected tab
-  if (!store.isHistoricalView) {
-    const selectedTab = store.systemLogTabs.get(store.selectedSystemLogTabId)
-    if (selectedTab) {
-      if (selectedTab.streamId === null) {
-        // General tab: show only logs without streamId
-        filtered = filtered.filter((log) => !log.streamId)
-      } else {
-        // Stream tab: show logs for this streamId only
-        filtered = filtered.filter((log) => log.streamId === selectedTab.streamId)
-      }
+  if (selectedTab) {
+    if (selectedTab.streamId === null) {
+      // General tab: show only logs without streamId
+      filtered = filtered.filter((log) => !log.streamId)
+    } else {
+      // Stream tab: show logs for this streamId only
+      filtered = filtered.filter((log) => log.streamId === selectedTab.streamId)
     }
   }
 
@@ -115,9 +126,76 @@ const filteredLogs = computed(() => {
   )
 })
 
+// Helper function to apply message type and search filters
+function applyMessageAndSearchFilters(logs: SystemLog[]): SystemLog[] {
+  let filtered = logs
+
+  // Filter by message type (multiple selections)
+  filtered = filtered.filter((log) => {
+    // If no message types selected, show no logs (hide all)
+    if (selectedMessageTypes.value.size === 0) return false
+
+    for (const type of selectedMessageTypes.value) {
+      switch (type) {
+        case 'error & warning':
+          if (log.level === LOG_LEVELS.ERROR || log.level === LOG_LEVELS.WARN) return true
+          break
+        case 'progress & stats':
+          if (log.category && STREAM_PROGRESS_CATEGORIES.includes(log.category)) return true
+          break
+        case 'info':
+          if (
+            log.level === LOG_LEVELS.INFO &&
+            !(log.category && STREAM_PROGRESS_CATEGORIES.includes(log.category))
+          )
+            return true
+          break
+      }
+    }
+    return false
+  })
+
+  // Filter by search text (searches message, source, type, streamId)
+  if (searchText.value.trim()) {
+    const query = searchText.value.toLowerCase()
+    filtered = filtered.filter((log) => {
+      const message = (log.message || '').toLowerCase()
+      const source = (log.source || '').toLowerCase()
+      const type = (log.type || '').toLowerCase()
+      const streamId = (log.streamId || '').toLowerCase()
+      const category = (log.category || '').toLowerCase()
+
+      return (
+        message.includes(query) ||
+        source.includes(query) ||
+        type.includes(query) ||
+        streamId.includes(query) ||
+        category.includes(query)
+      )
+    })
+  }
+
+  return filtered
+}
+
 const totalLogs = computed(() => {
   return filteredLogs.value.length
 })
+
+// Helper function to get log count for a specific tab (handles both historical and real-time)
+function getTabLogCount(tabId: string, tab: { streamId: string | null }): number {
+  // Check if this tab has historical logs
+  const historicalLogs = store.historicalLogsMap.get(tabId)
+  if (historicalLogs && historicalLogs.length > 0) {
+    return applyMessageAndSearchFilters(historicalLogs).length
+  }
+
+  // For real-time tabs, filter from baseFilteredLogs
+  if (tab.streamId === null) {
+    return baseFilteredLogs.value.filter((log) => !log.streamId).length
+  }
+  return baseFilteredLogs.value.filter((log) => log.streamId === tab.streamId).length
+}
 
 // Logs with meaningful messages (filter out empty ones)
 const logsWithContent = computed(() => {
@@ -632,11 +710,7 @@ onBeforeUnmount(() => {
                       <span
                         class="text-xs bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 px-1.5 py-0.5 rounded"
                       >
-                        {{
-                          tab.streamId === null
-                            ? baseFilteredLogs.filter((log) => !log.streamId).length
-                            : baseFilteredLogs.filter((log) => log.streamId === tab.streamId).length
-                        }}
+                        {{ getTabLogCount(tabId, tab) }}
                       </span>
                       <!-- Close button (X) - not for General tab -->
                       <button
