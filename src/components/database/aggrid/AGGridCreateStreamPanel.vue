@@ -9,7 +9,7 @@ import {
   type StreamExportFormat
 } from '@/composables/useStreamExport'
 import type { FilterConfig, SortConfig } from '@/stores/objectTabState'
-import apiClient from '@/api/apiClient'
+import { useSystemDefaults } from '@/composables/useSystemDefaults'
 
 const props = defineProps<{
   open: boolean
@@ -38,7 +38,8 @@ const streamNameTouched = ref(false)
 const compression = ref<'none' | 'gzip' | 'zstd' | 'snappy'>('none')
 const targetBasePath = ref('')
 const showOptions = ref(false)
-const defaultExportPath = ref('')
+const { systemDefaults, loadSystemDefaults } = useSystemDefaults()
+const defaultExportPath = computed(() => systemDefaults.value?.defaultExportPath ?? '')
 
 const { createStreamFromView, isExporting } = useStreamExport()
 
@@ -102,10 +103,9 @@ watch(
 
     // Fetch system defaults for export path
     try {
-      const defaults = await apiClient.getSystemDefaults()
-      defaultExportPath.value = defaults.defaultExportPath
+      await loadSystemDefaults()
     } catch {
-      defaultExportPath.value = ''
+      // Leave defaultExportPath empty if defaults cannot be loaded.
     }
   }
 )

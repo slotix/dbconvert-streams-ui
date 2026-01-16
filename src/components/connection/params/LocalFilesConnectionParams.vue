@@ -65,7 +65,8 @@
               <FolderSelector
                 v-model="folderPath"
                 :placeholder="folderPathPlaceholder"
-                help-text="Select the folder containing your data files"
+                :help-text="folderPathHelpText"
+                :initial-path="defaultBasePath"
               />
             </div>
           </div>
@@ -97,11 +98,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { computed, onMounted, watch } from 'vue'
 import { FileText, FolderOpen } from 'lucide-vue-next'
 import Spinner from '@/components/common/Spinner.vue'
 import FolderSelector from '@/components/common/FolderSelector.vue'
 import { useConnectionsStore } from '@/stores/connections'
+import { useSystemDefaults } from '@/composables/useSystemDefaults'
 
 interface Props {
   connectionType: string
@@ -111,11 +113,16 @@ interface Props {
 const props = defineProps<Props>()
 
 const connectionsStore = useConnectionsStore()
+const { systemDefaults, loadSystemDefaults } = useSystemDefaults()
 
 // Direct store access - single source of truth
 const connection = computed(() => connectionsStore.currentConnection)
+const defaultBasePath = computed(() => systemDefaults.value?.defaultExportPath ?? '')
 
 const folderPathPlaceholder = computed(() => {
+  if (defaultBasePath.value) {
+    return defaultBasePath.value
+  }
   if (typeof navigator === 'undefined') {
     return '/home/user/Documents/my-data-folder'
   }
@@ -128,6 +135,13 @@ const folderPathPlaceholder = computed(() => {
     return '/Users/user/Documents/my-data-folder'
   }
   return '/home/user/Documents/my-data-folder'
+})
+
+const folderPathHelpText = computed(() => {
+  if (defaultBasePath.value) {
+    return `Default folder (server): ${defaultBasePath.value}`
+  }
+  return 'Select the folder containing your data files'
 })
 
 // Computed property for folder path that uses spec.files.basePath
@@ -229,4 +243,12 @@ watch(
     }
   }
 )
+
+onMounted(async () => {
+  try {
+    await loadSystemDefaults()
+  } catch {
+    // Defaults are optional; fall back to placeholders when unavailable.
+  }
+})
 </script>

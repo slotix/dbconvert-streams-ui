@@ -315,7 +315,7 @@ const loadRoots = async () => {
   }
 }
 
-const loadDirectory = async (path: string) => {
+const loadDirectory = async (path: string): Promise<boolean> => {
   loading.value = true
   error.value = ''
 
@@ -330,6 +330,7 @@ const loadDirectory = async (path: string) => {
     if (!selectedPath.value) {
       selectedPath.value = currentPath.value
     }
+    return true
   } catch (err: unknown) {
     const errorMessage =
       err && typeof err === 'object' && 'response' in err
@@ -337,6 +338,7 @@ const loadDirectory = async (path: string) => {
         : undefined
     error.value = errorMessage || 'Failed to load directory'
     entries.value = []
+    return false
   } finally {
     loading.value = false
   }
@@ -467,7 +469,12 @@ watch(
 
       // Load initial directory
       if (props.initialPath) {
-        loadDirectory(props.initialPath)
+        loadDirectory(props.initialPath).then((loaded) => {
+          if (!loaded) {
+            selectedPath.value = ''
+            loadDirectory('')
+          }
+        })
       } else {
         // Load user home directory by default - get home directory from backend
         loadDirectory('')
@@ -487,7 +494,12 @@ onMounted(() => {
 
     // Load initial directory
     if (props.initialPath) {
-      loadDirectory(props.initialPath)
+      loadDirectory(props.initialPath).then((loaded) => {
+        if (!loaded) {
+          selectedPath.value = ''
+          loadDirectory('')
+        }
+      })
     } else {
       loadDirectory('')
     }

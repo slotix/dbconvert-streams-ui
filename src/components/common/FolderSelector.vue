@@ -32,7 +32,7 @@
     <!-- Folder Selection Modal -->
     <FolderSelectionModal
       v-model:is-open="showModal"
-      :initial-path="modelValue"
+      :initial-path="modalInitialPath"
       @select="handleFolderSelect"
     />
   </div>
@@ -47,6 +47,7 @@ interface Props {
   modelValue?: string
   placeholder?: string
   helpText?: string
+  initialPath?: string
   disabled?: boolean
   error?: boolean
 }
@@ -59,6 +60,7 @@ const props = withDefaults(defineProps<Props>(), {
   modelValue: '',
   placeholder: 'Select a folder...',
   helpText: 'Click Browse to select a folder for your data files',
+  initialPath: '',
   disabled: false,
   error: false
 })
@@ -66,6 +68,9 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<Emits>()
 
 const showModal = ref(false)
+const modalInitialPath = computed(() =>
+  props.modelValue ? props.modelValue : props.initialPath || ''
+)
 
 const inputClass = computed(() => {
   const baseClass =

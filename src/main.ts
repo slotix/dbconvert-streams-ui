@@ -14,6 +14,7 @@ import { getStorageValue, STORAGE_KEYS } from '@/constants/storageKeys'
 import { DESKTOP_NAVIGATION } from '@/constants/desktopNavigation'
 import { isWailsContext } from '@/composables/useWailsEvents'
 import { setupDesktopZoom } from '@/utils/desktopZoom'
+import { useSystemDefaults } from '@/composables/useSystemDefaults'
 
 // Display startup banner
 console.log(`
@@ -67,6 +68,11 @@ app.use(router)
 app.use(Toast, toastOptions)
 app.directive('tooltip', vTooltip)
 app.component('ConfirmDialog', ConfirmDialog)
+
+const { loadSystemDefaults } = useSystemDefaults()
+loadSystemDefaults().catch((err) => {
+  console.warn('Failed to load system defaults:', err)
+})
 
 // Initialize theme before mounting
 const themeStore = useThemeStore()
