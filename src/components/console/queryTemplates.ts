@@ -47,7 +47,7 @@ export function getFederatedTemplates(aliases: string[]): QueryTemplate[] {
       query: `-- Join tables from different databases
 SELECT a.*, b.*
 FROM ${pg1}.public.table1 a
-JOIN ${my1}.table2 b ON a.id = b.id
+JOIN ${my1}.database.table2 b ON a.id = b.id
 LIMIT 100;`
     },
     {
@@ -91,7 +91,7 @@ SELECT
   COUNT(DISTINCT b.id) as count,
   SUM(b.amount) as total
 FROM ${pg1}.public.categories a
-JOIN ${my1}.orders b ON a.id = b.category_id
+JOIN ${my1}.database.orders b ON a.id = b.category_id
 GROUP BY a.category
 ORDER BY total DESC;`
     },
@@ -102,7 +102,7 @@ SELECT 'postgres' as source, name, created_at
 FROM ${pg1}.public.users
 UNION ALL
 SELECT 'mysql' as source, name, created_at
-FROM ${my1}.users
+FROM ${my1}.database.users
 ORDER BY created_at DESC
 LIMIT 100;`
     },
