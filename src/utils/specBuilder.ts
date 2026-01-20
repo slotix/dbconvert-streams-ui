@@ -88,23 +88,18 @@ export function buildFileFormatSpec(
   fileFormat: string,
   compression?: string,
   parquetConfig?: ParquetConfig,
-  csvConfig?: CSVConfig,
-  useDuckDB: boolean = true
+  csvConfig?: CSVConfig
 ): FileFormatSpec | undefined {
-  // Always return format spec to include useDuckDB setting
-  // useDuckDB defaults to true, but false is also a valid explicit setting
   const hasFormatSettings = parquetConfig || csvConfig || compression
 
   if (!hasFormatSettings) {
-    // No other settings - just return useDuckDB
-    return { useDuckDB }
+    return undefined
   }
 
   return {
     compression,
     parquet: parquetConfig,
-    csv: csvConfig,
-    useDuckDB
+    csv: csvConfig
   }
 }
 
@@ -112,12 +107,11 @@ export function buildFileTargetSpec(
   fileFormat: string,
   compression?: string,
   parquetConfig?: ParquetConfig,
-  csvConfig?: CSVConfig,
-  useDuckDB: boolean = true
+  csvConfig?: CSVConfig
 ): TargetSpec {
   const spec: FileSpec = {
     fileFormat,
-    format: buildFileFormatSpec(fileFormat, compression, parquetConfig, csvConfig, useDuckDB)
+    format: buildFileFormatSpec(fileFormat, compression, parquetConfig, csvConfig)
   }
   return { files: spec }
 }
@@ -138,13 +132,12 @@ export function buildS3TargetSpec(
   parquetConfig?: ParquetConfig,
   csvConfig?: CSVConfig,
   serverSideEnc?: string,
-  kmsKeyId?: string,
-  useDuckDB: boolean = true
+  kmsKeyId?: string
 ): TargetSpec {
   const spec: S3Spec = {
     outputDirectory,
     fileFormat,
-    format: buildFileFormatSpec(fileFormat, compression, parquetConfig, csvConfig, useDuckDB),
+    format: buildFileFormatSpec(fileFormat, compression, parquetConfig, csvConfig),
     upload: {
       bucket,
       prefix,
@@ -166,13 +159,12 @@ export function buildGCSTargetSpec(
   keepLocalFiles?: boolean,
   compression?: string,
   parquetConfig?: ParquetConfig,
-  csvConfig?: CSVConfig,
-  useDuckDB: boolean = true
+  csvConfig?: CSVConfig
 ): TargetSpec {
   const spec: GCSSpec = {
     outputDirectory,
     fileFormat,
-    format: buildFileFormatSpec(fileFormat, compression, parquetConfig, csvConfig, useDuckDB),
+    format: buildFileFormatSpec(fileFormat, compression, parquetConfig, csvConfig),
     upload: {
       bucket,
       prefix,
@@ -191,13 +183,12 @@ export function buildAzureTargetSpec(
   keepLocalFiles?: boolean,
   compression?: string,
   parquetConfig?: ParquetConfig,
-  csvConfig?: CSVConfig,
-  useDuckDB: boolean = true
+  csvConfig?: CSVConfig
 ): TargetSpec {
   const spec: AzureBlobSpec = {
     outputDirectory,
     fileFormat,
-    format: buildFileFormatSpec(fileFormat, compression, parquetConfig, csvConfig, useDuckDB),
+    format: buildFileFormatSpec(fileFormat, compression, parquetConfig, csvConfig),
     upload: {
       container,
       prefix,
@@ -218,7 +209,6 @@ export function buildSnowflakeTargetSpec(
   csvConfig?: CSVConfig,
   filePrefix?: string,
   timestampFormat?: string,
-  useDuckDB: boolean = true,
   skipData?: boolean
 ): TargetSpec {
   const spec: SnowflakeTargetSpec = {
@@ -229,7 +219,7 @@ export function buildSnowflakeTargetSpec(
     staging: {
       outputDirectory,
       fileFormat,
-      format: buildFileFormatSpec(fileFormat, compression, parquetConfig, csvConfig, useDuckDB),
+      format: buildFileFormatSpec(fileFormat, compression, parquetConfig, csvConfig),
       config: {
         fileFormat,
         compressionType: compression,

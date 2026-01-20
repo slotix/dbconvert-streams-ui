@@ -158,18 +158,6 @@
                         compressionDisplay
                       }}</span>
                     </div>
-                    <div v-if="isFileTarget" class="flex items-center justify-between mt-1">
-                      <span>Writer:</span>
-                      <span
-                        class="font-medium"
-                        :class="
-                          useDuckDBDisplay
-                            ? 'text-teal-600 dark:text-teal-400'
-                            : 'text-gray-900 dark:text-gray-100'
-                        "
-                        >{{ useDuckDBDisplay ? 'DuckDB' : 'Standard' }}</span
-                      >
-                    </div>
                   </div>
 
                   <!-- S3 Upload info for S3 targets -->
@@ -379,13 +367,6 @@ const compressionDisplay = computed(() => {
   const spec = currentStreamConfig.value?.target?.spec
   const format = getFormatSpec(spec)
   return format?.compression || 'zstd'
-})
-
-// Get useDuckDB display from target.spec
-const useDuckDBDisplay = computed(() => {
-  const spec = currentStreamConfig.value?.target?.spec
-  const format = getFormatSpec(spec)
-  return format?.useDuckDB ?? true
 })
 
 // Custom queries (from connection queries, not from table filters)

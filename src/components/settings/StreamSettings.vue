@@ -27,15 +27,6 @@
           required
         />
       </div>
-
-      <!-- DuckDB Writer Toggle (only for local files) -->
-      <div v-if="isFileTarget" class="mt-6 pt-6 border-t border-gray-100 dark:border-gray-700">
-        <FormSwitch
-          v-model="useDuckDBWriter"
-          label="Use DuckDB Writer"
-          description="Enable DuckDB Appender API for file writing. DuckDB writer provides optimized performance for CSV, JSONL, and Parquet formats with advanced compression support."
-        />
-      </div>
     </div>
 
     <!-- S3 Upload Configuration (only for S3 targets) -->
@@ -352,7 +343,7 @@ function ensureTargetSpec() {
   // Initialize spec based on connection type
   if (conn.spec?.files) {
     // Local file target
-    config.target.spec = buildFileTargetSpec('csv', 'zstd', undefined, undefined, true)
+    config.target.spec = buildFileTargetSpec('csv', 'zstd')
   } else if (conn.spec?.s3) {
     // S3 target - get bucket from connection scope if available
     // Empty outputDirectory lets backend use platform-appropriate temp directory
@@ -364,12 +355,7 @@ function ensureTargetSpec() {
       conn.spec.s3.scope?.prefix,
       undefined,
       undefined,
-      'zstd',
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      true
+      'zstd'
     )
   }
 }
@@ -421,16 +407,6 @@ const compressionDescription = computed(() => {
       return 'No compression - fastest write speed, largest file size'
     default:
       return 'Select compression method'
-  }
-})
-
-// DuckDB Writer toggle - reads/writes directly to target.spec via composable
-const useDuckDBWriter = computed({
-  get: () => targetSpec.value?.useDuckDB.value ?? true,
-  set: (value) => {
-    if (targetSpec.value) {
-      targetSpec.value.useDuckDB.value = value
-    }
   }
 })
 

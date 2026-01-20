@@ -112,15 +112,6 @@ export function useTargetSpec(streamConfig: StreamConfig) {
     }
   })
 
-  // UseDuckDB
-  const useDuckDB = computed({
-    get: () => getFormatSpec(streamConfig.target.spec)?.useDuckDB ?? true,
-    set: (value: boolean) => {
-      const format = ensureFormat()
-      format.useDuckDB = value
-    }
-  })
-
   // S3 Upload config
   const s3Upload = computed({
     get: () => streamConfig.target.spec?.s3?.upload,
@@ -240,7 +231,6 @@ export function useTargetSpec(streamConfig: StreamConfig) {
     // File format settings
     fileFormat,
     compression,
-    useDuckDB,
 
     // S3 upload settings
     s3Upload,

@@ -131,7 +131,6 @@ export interface FileFormatSpec {
   compression?: string
   parquet?: ParquetConfig
   csv?: CSVConfig
-  useDuckDB?: boolean
 }
 
 export interface FileSpec {
