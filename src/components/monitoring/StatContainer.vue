@@ -1,6 +1,7 @@
 <template>
   <div class="relative mt-4 mb-3">
     <h2 class="text-xl font-bold tracking-tight text-gray-900 dark:text-gray-100">Stream Flow</h2>
+    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Live aggregated progress</p>
     <!-- Status Summary Message -->
     <div
       v-if="statusMessage"
