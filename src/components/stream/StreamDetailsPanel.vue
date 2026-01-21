@@ -1,5 +1,5 @@
 <template>
-  <div class="h-full flex flex-col bg-white dark:bg-gray-850">
+  <div class="h-[calc(100vh-140px)] flex flex-col bg-white dark:bg-gray-850">
     <!-- Top Level Tabs (always visible) -->
     <div
       class="px-6 pt-4 pb-0 bg-white dark:bg-gray-850 shrink-0 border-b border-gray-200 dark:border-gray-700"

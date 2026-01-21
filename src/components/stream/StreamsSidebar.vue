@@ -1,6 +1,6 @@
 <template>
   <div
-    class="flex flex-col h-full bg-linear-to-br from-white via-slate-50/50 to-white dark:from-gray-850 dark:via-gray-900/50 dark:to-gray-850 shadow-xl dark:shadow-gray-900/30 rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-2xl dark:hover:shadow-gray-900/50 border border-slate-200/50 dark:border-gray-700"
+    class="flex flex-col h-[calc(100vh-140px)] bg-linear-to-br from-white via-slate-50/50 to-white dark:from-gray-850 dark:via-gray-900/50 dark:to-gray-850 shadow-xl dark:shadow-gray-900/30 rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-2xl dark:hover:shadow-gray-900/50 border border-slate-200/50 dark:border-gray-700"
   >
     <!-- Streams List -->
     <div class="flex-1 overflow-y-auto p-2 scrollbar-thin">
