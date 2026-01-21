@@ -46,7 +46,9 @@
               >
                 Source Reader
               </div>
-              <div class="text-xs text-gray-600 dark:text-gray-400 font-medium">Data Producer</div>
+              <div class="text-xs text-gray-600 dark:text-gray-400 font-medium">
+                {{ sourceCountLabel }}
+              </div>
             </div>
           </div>
           <div class="shrink-0">
@@ -134,9 +136,7 @@
                 </span>
               </div>
               <div class="text-xs text-gray-600 dark:text-gray-400 font-medium">
-                Data Consumer{{
-                  isRunning && targetStats && targetStats.activeNodes > 1 ? 's' : ''
-                }}
+                {{ targetStageLabel }}
               </div>
             </div>
           </div>
@@ -248,6 +248,30 @@ const sourceStats = computed(() => {
 const targetStats = computed(() => {
   if (!isCurrentStreamData.value) return null
   return store.aggregatedTargetStats
+})
+
+const sourceCountLabel = computed(() => {
+  const count = props.stream.source?.connections?.length
+  if (count === undefined) return '— sources'
+  if (count === 0) return 'No sources'
+  if (count === 1) return '1 source'
+  return `${count} sources`
+})
+
+const targetStageLabel = computed(() => {
+  const targetStatus = targetStats.value?.status
+  if (targetStatus === 'FAILED') return 'Stage: Failed'
+  if (targetStatus === 'STOPPED') return 'Stage: Stopped'
+  if (targetStatus === 'FINISHED') return 'Stage: Finished'
+  if (props.isStreamFinished) {
+    const hasFailed = store.stats.some((stat) => stat.status === 'FAILED')
+    if (hasFailed) return 'Stage: Failed'
+    if (props.isStopped) return 'Stage: Stopped'
+    return 'Stage: Finished'
+  }
+  if (props.isPaused) return 'Stage: Paused'
+  const title = store.currentStage?.title
+  return title ? `Stage: ${title}` : 'Stage: —'
 })
 
 const modeLabel = computed(() => (store.streamConfig?.mode === 'convert' ? 'rows' : 'events'))
