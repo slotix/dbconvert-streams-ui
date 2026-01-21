@@ -1,11 +1,11 @@
 <template>
-  <div class="relative mt-4 mb-3">
+  <div class="relative mt-4 mb-2">
     <h2 class="text-xl font-bold tracking-tight text-gray-900 dark:text-gray-100">Stream Flow</h2>
     <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Live aggregated progress</p>
     <!-- Status Summary Message -->
     <div
       v-if="statusMessage"
-      :class="['mt-2 px-3 py-2 rounded-md text-sm font-medium', statusMessageClass]"
+      :class="['mt-2 px-3 py-1.5 rounded-md text-sm font-medium', statusMessageClass]"
     >
       {{ statusMessage }}
     </div>
@@ -13,16 +13,16 @@
 
   <!-- Source and Target Stats -->
   <div
-    class="grid grid-cols-1 divide-y divide-gray-200 dark:divide-gray-700 overflow-hidden rounded-xl bg-white dark:bg-gray-850 shadow-lg dark:shadow-gray-900/30 lg:grid-cols-2 lg:divide-x lg:divide-y-0"
+    class="grid grid-cols-1 divide-y divide-gray-200 dark:divide-gray-700 overflow-hidden rounded-md border border-gray-200 bg-white/80 dark:border-gray-700 dark:bg-gray-900/40 lg:grid-cols-2 lg:divide-x lg:divide-y-0"
   >
     <!-- Source Stats - Blue Theme -->
     <div class="flex flex-col">
       <div
         :class="[
-          'px-4 py-3 bg-gradient-to-br border-b',
+          'px-3 py-2 border-b border-l-2',
           isRunning
-            ? 'from-blue-50 via-blue-100 to-blue-50 border-blue-200 dark:from-blue-900/20 dark:via-blue-900/10 dark:to-blue-900/5 dark:border-blue-800/60'
-            : 'from-gray-50 via-gray-100 to-gray-50 border-gray-100 dark:from-gray-900/20 dark:via-gray-900/10 dark:to-gray-900/5 dark:border-gray-800/70'
+            ? 'bg-blue-50/60 border-blue-300/70 dark:bg-blue-900/10 dark:border-blue-500/40'
+            : 'bg-gray-50/70 border-gray-200 dark:bg-gray-900/40 dark:border-gray-700'
         ]"
       >
         <div class="flex items-center justify-between gap-3 sm:gap-4">
@@ -31,7 +31,7 @@
               <img
                 :src="sourceIcon"
                 alt="Source Reader"
-                class="h-8 sm:h-10 w-8 sm:w-10 object-contain drop-shadow-sm"
+                class="h-8 sm:h-10 w-8 sm:w-10 object-contain"
                 :class="{ 'opacity-50': !isRunning }"
               />
             </div>
@@ -61,9 +61,7 @@
         </div>
       </div>
 
-      <dl
-        class="flex-1 px-4 py-4 space-y-3 bg-gradient-to-b from-white to-gray-50 dark:from-gray-850 dark:to-gray-900"
-      >
+      <dl class="flex-1 px-3 py-3 space-y-2 bg-transparent">
         <StatRow
           label="Produced"
           :value="sourceStats ? formatNumber(sourceStats.counter) : '—'"
@@ -98,10 +96,10 @@
     <div class="flex flex-col">
       <div
         :class="[
-          'px-4 py-3 bg-gradient-to-br border-b',
+          'px-3 py-2 border-b border-l-2',
           isRunning
-            ? 'from-emerald-50 via-emerald-100 to-emerald-50 border-emerald-200 dark:from-emerald-900/20 dark:via-emerald-900/10 dark:to-emerald-900/5 dark:border-emerald-800/60'
-            : 'from-gray-50 via-gray-100 to-gray-50 border-gray-100 dark:from-gray-900/20 dark:via-gray-900/10 dark:to-gray-900/5 dark:border-gray-800/70'
+            ? 'bg-emerald-50/60 border-emerald-300/70 dark:bg-emerald-900/10 dark:border-emerald-500/40'
+            : 'bg-gray-50/70 border-gray-200 dark:bg-gray-900/40 dark:border-gray-700'
         ]"
       >
         <div class="flex items-center justify-between gap-3 sm:gap-4">
@@ -110,7 +108,7 @@
               <img
                 :src="targetIcon"
                 alt="Target Writer"
-                class="h-8 sm:h-10 w-8 sm:w-10 object-contain drop-shadow-sm"
+                class="h-8 sm:h-10 w-8 sm:w-10 object-contain"
                 :class="{ 'opacity-50': !isRunning }"
               />
             </div>
@@ -154,9 +152,7 @@
         </div>
       </div>
 
-      <dl
-        class="flex-1 px-4 py-4 space-y-3 bg-gradient-to-b from-white to-gray-50 dark:from-gray-850 dark:to-gray-900"
-      >
+      <dl class="flex-1 px-3 py-3 space-y-2 bg-transparent">
         <StatRow
           label="Consumed"
           :value="targetStats ? formatNumber(targetStats.counter) : '—'"
