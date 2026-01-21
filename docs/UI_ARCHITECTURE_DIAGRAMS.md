@@ -368,7 +368,6 @@ Stream Source: File Connection
 │  // Other:                                 │
 │  dataBundleSize: number                    │
 │  reportingIntervals: {source, target}      │
-│  useDuckDBWriter?: boolean                 │
 │  skipData?: boolean                        │
 │  limits: {numberOfEvents, elapsedTime}     │
 │                                             │

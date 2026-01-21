@@ -22,7 +22,6 @@ export interface StreamConfig {
   operations?: string[]
   targetFileFormat?: 'csv' | 'json' | 'jsonl' | 'parquet'
   compressionType?: 'uncompressed' | 'gzip' | 'zstd' | 'none'
-  useDuckDBWriter?: boolean
   tables?: Table[]
   files?: FileEntry[]
 }
@@ -122,7 +121,6 @@ export const defaultStreamConfigOptions: StreamConfig = {
     subDirectory: '',
     options: {
       compressionType: 'zstd',
-      useDuckDBWriter: false,
       structureOptions: {
         tables: true,
         indexes: true,
@@ -270,15 +268,6 @@ const dataBundleSize = computed<number>({
     const clampedValue = Math.min(Math.max(newValue, 10), 1000)
     if (currentStreamConfig.source?.options) {
       currentStreamConfig.source.options.dataBundleSize = clampedValue
-    }
-  }
-})
-
-const useDuckDBWriter = computed({
-  get: () => currentStreamConfig.target?.options?.useDuckDBWriter ?? false,
-  set: (value) => {
-    if (currentStreamConfig.target?.options) {
-      currentStreamConfig.target.options.useDuckDBWriter = value
     }
   }
 })

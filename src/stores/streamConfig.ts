@@ -26,11 +26,8 @@ import { normalizeStreamConnections, DEFAULT_ALIAS } from '@/utils/federatedUtil
 
 interface State {
   generateDefaultStreamConfigName(
-    source: string,
-    target: string,
-    tables: Table[],
-    sourceDatabase?: string,
-    targetDatabase?: string,
+    sourceConnections: StreamConnectionMapping[],
+    targetConnectionId: string,
     targetFileFormat?: string
   ): string
   streamConfigs: StreamConfig[]
@@ -529,11 +526,8 @@ export const useStreamsStore = defineStore('streams', {
     currentStep: null,
     currentFilter: '',
     generateDefaultStreamConfigName: function (
-      _source: string,
-      _target: string,
-      _tables: Table[],
-      _sourceDatabase?: string,
-      _targetDatabase?: string,
+      _sourceConnections: StreamConnectionMapping[],
+      _targetConnectionId: string,
       _targetFileFormat?: string
     ): string {
       throw new Error('Function not implemented.')
@@ -672,12 +666,10 @@ export const useStreamsStore = defineStore('streams', {
       }
 
       if (this.currentStreamConfig && !this.currentStreamConfig.name) {
-        const primarySourceConn = this.currentStreamConfig.source.connections?.[0]
-        const primarySourceConnectionId = primarySourceConn?.connectionId || ''
+        const sourceConnections = this.currentStreamConfig.source.connections || []
         this.currentStreamConfig.name = this.generateDefaultStreamConfigName(
-          primarySourceConnectionId,
-          this.currentStreamConfig.target.id || '',
-          primarySourceConn?.tables || []
+          sourceConnections,
+          this.currentStreamConfig.target.id || ''
         )
       }
     },
@@ -739,14 +731,10 @@ export const useStreamsStore = defineStore('streams', {
       try {
         this.prepareStreamData()
         if (!this.currentStreamConfig?.name) {
-          const primarySourceConn = this.currentStreamConfig?.source.connections?.[0]
-          const primarySourceConnectionId = primarySourceConn?.connectionId || ''
+          const sourceConnections = this.currentStreamConfig?.source.connections || []
           this.currentStreamConfig!.name = this.generateDefaultStreamConfigName(
-            primarySourceConnectionId,
+            sourceConnections,
             this.currentStreamConfig?.target.id || '',
-            primarySourceConn?.tables || [],
-            primarySourceConn?.database,
-            this.currentStreamConfig?.targetDatabase,
             getFileSpec(this.currentStreamConfig?.target.spec)?.fileFormat
           )
         }
@@ -910,8 +898,6 @@ export const useStreamsStore = defineStore('streams', {
         const compressionType = existingFormat?.compression || 'zstd'
         const parquetConfig = existingFormat?.parquet
         const csvConfig = existingFormat?.csv
-        // useDuckDB defaults to true
-        const useDuckDB = existingFormat?.useDuckDB ?? true
 
         // Build the appropriate target spec based on connection type
         const specBuilders: Record<string, () => TargetSpec> = {
@@ -927,7 +913,6 @@ export const useStreamsStore = defineStore('streams', {
               csvConfig,
               existingSpec?.snowflake?.staging?.config?.filePrefix,
               existingSpec?.snowflake?.staging?.config?.timestampFormat,
-              useDuckDB,
               skipData
             ),
           s3: () => {
@@ -945,8 +930,7 @@ export const useStreamsStore = defineStore('streams', {
               parquetConfig,
               csvConfig,
               existingUpload?.serverSideEnc,
-              existingUpload?.kmsKeyId,
-              useDuckDB
+              existingUpload?.kmsKeyId
             )
           },
           gcs: () => {
@@ -962,8 +946,7 @@ export const useStreamsStore = defineStore('streams', {
               existingUpload?.keepLocalFiles,
               compressionType,
               parquetConfig,
-              csvConfig,
-              useDuckDB
+              csvConfig
             )
           },
           azure: () => {
@@ -978,18 +961,11 @@ export const useStreamsStore = defineStore('streams', {
               existingUpload?.keepLocalFiles,
               compressionType,
               parquetConfig,
-              csvConfig,
-              useDuckDB
+              csvConfig
             )
           },
           file: () =>
-            buildFileTargetSpec(
-              resolvedFileFormat,
-              compressionType,
-              parquetConfig,
-              csvConfig,
-              useDuckDB
-            ),
+            buildFileTargetSpec(resolvedFileFormat, compressionType, parquetConfig, csvConfig),
           database: () =>
             buildDatabaseTargetSpec(targetDatabase, targetSchema, structureOptions, skipData)
         }
@@ -1128,21 +1104,35 @@ export const useStreamsStore = defineStore('streams', {
       this.streamConfigs = []
     },
     generateDefaultStreamConfigName(
-      source: string,
-      target: string,
-      tables: Table[],
-      _sourceDatabase?: string,
-      _targetDatabase?: string,
+      sourceConnections: StreamConnectionMapping[],
+      targetConnectionId: string,
       targetFileFormat?: string
     ): string {
       const connectionsStore = useConnectionsStore()
-      const sourceConnection = connectionsStore.connectionByID(source)
-      const targetConnection = connectionsStore.connectionByID(target)
+      const targetConnection = connectionsStore.connectionByID(targetConnectionId)
 
       const targetKind = getConnectionKindFromSpec(targetConnection?.spec)
 
-      const sourceType =
-        getConnectionTypeLabel(sourceConnection?.spec, sourceConnection?.type) || ''
+      // Abbreviation map for source types
+      const typeAbbreviations: Record<string, string> = {
+        postgresql: 'pg',
+        snowflake: 'sf',
+        azure: 'az'
+      }
+
+      // Get unique source types from all connections with abbreviations
+      const sourceTypes = sourceConnections
+        .map((conn) => {
+          const connection = connectionsStore.connectionByID(conn.connectionId)
+          const typeLabel = getConnectionTypeLabel(connection?.spec, connection?.type) || ''
+          return typeAbbreviations[typeLabel] || typeLabel
+        })
+        .filter((type) => type !== '')
+
+      // Deduplicate and sort alphabetically
+      const uniqueSourceTypes = [...new Set(sourceTypes)].sort()
+      const sourcePart = uniqueSourceTypes.join('_') || 'unknown'
+
       const targetType =
         getConnectionTypeLabel(targetConnection?.spec, targetConnection?.type) || ''
 
@@ -1158,12 +1148,15 @@ export const useStreamsStore = defineStore('streams', {
         targetPart = targetType
       }
 
-      // Calculate table count
-      const tableCount = tables.length > 0 ? tables.length : 'all'
+      // Calculate total table count across all source connections
+      const totalTables = sourceConnections.reduce((sum, conn) => {
+        return sum + (conn.tables?.length || 0)
+      }, 0)
+      const tableCount = totalTables > 0 ? totalTables : 'all'
 
-      // Format: {sourceType}_to_{targetType}_{count}_tables
-      // Examples: postgresql_to_csv_14_tables, mysql_to_snowflake_5_tables
-      return `${sourceType}_to_${targetPart}_${tableCount}_tables`
+      // Format: {sourceTypes}_to_{targetType}_{count}_tables
+      // Examples: mysql_pg_to_csv_14_tables, mysql_pg_s3_to_parquet_5_tables
+      return `${sourcePart}_to_${targetPart}_${tableCount}_tables`
     },
     async getStreamConfigById(configId: string): Promise<StreamConfig | null> {
       try {

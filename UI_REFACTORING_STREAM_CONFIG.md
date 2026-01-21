@@ -7,7 +7,7 @@ The UI codebase currently uses an old stream configuration structure that needs 
 
 The UI's `StreamConfig` type currently has:
 - **Top-level fields**: `id`, `name`, `mode`, `description`, `created`, `reportingInterval`, `limits`
-- **File/Output fields at stream level**: `targetFileFormat`, `compressionType`, `useDuckDBWriter`, `subDirectory`
+- **File/Output fields at stream level**: `targetFileFormat`, `compressionType`, `subDirectory`
 - **Legacy fields**: `tables`, `files` (for compatibility)
 - **Nested in targetOptions**: `parquetConfig`, `csvConfig`, `snowflakeConfig`, `s3UploadConfig`, `performanceConfig`
 
@@ -47,7 +47,6 @@ export interface TargetOptions {
   workerPoolSize?: number
   structureOptions?: { tables, indexes, foreignKeys }
   skipData?: boolean
-  useDuckDBWriter?: boolean
   parquetConfig?: ParquetConfig
   csvConfig?: CSVConfig
   snowflakeConfig?: SnowflakeConfig
@@ -65,7 +64,6 @@ export interface TargetOptions {
 - Add `SourceConfig` and `TargetConfig` types (already partially defined)
 - Move `targetFileFormat` from root to `TargetConfig.fileFormat`
 - Move `compressionType` from root to `TargetConfig.options.compressionType`
-- Move `useDuckDBWriter` from root to `TargetConfig.options.useDuckDBWriter`
 - Replace `dataBundleSize` with `source.options.dataBundleSize` and `target.options.performanceConfig.batchSize`
 - Replace `reportingIntervals` object with single `reportingInterval` number
 - Replace `operations` array with `source.options.operations`
@@ -90,7 +88,6 @@ export interface TargetOptions {
 #### Stream Settings (`/src/components/settings/StreamSettings.vue`)
 - Update `targetFileFormat` getter/setter to use `currentStreamConfig.target.fileFormat`
 - Update `compressionType` to use `currentStreamConfig.target.options.compressionType`
-- Update `useDuckDBWriter` to use `currentStreamConfig.target.options.useDuckDBWriter`
 - Update `dataBundleSize` to use correct path in source/target options
 - Update `reportingIntervalsSource` and `reportingIntervalsTarget` to handle unified `reportingInterval`
 
@@ -191,7 +188,6 @@ export interface TargetOptions {
     subDirectory: '',
     options: {
       compressionType: 'zstd',
-      useDuckDBWriter: false,
       structureOptions: { tables: true, indexes: true, foreignKeys: true },
       performanceConfig: { batchSize: 500 }
     }
@@ -270,7 +266,6 @@ None expected - this is an internal refactoring. The API payloads sent to the ba
 - [ ] Verify JSON view shows correct structure
 - [ ] Test CDC mode operations selection
 - [ ] Test file format and compression selection
-- [ ] Test DuckDB writer toggle
 - [ ] Test reporting interval settings
 - [ ] Test bundle size settings
 - [ ] Test clone stream functionality

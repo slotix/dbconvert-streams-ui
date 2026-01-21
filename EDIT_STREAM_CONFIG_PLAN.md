@@ -66,7 +66,6 @@ Must match wizard validation rules exactly:
 
 #### Options Object (optional)
 - `compressionType` (string)
-- `useDuckDBWriter` (boolean)
 - `dataBundleSize` (number, > 0)
 - `reportingIntervalSec` (number, >= 1)
 - `maxRowsToTransfer` (number, >= 0)

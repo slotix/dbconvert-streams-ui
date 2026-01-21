@@ -314,7 +314,6 @@ export interface StreamConfig {
     foreignKeys?: boolean
   }
   skipData?: boolean
-  useDuckDBWriter?: boolean            // Use DuckDB Appender for file writers
   limits: { numberOfEvents: number; elapsedTime: number }
   tables?: Table[]                     // For database sources
   files?: FileEntry[]                  // For file sources
