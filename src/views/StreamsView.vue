@@ -1,11 +1,11 @@
 <template>
-  <div class="h-screen overflow-hidden flex flex-col">
+  <div class="h-screen flex flex-col">
     <!-- Disconnected Overlay -->
     <DisconnectedOverlay />
 
     <!-- Enhanced Functional Toolbar with gradient background -->
     <header
-      class="sticky top-0 z-30 bg-linear-to-r from-slate-50 via-white to-slate-50 dark:from-gray-900 dark:via-gray-850 dark:to-gray-900 border-b border-slate-200 dark:border-gray-700 shadow-sm dark:shadow-gray-900/30 lg:-ml-[var(--sidebar-width)] lg:w-[calc(100%+var(--sidebar-width))]"
+      class="sticky top-0 z-30 bg-linear-to-r from-slate-50 via-white to-slate-50 dark:from-gray-900 dark:via-gray-850 dark:to-gray-900 border-b border-slate-200 dark:border-gray-700 shadow-sm dark:shadow-gray-900/30 lg:-ml-(--sidebar-width) lg:w-[calc(100%+var(--sidebar-width))]"
     >
       <div class="px-6 py-4 flex items-center gap-4">
         <div class="flex items-center gap-3">
@@ -63,7 +63,7 @@
     </header>
 
     <!-- Main Content -->
-    <main class="flex-1 mx-auto py-4 overflow-hidden w-full">
+    <main class="flex-1 mx-auto py-4 overflow-x-hidden">
       <!-- No streams (show regardless of backend connection status) -->
       <div
         v-if="streamsCount() === 0"
@@ -97,7 +97,7 @@
       <div v-else class="px-4 sm:px-6 lg:px-8 h-full">
         <div
           :ref="(el) => (sidebar.sidebarContainerRef.value = el as HTMLElement)"
-          class="pt-6 flex flex-row items-stretch min-w-0 overflow-hidden h-full"
+          class="mt-6 flex flex-row items-stretch min-w-0 overflow-x-hidden h-full"
         >
           <!-- Sidebar -->
           <div
