@@ -1,10 +1,26 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { CloudUpload } from 'lucide-vue-next'
+import { computed, toRefs } from 'vue'
+import { ChevronDown, CloudUpload } from 'lucide-vue-next'
 import { useMonitoringStore } from '@/stores/monitoring'
 import { STATUS } from '@/constants'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 import { formatDataSize } from '@/utils/formats'
+
+const props = withDefaults(
+  defineProps<{
+    isOpen?: boolean
+    collapsible?: boolean
+  }>(),
+  {
+    isOpen: true,
+    collapsible: false
+  }
+)
+const { isOpen, collapsible } = toRefs(props)
+
+const emit = defineEmits<{
+  (e: 'toggle'): void
+}>()
 
 const monitoringStore = useMonitoringStore()
 const s3UploadStats = computed(() => monitoringStore.s3UploadStats)
@@ -28,6 +44,7 @@ const statusCounts = computed(() => {
 const hasAnyUploads = computed(() => statusCounts.value.total > 0)
 
 const aggregateStats = computed(() => s3UploadStats.value.aggregate)
+const isExpanded = computed(() => (collapsible.value ? isOpen.value : true))
 
 // Calculate overall progress percentage
 const overallProgress = computed(() => {
@@ -98,6 +115,16 @@ function getUploadStatus(status: string) {
               {{ formatDataSize(aggregateStats.bytesTotal) }}
             </div>
           </div>
+          <button
+            v-if="collapsible"
+            type="button"
+            class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-amber-200 bg-white text-amber-700 transition-all hover:bg-amber-50 dark:border-amber-700/50 dark:bg-gray-900 dark:text-amber-300 dark:hover:bg-gray-800"
+            :aria-expanded="isExpanded"
+            aria-label="Toggle upload"
+            @click="emit('toggle')"
+          >
+            <ChevronDown class="h-4 w-4 transition-transform" :class="{ 'rotate-180': isOpen }" />
+          </button>
           <span
             class="inline-flex items-center rounded-full px-3 py-1.5 text-sm font-semibold bg-amber-600 text-white dark:bg-amber-500 dark:text-gray-900"
           >
@@ -127,7 +154,7 @@ function getUploadStatus(status: string) {
     </div>
 
     <!-- Upload Table -->
-    <div v-if="hasAnyUploads" class="p-0">
+    <div v-if="isExpanded && hasAnyUploads" class="p-0">
       <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
           <thead class="bg-gray-50 dark:bg-gray-900/30">
@@ -241,7 +268,7 @@ function getUploadStatus(status: string) {
     </div>
 
     <!-- Empty State -->
-    <div v-else class="px-6 py-12 text-center bg-amber-50/50 dark:bg-amber-900/10">
+    <div v-else-if="isExpanded" class="px-6 py-12 text-center bg-amber-50/50 dark:bg-amber-900/10">
       <div class="inline-flex p-4 bg-amber-100 dark:bg-amber-900/30 rounded-full mb-4">
         <CloudArrowUpIcon class="h-8 w-8 text-amber-400 dark:text-amber-500" />
       </div>

@@ -184,19 +184,24 @@
     </div>
   </div>
 
-  <!-- Tables Section - Full Width Below -->
+  <!-- Transfer Section -->
   <div class="mt-4">
-    <TableStatsCard @compare-table="(tableName) => $emit('compare-table', tableName)" />
+    <TableStatsCard
+      :collapsible="true"
+      :is-open="transferOpen"
+      @toggle="toggleTransfer"
+      @compare-table="(tableName) => $emit('compare-table', tableName)"
+    />
   </div>
 
-  <!-- S3 Upload Section - Show for S3/GCS/Azure targets -->
-  <div v-if="isS3Target" class="mt-4">
-    <S3UploadStatsCard />
+  <!-- Upload Section -->
+  <div v-if="hasUploadStage" class="mt-4">
+    <S3UploadStatsCard :collapsible="true" :is-open="uploadOpen" @toggle="toggleUpload" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useMonitoringStore } from '@/stores/monitoring'
 import type { StreamConfig } from '@/types/streamConfig'
 import {
@@ -276,11 +281,54 @@ const targetStageLabel = computed(() => {
 
 const modeLabel = computed(() => (store.streamConfig?.mode === 'convert' ? 'rows' : 'events'))
 
-// Check if target is S3/GCS/Azure cloud storage
-const isS3Target = computed(() => {
+const hasUploadStage = computed(() => {
   const spec = store.streamConfig?.target?.spec
-  return !!(spec?.s3 || spec?.gcs || spec?.azure)
+  return !!(spec?.s3 || spec?.snowflake)
 })
+
+const currentStageId = computed(() => store.currentStage?.id ?? store.currentStageID)
+const transferOpen = ref(true)
+const uploadOpen = ref(false)
+
+const syncStagePanels = (stageId: number) => {
+  if (!hasUploadStage.value) {
+    transferOpen.value = true
+    uploadOpen.value = false
+    return
+  }
+  if (stageId === 4 || stageId === 5) {
+    transferOpen.value = false
+    uploadOpen.value = true
+    return
+  }
+  transferOpen.value = true
+  uploadOpen.value = false
+}
+
+watch(
+  [currentStageId, hasUploadStage],
+  ([stageId]) => {
+    syncStagePanels(stageId)
+  },
+  {
+    immediate: true
+  }
+)
+
+const toggleTransfer = () => {
+  transferOpen.value = !transferOpen.value
+  if (transferOpen.value && hasUploadStage.value) {
+    uploadOpen.value = false
+  }
+}
+
+const toggleUpload = () => {
+  if (!hasUploadStage.value) return
+  uploadOpen.value = !uploadOpen.value
+  if (uploadOpen.value) {
+    transferOpen.value = false
+  }
+}
 
 // Status message for completed/stopped/failed states
 const statusMessage = computed(() => {

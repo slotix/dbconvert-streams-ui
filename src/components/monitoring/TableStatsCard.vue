@@ -1,13 +1,26 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { ChevronRight, Sheet } from 'lucide-vue-next'
+import { computed, toRefs } from 'vue'
+import { ChevronDown, ChevronRight, Sheet } from 'lucide-vue-next'
 import { useMonitoringStore } from '@/stores/monitoring'
 import { STATUS } from '@/constants'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 import TableProgressBar from './TableProgressBar.vue'
 
+const props = withDefaults(
+  defineProps<{
+    isOpen?: boolean
+    collapsible?: boolean
+  }>(),
+  {
+    isOpen: true,
+    collapsible: false
+  }
+)
+const { isOpen, collapsible } = toRefs(props)
+
 const emit = defineEmits<{
   (e: 'compare-table', tableName: string): void
+  (e: 'toggle'): void
 }>()
 
 const monitoringStore = useMonitoringStore()
@@ -36,6 +49,7 @@ const statusCounts = computed(() => {
 })
 
 const hasAnyTables = computed(() => statusCounts.value.total > 0)
+const isExpanded = computed(() => (collapsible.value ? isOpen.value : true))
 
 function handleCompareTable(tableName: string) {
   emit('compare-table', tableName)
@@ -82,16 +96,28 @@ function formatDuration(seconds: number) {
             </p>
           </div>
         </div>
-        <span
-          class="inline-flex items-center rounded-full px-3 py-1.5 text-sm font-semibold bg-gray-600 text-white dark:bg-gray-500 dark:text-gray-100"
-        >
-          {{ statusCounts.total }}
-        </span>
+        <div class="flex items-center gap-2">
+          <button
+            v-if="collapsible"
+            type="button"
+            class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-600 transition-all hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800"
+            :aria-expanded="isExpanded"
+            aria-label="Toggle tables"
+            @click="$emit('toggle')"
+          >
+            <ChevronDown class="h-4 w-4 transition-transform" :class="{ 'rotate-180': isOpen }" />
+          </button>
+          <span
+            class="inline-flex items-center rounded-full px-3 py-1.5 text-sm font-semibold bg-gray-600 text-white dark:bg-gray-500 dark:text-gray-100"
+          >
+            {{ statusCounts.total }}
+          </span>
+        </div>
       </div>
     </div>
 
     <!-- Tables Grid -->
-    <div v-if="hasAnyTables" class="p-0">
+    <div v-if="isExpanded && hasAnyTables" class="p-0">
       <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
           <thead class="bg-gray-50 dark:bg-gray-900/30">
@@ -196,7 +222,7 @@ function formatDuration(seconds: number) {
     </div>
 
     <!-- Empty State -->
-    <div v-else class="px-6 py-12 text-center bg-gray-50 dark:bg-gray-900/30">
+    <div v-else-if="isExpanded" class="px-6 py-12 text-center bg-gray-50 dark:bg-gray-900/30">
       <div class="inline-flex p-4 bg-gray-100 dark:bg-gray-800 rounded-full mb-4">
         <Sheet class="h-8 w-8 text-gray-400 dark:text-gray-500" />
       </div>

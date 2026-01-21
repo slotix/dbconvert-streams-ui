@@ -107,7 +107,7 @@ export const useMonitoringStore = defineStore('monitoring', {
       {
         id: 4,
         name: 's3Upload',
-        title: 'Uploading to S3',
+        title: 'Uploading staged files',
         description: 'Uploading staged files to cloud storage.',
         timestamp: null
       },
@@ -143,12 +143,12 @@ export const useMonitoringStore = defineStore('monitoring', {
           return statusPriority < STATUS_PRIORITY[STATUS.FAILED]
         }).length
 
-        // All nodes finished - update stage 4 title
+        // All nodes finished - update stage 5 title
         if (
           runningNodesNumber === 0 &&
           this.stats.every((stat) => ['FINISHED', 'STOPPED', 'FAILED'].includes(stat.status || ''))
         ) {
-          const stage = this.stages.find((s) => s.id === 4)
+          const stage = this.stages.find((s) => s.id === 5)
           if (stage) {
             const isStopped = this.stats.some((stat) => stat.status === 'STOPPED')
             if (isStopped) {
@@ -600,13 +600,6 @@ export const useMonitoringStore = defineStore('monitoring', {
       // Handle progress messages
       if (log.category === 'progress' && log.stage !== undefined) {
         this.currentStageID = log.stage
-      }
-
-      // Handle S3 upload logs - transition to stage 4 (s3Upload)
-      // This triggers when the first s3_upload log arrives
-      if (log.category === 's3_upload' && this.currentStageID < 4) {
-        this.currentStageID = 4
-        this.setStageTimestamp(4)
       }
 
       // Handle table metadata logs (from SSE instead of API)
