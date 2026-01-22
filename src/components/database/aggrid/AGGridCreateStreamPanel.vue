@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import SlideOverPanel from '@/components/common/SlideOverPanel.vue'
+import FolderSelectionModal from '@/components/common/FolderSelectionModal.vue'
 import { useObjectTabStateStore } from '@/stores/objectTabState'
 import { useToast } from 'vue-toastification'
 import {
@@ -37,6 +38,7 @@ const streamName = ref('')
 const streamNameTouched = ref(false)
 const compression = ref<'none' | 'gzip' | 'zstd' | 'snappy'>('none')
 const targetBasePath = ref('')
+const showFolderPicker = ref(false)
 const { systemDefaults, loadSystemDefaults } = useSystemDefaults()
 const defaultExportPath = computed(() => systemDefaults.value?.defaultExportPath ?? '')
 
@@ -86,6 +88,13 @@ const compressionOptions = computed(() => {
 
 function generateStreamName(): string {
   return buildExportStreamName(props.objectName, format.value)
+}
+
+const targetPickerPath = computed(() => targetBasePath.value || defaultExportPath.value || '')
+
+function handleFolderSelect(path: string) {
+  targetBasePath.value = path
+  showFolderPicker.value = false
 }
 
 watch(
@@ -271,15 +280,29 @@ async function onCreateStream() {
 
         <label class="block">
           <span class="text-xs text-gray-700 dark:text-gray-300">Target path</span>
-          <input
-            v-model="targetBasePath"
-            type="text"
-            class="mt-1 w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-850 px-2.5 py-2 text-sm text-gray-900 dark:text-gray-100"
-            placeholder="Leave blank to use default export folder"
-          />
+          <div class="mt-1 flex items-stretch gap-2">
+            <input
+              v-model="targetBasePath"
+              type="text"
+              class="w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-850 px-2.5 py-2 text-sm text-gray-900 dark:text-gray-100"
+              placeholder="Leave blank to use default export folder"
+            />
+            <button
+              type="button"
+              class="inline-flex items-center rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
+              @click="showFolderPicker = true"
+            >
+              Browse
+            </button>
+          </div>
           <p v-if="defaultExportPath" class="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
             Export folder (server default): {{ defaultExportPath }}
           </p>
+          <FolderSelectionModal
+            v-model:is-open="showFolderPicker"
+            :initial-path="targetPickerPath"
+            @select="handleFolderSelect"
+          />
         </label>
       </div>
 
