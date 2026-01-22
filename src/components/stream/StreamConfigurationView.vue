@@ -53,6 +53,21 @@
             :inline="true"
             @navigate="emit('navigate-target')"
           />
+          <div
+            v-if="!isFileTarget && (targetDatabaseName || targetSchemaName)"
+            class="mt-2 space-y-1 text-xs"
+          >
+            <div v-if="targetDatabaseName" class="flex items-center gap-2">
+              <span class="text-[10px] uppercase font-semibold text-gray-400">Target database</span>
+              <span class="text-gray-700 dark:text-gray-200 truncate">{{
+                targetDatabaseName
+              }}</span>
+            </div>
+            <div v-if="targetSchemaName" class="flex items-center gap-2">
+              <span class="text-[10px] uppercase font-semibold text-gray-400">Target schema</span>
+              <span class="text-gray-700 dark:text-gray-200 truncate">{{ targetSchemaName }}</span>
+            </div>
+          </div>
           <!-- Output Configuration (for file targets) -->
           <FileOutputSummary
             v-if="isFileTarget && hasFileFormat"
@@ -153,6 +168,13 @@ function handleSourceNavigate(connectionId: string) {
 }
 
 const targetLogo = computed(() => getLogo(props.target))
+const targetSpec = computed(() => props.stream.target?.spec)
+const targetDatabaseName = computed(
+  () => targetSpec.value?.database?.database || targetSpec.value?.snowflake?.database || ''
+)
+const targetSchemaName = computed(
+  () => targetSpec.value?.database?.schema || targetSpec.value?.snowflake?.schema || ''
+)
 </script>
 
 <style scoped>
