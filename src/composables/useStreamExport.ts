@@ -25,7 +25,7 @@ import { buildFileTargetSpec } from '@/utils/specBuilder'
 
 // Local storage key for the shared export connection ID
 const EXPORT_CONNECTION_KEY = 'dbconvert-export-connection-id'
-const EXPORT_CONNECTION_NAME = 'Data Explorer Export'
+const EXPORT_CONNECTION_NAME = 'Data Explorer Exports'
 
 export type StreamExportFormat = 'csv' | 'jsonl' | 'parquet'
 
