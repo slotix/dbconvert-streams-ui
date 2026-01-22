@@ -9,6 +9,7 @@ import { createS3Bucket } from '@/api/files'
 import type { FileSystemEntry } from '@/api/fileSystem'
 import type { DiagramFocusTarget, ShowDiagramPayload } from '@/types/diagram'
 import { parseRoutineName } from '@/utils/routineUtils'
+import { getConnectionKindFromSpec, isFileBasedKind } from '@/types/specs'
 import { findFileEntryByPath } from '@/utils/fileEntryUtils'
 import type { ObjectType } from '@/stores/explorerNavigation'
 
@@ -63,6 +64,19 @@ export function useConnectionActions(emits?: {
   }
 
   async function refreshDatabases(id: string) {
+    const connection = connectionsStore.connectionByID(id)
+    const kind = getConnectionKindFromSpec(connection?.spec)
+    if (isFileBasedKind(kind)) {
+      try {
+        await fileExplorerStore.loadEntries(id, true)
+        toast.success('Files refreshed')
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : 'Failed to refresh files'
+        toast.error(msg)
+      }
+      return
+    }
+
     navigationStore.invalidateDatabases(id)
     await navigationStore.ensureDatabases(id, true)
     const targets = new Set<string>()
