@@ -37,7 +37,6 @@ const streamName = ref('')
 const streamNameTouched = ref(false)
 const compression = ref<'none' | 'gzip' | 'zstd' | 'snappy'>('none')
 const targetBasePath = ref('')
-const showOptions = ref(false)
 const { systemDefaults, loadSystemDefaults } = useSystemDefaults()
 const defaultExportPath = computed(() => systemDefaults.value?.defaultExportPath ?? '')
 
@@ -97,7 +96,6 @@ watch(
     runImmediately.value = true
     compression.value = 'none'
     targetBasePath.value = ''
-    showOptions.value = false
     streamNameTouched.value = false
     streamName.value = generateStreamName()
 
@@ -258,45 +256,6 @@ async function onCreateStream() {
             <option value="jsonl">JSONL</option>
           </select>
         </label>
-      </div>
-
-      <div
-        class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-3 space-y-3"
-      >
-        <div class="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase">
-          Stream
-        </div>
-        <label class="inline-flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300">
-          <input v-model="runImmediately" type="checkbox" class="rounded border-gray-300" />
-          Run immediately
-        </label>
-
-        <label class="block">
-          <span class="text-xs text-gray-700 dark:text-gray-300">Stream name</span>
-          <input
-            v-model="streamName"
-            type="text"
-            class="mt-1 w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-850 px-2.5 py-2 text-sm text-gray-900 dark:text-gray-100"
-            @input="streamNameTouched = true"
-          />
-        </label>
-      </div>
-
-      <button
-        type="button"
-        class="inline-flex items-center gap-1 text-xs text-teal-700 dark:text-teal-300 hover:text-teal-600"
-        @click="showOptions = !showOptions"
-      >
-        {{ showOptions ? 'Hide stream settings' : 'Stream settings' }}
-      </button>
-
-      <div
-        v-if="showOptions"
-        class="space-y-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-3"
-      >
-        <div class="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase">
-          Stream-level settings
-        </div>
 
         <label class="block">
           <span class="text-xs text-gray-700 dark:text-gray-300">Compression</span>
@@ -321,6 +280,28 @@ async function onCreateStream() {
           <p v-if="defaultExportPath" class="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
             Export folder (server default): {{ defaultExportPath }}
           </p>
+        </label>
+      </div>
+
+      <div
+        class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-3 space-y-3"
+      >
+        <div class="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase">
+          Stream
+        </div>
+        <label class="inline-flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300">
+          <input v-model="runImmediately" type="checkbox" class="rounded border-gray-300" />
+          Run immediately
+        </label>
+
+        <label class="block">
+          <span class="text-xs text-gray-700 dark:text-gray-300">Stream name</span>
+          <input
+            v-model="streamName"
+            type="text"
+            class="mt-1 w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-850 px-2.5 py-2 text-sm text-gray-900 dark:text-gray-100"
+            @input="streamNameTouched = true"
+          />
         </label>
       </div>
     </div>
