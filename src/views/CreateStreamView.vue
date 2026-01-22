@@ -121,6 +121,7 @@
                 :target-connection-id="wizard.selection.value.targetConnectionId"
                 :source-database="wizard.selection.value.sourceDatabase"
                 :target-database="wizard.selection.value.targetDatabase"
+                :target-schema="wizard.selection.value.targetSchema"
                 @update:can-proceed="updateCanProceed"
               />
             </div>

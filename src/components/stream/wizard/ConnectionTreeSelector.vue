@@ -257,6 +257,34 @@
                   {{ getTableCount(connection.id, database.name) }} tables
                 </span>
               </div>
+              <div
+                v-if="shouldShowSchemas(connection, database.name)"
+                class="ml-7 mt-1 space-y-1 border-l border-gray-100 dark:border-gray-800 pl-3"
+              >
+                <div
+                  v-if="isSchemasLoading(connection.id, database.name)"
+                  class="py-1 text-xs text-gray-500"
+                >
+                  Loading schemas…
+                </div>
+                <div
+                  v-else-if="getSchemas(connection.id, database.name).length === 0"
+                  class="py-1 text-xs text-gray-500"
+                >
+                  No schemas found
+                </div>
+                <div v-else class="space-y-1">
+                  <div
+                    v-for="schema in getSchemas(connection.id, database.name)"
+                    :key="`${connection.id}:${database.name}:${schema}`"
+                    class="flex items-center gap-2 rounded-md px-2 py-1 text-xs cursor-pointer"
+                    :class="schemaRowClass(connection.id, database.name, schema)"
+                    @click="handleSchemaRowClick(connection, database.name, schema)"
+                  >
+                    <span class="truncate">{{ schema }}</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </template>
@@ -284,6 +312,7 @@ import {
   isDatabaseKind,
   isFileBasedKind
 } from '@/types/specs'
+import { supportsSchemas } from '@/types/databaseCapabilities'
 import type { ConnectionKind } from '@/types/specs'
 import type { Connection } from '@/types/connections'
 import type { StreamConnectionMapping } from '@/types/streamConfig'
@@ -702,6 +731,21 @@ function databaseRowClass(connectionId: string, database: string): string {
   }
 }
 
+function schemaRowClass(connectionId: string, database: string, schema: string): string {
+  const isSelected =
+    props.selectedConnectionId === connectionId &&
+    props.selectedDatabase === database &&
+    props.selectedSchema === schema
+
+  if (!isSelected) {
+    return 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800/50'
+  }
+
+  return props.mode === 'source'
+    ? 'bg-gradient-to-r from-blue-50 via-blue-100/60 to-transparent dark:from-blue-900/30 dark:via-blue-900/15 dark:to-transparent text-blue-900 dark:text-blue-100 font-semibold ring-1 ring-blue-200 dark:ring-blue-500/30 border border-blue-100/70 dark:border-blue-800/40 shadow-inner shadow-blue-900/5'
+    : 'bg-gradient-to-r from-emerald-50 via-emerald-100/60 to-transparent dark:from-emerald-900/30 dark:via-emerald-900/15 dark:to-transparent text-emerald-900 dark:text-emerald-100 font-semibold ring-1 ring-emerald-200 dark:ring-emerald-500/30 border border-emerald-100/70 dark:border-emerald-800/40 shadow-inner shadow-emerald-900/5'
+}
+
 function isConnectionExpanded(connectionId: string): boolean {
   return expandedConnections.value.has(connectionId)
 }
@@ -755,6 +799,41 @@ async function ensureMetadata(connectionId: string, database: string) {
   await navigationStore.ensureMetadata(connectionId, database)
 }
 
+function shouldShowSchemas(connection: Connection, database: string): boolean {
+  if (props.selectedConnectionId !== connection.id || props.selectedDatabase !== database) {
+    return false
+  }
+  const typeLabel = getConnectionTypeLabel(connection.spec, connection.type)
+  if (!typeLabel || !supportsSchemas(typeLabel)) {
+    return false
+  }
+  return true
+}
+
+function isSchemasLoading(connectionId: string, database: string): boolean {
+  return navigationStore.isMetadataLoading(connectionId, database)
+}
+
+function getSchemas(connectionId: string, database: string): string[] {
+  const fromDatabaseList = navigationStore.getFilteredSchemas(connectionId, database)
+  if (fromDatabaseList?.length) {
+    return fromDatabaseList.map((schema) => schema.name)
+  }
+  const meta = navigationStore.getMetadata(connectionId, database)
+  if (meta?.schemas?.length) {
+    return meta.schemas
+  }
+  if (meta?.tables) {
+    const names = new Set(
+      Object.values(meta.tables)
+        .map((table) => table.schema)
+        .filter((schema): schema is string => Boolean(schema))
+    )
+    return Array.from(names)
+  }
+  return []
+}
+
 function getTableCount(connectionId: string, database: string): number | null {
   const meta = navigationStore.metadataState[connectionId]?.[database]
   if (!meta) {
@@ -787,6 +866,16 @@ function handleDatabaseRowClick(connection: Connection, database: string) {
     // Single-select mode
     handleDatabaseSelect(connection, database)
   }
+}
+
+function handleSchemaRowClick(connection: Connection, database: string, schema: string) {
+  // Skip file connections
+  if (isFileConnection(connection)) {
+    return
+  }
+  addToSet(expandedConnections, connection.id)
+  emit('select-connection', { connectionId: connection.id, database, schema })
+  emit('select-database', { connectionId: connection.id, database, schema })
 }
 
 function getLogoSrc(connection: Connection): string {

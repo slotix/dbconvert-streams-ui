@@ -265,6 +265,7 @@ interface Props {
   targetConnectionId?: string | null
   sourceDatabase?: string | null
   targetDatabase?: string | null
+  targetSchema?: string | null
 }
 
 const props = defineProps<Props>()
@@ -307,6 +308,7 @@ const targetDisplay = computed(() => {
   if (!conn) return props.targetConnectionId
   let display = conn.name
   if (props.targetDatabase) display += ` / ${props.targetDatabase}`
+  if (props.targetSchema) display += ` / ${props.targetSchema}`
   // Use spec-based kind detection
   const kind = getConnectionKindFromSpec(conn.spec)
   if (isFileBasedKind(kind)) {

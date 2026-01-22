@@ -194,6 +194,9 @@
               <span v-if="targetDatabase" class="text-emerald-600 dark:text-emerald-300">
                 / {{ targetDatabase }}
               </span>
+              <span v-if="targetSchema" class="text-emerald-600 dark:text-emerald-300">
+                / {{ targetSchema }}
+              </span>
             </span>
             <span v-else class="text-emerald-500/80 dark:text-emerald-300/70 ml-1 italic"
               >Not selected</span

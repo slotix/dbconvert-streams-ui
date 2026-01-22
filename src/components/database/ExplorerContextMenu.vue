@@ -126,7 +126,8 @@ const isLocalNavigationFolder = computed(
 const isOpenable = computed(() => isDatabaseObject.value || isFileOrTableFolder.value)
 // Show menu for: non-file targets, openable files, OR local navigation folders
 const hasMenu = computed(
-  () => props.visible && !!props.target && (!isNavigationFolder.value || isLocalNavigationFolder.value)
+  () =>
+    props.visible && !!props.target && (!isNavigationFolder.value || isLocalNavigationFolder.value)
 )
 
 function click(action: string, openInRightSplit?: boolean) {
