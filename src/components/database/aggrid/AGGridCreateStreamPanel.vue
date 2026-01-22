@@ -190,15 +190,13 @@ async function onCreateStream() {
 
       <div class="grid grid-cols-1 gap-3">
         <div
+          v-if="filters.length > 0"
           class="rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/40 p-3"
         >
           <div class="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase">
             Filters
           </div>
-          <div v-if="filters.length === 0" class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            None
-          </div>
-          <ul v-else class="mt-1 space-y-1 text-xs text-gray-700 dark:text-gray-300">
+          <ul class="mt-1 space-y-1 text-xs text-gray-700 dark:text-gray-300">
             <li v-for="filter in filters" :key="filter.id">
               <span class="font-semibold text-gray-800 dark:text-gray-200">
                 {{ filter.column }}
@@ -210,15 +208,13 @@ async function onCreateStream() {
         </div>
 
         <div
+          v-if="sorts.length > 0"
           class="rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/40 p-3"
         >
           <div class="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase">
             Sort
           </div>
-          <div v-if="sorts.length === 0" class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            None
-          </div>
-          <ul v-else class="mt-1 space-y-1 text-xs text-gray-700 dark:text-gray-300">
+          <ul class="mt-1 space-y-1 text-xs text-gray-700 dark:text-gray-300">
             <li v-for="sort in sorts" :key="`${sort.column}-${sort.direction}`">
               <span class="font-semibold text-gray-800 dark:text-gray-200">
                 {{ sort.column }}
@@ -229,6 +225,7 @@ async function onCreateStream() {
         </div>
 
         <div
+          v-if="limit !== null && limit > 0"
           class="rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/40 p-3"
         >
           <div class="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase">
@@ -238,7 +235,7 @@ async function onCreateStream() {
             <span
               class="inline-flex items-center rounded-full bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-xs text-gray-700 dark:text-gray-300"
             >
-              {{ limit ?? 'None' }}
+              {{ limit }}
             </span>
           </div>
         </div>
