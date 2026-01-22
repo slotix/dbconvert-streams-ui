@@ -4,6 +4,7 @@ import SlideOverPanel from '@/components/common/SlideOverPanel.vue'
 import FolderSelectionModal from '@/components/common/FolderSelectionModal.vue'
 import { useObjectTabStateStore } from '@/stores/objectTabState'
 import { useToast } from 'vue-toastification'
+import { isWailsContext } from '@/composables/useWailsEvents'
 import {
   buildExportStreamName,
   useStreamExport,
@@ -43,6 +44,7 @@ const { systemDefaults, loadSystemDefaults } = useSystemDefaults()
 const defaultExportPath = computed(() => systemDefaults.value?.defaultExportPath ?? '')
 
 const { createStreamFromView, isExporting } = useStreamExport()
+const isDesktop = isWailsContext()
 
 const filterState = computed(() => tabStateStore.getFilterPanelState(props.objectKey))
 
@@ -95,6 +97,32 @@ const targetPickerPath = computed(() => targetBasePath.value || defaultExportPat
 function handleFolderSelect(path: string) {
   targetBasePath.value = path
   showFolderPicker.value = false
+}
+
+async function openTargetPathPicker() {
+  if (isDesktop) {
+    const wailsGo = (
+      window as unknown as {
+        go?: { main?: { App?: { PickDirectory?: (path: string) => Promise<string> } } }
+      }
+    ).go
+    if (!wailsGo?.main?.App?.PickDirectory) {
+      toast.error('Folder picker is not available in this build')
+      return
+    }
+
+    try {
+      const selectedPath = await wailsGo.main.App.PickDirectory(targetPickerPath.value)
+      if (selectedPath) {
+        targetBasePath.value = selectedPath
+      }
+    } catch (err: unknown) {
+      toast.error(`Failed to open folder picker: ${String(err)}`)
+    }
+    return
+  }
+
+  showFolderPicker.value = true
 }
 
 watch(
@@ -290,7 +318,7 @@ async function onCreateStream() {
             <button
               type="button"
               class="inline-flex items-center rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
-              @click="showFolderPicker = true"
+              @click="openTargetPathPicker"
             >
               Browse
             </button>
