@@ -11,6 +11,8 @@ import { useConnectionActions } from '@/composables/useConnectionActions'
 import { useDatabaseCapabilities } from '@/composables/useDatabaseCapabilities'
 import { useTreeSearch } from '@/composables/useTreeSearch'
 import { useSqlConsoleActions } from '@/composables/useSqlConsoleActions'
+import { useDesktopMode } from '@/composables/useDesktopMode'
+import { useToast } from 'vue-toastification'
 import type { Connection } from '@/types/connections'
 import type { DiagramFocusTarget, ShowDiagramPayload } from '@/types/diagram'
 import type { SQLRoutineMeta, SQLSequenceMeta, SQLTableMeta, SQLViewMeta } from '@/types/metadata'
@@ -99,6 +101,30 @@ const navigationStore = useExplorerNavigationStore()
 const fileExplorerStore = useFileExplorerStore()
 const { openTableInSqlConsole, openFileInDuckDbConsole } = useSqlConsoleActions()
 const treeLogic = useConnectionTreeLogic()
+const { isDesktop } = useDesktopMode()
+const toast = useToast()
+
+const WINDOWS_ABSOLUTE_PATH = /^[a-zA-Z]:[\\/]|^\\\\/
+
+function isAbsolutePath(path: string): boolean {
+  return path.startsWith('/') || WINDOWS_ABSOLUTE_PATH.test(path)
+}
+
+function joinSystemPath(basePath: string, relativePath: string): string {
+  if (!basePath) return relativePath
+  const separator = basePath.includes('\\') ? '\\' : '/'
+  const normalizedRel =
+    separator === '\\' ? relativePath.replace(/\//g, '\\') : relativePath.replace(/\\/g, '/')
+  const trimmedBase = basePath.endsWith(separator) ? basePath.slice(0, -1) : basePath
+  const trimmedRel = normalizedRel.startsWith(separator) ? normalizedRel.slice(1) : normalizedRel
+  return `${trimmedBase}${separator}${trimmedRel}`
+}
+
+function resolveSystemPath(path: string, basePath: string): string {
+  if (!path) return basePath || ''
+  if (isAbsolutePath(path) || (basePath && path.startsWith(basePath))) return path
+  return joinSystemPath(basePath, path)
+}
 
 // Use composables for context menu and actions
 const contextMenu = useTreeContextMenu()
@@ -204,11 +230,21 @@ const canCreateSchema = computed(() => {
   return capabilities.canCreateSchema.value
 })
 
-// Check if the context menu target is a file connection
+// Check if the context menu target belongs to a file connection
 const isFileConnection = computed(() => {
   const target = contextMenu.contextTarget.value
-  if (!target || target.kind !== 'connection') return false
+  if (!target) return false
   return treeLogic.isFileConnection(target.connectionId)
+})
+
+// Check if the context menu target belongs to a LOCAL file connection (not S3/cloud)
+const isLocalFileConnection = computed(() => {
+  const target = contextMenu.contextTarget.value
+  if (!target) return false
+  const conn = connectionsStore.connections.find((c) => c.id === target.connectionId)
+  if (!conn) return false
+  // Local files have spec.files.basePath, cloud connections have spec.s3/gcs/azure
+  return !!conn.spec?.files?.basePath
 })
 
 const searchTooShort = computed(() => {
@@ -431,6 +467,33 @@ function onMenuAction(payload: {
     case 'delete-connection':
       if (t.kind === 'connection') actions.deleteConnection(t.connectionId)
       break
+    case 'copy-base-path':
+      if (t.kind === 'connection') {
+        const conn = connectionsStore.connections.find((c) => c.id === t.connectionId)
+        const basePath = conn?.spec?.files?.basePath || ''
+        if (basePath) {
+          actions.copyToClipboard(basePath, 'Path copied')
+        }
+      }
+      break
+    case 'open-base-folder':
+      if (t.kind === 'connection' && isDesktop.value) {
+        const conn = connectionsStore.connections.find((c) => c.id === t.connectionId)
+        const basePath = conn?.spec?.files?.basePath || ''
+        if (basePath) {
+          const wailsGo = (
+            window as unknown as {
+              go?: { main?: { App?: { OpenContainingFolder?: (path: string) => Promise<void> } } }
+            }
+          ).go
+          if (wailsGo?.main?.App?.OpenContainingFolder) {
+            wailsGo.main.App.OpenContainingFolder(basePath).catch((err: unknown) =>
+              toast.error(`Failed to open folder: ${err}`)
+            )
+          }
+        }
+      }
+      break
     case 'refresh-metadata':
       if (t.kind === 'database' || t.kind === 'schema')
         actions.refreshDatabase(t.connectionId, t.database)
@@ -503,7 +566,33 @@ function onMenuAction(payload: {
       if (t.kind === 'file') actions.copyToClipboard(t.name, 'File name copied')
       break
     case 'copy-file-path':
-      if (t.kind === 'file') actions.copyToClipboard(t.path, 'File path copied')
+      if (t.kind === 'file') actions.copyToClipboard(t.path, 'Path copied')
+      break
+    case 'copy-system-path':
+      if (t.kind === 'file') {
+        const conn = connectionsStore.connections.find((c) => c.id === t.connectionId)
+        const basePath = conn?.spec?.files?.basePath || ''
+        const systemPath = resolveSystemPath(t.path, basePath)
+        actions.copyToClipboard(systemPath, 'Path copied')
+      }
+      break
+    case 'open-in-explorer':
+      if (t.kind === 'file' && isDesktop.value) {
+        const conn = connectionsStore.connections.find((c) => c.id === t.connectionId)
+        const basePath = conn?.spec?.files?.basePath || ''
+        const systemPath = resolveSystemPath(t.path, basePath)
+        // Call Wails binding directly via window.go (available in desktop mode)
+        const wailsGo = (
+          window as unknown as {
+            go?: { main?: { App?: { OpenContainingFolder?: (path: string) => Promise<void> } } }
+          }
+        ).go
+        if (wailsGo?.main?.App?.OpenContainingFolder) {
+          wailsGo.main.App.OpenContainingFolder(systemPath).catch((err: unknown) =>
+            toast.error(`Failed to open folder: ${err}`)
+          )
+        }
+      }
       break
     case 'open-in-sql-console':
       if (t.kind === 'table' || t.kind === 'view') {
@@ -999,6 +1088,7 @@ watch(
         :canCreateDatabase="canCreateDatabase"
         :canCreateSchema="canCreateSchema"
         :isFileConnection="isFileConnection"
+        :isLocalFileConnection="isLocalFileConnection"
         @menu-action="onMenuAction"
         @close="contextMenu.close"
       />

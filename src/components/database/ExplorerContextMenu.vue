@@ -5,6 +5,7 @@ import {
   Copy,
   Eye,
   EyeOff,
+  FolderOpen,
   PanelLeftOpen,
   PanelRightOpen,
   Pencil,
@@ -14,6 +15,7 @@ import {
   Terminal,
   Trash2
 } from 'lucide-vue-next'
+import { useDesktopMode } from '@/composables/useDesktopMode'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { useConnectionTreeLogic } from '@/composables/useConnectionTreeLogic'
 
@@ -53,7 +55,10 @@ const props = defineProps<{
   canCreateDatabase?: boolean
   canCreateSchema?: boolean
   isFileConnection?: boolean
+  isLocalFileConnection?: boolean
 }>()
+
+const { isDesktop } = useDesktopMode()
 
 const emit = defineEmits<{
   (
@@ -104,15 +109,25 @@ const isFileOrTableFolder = computed(() => {
   // For regular files, always true
   return true
 })
-// Check if this is a navigation folder (no menu items)
+// Check if this is a local filesystem file (not S3/cloud) - for desktop features
+const isLocalFile = computed(
+  () => props.isFileConnection && props.isLocalFileConnection && isFileOrTableFolder.value
+)
+// Check if this is a navigation folder (directory that's not a table folder)
 const isNavigationFolder = computed(() => {
   if (!props.target || props.target.kind !== 'file') return false
   return props.target.isDir && !props.target.isTable
 })
+// Check if this is a local navigation folder (for copy/open folder actions)
+const isLocalNavigationFolder = computed(
+  () => props.isFileConnection && props.isLocalFileConnection && isNavigationFolder.value
+)
 // Objects that can be opened (tables, views, files, table folders)
 const isOpenable = computed(() => isDatabaseObject.value || isFileOrTableFolder.value)
-// Only show menu if visible, has target, and is not a navigation folder
-const hasMenu = computed(() => props.visible && !!props.target && !isNavigationFolder.value)
+// Show menu for: non-file targets, openable files, OR local navigation folders
+const hasMenu = computed(
+  () => props.visible && !!props.target && (!isNavigationFolder.value || isLocalNavigationFolder.value)
+)
 
 function click(action: string, openInRightSplit?: boolean) {
   if (!props.target) return
@@ -187,6 +202,25 @@ function click(action: string, openInRightSplit?: boolean) {
             <Plus class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
             <span>New Database</span>
           </button>
+          <!-- Local file connection: Copy/Open base path -->
+          <template v-if="props.isLocalFileConnection">
+            <div class="my-1 border-t border-gray-100 dark:border-gray-700"></div>
+            <button
+              class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
+              @click="click('copy-base-path')"
+            >
+              <Copy class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
+              <span>Copy Path</span>
+            </button>
+            <button
+              v-if="isDesktop"
+              class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
+              @click="click('open-base-folder')"
+            >
+              <FolderOpen class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
+              <span>Open Folder</span>
+            </button>
+          </template>
           <div class="my-1 border-t border-gray-100 dark:border-gray-700"></div>
           <button
             class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
@@ -351,21 +385,42 @@ function click(action: string, openInRightSplit?: boolean) {
               <span>Open in SQL Console</span>
             </button>
             <div class="my-1 border-t border-gray-100 dark:border-gray-700"></div>
+            <!-- Copy Path: full system path for local files, relative path for S3 -->
             <button
               class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
-              @click="click('copy-file-name')"
+              @click="click(isLocalFile ? 'copy-system-path' : 'copy-file-path')"
             >
               <Copy class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
-              <span>Copy name</span>
+              <span>Copy Path</span>
             </button>
             <button
+              v-if="isLocalFile && isDesktop"
               class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
-              @click="click('copy-file-path')"
+              @click="click('open-in-explorer')"
             >
-              <Copy class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
-              <span>Copy path</span>
+              <FolderOpen class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
+              <span>Open Folder</span>
             </button>
           </template>
+        </template>
+
+        <!-- Navigation folder menu (local file folders that are not table folders) -->
+        <template v-else-if="isLocalNavigationFolder">
+          <button
+            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
+            @click="click('copy-system-path')"
+          >
+            <Copy class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
+            <span>Copy Path</span>
+          </button>
+          <button
+            v-if="isDesktop"
+            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
+            @click="click('open-in-explorer')"
+          >
+            <FolderOpen class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
+            <span>Open Folder</span>
+          </button>
         </template>
       </div>
     </div>
