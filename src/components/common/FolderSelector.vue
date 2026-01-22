@@ -42,6 +42,7 @@
 import { ref, computed } from 'vue'
 import { FolderOpen, Info } from 'lucide-vue-next'
 import FolderSelectionModal from './FolderSelectionModal.vue'
+import { isWailsContext } from '@/composables/useWailsEvents'
 
 interface Props {
   modelValue?: string
@@ -71,6 +72,7 @@ const showModal = ref(false)
 const modalInitialPath = computed(() =>
   props.modelValue ? props.modelValue : props.initialPath || ''
 )
+const isDesktop = isWailsContext()
 
 const inputClass = computed(() => {
   const baseClass =
@@ -87,10 +89,30 @@ const inputClass = computed(() => {
   return `${baseClass} border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-teal-500 dark:focus:ring-teal-400 focus:border-teal-500 dark:focus:border-teal-400`
 })
 
-const openModal = () => {
-  if (!props.disabled) {
-    showModal.value = true
+const openModal = async () => {
+  if (props.disabled) return
+
+  if (isDesktop) {
+    const wailsGo = (
+      window as unknown as {
+        go?: { main?: { App?: { PickDirectory?: (path: string) => Promise<string> } } }
+      }
+    ).go
+
+    if (wailsGo?.main?.App?.PickDirectory) {
+      try {
+        const selectedPath = await wailsGo.main.App.PickDirectory(modalInitialPath.value)
+        if (selectedPath) {
+          emit('update:modelValue', selectedPath)
+        }
+        return
+      } catch {
+        // Fall back to web modal if native dialog fails.
+      }
+    }
   }
+
+  showModal.value = true
 }
 
 const handleFolderSelect = (path: string) => {
