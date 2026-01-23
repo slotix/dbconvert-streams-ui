@@ -17,6 +17,7 @@ import type { FileSystemEntry } from '@/api/fileSystem'
 import type { FileMetadata } from '@/types/files'
 import * as files from '@/api/files'
 import type { FileFormat } from '@/utils/fileFormat'
+import { parseTableName } from '@/utils/federatedUtils'
 import {
   getConnectionKindFromSpec,
   getConnectionTypeLabel,
@@ -57,6 +58,12 @@ const monitoringStore = useMonitoringStore()
 
 // Selected table from stream config
 const selectedTable = ref<string>('')
+const isFederated = computed(() => (props.stream.source?.connections?.length || 0) > 1)
+const parsedSelectedTable = computed(() =>
+  parseTableName(selectedTable.value || '', isFederated.value)
+)
+const selectedTableName = computed(() => parsedSelectedTable.value.table)
+const selectedSchemaFromTable = computed(() => parsedSelectedTable.value.schema)
 
 // Source and target metadata
 const sourceTableMeta = ref<SQLTableMeta | null>(null)
@@ -80,12 +87,32 @@ const syncFlashTarget = ref(false) // Visual feedback for target grid
 // Get approximate row counts from store for both source and target
 const sourceApproxRows = computed(() => {
   if (!selectedTable.value || !sourceDatabase.value) return 0
-  return overviewStore.getTableRowCount(selectedTable.value, props.source.id, sourceDatabase.value)
+  const direct = overviewStore.getTableRowCount(
+    selectedTable.value,
+    props.source.id,
+    sourceDatabase.value
+  )
+  if (direct !== undefined) return direct
+  const parsed = selectedTableName.value
+  if (parsed && parsed !== selectedTable.value) {
+    return overviewStore.getTableRowCount(parsed, props.source.id, sourceDatabase.value) ?? 0
+  }
+  return 0
 })
 
 const targetApproxRows = computed(() => {
   if (!selectedTable.value || !targetDatabase.value || isFileTarget.value) return 0
-  return overviewStore.getTableRowCount(selectedTable.value, props.target.id, targetDatabase.value)
+  const direct = overviewStore.getTableRowCount(
+    selectedTable.value,
+    props.target.id,
+    targetDatabase.value
+  )
+  if (direct !== undefined) return direct
+  const parsed = selectedTableName.value
+  if (parsed && parsed !== selectedTable.value) {
+    return overviewStore.getTableRowCount(parsed, props.target.id, targetDatabase.value) ?? 0
+  }
+  return 0
 })
 
 const sourceTypeLabel = computed(
@@ -284,6 +311,9 @@ async function loadSourceTable() {
       console.warn('Failed to fetch source database overview:', e)
     }
 
+    const tableName = selectedTableName.value
+    const schemaFromName = selectedSchemaFromTable.value
+
     // For MySQL, don't pass schema (database IS the schema)
     // For PostgreSQL, use schema if provided, otherwise default to 'public'
     let schema: string | undefined
@@ -291,13 +321,13 @@ async function loadSourceTable() {
     if (sourceKind === 'database' && sourceTypeLabel.value === 'mysql') {
       schema = undefined // MySQL doesn't use separate schemas
     } else {
-      schema = sourceSchema.value || 'public'
+      schema = schemaFromName || sourceSchema.value || 'public'
     }
 
     const meta = navigationStore.findTableMeta(
       props.source.id,
       sourceDatabase.value,
-      selectedTable.value,
+      tableName,
       schema
     )
     sourceTableMeta.value = meta || null
@@ -325,6 +355,9 @@ async function loadTargetTable() {
       console.warn('Failed to fetch target database overview:', e)
     }
 
+    const tableName = selectedTableName.value
+    const schemaFromName = selectedSchemaFromTable.value
+
     // For MySQL, don't pass schema (database IS the schema)
     // For PostgreSQL, use schema if provided, otherwise default to 'public'
     let schema: string | undefined
@@ -332,14 +365,14 @@ async function loadTargetTable() {
     if (targetKind === 'database' && targetTypeLabel.value === 'mysql') {
       schema = undefined // MySQL doesn't use separate schemas
     } else {
-      schema = targetSchema.value || 'public'
+      schema = schemaFromName || targetSchema.value || 'public'
     }
 
     // Find the table metadata
     const meta = navigationStore.findTableMeta(
       props.target.id,
       targetDatabase.value,
-      selectedTable.value,
+      tableName,
       schema
     )
     targetTableMeta.value = meta || null

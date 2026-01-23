@@ -405,8 +405,8 @@ interface StreamTab {
 const tabs = computed<StreamTab[]>(() => [
   { id: 'configuration', label: 'Configuration', visible: true },
   { id: 'monitor', label: 'Monitor', visible: true },
-  { id: 'history', label: 'History', visible: true },
-  { id: 'compare', label: 'Compare', visible: isStreamFinished.value }
+  { id: 'compare', label: 'Compare', visible: Boolean(sourceRef.value && targetRef.value) },
+  { id: 'history', label: 'History', visible: true }
 ])
 
 const visibleTabs = computed(() => tabs.value.filter((tab) => tab.visible))
