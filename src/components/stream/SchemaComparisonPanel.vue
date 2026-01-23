@@ -116,7 +116,6 @@
               >
             </div>
           </div>
-
           <!-- Column Rows -->
           <div class="max-h-80 overflow-y-auto custom-scrollbar">
             <div
@@ -126,28 +125,46 @@
               :class="getRowClass(col)"
             >
               <!-- Source Column -->
-              <div v-if="col.sourceColumn" class="flex items-center gap-2 min-w-0">
-                <span class="font-mono font-medium text-gray-900 dark:text-gray-100">{{
-                  col.sourceColumn.name
-                }}</span>
-                <span class="text-gray-600 dark:text-gray-400 text-xs">{{
-                  col.sourceColumn.dataType
-                }}</span>
+              <div
+                v-if="col.sourceColumn"
+                class="grid grid-cols-[minmax(140px,1fr)_auto_70px_80px] items-center gap-3 min-w-0"
+              >
+                <div class="flex items-center gap-2 min-w-0">
+                  <span class="font-mono font-medium text-gray-900 dark:text-gray-100 truncate">{{
+                    col.sourceColumn.name
+                  }}</span>
+                  <span
+                    v-if="col.sourceColumn.isPrimaryKey"
+                    class="px-1.5 py-0.5 text-[10px] bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 rounded font-medium uppercase tracking-wide"
+                  >
+                    PK
+                  </span>
+                </div>
                 <span
-                  v-if="col.sourceColumn.isPrimaryKey"
-                  class="px-1.5 py-0.5 text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 rounded font-medium"
+                  class="px-1.5 py-0.5 text-[11px] bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300 rounded font-semibold tracking-wide uppercase text-center"
                 >
-                  PK
+                  {{ getTypeParts(col.sourceColumn.dataType).type }}
+                </span>
+                <span class="text-[11px] text-gray-600 dark:text-gray-400 font-mono text-center">
+                  {{ getColumnSize(col.sourceColumn) || '—' }}
                 </span>
                 <span
                   v-if="!col.sourceColumn.isNullable"
-                  class="px-1.5 py-0.5 text-xs bg-gray-100 text-gray-700 dark:bg-gray-900/40 dark:text-gray-300 rounded font-medium"
-                  title="NOT NULL"
+                  class="px-1.5 py-0.5 text-[11px] bg-gray-100 text-gray-600 dark:bg-gray-900/40 dark:text-gray-400 rounded font-medium uppercase tracking-wide text-center"
                 >
-                  NN
+                  NOT&nbsp;NULL
                 </span>
+                <span v-else class="text-[11px] text-gray-400 text-center">—</span>
               </div>
-              <div v-else class="text-gray-400 dark:text-gray-500 text-xs">-</div>
+              <div
+                v-else
+                class="grid grid-cols-[minmax(140px,1fr)_auto_70px_80px] items-center gap-3 text-gray-400 dark:text-gray-500 text-xs"
+              >
+                <span>—</span>
+                <span>—</span>
+                <span>—</span>
+                <span>—</span>
+              </div>
 
               <!-- Status Icon -->
               <div class="flex items-center justify-center w-16">
@@ -161,28 +178,46 @@
               </div>
 
               <!-- Target Column -->
-              <div v-if="col.targetColumn" class="flex items-center gap-2 min-w-0">
-                <span class="font-mono font-medium text-gray-900 dark:text-gray-100">{{
-                  col.targetColumn.name
-                }}</span>
-                <span class="text-gray-600 dark:text-gray-400 text-xs">{{
-                  col.targetColumn.dataType
-                }}</span>
+              <div
+                v-if="col.targetColumn"
+                class="grid grid-cols-[minmax(140px,1fr)_auto_70px_80px] items-center gap-3 min-w-0"
+              >
+                <div class="flex items-center gap-2 min-w-0">
+                  <span class="font-mono font-medium text-gray-900 dark:text-gray-100 truncate">{{
+                    col.targetColumn.name
+                  }}</span>
+                  <span
+                    v-if="col.targetColumn.isPrimaryKey"
+                    class="px-1.5 py-0.5 text-[10px] bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 rounded font-medium uppercase tracking-wide"
+                  >
+                    PK
+                  </span>
+                </div>
                 <span
-                  v-if="col.targetColumn.isPrimaryKey"
-                  class="px-1.5 py-0.5 text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 rounded font-medium"
+                  class="px-1.5 py-0.5 text-[11px] bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300 rounded font-semibold tracking-wide uppercase text-center"
                 >
-                  PK
+                  {{ getTypeParts(col.targetColumn.dataType).type }}
+                </span>
+                <span class="text-[11px] text-gray-600 dark:text-gray-400 font-mono text-center">
+                  {{ getColumnSize(col.targetColumn) || '—' }}
                 </span>
                 <span
                   v-if="!col.targetColumn.isNullable"
-                  class="px-1.5 py-0.5 text-xs bg-gray-100 text-gray-700 dark:bg-gray-900/40 dark:text-gray-300 rounded font-medium"
-                  title="NOT NULL"
+                  class="px-1.5 py-0.5 text-[11px] bg-gray-100 text-gray-600 dark:bg-gray-900/40 dark:text-gray-400 rounded font-medium uppercase tracking-wide text-center"
                 >
-                  NN
+                  NOT&nbsp;NULL
                 </span>
+                <span v-else class="text-[11px] text-gray-400 text-center">—</span>
               </div>
-              <div v-else class="text-gray-400 dark:text-gray-500 text-xs">-</div>
+              <div
+                v-else
+                class="grid grid-cols-[minmax(140px,1fr)_auto_70px_80px] items-center gap-3 text-gray-400 dark:text-gray-500 text-xs"
+              >
+                <span>—</span>
+                <span>—</span>
+                <span>—</span>
+                <span>—</span>
+              </div>
             </div>
           </div>
         </div>
@@ -376,6 +411,33 @@ function getDiffIcon(type: string) {
     new: PlusCircle
   }
   return iconMap[type] || null
+}
+
+function getTypeParts(type: string) {
+  const trimmed = (type || '').trim()
+  if (!trimmed) return { type: '', size: '' }
+  const openParen = trimmed.indexOf('(')
+  const closeParen = trimmed.lastIndexOf(')')
+  if (openParen > -1 && closeParen > openParen) {
+    return {
+      type: trimmed.slice(0, openParen).trim(),
+      size: trimmed.slice(openParen + 1, closeParen).trim()
+    }
+  }
+  return { type: trimmed, size: '' }
+}
+
+function getColumnSize(column: SQLColumnMeta): string {
+  if (column.precision?.Valid) {
+    const precision = column.precision.Int64
+    const scale = column.scale?.Valid ? column.scale.Int64 : null
+    return scale !== null ? `${precision},${scale}` : `${precision}`
+  }
+  if (column.length?.Valid) {
+    return `${column.length.Int64}`
+  }
+  const fallback = column.columnType || column.dataType
+  return getTypeParts(fallback).size
 }
 
 function getDiffIconColor(type: string) {
