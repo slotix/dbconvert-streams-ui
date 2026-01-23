@@ -33,14 +33,22 @@ import { Check, Pencil, Plus, Trash2, Download, ChevronDown } from 'lucide-vue-n
 import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/vue'
 import { useLucideIcons } from '@/composables/useLucideIcons'
 
-const props = defineProps<{
-  tableMeta: SQLTableMeta | SQLViewMeta
-  connectionId: string
-  database: string
-  isView?: boolean
-  approxRows?: number // Optional approximate row count from database overview
-  objectKey: string // Unique key for this table/view tab (from paneTabs store)
-}>()
+const props = withDefaults(
+  defineProps<{
+    tableMeta: SQLTableMeta | SQLViewMeta
+    connectionId: string
+    database: string
+    isView?: boolean
+    approxRows?: number // Optional approximate row count from database overview
+    objectKey: string // Unique key for this table/view tab (from paneTabs store)
+    showToolbarActions?: boolean
+    readOnly?: boolean
+  }>(),
+  {
+    showToolbarActions: true,
+    readOnly: false
+  }
+)
 
 // Store for persisting tab state including AG Grid data state
 const tabStateStore = useObjectTabStateStore()
@@ -88,6 +96,7 @@ const objectName = computed(() => getObjectName(props.tableMeta))
 const objectSchema = computed(() => getObjectSchema(props.tableMeta))
 
 const isTableEditable = computed(() => {
+  if (props.readOnly) return false
   if (props.isView) return false
   const meta = props.tableMeta as SQLTableMeta
   return Boolean(meta.isEditable)
@@ -106,6 +115,7 @@ const editKeyColumns = computed<string[]>(() => {
 })
 
 const editDisabledReason = computed(() => {
+  if (props.readOnly) return 'Read-only in compare view'
   if (props.isView) return 'Views are read-only'
   const meta = props.tableMeta as SQLTableMeta
   if (meta.isEditable) return ''
@@ -710,10 +720,11 @@ defineExpose({
 
       <!-- Grid Actions Toolbar (container for responsive badges) -->
       <div
+        v-if="props.showToolbarActions"
         class="toolbar-container flex items-center justify-between px-3 py-1.5 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700"
       >
         <!-- Left side: Status badges -->
-        <div class="flex items-center gap-2">
+        <div v-if="props.showToolbarActions" class="flex items-center gap-2">
           <!-- Selection count -->
           <span
             v-if="baseGrid.selectedRowCount.value > 0"

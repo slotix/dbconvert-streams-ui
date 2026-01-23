@@ -29,12 +29,20 @@ import { useLucideIcons } from '@/composables/useLucideIcons'
 import { isWailsContext } from '@/composables/useWailsEvents'
 import { useUnsavedChangesGuard } from '@/composables/useUnsavedChangesGuard'
 
-const props = defineProps<{
-  entry: FileSystemEntry
-  metadata: FileMetadata | null
-  connectionId: string
-  objectKey: string
-}>()
+const props = withDefaults(
+  defineProps<{
+    entry: FileSystemEntry
+    metadata: FileMetadata | null
+    connectionId: string
+    objectKey: string
+    showToolbarActions?: boolean
+    readOnly?: boolean
+  }>(),
+  {
+    showToolbarActions: true,
+    readOnly: false
+  }
+)
 
 const tabStateStore = useObjectTabStateStore()
 
@@ -60,9 +68,12 @@ const { strokeWidth: iconStroke } = useLucideIcons()
 const { confirmDiscardUnsavedChanges } = useUnsavedChangesGuard()
 
 const isTableFolder = computed(() => props.entry.type === 'dir' && props.entry.isTable)
-const isTableEditable = computed(() => !isUnsupportedFile.value && !isTableFolder.value)
+const isTableEditable = computed(
+  () => !props.readOnly && !isUnsupportedFile.value && !isTableFolder.value
+)
 
 const editDisabledReason = computed(() => {
+  if (props.readOnly) return 'Read-only in compare view'
   if (isUnsupportedFile.value) return 'Unsupported file type'
   if (isTableFolder.value) return 'Table folders are read-only. Edit a single file.'
   return ''
@@ -702,10 +713,10 @@ defineExpose({
 
     <!-- Grid Actions Toolbar -->
     <div
-      v-if="!isUnsupportedFile"
+      v-if="!isUnsupportedFile && props.showToolbarActions"
       class="toolbar-container flex items-center justify-between px-3 py-1.5 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700"
     >
-      <div class="flex items-center gap-2">
+      <div v-if="props.showToolbarActions" class="flex items-center gap-2">
         <span
           v-if="baseGrid.selectedRowCount.value > 0"
           class="stat-badge stat-badge-gray"

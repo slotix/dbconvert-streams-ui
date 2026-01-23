@@ -744,6 +744,8 @@ async function selectTable(tableName: string) {
               :is-view="false"
               :approx-rows="sourceApproxRows"
               :object-key="`compare-source-${stream.id}-${selectedTable}`"
+              :show-toolbar-actions="false"
+              read-only
             />
           </div>
           <div
@@ -801,6 +803,8 @@ async function selectTable(tableName: string) {
               :is-view="false"
               :approx-rows="targetApproxRows"
               :object-key="`compare-target-${stream.id}-${selectedTable}`"
+              :show-toolbar-actions="false"
+              read-only
             />
           </div>
 
@@ -816,6 +820,8 @@ async function selectTable(tableName: string) {
               :metadata="targetFileMetadata"
               :connection-id="target.id"
               :object-key="`compare-target-file-${stream.id}-${targetFileEntry.path}`"
+              :show-toolbar-actions="false"
+              read-only
             />
           </div>
 
